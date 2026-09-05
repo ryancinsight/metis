@@ -31,10 +31,10 @@ Only repository visibility is awaiting user input; local implementation proceeds
 
 <a id="METIS-DESKTOP-001"></a>
 ## METIS-DESKTOP-001 — Native restricted desktop [arch] [minor]
-- Status: todo; dependencies: METIS-PROCESS-001; risk: trust boundary
+- Status: in-progress; integrator: root; last-update: 2026-09-05; dependencies: METIS-PROCESS-001; risk: trust boundary
 - Scope: Windows/macOS/Linux native windows, OS-enforced frontend sandbox and real input event loop.
 - Acceptance: native visible form; file/network/process denial probes; IPC works under restrictions on each OS.
-- Current evidence: existing surface renders to memory only; original privilege assertion is empty.
+- Current evidence: `PlatformSurface` owns framebuffer/events only; `PlatformEvent` has no OS event producer. The ineffective original privilege assertion is removed. Native lifecycle, input dispatch and permission denial require new provider contracts and platform probes.
 
 <a id="METIS-AUDIT-001"></a>
 ## METIS-AUDIT-001 — Durable audit recovery [minor]
