@@ -26,7 +26,7 @@ edition = "2024"
 rust-version = "1.97"
 authors = ["Ryan Clanton <ryanclanton@outlook.com>"]
 license = "MIT OR Apache-2.0"
-repository = "https://github.com/ryancinsight/atlas.git"
+repository = "https://github.com/ryancinsight/metis"
 
 [workspace.dependencies]
 iris = { package = "iris-viz", git = "https://github.com/ryancinsight/iris", version = "0.1" }

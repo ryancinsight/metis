@@ -34,5 +34,27 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         }
     }
     bitmap.flush()?;
+    let mut snapshot = std::io::BufWriter::new(std::fs::File::create("output/form.svg")?);
+    writeln!(
+        snapshot,
+        "<svg xmlns=\"http://www.w3.org/2000/svg\" width=\"{width}\" height=\"{height}\" viewBox=\"0 0 {width} {height}\" shape-rendering=\"crispEdges\">"
+    )?;
+    writeln!(snapshot, "<title>Metis form software framebuffer</title>")?;
+    // Encode the actual raster as horizontal runs; no text or layout is rebuilt.
+    for (y, row) in pixels.chunks_exact(usize::try_from(width)?).enumerate() {
+        let mut x = 0;
+        while let Some(&pixel) = row.get(x) {
+            let length = row[x..].iter().take_while(|&&next| next == pixel).count();
+            let [alpha, red, green, blue] = pixel.to_be_bytes();
+            writeln!(
+                snapshot,
+                "<path fill=\"#{red:02x}{green:02x}{blue:02x}\" fill-opacity=\"{}\" d=\"M{x} {y}h{length}v1H{x}z\"/>",
+                f64::from(alpha) / 255.0
+            )?;
+            x += length;
+        }
+    }
+    writeln!(snapshot, "</svg>")?;
+    snapshot.flush()?;
     Ok(())
 }

@@ -1,7 +1,7 @@
 # Metis
 
 Metis is an unfinished Rust desktop presentation and isolated backend workspace
-inside Atlas. Its name refers to Metis, associated with counsel and practical
+in the public [Atlas stack](https://github.com/ryancinsight/atlas). Its name refers to Metis, associated with counsel and practical
 wisdom. It uses Rust and a bounded HTML/CSS-inspired language; it does not embed
 JavaScript or a WebView.
 
@@ -19,11 +19,11 @@ Use the pinned Rust toolchain and cargo-nextest 0.9.143. From this directory:
 ```text
 cargo build --workspace --bins
 cargo run -p metis-backend -- 60 2 0.2
-python scripts/verify.py --stack
+python scripts/verify.py
 ```
 
 The arguments are weight in kg, concentration in mg/mL and dose in mcg/kg/min.
-The stack gate uses local Atlas providers; standalone verification omits `--stack`.
+The gate verifies the committed Git dependency lock, including when invoked inside Atlas.
 The backend launches a separate frontend executable, receives its submitted
 values and returns the calculated result. For these demonstration inputs the
 rate is 0.36 mL/hour and drug rate is 0.72 mg/hour. Standard output carries IPC
@@ -47,8 +47,11 @@ the default branch; the removal trigger is tracked in
 
 ## Design and evidence
 
+- [User manual and application snapshots](docs/manual/README.md)
 - [Architecture](docs/ARCHITECTURE.md)
 - [Interface contract](docs/INTERFACE.md)
 - [Risk controls](docs/RISK_CONTROLS.md)
 - [Verification](docs/VERIFICATION.md)
 - [Current work](backlog.md)
+
+Licensed under [MIT](LICENSE-MIT) or [Apache-2.0](LICENSE-APACHE), at your option.

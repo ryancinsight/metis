@@ -19,28 +19,32 @@ process-isolation test. No original OS sandbox or native-window evidence exists.
 - Process evidence: separately built executables exchanging real pipes; PID and result checks. These do not prove OS least privilege.
 - Visual evidence: software framebuffer generated from actual form state and inspected independently of compilation.
 
-Inside Atlas, use `python scripts/verify.py --stack`. Cargo currently reorders
-unused overlay records on consecutive resolutions and rejects `--locked` despite
-an unchanged package graph. Stack mode compares the entire parsed lockfile before
-and after every command, permitting only permutation of `patch.unused` entries.
-Any dependency, source, checksum, edge or unused-entry change fails verification.
-Standalone mode retains Cargo's `--locked` enforcement. The two modes never
-silently fall back to each other.
+Use `python scripts/verify.py`. Resolving commands run with `--locked` outside
+the Atlas overlay, following Atlas's standalone-lock workflow. Inside Atlas,
+the gate preserves the configured shared build directory and profile budgets;
+it never disables the shared overlay or creates another build cache. The
+committed lock must describe Git sources, without local-overlay substitutions
+or unused-patch records. Earlier `--stack` verification is superseded by this
+standalone gate so publishing cannot ship an overlay-only dependency graph.
+
+The user manual replaces a domain book. Its application snapshot is produced by
+the Rust presentation example from actual framebuffer pixels and checked against
+`docs/manual/images/form.svg`. `--update-snapshots` explicitly refreshes that file;
+normal verification rejects drift and missing local manual links.
 
 ## Collected Windows evidence — 2026-09-05
 
-`python scripts/verify.py --stack` passes on Rust 1.97.0,
+The foundation gate passes on Rust 1.97.0,
 `x86_64-pc-windows-msvc`: formatting, all-target Clippy with warnings denied,
 82/82 debug tests, 82/82 release tests, ten doctests, documentation with warnings
 denied, real-process demonstration and presentation rendering. The 800×600 BMP
 is inspected: title/status and all form labels fit; viewport background is filled.
-The gate writes exact source hashes and normalized lock content to
+The gate writes exact source hashes and lock content to
 `output/verification.json`, rejecting source changes during a run.
 
 The resolved host metadata contains 43 packages, including 19 registry packages
-through Atlas providers. No Metis package declares a registry dependency. Cargo
-still reports unused Atlas overlay candidates; these are resolver diagnostics,
-not suppressed Rust source warnings. Separate upstream evidence includes 39/39
+through Atlas providers. No Metis package declares a registry dependency.
+Separate upstream evidence includes 39/39
 Moirai transport tests and 18/18 Atlas overlay-generator tests, with a real Cargo
 fixture detecting duplicate local/Git type identities before the generator fix.
 
@@ -51,6 +55,6 @@ corrects the initial test's message assumption without relaxing rejection.
 Windows tests do not prove Linux or macOS behavior. Miri does not execute Windows
 native system calls; those require targeted lifecycle tests and further platform
 instrumentation. Moirai resolves from pushed commit `0514f11`, not local provider
-edits. Other enabled Atlas overlays remain in use; an entirely standalone build
-is not established by this gate. Advisory scanning, coverage,
+edits. The public-repository increment collects the standalone gate against the
+repaired lock. Advisory scanning, coverage,
 mutation analysis and cross-platform sandbox probes remain uncollected.

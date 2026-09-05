@@ -6,7 +6,7 @@ rust-version.workspace = true
 authors.workspace = true
 license.workspace = true
 repository.workspace = true
-description = "Core types, cryptographic primitives, capability tokens, audit ledger, and IPC wire protocol for Metis"
+description = "Shared wire types, integrity primitives, capability tokens, and errors for Metis"
 
 [dependencies]
 # Pure Rust std only. Zero third-party dependencies.

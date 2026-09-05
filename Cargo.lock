@@ -129,6 +129,7 @@ checksum = "e17592d60ebacc7d5e169f4663c5f84f9161cc90328abcfe8456f41e4dfcb284"
 [[package]]
 name = "iris-viz"
 version = "0.1.0"
+source = "git+https://github.com/ryancinsight/iris#764ed2b4b1696363abc3950f0d930d244126e4bf"
 
 [[package]]
 name = "js-sys"
@@ -184,6 +185,7 @@ dependencies = [
 [[package]]
 name = "melinoe"
 version = "0.9.0"
+source = "git+https://github.com/ryancinsight/melinoe.git#61f3dee802ea5a5aa88ff296bf77e0ea868c8145"
 
 [[package]]
 name = "memchr"
@@ -266,6 +268,7 @@ dependencies = [
 [[package]]
 name = "mnemosyne-arena"
 version = "0.4.0"
+source = "git+https://github.com/ryancinsight/Mnemosyne.git?rev=3a5f2a6e6426613fe821a52c5b1405dfe4742d57#3a5f2a6e6426613fe821a52c5b1405dfe4742d57"
 dependencies = [
  "libc",
  "loom",
@@ -277,6 +280,7 @@ dependencies = [
 [[package]]
 name = "mnemosyne-backend"
 version = "0.5.0"
+source = "git+https://github.com/ryancinsight/Mnemosyne.git?rev=3a5f2a6e6426613fe821a52c5b1405dfe4742d57#3a5f2a6e6426613fe821a52c5b1405dfe4742d57"
 dependencies = [
  "mnemosyne-memory-core",
 ]
@@ -284,10 +288,12 @@ dependencies = [
 [[package]]
 name = "mnemosyne-build-util"
 version = "0.2.0"
+source = "git+https://github.com/ryancinsight/Mnemosyne.git?rev=3a5f2a6e6426613fe821a52c5b1405dfe4742d57#3a5f2a6e6426613fe821a52c5b1405dfe4742d57"
 
 [[package]]
 name = "mnemosyne-decay"
 version = "0.3.0"
+source = "git+https://github.com/ryancinsight/Mnemosyne.git?rev=3a5f2a6e6426613fe821a52c5b1405dfe4742d57#3a5f2a6e6426613fe821a52c5b1405dfe4742d57"
 dependencies = [
  "mnemosyne-arena",
  "mnemosyne-backend",
@@ -297,6 +303,7 @@ dependencies = [
 [[package]]
 name = "mnemosyne-local"
 version = "0.4.0"
+source = "git+https://github.com/ryancinsight/Mnemosyne.git?rev=3a5f2a6e6426613fe821a52c5b1405dfe4742d57#3a5f2a6e6426613fe821a52c5b1405dfe4742d57"
 dependencies = [
  "melinoe",
  "mnemosyne-arena",
@@ -311,6 +318,7 @@ dependencies = [
 [[package]]
 name = "mnemosyne-memory"
 version = "0.7.0"
+source = "git+https://github.com/ryancinsight/Mnemosyne.git?rev=3a5f2a6e6426613fe821a52c5b1405dfe4742d57#3a5f2a6e6426613fe821a52c5b1405dfe4742d57"
 dependencies = [
  "mnemosyne-arena",
  "mnemosyne-backend",
@@ -323,6 +331,7 @@ dependencies = [
 [[package]]
 name = "mnemosyne-memory-core"
 version = "0.2.0"
+source = "git+https://github.com/ryancinsight/Mnemosyne.git?rev=3a5f2a6e6426613fe821a52c5b1405dfe4742d57#3a5f2a6e6426613fe821a52c5b1405dfe4742d57"
 dependencies = [
  "loom",
 ]
@@ -330,6 +339,7 @@ dependencies = [
 [[package]]
 name = "mnemosyne-prof"
 version = "0.2.0"
+source = "git+https://github.com/ryancinsight/Mnemosyne.git?rev=3a5f2a6e6426613fe821a52c5b1405dfe4742d57#3a5f2a6e6426613fe821a52c5b1405dfe4742d57"
 dependencies = [
  "backtrace",
  "mnemosyne-build-util",
@@ -548,6 +558,7 @@ dependencies = [
 [[package]]
 name = "themis-topology"
 version = "0.10.1"
+source = "git+https://github.com/ryancinsight/themis#35406927d79d1e4dcc049db2c8c1cb7df372d26b"
 dependencies = [
  "melinoe",
 ]
@@ -838,55 +849,3 @@ name = "windows_x86_64_msvc"
 version = "0.52.6"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "589f6da84c646204747d1270a2a5661ea66ed1cced2631d546fdfb155959f9ec"
-
-[[patch.unused]]
-name = "proteus-mat"
-version = "0.1.0"
-
-[[patch.unused]]
-name = "harmonia"
-version = "0.1.0"
-
-[[patch.unused]]
-name = "hyperion"
-version = "0.1.0"
-
-[[patch.unused]]
-name = "mnemosyne-heap"
-version = "0.4.0"
-
-[[patch.unused]]
-name = "eunomia"
-version = "0.8.0"
-
-[[patch.unused]]
-name = "horae"
-version = "0.1.0"
-
-[[patch.unused]]
-name = "hermes-simd"
-version = "0.7.0"
-
-[[patch.unused]]
-name = "asclepius"
-version = "0.1.0"
-
-[[patch.unused]]
-name = "asclepius-coeus"
-version = "0.1.0"
-
-[[patch.unused]]
-name = "aequitas"
-version = "0.2.0"
-
-[[patch.unused]]
-name = "athena-core"
-version = "0.1.1"
-
-[[patch.unused]]
-name = "athena-leto"
-version = "0.1.1"
-
-[[patch.unused]]
-name = "gaia-mesh"
-version = "0.5.0"

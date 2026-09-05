@@ -1,7 +1,7 @@
 # Metis delivery
 
 Registration: [Atlas member item](../../backlog.md#metis-unregistered-member).
-Only repository visibility is awaiting user input; local implementation proceeds.
+The user authorizes a public repository; registration follows verified publication.
 
 <a id="METIS-SEC-001"></a>
 ## METIS-SEC-001 — Backend authority [arch] [patch]
@@ -64,8 +64,8 @@ Only repository visibility is awaiting user input; local implementation proceeds
 
 <a id="METIS-RELEASE-001"></a>
 ## METIS-RELEASE-001 — Publication readiness [patch]
-- Status: blocked; blocker: repository visibility decision and explicit release authority; re-open: user supplies both.
-- Scope: registry metadata, license files, book, advisory scan, CI, standalone dependency lock and platform verification.
+- Status: blocked; blocker: explicit registry release authority; re-open: user authorizes a release.
+- Scope: registry metadata, user manual with application snapshots, advisory scan, CI and platform verification.
 - Acceptance: package contents and required verification pass before any registry release.
 
 <a id="METIS-MEMORY-001"></a>
@@ -73,3 +73,10 @@ Only repository visibility is awaiting user input; local implementation proceeds
 - Status: todo; risk: overflow; scope: Moirai's allocation boundary.
 - Evidence: `../moirai/moirai-core/src/memory/allocator.rs` multiplies element size by count without a checked operation.
 - Acceptance: verify the public count contract and reject overflow with a typed error before allocation; debug/release adversarial tests.
+
+<a id="METIS-MANUAL-001"></a>
+## METIS-MANUAL-001 — Public member and user manual [patch]
+- Status: in-progress; integrator: root; last-update: 2026-09-05
+- Scope: public GitHub repository, Atlas gitlink, user-oriented manual and actual rendered application snapshots; no registry release.
+- Acceptance: public remote contains tested source; Atlas resolves the pinned commit; manual links resolve and generated snapshot matches the renderer.
+- Decision: [ADR 0001](docs/adr/0001-process-contract.md); user manual replaces the domain-book requirement by explicit user direction.
