@@ -1,0 +1,77 @@
+[package]
+name = "metis"
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+authors.workspace = true
+license.workspace = true
+repository.workspace = true
+description = "Rust presentation and isolated backend process contract"
+
+[workspace]
+resolver = "3"
+members = [
+    ".",
+    "crates/metis-core",
+    "crates/metis-backend",
+    "crates/metis-frontend",
+    "crates/metis-ipc",
+    "crates/metis-ui-lang",
+    "crates/metis-platform",
+]
+
+[workspace.package]
+version = "0.1.0"
+edition = "2024"
+rust-version = "1.97"
+authors = ["Ryan Clanton <ryanclanton@outlook.com>"]
+license = "MIT OR Apache-2.0"
+repository = "https://github.com/ryancinsight/atlas.git"
+
+[workspace.dependencies]
+iris = { package = "iris-viz", git = "https://github.com/ryancinsight/iris", version = "0.1" }
+moirai-core = { git = "https://github.com/ryancinsight/Moirai.git", rev = "0514f11ea9aaa5edd817581b4eed906fc951c076", version = "0.6", default-features = false, features = ["std"] }
+moirai-executor = { git = "https://github.com/ryancinsight/Moirai.git", rev = "0514f11ea9aaa5edd817581b4eed906fc951c076", version = "0.6", default-features = false }
+moirai-transport = { git = "https://github.com/ryancinsight/Moirai.git", rev = "0514f11ea9aaa5edd817581b4eed906fc951c076", version = "0.6", default-features = false }
+metis-core = { path = "crates/metis-core", version = "0.1.0" }
+metis-ipc = { path = "crates/metis-ipc", version = "0.1.0" }
+metis-ui-lang = { path = "crates/metis-ui-lang", version = "0.1.0" }
+metis-platform = { path = "crates/metis-platform", version = "0.1.0" }
+metis-backend = { path = "crates/metis-backend", version = "0.1.0" }
+metis-frontend = { path = "crates/metis-frontend", version = "0.1.0" }
+
+[dev-dependencies]
+iris.workspace = true
+moirai-core.workspace = true
+moirai-executor.workspace = true
+metis-core = { workspace = true }
+metis-ipc = { workspace = true }
+metis-ui-lang = { workspace = true }
+metis-platform = { workspace = true }
+metis-backend = { workspace = true }
+metis-frontend = { workspace = true }
+
+[workspace.lints.rust]
+missing_docs = "deny"
+unsafe_code = "deny"
+
+[workspace.lints.clippy]
+pedantic = { level = "warn", priority = -1 }
+unwrap_used = "deny"
+dbg_macro = "deny"
+
+[lints]
+workspace = true
+
+[profile.dev]
+debug = "line-tables-only"
+overflow-checks = true
+
+[profile.test]
+debug = "line-tables-only"
+overflow-checks = true
+
+[profile.release]
+debug = false
+strip = "symbols"
+overflow-checks = true

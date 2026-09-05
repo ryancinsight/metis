@@ -1,0 +1,26 @@
+[package]
+name = "metis-frontend"
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+authors.workspace = true
+license.workspace = true
+repository.workspace = true
+description = "Unprivileged presentation process, UI state manager, and IPC client for Metis"
+
+[dependencies]
+metis-core = { workspace = true }
+metis-ipc = { workspace = true }
+metis-ui-lang = { workspace = true }
+metis-platform = { workspace = true }
+
+[lib]
+name = "metis_frontend"
+path = "src/lib.rs"
+
+[[bin]]
+name = "metis-frontend"
+path = "src/main.rs"
+
+[lints]
+workspace = true

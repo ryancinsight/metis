@@ -1,0 +1,128 @@
+//! Request dispatch with per-connection replay rejection.
+use crate::transport::IpcTransport;
+use metis_core::error::{ErrorCode, MetisError, Result};
+use metis_core::protocol::{FrameHeader, MessageType};
+
+/// Identity available after a frame header has been decoded.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub struct RequestIdentity {
+    /// Operation named by the peer's frame header.
+    pub message_type: MessageType,
+    /// Correlation identifier named by that header.
+    pub sequence: u64,
+}
+impl From<&FrameHeader> for RequestIdentity {
+    fn from(header: &FrameHeader) -> Self {
+        Self {
+            message_type: header.msg_type,
+            sequence: header.sequence_id,
+        }
+    }
+}
+
+/// Stage of a failure outside normal application response processing.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum FailureContext {
+    /// Transport or framing rejected input before delivering a validated header.
+    Receive,
+    /// Request kind or sequence was rejected before application dispatch.
+    Request(RequestIdentity),
+    /// Application dispatch failed without producing a response.
+    Handler(RequestIdentity),
+    /// Response validation or transmission failed after application dispatch.
+    Response(RequestIdentity),
+}
+
+/// Request handler invoked only after frame and sequence validation.
+pub trait IpcHandler {
+    /// Computes the request's response.
+    /// # Errors
+    /// Returns application failures that prevent generating a response.
+    fn handle_request(
+        &mut self,
+        header: &FrameHeader,
+        payload: &[u8],
+    ) -> Result<(MessageType, Vec<u8>)>;
+
+    /// Records a failure which cannot be represented by a normal response.
+    ///
+    /// Called once per server failure, excluding clean EOF. An ordinary
+    /// application `ErrorResp` does not call this method. A response write
+    /// failure follows a completed handler call and is a distinct delivery
+    /// event, not evidence that the application operation was undone.
+    ///
+    /// # Errors
+    /// Returns audit or diagnostic sink failures; these stop the server.
+    fn handle_failure(&mut self, context: FailureContext, error: ErrorCode) -> Result<()>;
+}
+/// Server tracking the greatest accepted sequence on a connection.
+pub struct IpcServer<T> {
+    transport: T,
+    last_sequence: u64,
+}
+impl<T: IpcTransport> IpcServer<T> {
+    /// Starts a server accepting positive, strictly increasing request sequences.
+    pub const fn new(transport: T) -> Self {
+        Self {
+            transport,
+            last_sequence: 0,
+        }
+    }
+    /// Processes one request, or returns false for a clean peer close.
+    ///
+    /// Accepted sequences are consumed before dispatch, even when the handler
+    /// fails, preventing retry of a request that may already have side effects.
+    /// # Errors
+    /// Returns malformed-frame, replay, transport, or handler failures.
+    pub fn step<H: IpcHandler>(&mut self, handler: &mut H) -> Result<bool> {
+        let (header, payload) = match self.transport.recv_message() {
+            Ok(message) => message,
+            Err(error) if error.code == ErrorCode::ConnectionClosed => return Ok(false),
+            Err(error) => {
+                handler.handle_failure(FailureContext::Receive, error.code)?;
+                return Err(error);
+            }
+        };
+        let identity = RequestIdentity::from(&header);
+        let Some(expected) = header.msg_type.response_type() else {
+            let error = MetisError::protocol(
+                ErrorCode::UnexpectedMessageType,
+                "Server accepts request message types only",
+            );
+            handler.handle_failure(FailureContext::Request(identity), error.code)?;
+            return Err(error);
+        };
+        if header.sequence_id <= self.last_sequence {
+            let error = MetisError::protocol(
+                ErrorCode::ReplayDetected,
+                "Request sequence must increase strictly",
+            );
+            handler.handle_failure(FailureContext::Request(identity), error.code)?;
+            return Err(error);
+        }
+        self.last_sequence = header.sequence_id;
+        let (kind, response) = match handler.handle_request(&header, &payload) {
+            Ok(response) => response,
+            Err(error) => {
+                handler.handle_failure(FailureContext::Handler(identity), error.code)?;
+                return Err(error);
+            }
+        };
+        if kind != expected && kind != MessageType::ErrorResp {
+            let error = MetisError::protocol(
+                ErrorCode::UnexpectedMessageType,
+                "Handler response type does not match request",
+            );
+            handler.handle_failure(FailureContext::Response(identity), error.code)?;
+            return Err(error);
+        }
+        if let Err(error) = self
+            .transport
+            .send_message(kind, header.sequence_id, &response)
+        {
+            handler.handle_failure(FailureContext::Response(identity), error.code)?;
+            return Err(error);
+        }
+        Ok(true)
+    }
+}

@@ -1,0 +1,15 @@
+[package]
+name = "metis-ipc"
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+authors.workspace = true
+license.workspace = true
+repository.workspace = true
+description = "Length-prefixed binary IPC transport, channel abstractions, framing, and fault injection for Metis"
+
+[dependencies]
+metis-core = { workspace = true }
+
+[lints]
+workspace = true

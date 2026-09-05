@@ -1,0 +1,27 @@
+[package]
+name = "metis-backend"
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+authors.workspace = true
+license.workspace = true
+repository.workspace = true
+description = "Privileged clinical logic, safety interlocks, capability authorization, audit ledger, and supervisor for Metis"
+
+[dependencies]
+moirai-core.workspace = true
+moirai-executor.workspace = true
+moirai-transport.workspace = true
+metis-core = { workspace = true }
+metis-ipc = { workspace = true }
+
+[lib]
+name = "metis_backend"
+path = "src/lib.rs"
+
+[[bin]]
+name = "metis-backend"
+path = "src/main.rs"
+
+[lints]
+workspace = true

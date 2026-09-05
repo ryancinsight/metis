@@ -1,0 +1,17 @@
+[package]
+name = "metis-ui-lang"
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+authors.workspace = true
+license.workspace = true
+repository.workspace = true
+description = "Bounded XML-like markup parsing and sequential software presentation layout"
+
+[dependencies]
+iris.workspace = true
+metis-core = { workspace = true }
+metis-platform = { workspace = true }
+
+[lints]
+workspace = true
