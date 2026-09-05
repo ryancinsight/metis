@@ -3,6 +3,23 @@
 Registration: [Atlas member item](../../backlog.md#metis-unregistered-member).
 The user authorizes a public repository; registration follows verified publication.
 
+<a id="METIS-WEB-001"></a>
+## METIS-WEB-001 — Web application target contract [arch] [patch]
+- Status: review; integrator: root; last-update: 2026-09-05
+- Scope: supersede the no-WebView constraint, define Tauri migration/browser boundaries, and gate portable libraries on WASM; no browser-runtime support claim.
+- Acceptance: README/manual/architecture agree; ADR 0002 defines compatibility and security/memory oracles; portable target compiles and existing native gate passes.
+- Decision: [ADR 0002](docs/adr/0002-web-application-contract.md), number claimed by this item.
+- Evidence: WASM library build, 82 debug tests, 82 release tests, 10 doctests and full standalone gate pass; independent contract/gate review finds no actionable issue.
+
+<a id="METIS-BROWSER-001"></a>
+## METIS-BROWSER-001 — Browser form and command lifecycle [arch] [minor]
+- Status: todo; dependencies: METIS-WEB-001; risk: browser/native trust boundary
+- Scope: HTML5/CSS DOM form, Rust/WASM state and asynchronous bounded request correlation; reusable browser scheduling/transport belongs upstream in Moirai.
+- Acceptance: real browser inputs change displayed results; malformed/unauthorized commands fail; cancellation, timeout and teardown leave no pending requests/listeners; actual browser snapshot enters the manual.
+- Constraint: no native secrets or authority in downloaded WASM; private-pipe possession cannot authenticate browser requests. Desktop bridge or service boundary must enforce origin/session authorization.
+- Evidence: existing `IpcTransport` blocks on receipt; Moirai's current `WebReactor::poll_events` returns no events. Neither establishes browser support.
+- Decision: [ADR 0002](docs/adr/0002-web-application-contract.md).
+
 <a id="METIS-SEC-001"></a>
 ## METIS-SEC-001 — Backend authority [arch] [patch]
 - Status: review; integrator: root; last-update: 2026-09-05
@@ -31,8 +48,8 @@ The user authorizes a public repository; registration follows verified publicati
 
 <a id="METIS-DESKTOP-001"></a>
 ## METIS-DESKTOP-001 — Native restricted desktop [arch] [minor]
-- Status: in-progress; integrator: root; last-update: 2026-09-05; dependencies: METIS-PROCESS-001; risk: trust boundary
-- Scope: Windows/macOS/Linux native windows, OS-enforced frontend sandbox and real input event loop.
+- Status: todo; last-update: 2026-09-05; dependencies: METIS-PROCESS-001, METIS-WEB-001; risk: trust boundary
+- Scope: Windows/macOS/Linux native windows, system WebView hosting for existing web frontends, OS-enforced frontend sandbox and real input event loop.
 - Acceptance: native visible form; file/network/process denial probes; IPC works under restrictions on each OS.
 - Current evidence: `PlatformSurface` owns framebuffer/events only; `PlatformEvent` has no OS event producer. The ineffective original privilege assertion is removed. Native lifecycle, input dispatch and permission denial require new provider contracts and platform probes.
 

@@ -11,7 +11,9 @@ cargo fetch --locked
 python scripts/verify.py
 ```
 
-`rust-toolchain.toml` selects Rust 1.97.0. The verification script builds both
+`rust-toolchain.toml` selects Rust 1.97.0 and the `wasm32-unknown-unknown` target.
+The gate builds the core, pixel storage and presentation libraries for WASM;
+this checks compilation, not browser execution. The verification script builds both
 executables and examples, runs debug/release tests and documentation, and checks
 that the gallery snapshot matches the renderer. Subsequent Cargo commands in the
 gate use the committed lockfile offline. When run inside Atlas, the gate resolves

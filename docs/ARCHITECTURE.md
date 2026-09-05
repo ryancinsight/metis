@@ -1,5 +1,18 @@
 # Architecture
 
+## Target and implemented foundation
+
+Metis targets near drop-in Tauri migration, desktop web frontends, and Rust/WASM
+applications rendered in the browser. [ADR 0002](adr/0002-web-application-contract.md)
+owns that target contract. HTML5/CSS compatibility uses the browser's DOM/layout
+engine; the software renderer below remains an implemented bounded presentation
+path, not a substitute for web standards. Browser scheduling and request delivery
+must be asynchronous; the existing blocking pipe client cannot run on the
+browser event thread. Shared provider capabilities belong in Moirai and Iris.
+
+The following sections describe the current native foundation, not a completed
+web host. No browser renderer or desktop WebView host is implemented yet.
+
 The shared `metis-core` crate owns wire types, error codes and capability claim
 encoding. `metis-ipc` owns framing, canonical payload interpretation, transport
 correlation and typed failure reporting. `metis-backend` alone owns calculation

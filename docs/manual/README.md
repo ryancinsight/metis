@@ -1,12 +1,17 @@
 # Metis user manual
 
-Metis builds Rust applications with a declarative presentation layer and a
-separate backend process. It uses Atlas providers for execution and rendering,
-without a JavaScript runtime or WebView.
+Metis targets Rust applications on desktop and the web, with WASM application
+logic and HTML5/CSS presentation. It uses Atlas providers for execution and
+rendering. A system WebView is in scope for desktop web compatibility; the
+current executable demonstrates a separate backend and software presentation.
 
 This manual describes the working application surface. The current demonstration
 runs through pipes and renders into a software framebuffer. It does not yet open
-a native window or restrict operating-system permissions.
+a native window, run in a browser, or restrict operating-system permissions.
+
+The [target contract](../adr/0002-web-application-contract.md) describes the
+Tauri migration goal and required web support. These are implementation targets,
+not features available through the build commands below.
 
 - [Build and run](getting-started.md): requirements, the demonstration and verification.
 - [Create a presentation](presentation.md): supported markup, styles and application state.

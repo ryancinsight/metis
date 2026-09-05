@@ -194,6 +194,9 @@ def main():
         if not version.startswith("cargo-nextest 0.9.143 "):
             raise SystemExit("Install pinned cargo-nextest 0.9.143 before running this gate")
         cargo("format", ["fmt", "--all", "--check"], resolve=False)
+        # Library portability does not imply a working browser host or transport.
+        cargo("wasm-libraries", ["build", "--lib", "--target", "wasm32-unknown-unknown",
+                                 "-p", "metis-core", "-p", "metis-platform", "-p", "metis-ui-lang"])
         cargo("clippy", ["clippy", "--workspace", "--all-targets"], tail=["--", "-D", "warnings"])
         cargo("build", ["build", "--workspace", "--bins", "--examples"])
         cargo("tests", ["nextest", "run", "--workspace", "--profile", "ci"])

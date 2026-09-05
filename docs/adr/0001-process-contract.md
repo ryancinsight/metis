@@ -35,7 +35,13 @@ The recovered implementation uses a known key, fixed timestamps, an empty
 privilege assertion, a threaded demo and an unbounded parser. These mechanisms
 cannot establish isolation or authority. Preserve useful computation and tests;
 replace the defective mechanisms rather than preserving compatibility wrappers.
-WebViews, JavaScript and external crates conflict with the original task.
+Revision 2026-09-05: the user's clarified goal supersedes the original blanket
+WebView/JavaScript prohibition. Desktop web compatibility, WASM application
+logic and browser rendering are required by
+[ADR 0002](0002-web-application-contract.md). This process contract describes
+the implemented native transport; it does not require browser code to spawn
+processes or treat WASM as a privileged backend. Atlas provider reuse remains
+the dependency policy.
 Revision 2026-09-05: the user explicitly directs reuse of Atlas providers and
 Moirai threading. Metis now selects Moirai's executor and transport roles instead
 of owning another threading/process implementation. Metis adds no direct

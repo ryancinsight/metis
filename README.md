@@ -1,13 +1,25 @@
 # Metis
 
-Metis is an unfinished Rust desktop presentation and isolated backend workspace
-in the public [Atlas stack](https://github.com/ryancinsight/atlas). Its name refers to Metis, associated with counsel and practical
-wisdom. It uses Rust and a bounded HTML/CSS-inspired language; it does not embed
-JavaScript or a WebView.
+Metis is a Rust application framework in development in the public
+[Atlas stack](https://github.com/ryancinsight/atlas). Its goal is a near drop-in
+replacement for Tauri, supporting desktop applications, WebAssembly (WASM), and
+rendering on the web with HTML5/CSS. Application logic defaults to Rust, compiled
+to WASM where it runs in the browser. A desktop system WebView remains in scope
+to preserve existing web frontends; minimizing JavaScript dependencies does not
+mean banning web technology. Its name refers to Metis, associated with counsel
+and practical wisdom.
+
+Stronger security and lower memory use are design goals, not demonstrated
+advantages over Tauri. The [target contract](docs/adr/0002-web-application-contract.md)
+defines compatibility, trust boundaries, and the measurements required for those
+claims. Migrating an existing JavaScript frontend does not automatically remove
+its JavaScript, and Tauri API/plugin compatibility remains to be implemented.
 
 The current implementation provides binary IPC, session capabilities, backend
 calculation and audit ownership, a software rasterizer and a headless form
-workflow. It does not yet provide Tauri feature parity, native desktop windows,
+workflow. This renderer's bounded markup subset is not the intended limit of web
+support. Browser execution and a desktop WebView host are not implemented. It
+does not yet provide Tauri feature parity, native desktop windows,
 an OS privilege sandbox, durable audit storage or regulatory certification.
 The infusion arithmetic is a synthetic engineering example; its configurable
 limits are not treatment guidance.
