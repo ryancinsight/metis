@@ -12,6 +12,10 @@ process-isolation test. No original OS sandbox or native-window evidence exists.
 
 ## Evidence classes
 
+- WASM portability: compile `metis-core`, `metis-platform` and `metis-ui-lang`
+  libraries for `wasm32-unknown-unknown`. This does not run WASM, render in a
+  browser, validate host bindings or establish Tauri compatibility.
+
 - Types and compilation: frontend cannot import the backend through its declared dependency closure; validated policy fields cannot be overwritten externally.
 - Behavioral tests: exact wire fixtures, canonical decoding, malformed corpus, scope/session/time rejection, audit event outcomes and bounded numerical error.
 - Independent numeric evidence: dimensional infusion conversion and exact binary fixtures; arithmetic roundoff uses a stated gamma bound.
@@ -34,6 +38,10 @@ normal verification rejects drift and missing local manual links.
 
 ## Collected Windows evidence — 2026-09-05
 
+The same pinned-toolchain gate also compiles `metis-core`, `metis-platform`,
+`metis-ui-lang` and their Iris rendering dependency for
+`wasm32-unknown-unknown`. No browser-runtime execution is claimed by this build.
+
 The foundation gate passes on Rust 1.97.0,
 `x86_64-pc-windows-msvc`: formatting, all-target Clippy with warnings denied,
 82/82 debug tests, 82/82 release tests, ten doctests, documentation with warnings
@@ -55,6 +63,8 @@ corrects the initial test's message assumption without relaxing rejection.
 Windows tests do not prove Linux or macOS behavior. Miri does not execute Windows
 native system calls; those require targeted lifecycle tests and further platform
 instrumentation. Moirai resolves from pushed commit `0514f11`, not local provider
-edits. The public-repository increment collects the standalone gate against the
-repaired lock. Advisory scanning, coverage,
+edits. The public-repository increment passes the standalone gate against the
+repaired lock. Comparative security/memory evidence against Tauri and browser
+runtime tests remain required by [ADR 0002](adr/0002-web-application-contract.md).
+Advisory scanning, coverage,
 mutation analysis and cross-platform sandbox probes remain uncollected.

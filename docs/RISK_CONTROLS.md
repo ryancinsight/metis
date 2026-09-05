@@ -9,6 +9,8 @@
 | False authenticity claim in display | UI states backend MAC is not frontend-verified | The frontend has no signing key and cannot verify a symmetric backend MAC. |
 | Audit ambiguity or secret logging | Fixed typed records and canonical hashing; no raw patient text in audit | In-memory integrity tests; durable recovery/trusted checkpoint outstanding. |
 | Frontend has host privileges | Separate executable contains no clinical backend dependency | OS permission sandbox and native denial probes outstanding. |
+| Web content obtains native authority | Target: deny-by-default commands, origin/session binding, bounded asynchronous bridge | Browser/WebView host and hostile-origin, navigation, injection and teardown probes outstanding; see [ADR 0002](adr/0002-web-application-contract.md). |
+| WASM or Rust mistaken for comparative security/memory evidence | Claims distinguish portable compilation from host enforcement and measurement | Matched Tauri process-memory measurements and comparative threat tests outstanding. |
 | Backend freeze during IO | Bounded supervised frontend lifecycle | Process tests; arbitrary application handler computation remains synchronous and must itself be bounded. |
 | Regulatory assurance inferred from a demo | Claims restricted to observed engineering evidence | No completed clinical validation, risk-management file or regulatory submission exists. |
 
