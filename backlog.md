@@ -1,8 +1,10 @@
 # Metis delivery
 
 Registration: [Atlas member item](../../backlog.md#metis-unregistered-member).
-Public source is published. Atlas registration is prepared but awaits a review
-path that preserves active shared-checkout work; it does not block implementation.
+Public source and executable packaging are merged. Atlas registration awaits
+candidate-aware hook support: its current hook resets an alternate index and its
+local auditors read the shared checkout rather than a candidate revision.
+Registration must preserve active shared-checkout work; implementation continues.
 
 The [framework gap matrix](docs/adr/0003-framework-conformance.md) is the scope
 inventory. Every implementation item follows the [visual contract](docs/VERIFICATION.md#visual-contract)
@@ -312,8 +314,13 @@ an owner. “Unsupported” cannot replace delivery of a required mobile/native 
 
 <a id="METIS-VERIFY-002"></a>
 ## METIS-VERIFY-002 — Verification report storage [patch]
-- Status: in-progress; priority: P0; integrator: root; last-update: 2026-09-06
-- Scope: nextest report storage and explicit crate documentation lint declarations; no runtime/API changes.
-- Acceptance: committed test budgets remain unchanged, native suites pass, reports live under ignored output, and no repository-local target directory reappears.
-- Baseline: full gate at `0421bca` passes; Atlas scan finds nextest report storage under local target and four crates without explicit documentation lint attributes.
-- Authority: development through merge; dependency: none; risk: verification configuration.
+- Status: done; outcome: full gate passes with 102 debug/release native tests and 36 Python tests; JUnit lives under ignored output and no local target reappears. Four crate roots explicitly deny missing documentation.
+
+<a id="METIS-REGISTRATION-001"></a>
+## METIS-REGISTRATION-001 — Public Atlas member registration [patch]
+- Status: blocked; priority: P0; integrator: root; last-update: 2026-09-06
+- Scope: upstream [registration item](../../backlog.md#metis-unregistered-member); preserve unrelated Atlas shared-tree work.
+- Acceptance: Atlas records the published default gitlink, member configuration and measured initial conformance baseline; exact candidate passes the committed gate.
+- Blocker: Atlas pre-commit unsets GIT_INDEX_FILE before checking staged pins; root auditors inspect live HEAD/configuration. Existing alternate-index workflow cannot establish candidate verification.
+- Re-open: candidate-aware hooks/gates or a clean available Atlas checkout. Public Métis source remains independently consumable.
+- Completed: public repository and PR 8 verified/merged; registration closure and initial-baseline semantics audited against Atlas source. No runtime or signing capability depends on this metadata change.

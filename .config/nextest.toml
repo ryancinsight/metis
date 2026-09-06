@@ -1,3 +1,6 @@
+[store]
+dir = "output/nextest"
+
 [profile.default]
 slow-timeout = { period = "30s", terminate-after = 2 }
 retries = 0
@@ -5,4 +8,4 @@ retries = 0
 fail-fast = false
 retries = 0
 [profile.ci.junit]
-path = "output/nextest.xml"
+path = "junit.xml"

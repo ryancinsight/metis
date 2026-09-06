@@ -1,3 +1,4 @@
+#![deny(missing_docs)]
 #![doc = include_str!("../README.md")]
 #![forbid(unsafe_code)]
 pub mod app;
