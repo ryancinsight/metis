@@ -1,8 +1,8 @@
 # Inspect application output
 
 The current Metis demonstration has two independently useful checks: a real
-frontend/backend process exchange, and a deterministic software rendering of the
-initial form. It is not yet an interactive browser or desktop application.
+frontend/backend process exchange, and deterministic software captures of a real
+backend session through success, edit, rejection, correction, disconnect and recovery. It is not yet an interactive browser or desktop application.
 
 ## Run the checks
 
@@ -14,11 +14,11 @@ python scripts/verify.py
 
 The gate builds the pinned code, exercises native debug/release tests and the
 process example, builds the portable WASM libraries, and compares the current
-form capture with the committed gallery image. A passing WASM build does not run
+seven form captures with the committed gallery images. A passing WASM build does not run
 a browser; a passing process test does not exercise clicking the painted button.
 
 Open the [application gallery](applications.md) for the committed image, or
-inspect `output/form.bmp` and `output/form.svg` produced by this run. The SVG
+inspect `output/form*.bmp` and `output/form*.svg` produced by this run. The SVG
 encodes the same raster pixels; it is not a second layout implementation.
 
 ## Read the current form
@@ -30,7 +30,8 @@ capture's defaults are 72.50 kg, 4.00 mg/mL and 0.500 mcg/kg/min.
 
 Those are the initial presentation defaults, not the separate process example's
 60 kg, 2 mg/mL and 0.2 mcg/kg/min arguments. That process example computes
-0.36 mL/hour and 0.72 mg/hour. The existing image does not capture those results.
+0.36 mL/hour and 0.72 mg/hour. The success and recovery images now capture actual backend results on a bounded
+memory transport. They are distinct from the separate-process check.
 Neither example is treatment guidance.
 
 For a visual change, inspect the actual output before accepting a new baseline:
@@ -43,8 +44,9 @@ python scripts/verify.py
 Review the changed image and source together. A missing label, clipped control,
 wrong value or stale result must be fixed in the application; accepting a new
 snapshot does not make it correct. On a mismatch, the current gate reports the
-snapshot difference; automated difference images and interaction-state captures
-are not implemented yet.
+snapshot difference; automated difference images and browser/native input
+capture are not implemented yet. The software gallery exercises production state
+transitions through API calls, not clicks or keyboard events.
 
 ## What a demonstration proves
 

@@ -31,9 +31,10 @@ committed lock must describe Git sources, without local-overlay substitutions
 or unused-patch records. Earlier `--stack` verification is superseded by this
 standalone gate so publishing cannot ship an overlay-only dependency graph.
 
-The user manual replaces a domain book. Its application snapshot is produced by
-the Rust presentation example from actual framebuffer pixels and checked against
-`docs/manual/images/form.svg`. `--update-snapshots` explicitly refreshes that file;
+The user manual replaces a domain book. Its seven application snapshots are produced by
+the Rust presentation example from real backend exchanges and actual framebuffer
+pixels, checked against `docs/manual/images/form*.svg`. `--update-snapshots`
+explicitly refreshes those files;
 normal verification rejects drift and missing local manual links.
 
 ## Collected Windows evidence — 2026-09-05
@@ -42,9 +43,9 @@ The same pinned-toolchain gate also compiles `metis-core`, `metis-platform`,
 `metis-ui-lang` and their Iris rendering dependency for
 `wasm32-unknown-unknown`. No browser-runtime execution is claimed by this build.
 
-The foundation gate passes on Rust 1.97.0,
+The form-state gate passes on Rust 1.97.0,
 `x86_64-pc-windows-msvc`: formatting, all-target Clippy with warnings denied,
-82/82 debug tests, 82/82 release tests, ten doctests, documentation with warnings
+88/88 debug tests, 88/88 release tests, twelve doctests, documentation with warnings
 denied, real-process demonstration and presentation rendering. The 800×600 BMP
 is inspected: title/status and all form labels fit; viewport background is filled.
 The gate writes exact source hashes and the lock hash to
@@ -135,8 +136,10 @@ same scenario semantics with its real host implementation.
 <a id="V01"></a>
 ### V01 — Isolated form state gallery
 
-Current evidence: only the initial 800×600 software frame exists. Extend the
-existing form/presentation example through a real backend session. For inputs
+Current evidence: seven 800×600 software frames cover initial, success, edit,
+rejection, same-session correction, disconnect and new-session recovery through
+the production form. The backend runs on Moirai with bounded MemoryTransport;
+this gallery does not prove OS process isolation or responsive host events. For inputs
 60 kg, 2 mg/mL, 0.2 mcg/kg/min, the dimensional oracle is
 `60 × 0.2 × 60 / 1000 = 0.72 mg/hour`, hence `0.36 mL/hour`; doubling weight
 doubles those values. Use the numeric test suite's derived roundoff bound.

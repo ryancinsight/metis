@@ -76,13 +76,15 @@ Each row names its closing items; acceptance belongs in the
 | Semantic and visual tests | egui_kittest interaction/AccessKit/snapshots [E3] | TestAppContext and platform-dependent rendering [G1] | WebDriver routes differ by integration/platform [T7] | Initial 800×600 snapshot only; result-state pixels disconnected from backend tests. [VISUAL](../../backlog.md#METIS-VISUAL-001), [QUALITY](../../backlog.md#METIS-QUALITY-001). |
 | Memory, latency and growth | Rendering model alone proves no advantage | GPU model alone proves no advantage | Small bundle does not prove low process memory | No matched baseline or resource telemetry. [PERF](../../backlog.md#METIS-PERF-001), [MEMORY](../../backlog.md#METIS-MEMORY-001). |
 | Assurance, provenance and recovery | Application responsibility | Application responsibility | Capabilities, audits and distribution controls [T4] [T6] | MAC vectors/bounded IPC exist; durable audit, supply-chain and operational evidence incomplete. [CRYPTO](../../backlog.md#METIS-CRYPTO-001), [AUDIT](../../backlog.md#METIS-AUDIT-001), [QUALITY](../../backlog.md#METIS-QUALITY-001). |
-| Runnable user documentation | Demos and eframe template [E1] [E7] | Source examples [G1] [G4] | Guides and test examples [T7] | One truthful initial software capture. [MANUAL](../../backlog.md#METIS-MANUAL-001), [VISUAL](../../backlog.md#METIS-VISUAL-001); every new item carries a manual demonstration. |
+| Runnable user documentation | Demos and eframe template [E1] [E7] | Source examples [G1] [G4] | Guides and test examples [T7] | Seven real-session software captures; browser/OS evidence remains open. [MANUAL](../../backlog.md#METIS-MANUAL-001), [VISUAL](../../backlog.md#METIS-VISUAL-001); every new item carries a manual demonstration. |
 
 ## Concrete findings driving priority
 
-The [form state](../../crates/metis-frontend/src/app.rs) retains prior results
-when inputs change; a local request failure can return before refreshing the
-display. Resolve state invalidation before presenting an interactive calculation.
+The form-state findings are resolved by [ADR 0004](0004-form-state.md): private
+inputs and a single outcome clear stale results on edits and local/peer failures.
+Real backend traces and seven software captures verify the transitions. This
+2026-09-05 revision replaces the original stale-result finding; responsive host
+events remain dependent on asynchronous transport and browser/native hosting.
 The [style contract](../../crates/metis-ui-lang/README.md) admits declarations
 that have no effect; implement their documented semantics or reject them, never
 silently accept browser-like syntax with different behavior.

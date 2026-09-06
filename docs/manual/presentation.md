@@ -5,7 +5,7 @@ not an HTML5 browser engine: browser DOM APIs, script execution, entity decoding
 Unicode text shaping and general CSS layout are not available.
 
 Start with the runnable [presentation example](../../examples/presentation.rs).
-It parses the form's [application markup](../../crates/metis-frontend/src/app.rs),
+It parses the form's [application markup](../../crates/metis-frontend/src/presentation.rs),
 computes a display list and renders through Iris into a `Framebuffer`. The same
 pixel buffer supplies both the BMP inspection artifact and the manual snapshot.
 
@@ -30,9 +30,24 @@ failure boundaries, not recommendations to construct maximum-sized documents.
 
 ## Update application state
 
-`FrontendApp::set_inputs` updates the form values and labels. `render` computes
-the display list and paints the current state. `submit_calculation` sends the
-values through IPC and updates either the result or the error state.
+`FrontendApp::set_inputs(...)?` updates the form values and labels, clears any
+previous result and renders immediately. `submit_calculation` paints pending
+before sending the values through IPC, then paints success or failure. The
+current client blocks while waiting; this is not yet a responsive event loop.
+
+Match `state()` to distinguish a backend response, peer rejection, request
+preparation failure and disconnection. Full typed diagnostics remain available
+there; the software status line shows the error code. Failed requests and edits
+display no old result or MAC. A successful response belongs to the exact current
+`inputs()`; the document and framebuffer are available through read-only accessors.
+Long identifiers show an explicit ellipsis in the software preview, while the
+request retains the full identifier.
+
+Correct rejected inputs and submit again to recover on the same session. A
+transport or reply-decoding failure closes that session because the backend may
+already have processed the request. Reconnect by constructing a new app with a
+new authenticated transport. A repeated handshake is also rejected and closes
+the session. The [migration contract](../adr/0004-form-state.md) lists the API changes.
 
 `PlatformEvent` represents pointer, key, character, resize and quit events, but
 `PlatformSurface` currently receives application-supplied events only. A rendered

@@ -133,8 +133,8 @@ an owner. “Unsupported” cannot replace delivery of a required mobile/native 
 
 <a id="METIS-STATE-001"></a>
 ## METIS-STATE-001 — Correct form state transitions [arch] [major]
-- Status: in-progress; priority: P0; owner: Metis frontend; integrator: Codex/root; last-update: 2026-09-05; risk: stale displayed result; dependencies: METIS-WEB-001
-- Branch: `codex/metis-form-state`; claim: frontend state, callers, presentation example, manual and verification; ADR 0004 reserved for state ownership and migration.
+- Status: review; priority: P0; owner: Metis frontend; integrator: Codex/root; last-update: 2026-09-05; risk: stale displayed result; dependencies: METIS-WEB-001
+- Delivery: `codex/metis-form-state`; [ADR 0004](docs/adr/0004-form-state.md) owns API migration; 88 debug/release tests, 12 doctests and seven real-session captures pass; independent state review accepts the correction.
 - Scope: explicit idle/pending/success/rejected/disconnected state, invalidate results on edits, and render local transport failures; preserve backend-only calculations.
 - Acceptance: submit→edit→reject→recover and disconnect traces assert current input/result association, cleared obsolete values, typed failures and rendered labels/pixels; no fabricated backend result.
 - Demonstration: [V01](docs/VERIFICATION.md#V01), real success and rejection beside the initial form in the manual, generated from the production state path.
@@ -145,6 +145,7 @@ an owner. “Unsupported” cannot replace delivery of a required mobile/native 
 - Scope: extend existing presentation/example gate to the scenario contract; share application state/input traces between assertions and captures; retain exact software baselines.
 - Acceptance: [visual contract](docs/VERIFICATION.md#visual-contract) mechanized; missing/stale/changed goldens and incorrect state fail; source revision, inputs and target metadata accompany each artifact; injected clock/event synchronization, no sleeps.
 - Demonstration: [V01](docs/VERIFICATION.md#V01); browser/native capture adapters are added with their hosts, not stubbed in advance.
+- Foundation: STATE supplies seven fresh, byte-compared real-session captures and source/image hashes; scenario manifests, negative comparator fixtures and automated difference artifacts remain in this item.
 
 <a id="METIS-ASYNC-001"></a>
 ## METIS-ASYNC-001 — Bounded browser request lifecycle [arch] [minor]
