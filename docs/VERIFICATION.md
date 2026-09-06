@@ -287,9 +287,15 @@ Required tests use small synthetic studies with known values and physical
 landmarks; missing external datasets cannot turn a required test into success.
 Source inspection found file-path dispatch, tied-series selection, frame-zero,
 RGB display and grayscale coverage gaps, now owned by the RITK prerequisites.
-Reproduce and resolve each before accepting a migrated baseline. Public manual
-captures contain synthetic data and come from actual Métis execution. No viewer
-screenshot or DICOM runtime result was collected for this planning increment.
+The [RITK workflow manual](../../ritk/docs/manual/dicom-workflow.md) now records
+required synthetic file/byte pixel and coordinate checks, explicit acquisition
+selection, DICOMDIR membership, failed replacement and session restoration,
+plus a real Windows egui/eframe viewport capture and invalid-study rejection.
+That is original-viewer baseline evidence. Remaining physical-aspect display,
+media-directory semantics, resource bounds, frames, color and grayscale gaps keep their RITK acceptance
+items; none are established by a screenshot. Migrated-viewer captures must come
+from actual Métis execution and use the same synthetic studies. Browser host
+input and native host input retain separate verification requirements.
 
 <a id="V10"></a>
 ### V10 — Developer and package lifecycle
