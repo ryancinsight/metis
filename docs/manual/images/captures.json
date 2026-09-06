@@ -1,0 +1,542 @@
+{
+  "captures": {
+    "form": {
+      "image_sha256": "6887cb8c50f69a0b9e3e4be1f18bd27c79c8e900e9220df853c9afafb4eb19b6",
+      "semantics": {
+        "action": {
+          "0": "create session: 800x600, bounded MemoryTransport, backend exchanges=4"
+        },
+        "expected": {
+          "state": "idle"
+        },
+        "geometry": {
+          "0": "32 32 1",
+          "1": "32 56 1",
+          "10": "37 375 1",
+          "11": "37 399 1",
+          "2": "37 116 1",
+          "3": "37 142 1",
+          "4": "37 168 1",
+          "5": "37 194 1",
+          "6": "37 220 1",
+          "7": "53 264 1",
+          "8": "37 327 1",
+          "9": "37 351 1"
+        },
+        "input": {
+          "concentration_mg_ml": "4",
+          "patient_id": "PT-9042-ALPHA",
+          "target_dose_mcg_kg_min": "0.5",
+          "weight_kg": "72.5"
+        },
+        "label": {
+          "label-conc": "Drug Concentration: 4.00 mg/mL",
+          "label-dose": "Target Dose: 0.500 mcg/kg/min",
+          "label-patient": "Patient ID: PT-9042-ALPHA",
+          "label-weight": "Weight: 72.50 kg",
+          "output-rate": "Rate: Awaiting Backend Calculation...",
+          "output-signature": "Backend MAC: None",
+          "output-status": "Safety Status: Idle",
+          "status-badge": "SYSTEM READY"
+        },
+        "meta": {
+          "font": "metis-platform-bitmap",
+          "height": "600",
+          "scale": "1",
+          "scenario": "form",
+          "schema": "1",
+          "target": "software",
+          "width": "800"
+        },
+        "observed": {
+          "state": "idle"
+        },
+        "text": {
+          "0": "METIS FORM DEMONSTRATION",
+          "1": "SYSTEM READY",
+          "10": "Safety Status: Idle",
+          "11": "Backend MAC: None",
+          "2": "Patient Demographics and Drug Prescription",
+          "3": "Patient ID: PT-9042-ALPHA",
+          "4": "Weight: 72.50 kg",
+          "5": "Drug Concentration: 4.00 mg/mL",
+          "6": "Target Dose: 0.500 mcg/kg/min",
+          "7": "[ SUBMIT CALCULATION TO BACKEND ]",
+          "8": "Backend Calculation Output",
+          "9": "Rate: Awaiting Backend Calculation..."
+        }
+      }
+    },
+    "form-corrected": {
+      "image_sha256": "15931489281e6b947c3bbfeb8e190db760e4f0ca903deee15d7e4f4c400ceb64",
+      "semantics": {
+        "action": {
+          "0": "create session: 800x600, bounded MemoryTransport, backend exchanges=4",
+          "1": "initialize: process_id=1234, principal=[1;16]",
+          "2": "set inputs: patient_id=\"demo\", weight_kg=60, concentration_mg_ml=2, target_dose_mcg_kg_min=0.2",
+          "3": "submit calculation",
+          "4": "set inputs: patient_id=\"demo\", weight_kg=80, concentration_mg_ml=2, target_dose_mcg_kg_min=0.2",
+          "5": "set inputs: patient_id=\"demo\", weight_kg=0, concentration_mg_ml=2, target_dose_mcg_kg_min=0.2",
+          "6": "submit calculation",
+          "7": "set inputs: patient_id=\"demo\", weight_kg=60, concentration_mg_ml=2, target_dose_mcg_kg_min=0.2",
+          "8": "submit calculation"
+        },
+        "expected": {
+          "audit_sequence_id": "4",
+          "drug_rate_mg_hr": "0.72",
+          "rate_ml_hr": "0.36",
+          "state": "success"
+        },
+        "geometry": {
+          "0": "32 32 1",
+          "1": "32 56 1",
+          "10": "37 375 1",
+          "11": "37 399 1",
+          "2": "37 116 1",
+          "3": "37 142 1",
+          "4": "37 168 1",
+          "5": "37 194 1",
+          "6": "37 220 1",
+          "7": "53 264 1",
+          "8": "37 327 1",
+          "9": "37 351 1"
+        },
+        "input": {
+          "concentration_mg_ml": "2",
+          "patient_id": "demo",
+          "target_dose_mcg_kg_min": "0.2",
+          "weight_kg": "60"
+        },
+        "label": {
+          "label-conc": "Drug Concentration: 2.00 mg/mL",
+          "label-dose": "Target Dose: 0.200 mcg/kg/min",
+          "label-patient": "Patient ID: demo",
+          "label-weight": "Weight: 60.00 kg",
+          "output-rate": "Rate: 0.360 mL/hr (0.72 mg/hr)",
+          "output-signature": "Backend MAC: Present (not verified by frontend)",
+          "output-status": "Backend response (Audit Seq #4)",
+          "status-badge": "SESSION ACTIVE"
+        },
+        "meta": {
+          "font": "metis-platform-bitmap",
+          "height": "600",
+          "scale": "1",
+          "scenario": "form-corrected",
+          "schema": "1",
+          "target": "software",
+          "width": "800"
+        },
+        "observed": {
+          "audit_sequence_id": "4",
+          "drug_rate_mg_hr": "0.72",
+          "rate_ml_hr": "0.36",
+          "state": "success"
+        },
+        "text": {
+          "0": "METIS FORM DEMONSTRATION",
+          "1": "SESSION ACTIVE",
+          "10": "Backend response (Audit Seq #4)",
+          "11": "Backend MAC: Present (not verified by frontend)",
+          "2": "Patient Demographics and Drug Prescription",
+          "3": "Patient ID: demo",
+          "4": "Weight: 60.00 kg",
+          "5": "Drug Concentration: 2.00 mg/mL",
+          "6": "Target Dose: 0.200 mcg/kg/min",
+          "7": "[ SUBMIT CALCULATION TO BACKEND ]",
+          "8": "Backend Calculation Output",
+          "9": "Rate: 0.360 mL/hr (0.72 mg/hr)"
+        }
+      }
+    },
+    "form-disconnected": {
+      "image_sha256": "2431e2954227a5ec33f8504a70929ceec97e8ff99e05bb5a15afb53453eb9101",
+      "semantics": {
+        "action": {
+          "0": "create session: 800x600, bounded MemoryTransport, backend exchanges=4",
+          "1": "initialize: process_id=1234, principal=[1;16]",
+          "10": "submit calculation",
+          "2": "set inputs: patient_id=\"demo\", weight_kg=60, concentration_mg_ml=2, target_dose_mcg_kg_min=0.2",
+          "3": "submit calculation",
+          "4": "set inputs: patient_id=\"demo\", weight_kg=80, concentration_mg_ml=2, target_dose_mcg_kg_min=0.2",
+          "5": "set inputs: patient_id=\"demo\", weight_kg=0, concentration_mg_ml=2, target_dose_mcg_kg_min=0.2",
+          "6": "submit calculation",
+          "7": "set inputs: patient_id=\"demo\", weight_kg=60, concentration_mg_ml=2, target_dose_mcg_kg_min=0.2",
+          "8": "submit calculation",
+          "9": "join backend worker: endpoint closed"
+        },
+        "expected": {
+          "error_code": "16386",
+          "state": "disconnected"
+        },
+        "geometry": {
+          "0": "32 32 1",
+          "1": "32 56 1",
+          "10": "37 375 1",
+          "11": "37 399 1",
+          "2": "37 116 1",
+          "3": "37 142 1",
+          "4": "37 168 1",
+          "5": "37 194 1",
+          "6": "37 220 1",
+          "7": "53 264 1",
+          "8": "37 327 1",
+          "9": "37 351 1"
+        },
+        "input": {
+          "concentration_mg_ml": "2",
+          "patient_id": "demo",
+          "target_dose_mcg_kg_min": "0.2",
+          "weight_kg": "60"
+        },
+        "label": {
+          "label-conc": "Drug Concentration: 2.00 mg/mL",
+          "label-dose": "Target Dose: 0.200 mcg/kg/min",
+          "label-patient": "Patient ID: demo",
+          "label-weight": "Weight: 60.00 kg",
+          "output-rate": "Rate: No result",
+          "output-signature": "Backend MAC: No result",
+          "output-status": "Connection failed [0x4002] - reconnect",
+          "status-badge": "SESSION CLOSED"
+        },
+        "meta": {
+          "font": "metis-platform-bitmap",
+          "height": "600",
+          "scale": "1",
+          "scenario": "form-disconnected",
+          "schema": "1",
+          "target": "software",
+          "width": "800"
+        },
+        "observed": {
+          "error_code": "16386",
+          "state": "disconnected"
+        },
+        "text": {
+          "0": "METIS FORM DEMONSTRATION",
+          "1": "SESSION CLOSED",
+          "10": "Connection failed [0x4002] - reconnect",
+          "11": "Backend MAC: No result",
+          "2": "Patient Demographics and Drug Prescription",
+          "3": "Patient ID: demo",
+          "4": "Weight: 60.00 kg",
+          "5": "Drug Concentration: 2.00 mg/mL",
+          "6": "Target Dose: 0.200 mcg/kg/min",
+          "7": "[ SUBMIT CALCULATION TO BACKEND ]",
+          "8": "Backend Calculation Output",
+          "9": "Rate: No result"
+        }
+      }
+    },
+    "form-edited": {
+      "image_sha256": "bc326d9b373ce6ced018fee942023255e3103dee82a5d062effb53f80eea28b5",
+      "semantics": {
+        "action": {
+          "0": "create session: 800x600, bounded MemoryTransport, backend exchanges=4",
+          "1": "initialize: process_id=1234, principal=[1;16]",
+          "2": "set inputs: patient_id=\"demo\", weight_kg=60, concentration_mg_ml=2, target_dose_mcg_kg_min=0.2",
+          "3": "submit calculation",
+          "4": "set inputs: patient_id=\"demo\", weight_kg=80, concentration_mg_ml=2, target_dose_mcg_kg_min=0.2"
+        },
+        "expected": {
+          "state": "idle"
+        },
+        "geometry": {
+          "0": "32 32 1",
+          "1": "32 56 1",
+          "10": "37 375 1",
+          "11": "37 399 1",
+          "2": "37 116 1",
+          "3": "37 142 1",
+          "4": "37 168 1",
+          "5": "37 194 1",
+          "6": "37 220 1",
+          "7": "53 264 1",
+          "8": "37 327 1",
+          "9": "37 351 1"
+        },
+        "input": {
+          "concentration_mg_ml": "2",
+          "patient_id": "demo",
+          "target_dose_mcg_kg_min": "0.2",
+          "weight_kg": "80"
+        },
+        "label": {
+          "label-conc": "Drug Concentration: 2.00 mg/mL",
+          "label-dose": "Target Dose: 0.200 mcg/kg/min",
+          "label-patient": "Patient ID: demo",
+          "label-weight": "Weight: 80.00 kg",
+          "output-rate": "Rate: Awaiting Backend Calculation...",
+          "output-signature": "Backend MAC: None",
+          "output-status": "Safety Status: Idle",
+          "status-badge": "SESSION ACTIVE"
+        },
+        "meta": {
+          "font": "metis-platform-bitmap",
+          "height": "600",
+          "scale": "1",
+          "scenario": "form-edited",
+          "schema": "1",
+          "target": "software",
+          "width": "800"
+        },
+        "observed": {
+          "state": "idle"
+        },
+        "text": {
+          "0": "METIS FORM DEMONSTRATION",
+          "1": "SESSION ACTIVE",
+          "10": "Safety Status: Idle",
+          "11": "Backend MAC: None",
+          "2": "Patient Demographics and Drug Prescription",
+          "3": "Patient ID: demo",
+          "4": "Weight: 80.00 kg",
+          "5": "Drug Concentration: 2.00 mg/mL",
+          "6": "Target Dose: 0.200 mcg/kg/min",
+          "7": "[ SUBMIT CALCULATION TO BACKEND ]",
+          "8": "Backend Calculation Output",
+          "9": "Rate: Awaiting Backend Calculation..."
+        }
+      }
+    },
+    "form-recovered": {
+      "image_sha256": "fb692714935c3d2d5d84373faf410af7ea3c26a8c1d404869cc3df819f55a523",
+      "semantics": {
+        "action": {
+          "0": "create session: 800x600, bounded MemoryTransport, backend exchanges=4",
+          "1": "initialize: process_id=1234, principal=[1;16]",
+          "10": "submit calculation",
+          "11": "create session: 800x600, bounded MemoryTransport, backend exchanges=2",
+          "12": "initialize: process_id=1234, principal=[1;16]",
+          "13": "set inputs: patient_id=\"demo\", weight_kg=80, concentration_mg_ml=2, target_dose_mcg_kg_min=0.2",
+          "14": "submit calculation",
+          "2": "set inputs: patient_id=\"demo\", weight_kg=60, concentration_mg_ml=2, target_dose_mcg_kg_min=0.2",
+          "3": "submit calculation",
+          "4": "set inputs: patient_id=\"demo\", weight_kg=80, concentration_mg_ml=2, target_dose_mcg_kg_min=0.2",
+          "5": "set inputs: patient_id=\"demo\", weight_kg=0, concentration_mg_ml=2, target_dose_mcg_kg_min=0.2",
+          "6": "submit calculation",
+          "7": "set inputs: patient_id=\"demo\", weight_kg=60, concentration_mg_ml=2, target_dose_mcg_kg_min=0.2",
+          "8": "submit calculation",
+          "9": "join backend worker: endpoint closed"
+        },
+        "expected": {
+          "audit_sequence_id": "2",
+          "drug_rate_mg_hr": "0.96",
+          "rate_ml_hr": "0.48",
+          "state": "success"
+        },
+        "geometry": {
+          "0": "32 32 1",
+          "1": "32 56 1",
+          "10": "37 375 1",
+          "11": "37 399 1",
+          "2": "37 116 1",
+          "3": "37 142 1",
+          "4": "37 168 1",
+          "5": "37 194 1",
+          "6": "37 220 1",
+          "7": "53 264 1",
+          "8": "37 327 1",
+          "9": "37 351 1"
+        },
+        "input": {
+          "concentration_mg_ml": "2",
+          "patient_id": "demo",
+          "target_dose_mcg_kg_min": "0.2",
+          "weight_kg": "80"
+        },
+        "label": {
+          "label-conc": "Drug Concentration: 2.00 mg/mL",
+          "label-dose": "Target Dose: 0.200 mcg/kg/min",
+          "label-patient": "Patient ID: demo",
+          "label-weight": "Weight: 80.00 kg",
+          "output-rate": "Rate: 0.480 mL/hr (0.96 mg/hr)",
+          "output-signature": "Backend MAC: Present (not verified by frontend)",
+          "output-status": "Backend response (Audit Seq #2)",
+          "status-badge": "SESSION ACTIVE"
+        },
+        "meta": {
+          "font": "metis-platform-bitmap",
+          "height": "600",
+          "scale": "1",
+          "scenario": "form-recovered",
+          "schema": "1",
+          "target": "software",
+          "width": "800"
+        },
+        "observed": {
+          "audit_sequence_id": "2",
+          "drug_rate_mg_hr": "0.96",
+          "rate_ml_hr": "0.48",
+          "state": "success"
+        },
+        "text": {
+          "0": "METIS FORM DEMONSTRATION",
+          "1": "SESSION ACTIVE",
+          "10": "Backend response (Audit Seq #2)",
+          "11": "Backend MAC: Present (not verified by frontend)",
+          "2": "Patient Demographics and Drug Prescription",
+          "3": "Patient ID: demo",
+          "4": "Weight: 80.00 kg",
+          "5": "Drug Concentration: 2.00 mg/mL",
+          "6": "Target Dose: 0.200 mcg/kg/min",
+          "7": "[ SUBMIT CALCULATION TO BACKEND ]",
+          "8": "Backend Calculation Output",
+          "9": "Rate: 0.480 mL/hr (0.96 mg/hr)"
+        }
+      }
+    },
+    "form-rejected": {
+      "image_sha256": "b337f686f110ff15fd8775eb022c574775f420430dce443faceffee396be299a",
+      "semantics": {
+        "action": {
+          "0": "create session: 800x600, bounded MemoryTransport, backend exchanges=4",
+          "1": "initialize: process_id=1234, principal=[1;16]",
+          "2": "set inputs: patient_id=\"demo\", weight_kg=60, concentration_mg_ml=2, target_dose_mcg_kg_min=0.2",
+          "3": "submit calculation",
+          "4": "set inputs: patient_id=\"demo\", weight_kg=80, concentration_mg_ml=2, target_dose_mcg_kg_min=0.2",
+          "5": "set inputs: patient_id=\"demo\", weight_kg=0, concentration_mg_ml=2, target_dose_mcg_kg_min=0.2",
+          "6": "submit calculation"
+        },
+        "expected": {
+          "error_code": "12289",
+          "state": "rejected"
+        },
+        "geometry": {
+          "0": "32 32 1",
+          "1": "32 56 1",
+          "10": "37 375 1",
+          "11": "37 399 1",
+          "2": "37 116 1",
+          "3": "37 142 1",
+          "4": "37 168 1",
+          "5": "37 194 1",
+          "6": "37 220 1",
+          "7": "53 264 1",
+          "8": "37 327 1",
+          "9": "37 351 1"
+        },
+        "input": {
+          "concentration_mg_ml": "2",
+          "patient_id": "demo",
+          "target_dose_mcg_kg_min": "0.2",
+          "weight_kg": "0"
+        },
+        "label": {
+          "label-conc": "Drug Concentration: 2.00 mg/mL",
+          "label-dose": "Target Dose: 0.200 mcg/kg/min",
+          "label-patient": "Patient ID: demo",
+          "label-weight": "Weight: 0.00 kg",
+          "output-rate": "Rate: No result",
+          "output-signature": "Backend MAC: No result",
+          "output-status": "Backend rejected request [0x3001]",
+          "status-badge": "SESSION ACTIVE"
+        },
+        "meta": {
+          "font": "metis-platform-bitmap",
+          "height": "600",
+          "scale": "1",
+          "scenario": "form-rejected",
+          "schema": "1",
+          "target": "software",
+          "width": "800"
+        },
+        "observed": {
+          "error_code": "12289",
+          "state": "rejected"
+        },
+        "text": {
+          "0": "METIS FORM DEMONSTRATION",
+          "1": "SESSION ACTIVE",
+          "10": "Backend rejected request [0x3001]",
+          "11": "Backend MAC: No result",
+          "2": "Patient Demographics and Drug Prescription",
+          "3": "Patient ID: demo",
+          "4": "Weight: 0.00 kg",
+          "5": "Drug Concentration: 2.00 mg/mL",
+          "6": "Target Dose: 0.200 mcg/kg/min",
+          "7": "[ SUBMIT CALCULATION TO BACKEND ]",
+          "8": "Backend Calculation Output",
+          "9": "Rate: No result"
+        }
+      }
+    },
+    "form-success": {
+      "image_sha256": "b4725893ae4144bf366934b911d21ef9852a61c02c3ce87e14b0a6077bd44ddb",
+      "semantics": {
+        "action": {
+          "0": "create session: 800x600, bounded MemoryTransport, backend exchanges=4",
+          "1": "initialize: process_id=1234, principal=[1;16]",
+          "2": "set inputs: patient_id=\"demo\", weight_kg=60, concentration_mg_ml=2, target_dose_mcg_kg_min=0.2",
+          "3": "submit calculation"
+        },
+        "expected": {
+          "audit_sequence_id": "2",
+          "drug_rate_mg_hr": "0.72",
+          "rate_ml_hr": "0.36",
+          "state": "success"
+        },
+        "geometry": {
+          "0": "32 32 1",
+          "1": "32 56 1",
+          "10": "37 375 1",
+          "11": "37 399 1",
+          "2": "37 116 1",
+          "3": "37 142 1",
+          "4": "37 168 1",
+          "5": "37 194 1",
+          "6": "37 220 1",
+          "7": "53 264 1",
+          "8": "37 327 1",
+          "9": "37 351 1"
+        },
+        "input": {
+          "concentration_mg_ml": "2",
+          "patient_id": "demo",
+          "target_dose_mcg_kg_min": "0.2",
+          "weight_kg": "60"
+        },
+        "label": {
+          "label-conc": "Drug Concentration: 2.00 mg/mL",
+          "label-dose": "Target Dose: 0.200 mcg/kg/min",
+          "label-patient": "Patient ID: demo",
+          "label-weight": "Weight: 60.00 kg",
+          "output-rate": "Rate: 0.360 mL/hr (0.72 mg/hr)",
+          "output-signature": "Backend MAC: Present (not verified by frontend)",
+          "output-status": "Backend response (Audit Seq #2)",
+          "status-badge": "SESSION ACTIVE"
+        },
+        "meta": {
+          "font": "metis-platform-bitmap",
+          "height": "600",
+          "scale": "1",
+          "scenario": "form-success",
+          "schema": "1",
+          "target": "software",
+          "width": "800"
+        },
+        "observed": {
+          "audit_sequence_id": "2",
+          "drug_rate_mg_hr": "0.72",
+          "rate_ml_hr": "0.36",
+          "state": "success"
+        },
+        "text": {
+          "0": "METIS FORM DEMONSTRATION",
+          "1": "SESSION ACTIVE",
+          "10": "Backend response (Audit Seq #2)",
+          "11": "Backend MAC: Present (not verified by frontend)",
+          "2": "Patient Demographics and Drug Prescription",
+          "3": "Patient ID: demo",
+          "4": "Weight: 60.00 kg",
+          "5": "Drug Concentration: 2.00 mg/mL",
+          "6": "Target Dose: 0.200 mcg/kg/min",
+          "7": "[ SUBMIT CALCULATION TO BACKEND ]",
+          "8": "Backend Calculation Output",
+          "9": "Rate: 0.360 mL/hr (0.72 mg/hr)"
+        }
+      }
+    }
+  },
+  "fixture_sha256": "6fc493d766660ae9c3d55bd0959e84aff37a736374854353f31bceb60c77bb3f",
+  "schema": 1
+}

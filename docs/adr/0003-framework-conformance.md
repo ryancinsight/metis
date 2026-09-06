@@ -4,7 +4,13 @@ Status: Accepted
 
 Date: 2026-09-05
 
-Driver: [METIS-GAPS-001](../../backlog.md#METIS-GAPS-001).
+Drivers: [METIS-GAPS-001](../../backlog.md#METIS-GAPS-001),
+[METIS-VISUAL-001](../../backlog.md#METIS-VISUAL-001).
+
+Revision 2026-09-05: the software V01 runner now binds seven real backend states
+to recorded semantics, exact raster comparisons and source/fixture provenance.
+Deliberate text, geometry and color changes exercise regression detection;
+browser/native host evidence remains with the host items.
 
 ## Decision and scope
 
@@ -127,8 +133,9 @@ provider quarantine is removed only after published-source consumer verification
 
 Use the [visual scenario matrix](../VERIFICATION.md#visual-scenarios). Each closing
 item provides real source, input traces, semantic assertions, target captures and
-a user-manual section from the same revision. The current gallery remains an
-initial software frame; do not add mockups for unimplemented applications.
+a user-manual section from the same revision. The current gallery contains seven
+software states from real backend sessions; do not add mockups for unimplemented
+applications.
 An unsupported browser OS operation closes only its explicit target restriction,
 not the equivalent desktop requirement. Apply the same rule to mobile: required
 Android/iOS capability pairs come from the pinned inventory, and unimplemented

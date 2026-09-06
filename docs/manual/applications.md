@@ -60,18 +60,26 @@ A new app and backend session submit weight 80 kg and return 0.96 mg/hour and
 python scripts/verify.py
 ```
 
-The Rust example writes fixed `output/form*.bmp` and `output/form*.svg` files.
-SVG paths encode the actual raster; they do not rebuild layout as SVG text.
-The gate removes previous required captures before execution, asserts all seven
-fresh outputs, and compares each with its committed image. Output names are
-reused on subsequent runs. For an intentional visual change:
+The Rust example writes fixed `output/form*.bmp`, `output/form*.svg` and
+`output/form*.csv` files. SVG paths encode the actual raster; they do not rebuild
+layout as SVG text. The CSV records actual inputs, actions, state, displayed
+labels and text geometry alongside independently expected outcomes.
+
+The gate removes previous required captures before execution. It validates all
+seven new captures, checks BMP/SVG pixel agreement and compares both images and
+semantic records with the [reviewed baseline](images/captures.json). Source,
+lockfile and rendering-fixture hashes bind the observations to this run.
+For an intentional visual change:
 
 ```text
 python scripts/verify.py --update-snapshots
 python scripts/verify.py
 ```
 
-Inspect the generated images before accepting the baseline. The gate records
-source and image hashes in `output/verification.json`. Browser/OS capture,
-responsive pending/cancellation and automated difference images remain part of
-the [visual scenario work](../VERIFICATION.md#visual-contract).
+Inspect the generated images and semantic records before accepting the baseline.
+`output/visual/latest/report.json` records each comparison; adjacent expected,
+actual and difference images make failures inspectable. See
+[Inspect application output](testing.md) for report interpretation and retention.
+`output/verification.json` records the complete gate, including failures before
+capture. Browser/OS capture and responsive pending/cancellation remain in the
+[visual scenario contract](../VERIFICATION.md#visual-contract).

@@ -14,7 +14,8 @@ python scripts/verify.py
 
 The gate builds the pinned code, exercises native debug/release tests and the
 process example, builds the portable WASM libraries, and compares the current
-seven form captures with the committed gallery images. A passing WASM build does not run
+seven form captures and their recorded inputs, actions, labels and geometry with
+the committed gallery baseline. A passing WASM build does not run
 a browser; a passing process test does not exercise clicking the painted button.
 
 Open the [application gallery](applications.md) for the committed image, or
@@ -43,10 +44,17 @@ python scripts/verify.py
 
 Review the changed image and source together. A missing label, clipped control,
 wrong value or stale result must be fixed in the application; accepting a new
-snapshot does not make it correct. On a mismatch, the current gate reports the
-snapshot difference; automated difference images and browser/native input
-capture are not implemented yet. The software gallery exercises production state
-transitions through API calls, not clicks or keyboard events.
+snapshot does not make it correct. Read `output/visual/latest/report.json` for
+each scenario's semantic differences, changed pixel count and difference bounds.
+Its neighboring `*-expected.svg`, `*-actual.svg` and `*-difference.svg` files
+show the compared images and a red-on-black mask of changed pixels.
+`manifest.json` exists only for an accepted visual run. The next gate run rotates
+these known artifacts to `output/visual/previous/`, retaining one previous run.
+
+Three deliberately changed renders test detection of text, position and color
+regressions. Their difference images are test evidence, not application states.
+The software gallery exercises production state transitions through API calls;
+browser/native input capture, focus and accessibility remain unimplemented.
 
 ## What a demonstration proves
 
