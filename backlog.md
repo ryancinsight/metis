@@ -249,11 +249,13 @@ an owner. “Unsupported” cannot replace delivery of a required mobile/native 
 - Demonstration: [V08](docs/VERIFICATION.md#V08), connection/process status and denial journey; browsers never receive arbitrary native shell access.
 
 <a id="METIS-MIGRATION-001"></a>
-## METIS-MIGRATION-001 — Tauri application migration [arch] [minor]
-- Status: todo; priority: P2; owner: Metis CLI/contracts; dependencies: METIS-COMMANDS-001, METIS-FILES-001, METIS-INTEGRATION-001, METIS-SERVICES-001; risk: compatibility
-- Scope: enumerate the pinned Tauri core/config/plugin surface used by representative fixtures; commands/events/channels, assets, state, permissions and build mappings; generate actionable unsupported-API diagnostics.
-- Acceptance: migrated fixture behaves equivalently with native Metis implementations, no retained Tauri runtime or forwarding shim; every required symbol/config/plugin pair is mapped/tested. Restrictions follow the board's required-pair rule; unsupported required APIs remain open gaps.
-- Demonstration: [V09](docs/VERIFICATION.md#V09), before/after source diff, real identical user journeys and captures in the manual; record JS retained versus Rust/WASM replacement.
+## METIS-MIGRATION-001 — egui and Tauri application migration [arch] [minor]
+- Status: todo; priority: P1; owner: Metis framework + application owners; risk: lost application behavior.
+- Dependencies: METIS-COMMANDS-001, METIS-FILES-001, METIS-INPUT-001, METIS-ASSETS-001, METIS-GRAPHICS-001, METIS-DESKTOP-001, METIS-BROWSER-001, METIS-INTEGRATION-001, METIS-SERVICES-001.
+- Named driver: [ritk-snap](../ritk/backlog.md#RITK-SNAP-METIS-001), currently egui/eframe at RITK `341228e`; no Tauri dependency found in its manifest/workspace lock. RITK owns decoder, volume geometry and medical display correctness; Metis supplies the replacement shell.
+- Scope: inventory the actual viewer and a distinct pinned Tauri fixture; native Metis implementations replace required UI/state/input/render/file/lifecycle surfaces. First viewer journey opens a local DICOM study, selects its series and displays all three orthogonal views; full cutover retains the whole admitted viewer inventory.
+- Acceptance: [V09](docs/VERIFICATION.md#V09) plus RITK opening/frames/color/grayscale prerequisites; required symbols/config/plugins and viewer actions are mapped/tested. Existing bugs cannot serve as parity oracles. No retained egui/eframe/Tauri runtime or forwarding shim in the completed migrated viewer.
+- Demonstration: actual same-study before/after workflows, verified voxels/physical coordinates and real host captures in the user manual; record JavaScript retained versus Rust/WASM replacement and matched memory evidence.
 
 <a id="METIS-DISTRIBUTION-001"></a>
 ## METIS-DISTRIBUTION-001 — Build, package and update lifecycle [arch] [minor]

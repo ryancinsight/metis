@@ -12,6 +12,12 @@ to recorded semantics, exact raster comparisons and source/fixture provenance.
 Deliberate text, geometry and color changes exercise regression detection;
 browser/native host evidence remains with the host items.
 
+Revision 2026-09-06: the user names `ritk-snap` as the concrete viewer migration
+target. [METIS-MIGRATION-001](../../backlog.md#METIS-MIGRATION-001) now includes
+its egui/eframe surface and [V09](../VERIFICATION.md#V09) DICOM opening/display
+oracles. RITK retains format, geometry and medical-display ownership; this does
+not replace the distinct Tauri fixture or claim a working Métis viewer.
+
 ## Decision and scope
 
 Use Tauri as the application-framework migration reference and egui/GPUI as

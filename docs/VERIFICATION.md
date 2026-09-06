@@ -246,7 +246,7 @@ events, restart recovery and cleanup. No credentials or real patient data enter
 the fixture, diagnostic trace or screenshot.
 
 <a id="V09"></a>
-### V09 — Migrated Tauri application
+### V09 — Migrated viewer and Tauri application
 
 Pin a representative app and its command/event/channel/config/plugin inventory.
 Run the same input traces against original and migrated builds, asserting
@@ -255,6 +255,41 @@ retained JavaScript, Rust/WASM substitutions, unsupported target APIs and native
 Metis implementations. Use a form/settings application and a document/result
 explorer to exercise different native surfaces. Neither canvas resemblance nor
 forwarding requests into Tauri proves migration completion.
+
+The named viewer target is RITK's `ritk-snap`, inspected at
+`341228ee3861c5e9a091dcf58de500510f948505`. It currently uses egui/eframe,
+including the web canvas entrypoint; no Tauri dependency was found in its
+manifest or workspace lock. It supplies the concrete egui migration scenario;
+a separate real Tauri fixture still establishes Tauri API/configuration coverage.
+Implementation and DICOM prerequisites belong to the
+[RITK viewer item](../../ritk/backlog.md#RITK-SNAP-METIS-001) and its
+[decision](../../ritk/docs/adr/0026-viewer-presentation-migration.md).
+These are acceptance specifications, not a Métis viewer availability claim.
+
+| Opening/display boundary | Required evidence |
+| --- | --- |
+| Actual input | Open a file, directory, DICOMDIR and browser-provided byte batch through their real host paths; select series explicitly. Mixed studies or tied series counts cannot silently combine. |
+| Pixel decode | Known stored values, signedness, modality rescale and decoded color channels; pin the admitted transfer-syntax/photometric matrix, test each row and reject unsupported rows explicitly. A decoder's declared support is not runtime evidence. |
+| Frames and geometry | Every expected frame is reachable; per-frame metadata is retained. Assert physical landmarks, spatial ordering, anisotropic spacing and oblique orientation; temporal frames are not treated as spatial slices. |
+| Actual image | Axial/coronal/sagittal captures with known voxel/color landmarks, matching cursor readouts, orientation labels and aspect ratios; preserve RGB channels and admitted grayscale/VOI behavior. |
+| Interaction and recovery | Series selection, slice/frame navigation, window/level, zoom/pan and linked cursor change the expected pixels/state. Failed replacement, cancellation, rapid study switching and close/reopen cannot display a stale study as current. |
+| Host and resource bounds | Local file grants and invalid-reference denial, malformed/truncated data, unsupported syntax and bounded decode/task/buffer lifetime; real browser and native hosts are tested separately. |
+
+Physical-coordinate oracles use DICOM PS3.3 2026c
+[C.7.6.2](https://dicom.nema.org/medical/dicom/current/output/chtml/part03/sect_C.7.6.2.html),
+including row/column spacing and patient-position/orientation mapping.
+Grayscale oracles use
+[C.11.2](https://dicom.nema.org/medical/dicom/current/output/chtml/part03/sect_C.11.2.html),
+including distinct default LINEAR, LINEAR_EXACT and SIGMOID behavior where admitted.
+The old renderer is a differential comparison, never the sole correctness oracle.
+
+Required tests use small synthetic studies with known values and physical
+landmarks; missing external datasets cannot turn a required test into success.
+Source inspection found file-path dispatch, tied-series selection, frame-zero,
+RGB display and grayscale coverage gaps, now owned by the RITK prerequisites.
+Reproduce and resolve each before accepting a migrated baseline. Public manual
+captures contain synthetic data and come from actual Métis execution. No viewer
+screenshot or DICOM runtime result was collected for this planning increment.
 
 <a id="V10"></a>
 ### V10 — Developer and package lifecycle
