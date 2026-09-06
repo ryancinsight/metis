@@ -3,6 +3,14 @@
 Registration: [Atlas member item](../../backlog.md#metis-unregistered-member).
 The user authorizes a public repository; registration follows verified publication.
 
+<a id="METIS-GAPS-001"></a>
+## METIS-GAPS-001 — Framework conformance plan [arch] [patch]
+- Status: in-progress; integrator: root; last-update: 2026-09-05
+- Scope: compare egui, GPUI and Tauri with current source; update ordered development work, visual acceptance and the user manual. Runtime implementation remains in the resulting items.
+- Acceptance: source-backed capability matrix; every gap maps to an owner/item, dependencies and semantic/visual oracle; existing demonstration regenerated and inspected; independent coverage review passes.
+- Decision: ADR 0003 number claimed for framework conformance and demonstration policy.
+- Lease: root backlog.md, checklist.md, gap_audit.md, README.md, docs/; 2026-09-05
+
 <a id="METIS-WEB-001"></a>
 ## METIS-WEB-001 — Web application target contract [arch] [patch]
 - Status: review; integrator: root; last-update: 2026-09-05
