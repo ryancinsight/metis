@@ -138,17 +138,15 @@ an owner. “Unsupported” cannot replace delivery of a required mobile/native 
 
 <a id="METIS-VISUAL-001"></a>
 ## METIS-VISUAL-001 — Semantic and visual scenario runner [patch]
-- Status: review; priority: P0; owner: Metis verification; integrator: Codex/root; last-update: 2026-09-05; dependencies: METIS-STATE-001; risk: misleading screenshots
-- Branch: `codex/metis-visual-evidence`; scope: existing example, comparator, gate, tests and manual; baseline `9c38d2f` is the verified STATE merge.
-- Scope: extend existing presentation/example gate to the scenario contract; share application state/input traces between assertions and captures; retain exact software baselines.
-- Acceptance: [visual contract](docs/VERIFICATION.md#visual-contract) mechanized; missing/stale/changed goldens and incorrect state fail; source revision, inputs and target metadata accompany each artifact; injected clock/event synchronization, no sleeps.
-- Demonstration: [V01](docs/VERIFICATION.md#V01); browser/native capture adapters are added with their hosts, not stubbed in advance.
-- Evidence: seven real-session captures with semantic/fixture baseline, three mutation probes, bounded failure artifacts, alias/encoding/provenance regressions and actual worker cleanup on capture-write failure. Browser/native adapters remain with their host items.
+- Status: done; [PR 4](https://github.com/ryancinsight/metis/pull/4), merge `0465a43`.
+- Outcome: seven real-session semantic/raster baselines, three mutation probes, bounded difference artifacts and failure/provenance/alias regressions pass; manual synchronized.
 
 <a id="METIS-ASYNC-001"></a>
 ## METIS-ASYNC-001 — Bounded browser request lifecycle [arch] [minor]
-- Status: todo; priority: P0; owner: Moirai async/transport + Metis client; risk: hangs/leaks; dependencies: METIS-WEB-001
+- Status: in-progress; priority: P0; owner: Moirai async/transport + Metis client; integrator: Codex/root; last-update: 2026-09-06; branch: `codex/metis-browser-lifecycle`; risk: hangs/leaks; dependencies: METIS-WEB-001
 - Scope: event-driven receive/wakeup, task/request cancellation, deadlines and owned callback teardown; complete the upstream reactor gap and remove blocking browser paths.
+- Entry evidence: fetched Moirai default `4db2dc1`; browser PAL/role/driver sources match locked `0514f11`. Receive discards messages, callback ownership is forgotten, polling produces no events; native `Send + Sync` and blocking driver cannot serve browser-local tasks unchanged. Source inspection only.
+- First increment: revise Moirai ADR 0007 around owned browser I/O and a finite real-browser conformance trace before Metis adoption; published provider and consumer gates remain separate.
 - Acceptance: deliver ordered and out-of-order correlated messages, reject replay/oversize, enforce queue/in-flight bounds; cancel and shutdown leave zero live callbacks/tasks. Verify locked consumer source after upstream publication.
 - Demonstration: [V02](docs/VERIFICATION.md#V02) pending/cancel/disconnected states; [V12](docs/VERIFICATION.md#V12) repeat lifecycle/resource evidence.
 
