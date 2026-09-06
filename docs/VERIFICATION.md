@@ -55,7 +55,8 @@ The gate writes exact source hashes and the lock hash to
 `output/verification.json`, rejecting source changes during a run.
 
 The resolved host metadata contains 43 packages, including 19 registry packages
-through Atlas providers. No Metis package declares a registry dependency.
+through Atlas providers. At that revision no Metis package declares a registry dependency; distribution
+tooling subsequently admits the Serde JSON parser under ADR 0005.
 Separate upstream evidence includes 39/39
 Moirai transport tests and 18/18 Atlas overlay-generator tests, with a real Cargo
 fixture detecting duplicate local/Git type identities before the generator fix.
@@ -72,6 +73,22 @@ repaired lock. Comparative security/memory evidence against Tauri and browser
 runtime tests remain required by [ADR 0002](adr/0002-web-application-contract.md).
 Advisory scanning, coverage,
 mutation analysis and cross-platform sandbox probes remain uncollected.
+
+## Collected Windows distribution evidence — 2026-09-06
+
+The distribution increment passes 102 debug and 102 release native tests,
+36 Python gate/oracle tests, strict Clippy, doctests and documentation. The
+actual MSI installs into a custom directory, both installed process scenarios
+match independent rational conversion oracles, and uninstall without an
+`INSTALLDIR` override removes owned payload/registration/shortcut while preserving
+a user-created file. The empty application Start Menu directory is removed.
+`output/distribution/latest/workflow.json` records package hashes, commands and
+outcomes; this is host workflow evidence, not signing or OS isolation evidence.
+
+All seven gallery images retain identical pixels and semantic records. Updating
+the dependency-lock-bound fixture changes only `captures.json`'s fixture hash;
+no image or expected outcome changes. The gate records exact source hashes and
+rejects a stale fixture rather than silently accepting the dependency change.
 
 <a id="visual-contract"></a>
 ## Visual and interaction contract
@@ -303,6 +320,20 @@ input and native host input retain separate verification requirements.
 
 <a id="V10"></a>
 ### V10 — Developer and package lifecycle
+
+`python scripts/verify.py` builds the distribution CLI and runs
+`scripts/distribution.py` against its release executable. The workflow verifies
+portable payload hashes, MSI inventory and two input-sensitive process sessions.
+`python scripts/verify.py --install` additionally installs the generated per-user
+MSI into a private directory, checks registration/shortcut and installed bytes,
+runs both input cases and uninstalls while retaining a user-created sentinel.
+The workflow retains one guarded `output/distribution/latest` directory and a
+machine-readable report. Build commands have a 300-second bound; application and
+installer commands have a 60-second bound; the complete workflow has a 720-second
+bound. Native database tests use the ordinary nextest 30/60-second budgets.
+These checks cover the Windows x64 MSI increment, not the remaining lifecycle
+requirements below. Native system calls are covered by host tests, not Miri.
+
 
 Create/build/run using the CLI, deliberately introduce a compile error, fix it
 and exercise reload. Install locally built packages in isolated supported hosts;

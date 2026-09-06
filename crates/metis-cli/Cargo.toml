@@ -1,0 +1,25 @@
+[package]
+name = "metis-cli"
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+authors.workspace = true
+license.workspace = true
+repository.workspace = true
+description = "Build and package applications from a validated Metis manifest"
+publish = false
+
+[[bin]]
+name = "metis"
+path = "src/main.rs"
+
+[dependencies]
+metis-core.workspace = true
+moirai-core.workspace = true
+moirai-executor.workspace = true
+moirai-transport.workspace = true
+serde.workspace = true
+serde_json.workspace = true
+
+[lints]
+workspace = true

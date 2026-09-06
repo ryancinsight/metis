@@ -15,6 +15,7 @@ Tauri migration goal and required web support. These are implementation targets,
 not features available through the build commands below.
 
 - [Build and run](getting-started.md): requirements, the demonstration and verification.
+- [Build executables and installers](distribution.md): configure an application, create a portable bundle, install and remove it.
 - [Create a presentation](presentation.md): supported markup, styles and application state.
 - [Connect a backend](backend.md): process ownership, requests and errors.
 - [Application gallery](applications.md): snapshots produced by the actual examples.

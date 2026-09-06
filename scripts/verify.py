@@ -130,7 +130,7 @@ def run(name, args, *, cwd, environment, seconds=300, expected_exit=0, required_
     return result.stdout
 
 def source_state(metadata, configs):
-    inputs = {ROOT / "rust-toolchain.toml", *configs}
+    inputs = {ROOT / "rust-toolchain.toml", ROOT / "metis.json", *configs}
     inputs.update((ROOT / "docs").rglob("*.md"))
     for package in metadata["packages"]:
         if package["source"] is None:
@@ -148,6 +148,8 @@ def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--update-snapshots", action="store_true",
                         help="Replace reviewed visual baselines with this run's validated captures")
+    parser.add_argument("--install", action="store_true",
+                        help="Also install/run/uninstall the generated per-user MSI in an isolated directory")
     arguments = parser.parse_args()
     evidence()
     # Import and configuration failures must invalidate the previous success too.
@@ -210,7 +212,8 @@ def main():
             if package["name"].startswith("metis"):
                 for dependency in package["dependencies"]:
                     provider = dependency.get("source") or ""
-                    if provider and not provider.startswith("git+https://github.com/ryancinsight/"):
+                    tooling_parser = package["name"] == "metis-cli" and dependency["name"] in {"serde", "serde_json"} and provider.startswith("registry+")
+                    if provider and not provider.startswith("git+https://github.com/ryancinsight/") and not tooling_parser:
                         raise SystemExit(f"Non-Atlas direct dependency: {dependency}")
         output_path("provider-dependencies.json").write_text(json.dumps(external, indent=2), encoding="utf-8")
         packages = {p["id"]: p for p in metadata["packages"]}
@@ -222,8 +225,8 @@ def main():
             if package_id in reached:
                 continue
             reached.add(package_id)
-            if packages[package_id]["name"] == "metis-backend":
-                raise SystemExit("Frontend dependency closure includes backend authority")
+            if packages[package_id]["name"] in {"metis-backend", "metis-cli"}:
+                raise SystemExit("Frontend dependency closure includes backend authority or distribution tooling")
             pending.extend(nodes[package_id]["dependencies"])
         # This exact installed runner applies the committed 30/60-second budgets.
         version = execute("nextest-version", ["rustup", "run", TOOLCHAIN, "cargo", "nextest", "--version"])
@@ -238,6 +241,10 @@ def main():
         cargo("build", ["build", "--workspace", "--bins", "--examples"])
         cargo("tests", ["nextest", "run", "--workspace", "--profile", "ci"])
         cargo("release-build", ["build", "--workspace", "--bins", "--release"])
+        distribution_tool = pathlib.Path(metadata["target_directory"]) / "release" / "metis.exe"
+        execute("distribution", [sys.executable, str(ROOT / "scripts" / "distribution.py"),
+                                 "--tool", str(distribution_tool), "--output", str(OUTPUT / "distribution"),
+                                 *(["--install"] if arguments.install else [])], seconds=720)
         cargo("release-tests", ["nextest", "run", "--workspace", "--release", "--profile", "ci"])
         cargo("doctests", ["test", "--workspace", "--doc"])
         cargo("docs", ["doc", "--workspace", "--no-deps"])

@@ -41,6 +41,15 @@ values and returns the calculated result. For these demonstration inputs the
 rate is 0.36 mL/hour and drug rate is 0.72 mg/hour. Standard output carries IPC
 bytes exclusively; human-readable results go to standard error.
 
+## Build executables and installers
+
+The `metis` CLI builds declared Cargo binaries and bundles explicitly named
+resources from one [application manifest](metis.json). On Windows x64 it also
+authors a per-user MSI with a Start Menu shortcut and registered uninstall.
+See the [distribution manual](docs/manual/distribution.md) for the complete
+workflow, host prerequisites and current limits. The bundled example is a
+console application; packaging does not supply the missing desktop GUI host.
+
 ## Atlas ownership
 
 Moirai owns worker scheduling and process lifecycle. Metis consumes its executor
@@ -49,8 +58,10 @@ upstream in Moirai. Iris supplies the `RenderBackend` contract; Metis implements
 its bounded software renderer against that contract. Frontend dependencies never
 include `metis-backend`.
 
-Metis declares no direct third-party crates. Atlas providers have transitive
-dependencies; the gate records the actual graph instead of describing it as
+Runtime crates declare no direct third-party crates. The distribution CLI uses
+Serde and serde_json for validated manifests and Cargo artifact messages, as
+recorded in [ADR 0005](docs/adr/0005-application-distribution.md). Atlas providers
+have transitive dependencies; the gate records the actual graph instead of describing it as
 dependency-free. The Atlas development overlay resolves first-party code to local
 trees. Standalone builds depend on the corresponding pushed provider revisions.
 Moirai is pinned to the pushed process-support revision until its 0.6 API reaches

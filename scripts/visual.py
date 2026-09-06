@@ -382,7 +382,7 @@ def compare(root, output, provenance, update=False):
     except (VisualError, OSError, TypeError) as error:
         report["errors"].append(str(error))
     baseline_path = root / "docs" / "manual" / "images" / "captures.json"
-    if not update:
+    if not update and fixture is not None:
         try:
             baseline = _baseline(baseline_path, fixture)
         except (VisualError, OSError, AttributeError) as error:
@@ -420,7 +420,8 @@ def compare(root, output, provenance, update=False):
                 _owned(latest / f"{name}-difference.svg", output).write_bytes(encode_svg(mask))
                 if not update and expected_bytes != actual_bytes:
                     result["errors"].append("Exact SVG baseline differs")
-                if not update and baseline.get("captures", {}).get(name, {}).get("image_sha256") != hashlib.sha256(expected_bytes).hexdigest():
+                if (not update and name in baseline.get("captures", {})
+                        and baseline["captures"][name]["image_sha256"] != hashlib.sha256(expected_bytes).hexdigest()):
                     result["errors"].append("Golden SVG hash differs from its semantic baseline")
         except (VisualError, OSError) as error:
             if not update:

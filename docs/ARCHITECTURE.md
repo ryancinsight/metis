@@ -28,6 +28,16 @@ for inherited private pipes, finite teardown and Windows process-tree lifecycle
 containment. Metis retains only application dispatch and the form-session budget.
 No frontend object, memory address or backend secret crosses the IPC boundary.
 
+## Distribution boundary
+
+`metis-cli` owns application configuration, Cargo artifact selection and packaging.
+It consumes Moirai process supervision and the core streaming hash, and never
+enters the frontend dependency closure. The same validated payload supplies a
+portable directory and the Windows Installer backend. Rendering, application
+logic, process authorization and installation each retain one owner.
+[ADR 0005](adr/0005-application-distribution.md) defines the manifest, resource
+budgets, native FFI boundary and platform expansion contract.
+
 ## Provider selection
 
 | Role | Owner | Decision |
