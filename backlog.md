@@ -132,8 +132,9 @@ an owner. “Unsupported” cannot replace delivery of a required mobile/native 
 - Remaining: Atlas gitlink/review-path resolution; public source/manual/current software capture already exist at `9d96980`. Every later item owns its demonstration section, not a deferred documentation phase.
 
 <a id="METIS-STATE-001"></a>
-## METIS-STATE-001 — Correct form state transitions [patch]
-- Status: todo; priority: P0; owner: Metis frontend; risk: stale displayed result; dependencies: METIS-WEB-001
+## METIS-STATE-001 — Correct form state transitions [arch] [major]
+- Status: in-progress; priority: P0; owner: Metis frontend; integrator: Codex/root; last-update: 2026-09-05; risk: stale displayed result; dependencies: METIS-WEB-001
+- Branch: `codex/metis-form-state`; claim: frontend state, callers, presentation example, manual and verification; ADR 0004 reserved for state ownership and migration.
 - Scope: explicit idle/pending/success/rejected/disconnected state, invalidate results on edits, and render local transport failures; preserve backend-only calculations.
 - Acceptance: submit→edit→reject→recover and disconnect traces assert current input/result association, cleared obsolete values, typed failures and rendered labels/pixels; no fabricated backend result.
 - Demonstration: [V01](docs/VERIFICATION.md#V01), real success and rejection beside the initial form in the manual, generated from the production state path.
