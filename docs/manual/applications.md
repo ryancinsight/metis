@@ -83,3 +83,22 @@ actual and difference images make failures inspectable. See
 `output/verification.json` records the complete gate, including failures before
 capture. Browser/OS capture and responsive pending/cancellation remain in the
 [visual scenario contract](../VERIFICATION.md#visual-contract).
+
+## DICOM viewer migration baseline
+
+RITK's [synthetic DICOM workflow](../../../ritk/docs/manual/dicom-workflow.md)
+now includes a capture of the running egui/eframe viewer alongside exact
+software slice images, delivered in
+[RITK PR 236](https://github.com/ryancinsight/ritk/pull/236) at `4a9f6eb1`.
+Its three-instance study has known decoded values,
+anisotropic spacing and physical coordinates; no patient data is required.
+The native workflow also requires a missing study to fail without producing a
+successful-load screenshot.
+
+The baseline exercises explicit series selection, primary and secondary loads,
+authoritative DICOMDIR membership, failed replacement and session restore.
+The manual explains the current input limits and how to reproduce both the
+pixel checks and native capture. These results establish the existing viewer
+baseline for [V09](../VERIFICATION.md#V09); Métis host execution, browser input,
+multiframe/color presentation and matched memory measurements remain required
+before accepting the migration.
