@@ -6,7 +6,8 @@ rendering. A system WebView is in scope for desktop web compatibility; the
 current executable demonstrates a separate backend and software presentation.
 
 This manual describes the working application surface. The current demonstration
-runs through pipes and renders into a software framebuffer. It does not yet open
+tests separate processes through pipes; the gallery renders real backend sessions
+through bounded memory transport into a software framebuffer. Metis does not yet open
 a native window, run in a browser, or restrict operating-system permissions.
 
 The [target contract](../adr/0002-web-application-contract.md) describes the

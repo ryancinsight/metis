@@ -34,8 +34,11 @@ standalone gate so publishing cannot ship an overlay-only dependency graph.
 The user manual replaces a domain book. Its seven application snapshots are produced by
 the Rust presentation example from real backend exchanges and actual framebuffer
 pixels, checked against `docs/manual/images/form*.svg`. `--update-snapshots`
-explicitly refreshes those files;
-normal verification rejects drift and missing local manual links.
+explicitly refreshes those files and the semantic/fixture baseline
+`docs/manual/images/captures.json`; normal verification rejects drift and missing
+local manual links. Comparator unit tests and the actual capture-failure process
+probe each run under a 60-second bound. A write failure must terminate the
+Moirai session, collect the worker and preserve the primary diagnostic.
 
 ## Collected Windows evidence — 2026-09-05
 
@@ -73,10 +76,17 @@ mutation analysis and cross-platform sandbox probes remain uncollected.
 <a id="visual-contract"></a>
 ## Visual and interaction contract
 
-The implementation today runs one exact software-frame comparison. The contract
-below specifies the additional runner/host work owned by
-[VISUAL](../backlog.md#METIS-VISUAL-001) and its dependent items. Those requirements
-are not claims that browser/native tests already execute.
+The software runner covers seven stable V01 states. CSV observations emitted by
+the Rust example record actual inputs, actions, state, labels and text geometry
+alongside independently supplied expected outcomes. The comparator binds these
+to the current source/lock/compiler and rendering fixture, checks exact SVG bytes
+and decoded BMP pixels, and compares reviewed semantic records. It rejects missing
+captures, stale source mappings and wrong state even when an image appears valid.
+
+Three deliberately altered renders change a label, geometry and color. Each must
+produce a nonempty pixel difference against the initial form. They test the
+comparator and never enter the application gallery. The contract below also
+specifies the remaining real host work; it does not claim browser/native execution.
 
 Every scenario has one application source and one declared input/action trace.
 Tests assert application state, displayed values, layout/hit geometry and
@@ -100,7 +110,15 @@ distribution and excluded regions with a reason. Never widen a threshold to hide
 a changed label, misplaced control, missing glyph or clipped value. Independent
 semantic/geometry failures always block even when a pixel difference is small.
 
-The capture manifest records scenario ID, source/tree hash, action trace and
+For the software runner, `output/visual/latest/report.json` collects all seven
+states and all three mutation probes; successful runs also write `manifest.json`.
+Known reports rotate to `previous` at the next invocation. The gate invalidates
+prior success before reading toolchain configuration, and records each command,
+its deadline and expected exit status. `--help` does not start a run. Current
+software metadata explicitly marks focus, accessibility, pointer dispatch and
+responsive cancellation unsupported.
+
+The complete host capture manifest records scenario ID, source/tree hash, action trace and
 fixture hash, expected values, target/engine/driver, viewport/scale, fonts, image
 hash and observed outcome. An expected/actual/difference image and semantic diff
 must be available on failure. Include focus order and accessibility tree/action

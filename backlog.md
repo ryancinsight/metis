@@ -133,19 +133,17 @@ an owner. “Unsupported” cannot replace delivery of a required mobile/native 
 
 <a id="METIS-STATE-001"></a>
 ## METIS-STATE-001 — Correct form state transitions [arch] [major]
-- Status: review; priority: P0; owner: Metis frontend; integrator: Codex/root; last-update: 2026-09-05; risk: stale displayed result; dependencies: METIS-WEB-001
-- Delivery: `codex/metis-form-state`; [ADR 0004](docs/adr/0004-form-state.md) owns API migration; 88 debug/release tests, 12 doctests and seven real-session captures pass; independent state review accepts the correction.
-- Scope: explicit idle/pending/success/rejected/disconnected state, invalidate results on edits, and render local transport failures; preserve backend-only calculations.
-- Acceptance: submit→edit→reject→recover and disconnect traces assert current input/result association, cleared obsolete values, typed failures and rendered labels/pixels; no fabricated backend result.
-- Demonstration: [V01](docs/VERIFICATION.md#V01), real success and rejection beside the initial form in the manual, generated from the production state path.
+- Status: done; merged [PR 3](https://github.com/ryancinsight/metis/pull/3) at `9c38d2f`; [ADR 0004](docs/adr/0004-form-state.md).
+- Outcome: owned state clears stale results; 88 debug/release tests, 12 doctests and seven real-session captures pass with independent review.
 
 <a id="METIS-VISUAL-001"></a>
-## METIS-VISUAL-001 — Semantic and visual scenario runner [minor]
-- Status: todo; priority: P0; owner: Metis verification; dependencies: METIS-STATE-001; risk: misleading screenshots
+## METIS-VISUAL-001 — Semantic and visual scenario runner [patch]
+- Status: review; priority: P0; owner: Metis verification; integrator: Codex/root; last-update: 2026-09-05; dependencies: METIS-STATE-001; risk: misleading screenshots
+- Branch: `codex/metis-visual-evidence`; scope: existing example, comparator, gate, tests and manual; baseline `9c38d2f` is the verified STATE merge.
 - Scope: extend existing presentation/example gate to the scenario contract; share application state/input traces between assertions and captures; retain exact software baselines.
 - Acceptance: [visual contract](docs/VERIFICATION.md#visual-contract) mechanized; missing/stale/changed goldens and incorrect state fail; source revision, inputs and target metadata accompany each artifact; injected clock/event synchronization, no sleeps.
 - Demonstration: [V01](docs/VERIFICATION.md#V01); browser/native capture adapters are added with their hosts, not stubbed in advance.
-- Foundation: STATE supplies seven fresh, byte-compared real-session captures and source/image hashes; scenario manifests, negative comparator fixtures and automated difference artifacts remain in this item.
+- Evidence: seven real-session captures with semantic/fixture baseline, three mutation probes, bounded failure artifacts, alias/encoding/provenance regressions and actual worker cleanup on capture-write failure. Browser/native adapters remain with their host items.
 
 <a id="METIS-ASYNC-001"></a>
 ## METIS-ASYNC-001 — Bounded browser request lifecycle [arch] [minor]
