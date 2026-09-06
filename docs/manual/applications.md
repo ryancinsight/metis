@@ -16,6 +16,11 @@ frontend with a separate backend and checks process completion. For arguments
 [executable integration tests](../../crates/metis-backend/tests/process.rs)
 also change the weight to verify that results depend on submitted values.
 
+The initial image uses the template's 72.50 kg, 4.00 mg/mL and 0.500 mcg/kg/min
+defaults. It does not show the process example's submitted inputs or calculated
+results. [Inspect application output](testing.md) explains the two checks and
+how to review an actual visual change.
+
 This is the implemented application example today. Further applications belong
 in this gallery when they have runnable source and captured output.
 
