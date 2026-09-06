@@ -138,17 +138,15 @@ an owner. “Unsupported” cannot replace delivery of a required mobile/native 
 
 <a id="METIS-VISUAL-001"></a>
 ## METIS-VISUAL-001 — Semantic and visual scenario runner [patch]
-- Status: review; priority: P0; owner: Metis verification; integrator: Codex/root; last-update: 2026-09-05; dependencies: METIS-STATE-001; risk: misleading screenshots
-- Branch: `codex/metis-visual-evidence`; scope: existing example, comparator, gate, tests and manual; baseline `9c38d2f` is the verified STATE merge.
-- Scope: extend existing presentation/example gate to the scenario contract; share application state/input traces between assertions and captures; retain exact software baselines.
-- Acceptance: [visual contract](docs/VERIFICATION.md#visual-contract) mechanized; missing/stale/changed goldens and incorrect state fail; source revision, inputs and target metadata accompany each artifact; injected clock/event synchronization, no sleeps.
-- Demonstration: [V01](docs/VERIFICATION.md#V01); browser/native capture adapters are added with their hosts, not stubbed in advance.
-- Evidence: seven real-session captures with semantic/fixture baseline, three mutation probes, bounded failure artifacts, alias/encoding/provenance regressions and actual worker cleanup on capture-write failure. Browser/native adapters remain with their host items.
+- Status: done; [PR 4](https://github.com/ryancinsight/metis/pull/4), merge `0465a43`.
+- Outcome: seven real-session semantic/raster baselines, three mutation probes, bounded difference artifacts and failure/provenance/alias regressions pass; manual synchronized.
 
 <a id="METIS-ASYNC-001"></a>
 ## METIS-ASYNC-001 — Bounded browser request lifecycle [arch] [minor]
-- Status: todo; priority: P0; owner: Moirai async/transport + Metis client; risk: hangs/leaks; dependencies: METIS-WEB-001
+- Status: in-progress; priority: P0; owner: Moirai async/transport + Metis client; integrator: Codex/root; last-update: 2026-09-06; branch: `codex/metis-browser-lifecycle`; risk: hangs/leaks; dependencies: METIS-WEB-001
 - Scope: event-driven receive/wakeup, task/request cancellation, deadlines and owned callback teardown; complete the upstream reactor gap and remove blocking browser paths.
+- Entry evidence: fetched Moirai default `4db2dc1`; browser PAL/role/driver sources match locked `0514f11`. Receive discards messages, callback ownership is forgotten, polling produces no events; native `Send + Sync` and blocking driver cannot serve browser-local tasks unchanged. Source inspection only.
+- First increment: revise Moirai ADR 0007 around owned browser I/O and a finite real-browser conformance trace before Metis adoption; published provider and consumer gates remain separate.
 - Acceptance: deliver ordered and out-of-order correlated messages, reject replay/oversize, enforce queue/in-flight bounds; cancel and shutdown leave zero live callbacks/tasks. Verify locked consumer source after upstream publication.
 - Demonstration: [V02](docs/VERIFICATION.md#V02) pending/cancel/disconnected states; [V12](docs/VERIFICATION.md#V12) repeat lifecycle/resource evidence.
 
@@ -251,11 +249,13 @@ an owner. “Unsupported” cannot replace delivery of a required mobile/native 
 - Demonstration: [V08](docs/VERIFICATION.md#V08), connection/process status and denial journey; browsers never receive arbitrary native shell access.
 
 <a id="METIS-MIGRATION-001"></a>
-## METIS-MIGRATION-001 — Tauri application migration [arch] [minor]
-- Status: todo; priority: P2; owner: Metis CLI/contracts; dependencies: METIS-COMMANDS-001, METIS-FILES-001, METIS-INTEGRATION-001, METIS-SERVICES-001; risk: compatibility
-- Scope: enumerate the pinned Tauri core/config/plugin surface used by representative fixtures; commands/events/channels, assets, state, permissions and build mappings; generate actionable unsupported-API diagnostics.
-- Acceptance: migrated fixture behaves equivalently with native Metis implementations, no retained Tauri runtime or forwarding shim; every required symbol/config/plugin pair is mapped/tested. Restrictions follow the board's required-pair rule; unsupported required APIs remain open gaps.
-- Demonstration: [V09](docs/VERIFICATION.md#V09), before/after source diff, real identical user journeys and captures in the manual; record JS retained versus Rust/WASM replacement.
+## METIS-MIGRATION-001 — egui and Tauri application migration [arch] [minor]
+- Status: todo; priority: P1; owner: Metis framework + application owners; risk: lost application behavior.
+- Dependencies: METIS-COMMANDS-001, METIS-FILES-001, METIS-INPUT-001, METIS-ASSETS-001, METIS-GRAPHICS-001, METIS-DESKTOP-001, METIS-BROWSER-001, METIS-INTEGRATION-001, METIS-SERVICES-001.
+- Named driver: [ritk-snap](../ritk/backlog.md#RITK-SNAP-METIS-001), currently egui/eframe at RITK `341228e`; no Tauri dependency found in its manifest/workspace lock. RITK owns decoder, volume geometry and medical display correctness; Metis supplies the replacement shell.
+- Scope: inventory the actual viewer and a distinct pinned Tauri fixture; native Metis implementations replace required UI/state/input/render/file/lifecycle surfaces. First viewer journey opens a local DICOM study, selects its series and displays all three orthogonal views; full cutover retains the whole admitted viewer inventory.
+- Acceptance: [V09](docs/VERIFICATION.md#V09) plus RITK opening/frames/color/grayscale prerequisites; required symbols/config/plugins and viewer actions are mapped/tested. Existing bugs cannot serve as parity oracles. No retained egui/eframe/Tauri runtime or forwarding shim in the completed migrated viewer.
+- Demonstration: actual same-study before/after workflows, verified voxels/physical coordinates and real host captures in the user manual; record JavaScript retained versus Rust/WASM replacement and matched memory evidence.
 
 <a id="METIS-DISTRIBUTION-001"></a>
 ## METIS-DISTRIBUTION-001 — Build, package and update lifecycle [arch] [minor]
