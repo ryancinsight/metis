@@ -309,3 +309,11 @@ an owner. “Unsupported” cannot replace delivery of a required mobile/native 
 - Scope: reconcile every ADR 0003 matrix row and required target pair against exact-revision evidence, including late package/mobile/service work and current upstream inventory changes.
 - Acceptance: [V01](docs/VERIFICATION.md#V01)–[V12](docs/VERIFICATION.md#V12) run on their required real targets, with semantic/visual/security/resource results and manual demos; required unsupported pairs stay open and block closure. No mocked IPC, compile-only host claim or skipped denial/lifecycle suite.
 - Demonstration: same-revision gallery, migration guide, measured comparative report and host troubleshooting; final security claims require matched Tauri denial probes under the declared threat model.
+
+<a id="METIS-VERIFY-002"></a>
+## METIS-VERIFY-002 — Verification report storage [patch]
+- Status: in-progress; priority: P0; integrator: root; last-update: 2026-09-06
+- Scope: nextest report storage and explicit crate documentation lint declarations; no runtime/API changes.
+- Acceptance: committed test budgets remain unchanged, native suites pass, reports live under ignored output, and no repository-local target directory reappears.
+- Baseline: full gate at `0421bca` passes; Atlas scan finds nextest report storage under local target and four crates without explicit documentation lint attributes.
+- Authority: development through merge; dependency: none; risk: verification configuration.
