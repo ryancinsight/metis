@@ -86,10 +86,12 @@ capture. Browser/OS capture and responsive pending/cancellation remain in the
 
 ## DICOM viewer migration baseline
 
-RITK's [synthetic DICOM workflow](../../../ritk/docs/manual/dicom-workflow.md)
+RITK's [synthetic DICOM workflow](https://github.com/ryancinsight/ritk/blob/8152f483/docs/manual/dicom-workflow.md)
 now includes a capture of the running egui/eframe viewer alongside exact
-software slice images, delivered in
-[RITK PR 236](https://github.com/ryancinsight/ritk/pull/236) at `4a9f6eb1`.
+software slice images. Selected-study workflows landed in
+[RITK PR 236](https://github.com/ryancinsight/ritk/pull/236); physical display
+proportions and the current capture follow in
+[RITK PR 237](https://github.com/ryancinsight/ritk/pull/237) at `8152f483`.
 Its three-instance study has known decoded values,
 anisotropic spacing and physical coordinates; no patient data is required.
 The native workflow also requires a missing study to fail without producing a
@@ -97,6 +99,10 @@ successful-load screenshot.
 
 The baseline exercises explicit series selection, primary and secondary loads,
 authoritative DICOMDIR membership, failed replacement and session restore.
+Physical image proportions now follow voxel spacing across layouts and texture
+rotations, with paint and hit testing sharing a validated screen rectangle.
+Patient-coordinate fusion and transformed measurement semantics remain required;
+correct image proportions alone do not establish either property.
 The manual explains the current input limits and how to reproduce both the
 pixel checks and native capture. These results establish the existing viewer
 baseline for [V09](../VERIFICATION.md#V09); Métis host execution, browser input,

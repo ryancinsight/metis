@@ -291,8 +291,12 @@ The [RITK workflow manual](../../ritk/docs/manual/dicom-workflow.md) now records
 required synthetic file/byte pixel and coordinate checks, explicit acquisition
 selection, DICOMDIR membership, failed replacement and session restoration,
 plus a real Windows egui/eframe viewport capture and invalid-study rejection.
-That is original-viewer baseline evidence. Remaining physical-aspect display,
-media-directory semantics, resource bounds, frames, color and grayscale gaps keep their RITK acceptance
+RITK `8152f483` additionally verifies physical image proportions across layouts,
+rotations and zoom, with explicit rejection of collapsed screen rectangles;
+710 debug and 710 release viewer tests pass and the native capture is regenerated.
+That is original-viewer baseline evidence. Remaining patient-coordinate fusion,
+transformed measurements, media-directory semantics, resource bounds, frames,
+color and grayscale gaps keep their RITK acceptance
 items; none are established by a screenshot. Migrated-viewer captures must come
 from actual Métis execution and use the same synthetic studies. Browser host
 input and native host input retain separate verification requirements.
