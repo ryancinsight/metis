@@ -260,7 +260,10 @@ an owner. “Unsupported” cannot replace delivery of a required mobile/native 
 
 <a id="METIS-DISTRIBUTION-001"></a>
 ## METIS-DISTRIBUTION-001 — Build, package and update lifecycle [arch] [minor]
-- Status: todo; priority: P3; owner: Metis tooling; dependencies: METIS-MIGRATION-001, METIS-MACOS-001, METIS-LINUX-001; risk: delivery/update integrity
+- Status: in-progress; priority: P0; owner: Metis tooling; integrator: root; branch: codex/metis-application-packaging; last-update: 2026-09-06; risk: delivery/update integrity
+- Current increment: validated application manifest, Cargo artifact inventory, portable bundle and per-user Windows MSI; local install/run/uninstall preserves user files. Remaining target installers, developer reload and authenticated updates retain separate acceptance.
+- Dependencies: existing process-capable application for the first package; each later platform installer requires its corresponding host. Distribution does not wait for unrelated platform or viewer migrations.
+- Decision: [ADR 0005](docs/adr/0005-application-distribution.md); lease: root CLI/build/manifest/gates/docs, package_design crates/metis-cli/src/windows/; 2026-09-06.
 - Scope: CLI init/dev/build, asset bundling, offline cache invalidation, platform packages, signing verification and authenticated update/rollback; generated help/manual/completions.
 - Acceptance: reproducible local packages install/run/uninstall in isolated test environments; corrupt/expired/signature-invalid updates reject, interrupted update recovers; dev reload preserves bounded state and reports build errors.
 - Demonstration: [V10](docs/VERIFICATION.md#V10), actual install/reload/update/recovery captures; release signing identity/publication requires separate authority.
