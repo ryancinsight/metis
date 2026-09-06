@@ -232,6 +232,31 @@ class EvidenceTests(unittest.TestCase):
         self.assertEqual(baseline_path.read_bytes(), baseline)
         self.assertFalse((self.output / "visual/latest/manifest.json").exists())
 
+    def test_unavailable_baseline_does_not_report_hash_corruption(self):
+        self.produce()
+        visual.compare(self.root, self.output, self.provenance, update=True)
+        source = pathlib.Path(next(iter(self.sources)))
+        source.write_bytes(b"// Changed source\n")
+        failed = self.report_failure()
+        self.assertEqual(failed["errors"], [f"Stale source provenance: {source}"])
+        self.assertEqual([item["errors"] for item in failed["captures"].values()], [[]] * 7)
+        self.assertFalse((self.output / "visual/latest/manifest.json").exists())
+
+    def test_corrupt_baseline_hash_fails_with_equal_pixels(self):
+        self.produce()
+        visual.compare(self.root, self.output, self.provenance, update=True)
+        baseline_path = self.root / "docs/manual/images/captures.json"
+        baseline = json.loads(baseline_path.read_bytes())
+        baseline["captures"]["form"]["image_sha256"] = "0" * 64
+        baseline_path.write_bytes(json.dumps(baseline).encode())
+        failed = self.report_failure()
+        self.assertEqual(failed["errors"], [])
+        self.assertEqual(failed["captures"]["form"]["errors"],
+                         ["Golden SVG hash differs from its semantic baseline"])
+        self.assertEqual(failed["captures"]["form"]["pixels"],
+                         {"changed_pixels": 0, "bounds": None})
+        self.assertFalse((self.output / "visual/latest/manifest.json").exists())
+
     def test_bad_oracles_or_provenance_never_update_baselines(self):
         self.produce()
         values = semantics_fixture("form-success")
