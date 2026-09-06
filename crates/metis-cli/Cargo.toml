@@ -12,6 +12,9 @@ publish = false
 [[bin]]
 name = "metis"
 path = "src/main.rs"
+# The CLI manual owns command documentation; the metis library owns rustdoc's
+# metis/ output directory. Documenting both targets races on that same path.
+doc = false
 
 [dependencies]
 metis-core.workspace = true

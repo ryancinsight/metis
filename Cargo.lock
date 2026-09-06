@@ -215,6 +215,16 @@ dependencies = [
 ]
 
 [[package]]
+name = "metis-app"
+version = "0.1.0"
+dependencies = [
+ "metis-backend",
+ "metis-core",
+ "metis-frontend",
+ "metis-ipc",
+]
+
+[[package]]
 name = "metis-backend"
 version = "0.1.0"
 dependencies = [

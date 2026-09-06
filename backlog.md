@@ -145,7 +145,7 @@ an owner. “Unsupported” cannot replace delivery of a required mobile/native 
 
 <a id="METIS-ASYNC-001"></a>
 ## METIS-ASYNC-001 — Bounded browser request lifecycle [arch] [minor]
-- Status: in-progress; priority: P0; owner: Moirai async/transport + Metis client; integrator: Codex/root; last-update: 2026-09-06; branch: `codex/metis-browser-lifecycle`; risk: hangs/leaks; dependencies: METIS-WEB-001
+- Status: in-progress; priority: P0; owner: Moirai async/transport + Metis client; integrator: root; last-update: 2026-09-06; stage: provider contract audit; risk: hangs/leaks; dependencies: METIS-WEB-001
 - Scope: event-driven receive/wakeup, task/request cancellation, deadlines and owned callback teardown; complete the upstream reactor gap and remove blocking browser paths.
 - Entry evidence: fetched Moirai default `4db2dc1`; browser PAL/role/driver sources match locked `0514f11`. Receive discards messages, callback ownership is forgotten, polling produces no events; native `Send + Sync` and blocking driver cannot serve browser-local tasks unchanged. Source inspection only.
 - First increment: revise Moirai ADR 0007 around owned browser I/O and a finite real-browser conformance trace before Metis adoption; published provider and consumer gates remain separate.
@@ -327,11 +327,4 @@ an owner. “Unsupported” cannot replace delivery of a required mobile/native 
 
 <a id="METIS-APPLICATION-001"></a>
 ## METIS-APPLICATION-001 — Single executable application [arch] [major]
-- Status: in-progress; priority: P1; integrator: root; last-update: 2026-09-06
-- Outcome: one application executable launches both process roles through Moirai; optional sidecars remain an explicit packaging capability.
-- Scope: application composition, role dispatch, binary-target migration, package inventory, native workflow and manual; no GUI host, OS sandbox or new provider runtime.
-- Acceptance: copied/renamed executable runs without siblings, distinct process IDs and analytical results, invalid role/input/handshake rejects, exactly one executable installs and removes while user files survive.
-- Baseline: full committed gate passes at `b0e2700` (102 debug/release native tests, 36 Python tests, seven visual snapshots).
-- Decision: reserve ADR 0006 in docs/adr/0006-application-entry.md; revise ADRs 0001 and 0005 for same-image process roles; delete old binary commands with migration instructions.
-- Dependencies: METIS-DISTRIBUTION-001; authority: implementation through merge; risk: role dispatch and private process state.
-- Lease: root Cargo manifests/lock, metis.json, crates/metis-app, superseded backend/frontend mains and process test, CLI tests, examples/clinical_infusion_workflow.rs; 2026-09-06
+- Status: done; outcome: one relocated application image runs distinct process roles through Moirai; 108 debug/release tests, 38 Python checks, real single-executable MSI install/run/uninstall and unchanged visual snapshots pass. [Design and migration](docs/adr/0006-application-entry.md).

@@ -8,10 +8,12 @@ are independent of the Métis framework version.
 ## Configure and build
 
 The repository [metis.json](../../metis.json) is a runnable configuration for the
-two-process console demonstration. Change the application identity, display name,
+single-executable, two-process console demonstration. Change the application identity, display name,
 manufacturer and version for your own application. Generate one uppercase braced
 upgrade GUID for that identity and retain it. Declare every binary and resource;
-there is no recursive asset scan. Paths are relative to the manifest directory.
+the demonstration declares only `metis-app`. Additional declared binaries are
+optional sidecars, not mandatory frontend/backend components. There is no
+recursive asset scan. Paths are relative to the manifest directory.
 
 On Windows x64, use the pinned Rust toolchain and an ordinary Cargo workspace:
 
@@ -46,14 +48,16 @@ Keep source files and output ancestors stable while the command runs.
 ## Run the portable application
 
 ```powershell
-output/portable/app/metis-backend.exe 60 2 0.2
-output/portable/app/metis-backend.exe 80 2 0.2
+output/portable/app/metis-app.exe 60 2 0.2
+output/portable/app/metis-app.exe 80 2 0.2
 ```
 
-The backend starts its sibling frontend and exchanges real IPC messages. These
-synthetic example inputs produce respectively 0.36 and 0.48 mL/hour. Keep both
-executables together. The manifest launch arguments supply the first input set
-to the Start Menu shortcut. This demonstration is a console program and exits
+The application starts another instance of its own executable for presentation
+and exchanges real IPC messages. These synthetic example inputs produce
+respectively 0.36 and 0.48 mL/hour. The executable can be copied or renamed
+without a frontend companion; explicitly declared application resources still
+travel with applications that use them. The manifest launch arguments supply
+the first input set to the Start Menu shortcut. This demonstration is a console program and exits
 after its calculation; an application with a persistent GUI supplies that
 behavior in its own entry executable. Packaging does not create a GUI host.
 
@@ -92,14 +96,18 @@ Run the complete local installation demonstration with:
 python scripts/verify.py --install
 ```
 
-The Windows x64 demonstration verifies both the portable and installed forms:
+The Windows x64 verification workflow checks both the portable and installed
+forms against these independent expected values:
 
 | Input (weight, concentration, dose) | Flow | Drug rate |
 | --- | --- | --- |
 | `60 2 0.2` | 0.36 mL/hour | 0.72 mg/hour |
 | `80 4 0.5` | 0.60 mL/hour | 2.40 mg/hour |
 
-It also checks the shortcut's executable, arguments and working directory,
+The single-executable acceptance check requires exactly one application
+executable in the portable and installed payloads, while the calculation still
+reports distinct backend/frontend process identifiers. It also checks the
+shortcut's executable, arguments and working directory,
 removes the installed application and retains its user-created test file.
 
 The report at `output/distribution/latest/workflow.json` records exact inventory,

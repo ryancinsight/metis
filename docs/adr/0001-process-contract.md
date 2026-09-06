@@ -9,6 +9,11 @@ The manual lives under `docs/manual/`; Rustdoc retains API contracts and ADRs
 retain decisions. Snapshot generation reuses the presentation example and a
 regenerate/compare gate; no independently drawn mockup stands in for an app.
 
+Revision 2026-09-06: [METIS-APPLICATION-001](../../backlog.md#METIS-APPLICATION-001)
+replaces sibling executables with one application image serving separate process
+roles. [ADR 0006](0006-application-entry.md) owns the entry and migration; private
+transport, session authorization and lifecycle containment remain unchanged.
+
 Date: 2026-09-05
 
 Driver: [METIS-SEC-001](../../backlog.md#METIS-SEC-001), [METIS-PROCESS-001](../../backlog.md#METIS-PROCESS-001).
@@ -21,7 +26,9 @@ calculations, session authorization and audit storage. Frontend owns presentatio
 and input submission. No frontend dependency may expose backend clinical logic.
 Workspace members live under `crates/`, matching current Atlas organization.
 
-The launcher connects separate executables through inherited anonymous pipes.
+The application launcher connects separate instances of its own executable
+through inherited anonymous pipes. The frontend library still has no backend
+dependency; the composition binary contains both roles.
 Pipe possession constrains the session endpoint; claimed PIDs are metadata, not
 OS-authenticated identity. A private OS-generated backend key authenticates
 capability claims. Ordered requests and exact response correlation reject replay

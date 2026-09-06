@@ -6,6 +6,11 @@ Date: 2026-09-06
 
 Driver: [METIS-DISTRIBUTION-001](../../backlog.md#METIS-DISTRIBUTION-001).
 
+Revision 2026-09-06: [METIS-APPLICATION-001](../../backlog.md#METIS-APPLICATION-001)
+replaces the demonstration's mandatory executable pair with one application
+entry. [ADR 0006](0006-application-entry.md) defines process-role dispatch and the
+command migration. The manifest remains the single payload inventory.
+
 ## Decision
 
 One versioned application manifest declares identity, Cargo binary targets,
@@ -15,8 +20,10 @@ artifact messages. The same validated inventory supplies portable directories
 and platform installers. No renderer owns build or installation policy; a
 headless process application can exercise distribution before a GUI host exists.
 
-Separate application identity/version from the framework version. Keep frontend
-and backend executables distinct and preserve their sibling lookup contract.
+Separate application identity/version from the framework version. The
+demonstration ships one application executable, relaunching itself for the
+presentation role. Additional executables are optional manifest-declared sidecars;
+the framework does not require a frontend/backend executable pair.
 Do not create a second packaging configuration or infer assets from recursive
 directory scans. Runtime user data is outside the owned installation inventory.
 

@@ -19,9 +19,5 @@ metis-platform = { workspace = true }
 name = "metis_frontend"
 path = "src/lib.rs"
 
-[[bin]]
-name = "metis-frontend"
-path = "src/main.rs"
-
 [lints]
 workspace = true

@@ -1,9 +1,11 @@
 # metis-frontend
 
 Declarative form state, software rendering and correlated IPC requests. The
-dependency closure excludes backend calculation and audit storage. The current
-binary exchanges requests over inherited pipes; native window and operating-system
-sandbox integration remain unfinished.
+library dependency closure excludes backend calculation and audit storage. The
+`metis-app` executable composes both libraries and runs this presentation in a
+child process exchanging requests over inherited pipes. Its shared executable
+image contains backend code, but the child role creates no backend key or service.
+Native window and operating-system sandbox integration remain unfinished.
 
 `FrontendApp` owns its inputs, document and framebuffer. `set_inputs(...)?`
 clears any previous result and paints the edited form immediately. `state()`

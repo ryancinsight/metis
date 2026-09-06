@@ -19,6 +19,7 @@ members = [
     "crates/metis-ui-lang",
     "crates/metis-platform",
     "crates/metis-cli",
+    "crates/metis-app",
 ]
 
 [workspace.package]

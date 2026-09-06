@@ -1,0 +1,19 @@
+[package]
+name = "metis-app"
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+authors.workspace = true
+license.workspace = true
+repository.workspace = true
+description = "Single executable Metis application with supervised process roles"
+readme = "README.md"
+
+[dependencies]
+metis-backend.workspace = true
+metis-frontend.workspace = true
+metis-core.workspace = true
+metis-ipc.workspace = true
+
+[lints]
+workspace = true

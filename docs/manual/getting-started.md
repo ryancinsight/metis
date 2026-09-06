@@ -13,9 +13,9 @@ python scripts/verify.py
 
 `rust-toolchain.toml` selects Rust 1.97.0 and the `wasm32-unknown-unknown` target.
 The gate builds the core, pixel storage and presentation libraries for WASM;
-this checks compilation, not browser execution. The verification script builds both
-executables and examples, runs debug/release tests and documentation, and checks
-that the gallery snapshot matches the renderer. Subsequent Cargo commands in the
+this checks compilation, not browser execution. The verification script builds
+the application, distribution tool and examples, runs debug/release tests and
+documentation, and checks that the gallery snapshot matches the renderer. Subsequent Cargo commands in the
 gate use the committed lockfile offline. When run inside Atlas, the gate resolves
 published Git sources outside the local dependency overlay while retaining the
 same build cache and profile settings.
@@ -29,14 +29,16 @@ tools and Windows SDK. Native desktop event loops are not implemented yet.
 
 ```text
 cargo build --locked --workspace --bins
-cargo run --locked -p metis-backend -- 60 2 0.2
+cargo run --locked -p metis-app -- 60 2 0.2
+cargo run --locked -p metis-app -- --help
 ```
 
 The arguments are weight in kilograms, concentration in milligrams per milliliter,
 and target dose in micrograms per kilogram per minute. These inputs produce
 `rate_ml_hr=0.36` and `drug_rate_mg_hr=0.72`, with two verified in-memory audit
-records. Backend and frontend report different process identifiers. Human output
-uses standard error; the frontend's standard input/output carry framed IPC.
+records. Backend and frontend report different process identifiers while using
+the same `metis-app` executable. No frontend companion binary is required.
+Human output uses standard error; the frontend's standard input/output carry framed IPC.
 
 This is synthetic arithmetic for testing application boundaries, not a treatment
 calculator. The configured limits do not constitute clinical validation.

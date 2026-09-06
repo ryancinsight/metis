@@ -29,7 +29,7 @@ fn unsafe_or_ambiguous_destinations_reject() {
     }
     for path in [
         "assets/form.html",
-        "metis-backend.exe",
+        "metis-app.exe",
         "Patient Images/scan.bin",
     ] {
         relative(path).expect("admitted path");
@@ -42,13 +42,13 @@ fn identity_inventory_version_and_schema_are_validated() {
     app.validate().expect("valid manifest");
     app.resources.push(Resource {
         source: "README.md".into(),
-        destination: format!("METIS-BACKEND{}", std::env::consts::EXE_SUFFIX),
+        destination: format!("METIS-APP{}", std::env::consts::EXE_SUFFIX),
     });
     assert!(app.validate().is_err());
     app.resources.clear();
     app.entry = "missing".into();
     assert!(app.validate().is_err());
-    app.entry = "metis-backend".into();
+    app.entry = "metis-app".into();
     for version in [
         "1.2",
         "1.2.3.4",

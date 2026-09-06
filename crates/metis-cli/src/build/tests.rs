@@ -3,20 +3,20 @@ use super::*;
 #[test]
 fn artifact_inventory_requires_exact_declared_executables() {
     let selected = BTreeMap::from([
-        ("metis-backend".to_owned(), "backend-owner".to_owned()),
-        ("metis-frontend".to_owned(), "frontend-owner".to_owned()),
+        ("metis-app".to_owned(), "application-owner".to_owned()),
+        ("image-worker".to_owned(), "worker-owner".to_owned()),
     ]);
     let root = std::env::current_dir().expect("working directory");
-    let path = root.join("metis-backend.exe");
+    let path = root.join("metis-app.exe");
     let mut message = serde_json::Map::new();
     message.insert("reason".into(), "compiler-artifact".into());
-    message.insert("package_id".into(), "backend-owner".into());
+    message.insert("package_id".into(), "application-owner".into());
     message.insert(
         "executable".into(),
         path.to_string_lossy().into_owned().into(),
     );
     let mut target = serde_json::Map::new();
-    target.insert("name".into(), "metis-backend".into());
+    target.insert("name".into(), "metis-app".into());
     target.insert("kind".into(), vec![serde_json::Value::from("bin")].into());
     message.insert("target".into(), target.into());
     let first = serde_json::to_vec(&message).expect("artifact JSON");
@@ -24,9 +24,9 @@ fn artifact_inventory_requires_exact_declared_executables() {
         artifacts(&first, &selected).is_err(),
         "missing companion must fail"
     );
-    message.get_mut("target").expect("target")["name"] = "metis-frontend".into();
-    message.insert("package_id".into(), "frontend-owner".into());
-    let companion = root.join("metis-frontend.exe");
+    message.get_mut("target").expect("target")["name"] = "image-worker".into();
+    message.insert("package_id".into(), "worker-owner".into());
+    let companion = root.join("image-worker.exe");
     message.insert(
         "executable".into(),
         companion.to_string_lossy().into_owned().into(),
@@ -36,8 +36,8 @@ fn artifact_inventory_requires_exact_declared_executables() {
     stream.push(b'\n');
     stream.extend_from_slice(&second);
     let result = artifacts(&stream, &selected).expect("complete artifact stream");
-    assert_eq!(result.get("metis-backend"), Some(&path));
-    assert_eq!(result.get("metis-frontend"), Some(&companion));
+    assert_eq!(result.get("metis-app"), Some(&path));
+    assert_eq!(result.get("image-worker"), Some(&companion));
     stream.push(b'\n');
     stream.extend(first);
     assert!(
@@ -48,17 +48,20 @@ fn artifact_inventory_requires_exact_declared_executables() {
 
 #[test]
 fn package_target_pair_cannot_be_swapped() {
-    let app = crate::manifest::tests::fixture();
-    let metadata = br#"{"packages":[{"id":"backend-owner","name":"metis-backend","targets":[{"name":"metis-backend","kind":["bin"]}]},{"id":"frontend-owner","name":"metis-frontend","targets":[{"name":"metis-frontend","kind":["bin"]}]}],"workspace_members":["backend-owner","frontend-owner"]}"#;
+    let mut app = crate::manifest::tests::fixture();
+    app.binaries.push(crate::manifest::Binary {
+        package: "image-worker".into(),
+        bin: "image-worker".into(),
+    });
+    let metadata = br#"{"packages":[{"id":"application-owner","name":"metis-app","targets":[{"name":"metis-app","kind":["bin"]}]},{"id":"worker-owner","name":"image-worker","targets":[{"name":"image-worker","kind":["bin"]}]}],"workspace_members":["application-owner","worker-owner"]}"#;
     assert_eq!(
         targets(metadata, &app).expect("workspace targets"),
         BTreeMap::from([
-            ("metis-backend".into(), "backend-owner".into()),
-            ("metis-frontend".into(), "frontend-owner".into())
+            ("metis-app".into(), "application-owner".into()),
+            ("image-worker".into(), "worker-owner".into())
         ])
     );
-    let mut app = app;
-    app.binaries[0].package = "metis-frontend".into();
+    app.binaries[0].package = "image-worker".into();
     assert_eq!(
         targets(metadata, &app)
             .expect_err("swapped owner")
