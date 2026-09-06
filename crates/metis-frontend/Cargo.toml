@@ -9,6 +9,7 @@ repository.workspace = true
 description = "Unprivileged presentation process, UI state manager, and IPC client for Metis"
 
 [dependencies]
+iris.workspace = true
 metis-core = { workspace = true }
 metis-ipc = { workspace = true }
 metis-ui-lang = { workspace = true }

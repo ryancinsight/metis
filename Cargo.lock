@@ -227,6 +227,7 @@ version = "0.1.0"
 name = "metis-frontend"
 version = "0.1.0"
 dependencies = [
+ "iris-viz",
  "metis-core",
  "metis-ipc",
  "metis-platform",

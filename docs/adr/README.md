@@ -5,3 +5,4 @@
 | 0001 | [Process contract and assurance boundary](0001-process-contract.md) | Accepted |
 | 0002 | [Web application and Tauri migration contract](0002-web-application-contract.md) | Accepted |
 | 0003 | [Framework conformance and application evidence](0003-framework-conformance.md) | Accepted |
+| 0004 | [Form state ownership](0004-form-state.md) | Accepted |

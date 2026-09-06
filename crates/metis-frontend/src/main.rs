@@ -1,5 +1,5 @@
 //! One headless form submission over inherited pipes; stdout is wire bytes only.
-use metis_frontend::FrontendApp;
+use metis_frontend::{FormState, FrontendApp};
 use metis_ipc::transport::StreamTransport;
 use std::io::{stdin, stdout};
 
@@ -20,20 +20,21 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         weight.parse()?,
         concentration.parse()?,
         dose.parse()?,
-    );
+    )?;
     app.submit_calculation()?;
-    match app.last_response.as_ref() {
-        Some(response) => eprintln!(
+    match app.state() {
+        FormState::Success(response) => eprintln!(
             "frontend_pid={pid} rate_ml_hr={} drug_rate_mg_hr={} audit_sequence={}",
             response.rate_ml_hr, response.drug_rate_mg_hr, response.audit_sequence_id
         ),
-        None => {
-            return Err(app
-                .last_error
-                .as_deref()
-                .unwrap_or("Backend returned no result")
-                .into());
+        FormState::Rejected(error) => {
+            return Err(format!(
+                "Backend rejected request [0x{:04X}]: {}",
+                error.error_code, error.message
+            )
+            .into());
         }
+        state => return Err(format!("Submission completed without a result: {state:?}").into()),
     }
     Ok(())
 }

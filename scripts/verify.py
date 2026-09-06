@@ -15,6 +15,8 @@ ROOT = pathlib.Path(__file__).resolve().parents[1]
 OUTPUT = ROOT / "output"
 OUTPUT.mkdir(exist_ok=True)
 LOCK = ROOT / "Cargo.lock"
+CAPTURES = ("form", "form-success", "form-edited", "form-rejected",
+            "form-corrected", "form-disconnected", "form-recovered")
 TOOLCHAIN = tomllib.loads((ROOT / "rust-toolchain.toml").read_text(encoding="utf-8"))["toolchain"]["channel"]
 
 
@@ -69,13 +71,14 @@ def command(arguments, *, resolve=True, tail=()):
 
 def snapshot(update):
     """Require exact renderer output unless snapshot replacement is requested."""
-    actual = (OUTPUT / "form.svg").read_bytes()
-    expected = ROOT / "docs" / "manual" / "images" / "form.svg"
-    if update:
-        expected.parent.mkdir(parents=True, exist_ok=True)
-        expected.write_bytes(actual)
-    elif not expected.is_file() or expected.read_bytes() != actual:
-        raise SystemExit("Form snapshot differs; inspect output/form.svg, then use --update-snapshots to accept it")
+    for name in CAPTURES:
+        actual = (OUTPUT / f"{name}.svg").read_bytes()
+        expected = ROOT / "docs" / "manual" / "images" / f"{name}.svg"
+        if update:
+            expected.parent.mkdir(parents=True, exist_ok=True)
+            expected.write_bytes(actual)
+        elif not expected.is_file() or expected.read_bytes() != actual:
+            raise SystemExit(f"Snapshot {name} differs; inspect output/{name}.svg before accepting it")
 
 
 def manual_links():
@@ -128,6 +131,9 @@ def source_state(metadata, configs):
     return {str(path): hashlib.sha256(path.read_bytes()).hexdigest() for path in sorted(inputs)}
 
 def main():
+    # Windows consoles may use a legacy code page; never lose the failing-test
+    # diagnostic to a UnicodeEncodeError. Full UTF-8 output remains in the log.
+    sys.stdout.reconfigure(errors="backslashreplace")
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--update-snapshots", action="store_true",
                         help="Replace the committed form snapshot with this run's renderer output")
@@ -206,6 +212,11 @@ def main():
         cargo("docs", ["doc", "--workspace", "--no-deps"])
         example = pathlib.Path(metadata["target_directory"]) / "debug" / "examples" / ("clinical_infusion_workflow" + (".exe" if sys.platform == "win32" else ""))
         execute("example", [str(example)], seconds=60, cwd=ROOT)
+        # Fixed output names bound retention and prevent an old capture from
+        # satisfying a run that accidentally stops producing a required state.
+        for name in CAPTURES:
+            for suffix in (".bmp", ".svg"):
+                (OUTPUT / (name + suffix)).unlink(missing_ok=True)
         execute("presentation", [str(example.with_name("presentation" + (".exe" if sys.platform == "win32" else "")))], seconds=60, cwd=ROOT)
         snapshot(arguments.update_snapshots)
         manual_links()
@@ -213,7 +224,8 @@ def main():
             raise SystemExit("Source inputs changed during verification; collect against a stable revision")
         evidence = {"mode": "standalone", "host": host, "sources": source,
                     "lock_sha256": hashlib.sha256(BASELINE).hexdigest(),
-                    "snapshot_sha256": hashlib.sha256((OUTPUT / "form.svg").read_bytes()).hexdigest()}
+                    "snapshots": {name: hashlib.sha256((OUTPUT / f"{name}.svg").read_bytes()).hexdigest()
+                                  for name in CAPTURES}}
         (OUTPUT / "verification.json").write_text(json.dumps(evidence, sort_keys=True, indent=2), encoding="utf-8")
         print(f"Verified Metis with {len(metadata['packages'])} resolved packages; provider transitive graph recorded", flush=True)
 
