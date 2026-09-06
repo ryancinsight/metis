@@ -6,15 +6,11 @@
   "manufacturer": "Atlas",
   "upgrade_code": "{D7C5AA09-4B62-4612-B0CC-965D7767BCB8}",
   "cargo_manifest": "Cargo.toml",
-  "entry": "metis-backend",
+  "entry": "metis-app",
   "binaries": [
     {
-      "package": "metis-backend",
-      "bin": "metis-backend"
-    },
-    {
-      "package": "metis-frontend",
-      "bin": "metis-frontend"
+      "package": "metis-app",
+      "bin": "metis-app"
     }
   ],
   "resources": [

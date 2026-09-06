@@ -18,6 +18,20 @@ LOCK = ROOT / "Cargo.lock"
 TOOLCHAIN = None
 
 
+def application_targets(metadata):
+    """Pin executable ownership independently of the application manifest."""
+    members = [package for package in metadata["packages"] if package["id"] in metadata["workspace_members"]]
+    binaries = sorted((package["name"], target["name"])
+                      for package in members for target in package["targets"] if "bin" in target["kind"])
+    if binaries != [("metis-app", "metis-app"), ("metis-cli", "metis")]:
+        raise ValueError(f"Workspace must expose only the application and distribution executables: {binaries}")
+    for name in ("metis-backend", "metis-frontend"):
+        libraries = [package for package in members if package["name"] == name]
+        if len(libraries) != 1 or not any("lib" in target["kind"] for target in libraries[0]["targets"]):
+            raise ValueError(f"Process role must remain a library: {name}")
+    return binaries
+
+
 def resolution():
     """Preserve every byte of the standalone lock, rejecting overlay residue."""
     lock = LOCK.read_bytes()
@@ -197,6 +211,7 @@ def main():
                 raise SystemExit(f"Standalone resolution contains a non-workspace path package: {package['name']}")
         if target is not None and pathlib.Path(metadata["target_directory"]).resolve() != target:
             raise SystemExit("Cargo target directory differs from the inherited shared target")
+        application_targets(metadata)
         source = source_state(metadata, configs)
         revision = execute("revision", ["git", "rev-parse", "HEAD"], seconds=30, cwd=ROOT).strip()
         provenance = {"mode": "standalone", "host": host, "sources": source, "run_nonce": run_nonce,
@@ -225,8 +240,8 @@ def main():
             if package_id in reached:
                 continue
             reached.add(package_id)
-            if packages[package_id]["name"] in {"metis-backend", "metis-cli"}:
-                raise SystemExit("Frontend dependency closure includes backend authority or distribution tooling")
+            if packages[package_id]["name"] in {"metis-backend", "metis-app", "metis-cli"}:
+                raise SystemExit("Frontend dependency closure includes backend authority, application composition or distribution tooling")
             pending.extend(nodes[package_id]["dependencies"])
         # This exact installed runner applies the committed 30/60-second budgets.
         version = execute("nextest-version", ["rustup", "run", TOOLCHAIN, "cargo", "nextest", "--version"])

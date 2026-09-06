@@ -1,15 +1,15 @@
-//! Launches the demonstration frontend and owns its backend service.
-mod entropy;
+//! Parent-process application state and supervised presentation launch.
+use crate::{entropy, invocation::FRONTEND_ROLE};
 use metis_backend::{BackendService, clinical::SafetyEnvelope, supervisor::run_session};
 
-fn main() -> Result<(), Box<dyn std::error::Error>> {
+pub(crate) fn run(inputs: [String; 3]) -> Result<(), Box<dyn std::error::Error>> {
     // Binary reporter boundary erases errors; no hot-path dispatch.
-    let frontend = std::env::current_exe()?
-        .with_file_name(format!("metis-frontend{}", std::env::consts::EXE_SUFFIX));
+    let executable = std::env::current_exe()?;
     let mut service = BackendService::new(entropy::session_key()?, SafetyEnvelope::default());
-    let arguments: Vec<String> = std::env::args().skip(1).collect();
+    let [weight, concentration, dose] = inputs;
+    let arguments = [FRONTEND_ROLE.to_owned(), weight, concentration, dose];
     eprintln!("backend_pid={}", std::process::id());
-    run_session(&frontend, &arguments, &mut service)?;
+    run_session(&executable, &arguments, &mut service)?;
     service.ledger().verify_chain()?;
     eprintln!(
         "Metis session completed; {} audit records verified",

@@ -145,7 +145,7 @@ an owner. “Unsupported” cannot replace delivery of a required mobile/native 
 
 <a id="METIS-ASYNC-001"></a>
 ## METIS-ASYNC-001 — Bounded browser request lifecycle [arch] [minor]
-- Status: in-progress; priority: P0; owner: Moirai async/transport + Metis client; integrator: Codex/root; last-update: 2026-09-06; branch: `codex/metis-browser-lifecycle`; risk: hangs/leaks; dependencies: METIS-WEB-001
+- Status: in-progress; priority: P0; owner: Moirai async/transport + Metis client; integrator: root; last-update: 2026-09-06; stage: provider contract audit; risk: hangs/leaks; dependencies: METIS-WEB-001
 - Scope: event-driven receive/wakeup, task/request cancellation, deadlines and owned callback teardown; complete the upstream reactor gap and remove blocking browser paths.
 - Entry evidence: fetched Moirai default `4db2dc1`; browser PAL/role/driver sources match locked `0514f11`. Receive discards messages, callback ownership is forgotten, polling produces no events; native `Send + Sync` and blocking driver cannot serve browser-local tasks unchanged. Source inspection only.
 - First increment: revise Moirai ADR 0007 around owned browser I/O and a finite real-browser conformance trace before Metis adoption; published provider and consumer gates remain separate.
@@ -324,3 +324,7 @@ an owner. “Unsupported” cannot replace delivery of a required mobile/native 
 - Blocker: Atlas pre-commit unsets GIT_INDEX_FILE before checking staged pins; root auditors inspect live HEAD/configuration. Existing alternate-index workflow cannot establish candidate verification.
 - Re-open: candidate-aware hooks/gates or a clean available Atlas checkout. Public Métis source remains independently consumable.
 - Completed: public repository and PR 8 verified/merged; registration closure and initial-baseline semantics audited against Atlas source. No runtime or signing capability depends on this metadata change.
+
+<a id="METIS-APPLICATION-001"></a>
+## METIS-APPLICATION-001 — Single executable application [arch] [major]
+- Status: done; outcome: one relocated application image runs distinct process roles through Moirai; 108 debug/release tests, 38 Python checks, real single-executable MSI install/run/uninstall and unchanged visual snapshots pass. [Design and migration](docs/adr/0006-application-entry.md).

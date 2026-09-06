@@ -3,7 +3,8 @@
 Metis targets Rust applications on desktop and the web, with WASM application
 logic and HTML5/CSS presentation. It uses Atlas providers for execution and
 rendering. A system WebView is in scope for desktop web compatibility; the
-current executable demonstrates a separate backend and software presentation.
+current `metis-app` executable demonstrates backend and software presentation
+roles in separate processes, launched from one application executable.
 
 This manual describes the working application surface. The current demonstration
 tests separate processes through pipes; the gallery renders real backend sessions

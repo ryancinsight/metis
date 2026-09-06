@@ -3,12 +3,9 @@ use metis_frontend::{FormState, FrontendApp};
 use metis_ipc::transport::StreamTransport;
 use std::io::{stdin, stdout};
 
-fn main() -> Result<(), Box<dyn std::error::Error>> {
+pub(crate) fn run(inputs: [String; 3]) -> Result<(), Box<dyn std::error::Error>> {
     // Binary error reporter is the non-hot type-erasure boundary.
-    let arguments: Vec<String> = std::env::args().skip(1).collect();
-    let [weight, concentration, dose] = arguments.as_slice() else {
-        return Err("usage: metis-backend WEIGHT_KG CONCENTRATION_MG_ML DOSE_MCG_KG_MIN".into());
-    };
+    let [weight, concentration, dose] = inputs;
     let transport = StreamTransport::new(stdin(), stdout());
     let mut app = FrontendApp::new(transport, 800, 600)?;
     let pid = std::process::id();

@@ -12,3 +12,5 @@ metis --help
 
 See the [distribution manual](../../docs/manual/distribution.md) for the manifest,
 host prerequisites, installation verification and current target limits.
+Command documentation lives in that manual and `metis --help`. The binary does
+not emit a second rustdoc tree named `metis`, which belongs to the root library.

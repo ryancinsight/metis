@@ -1,5 +1,7 @@
 """Adversarial inventory and independent application-result workflow oracles."""
+import copy
 import hashlib
+import os
 import json
 import pathlib
 import sys
@@ -8,9 +10,71 @@ import unittest
 
 sys.path.insert(0, str(pathlib.Path(__file__).resolve().parents[1]))
 import distribution
+import verify
 
 
 class DistributionTests(unittest.TestCase):
+    def test_demonstration_has_one_executable_with_exact_entry(self):
+        with tempfile.TemporaryDirectory() as temporary:
+            root = pathlib.Path(temporary)
+            entry = "metis-app" + (".exe" if os.name == "nt" else "")
+            content = b"Executable inventory acceptance fixture"
+            (root / entry).write_bytes(content)
+            (root / "assets").mkdir()
+            (root / "assets" / "applications.md").write_bytes(b"Application instructions")
+            inventory = {
+                "entry": entry,
+                "application": {"entry": "metis-app", "binaries": [{"package": "metis-app", "bin": "metis-app"}],
+                                "resources": [{"destination": "assets/applications.md"}]},
+                "files": [{"destination": name, "bytes": (root / name).stat().st_size,
+                           "sha256": distribution.digest(root / name)}
+                          for name in (entry, "assets/applications.md")]}
+            self.assertEqual(distribution.verify_application(root, inventory), ["assets/applications.md", entry])
+            for replacement in ("metis-backend.exe", "assets/applications.md", "metis-app"):
+                if replacement != entry:
+                    with self.subTest(entry=replacement), self.assertRaisesRegex(ValueError, "exactly one"):
+                        distribution.verify_application(root, {**inventory, "entry": replacement})
+            for binaries in ([], [{"package": "metis-backend", "bin": "metis-app"}],
+                             inventory["application"]["binaries"] * 2,
+                             inventory["application"]["binaries"] + [{"package": "metis-frontend", "bin": "metis-frontend"}]):
+                changed = {**inventory, "application": {**inventory["application"], "binaries": binaries}}
+                with self.subTest(binaries=binaries), self.assertRaisesRegex(ValueError, "exactly one"):
+                    distribution.verify_application(root, changed)
+            for helper in ("metis-frontend.exe", "assets/hidden.EXE"):
+                (root / helper).write_bytes(b"Undeclared application image")
+                changed = copy.deepcopy(inventory)
+                changed["application"]["resources"].append({"destination": helper})
+                changed["files"].append({"destination": helper, "bytes": (root / helper).stat().st_size,
+                                         "sha256": distribution.digest(root / helper)})
+                with self.subTest(helper=helper), self.assertRaisesRegex(ValueError, "exactly one"):
+                    distribution.verify_application(root, changed)
+                (root / helper).unlink()
+
+    def test_workspace_target_ownership_prevents_split_executables(self):
+        packages = [
+            {"id": "app", "name": "metis-app", "targets": [{"name": "metis-app", "kind": ["bin"]}]},
+            {"id": "cli", "name": "metis-cli", "targets": [{"name": "metis", "kind": ["bin"]}]},
+            {"id": "backend", "name": "metis-backend", "targets": [{"name": "metis_backend", "kind": ["lib"]}]},
+            {"id": "frontend", "name": "metis-frontend", "targets": [{"name": "metis_frontend", "kind": ["lib"]}]}]
+        metadata = {"packages": packages, "workspace_members": [package["id"] for package in packages]}
+        self.assertEqual(verify.application_targets(metadata), [("metis-app", "metis-app"), ("metis-cli", "metis")])
+        for index in (2, 3):
+            changed = copy.deepcopy(metadata)
+            changed["packages"][index]["targets"].append({"name": packages[index]["name"], "kind": ["bin"]})
+            with self.subTest(role=packages[index]["name"]), self.assertRaisesRegex(ValueError, "only the application"):
+                verify.application_targets(changed)
+            changed["packages"][index]["targets"] = [{"name": packages[index]["name"], "kind": ["test"]}]
+            with self.subTest(missing_library=packages[index]["name"]), self.assertRaisesRegex(ValueError, "remain a library"):
+                verify.application_targets(changed)
+        changed = copy.deepcopy(metadata)
+        changed["packages"][0]["targets"][0]["name"] = "metis-backend"
+        with self.assertRaisesRegex(ValueError, "only the application"):
+            verify.application_targets(changed)
+        changed = copy.deepcopy(metadata)
+        changed["packages"][1]["targets"][0]["name"] = "metis-app"
+        with self.assertRaisesRegex(ValueError, "only the application"):
+            verify.application_targets(changed)
+
     def test_input_sensitive_unit_conversion_and_process_separation(self):
         first = distribution.calculation(
             "backend_pid=10\nfrontend_pid=20 rate_ml_hr=0.36 drug_rate_mg_hr=0.72 audit_sequence=2\n"

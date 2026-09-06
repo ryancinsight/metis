@@ -1,12 +1,14 @@
 # Connect a backend
 
-The [backend executable](../../crates/metis-backend/src/main.rs) owns calculation
-policy, a fresh OS-generated key and its audit ledger. It launches the sibling
-frontend through Moirai, transfers only the intended standard streams, and
-services the resulting `StreamTransport` until completion or failure.
+The [application entry](../../crates/metis-app/src/main.rs) runs the backend role
+by default. That role owns calculation policy, a fresh OS-generated key and its
+audit ledger. It launches the same executable in its presentation role through
+Moirai, transfers only the intended standard streams, and services the resulting
+`StreamTransport` until completion or failure.
 
-The [frontend executable](../../crates/metis-frontend/src/main.rs) creates its
-`FrontendApp`, acquires a session token, submits form values and reports the
+The child role creates its `FrontendApp` from the
+[frontend library](../../crates/metis-frontend/src/lib.rs), acquires a session
+token, submits form values and reports the
 response. Moirai supplies the blocking worker and process lifecycle. Metis owns
 the request protocol and application deadline; it does not create another runtime.
 
@@ -29,6 +31,13 @@ active token. The [wire contract](../INTERFACE.md) defines frames and payloads.
 Do not send the backend key to the frontend. The response MAC is symmetric; the
 frontend does not possess a verification mechanism and must not claim to verify
 it. Claimed process identifiers are metadata, not operating-system identity proof.
+
+The internal `--metis-frontend` argument selects the child role; it is not a
+credential. Child dispatch occurs before key generation and backend construction.
+Both processes load the same executable image, so library separation does not
+mean backend machine code is absent from the child. Private process state and
+pipe transfer remain the relevant boundaries; the role argument supplies no
+permission restriction.
 
 Windows job containment bounds descendant lifetimes. It does not deny filesystem,
 network or device access. The audit ring holds 1,024 records with a retained chain

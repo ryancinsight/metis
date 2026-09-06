@@ -7,3 +7,4 @@
 | 0003 | [Framework conformance and application evidence](0003-framework-conformance.md) | Accepted |
 | 0004 | [Form state ownership](0004-form-state.md) | Accepted |
 | 0005 | [Application distribution](0005-application-distribution.md) | Accepted |
+| 0006 | [Single application entry](0006-application-entry.md) | Accepted |

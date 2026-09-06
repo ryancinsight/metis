@@ -140,6 +140,27 @@ def verify_payload(directory, inventory, *, extras=()):
     return sorted(expected)
 
 
+def verify_application(directory, inventory):
+    """The shipped demonstration uses one image for both isolated process roles."""
+    application = inventory["application"]
+    suffix = ".exe" if os.name == "nt" else ""
+    entry = "metis-app" + suffix
+    if (application["entry"] != "metis-app"
+            or application["binaries"] != [{"package": "metis-app", "bin": "metis-app"}]
+            or inventory["entry"] != entry):
+        raise ValueError("Demonstration requires exactly one metis-app executable and entry")
+    payload = verify_payload(directory, inventory)
+    expected = {entry} | {resource["destination"] for resource in application["resources"]}
+    if set(payload) != expected:
+        raise ValueError("Package contains a different application inventory")
+    # Resource declarations cannot disguise a second Windows executable.
+    executables = [name for name in payload if pathlib.PurePosixPath(name).suffix.casefold() == ".exe"
+                   or name == entry]
+    if executables != [entry]:
+        raise ValueError("Demonstration payload must contain exactly one application executable")
+    return payload
+
+
 def verify_registration(values, inventory, installed):
     """Pin component ownership and the persisted uninstall destination."""
     expected = {f"F{index}": inventory["application"]["version"]
@@ -245,7 +266,7 @@ class Workflow:
                                 f"INSTALLDIR={installed}", "/L*v", self.directory / "install-msi.log"])
             if product_state(product) != 5:
                 raise ValueError("Windows Installer did not register the installed product")
-            verify_payload(installed, inventory)
+            verify_application(installed, inventory)
             if not shortcut.is_file() or shortcut.stat().st_size == 0:
                 raise ValueError("Installer did not create its Start Menu shortcut")
             quoted_shortcut = str(shortcut).replace("'", "''")
@@ -307,10 +328,7 @@ def main():
         source = read_json(ROOT / "metis.json")
         if inventory["schema"] != 1 or inventory["application"] != source:
             raise ValueError("Package changed the declared application manifest")
-        suffix = ".exe" if os.name == "nt" else ""
-        expected = {binary["bin"] + suffix for binary in source["binaries"]} | {resource["destination"] for resource in source["resources"]}
-        if set(verify_payload(package / "app", inventory)) != expected or inventory["entry"] != source["entry"] + suffix:
-            raise ValueError("Package contains a different application inventory")
+        verify_application(package / "app", inventory)
         for resource in source["resources"]:
             if digest(destination(ROOT, resource["source"])) != digest(destination(package / "app", resource["destination"])):
                 raise ValueError("Packaged resource differs from its declared source")

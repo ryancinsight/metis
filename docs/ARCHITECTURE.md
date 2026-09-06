@@ -16,12 +16,22 @@ web host. No browser renderer or desktop WebView host is implemented yet.
 The shared `metis-core` crate owns wire types, error codes and capability claim
 encoding. `metis-ipc` owns framing, canonical payload interpretation, transport
 correlation and typed failure reporting. `metis-backend` alone owns calculation
-policy, session authorization, audit storage and backend keys.
+policy, session authorization and audit storage. The application entry generates
+a fresh backend key and transfers ownership only into the parent service.
 
 `metis-frontend` converts submitted values to a wire request and displays the
 correlated response. `metis-ui-lang` parses bounded markup and computes a display
 list; `metis-platform` rasterizes it into bounded pixel storage. The renderer
 implements Iris's lending `RenderBackend<DisplayList>` contract.
+
+`metis-app` is the application composition boundary. Its default backend role
+relaunches the exact `current_exe()` path with `--metis-frontend` and the submitted
+inputs. The child dispatches before backend key generation or service creation.
+The application links both role libraries while the frontend library dependency
+closure remains independent of backend authority and distribution tooling.
+One executable image serves separate address spaces; this is not a claim that
+backend machine code is absent from the child. [ADR 0006](adr/0006-application-entry.md)
+owns role dispatch and command migration.
 
 Moirai owns execution and process lifecycle. Its transport provider is extended
 for inherited private pipes, finite teardown and Windows process-tree lifecycle
@@ -33,8 +43,10 @@ No frontend object, memory address or backend secret crosses the IPC boundary.
 `metis-cli` owns application configuration, Cargo artifact selection and packaging.
 It consumes Moirai process supervision and the core streaming hash, and never
 enters the frontend dependency closure. The same validated payload supplies a
-portable directory and the Windows Installer backend. Rendering, application
-logic, process authorization and installation each retain one owner.
+portable directory and the Windows Installer backend. The demonstration declares
+one application executable; other application manifests may name optional
+sidecars. Rendering, application logic, process authorization and installation
+each retain one owner.
 [ADR 0005](adr/0005-application-distribution.md) defines the manifest, resource
 budgets, native FFI boundary and platform expansion contract.
 

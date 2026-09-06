@@ -30,21 +30,26 @@ Use the pinned Rust toolchain and cargo-nextest 0.9.143. From this directory:
 
 ```text
 cargo build --workspace --bins
-cargo run -p metis-backend -- 60 2 0.2
+cargo run -p metis-app -- 60 2 0.2
+cargo run -p metis-app -- --help
 python scripts/verify.py
 ```
 
 The arguments are weight in kg, concentration in mg/mL and dose in mcg/kg/min.
 The gate verifies the committed Git dependency lock, including when invoked inside Atlas.
-The backend launches a separate frontend executable, receives its submitted
-values and returns the calculated result. For these demonstration inputs the
-rate is 0.36 mL/hour and drug rate is 0.72 mg/hour. Standard output carries IPC
-bytes exclusively; human-readable results go to standard error.
+The `metis-app` executable launches another instance of itself for presentation,
+receives its submitted values and returns the calculated result. One application
+executable therefore serves two processes with separate session state. For these
+demonstration inputs the rate is 0.36 mL/hour and drug rate is 0.72 mg/hour.
+During a session, standard output carries IPC bytes on the private child pipes;
+human-readable results go to standard error. `--help` writes usage to standard output.
 
 ## Build executables and installers
 
 The `metis` CLI builds declared Cargo binaries and bundles explicitly named
-resources from one [application manifest](metis.json). On Windows x64 it also
+resources from one [application manifest](metis.json). The demonstration ships
+one `metis-app` executable; optional sidecars remain explicit manifest targets.
+The `metis` build tool is not part of the application payload. On Windows x64 it also
 authors a per-user MSI with a Start Menu shortcut and registered uninstall.
 See the [distribution manual](docs/manual/distribution.md) for the complete
 workflow, host prerequisites and current limits. The bundled example is a
@@ -55,8 +60,10 @@ console application; packaging does not supply the missing desktop GUI host.
 Moirai owns worker scheduling and process lifecycle. Metis consumes its executor
 and transport APIs; missing process-pipe/deadline capabilities are implemented
 upstream in Moirai. Iris supplies the `RenderBackend` contract; Metis implements
-its bounded software renderer against that contract. Frontend dependencies never
-include `metis-backend`.
+its bounded software renderer against that contract. The `metis-frontend` library
+dependency closure excludes `metis-backend`; the application entry composes both
+libraries. A shared executable image does not remove backend code from the child
+or establish OS permission restrictions. See [application entry design](docs/adr/0006-application-entry.md).
 
 Runtime crates declare no direct third-party crates. The distribution CLI uses
 Serde and serde_json for validated manifests and Cargo artifact messages, as

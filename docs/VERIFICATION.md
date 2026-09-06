@@ -20,7 +20,7 @@ process-isolation test. No original OS sandbox or native-window evidence exists.
 - Behavioral tests: exact wire fixtures, canonical decoding, malformed corpus, scope/session/time rejection, audit event outcomes and bounded numerical error.
 - Independent numeric evidence: dimensional infusion conversion and exact binary fixtures; arithmetic roundoff uses a stated gamma bound.
 - Crypto evidence: published HMAC test vector and SHA-256 known answers plus streaming/padding regressions.
-- Process evidence: separately built executables exchanging real pipes; PID and result checks. These do not prove OS least privilege.
+- Process acceptance: separate instances of one application executable exchange real pipes; PID, result and standalone relocation checks distinguish executable packaging from process state. These do not prove OS least privilege.
 - Visual evidence: software framebuffer generated from actual form state and inspected independently of compilation.
 
 Use `python scripts/verify.py`. Resolving commands run with `--locked` outside
@@ -76,7 +76,7 @@ mutation analysis and cross-platform sandbox probes remain uncollected.
 
 ## Collected Windows distribution evidence — 2026-09-06
 
-The distribution increment passes 102 debug and 102 release native tests,
+The earlier two-executable distribution increment passes 102 debug and 102 release native tests,
 36 Python gate/oracle tests, strict Clippy, doctests and documentation. The
 actual MSI installs into a custom directory, both installed process scenarios
 match independent rational conversion oracles, and uninstall without an
@@ -89,6 +89,33 @@ All seven gallery images retain identical pixels and semantic records. Updating
 the dependency-lock-bound fixture changes only `captures.json`'s fixture hash;
 no image or expected outcome changes. The gate records exact source hashes and
 rejects a stale fixture rather than silently accepting the dependency change.
+
+## Single-application verification — 2026-09-06
+
+[METIS-APPLICATION-001](../backlog.md#METIS-APPLICATION-001) and
+[ADR 0006](adr/0006-application-entry.md) require a copied and renamed
+`metis-app` executable to complete input-sensitive sessions from a directory
+without companion executables. Verify distinct parent/child PIDs, calculation
+values against the arithmetic oracle, private wire output and audit completion.
+Unknown/malformed role arguments, missing inputs, invalid numbers and direct
+child invocation with EOF or malformed protocol must fail without a result or
+recursive parent launch. Existing supervision deadlines and descendant cleanup
+remain required. The portable and installed payload must each contain exactly
+one application executable; repeat the real MSI install/run/uninstall and
+user-file-preservation workflow.
+
+The complete Windows gate passes 108 debug and 108 release native tests,
+38 Python checks, WASM library compilation, strict Clippy, doctests, rustdoc,
+examples and seven unchanged visual snapshots. The real MSI workflow verifies
+one installed application executable, both input-sensitive process sessions,
+shortcut ownership, removal and preservation of the user-created file. The
+collected report binds outcomes to the exact revision and source hashes.
+The distribution binary uses its help/manual documentation; disabling its
+colliding rustdoc output leaves the root `metis` library as that path's owner.
+
+The shared image includes both libraries. Dependency checks establish that the
+frontend library does not import backend authority; they do not establish OS
+permission isolation or exclusion of backend code from the child process.
 
 <a id="visual-contract"></a>
 ## Visual and interaction contract
@@ -324,6 +351,8 @@ input and native host input retain separate verification requirements.
 `python scripts/verify.py` builds the distribution CLI and runs
 `scripts/distribution.py` against its release executable. The workflow verifies
 portable payload hashes, MSI inventory and two input-sensitive process sessions.
+The application-entry acceptance additionally requires exactly one executable in
+the demonstration payload while preserving distinct backend/frontend PIDs.
 `python scripts/verify.py --install` additionally installs the generated per-user
 MSI into a private directory, checks registration/shortcut and installed bytes,
 runs both input cases and uninstalls while retaining a user-created sentinel.

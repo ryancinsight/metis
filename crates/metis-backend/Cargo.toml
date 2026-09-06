@@ -19,9 +19,5 @@ metis-ipc = { workspace = true }
 name = "metis_backend"
 path = "src/lib.rs"
 
-[[bin]]
-name = "metis-backend"
-path = "src/main.rs"
-
 [lints]
 workspace = true
