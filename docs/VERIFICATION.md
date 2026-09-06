@@ -373,3 +373,5 @@ paths before optimizing; preserve the instrument across comparisons. Inject
 allocation exhaustion, disconnect and backend crash and assert bounded error
 recovery. Permission-denial probes compare security under a matched threat model;
 memory numbers and screenshots do not establish security superiority.
+
+Nextest stores its bounded reports in `output/nextest/ci/junit.xml`; Cargo compilation continues to use Atlas's shared target directory. The native test timeout and retry policies remain in `.config/nextest.toml`.
