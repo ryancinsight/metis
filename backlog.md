@@ -23,11 +23,8 @@ an owner. “Unsupported” cannot replace delivery of a required mobile/native 
 
 <a id="METIS-GAPS-001"></a>
 ## METIS-GAPS-001 — Framework conformance plan [arch] [patch]
-- Status: review; integrator: root; last-update: 2026-09-05
-- Scope: compare egui, GPUI and Tauri with current source; update ordered development work, visual acceptance and the user manual. Runtime implementation remains in the resulting items.
-- Acceptance: source-backed capability matrix; every gap maps to an owner/item, dependencies and semantic/visual oracle; existing demonstration regenerated and inspected; independent coverage review passes.
-- Decision: [ADR 0003](docs/adr/0003-framework-conformance.md).
-- Evidence: independent framework/visual reviews complete; dependency graph and local references checked; baseline gate and actual initial-frame inspection pass. Expanded runtime scenarios remain unimplemented work.
+- Status: done; delivery: [PR 2](https://github.com/ryancinsight/metis/pull/2), content `a6855aa`.
+- Outcome: [ADR 0003](docs/adr/0003-framework-conformance.md) maps 22 capability areas to owned work and twelve semantic/visual/manual scenarios; source review and existing gate pass. Runtime gaps remain open in the linked items.
 
 <a id="METIS-WEB-001"></a>
 ## METIS-WEB-001 — Web application target contract [arch] [patch]
