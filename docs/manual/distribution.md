@@ -1,0 +1,119 @@
+# Build executables and installable applications
+
+Métis uses one application manifest for Cargo targets, launch arguments and
+resources. The CLI emits a portable `app/` directory, an inventory of SHA-256
+hashes and, with `package`, a Windows Installer package. Application versions
+are independent of the Métis framework version.
+
+## Configure and build
+
+The repository [metis.json](../../metis.json) is a runnable configuration for the
+two-process console demonstration. Change the application identity, display name,
+manufacturer and version for your own application. Generate one uppercase braced
+upgrade GUID for that identity and retain it. Declare every binary and resource;
+there is no recursive asset scan. Paths are relative to the manifest directory.
+
+On Windows x64, use the pinned Rust toolchain and an ordinary Cargo workspace:
+
+```powershell
+cargo build -p metis-cli --release --locked
+metis --help
+metis build metis.json output/portable
+metis package metis.json output/installer
+```
+
+Here `metis` denotes the built executable in the configured Cargo target directory;
+put that directory on PATH or use its absolute path. Create `output` first.
+Each destination must be new. A failed build leaves its partial directory for
+inspection and does not erase existing output. A successful operation writes
+`inventory.json` last. Do not reuse an output directory as application input.
+
+The CLI invokes Cargo in release mode with `--locked`, using the caller's Cargo
+configuration and an explicit Windows x64 target. In Atlas, local provider overlays can differ from the standalone
+lock; `python scripts/verify.py` uses the standalone resolution while retaining
+the shared build cache. Missing or ambiguous compiler artifacts are errors.
+Building runs the selected project's build scripts with your developer account.
+
+The installed Windows cabinet tool and MSI API supply packaging; no WiX/NSIS
+installation is needed. Cabinet staging paths must currently be ASCII. Legacy installer-tool paths
+must fit 259 UTF-16 characters, including generated staging components; known
+canonical drive/UNC prefixes are converted without changing their target. Metadata
+uses code page 1252 and rejects text that cannot be represented losslessly. Shortcut arguments must fit 255 UTF-16 characters after
+Windows command-line quoting. Payloads are limited to 4096 files and 1 GiB; the manifest is
+limited to 1 MiB. Linked inputs, traversal and destination collisions reject.
+Keep source files and output ancestors stable while the command runs.
+
+## Run the portable application
+
+```powershell
+output/portable/app/metis-backend.exe 60 2 0.2
+output/portable/app/metis-backend.exe 80 2 0.2
+```
+
+The backend starts its sibling frontend and exchanges real IPC messages. These
+synthetic example inputs produce respectively 0.36 and 0.48 mL/hour. Keep both
+executables together. The manifest launch arguments supply the first input set
+to the Start Menu shortcut. This demonstration is a console program and exits
+after its calculation; an application with a persistent GUI supplies that
+behavior in its own entry executable. Packaging does not create a GUI host.
+
+## Install and remove
+
+Open the generated `.msi` using Windows Installer. It installs for the current
+user under Local AppData, registers an uninstall entry and creates a Start Menu
+shortcut. It does not request a machine-wide installation. The manifest names
+all files the installer owns; keep changing application data outside those files.
+
+For a quiet local test, pass the generated package path to `msiexec /i` with
+`/qn /norestart`. Remove it through Installed Apps or `msiexec /x PRODUCT_CODE
+/qn /norestart`, using the ProductCode in `inventory.json`. Uninstall removes
+owned files and registration while preserving unrelated files. The installer
+persists its installation directory in its current-user registry key and restores
+it for repair/removal; a missing location rejects maintenance before deleting
+files. Uninstall does not need an `INSTALLDIR` parameter. The bounded
+verification workflow also tests a private install directory and retained user
+file; it does not require installing into the application's default location.
+
+Re-running the same MSI supports Windows Installer maintenance. A different
+package with the same upgrade GUID rejects while the existing product is
+installed, even at the same version: uninstall first. Automatic updates,
+migration and rollback across releases are not implemented.
+
+## Inspect the result
+
+`inventory.json` contains application configuration, executable/resource paths,
+byte counts, SHA-256 values and the installer ProductCode/hash. These identify
+the bytes tested; hashes do not authenticate a publisher. MSI GUIDs are fresh,
+so repeated package builds do not produce identical MSI bytes.
+
+Run the complete local installation demonstration with:
+
+```powershell
+python scripts/verify.py --install
+```
+
+The Windows x64 demonstration verifies both the portable and installed forms:
+
+| Input (weight, concentration, dose) | Flow | Drug rate |
+| --- | --- | --- |
+| `60 2 0.2` | 0.36 mL/hour | 0.72 mg/hour |
+| `80 4 0.5` | 0.60 mL/hour | 2.40 mg/hour |
+
+It also checks the shortcut's executable, arguments and working directory,
+removes the installed application and retains its user-created test file.
+
+The report at `output/distribution/latest/workflow.json` records exact inventory,
+commands, calculated values and install/uninstall outcomes. The gate preserves
+only the latest marked test run and refuses to replace a still-registered test
+installation. Normal verification also exercises packaging and portable execution;
+`--install` opts into the current-user OS installation workflow.
+
+The [application gallery](applications.md) shows the existing renderer workflows.
+The [verification contract](../VERIFICATION.md#V10) distinguishes installation,
+rendering and host interaction evidence. Executable and installer creation does
+not establish lower memory usage or stronger OS isolation than Tauri.
+
+The first package backend is Windows x64 MSI. macOS bundles/DMG, Linux packages,
+other Windows architectures, signing, authenticated updates and browser deployment
+remain separate target work. This command does not sign, publish or release an
+application.

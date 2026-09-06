@@ -259,14 +259,27 @@ an owner. “Unsupported” cannot replace delivery of a required mobile/native 
 - Demonstration: actual same-study before/after workflows, verified voxels/physical coordinates and real host captures in the user manual; record JavaScript retained versus Rust/WASM replacement and matched memory evidence.
 
 <a id="METIS-DISTRIBUTION-001"></a>
-## METIS-DISTRIBUTION-001 — Build, package and update lifecycle [arch] [minor]
-- Status: in-progress; priority: P0; owner: Metis tooling; integrator: root; branch: codex/metis-application-packaging; last-update: 2026-09-06; risk: delivery/update integrity
-- Current increment: validated application manifest, Cargo artifact inventory, portable bundle and per-user Windows MSI; local install/run/uninstall preserves user files. Remaining target installers, developer reload and authenticated updates retain separate acceptance.
-- Dependencies: existing process-capable application for the first package; each later platform installer requires its corresponding host. Distribution does not wait for unrelated platform or viewer migrations.
-- Decision: [ADR 0005](docs/adr/0005-application-distribution.md); lease: root CLI/build/manifest/gates/docs, package_design crates/metis-cli/src/windows/; 2026-09-06.
-- Scope: CLI init/dev/build, asset bundling, offline cache invalidation, platform packages, signing verification and authenticated update/rollback; generated help/manual/completions.
-- Acceptance: reproducible local packages install/run/uninstall in isolated test environments; corrupt/expired/signature-invalid updates reject, interrupted update recovers; dev reload preserves bounded state and reports build errors.
-- Demonstration: [V10](docs/VERIFICATION.md#V10), actual install/reload/update/recovery captures; release signing identity/publication requires separate authority.
+## METIS-DISTRIBUTION-001 — Executables and Windows MSI [arch] [minor]
+- Status: done; delivery: `feat(distribution): Build executables and MSI`; decision: [ADR 0005](docs/adr/0005-application-distribution.md).
+- Outcome: one manifest, exact Cargo inventory, portable bundle, per-user MSI and manual; 102 debug/release tests, 36 Python tests, visual gate and real install/run/uninstall preserving user files pass.
+
+<a id="METIS-DISTRIBUTION-002"></a>
+## METIS-DISTRIBUTION-002 — Developer application lifecycle [minor]
+- Status: todo; priority: P2; owner: Metis tooling; dependencies: METIS-DISTRIBUTION-001; risk: stale build/runtime state
+- Scope: init/dev commands, generated help/completions and asset invalidation using the existing manifest; no second configuration grammar.
+- Acceptance: scaffold builds/runs, actual source/resource changes reload, invalid builds report and never run stale output; repeated reload retains bounded state. [V10](docs/VERIFICATION.md#V10).
+
+<a id="METIS-DISTRIBUTION-003"></a>
+## METIS-DISTRIBUTION-003 — macOS and Linux installers [arch] [minor]
+- Status: todo; priority: P2; owner: Metis tooling; dependencies: METIS-DISTRIBUTION-001; risk: platform ownership and lifecycle
+- Scope: target-specific executable/bundle and installation formats using the same validated inventory; each target requires its native host for installation evidence.
+- Acceptance: build/install/run/uninstall on macOS and Linux preserves user files and application behavior; actual host evidence and platform manual instructions. [ADR 0005](docs/adr/0005-application-distribution.md), [V10](docs/VERIFICATION.md#V10).
+
+<a id="METIS-DISTRIBUTION-004"></a>
+## METIS-DISTRIBUTION-004 — Signed update and recovery [arch] [minor]
+- Status: todo; priority: P2; owner: Metis tooling; dependencies: METIS-DISTRIBUTION-001; risk: publisher authentication/data loss
+- Scope: signed package verification, authenticated update/rollback and format evolution; no silent MSI overwrite or downgrade. Production signing identity/publication needs separate authority.
+- Acceptance: corrupt/expired/signature-invalid updates reject, interruption recovers installed state and preserves user files; real local update/recovery workflow and manual. [ADR 0005](docs/adr/0005-application-distribution.md), [V10](docs/VERIFICATION.md#V10).
 
 <a id="METIS-MOBILE-001"></a>
 ## METIS-MOBILE-001 — Mobile host and capability matrix [arch] [minor]
