@@ -6,6 +6,11 @@ Date: 2026-09-05
 
 Driver: [METIS-WEB-001](../../backlog.md#METIS-WEB-001).
 
+Revision 2026-09-05: [ADR 0003](0003-framework-conformance.md), driven by
+[METIS-GAPS-001](../../backlog.md#METIS-GAPS-001), adds the egui/GPUI/Tauri
+capability inventory and per-gap demonstration/verification closure. It retains
+this web/native trust boundary and does not claim API parity from toolkit breadth.
+
 ## Intent and authority
 
 The user clarifies that Metis must support WASM and web rendering, with the goal
