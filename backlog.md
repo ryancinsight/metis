@@ -324,3 +324,14 @@ an owner. “Unsupported” cannot replace delivery of a required mobile/native 
 - Blocker: Atlas pre-commit unsets GIT_INDEX_FILE before checking staged pins; root auditors inspect live HEAD/configuration. Existing alternate-index workflow cannot establish candidate verification.
 - Re-open: candidate-aware hooks/gates or a clean available Atlas checkout. Public Métis source remains independently consumable.
 - Completed: public repository and PR 8 verified/merged; registration closure and initial-baseline semantics audited against Atlas source. No runtime or signing capability depends on this metadata change.
+
+<a id="METIS-APPLICATION-001"></a>
+## METIS-APPLICATION-001 — Single executable application [arch] [major]
+- Status: in-progress; priority: P1; integrator: root; last-update: 2026-09-06
+- Outcome: one application executable launches both process roles through Moirai; optional sidecars remain an explicit packaging capability.
+- Scope: application composition, role dispatch, binary-target migration, package inventory, native workflow and manual; no GUI host, OS sandbox or new provider runtime.
+- Acceptance: copied/renamed executable runs without siblings, distinct process IDs and analytical results, invalid role/input/handshake rejects, exactly one executable installs and removes while user files survive.
+- Baseline: full committed gate passes at `b0e2700` (102 debug/release native tests, 36 Python tests, seven visual snapshots).
+- Decision: reserve ADR 0006 in docs/adr/0006-application-entry.md; revise ADRs 0001 and 0005 for same-image process roles; delete old binary commands with migration instructions.
+- Dependencies: METIS-DISTRIBUTION-001; authority: implementation through merge; risk: role dispatch and private process state.
+- Lease: root Cargo manifests/lock, metis.json, crates/metis-app, superseded backend/frontend mains and process test, CLI tests, examples/clinical_infusion_workflow.rs; 2026-09-06
