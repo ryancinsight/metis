@@ -59,6 +59,12 @@ fields from a query string for the local demonstration, but the values do not
 grant authority; the service's trusted context and capability signature remain
 authoritative.
 
+Revision 2026-09-07: lifecycle generation exhaustion is terminal. A failed
+start/stop boundary drops the mounted application before reporting the error,
+so completions from the exhausted generation cannot mutate a stale DOM. The
+browser session mapper preserves remote handshake error codes in
+`FormState::SessionFailed`; local transport failures remain typed disconnects.
+
 The provider revision for this lifecycle increment is Moirai
 `be87d009cd0e877beef719b47bdcbadc45659069`; its
 native cancellation-state tests and WASM library checks are recorded in ADR

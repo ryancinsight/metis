@@ -108,6 +108,9 @@ appear only after their host providers are implemented and explicitly added.
 Starting or stopping the WASM application advances a lifecycle generation.
 Completions from a cancelled connection or an earlier mount are discarded
 before they can restore state or render into the new DOM.
+If a host rejects the handshake, the browser preserves the peer's exact
+16-bit error code in the session-failed state; local transport failures remain
+typed connection failures.
 
 Local host events use `metis_ipc::EventHub<E, CAPACITY>`. Each subscription has
 its own bounded queue; `publish` returns `ERR_QUEUE_FULL` instead of blocking,

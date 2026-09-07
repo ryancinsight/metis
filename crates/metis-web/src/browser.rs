@@ -1,6 +1,7 @@
 //! Browser DOM application boundary.
 
 use crate::epoch::{Epoch, Generation};
+use crate::session::connect_failure_state;
 use metis_core::CapabilityScope;
 use metis_core::error::{ErrorCode, MetisError};
 use metis_core::protocol::{
@@ -9,6 +10,7 @@ use metis_core::protocol::{
 };
 use metis_frontend::{AsyncFrontendApp, FormInputs, FormState};
 use metis_ipc::BrowserWebSocketTransport;
+use metis_ipc::client::HandshakeError;
 use moirai_pal::wasm::{
     LocalTaskHandle, WebDocument, WebElement, WebEventListener, spawn_local_with_handle,
 };
@@ -181,8 +183,10 @@ impl BrowserApplication {
                     &config.endpoint,
                     Duration::from_secs(5),
                 )
-                .await?;
-                let mut frontend = AsyncFrontendApp::new(transport, Duration::from_secs(5))?;
+                .await
+                .map_err(HandshakeError::from)?;
+                let mut frontend = AsyncFrontendApp::new(transport, Duration::from_secs(5))
+                    .map_err(HandshakeError::from)?;
                 let inputs = state.borrow().inputs.clone();
                 frontend.set_inputs(
                     &inputs.patient_id,
@@ -190,11 +194,8 @@ impl BrowserApplication {
                     inputs.concentration_mg_ml,
                     inputs.target_dose_mcg_kg_min,
                 );
-                frontend
-                    .init(config.process_id, config.principal)
-                    .await
-                    .map_err(metis_handshake_error)?;
-                Ok::<_, MetisError>(frontend)
+                frontend.init(config.process_id, config.principal).await?;
+                Ok::<_, HandshakeError>(frontend)
             }
             .await;
             if !generation_is_current(generation) {
@@ -217,7 +218,7 @@ impl BrowserApplication {
                 Err(error) => {
                     let mut state = state.borrow_mut();
                     state.bridge = BridgeStatus::Disabled;
-                    state.state = FormState::Disconnected(error);
+                    state.state = connect_failure_state(error);
                     "Host capabilities: unavailable".clone_into(&mut state.capabilities);
                 }
             }
@@ -431,20 +432,6 @@ async fn receive_result_event(
     )))
 }
 
-fn metis_handshake_error(error: metis_ipc::client::HandshakeError) -> MetisError {
-    match error {
-        metis_ipc::client::HandshakeError::Local(error) => error,
-        metis_ipc::client::HandshakeError::Remote(response) => MetisError::capability(
-            ErrorCode::InvalidPrincipal,
-            format!("Backend rejected browser session: {}", response.message),
-        ),
-        _ => MetisError::transport(
-            ErrorCode::TransportBroken,
-            "Browser handshake failed with an unknown result",
-        ),
-    }
-}
-
 fn read_bridge_config(document: &WebDocument) -> io::Result<Option<BridgeConfig>> {
     let Some(endpoint) = optional_value(document, "metis-websocket-endpoint") else {
         return Ok(None);
@@ -555,7 +542,15 @@ fn render(document: &WebDocument, state: &BrowserState) -> io::Result<()> {
         FormState::Rejected(error) => {
             format!("Backend rejected request [0x{:04X}]", error.error_code)
         }
-        FormState::SessionFailed(_) => "Backend session failed".to_owned(),
+        FormState::SessionFailed(error) => match error {
+            HandshakeError::Local(error) => {
+                format!("Backend session failed [{}]", error.code.as_str())
+            }
+            HandshakeError::Remote(error) => {
+                format!("Backend session rejected [0x{:04X}]", error.error_code)
+            }
+            _ => "Backend session failed".to_owned(),
+        },
         _ => "Unsupported form state".to_owned(),
     };
     set_text(document, "metis-status", &message)?;
@@ -675,6 +670,7 @@ pub extern "C" fn metis_start() {
     let generation = match next_generation() {
         Ok(generation) => generation,
         Err(error) => {
+            APPLICATION.with_borrow_mut(|slot| *slot = None);
             if let Ok(document) = WebDocument::current() {
                 set_mount_error(&document, &error);
             }
@@ -706,6 +702,7 @@ pub extern "C" fn metis_start() {
 #[unsafe(no_mangle)]
 pub extern "C" fn metis_stop() {
     if let Err(error) = next_generation() {
+        APPLICATION.with_borrow_mut(|slot| *slot = None);
         if let Ok(document) = WebDocument::current() {
             set_mount_error(&document, &error);
         }

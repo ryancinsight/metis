@@ -280,6 +280,10 @@ client injection test also
 rejects a canceled sequence and then receives a newer outstanding response;
 browser-host late-response injection remains open alongside native desktop, OS
 permission and cross-engine coverage.
+The browser host maps local connection failures to `Disconnected` while keeping
+remote handshake rejections in `SessionFailed` with their original wire code;
+the mapping is covered by host-boundary unit tests. Lifecycle exhaustion is
+terminal and rejects all completions from the exhausted generation.
 
 The authenticated in-app browser trace also displayed `Registered frontend
 extensions: workbench v1` after the Rust mount, alongside the host capability
