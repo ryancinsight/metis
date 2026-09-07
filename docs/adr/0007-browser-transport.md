@@ -12,6 +12,11 @@ Revision 2026-09-06: Metis now consumes Moirai's merged browser PAL at
 consumer. This updates the provider pin and adds runtime evidence without
 claiming a live backend bridge.
 
+Revision 2026-09-07: Moirai PR #268 merged at `16a1b88`, adding a cancellable
+browser-local task handle. Metis now clears request-table entries after task
+cancellation and exports `metis_stop` for listener teardown; a live service
+trace remains open.
+
 ## Context
 
 The native Metis IPC client performs a blocking receive over an owned stream.
@@ -59,14 +64,17 @@ timeout, bounded request capacity, ordered and out-of-order sequence
 correlation, and async frame round trips. Warning-denied
 Clippy passes for native all-targets and `wasm32-unknown-unknown`; the lock
 resolves all Moirai packages to merged provider
-`66627b9` and its Mnemosyne backend. The
+`16a1b88` and its Mnemosyne backend. The
 browser workbench now loads the generated WASM and exercises
 disconnect/rejection states. A live-service trace must still exercise
-cancellation, late responses, listener/task teardown and capture V02/V12
-evidence before this item closes.
+late-response handling, task teardown around a real WebSocket bridge and
+capture V02/V12 evidence before this item closes. The local request and
+listener cancellation contracts are covered by Metis tests and the
+stop/remount browser workflow.
 
 ## Residuals
 
-The browser executor, desktop WebView host, origin/authority policy and visual
-browser snapshots remain open. Native correlation tests do not establish a
-running browser, callback/task teardown, memory efficiency or Tauri parity.
+The live WebSocket service, origin/authority policy, post-drop allocation
+measurement, cross-engine visual run and desktop WebView host remain open.
+Native correlation tests and the stop/remount workflow do not establish a
+running service, cross-engine memory efficiency or Tauri parity.

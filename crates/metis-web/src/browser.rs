@@ -245,14 +245,17 @@ thread_local! {
 ///
 /// The export is intentionally a single no-argument WASM boundary. The page
 /// owns CSS and the document shell; all mutable form state and event transitions
-/// remain in Rust. The unsafe attribute is required only to keep this stable
-/// raw WASM export callable by the generated browser loader.
+/// remain in Rust. An existing application is stopped before a remount so a
+/// failed mount cannot leave listeners attached to replaced markup. The unsafe
+/// attribute is required only to keep this stable raw WASM export callable by
+/// the generated browser loader.
 #[expect(
     unsafe_code,
     reason = "stable raw WASM export ABI at the browser boundary"
 )]
 #[unsafe(no_mangle)]
 pub extern "C" fn metis_start() {
+    APPLICATION.with_borrow_mut(|slot| *slot = None);
     let result = WebDocument::current().and_then(|document| BrowserApplication::mount(&document));
     match result {
         Ok(application) => APPLICATION.with_borrow_mut(|slot| *slot = Some(application)),
@@ -261,5 +264,24 @@ pub extern "C" fn metis_start() {
                 set_mount_error(&document, &error);
             }
         }
+    }
+}
+
+/// Stops the browser application and releases every Rust-owned DOM listener.
+///
+/// A subsequent [`metis_start`] call creates fresh state and listeners. The
+/// export is intentionally paired with the start boundary so a host can tear
+/// down a page or replace a running application without retaining callbacks.
+#[expect(
+    unsafe_code,
+    reason = "stable raw WASM export ABI at the browser boundary"
+)]
+#[unsafe(no_mangle)]
+pub extern "C" fn metis_stop() {
+    APPLICATION.with_borrow_mut(|slot| *slot = None);
+    if let Ok(document) = WebDocument::current()
+        && let Ok(root) = element(&document, "metis-app")
+    {
+        root.set_inner_html("<p>Metis browser host stopped.</p>");
     }
 }

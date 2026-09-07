@@ -21,3 +21,6 @@ python scripts/browser.py build
 Serve `output/browser` from an HTTP origin and open `index.html`. The page
 contains real editable controls; input changes update the Rust-owned state and
 the submit action exposes the missing privileged bridge as an explicit result.
+The generated module also exports `metis_stop`, which drops every Rust-owned
+DOM listener and replaces the root with a stopped message; `metis_start` mounts
+fresh state and listeners again.

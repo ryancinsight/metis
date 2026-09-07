@@ -24,10 +24,12 @@ the only SHA/HMAC implementation used by capability, audit, backend result and
 CLI packaging code. `metis-core::crypto` retains only CRC-32, whose contract is
 framing corruption detection rather than peer authentication.
 
-All Moirai dependencies in this workspace advance together to merged revision
-`66627b9`. The TLS provider remains available to consumers that enable its
-default `provider` feature; Metis's protocol graph does not compile rustls or
-the provider's key-exchange, AEAD and certificate dependencies.
+All Moirai dependencies in this workspace advance together. The crypto
+migration landed at merged revision `66627b9`; the current workspace pin is
+`16a1b88` after the cancellable browser-task provider increment. The TLS
+provider remains available to consumers that enable its default `provider`
+feature; Metis's protocol graph does not compile rustls or the provider's
+key-exchange, AEAD and certificate dependencies.
 
 ## Migration
 

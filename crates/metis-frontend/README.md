@@ -18,6 +18,8 @@ It accepts `metis_ipc::AsyncIpcTransport`, sends at most the bounded requests
 allowed by the asynchronous client, and changes to a typed disconnected state
 when a dispatched response cannot be trusted. Its `init` and
 `submit_calculation` methods are futures; they never block the browser thread.
+`cancel_pending_requests` clears correlation entries left by a cancelled task
+and returns the form to idle without presenting an obsolete result.
 
 ```rust
 use metis_frontend::{FormState, FrontendApp};

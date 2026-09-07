@@ -53,8 +53,10 @@ Open `http://127.0.0.1:8080/`. Change weight and dose to see the Rust-owned
 values update, enter a non-numeric value to observe `ERR_NUMERIC_INSTABILITY`,
 then submit to observe the typed `ERR_CONNECTION_CLOSED` result. The browser
 trace in [the manual](browser.md) records the observed semantic states and
-viewport. This is runtime evidence for the local HTML5/CSS host; it does not
-prove an authenticated service, origin grants, cancellation, or OS isolation.
+viewport. Use **Stop host** to remove the form and listener guards, then
+**Start host** to remount fresh controls. This is runtime evidence for the
+local HTML5/CSS host; it does not prove an authenticated service, origin grants,
+live task cancellation, or OS isolation.
 
 ## Check authentication provider ownership
 

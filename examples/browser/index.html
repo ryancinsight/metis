@@ -7,6 +7,8 @@
   <style>
     :root { color-scheme: light; font-family: system-ui, sans-serif; background: #0f172a; color: #e2e8f0; }
     body { margin: 0; min-width: 320px; }
+    .metis-host-controls { display: flex; gap: 0.65rem; max-width: 960px; margin: 0 auto; padding: 1rem 2rem 0; }
+    .metis-host-controls button { margin-top: 0; }
     #metis-app { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 1.5rem; max-width: 960px; margin: 0 auto; padding: 2rem; }
     .metis-header, .metis-form, .metis-result { border: 1px solid #334155; border-radius: 0.75rem; background: #1e293b; padding: 1.25rem; }
     .metis-header { grid-column: 1 / -1; }
@@ -26,11 +28,17 @@
   </style>
 </head>
 <body>
+  <nav class="metis-host-controls" aria-label="Metis host lifecycle">
+    <button id="metis-start" type="button">Start host</button>
+    <button id="metis-stop" type="button">Stop host</button>
+  </nav>
   <main id="metis-app" aria-live="polite"><p>Loading Metis WASM…</p></main>
   <script type="module">
     import init from "./metis_web.js";
     const wasm = await init();
     wasm.metis_start();
+    document.getElementById("metis-start").addEventListener("click", () => wasm.metis_start());
+    document.getElementById("metis-stop").addEventListener("click", () => wasm.metis_stop());
   </script>
 </body>
 </html>

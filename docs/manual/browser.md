@@ -30,14 +30,21 @@ display. Submit the form to observe `ERR_CONNECTION_CLOSED`: this is the
 explicit result for a page without an authorized backend bridge, not a local
 calculation or a fabricated success.
 
+The page's **Stop host** control calls the generated `metis_stop` export. The
+Rust host drops its listener guards and replaces `#metis-app` with
+`Metis browser host stopped.`. **Start host** calls `metis_start` again and
+mounts fresh controls. This exercises listener teardown and remount through the
+same WASM module; it does not establish a live backend, task allocation count,
+or origin/session grant.
+
 Capture the initial and edited states with the browser's native screenshot
 tool. Record browser engine, viewport, device scale, font environment and the
 WASM revision beside the images. These captures establish HTML/CSS execution,
 and focusable controls. Moirai's provider owns listener teardown in code, but a
 post-drop allocation trace is still required; the captures do not close the
-live WebSocket backend, origin policy or cancellation requirements in V02/V12.
+live WebSocket backend, origin policy or task allocation requirements in V02/V12.
 
-The browser host deliberately keeps those privileged operations separate. The
-next bridge increment will connect `AsyncFrontendApp` to
-`BrowserWebSocketTransport` only after the host-origin/session policy is
-implemented and tested.
+The browser host deliberately keeps those privileged operations separate. A
+future bridge will connect `AsyncFrontendApp` to `BrowserWebSocketTransport`
+through Moirai's cancellable local-task handle only after the host-origin and
+session policy is implemented and tested.

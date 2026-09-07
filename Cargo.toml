@@ -35,11 +35,11 @@ repository = "https://github.com/ryancinsight/metis"
 serde = { version = "1.0.229", features = ["derive"] }
 serde_json = "1.0.151"
 iris = { package = "iris-viz", git = "https://github.com/ryancinsight/iris", version = "0.1" }
-moirai-core = { git = "https://github.com/ryancinsight/Moirai.git", rev = "66627b919415a8219384f69078ff51f8ee20b2e2", version = "0.6", default-features = false, features = ["std"] }
-moirai-executor = { git = "https://github.com/ryancinsight/Moirai.git", rev = "66627b919415a8219384f69078ff51f8ee20b2e2", version = "0.6", default-features = false }
-moirai-transport = { git = "https://github.com/ryancinsight/Moirai.git", rev = "66627b919415a8219384f69078ff51f8ee20b2e2", version = "0.6", default-features = false }
-moirai-pal = { git = "https://github.com/ryancinsight/Moirai.git", rev = "66627b919415a8219384f69078ff51f8ee20b2e2", version = "0.6", default-features = false }
-moirai-crypto = { git = "https://github.com/ryancinsight/Moirai.git", rev = "66627b919415a8219384f69078ff51f8ee20b2e2", version = "0.6", default-features = false }
+moirai-core = { git = "https://github.com/ryancinsight/Moirai.git", rev = "16a1b88128ad69dd818e4a1a115ef0f195a3bab6", version = "0.6", default-features = false, features = ["std"] }
+moirai-executor = { git = "https://github.com/ryancinsight/Moirai.git", rev = "16a1b88128ad69dd818e4a1a115ef0f195a3bab6", version = "0.6", default-features = false }
+moirai-transport = { git = "https://github.com/ryancinsight/Moirai.git", rev = "16a1b88128ad69dd818e4a1a115ef0f195a3bab6", version = "0.6", default-features = false }
+moirai-pal = { git = "https://github.com/ryancinsight/Moirai.git", rev = "16a1b88128ad69dd818e4a1a115ef0f195a3bab6", version = "0.6", default-features = false }
+moirai-crypto = { git = "https://github.com/ryancinsight/Moirai.git", rev = "16a1b88128ad69dd818e4a1a115ef0f195a3bab6", version = "0.6", default-features = false }
 metis-core = { path = "crates/metis-core", version = "0.1.0" }
 metis-ipc = { path = "crates/metis-ipc", version = "0.1.0" }
 metis-ui-lang = { path = "crates/metis-ui-lang", version = "0.1.0" }

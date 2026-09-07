@@ -76,6 +76,22 @@ impl<T: AsyncIpcTransport> AsyncFrontendApp<T> {
         self.state = FormState::Idle;
     }
 
+    /// Cancels all requests left outstanding by a dropped browser task.
+    ///
+    /// The session capability remains valid. When at least one request was
+    /// removed, the form returns to idle without presenting a stale result.
+    #[must_use]
+    pub fn cancel_pending_requests(&mut self) -> usize {
+        let cancelled = self
+            .client
+            .as_mut()
+            .map_or(0, AsyncIpcClient::cancel_all_requests);
+        if cancelled != 0 {
+            self.state = FormState::Idle;
+        }
+        cancelled
+    }
+
     /// Sends one bounded request and awaits its correlated response.
     ///
     /// # Errors
@@ -182,6 +198,24 @@ mod tests {
         }
     }
 
+    struct OpenTransport;
+
+    impl AsyncIpcTransport for OpenTransport {
+        fn send_frame(&mut self, _frame: &[u8]) -> Result<()> {
+            Ok(())
+        }
+
+        fn recv_message(
+            &mut self,
+            _timeout: Duration,
+        ) -> impl Future<Output = Result<(FrameHeader, Vec<u8>)>> + '_ {
+            ready(Err(MetisError::transport(
+                ErrorCode::ConnectionClosed,
+                "test transport has no response",
+            )))
+        }
+    }
+
     fn poll_ready<F: Future>(future: F) -> F::Output {
         let mut future = Box::pin(future);
         let waker = Waker::noop();
@@ -210,5 +244,21 @@ mod tests {
         app.set_inputs("patient", 60.0, 2.0, 0.2);
         assert_eq!(app.state(), &FormState::Idle);
         assert_eq!(app.inputs().weight_kg.to_bits(), 60.0_f64.to_bits());
+    }
+
+    #[test]
+    fn cancelling_a_dropped_request_returns_the_form_to_idle() {
+        let mut app =
+            AsyncFrontendApp::new(OpenTransport, Duration::from_secs(1)).expect("positive timeout");
+        app.state = FormState::Pending;
+        app.client
+            .as_mut()
+            .expect("client")
+            .send_request(MessageType::HeartbeatReq, b"request")
+            .expect("request");
+
+        assert_eq!(app.cancel_pending_requests(), 1);
+        assert_eq!(app.state(), &FormState::Idle);
+        assert_eq!(app.cancel_pending_requests(), 0);
     }
 }
