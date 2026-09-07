@@ -9,7 +9,9 @@ The protocol exposes a bounded capability catalog with descriptors for the
 closed request/response command set; catalog entries are validated before a
 host or client can use them. `RemoteEventPayload` carries a versioned,
 bounded unsolicited event envelope; `EventCodec` supplies typed body encoding
-and decoding without a dynamic dispatch table.
+and decoding without a dynamic dispatch table. `PluginRegistry` accepts
+statically typed plugin manifests with explicit capability scopes and a bounded
+operation set; it does not erase handlers or grant operating-system authority.
 
 ```rust
 use metis_core::{build_frame, FrameHeader, MessageType, HEADER_SIZE};

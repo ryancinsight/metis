@@ -25,10 +25,12 @@ carry the strict same-origin CSP from the policy source consumed by
 desktop WebView host and OS permission boundary remain unimplemented.
 
 The shared `metis-core` crate owns wire types, typed command descriptors,
-capability catalog encoding, remote event envelopes and the
-host-origin/window/session policy. `metis-ipc` owns framing, canonical payload
-interpretation, transport correlation, bounded local and remote event delivery
-and typed failure reporting.
+capability catalog encoding, remote event envelopes, bounded host-local plugin
+metadata registration and the host-origin/window/session policy. `metis-ipc`
+owns framing, canonical payload interpretation, transport correlation, bounded
+local and remote event delivery and typed failure reporting. Plugin registration
+stores static metadata with explicit scopes; it does not erase handlers or cross
+the OS authority boundary.
 `metis-backend` alone owns calculation policy, session authorization and audit
 storage. The application entry generates a fresh backend key and
 transfers ownership only into the parent service.
@@ -75,9 +77,10 @@ origin, and OS permission checks remain transport/desktop work.
 name and bounded body. Synchronous and asynchronous clients verify the frame
 identifier and strict event ordering; the asynchronous response pump retains a
 bounded event queue while it correlates request responses. `EventCodec` binds a
-stable name to a typed body without a dynamic registry. Servers expose explicit
-send paths over both admitted transports. `EventHub<E, CAPACITY>` remains the
-bounded local fan-out primitive.
+stable name to a typed body without a dynamic registry. `PluginRegistry` binds
+static plugin manifests to bounded command/event metadata without a dynamic
+handler list. Servers expose explicit send paths over both admitted transports.
+`EventHub<E, CAPACITY>` remains the bounded local fan-out primitive.
 
 The browser shell keeps CSS and module bootstrap files external to satisfy the
 same-origin CSP. The build checks the HTML policy against

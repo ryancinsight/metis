@@ -16,6 +16,8 @@ pub use host::{
 };
 pub use protocol::{
     CapabilityCatalogPayload, CommandDescriptor, EventCodec, EventId, FrameHeader, HEADER_SIZE,
-    MAX_COMMANDS, MAX_EVENT_NAME_BYTES, MAX_PAYLOAD_SIZE, MessageType, PROTOCOL_MAGIC,
-    PROTOCOL_VERSION, RemoteEventPayload, SUPPORTED_COMMANDS, build_frame,
+    MAX_COMMANDS, MAX_EVENT_NAME_BYTES, MAX_PAYLOAD_SIZE, MAX_PLUGIN_NAME_BYTES,
+    MAX_PLUGIN_OPERATION_NAME_BYTES, MAX_PLUGIN_OPERATIONS, MAX_PLUGINS, MessageType,
+    PROTOCOL_MAGIC, PROTOCOL_VERSION, Plugin, PluginDescriptor, PluginOperation, PluginRegistry,
+    RemoteEventPayload, SUPPORTED_COMMANDS, build_frame,
 };

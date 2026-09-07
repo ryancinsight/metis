@@ -128,11 +128,47 @@ let event = client.recv_event()?;
 assert_eq!(event.decode_as::<Status>()?, Status(3));
 ```
 
+Hosts register extension metadata through a typed, bounded registry. The
+manifest is static, so registration cannot add an unbounded callback list or
+grant an operating-system privilege. Each operation names the capability that
+the host must verify before a handler runs:
+
+```rust
+use metis_core::{CapabilityScope, MAX_PLUGINS, Plugin, PluginDescriptor,
+    PluginOperation, PluginRegistry};
+
+static EVENTS: [PluginOperation; 1] = [PluginOperation::new(
+    "result.received",
+    CapabilityScope::STREAM_TELEMETRY,
+)];
+struct ViewerExtension;
+impl Plugin for ViewerExtension {
+    const DESCRIPTOR: PluginDescriptor =
+        PluginDescriptor::new("viewer", 1, &[], &EVENTS);
+}
+
+let mut plugins = PluginRegistry::<MAX_PLUGINS>::new()?;
+plugins.register::<ViewerExtension>()?;
+assert_eq!(
+    plugins
+        .get("viewer")
+        .expect("invariant: registered manifest is present")
+        .version(),
+    1,
+);
+```
+
+The registry is host-local metadata. Remote plugin invocation, native OS
+permission enforcement and a live unsolicited-event capture remain separate
+host/service work items. The generated workbench registers a `workbench`
+manifest during each Rust mount and displays its version in
+**Registered frontend extensions**, so stop/start teardown also recreates the
+typed registration state.
+
 `AsyncIpcClient::recv_response_for` retains unsolicited events in a bounded
 queue while it waits for its request. Browser code can call `poll_event` after
 the receive owner has pumped a response. A live browser unsolicited-event
-capture and plugin registration remain open in the command and services
-backlog items.
+capture remains open in the command and services backlog items.
 
 The page's **Stop host** control calls the generated `metis_stop` export. The
 Rust host cancels the active browser task, drops its listener guards and

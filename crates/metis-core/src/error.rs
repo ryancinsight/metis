@@ -45,6 +45,12 @@ pub enum ErrorCode {
     InvalidWindow = 0x2008,
     /// Host navigation is denied by the application policy.
     NavigationDenied = 0x2009,
+    /// A plugin manifest fails identifier, version or scope validation.
+    InvalidPluginDescriptor = 0x200a,
+    /// A plugin identifier is registered more than once in one host.
+    PluginAlreadyRegistered = 0x200b,
+    /// The bounded plugin registry has no remaining capacity.
+    PluginRegistryFull = 0x200c,
 
     // Clinical / Safety Interlock Errors (0x3000 - 0x3FFF)
     /// Weight is outside the demonstration input bounds.
@@ -118,6 +124,9 @@ impl ErrorCode {
             Self::InvalidOrigin => "ERR_INVALID_ORIGIN",
             Self::InvalidWindow => "ERR_INVALID_WINDOW",
             Self::NavigationDenied => "ERR_NAVIGATION_DENIED",
+            Self::InvalidPluginDescriptor => "ERR_INVALID_PLUGIN_DESCRIPTOR",
+            Self::PluginAlreadyRegistered => "ERR_PLUGIN_ALREADY_REGISTERED",
+            Self::PluginRegistryFull => "ERR_PLUGIN_REGISTRY_FULL",
             Self::InvalidPatientWeight => "ERR_INVALID_PATIENT_WEIGHT",
             Self::InvalidDrugConcentration => "ERR_INVALID_DRUG_CONCENTRATION",
             Self::InvalidTargetDose => "ERR_INVALID_TARGET_DOSE",

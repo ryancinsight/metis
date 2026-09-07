@@ -51,6 +51,15 @@ The wire catalog is an additive operation in the existing protocol version:
   finite deadline. The hub is a local delivery primitive and does not add a
   callback registry, executor, or transport-specific state machine.
 
+The command seam also exposes a host-local `PluginRegistry`. A plugin type
+implements `Plugin` with one static `PluginDescriptor`; the descriptor carries
+bounded lower-case identifiers, a version, and operation metadata with explicit
+non-empty capability scopes. The registry validates duplicate plugin and
+operation names, operation counts and capacity before storing static metadata.
+It deliberately does not erase plugin handlers, add a dynamic callback list,
+or grant operating-system authority. Extension dispatch remains at the host
+boundary after the existing capability checks.
+
 ## Alternatives
 
 Adding a JSON or string command router would duplicate the versioned binary
@@ -76,10 +85,10 @@ implementation.
 ## Limits
 
 This increment catalogs the closed protocol set, supplies bounded local event
-delivery and serializes unsolicited remote events. It does not claim a complete
-Tauri plugin registry, native OS capability discovery, or cross-engine browser
-coverage. Those remain owned by the command, desktop, services and browser
-items on the board.
+delivery, serializes unsolicited remote events and validates host-local typed
+plugin manifests. It does not claim remote plugin invocation, native OS
+capability discovery, or cross-engine browser coverage. Those remain owned by
+the command, desktop, services and browser items on the board.
 
 Because `MessageType` is a public enum, the extensibility marker makes this a
 major API change for the next published release. Package versions stay at
@@ -102,5 +111,6 @@ responses available to their request owners.
 The added verification covers exact envelope round-trips, malformed bounds,
 typed name matching, synchronous send/receive, event/response interleaving,
 identifier/version mismatch and replay. A live browser trace still exercises the
-capability catalog; a native unsolicited-event service trace and a plugin
-registry remain open.
+capability catalog; plugin descriptor validation is covered by the core tests.
+A native unsolicited-event service trace and remote plugin invocation remain
+open.
