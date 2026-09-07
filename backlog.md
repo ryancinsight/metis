@@ -65,7 +65,7 @@ an owner. “Unsupported” cannot replace delivery of a required mobile/native 
 
 <a id="METIS-PROCESS-001"></a>
 ## METIS-PROCESS-001 — Real executable workflow [arch] [minor]
-- Status: review; integrator: root; last-update: 2026-09-05
+- Status: in-progress; priority: P0; integrator: root; last-update: 2026-09-07; branch: `feat/process-foundation`
 - Scope: connect backend/frontend binaries through inherited pipes; bounded supervision and process tests.
 - Acceptance: separate PIDs, input-sensitive request/result exchange, failure propagation and finite shutdown.
 - Demonstration: [V01](docs/VERIFICATION.md#V01), manual process workflow and actual submitted state; [V05](docs/VERIFICATION.md#V05) remains a separate native-host requirement.
