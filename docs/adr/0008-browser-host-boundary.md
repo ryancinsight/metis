@@ -60,7 +60,7 @@ contract.
 
 ## Verification
 
-Moirai's browser PAL at `66627b9` passes its
+Moirai's browser PAL at `16a1b88` passes its
 WASM checks, strict Clippy and 39/39 PAL tests. Metis builds `metis-web` for
 `wasm32-unknown-unknown`; `scripts/browser.py build` generates the loader and
 WASM artifact with `wasm-bindgen` 0.2.128. A local browser trace loaded the

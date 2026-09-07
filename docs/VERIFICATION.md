@@ -74,7 +74,7 @@ native system calls; those require targeted lifecycle tests and further platform
 instrumentation. That earlier increment resolved Moirai from pushed commit
 `0514f11`, not local provider edits. The current browser-host increment advances
 the standalone lock to merged provider
-`66627b9`; comparative security/memory evidence
+`16a1b88`; comparative security/memory evidence
 against Tauri and live-service browser tests remain required by [ADR 0002](adr/0002-web-application-contract.md).
 Advisory scanning, coverage,
 mutation analysis and cross-platform sandbox probes remain uncollected.
