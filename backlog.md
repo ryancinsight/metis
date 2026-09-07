@@ -50,7 +50,7 @@ an owner. “Unsupported” cannot replace delivery of a required mobile/native 
 
 <a id="METIS-BROWSER-002"></a>
 ## METIS-BROWSER-002 — Browser stale-response runtime probe [patch]
-- Status: todo; priority: P1; owner: Metis browser host + verification; dependencies: METIS-BROWSER-001, METIS-COMMANDS-001; risk: stale DOM mutation
+- Status: in-progress; priority: P1; owner: Metis browser host + verification; integrator: root; last-update: 2026-09-07; branch: `feat/process-foundation`; dependencies: METIS-BROWSER-001, METIS-COMMANDS-001; risk: stale DOM mutation
 - Scope: delay a real service response at the browser transport boundary, stop/remount the WASM host, and observe response disposal and DOM stability; cross-engine, TLS, native desktop and OS permissions remain separate.
 - Acceptance: a bounded delayed response cannot change the stopped or remounted DOM; the browser task and WebSocket callbacks are released; the trace records the exact engine, revision, action sequence and observable state.
 - Demonstration: [V02](docs/VERIFICATION.md#V02), delayed-response trace and user-manual lifecycle capture.
