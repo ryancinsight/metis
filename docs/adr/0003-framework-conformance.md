@@ -141,7 +141,7 @@ silently accept browser-like syntax with different behavior.
 
 The [event surface](../../crates/metis-platform/src/event.rs) has no native event
 producer; [transport](../../crates/metis-ipc/src/transport.rs) blocks on receipt.
-Moirai's merged `00fb0ae` browser PAL now owns
+Moirai's merged `66627b9` browser PAL now owns
 DOM/event callbacks and bounded WebSocket receipt. The Metis browser host uses
 that provider; the browser service and native event producer remain closure
 requirements, not reasons to add another runtime. Consumer checks are against

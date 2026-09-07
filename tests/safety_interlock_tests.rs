@@ -7,7 +7,6 @@ use metis_backend::clinical::{
 };
 use metis_backend::service::{Clock, ClockReading, SESSION_LIFETIME};
 use metis_core::capability::CapabilityToken;
-use metis_core::crypto::hmac_sha256;
 use metis_core::error::{ErrorCode, Result};
 use metis_core::protocol::{
     ClinicalCalcRequestPayload, ClinicalCalcResponsePayload, ErrorResponsePayload, FrameHeader,
@@ -15,6 +14,7 @@ use metis_core::protocol::{
 };
 use metis_ipc::server::{FailureContext, IpcHandler, IpcServer, RequestIdentity};
 use metis_ipc::transport::{IpcTransport, MemoryTransport};
+use moirai_crypto::hmac_sha256;
 use std::cell::Cell;
 use std::rc::Rc;
 use std::time::Duration;

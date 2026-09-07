@@ -107,7 +107,7 @@ an owner. “Unsupported” cannot replace delivery of a required mobile/native 
 - Status: review; integrator: root; last-update: 2026-09-06
 - Scope: Moirai scheduler/process transport and Iris rendering contract; enumerate provider transitive graph.
 - Acceptance: no parallel Metis runtime; local and standalone provider sources coherent; contract tests pass.
-- Provider revision: Moirai `00fb0ae` is on its default branch and supplies the contained process, browser DOM/event and transport APIs consumed here. Metis's standalone lock pins that revision; the previous `0514f11` quarantine is removed.
+- Provider revision: Moirai `66627b9` is on its default branch and supplies the contained process, browser DOM/event, transport and standalone crypto APIs consumed here. Metis's standalone lock pins that revision; the previous `0514f11` quarantine is removed.
 - Dependencies: Atlas overlay mixed-version correction and consumer verification on the merged provider.
 - Demonstration: [V01](docs/VERIFICATION.md#V01) real provider-backed process workflow and [V02](docs/VERIFICATION.md#V02) browser DOM trace.
 
@@ -155,7 +155,7 @@ an owner. “Unsupported” cannot replace delivery of a required mobile/native 
 ## METIS-ASYNC-001 — Bounded browser request lifecycle [arch] [minor]
 - Status: in-progress; priority: P0; owner: Moirai async/transport + Metis client; integrator: root; last-update: 2026-09-06; stage: bounded correlation; risk: hangs/leaks; dependencies: METIS-WEB-001
 - Scope: event-driven receive/wakeup, task/request cancellation, deadlines and owned callback teardown; complete the upstream reactor gap and remove blocking browser paths.
-- Entry evidence: Moirai `00fb0ae` owns contained process lifecycles, browser callbacks, DOM handles, bounded WebSocket state and deadlines over its merged Mnemosyne backend; Metis uses one pinned Moirai source for native and WASM dependencies. Native async IPC tests pass 33/33, the WASM IPC check/Clippy pass, and `metis-web` builds for WASM.
+- Entry evidence: Moirai `66627b9` owns contained process lifecycles, browser callbacks, DOM handles, bounded WebSocket state, deadlines and standalone authentication primitives over its merged Mnemosyne backend; Metis uses one pinned Moirai source for native and WASM dependencies. Native async IPC tests pass 33/33, the WASM IPC check/Clippy pass, and `metis-web` builds for WASM.
 - First increments: add the Metis async transport/client seam, then route ordered and out-of-order responses through one bounded receive pump; the browser host now consumes the seam but remains disconnected until authority/session plumbing exists.
 - Acceptance: native correlation and queue bounds now pass; browser execution over a live WebSocket, replay/oversize, cancellation, late-response rejection and shutdown callback evidence remain required.
 - Demonstration: [V02](docs/VERIFICATION.md#V02) pending/cancel/disconnected states; [V12](docs/VERIFICATION.md#V12) repeat lifecycle/resource evidence.

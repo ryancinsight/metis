@@ -5,9 +5,9 @@
 //! can rewrite both the records and the checkpoint. A deployment must persist
 //! authenticated checkpoints outside the process before claiming durable audit.
 
-use metis_core::crypto::{constant_time_eq_32, sha256};
 use metis_core::error::{ErrorCode, MetisError, Result};
 use metis_ipc::server::{FailureContext, RequestIdentity};
+use moirai_crypto::{constant_time_eq_32, sha256};
 use std::collections::VecDeque;
 
 /// Maximum retained calls; fixed-size entries bound resident audit storage.

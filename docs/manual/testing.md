@@ -56,6 +56,24 @@ trace in [the manual](browser.md) records the observed semantic states and
 viewport. This is runtime evidence for the local HTML5/CSS host; it does not
 prove an authenticated service, origin grants, cancellation, or OS isolation.
 
+## Check authentication provider ownership
+
+Metis uses Moirai's standalone RustCrypto primitives for capability MACs, audit
+hashes, result signatures and CLI package digests. Verify the protocol-only
+dependency graph with:
+
+```text
+cargo tree --locked -p metis-core --edges normal
+cargo check --locked -p metis-core --target wasm32-unknown-unknown
+```
+
+The graph contains `moirai-crypto` with only its `hmac` and `sha2` normal
+dependencies; `rustls`, key exchange, AEAD and certificate crates stay behind
+the disabled provider feature. Metis retains CRC-32 for accidental frame
+corruption. Capability and audit tests exercise the same provider functions at
+their real wire boundaries. These checks establish ownership and build
+closure, not universal side-channel timing or Tauri security superiority.
+
 Open the [application gallery](applications.md) for the committed image, or
 inspect `output/form*.bmp` and `output/form*.svg` produced by this run. The SVG
 encodes the same raster pixels; it is not a second layout implementation.

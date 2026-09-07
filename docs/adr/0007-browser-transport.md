@@ -7,7 +7,7 @@ Date: 2026-09-06
 Driver: [METIS-ASYNC-001](../../backlog.md#METIS-ASYNC-001).
 
 Revision 2026-09-06: Metis now consumes Moirai's merged browser PAL at
-`00fb0ae`; the `metis-web` host and
+`66627b9`; the `metis-web` host and
 [ADR 0008](0008-browser-host-boundary.md) provide the first runnable DOM
 consumer. This updates the provider pin and adds runtime evidence without
 claiming a live backend bridge.
@@ -59,7 +59,7 @@ timeout, bounded request capacity, ordered and out-of-order sequence
 correlation, and async frame round trips. Warning-denied
 Clippy passes for native all-targets and `wasm32-unknown-unknown`; the lock
 resolves all Moirai packages to merged provider
-`00fb0ae` and its Mnemosyne backend. The
+`66627b9` and its Mnemosyne backend. The
 browser workbench now loads the generated WASM and exercises
 disconnect/rejection states. A live-service trace must still exercise
 cancellation, late responses, listener/task teardown and capture V02/V12

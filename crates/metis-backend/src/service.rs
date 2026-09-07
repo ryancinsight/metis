@@ -10,13 +10,13 @@ use crate::clinical::{
     DrugConcentrationMgMl, PatientWeightKg, SafetyEnvelope, TargetDoseRate, calculate_infusion_rate,
 };
 use metis_core::capability::{CapabilityScope, CapabilityToken};
-use metis_core::crypto::hmac_sha256;
 use metis_core::error::{ErrorCode, MetisError, Result};
 use metis_core::protocol::{
     ClinicalCalcRequestPayload, ClinicalCalcResponsePayload, ErrorResponsePayload, FrameHeader,
     HandshakeRequestPayload, HandshakeResponsePayload, MessageType, PROTOCOL_VERSION,
 };
 use metis_ipc::server::{FailureContext, IpcHandler, RequestIdentity};
+use moirai_crypto::hmac_sha256;
 use std::time::{Duration, Instant, SystemTime, UNIX_EPOCH};
 
 /// Session lifetime policy: one hour; changes require expiry-policy review.
