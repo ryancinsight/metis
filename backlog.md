@@ -162,13 +162,13 @@ an owner. “Unsupported” cannot replace delivery of a required mobile/native 
 ## METIS-AUTHORITY-001 — Host authority and origin policy [arch] [minor]
 - Status: done; priority: P0; owner: Metis broker + Moirai host mechanisms; integrator: root; last-update: 2026-09-07.
 - Commit: `1517ce5`; ADR: [0011](docs/adr/0011-host-authority-policy.md); verification: [VERIFICATION](docs/VERIFICATION.md#host-authority-and-asset-evidence--2026-09-07).
-- Outcome: canonical origin/window/session binding, host-bound HMAC verification, strict CSP/navigation asset policy, and positive/denial coverage pass the full standalone gate; live service and OS enforcement remain separate items.
+- Outcome: canonical origin/window/session binding, host-bound HMAC verification, strict CSP/navigation asset policy, and positive/denial coverage pass the full standalone gate; target capability discovery and explicit unsupported errors continue under METIS-COMMANDS-001, while live service and OS enforcement remain separate items.
 
 <a id="METIS-COMMANDS-001"></a>
 ## METIS-COMMANDS-001 — Typed commands and event streams [arch] [minor]
 - Status: todo; priority: P1; owner: Metis protocol/client/broker; dependencies: METIS-ASYNC-001, METIS-AUTHORITY-001; risk: public wire contract
-- Scope: general command registration, typed payloads/errors, bounded subscriptions/channels, unsubscribe/cancel and schema/version diagnostics; migrate in-repo callers without forwarding shims.
-- Acceptance: generic conformance suite across admitted transports; changing inputs changes outputs; unknown command/version rejects, late responses cannot mutate a new request and unsubscribed handlers receive nothing.
+- Scope: general command registration, typed payloads/errors, bounded subscriptions/channels, unsubscribe/cancel, schema/version diagnostics, target capability discovery and explicit unsupported-operation errors; migrate in-repo callers without forwarding shims.
+- Acceptance: generic conformance suite across admitted transports; changing inputs changes outputs; capability discovery reports target support, unsupported operations return typed errors, unknown command/version rejects, late responses cannot mutate a new request and unsubscribed handlers receive nothing.
 - Demonstration: [V02](docs/VERIFICATION.md#V02) and [V09](docs/VERIFICATION.md#V09), real backend actions/events in the manual.
 
 <a id="METIS-INPUT-001"></a>
