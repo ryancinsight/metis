@@ -65,6 +65,9 @@ pub(super) fn render(document: &WebDocument, state: &BrowserState) -> io::Result
     };
     set_text(document, "metis-events", event_status)?;
     set_text(document, "options-state", &state.controls.summary())?;
+    let submit_disabled =
+        !matches!(state.bridge, BridgeStatus::Ready) || matches!(state.state, FormState::Pending);
+    element(document, "submit-calculation")?.set_disabled(submit_disabled)?;
     let metrics = match &state.state {
         FormState::Success(response) => match state.controls.display_unit() {
             DisplayUnit::Volume => format!("Volume rate: {:.6} mL/hr", response.rate_ml_hr),

@@ -49,10 +49,11 @@ validates the browser Origin before `101 Switching Protocols`, runs the framed
 bridge in the browser. Post-drop allocation, TLS, cross-engine and desktop
 host evidence remain open.
 
-Revision 2026-09-07: Moirai `9e86e1dd3b9be39b03bacfd830c5a364a33f4f9d` adds the
-checked-state DOM seam. Metis now demonstrates Rust-owned checkbox, radio and
-range controls while select/menu/dialog, pointer capture, IME, accessibility
-technology and native-window input remain open.
+Revision 2026-09-07: Moirai `d879779247c8cfc5870f62f99a5364cbbf2d3c58` adds the
+checked-state and disabled-control DOM seams. Metis now demonstrates Rust-owned
+checkbox, radio and range controls, select state and submit lifecycle gating
+while menu/dialog, pointer capture, IME, accessibility technology and
+native-window input remain open.
 
 ## Decision and scope
 
@@ -170,9 +171,9 @@ producer; [transport](../../crates/metis-ipc/src/transport.rs) blocks on receipt
 Moirai's merged `be87d009cd0e877beef719b47bdcbadc45659069` browser PAL and HTTP
 service own DOM/event callbacks, bounded WebSocket receipt and pre-response
 upgrade validation. The follow-up provider revision
-`9e86e1dd3b9be39b03bacfd830c5a364a33f4f9d` adds checked DOM state. The Metis
-browser host uses those providers, including cancellable local tasks, and the
-live service composes the trusted host policy.
+`d879779247c8cfc5870f62f99a5364cbbf2d3c58` adds checked and disabled DOM state.
+The Metis browser host uses those providers, including cancellable local tasks,
+and the live service composes the trusted host policy.
 The native event producer, cross-engine runtime matrix and OS host remain
 closure requirements, not reasons to add another runtime. Consumer checks are
 against the pushed provider revision, not local provider edits.

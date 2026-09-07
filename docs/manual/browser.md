@@ -101,7 +101,10 @@ the Rust-owned `FormInputs` and the status returns to idle for each valid edit.
 Enter a non-numeric value to observe the typed `ERR_NUMERIC_INSTABILITY`
 display. With no service configuration, submit the form to observe
 `ERR_CONNECTION_CLOSED`; this is an explicit disconnected result, not a local
-calculation or a fabricated success.
+calculation or a fabricated success. The submit control is disabled until an
+authenticated bridge is ready and becomes disabled again while a request is in
+flight; changing the DOM or dispatching a click cannot bypass that lifecycle
+guard.
 
 The **View options** fieldset uses semantic HTML5 controls owned by the Rust
 host. Uncheck **Show remote events** to hide the event status line while the
@@ -116,7 +119,7 @@ checkbox or radio, use the range arrows, and open the select to reproduce the
 keyboard path.
 
 The captured service journey at revision
-`9e86e1dd3b9be39b03bacfd830c5a364a33f4f9d` used the Codex in-app
+`d879779247c8cfc5870f62f99a5364cbbf2d3c58` used the Codex in-app
 browser at 1280×720 CSS pixels and device scale 1.25. Pointer activation of
 **Drug mass rate** changed the summary to `drug mass rate` and the result to
 `Drug mass rate: 2.175000 mg/hr` without clearing the accepted backend result.
@@ -127,6 +130,15 @@ keyboard **Right** presses on **Result scale** changed the semantic value to
 semantic select value to `Audit detail`, changed the annotation to
 `Audit detail: sequence 4`, and retained the result. The focused range received
 the visible keyboard focus ring.
+
+The same service trace verified the submit lifecycle. Before the handshake, the
+accessibility tree marked **Submit to authorized backend** disabled. Once the
+bridge reported ready, the control became enabled. With the service started
+using `--response-delay-ms 4000`, submitting changed the status to **Request in
+progress** and marked the control disabled; after the delayed response, the
+button became enabled and the result showed `Volume rate: 0.543750 mL/hr`.
+On a disconnected workbench, attempting to activate the disabled control timed
+out without changing the status or accessibility tree.
 
 With the service configuration above, the status becomes `Authorized backend
 session ready`, and the header lists the commands advertised by that service

@@ -316,6 +316,9 @@ fn submit(
     if !generation_is_current(generation) {
         return;
     }
+    if !matches!(state.borrow().bridge, BridgeStatus::Ready) {
+        return;
+    }
     if task_slot.borrow().is_some() {
         let mut state = state.borrow_mut();
         state.state = FormState::Pending;

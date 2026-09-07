@@ -17,10 +17,11 @@ inside the Moirai provider so a Metis consumer does not import `web-sys`.
 
 The browser workbench uses semantic HTML5 checkbox, radio, range and select inputs.
 `metis-web` owns one `ControlState` alongside the form state. Moirai's
-`WebElement` reads the browser checked property and input/select value property;
-Rust event listeners validate the value, update `ControlState`, and render the
-derived status and metric text. Listener guards remain owned by the mounted
-application and are dropped on stop/remount.
+`WebElement` reads the browser checked property, input/select value property and
+disabled state; it also sets disabled state for form controls. Rust event
+listeners validate the value, update `ControlState`, and render the derived
+status and metric text. Listener guards remain owned by the mounted application
+and are dropped on stop/remount.
 
 Display-unit, visibility, and result-detail controls change presentation
 preferences only. The range control is a bounded scale preference and the
@@ -43,11 +44,17 @@ bounded scale parsing, invalid control input, numeric-field validation and
 preservation of a successful response while presentation controls change.
 `metis-web` passes native warning-denied Clippy, 10 native tests, and the WASM
 compile and Clippy checks against Moirai
-`9e86e1dd3b9be39b03bacfd830c5a364a33f4f9d`. The authenticated browser trace at
+`d879779247c8cfc5870f62f99a5364cbbf2d3c58`. The authenticated browser trace at
 1280×720 CSS pixels and device scale 1.25 selected the radio and checkbox with
 pointer actions, moved the range twice with the keyboard and selected Audit
 detail through the native select; the accessibility values, status text, focus
 ring and `2.175000 mg/hr` result matched the model.
+
+The same trace observed a disabled submit button before bridge readiness, an
+enabled button after the authenticated handshake, a disabled button during a
+four-second response delay, and an enabled button after the correlated result.
+A disconnected workbench rejected activation of the disabled button and kept
+its status unchanged.
 
 ## Residuals
 

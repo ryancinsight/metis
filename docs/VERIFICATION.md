@@ -20,7 +20,7 @@ process-isolation test. No original OS sandbox or native-window evidence exists.
 - Types and compilation: frontend cannot import the backend through its declared dependency closure; validated policy fields cannot be overwritten externally.
 - Behavioral tests: exact wire fixtures, canonical decoding, malformed corpus, scope/session/time rejection, audit event outcomes and bounded numerical error.
 - Independent numeric evidence: dimensional infusion conversion and exact binary fixtures; arithmetic roundoff uses a stated gamma bound.
-- Crypto evidence: Moirai `9e86e1dd3b9be39b03bacfd830c5a364a33f4f9d` publishes the shared HMAC/SHA-256 and
+- Crypto evidence: Moirai `d879779247c8cfc5870f62f99a5364cbbf2d3c58` publishes the shared HMAC/SHA-256 and
   fixed-width comparison primitives; independent vectors and streaming/padding
   regressions run upstream, while Metis capability, audit, result-signature and
   CLI tests exercise those functions at their real boundaries.
@@ -74,7 +74,7 @@ native system calls; those require targeted lifecycle tests and further platform
 instrumentation. That earlier increment resolved Moirai from pushed commit
 `0514f11`, not local provider edits. The current browser-host increment advances
 the standalone lock to merged provider
-`9e86e1dd3b9be39b03bacfd830c5a364a33f4f9d`; comparative security/memory evidence
+`d879779247c8cfc5870f62f99a5364cbbf2d3c58`; comparative security/memory evidence
 against Tauri and live-service browser tests remain required by [ADR 0002](adr/0002-web-application-contract.md).
 Advisory scanning, coverage,
 mutation analysis and cross-platform sandbox probes remain uncollected.
@@ -157,7 +157,7 @@ accessibility technology support and OS permission isolation remain open in
 ## Browser lifecycle evidence — 2026-09-07
 
 After rebuilding the generated artifacts from the standalone lock at Moirai
-`9e86e1dd3b9be39b03bacfd830c5a364a33f4f9d`, the Codex in-app browser loaded
+`d879779247c8cfc5870f62f99a5364cbbf2d3c58`, the Codex in-app browser loaded
 `http://127.0.0.1:8765/index.html` and exposed `Start host` and `Stop host`
 controls in the accessibility tree. Clicking **Stop host** removed the form
 and exposed the exact text `Metis browser host stopped.`; the inspected
@@ -200,7 +200,7 @@ permission isolation, post-drop allocation counts or cross-engine host parity.
 ## Live browser service evidence — 2026-09-07
 
 The standalone lock resolves all Moirai packages to
-`9e86e1dd3b9be39b03bacfd830c5a364a33f4f9d`, including the bounded HTTP/WebSocket
+`d879779247c8cfc5870f62f99a5364cbbf2d3c58`, including the bounded HTTP/WebSocket
 service and the cancellation-wakeup fix. The focused command
 `cargo nextest run --locked -p metis-backend -p metis-ipc -p metis-core`
 passes 55/55; native all-targets Clippy for `metis-backend` and `metis-ipc`,
@@ -241,7 +241,7 @@ result-detail changes to a successful response without clearing that response. N
 warning-denied Clippy, the WASM-target check and WASM-target Clippy pass for
 `metis-web`; `python scripts/browser.py build` regenerates the loader and WASM
 from the standalone lock at Moirai
-`9e86e1dd3b9be39b03bacfd830c5a364a33f4f9d`.
+`d879779247c8cfc5870f62f99a5364cbbf2d3c58`.
 
 In the authenticated service trace, the Codex in-app browser exposed the
 semantic control names and values at a 1280×720 CSS-pixel viewport and device
@@ -257,9 +257,19 @@ the result annotation to `Audit detail: sequence 4` while retaining
 `Drug mass rate: 2.175000 mg/hr`. The browser console contained only expected
 Moirai initialization entries and no warnings or errors.
 
-This closes the checkbox/radio/range/select browser slice and its real pointer
-and keyboard demonstration. Menu/dialog controls, pointer capture,
-drag/drop, wheel/touch/modifier events, IME, accessibility technology,
+The same trace verified the disabled-control lifecycle introduced by the
+Moirai `WebElement::disabled`/`set_disabled` seam. Before the authenticated
+handshake, the accessibility tree marked **Submit to authorized backend** as
+disabled. The control became enabled when the bridge reported ready. With a
+four-second response delay, submitting changed the status to **Request in
+progress** and disabled the control; after the correlated response it became
+enabled again and the metric was `Volume rate: 0.543750 mL/hr`. A disconnected
+workbench rejected activation of its disabled submit control; the status and
+accessibility tree stayed unchanged.
+
+This closes the checkbox/radio/range/select and disabled-submit browser slices
+with real pointer and keyboard demonstrations. Menu/dialog controls, pointer
+capture, drag/drop, wheel/touch/modifier events, IME, accessibility technology,
 cross-engine parity, post-drop allocation and native-window input remain open
 under the linked backlog items.
 
@@ -270,7 +280,7 @@ The service conformance host now accepts `--response-delay-ms` with a bounded
 timer in `AsyncIpcServer` and applies only to a successful clinical response;
 handshake, rejection and event frames remain immediate. The probe was run at
 revision `a8cc67c` with the standalone lock resolving Moirai to
-`9e86e1dd3b9be39b03bacfd830c5a364a33f4f9d`:
+`d879779247c8cfc5870f62f99a5364cbbf2d3c58`:
 
 ```text
 cargo run --locked -p metis-app -- --metis-browser-service http://127.0.0.1:8080 8765 66666666666666666666666666666666 --response-delay-ms 4000

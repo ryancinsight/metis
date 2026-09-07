@@ -165,7 +165,9 @@ an owner. “Unsupported” cannot replace delivery of a required mobile/native 
 - Demonstration: [V02](docs/VERIFICATION.md#V02), settings workbench; repeat on each native host as it becomes supported.
 - Completed increment: `feat(web): Add semantic browser controls` adds Rust-owned checkbox, radio, bounded range and select state, the Moirai `WebElement::checked` and input/select value seams, and split control/view modules; native `metis-web` tests pass 10/10 and the WASM gate is clean.
 - Live evidence: [browser control evidence](docs/VERIFICATION.md#browser-control-evidence--2026-09-07) records pointer radio/visibility changes, two keyboard range steps and a native select change in the authenticated service trace. Presentation changes preserve the correlated backend result.
-- Residuals: menu/dialog, disabled-control semantics, pointer capture, drag/drop, wheel/touch/modifier events, IME, accessibility technology and native-host input remain open; re-open this item when those dependencies land.
+- Completed increment: `feat(web): Enforce disabled control lifecycle` consumes Moirai `WebElement::disabled`/`set_disabled` from `d879779247c8cfc5870f62f99a5364cbbf2d3c58`; the submit button is disabled until the authenticated bridge is ready and while a request is pending, and programmatic submits are ignored outside the ready state.
+- Live evidence: [browser control evidence](docs/VERIFICATION.md#browser-control-evidence--2026-09-07) records the disabled accessibility state before connection, the pending-state disable during a delayed response, re-enablement after the correlated result, and unchanged state after activation was rejected.
+- Residuals: menu/dialog, pointer capture, drag/drop, wheel/touch/modifier events, IME, accessibility technology and native-host input remain open; re-open this item when those dependencies land.
 
 <a id="METIS-TEXT-001"></a>
 ## METIS-TEXT-001 — Text, selection and IME [minor]
