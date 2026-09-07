@@ -361,6 +361,20 @@ mod tests {
     use super::*;
 
     #[test]
+    fn empty_and_trailing_declarations_keep_the_default_contract() {
+        assert_eq!(
+            ComputedStyle::parse("").expect("empty style"),
+            ComputedStyle::default()
+        );
+        assert_eq!(
+            ComputedStyle::parse("display: flex;")
+                .expect("trailing declaration separator")
+                .display,
+            Display::Flex
+        );
+    }
+
+    #[test]
     fn parses_admitted_values_and_stored_properties() {
         let style = ComputedStyle::parse(
             "display: block; flex-direction: row; justify-content: center; align-items: end; \
@@ -401,6 +415,7 @@ mod tests {
         for css in [
             "unknown: value",
             "display",
+            "gap:",
             "display: column",
             "gap: -1px",
             "width: NaN%",
