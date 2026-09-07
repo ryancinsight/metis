@@ -38,6 +38,14 @@ contracts as the private-pipe server and sends one bounded response message.
 `serve_browser_websocket` adds the host-origin validator before the HTTP 101
 response and requires a trusted `HostContext` before serving a browser session.
 
+`EventHub<E, CAPACITY>` provides bounded local fan-out for host events. Each
+`Subscription` owns a finite queue; `publish` returns `QueueFull` instead of
+blocking or discarding an event, and `unsubscribe` removes delivery before a
+future publication. `recv_timeout` requires an explicit finite deadline.
+
+`discover_capabilities` returns `CapabilityError`, keeping local protocol
+failures separate from the peer's full `ErrorResponsePayload`.
+
 Fault injection modifies encoded wire bytes before delivery. CRC32 detects
 accidental corruption; it does not authenticate transport peers. Handshake
 principal/version checks validate response consistency, while the application

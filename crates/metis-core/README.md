@@ -5,6 +5,9 @@ integrity. Authentication hashing comes from the Atlas-owned
 `moirai-crypto` provider with its TLS feature disabled; CRC-32 remains local
 because it detects accidental corruption rather than authenticating peers.
 This crate contains no backend calculation or audit storage implementation.
+The protocol exposes a bounded capability catalog with descriptors for the
+closed request/response command set; catalog entries are validated before a
+host or client can use them.
 
 ```rust
 use metis_core::{build_frame, FrameHeader, MessageType, HEADER_SIZE};

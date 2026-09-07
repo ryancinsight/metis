@@ -23,3 +23,6 @@ handshake principal can route a session but cannot select its authority. The
 example policy is not clinical guidance. Audit storage does not survive restart. See
 [architecture](../../docs/ARCHITECTURE.md) and
 [verification](../../docs/VERIFICATION.md). This package is unpublished.
+After handshake the service answers `CapabilityReq` with its bounded command
+catalog. A known command outside that catalog produces an explicit typed
+`UnexpectedMessageType` response.

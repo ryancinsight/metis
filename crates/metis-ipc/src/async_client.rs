@@ -1,10 +1,15 @@
 //! Correlated asynchronous IPC for browser-thread transports.
 
-use crate::client::{HandshakeError, decode_handshake_response, next_request, validate_response};
+use crate::client::{
+    CapabilityError, HandshakeError, decode_capability_response, decode_handshake_response,
+    next_request, validate_response,
+};
 use crate::transport::AsyncIpcTransport;
 use metis_core::capability::CapabilityToken;
 use metis_core::error::{ErrorCode, MetisError, Result};
-use metis_core::protocol::{HandshakeRequestPayload, MessageType, PROTOCOL_VERSION};
+use metis_core::protocol::{
+    CapabilityCatalogPayload, HandshakeRequestPayload, MessageType, PROTOCOL_VERSION,
+};
 use std::collections::BTreeMap;
 use std::time::Duration;
 
@@ -81,6 +86,18 @@ impl<T: AsyncIpcTransport> AsyncIpcClient<T> {
         let token = decode_handshake_response(kind, &payload, principal_id)?;
         self.active_token = Some(token.clone());
         Ok(token)
+    }
+
+    /// Discovers the typed commands advertised by an authenticated host.
+    ///
+    /// # Errors
+    /// Returns local transport, correlation, decoding, or protocol-version
+    /// errors, or the peer's decoded rejection.
+    pub async fn discover_capabilities(
+        &mut self,
+    ) -> std::result::Result<CapabilityCatalogPayload, CapabilityError> {
+        let (kind, payload) = self.send_and_recv(MessageType::CapabilityReq, &[]).await?;
+        decode_capability_response(kind, &payload)
     }
 
     /// Returns the current session capability, if acquired.
@@ -362,6 +379,32 @@ mod tests {
             Err(HandshakeError::Remote(rejection))
         );
         assert_eq!(client.active_token(), None);
+    }
+
+    #[test]
+    fn capability_discovery_uses_the_correlated_async_request() {
+        let catalog = CapabilityCatalogPayload::new([
+            MessageType::CapabilityReq,
+            MessageType::ClinicalCalcReq,
+        ])
+        .expect("catalog");
+        let response = frame(
+            MessageType::CapabilityResp,
+            1,
+            &catalog.encode().expect("encoded catalog"),
+        );
+        let mut client =
+            AsyncIpcClient::new(ScriptTransport::new([response]), Duration::from_secs(1))
+                .expect("positive timeout");
+        assert_eq!(
+            poll_ready(client.discover_capabilities()).expect("catalog"),
+            catalog
+        );
+        let wire = client.transport.sent.first().expect("request frame");
+        let mut wire = wire.as_slice();
+        let (header, payload) = crate::read_frame(&mut wire).expect("request");
+        assert_eq!(header.msg_type, MessageType::CapabilityReq);
+        assert!(payload.is_empty());
     }
 
     #[test]

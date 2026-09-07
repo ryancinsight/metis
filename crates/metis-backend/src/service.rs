@@ -13,8 +13,9 @@ use metis_core::capability::{CapabilityGrantSpec, CapabilityScope, CapabilityTok
 use metis_core::error::{ErrorCode, MetisError, Result};
 use metis_core::host::{HostContext, HostPolicy, HostSessionId};
 use metis_core::protocol::{
-    ClinicalCalcRequestPayload, ClinicalCalcResponsePayload, ErrorResponsePayload, FrameHeader,
-    HandshakeRequestPayload, HandshakeResponsePayload, MessageType, PROTOCOL_VERSION,
+    CapabilityCatalogPayload, ClinicalCalcRequestPayload, ClinicalCalcResponsePayload,
+    ErrorResponsePayload, FrameHeader, HandshakeRequestPayload, HandshakeResponsePayload,
+    MessageType, PROTOCOL_VERSION, SUPPORTED_COMMANDS,
 };
 use metis_ipc::server::{FailureContext, IpcHandler, RequestIdentity};
 use moirai_crypto::hmac_sha256;
@@ -352,6 +353,22 @@ impl<C: Clock> BackendService<C> {
         Ok(response.encode())
     }
 
+    fn capabilities(&self, payload: &[u8]) -> Result<Vec<u8>> {
+        if !payload.is_empty() {
+            return Err(MetisError::protocol(
+                ErrorCode::MalformedPayload,
+                "Capability discovery request must have an empty payload",
+            ));
+        }
+        if self.session.is_none() {
+            return Err(MetisError::capability(
+                ErrorCode::MissingCapability,
+                "Handshake required before capability discovery",
+            ));
+        }
+        CapabilityCatalogPayload::new(SUPPORTED_COMMANDS.iter().copied())?.encode()
+    }
+
     fn result_signature(
         &self,
         header: &FrameHeader,
@@ -392,6 +409,9 @@ impl<C: Clock> BackendService<C> {
                 MessageType::HandshakeResp,
                 self.handshake(payload, reading)?,
             )),
+            MessageType::CapabilityReq => {
+                Ok((MessageType::CapabilityResp, self.capabilities(payload)?))
+            }
             MessageType::HeartbeatReq if payload.is_empty() => {
                 Ok((MessageType::HeartbeatResp, Vec::new()))
             }
@@ -444,3 +464,7 @@ impl<C: Clock> IpcHandler for BackendService<C> {
         clock_result.map(|_| ())
     }
 }
+
+#[cfg(test)]
+#[path = "service_tests.rs"]
+mod service_tests;
