@@ -50,11 +50,8 @@ an owner. “Unsupported” cannot replace delivery of a required mobile/native 
 
 <a id="METIS-SEC-001"></a>
 ## METIS-SEC-001 — Backend authority [arch] [patch]
-- Status: in-progress; priority: P0; integrator: root; last-update: 2026-09-07; branch: `feat/process-foundation`
-- Scope: backend-only calculation/audit, validated configuration, session authority, real time and OS entropy.
-- Acceptance: malformed/expired/cross-session requests fail; numerical boundary tests pass; frontend dependency closure excludes clinical/audit modules.
-- Decision: [ADR 0001](docs/adr/0001-process-contract.md).
-- Demonstration: [V01](docs/VERIFICATION.md#V01) and [V08](docs/VERIFICATION.md#V08), real scoped request success/rejection with honest authentication status.
+- Status: done; priority: P0; delivery: `1517ce5`; authority audit passed 2026-09-07.
+- Outcome: Host-bound capability, expiry, cross-session rejection and frontend dependency checks satisfy [ADR 0001](docs/adr/0001-process-contract.md) and [ADR 0011](docs/adr/0011-host-authority-policy.md); OS permissions and durable audit remain separate gaps.
 
 <a id="METIS-IPC-001"></a>
 ## METIS-IPC-001 — Canonical bounded IPC [patch]
