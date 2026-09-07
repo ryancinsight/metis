@@ -1,8 +1,9 @@
 # Open capability and evidence risks
 
 Source baseline and full comparison: [ADR 0003](docs/adr/0003-framework-conformance.md).
-Scope: Metis browser-host increment on `feat/browser-host`, based on `fb0c944`,
-inspected 2026-09-06. Earlier rows describe the pre-host baseline; implementation status belongs in
+Scope: Metis browser lifecycle increment on `feat/browser-lifecycle`, based on
+`58fdc6a`, inspected 2026-09-07. Earlier rows describe the pre-host
+baseline; implementation status belongs in
 [backlog.md](backlog.md); this register contains unresolved risks only.
 
 | Risk | Current evidence | Closure / recheck trigger |
