@@ -9,8 +9,9 @@ use crate::audit::{AuditEvent, AuditLedger};
 use crate::clinical::{
     DrugConcentrationMgMl, PatientWeightKg, SafetyEnvelope, TargetDoseRate, calculate_infusion_rate,
 };
-use metis_core::capability::{CapabilityScope, CapabilityToken};
+use metis_core::capability::{CapabilityGrantSpec, CapabilityScope, CapabilityToken};
 use metis_core::error::{ErrorCode, MetisError, Result};
+use metis_core::host::{HostContext, HostPolicy, HostSessionId};
 use metis_core::protocol::{
     ClinicalCalcRequestPayload, ClinicalCalcResponsePayload, ErrorResponsePayload, FrameHeader,
     HandshakeRequestPayload, HandshakeResponsePayload, MessageType, PROTOCOL_VERSION,
@@ -70,6 +71,7 @@ impl Clock for SystemClock {
 
 struct Session {
     token: CapabilityToken,
+    context: HostContext,
     started: Duration,
 }
 
@@ -77,6 +79,7 @@ struct Session {
 pub struct BackendService<C = SystemClock> {
     master_key: [u8; 32],
     envelope: SafetyEnvelope,
+    host_policy: HostPolicy,
     ledger: AuditLedger,
     clock: C,
     session: Option<Session>,
@@ -92,7 +95,12 @@ impl BackendService {
     /// Example envelope limits do not constitute clinical validation.
     #[must_use]
     pub fn new(master_key: [u8; 32], envelope: SafetyEnvelope) -> Self {
-        Self::with_clock(master_key, envelope, SystemClock::default())
+        Self::with_clock_and_policy(
+            master_key,
+            envelope,
+            SystemClock::default(),
+            HostPolicy::native(),
+        )
     }
 }
 
@@ -100,9 +108,21 @@ impl<C> BackendService<C> {
     /// Selects a clock implementation for deterministic temporal verification.
     #[must_use]
     pub fn with_clock(master_key: [u8; 32], envelope: SafetyEnvelope, clock: C) -> Self {
+        Self::with_clock_and_policy(master_key, envelope, clock, HostPolicy::native())
+    }
+
+    /// Selects a clock and exact host policy for deterministic verification.
+    #[must_use]
+    pub fn with_clock_and_policy(
+        master_key: [u8; 32],
+        envelope: SafetyEnvelope,
+        clock: C,
+        host_policy: HostPolicy,
+    ) -> Self {
         Self {
             master_key,
             envelope,
+            host_policy,
             ledger: AuditLedger::new(),
             clock,
             session: None,
@@ -191,15 +211,20 @@ impl<C: Clock> BackendService<C> {
         // The session key is unique; the issuance sequence is a public identifier,
         // never a substitute for the key's unpredictability.
         let token_id = self.ledger.next_sequence();
-        let token = CapabilityToken::issue(
-            token_id,
-            request.principal_id,
-            CapabilityScope::SUBMIT_CALCULATION,
-            reading.unix_time.as_secs(),
-            SESSION_LIFETIME.as_secs(),
-            token_id,
+        let context = self
+            .host_policy
+            .context_for(HostSessionId::new(request.principal_id)?);
+        let token = context.issue_capability(
+            CapabilityGrantSpec {
+                token_id,
+                principal_id: request.principal_id,
+                scope: CapabilityScope::SUBMIT_CALCULATION,
+                issued_at_secs: reading.unix_time.as_secs(),
+                duration_secs: SESSION_LIFETIME.as_secs(),
+                nonce: token_id,
+            },
             &self.master_key,
-        );
+        )?;
         let response = HandshakeResponsePayload {
             server_version: PROTOCOL_VERSION,
             initial_token: token.clone(),
@@ -207,6 +232,7 @@ impl<C: Clock> BackendService<C> {
         .encode();
         self.session = Some(Session {
             token,
+            context,
             started: reading.monotonic,
         });
         Ok(response)
@@ -219,17 +245,20 @@ impl<C: Clock> BackendService<C> {
                 "Handshake required before calculation",
             )
         })?;
-        token.verify(
-            CapabilityScope::SUBMIT_CALCULATION,
-            reading.unix_time.as_secs(),
-            &self.master_key,
-        )?;
-        if token.claims_bytes() != session.token.claims_bytes() {
+        if token != &session.token {
             return Err(MetisError::capability(
                 ErrorCode::InvalidPrincipal,
                 "Capability was not issued to this transport session",
             ));
         }
+        let _verified = self
+            .host_policy
+            .authorize::<{ CapabilityScope::SUBMIT_CALCULATION.0 }>(
+                token,
+                &session.context,
+                reading.unix_time.as_secs(),
+                &self.master_key,
+            )?;
         let elapsed = reading
             .monotonic
             .checked_sub(session.started)
