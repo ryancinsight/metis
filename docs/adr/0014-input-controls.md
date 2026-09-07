@@ -56,9 +56,14 @@ four-second response delay, and an enabled button after the correlated result.
 A disconnected workbench rejected activation of the disabled button and kept
 its status unchanged.
 
+The dialog increment consumes Moirai `WebElement::dialog_open`, `show_modal`,
+`close_dialog` and `focus` from `8f02b8b7de6cf6361b519bd79759d8508568fbdb`.
+The authenticated browser trace opened the native HTML dialog, verified its
+status and capability text, closed it through the Rust listener, restored focus
+to the opener on the `close` event, and exercised Escape dismissal.
+
 ## Residuals
 
-Menu/dialog controls, pointer capture, drag/drop, wheel/touch/modifier events,
-IME, accessibility technology and native-window input remain under the linked
-backlog items. This increment does not claim cross-engine or native
-input parity.
+Pointer capture, drag/drop, wheel/touch/modifier events, IME, accessibility
+technology and native-window input remain under the linked backlog items. This
+increment does not claim cross-engine or native input parity.

@@ -268,10 +268,38 @@ workbench rejected activation of its disabled submit control; the status and
 accessibility tree stayed unchanged.
 
 This closes the checkbox/radio/range/select and disabled-submit browser slices
-with real pointer and keyboard demonstrations. Menu/dialog controls, pointer
-capture, drag/drop, wheel/touch/modifier events, IME, accessibility technology,
-cross-engine parity, post-drop allocation and native-window input remain open
-under the linked backlog items.
+with real pointer and keyboard demonstrations. Pointer capture, drag/drop,
+wheel/touch/modifier events, IME, accessibility technology, cross-engine parity,
+post-drop allocation and native-window input remain open under the linked
+backlog items.
+
+## Browser dialog evidence — 2026-09-07
+
+The dialog increment consumes Moirai `WebElement::dialog_open`, `show_modal`,
+`close_dialog` and `focus` from merged revision
+`8f02b8b7de6cf6361b519bd79759d8508568fbdb`. `metis-web` passes 10/10 native
+nextest tests, native warning-denied Clippy, the WASM-target check and
+WASM-target Clippy; `python scripts/browser.py build` produces the generated
+loader and WASM from that standalone lock.
+
+The authenticated Codex in-app browser trace used the same 1280×720 CSS-pixel
+viewport and device scale 1.25. **Session details** appeared as a semantic
+dialog opener. Activating it opened the native HTML dialog; the provider-backed
+open-state read returned the `open` attribute, and the accessibility tree
+exposed **Authorized session details**, the ready status, the full capability
+summary and **Close**. The captured modal screenshot showed the dialog backdrop,
+the bounded panel and the visible focus ring on **Close**.
+
+Activating **Close** called the Rust `close_dialog` seam. The browser `close`
+event then called the provider `focus` seam, and the accessibility tree returned
+to the workbench with focus on **Session details**. Pressing **Escape** closed
+the modal through the browser's native cancel path; the dialog had no `open`
+attribute afterward and focus again returned to the opener. The browser console
+contained only expected Moirai initialization entries and no warnings or errors.
+
+This closes the menu/dialog portion of `METIS-INPUT-001`. Pointer capture,
+drag/drop, wheel/touch/modifier events, IME, accessibility technology,
+cross-engine parity, post-drop allocation and native-window input remain open.
 
 ## Browser stale-response evidence — 2026-09-07
 

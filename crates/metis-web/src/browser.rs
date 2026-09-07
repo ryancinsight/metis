@@ -2,6 +2,8 @@
 
 #[path = "browser/config.rs"]
 mod config;
+#[path = "browser/dialog.rs"]
+mod dialog;
 #[path = "browser/events.rs"]
 mod events;
 #[path = "view.rs"]
@@ -79,7 +81,7 @@ impl BrowserApplication {
         let app = Rc::new(RefCell::new(None));
         let task = Rc::new(RefCell::new(None));
 
-        let mut listeners = Vec::with_capacity(9);
+        let mut listeners = Vec::with_capacity(12);
         listeners.push(input_listener(
             document,
             &state,
@@ -143,6 +145,7 @@ impl BrowserApplication {
             "change",
             ControlField::ResultDetail,
         )?);
+        listeners.extend(dialog::listeners(document)?);
 
         let form = view::element(document, "metis-form")?;
         let listener_document = document.clone();

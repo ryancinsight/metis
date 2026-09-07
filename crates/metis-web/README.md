@@ -15,9 +15,11 @@ After a successful submission the workbench receives and decodes the backend's
 `clinical.result` event, verifies it matches the correlated response, and
 renders its identifier and rates in the event status line.
 
-The workbench also demonstrates Rust-owned checkbox, radio and range controls.
-Their semantic browser state is read through Moirai's DOM seam and rendered as
-bounded presentation preferences without changing the authoritative response.
+The workbench also demonstrates Rust-owned checkbox, radio, range and native
+HTML dialog controls. Their semantic browser state is read through Moirai's DOM
+seam and rendered as bounded presentation preferences without changing the
+authoritative response. Dialog open/close operations and focus restoration stay
+inside that same seam.
 
 Build the WASM artifact and generated browser glue with:
 

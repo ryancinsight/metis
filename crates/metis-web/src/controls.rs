@@ -10,7 +10,14 @@ pub(crate) const BROWSER_MARKUP: &str = r#"
   <p id="metis-capabilities">Host capabilities: unavailable</p>
   <p id="metis-plugins">Registered frontend extensions: unavailable</p>
   <p id="metis-events" role="status">Remote events: none</p>
+  <button id="open-session-dialog" type="button" aria-haspopup="dialog" aria-controls="session-dialog">Session details</button>
 </header>
+<dialog id="session-dialog" aria-labelledby="session-dialog-heading">
+  <h2 id="session-dialog-heading">Authorized session details</h2>
+  <p id="session-dialog-status" role="status">Controls active; no authorized backend bridge configured</p>
+  <p id="session-dialog-capabilities">Host capabilities: unavailable</p>
+  <button id="session-dialog-close" type="button">Close</button>
+</dialog>
 <form id="metis-form" class="metis-form">
   <label for="patient-id">Patient reference</label>
   <input id="patient-id" name="patient-id" value="PT-9042-ALPHA" autocomplete="off">

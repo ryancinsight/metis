@@ -56,7 +56,9 @@ pub(super) fn render(document: &WebDocument, state: &BrowserState) -> io::Result
         _ => "Unsupported form state".to_owned(),
     };
     set_text(document, "metis-status", &message)?;
+    set_text(document, "session-dialog-status", &message)?;
     set_text(document, "metis-capabilities", &state.capabilities)?;
+    set_text(document, "session-dialog-capabilities", &state.capabilities)?;
     set_text(document, "metis-plugins", &state.plugins)?;
     let event_status = if state.controls.show_events() {
         state.event_status.as_str()

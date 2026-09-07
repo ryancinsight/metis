@@ -131,6 +131,22 @@ semantic select value to `Audit detail`, changed the annotation to
 `Audit detail: sequence 4`, and retained the result. The focused range received
 the visible keyboard focus ring.
 
+The header's **Session details** button exercises the native HTML dialog path.
+Activate it after the host reports ready. Rust calls the Moirai `show_modal`
+seam; the dialog exposes the current session status and capability summary as
+text and keeps browser focus on its **Close** button. Activate **Close** to call
+the Rust `close_dialog` seam. The native `close` event restores focus to
+**Session details** through Moirai's `focus` seam. Press **Escape** to exercise
+the browser's cancel path; it closes the dialog and restores the same opener.
+The dialog open-state read is used to avoid duplicate modal transitions.
+
+The 2026-09-07 trace at the same 1280×720 CSS-pixel viewport and device scale
+1.25 captured the modal backdrop and focus ring, matched the ready status and
+capability text in the accessibility tree, verified the `open` attribute while
+modal and its absence after both close paths, and observed focus return to the
+opener. It used Moirai revision
+`8f02b8b7de6cf6361b519bd79759d8508568fbdb`.
+
 The same service trace verified the submit lifecycle. Before the handshake, the
 accessibility tree marked **Submit to authorized backend** disabled. Once the
 bridge reported ready, the control became enabled. With the service started

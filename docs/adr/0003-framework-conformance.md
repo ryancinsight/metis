@@ -55,6 +55,12 @@ checkbox, radio and range controls, select state and submit lifecycle gating
 while menu/dialog, pointer capture, IME, accessibility technology and
 native-window input remain open.
 
+Revision 2026-09-07: Moirai `8f02b8b7de6cf6361b519bd79759d8508568fbdb` adds typed
+HTML dialog open/close/state and focus seams. Metis now demonstrates modal
+session details, provider-backed close and opener focus restoration in the
+authenticated browser trace. Pointer capture, IME, accessibility technology and
+native-window input remain open.
+
 ## Decision and scope
 
 Use Tauri as the application-framework migration reference and egui/GPUI/Iced

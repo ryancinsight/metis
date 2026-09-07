@@ -5,8 +5,12 @@ body { margin: 0; min-width: 320px; }
 #metis-app { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 1.5rem; max-width: 960px; margin: 0 auto; padding: 2rem; }
 .metis-header, .metis-form, .metis-options, .metis-result { border: 1px solid #334155; border-radius: 0.75rem; background: #1e293b; padding: 1.25rem; }
 .metis-header { grid-column: 1 / -1; }
+.metis-header > button { margin-top: 1rem; }
 .metis-kicker { margin: 0 0 0.5rem; color: #67e8f9; font-size: 0.75rem; letter-spacing: 0.12em; }
 h1, h2 { margin-top: 0; }
+dialog { max-width: min(32rem, calc(100vw - 3rem)); border: 1px solid #67e8f9; border-radius: 0.75rem; background: #1e293b; color: #e2e8f0; padding: 1.25rem; }
+dialog::backdrop { background: rgb(15 23 42 / 75%); }
+dialog p { color: #bae6fd; }
 .metis-form { display: grid; gap: 0.65rem; }
 .metis-options { display: grid; align-content: start; gap: 0.65rem; margin: 0; }
 .metis-options legend { padding: 0 0.35rem; color: #f8fafc; font-weight: 700; }
@@ -17,6 +21,7 @@ input, select { box-sizing: border-box; width: 100%; border: 1px solid #64748b; 
 input[type="checkbox"], input[type="radio"] { width: auto; padding: 0; accent-color: #22d3ee; }
 input[type="range"] { padding: 0; accent-color: #22d3ee; }
 button { margin-top: 0.5rem; border: 0; border-radius: 0.4rem; background: #0891b2; color: #ecfeff; padding: 0.7rem 1rem; font: inherit; font-weight: 700; cursor: pointer; }
+button:disabled { background: #475569; color: #cbd5e1; cursor: not-allowed; opacity: 0.75; }
 button:focus-visible, input:focus-visible, select:focus-visible { outline: 3px solid #facc15; outline-offset: 2px; }
 .metis-result { min-height: 12rem; }
 #options-state, #result-metrics, #result-detail { color: #bae6fd; min-height: 1.5rem; }
