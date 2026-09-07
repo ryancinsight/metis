@@ -36,10 +36,14 @@ lifecycles; they do not supply this broker contract.
   uses `metis://native` and window 1, while deterministic tests can provide an
   explicit policy. The session stores the trusted context and rejects any
   token other than the one issued for that context.
-- The browser asset shell uses external CSS and module files under a strict
-  same-origin CSP. Its bootstrap blocks cross-origin anchor navigation as
-  defense in depth. The native or service host remains the enforcement point;
-  downloaded WASM is never an authority source.
+- The browser asset shell uses external CSS and module files under the strict
+  same-origin policy in `crates/metis-core/src/content_security_policy.txt`.
+  `HostPolicy` includes that source and the browser build checks the HTML
+  asset against it. The policy permits the generated WASM loader with
+  `'wasm-unsafe-eval'`; its `frame-ancestors` directive is effective only when
+  a native or service host sends the policy as a response header. The
+  bootstrap blocks cross-origin anchor navigation as defense in depth.
+  Downloaded WASM is never an authority source.
 
 This contract is shared by future desktop and authenticated browser bridges.
 Those bridges must supply observed host metadata and may not derive authority
@@ -57,7 +61,7 @@ primitives.
 
 ## Verification
 
-Core tests cover canonicalization, malformed and injection forms, exact policy
+Core tests cover canonicalization, strict IPv6, malformed and injection forms, exact policy
 matches, origin/window/session substitutions, unbound-token rejection and
 retargeted host signatures. Backend process and IPC tests continue to exercise
 one-handshake session binding and expiry. The browser asset test and manual

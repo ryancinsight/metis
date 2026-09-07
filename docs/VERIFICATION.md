@@ -173,7 +173,7 @@ parity.
 
 The `metis-core` host contract now parses canonical ASCII network origins,
 rejects credentials/paths/wildcards/opaque schemes and invalid ports, and binds
-one exact origin and window to a nonzero session principal. Six core tests
+one exact origin and window to a nonzero session principal. Seven core tests
 cover positive authorization, origin/window/session substitutions, unbound
 tokens and retargeted host signatures. `metis-backend` stores the trusted
 context in each session and issues its fixed-width token with the host binding
@@ -182,11 +182,14 @@ window 1. Existing backend/IPC tests continue to cover one-handshake and
 cross-session rejection.
 
 The browser shell moved its CSS and module bootstrap to external same-origin
-assets. Two static asset tests verify that the document has no inline style or
-module body, that the CSP contains same-origin script/style/connect and
-same-origin form actions, and that the bootstrap blocks cross-origin anchor
-navigation. The existing browser screenshot/console trace remains valid after
-the asset move; it still has no authenticated service.
+assets. Static asset tests verify that the document has no inline style or
+module body, that its policy equals the `HostPolicy` source, that WASM is
+permitted through `'wasm-unsafe-eval'`, and that the bootstrap blocks
+cross-origin anchor navigation. The browser build rejects policy drift before
+copying the page. The `frame-ancestors` directive requires a response header
+from the eventual native or service host; it is not an effective document-meta
+framing control. The browser screenshot/console trace therefore establishes
+WASM and asset loading but still has no authenticated service.
 
 This evidence establishes the local authority kernel and asset policy. It does
 not establish service-side Origin header validation, TLS endpoint policy, a

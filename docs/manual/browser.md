@@ -7,13 +7,20 @@ Moirai owns the DOM handles and listener lifetimes. The page contains no
 backend key and does not perform the privileged clinical calculation in
 downloaded WASM.
 
-The page carries the same strict content-security policy emitted by
-`metis_core::HostPolicy`: scripts and styles load from the page origin,
-connections are same-origin, forms cannot post elsewhere, and plugins and
-framing are disabled. The bootstrap also cancels cross-origin anchor
-navigation as a defense-in-depth check. A host must still enforce the policy
-at the native or service boundary; downloaded page code is not an authority
-source.
+The page carries the same strict content-security policy as
+`metis_core::HostPolicy`. The policy source is
+`crates/metis-core/src/content_security_policy.txt`; the browser build checks
+the HTML asset against that source before copying it. Scripts, styles,
+connections and form actions are same-origin, the generated WASM loader is
+permitted by `'wasm-unsafe-eval'`, and plugins are disabled. The bootstrap also
+cancels cross-origin anchor navigation as a defense-in-depth check.
+
+The `frame-ancestors 'none'` directive is present for a host that delivers the
+policy as an HTTP response header. Browsers do not enforce `frame-ancestors`
+from a document meta tag, so the current static workbench has no framing
+enforcement until its native or service host supplies that header. A host must
+also enforce origin, session and operating-system policy at its boundary;
+downloaded page code is not an authority source.
 
 ## Build and serve
 

@@ -164,7 +164,7 @@ an owner. “Unsupported” cannot replace delivery of a required mobile/native 
 - Scope: deny-by-default command grants bound to session/origin/window, CSP/navigation/asset policy, target capability discovery and explicit unsupported errors.
 - Acceptance: spoofed origin/window, navigation, replay, injection and resource-exhaustion probes cannot elevate authority; backend keys absent from WASM/assets; each grant has positive and denial cases.
 - Demonstration: [V08](docs/VERIFICATION.md#V08); screenshots pair visible denial with backend/probe evidence, never substitute for it. OS enforcement lands per desktop item.
-- First increment: add a validated host-origin/window/session contract, bind backend capability verification to that contract, and ship a strict browser CSP/navigation policy. `HostPolicy` and host-bound HMAC checks now pass their positive and substitution tests; live authenticated service and OS permission probes remain separate acceptance slices.
+- First increment: add a validated host-origin/window/session contract, bind backend capability verification to that contract, and ship a strict browser CSP/navigation policy. `HostPolicy` and host-bound HMAC checks now pass their positive, strict-IPv6 and substitution tests; the HTML policy is checked against the same canonical source, while live authenticated service and OS permission probes remain separate acceptance slices.
 
 <a id="METIS-COMMANDS-001"></a>
 ## METIS-COMMANDS-001 — Typed commands and event streams [arch] [minor]

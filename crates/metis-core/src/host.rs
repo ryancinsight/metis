@@ -8,12 +8,13 @@ use crate::capability::{CapabilityGrantSpec, CapabilityScope, CapabilityToken};
 use crate::error::{ErrorCode, MetisError, Result};
 use moirai_crypto::sha256;
 use std::fmt;
+use std::net::Ipv6Addr;
 use std::num::NonZeroU64;
 use std::str::FromStr;
 
 const MAX_ORIGIN_BYTES: usize = 256;
 const NATIVE_ORIGIN: &str = "metis://native";
-const CONTENT_SECURITY_POLICY: &str = "default-src 'self'; script-src 'self'; style-src 'self'; connect-src 'self'; img-src 'self'; object-src 'none'; base-uri 'none'; frame-ancestors 'none'; form-action 'self'";
+const CONTENT_SECURITY_POLICY: &str = include_str!("content_security_policy.txt");
 const HOST_BINDING_DOMAIN: &[u8; 8] = b"METIS-H1";
 const NATIVE_WINDOW_ID: WindowId = WindowId(NonZeroU64::MIN);
 
@@ -393,14 +394,9 @@ fn canonical_authority(authority: &str) -> Result<String> {
             return Err(invalid_origin());
         };
         let host = &authority[1..close];
-        if host.is_empty()
-            || !host.contains(':')
-            || host
-                .bytes()
-                .any(|byte| !(byte.is_ascii_hexdigit() || matches!(byte, b':' | b'.')))
-        {
+        let Ok(host) = host.parse::<Ipv6Addr>() else {
             return Err(invalid_origin());
-        }
+        };
         let suffix = &authority[close + 1..];
         if !suffix.is_empty() {
             let Some(port) = suffix.strip_prefix(':') else {
@@ -408,26 +404,27 @@ fn canonical_authority(authority: &str) -> Result<String> {
             };
             validate_port(port)?;
         }
-    } else {
-        let mut parts = authority.split(':');
-        let Some(host) = parts.next() else {
-            return Err(invalid_origin());
-        };
-        let port = parts.next();
-        if parts.next().is_some() || host.is_empty() || host.starts_with('.') || host.ends_with('.')
-        {
-            return Err(invalid_origin());
-        }
-        if host.contains("..")
-            || host
-                .bytes()
-                .any(|byte| !(byte.is_ascii_alphanumeric() || matches!(byte, b'.' | b'-' | b'_')))
-        {
-            return Err(invalid_origin());
-        }
-        if let Some(port) = port {
-            validate_port(port)?;
-        }
+        let port = suffix;
+        return Ok(format!("[{host}]{port}"));
+    }
+
+    let mut parts = authority.split(':');
+    let Some(host) = parts.next() else {
+        return Err(invalid_origin());
+    };
+    let port = parts.next();
+    if parts.next().is_some() || host.is_empty() || host.starts_with('.') || host.ends_with('.') {
+        return Err(invalid_origin());
+    }
+    if host.contains("..")
+        || host
+            .bytes()
+            .any(|byte| !(byte.is_ascii_alphanumeric() || matches!(byte, b'.' | b'-' | b'_')))
+    {
+        return Err(invalid_origin());
+    }
+    if let Some(port) = port {
+        validate_port(port)?;
     }
 
     Ok(authority.to_ascii_lowercase())

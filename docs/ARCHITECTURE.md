@@ -18,8 +18,8 @@ listener lifetimes.
 The following sections describe the current native foundation and the first
 browser host. The browser workbench mounts a real DOM form and reports a typed
 disconnection when no authenticated backend bridge is configured. Its external
-assets carry the strict same-origin CSP emitted by `HostPolicy`, and the
-bootstrap rejects cross-origin anchor navigation. A live browser service,
+assets carry the strict same-origin CSP from the policy source consumed by
+`HostPolicy`, and the bootstrap rejects cross-origin anchor navigation. A live browser service,
 desktop WebView host and OS permission boundary remain unimplemented.
 
 The shared `metis-core` crate owns wire types, error codes, capability claim
@@ -66,8 +66,14 @@ browser acceptor: Origin headers, TLS, endpoint allowlists and OS permission
 checks belong to the transport and desktop host increments.
 
 The browser shell keeps CSS and module bootstrap files external to satisfy the
-same-origin CSP. CSP and the module's navigation guard reduce the page attack
-surface; neither turns downloaded WASM into a trusted authority source.
+same-origin CSP. The build checks the HTML policy against
+`crates/metis-core/src/content_security_policy.txt`, which is included by
+`HostPolicy`, so the two consumers cannot drift silently. The policy includes
+`'wasm-unsafe-eval'` because the generated WASM loader uses WebAssembly
+evaluation. `frame-ancestors` is effective only when a native or service host
+delivers the policy as a response header; a document meta tag cannot enforce
+framing. CSP and the module's navigation guard reduce the page attack surface;
+neither turns downloaded WASM into a trusted authority source.
 
 ## Distribution boundary
 

@@ -56,6 +56,30 @@ fn origin_parser_rejects_opaque_and_injection_forms() {
 }
 
 #[test]
+fn origin_parser_accepts_and_canonicalizes_strict_ipv6() {
+    assert_eq!(
+        HostOrigin::try_from("HTTP://[2001:DB8:0:0:0:0:0:1]:443")
+            .expect("valid IPv6 origin")
+            .as_str(),
+        "http://[2001:db8::1]:443"
+    );
+    for value in [
+        "http://[::::]",
+        "http://[1:2:3:4:5:6:7:8:9]",
+        "http://[gggg::1]",
+        "http://[::1]extra",
+    ] {
+        assert_eq!(
+            HostOrigin::try_from(value)
+                .expect_err("malformed IPv6 origin")
+                .code,
+            ErrorCode::InvalidOrigin,
+            "value: {value}"
+        );
+    }
+}
+
+#[test]
 fn policy_authorizes_exact_context_and_scope() {
     let principal = [0x11; 16];
     let origin = HostOrigin::try_from("http://localhost:8765").expect("origin");
@@ -187,6 +211,7 @@ fn policy_emits_strict_csp_without_inline_or_wildcard_sources() {
     let policy = HostPolicy::native();
     let csp = policy.content_security_policy();
     assert!(csp.contains("default-src 'self'"));
+    assert!(csp.contains("script-src 'self' 'wasm-unsafe-eval'"));
     assert!(csp.contains("connect-src 'self'"));
     assert!(!csp.contains("unsafe-inline"));
     assert!(!csp.contains('*'));

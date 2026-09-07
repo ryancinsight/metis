@@ -22,8 +22,13 @@ class BrowserAssetContractTests(unittest.TestCase):
         policy = document.split('http-equiv="Content-Security-Policy" content="', 1)[1].split(
             '"', 1
         )[0]
+        canonical = (ROOT / "crates" / "metis-core" / "src" / "content_security_policy.txt").read_text(
+            encoding="utf-8"
+        )
+        self.assertEqual(policy, canonical)
         for directive in (
             "default-src 'self'",
+            "script-src 'self' 'wasm-unsafe-eval'",
             "script-src 'self'",
             "style-src 'self'",
             "connect-src 'self'",
