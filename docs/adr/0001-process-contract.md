@@ -51,8 +51,10 @@ processes or treat WASM as a privileged backend. Atlas provider reuse remains
 the dependency policy.
 Revision 2026-09-05: the user explicitly directs reuse of Atlas providers and
 Moirai threading. Metis now selects Moirai's executor and transport roles instead
-of owning another threading/process implementation. Metis adds no direct
-third-party dependency; provider transitive dependencies are enumerated by the
+of owning another threading/process implementation. Runtime crates keep direct
+dependencies on Atlas providers; the distribution CLI directly uses the
+maintained Serde and `serde_json` parser for its validated manifest and Cargo
+message tooling. Provider transitive dependencies are enumerated by the
 verification gate. A zero-transitive interpretation would exclude Moirai and
 conflicts with this clarified provider requirement.
 

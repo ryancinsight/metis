@@ -65,7 +65,7 @@ an owner. “Unsupported” cannot replace delivery of a required mobile/native 
 
 <a id="METIS-PROCESS-001"></a>
 ## METIS-PROCESS-001 — Real executable workflow [arch] [minor]
-- Status: done; priority: P0; delivery: `ab722a8`; process workflow audit passed 2026-09-07.
+- Status: done; priority: P0; delivery: `e6daa0d`; process workflow audit passed 2026-09-07.
 - Outcome: One copied `metis-app` image runs separate backend/frontend processes through Moirai pipes with input-sensitive results, typed failure propagation, bounded Windows tree cleanup and V01/V10 documentation; non-Windows containment, native windows and OS permissions remain separate requirements.
 
 <a id="METIS-DESKTOP-001"></a>
@@ -90,8 +90,8 @@ an owner. “Unsupported” cannot replace delivery of a required mobile/native 
 
 <a id="METIS-PROVIDER-001"></a>
 ## METIS-PROVIDER-001 — Atlas provider adoption [arch] [patch]
-- Status: done; priority: P0; delivery: `33cc550`; provider audit passed 2026-09-07.
-- Outcome: Clean Moirai `be87d009cd0e877beef719b47bdcbadc45659069` (`main`) and Iris `764ed2b4b1696363abc3950f0d930d244126e4bf` (`main`) match every standalone lock source; 178/178 consumer tests pass with strict diagnostics, no parallel GUI/runtime dependency exists, and the 155-package provider transitive graph is recorded. Browser/native host gaps remain separate.
+- Status: done; priority: P0; delivery: `0a2d8e4`; provider audit passed 2026-09-07.
+- Outcome: Clean Moirai `be87d009cd0e877beef719b47bdcbadc45659069` (`main`) and Iris `764ed2b4b1696363abc3950f0d930d244126e4bf` (`main`) match every standalone lock source; 178/178 consumer tests pass with strict diagnostics, no parallel GUI/runtime dependency exists, and the 155-package provider transitive graph is recorded. Runtime crates use Atlas direct dependencies; the distribution CLI's Serde exception is documented in ADR 0005. Browser/native host gaps remain separate.
 
 <a id="METIS-CRYPTO-001"></a>
 ## METIS-CRYPTO-001 — Shared authentication primitives [arch] [patch]
