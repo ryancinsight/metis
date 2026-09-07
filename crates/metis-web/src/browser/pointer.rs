@@ -160,7 +160,7 @@ fn metadata_summary(metadata: PointerMetadata) -> String {
     )
 }
 
-fn modifier_summary(modifiers: PointerModifiers) -> String {
+pub(super) fn modifier_summary(modifiers: PointerModifiers) -> String {
     let mut summary = String::new();
     for (active, label) in [
         (modifiers.ctrl(), "Ctrl"),
@@ -182,8 +182,5 @@ fn modifier_summary(modifiers: PointerModifiers) -> String {
 }
 
 fn set_error(document: &WebDocument, status: &WebElement, message: &str) {
-    status.set_text(&format!("Pointer capture: error ({message})"));
-    if let Ok(mount_status) = view::element(document, "metis-status") {
-        mount_status.set_text(&format!("Browser host error: {message}"));
-    }
+    view::set_status_error(document, status, "Pointer capture", message);
 }

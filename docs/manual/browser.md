@@ -142,6 +142,24 @@ The metadata trace and provider revision are recorded in
 [browser pointer-metadata evidence](../VERIFICATION.md#browser-pointer-metadata-evidence--2026-09-07).
 The current provider revision is `a3c86cd183a18edc35db30f1d35e79fe80092df4`.
 
+The **Wheel** status below the pointer status demonstrates the browser scroll
+boundary. Scroll the named **Pointer capture surface**. Rust reads Moirai's
+`WheelMetadata` record and renders the horizontal, vertical and depth deltas,
+their pixel/line/page unit, viewport coordinates and modifier keys. The
+listener prevents the browser default action after the event kind is
+validated; a viewer may then apply its own bounded zoom or pan policy.
+
+The 2026-09-07 wheel trace used the generated browser build at 1280×720 CSS
+pixels and device scale 1.25. An in-app browser scroll action produced
+`Wheel: delta (0.00, -129.60, 0.00) pixel at (386, 580), modifiers none`; a
+horizontal action produced `delta (426.40, 0.00, 0.00)` at the same target.
+The trace is automation-generated browser input; the CUA surface does not
+expose the hardware `isTrusted` flag, so this evidence does not claim a
+physical-wheel or cross-engine result. The provider revision is
+`f634b3a802ec0355da22f111ed01067d2435c5cb`; full command output and the
+rendered screenshot are recorded in
+[browser wheel metadata evidence](../VERIFICATION.md#browser-wheel-metadata-evidence--2026-09-07).
+
 The captured service journey at revision
 `d879779247c8cfc5870f62f99a5364cbbf2d3c58` used the Codex in-app
 browser at 1280×720 CSS pixels and device scale 1.25. Pointer activation of

@@ -354,6 +354,35 @@ closes the provider metadata portion of `METIS-INPUT-001`; drag/drop policy,
 touch gesture interpretation, IME, accessibility technology, cross-engine
 parity, post-drop allocation and native-window input remain open.
 
+## Browser wheel metadata evidence — 2026-09-07
+
+The wheel increment consumes Moirai `WebEvent::wheel_metadata` and the
+`WheelMetadata` value seam from merged provider revision
+`f634b3a802ec0355da22f111ed01067d2435c5cb`. `metis-web` passes 10/10 native
+nextest tests, native warning-denied Clippy, the WASM-target check and
+WASM-target Clippy; `python scripts/browser.py build` produces the generated
+loader and WASM from the updated standalone lock.
+
+The Codex in-app browser trace used the generated page at a 1280×720 CSS-pixel
+viewport and device scale 1.25, served from a separate loopback HTTP origin
+without a backend bridge. The accessibility tree retained the named **Pointer
+capture surface** group and the semantic **Wheel** status. An upward scroll
+action ended with `Wheel: delta (0.00, -129.60, 0.00) pixel at (386, 580),
+modifiers none`; a rightward action ended with `Wheel: delta (426.40, 0.00,
+0.00) pixel at (386, 580), modifiers none`. The status changed with the
+scroll direction, proving that the deltas are input-sensitive, and the
+full-page screenshot showed the wheel record beside the unchanged backend
+result panel.
+
+The scroll action is automation-generated browser input. The CUA surface does
+not expose the browser event's hardware `isTrusted` flag, so this trace does
+not claim physical-wheel or cross-engine parity. The provider's WASM
+compile/clippy checks cover the browser binding; native provider nextest
+remains 47/47. This closes the wheel metadata transport portion of
+`METIS-INPUT-001`; zoom/pan gesture policy, drag/drop, touch interpretation,
+IME, accessibility technology, cross-engine parity, post-drop allocation and
+native-window input remain open.
+
 ## Browser stale-response evidence — 2026-09-07
 
 The service conformance host now accepts `--response-delay-ms` with a bounded

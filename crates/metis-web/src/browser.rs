@@ -10,6 +10,8 @@ mod events;
 mod pointer;
 #[path = "view.rs"]
 mod view;
+#[path = "browser/wheel.rs"]
+mod wheel;
 
 use crate::controls;
 use crate::controls::{ControlField, DisplayUnit, InputField};
@@ -83,7 +85,7 @@ impl BrowserApplication {
         let app = Rc::new(RefCell::new(None));
         let task = Rc::new(RefCell::new(None));
 
-        let mut listeners = Vec::with_capacity(16);
+        let mut listeners = Vec::with_capacity(18);
         listeners.push(input_listener(
             document,
             &state,
@@ -149,6 +151,7 @@ impl BrowserApplication {
         )?);
         listeners.extend(dialog::listeners(document)?);
         listeners.extend(pointer::listeners(document)?);
+        listeners.extend(wheel::listeners(document)?);
 
         let form = view::element(document, "metis-form")?;
         let listener_document = document.clone();

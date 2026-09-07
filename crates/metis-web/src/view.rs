@@ -184,3 +184,15 @@ pub(super) fn set_mount_error(document: &WebDocument, error: &io::Error) {
         status.set_text(&format!("Browser host error: {error}"));
     }
 }
+
+pub(super) fn set_status_error(
+    document: &WebDocument,
+    status: &WebElement,
+    label: &str,
+    message: &str,
+) {
+    status.set_text(&format!("{label}: error ({message})"));
+    if let Ok(mount_status) = element(document, "metis-status") {
+        mount_status.set_text(&format!("Browser host error: {message}"));
+    }
+}

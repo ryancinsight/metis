@@ -173,7 +173,9 @@ an owner. “Unsupported” cannot replace delivery of a required mobile/native 
 - Live evidence: [browser pointer-capture evidence](docs/VERIFICATION.md#browser-pointer-capture-evidence--2026-09-07) records pointer ID `1`, release status, semantic surface name and the rendered surface screenshot.
 - Completed increment: `feat(web): Render pointer metadata` consumes Moirai `WebEvent::pointer_metadata` and `PointerMetadata` from merged revision `a3c86cd183a18edc35db30f1d35e79fe80092df4`; Rust renders device type, CSS-pixel coordinates, changed/held buttons, modifiers and primary-pointer state on capture and movement.
 - Live evidence: [browser pointer metadata evidence](docs/VERIFICATION.md#browser-pointer-metadata-evidence--2026-09-07) records the input-sensitive status and screenshot; gesture policy remains open.
-- Residuals: drag/drop policy, wheel/touch gesture interpretation, IME, accessibility technology and native-host input remain open; re-open this item when those dependencies land.
+- Completed increment: `feat(web): Render wheel metadata` consumes Moirai `WebEvent::wheel_metadata` and `WheelMetadata` from merged revision `f634b3a802ec0355da22f111ed01067d2435c5cb`; Rust renders bounded deltas, browser unit, viewport coordinates and modifiers on the pointer surface.
+- Live evidence: [browser wheel metadata evidence](docs/VERIFICATION.md#browser-wheel-metadata-evidence--2026-09-07) records input-sensitive vertical and horizontal scroll actions and the rendered status; the automation trust limitation is explicit.
+- Residuals: drag/drop policy, zoom/pan gesture policy, touch interpretation, IME, accessibility technology and native-host input remain open; re-open this item when those dependencies land.
 
 <a id="METIS-TEXT-001"></a>
 ## METIS-TEXT-001 — Text, selection and IME [minor]
