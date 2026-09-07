@@ -161,7 +161,8 @@ an owner. “Unsupported” cannot replace delivery of a required mobile/native 
 
 <a id="METIS-COMMANDS-001"></a>
 ## METIS-COMMANDS-001 — Typed commands and event streams [arch] [minor]
-- Status: todo; priority: P1; owner: Metis protocol/client/broker; dependencies: METIS-ASYNC-001, METIS-AUTHORITY-001; risk: public wire contract
+- Status: in-progress; priority: P1; owner: Metis protocol/client/broker; integrator: root; last-update: 2026-09-07; branch: `feat/commands-capabilities`; dependencies: METIS-ASYNC-001, METIS-AUTHORITY-001; risk: public wire contract; ADR: 0012 (claimed)
+- Lease: root — `crates/metis-core/src/protocol/`, `crates/metis-ipc/src/`, `crates/metis-backend/src/service.rs`, `docs/adr/0012-command-event-contract.md` — 2026-09-07
 - Scope: general command registration, typed payloads/errors, bounded subscriptions/channels, unsubscribe/cancel, schema/version diagnostics, target capability discovery and explicit unsupported-operation errors; migrate in-repo callers without forwarding shims.
 - Acceptance: generic conformance suite across admitted transports; changing inputs changes outputs; capability discovery reports target support, unsupported operations return typed errors, unknown command/version rejects, late responses cannot mutate a new request and unsubscribed handlers receive nothing.
 - Demonstration: [V02](docs/VERIFICATION.md#V02) and [V09](docs/VERIFICATION.md#V09), real backend actions/events in the manual.
