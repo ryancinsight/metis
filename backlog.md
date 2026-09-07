@@ -90,7 +90,7 @@ an owner. “Unsupported” cannot replace delivery of a required mobile/native 
 
 <a id="METIS-PROVIDER-001"></a>
 ## METIS-PROVIDER-001 — Atlas provider adoption [arch] [patch]
-- Status: review; integrator: root; last-update: 2026-09-06
+- Status: in-progress; integrator: root; last-update: 2026-09-07; branch: `feat/process-foundation`
 - Scope: Moirai scheduler/process transport and Iris rendering contract; enumerate provider transitive graph.
 - Acceptance: no parallel Metis runtime; local and standalone provider sources coherent; contract tests pass.
 - Provider revision: Moirai `be87d009cd0e877beef719b47bdcbadc45659069` is on its default branch and supplies the contained process, browser DOM/event, cancellable local task, bounded WebSocket service/client, transport and standalone crypto APIs consumed here. Metis's standalone lock pins that revision after merged provider PRs #269 and #270.
