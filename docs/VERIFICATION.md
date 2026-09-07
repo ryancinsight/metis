@@ -109,7 +109,7 @@ remain required. The portable and installed payload must each contain exactly
 one application executable; repeat the real MSI install/run/uninstall and
 user-file-preservation workflow.
 
-The complete Windows gate passes 127 debug and 127 release native tests,
+The historical Windows gate passes 126 debug and 126 release native tests,
 40 Python checks, WASM library compilation, strict Clippy, doctests, rustdoc,
 examples and seven unchanged visual snapshots. The real MSI workflow verifies
 one installed application executable, both input-sensitive process sessions,
@@ -260,6 +260,21 @@ keyboard demonstration. Select/menu/dialog controls, pointer capture,
 drag/drop, wheel/touch/modifier events, IME, accessibility technology,
 cross-engine parity, post-drop allocation and native-window input remain open
 under the linked backlog items.
+
+## Final gate evidence — 2026-09-07
+
+The delivered revision passes `python scripts/verify.py`. The gate reports zero
+exit status for compiler identity, dependency metadata, revision and fixture
+freshness, formatting, visual tests, WASM library checks, Clippy, debug and
+release builds, distribution, debug and release nextest suites, doctests,
+documentation, the runnable example, presentation checks and visual capture
+comparison. The deliberate capture-failure probe exits 1 as its negative oracle;
+the gate records that result as expected and still passes overall.
+
+The debug and release native suites each run 196 tests with zero failures or
+skips. The package workflow tests run 14/14. The gate resolves 155 packages and
+records the exact revision, source hash, lock hash and visual report under the
+ignored `output/` directory. All seven captures and three mutation probes pass.
 
 ## Typed command and event evidence — 2026-09-07
 
