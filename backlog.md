@@ -161,7 +161,8 @@ an owner. “Unsupported” cannot replace delivery of a required mobile/native 
 
 <a id="METIS-COMMANDS-001"></a>
 ## METIS-COMMANDS-001 — Typed commands and event streams [arch] [major]
-- Status: in-progress; priority: P1; owner: Metis protocol/client/broker; integrator: root; last-update: 2026-09-07; branch: `feat/native-event-trace`; dependencies: METIS-ASYNC-001, METIS-AUTHORITY-001; risk: public wire contract; ADR: 0012 (claimed)
+- Status: in-progress; priority: P1; owner: Metis protocol/client/broker; integrator: root; last-update: 2026-09-07; branch: `feat/commands-websocket-plugin`; dependencies: METIS-ASYNC-001, METIS-AUTHORITY-001; risk: public wire contract; ADR: 0012 (claimed)
+- lease: root crates/metis-backend/src/websocket.rs, docs/VERIFICATION.md, docs/manual/browser.md 2026-09-07T12:15:37-04:00
 - Evidence: capability catalog, explicit unsupported-operation response, bounded event fan-out, versioned remote event envelope, sync/async event receipt, typed plugin manifest validation including operation-count limits, typed plugin invocation and browser display pass the focused run, full verification, and the live WebSocket workbench trace; the public enum extension is classified major by semver comparison.
 - Completed increment: remote event envelope codec, strict version/identifier checks, sync/async send and receipt, bounded async event retention, host-local typed plugin manifest registration, scoped backend plugin invocation, and backend-produced clinical.result delivery through the real synchronous process-isolation test, Moirai WebSocket and browser display pass the focused and workspace gates. Native target capability and late-response injection remain.
 - Scope: general command registration, typed payloads/errors, bounded subscriptions/channels, unsubscribe/cancel, schema/version diagnostics, target capability discovery and explicit unsupported-operation errors; migrate in-repo callers without forwarding shims.
