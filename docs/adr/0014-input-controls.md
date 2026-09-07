@@ -42,7 +42,7 @@ bounded scale parsing, invalid control input, numeric-field validation and
 preservation of a successful response while presentation controls change.
 `metis-web` passes native warning-denied Clippy, 10 native tests, and the WASM
 compile and Clippy checks against Moirai
-`5b7708606d14bcbf62e10925604eb45ebc0ddb86`. The authenticated browser trace at
+`9e86e1dd3b9be39b03bacfd830c5a364a33f4f9d`. The authenticated browser trace at
 1280×720 CSS pixels and device scale 1.25 selected the radio and checkbox with
 pointer actions, then moved the range twice with the keyboard; the accessibility
 values, status text, focus ring and `2.175000 mg/hr` result matched the model.

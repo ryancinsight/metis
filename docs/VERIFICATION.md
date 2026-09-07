@@ -20,7 +20,7 @@ process-isolation test. No original OS sandbox or native-window evidence exists.
 - Types and compilation: frontend cannot import the backend through its declared dependency closure; validated policy fields cannot be overwritten externally.
 - Behavioral tests: exact wire fixtures, canonical decoding, malformed corpus, scope/session/time rejection, audit event outcomes and bounded numerical error.
 - Independent numeric evidence: dimensional infusion conversion and exact binary fixtures; arithmetic roundoff uses a stated gamma bound.
-- Crypto evidence: Moirai `5b7708606d14bcbf62e10925604eb45ebc0ddb86` publishes the shared HMAC/SHA-256 and
+- Crypto evidence: Moirai `9e86e1dd3b9be39b03bacfd830c5a364a33f4f9d` publishes the shared HMAC/SHA-256 and
   fixed-width comparison primitives; independent vectors and streaming/padding
   regressions run upstream, while Metis capability, audit, result-signature and
   CLI tests exercise those functions at their real boundaries.
@@ -74,7 +74,7 @@ native system calls; those require targeted lifecycle tests and further platform
 instrumentation. That earlier increment resolved Moirai from pushed commit
 `0514f11`, not local provider edits. The current browser-host increment advances
 the standalone lock to merged provider
-`5b7708606d14bcbf62e10925604eb45ebc0ddb86`; comparative security/memory evidence
+`9e86e1dd3b9be39b03bacfd830c5a364a33f4f9d`; comparative security/memory evidence
 against Tauri and live-service browser tests remain required by [ADR 0002](adr/0002-web-application-contract.md).
 Advisory scanning, coverage,
 mutation analysis and cross-platform sandbox probes remain uncollected.
@@ -156,7 +156,7 @@ accessibility technology support and OS permission isolation remain open in
 ## Browser lifecycle evidence — 2026-09-07
 
 After rebuilding the generated artifacts from the standalone lock at Moirai
-`5b7708606d14bcbf62e10925604eb45ebc0ddb86`, the Codex in-app browser loaded
+`9e86e1dd3b9be39b03bacfd830c5a364a33f4f9d`, the Codex in-app browser loaded
 `http://127.0.0.1:8765/index.html` and exposed `Start host` and `Stop host`
 controls in the accessibility tree. Clicking **Stop host** removed the form
 and exposed the exact text `Metis browser host stopped.`; the inspected
@@ -199,7 +199,7 @@ permission isolation, post-drop allocation counts or cross-engine host parity.
 ## Live browser service evidence — 2026-09-07
 
 The standalone lock resolves all Moirai packages to
-`5b7708606d14bcbf62e10925604eb45ebc0ddb86`, including the bounded HTTP/WebSocket
+`9e86e1dd3b9be39b03bacfd830c5a364a33f4f9d`, including the bounded HTTP/WebSocket
 service and the cancellation-wakeup fix. The focused command
 `cargo nextest run --locked -p metis-backend -p metis-ipc -p metis-core`
 passes 55/55; native all-targets Clippy for `metis-backend` and `metis-ipc`,
@@ -241,7 +241,7 @@ changes to a successful response without clearing that response. Native
 warning-denied Clippy, the WASM-target check and WASM-target Clippy pass for
 `metis-web`; `python scripts/browser.py build` regenerates the loader and WASM
 from the standalone lock at Moirai
-`5b7708606d14bcbf62e10925604eb45ebc0ddb86`.
+`9e86e1dd3b9be39b03bacfd830c5a364a33f4f9d`.
 
 In the authenticated service trace, the Codex in-app browser exposed the
 semantic control names and values at a 1280×720 CSS-pixel viewport and device
