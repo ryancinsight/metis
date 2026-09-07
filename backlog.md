@@ -90,12 +90,8 @@ an owner. “Unsupported” cannot replace delivery of a required mobile/native 
 
 <a id="METIS-PROVIDER-001"></a>
 ## METIS-PROVIDER-001 — Atlas provider adoption [arch] [patch]
-- Status: in-progress; integrator: root; last-update: 2026-09-07; branch: `feat/process-foundation`
-- Scope: Moirai scheduler/process transport and Iris rendering contract; enumerate provider transitive graph.
-- Acceptance: no parallel Metis runtime; local and standalone provider sources coherent; contract tests pass.
-- Provider revision: Moirai `be87d009cd0e877beef719b47bdcbadc45659069` is on its default branch and supplies the contained process, browser DOM/event, cancellable local task, bounded WebSocket service/client, transport and standalone crypto APIs consumed here. Metis's standalone lock pins that revision after merged provider PRs #269 and #270.
-- Dependencies: Atlas overlay mixed-version correction and consumer verification on the merged provider.
-- Demonstration: [V01](docs/VERIFICATION.md#V01) real provider-backed process workflow and [V02](docs/VERIFICATION.md#V02) browser DOM trace.
+- Status: done; priority: P0; delivery: `33cc550`; provider audit passed 2026-09-07.
+- Outcome: Clean Moirai `be87d009cd0e877beef719b47bdcbadc45659069` (`main`) and Iris `764ed2b4b1696363abc3950f0d930d244126e4bf` (`main`) match every standalone lock source; 178/178 consumer tests pass with strict diagnostics, no parallel GUI/runtime dependency exists, and the 155-package provider transitive graph is recorded. Browser/native host gaps remain separate.
 
 <a id="METIS-CRYPTO-001"></a>
 ## METIS-CRYPTO-001 — Shared authentication primitives [arch] [patch]
