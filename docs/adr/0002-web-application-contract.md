@@ -79,7 +79,7 @@ The existing custom binary protocol is not the Tauri invoke protocol.
 | --- | --- | --- |
 | HTML5/CSS/assets | Preserve existing web presentation in browser/system WebView | `metis-web` mounts a real DOM form and page CSS; broader DOM/layout parity and visual cases remain required. |
 | Rust/WASM | Shared portable application code with asynchronous host bindings | `metis-web` compiles and runs in the local browser workbench; the configured loopback bridge and binding-lifetime tests pass, while cross-engine runtime evidence remains required. |
-| Commands/events | Typed requests, correlated responses, bounded event delivery and cancellation | Existing private-pipe protocol is tested; generic commands/events and Tauri migration mappings remain required. |
+| Commands/events | Typed requests, correlated responses, bounded event delivery and cancellation | Versioned capability discovery, bounded local event delivery and cancellation now sit on the shared IPC seam; remote event serialization and Tauri migration mappings remain required. |
 | Windows/lifecycle | Desktop window creation, input, navigation, close and teardown | No native window host yet; host-specific integration and denial probes required. |
 | Plugins/native APIs | Explicit permission-scoped supported operations | Inventory file/dialog/clipboard/shell/window capabilities against migrated examples; reject unsupported operations. |
 | Configuration/distribution | Reviewed mappings for assets, permissions, build, packaging and updates | No configuration importer, bundler or updater parity claim; migration diagnostics and install/update tests required. |

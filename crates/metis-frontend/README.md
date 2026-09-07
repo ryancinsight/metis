@@ -18,6 +18,9 @@ It accepts `metis_ipc::AsyncIpcTransport`, sends at most the bounded requests
 allowed by the asynchronous client, and changes to a typed disconnected state
 when a dispatched response cannot be trusted. Its `init` and
 `submit_calculation` methods are futures; they never block the browser thread.
+Initialization also obtains the host's versioned command catalog through
+`AsyncIpcClient::discover_capabilities`; the validated catalog is available
+from `capabilities()` before a command is submitted.
 `cancel_pending_requests` clears correlation entries left by a cancelled task
 and returns the form to idle without presenting an obsolete result.
 

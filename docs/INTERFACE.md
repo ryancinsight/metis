@@ -22,12 +22,15 @@ are errors. Sender-side encoding applies the same size limits as decoding.
 | Handshake request | 0x0001 | version u16, claimed process u32, principal [u8;16] |
 | Handshake response | 0x0002 | version u16, token |
 | Heartbeat request/response | 0x0003/0x0004 | empty |
+| Capability catalog request/response | 0x0005/0x0006 | request empty; response version u16, count u16, request identifiers u16[] (maximum 16) |
 | Calculation request | 0x0010 | token; weight/concentration/dose IEEE binary64; u16 UTF-8 identifier byte length; identifier |
 | Calculation response | 0x0011 | audit sequence u64; rate/drug-rate binary64; pediatric byte 0 or 1; MAC [u8;32] |
 | Error response | 0x00ff | error code u16; message byte count u16; UTF-8 message |
 
 Audit query (0x0020/0x0021) and telemetry (0x0030) are reserved identifiers; the
-backend does not implement these operations and rejects unsupported requests.
+backend does not implement these operations and rejects unsupported requests
+with `ERR_UNEXPECTED_MESSAGE_TYPE`. A capability catalog is valid only after
+handshake and lists the request identifiers the host currently accepts.
 
 A token is 84 bytes: id u64, principal [u8;16], scope u32, issuance u64,
 expiration u64, issuance discriminator u64, HMAC [u8;32]. Generic token

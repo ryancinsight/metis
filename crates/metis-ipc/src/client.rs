@@ -3,8 +3,8 @@ use crate::transport::IpcTransport;
 use metis_core::capability::CapabilityToken;
 use metis_core::error::{ErrorCode, MetisError, Result};
 use metis_core::protocol::{
-    ErrorResponsePayload, FrameHeader, HandshakeRequestPayload, HandshakeResponsePayload,
-    MessageType, PROTOCOL_VERSION,
+    CapabilityCatalogPayload, ErrorResponsePayload, FrameHeader, HandshakeRequestPayload,
+    HandshakeResponsePayload, MessageType, PROTOCOL_VERSION,
 };
 
 /// Failure to establish a session, preserving local faults and peer rejections.
@@ -33,7 +33,7 @@ use metis_core::protocol::{
 pub enum HandshakeError {
     /// Transport, correlation, decoding, or session validation fails locally.
     Local(MetisError),
-    /// The correlated peer response rejects the handshake.
+    /// The correlated peer response rejects session initialization.
     Remote(ErrorResponsePayload),
 }
 
@@ -59,6 +59,44 @@ impl std::fmt::Display for HandshakeError {
 impl std::error::Error for HandshakeError {
     fn source(&self) -> Option<&(dyn std::error::Error + 'static)> {
         // The standard error source API requires type erasure for diagnostics.
+        match self {
+            Self::Local(error) => Some(error),
+            Self::Remote(_) => None,
+        }
+    }
+}
+
+/// Failure to discover a host catalog, preserving local faults and peer rejections.
+#[derive(Debug, Clone, PartialEq, Eq)]
+#[non_exhaustive]
+pub enum CapabilityError {
+    /// Transport, correlation, decoding, or version validation fails locally.
+    Local(MetisError),
+    /// The correlated peer response rejects capability discovery.
+    Remote(ErrorResponsePayload),
+}
+
+impl From<MetisError> for CapabilityError {
+    fn from(error: MetisError) -> Self {
+        Self::Local(error)
+    }
+}
+
+impl std::fmt::Display for CapabilityError {
+    fn fmt(&self, formatter: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self {
+            Self::Local(error) => error.fmt(formatter),
+            Self::Remote(error) => write!(
+                formatter,
+                "Peer rejected capability discovery [0x{:04X}]: {}",
+                error.error_code, error.message
+            ),
+        }
+    }
+}
+
+impl std::error::Error for CapabilityError {
+    fn source(&self) -> Option<&(dyn std::error::Error + 'static)> {
         match self {
             Self::Local(error) => Some(error),
             Self::Remote(_) => None,
@@ -103,6 +141,18 @@ impl<T: IpcTransport> IpcClient<T> {
         let token = decode_handshake_response(kind, &payload, principal_id)?;
         self.active_token = Some(token.clone());
         Ok(token)
+    }
+
+    /// Discovers the typed commands advertised by an authenticated host.
+    ///
+    /// # Errors
+    /// Returns local transport, correlation, decoding, or protocol-version
+    /// errors, or the peer's decoded rejection.
+    pub fn discover_capabilities(
+        &mut self,
+    ) -> std::result::Result<CapabilityCatalogPayload, CapabilityError> {
+        let (kind, payload) = self.send_and_recv(MessageType::CapabilityReq, &[])?;
+        decode_capability_response(kind, &payload)
     }
     /// Returns the current session capability, if acquired.
     pub const fn active_token(&self) -> Option<&CapabilityToken> {
@@ -199,6 +249,33 @@ pub(crate) fn decode_handshake_response(
     Ok(response.initial_token)
 }
 
+pub(crate) fn decode_capability_response(
+    kind: MessageType,
+    payload: &[u8],
+) -> std::result::Result<CapabilityCatalogPayload, CapabilityError> {
+    if kind == MessageType::ErrorResp {
+        return Err(CapabilityError::Remote(ErrorResponsePayload::decode(
+            payload,
+        )?));
+    }
+    if kind != MessageType::CapabilityResp {
+        return Err(MetisError::protocol(
+            ErrorCode::UnexpectedMessageType,
+            "Capability discovery response type does not match the request",
+        )
+        .into());
+    }
+    let catalog = CapabilityCatalogPayload::decode(payload)?;
+    if catalog.protocol_version() != PROTOCOL_VERSION {
+        return Err(MetisError::protocol(
+            ErrorCode::VersionMismatch,
+            "Capability catalog version differs from the wire contract",
+        )
+        .into());
+    }
+    Ok(catalog)
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -228,5 +305,54 @@ mod tests {
                 .code,
             ErrorCode::SequenceMismatch
         );
+    }
+
+    #[test]
+    fn capability_discovery_decodes_the_versioned_catalog() {
+        let catalog = CapabilityCatalogPayload::new([
+            MessageType::CapabilityReq,
+            MessageType::ClinicalCalcReq,
+        ])
+        .expect("catalog");
+        let decoded = decode_capability_response(
+            MessageType::CapabilityResp,
+            &catalog.encode().expect("encoded catalog"),
+        )
+        .expect("catalog response");
+        assert_eq!(decoded, catalog);
+    }
+
+    #[test]
+    fn capability_discovery_rejects_an_unadvertised_host_operation() {
+        let error = decode_capability_response(
+            MessageType::ErrorResp,
+            &ErrorResponsePayload {
+                error_code: ErrorCode::UnexpectedMessageType as u16,
+                message: ErrorCode::UnexpectedMessageType.as_str().to_owned(),
+            }
+            .encode()
+            .expect("error payload"),
+        )
+        .expect_err("unsupported catalog");
+        assert_eq!(
+            error,
+            CapabilityError::Remote(ErrorResponsePayload {
+                error_code: ErrorCode::UnexpectedMessageType as u16,
+                message: ErrorCode::UnexpectedMessageType.as_str().to_owned(),
+            })
+        );
+    }
+
+    #[test]
+    fn capability_discovery_rejects_a_catalog_version_mismatch() {
+        let catalog = CapabilityCatalogPayload::new([MessageType::HeartbeatReq]).expect("catalog");
+        let mut payload = catalog.encode().expect("encoded catalog");
+        payload[..2].copy_from_slice(&0x0200_u16.to_be_bytes());
+        let error = decode_capability_response(MessageType::CapabilityResp, &payload)
+            .expect_err("version mismatch");
+        assert!(matches!(
+            error,
+            CapabilityError::Local(error) if error.code == ErrorCode::VersionMismatch
+        ));
     }
 }

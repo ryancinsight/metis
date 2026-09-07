@@ -24,11 +24,12 @@ carry the strict same-origin CSP from the policy source consumed by
 `HostPolicy`, and the bootstrap rejects cross-origin anchor navigation. A
 desktop WebView host and OS permission boundary remain unimplemented.
 
-The shared `metis-core` crate owns wire types, error codes, capability claim
-encoding and the host-origin/window/session policy. `metis-ipc` owns framing,
-canonical payload interpretation, transport correlation and typed failure
-reporting. `metis-backend` alone owns calculation policy, session authorization
-and audit storage. The application entry generates a fresh backend key and
+The shared `metis-core` crate owns wire types, typed command descriptors,
+capability catalog encoding and the host-origin/window/session policy.
+`metis-ipc` owns framing, canonical payload interpretation, transport
+correlation, bounded event subscriptions and typed failure reporting.
+`metis-backend` alone owns calculation policy, session authorization and audit
+storage. The application entry generates a fresh backend key and
 transfers ownership only into the parent service.
 
 `metis-frontend` converts submitted values to a wire request and displays the

@@ -231,6 +231,31 @@ pre-response Origin validation and bounded backend session. It does not close
 late-response injection, post-drop JavaScript allocation, TLS, accessibility
 technology/IME, cross-engine or native desktop/OS permission scenarios.
 
+## Typed command and event evidence — 2026-09-07
+
+`METIS-COMMANDS-001` adds `CapabilityReq`/`CapabilityResp` to the existing
+versioned frame contract. `CapabilityCatalogPayload` rejects unknown,
+response-only, duplicate and over-limit identifiers before a caller can use
+the catalog. `IpcClient` and `AsyncIpcClient` decode the same versioned result;
+the backend requires a completed handshake and advertises its capability,
+heartbeat and clinical calculation commands. A known but unadvertised audit
+request returns the typed `ERR_UNEXPECTED_MESSAGE_TYPE` response.
+
+The focused command/event run `cargo nextest run --locked -p metis-core -p
+metis-ipc -p metis-backend -p metis-frontend -p metis-app` passes 84/84. It
+includes catalog round-trips,
+version and malformed-entry rejection, post-handshake service discovery,
+explicit unsupported-operation handling, and the bounded `EventHub` tests for
+input-sensitive fan-out, per-subscriber backpressure, unsubscribe and finite
+deadlines. Native all-targets Clippy passes with `-D warnings`. The workspace
+semver comparison rejected the exhaustive-enum extension under a minor
+release, so the public `MessageType` change is classified as major and the
+accepted ADR records that release classification; the manifests remain at
+`0.1.0` until release authority assigns the next version.
+The browser workbench renders the same catalog after its authenticated
+handshake; the runtime trace remains a single Codex in-app browser engine and
+does not close the cross-engine requirement.
+
 <a id="visual-contract"></a>
 ## Visual and interaction contract
 

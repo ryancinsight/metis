@@ -75,11 +75,28 @@ display. With no service configuration, submit the form to observe
 calculation or a fabricated success.
 
 With the service configuration above, the status becomes `Authorized backend
-session ready`. Submit the defaults to observe the real backend response, then
+session ready`, and the header lists the commands advertised by that service
+(`host.capabilities`, `session.heartbeat` and `clinical.calculate`). The list
+comes from the versioned Metis capability catalog after the authenticated
+handshake; it is not a page-provided permission claim. Submit the defaults to observe the real backend response, then
 change the fields to `80`, `4` and `0.75` and submit again. The result panel
 must show the echoed patient reference and those exact formatted values. Set
 weight to `0` to observe `Backend rejected request [0x3001]`; the previous
 result is cleared before the rejection is displayed.
+
+Hosts can use the same catalog from Rust with the synchronous or asynchronous
+IPC client:
+
+```rust
+let catalog = client.discover_capabilities()?;
+assert!(catalog.supports(metis_core::MessageType::ClinicalCalcReq));
+```
+
+Local host events use `metis_ipc::EventHub<E, CAPACITY>`. Each subscription has
+its own bounded queue; `publish` returns `ERR_QUEUE_FULL` instead of blocking,
+and `unsubscribe` removes delivery before a later publication. Callers use
+`Subscription::recv_timeout` with a finite deadline. Remote event wire types
+and plugin registration remain open in the command and services backlog items.
 
 The page's **Stop host** control calls the generated `metis_stop` export. The
 Rust host cancels the active browser task, drops its listener guards and

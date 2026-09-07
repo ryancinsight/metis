@@ -11,6 +11,7 @@ pub const HEADER_SIZE: usize = 24;
 pub const MAX_PAYLOAD_SIZE: usize = 65_536;
 /// Wire message identifiers.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
+#[non_exhaustive]
 #[repr(u16)]
 pub enum MessageType {
     /// Initial session request.
@@ -21,6 +22,10 @@ pub enum MessageType {
     HeartbeatReq = 3,
     /// Liveness response.
     HeartbeatResp = 4,
+    /// Capability catalog request.
+    CapabilityReq = 5,
+    /// Capability catalog response.
+    CapabilityResp = 6,
     /// Clinical calculation request.
     ClinicalCalcReq = 0x10,
     /// Clinical calculation response.
@@ -43,6 +48,8 @@ impl MessageType {
             2 => Some(Self::HandshakeResp),
             3 => Some(Self::HeartbeatReq),
             4 => Some(Self::HeartbeatResp),
+            5 => Some(Self::CapabilityReq),
+            6 => Some(Self::CapabilityResp),
             0x10 => Some(Self::ClinicalCalcReq),
             0x11 => Some(Self::ClinicalCalcResp),
             0x20 => Some(Self::AuditQueryReq),
@@ -58,6 +65,7 @@ impl MessageType {
         match self {
             Self::HandshakeReq => Some(Self::HandshakeResp),
             Self::HeartbeatReq => Some(Self::HeartbeatResp),
+            Self::CapabilityReq => Some(Self::CapabilityResp),
             Self::ClinicalCalcReq => Some(Self::ClinicalCalcResp),
             Self::AuditQueryReq => Some(Self::AuditQueryResp),
             _ => None,
