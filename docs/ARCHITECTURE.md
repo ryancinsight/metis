@@ -7,8 +7,10 @@ applications rendered in the browser. [ADR 0002](adr/0002-web-application-contra
 owns that target contract. HTML5/CSS compatibility uses the browser's DOM/layout
 engine; the software renderer below remains an implemented bounded presentation
 path, not a substitute for web standards. Browser scheduling and request delivery
-must be asynchronous; the existing blocking pipe client cannot run on the
-browser event thread. Shared provider capabilities belong in Moirai and Iris.
+must be asynchronous; the native blocking `IpcTransport` cannot run on the
+browser event thread. `metis-ipc` now supplies `AsyncIpcTransport`,
+`AsyncIpcClient` and a bounded WASM WebSocket adapter backed by Moirai's browser
+reactor and timer. Shared provider capabilities belong in Moirai and Iris.
 
 The following sections describe the current native foundation, not a completed
 web host. No browser renderer or desktop WebView host is implemented yet.

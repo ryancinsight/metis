@@ -34,9 +34,10 @@ repository = "https://github.com/ryancinsight/metis"
 serde = { version = "1.0.229", features = ["derive"] }
 serde_json = "1.0.151"
 iris = { package = "iris-viz", git = "https://github.com/ryancinsight/iris", version = "0.1" }
-moirai-core = { git = "https://github.com/ryancinsight/Moirai.git", rev = "0514f11ea9aaa5edd817581b4eed906fc951c076", version = "0.6", default-features = false, features = ["std"] }
-moirai-executor = { git = "https://github.com/ryancinsight/Moirai.git", rev = "0514f11ea9aaa5edd817581b4eed906fc951c076", version = "0.6", default-features = false }
-moirai-transport = { git = "https://github.com/ryancinsight/Moirai.git", rev = "0514f11ea9aaa5edd817581b4eed906fc951c076", version = "0.6", default-features = false }
+moirai-core = { git = "https://github.com/ryancinsight/Moirai.git", rev = "95ff7ae6f5fa7ecfec0341132723a500f6933f46", version = "0.6", default-features = false, features = ["std"] }
+moirai-executor = { git = "https://github.com/ryancinsight/Moirai.git", rev = "95ff7ae6f5fa7ecfec0341132723a500f6933f46", version = "0.6", default-features = false }
+moirai-transport = { git = "https://github.com/ryancinsight/Moirai.git", rev = "95ff7ae6f5fa7ecfec0341132723a500f6933f46", version = "0.6", default-features = false }
+moirai-pal = { git = "https://github.com/ryancinsight/Moirai.git", rev = "95ff7ae6f5fa7ecfec0341132723a500f6933f46", version = "0.6", default-features = false }
 metis-core = { path = "crates/metis-core", version = "0.1.0" }
 metis-ipc = { path = "crates/metis-ipc", version = "0.1.0" }
 metis-ui-lang = { path = "crates/metis-ui-lang", version = "0.1.0" }

@@ -11,5 +11,8 @@ description = "Length-prefixed binary IPC transport, channel abstractions, frami
 [dependencies]
 metis-core = { workspace = true }
 
+[target.'cfg(target_arch = "wasm32")'.dependencies]
+moirai-pal.workspace = true
+
 [lints]
 workspace = true

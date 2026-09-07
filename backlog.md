@@ -152,11 +152,11 @@ an owner. “Unsupported” cannot replace delivery of a required mobile/native 
 
 <a id="METIS-ASYNC-001"></a>
 ## METIS-ASYNC-001 — Bounded browser request lifecycle [arch] [minor]
-- Status: in-progress; priority: P0; owner: Moirai async/transport + Metis client; integrator: root; last-update: 2026-09-06; stage: provider contract audit; risk: hangs/leaks; dependencies: METIS-WEB-001
+- Status: in-progress; priority: P0; owner: Moirai async/transport + Metis client; integrator: root; last-update: 2026-09-06; stage: bounded consumer seam; risk: hangs/leaks; dependencies: METIS-WEB-001
 - Scope: event-driven receive/wakeup, task/request cancellation, deadlines and owned callback teardown; complete the upstream reactor gap and remove blocking browser paths.
-- Entry evidence: fetched Moirai default `4db2dc1`; browser PAL/role/driver sources match locked `0514f11`. Receive discards messages, callback ownership is forgotten, polling produces no events; native `Send + Sync` and blocking driver cannot serve browser-local tasks unchanged. Source inspection only.
-- First increment: revise Moirai ADR 0007 around owned browser I/O and a finite real-browser conformance trace before Metis adoption; published provider and consumer gates remain separate.
-- Acceptance: deliver ordered and out-of-order correlated messages, reject replay/oversize, enforce queue/in-flight bounds; cancel and shutdown leave zero live callbacks/tasks. Verify locked consumer source after upstream publication.
+- Entry evidence: Moirai `95ff7ae` owns browser callbacks, bounded WebSocket state and deadlines over merged Mnemosyne backend `2eb49c1`; Metis uses one pinned Moirai source for native and WASM dependencies. Native async IPC tests pass 29/29 and the WASM IPC check/Clippy pass.
+- First increment: add the Metis async transport/client seam and preserve the finite browser lifecycle contract; published provider and consumer gates remain separate.
+- Acceptance: deliver ordered and out-of-order correlated messages, reject replay/oversize, enforce queue/in-flight bounds; cancel and shutdown leave zero live callbacks/tasks. Browser execution and concurrent correlation remain open.
 - Demonstration: [V02](docs/VERIFICATION.md#V02) pending/cancel/disconnected states; [V12](docs/VERIFICATION.md#V12) repeat lifecycle/resource evidence.
 
 <a id="METIS-AUTHORITY-001"></a>
