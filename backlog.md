@@ -113,7 +113,8 @@ an owner. “Unsupported” cannot replace delivery of a required mobile/native 
 
 <a id="METIS-CRYPTO-001"></a>
 ## METIS-CRYPTO-001 — Shared authentication primitives [arch] [patch]
-- Status: todo; priority: P0; owner: owning Atlas crypto provider + Metis backend; dependencies: METIS-PROVIDER-001; risk: authentication
+- Status: in-progress; priority: P0; integrator: root; branch: `feat/metis-crypto-provider`; lease: root `crates/metis-core`, `crates/metis-backend`, `crates/metis-cli`, `tests`, provider contract; last-update: 2026-09-07
+- Owner: owning Atlas crypto provider + Metis backend; dependencies: METIS-PROVIDER-001; risk: authentication
 - Scope: extract the required standalone MAC/hash contract into its Atlas provider and remove the Metis seed copy.
 - Acceptance: independent vectors and canonical wire/audit tests agree; no TLS dependency needed solely for hashing; confirm constant-time comparison/codegen claims separately from vectors.
 - Demonstration: [V08](docs/VERIFICATION.md#V08), display honest verification status; never imply frontend MAC verification without a verification contract.
