@@ -107,7 +107,7 @@ an owner. “Unsupported” cannot replace delivery of a required mobile/native 
 
 <a id="METIS-MEMORY-001"></a>
 ## METIS-MEMORY-001 — Provider allocation count [patch]
-- Status: todo; priority: P0; owner: Moirai allocation provider; risk: overflow
+- Status: in-progress; priority: P0; owner: Moirai allocation provider; integrator: root; last-update: 2026-09-07; branch: `feat/process-foundation`; risk: overflow
 - Scope: verify the public count contract, locked-source exposure and local allocator multiplication before classifying the defect; do not assume all allocations use this path.
 - Acceptance: reachable overflow rejects with a typed error before allocation and debug/release adversarial tests; otherwise close with exact unreachable-path evidence.
 - Demonstration: [V12](docs/VERIFICATION.md#V12), bounded-allocation denial shown as an application error when the exposed path is integrated.

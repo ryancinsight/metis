@@ -6,3 +6,4 @@
 - [Browser host](backlog.md#METIS-BROWSER-001): `metis-web` mounts the HTML5/CSS workbench, uses strict external assets, and exposes typed invalid-input/disconnected states. Service-side Origin/session validation and a live backend pass; native desktop, accessibility/IME and cross-engine coverage remain open.
 - [Viewer driver](backlog.md#METIS-MIGRATION-001): ritk-snap source audit and DICOM prerequisites recorded; use its real opening/display trace to validate upcoming host, image and asynchronous-loading contracts.
 - [Verification](backlog.md#METIS-VERIFY-001): public foundation published; Atlas registration needs a review branch that preserves the shared checkout.
+- [Memory provider](backlog.md#METIS-MEMORY-001): audit the reachable allocation/count contract against the pinned Moirai and Mnemosyne sources before changing code.
