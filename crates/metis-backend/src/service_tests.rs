@@ -4,7 +4,8 @@ use metis_core::crc32;
 use metis_core::protocol::{
     CapabilityCatalogPayload, FrameHeader, HandshakeRequestPayload, HandshakeResponsePayload,
     MessageType, PROTOCOL_VERSION, PluginDescriptor, PluginInvocationPayload,
-    PluginInvocationResponsePayload, PluginOperation,
+    PluginInvocationResponsePayload, PluginOperation, TargetCapability, TargetCapabilityPayload,
+    TargetPlatform,
 };
 
 const KEY: [u8; 32] = [7; 32];
@@ -95,6 +96,7 @@ fn capability_catalog_requires_handshake_and_advertises_supported_commands() {
     assert_eq!(catalog.0, MessageType::CapabilityResp);
     let catalog = CapabilityCatalogPayload::decode(&catalog.1).expect("catalog payload");
     assert!(catalog.supports(MessageType::CapabilityReq));
+    assert!(catalog.supports(MessageType::TargetCapabilityReq));
     assert!(catalog.supports(MessageType::HeartbeatReq));
     assert!(catalog.supports(MessageType::ClinicalCalcReq));
     assert!(catalog.supports(MessageType::PluginInvokeReq));
@@ -122,6 +124,42 @@ fn known_but_unadvertised_command_returns_a_typed_protocol_error() {
     assert_eq!(response.0, MessageType::ErrorResp);
     let error = ErrorResponsePayload::decode(&response.1).expect("error payload");
     assert_eq!(error.error_code, ErrorCode::UnexpectedMessageType as u16);
+}
+
+#[test]
+fn target_capability_discovery_reports_only_installed_host_surfaces() {
+    let mut service = BackendService::new(KEY, SafetyEnvelope::default());
+    let handshake = HandshakeRequestPayload {
+        client_version: PROTOCOL_VERSION,
+        client_process_id: 42,
+        principal_id: PRINCIPAL,
+    }
+    .encode();
+    service
+        .handle_request(
+            &header(MessageType::HandshakeReq, 1, &handshake),
+            &handshake,
+        )
+        .expect("handshake");
+
+    let response = service
+        .handle_request(&header(MessageType::TargetCapabilityReq, 2, &[]), &[])
+        .expect("target descriptor");
+    assert_eq!(response.0, MessageType::TargetCapabilityResp);
+    let descriptor = TargetCapabilityPayload::decode(&response.1).expect("target payload");
+    assert_eq!(descriptor.platform(), TargetPlatform::current());
+    assert!(descriptor.supports(TargetCapability::NativeProcess));
+    assert!(!descriptor.supports(TargetCapability::PrivateProcessIpc));
+    assert!(!descriptor.supports(TargetCapability::NativeWindow));
+
+    service
+        .add_target_capability(TargetCapability::PrivateProcessIpc)
+        .expect("surface");
+    let response = service
+        .handle_request(&header(MessageType::TargetCapabilityReq, 3, &[]), &[])
+        .expect("updated target descriptor");
+    let descriptor = TargetCapabilityPayload::decode(&response.1).expect("target payload");
+    assert!(descriptor.supports(TargetCapability::PrivateProcessIpc));
 }
 
 #[test]

@@ -53,6 +53,10 @@ after a prior response before accepting the next response.
 
 `discover_capabilities` returns `CapabilityError`, keeping local protocol
 failures separate from the peer's full `ErrorResponsePayload`.
+`discover_target_capabilities` returns `TargetCapabilityError` with the same
+local-versus-peer distinction and decodes the host's versioned target surface
+descriptor. The descriptor is evidence of the installed host boundary; a
+platform name alone does not imply native window or operating-system support.
 
 `IpcClient::invoke_plugin` and `AsyncIpcClient::invoke_plugin` send a typed
 `PluginInvocationPayload` and decode its bounded response body. The clients

@@ -9,7 +9,8 @@ Driver: [METIS-COMMANDS-001](../../backlog.md#METIS-COMMANDS-001).
 ## Context
 
 Metis currently has a fixed set of typed request and response payloads, but a
-host cannot ask a connected service which operations it admits. Unknown wire
+host cannot ask a connected service which operations or target surfaces it
+admits. Unknown wire
 identifiers are rejected during frame decoding and known operations that a
 service does not implement return the generic protocol error. The browser
 client also needs bounded event subscriptions without importing a second
@@ -43,6 +44,21 @@ The wire catalog is an additive operation in the existing protocol version:
   protocol error. A known but unadvertised operation and an unknown wire
   identifier remain explicit `UnexpectedMessageType` errors; neither is
   silently ignored or forwarded.
+
+- `TargetCapabilityReq` and `TargetCapabilityResp` use a separate empty-request
+  route after handshake. `TargetCapabilityPayload` carries the protocol
+  version, target platform and a bounded list of surfaces installed by the
+  host. Unknown platform or surface identifiers, duplicates, truncation,
+  trailing bytes and over-limit lists fail before the descriptor is exposed.
+  The backend starts with its native-process surface; the application and
+  browser acceptor add private-process IPC and authenticated WebSocket
+  surfaces at the composition boundary. A platform identifier never implies a
+  native window, operating-system permission, accessibility or IME provider.
+- Both client variants expose `discover_target_capabilities` with a typed
+  `TargetCapabilityError`, preserving peer rejection payloads separately from
+  local protocol failures. The asynchronous frontend stores the validated
+  descriptor beside the command catalog, and the browser workbench renders
+  both the remote host surfaces and its local WASM/DOM/CSS surfaces.
 
 `metis-ipc` also owns `EventHub<E, CAPACITY>` and `Subscription<E>`. Every
   subscription uses a bounded synchronous channel, `publish` reports
@@ -78,15 +94,20 @@ Client and backend tests cover post-handshake discovery and explicit rejection
 of the known unsupported audit request. Event tests cover input-sensitive
 delivery, independent subscriber queues, full-queue backpressure,
 unsubscribe, disconnected receivers and finite receive deadlines. The same
-catalog and event conformance tests run against the existing memory transport;
+Target descriptor tests cover exact platform/surface round-trips, unknown and
+duplicate values, bounds and trailing bytes; sync and async clients and the
+backend cover correlated target discovery. The same catalog, target and event
+conformance tests run against the existing memory transport;
 the browser and WebSocket paths continue to use the shared frame and sequence
 implementation.
 
 ## Limits
 
 The initial catalog and event increments did not claim remote plugin invocation,
-native OS capability discovery or cross-engine browser coverage. The remote
+target surface discovery, native OS capability discovery or cross-engine
+browser coverage. The remote
 invocation revision below closes the first of those protocol gaps; native OS
+target surface reporting now exposes only installed host mechanisms. Native OS
 capability discovery and cross-engine coverage remain owned by the desktop,
 services and browser items on the board.
 
@@ -171,3 +192,30 @@ Backend service tests exercise an input-sensitive executor, successful scope
 authorization, insufficient scope, unknown plugin and unknown command errors.
 Both synchronous and asynchronous clients use typed invocation helpers and
 preserve peer rejections separately from local transport/decode failures.
+
+## Revision 2026-09-07 (target discovery and lifecycle guard)
+
+The host target is now a first-class, versioned discovery result. A client
+requests `TargetCapabilityReq` after handshake and receives the platform plus
+the bounded surfaces installed by that service. `BackendService` advertises
+the native process boundary by default; `metis-app` adds private-process IPC,
+and `serve_browser_websocket` adds its authenticated browser bridge. The WASM
+application records its own DOM/CSS/WASM surfaces for the browser workbench.
+The descriptor is deliberately separate from the command catalog so a caller
+can distinguish an available operation from the host mechanism that can carry
+it. Missing native-window, OS-permission, accessibility and IME providers stay
+absent and therefore cannot be mistaken for platform support.
+
+The browser host also assigns a monotonic lifecycle generation at each start
+or stop boundary. Async connection and submission completions must match the
+generation that created them before they store an app, state or DOM render.
+This guard complements Moirai's cancellable local task handle: cancellation
+releases the pending future, while the generation check prevents a completion
+already ready at the boundary from mutating a remounted application. Overflow
+of the generation is a typed local error rather than a wraparound.
+
+Target descriptor round-trips, malformed values, service dispatch, sync and
+async client correlation, authenticated WebSocket discovery and native
+generation rejection are covered by tests. The browser target guard is
+covered by the lifecycle unit tests; delayed browser-server injection and
+cross-engine capture remain open runtime evidence.

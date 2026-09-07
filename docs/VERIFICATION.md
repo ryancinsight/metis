@@ -227,13 +227,15 @@ replayed sequences and a 65,561-byte WebSocket message through the same service
 adapter.
 
 This is runtime evidence for the Rust/WASM DOM host, Moirai transport,
-pre-response Origin validation and bounded backend session. It does not close
-late-response injection, post-drop JavaScript allocation, TLS, accessibility
-technology/IME, cross-engine or native desktop/OS permission scenarios.
+pre-response Origin validation, target-surface discovery and bounded backend
+session. It does not close late-response injection, post-drop JavaScript
+allocation, TLS, accessibility/IME, cross-engine or native desktop/OS
+permission scenarios.
 
 ## Typed command and event evidence — 2026-09-07
 
-`METIS-COMMANDS-001` adds `CapabilityReq`/`CapabilityResp` and
+`METIS-COMMANDS-001` adds `CapabilityReq`/`CapabilityResp`,
+`TargetCapabilityReq`/`TargetCapabilityResp` and
 `PluginInvokeReq`/`PluginInvokeResp` to the existing versioned frame contract.
 `CapabilityCatalogPayload` rejects unknown, response-only, duplicate and
 over-limit identifiers before a caller can use the catalog. `IpcClient` and
@@ -241,13 +243,18 @@ over-limit identifiers before a caller can use the catalog. `IpcClient` and
 completed handshake and advertises its capability, heartbeat, clinical
 calculation and plugin-invocation commands. A known but unadvertised audit
 request returns the typed `ERR_UNEXPECTED_MESSAGE_TYPE` response.
+Target discovery returns the host platform and only its installed surfaces;
+the browser workbench also renders its local WASM/DOM/CSS descriptor. Native
+window, operating-system permission, accessibility and IME surfaces remain
+absent until a provider is implemented.
 
 The focused command/event run `cargo nextest run --locked -p metis-core -p
 metis-ipc -p metis-backend -p metis-frontend -p metis-web -p metis-app` passes
-109/109. It
-includes catalog round-trips, version and malformed-entry rejection,
+119/119 and covers the target descriptor and lifecycle guard in addition to
+the earlier cases. It includes catalog round-trips, version and malformed-entry rejection,
 post-handshake service discovery, explicit unsupported-operation handling,
-remote event envelope round-trips and bounds, synchronous send/receive,
+target descriptor round-trips and malformed-value rejection, remote event
+envelope round-trips and bounds, synchronous send/receive,
 event/response interleaving, identifier mismatch/replay rejection, typed plugin
 invocation payloads and responses, bounded executor dispatch, scope and
 unknown-plugin rejection, and the bounded `EventHub` tests for input-sensitive
@@ -257,9 +264,9 @@ semver comparison rejected the exhaustive-enum extension under a minor
 release, so the public `MessageType` change is classified as major and the
 accepted ADR records that release classification; the manifests remain at
 `0.1.0` until release authority assigns the next version.
-The browser workbench renders the same catalog after its authenticated
-handshake; the runtime trace remains a single Codex in-app browser engine and
-does not close the cross-engine requirement. Core tests also validate typed
+The browser workbench renders the command catalog and target descriptor after
+its authenticated handshake; the runtime trace remains a single Codex in-app
+browser engine and does not close the cross-engine requirement. Core tests also validate typed
 plugin manifest registration, duplicate and malformed metadata rejection,
 operation-count limits and bounded registry capacity. The real backend
 process-isolation test receives a backend-produced `clinical.result` event over
@@ -267,8 +274,9 @@ the synchronous memory transport after the correlated response and decodes its
 typed body, identifier and rates. The authenticated Moirai WebSocket loopback
 performs the same checks and then invokes a registered `websocket.increment`
 plugin over the same framed transport, decoding its input-sensitive typed
-response. Both client variants also exercise the typed plugin invocation helper
-and preserve peer error payloads. The asynchronous client injection test also
+response. Both client variants also exercise the typed target-discovery and
+plugin invocation helpers and preserve peer error payloads. The asynchronous
+client injection test also
 rejects a canceled sequence and then receives a newer outstanding response;
 browser-host late-response injection remains open alongside native desktop, OS
 permission and cross-engine coverage.

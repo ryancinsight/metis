@@ -17,6 +17,9 @@ operation set; `PluginInvocationPayload` and
 `PluginInvocationResponsePayload` carry a versioned, bounded request and opaque
 response body for the host router. This crate validates the wire envelope but
 does not execute plugin code or grant operating-system authority.
+`TargetCapabilityPayload` reports the host platform and its bounded, explicitly
+installed surfaces. It does not infer native windows, operating-system
+permissions, accessibility or IME support from a platform identifier.
 
 ```rust
 use metis_core::{build_frame, FrameHeader, MessageType, HEADER_SIZE};

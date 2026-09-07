@@ -4,6 +4,7 @@ use metis_backend::serve_browser_websocket;
 use metis_backend::service::SystemClock;
 use metis_backend::{BackendService, clinical::SafetyEnvelope, supervisor::run_session};
 use metis_core::host::{HostContext, HostOrigin, HostPolicy, HostSessionId, WindowId};
+use metis_core::protocol::TargetCapability;
 use moirai_async::net::TcpListener;
 use moirai_http::WebSocketConfig;
 use std::time::Duration;
@@ -12,6 +13,7 @@ pub(crate) fn run(inputs: [String; 3]) -> Result<(), Box<dyn std::error::Error>>
     // Binary reporter boundary erases errors; no hot-path dispatch.
     let executable = std::env::current_exe()?;
     let mut service = BackendService::new(entropy::session_key()?, SafetyEnvelope::default());
+    service.add_target_capability(TargetCapability::PrivateProcessIpc)?;
     let [weight, concentration, dose] = inputs;
     let arguments = [FRONTEND_ROLE.to_owned(), weight, concentration, dose];
     eprintln!("backend_pid={}", std::process::id());

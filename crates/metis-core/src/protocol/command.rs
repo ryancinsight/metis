@@ -59,6 +59,11 @@ impl MessageType {
                 Self::CapabilityResp,
                 "host.capabilities",
             )),
+            Self::TargetCapabilityReq => Some(CommandDescriptor::new(
+                Self::TargetCapabilityReq,
+                Self::TargetCapabilityResp,
+                "host.target_capabilities",
+            )),
             Self::HeartbeatReq => Some(CommandDescriptor::new(
                 Self::HeartbeatReq,
                 Self::HeartbeatResp,
@@ -81,6 +86,7 @@ impl MessageType {
             )),
             Self::HandshakeResp
             | Self::CapabilityResp
+            | Self::TargetCapabilityResp
             | Self::HeartbeatResp
             | Self::ClinicalCalcResp
             | Self::AuditQueryResp
@@ -100,6 +106,7 @@ impl MessageType {
 /// Commands implemented by the current backend service after handshake.
 pub const SUPPORTED_COMMANDS: &[MessageType] = &[
     MessageType::CapabilityReq,
+    MessageType::TargetCapabilityReq,
     MessageType::HeartbeatReq,
     MessageType::ClinicalCalcReq,
     MessageType::PluginInvokeReq,
@@ -267,6 +274,7 @@ mod tests {
         for command in [
             MessageType::HandshakeReq,
             MessageType::CapabilityReq,
+            MessageType::TargetCapabilityReq,
             MessageType::HeartbeatReq,
             MessageType::ClinicalCalcReq,
             MessageType::PluginInvokeReq,

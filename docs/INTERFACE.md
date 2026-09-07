@@ -23,6 +23,7 @@ are errors. Sender-side encoding applies the same size limits as decoding.
 | Handshake response | 0x0002 | version u16, token |
 | Heartbeat request/response | 0x0003/0x0004 | empty |
 | Capability catalog request/response | 0x0005/0x0006 | request empty; response version u16, count u16, request identifiers u16[] (maximum 16) |
+| Target capability request/response | 0x0007/0x0008 | request empty; response version u16, platform u8, surface count u8, surface identifiers u16[] (maximum 16) |
 | Calculation request | 0x0010 | token; weight/concentration/dose IEEE binary64; u16 UTF-8 identifier byte length; identifier |
 | Calculation response | 0x0011 | audit sequence u64; rate/drug-rate binary64; pediatric byte 0 or 1; MAC [u8;32] |
 | Error response | 0x00ff | error code u16; message byte count u16; UTF-8 message |
@@ -35,7 +36,11 @@ event sent by an authenticated host. Its envelope rejects zero or replayed
 identifiers, empty or oversized names, invalid UTF-8, truncation and trailing
 bytes. `EventCodec` associates a stable name with a typed body without dynamic
 dispatch. A capability catalog is valid only after handshake and lists the
-request identifiers the host currently accepts.
+request identifiers the host currently accepts. Target capability discovery is
+also valid only after handshake; it reports the platform selected by the host
+and only the runtime or transport surfaces installed at that boundary. An
+unsupported surface is absent from the descriptor and remains a typed host
+error when requested.
 
 An authenticated server sends at most one handler-produced event immediately
 after the correlated response for the request that produced it. The clinical

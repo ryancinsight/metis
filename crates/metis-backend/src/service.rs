@@ -17,7 +17,7 @@ use metis_core::protocol::{
     CapabilityCatalogPayload, ClinicalCalcRequestPayload, ClinicalCalcResponsePayload,
     ErrorResponsePayload, FrameHeader, HandshakeRequestPayload, HandshakeResponsePayload,
     MessageType, PROTOCOL_VERSION, Plugin, PluginInvocationPayload, RemoteEventPayload,
-    SUPPORTED_COMMANDS,
+    SUPPORTED_COMMANDS, TargetCapability, TargetCapabilityPayload,
 };
 use metis_ipc::server::{FailureContext, IpcHandler, RequestIdentity};
 use moirai_crypto::hmac_sha256;
@@ -92,6 +92,7 @@ pub struct BackendService<C = SystemClock> {
     clock_failed: bool,
     pending_event: Option<RemoteEventPayload>,
     plugins: PluginRouter,
+    target_capabilities: TargetCapabilityPayload,
 }
 
 impl BackendService {
@@ -143,6 +144,7 @@ impl<C> BackendService<C> {
             pending_event: None,
             plugins: PluginRouter::new()
                 .expect("invariant: the default plugin router capacity is valid"),
+            target_capabilities: TargetCapabilityPayload::native_service(),
         }
     }
 
@@ -177,6 +179,7 @@ impl<C> BackendService<C> {
             clock_failed: false,
             pending_event: None,
             plugins: PluginRouter::new()?,
+            target_capabilities: TargetCapabilityPayload::native_service(),
         })
     }
 
@@ -208,6 +211,23 @@ impl<C> BackendService<C> {
 
     pub(crate) const fn has_trusted_context(&self) -> bool {
         self.trusted_context.is_some()
+    }
+
+    /// Returns the target surfaces exposed by this host boundary.
+    #[must_use]
+    pub const fn target_capabilities(&self) -> &TargetCapabilityPayload {
+        &self.target_capabilities
+    }
+
+    /// Adds one implemented target surface to the host descriptor.
+    ///
+    /// Hosts call this before accepting a session so discovery reflects the
+    /// transport and runtime surfaces that are actually installed.
+    ///
+    /// # Errors
+    /// Returns [`ErrorCode::PayloadTooLarge`] when the descriptor is full.
+    pub fn add_target_capability(&mut self, capability: TargetCapability) -> Result<()> {
+        self.target_capabilities.add_capability(capability)
     }
 }
 
@@ -410,6 +430,22 @@ impl<C: Clock> BackendService<C> {
         CapabilityCatalogPayload::new(SUPPORTED_COMMANDS.iter().copied())?.encode()
     }
 
+    fn target_capability_payload(&self, payload: &[u8]) -> Result<Vec<u8>> {
+        if !payload.is_empty() {
+            return Err(MetisError::protocol(
+                ErrorCode::MalformedPayload,
+                "Target capability discovery request must have an empty payload",
+            ));
+        }
+        if self.session.is_none() {
+            return Err(MetisError::capability(
+                ErrorCode::MissingCapability,
+                "Handshake required before target capability discovery",
+            ));
+        }
+        self.target_capabilities.encode()
+    }
+
     fn invoke_plugin(&mut self, payload: &[u8], reading: ClockReading) -> Result<Vec<u8>> {
         let request = PluginInvocationPayload::decode(payload)?;
         if !self.plugins.contains(request.plugin_name()) {
@@ -474,6 +510,10 @@ impl<C: Clock> BackendService<C> {
             MessageType::CapabilityReq => {
                 Ok((MessageType::CapabilityResp, self.capabilities(payload)?))
             }
+            MessageType::TargetCapabilityReq => Ok((
+                MessageType::TargetCapabilityResp,
+                self.target_capability_payload(payload)?,
+            )),
             MessageType::HeartbeatReq if payload.is_empty() => {
                 Ok((MessageType::HeartbeatResp, Vec::new()))
             }

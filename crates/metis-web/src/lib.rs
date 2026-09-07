@@ -3,6 +3,9 @@
 #![deny(unsafe_code)]
 #![doc = include_str!("../README.md")]
 
+#[cfg(any(target_arch = "wasm32", test))]
+mod epoch;
+
 #[cfg(target_arch = "wasm32")]
 mod browser;
 

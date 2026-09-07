@@ -2,6 +2,7 @@
 
 use crate::service::{BackendService, Clock};
 use metis_core::error::{ErrorCode, MetisError, Result};
+use metis_core::protocol::TargetCapability;
 use metis_ipc::AsyncIpcServer;
 use moirai_async::io::{AsyncRead, AsyncWrite};
 use moirai_http::{WebSocketConfig, accept_websocket_with_validator};
@@ -34,6 +35,7 @@ where
             "Browser service requires a trusted host session context",
         ));
     }
+    service.add_target_capability(TargetCapability::BrowserWebSocket)?;
     let policy = service.browser_policy().clone();
     let (socket, _upgrade) = accept_websocket_with_validator(stream, config, move |request| {
         policy
@@ -83,7 +85,7 @@ mod tests {
         ClinicalCalcRequestPayload, ClinicalCalcResponsePayload, HandshakeRequestPayload,
         HandshakeResponsePayload, MessageType, PROTOCOL_VERSION, Plugin, PluginDescriptor,
         PluginInvocationPayload, PluginInvocationResponsePayload, PluginOperation,
-        RemoteEventPayload, build_frame,
+        RemoteEventPayload, TargetCapability, TargetCapabilityPayload, build_frame,
     };
     use moirai_async::io::{AsyncReadExt, AsyncWriteExt};
     use moirai_async::net::{TcpListener, TcpStream};
@@ -267,7 +269,7 @@ mod tests {
         Ok(payload)
     }
 
-    async fn run_valid_exchange() -> io::Result<(Vec<u8>, Vec<u8>, Vec<u8>, Vec<u8>)> {
+    async fn run_valid_exchange() -> io::Result<(Vec<u8>, Vec<u8>, Vec<u8>, Vec<u8>, Vec<u8>)> {
         let listener = TcpListener::bind("127.0.0.1:0").await?;
         let address = listener.local_addr()?;
         let server = std::thread::spawn(move || {
@@ -306,9 +308,15 @@ mod tests {
                 .map_err(|error| io::Error::new(ErrorKind::InvalidData, error.to_string()))?
                 .initial_token;
 
+            let target_request = build_frame(MessageType::TargetCapabilityReq, 2, &[])
+                .map_err(|error| io::Error::new(ErrorKind::InvalidData, error.to_string()))?;
+            client.write_all(&masked_binary(&target_request)).await?;
+            client.flush().await?;
+            let target_response = read_server_binary(&mut client).await?;
+
             let calculation = build_frame(
                 MessageType::ClinicalCalcReq,
-                2,
+                3,
                 &ClinicalCalcRequestPayload {
                     token: token.clone(),
                     patient_id: "PT-9042-ALPHA".to_owned(),
@@ -328,7 +336,7 @@ mod tests {
                 .map_err(|error| io::Error::new(ErrorKind::InvalidData, error.to_string()))?;
             let plugin = build_frame(
                 MessageType::PluginInvokeReq,
-                3,
+                4,
                 &plugin
                     .encode()
                     .map_err(|error| io::Error::new(ErrorKind::InvalidData, error.to_string()))?,
@@ -341,6 +349,7 @@ mod tests {
             client.flush().await?;
             Ok((
                 handshake_response,
+                target_response,
                 calculation_response,
                 event,
                 plugin_response,
@@ -360,7 +369,7 @@ mod tests {
 
     #[test]
     fn authenticated_loopback_preserves_handshake_and_clinical_values() {
-        let (handshake, calculation, event_wire, plugin_wire) =
+        let (handshake, target, calculation, event_wire, plugin_wire) =
             moirai_executor::block_on(run_valid_exchange()).expect("loopback exchange");
         let mut handshake_wire = handshake.as_slice();
         let (handshake_header, handshake_payload) =
@@ -370,10 +379,17 @@ mod tests {
         let token = HandshakeResponsePayload::decode(&handshake_payload)
             .expect("handshake payload")
             .initial_token;
+        let mut target_wire = target.as_slice();
+        let (target_header, target_payload) =
+            metis_ipc::read_frame(&mut target_wire).expect("target frame");
+        assert_eq!(target_header.sequence_id, 2);
+        assert_eq!(target_header.msg_type, MessageType::TargetCapabilityResp);
+        let target = TargetCapabilityPayload::decode(&target_payload).expect("target payload");
+        assert!(target.supports(TargetCapability::BrowserWebSocket));
         let mut calculation_wire = calculation.as_slice();
         let (calculation_header, calculation_payload) =
             metis_ipc::read_frame(&mut calculation_wire).expect("calculation frame");
-        assert_eq!(calculation_header.sequence_id, 2);
+        assert_eq!(calculation_header.sequence_id, 3);
         assert_eq!(calculation_header.msg_type, MessageType::ClinicalCalcResp);
         let result =
             ClinicalCalcResponsePayload::decode(&calculation_payload).expect("calculation payload");
@@ -398,7 +414,7 @@ mod tests {
         let mut plugin_wire = plugin_wire.as_slice();
         let (plugin_header, plugin_payload) =
             metis_ipc::read_frame(&mut plugin_wire).expect("plugin frame");
-        assert_eq!(plugin_header.sequence_id, 3);
+        assert_eq!(plugin_header.sequence_id, 4);
         assert_eq!(plugin_header.msg_type, MessageType::PluginInvokeResp);
         assert_eq!(
             PluginInvocationResponsePayload::decode(&plugin_payload)

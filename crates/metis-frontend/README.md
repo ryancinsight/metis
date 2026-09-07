@@ -20,7 +20,10 @@ when a dispatched response cannot be trusted. Its `init` and
 `submit_calculation` methods are futures; they never block the browser thread.
 Initialization also obtains the host's versioned command catalog through
 `AsyncIpcClient::discover_capabilities`; the validated catalog is available
-from `capabilities()` before a command is submitted.
+from `capabilities()` before a command is submitted. It also obtains the
+versioned target descriptor through
+`AsyncIpcClient::discover_target_capabilities`; callers read it from
+`target_capabilities()` and can reject a surface that the host did not install.
 `cancel_pending_requests` clears correlation entries left by a cancelled task
 and returns the form to idle without presenting an obsolete result.
 After a successful calculation, `recv_event().await` (or the synchronous

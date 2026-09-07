@@ -26,6 +26,10 @@ pub enum MessageType {
     CapabilityReq = 5,
     /// Capability catalog response.
     CapabilityResp = 6,
+    /// Host target capability request.
+    TargetCapabilityReq = 7,
+    /// Host target capability response.
+    TargetCapabilityResp = 8,
     /// Clinical calculation request.
     ClinicalCalcReq = 0x10,
     /// Clinical calculation response.
@@ -54,6 +58,8 @@ impl MessageType {
             4 => Some(Self::HeartbeatResp),
             5 => Some(Self::CapabilityReq),
             6 => Some(Self::CapabilityResp),
+            7 => Some(Self::TargetCapabilityReq),
+            8 => Some(Self::TargetCapabilityResp),
             0x10 => Some(Self::ClinicalCalcReq),
             0x11 => Some(Self::ClinicalCalcResp),
             0x20 => Some(Self::AuditQueryReq),
@@ -72,6 +78,7 @@ impl MessageType {
             Self::HandshakeReq => Some(Self::HandshakeResp),
             Self::HeartbeatReq => Some(Self::HeartbeatResp),
             Self::CapabilityReq => Some(Self::CapabilityResp),
+            Self::TargetCapabilityReq => Some(Self::TargetCapabilityResp),
             Self::ClinicalCalcReq => Some(Self::ClinicalCalcResp),
             Self::AuditQueryReq => Some(Self::AuditQueryResp),
             Self::PluginInvokeReq => Some(Self::PluginInvokeResp),

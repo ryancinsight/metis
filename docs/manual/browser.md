@@ -76,10 +76,13 @@ calculation or a fabricated success.
 
 With the service configuration above, the status becomes `Authorized backend
 session ready`, and the header lists the commands advertised by that service
-(`host.capabilities`, `session.heartbeat`, `clinical.calculate` and
-`plugin.invoke`). The list
-comes from the versioned Metis capability catalog after the authenticated
-handshake; it is not a page-provided permission claim. Submit the defaults to observe the real backend response, then
+(`host.capabilities`, `host.target_capabilities`, `session.heartbeat`,
+`clinical.calculate` and `plugin.invoke`). It also displays the host target
+platform and installed surfaces (`native-process` and
+`browser-websocket` for this service), followed by the local WASM/DOM/CSS
+surfaces. These values come from the versioned Metis capability and target
+descriptors after the authenticated handshake; they are not page-provided
+permission claims. Submit the defaults to observe the real backend response, then
 change the fields to `80`, `4` and `0.75` and submit again. The result panel
 must show the echoed patient reference and those exact formatted values. Set
 weight to `0` to observe `Backend rejected request [0x3001]`; the previous
@@ -94,7 +97,17 @@ IPC client:
 ```rust
 let catalog = client.discover_capabilities()?;
 assert!(catalog.supports(metis_core::MessageType::ClinicalCalcReq));
+let target = client.discover_target_capabilities()?;
+assert!(target.supports(metis_core::TargetCapability::BrowserWebSocket));
 ```
+
+The target descriptor is evidence of the service boundary that accepted the
+session. A Windows or Linux platform value does not claim a native window,
+operating-system permissions, accessibility or IME support; those surfaces
+appear only after their host providers are implemented and explicitly added.
+Starting or stopping the WASM application advances a lifecycle generation.
+Completions from a cancelled connection or an earlier mount are discarded
+before they can restore state or render into the new DOM.
 
 Local host events use `metis_ipc::EventHub<E, CAPACITY>`. Each subscription has
 its own bounded queue; `publish` returns `ERR_QUEUE_FULL` instead of blocking,

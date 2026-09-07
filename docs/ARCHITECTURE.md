@@ -25,8 +25,9 @@ carry the strict same-origin CSP from the policy source consumed by
 desktop WebView host and OS permission boundary remain unimplemented.
 
 The shared `metis-core` crate owns wire types, typed command descriptors,
-capability catalog encoding, remote event envelopes, bounded host-local plugin
-metadata registration and the host-origin/window/session policy. `metis-ipc`
+capability catalog and target-surface encoding, remote event envelopes, bounded
+host-local plugin metadata registration and the host-origin/window/session
+policy. `metis-ipc`
 owns framing, canonical payload interpretation, transport correlation, bounded
 local and remote event delivery and typed failure reporting. Plugin registration
 stores static metadata with explicit scopes, while its invocation payload keeps
@@ -93,6 +94,13 @@ host-side command executor at the extension boundary; the invocation payload
 and response are bounded and correlated by the same frame contract. Servers
 expose explicit send paths over both admitted transports.
 `EventHub<E, CAPACITY>` remains the bounded local fan-out primitive.
+
+`TargetCapabilityPayload` separates target identity from installed host
+surfaces. The native service advertises its process boundary, the one-
+executable application adds private-process IPC, and the browser acceptor adds
+the authenticated WebSocket bridge. The WASM workbench reports its own
+WASM/DOM/CSS surfaces. Native windows, operating-system permissions,
+accessibility and IME remain absent until a provider implements them.
 
 The browser shell keeps CSS and module bootstrap files external to satisfy the
 same-origin CSP. The build checks the HTML policy against

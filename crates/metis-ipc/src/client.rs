@@ -5,7 +5,7 @@ use metis_core::error::{ErrorCode, MetisError, Result};
 use metis_core::protocol::{
     CapabilityCatalogPayload, ErrorResponsePayload, FrameHeader, HandshakeRequestPayload,
     HandshakeResponsePayload, MessageType, PROTOCOL_VERSION, PluginInvocationPayload,
-    PluginInvocationResponsePayload, RemoteEventPayload,
+    PluginInvocationResponsePayload, RemoteEventPayload, TargetCapabilityPayload,
 };
 use std::collections::VecDeque;
 
@@ -109,6 +109,44 @@ impl std::error::Error for CapabilityError {
     }
 }
 
+/// Failure to discover the connected host target and its implemented surfaces.
+#[derive(Debug, Clone, PartialEq, Eq)]
+#[non_exhaustive]
+pub enum TargetCapabilityError {
+    /// Transport, correlation, decoding, or version validation fails locally.
+    Local(MetisError),
+    /// The correlated peer rejects target discovery.
+    Remote(ErrorResponsePayload),
+}
+
+impl From<MetisError> for TargetCapabilityError {
+    fn from(error: MetisError) -> Self {
+        Self::Local(error)
+    }
+}
+
+impl std::fmt::Display for TargetCapabilityError {
+    fn fmt(&self, formatter: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self {
+            Self::Local(error) => error.fmt(formatter),
+            Self::Remote(error) => write!(
+                formatter,
+                "Peer rejected target capability discovery [0x{:04X}]: {}",
+                error.error_code, error.message
+            ),
+        }
+    }
+}
+
+impl std::error::Error for TargetCapabilityError {
+    fn source(&self) -> Option<&(dyn std::error::Error + 'static)> {
+        match self {
+            Self::Local(error) => Some(error),
+            Self::Remote(_) => None,
+        }
+    }
+}
+
 /// Failure to invoke a remote plugin, preserving local faults and peer errors.
 #[derive(Debug, Clone, PartialEq, Eq)]
 #[non_exhaustive]
@@ -200,6 +238,18 @@ impl<T: IpcTransport> IpcClient<T> {
     ) -> std::result::Result<CapabilityCatalogPayload, CapabilityError> {
         let (kind, payload) = self.send_and_recv(MessageType::CapabilityReq, &[])?;
         decode_capability_response(kind, &payload)
+    }
+
+    /// Discovers the connected host target and its implemented surfaces.
+    ///
+    /// # Errors
+    /// Returns local transport, correlation, decoding, or protocol-version
+    /// errors, or the peer's decoded rejection.
+    pub fn discover_target_capabilities(
+        &mut self,
+    ) -> std::result::Result<TargetCapabilityPayload, TargetCapabilityError> {
+        let (kind, payload) = self.send_and_recv(MessageType::TargetCapabilityReq, &[])?;
+        decode_target_capability_response(kind, &payload)
     }
 
     /// Invokes one authenticated plugin operation and decodes its bounded body.
@@ -374,6 +424,33 @@ pub(crate) fn decode_capability_response(
     Ok(catalog)
 }
 
+pub(crate) fn decode_target_capability_response(
+    kind: MessageType,
+    payload: &[u8],
+) -> std::result::Result<TargetCapabilityPayload, TargetCapabilityError> {
+    if kind == MessageType::ErrorResp {
+        return Err(TargetCapabilityError::Remote(ErrorResponsePayload::decode(
+            payload,
+        )?));
+    }
+    if kind != MessageType::TargetCapabilityResp {
+        return Err(MetisError::protocol(
+            ErrorCode::UnexpectedMessageType,
+            "Target capability discovery response type does not match the request",
+        )
+        .into());
+    }
+    let descriptor = TargetCapabilityPayload::decode(payload)?;
+    if descriptor.protocol_version() != PROTOCOL_VERSION {
+        return Err(MetisError::protocol(
+            ErrorCode::VersionMismatch,
+            "Target capability descriptor version differs from the wire contract",
+        )
+        .into());
+    }
+    Ok(descriptor)
+}
+
 pub(crate) fn decode_plugin_response(
     kind: MessageType,
     payload: &[u8],
@@ -432,6 +509,7 @@ pub(crate) fn decode_event(
 mod tests {
     use super::*;
     use crate::MemoryTransport;
+    use metis_core::protocol::{TargetCapability, TargetPlatform};
 
     #[test]
     fn exhausted_sequence_never_wraps_to_zero() {
@@ -472,6 +550,63 @@ mod tests {
         )
         .expect("catalog response");
         assert_eq!(decoded, catalog);
+    }
+
+    #[test]
+    fn target_capability_discovery_correlates_and_decodes_the_host_descriptor() {
+        let descriptor = TargetCapabilityPayload::new(
+            TargetPlatform::Windows,
+            [
+                TargetCapability::NativeProcess,
+                TargetCapability::BrowserWebSocket,
+            ],
+        )
+        .expect("descriptor");
+        let (transport, mut peer) = MemoryTransport::pair();
+        peer.send_message(
+            MessageType::TargetCapabilityResp,
+            1,
+            &descriptor.encode().expect("encoded descriptor"),
+        )
+        .expect("response");
+        let mut client = IpcClient::new(transport);
+        assert_eq!(
+            client
+                .discover_target_capabilities()
+                .expect("target descriptor"),
+            descriptor
+        );
+        let (header, payload) = peer.recv_message().expect("request");
+        assert_eq!(header.msg_type, MessageType::TargetCapabilityReq);
+        assert_eq!(header.sequence_id, 1);
+        assert!(payload.is_empty());
+    }
+
+    #[test]
+    fn target_capability_discovery_rejects_a_descriptor_version_mismatch() {
+        let descriptor = TargetCapabilityPayload::native_service();
+        let mut payload = descriptor.encode().expect("encoded descriptor");
+        payload[..2].copy_from_slice(&0x0200_u16.to_be_bytes());
+        let error = decode_target_capability_response(MessageType::TargetCapabilityResp, &payload)
+            .expect_err("version mismatch");
+        assert!(matches!(
+            error,
+            TargetCapabilityError::Local(error) if error.code == ErrorCode::VersionMismatch
+        ));
+    }
+
+    #[test]
+    fn target_capability_discovery_preserves_a_peer_rejection() {
+        let rejection = ErrorResponsePayload {
+            error_code: ErrorCode::MissingCapability as u16,
+            message: ErrorCode::MissingCapability.as_str().to_owned(),
+        };
+        let error = decode_target_capability_response(
+            MessageType::ErrorResp,
+            &rejection.encode().expect("error payload"),
+        )
+        .expect_err("peer rejection");
+        assert_eq!(error, TargetCapabilityError::Remote(rejection));
     }
 
     #[test]

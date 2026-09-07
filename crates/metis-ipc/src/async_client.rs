@@ -1,9 +1,9 @@
 //! Correlated asynchronous IPC for browser-thread transports.
 
 use crate::client::{
-    CapabilityError, HandshakeError, PluginInvocationError, decode_capability_response,
-    decode_event, decode_handshake_response, decode_plugin_response, next_request,
-    validate_response,
+    CapabilityError, HandshakeError, PluginInvocationError, TargetCapabilityError,
+    decode_capability_response, decode_event, decode_handshake_response, decode_plugin_response,
+    decode_target_capability_response, next_request, validate_response,
 };
 use crate::transport::AsyncIpcTransport;
 use metis_core::capability::CapabilityToken;
@@ -11,6 +11,7 @@ use metis_core::error::{ErrorCode, MetisError, Result};
 use metis_core::protocol::{
     CapabilityCatalogPayload, HandshakeRequestPayload, MessageType, PROTOCOL_VERSION,
     PluginInvocationPayload, PluginInvocationResponsePayload, RemoteEventPayload,
+    TargetCapabilityPayload,
 };
 use std::collections::BTreeMap;
 use std::collections::VecDeque;
@@ -107,6 +108,20 @@ impl<T: AsyncIpcTransport> AsyncIpcClient<T> {
     ) -> std::result::Result<CapabilityCatalogPayload, CapabilityError> {
         let (kind, payload) = self.send_and_recv(MessageType::CapabilityReq, &[]).await?;
         decode_capability_response(kind, &payload)
+    }
+
+    /// Discovers the connected host target and its implemented surfaces.
+    ///
+    /// # Errors
+    /// Returns local transport, correlation, decoding, or protocol-version
+    /// errors, or the peer's decoded rejection.
+    pub async fn discover_target_capabilities(
+        &mut self,
+    ) -> std::result::Result<TargetCapabilityPayload, TargetCapabilityError> {
+        let (kind, payload) = self
+            .send_and_recv(MessageType::TargetCapabilityReq, &[])
+            .await?;
+        decode_target_capability_response(kind, &payload)
     }
 
     /// Invokes one authenticated plugin operation without blocking the caller.
@@ -356,6 +371,7 @@ mod tests {
     use metis_core::capability::{CapabilityScope, CapabilityToken};
     use metis_core::error::{ErrorCode, MetisError};
     use metis_core::protocol::{FrameHeader, HandshakeResponsePayload, build_frame};
+    use metis_core::protocol::{TargetCapability, TargetPlatform};
     use std::collections::VecDeque;
     use std::future::{Future, ready};
     use std::task::{Context, Poll, Waker};
@@ -497,6 +513,36 @@ mod tests {
         let mut wire = wire.as_slice();
         let (header, payload) = crate::read_frame(&mut wire).expect("request");
         assert_eq!(header.msg_type, MessageType::CapabilityReq);
+        assert!(payload.is_empty());
+    }
+
+    #[test]
+    fn target_capability_discovery_uses_the_correlated_async_request() {
+        let descriptor = TargetCapabilityPayload::new(
+            TargetPlatform::Linux,
+            [
+                TargetCapability::NativeProcess,
+                TargetCapability::BrowserWebSocket,
+            ],
+        )
+        .expect("descriptor");
+        let response = frame(
+            MessageType::TargetCapabilityResp,
+            1,
+            &descriptor.encode().expect("encoded descriptor"),
+        );
+        let mut client =
+            AsyncIpcClient::new(ScriptTransport::new([response]), Duration::from_secs(1))
+                .expect("positive timeout");
+        assert_eq!(
+            poll_ready(client.discover_target_capabilities()).expect("target descriptor"),
+            descriptor
+        );
+        let wire = client.transport.sent.first().expect("request frame");
+        let mut wire = wire.as_slice();
+        let (header, payload) = crate::read_frame(&mut wire).expect("request");
+        assert_eq!(header.msg_type, MessageType::TargetCapabilityReq);
+        assert_eq!(header.sequence_id, 1);
         assert!(payload.is_empty());
     }
 

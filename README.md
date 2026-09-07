@@ -26,8 +26,11 @@ bounded command catalog and a local backpressure-aware event hub through the
 existing IPC seam. The same seam carries versioned unsolicited events over
 synchronous pipes and asynchronous WebSocket sessions, with strict identifiers
 and bounded retention; an accepted clinical calculation emits a typed
-`clinical.result` event after its correlated response. Hosts can register
-bounded, typed plugin manifests with explicit capability scopes; the versioned
+`clinical.result` event after its correlated response. They also expose a
+versioned target descriptor naming the host platform and installed transport
+surfaces; unsupported native window and OS permission surfaces remain absent.
+Hosts can register bounded, typed plugin manifests with explicit capability
+scopes; the versioned
 IPC seam also invokes declared plugin commands through a bounded host router and
 typed sync/async client methods. Registration and invocation do not grant
 operating-system authority; handler erasure is confined to the backend's open

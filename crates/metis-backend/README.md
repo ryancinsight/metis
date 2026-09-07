@@ -31,3 +31,9 @@ declared commands after the service verifies the command's capability scope.
 The plugin owns its opaque body codec, responses remain bounded by the wire
 frame, and the route grants no operating-system authority. Unknown plugins,
 commands, missing scopes and executor failures remain typed responses.
+After the same handshake, `TargetCapabilityReq` returns the host platform and
+the surfaces installed by the service boundary. `BackendService` starts with
+the native-process surface; the application adds private-process IPC and the
+browser acceptor adds its authenticated WebSocket surface. Missing native
+window and operating-system surfaces are reported as absent rather than
+inferred from the target platform.

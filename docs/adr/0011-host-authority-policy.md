@@ -71,7 +71,8 @@ one-handshake session binding and expiry. The native WebSocket service tests
 complete an authorized loopback handshake and verify that an unauthorized
 Origin receives no 101 response. The browser asset test and manual trace verify
 external assets, strict CSP directives, live service results and lifecycle
-behavior. Full workspace, release, documentation and visual gates bind the
+behavior. Target-surface discovery is checked against the installed process
+and browser bridge composition. Full workspace, release, documentation and visual gates bind the
 result to the delivered revision.
 
 ## Limits

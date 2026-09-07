@@ -20,6 +20,7 @@ pub use async_client::{AsyncIpcClient, MAX_PENDING_REQUESTS, RequestId};
 pub use async_server::AsyncIpcServer;
 pub use client::{
     CapabilityError, HandshakeError, IpcClient, MAX_QUEUED_EVENTS, PluginInvocationError,
+    TargetCapabilityError,
 };
 pub use events::{EventHub, MAX_SUBSCRIPTIONS, Subscription, SubscriptionId};
 pub use fault::{FaultConfig, FaultInjectingTransport};

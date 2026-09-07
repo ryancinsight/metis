@@ -4,10 +4,10 @@ use crate::{FormInputs, FormState};
 use metis_core::error::{ErrorCode, MetisError, Result};
 use metis_core::protocol::{
     CapabilityCatalogPayload, ClinicalCalcRequestPayload, ClinicalCalcResponsePayload,
-    ErrorResponsePayload, MessageType, RemoteEventPayload,
+    ErrorResponsePayload, MessageType, RemoteEventPayload, TargetCapabilityPayload,
 };
 use metis_ipc::async_client::AsyncIpcClient;
-use metis_ipc::client::{CapabilityError, HandshakeError};
+use metis_ipc::client::{CapabilityError, HandshakeError, TargetCapabilityError};
 use metis_ipc::transport::AsyncIpcTransport;
 use std::time::Duration;
 
@@ -15,6 +15,7 @@ use std::time::Duration;
 pub struct AsyncFrontendApp<T> {
     client: Option<AsyncIpcClient<T>>,
     capabilities: Option<CapabilityCatalogPayload>,
+    target_capabilities: Option<TargetCapabilityPayload>,
     inputs: FormInputs,
     state: FormState,
 }
@@ -28,6 +29,7 @@ impl<T: AsyncIpcTransport> AsyncFrontendApp<T> {
         Ok(Self {
             client: Some(AsyncIpcClient::new(transport, request_timeout)?),
             capabilities: None,
+            target_capabilities: None,
             inputs: FormInputs::new("PT-9042-ALPHA", 72.5, 4.0, 0.5),
             state: FormState::Idle,
         })
@@ -49,6 +51,12 @@ impl<T: AsyncIpcTransport> AsyncFrontendApp<T> {
     #[must_use]
     pub const fn capabilities(&self) -> Option<&CapabilityCatalogPayload> {
         self.capabilities.as_ref()
+    }
+
+    /// Returns the host target descriptor acquired during initialization.
+    #[must_use]
+    pub const fn target_capabilities(&self) -> Option<&TargetCapabilityPayload> {
+        self.target_capabilities.as_ref()
     }
 
     /// Acquires a session capability without blocking the browser event loop.
@@ -78,21 +86,34 @@ impl<T: AsyncIpcTransport> AsyncFrontendApp<T> {
                                 )),
                             }
                         })?;
-                        Ok::<_, HandshakeError>((token, catalog))
+                        let target = client
+                        .discover_target_capabilities()
+                        .await
+                        .map_err(|error| match error {
+                            TargetCapabilityError::Local(error) => HandshakeError::Local(error),
+                            TargetCapabilityError::Remote(error) => HandshakeError::Remote(error),
+                            _ => HandshakeError::Local(MetisError::protocol(
+                                ErrorCode::UnexpectedMessageType,
+                                "Target capability discovery returned an unsupported error variant",
+                            )),
+                        })?;
+                        Ok::<_, HandshakeError>((token, catalog, target))
                     }
                     .await
                 }
                 None => Err(HandshakeError::from(Self::closed())),
             };
         match outcome {
-            Ok((_, catalog)) => {
+            Ok((_, catalog, target)) => {
                 self.capabilities = Some(catalog);
+                self.target_capabilities = Some(target);
                 self.state = FormState::Idle;
                 Ok(())
             }
             Err(error) => {
                 self.client = None;
                 self.capabilities = None;
+                self.target_capabilities = None;
                 self.state = FormState::SessionFailed(error.clone());
                 Err(error)
             }

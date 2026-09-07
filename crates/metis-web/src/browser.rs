@@ -1,10 +1,11 @@
 //! Browser DOM application boundary.
 
+use crate::epoch::{Epoch, Generation};
 use metis_core::CapabilityScope;
 use metis_core::error::{ErrorCode, MetisError};
 use metis_core::protocol::{
     CapabilityCatalogPayload, ClinicalCalcResponsePayload, MAX_PLUGINS, Plugin, PluginDescriptor,
-    PluginOperation, PluginRegistry,
+    PluginOperation, PluginRegistry, TargetCapabilityPayload,
 };
 use metis_frontend::{AsyncFrontendApp, FormInputs, FormState};
 use metis_ipc::BrowserWebSocketTransport;
@@ -93,10 +94,11 @@ struct BrowserApplication {
     state: Rc<RefCell<BrowserState>>,
     app: Rc<RefCell<Option<AsyncFrontendApp<BrowserWebSocketTransport>>>>,
     task: Rc<RefCell<Option<LocalTaskHandle>>>,
+    generation: Generation,
 }
 
 impl BrowserApplication {
-    fn mount(document: &WebDocument) -> io::Result<Self> {
+    fn mount(document: &WebDocument, generation: Generation) -> io::Result<Self> {
         let bridge_config = read_bridge_config(document)?;
         let root = element(document, "metis-app")?;
         root.set_inner_html(BROWSER_MARKUP);
@@ -147,6 +149,7 @@ impl BrowserApplication {
                 &listener_state,
                 &listener_app,
                 &listener_task,
+                generation,
             );
         })?);
         let application = Self {
@@ -154,6 +157,7 @@ impl BrowserApplication {
             state,
             app,
             task,
+            generation,
         };
         if let Some(config) = bridge_config {
             application.connect(document, config);
@@ -162,6 +166,7 @@ impl BrowserApplication {
     }
 
     fn connect(&self, document: &WebDocument, config: BridgeConfig) {
+        let generation = self.generation;
         let state = Rc::clone(&self.state);
         let app_slot = Rc::clone(&self.app);
         let task_cleanup = Rc::clone(&self.task);
@@ -192,12 +197,17 @@ impl BrowserApplication {
                 Ok::<_, MetisError>(frontend)
             }
             .await;
+            if !generation_is_current(generation) {
+                let _ = task_cleanup.borrow_mut().take();
+                return;
+            }
             match result {
                 Ok(frontend) => {
-                    let capabilities = frontend.capabilities().map_or_else(
-                        || "Host capabilities: unavailable".to_owned(),
-                        capability_summary,
-                    );
+                    let capabilities =
+                        match (frontend.capabilities(), frontend.target_capabilities()) {
+                            (Some(catalog), Some(target)) => capability_summary(catalog, target),
+                            _ => "Host capabilities: unavailable".to_owned(),
+                        };
                     *app_slot.borrow_mut() = Some(frontend);
                     let mut state = state.borrow_mut();
                     state.bridge = BridgeStatus::Ready;
@@ -210,6 +220,10 @@ impl BrowserApplication {
                     state.state = FormState::Disconnected(error);
                     "Host capabilities: unavailable".clone_into(&mut state.capabilities);
                 }
+            }
+            if !generation_is_current(generation) {
+                let _ = task_cleanup.borrow_mut().take();
+                return;
             }
             if let Err(error) = render(&listener_document, &state.borrow()) {
                 set_mount_error(&listener_document, &error);
@@ -296,7 +310,11 @@ fn submit(
     state: &Rc<RefCell<BrowserState>>,
     app_slot: &Rc<RefCell<Option<AsyncFrontendApp<BrowserWebSocketTransport>>>>,
     task_slot: &Rc<RefCell<Option<LocalTaskHandle>>>,
+    generation: Generation,
 ) {
+    if !generation_is_current(generation) {
+        return;
+    }
     if task_slot.borrow().is_some() {
         let mut state = state.borrow_mut();
         state.state = FormState::Pending;
@@ -348,6 +366,10 @@ fn submit(
         let outcome = event_error
             .clone()
             .map_or_else(|| app.state().clone(), FormState::Disconnected);
+        if !generation_is_current(generation) {
+            let _ = task_cleanup.borrow_mut().take();
+            return;
+        }
         let bridge = if result.is_ok() && event_error.is_none() {
             BridgeStatus::Ready
         } else {
@@ -543,8 +565,11 @@ fn render(document: &WebDocument, state: &BrowserState) -> io::Result<()> {
     set_text(document, "result-state", &message)
 }
 
-fn capability_summary(catalog: &CapabilityCatalogPayload) -> String {
-    let names = catalog
+fn capability_summary(
+    catalog: &CapabilityCatalogPayload,
+    target: &TargetCapabilityPayload,
+) -> String {
+    let command_names = catalog
         .commands()
         .iter()
         .filter_map(|command| {
@@ -553,10 +578,25 @@ fn capability_summary(catalog: &CapabilityCatalogPayload) -> String {
                 .map(metis_core::CommandDescriptor::name)
         })
         .collect::<Vec<_>>();
-    if names.is_empty() {
-        return "Host capabilities: none advertised".to_owned();
-    }
-    format!("Host capabilities: {}", names.join(", "))
+    let host_surfaces = target
+        .capabilities()
+        .iter()
+        .map(|capability| capability.name())
+        .collect::<Vec<_>>();
+    let browser = TargetCapabilityPayload::browser_application();
+    let browser_surfaces = browser
+        .capabilities()
+        .iter()
+        .map(|capability| capability.name())
+        .collect::<Vec<_>>();
+    format!(
+        "Host capabilities: target={} surfaces=[{}] commands=[{}]; browser target={} surfaces=[{}]",
+        target.platform().name(),
+        host_surfaces.join(", "),
+        command_names.join(", "),
+        browser.platform().name(),
+        browser_surfaces.join(", "),
+    )
 }
 
 static WORKBENCH_EVENTS: [PluginOperation; 1] = [PluginOperation::new(
@@ -607,6 +647,15 @@ fn set_mount_error(document: &WebDocument, error: &io::Error) {
 
 thread_local! {
     static APPLICATION: RefCell<Option<BrowserApplication>> = const { RefCell::new(None) };
+    static APPLICATION_EPOCH: RefCell<Epoch> = const { RefCell::new(Epoch::new()) };
+}
+
+fn next_generation() -> io::Result<Generation> {
+    APPLICATION_EPOCH.with_borrow_mut(Epoch::advance)
+}
+
+fn generation_is_current(generation: Generation) -> bool {
+    APPLICATION_EPOCH.with_borrow(|epoch| epoch.accepts(generation))
 }
 
 /// Mounts the Metis browser application into the page's `#metis-app` element.
@@ -623,8 +672,18 @@ thread_local! {
 )]
 #[unsafe(no_mangle)]
 pub extern "C" fn metis_start() {
+    let generation = match next_generation() {
+        Ok(generation) => generation,
+        Err(error) => {
+            if let Ok(document) = WebDocument::current() {
+                set_mount_error(&document, &error);
+            }
+            return;
+        }
+    };
     APPLICATION.with_borrow_mut(|slot| *slot = None);
-    let result = WebDocument::current().and_then(|document| BrowserApplication::mount(&document));
+    let result = WebDocument::current()
+        .and_then(|document| BrowserApplication::mount(&document, generation));
     match result {
         Ok(application) => APPLICATION.with_borrow_mut(|slot| *slot = Some(application)),
         Err(error) => {
@@ -646,6 +705,12 @@ pub extern "C" fn metis_start() {
 )]
 #[unsafe(no_mangle)]
 pub extern "C" fn metis_stop() {
+    if let Err(error) = next_generation() {
+        if let Ok(document) = WebDocument::current() {
+            set_mount_error(&document, &error);
+        }
+        return;
+    }
     APPLICATION.with_borrow_mut(|slot| *slot = None);
     if let Ok(document) = WebDocument::current()
         && let Ok(root) = element(&document, "metis-app")
