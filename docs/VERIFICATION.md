@@ -250,7 +250,7 @@ absent until a provider is implemented.
 
 The focused command/event run `cargo nextest run --locked -p metis-core -p
 metis-ipc -p metis-backend -p metis-frontend -p metis-web -p metis-app` passes
-119/119 and covers the target descriptor and lifecycle guard in addition to
+121/121 and covers the target descriptor and lifecycle guard in addition to
 the earlier cases. It includes catalog round-trips, version and malformed-entry rejection,
 post-handshake service discovery, explicit unsupported-operation handling,
 target descriptor round-trips and malformed-value rejection, remote event
