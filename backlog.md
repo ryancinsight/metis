@@ -85,7 +85,7 @@ an owner. “Unsupported” cannot replace delivery of a required mobile/native 
 
 <a id="METIS-VERIFY-001"></a>
 ## METIS-VERIFY-001 — Verify and deliver foundation [patch]
-- Status: todo; priority: P0; owner: Metis integration; dependencies: METIS-SEC-001, METIS-IPC-001, METIS-UI-001, METIS-PROCESS-001
+- Status: in-progress; priority: P0; owner: Metis integration; integrator: root; last-update: 2026-09-07; branch: `feat/process-foundation`; dependencies: METIS-SEC-001, METIS-IPC-001, METIS-UI-001, METIS-PROCESS-001
 - Scope: source documentation, warning-clean gates, process evidence and Git delivery.
 - Acceptance: fmt/clippy/nextest/doc pass; Atlas-only direct dependencies and enumerated provider transitive graph; evidence states host coverage and residual risks.
 - Demonstration: [V01](docs/VERIFICATION.md#V01), current source/capture and evidence limits in the manual; final framework-wide closure belongs to CONFORMANCE.
