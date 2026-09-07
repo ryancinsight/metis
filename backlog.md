@@ -55,7 +55,7 @@ an owner. “Unsupported” cannot replace delivery of a required mobile/native 
 
 <a id="METIS-IPC-001"></a>
 ## METIS-IPC-001 — Canonical bounded IPC [patch]
-- Status: review; integrator: root; last-update: 2026-09-05
+- Status: in-progress; priority: P0; integrator: root; last-update: 2026-09-07; branch: `feat/process-foundation`
 - Scope: framing, canonical payloads, correlation/replay, bounded memory transport, wire fault injection.
 - Acceptance: exact bytes and typed errors for truncation, corruption, replay, oversize and malformed payloads.
 - Demonstration: [V01](docs/VERIFICATION.md#V01) and [V02](docs/VERIFICATION.md#V02), surfaced rejection/disconnection; wire assertions supplement visible outcomes.
