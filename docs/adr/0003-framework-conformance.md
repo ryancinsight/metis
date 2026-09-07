@@ -24,6 +24,12 @@ async tasks and headless/E2E testing direction inform Metis's state, host and
 visual contracts. The archived `iced_web` DOM runtime is not treated as current
 Iced behavior, so it does not close Metis's HTML5/CSS reuse gap.
 
+Revision 2026-09-06: the browser slice adds `metis-web`, a real HTML5/CSS host
+that loads generated WASM and drives Rust-owned controls through Moirai's DOM
+handles. The local trace proves editable state, typed invalid-input rejection
+and explicit missing-bridge failure. It does not close the authenticated live
+service, origin/session, cancellation, accessibility or cross-engine rows.
+
 ## Decision and scope
 
 Use Tauri as the application-framework migration reference and egui/GPUI/Iced
@@ -48,11 +54,13 @@ must return explicit outcomes; a silent no-op never closes a gap.
 
 ## Baselines and evidence limits
 
-Inspection date: 2026-09-06. Metis source baseline is
-`fbda109`; its standalone Windows gate passes
+Initial inspection date: 2026-09-06. Metis source baseline was
+`fbda109`; its standalone Windows gate passed
 82 debug tests, 82 release tests, ten doctests, WASM library compilation and the
-initial software snapshot. No competitor executable, comparative benchmark,
-native Metis window or Metis browser application ran in this analysis.
+initial software snapshot. The initial comparison ran no competitor executable,
+comparative benchmark or native Metis window. The follow-up browser-host trace
+is recorded in [VERIFICATION](../VERIFICATION.md) and does not change those
+initial comparison limits.
 
 | Reference | Inspected baseline | Qualification |
 | --- | --- | --- |
@@ -61,9 +69,10 @@ native Metis window or Metis browser application ran in this analysis.
 | Tauri | [tauri-v2.11.5 release][T0], 2026-07-01; v2 documentation read on inspection date | Documentation can describe newer integrations than a release; pin application/driver revisions when building comparison fixtures. |
 | Iced | [0.14.0 crate and API docs][I0], released 2025-12-07; official examples and release notes [I1] [I2] | Versioned docs describe Windows/macOS/Linux/Web, Elm-style state/messages/view/update, async tasks, native rendering and wgpu/tiny-skia paths. The former DOM runtime is archived [I3]; DOM reuse is not inferred from current Iced. |
 
-“Provided” below means documented or present in inspected source, not independently
-executed here. “Host” means the browser/OS or a named companion supplies the
-behavior. “Not established” is limited to inspected sources, not an assertion
+“Provided” below means documented or present in inspected source, not
+independently executed in the initial comparison. “Host” means the browser/OS or
+a named companion supplies the behavior. “Not established” is limited to
+inspected sources, not an assertion
 that no ecosystem solution exists. No numeric parity percentage is meaningful
 until the test inventory and supported target set are fixed.
 
@@ -73,17 +82,17 @@ Each row names its closing items; acceptance belongs in the
 [development board](../../backlog.md), with visual methodology in
 [verification](../VERIFICATION.md#visual-contract). All open rows remain gaps.
 
-| Capability | egui ecosystem | GPUI | Tauri | Metis at baseline and closing items |
+| Capability | egui ecosystem | GPUI | Tauri | Metis state and closing items |
 | --- | --- | --- | --- | --- |
 | Application state and controls | Immediate-mode widgets and responses [E1] | Entities, views, actions [G1] | Frontend framework supplies widgets/state [T1] | One form; no control dispatch or general component lifecycle. [STATE](../../backlog.md#METIS-STATE-001), [INPUT](../../backlog.md#METIS-INPUT-001). |
 | Layout, themes, resizing | Panels, scrolling, logical-point sizing [E1] | Styled element layout; not browser CSS [G1] | Host HTML/CSS and DOM [T1] | Sequential layout; several accepted styles do nothing. [LAYOUT](../../backlog.md#METIS-LAYOUT-001). |
 | Text editing and IME | Text editing plus integration IME contract [E4] | Selection/composition input example [G4] | Browser text/IME, subject to host integration | Bitmap Latin subset; no composition/selection. [TEXT](../../backlog.md#METIS-TEXT-001). |
 | Accessibility | AccessKit integration; custom widget semantics required [E5] | AccessKit roles/identity/actions in current source [G3] | Semantic frontend plus WebView/OS accessibility | No semantic tree/adapter. [A11Y](../../backlog.md#METIS-A11Y-001). |
 | Pointer, keyboard, touch, focus | Backend input, sensitivity and viewports [E1] | Platform events and actions [G1] | Web frontend and native window events [T1] | Application-fed queue with no event consumer/OS pump. [INPUT](../../backlog.md#METIS-INPUT-001), desktop items. |
-| Browser/WASM execution | eframe canvas host with WASM bindings [E2] | Current `gpui_web`: canvas, WebGPU/WebGL2 [G2] | Web frontend can target browser; native APIs need a host [T1] | Three libraries compile to WASM; no runnable browser host. [BROWSER](../../backlog.md#METIS-BROWSER-001), [ASYNC](../../backlog.md#METIS-ASYNC-001). |
+| Browser/WASM execution | eframe canvas host with WASM bindings [E2] | Current `gpui_web`: canvas, WebGPU/WebGL2 [G2] | Web frontend can target browser; native APIs need a host [T1] | `metis-web` loads generated WASM into an HTML5/CSS DOM host; live service, cancellation and cross-engine runs remain. [BROWSER](../../backlog.md#METIS-BROWSER-001), [ASYNC](../../backlog.md#METIS-ASYNC-001). |
 | Existing HTML5/CSS frontend reuse | Canvas UI is not DOM compatibility [E2] | Canvas UI is not DOM compatibility [G2] | WebView presentation is the core model [T1] | Custom markup does not preserve DOM/CSS applications. [BROWSER](../../backlog.md#METIS-BROWSER-001), [MIGRATION](../../backlog.md#METIS-MIGRATION-001). |
 | Native windows and platform lifecycle | eframe/backend-dependent viewports [E1] [E2] | macOS, Windows, Wayland/X11 platform code [G1] | Desktop system WebViews [T1] | Headless Windows-contained process workflow. [WINDOWS](../../backlog.md#METIS-DESKTOP-001), [MACOS](../../backlog.md#METIS-MACOS-001), [LINUX](../../backlog.md#METIS-LINUX-001). |
-| Async commands, events, cancellation | Application/host concern | Executor and action facilities [G1] | Commands, events and channels [T2] [T3] | Blocking request receiver; no subscriptions/cancel protocol. [ASYNC](../../backlog.md#METIS-ASYNC-001), [COMMANDS](../../backlog.md#METIS-COMMANDS-001). |
+| Async commands, events, cancellation | Application/host concern | Executor and action facilities [G1] | Commands, events and channels [T2] [T3] | Async client, bounded correlation and browser transport exist; live service, subscriptions and cancellation remain. [ASYNC](../../backlog.md#METIS-ASYNC-001), [COMMANDS](../../backlog.md#METIS-COMMANDS-001). |
 | Scoped native authority | Tauri-like broker not established by toolkit docs | Tauri-like broker not established by toolkit docs | Capability scopes and host boundaries [T4] | Session-scoped calculation only; no OS or browser-origin restriction. [AUTHORITY](../../backlog.md#METIS-AUTHORITY-001), desktop items. |
 | Images, vector content and media | Extras loaders; renderer integrations [E6] | Image/list examples and GPU elements [G1] | Browser assets/media and host permissions | Rectangle/border/bitmap-text commands only. [ASSETS](../../backlog.md#METIS-ASSETS-001), [GRAPHICS](../../backlog.md#METIS-GRAPHICS-001). |
 | Large lists, tables and reactive updates | Extras tables [E6] | Elements support large list views [G1] | Frontend framework/browser concern | No virtualized controls or reusable subscriptions. [DATA](../../backlog.md#METIS-DATA-001), [STATE](../../backlog.md#METIS-STATE-001). |
@@ -93,10 +102,10 @@ Each row names its closing items; acceptance belongs in the
 | Configuration, API/plugin migration | Separate API and hosting model | Separate API and hosting model | Commands/plugins/configuration/tooling [T1] [T5] | Custom wire protocol only; no import/mapping diagnostics. [MIGRATION](../../backlog.md#METIS-MIGRATION-001). |
 | Packaging, signing and updates | eframe template covers app/web build [E7] | Tauri-like distribution contract not established | Platform bundling and signing [T6]; updater plugin [T5] | Application manifest, one application executable serving two process roles (ADR 0006), portable bundle and Windows per-user MSI are the current distribution surface (ADR 0005); signing, [other platform formats](../../backlog.md#METIS-DISTRIBUTION-003) and [update recovery](../../backlog.md#METIS-DISTRIBUTION-004) remain gaps. [DISTRIBUTION](../../backlog.md#METIS-DISTRIBUTION-001), [RELEASE](../../backlog.md#METIS-RELEASE-001). |
 | Mobile/touch lifecycle | Target-specific integrations; parity not inferred | Complete mobile product support not established | Android/iOS target and plugin support [T1] [T5] | No mobile host/probes. [MOBILE](../../backlog.md#METIS-MOBILE-001). |
-| Semantic and visual tests | egui_kittest interaction/AccessKit/snapshots [E3] | TestAppContext and platform-dependent rendering [G1] | WebDriver routes differ by integration/platform [T7] | Initial 800×600 snapshot only; result-state pixels disconnected from backend tests. [VISUAL](../../backlog.md#METIS-VISUAL-001), [QUALITY](../../backlog.md#METIS-QUALITY-001). |
+| Semantic and visual tests | egui_kittest interaction/AccessKit/snapshots [E3] | TestAppContext and platform-dependent rendering [G1] | WebDriver routes differ by integration/platform [T7] | Seven software captures plus a local browser semantic/screenshot trace; committed cross-engine and live-state capture providers remain. [VISUAL](../../backlog.md#METIS-VISUAL-001), [QUALITY](../../backlog.md#METIS-QUALITY-001). |
 | Memory, latency and growth | Rendering model alone proves no advantage | GPU model alone proves no advantage | Small bundle does not prove low process memory | No matched baseline or resource telemetry. [PERF](../../backlog.md#METIS-PERF-001), [MEMORY](../../backlog.md#METIS-MEMORY-001). |
 | Assurance, provenance and recovery | Application responsibility | Application responsibility | Capabilities, audits and distribution controls [T4] [T6] | MAC vectors/bounded IPC exist; durable audit, supply-chain and operational evidence incomplete. [CRYPTO](../../backlog.md#METIS-CRYPTO-001), [AUDIT](../../backlog.md#METIS-AUDIT-001), [QUALITY](../../backlog.md#METIS-QUALITY-001). |
-| Runnable user documentation | Demos and eframe template [E1] [E7] | Source examples [G1] [G4] | Guides and test examples [T7] | Seven real-session software captures; browser/OS evidence remains open. [MANUAL](../../backlog.md#METIS-MANUAL-001), [VISUAL](../../backlog.md#METIS-VISUAL-001); every new item carries a manual demonstration. |
+| Runnable user documentation | Demos and eframe template [E1] [E7] | Source examples [G1] [G4] | Guides and test examples [T7] | Seven real-session software captures and a browser workbench walkthrough; native and authenticated browser evidence remains open. [MANUAL](../../backlog.md#METIS-MANUAL-001), [VISUAL](../../backlog.md#METIS-VISUAL-001); every new item carries a manual demonstration. |
 
 ## Iced-specific comparison
 
@@ -111,7 +120,7 @@ after the corresponding Metis implementation and target evidence pass.
 | Layout and widgets | Responsive layout, built-in text inputs and scrollables, and custom widgets are documented [I0] [I1] | Metis must implement or reject each admitted CSS/layout property and provide reusable DOM controls. [LAYOUT](../../backlog.md#METIS-LAYOUT-001), [INPUT](../../backlog.md#METIS-INPUT-001), [DATA](../../backlog.md#METIS-DATA-001). |
 | Text, IME and accessibility | Iced documents text input/widgets; the comparator does not establish Metis's DOM IME or assistive-technology contract | Keep DOM text, composition, selection, semantic roles and OS bridge in Metis's target items. [TEXT](../../backlog.md#METIS-TEXT-001), [A11Y](../../backlog.md#METIS-A11Y-001). |
 | Native windows | The native runtime manages windows and events on supported desktop targets [I0] | Metis still needs restricted Windows, macOS and Linux hosts with real event, process and permission probes. [DESKTOP](../../backlog.md#METIS-DESKTOP-001), [MACOS](../../backlog.md#METIS-MACOS-001), [LINUX](../../backlog.md#METIS-LINUX-001). |
-| Browser and WebAssembly | Iced examples run on native and web; current renderer direction uses the browser canvas/GPU path [I1] [I2] | This establishes a useful renderer comparator but does not provide an HTML/CSS DOM replacement. Metis must complete a real browser host and WASM lifecycle. [BROWSER](../../backlog.md#METIS-BROWSER-001), [ASYNC](../../backlog.md#METIS-ASYNC-001). |
+| Browser and WebAssembly | Iced examples run on native and web; current renderer direction uses the browser canvas/GPU path [I1] [I2] | This establishes a useful renderer comparator but does not provide an HTML/CSS DOM replacement. Metis now has a local DOM host; authenticated lifecycle and cross-engine evidence remain. [BROWSER](../../backlog.md#METIS-BROWSER-001), [ASYNC](../../backlog.md#METIS-ASYNC-001). |
 | HTML/CSS reuse | The old `iced_web` DOM runtime is archived and read-only [I3] | Do not claim DOM compatibility from Iced. Metis's DOM route remains an owned implementation with CSS semantics and migration diagnostics. [BROWSER](../../backlog.md#METIS-BROWSER-001), [MIGRATION](../../backlog.md#METIS-MIGRATION-001). |
 | Renderers and assets | Native renderer abstraction includes wgpu and tiny-skia; current docs identify WebGPU/WebGL-oriented browser rendering [I0] [I4] | Compare renderer correctness and resource bounds through Iris and Metis fixtures; do not add an Iced dependency or duplicate a renderer. [GRAPHICS](../../backlog.md#METIS-GRAPHICS-001), [ASSETS](../../backlog.md#METIS-ASSETS-001), [PERF](../../backlog.md#METIS-PERF-001). |
 | Files and authority | Iced provides application/runtime facilities, not Tauri's capability scopes or Metis's deny-by-default broker | Metis must enforce session/origin/window grants around files, network, processes and persistence. [AUTHORITY](../../backlog.md#METIS-AUTHORITY-001), [FILES](../../backlog.md#METIS-FILES-001), [SERVICES](../../backlog.md#METIS-SERVICES-001). |
@@ -132,11 +141,11 @@ silently accept browser-like syntax with different behavior.
 
 The [event surface](../../crates/metis-platform/src/event.rs) has no native event
 producer; [transport](../../crates/metis-ipc/src/transport.rs) blocks on receipt.
-Moirai's inspected local `69763f7` browser reactor discards incoming events and
-retains callbacks without teardown. Its portable process implementation rejects
-the containment Metis requires. These are upstream closure requirements, not
-reasons to add another runtime. Metis still locks the earlier `0514f11` process
-revision; a local-provider finding is not proof of standalone-consumer exposure.
+Moirai's merged `00fb0ae` browser PAL now owns
+DOM/event callbacks and bounded WebSocket receipt. The Metis browser host uses
+that provider; the browser service and native event producer remain closure
+requirements, not reasons to add another runtime. Consumer checks are against
+the pushed provider revision, not local provider edits.
 Iris's current lending rendering seam is sufficient for the software path and
 does not block a DOM host.
 

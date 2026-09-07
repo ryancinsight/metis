@@ -13,6 +13,12 @@ returns one outcome: idle, pending, success, peer rejection, preparation failure
 disconnection or handshake failure. Only success carries a backend response.
 Read `inputs()`, `document()` and `framebuffer()` without mutating this association.
 
+`AsyncFrontendApp` owns the same input/result state for a browser event loop.
+It accepts `metis_ipc::AsyncIpcTransport`, sends at most the bounded requests
+allowed by the asynchronous client, and changes to a typed disconnected state
+when a dispatched response cannot be trusted. Its `init` and
+`submit_calculation` methods are futures; they never block the browser thread.
+
 ```rust
 use metis_frontend::{FormState, FrontendApp};
 let (transport, peer) = metis_ipc::MemoryTransport::pair();

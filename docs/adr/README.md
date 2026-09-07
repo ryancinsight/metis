@@ -9,3 +9,4 @@
 | 0005 | [Application distribution](0005-application-distribution.md) | Accepted |
 | 0006 | [Single application entry](0006-application-entry.md) | Accepted |
 | 0007 | [Browser transport ownership](0007-browser-transport.md) | Accepted |
+| 0008 | [Browser host boundary](0008-browser-host-boundary.md) | Accepted |

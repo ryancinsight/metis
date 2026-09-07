@@ -1,8 +1,11 @@
 # Inspect application output
 
-The current Metis demonstration has two independently useful checks: a real
-frontend/backend process exchange, and deterministic software captures of a real
-backend session through success, edit, rejection, correction, disconnect and recovery. It is not yet an interactive browser or desktop application.
+The current Metis demonstration has three independently useful checks: a real
+frontend/backend process exchange, deterministic software captures of a real
+backend session through success, edit, rejection, correction, disconnect and
+recovery, and a browser workbench with Rust/WASM-driven HTML5/CSS controls. The
+browser workbench has no authenticated service bridge yet, and no desktop window
+host is implemented.
 
 ## Run the checks
 
@@ -13,10 +16,10 @@ python scripts/verify.py
 ```
 
 The gate builds the pinned code, exercises native debug/release tests and the
-process example, builds the portable WASM libraries, and compares the current
+process example, builds the portable WASM libraries including `metis-web`, and compares the current
 seven form captures and their recorded inputs, actions, labels and geometry with
 the committed gallery baseline. A passing WASM build does not run
-a browser; a passing process test does not exercise clicking the painted button.
+a browser; use the browser workbench command below for that runtime evidence.
 
 ## Check the browser transport slice
 
@@ -36,6 +39,22 @@ snapshot. V02 and V12 remain the acceptance
 checks for real WASM execution, cancellation, disconnect/recovery, teardown
 and resource measurements; their gallery entries must identify the actual
 engine, host and revision.
+
+## Run the browser workbench
+
+Build and serve the actual generated WASM loader and HTML/CSS shell:
+
+```text
+python scripts/browser.py build
+python -m http.server 8080 --directory output/browser
+```
+
+Open `http://127.0.0.1:8080/`. Change weight and dose to see the Rust-owned
+values update, enter a non-numeric value to observe `ERR_NUMERIC_INSTABILITY`,
+then submit to observe the typed `ERR_CONNECTION_CLOSED` result. The browser
+trace in [the manual](browser.md) records the observed semantic states and
+viewport. This is runtime evidence for the local HTML5/CSS host; it does not
+prove an authenticated service, origin grants, cancellation, or OS isolation.
 
 Open the [application gallery](applications.md) for the committed image, or
 inspect `output/form*.bmp` and `output/form*.svg` produced by this run. The SVG
@@ -73,7 +92,8 @@ these known artifacts to `output/visual/previous/`, retaining one previous run.
 Three deliberately changed renders test detection of text, position and color
 regressions. Their difference images are test evidence, not application states.
 The software gallery exercises production state transitions through API calls;
-browser/native input capture, focus and accessibility remain unimplemented.
+the browser workbench now exercises editable controls and focus, while browser
+backend cancellation, accessibility and native input capture remain unimplemented.
 
 ## What a demonstration proves
 
