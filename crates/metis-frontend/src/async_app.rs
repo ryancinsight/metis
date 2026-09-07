@@ -4,7 +4,7 @@ use crate::{FormInputs, FormState};
 use metis_core::error::{ErrorCode, MetisError, Result};
 use metis_core::protocol::{
     CapabilityCatalogPayload, ClinicalCalcRequestPayload, ClinicalCalcResponsePayload,
-    ErrorResponsePayload, MessageType,
+    ErrorResponsePayload, MessageType, RemoteEventPayload,
 };
 use metis_ipc::async_client::AsyncIpcClient;
 use metis_ipc::client::{CapabilityError, HandshakeError};
@@ -151,6 +151,26 @@ impl<T: AsyncIpcTransport> AsyncFrontendApp<T> {
                 Err(error)
             }
         }
+    }
+
+    /// Receives the next unsolicited event from the authenticated backend.
+    ///
+    /// Event delivery is separate from the correlated calculation response;
+    /// a successful calculation may therefore be displayed before its event
+    /// is consumed. A receive or decoding failure closes this application
+    /// because the message stream can no longer be trusted.
+    ///
+    /// # Errors
+    /// Returns transport, event-envelope, sequence, or typed protocol errors.
+    pub async fn recv_event(&mut self) -> Result<RemoteEventPayload> {
+        let result = match self.client.as_mut() {
+            Some(client) => client.recv_event().await,
+            None => Err(Self::closed()),
+        };
+        if result.is_err() {
+            self.client = None;
+        }
+        result
     }
 
     fn closed() -> MetisError {

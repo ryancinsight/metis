@@ -13,6 +13,8 @@ use std::collections::VecDeque;
 /// Maximum retained calls; fixed-size entries bound resident audit storage.
 pub const AUDIT_CAPACITY: usize = 1024;
 
+const AUDIT_HASH_CAPACITY: usize = 99;
+
 /// Application processing and transport failures have distinct audit meanings.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum AuditEvent {
@@ -43,22 +45,27 @@ pub struct AuditRecord {
 
 impl AuditRecord {
     fn compute_hash(&self) -> [u8; 32] {
-        let mut bytes = Vec::with_capacity(91);
+        let mut bytes = Vec::with_capacity(AUDIT_HASH_CAPACITY);
         bytes.extend_from_slice(b"METIS-AUDIT-2");
         bytes.extend_from_slice(&self.sequence_id.to_be_bytes());
         bytes.extend_from_slice(&self.timestamp_millis.to_be_bytes());
         bytes.extend_from_slice(&self.actor_id);
-        let (tag, identity) = match self.event {
-            AuditEvent::Processed(identity) => (0, Some(identity)),
-            AuditEvent::Failure(FailureContext::Receive) => (1, None),
-            AuditEvent::Failure(FailureContext::Request(identity)) => (2, Some(identity)),
-            AuditEvent::Failure(FailureContext::Handler(identity)) => (3, Some(identity)),
-            AuditEvent::Failure(FailureContext::Response(identity)) => (4, Some(identity)),
+        let (tag, identity, event_id) = match self.event {
+            AuditEvent::Processed(identity) => (0, Some(identity), None),
+            AuditEvent::Failure(FailureContext::Receive) => (1, None, None),
+            AuditEvent::Failure(FailureContext::Request(identity)) => (2, Some(identity), None),
+            AuditEvent::Failure(FailureContext::Handler(identity)) => (3, Some(identity), None),
+            AuditEvent::Failure(FailureContext::Response(identity)) => (4, Some(identity), None),
+            AuditEvent::Failure(FailureContext::Event(event_id)) => (5, None, Some(event_id)),
+            AuditEvent::Failure(_) => (255, None, None),
         };
         bytes.push(tag);
         if let Some(identity) = identity {
             bytes.extend_from_slice(&(identity.message_type as u16).to_be_bytes());
             bytes.extend_from_slice(&identity.sequence.to_be_bytes());
+        }
+        if let Some(event_id) = event_id {
+            bytes.extend_from_slice(&event_id.get().to_be_bytes());
         }
         bytes.push(u8::from(self.outcome.is_some()));
         bytes.extend_from_slice(&self.outcome.map_or(0, |code| code as u16).to_be_bytes());
@@ -179,7 +186,7 @@ impl AuditLedger {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use metis_core::protocol::MessageType;
+    use metis_core::protocol::{EventId, MessageType};
 
     #[test]
     fn eviction_preserves_sequence_and_detects_field_changes() {
@@ -210,6 +217,7 @@ mod tests {
             FailureContext::Request(identity),
             FailureContext::Handler(identity),
             FailureContext::Response(identity),
+            FailureContext::Event(EventId::try_from(7).expect("nonzero event id")),
         ] {
             let mut altered = ledger.clone();
             altered.records.front_mut().expect("front").event = AuditEvent::Failure(context);

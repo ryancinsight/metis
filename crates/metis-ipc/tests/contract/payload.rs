@@ -4,7 +4,7 @@ use metis_core::error::ErrorCode;
 use metis_core::protocol::{
     ClinicalCalcRequestPayload, ClinicalCalcResponsePayload, ErrorResponsePayload,
     HandshakeRequestPayload, HandshakeResponsePayload, MAX_PAYLOAD_SIZE, MessageType,
-    PROTOCOL_VERSION, build_frame,
+    PROTOCOL_VERSION, RemoteEventPayload, build_frame,
 };
 
 fn request() -> ClinicalCalcRequestPayload {
@@ -69,6 +69,24 @@ fn payloads_roundtrip_all_semantic_fields() {
         ErrorResponsePayload::decode(&error.encode().expect("error encoding"))
             .expect("error decoding"),
         error
+    );
+}
+
+#[test]
+fn clinical_response_codec_roundtrips_through_remote_event_envelope() {
+    let response = ClinicalCalcResponsePayload {
+        audit_sequence_id: 19,
+        rate_ml_hr: 1.25,
+        drug_rate_mg_hr: 2.5,
+        is_pediatric: true,
+        result_signature: [4; 32],
+    };
+    let event = RemoteEventPayload::from_event(response.audit_sequence_id, &response)
+        .expect("clinical event envelope");
+    assert_eq!(event.name(), "clinical.result");
+    assert_eq!(
+        event.decode_as::<ClinicalCalcResponsePayload>(),
+        Ok(response)
     );
 }
 

@@ -32,7 +32,9 @@ local and remote event delivery and typed failure reporting. Plugin registration
 stores static metadata with explicit scopes; it does not erase handlers or cross
 the OS authority boundary.
 `metis-backend` alone owns calculation policy, session authorization and audit
-storage. The application entry generates a fresh backend key and
+storage. A successful clinical calculation also creates one bounded
+`clinical.result` event from the typed response; `metis-ipc` emits it only after
+the correlated response. The application entry generates a fresh backend key and
 transfers ownership only into the parent service.
 
 `metis-frontend` converts submitted values to a wire request and displays the
@@ -76,8 +78,11 @@ origin, and OS permission checks remain transport/desktop work.
 `RemoteEventPayload` carries a version, nonzero event identifier, bounded UTF-8
 name and bounded body. Synchronous and asynchronous clients verify the frame
 identifier and strict event ordering; the asynchronous response pump retains a
-bounded event queue while it correlates request responses. `EventCodec` binds a
-stable name to a typed body without a dynamic registry. `PluginRegistry` binds
+bounded event queue while it correlates request responses, and the synchronous
+client drains the same bounded queue when a later request encounters an event.
+`IpcHandler` exposes one event slot after each response, which prevents a
+handler from creating an unbounded send loop. `EventCodec` binds a stable name
+to a typed body without a dynamic registry. `PluginRegistry` binds
 static plugin manifests to bounded command/event metadata without a dynamic
 handler list. Servers expose explicit send paths over both admitted transports.
 `EventHub<E, CAPACITY>` remains the bounded local fan-out primitive.

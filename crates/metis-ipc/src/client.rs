@@ -6,6 +6,10 @@ use metis_core::protocol::{
     CapabilityCatalogPayload, ErrorResponsePayload, FrameHeader, HandshakeRequestPayload,
     HandshakeResponsePayload, MessageType, PROTOCOL_VERSION, RemoteEventPayload,
 };
+use std::collections::VecDeque;
+
+/// Maximum unsolicited events retained while a synchronous client awaits a response.
+pub const MAX_QUEUED_EVENTS: usize = 16;
 
 /// Failure to establish a session, preserving local faults and peer rejections.
 ///
@@ -110,6 +114,7 @@ pub struct IpcClient<T> {
     next_seq: Option<u64>,
     active_token: Option<CapabilityToken>,
     last_event_id: Option<u64>,
+    events: VecDeque<RemoteEventPayload>,
 }
 impl<T: IpcTransport> IpcClient<T> {
     /// Starts a client without an authenticated session capability.
@@ -119,6 +124,7 @@ impl<T: IpcTransport> IpcClient<T> {
             next_seq: Some(1),
             active_token: None,
             last_event_id: None,
+            events: VecDeque::new(),
         }
     }
     /// Acquires a token whose principal and protocol version match the request.
@@ -162,11 +168,15 @@ impl<T: IpcTransport> IpcClient<T> {
     /// Event identifiers must echo the envelope identifier and increase
     /// strictly for this client. Callers should invoke this method from the
     /// one receive owner for a connection; request responses are not consumed
-    /// by an event-only call.
+    /// by an event-only call. Events observed while a request response is
+    /// pending are returned from this bounded queue before reading the wire.
     ///
     /// # Errors
     /// Returns transport, decoding, message-type, or event-sequence errors.
     pub fn recv_event(&mut self) -> Result<RemoteEventPayload> {
+        if let Some(event) = self.events.pop_front() {
+            return Ok(event);
+        }
         let (header, payload) = self.transport.recv_message()?;
         decode_event(&header, &payload, &mut self.last_event_id)
     }
@@ -184,6 +194,9 @@ impl<T: IpcTransport> IpcClient<T> {
     /// # Errors
     /// Rejects non-request types, exhausted sequences, transport failures,
     /// unrelated sequence identifiers, and incompatible response types.
+    /// Unsolicited events encountered before the correlated response are
+    /// retained for [`Self::recv_event`] within the same bounded queue used by
+    /// the event receiver.
     pub fn send_and_recv(
         &mut self,
         msg_type: MessageType,
@@ -191,9 +204,22 @@ impl<T: IpcTransport> IpcClient<T> {
     ) -> Result<(MessageType, Vec<u8>)> {
         let (expected, sequence) = next_request(&mut self.next_seq, msg_type)?;
         self.transport.send_message(msg_type, sequence, payload)?;
-        let (header, response) = self.transport.recv_message()?;
-        validate_response(expected, sequence, &header)?;
-        Ok((header.msg_type, response))
+        loop {
+            let (header, response) = self.transport.recv_message()?;
+            if header.msg_type.is_event() {
+                if self.events.len() >= MAX_QUEUED_EVENTS {
+                    return Err(MetisError::transport(
+                        ErrorCode::QueueFull,
+                        "Synchronous IPC remote event queue is full",
+                    ));
+                }
+                let event = decode_event(&header, &response, &mut self.last_event_id)?;
+                self.events.push_back(event);
+                continue;
+            }
+            validate_response(expected, sequence, &header)?;
+            return Ok((header.msg_type, response));
+        }
     }
 }
 
@@ -449,5 +475,28 @@ mod tests {
             client.recv_event().expect_err("version mismatch").code,
             ErrorCode::VersionMismatch
         );
+    }
+
+    #[test]
+    fn retains_an_event_seen_before_its_correlated_response() {
+        let (transport, mut peer) = MemoryTransport::pair();
+        let event = RemoteEventPayload::new(1, "test.value", [0x12, 0x34]).expect("event");
+        peer.send_message(
+            MessageType::TelemetryStreamEvent,
+            event.event_id().get(),
+            &event.encode().expect("event payload"),
+        )
+        .expect("event frame");
+        peer.send_message(MessageType::HeartbeatResp, 1, b"response")
+            .expect("response frame");
+
+        let mut client = IpcClient::new(transport);
+        assert_eq!(
+            client
+                .send_and_recv(MessageType::HeartbeatReq, b"request")
+                .expect("correlated response"),
+            (MessageType::HeartbeatResp, b"response".to_vec())
+        );
+        assert_eq!(client.recv_event().expect("queued event"), event);
     }
 }

@@ -82,7 +82,10 @@ handshake; it is not a page-provided permission claim. Submit the defaults to ob
 change the fields to `80`, `4` and `0.75` and submit again. The result panel
 must show the echoed patient reference and those exact formatted values. Set
 weight to `0` to observe `Backend rejected request [0x3001]`; the previous
-result is cleared before the rejection is displayed.
+result is cleared before the rejection is displayed. After an accepted
+calculation the header also shows `Remote event: clinical.result` with the
+nonzero event identifier, audit sequence and typed rates. A rejected request
+does not produce a clinical event and the status line says so.
 
 Hosts can use the same catalog from Rust with the synchronous or asynchronous
 IPC client:
@@ -158,17 +161,19 @@ assert_eq!(
 );
 ```
 
-The registry is host-local metadata. Remote plugin invocation, native OS
-permission enforcement and a live unsolicited-event capture remain separate
-host/service work items. The generated workbench registers a `workbench`
+The registry is host-local metadata. Remote plugin invocation and native OS
+permission enforcement remain separate host/service work items. The generated
+workbench registers a `workbench`
 manifest during each Rust mount and displays its version in
 **Registered frontend extensions**, so stop/start teardown also recreates the
 typed registration state.
 
 `AsyncIpcClient::recv_response_for` retains unsolicited events in a bounded
-queue while it waits for its request. Browser code can call `poll_event` after
-the receive owner has pumped a response. A live browser unsolicited-event
-capture remains open in the command and services backlog items.
+queue while it waits for its request. Browser code calls
+`AsyncFrontendApp::recv_event().await` after the accepted calculation; it
+decodes `clinical.result` and checks the event body against the correlated
+response before rendering. The native WebSocket service and the browser
+workbench therefore exercise the same event envelope and typed codec.
 
 The page's **Stop host** control calls the generated `metis_stop` export. The
 Rust host cancels the active browser task, drops its listener guards and
@@ -183,8 +188,14 @@ Capture the initial, successful, rejected, stopped and recovered states with the
 browser's native screenshot tool. Record browser engine, viewport, device
 scale, font environment, service command and WASM revision beside the images.
 The verified local trace used the Codex in-app browser at 1280×720 CSS pixels
-and device scale 1.25; its engine version was unavailable. The trace had no
-console warnings or errors. These captures establish HTML5/CSS execution and
-focusable controls and pair with the native loopback tests. They do not close
-post-drop allocation measurement, cross-engine behavior, TLS, accessibility
-technology support or OS permission isolation.
+and device scale 1.25; its engine version was unavailable. The accepted default
+calculation displayed `Remote event: clinical.result #3` with audit sequence 3,
+rate `0.543750 ml/hr` and drug rate `2.175000 mg/hr`. The zero-weight request
+displayed `Backend rejected request [0x3001]` and `Remote events: none (request
+rejected)`. Stop/start teardown and service restart restored
+`Authorized backend session ready`. The tab's console contained only the
+expected Moirai initialization log entries and no warnings or errors. These
+captures establish HTML5/CSS execution and focusable controls and pair with the
+native loopback tests. They do not close post-drop allocation measurement,
+cross-engine behavior, TLS, accessibility technology support or OS permission
+isolation.

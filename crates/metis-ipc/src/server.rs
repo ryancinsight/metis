@@ -1,7 +1,7 @@
 //! Request dispatch with per-connection replay rejection.
 use crate::transport::IpcTransport;
 use metis_core::error::{ErrorCode, MetisError, Result};
-use metis_core::protocol::{FrameHeader, MessageType, RemoteEventPayload};
+use metis_core::protocol::{EventId, FrameHeader, MessageType, RemoteEventPayload};
 
 /// Identity available after a frame header has been decoded.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -22,6 +22,7 @@ impl From<&FrameHeader> for RequestIdentity {
 
 /// Stage of a failure outside normal application response processing.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
+#[non_exhaustive]
 pub enum FailureContext {
     /// Transport or framing rejected input before delivering a validated header.
     Receive,
@@ -31,6 +32,8 @@ pub enum FailureContext {
     Handler(RequestIdentity),
     /// Response validation or transmission failed after application dispatch.
     Response(RequestIdentity),
+    /// An unsolicited event failed after its correlated response was sent.
+    Event(EventId),
 }
 
 /// Response produced after the request and handler contracts have passed.
@@ -65,6 +68,15 @@ pub trait IpcHandler {
     /// # Errors
     /// Returns audit or diagnostic sink failures; these stop the server.
     fn handle_failure(&mut self, context: FailureContext, error: ErrorCode) -> Result<()>;
+
+    /// Takes one event produced by the completed request, if any.
+    ///
+    /// Servers call this once after successfully sending the correlated
+    /// response. A single slot keeps handler-controlled event production
+    /// bounded and preserves the request/response ordering contract.
+    fn take_event(&mut self) -> Option<RemoteEventPayload> {
+        None
+    }
 }
 /// Server tracking the greatest accepted sequence on a connection.
 pub struct IpcServer<T> {
@@ -103,6 +115,12 @@ impl<T: IpcTransport> IpcServer<T> {
             &dispatched.payload,
         ) {
             handler.handle_failure(FailureContext::Response(dispatched.identity), error.code)?;
+            return Err(error);
+        }
+        if let Some(event) = handler.take_event()
+            && let Err(error) = self.send_event(&event)
+        {
+            handler.handle_failure(FailureContext::Event(event.event_id()), error.code)?;
             return Err(error);
         }
         Ok(true)

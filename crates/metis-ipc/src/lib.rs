@@ -15,10 +15,10 @@ pub mod transport;
 #[cfg(target_arch = "wasm32")]
 mod browser;
 
-pub use async_client::{AsyncIpcClient, MAX_PENDING_REQUESTS, MAX_QUEUED_EVENTS, RequestId};
+pub use async_client::{AsyncIpcClient, MAX_PENDING_REQUESTS, RequestId};
 #[cfg(not(target_arch = "wasm32"))]
 pub use async_server::AsyncIpcServer;
-pub use client::{CapabilityError, HandshakeError, IpcClient};
+pub use client::{CapabilityError, HandshakeError, IpcClient, MAX_QUEUED_EVENTS};
 pub use events::{EventHub, MAX_SUBSCRIPTIONS, Subscription, SubscriptionId};
 pub use fault::{FaultConfig, FaultInjectingTransport};
 pub use frame::{read_frame, write_frame};

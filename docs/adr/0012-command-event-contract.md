@@ -110,9 +110,27 @@ responses available to their request owners.
 
 The added verification covers exact envelope round-trips, malformed bounds,
 typed name matching, synchronous send/receive, event/response interleaving,
-identifier/version mismatch and replay. A live browser trace still exercises the
-capability catalog; plugin descriptor validation is covered by the core tests.
-A native unsolicited-event service trace and remote plugin invocation remain
+identifier/version mismatch and replay. A live browser trace exercises the
+capability catalog and the backend-produced clinical event; plugin descriptor
+validation is covered by the core tests. Remote plugin invocation remains
 open. `ErrorCode` is now non-exhaustive so future typed protocol and capability
 failures do not force downstream match arms; this follows the major release
 classification already required by the public `MessageType` extension.
+
+## Revision 2026-09-07 (event production)
+
+The event envelope was previously only an explicit server send primitive. The
+server contract now gives `IpcHandler` one bounded event slot drained after a
+successful correlated response on both synchronous and asynchronous transports.
+`BackendService` fills that slot only for an accepted clinical calculation,
+using the signed `ClinicalCalcResponsePayload` as the `clinical.result` body and
+the audit sequence as its strictly increasing identifier. The clients consume
+the event explicitly; the synchronous client also retains an event encountered
+while waiting for a later response so existing request code remains ordered.
+
+Event delivery failures are audited as `FailureContext::Event(EventId)` and the
+public failure context is non-exhaustive. The browser workbench receives the
+event through `AsyncFrontendApp`, decodes it without dynamic dispatch and
+verifies exact equality with the correlated response before displaying it.
+Synchronous memory-transport, asynchronous WebSocket loopback and browser
+workflow evidence cover the event path. Remote plugin invocation remains open.

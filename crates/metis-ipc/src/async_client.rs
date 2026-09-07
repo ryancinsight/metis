@@ -18,8 +18,7 @@ use std::time::Duration;
 /// Maximum number of requests and completed responses retained by one client.
 pub const MAX_PENDING_REQUESTS: usize = 16;
 
-/// Maximum unsolicited events retained while a receive owner awaits a response.
-pub const MAX_QUEUED_EVENTS: usize = 16;
+pub use crate::client::MAX_QUEUED_EVENTS;
 
 /// Correlation identifier assigned to one asynchronous request.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, PartialOrd, Ord)]

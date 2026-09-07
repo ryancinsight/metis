@@ -3,6 +3,7 @@ use crate::presentation::CLINICAL_SCREEN_XML;
 use metis_core::error::{ErrorCode, MetisError, Result};
 use metis_core::protocol::{
     ClinicalCalcRequestPayload, ClinicalCalcResponsePayload, ErrorResponsePayload, MessageType,
+    RemoteEventPayload,
 };
 use metis_ipc::client::{HandshakeError, IpcClient};
 use metis_ipc::transport::IpcTransport;
@@ -189,6 +190,26 @@ impl<T: IpcTransport> FrontendApp<T> {
                 Err(error)
             }
         }
+    }
+
+    /// Receives the next unsolicited event from the authenticated backend.
+    ///
+    /// The correlated response and its event are separate messages. Call this
+    /// after a successful operation when the host owns the receive stream.
+    /// A receive or decoding failure closes the application because the stream
+    /// can no longer be trusted.
+    ///
+    /// # Errors
+    /// Returns transport, event-envelope, sequence, or typed protocol errors.
+    pub fn recv_event(&mut self) -> Result<RemoteEventPayload> {
+        let result = match self.client.as_mut() {
+            Some(client) => client.recv_event(),
+            None => Err(Self::closed()),
+        };
+        if result.is_err() {
+            self.client = None;
+        }
+        result
     }
 
     fn closed() -> MetisError {

@@ -36,6 +36,13 @@ bytes. `EventCodec` associates a stable name with a typed body without dynamic
 dispatch. A capability catalog is valid only after handshake and lists the
 request identifiers the host currently accepts.
 
+An authenticated server sends at most one handler-produced event immediately
+after the correlated response for the request that produced it. The clinical
+backend emits `clinical.result` with the response body and its audit sequence
+as the event identifier. Clients consume this event explicitly; synchronous
+clients retain it when it arrives before a later response, and asynchronous
+clients retain it in their bounded receive queue.
+
 Plugin manifests are host-local metadata rather than a wire message. A
 `Plugin` implementation supplies one static `PluginDescriptor` to a bounded
 `PluginRegistry` (maximum 16 manifests and 16 combined operations per
@@ -68,6 +75,7 @@ frontend displays its received MAC without asserting that it can verify it.
 
 Each handler result records a typed audit event. Failure contexts distinguish
 receive failure with no decoded header, request rejection with identity, handler
-failure and response delivery failure. A processed request whose response fails
-has two distinct events. Audit records use canonical METIS-AUDIT-2 hashing and
-bounded in-memory retention; persistence and trusted checkpoints remain open.
+failure, response delivery failure and unsolicited-event delivery failure with
+its event identifier. A processed request whose response fails has two distinct
+events. Audit records use canonical METIS-AUDIT-2 hashing and bounded in-memory
+retention; persistence and trusted checkpoints remain open.

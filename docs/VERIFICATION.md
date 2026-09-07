@@ -242,7 +242,7 @@ heartbeat and clinical calculation commands. A known but unadvertised audit
 request returns the typed `ERR_UNEXPECTED_MESSAGE_TYPE` response.
 
 The focused command/event run `cargo nextest run --locked -p metis-core -p
-metis-ipc -p metis-backend -p metis-frontend -p metis-app` passes 97/97. It
+metis-ipc -p metis-backend -p metis-frontend -p metis-app` passes 100/100. It
 includes catalog round-trips, version and malformed-entry rejection,
 post-handshake service discovery, explicit unsupported-operation handling,
 remote event envelope round-trips and bounds, synchronous send/receive,
@@ -258,18 +258,28 @@ The browser workbench renders the same catalog after its authenticated
 handshake; the runtime trace remains a single Codex in-app browser engine and
 does not close the cross-engine requirement. Core tests also validate typed
 plugin manifest registration, duplicate and malformed metadata rejection,
-operation-count limits and bounded registry capacity. A native unsolicited-event
-trace and remote plugin invocation remain open.
+operation-count limits and bounded registry capacity. The native synchronous
+transport test and the authenticated Moirai WebSocket loopback now receive a
+backend-produced `clinical.result` event after the correlated response; both
+decode its typed body and verify the event identifier and rates. Remote plugin
+invocation remains open.
 
 The authenticated in-app browser trace also displayed `Registered frontend
 extensions: workbench v1` after the Rust mount, alongside the host capability
-catalog and clinical result. The zero-weight submission displayed the typed
-`Backend rejected request [0x3001]` state; stopping replaced the root with the
+catalog and `Remote events: none`. Submitting the default inputs rendered
+`Remote event: clinical.result #3 (audit=3 rate=0.543750 ml/hr
+drug=2.175000 mg/hr)`; the browser had decoded the typed event body and checked
+it against the correlated response. A zero-weight submission displayed the
+typed `Backend rejected request [0x3001]` state and
+`Remote events: none (request rejected)`. Stopping replaced the root with the
 stopped lifecycle state, and starting again recreated the form and plugin
 metadata while surfacing `ERR_TRANSPORT_BROKEN` after the one-shot service had
-exited. The capture was made at a 1280x720 CSS viewport; it is evidence for the
-single in-app browser engine and does not close cross-engine or native desktop
-coverage.
+exited. Restarting the service and starting the host again restored
+`Authorized backend session ready`. The capture was made at a 1280x720 CSS
+viewport with device scale 1.25; the engine version was unavailable. The tab's
+console contained only the expected Moirai initialization log entries and no
+warnings or errors. This is evidence for the single in-app browser engine and
+does not close cross-engine or native desktop coverage.
 
 <a id="visual-contract"></a>
 ## Visual and interaction contract

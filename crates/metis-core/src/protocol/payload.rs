@@ -1,4 +1,5 @@
 //! Exact-length payload codecs with validated UTF-8 and bounded strings.
+use super::event::EventCodec;
 use super::wire::{MAX_PAYLOAD_SIZE, check_length, finish, malformed, take};
 use crate::capability::{CapabilityScope, CapabilityToken};
 use crate::error::{ErrorCode, MetisError, Result};
@@ -162,6 +163,18 @@ impl ClinicalCalcResponsePayload {
             is_pediatric,
             result_signature,
         })
+    }
+}
+
+impl EventCodec for ClinicalCalcResponsePayload {
+    const NAME: &'static str = "clinical.result";
+
+    fn encode(&self) -> Result<Vec<u8>> {
+        Ok(ClinicalCalcResponsePayload::encode(self))
+    }
+
+    fn decode(payload: &[u8]) -> Result<Self> {
+        ClinicalCalcResponsePayload::decode(payload)
     }
 }
 /// Structured remote failure.

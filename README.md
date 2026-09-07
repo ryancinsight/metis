@@ -25,7 +25,9 @@ is implemented for the demonstrator. Authenticated sessions also expose a
 bounded command catalog and a local backpressure-aware event hub through the
 existing IPC seam. The same seam carries versioned unsolicited events over
 synchronous pipes and asynchronous WebSocket sessions, with strict identifiers
-and bounded async retention. Hosts can register bounded, typed plugin manifests
+and bounded retention; an accepted clinical calculation emits a typed
+`clinical.result` event after its correlated response. Hosts can register
+bounded, typed plugin manifests
 with explicit capability scopes; registration does not grant operating-system
 authority or erase handler types. This renderer's bounded markup subset is
 not the intended limit of web support. A desktop WebView host is not implemented. Metis does not

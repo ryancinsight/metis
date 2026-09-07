@@ -15,7 +15,7 @@ use metis_core::host::{HostContext, HostPolicy, HostSessionId};
 use metis_core::protocol::{
     CapabilityCatalogPayload, ClinicalCalcRequestPayload, ClinicalCalcResponsePayload,
     ErrorResponsePayload, FrameHeader, HandshakeRequestPayload, HandshakeResponsePayload,
-    MessageType, PROTOCOL_VERSION, SUPPORTED_COMMANDS,
+    MessageType, PROTOCOL_VERSION, RemoteEventPayload, SUPPORTED_COMMANDS,
 };
 use metis_ipc::server::{FailureContext, IpcHandler, RequestIdentity};
 use moirai_crypto::hmac_sha256;
@@ -88,6 +88,7 @@ pub struct BackendService<C = SystemClock> {
     last_sequence: u64,
     last_reading: Option<ClockReading>,
     clock_failed: bool,
+    pending_event: Option<RemoteEventPayload>,
 }
 
 impl BackendService {
@@ -132,6 +133,7 @@ impl<C> BackendService<C> {
             last_sequence: 0,
             last_reading: None,
             clock_failed: false,
+            pending_event: None,
         }
     }
 
@@ -164,6 +166,7 @@ impl<C> BackendService<C> {
             last_sequence: 0,
             last_reading: None,
             clock_failed: false,
+            pending_event: None,
         })
     }
 
@@ -329,7 +332,7 @@ impl<C: Clock> BackendService<C> {
     }
 
     fn calculate(
-        &self,
+        &mut self,
         header: &FrameHeader,
         payload: &[u8],
         reading: ClockReading,
@@ -350,6 +353,10 @@ impl<C: Clock> BackendService<C> {
             result_signature: [0; 32],
         };
         response.result_signature = self.result_signature(header, &request, &response)?;
+        self.pending_event = Some(RemoteEventPayload::from_event(
+            response.audit_sequence_id,
+            &response,
+        )?);
         Ok(response.encode())
     }
 
@@ -437,11 +444,15 @@ impl<C: Clock> IpcHandler for BackendService<C> {
         header: &FrameHeader,
         payload: &[u8],
     ) -> Result<(MessageType, Vec<u8>)> {
+        self.pending_event = None;
         let result = self.dispatch(header, payload);
-        self.record_event(
+        if let Err(error) = self.record_event(
             AuditEvent::Processed(RequestIdentity::from(header)),
             result.as_ref().err().map(|error| error.code),
-        )?;
+        ) {
+            self.pending_event = None;
+            return Err(error);
+        }
         match result {
             Ok(response) => Ok(response),
             Err(error) => Ok((
@@ -456,12 +467,17 @@ impl<C: Clock> IpcHandler for BackendService<C> {
     }
 
     fn handle_failure(&mut self, context: FailureContext, error: ErrorCode) -> Result<()> {
+        self.pending_event = None;
         // Preserve the transport event even if the clock fails. In that case
         // the record uses the last trusted timestamp and the clock fault stops
         // the server after the event is appended.
         let clock_result = self.observe_clock();
         self.record_event(AuditEvent::Failure(context), Some(error))?;
         clock_result.map(|_| ())
+    }
+
+    fn take_event(&mut self) -> Option<RemoteEventPayload> {
+        self.pending_event.take()
     }
 }
 

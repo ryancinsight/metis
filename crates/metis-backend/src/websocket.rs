@@ -79,7 +79,7 @@ mod tests {
     use metis_core::host::{HostContext, HostOrigin, HostPolicy, HostSessionId, WindowId};
     use metis_core::protocol::{
         ClinicalCalcRequestPayload, ClinicalCalcResponsePayload, HandshakeRequestPayload,
-        HandshakeResponsePayload, MessageType, PROTOCOL_VERSION, build_frame,
+        HandshakeResponsePayload, MessageType, PROTOCOL_VERSION, RemoteEventPayload, build_frame,
     };
     use moirai_async::io::{AsyncReadExt, AsyncWriteExt};
     use moirai_async::net::{TcpListener, TcpStream};
@@ -235,7 +235,7 @@ mod tests {
         Ok(payload)
     }
 
-    async fn run_valid_exchange() -> io::Result<(Vec<u8>, Vec<u8>)> {
+    async fn run_valid_exchange() -> io::Result<(Vec<u8>, Vec<u8>, Vec<u8>)> {
         let listener = TcpListener::bind("127.0.0.1:0").await?;
         let address = listener.local_addr()?;
         let server = std::thread::spawn(move || {
@@ -291,9 +291,10 @@ mod tests {
             client.write_all(&masked_binary(&calculation)).await?;
             client.flush().await?;
             let calculation_response = read_server_binary(&mut client).await?;
+            let event = read_server_binary(&mut client).await?;
             client.write_all(&masked_close()).await?;
             client.flush().await?;
-            Ok((handshake_response, calculation_response))
+            Ok((handshake_response, calculation_response, event))
         }
         .await;
 
@@ -309,7 +310,7 @@ mod tests {
 
     #[test]
     fn authenticated_loopback_preserves_handshake_and_clinical_values() {
-        let (handshake, calculation) =
+        let (handshake, calculation, event_wire) =
             moirai_executor::block_on(run_valid_exchange()).expect("loopback exchange");
         let mut handshake_wire = handshake.as_slice();
         let (handshake_header, handshake_payload) =
@@ -330,6 +331,20 @@ mod tests {
         assert_eq!(result.drug_rate_mg_hr.to_bits(), 2.175_f64.to_bits());
         assert!(!result.is_pediatric);
         assert_ne!(token.signature, [0; 32]);
+        let mut event_wire = event_wire.as_slice();
+        let (event_header, event_payload) =
+            metis_ipc::read_frame(&mut event_wire).expect("event frame");
+        assert_eq!(event_header.sequence_id, result.audit_sequence_id);
+        assert_eq!(event_header.msg_type, MessageType::TelemetryStreamEvent);
+        let event = RemoteEventPayload::decode(&event_payload).expect("event envelope");
+        assert_eq!(event.name(), "clinical.result");
+        assert_eq!(event.event_id().get(), result.audit_sequence_id);
+        assert_eq!(
+            event
+                .decode_as::<ClinicalCalcResponsePayload>()
+                .expect("typed event"),
+            result
+        );
     }
 
     #[test]
