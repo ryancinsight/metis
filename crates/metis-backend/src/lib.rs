@@ -13,4 +13,4 @@ pub use plugins::PluginExecutor;
 pub use service::BackendService;
 pub use supervisor::run_session;
 #[cfg(not(target_arch = "wasm32"))]
-pub use websocket::serve_browser_websocket;
+pub use websocket::{serve_browser_websocket, serve_browser_websocket_with_response_delay};

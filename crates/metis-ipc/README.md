@@ -41,6 +41,11 @@ ordering keeps existing correlated clients valid while making backend-produced
 events observable to an explicit event receiver.
 `serve_browser_websocket` adds the host-origin validator before the HTTP 101
 response and requires a trusted `HostContext` before serving a browser session.
+The conformance host can opt into
+`serve_browser_websocket_with_response_delay`, which uses a bounded Moirai
+timer before successful clinical responses. This is a lifecycle probe for
+stopped or remounted browser applications; handshake, rejection and event
+frames remain immediate.
 
 `EventHub<E, CAPACITY>` provides bounded local fan-out for host events. Each
 `Subscription` owns a finite queue; `publish` returns `QueueFull` instead of

@@ -22,6 +22,11 @@ bounded loopback WebSocket role:
 cargo run --locked -p metis-app -- --metis-browser-service http://127.0.0.1:8080 8765 66666666666666666666666666666666
 ```
 
+The browser service accepts the optional `--response-delay-ms MILLISECONDS`
+probe flag with a value from 1 through 30,000. It delays successful clinical
+responses through Moirai's asynchronous timer so a browser host can verify
+stop/remount cancellation against a real service boundary.
+
 The service validates the browser `Origin` before the HTTP upgrade, binds the
 configured session context and exits after the peer closes. This role is a
 local conformance host; it does not provide TLS or operating-system permission

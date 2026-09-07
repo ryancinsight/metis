@@ -8,6 +8,10 @@ use metis_core::protocol::{MessageType, RemoteEventPayload, build_frame};
 use moirai_async::io::{AsyncRead, AsyncWrite};
 use moirai_http::WebSocketStream;
 use std::io;
+use std::time::Duration;
+
+/// Largest response delay admitted by the browser conformance probe.
+pub const MAX_CLINICAL_RESPONSE_DELAY: Duration = Duration::from_secs(30);
 
 /// One ordered Metis IPC session carried by a message-oriented WebSocket.
 ///
@@ -18,6 +22,7 @@ pub struct AsyncIpcServer<S> {
     stream: WebSocketStream<S>,
     last_sequence: u64,
     last_event_id: Option<u64>,
+    clinical_response_delay: Option<Duration>,
 }
 
 impl<S> AsyncIpcServer<S> {
@@ -28,8 +33,38 @@ impl<S> AsyncIpcServer<S> {
             stream,
             last_sequence: 0,
             last_event_id: None,
+            clinical_response_delay: None,
         }
     }
+
+    /// Adds a bounded delay before a successful clinical response is sent.
+    ///
+    /// This probe exercises cancellation at a real service boundary. It uses
+    /// Moirai's asynchronous timer, so the delay never blocks the executor;
+    /// dropping the browser transport prevents the eventual frame from
+    /// reaching a stopped host.
+    /// Handshake, capability, rejection and event frames remain immediate.
+    ///
+    /// # Errors
+    /// Returns [`ErrorCode::Timeout`] when `delay` exceeds
+    /// [`MAX_CLINICAL_RESPONSE_DELAY`].
+    pub fn with_clinical_response_delay(mut self, delay: Duration) -> Result<Self> {
+        self.clinical_response_delay = validate_clinical_response_delay(delay)?;
+        Ok(self)
+    }
+}
+
+fn validate_clinical_response_delay(delay: Duration) -> Result<Option<Duration>> {
+    if delay > MAX_CLINICAL_RESPONSE_DELAY {
+        return Err(MetisError::transport(
+            ErrorCode::Timeout,
+            format!(
+                "Clinical response delay exceeds the {} second probe bound",
+                MAX_CLINICAL_RESPONSE_DELAY.as_secs()
+            ),
+        ));
+    }
+    Ok((!delay.is_zero()).then_some(delay))
 }
 
 impl<S: AsyncRead + AsyncWrite + Unpin> AsyncIpcServer<S> {
@@ -76,6 +111,11 @@ impl<S: AsyncRead + AsyncWrite + Unpin> AsyncIpcServer<S> {
         if let Err(error) = check_wire_size(&wire) {
             handler.handle_failure(FailureContext::Response(dispatched.identity), error.code)?;
             return Err(error);
+        }
+        if dispatched.message_type == MessageType::ClinicalCalcResp
+            && let Some(delay) = self.clinical_response_delay
+        {
+            moirai_async::timer::sleep(delay).await;
         }
         if let Err(error) = self.stream.send_binary(&wire).await {
             let error = websocket_error(&error);
@@ -177,5 +217,36 @@ fn websocket_error(error: &io::Error) -> MetisError {
         MetisError::protocol(code, message)
     } else {
         MetisError::transport(code, message)
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::{MAX_CLINICAL_RESPONSE_DELAY, validate_clinical_response_delay};
+    use metis_core::ErrorCode;
+    use std::time::Duration;
+
+    #[test]
+    fn clinical_response_delay_is_bounded_and_zero_is_immediate() {
+        assert_eq!(
+            validate_clinical_response_delay(Duration::ZERO).expect("zero delay is valid"),
+            None
+        );
+        let delay = Duration::from_secs(4);
+        assert_eq!(
+            validate_clinical_response_delay(delay).expect("bounded delay is valid"),
+            Some(delay)
+        );
+        assert_eq!(
+            validate_clinical_response_delay(MAX_CLINICAL_RESPONSE_DELAY)
+                .expect("maximum delay is valid"),
+            Some(MAX_CLINICAL_RESPONSE_DELAY)
+        );
+        assert_eq!(
+            validate_clinical_response_delay(MAX_CLINICAL_RESPONSE_DELAY + Duration::from_nanos(1))
+                .expect_err("over-bound delay must fail")
+                .code,
+            ErrorCode::Timeout
+        );
     }
 }

@@ -7,6 +7,7 @@ use metis_ipc::AsyncIpcServer;
 use moirai_async::io::{AsyncRead, AsyncWrite};
 use moirai_http::{WebSocketConfig, accept_websocket_with_validator};
 use std::io;
+use std::time::Duration;
 
 /// Serves one browser WebSocket session after a pre-response origin check.
 ///
@@ -23,7 +24,43 @@ use std::io;
 pub async fn serve_browser_websocket<S, C>(
     stream: S,
     config: WebSocketConfig,
+    service: BackendService<C>,
+) -> Result<()>
+where
+    S: AsyncRead + AsyncWrite + Unpin,
+    C: Clock,
+{
+    serve_browser_websocket_with_policy(stream, config, service, None).await
+}
+
+/// Serves one browser session with a bounded delayed clinical response probe.
+///
+/// The delay is applied only to a successful `ClinicalCalcResp`. It exercises
+/// the same authenticated service and WebSocket path as the normal browser
+/// host, allowing a stopped or remounted WASM application to be checked for
+/// stale DOM mutation. The delay is implemented by Moirai's cancellable timer.
+///
+/// # Errors
+/// Returns the normal browser-service failures or [`ErrorCode::Timeout`] when
+/// `response_delay` exceeds [`metis_ipc::MAX_CLINICAL_RESPONSE_DELAY`].
+pub async fn serve_browser_websocket_with_response_delay<S, C>(
+    stream: S,
+    config: WebSocketConfig,
+    service: BackendService<C>,
+    response_delay: Duration,
+) -> Result<()>
+where
+    S: AsyncRead + AsyncWrite + Unpin,
+    C: Clock,
+{
+    serve_browser_websocket_with_policy(stream, config, service, Some(response_delay)).await
+}
+
+async fn serve_browser_websocket_with_policy<S, C>(
+    stream: S,
+    config: WebSocketConfig,
     mut service: BackendService<C>,
+    response_delay: Option<Duration>,
 ) -> Result<()>
 where
     S: AsyncRead + AsyncWrite + Unpin,
@@ -45,7 +82,12 @@ where
     })
     .await
     .map_err(|error| websocket_error(&error))?;
-    AsyncIpcServer::new(socket).run(&mut service).await
+    let server = AsyncIpcServer::new(socket);
+    let mut server = match response_delay {
+        Some(delay) => server.with_clinical_response_delay(delay)?,
+        None => server,
+    };
+    server.run(&mut service).await
 }
 
 fn origin_error(error: MetisError) -> io::Error {

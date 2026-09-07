@@ -65,6 +65,35 @@ configuration, not credentials. The service's trusted context and capability
 signature remain authoritative. The demonstration is loopback-only and uses
 `ws://`; it does not establish TLS server authentication.
 
+## Verify stop/remount disposal at the service boundary
+
+The browser service can delay a successful clinical response for a bounded
+interval. This exercises the same WebSocket and `AsyncIpcServer` path as the
+normal workflow while leaving handshake, rejection and event frames immediate:
+
+```text
+cargo run --locked -p metis-app -- --metis-browser-service http://127.0.0.1:8080 8765 66666666666666666666666666666666 --response-delay-ms 4000
+```
+
+With the configured workbench URL open, wait for **Authorized backend session
+ready**, activate **Submit to authorized backend**, and immediately activate
+**Stop host**. The stopped page must contain only `Metis browser host stopped.`
+Start the host again before the four-second delay expires. The remounted form
+must show its new generation and either the fresh session state or the explicit
+`Backend unavailable [ERR_TRANSPORT_BROKEN]` state when the one-connection
+conformance service has closed; it must not show the old result. After at least
+four seconds, inspect the page again. The accessibility tree and screenshot
+must remain unchanged, with no stale result or event from the stopped request.
+
+The 2026-09-07 trace used the Codex in-app browser at a 1280×720 CSS-pixel
+viewport and device scale 1.25. It observed **Request in progress**, stopped
+the host, remounted it, then waited beyond the delay. The remounted tree stayed
+at `Backend unavailable [ERR_TRANSPORT_BROKEN]` with `Remote events: none`; the
+delayed response did not mutate the new DOM. The browser engine version and
+post-drop allocation counts were unavailable, so this is lifecycle evidence
+for one engine and the real loopback service, not cross-engine or allocation
+proof.
+
 ## Exercise the real Rust state
 
 Change the weight, concentration or dose fields. The result panel updates from

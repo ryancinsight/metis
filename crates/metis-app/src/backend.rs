@@ -1,8 +1,11 @@
 //! Parent-process application state and supervised presentation launch.
-use crate::{entropy, invocation::FRONTEND_ROLE};
-use metis_backend::serve_browser_websocket;
+use crate::{
+    entropy,
+    invocation::{BrowserResponseDelay, FRONTEND_ROLE},
+};
 use metis_backend::service::SystemClock;
 use metis_backend::{BackendService, clinical::SafetyEnvelope, supervisor::run_session};
+use metis_backend::{serve_browser_websocket, serve_browser_websocket_with_response_delay};
 use metis_core::host::{HostContext, HostOrigin, HostPolicy, HostSessionId, WindowId};
 use metis_core::protocol::TargetCapability;
 use moirai_async::net::TcpListener;
@@ -30,6 +33,7 @@ pub(crate) fn run_browser_service(
     raw_origin: &str,
     port: u16,
     principal: [u8; 16],
+    response_delay: Option<BrowserResponseDelay>,
 ) -> Result<(), Box<dyn std::error::Error>> {
     let origin = HostOrigin::parse(raw_origin)?;
     let window = WindowId::new(1)?;
@@ -56,7 +60,16 @@ pub(crate) fn run_browser_service(
         Duration::from_secs(10),
         Duration::from_secs(30),
     );
-    moirai_executor::block_on(serve_browser_websocket(stream, config, service))?;
+    if let Some(response_delay) = response_delay {
+        moirai_executor::block_on(serve_browser_websocket_with_response_delay(
+            stream,
+            config,
+            service,
+            response_delay.duration(),
+        ))?;
+    } else {
+        moirai_executor::block_on(serve_browser_websocket(stream, config, service))?;
+    }
     Ok(())
 }
 

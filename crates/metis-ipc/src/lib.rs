@@ -17,7 +17,7 @@ mod browser;
 
 pub use async_client::{AsyncIpcClient, MAX_PENDING_REQUESTS, RequestId};
 #[cfg(not(target_arch = "wasm32"))]
-pub use async_server::AsyncIpcServer;
+pub use async_server::{AsyncIpcServer, MAX_CLINICAL_RESPONSE_DELAY};
 pub use client::{
     CapabilityError, HandshakeError, IpcClient, MAX_QUEUED_EVENTS, PluginInvocationError,
     TargetCapabilityError,
