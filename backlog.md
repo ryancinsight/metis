@@ -60,11 +60,8 @@ an owner. “Unsupported” cannot replace delivery of a required mobile/native 
 
 <a id="METIS-UI-001"></a>
 ## METIS-UI-001 — Bounded presentation [major]
-- Status: in-progress; priority: P0; integrator: root; last-update: 2026-09-07; branch: `feat/process-foundation`
-- Scope: markup/style parsing, layout, software rasterizer, bounded surface/event allocations.
-- Acceptance: EOF/depth/Unicode/overflow cases terminate with errors; unsupported or malformed styles return `ERR_INVALID_CSS_STYLE`; supported forms still render from input.
-- Demonstration: [V01](docs/VERIFICATION.md#V01) and [V04](docs/VERIFICATION.md#V04), actual supported-layout captures with typed unsupported-style diagnostics.
-- Decision: [ADR 0013](docs/adr/0013-strict-style-contract.md); migration: [style migration guide](docs/manual/style-migration.md).
+- Status: done; priority: P0; delivery: `ab722a8`; style contract audit passed 2026-09-07.
+- Outcome: Strict typed style parsing, parser propagation, positive/negative coverage, software rendering evidence and migration documentation satisfy [ADR 0013](docs/adr/0013-strict-style-contract.md); browser/native CSS and host gaps remain separate.
 
 <a id="METIS-PROCESS-001"></a>
 ## METIS-PROCESS-001 — Real executable workflow [arch] [minor]
