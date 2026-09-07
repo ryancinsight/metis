@@ -9,7 +9,7 @@ repository.workspace = true
 description = "Shared wire types, integrity primitives, capability tokens, and errors for Metis"
 
 [dependencies]
-# Pure Rust std only. Zero third-party dependencies.
+moirai-crypto.workspace = true
 
 [lints]
 workspace = true

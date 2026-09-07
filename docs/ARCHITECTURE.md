@@ -66,7 +66,7 @@ budgets, native FFI boundary and platform expansion contract.
 | General allocation | Mnemosyne | Already reachable through Moirai; no extra global allocator override without an allocation contract/measurement. |
 | Recoverable framebuffer allocation | Metis | Mnemosyne aligned storage currently aborts on allocation failure; Metis checks size and uses fallible reservation. |
 | In-process brand/borrow proofs | Melinoe | Reached through Moirai; cannot replace authenticated serialized capability claims. |
-| Standalone MAC/hash | Metis seed implementation | Moirai crypto currently exposes a TLS provider, not a standalone public primitive surface. Upstream extraction remains required before replacement. |
+| Standalone MAC/hash | Moirai `moirai-crypto` standalone primitives with its TLS feature disabled | Metis consumes the provider's SHA-256, HMAC-SHA256 and fixed-width comparison; CRC-32 remains in the protocol owner. Independent vectors and canonical wire/audit tests are required. |
 
 ## Platform coverage
 

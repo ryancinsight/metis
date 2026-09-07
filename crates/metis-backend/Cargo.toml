@@ -10,6 +10,7 @@ description = "Privileged clinical logic, safety interlocks, capability authoriz
 
 [dependencies]
 moirai-core.workspace = true
+moirai-crypto.workspace = true
 moirai-executor.workspace = true
 moirai-transport.workspace = true
 metis-core = { workspace = true }

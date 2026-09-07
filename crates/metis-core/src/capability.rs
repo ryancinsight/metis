@@ -4,8 +4,8 @@
 //! receives scoped, time-limited tokens verified by the backend. These tokens
 //! do not restrict operating-system privileges or authenticate a claimed PID.
 
-use crate::crypto::{constant_time_eq_32, hmac_sha256};
 use crate::error::{ErrorCode, MetisError, Result};
+use moirai_crypto::{constant_time_eq_32, hmac_sha256};
 use std::marker::PhantomData;
 
 /// Bitflags representing distinct capability scopes.

@@ -1,6 +1,10 @@
 # Form state ownership
 
-Status: Accepted. Date: 2026-09-05. Driver: [METIS-STATE-001](../../backlog.md#METIS-STATE-001).
+Status: Accepted
+
+Date: 2026-09-05
+
+Driver: [METIS-STATE-001](../../backlog.md#METIS-STATE-001).
 
 The form owns its inputs, transport, document and framebuffer. Only a successful
 correlated backend response creates `FormState::Success`. Input edits and every

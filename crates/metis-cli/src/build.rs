@@ -318,7 +318,7 @@ fn copy(source: &Path, target: &Path, destination: String, total: &mut u64) -> R
         .create_new(true)
         .write(true)
         .open(target)?;
-    let mut hash = metis_core::Sha256::new();
+    let mut hash = moirai_crypto::Sha256::new();
     let mut buffer = [0; 16 * 1024];
     let mut bytes = 0_u64;
     loop {
@@ -351,7 +351,7 @@ fn copy(source: &Path, target: &Path, destination: String, total: &mut u64) -> R
 
 fn digest_file(path: &Path) -> Result<String> {
     let mut source = fs::File::open(path)?;
-    let mut hash = metis_core::Sha256::new();
+    let mut hash = moirai_crypto::Sha256::new();
     let mut buffer = [0; 16 * 1024];
     loop {
         let count = source.read(&mut buffer)?;

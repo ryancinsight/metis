@@ -1,8 +1,10 @@
 # metis-core
 
-Shared versioned wire vocabulary, capability claims, typed errors and integrity
-primitives. This crate depends only on Rust's standard library. It contains no
-backend calculation or audit storage implementation.
+Shared versioned wire vocabulary, capability claims, typed errors and framing
+integrity. Authentication hashing comes from the Atlas-owned
+`moirai-crypto` provider with its TLS feature disabled; CRC-32 remains local
+because it detects accidental corruption rather than authenticating peers.
+This crate contains no backend calculation or audit storage implementation.
 
 ```rust
 use metis_core::{build_frame, FrameHeader, MessageType, HEADER_SIZE};
@@ -16,5 +18,8 @@ assert_eq!(header.sequence_id, 7);
 Capability validation controls application commands, not operating-system
 privileges. HMAC requires a private backend key; it is not a public signature.
 The framing CRC detects corruption and does not authenticate a peer.
+The provider's fixed-width comparison and HMAC vectors are tested upstream;
+Metis's capability and audit tests exercise the same functions at their
+canonical wire boundaries.
 See the workspace [wire contract](../../docs/INTERFACE.md) and
 [verification limits](../../docs/VERIFICATION.md). This package is unpublished.

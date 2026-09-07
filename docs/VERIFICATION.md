@@ -20,7 +20,10 @@ process-isolation test. No original OS sandbox or native-window evidence exists.
 - Types and compilation: frontend cannot import the backend through its declared dependency closure; validated policy fields cannot be overwritten externally.
 - Behavioral tests: exact wire fixtures, canonical decoding, malformed corpus, scope/session/time rejection, audit event outcomes and bounded numerical error.
 - Independent numeric evidence: dimensional infusion conversion and exact binary fixtures; arithmetic roundoff uses a stated gamma bound.
-- Crypto evidence: published HMAC test vector and SHA-256 known answers plus streaming/padding regressions.
+- Crypto evidence: Moirai `66627b9` publishes the shared HMAC/SHA-256 and
+  fixed-width comparison primitives; independent vectors and streaming/padding
+  regressions run upstream, while Metis capability, audit, result-signature and
+  CLI tests exercise those functions at their real boundaries.
 - Process acceptance: separate instances of one application executable exchange real pipes; PID, result and standalone relocation checks distinguish executable packaging from process state. These do not prove OS least privilege.
 - Visual evidence: software framebuffer generated from actual form state and inspected independently of compilation.
 
@@ -71,7 +74,7 @@ native system calls; those require targeted lifecycle tests and further platform
 instrumentation. That earlier increment resolved Moirai from pushed commit
 `0514f11`, not local provider edits. The current browser-host increment advances
 the standalone lock to merged provider
-`00fb0ae`; comparative security/memory evidence
+`66627b9`; comparative security/memory evidence
 against Tauri and live-service browser tests remain required by [ADR 0002](adr/0002-web-application-contract.md).
 Advisory scanning, coverage,
 mutation analysis and cross-platform sandbox probes remain uncollected.
@@ -321,6 +324,14 @@ unsupported browser operation. Use temporary user-data fixtures and local test
 servers. Capture user-visible outcomes and independently assert effects, audit
 events, restart recovery and cleanup. No credentials or real patient data enter
 the fixture, diagnostic trace or screenshot.
+
+The authentication slice uses the Moirai provider with its TLS feature
+disabled. `cargo tree --locked -p metis-core --edges normal` and the Metis
+WASM check show the protocol graph contains only the provider's `hmac` and
+`sha2` dependencies; `rustls` remains outside this graph. The frontend still
+displays a received MAC without claiming it can verify that MAC. This is
+dependency and value-semantic evidence, not a universal side-channel timing
+proof or a security comparison with Tauri.
 
 <a id="V09"></a>
 ### V09 — Migrated viewer and Tauri application
