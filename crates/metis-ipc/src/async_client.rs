@@ -164,7 +164,9 @@ impl<T: AsyncIpcTransport> AsyncIpcClient<T> {
     ///
     /// Cancellation removes the identifier from the bounded correlation table.
     /// A later peer response for that identifier is therefore rejected as an
-    /// unknown sequence instead of being delivered to a new request.
+    /// unknown sequence instead of being delivered to a new request. The
+    /// receive pump remains usable for other outstanding requests after the
+    /// caller handles that typed rejection.
     ///
     /// # Errors
     /// Returns [`ErrorCode::SequenceMismatch`] when `request_id` is no longer
@@ -679,9 +681,12 @@ mod tests {
 
     #[test]
     fn cancellation_rejects_a_late_response_without_touching_newer_requests() {
-        let response = frame(MessageType::HeartbeatResp, 1, b"late");
+        let responses = [
+            frame(MessageType::HeartbeatResp, 1, b"late"),
+            frame(MessageType::HeartbeatResp, 2, b"active"),
+        ];
         let mut client =
-            AsyncIpcClient::new(ScriptTransport::new([response]), Duration::from_secs(1))
+            AsyncIpcClient::new(ScriptTransport::new(responses), Duration::from_secs(1))
                 .expect("positive timeout");
         let cancelled = client
             .send_request(MessageType::HeartbeatReq, b"cancelled")
@@ -694,6 +699,11 @@ mod tests {
         let error = poll_ready(client.recv_response()).expect_err("late response");
         assert_eq!(error.code, ErrorCode::SequenceMismatch);
         assert_eq!(client.pending_request_count(), 1);
+        assert_eq!(
+            poll_ready(client.recv_response()).expect("active response"),
+            (RequestId(2), MessageType::HeartbeatResp, b"active".to_vec())
+        );
+        assert_eq!(client.pending_request_count(), 0);
         assert_eq!(
             client
                 .cancel_request(cancelled)

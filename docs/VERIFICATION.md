@@ -265,9 +265,13 @@ operation-count limits and bounded registry capacity. The real backend
 process-isolation test receives a backend-produced `clinical.result` event over
 the synchronous memory transport after the correlated response and decodes its
 typed body, identifier and rates. The authenticated Moirai WebSocket loopback
-performs the same checks. Both client variants also exercise the typed plugin
-invocation helper and preserve peer error payloads. Native desktop, OS
-permission, cross-engine and late-response injection coverage remain open.
+performs the same checks and then invokes a registered `websocket.increment`
+plugin over the same framed transport, decoding its input-sensitive typed
+response. Both client variants also exercise the typed plugin invocation helper
+and preserve peer error payloads. The asynchronous client injection test also
+rejects a canceled sequence and then receives a newer outstanding response;
+browser-host late-response injection remains open alongside native desktop, OS
+permission and cross-engine coverage.
 
 The authenticated in-app browser trace also displayed `Registered frontend
 extensions: workbench v1` after the Rust mount, alongside the host capability

@@ -180,6 +180,13 @@ let response = client.invoke_plugin(&invocation)?;
 let body = response.body();
 ```
 
+The native Moirai WebSocket loopback in the verification suite sends the same
+typed invocation after the clinical event. Its registered `websocket.increment`
+executor transforms `[2, 5, 10]` into `[3, 6, 11]`, proving that plugin-owned
+body bytes cross the authenticated framed transport. The browser workbench
+currently advertises the plugin command but does not invoke it from a page
+control.
+
 Unknown plugins and commands, malformed body envelopes, insufficient scopes and
 executor failures remain typed responses. Invocation only reaches the
 registered host executor; it does not grant file, network, process or other

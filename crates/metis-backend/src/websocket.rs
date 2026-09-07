@@ -75,11 +75,15 @@ fn websocket_error(error: &io::Error) -> MetisError {
 mod tests {
     use super::*;
     use crate::clinical::SafetyEnvelope;
+    use crate::plugins::PluginExecutor;
     use crate::service::SystemClock;
+    use metis_core::capability::CapabilityScope;
     use metis_core::host::{HostContext, HostOrigin, HostPolicy, HostSessionId, WindowId};
     use metis_core::protocol::{
         ClinicalCalcRequestPayload, ClinicalCalcResponsePayload, HandshakeRequestPayload,
-        HandshakeResponsePayload, MessageType, PROTOCOL_VERSION, RemoteEventPayload, build_frame,
+        HandshakeResponsePayload, MessageType, PROTOCOL_VERSION, Plugin, PluginDescriptor,
+        PluginInvocationPayload, PluginInvocationResponsePayload, PluginOperation,
+        RemoteEventPayload, build_frame,
     };
     use moirai_async::io::{AsyncReadExt, AsyncWriteExt};
     use moirai_async::net::{TcpListener, TcpStream};
@@ -91,6 +95,30 @@ mod tests {
     const PRINCIPAL: [u8; 16] = [0x66; 16];
     const MASK: [u8; 4] = [0x13, 0x37, 0xa5, 0x5a];
 
+    static PLUGIN_COMMANDS: [PluginOperation; 1] = [PluginOperation::new(
+        "increment",
+        CapabilityScope::SUBMIT_CALCULATION,
+    )];
+
+    struct WebSocketPlugin;
+
+    impl Plugin for WebSocketPlugin {
+        const DESCRIPTOR: PluginDescriptor =
+            PluginDescriptor::new("websocket", 1, &PLUGIN_COMMANDS, &[]);
+    }
+
+    impl PluginExecutor for WebSocketPlugin {
+        fn invoke(&mut self, operation_name: &str, body: &[u8]) -> metis_core::Result<Vec<u8>> {
+            if operation_name != "increment" {
+                return Err(metis_core::MetisError::capability(
+                    metis_core::ErrorCode::PluginOperationNotFound,
+                    "WebSocket test executor received an undeclared operation",
+                ));
+            }
+            Ok(body.iter().map(|byte| byte.wrapping_add(1)).collect())
+        }
+    }
+
     fn service() -> BackendService {
         let origin = HostOrigin::parse(ORIGIN).expect("test origin");
         let policy = HostPolicy::new(origin.clone(), WindowId::new(1).expect("test window"));
@@ -99,14 +127,18 @@ mod tests {
             WindowId::new(1).expect("test window"),
             HostSessionId::new(PRINCIPAL).expect("test principal"),
         );
-        BackendService::with_trusted_context(
+        let mut service = BackendService::with_trusted_context(
             [7; 32],
             SafetyEnvelope::default(),
             SystemClock::default(),
             policy,
             context,
         )
-        .expect("trusted context")
+        .expect("trusted context");
+        service
+            .register_plugin(WebSocketPlugin)
+            .expect("test plugin");
+        service
     }
 
     fn config() -> WebSocketConfig {
@@ -235,7 +267,7 @@ mod tests {
         Ok(payload)
     }
 
-    async fn run_valid_exchange() -> io::Result<(Vec<u8>, Vec<u8>, Vec<u8>)> {
+    async fn run_valid_exchange() -> io::Result<(Vec<u8>, Vec<u8>, Vec<u8>, Vec<u8>)> {
         let listener = TcpListener::bind("127.0.0.1:0").await?;
         let address = listener.local_addr()?;
         let server = std::thread::spawn(move || {
@@ -278,7 +310,7 @@ mod tests {
                 MessageType::ClinicalCalcReq,
                 2,
                 &ClinicalCalcRequestPayload {
-                    token,
+                    token: token.clone(),
                     patient_id: "PT-9042-ALPHA".to_owned(),
                     weight_kg: 72.5,
                     concentration_mg_ml: 4.0,
@@ -292,9 +324,27 @@ mod tests {
             client.flush().await?;
             let calculation_response = read_server_binary(&mut client).await?;
             let event = read_server_binary(&mut client).await?;
+            let plugin = PluginInvocationPayload::new(token, "websocket", "increment", [2, 5, 10])
+                .map_err(|error| io::Error::new(ErrorKind::InvalidData, error.to_string()))?;
+            let plugin = build_frame(
+                MessageType::PluginInvokeReq,
+                3,
+                &plugin
+                    .encode()
+                    .map_err(|error| io::Error::new(ErrorKind::InvalidData, error.to_string()))?,
+            )
+            .map_err(|error| io::Error::new(ErrorKind::InvalidData, error.to_string()))?;
+            client.write_all(&masked_binary(&plugin)).await?;
+            client.flush().await?;
+            let plugin_response = read_server_binary(&mut client).await?;
             client.write_all(&masked_close()).await?;
             client.flush().await?;
-            Ok((handshake_response, calculation_response, event))
+            Ok((
+                handshake_response,
+                calculation_response,
+                event,
+                plugin_response,
+            ))
         }
         .await;
 
@@ -310,7 +360,7 @@ mod tests {
 
     #[test]
     fn authenticated_loopback_preserves_handshake_and_clinical_values() {
-        let (handshake, calculation, event_wire) =
+        let (handshake, calculation, event_wire, plugin_wire) =
             moirai_executor::block_on(run_valid_exchange()).expect("loopback exchange");
         let mut handshake_wire = handshake.as_slice();
         let (handshake_header, handshake_payload) =
@@ -344,6 +394,17 @@ mod tests {
                 .decode_as::<ClinicalCalcResponsePayload>()
                 .expect("typed event"),
             result
+        );
+        let mut plugin_wire = plugin_wire.as_slice();
+        let (plugin_header, plugin_payload) =
+            metis_ipc::read_frame(&mut plugin_wire).expect("plugin frame");
+        assert_eq!(plugin_header.sequence_id, 3);
+        assert_eq!(plugin_header.msg_type, MessageType::PluginInvokeResp);
+        assert_eq!(
+            PluginInvocationResponsePayload::decode(&plugin_payload)
+                .expect("plugin payload")
+                .body(),
+            [3, 6, 11]
         );
     }
 
