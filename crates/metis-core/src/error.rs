@@ -3,8 +3,12 @@
 use std::fmt;
 
 /// Discriminant error codes classified by subsystem.
+///
+/// The set is non-exhaustive so future releases can add typed failures without
+/// requiring downstream match arms.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
 #[repr(u16)]
+#[non_exhaustive]
 pub enum ErrorCode {
     // Protocol / Framing Errors (0x1000 - 0x1FFF)
     /// Frame magic does not identify Metis.

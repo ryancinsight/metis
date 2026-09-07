@@ -257,9 +257,9 @@ accepted ADR records that release classification; the manifests remain at
 The browser workbench renders the same catalog after its authenticated
 handshake; the runtime trace remains a single Codex in-app browser engine and
 does not close the cross-engine requirement. Core tests also validate typed
-plugin manifest registration, duplicate and malformed metadata rejection, and
-bounded registry capacity. A native unsolicited-event trace and remote plugin
-invocation remain open.
+plugin manifest registration, duplicate and malformed metadata rejection,
+operation-count limits and bounded registry capacity. A native unsolicited-event
+trace and remote plugin invocation remain open.
 
 The authenticated in-app browser trace also displayed `Registered frontend
 extensions: workbench v1` after the Rust mount, alongside the host capability
