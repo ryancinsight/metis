@@ -42,6 +42,9 @@ response and requires a trusted `HostContext` before serving a browser session.
 `Subscription` owns a finite queue; `publish` returns `QueueFull` instead of
 blocking or discarding an event, and `unsubscribe` removes delivery before a
 future publication. `recv_timeout` requires an explicit finite deadline.
+`IpcClient::recv_event` and `AsyncIpcClient::recv_event` decode the versioned
+`RemoteEventPayload`; the asynchronous response pump keeps remote events in a
+bounded queue while it correlates request responses.
 
 `discover_capabilities` returns `CapabilityError`, keeping local protocol
 failures separate from the peer's full `ErrorResponsePayload`.

@@ -1,7 +1,7 @@
 //! Request dispatch with per-connection replay rejection.
 use crate::transport::IpcTransport;
 use metis_core::error::{ErrorCode, MetisError, Result};
-use metis_core::protocol::{FrameHeader, MessageType};
+use metis_core::protocol::{FrameHeader, MessageType, RemoteEventPayload};
 
 /// Identity available after a frame header has been decoded.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -70,6 +70,7 @@ pub trait IpcHandler {
 pub struct IpcServer<T> {
     transport: T,
     last_sequence: u64,
+    last_event_id: Option<u64>,
 }
 impl<T: IpcTransport> IpcServer<T> {
     /// Starts a server accepting positive, strictly increasing request sequences.
@@ -77,6 +78,7 @@ impl<T: IpcTransport> IpcServer<T> {
         Self {
             transport,
             last_sequence: 0,
+            last_event_id: None,
         }
     }
     /// Processes one request, or returns false for a clean peer close.
@@ -104,6 +106,28 @@ impl<T: IpcTransport> IpcServer<T> {
             return Err(error);
         }
         Ok(true)
+    }
+
+    /// Sends one unsolicited event with a strictly increasing identifier.
+    ///
+    /// Event identifiers use a sequence independent from request correlation.
+    /// The identifier is consumed before transmission so an uncertain write
+    /// cannot be retried as the same event.
+    ///
+    /// # Errors
+    /// Returns payload, replay, or transport failures.
+    pub fn send_event(&mut self, event: &RemoteEventPayload) -> Result<()> {
+        let event_id = event.event_id().get();
+        if self.last_event_id.is_some_and(|last| event_id <= last) {
+            return Err(MetisError::protocol(
+                ErrorCode::ReplayDetected,
+                "Remote event identifiers must increase strictly",
+            ));
+        }
+        let payload = event.encode()?;
+        self.last_event_id = Some(event_id);
+        self.transport
+            .send_message(MessageType::TelemetryStreamEvent, event_id, &payload)
     }
 }
 
@@ -160,4 +184,26 @@ pub(crate) fn dispatch_request<H: IpcHandler>(
         message_type,
         payload,
     })
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::IpcClient;
+    use crate::transport::MemoryTransport;
+
+    #[test]
+    fn sync_server_sends_a_bounded_remote_event_once() {
+        let (client_transport, server_transport) = MemoryTransport::pair();
+        let mut server = IpcServer::new(server_transport);
+        let event = RemoteEventPayload::new(1, "test.value", [0x12, 0x34]).expect("event");
+        server.send_event(&event).expect("event send");
+
+        let mut client = IpcClient::new(client_transport);
+        assert_eq!(client.recv_event().expect("event receive"), event);
+        assert_eq!(
+            server.send_event(&event).expect_err("replay").code,
+            ErrorCode::ReplayDetected
+        );
+    }
 }

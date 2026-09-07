@@ -1,20 +1,25 @@
 //! Correlated asynchronous IPC for browser-thread transports.
 
 use crate::client::{
-    CapabilityError, HandshakeError, decode_capability_response, decode_handshake_response,
-    next_request, validate_response,
+    CapabilityError, HandshakeError, decode_capability_response, decode_event,
+    decode_handshake_response, next_request, validate_response,
 };
 use crate::transport::AsyncIpcTransport;
 use metis_core::capability::CapabilityToken;
 use metis_core::error::{ErrorCode, MetisError, Result};
 use metis_core::protocol::{
     CapabilityCatalogPayload, HandshakeRequestPayload, MessageType, PROTOCOL_VERSION,
+    RemoteEventPayload,
 };
 use std::collections::BTreeMap;
+use std::collections::VecDeque;
 use std::time::Duration;
 
 /// Maximum number of requests and completed responses retained by one client.
 pub const MAX_PENDING_REQUESTS: usize = 16;
+
+/// Maximum unsolicited events retained while a receive owner awaits a response.
+pub const MAX_QUEUED_EVENTS: usize = 16;
 
 /// Correlation identifier assigned to one asynchronous request.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, PartialOrd, Ord)]
@@ -37,6 +42,8 @@ pub struct AsyncIpcClient<T> {
     request_timeout: Duration,
     pending: BTreeMap<u64, MessageType>,
     completed: BTreeMap<u64, (MessageType, Vec<u8>)>,
+    events: VecDeque<RemoteEventPayload>,
+    last_event_id: Option<u64>,
 }
 
 impl<T: AsyncIpcTransport> AsyncIpcClient<T> {
@@ -58,6 +65,8 @@ impl<T: AsyncIpcTransport> AsyncIpcClient<T> {
             request_timeout,
             pending: BTreeMap::new(),
             completed: BTreeMap::new(),
+            events: VecDeque::with_capacity(MAX_QUEUED_EVENTS),
+            last_event_id: None,
         })
     }
 
@@ -178,15 +187,78 @@ impl<T: AsyncIpcTransport> AsyncIpcClient<T> {
                 "Async IPC has no pending response",
             ));
         }
-        let (header, response) = self.transport.recv_message(self.request_timeout).await?;
-        let Some(expected) = self.pending.remove(&header.sequence_id) else {
-            return Err(MetisError::protocol(
-                ErrorCode::SequenceMismatch,
-                "Response sequence does not match an outstanding request",
-            ));
-        };
-        validate_response(expected, header.sequence_id, &header)?;
-        Ok((RequestId(header.sequence_id), header.msg_type, response))
+        loop {
+            let (header, response) = self.transport.recv_message(self.request_timeout).await?;
+            if header.msg_type.is_event() {
+                if self.events.len() >= MAX_QUEUED_EVENTS {
+                    return Err(MetisError::transport(
+                        ErrorCode::QueueFull,
+                        "Async IPC remote event queue is full",
+                    ));
+                }
+                let event = decode_event(&header, &response, &mut self.last_event_id)?;
+                self.events.push_back(event);
+                continue;
+            }
+            let Some(expected) = self.pending.remove(&header.sequence_id) else {
+                return Err(MetisError::protocol(
+                    ErrorCode::SequenceMismatch,
+                    "Response sequence does not match an outstanding request",
+                ));
+            };
+            validate_response(expected, header.sequence_id, &header)?;
+            return Ok((RequestId(header.sequence_id), header.msg_type, response));
+        }
+    }
+
+    /// Receives one remote event, retaining any correlated responses encountered.
+    ///
+    /// A single receive owner must call this method for a connection. Responses
+    /// for outstanding requests are moved into the bounded completed table so
+    /// a later [`Self::recv_response_for`] call can retrieve them.
+    ///
+    /// # Errors
+    /// Returns timeout, transport, event decoding, sequence, or response-type
+    /// failures.
+    pub async fn recv_event(&mut self) -> Result<RemoteEventPayload> {
+        if let Some(event) = self.events.pop_front() {
+            return Ok(event);
+        }
+        loop {
+            let (header, payload) = self.transport.recv_message(self.request_timeout).await?;
+            if header.msg_type.is_event() {
+                return decode_event(&header, &payload, &mut self.last_event_id);
+            }
+            let Some(expected) = self.pending.remove(&header.sequence_id) else {
+                return Err(MetisError::protocol(
+                    ErrorCode::SequenceMismatch,
+                    "Response sequence does not match an outstanding request",
+                ));
+            };
+            validate_response(expected, header.sequence_id, &header)?;
+            if self
+                .completed
+                .insert(header.sequence_id, (header.msg_type, payload))
+                .is_some()
+            {
+                return Err(MetisError::protocol(
+                    ErrorCode::SequenceMismatch,
+                    "Async IPC received a duplicate response",
+                ));
+            }
+        }
+    }
+
+    /// Removes the oldest event received by the connection pump.
+    #[must_use]
+    pub fn poll_event(&mut self) -> Option<RemoteEventPayload> {
+        self.events.pop_front()
+    }
+
+    /// Returns the number of queued unsolicited events.
+    #[must_use]
+    pub fn queued_event_count(&self) -> usize {
+        self.events.len()
     }
 
     /// Receives the response for one request, retaining other responses.
@@ -459,6 +531,76 @@ mod tests {
             (MessageType::HeartbeatResp, b"second".to_vec())
         );
         assert_eq!(client.pending_request_count(), 0);
+    }
+
+    #[test]
+    fn response_pump_retains_remote_events_while_correlating_a_request() {
+        let event = RemoteEventPayload::new(9, "test.value", [0x12, 0x34]).expect("event");
+        let responses = [
+            frame(
+                MessageType::TelemetryStreamEvent,
+                event.event_id().get(),
+                &event.encode().expect("event payload"),
+            ),
+            frame(MessageType::HeartbeatResp, 1, b"response"),
+        ];
+        let mut client =
+            AsyncIpcClient::new(ScriptTransport::new(responses), Duration::from_secs(1))
+                .expect("positive timeout");
+        let request = client
+            .send_request(MessageType::HeartbeatReq, b"request")
+            .expect("request");
+
+        assert_eq!(
+            poll_ready(client.recv_response_for(request)).expect("response"),
+            (MessageType::HeartbeatResp, b"response".to_vec())
+        );
+        assert_eq!(client.queued_event_count(), 1);
+        assert_eq!(client.poll_event(), Some(event));
+    }
+
+    #[test]
+    fn event_pump_retains_correlated_responses_for_later_consumers() {
+        let event = RemoteEventPayload::new(9, "test.value", [0x56, 0x78]).expect("event");
+        let responses = [
+            frame(MessageType::HeartbeatResp, 1, b"response"),
+            frame(
+                MessageType::TelemetryStreamEvent,
+                event.event_id().get(),
+                &event.encode().expect("event payload"),
+            ),
+        ];
+        let mut client =
+            AsyncIpcClient::new(ScriptTransport::new(responses), Duration::from_secs(1))
+                .expect("positive timeout");
+        let request = client
+            .send_request(MessageType::HeartbeatReq, b"request")
+            .expect("request");
+
+        assert_eq!(poll_ready(client.recv_event()).expect("event"), event);
+        assert_eq!(
+            poll_ready(client.recv_response_for(request)).expect("response"),
+            (MessageType::HeartbeatResp, b"response".to_vec())
+        );
+    }
+
+    #[test]
+    fn event_header_and_envelope_identifiers_must_match() {
+        let event = RemoteEventPayload::new(1, "test.value", [0x9a, 0xbc]).expect("event");
+        let response = frame(
+            MessageType::TelemetryStreamEvent,
+            2,
+            &event.encode().expect("event payload"),
+        );
+        let mut client =
+            AsyncIpcClient::new(ScriptTransport::new([response]), Duration::from_secs(1))
+                .expect("positive timeout");
+        assert_eq!(
+            poll_ready(client.recv_event())
+                .expect_err("mismatched event identifiers")
+                .code,
+            ErrorCode::SequenceMismatch
+        );
     }
 
     #[test]

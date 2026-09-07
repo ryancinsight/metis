@@ -4,7 +4,7 @@ use metis_core::capability::CapabilityToken;
 use metis_core::error::{ErrorCode, MetisError, Result};
 use metis_core::protocol::{
     CapabilityCatalogPayload, ErrorResponsePayload, FrameHeader, HandshakeRequestPayload,
-    HandshakeResponsePayload, MessageType, PROTOCOL_VERSION,
+    HandshakeResponsePayload, MessageType, PROTOCOL_VERSION, RemoteEventPayload,
 };
 
 /// Failure to establish a session, preserving local faults and peer rejections.
@@ -109,6 +109,7 @@ pub struct IpcClient<T> {
     transport: T,
     next_seq: Option<u64>,
     active_token: Option<CapabilityToken>,
+    last_event_id: Option<u64>,
 }
 impl<T: IpcTransport> IpcClient<T> {
     /// Starts a client without an authenticated session capability.
@@ -117,6 +118,7 @@ impl<T: IpcTransport> IpcClient<T> {
             transport,
             next_seq: Some(1),
             active_token: None,
+            last_event_id: None,
         }
     }
     /// Acquires a token whose principal and protocol version match the request.
@@ -153,6 +155,20 @@ impl<T: IpcTransport> IpcClient<T> {
     ) -> std::result::Result<CapabilityCatalogPayload, CapabilityError> {
         let (kind, payload) = self.send_and_recv(MessageType::CapabilityReq, &[])?;
         decode_capability_response(kind, &payload)
+    }
+
+    /// Receives one unsolicited event from the message-oriented transport.
+    ///
+    /// Event identifiers must echo the envelope identifier and increase
+    /// strictly for this client. Callers should invoke this method from the
+    /// one receive owner for a connection; request responses are not consumed
+    /// by an event-only call.
+    ///
+    /// # Errors
+    /// Returns transport, decoding, message-type, or event-sequence errors.
+    pub fn recv_event(&mut self) -> Result<RemoteEventPayload> {
+        let (header, payload) = self.transport.recv_message()?;
+        decode_event(&header, &payload, &mut self.last_event_id)
     }
     /// Returns the current session capability, if acquired.
     pub const fn active_token(&self) -> Option<&CapabilityToken> {
@@ -276,6 +292,41 @@ pub(crate) fn decode_capability_response(
     Ok(catalog)
 }
 
+pub(crate) fn decode_event(
+    header: &FrameHeader,
+    payload: &[u8],
+    last_event_id: &mut Option<u64>,
+) -> Result<RemoteEventPayload> {
+    if !header.msg_type.is_event() {
+        return Err(MetisError::protocol(
+            ErrorCode::UnexpectedMessageType,
+            "Event receiver requires an unsolicited event message",
+        ));
+    }
+    let event = RemoteEventPayload::decode(payload)?;
+    if event.protocol_version() != PROTOCOL_VERSION {
+        return Err(MetisError::protocol(
+            ErrorCode::VersionMismatch,
+            "Remote event version differs from the wire contract",
+        ));
+    }
+    let event_id = event.event_id().get();
+    if header.sequence_id != event_id {
+        return Err(MetisError::protocol(
+            ErrorCode::SequenceMismatch,
+            "Remote event header and envelope identifiers differ",
+        ));
+    }
+    if last_event_id.is_some_and(|last| event_id <= last) {
+        return Err(MetisError::protocol(
+            ErrorCode::ReplayDetected,
+            "Remote event identifiers must increase strictly",
+        ));
+    }
+    *last_event_id = Some(event_id);
+    Ok(event)
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -354,5 +405,49 @@ mod tests {
             error,
             CapabilityError::Local(error) if error.code == ErrorCode::VersionMismatch
         ));
+    }
+
+    #[test]
+    fn receives_a_typed_remote_event_and_rejects_replayed_ids() {
+        let (transport, mut peer) = MemoryTransport::pair();
+        let event = RemoteEventPayload::new(4, "test.value", [0x12, 0x34]).expect("event");
+        peer.send_message(
+            MessageType::TelemetryStreamEvent,
+            event.event_id().get(),
+            &event.encode().expect("event payload"),
+        )
+        .expect("event frame");
+        let mut client = IpcClient::new(transport);
+        assert_eq!(client.recv_event().expect("event"), event);
+
+        peer.send_message(
+            MessageType::TelemetryStreamEvent,
+            event.event_id().get(),
+            &event.encode().expect("event payload"),
+        )
+        .expect("replayed event frame");
+        assert_eq!(
+            client.recv_event().expect_err("replayed event").code,
+            ErrorCode::ReplayDetected
+        );
+    }
+
+    #[test]
+    fn rejects_a_remote_event_version_mismatch() {
+        let (transport, mut peer) = MemoryTransport::pair();
+        let event = RemoteEventPayload::new(1, "test.value", [0x12, 0x34]).expect("event");
+        let mut payload = event.encode().expect("event payload");
+        payload[..2].copy_from_slice(&0x0200_u16.to_be_bytes());
+        peer.send_message(
+            MessageType::TelemetryStreamEvent,
+            event.event_id().get(),
+            &payload,
+        )
+        .expect("event frame");
+        let mut client = IpcClient::new(transport);
+        assert_eq!(
+            client.recv_event().expect_err("version mismatch").code,
+            ErrorCode::VersionMismatch
+        );
     }
 }

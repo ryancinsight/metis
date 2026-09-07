@@ -5,9 +5,11 @@
 //! IEEE-754 binary64 clinical fields use big-endian byte order. CRC detects
 //! accidental corruption; it does not authenticate a peer or a payload.
 mod command;
+mod event;
 mod payload;
 mod wire;
 pub use command::{CapabilityCatalogPayload, CommandDescriptor, MAX_COMMANDS, SUPPORTED_COMMANDS};
+pub use event::{EventCodec, EventId, MAX_EVENT_NAME_BYTES, RemoteEventPayload};
 pub use payload::{
     ClinicalCalcRequestPayload, ClinicalCalcResponsePayload, ErrorResponsePayload,
     HandshakeRequestPayload, HandshakeResponsePayload,

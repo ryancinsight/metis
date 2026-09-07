@@ -242,19 +242,22 @@ heartbeat and clinical calculation commands. A known but unadvertised audit
 request returns the typed `ERR_UNEXPECTED_MESSAGE_TYPE` response.
 
 The focused command/event run `cargo nextest run --locked -p metis-core -p
-metis-ipc -p metis-backend -p metis-frontend -p metis-app` passes 84/84. It
-includes catalog round-trips,
-version and malformed-entry rejection, post-handshake service discovery,
-explicit unsupported-operation handling, and the bounded `EventHub` tests for
-input-sensitive fan-out, per-subscriber backpressure, unsubscribe and finite
-deadlines. Native all-targets Clippy passes with `-D warnings`. The workspace
+metis-ipc -p metis-backend -p metis-frontend -p metis-app` passes 93/93. It
+includes catalog round-trips, version and malformed-entry rejection,
+post-handshake service discovery, explicit unsupported-operation handling,
+remote event envelope round-trips and bounds, synchronous send/receive,
+event/response interleaving, identifier mismatch/replay rejection, and the
+bounded `EventHub` tests for input-sensitive fan-out, per-subscriber
+backpressure, unsubscribe and finite deadlines. Native all-targets Clippy
+passes with `-D warnings`. The workspace
 semver comparison rejected the exhaustive-enum extension under a minor
 release, so the public `MessageType` change is classified as major and the
 accepted ADR records that release classification; the manifests remain at
 `0.1.0` until release authority assigns the next version.
 The browser workbench renders the same catalog after its authenticated
 handshake; the runtime trace remains a single Codex in-app browser engine and
-does not close the cross-engine requirement.
+does not close the cross-engine requirement. A native unsolicited-event trace
+and plugin registry are still open.
 
 <a id="visual-contract"></a>
 ## Visual and interaction contract

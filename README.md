@@ -23,7 +23,9 @@ strict same-origin CSP and its service bridge validates Origin before the
 upgrade, then binds grants to origin, window and session. The loopback bridge
 is implemented for the demonstrator. Authenticated sessions also expose a
 bounded command catalog and a local backpressure-aware event hub through the
-existing IPC seam. This renderer's bounded markup subset is
+existing IPC seam. The same seam carries versioned unsolicited events over
+synchronous pipes and asynchronous WebSocket sessions, with strict identifiers
+and bounded async retention. This renderer's bounded markup subset is
 not the intended limit of web support. A desktop WebView host is not implemented. Metis does not
 yet provide Tauri feature parity, native desktop windows,
 an OS privilege sandbox, durable audit storage or regulatory certification.
