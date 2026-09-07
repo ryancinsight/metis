@@ -150,12 +150,8 @@ an owner. “Unsupported” cannot replace delivery of a required mobile/native 
 
 <a id="METIS-ASYNC-001"></a>
 ## METIS-ASYNC-001 — Bounded browser request lifecycle [arch] [minor]
-- Status: review; priority: P0; owner: Moirai async/transport + Metis client; integrator: root; branch: `feat/process-foundation`; last-update: 2026-09-07; stage: live WebSocket lifecycle; risk: hangs/leaks; dependencies: METIS-WEB-001
-- Scope: event-driven receive/wakeup, task/request cancellation, deadlines and owned callback teardown; complete the upstream reactor gap and remove blocking browser paths.
-- Entry evidence: Moirai `be87d009cd0e877beef719b47bdcbadc45659069` owns contained process lifecycles, browser callbacks, DOM handles, cancellable local tasks, bounded WebSocket state/service, deadlines and standalone authentication primitives over its merged Mnemosyne backend; Metis uses one pinned Moirai source for native and WASM dependencies. Focused Metis core/backend/IPC/frontend Nextest passes 59/59, native all-targets Clippy and WASM library Clippy pass, the WASM check passes, and the live browser trace proves service success, rejection, disconnect and recovery.
-- First increments: add the Metis async transport/client seam, route ordered and out-of-order responses through one bounded receive pump, then connect the browser host to the trusted Moirai service boundary.
-- Acceptance: native correlation and queue bounds, request cancellation, late-response rejection, host stop/remount, authenticated live-browser execution, service-side Origin rejection, replay/oversize rejection and task-handle integration pass. Post-drop allocation is owned by [METIS-MEMORY-001](backlog.md#METIS-MEMORY-001) and [METIS-PERF-001](backlog.md#METIS-PERF-001); cross-engine and accessibility/IME coverage by [METIS-BROWSER-001](backlog.md#METIS-BROWSER-001); TLS by [METIS-SERVICES-001](backlog.md#METIS-SERVICES-001); desktop host coverage by [METIS-DESKTOP-001](backlog.md#METIS-DESKTOP-001).
-- Demonstration: [V02](docs/VERIFICATION.md#V02) live success/rejection/disconnect/recovery trace; repeat lifecycle/resource evidence remains with the linked measurement items.
+- Status: done; delivery: `a1f50ca`; ADR: [0007](docs/adr/0007-browser-transport.md); verification: [VERIFICATION](docs/VERIFICATION.md#live-browser-service-evidence--2026-09-07).
+- Outcome: bounded Moirai browser client/server, trusted pre-101 Origin/session validation, and live HTML5/CSS service trace pass; residual platform/resource coverage remains owned by the linked browser, memory, performance, services and desktop items.
 
 <a id="METIS-AUTHORITY-001"></a>
 ## METIS-AUTHORITY-001 — Host authority and origin policy [arch] [minor]
