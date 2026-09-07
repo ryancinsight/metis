@@ -107,10 +107,9 @@ an owner. “Unsupported” cannot replace delivery of a required mobile/native 
 
 <a id="METIS-MEMORY-001"></a>
 ## METIS-MEMORY-001 — Provider allocation count [patch]
-- Status: in-progress; priority: P0; owner: Moirai allocation provider; integrator: root; last-update: 2026-09-07; branch: `feat/process-foundation`; risk: overflow
+- Status: done; priority: P0; delivery: `f246c81`; exact locked-provider and reachable-path audit passed 2026-09-07.
 - Scope: verify the public count contract, locked-source exposure and local allocator multiplication before classifying the defect; do not assume all allocations use this path.
-- Acceptance: reachable overflow rejects with a typed error before allocation and debug/release adversarial tests; otherwise close with exact unreachable-path evidence.
-- Demonstration: [V12](docs/VERIFICATION.md#V12), bounded-allocation denial shown as an application error when the exposed path is integrated.
+- Outcome: Metis does not instantiate Moirai `CacheAlignedAllocator`/`UnifiedRingBuffer` or Mnemosyne allocation statistics; its external allocation paths use finite caps and fallible reservation. The provider arithmetic concern is unreachable from the current graph. Reopen if a Metis API selects provider allocation or V12 integrates provider telemetry.
 
 <a id="METIS-MANUAL-001"></a>
 ## METIS-MANUAL-001 — Public member and user manual [patch]
