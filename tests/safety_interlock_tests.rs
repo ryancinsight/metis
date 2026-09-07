@@ -8,6 +8,7 @@ use metis_backend::clinical::{
 use metis_backend::service::{Clock, ClockReading, SESSION_LIFETIME};
 use metis_core::capability::CapabilityToken;
 use metis_core::error::{ErrorCode, Result};
+use metis_core::host::{HostOrigin, HostPolicy, HostSessionId, WindowId};
 use metis_core::protocol::{
     ClinicalCalcRequestPayload, ClinicalCalcResponsePayload, ErrorResponsePayload, FrameHeader,
     HandshakeRequestPayload, HandshakeResponsePayload, MessageType, PROTOCOL_VERSION,
@@ -36,6 +37,23 @@ fn service() -> (BackendService<TestClock>, TestClock) {
     (
         BackendService::with_clock([7; 32], SafetyEnvelope::default(), clock.clone()),
         clock,
+    )
+}
+
+fn service_with_policy(policy: HostPolicy) -> (BackendService<TestClock>, TestClock, HostPolicy) {
+    let clock = TestClock(Rc::new(Cell::new(ClockReading {
+        unix_time: Duration::from_secs(1_700_000_000),
+        monotonic: Duration::ZERO,
+    })));
+    (
+        BackendService::with_clock_and_policy(
+            [7; 32],
+            SafetyEnvelope::default(),
+            clock.clone(),
+            policy.clone(),
+        ),
+        clock,
+        policy,
     )
 }
 
@@ -268,6 +286,40 @@ fn session_rejects_another_principal_and_replayed_sequence() {
         )
         .expect("dispatch");
     assert_eq!(kind, MessageType::ClinicalCalcResp);
+}
+
+#[test]
+fn backend_handshake_binds_issued_token_to_configured_host_policy() {
+    let policy = HostPolicy::new(
+        HostOrigin::try_from("https://viewer.example").expect("origin"),
+        WindowId::new(9).expect("window"),
+    );
+    let (mut service, _, policy) = service_with_policy(policy);
+    let principal = [0x55; 16];
+    let token = handshake(&mut service, principal);
+    let context = policy.context_for(HostSessionId::new(principal).expect("session"));
+    token
+        .verify_for_host(
+            metis_core::capability::CapabilityScope::SUBMIT_CALCULATION,
+            1_700_000_001,
+            &[7; 32],
+            &context,
+        )
+        .expect("configured policy binding");
+    let native_context =
+        HostPolicy::native().context_for(HostSessionId::new(principal).expect("session"));
+    assert_eq!(
+        token
+            .verify_for_host(
+                metis_core::capability::CapabilityScope::SUBMIT_CALCULATION,
+                1_700_000_001,
+                &[7; 32],
+                &native_context,
+            )
+            .expect_err("retargeted policy")
+            .code,
+        ErrorCode::InvalidCapabilitySignature
+    );
 }
 
 #[test]

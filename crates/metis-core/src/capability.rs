@@ -5,6 +5,7 @@
 //! do not restrict operating-system privileges or authenticate a claimed PID.
 
 use crate::error::{ErrorCode, MetisError, Result};
+use crate::host::HostContext;
 use moirai_crypto::{constant_time_eq_32, hmac_sha256};
 use std::marker::PhantomData;
 
@@ -37,6 +38,23 @@ impl CapabilityScope {
     pub const fn union(&self, other: Self) -> Self {
         Self(self.0 | other.0)
     }
+}
+
+/// Parameters used when a trusted host issues a capability grant.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub struct CapabilityGrantSpec {
+    /// Unique identifier for this token issuance.
+    pub token_id: u64,
+    /// Session principal receiving the grant.
+    pub principal_id: [u8; 16],
+    /// Operations admitted by the grant.
+    pub scope: CapabilityScope,
+    /// UTC timestamp of issuance.
+    pub issued_at_secs: u64,
+    /// Lifetime added to the issuance timestamp.
+    pub duration_secs: u64,
+    /// Issuance discriminator used for replay separation.
+    pub nonce: u64,
 }
 
 /// Cryptographically signed capability token.
@@ -118,6 +136,10 @@ impl CapabilityToken {
         token
     }
 
+    pub(crate) fn sign_for_host(&mut self, backend_master_key: &[u8], context: &HostContext) {
+        self.signature = hmac_sha256(backend_master_key, &host_claims(self, context));
+    }
+
     /// Verifies the token's cryptographic signature against the master secret key.
     ///
     /// # Errors
@@ -168,6 +190,61 @@ impl CapabilityToken {
 
         Ok(())
     }
+
+    /// Verifies a capability token and its exact host binding.
+    ///
+    /// # Errors
+    /// Rejects a token whose signature, lifetime, scope, or host binding is
+    /// invalid.
+    pub fn verify_for_host(
+        &self,
+        required_scope: CapabilityScope,
+        current_time_secs: u64,
+        backend_master_key: &[u8],
+        context: &HostContext,
+    ) -> Result<()> {
+        if self.principal_id != context.session_id().as_bytes() {
+            return Err(MetisError::capability(
+                ErrorCode::InvalidPrincipal,
+                "Capability principal is not bound to the host session",
+            ));
+        }
+        let expected_signature = hmac_sha256(backend_master_key, &host_claims(self, context));
+        if !constant_time_eq_32(&self.signature, &expected_signature) {
+            return Err(MetisError::capability(
+                ErrorCode::InvalidCapabilitySignature,
+                "Capability token is not bound to this host context",
+            ));
+        }
+        if current_time_secs < self.issued_at_secs || current_time_secs >= self.expires_at_secs {
+            return Err(MetisError::capability(
+                ErrorCode::CapabilityExpired,
+                format!(
+                    "Capability token expired at {} (current: {})",
+                    self.expires_at_secs, current_time_secs
+                ),
+            ));
+        }
+        if !self.scope.contains(required_scope) {
+            return Err(MetisError::capability(
+                ErrorCode::InsufficientScope,
+                format!(
+                    "Token scope 0x{:08X} lacks required scope 0x{:08X}",
+                    self.scope.0, required_scope.0
+                ),
+            ));
+        }
+        Ok(())
+    }
+}
+
+fn host_claims(token: &CapabilityToken, context: &HostContext) -> [u8; 104] {
+    let claims = token.claims_bytes();
+    let binding = context.capability_binding();
+    let mut bytes = [0u8; 104];
+    bytes[..claims.len()].copy_from_slice(&claims);
+    bytes[claims.len()..].copy_from_slice(&binding);
+    bytes
 }
 
 /// Snapshot witness of a capability check at the supplied timestamp.

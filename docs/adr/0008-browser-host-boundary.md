@@ -45,6 +45,12 @@ listener guards before replacing the root, and `metis_start` clears any prior
 application before attempting a remount so failed replacement cannot retain
 callbacks for stale markup.
 
+Revision 2026-09-07: [ADR 0011](0011-host-authority-policy.md) adds the shared
+`HostOrigin`/`WindowId`/`HostSessionId` contract, host-bound capability HMAC
+associated data and the strict external-asset CSP/navigation policy. This
+closes the local authority-kernel increment; the browser service still has to
+provide trusted Origin/session observations.
+
 The provider revision for this lifecycle increment is Moirai `16a1b88`; its
 native cancellation-state tests and WASM library checks are recorded in ADR
 0045. Metis's local request cancellation and stop/remount trace extend the
@@ -56,7 +62,8 @@ Direct `web-sys` calls in Metis would duplicate Moirai's handle and callback
 ownership. Keeping only the software renderer would not preserve DOM/CSS
 behavior. Connecting to an arbitrary URL from page markup would turn page data
 into an authority decision, so endpoint selection waits for the origin/session
-contract.
+contract. The contract is now defined by ADR 0011; a live service must still
+enforce it at its acceptor.
 
 ## Verification
 
@@ -72,7 +79,7 @@ engine version; no cross-engine or post-drop allocation measurement is claimed.
 
 ## Residuals
 
-The live browser service, origin/session grants, live task/late-response checks,
+The live browser service, service-side Origin/session validation, live task/late-response checks,
 accessibility/IME evidence, Chromium/Firefox/WebKit matrix and desktop WebView
 host remain open in the linked backlog items. Local request cancellation and
 stop/remount listener teardown are covered by the Metis test and browser trace.

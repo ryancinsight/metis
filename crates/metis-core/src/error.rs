@@ -39,6 +39,12 @@ pub enum ErrorCode {
     PrivilegeEscalationAttempt = 0x2005,
     /// Claimed principal does not match the session.
     InvalidPrincipal = 0x2006,
+    /// Host origin is outside the configured navigation policy.
+    InvalidOrigin = 0x2007,
+    /// Host window is outside the configured window policy.
+    InvalidWindow = 0x2008,
+    /// Host navigation is denied by the application policy.
+    NavigationDenied = 0x2009,
 
     // Clinical / Safety Interlock Errors (0x3000 - 0x3FFF)
     /// Weight is outside the demonstration input bounds.
@@ -109,6 +115,9 @@ impl ErrorCode {
             Self::InsufficientScope => "ERR_INSUFFICIENT_SCOPE",
             Self::PrivilegeEscalationAttempt => "ERR_PRIVILEGE_ESCALATION_ATTEMPT",
             Self::InvalidPrincipal => "ERR_INVALID_PRINCIPAL",
+            Self::InvalidOrigin => "ERR_INVALID_ORIGIN",
+            Self::InvalidWindow => "ERR_INVALID_WINDOW",
+            Self::NavigationDenied => "ERR_NAVIGATION_DENIED",
             Self::InvalidPatientWeight => "ERR_INVALID_PATIENT_WEIGHT",
             Self::InvalidDrugConcentration => "ERR_INVALID_DRUG_CONCENTRATION",
             Self::InvalidTargetDose => "ERR_INVALID_TARGET_DOSE",

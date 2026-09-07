@@ -109,8 +109,8 @@ remain required. The portable and installed payload must each contain exactly
 one application executable; repeat the real MSI install/run/uninstall and
 user-file-preservation workflow.
 
-The complete Windows gate passes 118 debug and 118 release native tests,
-38 Python checks, WASM library compilation, strict Clippy, doctests, rustdoc,
+The complete Windows gate passes 126 debug and 126 release native tests,
+40 Python checks, WASM library compilation, strict Clippy, doctests, rustdoc,
 examples and seven unchanged visual snapshots. The real MSI workflow verifies
 one installed application executable, both input-sensitive process sessions,
 shortcut ownership, removal and preservation of the user-created file. The
@@ -168,6 +168,34 @@ guards, clears the mounted DOM, and remounts fresh form state through the same
 module. It does not establish a live WebSocket bridge, origin/session grant,
 post-drop JavaScript allocation count, cross-engine behavior or native window
 parity.
+
+## Host authority and asset evidence — 2026-09-07
+
+The `metis-core` host contract now parses canonical ASCII network origins,
+rejects credentials/paths/wildcards/opaque schemes and invalid ports, canonicalizes
+numeric ports including HTTP(S) defaults, and binds
+one exact origin and window to a nonzero session principal. Seven core tests
+cover positive authorization, origin/window/session substitutions, unbound
+tokens and retargeted host signatures. `metis-backend` stores the trusted
+context in each session and issues its fixed-width token with the host binding
+as HMAC associated data; the default contained policy is `metis://native` and
+window 1. Existing backend/IPC tests continue to cover one-handshake and
+cross-session rejection.
+
+The browser shell moved its CSS and module bootstrap to external same-origin
+assets. Static asset tests verify that the document has no inline style or
+module body, that its policy equals the `HostPolicy` source, that WASM is
+permitted through `'wasm-unsafe-eval'`, and that the bootstrap blocks
+cross-origin anchor navigation. The browser build rejects policy drift before
+copying the page. The `frame-ancestors` directive requires a response header
+from the eventual native or service host; it is not an effective document-meta
+framing control. The browser screenshot/console trace therefore establishes
+WASM and asset loading but still has no authenticated service.
+
+This evidence establishes the local authority kernel and asset policy. It does
+not establish service-side Origin header validation, TLS endpoint policy, a
+live authenticated WebSocket acceptor, OS permission isolation, post-drop
+allocation counts or cross-engine host parity.
 
 <a id="visual-contract"></a>
 ## Visual and interaction contract

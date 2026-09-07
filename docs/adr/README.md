@@ -19,3 +19,4 @@
 | [0008](0008-browser-host-boundary.md) | Browser host boundary | Accepted |
 | [0009](0009-crypto-provider-boundary.md) | Atlas crypto provider boundary | Accepted |
 | [0010](0010-cancellable-browser-request-lifecycle.md) | Cancellable browser request lifecycle | Accepted |
+| [0011](0011-host-authority-policy.md) | Host authority and origin policy | Accepted |

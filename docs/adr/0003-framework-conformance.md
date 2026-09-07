@@ -35,6 +35,13 @@ Metis request-table cancellation and `metis_stop` listener teardown now have
 native and browser lifecycle evidence; authenticated live-service task wiring,
 allocation measurement and cross-engine rows remain open.
 
+Revision 2026-09-07: Metis adds [ADR 0011](0011-host-authority-policy.md),
+which defines exact origin/window/session admission, host-bound capability HMAC
+associated data and the strict external-asset CSP/navigation policy. Core
+substitution tests and browser asset checks close the local authority-kernel
+increment; service-side Origin validation, OS permissions and live bridge
+evidence remain open.
+
 ## Decision and scope
 
 Use Tauri as the application-framework migration reference and egui/GPUI/Iced
@@ -98,7 +105,7 @@ Each row names its closing items; acceptance belongs in the
 | Existing HTML5/CSS frontend reuse | Canvas UI is not DOM compatibility [E2] | Canvas UI is not DOM compatibility [G2] | WebView presentation is the core model [T1] | Custom markup does not preserve DOM/CSS applications. [BROWSER](../../backlog.md#METIS-BROWSER-001), [MIGRATION](../../backlog.md#METIS-MIGRATION-001). |
 | Native windows and platform lifecycle | eframe/backend-dependent viewports [E1] [E2] | macOS, Windows, Wayland/X11 platform code [G1] | Desktop system WebViews [T1] | Headless Windows-contained process workflow. [WINDOWS](../../backlog.md#METIS-DESKTOP-001), [MACOS](../../backlog.md#METIS-MACOS-001), [LINUX](../../backlog.md#METIS-LINUX-001). |
 | Async commands, events, cancellation | Application/host concern | Executor and action facilities [G1] | Commands, events and channels [T2] [T3] | Async client, bounded correlation, request cancellation and browser transport exist; live service, task bridge, subscriptions and late-response service traces remain. [ASYNC](../../backlog.md#METIS-ASYNC-001), [COMMANDS](../../backlog.md#METIS-COMMANDS-001). |
-| Scoped native authority | Tauri-like broker not established by toolkit docs | Tauri-like broker not established by toolkit docs | Capability scopes and host boundaries [T4] | Session-scoped calculation only; no OS or browser-origin restriction. [AUTHORITY](../../backlog.md#METIS-AUTHORITY-001), desktop items. |
+| Scoped native authority | Tauri-like broker not established by toolkit docs | Tauri-like broker not established by toolkit docs | Capability scopes and host boundaries [T4] | `HostPolicy` now enforces exact origin/window/session binding and host-bound HMAC associated data; live service and OS permission enforcement remain open. [AUTHORITY](../../backlog.md#METIS-AUTHORITY-001), desktop items. |
 | Images, vector content and media | Extras loaders; renderer integrations [E6] | Image/list examples and GPU elements [G1] | Browser assets/media and host permissions | Rectangle/border/bitmap-text commands only. [ASSETS](../../backlog.md#METIS-ASSETS-001), [GRAPHICS](../../backlog.md#METIS-GRAPHICS-001). |
 | Large lists, tables and reactive updates | Extras tables [E6] | Elements support large list views [G1] | Frontend framework/browser concern | No virtualized controls or reusable subscriptions. [DATA](../../backlog.md#METIS-DATA-001), [STATE](../../backlog.md#METIS-STATE-001). |
 | Files, persistence and dialogs | Host/application concern | Platform services; browser restrictions [G5] | Official plugin surfaces [T5] | In-memory audit only; no user file/store APIs. [FILES](../../backlog.md#METIS-FILES-001), [AUDIT](../../backlog.md#METIS-AUDIT-001). |

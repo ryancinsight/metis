@@ -10,6 +10,7 @@ import subprocess
 
 ROOT = pathlib.Path(__file__).resolve().parents[1]
 OUTPUT = ROOT / "output" / "browser"
+CONTENT_SECURITY_POLICY = ROOT / "crates" / "metis-core" / "src" / "content_security_policy.txt"
 WASM_BINDGEN_VERSION = "0.2.128"
 
 
@@ -57,12 +58,40 @@ def wasm_artifact() -> pathlib.Path:
     return target_directory / "wasm32-unknown-unknown" / "release" / "metis_web.wasm"
 
 
+def content_security_policy() -> str:
+    policy = CONTENT_SECURITY_POLICY.read_text(encoding="utf-8")
+    if not policy or policy != policy.strip() or any(char in policy for char in '\r\n"'):
+        raise SystemExit("content-security policy source must be one quoted-free line")
+    return policy
+
+
+def validate_index_policy(index: pathlib.Path) -> None:
+    document = index.read_text(encoding="utf-8")
+    marker = 'http-equiv="Content-Security-Policy" content="'
+    if marker not in document:
+        raise SystemExit("browser index is missing its content-security policy")
+    actual = document.split(marker, 1)[1].split('"', 1)[0]
+    expected = content_security_policy()
+    if actual != expected:
+        raise SystemExit("browser index content-security policy differs from HostPolicy source")
+
+
 def build() -> None:
     run(["cargo", "build", "--locked", "-p", "metis-web", "--target", "wasm32-unknown-unknown", "--release"])
     OUTPUT.mkdir(parents=True, exist_ok=True)
     run([wasm_bindgen(), str(wasm_artifact()), "--target", "web", "--out-dir", str(OUTPUT)])
-    shutil.copy2(ROOT / "examples" / "browser" / "index.html", OUTPUT / "index.html")
-    required = (OUTPUT / "index.html", OUTPUT / "metis_web.js", OUTPUT / "metis_web_bg.wasm")
+    index = ROOT / "examples" / "browser" / "index.html"
+    validate_index_policy(index)
+    shutil.copy2(index, OUTPUT / "index.html")
+    for asset in ("styles.css", "bootstrap.js"):
+        shutil.copy2(ROOT / "examples" / "browser" / asset, OUTPUT / asset)
+    required = (
+        OUTPUT / "index.html",
+        OUTPUT / "styles.css",
+        OUTPUT / "bootstrap.js",
+        OUTPUT / "metis_web.js",
+        OUTPUT / "metis_web_bg.wasm",
+    )
     missing = [str(path) for path in required if not path.is_file()]
     if missing:
         raise SystemExit(f"browser build did not produce required artifacts: {', '.join(missing)}")

@@ -30,17 +30,21 @@ Audit query (0x0020/0x0021) and telemetry (0x0030) are reserved identifiers; the
 backend does not implement these operations and rejects unsupported requests.
 
 A token is 84 bytes: id u64, principal [u8;16], scope u32, issuance u64,
-expiration u64, issuance discriminator u64, HMAC [u8;32]. Claim authentication
-currently includes the canonical fixed claims buffer with four zero padding
-bytes after the discriminator. Validity is [issued, expires); the backend also
-checks its monotonic session lifetime and locks out detected clock rollback.
-The principal is an application session label, not proof of OS identity.
+expiration u64, issuance discriminator u64, HMAC [u8;32]. Generic token
+authentication uses the canonical fixed claims buffer with four zero padding
+bytes after the discriminator. Host-issued tokens authenticate that same claims
+buffer plus a fixed host-binding record containing a domain tag, SHA-256 digest
+of the canonical origin and window u64. The binding is associated data and is
+reconstructed by the trusted host; it is not copied into the wire token.
+Validity is [issued, expires); the backend also checks its monotonic session
+lifetime and locks out detected clock rollback. The principal is an
+application session label, not proof of OS identity.
 
 The backend grants only SUBMIT_CALCULATION. It accepts one handshake per private
-session and binds accepted claims to the token issued on that session. The
-result MAC covers the domain tag, request sequence, canonical request and all
-response fields except the MAC itself. The frontend displays its received MAC
-without asserting that it can verify it.
+session and binds accepted claims to the token issued on that session and the
+configured `HostPolicy` context. The result MAC covers the domain tag, request
+sequence, canonical request and all response fields except the MAC itself. The
+frontend displays its received MAC without asserting that it can verify it.
 
 Each handler result records a typed audit event. Failure contexts distinguish
 receive failure with no decoded header, request rejection with identity, handler
