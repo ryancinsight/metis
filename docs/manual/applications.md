@@ -108,3 +108,16 @@ pixel checks and native capture. These results establish the existing viewer
 baseline for [V09](../VERIFICATION.md#V09); Métis host execution, browser input,
 multiframe/color presentation and matched memory measurements remain required
 before accepting the migration.
+
+## Framework comparison evidence
+
+The complete comparison is maintained in
+[ADR 0003](../adr/0003-framework-conformance.md). Iced 0.14 is included as a
+renderer, state-model and testing comparator; the current Metis build does not
+depend on Iced and this gallery contains no Iced runtime capture. The official
+[Iced examples](https://docs.rs/crate/iced/0.14.0/source/examples/README.md)
+are the source reference for its native and web demonstrations. The former
+[`iced_web`](https://github.com/iced-rs/iced_web) DOM runtime is archived, so
+its existence does not establish HTML5/CSS compatibility for a current Iced
+application or for Metis. A future comparator capture requires a pinned,
+runnable fixture and belongs to its own verification item.

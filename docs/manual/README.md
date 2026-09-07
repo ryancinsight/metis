@@ -21,6 +21,7 @@ not features available through the build commands below.
 - [Connect a backend](backend.md): process ownership, requests and errors.
 - [Application gallery](applications.md): snapshots produced by the actual examples.
 - [Inspect application output](testing.md): run visual checks, interpret the current demonstration and review snapshot changes.
+- [Framework comparison](../adr/0003-framework-conformance.md): source-pinned gaps against Tauri, egui, GPUI and Iced.
 
 Public repository: [ryancinsight/metis](https://github.com/ryancinsight/metis).
 For individual Rust API contracts, build `cargo doc --workspace --no-deps`.

@@ -83,6 +83,6 @@ the default branch; the removal trigger is tracked in
 - [Risk controls](docs/RISK_CONTROLS.md)
 - [Verification](docs/VERIFICATION.md)
 - [Current work](backlog.md)
-- [egui, GPUI and Tauri gap analysis](docs/adr/0003-framework-conformance.md)
+- [egui, GPUI, Iced and Tauri gap analysis](docs/adr/0003-framework-conformance.md)
 
 Licensed under [MIT](LICENSE-MIT) or [Apache-2.0](LICENSE-APACHE), at your option.

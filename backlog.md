@@ -28,6 +28,13 @@ an owner. “Unsupported” cannot replace delivery of a required mobile/native 
 - Status: done; delivery: [PR 2](https://github.com/ryancinsight/metis/pull/2), content `a6855aa`.
 - Outcome: [ADR 0003](docs/adr/0003-framework-conformance.md) maps 22 capability areas to owned work and twelve semantic/visual/manual scenarios; source review and existing gate pass. Runtime gaps remain open in the linked items.
 
+<a id="METIS-ICED-001"></a>
+## METIS-ICED-001 — Iced comparator and backend decision [arch] [patch]
+- Status: review; priority: P1; owner: Metis integration; integrator: root; last-update: 2026-09-06; branch: `feat/process-foundation`; dependencies: METIS-GAPS-001
+- Outcome: source-pinned Iced 0.14 comparison covers state, layout, text, native/web rendering, authority, packaging, testing and performance; the manual and development plan state which capabilities Metis owns and which remain open.
+- Acceptance: ADR 0003 links only verified official Iced sources, records that archived `iced_web` does not establish current DOM support, adds no Iced dependency, and links every unresolved capability to an existing Metis item. The manual names the comparator without fabricating a runtime capture.
+- Demonstration: [V01](docs/VERIFICATION.md#V01) evidence index and the manual comparison section; a future browser/native Iced fixture is a separate item once a pinned executable target is selected.
+
 <a id="METIS-WEB-001"></a>
 ## METIS-WEB-001 — Web application target contract [arch] [patch]
 - Status: done; delivery: [PR 1](https://github.com/ryancinsight/metis/pull/1), `65e6af1`.

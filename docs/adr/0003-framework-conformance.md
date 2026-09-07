@@ -18,12 +18,18 @@ its egui/eframe surface and [V09](../VERIFICATION.md#V09) DICOM opening/display
 oracles. RITK retains format, geometry and medical-display ownership; this does
 not replace the distinct Tauri fixture or claim a working Métis viewer.
 
+Revision 2026-09-06: Iced 0.14.0 is added as a source-pinned comparator. Its
+Elm-style state/update/view model, native runtime, WebAssembly renderer path,
+async tasks and headless/E2E testing direction inform Metis's state, host and
+visual contracts. The archived `iced_web` DOM runtime is not treated as current
+Iced behavior, so it does not close Metis's HTML5/CSS reuse gap.
+
 ## Decision and scope
 
-Use Tauri as the application-framework migration reference and egui/GPUI as
-interaction, text, rendering and test-tooling references. Resolve all gaps in
+Use Tauri as the application-framework migration reference and egui/GPUI/Iced
+as interaction, text, rendering and test-tooling references. Resolve all gaps in
 the audited capability matrix below through the linked development items.
-This is a capability contract, not a promise to clone three incompatible APIs,
+This is a capability contract, not a promise to clone four incompatible APIs,
 every third-party extension, or future upstream releases. New upstream surfaces
 reopen the inventory; none inherit a support claim without a test.
 
@@ -33,7 +39,8 @@ application behavior. Custom rendering has its own contract through Iris.
 Moirai owns execution/transport; Metis owns application state, host integration
 and permission policy. A GPU renderer is not a prerequisite for a DOM form.
 
-egui, GPUI and Tauri are comparison subjects, not newly adopted dependencies.
+egui, GPUI, Iced and Tauri are comparison subjects, not newly adopted
+dependencies.
 Their companion crates are named separately. Native GPU rendering, mobile
 support and distribution are separate increments, not reasons to delay the
 first working browser and Windows applications. Unsupported target operations
@@ -41,8 +48,8 @@ must return explicit outcomes; a silent no-op never closes a gap.
 
 ## Baselines and evidence limits
 
-Inspection date: 2026-09-05. Metis source baseline is
-`65e6af139a701737868711298b73aeafcf380154`; its standalone Windows gate passes
+Inspection date: 2026-09-06. Metis source baseline is
+`fbda109`; its standalone Windows gate passes
 82 debug tests, 82 release tests, ten doctests, WASM library compilation and the
 initial software snapshot. No competitor executable, comparative benchmark,
 native Metis window or Metis browser application ran in this analysis.
@@ -52,6 +59,7 @@ native Metis window or Metis browser application ran in this analysis.
 | egui ecosystem | [0.36.1 release][E0], `4c1f2fae95475a40e524884ebb298bcb1714b08e`, 2026-08-07 | Versioned crate docs where available; IME/extras `latest` resolved to 0.36.1; accessibility/template `main` pages are dated observations. |
 | GPUI / Zed | Official `main` sources read on the inspection date; observed head `5a9b9558db01a6b906cec2fb70a797affdc58cdd` | Source inventory, not a checked-out build or proof every API is in the published GPUI crate. |
 | Tauri | [tauri-v2.11.5 release][T0], 2026-07-01; v2 documentation read on inspection date | Documentation can describe newer integrations than a release; pin application/driver revisions when building comparison fixtures. |
+| Iced | [0.14.0 crate and API docs][I0], released 2025-12-07; official examples and release notes [I1] [I2] | Versioned docs describe Windows/macOS/Linux/Web, Elm-style state/messages/view/update, async tasks, native rendering and wgpu/tiny-skia paths. The former DOM runtime is archived [I3]; DOM reuse is not inferred from current Iced. |
 
 “Provided” below means documented or present in inspected source, not independently
 executed here. “Host” means the browser/OS or a named companion supplies the
@@ -89,6 +97,27 @@ Each row names its closing items; acceptance belongs in the
 | Memory, latency and growth | Rendering model alone proves no advantage | GPU model alone proves no advantage | Small bundle does not prove low process memory | No matched baseline or resource telemetry. [PERF](../../backlog.md#METIS-PERF-001), [MEMORY](../../backlog.md#METIS-MEMORY-001). |
 | Assurance, provenance and recovery | Application responsibility | Application responsibility | Capabilities, audits and distribution controls [T4] [T6] | MAC vectors/bounded IPC exist; durable audit, supply-chain and operational evidence incomplete. [CRYPTO](../../backlog.md#METIS-CRYPTO-001), [AUDIT](../../backlog.md#METIS-AUDIT-001), [QUALITY](../../backlog.md#METIS-QUALITY-001). |
 | Runnable user documentation | Demos and eframe template [E1] [E7] | Source examples [G1] [G4] | Guides and test examples [T7] | Seven real-session software captures; browser/OS evidence remains open. [MANUAL](../../backlog.md#METIS-MANUAL-001), [VISUAL](../../backlog.md#METIS-VISUAL-001); every new item carries a manual demonstration. |
+
+## Iced-specific comparison
+
+Iced is a comparator, not a Metis dependency. The rows below separate what the
+versioned Iced contract supplies from the application-framework and security
+contracts Metis still owns. A documented Iced capability closes a Metis gap only
+after the corresponding Metis implementation and target evidence pass.
+
+| Capability | Iced 0.14 evidence | Metis consequence and closing work |
+| --- | --- | --- |
+| State and control flow | Elm-style state, messages, `update` and `view`; `Task` and `Subscription` support asynchronous work [I0] [I1] | Use the state/message split as a design reference, while keeping Metis's typed command and authority boundary. [STATE](../../backlog.md#METIS-STATE-001), [COMMANDS](../../backlog.md#METIS-COMMANDS-001), [ASYNC](../../backlog.md#METIS-ASYNC-001) remain open for the DOM and broker contracts. |
+| Layout and widgets | Responsive layout, built-in text inputs and scrollables, and custom widgets are documented [I0] [I1] | Metis must implement or reject each admitted CSS/layout property and provide reusable DOM controls. [LAYOUT](../../backlog.md#METIS-LAYOUT-001), [INPUT](../../backlog.md#METIS-INPUT-001), [DATA](../../backlog.md#METIS-DATA-001). |
+| Text, IME and accessibility | Iced documents text input/widgets; the comparator does not establish Metis's DOM IME or assistive-technology contract | Keep DOM text, composition, selection, semantic roles and OS bridge in Metis's target items. [TEXT](../../backlog.md#METIS-TEXT-001), [A11Y](../../backlog.md#METIS-A11Y-001). |
+| Native windows | The native runtime manages windows and events on supported desktop targets [I0] | Metis still needs restricted Windows, macOS and Linux hosts with real event, process and permission probes. [DESKTOP](../../backlog.md#METIS-DESKTOP-001), [MACOS](../../backlog.md#METIS-MACOS-001), [LINUX](../../backlog.md#METIS-LINUX-001). |
+| Browser and WebAssembly | Iced examples run on native and web; current renderer direction uses the browser canvas/GPU path [I1] [I2] | This establishes a useful renderer comparator but does not provide an HTML/CSS DOM replacement. Metis must complete a real browser host and WASM lifecycle. [BROWSER](../../backlog.md#METIS-BROWSER-001), [ASYNC](../../backlog.md#METIS-ASYNC-001). |
+| HTML/CSS reuse | The old `iced_web` DOM runtime is archived and read-only [I3] | Do not claim DOM compatibility from Iced. Metis's DOM route remains an owned implementation with CSS semantics and migration diagnostics. [BROWSER](../../backlog.md#METIS-BROWSER-001), [MIGRATION](../../backlog.md#METIS-MIGRATION-001). |
+| Renderers and assets | Native renderer abstraction includes wgpu and tiny-skia; current docs identify WebGPU/WebGL-oriented browser rendering [I0] [I4] | Compare renderer correctness and resource bounds through Iris and Metis fixtures; do not add an Iced dependency or duplicate a renderer. [GRAPHICS](../../backlog.md#METIS-GRAPHICS-001), [ASSETS](../../backlog.md#METIS-ASSETS-001), [PERF](../../backlog.md#METIS-PERF-001). |
+| Files and authority | Iced provides application/runtime facilities, not Tauri's capability scopes or Metis's deny-by-default broker | Metis must enforce session/origin/window grants around files, network, processes and persistence. [AUTHORITY](../../backlog.md#METIS-AUTHORITY-001), [FILES](../../backlog.md#METIS-FILES-001), [SERVICES](../../backlog.md#METIS-SERVICES-001). |
+| Packaging and updates | The versioned Iced docs describe application execution and rendering, not Tauri-style installers, signing or updater recovery | Keep packaging, install/uninstall preservation, signing and update recovery in Metis's distribution items. [DISTRIBUTION](../../backlog.md#METIS-DISTRIBUTION-001), [RELEASE](../../backlog.md#METIS-RELEASE-001). |
+| Semantic and visual tests | Iced 0.14 release notes identify headless mode and first-class E2E testing; exact test APIs require a pinned fixture before adoption [I2] | Metis keeps its own semantic/raster snapshots and must add browser/native capture providers. [VISUAL](../../backlog.md#METIS-VISUAL-001), [QUALITY](../../backlog.md#METIS-QUALITY-001). |
+| Memory and performance | A renderer/framework description does not establish memory reduction or latency parity | Measure Metis against matched workloads and process boundaries after live browser/native apps exist. [MEMORY](../../backlog.md#METIS-MEMORY-001), [PERF](../../backlog.md#METIS-PERF-001), [CONFORMANCE](../../backlog.md#METIS-CONFORMANCE-001). |
 
 ## Concrete findings driving priority
 
@@ -188,3 +217,8 @@ observations; future implementation fixtures must pin the actual dependencies.
 [T5]: https://v2.tauri.app/plugin/
 [T6]: https://v2.tauri.app/distribute/
 [T7]: https://v2.tauri.app/develop/tests/webdriver/
+[I0]: https://docs.rs/crate/iced/0.14.0
+[I1]: https://docs.rs/crate/iced/0.14.0/source/examples/README.md
+[I2]: https://github.com/iced-rs/iced/releases
+[I3]: https://github.com/iced-rs/iced_web
+[I4]: https://github.com/iced-rs/iced/blob/master/Cargo.toml
