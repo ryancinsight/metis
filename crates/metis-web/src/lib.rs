@@ -7,4 +7,4 @@
 mod browser;
 
 #[cfg(target_arch = "wasm32")]
-pub use browser::metis_start;
+pub use browser::{metis_start, metis_stop};

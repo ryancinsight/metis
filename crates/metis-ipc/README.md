@@ -26,7 +26,10 @@ Browser callers use `AsyncIpcClient` with the WASM-only
 `BrowserWebSocketTransport`. `send_request` permits at most sixteen requests
 or completed responses at once; one receive consumer routes out-of-order
 responses with `RequestId` and `recv_response_for`. Each receive has a finite
-deadline and Moirai owns WebSocket callback and timer teardown.
+deadline and Moirai owns WebSocket callback and timer teardown. A caller that
+cancels a browser task can call `cancel_request` or `cancel_all_requests` to
+remove its correlation entries; late responses are rejected by sequence
+validation instead of being delivered to a later request.
 
 Fault injection modifies encoded wire bytes before delivery. CRC32 detects
 accidental corruption; it does not authenticate transport peers. Handshake

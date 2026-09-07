@@ -20,7 +20,7 @@ process-isolation test. No original OS sandbox or native-window evidence exists.
 - Types and compilation: frontend cannot import the backend through its declared dependency closure; validated policy fields cannot be overwritten externally.
 - Behavioral tests: exact wire fixtures, canonical decoding, malformed corpus, scope/session/time rejection, audit event outcomes and bounded numerical error.
 - Independent numeric evidence: dimensional infusion conversion and exact binary fixtures; arithmetic roundoff uses a stated gamma bound.
-- Crypto evidence: Moirai `66627b9` publishes the shared HMAC/SHA-256 and
+- Crypto evidence: Moirai `16a1b88` publishes the shared HMAC/SHA-256 and
   fixed-width comparison primitives; independent vectors and streaming/padding
   regressions run upstream, while Metis capability, audit, result-signature and
   CLI tests exercise those functions at their real boundaries.
@@ -74,7 +74,7 @@ native system calls; those require targeted lifecycle tests and further platform
 instrumentation. That earlier increment resolved Moirai from pushed commit
 `0514f11`, not local provider edits. The current browser-host increment advances
 the standalone lock to merged provider
-`66627b9`; comparative security/memory evidence
+`16a1b88`; comparative security/memory evidence
 against Tauri and live-service browser tests remain required by [ADR 0002](adr/0002-web-application-contract.md).
 Advisory scanning, coverage,
 mutation analysis and cross-platform sandbox probes remain uncollected.
@@ -144,11 +144,30 @@ trace; they are runtime observations, not committed browser golden images.
 
 This evidence establishes HTML5/CSS loading, Rust/WASM state updates, semantic
 focusable controls and explicit failure handling for the local workbench. It
-does not establish a live WebSocket service, origin/session grants, cancellation
-or late-response handling, post-drop resource counts, cross-engine behavior,
-accessibility technology support or OS permission isolation. Those remain open
-in [METIS-BROWSER-001](../backlog.md#METIS-BROWSER-001) and
+does not establish a live WebSocket service, origin/session grants,
+late-response handling, post-drop resource counts, cross-engine behavior,
+accessibility technology support or OS permission isolation. The request-table
+cancellation contract is covered by native tests; the browser listener
+teardown/remount trace is recorded below. Live service and allocation evidence
+remain open in [METIS-BROWSER-001](../backlog.md#METIS-BROWSER-001) and
 [METIS-ASYNC-001](../backlog.md#METIS-ASYNC-001).
+
+## Browser lifecycle evidence — 2026-09-07
+
+After rebuilding the generated artifacts from the standalone lock at Moirai
+`16a1b88`, the Codex in-app browser loaded
+`http://127.0.0.1:8765/index.html` and exposed `Start host` and `Stop host`
+controls in the accessibility tree. Clicking **Stop host** removed the form
+and exposed the exact text `Metis browser host stopped.`; the inspected
+1280×720 screenshot contained only the lifecycle controls and stopped message.
+Clicking **Start host** restored the form with the default values, labelled
+controls and idle status. Browser console warnings and errors were empty.
+
+This trace demonstrates that the WASM host drops its Rust-owned listener
+guards, clears the mounted DOM, and remounts fresh form state through the same
+module. It does not establish a live WebSocket bridge, origin/session grant,
+post-drop JavaScript allocation count, cross-engine behavior or native window
+parity.
 
 <a id="visual-contract"></a>
 ## Visual and interaction contract

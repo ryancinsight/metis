@@ -115,6 +115,37 @@ impl<T: AsyncIpcTransport> AsyncIpcClient<T> {
         Ok(RequestId(sequence))
     }
 
+    /// Cancels one outstanding request or retained response.
+    ///
+    /// Cancellation removes the identifier from the bounded correlation table.
+    /// A later peer response for that identifier is therefore rejected as an
+    /// unknown sequence instead of being delivered to a new request.
+    ///
+    /// # Errors
+    /// Returns [`ErrorCode::SequenceMismatch`] when `request_id` is no longer
+    /// pending or retained.
+    pub fn cancel_request(&mut self, request_id: RequestId) -> Result<()> {
+        let removed_pending = self.pending.remove(&request_id.0).is_some();
+        let removed_completed = self.completed.remove(&request_id.0).is_some();
+        if removed_pending || removed_completed {
+            Ok(())
+        } else {
+            Err(Self::missing_request())
+        }
+    }
+
+    /// Cancels every outstanding request and retained response.
+    ///
+    /// Returns the number of correlation entries removed. The active session
+    /// capability is preserved, so a caller can submit a new request after
+    /// cancelling an earlier operation.
+    pub fn cancel_all_requests(&mut self) -> usize {
+        let count = self.pending_request_count();
+        self.pending.clear();
+        self.completed.clear();
+        count
+    }
+
     /// Receives the next response from the single transport receive pump.
     ///
     /// The returned identifier lets a caller route an out-of-order response.
@@ -157,10 +188,7 @@ impl<T: AsyncIpcTransport> AsyncIpcClient<T> {
             return Ok(response);
         }
         if !self.pending.contains_key(&request_id.0) {
-            return Err(MetisError::protocol(
-                ErrorCode::SequenceMismatch,
-                "Async IPC request is not outstanding",
-            ));
+            return Err(Self::missing_request());
         }
         loop {
             let (received, message_type, payload) = self.recv_response().await?;
@@ -201,6 +229,13 @@ impl<T: AsyncIpcTransport> AsyncIpcClient<T> {
     ) -> Result<(MessageType, Vec<u8>)> {
         let request_id = self.send_request(msg_type, payload)?;
         self.recv_response_for(request_id).await
+    }
+
+    fn missing_request() -> MetisError {
+        MetisError::protocol(
+            ErrorCode::SequenceMismatch,
+            "Async IPC request is not outstanding",
+        )
     }
 }
 
@@ -413,6 +448,57 @@ mod tests {
         let error = poll_ready(client.recv_response()).expect_err("unknown sequence");
         assert_eq!(error.code, ErrorCode::SequenceMismatch);
         assert_eq!(client.pending_request_count(), 1);
+    }
+
+    #[test]
+    fn cancellation_rejects_a_late_response_without_touching_newer_requests() {
+        let response = frame(MessageType::HeartbeatResp, 1, b"late");
+        let mut client =
+            AsyncIpcClient::new(ScriptTransport::new([response]), Duration::from_secs(1))
+                .expect("positive timeout");
+        let cancelled = client
+            .send_request(MessageType::HeartbeatReq, b"cancelled")
+            .expect("cancelled request");
+        client
+            .send_request(MessageType::HeartbeatReq, b"active")
+            .expect("active request");
+
+        assert_eq!(client.cancel_request(cancelled), Ok(()));
+        let error = poll_ready(client.recv_response()).expect_err("late response");
+        assert_eq!(error.code, ErrorCode::SequenceMismatch);
+        assert_eq!(client.pending_request_count(), 1);
+        assert_eq!(
+            client
+                .cancel_request(cancelled)
+                .expect_err("already cancelled")
+                .code,
+            ErrorCode::SequenceMismatch
+        );
+    }
+
+    #[test]
+    fn cancellation_clears_retained_responses_and_preserves_the_session() {
+        let response = frame(MessageType::HeartbeatResp, 2, b"retained");
+        let mut client =
+            AsyncIpcClient::new(ScriptTransport::new([response]), Duration::from_secs(1))
+                .expect("positive timeout");
+        let active = token([9; 16]);
+        client.set_active_token(active.clone());
+        let first = client
+            .send_request(MessageType::HeartbeatReq, b"first")
+            .expect("first request");
+        let second = client
+            .send_request(MessageType::HeartbeatReq, b"second")
+            .expect("second request");
+
+        let error =
+            poll_ready(client.recv_response_for(first)).expect_err("missing first response");
+        assert_eq!(error.code, ErrorCode::ConnectionClosed);
+        assert_eq!(client.pending_request_count(), 2);
+        assert_eq!(client.cancel_request(second), Ok(()));
+        assert_eq!(client.cancel_all_requests(), 1);
+        assert_eq!(client.pending_request_count(), 0);
+        assert_eq!(client.active_token(), Some(&active));
     }
 
     #[test]

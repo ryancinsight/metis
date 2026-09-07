@@ -36,9 +36,19 @@ WASM and never displays a fabricated success. The eventual bridge must bind an
 authenticated session to the host origin and reject navigation, replay,
 oversize and cross-session requests before connecting this UI state to a result.
 
-The one raw `metis_start` export is the WASM ABI boundary. Its unsafe attribute
-is isolated and documented; the host state, DOM operations and callbacks remain
-safe Rust.
+The raw `metis_start` and `metis_stop` exports are the WASM ABI boundary. Their
+unsafe attributes are isolated and documented; the host state, DOM operations
+and callbacks remain safe Rust.
+
+Revision 2026-09-07: the host also exports `metis_stop`. It drops the mounted
+listener guards before replacing the root, and `metis_start` clears any prior
+application before attempting a remount so failed replacement cannot retain
+callbacks for stale markup.
+
+The provider revision for this lifecycle increment is Moirai `16a1b88`; its
+native cancellation-state tests and WASM library checks are recorded in ADR
+0045. Metis's local request cancellation and stop/remount trace extend the
+boundary without claiming a live service.
 
 ## Alternatives
 
@@ -50,7 +60,7 @@ contract.
 
 ## Verification
 
-Moirai's browser PAL at `66627b9` passes its
+Moirai's browser PAL at `16a1b88` passes its
 WASM checks, strict Clippy and 39/39 PAL tests. Metis builds `metis-web` for
 `wasm32-unknown-unknown`; `scripts/browser.py build` generates the loader and
 WASM artifact with `wasm-bindgen` 0.2.128. A local browser trace loaded the
@@ -62,8 +72,10 @@ engine version; no cross-engine or post-drop allocation measurement is claimed.
 
 ## Residuals
 
-The live browser service, origin/session grants, cancellation and late-response
-checks, accessibility/IME evidence, Chromium/Firefox/WebKit matrix and desktop
-WebView host remain open in the linked backlog items. This decision establishes
+The live browser service, origin/session grants, live task/late-response checks,
+accessibility/IME evidence, Chromium/Firefox/WebKit matrix and desktop WebView
+host remain open in the linked backlog items. Local request cancellation and
+stop/remount listener teardown are covered by the Metis test and browser trace.
+This decision establishes
 the browser host boundary and runnable local controls; it does not establish
 Tauri API parity, security superiority or lower memory use.

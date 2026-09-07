@@ -28,7 +28,12 @@ Revision 2026-09-06: the browser slice adds `metis-web`, a real HTML5/CSS host
 that loads generated WASM and drives Rust-owned controls through Moirai's DOM
 handles. The local trace proves editable state, typed invalid-input rejection
 and explicit missing-bridge failure. It does not close the authenticated live
-service, origin/session, cancellation, accessibility or cross-engine rows.
+service, origin/session, accessibility or cross-engine rows.
+
+Revision 2026-09-07: Moirai `16a1b88` adds cancellable browser-local tasks.
+Metis request-table cancellation and `metis_stop` listener teardown now have
+native and browser lifecycle evidence; authenticated live-service task wiring,
+allocation measurement and cross-engine rows remain open.
 
 ## Decision and scope
 
@@ -89,10 +94,10 @@ Each row names its closing items; acceptance belongs in the
 | Text editing and IME | Text editing plus integration IME contract [E4] | Selection/composition input example [G4] | Browser text/IME, subject to host integration | Bitmap Latin subset; no composition/selection. [TEXT](../../backlog.md#METIS-TEXT-001). |
 | Accessibility | AccessKit integration; custom widget semantics required [E5] | AccessKit roles/identity/actions in current source [G3] | Semantic frontend plus WebView/OS accessibility | No semantic tree/adapter. [A11Y](../../backlog.md#METIS-A11Y-001). |
 | Pointer, keyboard, touch, focus | Backend input, sensitivity and viewports [E1] | Platform events and actions [G1] | Web frontend and native window events [T1] | Application-fed queue with no event consumer/OS pump. [INPUT](../../backlog.md#METIS-INPUT-001), desktop items. |
-| Browser/WASM execution | eframe canvas host with WASM bindings [E2] | Current `gpui_web`: canvas, WebGPU/WebGL2 [G2] | Web frontend can target browser; native APIs need a host [T1] | `metis-web` loads generated WASM into an HTML5/CSS DOM host; live service, cancellation and cross-engine runs remain. [BROWSER](../../backlog.md#METIS-BROWSER-001), [ASYNC](../../backlog.md#METIS-ASYNC-001). |
+| Browser/WASM execution | eframe canvas host with WASM bindings [E2] | Current `gpui_web`: canvas, WebGPU/WebGL2 [G2] | Web frontend can target browser; native APIs need a host [T1] | `metis-web` loads generated WASM into an HTML5/CSS DOM host; local request cancellation and host teardown are covered, while live service, task wiring and cross-engine runs remain. [BROWSER](../../backlog.md#METIS-BROWSER-001), [ASYNC](../../backlog.md#METIS-ASYNC-001). |
 | Existing HTML5/CSS frontend reuse | Canvas UI is not DOM compatibility [E2] | Canvas UI is not DOM compatibility [G2] | WebView presentation is the core model [T1] | Custom markup does not preserve DOM/CSS applications. [BROWSER](../../backlog.md#METIS-BROWSER-001), [MIGRATION](../../backlog.md#METIS-MIGRATION-001). |
 | Native windows and platform lifecycle | eframe/backend-dependent viewports [E1] [E2] | macOS, Windows, Wayland/X11 platform code [G1] | Desktop system WebViews [T1] | Headless Windows-contained process workflow. [WINDOWS](../../backlog.md#METIS-DESKTOP-001), [MACOS](../../backlog.md#METIS-MACOS-001), [LINUX](../../backlog.md#METIS-LINUX-001). |
-| Async commands, events, cancellation | Application/host concern | Executor and action facilities [G1] | Commands, events and channels [T2] [T3] | Async client, bounded correlation and browser transport exist; live service, subscriptions and cancellation remain. [ASYNC](../../backlog.md#METIS-ASYNC-001), [COMMANDS](../../backlog.md#METIS-COMMANDS-001). |
+| Async commands, events, cancellation | Application/host concern | Executor and action facilities [G1] | Commands, events and channels [T2] [T3] | Async client, bounded correlation, request cancellation and browser transport exist; live service, task bridge, subscriptions and late-response service traces remain. [ASYNC](../../backlog.md#METIS-ASYNC-001), [COMMANDS](../../backlog.md#METIS-COMMANDS-001). |
 | Scoped native authority | Tauri-like broker not established by toolkit docs | Tauri-like broker not established by toolkit docs | Capability scopes and host boundaries [T4] | Session-scoped calculation only; no OS or browser-origin restriction. [AUTHORITY](../../backlog.md#METIS-AUTHORITY-001), desktop items. |
 | Images, vector content and media | Extras loaders; renderer integrations [E6] | Image/list examples and GPU elements [G1] | Browser assets/media and host permissions | Rectangle/border/bitmap-text commands only. [ASSETS](../../backlog.md#METIS-ASSETS-001), [GRAPHICS](../../backlog.md#METIS-GRAPHICS-001). |
 | Large lists, tables and reactive updates | Extras tables [E6] | Elements support large list views [G1] | Frontend framework/browser concern | No virtualized controls or reusable subscriptions. [DATA](../../backlog.md#METIS-DATA-001), [STATE](../../backlog.md#METIS-STATE-001). |
@@ -141,11 +146,12 @@ silently accept browser-like syntax with different behavior.
 
 The [event surface](../../crates/metis-platform/src/event.rs) has no native event
 producer; [transport](../../crates/metis-ipc/src/transport.rs) blocks on receipt.
-Moirai's merged `66627b9` browser PAL now owns
+Moirai's merged `16a1b88` browser PAL now owns
 DOM/event callbacks and bounded WebSocket receipt. The Metis browser host uses
-that provider; the browser service and native event producer remain closure
-requirements, not reasons to add another runtime. Consumer checks are against
-the pushed provider revision, not local provider edits.
+that provider, including cancellable local tasks; the browser service and
+native event producer remain closure requirements, not reasons to add another
+runtime. Consumer checks are against the pushed provider revision, not local
+provider edits.
 Iris's current lending rendering seam is sufficient for the software path and
 does not block a DOM host.
 

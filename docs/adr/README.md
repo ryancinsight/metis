@@ -17,4 +17,5 @@
 | [0006](0006-application-entry.md) | Single application entry | Accepted |
 | [0007](0007-browser-transport.md) | Browser transport ownership | Accepted |
 | [0008](0008-browser-host-boundary.md) | Browser host boundary | Accepted |
-| [0009](0009-crypto-provider-boundary.md) | Crypto provider boundary | Accepted |
+| [0009](0009-crypto-provider-boundary.md) | Atlas crypto provider boundary | Accepted |
+| [0010](0010-cancellable-browser-request-lifecycle.md) | Cancellable browser request lifecycle | Accepted |
