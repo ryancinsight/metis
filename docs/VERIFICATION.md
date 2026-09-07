@@ -20,7 +20,7 @@ process-isolation test. No original OS sandbox or native-window evidence exists.
 - Types and compilation: frontend cannot import the backend through its declared dependency closure; validated policy fields cannot be overwritten externally.
 - Behavioral tests: exact wire fixtures, canonical decoding, malformed corpus, scope/session/time rejection, audit event outcomes and bounded numerical error.
 - Independent numeric evidence: dimensional infusion conversion and exact binary fixtures; arithmetic roundoff uses a stated gamma bound.
-- Crypto evidence: Moirai `be87d009cd0e877beef719b47bdcbadc45659069` publishes the shared HMAC/SHA-256 and
+- Crypto evidence: Moirai `ddbd75f61914bba195c71cb671bf6d8bf4c14eb6` publishes the shared HMAC/SHA-256 and
   fixed-width comparison primitives; independent vectors and streaming/padding
   regressions run upstream, while Metis capability, audit, result-signature and
   CLI tests exercise those functions at their real boundaries.
@@ -74,7 +74,7 @@ native system calls; those require targeted lifecycle tests and further platform
 instrumentation. That earlier increment resolved Moirai from pushed commit
 `0514f11`, not local provider edits. The current browser-host increment advances
 the standalone lock to merged provider
-`be87d009cd0e877beef719b47bdcbadc45659069`; comparative security/memory evidence
+`ddbd75f61914bba195c71cb671bf6d8bf4c14eb6`; comparative security/memory evidence
 against Tauri and live-service browser tests remain required by [ADR 0002](adr/0002-web-application-contract.md).
 Advisory scanning, coverage,
 mutation analysis and cross-platform sandbox probes remain uncollected.
@@ -109,7 +109,7 @@ remain required. The portable and installed payload must each contain exactly
 one application executable; repeat the real MSI install/run/uninstall and
 user-file-preservation workflow.
 
-The complete Windows gate passes 126 debug and 126 release native tests,
+The complete Windows gate passes 127 debug and 127 release native tests,
 40 Python checks, WASM library compilation, strict Clippy, doctests, rustdoc,
 examples and seven unchanged visual snapshots. The real MSI workflow verifies
 one installed application executable, both input-sensitive process sessions,
@@ -156,7 +156,7 @@ accessibility technology support and OS permission isolation remain open in
 ## Browser lifecycle evidence — 2026-09-07
 
 After rebuilding the generated artifacts from the standalone lock at Moirai
-`be87d009cd0e877beef719b47bdcbadc45659069`, the Codex in-app browser loaded
+`ddbd75f61914bba195c71cb671bf6d8bf4c14eb6`, the Codex in-app browser loaded
 `http://127.0.0.1:8765/index.html` and exposed `Start host` and `Stop host`
 controls in the accessibility tree. Clicking **Stop host** removed the form
 and exposed the exact text `Metis browser host stopped.`; the inspected
@@ -199,7 +199,7 @@ permission isolation, post-drop allocation counts or cross-engine host parity.
 ## Live browser service evidence — 2026-09-07
 
 The standalone lock resolves all Moirai packages to
-`be87d009cd0e877beef719b47bdcbadc45659069`, including the bounded HTTP/WebSocket
+`ddbd75f61914bba195c71cb671bf6d8bf4c14eb6`, including the bounded HTTP/WebSocket
 service and the cancellation-wakeup fix. The focused command
 `cargo nextest run --locked -p metis-backend -p metis-ipc -p metis-core`
 passes 55/55; native all-targets Clippy for `metis-backend` and `metis-ipc`,
@@ -232,6 +232,35 @@ session. It does not close late-response injection, post-drop JavaScript
 allocation, TLS, accessibility/IME, cross-engine or native desktop/OS
 permission scenarios.
 
+## Browser control evidence — 2026-09-07
+
+The control model adds semantic HTML5 checkbox, radio and range inputs to the
+same Rust/WASM workbench. `cargo nextest run --locked -p metis-web` passes
+10/10, including a regression that applies visibility, display-unit and scale
+changes to a successful response without clearing that response. Native
+warning-denied Clippy, the WASM-target check and WASM-target Clippy pass for
+`metis-web`; `python scripts/browser.py build` regenerates the loader and WASM
+from the standalone lock at Moirai
+`ddbd75f61914bba195c71cb671bf6d8bf4c14eb6`.
+
+In the authenticated service trace, the Codex in-app browser exposed the
+semantic control names and values at a 1280×720 CSS-pixel viewport and device
+scale 1.25; the engine version was unavailable. Pointer activation of **Drug
+mass rate** selected the radio and changed the rendered metric to
+`Drug mass rate: 2.175000 mg/hr` while retaining `Backend result received` and
+the correlated event. Pointer activation of **Show remote events** changed the
+event text to `Remote events: hidden by preference` while retaining the metric.
+Two keyboard **Right** presses on **Result scale** changed its accessibility
+value to `120`, updated `View options: ... scale 120%`, and left the visible
+focus ring on the range. The browser console contained only expected Moirai
+initialization entries and no warnings or errors.
+
+This closes the checkbox/radio/range browser slice and its real pointer and
+keyboard demonstration. Select/menu/dialog controls, pointer capture,
+drag/drop, wheel/touch/modifier events, IME, accessibility technology,
+cross-engine parity, post-drop allocation and native-window input remain open
+under the linked backlog items.
+
 ## Typed command and event evidence — 2026-09-07
 
 `METIS-COMMANDS-001` adds `CapabilityReq`/`CapabilityResp`,
@@ -250,8 +279,9 @@ absent until a provider is implemented.
 
 The focused command/event run `cargo nextest run --locked -p metis-core -p
 metis-ipc -p metis-backend -p metis-frontend -p metis-web -p metis-app` passes
-121/121 and covers the target descriptor and lifecycle guard in addition to
-the earlier cases. It includes catalog round-trips, version and malformed-entry rejection,
+122/122 and covers the target descriptor, lifecycle guard and presentation
+control state in addition to the earlier cases. It includes catalog round-trips,
+version and malformed-entry rejection,
 post-handshake service discovery, explicit unsupported-operation handling,
 target descriptor round-trips and malformed-value rejection, remote event
 envelope round-trips and bounds, synchronous send/receive,

@@ -90,10 +90,10 @@ recorded in [ADR 0005](docs/adr/0005-application-distribution.md). Atlas provide
 have transitive dependencies; the gate records the actual graph instead of describing it as
 dependency-free. The Atlas development overlay resolves first-party code to local
 trees. Standalone builds depend on the corresponding pushed provider revisions.
-Moirai is pinned to current default-branch revision
-`be87d009cd0e877beef719b47bdcbadc45659069`, which includes the merged process,
-browser/API, bounded WebSocket service and cancellable-task surfaces. Consumer
-verification and any future provider advance remain tracked in
+Moirai is pinned to provider revision
+`ddbd75f61914bba195c71cb671bf6d8bf4c14eb6`, which includes the merged process,
+browser/API, bounded WebSocket service, cancellable-task surfaces and the
+checked-state DOM seam. Consumer verification and any future provider advance remain tracked in
 [the board](backlog.md#METIS-PROVIDER-001).
 
 ## Design and evidence

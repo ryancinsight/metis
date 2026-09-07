@@ -159,10 +159,12 @@ an owner. “Unsupported” cannot replace delivery of a required mobile/native 
 <a id="METIS-INPUT-001"></a>
 ## METIS-INPUT-001 — Interactive controls and shared UI state [minor]
 - Status: in-progress; priority: P1; owner: Metis UI/host; integrator: root; last-update: 2026-09-07; branch: `feat/process-foundation`; dependencies: METIS-BROWSER-001; risk: input/state mismatch; ADR: 0014 (claimed)
-- lease: root — `metis-web/src/browser.rs`, `metis-web/src/controls.rs`, `moirai-pal/src/wasm/dom.rs`, `docs/adr/0014-input-controls.md`, `docs/manual/browser.md` — 2026-09-07T19:10:04Z
 - Scope: buttons, checks, radios, sliders, editable fields, select/menu/dialog controls; focus, pointer capture, drag/drop, wheel/touch/modifiers, shortcuts, reusable state/actions and subscription teardown.
 - Acceptance: keyboard and pointer/touch journeys update identical model values; disabled controls reject action; focus survives rerender and subscriptions detach on close; real hit targets agree with rendered geometry.
 - Demonstration: [V02](docs/VERIFICATION.md#V02), settings workbench; repeat on each native host as it becomes supported.
+- Completed increment: `feat(web): Add semantic browser controls` adds Rust-owned checkbox, radio and bounded range state, the Moirai `WebElement::checked` seam, and split control/view modules; native `metis-web` tests pass 10/10 and the WASM gate is clean.
+- Live evidence: [browser control evidence](docs/VERIFICATION.md#browser-control-evidence--2026-09-07) records pointer radio/visibility changes and two keyboard range steps in the authenticated service trace. Presentation changes preserve the correlated backend result.
+- Residuals: select/menu/dialog, disabled-control semantics, pointer capture, drag/drop, wheel/touch/modifier events, IME, accessibility technology and native-host input remain open; re-open this item when those dependencies land.
 
 <a id="METIS-TEXT-001"></a>
 ## METIS-TEXT-001 — Text, selection and IME [minor]

@@ -74,6 +74,26 @@ display. With no service configuration, submit the form to observe
 `ERR_CONNECTION_CLOSED`; this is an explicit disconnected result, not a local
 calculation or a fabricated success.
 
+The **View options** fieldset uses semantic HTML5 controls owned by the Rust
+host. Uncheck **Show remote events** to hide the event status line while the
+event remains received and validated; select **Volume rate** or **Drug mass
+rate** to change the displayed metric; move **Result scale** with the arrow
+keys or pointer to select a bounded 50–150% presentation preference. The
+`options-state` text and `data-result-scale-percent` attribute expose the
+Rust-owned state after each change. Tab through the labels, press Space on the
+checkbox or radio, and use the range arrows to reproduce the keyboard path.
+
+The captured service journey at revision
+`ddbd75f61914bba195c71cb671bf6d8bf4c14eb6` used the Codex in-app
+browser at 1280×720 CSS pixels and device scale 1.25. Pointer activation of
+**Drug mass rate** changed the summary to `drug mass rate` and the result to
+`Drug mass rate: 2.175000 mg/hr` without clearing the accepted backend result.
+Pointer activation of **Show remote events** changed the event line to
+`Remote events: hidden by preference` while retaining that metric. Two
+keyboard **Right** presses on **Result scale** changed the semantic value to
+`120` and the summary to `scale 120%`; the focused range received the visible
+keyboard focus ring.
+
 With the service configuration above, the status becomes `Authorized backend
 session ready`, and the header lists the commands advertised by that service
 (`host.capabilities`, `host.target_capabilities`, `session.heartbeat`,
@@ -232,13 +252,14 @@ browser's native screenshot tool. Record browser engine, viewport, device
 scale, font environment, service command and WASM revision beside the images.
 The verified local trace used the Codex in-app browser at 1280×720 CSS pixels
 and device scale 1.25; its engine version was unavailable. The accepted default
-calculation displayed `Remote event: clinical.result #3` with audit sequence 3,
-rate `0.543750 ml/hr` and drug rate `2.175000 mg/hr`. The zero-weight request
-displayed `Backend rejected request [0x3001]` and `Remote events: none (request
-rejected)`. Stop/start teardown and service restart restored
-`Authorized backend session ready`. The tab's console contained only the
-expected Moirai initialization log entries and no warnings or errors. These
-captures establish HTML5/CSS execution and focusable controls and pair with the
-native loopback tests. They do not close post-drop allocation measurement,
-cross-engine behavior, TLS, accessibility technology support or OS permission
-isolation.
+calculation displayed `Remote event: clinical.result #4` with audit sequence 4,
+rate `0.543750 ml/hr` and drug rate `2.175000 mg/hr`. Selecting **Drug mass
+rate** then displayed `Drug mass rate: 2.175000 mg/hr`; hiding events and moving
+the range to 120% preserved the result. The zero-weight request displayed
+`Backend rejected request [0x3001]` and `Remote events: none (request
+rejected)`. Stop/start teardown and service restart restored `Authorized backend
+session ready`. The tab's console contained only the expected Moirai
+initialization log entries and no warnings or errors. These captures establish
+HTML5/CSS execution and focusable controls and pair with the native loopback
+tests. They do not close post-drop allocation measurement, cross-engine
+behavior, TLS, accessibility technology support or OS permission isolation.

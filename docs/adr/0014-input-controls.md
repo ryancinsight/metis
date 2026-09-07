@@ -38,11 +38,14 @@ current browser contract.
 ## Verification
 
 `ControlState` tests cover default values, checked and radio transitions,
-bounded scale parsing, invalid control input and existing numeric-field
-validation. `metis-web` passes native warning-denied Clippy, its native tests,
-and the WASM compile and Clippy checks against Moirai
-`ddbd75f61914bba195c71cb671bf6d8bf4c14eb6`. The real browser trace must exercise
-keyboard and pointer changes and record the resulting DOM text and geometry.
+bounded scale parsing, invalid control input, numeric-field validation and
+preservation of a successful response while presentation controls change.
+`metis-web` passes native warning-denied Clippy, 10 native tests, and the WASM
+compile and Clippy checks against Moirai
+`ddbd75f61914bba195c71cb671bf6d8bf4c14eb6`. The authenticated browser trace at
+1280×720 CSS pixels and device scale 1.25 selected the radio and checkbox with
+pointer actions, then moved the range twice with the keyboard; the accessibility
+values, status text, focus ring and `2.175000 mg/hr` result matched the model.
 
 ## Residuals
 

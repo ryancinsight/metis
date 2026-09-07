@@ -22,3 +22,4 @@
 | [0011](0011-host-authority-policy.md) | Host authority and origin policy | Accepted |
 | [0012](0012-command-event-contract.md) | Typed command and event contract | Accepted |
 | [0013](0013-strict-style-contract.md) | Strict presentation style contract | Accepted |
+| [0014](0014-input-controls.md) | Rust-owned browser input controls | Accepted |

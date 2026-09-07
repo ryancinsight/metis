@@ -9,6 +9,9 @@ mod epoch;
 #[cfg(any(target_arch = "wasm32", test))]
 mod session;
 
+#[cfg(any(target_arch = "wasm32", test))]
+mod controls;
+
 #[cfg(target_arch = "wasm32")]
 mod browser;
 

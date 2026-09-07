@@ -1,13 +1,17 @@
 //! Browser DOM application boundary.
 
+#[path = "browser/config.rs"]
+mod config;
+#[path = "browser/events.rs"]
+mod events;
+#[path = "view.rs"]
+mod view;
+
+use crate::controls;
+use crate::controls::{ControlField, DisplayUnit, InputField};
 use crate::epoch::{Epoch, Generation};
 use crate::session::connect_failure_state;
-use metis_core::CapabilityScope;
 use metis_core::error::{ErrorCode, MetisError};
-use metis_core::protocol::{
-    CapabilityCatalogPayload, ClinicalCalcResponsePayload, MAX_PLUGINS, Plugin, PluginDescriptor,
-    PluginOperation, PluginRegistry, TargetCapabilityPayload,
-};
 use metis_frontend::{AsyncFrontendApp, FormInputs, FormState};
 use metis_ipc::BrowserWebSocketTransport;
 use metis_ipc::client::HandshakeError;
@@ -19,37 +23,7 @@ use std::io;
 use std::rc::Rc;
 use std::time::Duration;
 
-const BROWSER_MARKUP: &str = r#"
-<header class="metis-header">
-  <p class="metis-kicker">METIS / BROWSER WORKBENCH</p>
-  <h1>Authorized clinical form boundary</h1>
-  <p id="metis-status" role="status">Browser controls are active.</p>
-  <p id="metis-capabilities">Host capabilities: unavailable</p>
-  <p id="metis-plugins">Registered frontend extensions: unavailable</p>
-  <p id="metis-events" role="status">Remote events: none</p>
-</header>
-<form id="metis-form" class="metis-form">
-  <label for="patient-id">Patient reference</label>
-  <input id="patient-id" name="patient-id" value="PT-9042-ALPHA" autocomplete="off">
-  <label for="weight-kg">Weight (kg)</label>
-  <input id="weight-kg" name="weight-kg" type="number" step="any" value="72.5">
-  <label for="concentration-mg-ml">Drug concentration (mg/mL)</label>
-  <input id="concentration-mg-ml" name="concentration-mg-ml" type="number" step="any" value="4">
-  <label for="target-dose">Target dose (mcg/kg/min)</label>
-  <input id="target-dose" name="target-dose" type="number" step="any" value="0.5">
-  <button id="submit-calculation" type="submit">Submit to authorized backend</button>
-</form>
-<section class="metis-result" aria-labelledby="result-heading">
-  <h2 id="result-heading">Backend result</h2>
-  <p id="result-state">No backend bridge configured.</p>
-  <dl>
-    <dt>Patient</dt><dd id="result-patient">PT-9042-ALPHA</dd>
-    <dt>Weight</dt><dd id="result-weight">72.50 kg</dd>
-    <dt>Concentration</dt><dd id="result-concentration">4.00 mg/mL</dd>
-    <dt>Dose</dt><dd id="result-dose">0.500 mcg/kg/min</dd>
-  </dl>
-</section>
-"#;
+use config::BridgeConfig;
 
 #[derive(Clone)]
 struct BrowserState {
@@ -59,6 +33,7 @@ struct BrowserState {
     capabilities: String,
     plugins: String,
     event_status: String,
+    controls: controls::ControlState,
 }
 
 impl Default for BrowserState {
@@ -68,8 +43,9 @@ impl Default for BrowserState {
             state: FormState::Idle,
             bridge: BridgeStatus::Disabled,
             capabilities: "Host capabilities: unavailable".to_owned(),
-            plugins: plugin_summary(),
+            plugins: view::plugin_summary(),
             event_status: "Remote events: none".to_owned(),
+            controls: controls::ControlState::default(),
         }
     }
 }
@@ -79,12 +55,6 @@ enum BridgeStatus {
     Disabled,
     Connecting,
     Ready,
-}
-
-struct BridgeConfig {
-    endpoint: String,
-    process_id: u32,
-    principal: [u8; 16],
 }
 
 struct BrowserApplication {
@@ -101,15 +71,15 @@ struct BrowserApplication {
 
 impl BrowserApplication {
     fn mount(document: &WebDocument, generation: Generation) -> io::Result<Self> {
-        let bridge_config = read_bridge_config(document)?;
-        let root = element(document, "metis-app")?;
-        root.set_inner_html(BROWSER_MARKUP);
+        let bridge_config = config::read_bridge_config(document)?;
+        let root = view::element(document, "metis-app")?;
+        root.set_inner_html(controls::BROWSER_MARKUP);
         let state = Rc::new(RefCell::new(BrowserState::default()));
-        render(document, &state.borrow())?;
+        view::render(document, &state.borrow())?;
         let app = Rc::new(RefCell::new(None));
         let task = Rc::new(RefCell::new(None));
 
-        let mut listeners = Vec::with_capacity(5);
+        let mut listeners = Vec::with_capacity(8);
         listeners.push(input_listener(
             document,
             &state,
@@ -138,8 +108,36 @@ impl BrowserApplication {
             "target-dose",
             InputField::Dose,
         )?);
+        listeners.push(control_listener(
+            document,
+            &state,
+            "show-events",
+            "change",
+            ControlField::ShowEvents,
+        )?);
+        listeners.push(control_listener(
+            document,
+            &state,
+            "dose-volume",
+            "change",
+            ControlField::DisplayUnit(DisplayUnit::Volume),
+        )?);
+        listeners.push(control_listener(
+            document,
+            &state,
+            "dose-mass",
+            "change",
+            ControlField::DisplayUnit(DisplayUnit::DrugMass),
+        )?);
+        listeners.push(control_listener(
+            document,
+            &state,
+            "result-scale",
+            "input",
+            ControlField::Scale,
+        )?);
 
-        let form = element(document, "metis-form")?;
+        let form = view::element(document, "metis-form")?;
         let listener_document = document.clone();
         let listener_state = Rc::clone(&state);
         let listener_app = Rc::clone(&app);
@@ -174,8 +172,8 @@ impl BrowserApplication {
         let task_cleanup = Rc::clone(&self.task);
         let listener_document = document.clone();
         state.borrow_mut().bridge = BridgeStatus::Connecting;
-        if let Err(error) = render(document, &state.borrow()) {
-            set_mount_error(document, &error);
+        if let Err(error) = view::render(document, &state.borrow()) {
+            view::set_mount_error(document, &error);
         }
         let task = spawn_local_with_handle(async move {
             let result = async {
@@ -206,7 +204,9 @@ impl BrowserApplication {
                 Ok(frontend) => {
                     let capabilities =
                         match (frontend.capabilities(), frontend.target_capabilities()) {
-                            (Some(catalog), Some(target)) => capability_summary(catalog, target),
+                            (Some(catalog), Some(target)) => {
+                                view::capability_summary(catalog, target)
+                            }
                             _ => "Host capabilities: unavailable".to_owned(),
                         };
                     *app_slot.borrow_mut() = Some(frontend);
@@ -226,21 +226,13 @@ impl BrowserApplication {
                 let _ = task_cleanup.borrow_mut().take();
                 return;
             }
-            if let Err(error) = render(&listener_document, &state.borrow()) {
-                set_mount_error(&listener_document, &error);
+            if let Err(error) = view::render(&listener_document, &state.borrow()) {
+                view::set_mount_error(&listener_document, &error);
             }
             let _ = task_cleanup.borrow_mut().take();
         });
         *self.task.borrow_mut() = Some(task);
     }
-}
-
-#[derive(Clone, Copy)]
-enum InputField {
-    Patient,
-    Weight,
-    Concentration,
-    Dose,
 }
 
 fn input_listener(
@@ -250,7 +242,7 @@ fn input_listener(
     id: &'static str,
     field: InputField,
 ) -> io::Result<WebEventListener> {
-    let input = element(document, id)?;
+    let input = view::element(document, id)?;
     let listener_document = document.clone();
     let listener_state = Rc::clone(state);
     let listener_app = Rc::clone(app);
@@ -259,7 +251,12 @@ fn input_listener(
             return;
         };
         let mut state = listener_state.borrow_mut();
-        update_input(&mut state, field, &value);
+        let BrowserState {
+            inputs,
+            state: form_state,
+            ..
+        } = &mut *state;
+        controls::update_input(inputs, form_state, field, &value);
         if let Some(app) = listener_app.borrow_mut().as_mut() {
             let inputs = &state.inputs;
             app.set_inputs(
@@ -269,41 +266,37 @@ fn input_listener(
                 inputs.target_dose_mcg_kg_min,
             );
         }
-        if let Err(error) = render(&listener_document, &state) {
-            set_mount_error(&listener_document, &error);
+        if let Err(error) = view::render(&listener_document, &state) {
+            view::set_mount_error(&listener_document, &error);
         }
     })
 }
 
-fn update_input(state: &mut BrowserState, field: InputField, value: &str) {
-    match field {
-        InputField::Patient => value.clone_into(&mut state.inputs.patient_id),
-        InputField::Weight => {
-            if let Some(value) = parse_finite(value) {
-                state.inputs.weight_kg = value;
-            } else {
-                state.state = invalid_input("weight");
-                return;
-            }
+fn control_listener(
+    document: &WebDocument,
+    state: &Rc<RefCell<BrowserState>>,
+    id: &'static str,
+    event_name: &'static str,
+    field: ControlField,
+) -> io::Result<WebEventListener> {
+    let input = view::element(document, id)?;
+    let listener_document = document.clone();
+    let listener_state = Rc::clone(state);
+    input.add_event_listener(event_name, move |event| {
+        let target = event.target();
+        let checked = target.as_ref().and_then(WebElement::checked);
+        let value = event.value();
+        let mut state = listener_state.borrow_mut();
+        let BrowserState {
+            controls,
+            state: form_state,
+            ..
+        } = &mut *state;
+        controls::update_control(controls, form_state, field, checked, value.as_deref());
+        if let Err(error) = view::render(&listener_document, &state) {
+            view::set_mount_error(&listener_document, &error);
         }
-        InputField::Concentration => {
-            if let Some(value) = parse_finite(value) {
-                state.inputs.concentration_mg_ml = value;
-            } else {
-                state.state = invalid_input("concentration");
-                return;
-            }
-        }
-        InputField::Dose => {
-            if let Some(value) = parse_finite(value) {
-                state.inputs.target_dose_mcg_kg_min = value;
-            } else {
-                state.state = invalid_input("dose");
-                return;
-            }
-        }
-    }
-    state.state = FormState::Idle;
+    })
 }
 
 fn submit(
@@ -319,8 +312,8 @@ fn submit(
     if task_slot.borrow().is_some() {
         let mut state = state.borrow_mut();
         state.state = FormState::Pending;
-        if let Err(error) = render(document, &state) {
-            set_mount_error(document, &error);
+        if let Err(error) = view::render(document, &state) {
+            view::set_mount_error(document, &error);
         }
         return;
     }
@@ -330,8 +323,8 @@ fn submit(
             ErrorCode::ConnectionClosed,
             "No authorized browser backend bridge is configured",
         ));
-        if let Err(error) = render(document, &state) {
-            set_mount_error(document, &error);
+        if let Err(error) = view::render(document, &state) {
+            view::set_mount_error(document, &error);
         }
         return;
     };
@@ -345,8 +338,8 @@ fn submit(
     {
         let mut state = state.borrow_mut();
         state.state = FormState::Pending;
-        if let Err(error) = render(document, &state) {
-            set_mount_error(document, &error);
+        if let Err(error) = view::render(document, &state) {
+            view::set_mount_error(document, &error);
         }
     }
     let task_cleanup = Rc::clone(task_slot);
@@ -360,7 +353,9 @@ fn submit(
             _ => None,
         };
         let event = match expected {
-            Some(expected) if result.is_ok() => receive_result_event(&mut app, expected).await,
+            Some(expected) if result.is_ok() => {
+                events::receive_result_event(&mut app, expected).await
+            }
             _ => Ok(None),
         };
         let event_error = event.as_ref().err().cloned();
@@ -395,249 +390,13 @@ fn submit(
                 _ => {}
             }
             state.state = outcome;
-            if let Err(error) = render(&result_document, &state) {
-                set_mount_error(&result_document, &error);
+            if let Err(error) = view::render(&result_document, &state) {
+                view::set_mount_error(&result_document, &error);
             }
         }
         let _ = task_cleanup.borrow_mut().take();
     });
     *task_slot.borrow_mut() = Some(task);
-}
-
-async fn receive_result_event(
-    app: &mut AsyncFrontendApp<BrowserWebSocketTransport>,
-    expected: ClinicalCalcResponsePayload,
-) -> metis_core::error::Result<Option<String>> {
-    let event = app.recv_event().await?;
-    let received = event.decode_as::<ClinicalCalcResponsePayload>()?;
-    if event.event_id().get() != expected.audit_sequence_id {
-        return Err(MetisError::protocol(
-            ErrorCode::SequenceMismatch,
-            "Remote event identifier differs from its correlated response",
-        ));
-    }
-    if received != expected {
-        return Err(MetisError::protocol(
-            ErrorCode::SequenceMismatch,
-            "Remote event result differs from its correlated response",
-        ));
-    }
-    Ok(Some(format!(
-        "Remote event: {} #{} (audit={} rate={:.6} ml/hr drug={:.6} mg/hr)",
-        event.name(),
-        event.event_id().get(),
-        received.audit_sequence_id,
-        received.rate_ml_hr,
-        received.drug_rate_mg_hr,
-    )))
-}
-
-fn read_bridge_config(document: &WebDocument) -> io::Result<Option<BridgeConfig>> {
-    let Some(endpoint) = optional_value(document, "metis-websocket-endpoint") else {
-        return Ok(None);
-    };
-    if endpoint.trim().is_empty() {
-        return Ok(None);
-    }
-    if !endpoint.starts_with("ws://") && !endpoint.starts_with("wss://") {
-        return Err(io::Error::new(
-            io::ErrorKind::InvalidInput,
-            "Browser endpoint must use ws:// or wss://",
-        ));
-    }
-    let process_id = optional_value(document, "metis-process-id")
-        .ok_or_else(|| config_error("Browser process identifier is missing"))?
-        .parse::<u32>()
-        .map_err(|_| config_error("Browser process identifier is not a positive integer"))?;
-    if process_id == 0 {
-        return Err(config_error("Browser process identifier must be nonzero"));
-    }
-    let principal = optional_value(document, "metis-principal")
-        .ok_or_else(|| config_error("Browser principal is missing"))?;
-    Ok(Some(BridgeConfig {
-        endpoint,
-        process_id,
-        principal: parse_principal(&principal)?,
-    }))
-}
-
-fn optional_value(document: &WebDocument, id: &str) -> Option<String> {
-    document
-        .get_element_by_id(id)
-        .and_then(|element| element.value())
-}
-
-fn parse_principal(value: &str) -> io::Result<[u8; 16]> {
-    let bytes = value.as_bytes();
-    if bytes.len() != 32 {
-        return Err(config_error("Browser principal must contain 32 hex digits"));
-    }
-    let mut principal = [0; 16];
-    for (index, slot) in principal.iter_mut().enumerate() {
-        let high = hex_digit(bytes[index * 2])?;
-        let low = hex_digit(bytes[index * 2 + 1])?;
-        *slot = (high << 4) | low;
-    }
-    if principal == [0; 16] {
-        return Err(config_error("Browser principal must be nonzero"));
-    }
-    Ok(principal)
-}
-
-fn hex_digit(value: u8) -> io::Result<u8> {
-    match value {
-        b'0'..=b'9' => Ok(value - b'0'),
-        b'a'..=b'f' => Ok(value - b'a' + 10),
-        b'A'..=b'F' => Ok(value - b'A' + 10),
-        _ => Err(config_error("Browser principal contains a non-hex digit")),
-    }
-}
-
-fn config_error(message: &str) -> io::Error {
-    io::Error::new(io::ErrorKind::InvalidInput, message)
-}
-
-fn parse_finite(value: &str) -> Option<f64> {
-    value.parse::<f64>().ok().filter(|value| value.is_finite())
-}
-
-fn invalid_input(field: &str) -> FormState {
-    FormState::Failed(MetisError::clinical(
-        ErrorCode::NumericInstability,
-        format!("Browser field {field} must contain a finite number"),
-    ))
-}
-
-fn render(document: &WebDocument, state: &BrowserState) -> io::Result<()> {
-    let inputs = &state.inputs;
-    set_text(document, "result-patient", &inputs.patient_id)?;
-    set_text(
-        document,
-        "result-weight",
-        &format!("{:.2} kg", inputs.weight_kg),
-    )?;
-    set_text(
-        document,
-        "result-concentration",
-        &format!("{:.2} mg/mL", inputs.concentration_mg_ml),
-    )?;
-    set_text(
-        document,
-        "result-dose",
-        &format!("{:.3} mcg/kg/min", inputs.target_dose_mcg_kg_min),
-    )?;
-    let message = match &state.state {
-        FormState::Idle => match state.bridge {
-            BridgeStatus::Disabled => "Controls active; no authorized backend bridge configured",
-            BridgeStatus::Connecting => "Connecting to authorized backend",
-            BridgeStatus::Ready => "Authorized backend session ready",
-        }
-        .to_owned(),
-        FormState::Failed(error) => format!("Input rejected [{}]", error.code.as_str()),
-        FormState::Disconnected(error) => {
-            format!("Backend unavailable [{}]", error.code.as_str())
-        }
-        FormState::Pending => "Request in progress".to_owned(),
-        FormState::Success(_) => "Backend result received".to_owned(),
-        FormState::Rejected(error) => {
-            format!("Backend rejected request [0x{:04X}]", error.error_code)
-        }
-        FormState::SessionFailed(error) => match error {
-            HandshakeError::Local(error) => {
-                format!("Backend session failed [{}]", error.code.as_str())
-            }
-            HandshakeError::Remote(error) => {
-                format!("Backend session rejected [0x{:04X}]", error.error_code)
-            }
-            _ => "Backend session failed".to_owned(),
-        },
-        _ => "Unsupported form state".to_owned(),
-    };
-    set_text(document, "metis-status", &message)?;
-    set_text(document, "metis-capabilities", &state.capabilities)?;
-    set_text(document, "metis-plugins", &state.plugins)?;
-    set_text(document, "metis-events", &state.event_status)?;
-    set_text(document, "result-state", &message)
-}
-
-fn capability_summary(
-    catalog: &CapabilityCatalogPayload,
-    target: &TargetCapabilityPayload,
-) -> String {
-    let command_names = catalog
-        .commands()
-        .iter()
-        .filter_map(|command| {
-            command
-                .descriptor()
-                .map(metis_core::CommandDescriptor::name)
-        })
-        .collect::<Vec<_>>();
-    let host_surfaces = target
-        .capabilities()
-        .iter()
-        .map(|capability| capability.name())
-        .collect::<Vec<_>>();
-    let browser = TargetCapabilityPayload::browser_application();
-    let browser_surfaces = browser
-        .capabilities()
-        .iter()
-        .map(|capability| capability.name())
-        .collect::<Vec<_>>();
-    format!(
-        "Host capabilities: target={} surfaces=[{}] commands=[{}]; browser target={} surfaces=[{}]",
-        target.platform().name(),
-        host_surfaces.join(", "),
-        command_names.join(", "),
-        browser.platform().name(),
-        browser_surfaces.join(", "),
-    )
-}
-
-static WORKBENCH_EVENTS: [PluginOperation; 1] = [PluginOperation::new(
-    "form.state",
-    CapabilityScope::UI_RENDER,
-)];
-
-struct WorkbenchPlugin;
-
-impl Plugin for WorkbenchPlugin {
-    const DESCRIPTOR: PluginDescriptor =
-        PluginDescriptor::new("workbench", 1, &[], &WORKBENCH_EVENTS);
-}
-
-fn plugin_summary() -> String {
-    let mut registry = PluginRegistry::<MAX_PLUGINS>::new()
-        .expect("invariant: the browser plugin registry has a positive bounded capacity");
-    registry
-        .register::<WorkbenchPlugin>()
-        .expect("invariant: the static browser plugin manifest is valid");
-    let entries = registry
-        .plugins()
-        .iter()
-        .map(|plugin| format!("{} v{}", plugin.name(), plugin.version()))
-        .collect::<Vec<_>>();
-    format!("Registered frontend extensions: {}", entries.join(", "))
-}
-
-fn set_text(document: &WebDocument, id: &str, text: &str) -> io::Result<()> {
-    element(document, id)?.set_text(text);
-    Ok(())
-}
-
-fn element(document: &WebDocument, id: &str) -> io::Result<WebElement> {
-    document.get_element_by_id(id).ok_or_else(|| {
-        io::Error::new(
-            io::ErrorKind::NotFound,
-            format!("Metis DOM element #{id} is absent"),
-        )
-    })
-}
-
-fn set_mount_error(document: &WebDocument, error: &io::Error) {
-    if let Ok(status) = element(document, "metis-status") {
-        status.set_text(&format!("Browser host error: {error}"));
-    }
 }
 
 thread_local! {
@@ -672,7 +431,7 @@ pub extern "C" fn metis_start() {
         Err(error) => {
             APPLICATION.with_borrow_mut(|slot| *slot = None);
             if let Ok(document) = WebDocument::current() {
-                set_mount_error(&document, &error);
+                view::set_mount_error(&document, &error);
             }
             return;
         }
@@ -684,7 +443,7 @@ pub extern "C" fn metis_start() {
         Ok(application) => APPLICATION.with_borrow_mut(|slot| *slot = Some(application)),
         Err(error) => {
             if let Ok(document) = WebDocument::current() {
-                set_mount_error(&document, &error);
+                view::set_mount_error(&document, &error);
             }
         }
     }
@@ -704,13 +463,13 @@ pub extern "C" fn metis_stop() {
     if let Err(error) = next_generation() {
         APPLICATION.with_borrow_mut(|slot| *slot = None);
         if let Ok(document) = WebDocument::current() {
-            set_mount_error(&document, &error);
+            view::set_mount_error(&document, &error);
         }
         return;
     }
     APPLICATION.with_borrow_mut(|slot| *slot = None);
     if let Ok(document) = WebDocument::current()
-        && let Ok(root) = element(&document, "metis-app")
+        && let Ok(root) = view::element(&document, "metis-app")
     {
         root.set_inner_html("<p>Metis browser host stopped.</p>");
     }

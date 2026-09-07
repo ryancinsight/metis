@@ -49,6 +49,11 @@ validates the browser Origin before `101 Switching Protocols`, runs the framed
 bridge in the browser. Post-drop allocation, TLS, cross-engine and desktop
 host evidence remain open.
 
+Revision 2026-09-07: Moirai `ddbd75f61914bba195c71cb671bf6d8bf4c14eb6` adds the
+checked-state DOM seam. Metis now demonstrates Rust-owned checkbox, radio and
+range controls while select/menu/dialog, pointer capture, IME, accessibility
+technology and native-window input remain open.
+
 ## Decision and scope
 
 Use Tauri as the application-framework migration reference and egui/GPUI/Iced
@@ -103,12 +108,12 @@ Each row names its closing items; acceptance belongs in the
 
 | Capability | egui ecosystem | GPUI | Tauri | Metis state and closing items |
 | --- | --- | --- | --- | --- |
-| Application state and controls | Immediate-mode widgets and responses [E1] | Entities, views, actions [G1] | Frontend framework supplies widgets/state [T1] | One form; no control dispatch or general component lifecycle. [STATE](../../backlog.md#METIS-STATE-001), [INPUT](../../backlog.md#METIS-INPUT-001). |
+| Application state and controls | Immediate-mode widgets and responses [E1] | Entities, views, actions [G1] | Frontend framework supplies widgets/state [T1] | One form with Rust-owned checkbox, radio and range dispatch; select/menu/dialog and general component lifecycle remain open. [STATE](../../backlog.md#METIS-STATE-001), [INPUT](../../backlog.md#METIS-INPUT-001). |
 | Layout, themes, resizing | Panels, scrolling, logical-point sizing [E1] | Styled element layout; not browser CSS [G1] | Host HTML/CSS and DOM [T1] | Sequential layout; several accepted styles do nothing. [LAYOUT](../../backlog.md#METIS-LAYOUT-001). |
 | Text editing and IME | Text editing plus integration IME contract [E4] | Selection/composition input example [G4] | Browser text/IME, subject to host integration | Bitmap Latin subset; no composition/selection. [TEXT](../../backlog.md#METIS-TEXT-001). |
 | Accessibility | AccessKit integration; custom widget semantics required [E5] | AccessKit roles/identity/actions in current source [G3] | Semantic frontend plus WebView/OS accessibility | No semantic tree/adapter. [A11Y](../../backlog.md#METIS-A11Y-001). |
-| Pointer, keyboard, touch, focus | Backend input, sensitivity and viewports [E1] | Platform events and actions [G1] | Web frontend and native window events [T1] | Application-fed queue with no event consumer/OS pump. [INPUT](../../backlog.md#METIS-INPUT-001), desktop items. |
-| Browser/WASM execution | eframe canvas host with WASM bindings [E2] | Current `gpui_web`: canvas, WebGPU/WebGL2 [G2] | Web frontend can target browser; native APIs need a host [T1] | `metis-web` loads generated WASM into an HTML5/CSS DOM host and connects through a bounded Moirai WebSocket service; target-surface discovery, lifecycle generation guards and loopback success/rejection/recovery pass, while cross-engine runs remain. [BROWSER](../../backlog.md#METIS-BROWSER-001), [ASYNC](../../backlog.md#METIS-ASYNC-001). |
+| Pointer, keyboard, touch, focus | Backend input, sensitivity and viewports [E1] | Platform events and actions [G1] | Web frontend and native window events [T1] | Browser text, checkbox, radio and range controls use semantic keyboard/pointer targets; native event production, touch, capture and OS pump remain open. [INPUT](../../backlog.md#METIS-INPUT-001), desktop items. |
+| Browser/WASM execution | eframe canvas host with WASM bindings [E2] | Current `gpui_web`: canvas, WebGPU/WebGL2 [G2] | Web frontend can target browser; native APIs need a host [T1] | `metis-web` loads generated WASM into an HTML5/CSS DOM host and connects through a bounded Moirai WebSocket service; target-surface discovery, lifecycle generation guards, semantic checkbox/radio/range controls and loopback success/rejection/recovery pass, while cross-engine runs remain. [BROWSER](../../backlog.md#METIS-BROWSER-001), [ASYNC](../../backlog.md#METIS-ASYNC-001). |
 | Existing HTML5/CSS frontend reuse | Canvas UI is not DOM compatibility [E2] | Canvas UI is not DOM compatibility [G2] | WebView presentation is the core model [T1] | Custom markup does not preserve DOM/CSS applications. [BROWSER](../../backlog.md#METIS-BROWSER-001), [MIGRATION](../../backlog.md#METIS-MIGRATION-001). |
 | Native windows and platform lifecycle | eframe/backend-dependent viewports [E1] [E2] | macOS, Windows, Wayland/X11 platform code [G1] | Desktop system WebViews [T1] | Headless Windows-contained process workflow. [WINDOWS](../../backlog.md#METIS-DESKTOP-001), [MACOS](../../backlog.md#METIS-MACOS-001), [LINUX](../../backlog.md#METIS-LINUX-001). |
 | Async commands, events, cancellation | Application/host concern | Executor and action facilities [G1] | Commands, events and channels [T2] [T3] | Async client/server, bounded correlation, request cancellation, browser task handle and pre-response Origin validation exist. A versioned capability catalog, target-surface descriptor, bounded local event hub, versioned remote event envelope, typed plugin invocation and host-local plugin registry now cover command discovery and delivery metadata; lifecycle generation guards prevent stale browser completions, while delayed-response injection and cross-engine service traces remain. [COMMANDS](../../backlog.md#METIS-COMMANDS-001), [BROWSER](../../backlog.md#METIS-BROWSER-001). |
@@ -164,8 +169,10 @@ The [event surface](../../crates/metis-platform/src/event.rs) has no native even
 producer; [transport](../../crates/metis-ipc/src/transport.rs) blocks on receipt.
 Moirai's merged `be87d009cd0e877beef719b47bdcbadc45659069` browser PAL and HTTP
 service own DOM/event callbacks, bounded WebSocket receipt and pre-response
-upgrade validation. The Metis browser host uses that provider, including
-cancellable local tasks, and the live service composes the trusted host policy.
+upgrade validation. The follow-up provider revision
+`ddbd75f61914bba195c71cb671bf6d8bf4c14eb6` adds checked DOM state. The Metis
+browser host uses those providers, including cancellable local tasks, and the
+live service composes the trusted host policy.
 The native event producer, cross-engine runtime matrix and OS host remain
 closure requirements, not reasons to add another runtime. Consumer checks are
 against the pushed provider revision, not local provider edits.
