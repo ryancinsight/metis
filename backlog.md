@@ -160,11 +160,9 @@ an owner. “Unsupported” cannot replace delivery of a required mobile/native 
 
 <a id="METIS-AUTHORITY-001"></a>
 ## METIS-AUTHORITY-001 — Host authority and origin policy [arch] [minor]
-- Status: in-progress; priority: P0; owner: Metis broker + Moirai host mechanisms; integrator: root; last-update: 2026-09-07; branch: `feat/authority-policy`; stage: typed origin/window/session binding; risk: hostile frontend; dependencies: METIS-WEB-001
-- Scope: deny-by-default command grants bound to session/origin/window, CSP/navigation/asset policy, target capability discovery and explicit unsupported errors.
-- Acceptance: spoofed origin/window, navigation, replay, injection and resource-exhaustion probes cannot elevate authority; backend keys absent from WASM/assets; each grant has positive and denial cases.
-- Demonstration: [V08](docs/VERIFICATION.md#V08); screenshots pair visible denial with backend/probe evidence, never substitute for it. OS enforcement lands per desktop item.
-- First increment: add a validated host-origin/window/session contract, bind backend capability verification to that contract, and ship a strict browser CSP/navigation policy. `HostPolicy` and host-bound HMAC checks now pass their positive, strict-IPv6 and substitution tests; the HTML policy is checked against the same canonical source, while live authenticated service and OS permission probes remain separate acceptance slices.
+- Status: done; priority: P0; owner: Metis broker + Moirai host mechanisms; integrator: root; last-update: 2026-09-07.
+- Commit: `1517ce5`; ADR: [0011](docs/adr/0011-host-authority-policy.md); verification: [VERIFICATION](docs/VERIFICATION.md#host-authority-and-asset-evidence--2026-09-07).
+- Outcome: canonical origin/window/session binding, host-bound HMAC verification, strict CSP/navigation asset policy, and positive/denial coverage pass the full standalone gate; live service and OS enforcement remain separate items.
 
 <a id="METIS-COMMANDS-001"></a>
 ## METIS-COMMANDS-001 — Typed commands and event streams [arch] [minor]
