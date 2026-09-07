@@ -57,7 +57,7 @@ pub(crate) const BROWSER_MARKUP: &str = r#"
   <h2 id="pointer-heading">Pointer capture</h2>
   <p id="pointer-status" role="status">Pointer capture: idle</p>
   <div id="pointer-surface" role="group" tabindex="0" aria-label="Pointer capture surface">
-    Press or drag this surface to exercise Rust-owned pointer capture.
+    Press or drag this surface to exercise Rust-owned pointer capture and metadata.
   </div>
 </section>
 <section class="metis-result" aria-labelledby="result-heading">
