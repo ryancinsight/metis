@@ -71,6 +71,12 @@ impl MessageType {
             _ => None,
         }
     }
+
+    /// Returns whether this identifier selects an unsolicited event.
+    #[must_use]
+    pub const fn is_event(self) -> bool {
+        matches!(self, Self::TelemetryStreamEvent)
+    }
 }
 /// Decoded fixed-size frame header.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]

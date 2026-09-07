@@ -15,7 +15,7 @@ pub use host::{
     HostContext, HostOrigin, HostPolicy, HostSessionId, VerifiedHostCapability, WindowId,
 };
 pub use protocol::{
-    CapabilityCatalogPayload, CommandDescriptor, FrameHeader, HEADER_SIZE, MAX_COMMANDS,
-    MAX_PAYLOAD_SIZE, MessageType, PROTOCOL_MAGIC, PROTOCOL_VERSION, SUPPORTED_COMMANDS,
-    build_frame,
+    CapabilityCatalogPayload, CommandDescriptor, EventCodec, EventId, FrameHeader, HEADER_SIZE,
+    MAX_COMMANDS, MAX_EVENT_NAME_BYTES, MAX_PAYLOAD_SIZE, MessageType, PROTOCOL_MAGIC,
+    PROTOCOL_VERSION, RemoteEventPayload, SUPPORTED_COMMANDS, build_frame,
 };

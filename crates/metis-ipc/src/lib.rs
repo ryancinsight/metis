@@ -15,7 +15,7 @@ pub mod transport;
 #[cfg(target_arch = "wasm32")]
 mod browser;
 
-pub use async_client::{AsyncIpcClient, MAX_PENDING_REQUESTS, RequestId};
+pub use async_client::{AsyncIpcClient, MAX_PENDING_REQUESTS, MAX_QUEUED_EVENTS, RequestId};
 #[cfg(not(target_arch = "wasm32"))]
 pub use async_server::AsyncIpcServer;
 pub use client::{CapabilityError, HandshakeError, IpcClient};

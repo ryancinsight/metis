@@ -96,7 +96,43 @@ Local host events use `metis_ipc::EventHub<E, CAPACITY>`. Each subscription has
 its own bounded queue; `publish` returns `ERR_QUEUE_FULL` instead of blocking,
 and `unsubscribe` removes delivery before a later publication. Callers use
 `Subscription::recv_timeout` with a finite deadline. Remote event wire types
-and plugin registration remain open in the command and services backlog items.
+are versioned, bounded, and rejected when the envelope version differs from the
+negotiated contract. Native callers can send a typed unsolicited event
+through the same frame boundary:
+
+```rust
+#[derive(Debug, PartialEq, Eq)]
+struct Status(u16);
+
+impl metis_core::EventCodec for Status {
+    const NAME: &'static str = "host.status";
+
+    fn encode(&self) -> metis_core::Result<Vec<u8>> {
+        Ok(self.0.to_be_bytes().to_vec())
+    }
+
+    fn decode(bytes: &[u8]) -> metis_core::Result<Self> {
+        let value = <[u8; 2]>::try_from(bytes)
+            .map(u16::from_be_bytes)
+            .map_err(|_| metis_core::MetisError::protocol(
+                metis_core::ErrorCode::MalformedPayload,
+                "Status event body must contain one big-endian u16",
+            ))?;
+        Ok(Self(value))
+    }
+}
+
+let event = metis_core::RemoteEventPayload::from_event(1, &Status(3))?;
+server.send_event(&event)?;
+let event = client.recv_event()?;
+assert_eq!(event.decode_as::<Status>()?, Status(3));
+```
+
+`AsyncIpcClient::recv_response_for` retains unsolicited events in a bounded
+queue while it waits for its request. Browser code can call `poll_event` after
+the receive owner has pumped a response. A live browser unsolicited-event
+capture and plugin registration remain open in the command and services
+backlog items.
 
 The page's **Stop host** control calls the generated `metis_stop` export. The
 Rust host cancels the active browser task, drops its listener guards and

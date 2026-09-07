@@ -75,12 +75,32 @@ implementation.
 
 ## Limits
 
-This increment catalogs the closed protocol set and supplies the bounded local
-event primitive. It does not claim a complete Tauri plugin registry, remote
-event serialization, native OS capability discovery, or cross-engine browser
+This increment catalogs the closed protocol set, supplies bounded local event
+delivery and serializes unsolicited remote events. It does not claim a complete
+Tauri plugin registry, native OS capability discovery, or cross-engine browser
 coverage. Those remain owned by the command, desktop, services and browser
 items on the board.
 
 Because `MessageType` is a public enum, the extensibility marker makes this a
 major API change for the next published release. Package versions stay at
 `0.1.0` while release authority has not assigned that release.
+
+## Revision 2026-09-07
+
+The first command increment left remote event serialization open. The contract
+now includes `RemoteEventPayload`, which carries the protocol version, a nonzero
+event identifier, a bounded UTF-8 name and bounded body bytes. `EventCodec`
+associates a stable name with a typed body; `decode_as` rejects a name mismatch
+before invoking the body decoder. Synchronous and asynchronous clients verify
+that the frame sequence echoes the envelope identifier, the envelope version
+matches the negotiated wire contract, and identifiers increase strictly. The
+synchronous and asynchronous servers expose an explicit
+send path whose event sequence is consumed before transmission. The asynchronous
+client's response pump retains a bounded event queue and keeps correlated
+responses available to their request owners.
+
+The added verification covers exact envelope round-trips, malformed bounds,
+typed name matching, synchronous send/receive, event/response interleaving,
+identifier/version mismatch and replay. A live browser trace still exercises the
+capability catalog; a native unsolicited-event service trace and a plugin
+registry remain open.

@@ -4,7 +4,7 @@ use crate::frame::read_frame;
 use crate::server::{FailureContext, IpcHandler, dispatch_request};
 use crate::transport::check_wire_size;
 use metis_core::error::{ErrorCode, MetisError, Result};
-use metis_core::protocol::build_frame;
+use metis_core::protocol::{MessageType, RemoteEventPayload, build_frame};
 use moirai_async::io::{AsyncRead, AsyncWrite};
 use moirai_http::WebSocketStream;
 use std::io;
@@ -17,6 +17,7 @@ use std::io;
 pub struct AsyncIpcServer<S> {
     stream: WebSocketStream<S>,
     last_sequence: u64,
+    last_event_id: Option<u64>,
 }
 
 impl<S> AsyncIpcServer<S> {
@@ -26,6 +27,7 @@ impl<S> AsyncIpcServer<S> {
         Self {
             stream,
             last_sequence: 0,
+            last_event_id: None,
         }
     }
 }
@@ -95,6 +97,35 @@ impl<S: AsyncRead + AsyncWrite + Unpin> AsyncIpcServer<S> {
     pub async fn run<H: IpcHandler>(&mut self, handler: &mut H) -> Result<()> {
         while self.step(handler).await? {}
         Ok(())
+    }
+
+    /// Sends one unsolicited event with a strictly increasing identifier.
+    ///
+    /// The event uses the same bounded binary frame as pipe transports. Its
+    /// identifier is consumed before the asynchronous write so an uncertain
+    /// transmission cannot be retried as the same event.
+    ///
+    /// # Errors
+    /// Returns payload, replay, frame-size, or WebSocket transport failures.
+    pub async fn send_event(&mut self, event: &RemoteEventPayload) -> Result<()> {
+        let event_id = event.event_id().get();
+        if self.last_event_id.is_some_and(|last| event_id <= last) {
+            return Err(MetisError::protocol(
+                ErrorCode::ReplayDetected,
+                "Remote event identifiers must increase strictly",
+            ));
+        }
+        let wire = build_frame(
+            MessageType::TelemetryStreamEvent,
+            event_id,
+            &event.encode()?,
+        )?;
+        check_wire_size(&wire)?;
+        self.last_event_id = Some(event_id);
+        self.stream
+            .send_binary(&wire)
+            .await
+            .map_err(|error| websocket_error(&error))
     }
 }
 

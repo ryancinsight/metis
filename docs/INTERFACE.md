@@ -26,11 +26,15 @@ are errors. Sender-side encoding applies the same size limits as decoding.
 | Calculation request | 0x0010 | token; weight/concentration/dose IEEE binary64; u16 UTF-8 identifier byte length; identifier |
 | Calculation response | 0x0011 | audit sequence u64; rate/drug-rate binary64; pediatric byte 0 or 1; MAC [u8;32] |
 | Error response | 0x00ff | error code u16; message byte count u16; UTF-8 message |
+| Telemetry event | 0x0030 | version u16; event id u64; name byte count u16; body byte count u32; UTF-8 name; bounded body |
 
-Audit query (0x0020/0x0021) and telemetry (0x0030) are reserved identifiers; the
-backend does not implement these operations and rejects unsupported requests
-with `ERR_UNEXPECTED_MESSAGE_TYPE`. A capability catalog is valid only after
-handshake and lists the request identifiers the host currently accepts.
+Audit query (0x0020/0x0021) remains reserved and the backend rejects it as a
+request with `ERR_UNEXPECTED_MESSAGE_TYPE`. Telemetry (0x0030) is an unsolicited
+event sent by an authenticated host. Its envelope rejects zero or replayed
+identifiers, empty or oversized names, invalid UTF-8, truncation and trailing
+bytes. `EventCodec` associates a stable name with a typed body without dynamic
+dispatch. A capability catalog is valid only after handshake and lists the
+request identifiers the host currently accepts.
 
 A token is 84 bytes: id u64, principal [u8;16], scope u32, issuance u64,
 expiration u64, issuance discriminator u64, HMAC [u8;32]. Generic token
