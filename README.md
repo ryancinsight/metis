@@ -16,10 +16,12 @@ claims. Migrating an existing JavaScript frontend does not automatically remove
 its JavaScript, and Tauri API/plugin compatibility remains to be implemented.
 
 The current implementation provides binary IPC, session capabilities, backend
-calculation and audit ownership, a software rasterizer and a headless form
-workflow. This renderer's bounded markup subset is not the intended limit of web
-support. Browser execution and a desktop WebView host are not implemented. It
-does not yet provide Tauri feature parity, native desktop windows,
+calculation and audit ownership, a software rasterizer, a headless form workflow
+and a runnable HTML5/CSS browser workbench. The browser workbench keeps state and
+events in Rust/WASM while Moirai owns browser handles; its authenticated backend
+bridge is still open. This renderer's bounded markup subset is not the intended
+limit of web support. A desktop WebView host is not implemented. Metis does not
+yet provide Tauri feature parity, native desktop windows,
 an OS privilege sandbox, durable audit storage or regulatory certification.
 The infusion arithmetic is a synthetic engineering example; its configurable
 limits are not treatment guidance.
@@ -57,10 +59,11 @@ console application; packaging does not supply the missing desktop GUI host.
 
 ## Atlas ownership
 
-Moirai owns worker scheduling and process lifecycle. Metis consumes its executor
-and transport APIs; missing process-pipe/deadline capabilities are implemented
-upstream in Moirai. Iris supplies the `RenderBackend` contract; Metis implements
-its bounded software renderer against that contract. The `metis-frontend` library
+Moirai owns worker scheduling, process lifecycle and browser DOM/event handles.
+Metis consumes its executor, transport and WASM PAL APIs; missing shared
+capabilities are implemented upstream in Moirai. Iris supplies the
+`RenderBackend` contract; Metis implements its bounded software renderer against
+that contract. The `metis-frontend` library
 dependency closure excludes `metis-backend`; the application entry composes both
 libraries. A shared executable image does not remove backend code from the child
 or establish OS permission restrictions. See [application entry design](docs/adr/0006-application-entry.md).
@@ -71,8 +74,9 @@ recorded in [ADR 0005](docs/adr/0005-application-distribution.md). Atlas provide
 have transitive dependencies; the gate records the actual graph instead of describing it as
 dependency-free. The Atlas development overlay resolves first-party code to local
 trees. Standalone builds depend on the corresponding pushed provider revisions.
-Moirai is pinned to the pushed process-support revision until its 0.6 API reaches
-the default branch; the removal trigger is tracked in
+Moirai is pinned to current default-branch revision `00fb0ae`, which includes
+the merged process and browser/API surfaces. Consumer verification and any
+future provider advance remain tracked in
 [the board](backlog.md#METIS-PROVIDER-001).
 
 ## Design and evidence

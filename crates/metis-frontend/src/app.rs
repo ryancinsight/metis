@@ -44,6 +44,24 @@ pub struct FormInputs {
     pub target_dose_mcg_kg_min: f64,
 }
 
+impl FormInputs {
+    /// Creates a captured input set owned by a frontend host.
+    #[must_use]
+    pub fn new(
+        patient_id: impl Into<String>,
+        weight_kg: f64,
+        concentration_mg_ml: f64,
+        target_dose_mcg_kg_min: f64,
+    ) -> Self {
+        Self {
+            patient_id: patient_id.into(),
+            weight_kg,
+            concentration_mg_ml,
+            target_dose_mcg_kg_min,
+        }
+    }
+}
+
 /// Owns inputs and presentation so callers cannot bypass result invalidation.
 pub struct FrontendApp<T> {
     pub(crate) client: Option<IpcClient<T>>,
@@ -62,12 +80,7 @@ impl<T: IpcTransport> FrontendApp<T> {
             client: Some(IpcClient::new(transport)),
             doc: parse_markup(CLINICAL_SCREEN_XML)?,
             framebuffer: Framebuffer::new(width, height)?,
-            inputs: FormInputs {
-                patient_id: "PT-9042-ALPHA".into(),
-                weight_kg: 72.5,
-                concentration_mg_ml: 4.0,
-                target_dose_mcg_kg_min: 0.5,
-            },
+            inputs: FormInputs::new("PT-9042-ALPHA", 72.5, 4.0, 0.5),
             state: FormState::Idle,
         };
         app.render()?;

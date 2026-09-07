@@ -42,13 +42,13 @@ an owner. “Unsupported” cannot replace delivery of a required mobile/native 
 
 <a id="METIS-BROWSER-001"></a>
 ## METIS-BROWSER-001 — Browser form and command lifecycle [arch] [minor]
-- Status: todo; priority: P1; owner: Metis frontend/host; dependencies: METIS-STATE-001, METIS-ASYNC-001, METIS-AUTHORITY-001; risk: browser/native trust boundary
+- Status: in-progress; priority: P1; owner: Metis frontend/host; integrator: root; last-update: 2026-09-06; branch: `feat/browser-host`; dependencies: METIS-STATE-001, METIS-ASYNC-001, METIS-AUTHORITY-001; risk: browser/native trust boundary
 - Scope: actual HTML5/CSS DOM form, Rust/WASM state, asset loading and bounded asynchronous requests; portable UI never imports native authority.
 - Acceptance: Chromium/Firefox/WebKit runtime jobs load WASM and respond to two input changes; authorized service/desktop bridge verifies results; explicit unsupported native-only operations; zero pending requests/listeners after cancel/close.
 - Demonstration: [V02](docs/VERIFICATION.md#V02), actual browser captures and copyable build/run commands in the manual. A browser-only local control demo can land before the privileged bridge.
 - Constraint: no native secrets or authority in downloaded WASM; private-pipe possession cannot authenticate browser requests. Desktop bridge or service boundary must enforce origin/session authorization.
-- Evidence: existing `IpcTransport` blocks on receipt; Moirai's current `WebReactor::poll_events` returns no events. Neither establishes browser support.
-- Decision: [ADR 0002](docs/adr/0002-web-application-contract.md).
+- Evidence: `metis-web` now mounts a real DOM form through Moirai's owned handles. A local trace changed weight and dose, rejected a non-numeric edit with `ERR_NUMERIC_INSTABILITY`, and surfaced `ERR_CONNECTION_CLOSED` without a backend. Live service, origin/session, cancellation and cross-engine evidence remain open.
+- Decision: [ADR 0002](docs/adr/0002-web-application-contract.md), [ADR 0008](docs/adr/0008-browser-host-boundary.md).
 
 <a id="METIS-SEC-001"></a>
 ## METIS-SEC-001 — Backend authority [arch] [patch]
@@ -104,12 +104,12 @@ an owner. “Unsupported” cannot replace delivery of a required mobile/native 
 
 <a id="METIS-PROVIDER-001"></a>
 ## METIS-PROVIDER-001 — Atlas provider adoption [arch] [patch]
-- Status: review; integrator: root; last-update: 2026-09-05
+- Status: review; integrator: root; last-update: 2026-09-06
 - Scope: Moirai scheduler/process transport and Iris rendering contract; enumerate provider transitive graph.
 - Acceptance: no parallel Metis runtime; local and standalone provider sources coherent; contract tests pass.
-- Quarantine: use pushed Moirai `0514f11` with reviewed process support until the 0.6 API lands on main. A later wrong-repository dependency reference is corrected upstream in `69763f7`; remove the snapshot pin after main exposes the API and the consumer gate passes.
-- Dependencies: upstream process API and Atlas overlay mixed-version correction.
-- Demonstration: [V01](docs/VERIFICATION.md#V01) real provider-backed process workflow; documented quarantine removed only after consumer verification.
+- Provider revision: Moirai `00fb0ae` is on its default branch and supplies the contained process, browser DOM/event and transport APIs consumed here. Metis's standalone lock pins that revision; the previous `0514f11` quarantine is removed.
+- Dependencies: Atlas overlay mixed-version correction and consumer verification on the merged provider.
+- Demonstration: [V01](docs/VERIFICATION.md#V01) real provider-backed process workflow and [V02](docs/VERIFICATION.md#V02) browser DOM trace.
 
 <a id="METIS-CRYPTO-001"></a>
 ## METIS-CRYPTO-001 — Shared authentication primitives [arch] [patch]
@@ -154,9 +154,9 @@ an owner. “Unsupported” cannot replace delivery of a required mobile/native 
 ## METIS-ASYNC-001 — Bounded browser request lifecycle [arch] [minor]
 - Status: in-progress; priority: P0; owner: Moirai async/transport + Metis client; integrator: root; last-update: 2026-09-06; stage: bounded correlation; risk: hangs/leaks; dependencies: METIS-WEB-001
 - Scope: event-driven receive/wakeup, task/request cancellation, deadlines and owned callback teardown; complete the upstream reactor gap and remove blocking browser paths.
-- Entry evidence: Moirai `95ff7ae` owns browser callbacks, bounded WebSocket state and deadlines over merged Mnemosyne backend `2eb49c1`; Metis uses one pinned Moirai source for native and WASM dependencies. Native async IPC tests pass 33/33 and the WASM IPC check/Clippy pass.
-- First increments: add the Metis async transport/client seam, then route ordered and out-of-order responses through one bounded receive pump; published provider and consumer gates remain separate.
-- Acceptance: native correlation and queue bounds now pass; browser execution, replay/oversize over a live WebSocket, cancellation and shutdown callback evidence remain required.
+- Entry evidence: Moirai `00fb0ae` owns contained process lifecycles, browser callbacks, DOM handles, bounded WebSocket state and deadlines over its merged Mnemosyne backend; Metis uses one pinned Moirai source for native and WASM dependencies. Native async IPC tests pass 33/33, the WASM IPC check/Clippy pass, and `metis-web` builds for WASM.
+- First increments: add the Metis async transport/client seam, then route ordered and out-of-order responses through one bounded receive pump; the browser host now consumes the seam but remains disconnected until authority/session plumbing exists.
+- Acceptance: native correlation and queue bounds now pass; browser execution over a live WebSocket, replay/oversize, cancellation, late-response rejection and shutdown callback evidence remain required.
 - Demonstration: [V02](docs/VERIFICATION.md#V02) pending/cancel/disconnected states; [V12](docs/VERIFICATION.md#V12) repeat lifecycle/resource evidence.
 
 <a id="METIS-AUTHORITY-001"></a>

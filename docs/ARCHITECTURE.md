@@ -11,9 +11,14 @@ must be asynchronous; the native blocking `IpcTransport` cannot run on the
 browser event thread. `metis-ipc` now supplies `AsyncIpcTransport`,
 `AsyncIpcClient` and a bounded WASM WebSocket adapter backed by Moirai's browser
 reactor and timer. Shared provider capabilities belong in Moirai and Iris.
+`metis-web` is the WASM host crate: it owns application state and rendering for
+an HTML5 document, while Moirai owns `WebDocument`, `WebElement` and event
+listener lifetimes.
 
-The following sections describe the current native foundation, not a completed
-web host. No browser renderer or desktop WebView host is implemented yet.
+The following sections describe the current native foundation and the first
+browser host. The browser workbench mounts a real DOM form and reports a typed
+disconnection when no authenticated backend bridge is configured. A live browser
+service, desktop WebView host and OS permission boundary remain unimplemented.
 
 The shared `metis-core` crate owns wire types, error codes and capability claim
 encoding. `metis-ipc` owns framing, canonical payload interpretation, transport

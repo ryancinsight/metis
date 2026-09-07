@@ -249,9 +249,11 @@ def main():
             raise SystemExit("Install pinned cargo-nextest 0.9.143 before running this gate")
         cargo("format", ["fmt", "--all", "--check"], resolve=False)
         execute("visual-tests", [sys.executable, "-m", "unittest", "discover", "-s", "scripts/tests"], seconds=60, cwd=ROOT)
-        # Library portability does not imply a working browser host or transport.
+        # Compile the browser host in the same locked gate; runtime evidence is
+        # collected by scripts/browser.py and the manual browser trace.
         cargo("wasm-libraries", ["build", "--lib", "--target", "wasm32-unknown-unknown",
-                                 "-p", "metis-core", "-p", "metis-platform", "-p", "metis-ui-lang"])
+                                 "-p", "metis-core", "-p", "metis-platform", "-p", "metis-ui-lang",
+                                 "-p", "metis-web"])
         cargo("clippy", ["clippy", "--workspace", "--all-targets"], tail=["--", "-D", "warnings"])
         cargo("build", ["build", "--workspace", "--bins", "--examples"])
         cargo("tests", ["nextest", "run", "--workspace", "--profile", "ci"])

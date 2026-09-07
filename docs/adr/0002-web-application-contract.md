@@ -12,6 +12,12 @@ bounded asynchronous browser transport slice. [ADR 0003](0003-framework-conforma
 capability inventory and per-gap demonstration/verification closure. It retains
 this web/native trust boundary and does not claim API parity from toolkit breadth.
 
+Revision 2026-09-06: [ADR 0008](0008-browser-host-boundary.md) records the
+first runnable `metis-web` HTML5/CSS host. Moirai's owned DOM handles and
+listener teardown drive a real Rust/WASM form at a local HTTP origin. The host
+reports a typed disconnection when no authenticated service is configured; the
+live bridge, origin/session policy and cross-engine evidence remain open.
+
 ## Intent and authority
 
 The user clarifies that Metis must support WASM and web rendering, with the goal
@@ -41,11 +47,11 @@ the existing synchronous pipe receiver on its main event thread.
 The initial consumer seam is `metis_ipc::AsyncIpcTransport` and
 `AsyncIpcClient`. The WASM-only `BrowserWebSocketTransport` owns a bounded
 Moirai WebSocket reactor and races one receive against a finite `WebTimer`.
-Native `IpcTransport` remains the blocking stream contract. This slice proves
-frame bounds, correlation and cancellation at compile and native-test level;
-it does not claim a running browser host, concurrent request multiplexing or
-the V02/V12 browser trace. [ADR 0007](0007-browser-transport.md) owns the
-consumer contract and its residuals.
+Native `IpcTransport` remains the blocking stream contract. [ADR 0007]
+(`0007-browser-transport.md`) owns the consumer contract; [ADR 0008]
+(`0008-browser-host-boundary.md`) owns the runnable DOM host and its explicit
+disconnected state. Neither decision claims a live authenticated browser
+service or complete V02/V12 cancellation evidence.
 
 Desktop privileged logic remains in a separate Rust backend. Downloaded WASM is
 frontend code: it cannot protect server secrets or establish native privilege
@@ -63,8 +69,8 @@ The existing custom binary protocol is not the Tauri invoke protocol.
 
 | Surface | Target | Current evidence / required acceptance |
 | --- | --- | --- |
-| HTML5/CSS/assets | Preserve existing web presentation in browser/system WebView | Current XML-like renderer has no web-standards parity; real DOM interaction and visual cases required. |
-| Rust/WASM | Shared portable application code with asynchronous host bindings | WASM library compilation is the first gate; browser execution and binding lifetime tests remain required. |
+| HTML5/CSS/assets | Preserve existing web presentation in browser/system WebView | `metis-web` mounts a real DOM form and page CSS; broader DOM/layout parity and visual cases remain required. |
+| Rust/WASM | Shared portable application code with asynchronous host bindings | `metis-web` compiles and runs in the local browser workbench; authenticated bridge and binding-lifetime tests remain required. |
 | Commands/events | Typed requests, correlated responses, bounded event delivery and cancellation | Existing private-pipe protocol is tested; generic commands/events and Tauri migration mappings remain required. |
 | Windows/lifecycle | Desktop window creation, input, navigation, close and teardown | No native window host yet; host-specific integration and denial probes required. |
 | Plugins/native APIs | Explicit permission-scoped supported operations | Inventory file/dialog/clipboard/shell/window capabilities against migrated examples; reject unsupported operations. |
@@ -130,8 +136,9 @@ these mechanisms alone are not differentiators.
 - [Tauri process model](https://v2.tauri.app/concept/process-model/): core and WebView process responsibilities.
 - [WebAssembly security](https://webassembly.org/docs/security/), security goals and execution semantics: isolated execution and host embedding responsibilities.
 
-Source inspection at Metis `9d96980` finds a bounded software renderer and blocking
-native transport, not a browser host. Provider inspection finds Iris's lending
-rendering contract and incomplete browser event receipt in Moirai. Neither is
-evidence of working browser integration. Reconsider this implementation boundary
-when the tracked browser and desktop acceptance suites pass.
+Source inspection at the Metis browser-host increment based on `fb0c944` finds
+a bounded software renderer, an async browser client seam and the runnable
+`metis-web` DOM host. Provider
+inspection finds Moirai's owned DOM/event handles and browser WebSocket
+transport. This establishes local browser execution only; the authenticated
+bridge, desktop host and remaining acceptance suites still govern compatibility.

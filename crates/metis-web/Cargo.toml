@@ -1,0 +1,25 @@
+[package]
+name = "metis-web"
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+authors.workspace = true
+license.workspace = true
+repository.workspace = true
+description = "HTML5/CSS browser host for Metis WASM applications"
+readme = "README.md"
+
+[dependencies]
+metis-core = { workspace = true }
+metis-frontend = { workspace = true }
+
+[target.'cfg(target_arch = "wasm32")'.dependencies]
+moirai-pal.workspace = true
+
+[lib]
+name = "metis_web"
+path = "src/lib.rs"
+crate-type = ["cdylib", "rlib"]
+
+[lints]
+workspace = true

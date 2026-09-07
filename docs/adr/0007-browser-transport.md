@@ -6,6 +6,12 @@ Date: 2026-09-06
 
 Driver: [METIS-ASYNC-001](../../backlog.md#METIS-ASYNC-001).
 
+Revision 2026-09-06: Metis now consumes Moirai's merged browser PAL at
+`00fb0ae`; the `metis-web` host and
+[ADR 0008](0008-browser-host-boundary.md) provide the first runnable DOM
+consumer. This updates the provider pin and adds runtime evidence without
+claiming a live backend bridge.
+
 ## Context
 
 The native Metis IPC client performs a blocking receive over an owned stream.
@@ -51,11 +57,13 @@ an open-ended receive would turn peer input into unbounded application memory.
 `metis-ipc` native Nextest passes 33/33, including handshake rejection, zero
 timeout, bounded request capacity, ordered and out-of-order sequence
 correlation, and async frame round trips. Warning-denied
-Clippy passes for native all-targets and `wasm32-unknown-unknown`; the WASM
-check resolves all Moirai packages to `95ff7ae` and the merged Mnemosyne
-backend `2eb49c1`. These are static and native evidence only. A real browser
-trace must load the WASM, exercise cancellation/disconnect/recovery, verify
-listener/task teardown and capture V02/V12 evidence before this item closes.
+Clippy passes for native all-targets and `wasm32-unknown-unknown`; the lock
+resolves all Moirai packages to merged provider
+`00fb0ae` and its Mnemosyne backend. The
+browser workbench now loads the generated WASM and exercises
+disconnect/rejection states. A live-service trace must still exercise
+cancellation, late responses, listener/task teardown and capture V02/V12
+evidence before this item closes.
 
 ## Residuals
 

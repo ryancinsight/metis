@@ -287,6 +287,15 @@ dependencies = [
 ]
 
 [[package]]
+name = "metis-web"
+version = "0.1.0"
+dependencies = [
+ "metis-core",
+ "metis-frontend",
+ "moirai-pal",
+]
+
+[[package]]
 name = "miniz_oxide"
 version = "0.8.9"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -378,7 +387,7 @@ dependencies = [
 [[package]]
 name = "moirai-core"
 version = "0.6.0"
-source = "git+https://github.com/ryancinsight/Moirai.git?rev=95ff7ae6f5fa7ecfec0341132723a500f6933f46#95ff7ae6f5fa7ecfec0341132723a500f6933f46"
+source = "git+https://github.com/ryancinsight/Moirai.git?rev=00fb0aec6e605927bdca76a1ab34959b5a1353e0#00fb0aec6e605927bdca76a1ab34959b5a1353e0"
 dependencies = [
  "bytemuck",
  "libc",
@@ -390,7 +399,7 @@ dependencies = [
 [[package]]
 name = "moirai-executor"
 version = "0.6.0"
-source = "git+https://github.com/ryancinsight/Moirai.git?rev=95ff7ae6f5fa7ecfec0341132723a500f6933f46#95ff7ae6f5fa7ecfec0341132723a500f6933f46"
+source = "git+https://github.com/ryancinsight/Moirai.git?rev=00fb0aec6e605927bdca76a1ab34959b5a1353e0#00fb0aec6e605927bdca76a1ab34959b5a1353e0"
 dependencies = [
  "melinoe",
  "moirai-core",
@@ -403,7 +412,7 @@ dependencies = [
 [[package]]
 name = "moirai-pal"
 version = "0.6.0"
-source = "git+https://github.com/ryancinsight/Moirai.git?rev=95ff7ae6f5fa7ecfec0341132723a500f6933f46#95ff7ae6f5fa7ecfec0341132723a500f6933f46"
+source = "git+https://github.com/ryancinsight/Moirai.git?rev=00fb0aec6e605927bdca76a1ab34959b5a1353e0#00fb0aec6e605927bdca76a1ab34959b5a1353e0"
 dependencies = [
  "js-sys",
  "libc",
@@ -418,7 +427,7 @@ dependencies = [
 [[package]]
 name = "moirai-scheduler"
 version = "0.6.0"
-source = "git+https://github.com/ryancinsight/Moirai.git?rev=95ff7ae6f5fa7ecfec0341132723a500f6933f46#95ff7ae6f5fa7ecfec0341132723a500f6933f46"
+source = "git+https://github.com/ryancinsight/Moirai.git?rev=00fb0aec6e605927bdca76a1ab34959b5a1353e0#00fb0aec6e605927bdca76a1ab34959b5a1353e0"
 dependencies = [
  "loom",
  "mnemosyne-memory",
@@ -430,7 +439,7 @@ dependencies = [
 [[package]]
 name = "moirai-transport"
 version = "0.6.0"
-source = "git+https://github.com/ryancinsight/Moirai.git?rev=95ff7ae6f5fa7ecfec0341132723a500f6933f46#95ff7ae6f5fa7ecfec0341132723a500f6933f46"
+source = "git+https://github.com/ryancinsight/Moirai.git?rev=00fb0aec6e605927bdca76a1ab34959b5a1353e0#00fb0aec6e605927bdca76a1ab34959b5a1353e0"
 dependencies = [
  "bytemuck",
  "moirai-core",
@@ -441,7 +450,7 @@ dependencies = [
 [[package]]
 name = "moirai-utils"
 version = "0.6.0"
-source = "git+https://github.com/ryancinsight/Moirai.git?rev=95ff7ae6f5fa7ecfec0341132723a500f6933f46#95ff7ae6f5fa7ecfec0341132723a500f6933f46"
+source = "git+https://github.com/ryancinsight/Moirai.git?rev=00fb0aec6e605927bdca76a1ab34959b5a1353e0#00fb0aec6e605927bdca76a1ab34959b5a1353e0"
 
 [[package]]
 name = "nu-ansi-term"

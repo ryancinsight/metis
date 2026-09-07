@@ -12,9 +12,10 @@ process-isolation test. No original OS sandbox or native-window evidence exists.
 
 ## Evidence classes
 
-- WASM portability: compile `metis-core`, `metis-platform` and `metis-ui-lang`
-  libraries for `wasm32-unknown-unknown`. This does not run WASM, render in a
-  browser, validate host bindings or establish Tauri compatibility.
+- WASM portability: compile `metis-core`, `metis-platform`, `metis-ui-lang` and
+  `metis-web` libraries for `wasm32-unknown-unknown`. Compilation is static
+  evidence; it does not by itself validate host bindings or establish Tauri
+  compatibility. The browser workbench has a separate runtime trace below.
 
 - Types and compilation: frontend cannot import the backend through its declared dependency closure; validated policy fields cannot be overwritten externally.
 - Behavioral tests: exact wire fixtures, canonical decoding, malformed corpus, scope/session/time rejection, audit event outcomes and bounded numerical error.
@@ -67,10 +68,11 @@ corrects the initial test's message assumption without relaxing rejection.
 
 Windows tests do not prove Linux or macOS behavior. Miri does not execute Windows
 native system calls; those require targeted lifecycle tests and further platform
-instrumentation. Moirai resolves from pushed commit `0514f11`, not local provider
-edits. The public-repository increment passes the standalone gate against the
-repaired lock. Comparative security/memory evidence against Tauri and browser
-runtime tests remain required by [ADR 0002](adr/0002-web-application-contract.md).
+instrumentation. That earlier increment resolved Moirai from pushed commit
+`0514f11`, not local provider edits. The current browser-host increment advances
+the standalone lock to merged provider
+`00fb0ae`; comparative security/memory evidence
+against Tauri and live-service browser tests remain required by [ADR 0002](adr/0002-web-application-contract.md).
 Advisory scanning, coverage,
 mutation analysis and cross-platform sandbox probes remain uncollected.
 
@@ -104,7 +106,7 @@ remain required. The portable and installed payload must each contain exactly
 one application executable; repeat the real MSI install/run/uninstall and
 user-file-preservation workflow.
 
-The complete Windows gate passes 108 debug and 108 release native tests,
+The complete Windows gate passes 118 debug and 118 release native tests,
 38 Python checks, WASM library compilation, strict Clippy, doctests, rustdoc,
 examples and seven unchanged visual snapshots. The real MSI workflow verifies
 one installed application executable, both input-sensitive process sessions,
@@ -116,6 +118,34 @@ colliding rustdoc output leaves the root `metis` library as that path's owner.
 The shared image includes both libraries. Dependency checks establish that the
 frontend library does not import backend authority; they do not establish OS
 permission isolation or exclusion of backend code from the child process.
+
+## Browser workbench verification — 2026-09-06
+
+The `metis-web` package builds for `wasm32-unknown-unknown`, and
+`python scripts/browser.py build` generates `metis_web.js`,
+`metis_web_bg.wasm` and the HTML page with `wasm-bindgen` 0.2.128. A local
+HTTP server at `http://127.0.0.1:8765/index.html` loaded those generated
+artifacts in the Codex in-app browser. The captured viewport was 1280×720 CSS
+pixels at device scale 1.25; the browser harness did not expose an engine
+version. Console error and warning logs were empty.
+
+The accessibility trace showed the semantic form, four labelled controls and
+the submit button. Changing weight from 72.5 to 80 and dose from 0.5 to 0.75
+updated the Rust-owned result values to `80.00 kg` and `0.750 mcg/kg/min`.
+Replacing the concentration with `x` produced `Input rejected
+[ERR_NUMERIC_INSTABILITY]`; restoring `4` and submitting produced
+`Backend unavailable [ERR_CONNECTION_CLOSED]`. The latter is the required
+failure when no authenticated service bridge is configured. Screenshots from
+the initial, invalid-input and disconnected states were inspected during the
+trace; they are runtime observations, not committed browser golden images.
+
+This evidence establishes HTML5/CSS loading, Rust/WASM state updates, semantic
+focusable controls and explicit failure handling for the local workbench. It
+does not establish a live WebSocket service, origin/session grants, cancellation
+or late-response handling, post-drop resource counts, cross-engine behavior,
+accessibility technology support or OS permission isolation. Those remain open
+in [METIS-BROWSER-001](../backlog.md#METIS-BROWSER-001) and
+[METIS-ASYNC-001](../backlog.md#METIS-ASYNC-001).
 
 <a id="visual-contract"></a>
 ## Visual and interaction contract
@@ -130,7 +160,8 @@ captures, stale source mappings and wrong state even when an image appears valid
 Three deliberately altered renders change a label, geometry and color. Each must
 produce a nonempty pixel difference against the initial form. They test the
 comparator and never enter the application gallery. The contract below also
-specifies the remaining real host work; it does not claim browser/native execution.
+specifies the remaining real host work; the browser workbench now has a local
+runtime trace, while native desktop execution remains unimplemented.
 
 Every scenario has one application source and one declared input/action trace.
 Tests assert application state, displayed values, layout/hit geometry and
@@ -160,7 +191,9 @@ Known reports rotate to `previous` at the next invocation. The gate invalidates
 prior success before reading toolchain configuration, and records each command,
 its deadline and expected exit status. `--help` does not start a run. Current
 software metadata explicitly marks focus, accessibility, pointer dispatch and
-responsive cancellation unsupported.
+responsive cancellation unsupported. The browser trace separately records DOM
+focus and editing; browser cancellation and assistive-technology evidence remain
+unsupported.
 
 The complete host capture manifest records scenario ID, source/tree hash, action trace and
 fixture hash, expected values, target/engine/driver, viewport/scale, fonts, image

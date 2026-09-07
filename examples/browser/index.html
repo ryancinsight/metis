@@ -1,0 +1,36 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Metis browser workbench</title>
+  <style>
+    :root { color-scheme: light; font-family: system-ui, sans-serif; background: #0f172a; color: #e2e8f0; }
+    body { margin: 0; min-width: 320px; }
+    #metis-app { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 1.5rem; max-width: 960px; margin: 0 auto; padding: 2rem; }
+    .metis-header, .metis-form, .metis-result { border: 1px solid #334155; border-radius: 0.75rem; background: #1e293b; padding: 1.25rem; }
+    .metis-header { grid-column: 1 / -1; }
+    .metis-kicker { margin: 0 0 0.5rem; color: #67e8f9; font-size: 0.75rem; letter-spacing: 0.12em; }
+    h1, h2 { margin-top: 0; }
+    .metis-form { display: grid; gap: 0.65rem; }
+    label { color: #cbd5e1; font-size: 0.9rem; }
+    input { box-sizing: border-box; width: 100%; border: 1px solid #64748b; border-radius: 0.4rem; background: #0f172a; color: #f8fafc; padding: 0.65rem; font: inherit; }
+    button { margin-top: 0.5rem; border: 0; border-radius: 0.4rem; background: #0891b2; color: #ecfeff; padding: 0.7rem 1rem; font: inherit; font-weight: 700; cursor: pointer; }
+    button:focus-visible, input:focus-visible { outline: 3px solid #facc15; outline-offset: 2px; }
+    .metis-result { min-height: 12rem; }
+    dl { display: grid; grid-template-columns: auto 1fr; gap: 0.55rem 1rem; }
+    dt { color: #94a3b8; }
+    dd { margin: 0; color: #f8fafc; font-variant-numeric: tabular-nums; }
+    #metis-status, #result-state { color: #67e8f9; min-height: 1.5rem; }
+    @media (max-width: 700px) { #metis-app { grid-template-columns: 1fr; padding: 1rem; } .metis-header { grid-column: auto; } }
+  </style>
+</head>
+<body>
+  <main id="metis-app" aria-live="polite"><p>Loading Metis WASM…</p></main>
+  <script type="module">
+    import init from "./metis_web.js";
+    const wasm = await init();
+    wasm.metis_start();
+  </script>
+</body>
+</html>

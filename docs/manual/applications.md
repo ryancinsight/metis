@@ -4,7 +4,9 @@ These are captures of the production Metis form and its real backend responses,
 rendered into an 800×600 software framebuffer through Iris. The runnable
 [presentation example](../../examples/presentation.rs) uses bounded IPC and a
 Moirai worker, asserts values and audit outcomes, and checks text geometry before
-capturing each state. It does not create native controls or execute in a browser.
+capturing each state. That software example does not create native controls or
+execute in a browser; the separate [browser workbench](browser.md) exercises the
+HTML5/CSS host.
 The separate [process demonstration](getting-started.md) tests actual child processes.
 
 ## Initial form
