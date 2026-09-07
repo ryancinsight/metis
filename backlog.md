@@ -45,8 +45,15 @@ an owner. “Unsupported” cannot replace delivery of a required mobile/native 
 - Acceptance: Chromium/Firefox/WebKit runtime jobs load WASM and respond to two input changes; authorized service/desktop bridge verifies results; explicit unsupported native-only operations; zero pending requests/listeners after cancel/close.
 - Demonstration: [V02](docs/VERIFICATION.md#V02), actual browser captures and copyable build/run commands in the manual. A browser-only local control demo can land before the privileged bridge.
 - Constraint: no native secrets or authority in downloaded WASM; private-pipe possession cannot authenticate browser requests. Desktop bridge or service boundary must enforce origin/session authorization.
-- Evidence: `metis-web` mounts a real DOM form through Moirai's owned handles and connects `AsyncFrontendApp` through `BrowserWebSocketTransport` when host configuration is present. The live trace completed an authenticated loopback handshake, exact backend results, numeric rejection, service disconnect, stop/remount cancellation and recovery with no browser console diagnostics. Native loopback tests reject an unauthorized Origin before `101 Switching Protocols`; post-drop allocation, TLS, accessibility/IME, cross-engine and desktop evidence remain open.
+- Evidence: `metis-web` mounts a real DOM form through Moirai's owned handles and connects `AsyncFrontendApp` through `BrowserWebSocketTransport` when host configuration is present. The live trace completed an authenticated loopback handshake, exact backend results, numeric rejection, service disconnect, stop/remount cancellation and recovery with no browser console diagnostics. Native loopback tests reject an unauthorized Origin before `101 Switching Protocols`; post-drop allocation, TLS, accessibility/IME, cross-engine, delayed-response and desktop evidence remain open.
 - Decision: [ADR 0002](docs/adr/0002-web-application-contract.md), [ADR 0008](docs/adr/0008-browser-host-boundary.md).
+
+<a id="METIS-BROWSER-002"></a>
+## METIS-BROWSER-002 — Browser stale-response runtime probe [patch]
+- Status: todo; priority: P1; owner: Metis browser host + verification; dependencies: METIS-BROWSER-001, METIS-COMMANDS-001; risk: stale DOM mutation
+- Scope: delay a real service response at the browser transport boundary, stop/remount the WASM host, and observe response disposal and DOM stability; cross-engine, TLS, native desktop and OS permissions remain separate.
+- Acceptance: a bounded delayed response cannot change the stopped or remounted DOM; the browser task and WebSocket callbacks are released; the trace records the exact engine, revision, action sequence and observable state.
+- Demonstration: [V02](docs/VERIFICATION.md#V02), delayed-response trace and user-manual lifecycle capture.
 
 <a id="METIS-SEC-001"></a>
 ## METIS-SEC-001 — Backend authority [arch] [patch]
@@ -142,16 +149,17 @@ an owner. “Unsupported” cannot replace delivery of a required mobile/native 
 
 <a id="METIS-COMMANDS-001"></a>
 ## METIS-COMMANDS-001 — Typed commands and event streams [arch] [major]
-- Status: in-progress; priority: P1; owner: Metis protocol/client/broker; integrator: root; last-update: 2026-09-07; branch: `feat/process-foundation`; dependencies: METIS-ASYNC-001, METIS-AUTHORITY-001; risk: public wire contract; ADR: 0012 (claimed)
+- Status: done; priority: P1; owner: Metis protocol/client/broker; integrator: root; last-update: 2026-09-07; branch: `feat/process-foundation`; delivery: `0ec681c`; dependencies: METIS-ASYNC-001, METIS-AUTHORITY-001; risk: public wire contract; ADR: 0012
 - Evidence: capability catalog, target surface descriptor, explicit unsupported-operation response, bounded event fan-out, versioned remote event envelope, sync/async event receipt, typed plugin manifest validation including operation-count limits, typed plugin invocation and browser display pass the focused run, full verification, and the live WebSocket workbench trace; target route and lifecycle delivery commits `7d2f784` and `4916fc0`; the public enum extension is classified major by semver comparison.
-- Completed increment: remote event envelope codec, strict version/identifier checks, sync/async send and receipt, bounded async event retention, host-local typed plugin manifest registration, scoped backend plugin invocation, backend-produced clinical.result delivery, target platform/surface discovery and browser lifecycle generation guards pass the focused and workspace gates. The authenticated Moirai WebSocket loopback now also discovers its installed browser bridge and invokes a registered plugin with input-sensitive output. The asynchronous client injection test rejects a canceled sequence without preventing a newer response. Lifecycle exhaustion is terminal, and browser session failures preserve local versus remote error identity. Delayed browser-server response injection, native window and OS permission providers remain.
+- Outcome: remote event and capability contracts, bounded delivery, typed plugin invocation, target-surface discovery, browser lifecycle generation guards and local/remote session error identity pass focused and workspace gates. The authenticated Moirai WebSocket loopback discovers its browser bridge and invokes an input-sensitive plugin. Browser delayed-response runtime probing, native window and OS permission providers continue under their owning items.
 - Scope: general command registration, typed payloads/errors, bounded subscriptions/channels, unsubscribe/cancel, schema/version diagnostics, target capability discovery and explicit unsupported-operation errors; migrate in-repo callers without forwarding shims.
 - Acceptance: generic conformance suite across admitted transports; changing inputs changes outputs; capability discovery reports target support, unsupported operations return typed errors, unknown command/version rejects, late responses cannot mutate a new request and unsubscribed handlers receive nothing.
 - Demonstration: [V02](docs/VERIFICATION.md#V02) and [V09](docs/VERIFICATION.md#V09), real backend actions/events in the manual.
 
 <a id="METIS-INPUT-001"></a>
 ## METIS-INPUT-001 — Interactive controls and shared UI state [minor]
-- Status: todo; priority: P1; owner: Metis UI/host; dependencies: METIS-BROWSER-001; risk: input/state mismatch
+- Status: in-progress; priority: P1; owner: Metis UI/host; integrator: root; last-update: 2026-09-07; branch: `feat/process-foundation`; dependencies: METIS-BROWSER-001; risk: input/state mismatch; ADR: 0014 (claimed)
+- lease: root — `metis-web/src/browser.rs`, `metis-web/src/controls.rs`, `moirai-pal/src/wasm/dom.rs`, `docs/adr/0014-input-controls.md`, `docs/manual/browser.md` — 2026-09-07T19:10:04Z
 - Scope: buttons, checks, radios, sliders, editable fields, select/menu/dialog controls; focus, pointer capture, drag/drop, wheel/touch/modifiers, shortcuts, reusable state/actions and subscription teardown.
 - Acceptance: keyboard and pointer/touch journeys update identical model values; disabled controls reject action; focus survives rerender and subscriptions detach on close; real hit targets agree with rendered geometry.
 - Demonstration: [V02](docs/VERIFICATION.md#V02), settings workbench; repeat on each native host as it becomes supported.
