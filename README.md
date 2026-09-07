@@ -30,7 +30,8 @@ and bounded retention; an accepted clinical calculation emits a typed
 bounded, typed plugin manifests with explicit capability scopes; the versioned
 IPC seam also invokes declared plugin commands through a bounded host router and
 typed sync/async client methods. Registration and invocation do not grant
-operating-system authority or erase handler types. This renderer's bounded
+operating-system authority; handler erasure is confined to the backend's open
+extension boundary. This renderer's bounded
 markup subset is
 not the intended limit of web support. A desktop WebView host is not implemented. Metis does not
 yet provide Tauri feature parity, native desktop windows,

@@ -341,30 +341,7 @@ fn submit(
             _ => None,
         };
         let event = match expected {
-            Some(expected) if result.is_ok() => match app.recv_event().await {
-                Ok(event) => match event.decode_as::<ClinicalCalcResponsePayload>() {
-                    Ok(received) if event.event_id().get() != expected.audit_sequence_id => {
-                        Err(MetisError::protocol(
-                            ErrorCode::SequenceMismatch,
-                            "Remote event identifier differs from its correlated response",
-                        ))
-                    }
-                    Ok(received) if received == expected => Ok(Some(format!(
-                        "Remote event: {} #{} (audit={} rate={:.6} ml/hr drug={:.6} mg/hr)",
-                        event.name(),
-                        event.event_id().get(),
-                        received.audit_sequence_id,
-                        received.rate_ml_hr,
-                        received.drug_rate_mg_hr,
-                    ))),
-                    Ok(_) => Err(MetisError::protocol(
-                        ErrorCode::SequenceMismatch,
-                        "Remote event result differs from its correlated response",
-                    )),
-                    Err(error) => Err(error),
-                },
-                Err(error) => Err(error),
-            },
+            Some(expected) if result.is_ok() => receive_result_event(&mut app, expected).await,
             _ => Ok(None),
         };
         let event_error = event.as_ref().err().cloned();
@@ -402,6 +379,34 @@ fn submit(
         let _ = task_cleanup.borrow_mut().take();
     });
     *task_slot.borrow_mut() = Some(task);
+}
+
+async fn receive_result_event(
+    app: &mut AsyncFrontendApp<BrowserWebSocketTransport>,
+    expected: ClinicalCalcResponsePayload,
+) -> metis_core::error::Result<Option<String>> {
+    let event = app.recv_event().await?;
+    let received = event.decode_as::<ClinicalCalcResponsePayload>()?;
+    if event.event_id().get() != expected.audit_sequence_id {
+        return Err(MetisError::protocol(
+            ErrorCode::SequenceMismatch,
+            "Remote event identifier differs from its correlated response",
+        ));
+    }
+    if received != expected {
+        return Err(MetisError::protocol(
+            ErrorCode::SequenceMismatch,
+            "Remote event result differs from its correlated response",
+        ));
+    }
+    Ok(Some(format!(
+        "Remote event: {} #{} (audit={} rate={:.6} ml/hr drug={:.6} mg/hr)",
+        event.name(),
+        event.event_id().get(),
+        received.audit_sequence_id,
+        received.rate_ml_hr,
+        received.drug_rate_mg_hr,
+    )))
 }
 
 fn metis_handshake_error(error: metis_ipc::client::HandshakeError) -> MetisError {

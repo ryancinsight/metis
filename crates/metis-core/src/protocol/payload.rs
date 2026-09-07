@@ -201,19 +201,19 @@ impl PluginInvocationPayload {
     /// that exceeds the frame resource bound.
     pub fn new(
         token: CapabilityToken,
-        plugin_name: impl Into<String>,
-        operation_name: impl Into<String>,
+        plugin_name: impl AsRef<str>,
+        operation_name: impl AsRef<str>,
         body: impl AsRef<[u8]>,
     ) -> Result<Self> {
-        let plugin_name = plugin_name.into();
-        let operation_name = operation_name.into();
-        let body = body.as_ref().to_vec();
-        validate_plugin_invocation_parts(&plugin_name, &operation_name, body.len())?;
+        let plugin_name = plugin_name.as_ref();
+        let operation_name = operation_name.as_ref();
+        let body = body.as_ref();
+        validate_plugin_invocation_parts(plugin_name, operation_name, body.len())?;
         Ok(Self {
             token,
-            plugin_name,
-            operation_name,
-            body,
+            plugin_name: plugin_name.to_owned(),
+            operation_name: operation_name.to_owned(),
+            body: body.to_vec(),
         })
     }
 

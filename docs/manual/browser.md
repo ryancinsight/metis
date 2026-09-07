@@ -76,7 +76,8 @@ calculation or a fabricated success.
 
 With the service configuration above, the status becomes `Authorized backend
 session ready`, and the header lists the commands advertised by that service
-(`host.capabilities`, `session.heartbeat` and `clinical.calculate`). The list
+(`host.capabilities`, `session.heartbeat`, `clinical.calculate` and
+`plugin.invoke`). The list
 comes from the versioned Metis capability catalog after the authenticated
 handshake; it is not a page-provided permission claim. Submit the defaults to observe the real backend response, then
 change the fields to `80`, `4` and `0.75` and submit again. The result panel

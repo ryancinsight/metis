@@ -27,7 +27,7 @@ struct RegisteredPlugin {
 }
 
 /// Bounded runtime registry for permission-checked remote plugin calls.
-pub struct PluginRouter<const CAPACITY: usize = MAX_PLUGINS> {
+pub(crate) struct PluginRouter<const CAPACITY: usize = MAX_PLUGINS> {
     metadata: PluginRegistry<CAPACITY>,
     executors: Vec<RegisteredPlugin>,
 }
@@ -38,7 +38,7 @@ impl<const CAPACITY: usize> PluginRouter<CAPACITY> {
     /// # Errors
     /// Returns the registry's typed capacity error when `CAPACITY` is outside
     /// the host bound.
-    pub fn new() -> Result<Self> {
+    pub(crate) fn new() -> Result<Self> {
         Ok(Self {
             metadata: PluginRegistry::new()?,
             executors: Vec::new(),
@@ -52,7 +52,7 @@ impl<const CAPACITY: usize> PluginRouter<CAPACITY> {
     ///
     /// # Errors
     /// Returns a typed descriptor, duplicate, capacity or allocation error.
-    pub fn register<P>(&mut self, executor: P) -> Result<()>
+    pub(crate) fn register<P>(&mut self, executor: P) -> Result<()>
     where
         P: Plugin + PluginExecutor + 'static,
     {
@@ -70,21 +70,15 @@ impl<const CAPACITY: usize> PluginRouter<CAPACITY> {
         Ok(())
     }
 
-    /// Returns the operation metadata used for capability authorization.
-    #[must_use]
-    pub fn operation(&self, plugin_name: &str, operation_name: &str) -> Option<PluginOperation> {
-        self.metadata.operation(plugin_name, operation_name)
-    }
-
     /// Returns a registered command used for remote invocation authorization.
     #[must_use]
-    pub fn command(&self, plugin_name: &str, command_name: &str) -> Option<PluginOperation> {
+    pub(crate) fn command(&self, plugin_name: &str, command_name: &str) -> Option<PluginOperation> {
         self.metadata.command(plugin_name, command_name)
     }
 
     /// Returns whether the exact plugin identifier is registered.
     #[must_use]
-    pub fn contains(&self, plugin_name: &str) -> bool {
+    pub(crate) fn contains(&self, plugin_name: &str) -> bool {
         self.metadata.get(plugin_name).is_some()
     }
 
@@ -97,7 +91,7 @@ impl<const CAPACITY: usize> PluginRouter<CAPACITY> {
     /// # Errors
     /// Returns `PluginNotFound`, `PluginOperationNotFound`, a response-size
     /// error, or the executor's typed error.
-    pub fn invoke(
+    pub(crate) fn invoke(
         &mut self,
         request: &PluginInvocationPayload,
     ) -> Result<PluginInvocationResponsePayload> {
@@ -128,18 +122,6 @@ impl<const CAPACITY: usize> PluginRouter<CAPACITY> {
             .executor
             .invoke(operation.name(), request.body())?;
         PluginInvocationResponsePayload::new(response)
-    }
-
-    /// Returns the number of registered plugin executors.
-    #[must_use]
-    pub fn len(&self) -> usize {
-        self.executors.len()
-    }
-
-    /// Returns whether no plugin executors are registered.
-    #[must_use]
-    pub fn is_empty(&self) -> bool {
-        self.executors.is_empty()
     }
 }
 
@@ -198,7 +180,6 @@ mod tests {
     fn router_dispatches_input_sensitive_executor_output() {
         let mut router = PluginRouter::<1>::new().expect("router");
         router.register(EchoPlugin).expect("register");
-        assert_eq!(router.len(), 1);
         assert_eq!(
             router
                 .invoke(&request("echo", "echo", [1, 4, 9].as_slice()))
