@@ -72,7 +72,11 @@ Revision 2026-09-07: Moirai PR #277 merged at
 `a3c86cd183a18edc35db30f1d35e79fe80092df4` adds the copyable
 `PointerMetadata` snapshot for device type, CSS-pixel coordinates, button
 state, modifier keys and primary-pointer state. Metis renders the snapshot on
-capture and movement; drag/drop policy and gesture interpretation remain open.
+capture and movement. Moirai PR #278 merged at
+`f634b3a802ec0355da22f111ed01067d2435c5cb` adds `WheelMetadata` for bounded
+deltas, browser units, viewport coordinates and modifier state; Metis renders
+vertical and horizontal scroll traces. Drag/drop policy and gesture
+interpretation remain open.
 
 ## Decision and scope
 

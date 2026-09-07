@@ -26,6 +26,10 @@ is owned by the mounted listener set. The same events expose a Rust-owned
 metadata snapshot with device type, CSS-pixel coordinates, button state,
 modifier keys and the primary-pointer marker; `pointermove` renders the
 snapshot while the surface owns the capture.
+The same surface listens for browser wheel events through Moirai's
+`WheelMetadata` snapshot and renders pixel/line/page deltas, viewport position
+and modifier state without importing `web-sys`. The listener prevents the
+browser default action after the provider has validated the event kind.
 
 Build the WASM artifact and generated browser glue with:
 

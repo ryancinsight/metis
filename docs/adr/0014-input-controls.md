@@ -42,6 +42,13 @@ held buttons, modifier keys and primary-pointer marker. Captured `pointermove`
 events update the same status so drag policy can consume one coherent input
 record.
 
+The pointer surface also listens for wheel events. Moirai converts the browser
+event into a copyable `WheelMetadata` snapshot containing all three deltas,
+their browser unit, viewport coordinates and modifier keys. Metis renders that
+record and prevents the browser default action after the event kind is
+validated; interpreting scrolling as a viewer gesture remains an application
+policy.
+
 ## Alternatives
 
 Duplicating a widget renderer would lose browser-native focus and keyboard
@@ -82,10 +89,14 @@ pointer surface, observed the provider-backed release status with pointer ID
 same viewport and device scale. The metadata increment consumes
 `PointerMetadata` from merged Moirai revision
 `a3c86cd183a18edc35db30f1d35e79fe80092df4`; its live browser trace records the
-pointer type, coordinates, buttons, modifiers and primary marker.
+pointer type, coordinates, buttons, modifiers and primary marker. The wheel
+increment consumes `WheelMetadata` from merged Moirai revision
+`f634b3a802ec0355da22f111ed01067d2435c5cb`; an in-app browser scroll action
+renders input-sensitive vertical and horizontal pixel deltas with the target
+coordinates and modifier state.
 
 ## Residuals
 
-Drag/drop policy, wheel/touch gesture interpretation, IME, accessibility
+Drag/drop policy, touch gesture interpretation, IME, accessibility
 technology and native-window input remain under the linked backlog items. This
 increment does not claim cross-engine or native input parity.
