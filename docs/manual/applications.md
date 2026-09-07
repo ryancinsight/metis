@@ -111,6 +111,16 @@ baseline for [V09](../VERIFICATION.md#V09); Métis host execution, browser input
 multiframe/color presentation and matched memory measurements remain required
 before accepting the migration.
 
+## Browser service workflow
+
+The browser workbench has a live loopback capture path in addition to the
+software gallery. Run the service command from [the browser manual](browser.md),
+open the configured URL, and capture the authorized session, changed values,
+`0x3001` rejection, stopped host and recovered session. The verified trace used
+the Codex in-app browser at 1280×720 CSS pixels and device scale 1.25 with no
+console warnings or errors. These browser captures are runtime observations;
+the software gallery remains the deterministic image baseline.
+
 ## Framework comparison evidence
 
 The complete comparison is maintained in

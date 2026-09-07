@@ -1,11 +1,15 @@
 //! Browser DOM application boundary.
 
 use metis_core::error::{ErrorCode, MetisError};
-use metis_frontend::{FormInputs, FormState};
-use moirai_pal::wasm::{WebDocument, WebElement, WebEventListener};
+use metis_frontend::{AsyncFrontendApp, FormInputs, FormState};
+use metis_ipc::BrowserWebSocketTransport;
+use moirai_pal::wasm::{
+    LocalTaskHandle, WebDocument, WebElement, WebEventListener, spawn_local_with_handle,
+};
 use std::cell::RefCell;
 use std::io;
 use std::rc::Rc;
+use std::time::Duration;
 
 const BROWSER_MARKUP: &str = r#"
 <header class="metis-header">
@@ -40,6 +44,7 @@ const BROWSER_MARKUP: &str = r#"
 struct BrowserState {
     inputs: FormInputs,
     state: FormState,
+    bridge: BridgeStatus,
 }
 
 impl Default for BrowserState {
@@ -47,8 +52,22 @@ impl Default for BrowserState {
         Self {
             inputs: FormInputs::new("PT-9042-ALPHA", 72.5, 4.0, 0.5),
             state: FormState::Idle,
+            bridge: BridgeStatus::Disabled,
         }
     }
+}
+
+#[derive(Clone, Copy)]
+enum BridgeStatus {
+    Disabled,
+    Connecting,
+    Ready,
+}
+
+struct BridgeConfig {
+    endpoint: String,
+    process_id: u32,
+    principal: [u8; 16],
 }
 
 struct BrowserApplication {
@@ -57,37 +76,47 @@ struct BrowserApplication {
         reason = "listener handles are retained solely for Drop teardown"
     )]
     listeners: Vec<WebEventListener>,
+    state: Rc<RefCell<BrowserState>>,
+    app: Rc<RefCell<Option<AsyncFrontendApp<BrowserWebSocketTransport>>>>,
+    task: Rc<RefCell<Option<LocalTaskHandle>>>,
 }
 
 impl BrowserApplication {
     fn mount(document: &WebDocument) -> io::Result<Self> {
+        let bridge_config = read_bridge_config(document)?;
         let root = element(document, "metis-app")?;
         root.set_inner_html(BROWSER_MARKUP);
         let state = Rc::new(RefCell::new(BrowserState::default()));
         render(document, &state.borrow())?;
+        let app = Rc::new(RefCell::new(None));
+        let task = Rc::new(RefCell::new(None));
 
         let mut listeners = Vec::with_capacity(5);
         listeners.push(input_listener(
             document,
             &state,
+            &app,
             "patient-id",
             InputField::Patient,
         )?);
         listeners.push(input_listener(
             document,
             &state,
+            &app,
             "weight-kg",
             InputField::Weight,
         )?);
         listeners.push(input_listener(
             document,
             &state,
+            &app,
             "concentration-mg-ml",
             InputField::Concentration,
         )?);
         listeners.push(input_listener(
             document,
             &state,
+            &app,
             "target-dose",
             InputField::Dose,
         )?);
@@ -95,18 +124,77 @@ impl BrowserApplication {
         let form = element(document, "metis-form")?;
         let listener_document = document.clone();
         let listener_state = Rc::clone(&state);
+        let listener_app = Rc::clone(&app);
+        let listener_task = Rc::clone(&task);
         listeners.push(form.add_event_listener("submit", move |event| {
             event.prevent_default();
-            let mut state = listener_state.borrow_mut();
-            state.state = FormState::Disconnected(MetisError::transport(
-                ErrorCode::ConnectionClosed,
-                "No authorized browser backend bridge is configured",
-            ));
-            if let Err(error) = render(&listener_document, &state) {
+            submit(
+                &listener_document,
+                &listener_state,
+                &listener_app,
+                &listener_task,
+            );
+        })?);
+        let application = Self {
+            listeners,
+            state,
+            app,
+            task,
+        };
+        if let Some(config) = bridge_config {
+            application.connect(document, config);
+        }
+        Ok(application)
+    }
+
+    fn connect(&self, document: &WebDocument, config: BridgeConfig) {
+        let state = Rc::clone(&self.state);
+        let app_slot = Rc::clone(&self.app);
+        let task_cleanup = Rc::clone(&self.task);
+        let listener_document = document.clone();
+        state.borrow_mut().bridge = BridgeStatus::Connecting;
+        if let Err(error) = render(document, &state.borrow()) {
+            set_mount_error(document, &error);
+        }
+        let task = spawn_local_with_handle(async move {
+            let result = async {
+                let transport = BrowserWebSocketTransport::connect_with_defaults_async(
+                    &config.endpoint,
+                    Duration::from_secs(5),
+                )
+                .await?;
+                let mut frontend = AsyncFrontendApp::new(transport, Duration::from_secs(5))?;
+                let inputs = state.borrow().inputs.clone();
+                frontend.set_inputs(
+                    &inputs.patient_id,
+                    inputs.weight_kg,
+                    inputs.concentration_mg_ml,
+                    inputs.target_dose_mcg_kg_min,
+                );
+                frontend
+                    .init(config.process_id, config.principal)
+                    .await
+                    .map_err(metis_handshake_error)?;
+                Ok::<_, MetisError>(frontend)
+            }
+            .await;
+            match result {
+                Ok(frontend) => {
+                    *app_slot.borrow_mut() = Some(frontend);
+                    state.borrow_mut().bridge = BridgeStatus::Ready;
+                    state.borrow_mut().state = FormState::Idle;
+                }
+                Err(error) => {
+                    state.borrow_mut().bridge = BridgeStatus::Disabled;
+                    state.borrow_mut().state = FormState::Disconnected(error);
+                }
+            }
+            if let Err(error) = render(&listener_document, &state.borrow()) {
                 set_mount_error(&listener_document, &error);
             }
-        })?);
-        Ok(Self { listeners })
+            let _ = task_cleanup.borrow_mut().take();
+        });
+        *self.task.borrow_mut() = Some(task);
     }
 }
 
@@ -121,18 +209,29 @@ enum InputField {
 fn input_listener(
     document: &WebDocument,
     state: &Rc<RefCell<BrowserState>>,
+    app: &Rc<RefCell<Option<AsyncFrontendApp<BrowserWebSocketTransport>>>>,
     id: &'static str,
     field: InputField,
 ) -> io::Result<WebEventListener> {
     let input = element(document, id)?;
     let listener_document = document.clone();
     let listener_state = Rc::clone(state);
+    let listener_app = Rc::clone(app);
     input.add_event_listener("input", move |event| {
         let Some(value) = event.value() else {
             return;
         };
         let mut state = listener_state.borrow_mut();
         update_input(&mut state, field, &value);
+        if let Some(app) = listener_app.borrow_mut().as_mut() {
+            let inputs = &state.inputs;
+            app.set_inputs(
+                &inputs.patient_id,
+                inputs.weight_kg,
+                inputs.concentration_mg_ml,
+                inputs.target_dose_mcg_kg_min,
+            );
+        }
         if let Err(error) = render(&listener_document, &state) {
             set_mount_error(&listener_document, &error);
         }
@@ -170,6 +269,150 @@ fn update_input(state: &mut BrowserState, field: InputField, value: &str) {
     state.state = FormState::Idle;
 }
 
+fn submit(
+    document: &WebDocument,
+    state: &Rc<RefCell<BrowserState>>,
+    app_slot: &Rc<RefCell<Option<AsyncFrontendApp<BrowserWebSocketTransport>>>>,
+    task_slot: &Rc<RefCell<Option<LocalTaskHandle>>>,
+) {
+    if task_slot.borrow().is_some() {
+        let mut state = state.borrow_mut();
+        state.state = FormState::Pending;
+        if let Err(error) = render(document, &state) {
+            set_mount_error(document, &error);
+        }
+        return;
+    }
+    let Some(mut app) = app_slot.borrow_mut().take() else {
+        let mut state = state.borrow_mut();
+        state.state = FormState::Disconnected(MetisError::transport(
+            ErrorCode::ConnectionClosed,
+            "No authorized browser backend bridge is configured",
+        ));
+        if let Err(error) = render(document, &state) {
+            set_mount_error(document, &error);
+        }
+        return;
+    };
+    let inputs = state.borrow().inputs.clone();
+    app.set_inputs(
+        &inputs.patient_id,
+        inputs.weight_kg,
+        inputs.concentration_mg_ml,
+        inputs.target_dose_mcg_kg_min,
+    );
+    {
+        let mut state = state.borrow_mut();
+        state.state = FormState::Pending;
+        if let Err(error) = render(document, &state) {
+            set_mount_error(document, &error);
+        }
+    }
+    let task_cleanup = Rc::clone(task_slot);
+    let result_state = Rc::clone(state);
+    let result_app = Rc::clone(app_slot);
+    let result_document = document.clone();
+    let task = spawn_local_with_handle(async move {
+        let result = app.submit_calculation().await;
+        let outcome = app.state().clone();
+        let bridge = if result.is_ok() {
+            BridgeStatus::Ready
+        } else {
+            BridgeStatus::Disabled
+        };
+        *result_app.borrow_mut() = Some(app);
+        {
+            let mut state = result_state.borrow_mut();
+            state.bridge = bridge;
+            state.state = outcome;
+            if let Err(error) = render(&result_document, &state) {
+                set_mount_error(&result_document, &error);
+            }
+        }
+        let _ = task_cleanup.borrow_mut().take();
+    });
+    *task_slot.borrow_mut() = Some(task);
+}
+
+fn metis_handshake_error(error: metis_ipc::client::HandshakeError) -> MetisError {
+    match error {
+        metis_ipc::client::HandshakeError::Local(error) => error,
+        metis_ipc::client::HandshakeError::Remote(response) => MetisError::capability(
+            ErrorCode::InvalidPrincipal,
+            format!("Backend rejected browser session: {}", response.message),
+        ),
+        _ => MetisError::transport(
+            ErrorCode::TransportBroken,
+            "Browser handshake failed with an unknown result",
+        ),
+    }
+}
+
+fn read_bridge_config(document: &WebDocument) -> io::Result<Option<BridgeConfig>> {
+    let Some(endpoint) = optional_value(document, "metis-websocket-endpoint") else {
+        return Ok(None);
+    };
+    if endpoint.trim().is_empty() {
+        return Ok(None);
+    }
+    if !endpoint.starts_with("ws://") && !endpoint.starts_with("wss://") {
+        return Err(io::Error::new(
+            io::ErrorKind::InvalidInput,
+            "Browser endpoint must use ws:// or wss://",
+        ));
+    }
+    let process_id = optional_value(document, "metis-process-id")
+        .ok_or_else(|| config_error("Browser process identifier is missing"))?
+        .parse::<u32>()
+        .map_err(|_| config_error("Browser process identifier is not a positive integer"))?;
+    if process_id == 0 {
+        return Err(config_error("Browser process identifier must be nonzero"));
+    }
+    let principal = optional_value(document, "metis-principal")
+        .ok_or_else(|| config_error("Browser principal is missing"))?;
+    Ok(Some(BridgeConfig {
+        endpoint,
+        process_id,
+        principal: parse_principal(&principal)?,
+    }))
+}
+
+fn optional_value(document: &WebDocument, id: &str) -> Option<String> {
+    document
+        .get_element_by_id(id)
+        .and_then(|element| element.value())
+}
+
+fn parse_principal(value: &str) -> io::Result<[u8; 16]> {
+    let bytes = value.as_bytes();
+    if bytes.len() != 32 {
+        return Err(config_error("Browser principal must contain 32 hex digits"));
+    }
+    let mut principal = [0; 16];
+    for (index, slot) in principal.iter_mut().enumerate() {
+        let high = hex_digit(bytes[index * 2])?;
+        let low = hex_digit(bytes[index * 2 + 1])?;
+        *slot = (high << 4) | low;
+    }
+    if principal == [0; 16] {
+        return Err(config_error("Browser principal must be nonzero"));
+    }
+    Ok(principal)
+}
+
+fn hex_digit(value: u8) -> io::Result<u8> {
+    match value {
+        b'0'..=b'9' => Ok(value - b'0'),
+        b'a'..=b'f' => Ok(value - b'a' + 10),
+        b'A'..=b'F' => Ok(value - b'A' + 10),
+        _ => Err(config_error("Browser principal contains a non-hex digit")),
+    }
+}
+
+fn config_error(message: &str) -> io::Error {
+    io::Error::new(io::ErrorKind::InvalidInput, message)
+}
+
 fn parse_finite(value: &str) -> Option<f64> {
     value.parse::<f64>().ok().filter(|value| value.is_finite())
 }
@@ -200,7 +443,12 @@ fn render(document: &WebDocument, state: &BrowserState) -> io::Result<()> {
         &format!("{:.3} mcg/kg/min", inputs.target_dose_mcg_kg_min),
     )?;
     let message = match &state.state {
-        FormState::Idle => "Controls active; no authorized backend bridge configured".to_owned(),
+        FormState::Idle => match state.bridge {
+            BridgeStatus::Disabled => "Controls active; no authorized backend bridge configured",
+            BridgeStatus::Connecting => "Connecting to authorized backend",
+            BridgeStatus::Ready => "Authorized backend session ready",
+        }
+        .to_owned(),
         FormState::Failed(error) => format!("Input rejected [{}]", error.code.as_str()),
         FormState::Disconnected(error) => {
             format!("Backend unavailable [{}]", error.code.as_str())

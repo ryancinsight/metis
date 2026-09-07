@@ -173,6 +173,34 @@ fn policy_rejects_origin_window_and_session_substitution() {
 }
 
 #[test]
+fn policy_observes_only_the_configured_browser_origin() {
+    let policy = HostPolicy::new(
+        HostOrigin::try_from("https://viewer.example:443").expect("origin"),
+        WindowId::new(3).expect("window"),
+    );
+    assert_eq!(
+        policy
+            .observe_origin(Some("HTTPS://VIEWER.EXAMPLE"))
+            .expect("canonical equivalent origin")
+            .as_str(),
+        "https://viewer.example"
+    );
+    for (raw, code) in [
+        (None, ErrorCode::InvalidOrigin),
+        (Some("https://evil.example"), ErrorCode::NavigationDenied),
+        (Some("file:///viewer"), ErrorCode::InvalidOrigin),
+    ] {
+        assert_eq!(
+            policy
+                .observe_origin(raw)
+                .expect_err("origin must be rejected")
+                .code,
+            code
+        );
+    }
+}
+
+#[test]
 fn host_binding_rejects_unbound_and_retargeted_signatures() {
     let principal = [0x44; 16];
     let context = make_context("https://app.example", 3, principal);

@@ -16,10 +16,12 @@ an HTML5 document, while Moirai owns `WebDocument`, `WebElement` and event
 listener lifetimes.
 
 The following sections describe the current native foundation and the first
-browser host. The browser workbench mounts a real DOM form and reports a typed
-disconnection when no authenticated backend bridge is configured. Its external
-assets carry the strict same-origin CSP from the policy source consumed by
-`HostPolicy`, and the bootstrap rejects cross-origin anchor navigation. A live browser service,
+browser host. The browser workbench mounts a real DOM form and can connect to a
+bounded native service when the host supplies explicit endpoint configuration.
+`metis-backend` validates the observed `Origin` before the WebSocket upgrade and
+requires a trusted host context before it serves requests. Its external assets
+carry the strict same-origin CSP from the policy source consumed by
+`HostPolicy`, and the bootstrap rejects cross-origin anchor navigation. A
 desktop WebView host and OS permission boundary remain unimplemented.
 
 The shared `metis-core` crate owns wire types, error codes, capability claim
@@ -61,9 +63,11 @@ a token retargeted to another origin/window fails signature verification.
 The 84-byte token wire format stays fixed-width because authority metadata is
 not copied from the browser into the payload. `BackendService` defaults to the
 contained native policy (`metis://native`, window 1) and accepts an explicit
-policy for deterministic host integration tests. The service still has no live
-browser acceptor: Origin headers, TLS, endpoint allowlists and OS permission
-checks belong to the transport and desktop host increments.
+policy for deterministic host integration tests. The browser service uses
+`accept_websocket_with_validator` to observe and validate the request `Origin`
+before it sends `101 Switching Protocols`, then runs `AsyncIpcServer` over
+Moirai's bounded message stream. TLS, endpoint allowlists beyond the exact
+origin, and OS permission checks remain transport/desktop work.
 
 The browser shell keeps CSS and module bootstrap files external to satisfy the
 same-origin CSP. The build checks the HTML policy against
@@ -103,6 +107,8 @@ budgets, native FFI boundary and platform expansion contract.
 The visible desktop event loop and OS permission sandbox remain incomplete.
 Process address-space separation and lifecycle containment do not deny file,
 network or device access. Platform support claims require separate host tests
-and denial probes, not merely `cfg` branches or successful compilation.
+and denial probes, not merely `cfg` branches or successful compilation. The
+loopback browser service is a one-connection conformance host; it is not a
+production TLS listener or a substitute for the native desktop host.
 
 See [ADR 0001](adr/0001-process-contract.md) for the trust boundary and alternatives.

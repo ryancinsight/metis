@@ -44,6 +44,11 @@ Human output uses standard error; the frontend's standard input/output carry fra
 This is synthetic arithmetic for testing application boundaries, not a treatment
 calculator. The configured limits do not constitute clinical validation.
 
+The HTML5/CSS browser workflow and its optional authenticated loopback service
+are documented in [Run the browser workbench](browser.md). It uses the same
+single `metis-app` executable and a Moirai WebSocket session; no separate
+frontend binary is required.
+
 ## Diagnose a failure
 
 - An unavailable Git revision is a dependency-resolution failure. Check the

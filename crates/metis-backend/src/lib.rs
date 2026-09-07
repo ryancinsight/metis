@@ -5,6 +5,10 @@ pub mod audit;
 pub mod clinical;
 pub mod service;
 pub mod supervisor;
+#[cfg(not(target_arch = "wasm32"))]
+pub mod websocket;
 
 pub use service::BackendService;
 pub use supervisor::run_session;
+#[cfg(not(target_arch = "wasm32"))]
+pub use websocket::serve_browser_websocket;

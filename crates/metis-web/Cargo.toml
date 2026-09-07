@@ -12,6 +12,7 @@ readme = "README.md"
 [dependencies]
 metis-core = { workspace = true }
 metis-frontend = { workspace = true }
+metis-ipc = { workspace = true }
 
 [target.'cfg(target_arch = "wasm32")'.dependencies]
 moirai-pal.workspace = true

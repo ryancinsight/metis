@@ -26,7 +26,8 @@ framing corruption detection rather than peer authentication.
 
 All Moirai dependencies in this workspace advance together. The crypto
 migration landed at merged revision `66627b9`; the current workspace pin is
-`16a1b88` after the cancellable browser-task provider increment. The TLS
+`be87d009cd0e877beef719b47bdcbadc45659069` after the bounded WebSocket service
+and cancellation-wakeup provider increments. The TLS
 provider remains available to consumers that enable its default `provider`
 feature; Metis's protocol graph does not compile rustls or the provider's
 key-exchange, AEAD and certificate dependencies.

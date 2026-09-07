@@ -4,8 +4,9 @@ The current Metis demonstration has three independently useful checks: a real
 frontend/backend process exchange, deterministic software captures of a real
 backend session through success, edit, rejection, correction, disconnect and
 recovery, and a browser workbench with Rust/WASM-driven HTML5/CSS controls. The
-browser workbench has no authenticated service bridge yet, and no desktop window
-host is implemented.
+workbench can connect to the documented one-shot loopback service for a real
+authenticated calculation; no desktop window host or OS permission boundary is
+implemented.
 
 ## Run the checks
 
@@ -16,10 +17,11 @@ python scripts/verify.py
 ```
 
 The gate builds the pinned code, exercises native debug/release tests and the
-process example, builds the portable WASM libraries including `metis-web`, and compares the current
-seven form captures and their recorded inputs, actions, labels and geometry with
-the committed gallery baseline. A passing WASM build does not run
-a browser; use the browser workbench command below for that runtime evidence.
+process example, builds the portable WASM libraries including `metis-web`, and
+compares the current seven form captures and their recorded inputs, actions,
+labels and geometry with the committed gallery baseline. A passing WASM build
+does not run a browser; use the browser workbench command below for that
+runtime evidence.
 
 ## Check the browser transport slice
 
@@ -33,11 +35,11 @@ cargo nextest run --locked -p metis-ipc
 ```
 
 These commands prove that frame bounds, one-pump ordered and out-of-order
-request correlation, and the native async-client tests compile against one
-pinned Moirai revision. They do not open a browser or produce a browser
-snapshot. V02 and V12 remain the acceptance
-checks for real WASM execution, cancellation, disconnect/recovery, teardown
-and resource measurements; their gallery entries must identify the actual
+request correlation, the native async server and the native async-client tests
+compile against one pinned Moirai revision. They do not open a browser or
+produce a browser snapshot. V02 and V12 remain the acceptance checks for
+cross-engine execution, post-drop resource measurements and the remaining
+desktop lifecycle evidence; their gallery entries must identify the actual
 engine, host and revision.
 
 ## Run the browser workbench
@@ -51,12 +53,16 @@ python -m http.server 8080 --directory output/browser
 
 Open `http://127.0.0.1:8080/`. Change weight and dose to see the Rust-owned
 values update, enter a non-numeric value to observe `ERR_NUMERIC_INSTABILITY`,
-then submit to observe the typed `ERR_CONNECTION_CLOSED` result. The browser
-trace in [the manual](browser.md) records the observed semantic states and
-viewport. Use **Stop host** to remove the form and listener guards, then
-**Start host** to remount fresh controls. This is runtime evidence for the
-local HTML5/CSS host and its asset policy; it does not prove an authenticated
-service-side Origin check, live task cancellation, or OS isolation.
+then submit to observe the typed `ERR_CONNECTION_CLOSED` result. Start the
+loopback command in [the browser manual](browser.md), reopen the page with its
+endpoint, process and principal query values, and submit to exercise the real
+handshake and calculation. The recorded trace covers authorized success,
+numeric rejection, service disconnect, stop/remount and recovery. Use
+**Stop host** to cancel the browser task, remove the form and listener guards,
+then **Start host** to remount fresh controls. This is runtime evidence for the
+HTML5/CSS host, Moirai transport and pre-response Origin check; it does not
+prove TLS, cross-engine behavior, post-drop allocation bounds, accessibility
+technology support or OS isolation.
 
 ## Check authentication provider ownership
 
@@ -112,16 +118,17 @@ these known artifacts to `output/visual/previous/`, retaining one previous run.
 Three deliberately changed renders test detection of text, position and color
 regressions. Their difference images are test evidence, not application states.
 The software gallery exercises production state transitions through API calls;
-the browser workbench now exercises editable controls and focus, while browser
-backend cancellation, accessibility and native input capture remain unimplemented.
+the browser workbench exercises editable controls, focus, real service
+requests, explicit disconnects and task/listener teardown. Browser accessibility
+technology, IME and native input capture remain unimplemented.
 
 ## What a demonstration proves
 
 A useful application demonstration pairs visible output with expected behavior:
-inputs, actions, the resulting values, and the tested target. When browser/native
-demonstrations become available, their gallery entries will identify the actual
-host and include focus, editing, success, error and recovery states. Screen-reader
-operation, permission denial and memory use require their own checks in addition
-to images. Only runnable examples with captured output appear in this manual;
+inputs, actions, the resulting values, and the tested target. The browser
+service trace identifies the actual host and includes focus, editing, success,
+error, disconnect and recovery states. Screen-reader operation, permission
+denial and memory use require their own checks in addition to images. Only
+runnable examples with captured output appear in this manual;
 the [development scenario contract](../VERIFICATION.md#visual-scenarios) records
 the remaining coverage.

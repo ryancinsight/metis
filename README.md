@@ -19,9 +19,10 @@ The current implementation provides binary IPC, session capabilities, backend
 calculation and audit ownership, a software rasterizer, a headless form workflow
 and a runnable HTML5/CSS browser workbench. The browser workbench keeps state and
 events in Rust/WASM while Moirai owns browser handles; its external assets use a
-strict same-origin CSP and its local host policy binds grants to origin, window
-and session. The authenticated backend bridge is still open. This renderer's bounded markup subset is not the intended
-limit of web support. A desktop WebView host is not implemented. Metis does not
+strict same-origin CSP and its service bridge validates Origin before the
+upgrade, then binds grants to origin, window and session. The loopback bridge
+is implemented for the demonstrator. This renderer's bounded markup subset is
+not the intended limit of web support. A desktop WebView host is not implemented. Metis does not
 yet provide Tauri feature parity, native desktop windows,
 an OS privilege sandbox, durable audit storage or regulatory certification.
 The infusion arithmetic is a synthetic engineering example; its configurable
@@ -75,8 +76,9 @@ recorded in [ADR 0005](docs/adr/0005-application-distribution.md). Atlas provide
 have transitive dependencies; the gate records the actual graph instead of describing it as
 dependency-free. The Atlas development overlay resolves first-party code to local
 trees. Standalone builds depend on the corresponding pushed provider revisions.
-Moirai is pinned to current default-branch revision `16a1b88`, which includes
-the merged process, browser/API and cancellable-task surfaces. Consumer
+Moirai is pinned to current default-branch revision
+`be87d009cd0e877beef719b47bdcbadc45659069`, which includes the merged process,
+browser/API, bounded WebSocket service and cancellable-task surfaces. Consumer
 verification and any future provider advance remain tracked in
 [the board](backlog.md#METIS-PROVIDER-001).
 

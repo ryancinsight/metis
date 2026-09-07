@@ -8,7 +8,7 @@ use metis_backend::clinical::{
 use metis_backend::service::{Clock, ClockReading, SESSION_LIFETIME};
 use metis_core::capability::CapabilityToken;
 use metis_core::error::{ErrorCode, Result};
-use metis_core::host::{HostOrigin, HostPolicy, HostSessionId, WindowId};
+use metis_core::host::{HostContext, HostOrigin, HostPolicy, HostSessionId, WindowId};
 use metis_core::protocol::{
     ClinicalCalcRequestPayload, ClinicalCalcResponsePayload, ErrorResponsePayload, FrameHeader,
     HandshakeRequestPayload, HandshakeResponsePayload, MessageType, PROTOCOL_VERSION,
@@ -67,6 +67,14 @@ fn header(msg_type: MessageType, sequence_id: u64, payload: &[u8]) -> FrameHeade
 }
 
 fn handshake(service: &mut BackendService<TestClock>, principal: [u8; 16]) -> CapabilityToken {
+    handshake_at(service, 1, principal)
+}
+
+fn handshake_at(
+    service: &mut BackendService<TestClock>,
+    sequence: u64,
+    principal: [u8; 16],
+) -> CapabilityToken {
     let payload = HandshakeRequestPayload {
         client_version: PROTOCOL_VERSION,
         client_process_id: 1,
@@ -74,7 +82,10 @@ fn handshake(service: &mut BackendService<TestClock>, principal: [u8; 16]) -> Ca
     }
     .encode();
     let (kind, bytes) = service
-        .handle_request(&header(MessageType::HandshakeReq, 1, &payload), &payload)
+        .handle_request(
+            &header(MessageType::HandshakeReq, sequence, &payload),
+            &payload,
+        )
         .expect("dispatch");
     assert_eq!(kind, MessageType::HandshakeResp);
     HandshakeResponsePayload::decode(&bytes)
@@ -320,6 +331,56 @@ fn backend_handshake_binds_issued_token_to_configured_host_policy() {
             .code,
         ErrorCode::InvalidCapabilitySignature
     );
+}
+
+#[test]
+fn trusted_service_context_rejects_browser_principal_substitution() {
+    let policy = HostPolicy::new(
+        HostOrigin::try_from("http://127.0.0.1:8765").expect("origin"),
+        WindowId::new(1).expect("window"),
+    );
+    let trusted = policy.context_for(HostSessionId::new([0x66; 16]).expect("session"));
+    let clock = TestClock(Rc::new(Cell::new(ClockReading {
+        unix_time: Duration::from_secs(1_700_000_000),
+        monotonic: Duration::ZERO,
+    })));
+    let mut service = BackendService::with_trusted_context(
+        [7; 32],
+        SafetyEnvelope::default(),
+        clock,
+        policy,
+        trusted,
+    )
+    .expect("trusted context satisfies policy");
+
+    assert_eq!(
+        error(
+            &mut service,
+            1,
+            MessageType::HandshakeReq,
+            &HandshakeRequestPayload {
+                client_version: PROTOCOL_VERSION,
+                client_process_id: 1,
+                principal_id: [0x77; 16],
+            }
+            .encode(),
+        ),
+        ErrorCode::InvalidPrincipal as u16
+    );
+    let token = handshake_at(&mut service, 2, [0x66; 16]);
+    let context = HostContext::new(
+        HostOrigin::try_from("http://127.0.0.1:8765").expect("origin"),
+        WindowId::new(1).expect("window"),
+        HostSessionId::new([0x66; 16]).expect("session"),
+    );
+    token
+        .verify_for_host(
+            metis_core::capability::CapabilityScope::SUBMIT_CALCULATION,
+            1_700_000_001,
+            &[7; 32],
+            &context,
+        )
+        .expect("trusted context signs the issued grant");
 }
 
 #[test]

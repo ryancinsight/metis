@@ -33,6 +33,17 @@ pub enum FailureContext {
     Response(RequestIdentity),
 }
 
+/// Response produced after the request and handler contracts have passed.
+#[derive(Debug)]
+pub(crate) struct DispatchedResponse {
+    /// Identity of the request that produced the response.
+    pub identity: RequestIdentity,
+    /// Wire message type to send to the peer.
+    pub message_type: MessageType,
+    /// Encoded response payload.
+    pub payload: Vec<u8>,
+}
+
 /// Request handler invoked only after frame and sequence validation.
 pub trait IpcHandler {
     /// Computes the request's response.
@@ -83,46 +94,70 @@ impl<T: IpcTransport> IpcServer<T> {
                 return Err(error);
             }
         };
-        let identity = RequestIdentity::from(&header);
-        let Some(expected) = header.msg_type.response_type() else {
-            let error = MetisError::protocol(
-                ErrorCode::UnexpectedMessageType,
-                "Server accepts request message types only",
-            );
-            handler.handle_failure(FailureContext::Request(identity), error.code)?;
-            return Err(error);
-        };
-        if header.sequence_id <= self.last_sequence {
-            let error = MetisError::protocol(
-                ErrorCode::ReplayDetected,
-                "Request sequence must increase strictly",
-            );
-            handler.handle_failure(FailureContext::Request(identity), error.code)?;
-            return Err(error);
-        }
-        self.last_sequence = header.sequence_id;
-        let (kind, response) = match handler.handle_request(&header, &payload) {
-            Ok(response) => response,
-            Err(error) => {
-                handler.handle_failure(FailureContext::Handler(identity), error.code)?;
-                return Err(error);
-            }
-        };
-        if kind != expected && kind != MessageType::ErrorResp {
-            let error = MetisError::protocol(
-                ErrorCode::UnexpectedMessageType,
-                "Handler response type does not match request",
-            );
-            handler.handle_failure(FailureContext::Response(identity), error.code)?;
-            return Err(error);
-        }
-        if let Err(error) = self
-            .transport
-            .send_message(kind, header.sequence_id, &response)
-        {
-            handler.handle_failure(FailureContext::Response(identity), error.code)?;
+        let dispatched = dispatch_request(&mut self.last_sequence, handler, header, &payload)?;
+        if let Err(error) = self.transport.send_message(
+            dispatched.message_type,
+            dispatched.identity.sequence,
+            &dispatched.payload,
+        ) {
+            handler.handle_failure(FailureContext::Response(dispatched.identity), error.code)?;
             return Err(error);
         }
         Ok(true)
     }
+}
+
+/// Validate and dispatch one decoded request for any message-oriented server.
+///
+/// The sequence is consumed before the handler runs. Both synchronous pipe
+/// sessions and asynchronous WebSocket sessions therefore share identical
+/// replay, response-type, and failure-context semantics.
+///
+/// # Errors
+/// Returns protocol or handler failures after recording the corresponding
+/// failure context through `handler`.
+pub(crate) fn dispatch_request<H: IpcHandler>(
+    last_sequence: &mut u64,
+    handler: &mut H,
+    header: FrameHeader,
+    payload: &[u8],
+) -> Result<DispatchedResponse> {
+    let identity = RequestIdentity::from(&header);
+    let Some(expected) = header.msg_type.response_type() else {
+        let error = MetisError::protocol(
+            ErrorCode::UnexpectedMessageType,
+            "Server accepts request message types only",
+        );
+        handler.handle_failure(FailureContext::Request(identity), error.code)?;
+        return Err(error);
+    };
+    if header.sequence_id <= *last_sequence {
+        let error = MetisError::protocol(
+            ErrorCode::ReplayDetected,
+            "Request sequence must increase strictly",
+        );
+        handler.handle_failure(FailureContext::Request(identity), error.code)?;
+        return Err(error);
+    }
+    *last_sequence = header.sequence_id;
+    let (message_type, payload) = match handler.handle_request(&header, payload) {
+        Ok(response) => response,
+        Err(error) => {
+            handler.handle_failure(FailureContext::Handler(identity), error.code)?;
+            return Err(error);
+        }
+    };
+    if message_type != expected && message_type != MessageType::ErrorResp {
+        let error = MetisError::protocol(
+            ErrorCode::UnexpectedMessageType,
+            "Handler response type does not match request",
+        );
+        handler.handle_failure(FailureContext::Response(identity), error.code)?;
+        return Err(error);
+    }
+    Ok(DispatchedResponse {
+        identity,
+        message_type,
+        payload,
+    })
 }

@@ -290,6 +290,34 @@ impl HostPolicy {
         HostContext::new(self.allowed_origin.clone(), self.allowed_window, session_id)
     }
 
+    /// Parses and checks an origin observed at a browser transport boundary.
+    ///
+    /// The raw value comes from the HTTP `Origin` header and is never copied
+    /// from an IPC payload. Canonicalization permits equivalent casing and
+    /// default-port spellings, while any other origin or a missing header is
+    /// rejected before a session context is constructed.
+    ///
+    /// # Errors
+    /// Returns [`ErrorCode::InvalidOrigin`] when the header is missing or
+    /// malformed, and [`ErrorCode::NavigationDenied`] when its canonical value
+    /// is outside this policy.
+    pub fn observe_origin(&self, raw_origin: Option<&str>) -> Result<HostOrigin> {
+        let raw_origin = raw_origin.ok_or_else(|| {
+            MetisError::capability(
+                ErrorCode::InvalidOrigin,
+                "Browser WebSocket handshake must include an Origin header",
+            )
+        })?;
+        let origin = HostOrigin::parse(raw_origin)?;
+        if origin != self.allowed_origin {
+            return Err(MetisError::capability(
+                ErrorCode::NavigationDenied,
+                "Browser origin is outside the connection policy",
+            ));
+        }
+        Ok(origin)
+    }
+
     /// Checks that a host context matches the exact origin and window policy.
     ///
     /// This method must receive origin and window values observed by the host

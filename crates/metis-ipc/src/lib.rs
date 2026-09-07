@@ -3,6 +3,8 @@
 #![forbid(unsafe_code)]
 
 pub mod async_client;
+#[cfg(not(target_arch = "wasm32"))]
+pub mod async_server;
 pub mod client;
 pub mod fault;
 pub mod frame;
@@ -13,6 +15,8 @@ pub mod transport;
 mod browser;
 
 pub use async_client::{AsyncIpcClient, MAX_PENDING_REQUESTS, RequestId};
+#[cfg(not(target_arch = "wasm32"))]
+pub use async_server::AsyncIpcServer;
 pub use client::IpcClient;
 pub use fault::{FaultConfig, FaultInjectingTransport};
 pub use frame::{read_frame, write_frame};

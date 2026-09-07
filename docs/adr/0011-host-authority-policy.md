@@ -46,9 +46,11 @@ lifecycles; they do not supply this broker contract.
   bootstrap blocks cross-origin anchor navigation as defense in depth.
   Downloaded WASM is never an authority source.
 
-This contract is shared by future desktop and authenticated browser bridges.
-Those bridges must supply observed host metadata and may not derive authority
-from page fields or a caller-selected endpoint.
+This contract is shared by desktop and authenticated browser bridges. The
+current `serve_browser_websocket` composition supplies the observed Origin to
+the policy before the HTTP 101 response and uses a trusted context for the
+session. Query fields and hidden page inputs select only the demonstration
+endpoint; they do not supply authority.
 
 ## Alternatives
 
@@ -65,16 +67,17 @@ primitives.
 Core tests cover canonicalization, strict IPv6, malformed and injection forms, exact policy
 matches, origin/window/session substitutions, unbound-token rejection and
 retargeted host signatures. Backend process and IPC tests continue to exercise
-one-handshake session binding and expiry. The browser asset test and manual
-trace verify external assets, strict CSP directives and lifecycle behavior.
-Full workspace, release, documentation and visual gates bind the result to the
-delivered revision.
+one-handshake session binding and expiry. The native WebSocket service tests
+complete an authorized loopback handshake and verify that an unauthorized
+Origin receives no 101 response. The browser asset test and manual trace verify
+external assets, strict CSP directives, live service results and lifecycle
+behavior. Full workspace, release, documentation and visual gates bind the
+result to the delivered revision.
 
 ## Limits
 
-This decision does not establish a live authenticated WebSocket acceptor,
-browser Origin header validation at a service, TLS endpoint policy, OS process
-permissions, or cross-engine desktop evidence. Those capabilities remain in
-[METIS-ASYNC-001](../../backlog.md#METIS-ASYNC-001),
+This decision does not establish TLS endpoint policy, OS process permissions,
+or cross-engine desktop evidence. Those capabilities remain in
+[METIS-SERVICES-001](../../backlog.md#METIS-SERVICES-001),
 [METIS-BROWSER-001](../../backlog.md#METIS-BROWSER-001),
 and [METIS-DESKTOP-001](../../backlog.md#METIS-DESKTOP-001).

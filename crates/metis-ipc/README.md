@@ -31,6 +31,13 @@ cancels a browser task can call `cancel_request` or `cancel_all_requests` to
 remove its correlation entries; late responses are rejected by sequence
 validation instead of being delivered to a later request.
 
+Native service callers use `AsyncIpcServer` over Moirai's message-oriented
+`WebSocketStream`. One WebSocket binary message carries exactly one Metis wire
+frame; the server applies the same sequence, replay, payload and handler
+contracts as the private-pipe server and sends one bounded response message.
+`serve_browser_websocket` adds the host-origin validator before the HTTP 101
+response and requires a trusted `HostContext` before serving a browser session.
+
 Fault injection modifies encoded wire bytes before delivery. CRC32 detects
 accidental corruption; it does not authenticate transport peers. Handshake
 principal/version checks validate response consistency, while the application

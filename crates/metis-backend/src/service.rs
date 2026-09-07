@@ -80,6 +80,7 @@ pub struct BackendService<C = SystemClock> {
     master_key: [u8; 32],
     envelope: SafetyEnvelope,
     host_policy: HostPolicy,
+    trusted_context: Option<HostContext>,
     ledger: AuditLedger,
     clock: C,
     session: Option<Session>,
@@ -123,6 +124,7 @@ impl<C> BackendService<C> {
             master_key,
             envelope,
             host_policy,
+            trusted_context: None,
             ledger: AuditLedger::new(),
             clock,
             session: None,
@@ -132,10 +134,50 @@ impl<C> BackendService<C> {
         }
     }
 
+    /// Selects a clock, exact host policy, and already-observed session context.
+    ///
+    /// A native or service acceptor uses this constructor after validating the
+    /// browser `Origin` header and generating the session principal. The
+    /// handshake may repeat that principal as a routing label, but it cannot
+    /// replace the trusted context with values supplied by the browser.
+    ///
+    /// # Errors
+    /// Returns [`ErrorCode::NavigationDenied`] or [`ErrorCode::InvalidWindow`]
+    /// when `context` does not satisfy `host_policy`.
+    pub fn with_trusted_context(
+        master_key: [u8; 32],
+        envelope: SafetyEnvelope,
+        clock: C,
+        host_policy: HostPolicy,
+        context: HostContext,
+    ) -> Result<Self> {
+        host_policy.check_context(&context)?;
+        Ok(Self {
+            master_key,
+            envelope,
+            host_policy,
+            trusted_context: Some(context),
+            ledger: AuditLedger::new(),
+            clock,
+            session: None,
+            last_sequence: 0,
+            last_reading: None,
+            clock_failed: false,
+        })
+    }
+
     /// Retained request outcomes, including rejected requests.
     #[must_use]
     pub const fn ledger(&self) -> &AuditLedger {
         &self.ledger
+    }
+
+    pub(crate) fn browser_policy(&self) -> &HostPolicy {
+        &self.host_policy
+    }
+
+    pub(crate) const fn has_trusted_context(&self) -> bool {
+        self.trusted_context.is_some()
     }
 }
 
@@ -211,9 +253,17 @@ impl<C: Clock> BackendService<C> {
         // The session key is unique; the issuance sequence is a public identifier,
         // never a substitute for the key's unpredictability.
         let token_id = self.ledger.next_sequence();
-        let context = self
-            .host_policy
-            .context_for(HostSessionId::new(request.principal_id)?);
+        let session_id = HostSessionId::new(request.principal_id)?;
+        let context = match self.trusted_context.as_ref() {
+            Some(expected) if expected.session_id() != session_id => {
+                return Err(MetisError::capability(
+                    ErrorCode::InvalidPrincipal,
+                    "Handshake principal is not bound to the trusted host session",
+                ));
+            }
+            Some(expected) => expected.clone(),
+            None => self.host_policy.context_for(session_id),
+        };
         let token = context.issue_capability(
             CapabilityGrantSpec {
                 token_id,

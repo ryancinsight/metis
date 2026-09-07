@@ -16,6 +16,10 @@ moirai-transport.workspace = true
 metis-core = { workspace = true }
 metis-ipc = { workspace = true }
 
+[target.'cfg(not(target_arch = "wasm32"))'.dependencies]
+moirai-async.workspace = true
+moirai-http.workspace = true
+
 [lib]
 name = "metis_backend"
 path = "src/lib.rs"

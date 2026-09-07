@@ -14,8 +14,13 @@ claiming a live backend bridge.
 
 Revision 2026-09-07: Moirai PR #268 merged at `16a1b88`, adding a cancellable
 browser-local task handle. Metis now clears request-table entries after task
-cancellation and exports `metis_stop` for listener teardown; a live service
-trace remains open.
+cancellation and exports `metis_stop` for listener teardown.
+
+Revision 2026-09-07: Moirai PR #269 added the bounded native WebSocket service
+and PR #270 merged at `be87d009cd0e877beef719b47bdcbadc45659069` moved
+cancellation waiter wakeups outside the provider state mutex. Metis now runs
+the browser client against that service through `AsyncIpcServer`; the service
+checks Origin before the 101 response and binds the session to `HostContext`.
 
 ## Context
 
@@ -64,17 +69,17 @@ timeout, bounded request capacity, ordered and out-of-order sequence
 correlation, and async frame round trips. Warning-denied
 Clippy passes for native all-targets and `wasm32-unknown-unknown`; the lock
 resolves all Moirai packages to merged provider
-`16a1b88` and its Mnemosyne backend. The
-browser workbench now loads the generated WASM and exercises
-disconnect/rejection states. A live-service trace must still exercise
-late-response handling, task teardown around a real WebSocket bridge and
-capture V02/V12 evidence before this item closes. The local request and
-listener cancellation contracts are covered by Metis tests and the
-stop/remount browser workflow.
+`be87d009cd0e877beef719b47bdcbadc45659069` and its Mnemosyne backend. The
+`metis-backend` loopback tests complete an authenticated handshake and clinical
+calculation with exact floating-point values, reject an unauthorized Origin
+before `101`, and exercise the same service path used by the browser workbench.
+The live browser trace covers service success, numeric rejection,
+disconnect/recovery and stop/remount task teardown. The local request and
+listener cancellation contracts remain covered by Metis tests.
 
 ## Residuals
 
-The live WebSocket service, origin/authority policy, post-drop allocation
-measurement, cross-engine visual run and desktop WebView host remain open.
-Native correlation tests and the stop/remount workflow do not establish a
-running service, cross-engine memory efficiency or Tauri parity.
+Post-drop allocation measurement, late-response service injection, cross-engine
+visual/runtime runs, TLS server authentication and the desktop WebView host
+remain open. The loopback service is a one-connection conformance host and does
+not establish OS permission isolation or Tauri parity.

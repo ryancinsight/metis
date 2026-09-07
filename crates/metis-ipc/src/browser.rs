@@ -4,7 +4,7 @@ use crate::frame::read_frame;
 use crate::transport::{AsyncIpcTransport, check_wire_size};
 use metis_core::error::{ErrorCode, MetisError, Result};
 use metis_core::protocol::{FrameHeader, HEADER_SIZE, MAX_PAYLOAD_SIZE};
-use moirai_pal::wasm::{WebReactor, WebSocketLimits, WebSocketReceive, WebTimer};
+use moirai_pal::wasm::{WebReactor, WebSocketLimits, WebSocketOpen, WebSocketReceive, WebTimer};
 use moirai_pal::{Interest, RawFd, Reactor};
 use std::future::Future;
 use std::io;
@@ -62,6 +62,57 @@ impl BrowserWebSocketTransport {
             .map_err(|error| map_browser_error(&error))?;
         Self::connect(url, limits)
     }
+
+    /// Opens a connection and waits for the browser WebSocket `OPEN` event.
+    ///
+    /// Sending before `OPEN` is a browser state-machine error. This constructor
+    /// keeps the transport owned while awaiting the provider's
+    /// cancellation-safe readiness future and closes the descriptor when the
+    /// finite opening deadline expires.
+    ///
+    /// # Errors
+    /// Returns connection, registration, readiness, or timeout errors.
+    pub async fn connect_async(
+        url: &str,
+        limits: WebSocketLimits,
+        open_timeout: Duration,
+    ) -> Result<Self> {
+        if open_timeout.is_zero() {
+            return Err(MetisError::transport(
+                ErrorCode::Timeout,
+                "WebSocket OPEN timeout must be non-zero",
+            ));
+        }
+        let mut transport = Self::connect(url, limits)?;
+        let open = transport
+            .reactor
+            .websocket_open_async(transport.fd)
+            .map_err(|error| map_browser_error(&error))?;
+        let timer = WebTimer::new(open_timeout).map_err(|error| map_browser_error(&error))?;
+        let result = OpenOrTimeout { open, timer }.await;
+        if let Err(error) = result {
+            let close_result = transport.reactor.websocket_close(transport.fd);
+            return match close_result {
+                Ok(()) => Err(map_browser_error(&error)),
+                Err(close_error) => Err(MetisError::transport(
+                    ErrorCode::TransportBroken,
+                    format!("WebSocket OPEN failed: {error}; cleanup failed: {close_error}"),
+                )),
+            };
+        }
+        Ok(transport)
+    }
+
+    /// Opens a connection with the default frame and queue bounds, waiting for
+    /// `OPEN` within `open_timeout`.
+    ///
+    /// # Errors
+    /// Returns connection, registration, readiness, or timeout errors.
+    pub async fn connect_with_defaults_async(url: &str, open_timeout: Duration) -> Result<Self> {
+        let limits = WebSocketLimits::new(DEFAULT_MESSAGE_BYTES, DEFAULT_QUEUED_MESSAGES)
+            .map_err(|error| map_browser_error(&error))?;
+        Self::connect_async(url, limits, open_timeout).await
+    }
 }
 
 impl AsyncIpcTransport for BrowserWebSocketTransport {
@@ -91,6 +142,32 @@ impl AsyncIpcTransport for BrowserWebSocketTransport {
 struct ReceiveOrTimeout {
     receive: WebSocketReceive,
     timer: WebTimer,
+}
+
+struct OpenOrTimeout {
+    open: WebSocketOpen,
+    timer: WebTimer,
+}
+
+impl Future for OpenOrTimeout {
+    type Output = io::Result<()>;
+
+    fn poll(self: Pin<&mut Self>, cx: &mut Context<'_>) -> Poll<Self::Output> {
+        let this = self.get_mut();
+        if let Poll::Ready(result) = Pin::new(&mut this.open).poll(cx) {
+            return Poll::Ready(result);
+        }
+        if let Poll::Ready(result) = Pin::new(&mut this.timer).poll(cx) {
+            return Poll::Ready(match result {
+                Ok(()) => Err(io::Error::new(
+                    io::ErrorKind::TimedOut,
+                    "WebSocket OPEN deadline elapsed",
+                )),
+                Err(error) => Err(error),
+            });
+        }
+        Poll::Pending
+    }
 }
 
 impl Future for ReceiveOrTimeout {

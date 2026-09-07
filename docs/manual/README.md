@@ -9,11 +9,12 @@ roles in separate processes, launched from one application executable.
 This manual describes the working application surface. The current demonstration
 tests separate processes through pipes; the gallery renders real backend sessions
 through bounded memory transport into a software framebuffer; and the browser
-workbench runs Rust/WASM controls in an HTML5/CSS document. Metis does not yet
-open a native window, connect the browser workbench to an authenticated service,
-or restrict operating-system permissions. The browser shell does enforce its
-local strict CSP and the backend's `HostPolicy` binds local grants to an exact
-origin, window and session; service-side and OS enforcement remain separate
+workbench runs Rust/WASM controls in an HTML5/CSS document. With the documented
+loopback service command, the workbench also completes an authenticated
+WebSocket handshake and a real backend calculation. Metis does not yet open a
+native window or restrict operating-system permissions. The browser shell
+enforces its strict CSP, and the service `HostPolicy` binds grants to an exact
+origin, window and session; TLS, desktop and OS enforcement remain separate
 workflows.
 
 The [target contract](../adr/0002-web-application-contract.md) describes the

@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'wasm-unsafe-eval'; style-src 'self'; connect-src 'self'; img-src 'self'; object-src 'none'; base-uri 'none'; frame-ancestors 'none'; form-action 'self'">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'wasm-unsafe-eval'; style-src 'self'; connect-src 'self' ws://127.0.0.1:8765; img-src 'self'; object-src 'none'; base-uri 'none'; frame-ancestors 'none'; form-action 'self'">
   <title>Metis browser workbench</title>
   <link rel="stylesheet" href="./styles.css">
 </head>
@@ -12,6 +12,11 @@
     <button id="metis-start" type="button">Start host</button>
     <button id="metis-stop" type="button">Stop host</button>
   </nav>
+  <section id="metis-config" hidden aria-hidden="true">
+    <input id="metis-websocket-endpoint" value="" autocomplete="off">
+    <input id="metis-process-id" value="" autocomplete="off">
+    <input id="metis-principal" value="" autocomplete="off">
+  </section>
   <main id="metis-app" aria-live="polite"><p>Loading Metis WASM…</p></main>
   <script type="module" src="./bootstrap.js"></script>
 </body>

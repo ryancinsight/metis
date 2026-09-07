@@ -27,14 +27,16 @@ Moirai owns the browser platform seam. `WebDocument`, `WebElement`,
 `WebEvent` and `WebEventListener` wrap DOM access and remove callbacks when
 their Rust handles drop. Metis does not import `web-sys` directly or create a
 second event-loop/runtime implementation. `AsyncFrontendApp` and
-`BrowserWebSocketTransport` remain the consumer seam for the future authorized
-service bridge.
+`BrowserWebSocketTransport` form the client seam for the authorized service
+bridge; the native service composition lives in `metis-backend` and
+`metis-ipc`.
 
-The current host has no service endpoint or session grant. A submit therefore
-produces `ERR_CONNECTION_CLOSED`; it never performs the clinical calculation in
-WASM and never displays a fabricated success. The eventual bridge must bind an
-authenticated session to the host origin and reject navigation, replay,
-oversize and cross-session requests before connecting this UI state to a result.
+Without service configuration a submit produces `ERR_CONNECTION_CLOSED`; it
+never performs the clinical calculation in WASM and never displays a fabricated
+success. When configured, the browser client connects to the bounded Moirai
+WebSocket service. The acceptor validates the observed Origin before the 101
+response, constructs a trusted host session and then applies Metis handshake,
+replay, oversize and capability checks before connecting UI state to a result.
 
 The raw `metis_start` and `metis_stop` exports are the WASM ABI boundary. Their
 unsafe attributes are isolated and documented; the host state, DOM operations
@@ -48,13 +50,20 @@ callbacks for stale markup.
 Revision 2026-09-07: [ADR 0011](0011-host-authority-policy.md) adds the shared
 `HostOrigin`/`WindowId`/`HostSessionId` contract, host-bound capability HMAC
 associated data and the strict external-asset CSP/navigation policy. This
-closes the local authority-kernel increment; the browser service still has to
-provide trusted Origin/session observations.
+closes the local authority-kernel increment; the browser service now consumes
+that contract at its pre-response Origin validator.
 
-The provider revision for this lifecycle increment is Moirai `16a1b88`; its
+Revision 2026-09-07: the host reads optional endpoint/process/principal values
+from host-provided configuration fields. The bootstrap may populate those
+fields from a query string for the local demonstration, but the values do not
+grant authority; the service's trusted context and capability signature remain
+authoritative.
+
+The provider revision for this lifecycle increment is Moirai
+`be87d009cd0e877beef719b47bdcbadc45659069`; its
 native cancellation-state tests and WASM library checks are recorded in ADR
-0045. Metis's local request cancellation and stop/remount trace extend the
-boundary without claiming a live service.
+0045. Metis's local request cancellation, live service loopback tests and
+stop/remount trace extend the boundary without claiming TLS or OS enforcement.
 
 ## Alternatives
 
@@ -67,22 +76,25 @@ enforce it at its acceptor.
 
 ## Verification
 
-Moirai's browser PAL at `16a1b88` passes its
+Moirai's browser PAL at
+`be87d009cd0e877beef719b47bdcbadc45659069` passes its
 WASM checks, strict Clippy and 39/39 PAL tests. Metis builds `metis-web` for
 `wasm32-unknown-unknown`; `scripts/browser.py build` generates the loader and
 WASM artifact with `wasm-bindgen` 0.2.128. A local browser trace loaded the
-page at `http://127.0.0.1:8765/index.html` with a 1280×720 viewport and device
-scale 1.25. It changed weight to 80 and dose to 0.75, rejected a hostile
-numeric edit with `ERR_NUMERIC_INSTABILITY`, and exposed
-`ERR_CONNECTION_CLOSED` on submit. The Codex in-app browser did not expose its
-engine version; no cross-engine or post-drop allocation measurement is claimed.
+page at `http://127.0.0.1:8080/` with a 1280×720 viewport and device scale
+1.25. It connected to the service at `ws://127.0.0.1:8765/socket`, submitted
+valid values, rejected zero weight with `0x3001`, observed service disconnect
+and recovered after a new service session. The Codex in-app browser did not
+expose its engine version; no cross-engine or post-drop allocation measurement
+is claimed.
 
 ## Residuals
 
-The live browser service, service-side Origin/session validation, live task/late-response checks,
+Post-drop allocation measurement, late-response service injection,
 accessibility/IME evidence, Chromium/Firefox/WebKit matrix and desktop WebView
-host remain open in the linked backlog items. Local request cancellation and
-stop/remount listener teardown are covered by the Metis test and browser trace.
-This decision establishes
-the browser host boundary and runnable local controls; it does not establish
-Tauri API parity, security superiority or lower memory use.
+host remain open in the linked backlog items. Local request cancellation,
+pre-response Origin validation and stop/remount listener/task teardown are
+covered by the Metis tests and browser trace. This decision establishes the
+browser host boundary and runnable local controls; it does not establish TLS,
+OS permission isolation, Tauri API parity, security superiority or lower memory
+use.

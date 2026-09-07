@@ -15,6 +15,18 @@ The console demonstration prints a flow of 0.36 mL/hour and a drug rate of
 Windows job containment bounds the managed session, not OS permissions.
 Native GUI hosting and other platform containment remain separate capabilities.
 
+The same executable can serve one authenticated browser session through the
+bounded loopback WebSocket role:
+
+```powershell
+cargo run --locked -p metis-app -- --metis-browser-service http://127.0.0.1:8080 8765 66666666666666666666666666666666
+```
+
+The service validates the browser `Origin` before the HTTP upgrade, binds the
+configured session context and exits after the peer closes. This role is a
+local conformance host; it does not provide TLS or operating-system permission
+isolation. The complete browser workflow is in the [user manual](../../docs/manual/browser.md).
+
 See the [user manual](../../docs/manual/distribution.md) for portable and
 installer workflows and the [application decision](../../docs/adr/0006-application-entry.md)
 for process boundaries and migration from the removed demonstration commands.

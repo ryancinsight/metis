@@ -20,7 +20,7 @@ process-isolation test. No original OS sandbox or native-window evidence exists.
 - Types and compilation: frontend cannot import the backend through its declared dependency closure; validated policy fields cannot be overwritten externally.
 - Behavioral tests: exact wire fixtures, canonical decoding, malformed corpus, scope/session/time rejection, audit event outcomes and bounded numerical error.
 - Independent numeric evidence: dimensional infusion conversion and exact binary fixtures; arithmetic roundoff uses a stated gamma bound.
-- Crypto evidence: Moirai `16a1b88` publishes the shared HMAC/SHA-256 and
+- Crypto evidence: Moirai `be87d009cd0e877beef719b47bdcbadc45659069` publishes the shared HMAC/SHA-256 and
   fixed-width comparison primitives; independent vectors and streaming/padding
   regressions run upstream, while Metis capability, audit, result-signature and
   CLI tests exercise those functions at their real boundaries.
@@ -74,7 +74,7 @@ native system calls; those require targeted lifecycle tests and further platform
 instrumentation. That earlier increment resolved Moirai from pushed commit
 `0514f11`, not local provider edits. The current browser-host increment advances
 the standalone lock to merged provider
-`16a1b88`; comparative security/memory evidence
+`be87d009cd0e877beef719b47bdcbadc45659069`; comparative security/memory evidence
 against Tauri and live-service browser tests remain required by [ADR 0002](adr/0002-web-application-contract.md).
 Advisory scanning, coverage,
 mutation analysis and cross-platform sandbox probes remain uncollected.
@@ -143,19 +143,20 @@ the initial, invalid-input and disconnected states were inspected during the
 trace; they are runtime observations, not committed browser golden images.
 
 This evidence establishes HTML5/CSS loading, Rust/WASM state updates, semantic
-focusable controls and explicit failure handling for the local workbench. It
-does not establish a live WebSocket service, origin/session grants,
-late-response handling, post-drop resource counts, cross-engine behavior,
-accessibility technology support or OS permission isolation. The request-table
-cancellation contract is covered by native tests; the browser listener
-teardown/remount trace is recorded below. Live service and allocation evidence
-remain open in [METIS-BROWSER-001](../backlog.md#METIS-BROWSER-001) and
-[METIS-ASYNC-001](../backlog.md#METIS-ASYNC-001).
+focusable controls and explicit failure handling for the pre-service local
+workbench. The live service trace below establishes the authenticated loopback
+path. Late-response injection, post-drop resource counts, cross-engine behavior,
+accessibility technology support and OS permission isolation remain open in
+[METIS-BROWSER-001](../backlog.md#METIS-BROWSER-001),
+[METIS-MEMORY-001](../backlog.md#METIS-MEMORY-001),
+[METIS-PERF-001](../backlog.md#METIS-PERF-001),
+[METIS-SERVICES-001](../backlog.md#METIS-SERVICES-001) and
+[METIS-DESKTOP-001](../backlog.md#METIS-DESKTOP-001).
 
 ## Browser lifecycle evidence — 2026-09-07
 
 After rebuilding the generated artifacts from the standalone lock at Moirai
-`16a1b88`, the Codex in-app browser loaded
+`be87d009cd0e877beef719b47bdcbadc45659069`, the Codex in-app browser loaded
 `http://127.0.0.1:8765/index.html` and exposed `Start host` and `Stop host`
 controls in the accessibility tree. Clicking **Stop host** removed the form
 and exposed the exact text `Metis browser host stopped.`; the inspected
@@ -165,9 +166,8 @@ controls and idle status. Browser console warnings and errors were empty.
 
 This trace demonstrates that the WASM host drops its Rust-owned listener
 guards, clears the mounted DOM, and remounts fresh form state through the same
-module. It does not establish a live WebSocket bridge, origin/session grant,
-post-drop JavaScript allocation count, cross-engine behavior or native window
-parity.
+module. It is the disconnected lifecycle baseline; the authenticated bridge
+trace below covers the service path.
 
 ## Host authority and asset evidence — 2026-09-07
 
@@ -188,14 +188,48 @@ module body, that its policy equals the `HostPolicy` source, that WASM is
 permitted through `'wasm-unsafe-eval'`, and that the bootstrap blocks
 cross-origin anchor navigation. The browser build rejects policy drift before
 copying the page. The `frame-ancestors` directive requires a response header
-from the eventual native or service host; it is not an effective document-meta
-framing control. The browser screenshot/console trace therefore establishes
-WASM and asset loading but still has no authenticated service.
+from the native or service host; it is not an effective document-meta framing
+control. The live service trace below supplies that host-side Origin check for
+the loopback demonstrator.
 
-This evidence establishes the local authority kernel and asset policy. It does
-not establish service-side Origin header validation, TLS endpoint policy, a
-live authenticated WebSocket acceptor, OS permission isolation, post-drop
-allocation counts or cross-engine host parity.
+This evidence establishes the local authority kernel, asset policy and its
+consumer-side integration. It does not establish TLS endpoint policy, OS
+permission isolation, post-drop allocation counts or cross-engine host parity.
+
+## Live browser service evidence — 2026-09-07
+
+The standalone lock resolves all Moirai packages to
+`be87d009cd0e877beef719b47bdcbadc45659069`, including the bounded HTTP/WebSocket
+service and the cancellation-wakeup fix. The focused command
+`cargo nextest run --locked -p metis-backend -p metis-ipc -p metis-core`
+passes 55/55; native all-targets Clippy for `metis-backend` and `metis-ipc`,
+the WASM `metis-web` check and WASM-target Clippy pass. The browser build
+command `python scripts/browser.py build` produces the same WASM loader used by
+the trace.
+
+For the runtime check, a Python static server served `output/browser` at
+`http://127.0.0.1:8080/` and the one-connection `metis-app
+--metis-browser-service` accepted `ws://127.0.0.1:8765/socket` with principal
+`66666666666666666666666666666666`. The Codex in-app browser opened the page
+with endpoint, process and principal query values at a 1280×720 CSS-pixel
+viewport and device scale 1.25; the engine version was unavailable and browser
+console warnings/errors were empty.
+
+The accessibility trace observed `Authorized backend session ready`, submitted
+the default values and received the backend result. It then changed weight to
+`80`, concentration to `4` and dose to `0.75`, received the echoed values,
+rejected weight `0` with `Backend rejected request [0x3001]`, stopped the host,
+restarted it after the service exited to observe `ERR_TRANSPORT_BROKEN`, and
+recovered after starting a new service session. The native loopback tests also
+assert the exact response values (`0.54375` and `2.175`), verify that an
+unauthorized Origin receives no `101 Switching Protocols` response, and reject
+replayed sequences and a 65,561-byte WebSocket message through the same service
+adapter.
+
+This is runtime evidence for the Rust/WASM DOM host, Moirai transport,
+pre-response Origin validation and bounded backend session. It does not close
+late-response injection, post-drop JavaScript allocation, TLS, accessibility
+technology/IME, cross-engine or native desktop/OS permission scenarios.
 
 <a id="visual-contract"></a>
 ## Visual and interaction contract
@@ -210,8 +244,9 @@ captures, stale source mappings and wrong state even when an image appears valid
 Three deliberately altered renders change a label, geometry and color. Each must
 produce a nonempty pixel difference against the initial form. They test the
 comparator and never enter the application gallery. The contract below also
-specifies the remaining real host work; the browser workbench now has a local
-runtime trace, while native desktop execution remains unimplemented.
+specifies the remaining real host work; the browser workbench now has local and
+authenticated loopback runtime traces, while native desktop execution remains
+unimplemented.
 
 Every scenario has one application source and one declared input/action trace.
 Tests assert application state, displayed values, layout/hit geometry and

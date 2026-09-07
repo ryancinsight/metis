@@ -14,6 +14,9 @@ metis-backend.workspace = true
 metis-frontend.workspace = true
 metis-core.workspace = true
 metis-ipc.workspace = true
+moirai-async.workspace = true
+moirai-executor.workspace = true
+moirai-http.workspace = true
 
 [lints]
 workspace = true

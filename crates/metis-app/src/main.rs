@@ -24,6 +24,11 @@ fn run() -> Result<(), Box<dyn std::error::Error>> {
     match Invocation::parse(std::env::args_os().skip(1))? {
         Invocation::Backend(inputs) => backend::run(inputs),
         Invocation::Frontend(inputs) => frontend::run(inputs),
+        Invocation::BrowserService {
+            origin,
+            port,
+            principal,
+        } => backend::run_browser_service(&origin, port, principal),
         Invocation::Help => {
             println!("{USAGE}");
             Ok(())

@@ -17,7 +17,9 @@ provides a library, not a separate executable. Windows process tree containment
 bounds child lifetimes; it does not restrict file or network permissions. The
 default `BackendService` policy binds grants to the contained native origin and
 window; browser and desktop hosts must supply their observed context before
-they can expose privileged commands. The example policy is not clinical
-guidance. Audit storage does not survive restart. See
+they can expose privileged commands. A live acceptor uses
+`HostPolicy::observe_origin` and `BackendService::with_trusted_context`, so the
+handshake principal can route a session but cannot select its authority. The
+example policy is not clinical guidance. Audit storage does not survive restart. See
 [architecture](../../docs/ARCHITECTURE.md) and
 [verification](../../docs/VERIFICATION.md). This package is unpublished.

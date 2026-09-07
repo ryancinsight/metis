@@ -28,11 +28,11 @@ result.
 
 The WASM host exports `metis_stop` beside `metis_start`. Stopping drops the
 `BrowserApplication`, whose Moirai-owned listener guards detach every DOM
-callback, and replaces the root with a stopped message. Starting mounts fresh
-state and listeners. A future authorized WebSocket bridge schedules its
-request future with Moirai's `spawn_local_with_handle` and calls the frontend
-cancellation method after the handle is cancelled; the current page remains
-disconnected until origin/session authority exists.
+callback, cancels the active `LocalTaskHandle` and replaces the root with a
+stopped message. Starting mounts fresh state and listeners. When host
+configuration is present, the application schedules its handshake and request
+futures with Moirai's `spawn_local_with_handle`; cancellation clears the
+request table before the task and transport are dropped.
 
 ## Alternatives
 
@@ -46,14 +46,17 @@ would make a stopped page interactive and keep JavaScript callbacks rooted.
 
 Metis IPC tests cover late-response rejection, removal of pending and retained
 entries, bounded counts and repeated cancellation. The frontend test covers a
-dropped request returning to idle. The WASM host exports and builds
-`metis_start`/`metis_stop`; the browser manual exercises stop/remount controls.
+dropped request returning to idle. The backend WebSocket tests cover an
+authenticated loopback exchange and pre-response Origin rejection. The WASM
+host exports and builds `metis_start`/`metis_stop`; the browser trace exercises
+authorized success, service disconnect/recovery and stop/remount controls.
 Moirai ADR 0045 records native cancellation-state tests, WASM compilation and
-warning-denied Clippy for the provider handle.
+warning-denied Clippy for the provider handle; provider ADR 0046 records the
+bounded service and unlocked cancellation wakeups.
 
 ## Limits
 
-This increment does not provide an authenticated WebSocket service, origin
-grant, cross-engine browser run, post-drop JavaScript allocation measurement,
-or native desktop window. A task that performs long synchronous work before an
-await still occupies the browser thread until it yields.
+This increment does not provide TLS server authentication, cross-engine browser
+runs, post-drop JavaScript allocation measurement, or a native desktop window.
+A task that performs long synchronous work before an await still occupies the
+browser thread until it yields.
