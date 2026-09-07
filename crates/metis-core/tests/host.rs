@@ -28,6 +28,18 @@ fn origin_parser_canonicalizes_allowed_network_origins() {
             .as_str(),
         "tauri://localhost"
     );
+    assert_eq!(
+        HostOrigin::try_from("HTTP://HOST:00080")
+            .expect("origin")
+            .as_str(),
+        "http://host"
+    );
+    assert_eq!(
+        HostOrigin::try_from("tauri://HOST:0007")
+            .expect("origin")
+            .as_str(),
+        "tauri://host:7"
+    );
 }
 
 #[test]
@@ -44,6 +56,9 @@ fn origin_parser_rejects_opaque_and_injection_forms() {
         "http://*",
         "http://[::1",
         "http://host:bad",
+        "http://host:+443",
+        "http://host: 443",
+        "http://host:000",
     ] {
         assert_eq!(
             HostOrigin::try_from(value)
@@ -58,10 +73,10 @@ fn origin_parser_rejects_opaque_and_injection_forms() {
 #[test]
 fn origin_parser_accepts_and_canonicalizes_strict_ipv6() {
     assert_eq!(
-        HostOrigin::try_from("HTTP://[2001:DB8:0:0:0:0:0:1]:443")
+        HostOrigin::try_from("HTTP://[2001:DB8:0:0:0:0:0:1]:8443")
             .expect("valid IPv6 origin")
             .as_str(),
-        "http://[2001:db8::1]:443"
+        "http://[2001:db8::1]:8443"
     );
     for value in [
         "http://[::::]",
@@ -203,6 +218,39 @@ fn host_binding_rejects_unbound_and_retargeted_signatures() {
             .expect_err("retargeted token")
             .code,
         ErrorCode::InvalidCapabilitySignature
+    );
+    assert_eq!(
+        bound
+            .verify_for_host(
+                CapabilityScope::SUBMIT_CALCULATION,
+                11,
+                &KEY,
+                &make_context("https://app.example", 3, [0x55; 16]),
+            )
+            .expect_err("session-retargeted token")
+            .code,
+        ErrorCode::InvalidPrincipal
+    );
+    assert_eq!(
+        bound
+            .verify_for_host(CapabilityScope::SUBMIT_CALCULATION, 9, &KEY, &context,)
+            .expect_err("not-yet-issued token")
+            .code,
+        ErrorCode::CapabilityExpired
+    );
+    assert_eq!(
+        bound
+            .verify_for_host(CapabilityScope::SYSTEM_ADMIN, 11, &KEY, &context)
+            .expect_err("missing scope")
+            .code,
+        ErrorCode::InsufficientScope
+    );
+    assert_eq!(
+        bound
+            .verify_for_host(CapabilityScope::SUBMIT_CALCULATION, 70, &KEY, &context)
+            .expect_err("expired token")
+            .code,
+        ErrorCode::CapabilityExpired
     );
 }
 

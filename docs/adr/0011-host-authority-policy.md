@@ -21,7 +21,8 @@ lifecycles; they do not supply this broker contract.
 `metis-core` owns a deny-by-default host contract:
 
 - `HostOrigin` accepts only canonical ASCII network origins and rejects
-  credentials, paths, fragments, wildcards, opaque schemes and invalid ports.
+  credentials, paths, fragments, wildcards, opaque schemes and invalid ports;
+  numeric ports are canonicalized and default HTTP(S) ports are omitted.
 - `WindowId` and `HostSessionId` are validating nonzero identities.
 - `HostPolicy` admits one exact origin and window and creates the context a
   trusted host observed for a session. A command must pass the policy, principal

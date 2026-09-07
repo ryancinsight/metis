@@ -203,6 +203,12 @@ impl CapabilityToken {
         backend_master_key: &[u8],
         context: &HostContext,
     ) -> Result<()> {
+        if self.principal_id != context.session_id().as_bytes() {
+            return Err(MetisError::capability(
+                ErrorCode::InvalidPrincipal,
+                "Capability principal is not bound to the host session",
+            ));
+        }
         let expected_signature = hmac_sha256(backend_master_key, &host_claims(self, context));
         if !constant_time_eq_32(&self.signature, &expected_signature) {
             return Err(MetisError::capability(

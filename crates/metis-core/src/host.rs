@@ -30,8 +30,10 @@ pub struct HostOrigin(String);
 impl HostOrigin {
     /// Parses and canonicalizes a host origin.
     ///
-    /// Scheme and host letters are lowercased. The result contains only the
-    /// scheme and authority; a path, query, or fragment is never accepted.
+    /// Scheme and host letters are lowercased. Decimal ports are normalized,
+    /// and the default HTTP port 80 or HTTPS port 443 is omitted. The result
+    /// contains only the scheme and authority; a path, query, or fragment is
+    /// never accepted.
     ///
     /// # Errors
     /// Returns [`ErrorCode::InvalidOrigin`] for an empty, oversized, malformed,
@@ -50,7 +52,7 @@ impl HostOrigin {
         if !matches!(scheme.as_str(), "http" | "https" | "metis" | "tauri") {
             return Err(invalid_origin());
         }
-        let authority = canonical_authority(authority)?;
+        let authority = canonical_authority(&scheme, authority)?;
         Ok(Self(format!("{scheme}://{authority}")))
     }
 
@@ -376,7 +378,7 @@ fn invalid_origin() -> MetisError {
     )
 }
 
-fn canonical_authority(authority: &str) -> Result<String> {
+fn canonical_authority(scheme: &str, authority: &str) -> Result<String> {
     if authority.is_empty()
         || authority.len() > MAX_ORIGIN_BYTES
         || authority
@@ -402,10 +404,10 @@ fn canonical_authority(authority: &str) -> Result<String> {
             let Some(port) = suffix.strip_prefix(':') else {
                 return Err(invalid_origin());
             };
-            validate_port(port)?;
+            let port = canonical_port(scheme, port)?;
+            return Ok(format!("[{host}]{port}"));
         }
-        let port = suffix;
-        return Ok(format!("[{host}]{port}"));
+        return Ok(format!("[{host}]"));
     }
 
     let mut parts = authority.split(':');
@@ -423,19 +425,22 @@ fn canonical_authority(authority: &str) -> Result<String> {
     {
         return Err(invalid_origin());
     }
-    if let Some(port) = port {
-        validate_port(port)?;
-    }
-
-    Ok(authority.to_ascii_lowercase())
+    let port = port.map_or_else(|| Ok(String::new()), |port| canonical_port(scheme, port))?;
+    Ok(format!("{}{port}", host.to_ascii_lowercase()))
 }
 
-fn validate_port(port: &str) -> Result<()> {
-    let Ok(port) = port.parse::<u16>() else {
+fn canonical_port(scheme: &str, suffix: &str) -> Result<String> {
+    if suffix.is_empty() || !suffix.bytes().all(|byte| byte.is_ascii_digit()) {
+        return Err(invalid_origin());
+    }
+    let Ok(port) = suffix.parse::<u16>() else {
         return Err(invalid_origin());
     };
     if port == 0 {
         return Err(invalid_origin());
     }
-    Ok(())
+    if (scheme == "http" && port == 80) || (scheme == "https" && port == 443) {
+        return Ok(String::new());
+    }
+    Ok(format!(":{port}"))
 }

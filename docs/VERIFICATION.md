@@ -172,7 +172,8 @@ parity.
 ## Host authority and asset evidence — 2026-09-07
 
 The `metis-core` host contract now parses canonical ASCII network origins,
-rejects credentials/paths/wildcards/opaque schemes and invalid ports, and binds
+rejects credentials/paths/wildcards/opaque schemes and invalid ports, canonicalizes
+numeric ports including HTTP(S) defaults, and binds
 one exact origin and window to a nonzero session principal. Seven core tests
 cover positive authorization, origin/window/session substitutions, unbound
 tokens and retargeted host signatures. `metis-backend` stores the trusted
