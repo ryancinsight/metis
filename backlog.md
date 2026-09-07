@@ -85,10 +85,8 @@ an owner. “Unsupported” cannot replace delivery of a required mobile/native 
 
 <a id="METIS-VERIFY-001"></a>
 ## METIS-VERIFY-001 — Verify and deliver foundation [patch]
-- Status: in-progress; priority: P0; owner: Metis integration; integrator: root; last-update: 2026-09-07; branch: `feat/process-foundation`; dependencies: METIS-SEC-001, METIS-IPC-001, METIS-UI-001, METIS-PROCESS-001
-- Scope: source documentation, warning-clean gates, process evidence and Git delivery.
-- Acceptance: fmt/clippy/nextest/doc pass; Atlas-only direct dependencies and enumerated provider transitive graph; evidence states host coverage and residual risks.
-- Demonstration: [V01](docs/VERIFICATION.md#V01), current source/capture and evidence limits in the manual; final framework-wide closure belongs to CONFORMANCE.
+- Status: done; priority: P0; delivery: `f246c81`; exact standalone gate passed 2026-09-07.
+- Outcome: Pinned Rust 1.97.0/nextest verification passed all stages, 155-package locked resolution and provider graph audit; Metis direct runtime edges are Atlas repositories (CLI parser exception documented), visual baselines match, and Windows/browser/WASM limits remain explicit.
 
 <a id="METIS-PROVIDER-001"></a>
 ## METIS-PROVIDER-001 — Atlas provider adoption [arch] [patch]
