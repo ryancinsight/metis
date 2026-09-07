@@ -58,21 +58,21 @@ an owner. “Unsupported” cannot replace delivery of a required mobile/native 
 
 <a id="METIS-IPC-001"></a>
 ## METIS-IPC-001 — Canonical bounded IPC [patch]
-- Status: in-progress; priority: P0; integrator: root; last-update: 2026-09-07; branch: `feat/process-foundation`
+- Status: review; integrator: root; last-update: 2026-09-05
 - Scope: framing, canonical payloads, correlation/replay, bounded memory transport, wire fault injection.
 - Acceptance: exact bytes and typed errors for truncation, corruption, replay, oversize and malformed payloads.
 - Demonstration: [V01](docs/VERIFICATION.md#V01) and [V02](docs/VERIFICATION.md#V02), surfaced rejection/disconnection; wire assertions supplement visible outcomes.
 
 <a id="METIS-UI-001"></a>
 ## METIS-UI-001 — Bounded presentation [patch]
-- Status: in-progress; priority: P0; integrator: root; last-update: 2026-09-07; branch: `feat/process-foundation`
+- Status: review; integrator: root; last-update: 2026-09-05
 - Scope: markup/style parsing, layout, software rasterizer, bounded surface/event allocations.
 - Acceptance: EOF/depth/Unicode/overflow cases terminate with errors; supported forms still render from input.
 - Demonstration: [V01](docs/VERIFICATION.md#V01) and [V04](docs/VERIFICATION.md#V04), actual supported-layout captures with typed unsupported-style diagnostics.
 
 <a id="METIS-PROCESS-001"></a>
 ## METIS-PROCESS-001 — Real executable workflow [arch] [minor]
-- Status: in-progress; priority: P0; integrator: root; last-update: 2026-09-07; branch: `feat/process-foundation`
+- Status: review; integrator: root; last-update: 2026-09-05
 - Scope: connect backend/frontend binaries through inherited pipes; bounded supervision and process tests.
 - Acceptance: separate PIDs, input-sensitive request/result exchange, failure propagation and finite shutdown.
 - Demonstration: [V01](docs/VERIFICATION.md#V01), manual process workflow and actual submitted state; [V05](docs/VERIFICATION.md#V05) remains a separate native-host requirement.
