@@ -60,7 +60,7 @@ an owner. “Unsupported” cannot replace delivery of a required mobile/native 
 
 <a id="METIS-UI-001"></a>
 ## METIS-UI-001 — Bounded presentation [patch]
-- Status: review; integrator: root; last-update: 2026-09-05
+- Status: in-progress; priority: P0; integrator: root; last-update: 2026-09-07; branch: `feat/process-foundation`
 - Scope: markup/style parsing, layout, software rasterizer, bounded surface/event allocations.
 - Acceptance: EOF/depth/Unicode/overflow cases terminate with errors; supported forms still render from input.
 - Demonstration: [V01](docs/VERIFICATION.md#V01) and [V04](docs/VERIFICATION.md#V04), actual supported-layout captures with typed unsupported-style diagnostics.
