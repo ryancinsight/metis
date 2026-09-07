@@ -340,6 +340,8 @@ mod tests {
             PluginOperation::new("open", CapabilityScope::UI_RENDER),
             PluginOperation::new("open", CapabilityScope::UI_RENDER),
         ];
+        static TOO_MANY: [PluginOperation; MAX_PLUGIN_OPERATIONS + 1] =
+            [PluginOperation::new("open", CapabilityScope::UI_RENDER); MAX_PLUGIN_OPERATIONS + 1];
         struct EmptyScope;
         impl Plugin for EmptyScope {
             const DESCRIPTOR: PluginDescriptor =
@@ -349,6 +351,11 @@ mod tests {
         impl Plugin for Duplicate {
             const DESCRIPTOR: PluginDescriptor =
                 PluginDescriptor::new("duplicate", 1, &DUPLICATE, &[]);
+        }
+        struct TooMany;
+        impl Plugin for TooMany {
+            const DESCRIPTOR: PluginDescriptor =
+                PluginDescriptor::new("too-many", 1, &TOO_MANY, &[]);
         }
         struct InvalidName;
         impl Plugin for InvalidName {
@@ -387,6 +394,13 @@ mod tests {
                 .expect_err("invalid version")
                 .code,
             ErrorCode::InvalidPluginDescriptor
+        );
+        assert_eq!(
+            registry
+                .register::<TooMany>()
+                .expect_err("operation bound")
+                .code,
+            ErrorCode::PayloadTooLarge
         );
     }
 

@@ -56,6 +56,10 @@ Validity is [issued, expires); the backend also checks its monotonic session
 lifetime and locks out detected clock rollback. The principal is an
 application session label, not proof of OS identity.
 
+`ErrorCode` is non-exhaustive so future typed failures can be added without
+requiring downstream match arms; callers handle unknown future codes at the
+boundary.
+
 The backend grants only SUBMIT_CALCULATION. It accepts one handshake per private
 session and binds accepted claims to the token issued on that session and the
 configured `HostPolicy` context. The result MAC covers the domain tag, request

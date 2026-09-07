@@ -113,4 +113,6 @@ typed name matching, synchronous send/receive, event/response interleaving,
 identifier/version mismatch and replay. A live browser trace still exercises the
 capability catalog; plugin descriptor validation is covered by the core tests.
 A native unsolicited-event service trace and remote plugin invocation remain
-open.
+open. `ErrorCode` is now non-exhaustive so future typed protocol and capability
+failures do not force downstream match arms; this follows the major release
+classification already required by the public `MessageType` extension.
