@@ -20,9 +20,12 @@ Layout supports sequential row/column flow, explicit and percentage dimensions,
 automatic width/content height, spacing, colors, square borders, and bitmap text.
 Stored alignment, minimum-size, font-weight, and radius declarations currently
 have no rendering effect. The font and glyph coverage belong to metis-platform.
-Layout rejects coordinate overflow and invalid dimensions. Application-built
-DOMs should observe the parser limits; direct DOM construction does not validate
-them until layout, and recursive DOM utility operations assume bounded trees.
+`ComputedStyle::parse` strictly rejects unknown properties, malformed
+declarations and invalid values with `ErrorCode::InvalidCssStyle`; an empty
+style and a trailing semicolon are valid. Layout rejects coordinate overflow
+and invalid dimensions. Application-built DOMs should observe the parser
+limits; direct DOM construction does not validate them until layout, and
+recursive DOM utility operations assume bounded trees.
 
 The software framebuffer implements Iris `RenderBackend<DisplayList>`. Rendering
 returns a slice borrowed from the existing pixel storage, preserving the same

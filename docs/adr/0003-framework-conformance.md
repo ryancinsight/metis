@@ -154,9 +154,11 @@ inputs and a single outcome clear stale results on edits and local/peer failures
 Real backend traces and seven software captures verify the transitions. This
 2026-09-05 revision replaces the original stale-result finding; responsive host
 events remain dependent on asynchronous transport and browser/native hosting.
-The [style contract](../../crates/metis-ui-lang/README.md) admits declarations
-that have no effect; implement their documented semantics or reject them, never
-silently accept browser-like syntax with different behavior.
+The [style contract](../../crates/metis-ui-lang/README.md) admits a bounded set
+of declarations, stores some properties whose renderer semantics are pending,
+and rejects unknown or malformed declarations with a typed diagnostic. It never
+silently accepts browser-like syntax with different behavior; [ADR 0013](0013-strict-style-contract.md)
+owns the parser contract.
 
 The [event surface](../../crates/metis-platform/src/event.rs) has no native event
 producer; [transport](../../crates/metis-ipc/src/transport.rs) blocks on receipt.

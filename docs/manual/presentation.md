@@ -21,8 +21,11 @@ automatic width/content height, padding, margins, gaps, colors and square border
 Each row child with automatic width can consume the available width; assign
 explicit widths or stack content in a column when that is the intended result.
 Stored alignment, minimum-size, font-weight and radius declarations currently
-have no rendering effect. The exact implementation limits are documented in
-[metis-ui-lang](../../crates/metis-ui-lang/README.md).
+have no rendering effect. Unknown properties, malformed declarations and
+invalid values fail with the typed `ERR_INVALID_CSS_STYLE` diagnostic; the
+software parser never silently changes a style. The exact implementation
+limits are documented in [metis-ui-lang](../../crates/metis-ui-lang/README.md),
+and the migration steps are in [Migrate presentation styles](style-migration.md).
 
 Parsing admits at most one MiB of markup, 4,096 nodes, 64 nesting levels and 64
 attributes per element. Framebuffers admit at most 16,777,216 pixels. These are

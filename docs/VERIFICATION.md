@@ -420,7 +420,8 @@ overflow/scrolling, alignment, theme and scaling. Use 360×640, 800×600 and
 partition narrow portrait, existing fixture and wide desktop, plus integer
 high-DPI mapping. Assert box/clip/hit-target coordinates and no occluded required
 controls. They are coverage points, not performance claims. Custom presentation
-has explicit supported properties; browser semantics are not inferred from
+has explicit supported properties and returns `ERR_INVALID_CSS_STYLE` for
+unknown or malformed declarations; browser semantics are not inferred from
 similarly named custom enums. Add platform-specific fractional scale cases where
 the declared host contract admits them.
 

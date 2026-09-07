@@ -1,5 +1,6 @@
 //! CSS-inspired style declarations, box model, and layout properties.
 
+use metis_core::error::{ErrorCode, MetisError, Result};
 pub use metis_platform::framebuffer::Color;
 
 /// Display flow mode.
@@ -176,168 +177,239 @@ impl Default for ComputedStyle {
 impl ComputedStyle {
     /// Parses an inline declaration list such as `display: flex; gap: 10px`.
     ///
-    /// Unknown properties and malformed declaration syntax are ignored. Invalid
-    /// dimensions resolve to `Auto`; malformed edge lists resolve to zero edges.
-    /// Coordinate limits and finite percentages are checked by layout.
-    #[must_use]
-    pub fn parse(css: &str) -> Self {
+    ///
+    /// # Errors
+    /// Returns [`ErrorCode::InvalidCssStyle`] for unknown properties, malformed
+    /// declarations, invalid values, negative spacing, malformed edge lists or
+    /// non-finite and negative dimensions. Coordinate limits are checked by
+    /// layout after parsing.
+    pub fn parse(css: &str) -> Result<Self> {
         let mut style = Self::default();
         for declaration in css.split(';') {
             let part = declaration.trim();
             if part.is_empty() {
                 continue;
             }
-            let Some((key, val)) = part.split_once(':') else {
-                continue;
-            };
-            let key = key.trim().to_ascii_lowercase();
+            let (key, val) = part
+                .split_once(':')
+                .ok_or_else(|| invalid_style("Style declaration requires ':'"))?;
+            let key = key.trim();
+            if key.is_empty() {
+                return Err(invalid_style("Style property name is empty"));
+            }
+            let key = key.to_ascii_lowercase();
             let val = val.trim();
+            if val.is_empty() {
+                return Err(invalid_value(&key, val));
+            }
 
             match key.as_str() {
-                "display" => match val {
-                    "flex" => style.display = Display::Flex,
-                    "block" => style.display = Display::Block,
-                    "inline" => style.display = Display::Inline,
-                    "none" => style.display = Display::None,
-                    _ => {}
-                },
-                "flex-direction" => match val {
-                    "row" => style.flex_direction = FlexDirection::Row,
-                    "column" => style.flex_direction = FlexDirection::Column,
-                    _ => {}
-                },
-                "justify-content" => match val {
-                    "flex-start" | "start" => style.justify_content = JustifyContent::FlexStart,
-                    "center" => style.justify_content = JustifyContent::Center,
-                    "flex-end" | "end" => style.justify_content = JustifyContent::FlexEnd,
-                    "space-between" => style.justify_content = JustifyContent::SpaceBetween,
-                    _ => {}
-                },
-                "align-items" => match val {
-                    "flex-start" | "start" => style.align_items = AlignItems::FlexStart,
-                    "center" => style.align_items = AlignItems::Center,
-                    "flex-end" | "end" => style.align_items = AlignItems::FlexEnd,
-                    "stretch" => style.align_items = AlignItems::Stretch,
-                    _ => {}
-                },
-                "gap" => {
-                    if let Some(px) = parse_px(val) {
-                        style.gap = px;
+                "display" => {
+                    style.display = match val {
+                        "flex" => Display::Flex,
+                        "block" => Display::Block,
+                        "inline" => Display::Inline,
+                        "none" => Display::None,
+                        _ => return Err(invalid_value(&key, val)),
                     }
                 }
-                "width" => {
-                    style.width = parse_size(val);
+                "flex-direction" => {
+                    style.flex_direction = match val {
+                        "row" => FlexDirection::Row,
+                        "column" => FlexDirection::Column,
+                        _ => return Err(invalid_value(&key, val)),
+                    }
                 }
-                "height" => {
-                    style.height = parse_size(val);
+                "justify-content" => {
+                    style.justify_content = match val {
+                        "flex-start" | "start" => JustifyContent::FlexStart,
+                        "center" => JustifyContent::Center,
+                        "flex-end" | "end" => JustifyContent::FlexEnd,
+                        "space-between" => JustifyContent::SpaceBetween,
+                        _ => return Err(invalid_value(&key, val)),
+                    }
                 }
-                "min-width" => {
-                    style.min_width = parse_size(val);
+                "align-items" => {
+                    style.align_items = match val {
+                        "flex-start" | "start" => AlignItems::FlexStart,
+                        "center" => AlignItems::Center,
+                        "flex-end" | "end" => AlignItems::FlexEnd,
+                        "stretch" => AlignItems::Stretch,
+                        _ => return Err(invalid_value(&key, val)),
+                    }
                 }
-                "min-height" => {
-                    style.min_height = parse_size(val);
-                }
-                "padding" => {
-                    style.padding = parse_edges(val);
-                }
-                "margin" => {
-                    style.margin = parse_edges(val);
-                }
-                "border-width" => {
-                    style.border_width = parse_edges(val);
-                }
+                "gap" => style.gap = parse_nonnegative_px(&key, val)?,
+                "width" => style.width = parse_size(&key, val)?,
+                "height" => style.height = parse_size(&key, val)?,
+                "min-width" => style.min_width = parse_size(&key, val)?,
+                "min-height" => style.min_height = parse_size(&key, val)?,
+                "padding" => style.padding = parse_edges(&key, val)?,
+                "margin" => style.margin = parse_edges(&key, val)?,
+                "border-width" => style.border_width = parse_edges(&key, val)?,
                 "border-color" => {
-                    if let Some(c) = Color::from_hex(val) {
-                        style.border_color = c;
-                    }
+                    style.border_color = parse_color(&key, val)?;
                 }
-                "border-radius" => {
-                    if let Some(px) = parse_px(val) {
-                        style.border_radius = px;
-                    }
-                }
+                "border-radius" => style.border_radius = parse_nonnegative_px(&key, val)?,
                 "background-color" | "background" => {
-                    if let Some(c) = Color::from_hex(val) {
-                        style.background_color = Some(c);
-                    }
+                    style.background_color = Some(parse_color(&key, val)?);
                 }
-                "color" => {
-                    if let Some(c) = Color::from_hex(val) {
-                        style.text_color = c;
-                    }
-                }
+                "color" => style.text_color = parse_color(&key, val)?,
                 "font-size" => {
-                    if let Some(px) = parse_px(val) {
-                        style.font_size = px.max(8).unsigned_abs();
-                    }
+                    let px = parse_nonnegative_px(&key, val)?.max(8);
+                    style.font_size = u32::try_from(px).map_err(|_| invalid_value(&key, val))?;
                 }
-                "font-weight" => match val {
-                    "bold" | "700" => style.font_weight = FontWeight::Bold,
-                    _ => style.font_weight = FontWeight::Normal,
-                },
-                _ => {}
+                "font-weight" => {
+                    style.font_weight = match val {
+                        "normal" | "400" => FontWeight::Normal,
+                        "bold" | "700" => FontWeight::Bold,
+                        _ => return Err(invalid_value(&key, val)),
+                    };
+                }
+                _ => {
+                    return Err(MetisError::ui(
+                        ErrorCode::InvalidCssStyle,
+                        format!("Unsupported CSS style property '{key}'"),
+                    ));
+                }
             }
         }
-        style
+        Ok(style)
     }
+}
+
+fn invalid_style(message: &str) -> MetisError {
+    MetisError::ui(ErrorCode::InvalidCssStyle, message)
+}
+
+fn invalid_value(property: &str, value: &str) -> MetisError {
+    MetisError::ui(
+        ErrorCode::InvalidCssStyle,
+        format!("Invalid value for CSS property '{property}': '{value}'"),
+    )
 }
 
 fn parse_px(s: &str) -> Option<i32> {
-    let s = s.trim().trim_end_matches("px");
-    s.parse::<i32>().ok()
+    let s = s.trim();
+    let number = s.strip_suffix("px").unwrap_or(s).trim();
+    (!number.is_empty())
+        .then(|| number.parse::<i32>().ok())
+        .flatten()
 }
 
-fn parse_size(s: &str) -> Size {
-    let s = s.trim();
+fn parse_nonnegative_px(property: &str, value: &str) -> Result<i32> {
+    let px = parse_px(value).ok_or_else(|| invalid_value(property, value))?;
+    if px < 0 {
+        return Err(invalid_value(property, value));
+    }
+    Ok(px)
+}
+
+fn parse_size(property: &str, value: &str) -> Result<Size> {
+    let s = value.trim();
     if s == "auto" {
-        return Size::Auto;
+        return Ok(Size::Auto);
     }
     if let Some(pct) = s.strip_suffix('%')
         && let Ok(val) = pct.trim().parse::<f32>()
+        && val.is_finite()
+        && val >= 0.0
     {
-        return Size::Percent(val / 100.0);
+        return Ok(Size::Percent(val / 100.0));
     }
-    if let Some(px) = parse_px(s) {
-        return Size::Px(px);
-    }
-    Size::Auto
+    parse_nonnegative_px(property, s).map(Size::Px)
 }
 
-fn parse_edges(s: &str) -> EdgeValues {
-    let mut parts = s.split_whitespace();
-    let Some(top) = parts.next().and_then(parse_px) else {
-        return EdgeValues::default();
-    };
-    let Some(right_text) = parts.next() else {
-        return EdgeValues::all(top);
-    };
-    let Some(right) = parse_px(right_text) else {
-        return EdgeValues::default();
-    };
-    let Some(bottom_text) = parts.next() else {
-        return EdgeValues::symmetric(top, right);
-    };
-    let Some(bottom) = parse_px(bottom_text) else {
-        return EdgeValues::default();
-    };
-    let Some(left_text) = parts.next() else {
-        return EdgeValues {
+fn parse_edges(property: &str, value: &str) -> Result<EdgeValues> {
+    let mut values = [0; 4];
+    let mut count = 0;
+    for part in value.split_whitespace() {
+        let slot = values
+            .get_mut(count)
+            .ok_or_else(|| invalid_value(property, value))?;
+        *slot = parse_nonnegative_px(property, part)?;
+        count += 1;
+    }
+    if count == 0 {
+        return Err(invalid_value(property, value));
+    }
+    let [top, right, bottom, left] = values;
+    Ok(match count {
+        1 => EdgeValues::all(top),
+        2 => EdgeValues::symmetric(top, right),
+        3 => EdgeValues {
             top,
             right,
             bottom,
             left: right,
-        };
-    };
-    let Some(left) = parse_px(left_text) else {
-        return EdgeValues::default();
-    };
-    if parts.next().is_some() {
-        return EdgeValues::default();
+        },
+        4 => EdgeValues {
+            top,
+            right,
+            bottom,
+            left,
+        },
+        _ => return Err(invalid_value(property, value)),
+    })
+}
+
+fn parse_color(property: &str, value: &str) -> Result<Color> {
+    Color::from_hex(value).ok_or_else(|| invalid_value(property, value))
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn parses_admitted_values_and_stored_properties() {
+        let style = ComputedStyle::parse(
+            "display: block; flex-direction: row; justify-content: center; align-items: end; \
+             gap: 4px; width: 50%; height: 12px; min-width: auto; min-height: 3; \
+             padding: 1px 2px 3px 4px; margin: 5px 6px; border-width: 1px; \
+             border-color: #123456; border-radius: 2px; background: #abcdef80; \
+             color: #fedcba; font-size: 10px; font-weight: 700;",
+        )
+        .expect("admitted style");
+
+        assert_eq!(style.display, Display::Block);
+        assert_eq!(style.flex_direction, FlexDirection::Row);
+        assert_eq!(style.justify_content, JustifyContent::Center);
+        assert_eq!(style.align_items, AlignItems::FlexEnd);
+        assert_eq!(style.gap, 4);
+        assert_eq!(style.width, Size::Percent(0.5));
+        assert_eq!(style.height, Size::Px(12));
+        assert_eq!(
+            style.padding,
+            EdgeValues {
+                top: 1,
+                right: 2,
+                bottom: 3,
+                left: 4
+            }
+        );
+        assert_eq!(style.margin, EdgeValues::symmetric(5, 6));
+        assert_eq!(style.border_color, Color::rgb(0x12, 0x34, 0x56));
+        assert_eq!(
+            style.background_color,
+            Some(Color::rgba(0xab, 0xcd, 0xef, 0x80))
+        );
+        assert_eq!(style.font_weight, FontWeight::Bold);
     }
-    EdgeValues {
-        top,
-        right,
-        bottom,
-        left,
+
+    #[test]
+    fn rejects_unsupported_and_malformed_values_with_one_code() {
+        for css in [
+            "unknown: value",
+            "display",
+            "display: column",
+            "gap: -1px",
+            "width: NaN%",
+            "padding: 1px nope",
+            "color: #xyz",
+            "font-weight: 500",
+        ] {
+            let error = ComputedStyle::parse(css).expect_err("invalid style");
+            assert_eq!(error.code, ErrorCode::InvalidCssStyle, "{css}");
+        }
     }
 }

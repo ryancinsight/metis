@@ -344,7 +344,9 @@ mod tests {
                 .code,
             ErrorCode::LayoutOverflow
         );
-        let doc = parse_markup("<a style='width:NaN%'/>").expect("markup");
+        let mut element = DomElement::new("a");
+        element.computed_style.width = Size::Percent(f32::NAN);
+        let doc = DomDocument::new(element);
         assert_eq!(
             compute_layout(&doc, 8, 16).expect_err("invalid size").code,
             ErrorCode::LayoutOverflow

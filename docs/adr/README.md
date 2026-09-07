@@ -21,3 +21,4 @@
 | [0010](0010-cancellable-browser-request-lifecycle.md) | Cancellable browser request lifecycle | Accepted |
 | [0011](0011-host-authority-policy.md) | Host authority and origin policy | Accepted |
 | [0012](0012-command-event-contract.md) | Typed command and event contract | Accepted |
+| [0013](0013-strict-style-contract.md) | Strict presentation style contract | Proposed |

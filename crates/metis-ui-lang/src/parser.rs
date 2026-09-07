@@ -88,9 +88,10 @@ impl Parser<'_> {
             return Err(syntax_error("Expected tag identifier"));
         }
         let (attributes, self_closing) = self.parse_attributes()?;
-        let computed_style = attributes
-            .get("style")
-            .map_or_else(ComputedStyle::default, |value| ComputedStyle::parse(value));
+        let computed_style = attributes.get("style").map_or_else(
+            || Ok(ComputedStyle::default()),
+            |value| ComputedStyle::parse(value),
+        )?;
         let mut element = DomElement {
             tag,
             attributes,
@@ -300,6 +301,21 @@ mod tests {
             parse_markup("<a></b>").expect_err("mismatch").code,
             ErrorCode::TagMismatch
         );
+    }
+
+    #[test]
+    fn style_errors_propagate_from_element_attributes() {
+        for input in [
+            "<a style='unknown: value'/>",
+            "<a style='gap'/>",
+            "<a style='width: NaN%'/>",
+        ] {
+            assert_eq!(
+                parse_markup(input).expect_err("invalid style").code,
+                ErrorCode::InvalidCssStyle,
+                "{input}"
+            );
+        }
     }
 
     #[test]
