@@ -96,9 +96,9 @@ is claimed.
 
 ## Residuals
 
-Post-drop allocation measurement, late-response service injection,
-accessibility/IME evidence, Chromium/Firefox/WebKit matrix and desktop WebView
-host remain open in the linked backlog items. Local request cancellation,
+Post-drop allocation measurement, accessibility/IME evidence,
+Chromium/Firefox/WebKit matrix and desktop WebView host remain open in the
+linked backlog items. Local request cancellation,
 pre-response Origin validation and stop/remount listener/task teardown are
 covered by the Metis tests and browser trace. This decision establishes the
 browser host boundary and runnable local controls; it does not establish TLS,

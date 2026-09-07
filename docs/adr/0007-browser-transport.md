@@ -22,6 +22,11 @@ cancellation waiter wakeups outside the provider state mutex. Metis now runs
 the browser client against that service through `AsyncIpcServer`; the service
 checks Origin before the 101 response and binds the session to `HostContext`.
 
+Revision 2026-09-07: Metis adds a bounded `--response-delay-ms` service probe
+using Moirai's async timer. A live stop/remount trace confirms that a delayed
+clinical response cannot mutate the new DOM after the browser transport and
+listener guards are dropped.
+
 ## Context
 
 The native Metis IPC client performs a blocking receive over an owned stream.
@@ -74,12 +79,13 @@ resolves all Moirai packages to merged provider
 calculation with exact floating-point values, reject an unauthorized Origin
 before `101`, and exercise the same service path used by the browser workbench.
 The live browser trace covers service success, numeric rejection,
-disconnect/recovery and stop/remount task teardown. The local request and
-listener cancellation contracts remain covered by Metis tests.
+disconnect/recovery, stop/remount task teardown and a delayed response that is
+disposed at the service/session boundary. The local request and listener
+cancellation contracts remain covered by Metis tests.
 
 ## Residuals
 
-Post-drop allocation measurement, late-response service injection, cross-engine
-visual/runtime runs, TLS server authentication and the desktop WebView host
-remain open. The loopback service is a one-connection conformance host and does
+Post-drop allocation measurement, cross-engine visual/runtime runs, TLS server
+authentication and the desktop WebView host remain open. The loopback service is
+a one-connection conformance host and does
 not establish OS permission isolation or Tauri parity.

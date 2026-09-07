@@ -145,7 +145,8 @@ trace; they are runtime observations, not committed browser golden images.
 This evidence establishes HTML5/CSS loading, Rust/WASM state updates, semantic
 focusable controls and explicit failure handling for the pre-service local
 workbench. The live service trace below establishes the authenticated loopback
-path. Late-response injection, post-drop resource counts, cross-engine behavior,
+path. The delayed-response stop/remount trace below closes service-boundary
+stale DOM delivery; post-drop resource counts, cross-engine behavior,
 accessibility technology support and OS permission isolation remain open in
 [METIS-BROWSER-001](../backlog.md#METIS-BROWSER-001),
 [METIS-MEMORY-001](../backlog.md#METIS-MEMORY-001),
@@ -228,9 +229,8 @@ adapter.
 
 This is runtime evidence for the Rust/WASM DOM host, Moirai transport,
 pre-response Origin validation, target-surface discovery and bounded backend
-session. It does not close late-response injection, post-drop JavaScript
-allocation, TLS, accessibility/IME, cross-engine or native desktop/OS
-permission scenarios.
+session. It does not close post-drop JavaScript allocation, TLS,
+accessibility/IME, cross-engine or native desktop/OS permission scenarios.
 
 ## Browser control evidence — 2026-09-07
 
@@ -263,6 +263,38 @@ drag/drop, wheel/touch/modifier events, IME, accessibility technology,
 cross-engine parity, post-drop allocation and native-window input remain open
 under the linked backlog items.
 
+## Browser stale-response evidence — 2026-09-07
+
+The service conformance host now accepts `--response-delay-ms` with a bounded
+1–30,000 millisecond value. The delay is implemented by Moirai's asynchronous
+timer in `AsyncIpcServer` and applies only to a successful clinical response;
+handshake, rejection and event frames remain immediate. The probe was run at
+revision `a8cc67c` with the standalone lock resolving Moirai to
+`9e86e1dd3b9be39b03bacfd830c5a364a33f4f9d`:
+
+```text
+cargo run --locked -p metis-app -- --metis-browser-service http://127.0.0.1:8080 8765 66666666666666666666666666666666 --response-delay-ms 4000
+```
+
+The Codex in-app browser used the configured workbench URL at a 1280×720
+CSS-pixel viewport and device scale 1.25; its engine version was unavailable.
+After observing `Authorized backend session ready`, the trace activated
+`Submit to authorized backend` and observed `Request in progress`, then
+activated `Stop host` before the four-second response deadline. The stopped DOM
+contained only `Metis browser host stopped.`. It then activated `Start host`
+while the old response was pending. The new generation rendered
+`Backend unavailable [ERR_TRANSPORT_BROKEN]`, `Host capabilities: unavailable`
+and `Remote events: none`. After waiting 4.5 seconds, the accessibility tree
+was unchanged and contained no old result, event or request completion. The
+service session ended when the dropped peer could no longer receive the delayed
+frame; no stale response reached the remounted DOM.
+
+The screenshot captured after the wait showed the remounted CSS form with the
+typed disconnected status, default controls and no prior clinical result. This
+is lifecycle evidence for one in-app browser engine and the real loopback
+service. Browser engine comparison, post-drop JavaScript allocation counts,
+TLS and native host permission evidence remain open.
+
 ## Final gate evidence — 2026-09-07
 
 The delivered revision passes `python scripts/verify.py`. The gate reports zero
@@ -273,7 +305,7 @@ documentation, the runnable example, presentation checks and visual capture
 comparison. The deliberate capture-failure probe exits 1 as its negative oracle;
 the gate records that result as expected and still passes overall.
 
-The debug and release native suites each run 196 tests with zero failures or
+The debug and release native suites each run 197 tests with zero failures or
 skips. The package workflow tests run 14/14. The gate resolves 155 packages and
 records the exact revision, source hash, lock hash and visual report under the
 ignored `output/` directory. All seven captures and three mutation probes pass.
@@ -323,10 +355,10 @@ performs the same checks and then invokes a registered `websocket.increment`
 plugin over the same framed transport, decoding its input-sensitive typed
 response. Both client variants also exercise the typed target-discovery and
 plugin invocation helpers and preserve peer error payloads. The asynchronous
-client injection test also
-rejects a canceled sequence and then receives a newer outstanding response;
-browser-host late-response injection remains open alongside native desktop, OS
-permission and cross-engine coverage.
+client injection test also rejects a canceled sequence and then receives a
+newer outstanding response. The browser-host delayed-response stop/remount
+probe is recorded in [Browser stale-response evidence](#browser-stale-response-evidence--2026-09-07);
+native desktop, OS permission and cross-engine coverage remain open.
 The browser host maps local connection failures to `Disconnected` while keeping
 remote handshake rejections in `SessionFailed` with their original wire code;
 the mapping is covered by host-boundary unit tests. Lifecycle exhaustion is
@@ -454,7 +486,7 @@ Load actual Rust/WASM and HTML/CSS in Chromium, Firefox and WebKit jobs. Exercis
 pointer, keyboard, touch where supported, focus traversal, editable/selectable
 controls, disabled state and a cancellable backend operation. Two input changes
 must produce independently expected displayed results; confirm pending→cancel,
-disconnect→recover and late-response rejection. Capture focus/error/success and
+disconnect→recover and delayed-response stop/remount rejection. Capture focus/error/success and
 assert no remaining listeners, requests or tasks after teardown. A local-only
 settings pane is allowed without backend authority; an authoritative calculation
 must use the authenticated configured host/service and its real response.

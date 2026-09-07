@@ -217,5 +217,6 @@ of the generation is a typed local error rather than a wraparound.
 Target descriptor round-trips, malformed values, service dispatch, sync and
 async client correlation, authenticated WebSocket discovery and native
 generation rejection are covered by tests. The browser target guard is
-covered by the lifecycle unit tests; delayed browser-server injection and
-cross-engine capture remain open runtime evidence.
+covered by the lifecycle unit tests; the delayed browser-server stop/remount
+probe is recorded in [VERIFICATION](../VERIFICATION.md#browser-stale-response-evidence--2026-09-07).
+Cross-engine capture remains open runtime evidence.

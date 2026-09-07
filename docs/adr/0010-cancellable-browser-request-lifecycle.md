@@ -49,7 +49,8 @@ entries, bounded counts and repeated cancellation. The frontend test covers a
 dropped request returning to idle. The backend WebSocket tests cover an
 authenticated loopback exchange and pre-response Origin rejection. The WASM
 host exports and builds `metis_start`/`metis_stop`; the browser trace exercises
-authorized success, service disconnect/recovery and stop/remount controls.
+authorized success, service disconnect/recovery, and a delayed-response
+stop/remount sequence against the real service.
 Moirai ADR 0045 records native cancellation-state tests, WASM compilation and
 warning-denied Clippy for the provider handle; provider ADR 0046 records the
 bounded service and unlocked cancellation wakeups.
