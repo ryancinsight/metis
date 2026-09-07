@@ -109,7 +109,7 @@ remain required. The portable and installed payload must each contain exactly
 one application executable; repeat the real MSI install/run/uninstall and
 user-file-preservation workflow.
 
-The complete Windows gate passes 125 debug and 125 release native tests,
+The complete Windows gate passes 126 debug and 126 release native tests,
 40 Python checks, WASM library compilation, strict Clippy, doctests, rustdoc,
 examples and seven unchanged visual snapshots. The real MSI workflow verifies
 one installed application executable, both input-sensitive process sessions,
