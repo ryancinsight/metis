@@ -109,8 +109,8 @@ remain required. The portable and installed payload must each contain exactly
 one application executable; repeat the real MSI install/run/uninstall and
 user-file-preservation workflow.
 
-The complete Windows gate passes 118 debug and 118 release native tests,
-38 Python checks, WASM library compilation, strict Clippy, doctests, rustdoc,
+The complete Windows gate passes 125 debug and 125 release native tests,
+40 Python checks, WASM library compilation, strict Clippy, doctests, rustdoc,
 examples and seven unchanged visual snapshots. The real MSI workflow verifies
 one installed application executable, both input-sensitive process sessions,
 shortcut ownership, removal and preservation of the user-created file. The
@@ -173,7 +173,7 @@ parity.
 
 The `metis-core` host contract now parses canonical ASCII network origins,
 rejects credentials/paths/wildcards/opaque schemes and invalid ports, and binds
-one exact origin and window to a nonzero session principal. Seven core tests
+one exact origin and window to a nonzero session principal. Six core tests
 cover positive authorization, origin/window/session substitutions, unbound
 tokens and retargeted host signatures. `metis-backend` stores the trusted
 context in each session and issues its fixed-width token with the host binding
