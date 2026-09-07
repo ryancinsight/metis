@@ -11,6 +11,9 @@ session principal, it connects `AsyncFrontendApp` to the Metis service over the
 bounded Moirai WebSocket transport. The downloaded WASM never calculates
 clinical output and never treats page configuration as backend authority; the
 service validates the observed origin and trusted session before the upgrade.
+After a successful submission the workbench receives and decodes the backend's
+`clinical.result` event, verifies it matches the correlated response, and
+renders its identifier and rates in the event status line.
 
 Build the WASM artifact and generated browser glue with:
 

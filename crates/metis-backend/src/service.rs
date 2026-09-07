@@ -9,13 +9,15 @@ use crate::audit::{AuditEvent, AuditLedger};
 use crate::clinical::{
     DrugConcentrationMgMl, PatientWeightKg, SafetyEnvelope, TargetDoseRate, calculate_infusion_rate,
 };
+use crate::plugins::{PluginExecutor, PluginRouter};
 use metis_core::capability::{CapabilityGrantSpec, CapabilityScope, CapabilityToken};
 use metis_core::error::{ErrorCode, MetisError, Result};
 use metis_core::host::{HostContext, HostPolicy, HostSessionId};
 use metis_core::protocol::{
     CapabilityCatalogPayload, ClinicalCalcRequestPayload, ClinicalCalcResponsePayload,
     ErrorResponsePayload, FrameHeader, HandshakeRequestPayload, HandshakeResponsePayload,
-    MessageType, PROTOCOL_VERSION, SUPPORTED_COMMANDS,
+    MessageType, PROTOCOL_VERSION, Plugin, PluginInvocationPayload, RemoteEventPayload,
+    SUPPORTED_COMMANDS,
 };
 use metis_ipc::server::{FailureContext, IpcHandler, RequestIdentity};
 use moirai_crypto::hmac_sha256;
@@ -88,6 +90,8 @@ pub struct BackendService<C = SystemClock> {
     last_sequence: u64,
     last_reading: Option<ClockReading>,
     clock_failed: bool,
+    pending_event: Option<RemoteEventPayload>,
+    plugins: PluginRouter,
 }
 
 impl BackendService {
@@ -114,6 +118,10 @@ impl<C> BackendService<C> {
     }
 
     /// Selects a clock and exact host policy for deterministic verification.
+    ///
+    /// # Panics
+    /// Panics only if the compile-time default plugin-router capacity violates
+    /// its invariant; the default capacity is fixed below the host bound.
     #[must_use]
     pub fn with_clock_and_policy(
         master_key: [u8; 32],
@@ -132,6 +140,9 @@ impl<C> BackendService<C> {
             last_sequence: 0,
             last_reading: None,
             clock_failed: false,
+            pending_event: None,
+            plugins: PluginRouter::new()
+                .expect("invariant: the default plugin router capacity is valid"),
         }
     }
 
@@ -164,6 +175,8 @@ impl<C> BackendService<C> {
             last_sequence: 0,
             last_reading: None,
             clock_failed: false,
+            pending_event: None,
+            plugins: PluginRouter::new()?,
         })
     }
 
@@ -171,6 +184,22 @@ impl<C> BackendService<C> {
     #[must_use]
     pub const fn ledger(&self) -> &AuditLedger {
         &self.ledger
+    }
+
+    /// Registers a permission-scoped plugin executor for this host.
+    ///
+    /// Registration validates the plugin's static descriptor and keeps the
+    /// executor behind the bounded extension router. It does not grant the
+    /// plugin operating-system authority; each invocation still verifies the
+    /// declared capability scope against the trusted session token.
+    ///
+    /// # Errors
+    /// Returns a typed descriptor, duplicate, capacity, or allocation error.
+    pub fn register_plugin<P>(&mut self, plugin: P) -> Result<()>
+    where
+        P: Plugin + PluginExecutor + 'static,
+    {
+        self.plugins.register(plugin)
     }
 
     pub(crate) fn browser_policy(&self) -> &HostPolicy {
@@ -289,7 +318,12 @@ impl<C: Clock> BackendService<C> {
         Ok(response)
     }
 
-    fn authorize(&self, token: &CapabilityToken, reading: ClockReading) -> Result<()> {
+    fn authorize_scope(
+        &self,
+        token: &CapabilityToken,
+        reading: ClockReading,
+        required_scope: CapabilityScope,
+    ) -> Result<()> {
         let session = self.session.as_ref().ok_or_else(|| {
             MetisError::capability(
                 ErrorCode::MissingCapability,
@@ -302,14 +336,13 @@ impl<C: Clock> BackendService<C> {
                 "Capability was not issued to this transport session",
             ));
         }
-        let _verified = self
-            .host_policy
-            .authorize::<{ CapabilityScope::SUBMIT_CALCULATION.0 }>(
-                token,
-                &session.context,
-                reading.unix_time.as_secs(),
-                &self.master_key,
-            )?;
+        self.host_policy.check_context(&session.context)?;
+        token.verify_for_host(
+            required_scope,
+            reading.unix_time.as_secs(),
+            &self.master_key,
+            &session.context,
+        )?;
         let elapsed = reading
             .monotonic
             .checked_sub(session.started)
@@ -328,8 +361,12 @@ impl<C: Clock> BackendService<C> {
         Ok(())
     }
 
+    fn authorize(&self, token: &CapabilityToken, reading: ClockReading) -> Result<()> {
+        self.authorize_scope(token, reading, CapabilityScope::SUBMIT_CALCULATION)
+    }
+
     fn calculate(
-        &self,
+        &mut self,
         header: &FrameHeader,
         payload: &[u8],
         reading: ClockReading,
@@ -350,6 +387,10 @@ impl<C: Clock> BackendService<C> {
             result_signature: [0; 32],
         };
         response.result_signature = self.result_signature(header, &request, &response)?;
+        self.pending_event = Some(RemoteEventPayload::from_event(
+            response.audit_sequence_id,
+            &response,
+        )?);
         Ok(response.encode())
     }
 
@@ -367,6 +408,27 @@ impl<C: Clock> BackendService<C> {
             ));
         }
         CapabilityCatalogPayload::new(SUPPORTED_COMMANDS.iter().copied())?.encode()
+    }
+
+    fn invoke_plugin(&mut self, payload: &[u8], reading: ClockReading) -> Result<Vec<u8>> {
+        let request = PluginInvocationPayload::decode(payload)?;
+        if !self.plugins.contains(request.plugin_name()) {
+            return Err(MetisError::capability(
+                ErrorCode::PluginNotFound,
+                "Plugin invocation names an unregistered plugin",
+            ));
+        }
+        let operation = self
+            .plugins
+            .command(request.plugin_name(), request.operation_name())
+            .ok_or_else(|| {
+                MetisError::capability(
+                    ErrorCode::PluginOperationNotFound,
+                    "Plugin invocation names an undeclared operation",
+                )
+            })?;
+        self.authorize_scope(request.token(), reading, operation.required_scope())?;
+        self.plugins.invoke(&request)?.encode()
     }
 
     fn result_signature(
@@ -423,6 +485,10 @@ impl<C: Clock> BackendService<C> {
                 MessageType::ClinicalCalcResp,
                 self.calculate(header, payload, reading)?,
             )),
+            MessageType::PluginInvokeReq => Ok((
+                MessageType::PluginInvokeResp,
+                self.invoke_plugin(payload, reading)?,
+            )),
             _ => Err(MetisError::protocol(
                 ErrorCode::UnexpectedMessageType,
                 "Message type is not a supported request operation",
@@ -437,11 +503,15 @@ impl<C: Clock> IpcHandler for BackendService<C> {
         header: &FrameHeader,
         payload: &[u8],
     ) -> Result<(MessageType, Vec<u8>)> {
+        self.pending_event = None;
         let result = self.dispatch(header, payload);
-        self.record_event(
+        if let Err(error) = self.record_event(
             AuditEvent::Processed(RequestIdentity::from(header)),
             result.as_ref().err().map(|error| error.code),
-        )?;
+        ) {
+            self.pending_event = None;
+            return Err(error);
+        }
         match result {
             Ok(response) => Ok(response),
             Err(error) => Ok((
@@ -456,12 +526,17 @@ impl<C: Clock> IpcHandler for BackendService<C> {
     }
 
     fn handle_failure(&mut self, context: FailureContext, error: ErrorCode) -> Result<()> {
+        self.pending_event = None;
         // Preserve the transport event even if the clock fails. In that case
         // the record uses the last trusted timestamp and the clock fault stops
         // the server after the event is appended.
         let clock_result = self.observe_clock();
         self.record_event(AuditEvent::Failure(context), Some(error))?;
         clock_result.map(|_| ())
+    }
+
+    fn take_event(&mut self) -> Option<RemoteEventPayload> {
+        self.pending_event.take()
     }
 }
 

@@ -6,7 +6,8 @@ mod payload;
 use metis_core::capability::{CapabilityScope, CapabilityToken};
 use metis_core::error::{ErrorCode, MetisError, Result};
 use metis_core::protocol::{
-    FrameHeader, HandshakeResponsePayload, MessageType, PROTOCOL_VERSION, build_frame,
+    ClinicalCalcResponsePayload, FrameHeader, HandshakeResponsePayload, MessageType,
+    PROTOCOL_VERSION, RemoteEventPayload, build_frame,
 };
 use metis_ipc::client::HandshakeError;
 use metis_ipc::server::{FailureContext, RequestIdentity};
@@ -224,6 +225,7 @@ fn handshake_validates_version_and_principal_before_installing_token() {
 struct Heartbeat {
     count: usize,
     failures: Vec<(FailureContext, ErrorCode)>,
+    event: Option<RemoteEventPayload>,
 }
 impl IpcHandler for Heartbeat {
     fn handle_request(
@@ -238,6 +240,41 @@ impl IpcHandler for Heartbeat {
         self.failures.push((context, error));
         Ok(())
     }
+    fn take_event(&mut self) -> Option<RemoteEventPayload> {
+        self.event.take()
+    }
+}
+
+#[test]
+fn sync_server_delivers_handler_event_after_its_correlated_response() {
+    let (transport, server_transport) = MemoryTransport::pair();
+    let mut client = IpcClient::new(transport);
+    let mut server = IpcServer::new(server_transport);
+    let response = ClinicalCalcResponsePayload {
+        audit_sequence_id: 9,
+        rate_ml_hr: 1.25,
+        drug_rate_mg_hr: 2.5,
+        is_pediatric: false,
+        result_signature: [4; 32],
+    };
+    let mut handler = Heartbeat {
+        count: 0,
+        failures: Vec::new(),
+        event: Some(RemoteEventPayload::from_event(9, &response).expect("typed event envelope")),
+    };
+    let server_thread = std::thread::spawn(move || server.step(&mut handler));
+    assert_eq!(
+        client.send_and_recv(MessageType::HeartbeatReq, b"echo"),
+        Ok((MessageType::HeartbeatResp, b"echo".to_vec()))
+    );
+    assert_eq!(server_thread.join().expect("server thread"), Ok(true));
+    let event = client.recv_event().expect("unsolicited event");
+    assert_eq!(event.name(), "clinical.result");
+    assert_eq!(event.event_id().get(), response.audit_sequence_id);
+    assert_eq!(
+        event.decode_as::<ClinicalCalcResponsePayload>(),
+        Ok(response)
+    );
 }
 
 #[test]

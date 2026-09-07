@@ -1,15 +1,16 @@
 //! Correlated asynchronous IPC for browser-thread transports.
 
 use crate::client::{
-    CapabilityError, HandshakeError, decode_capability_response, decode_event,
-    decode_handshake_response, next_request, validate_response,
+    CapabilityError, HandshakeError, PluginInvocationError, decode_capability_response,
+    decode_event, decode_handshake_response, decode_plugin_response, next_request,
+    validate_response,
 };
 use crate::transport::AsyncIpcTransport;
 use metis_core::capability::CapabilityToken;
 use metis_core::error::{ErrorCode, MetisError, Result};
 use metis_core::protocol::{
     CapabilityCatalogPayload, HandshakeRequestPayload, MessageType, PROTOCOL_VERSION,
-    RemoteEventPayload,
+    PluginInvocationPayload, PluginInvocationResponsePayload, RemoteEventPayload,
 };
 use std::collections::BTreeMap;
 use std::collections::VecDeque;
@@ -18,8 +19,7 @@ use std::time::Duration;
 /// Maximum number of requests and completed responses retained by one client.
 pub const MAX_PENDING_REQUESTS: usize = 16;
 
-/// Maximum unsolicited events retained while a receive owner awaits a response.
-pub const MAX_QUEUED_EVENTS: usize = 16;
+pub use crate::client::MAX_QUEUED_EVENTS;
 
 /// Correlation identifier assigned to one asynchronous request.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, PartialOrd, Ord)]
@@ -107,6 +107,25 @@ impl<T: AsyncIpcTransport> AsyncIpcClient<T> {
     ) -> std::result::Result<CapabilityCatalogPayload, CapabilityError> {
         let (kind, payload) = self.send_and_recv(MessageType::CapabilityReq, &[]).await?;
         decode_capability_response(kind, &payload)
+    }
+
+    /// Invokes one authenticated plugin operation without blocking the caller.
+    ///
+    /// The payload carries the capability token and plugin-owned body codec;
+    /// this client validates only the outer response envelope.
+    ///
+    /// # Errors
+    /// Returns local transport, correlation, decoding, or response-type errors,
+    /// or the peer's decoded rejection.
+    pub async fn invoke_plugin(
+        &mut self,
+        request: &PluginInvocationPayload,
+    ) -> std::result::Result<PluginInvocationResponsePayload, PluginInvocationError> {
+        let encoded = request.encode()?;
+        let (kind, payload) = self
+            .send_and_recv(MessageType::PluginInvokeReq, &encoded)
+            .await?;
+        decode_plugin_response(kind, &payload)
     }
 
     /// Returns the current session capability, if acquired.
@@ -477,6 +496,29 @@ mod tests {
         let (header, payload) = crate::read_frame(&mut wire).expect("request");
         assert_eq!(header.msg_type, MessageType::CapabilityReq);
         assert!(payload.is_empty());
+    }
+
+    #[test]
+    fn plugin_invocation_decodes_the_correlated_async_response() {
+        let token = token([1; 16]);
+        let request = PluginInvocationPayload::new(token, "viewer", "open", [1, 4, 9])
+            .expect("plugin invocation");
+        let response = PluginInvocationResponsePayload::new([2, 5, 10])
+            .expect("plugin response")
+            .encode()
+            .expect("encoded response");
+        let response = frame(MessageType::PluginInvokeResp, 1, &response);
+        let mut client =
+            AsyncIpcClient::new(ScriptTransport::new([response]), Duration::from_secs(1))
+                .expect("positive timeout");
+
+        let response = poll_ready(client.invoke_plugin(&request)).expect("plugin response");
+        assert_eq!(response.body(), [2, 5, 10]);
+        let wire = client.transport.sent.first().expect("request frame");
+        let mut wire = wire.as_slice();
+        let (header, payload) = crate::read_frame(&mut wire).expect("request");
+        assert_eq!(header.msg_type, MessageType::PluginInvokeReq);
+        assert_eq!(PluginInvocationPayload::decode(&payload), Ok(request));
     }
 
     #[test]

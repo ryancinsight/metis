@@ -82,6 +82,12 @@ impl<S: AsyncRead + AsyncWrite + Unpin> AsyncIpcServer<S> {
             handler.handle_failure(FailureContext::Response(dispatched.identity), error.code)?;
             return Err(error);
         }
+        if let Some(event) = handler.take_event()
+            && let Err(error) = self.send_event(&event).await
+        {
+            handler.handle_failure(FailureContext::Event(event.event_id()), error.code)?;
+            return Err(error);
+        }
         Ok(true)
     }
 

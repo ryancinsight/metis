@@ -55,6 +55,10 @@ pub enum ErrorCode {
     PluginAlreadyRegistered = 0x200b,
     /// The bounded plugin registry has no remaining capacity.
     PluginRegistryFull = 0x200c,
+    /// The requested plugin is not registered by this host.
+    PluginNotFound = 0x200d,
+    /// The requested operation is not declared by the plugin.
+    PluginOperationNotFound = 0x200e,
 
     // Clinical / Safety Interlock Errors (0x3000 - 0x3FFF)
     /// Weight is outside the demonstration input bounds.
@@ -131,6 +135,8 @@ impl ErrorCode {
             Self::InvalidPluginDescriptor => "ERR_INVALID_PLUGIN_DESCRIPTOR",
             Self::PluginAlreadyRegistered => "ERR_PLUGIN_ALREADY_REGISTERED",
             Self::PluginRegistryFull => "ERR_PLUGIN_REGISTRY_FULL",
+            Self::PluginNotFound => "ERR_PLUGIN_NOT_FOUND",
+            Self::PluginOperationNotFound => "ERR_PLUGIN_OPERATION_NOT_FOUND",
             Self::InvalidPatientWeight => "ERR_INVALID_PATIENT_WEIGHT",
             Self::InvalidDrugConcentration => "ERR_INVALID_DRUG_CONCENTRATION",
             Self::InvalidTargetDose => "ERR_INVALID_TARGET_DOSE",

@@ -4,8 +4,13 @@ use metis_core::capability::CapabilityToken;
 use metis_core::error::{ErrorCode, MetisError, Result};
 use metis_core::protocol::{
     CapabilityCatalogPayload, ErrorResponsePayload, FrameHeader, HandshakeRequestPayload,
-    HandshakeResponsePayload, MessageType, PROTOCOL_VERSION, RemoteEventPayload,
+    HandshakeResponsePayload, MessageType, PROTOCOL_VERSION, PluginInvocationPayload,
+    PluginInvocationResponsePayload, RemoteEventPayload,
 };
+use std::collections::VecDeque;
+
+/// Maximum unsolicited events retained while a synchronous client awaits a response.
+pub const MAX_QUEUED_EVENTS: usize = 16;
 
 /// Failure to establish a session, preserving local faults and peer rejections.
 ///
@@ -104,12 +109,51 @@ impl std::error::Error for CapabilityError {
     }
 }
 
+/// Failure to invoke a remote plugin, preserving local faults and peer errors.
+#[derive(Debug, Clone, PartialEq, Eq)]
+#[non_exhaustive]
+pub enum PluginInvocationError {
+    /// Transport, correlation, decoding, or response validation fails locally.
+    Local(MetisError),
+    /// The correlated peer rejects the plugin operation.
+    Remote(ErrorResponsePayload),
+}
+
+impl From<MetisError> for PluginInvocationError {
+    fn from(error: MetisError) -> Self {
+        Self::Local(error)
+    }
+}
+
+impl std::fmt::Display for PluginInvocationError {
+    fn fmt(&self, formatter: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self {
+            Self::Local(error) => error.fmt(formatter),
+            Self::Remote(error) => write!(
+                formatter,
+                "Peer rejected plugin invocation [0x{:04X}]: {}",
+                error.error_code, error.message
+            ),
+        }
+    }
+}
+
+impl std::error::Error for PluginInvocationError {
+    fn source(&self) -> Option<&(dyn std::error::Error + 'static)> {
+        match self {
+            Self::Local(error) => Some(error),
+            Self::Remote(_) => None,
+        }
+    }
+}
+
 /// Client with monotonically increasing sequence identifiers.
 pub struct IpcClient<T> {
     transport: T,
     next_seq: Option<u64>,
     active_token: Option<CapabilityToken>,
     last_event_id: Option<u64>,
+    events: VecDeque<RemoteEventPayload>,
 }
 impl<T: IpcTransport> IpcClient<T> {
     /// Starts a client without an authenticated session capability.
@@ -119,6 +163,7 @@ impl<T: IpcTransport> IpcClient<T> {
             next_seq: Some(1),
             active_token: None,
             last_event_id: None,
+            events: VecDeque::new(),
         }
     }
     /// Acquires a token whose principal and protocol version match the request.
@@ -157,16 +202,37 @@ impl<T: IpcTransport> IpcClient<T> {
         decode_capability_response(kind, &payload)
     }
 
+    /// Invokes one authenticated plugin operation and decodes its bounded body.
+    ///
+    /// The payload carries the capability token and the plugin-owned body
+    /// codec; this client only validates the outer response envelope.
+    ///
+    /// # Errors
+    /// Returns local transport, correlation, decoding, or response-type errors,
+    /// or the peer's decoded rejection.
+    pub fn invoke_plugin(
+        &mut self,
+        request: &PluginInvocationPayload,
+    ) -> std::result::Result<PluginInvocationResponsePayload, PluginInvocationError> {
+        let encoded = request.encode()?;
+        let (kind, payload) = self.send_and_recv(MessageType::PluginInvokeReq, &encoded)?;
+        decode_plugin_response(kind, &payload)
+    }
+
     /// Receives one unsolicited event from the message-oriented transport.
     ///
     /// Event identifiers must echo the envelope identifier and increase
     /// strictly for this client. Callers should invoke this method from the
     /// one receive owner for a connection; request responses are not consumed
-    /// by an event-only call.
+    /// by an event-only call. Events observed while a request response is
+    /// pending are returned from this bounded queue before reading the wire.
     ///
     /// # Errors
     /// Returns transport, decoding, message-type, or event-sequence errors.
     pub fn recv_event(&mut self) -> Result<RemoteEventPayload> {
+        if let Some(event) = self.events.pop_front() {
+            return Ok(event);
+        }
         let (header, payload) = self.transport.recv_message()?;
         decode_event(&header, &payload, &mut self.last_event_id)
     }
@@ -184,6 +250,9 @@ impl<T: IpcTransport> IpcClient<T> {
     /// # Errors
     /// Rejects non-request types, exhausted sequences, transport failures,
     /// unrelated sequence identifiers, and incompatible response types.
+    /// Unsolicited events encountered before the correlated response are
+    /// retained for [`Self::recv_event`] within the same bounded queue used by
+    /// the event receiver.
     pub fn send_and_recv(
         &mut self,
         msg_type: MessageType,
@@ -191,9 +260,22 @@ impl<T: IpcTransport> IpcClient<T> {
     ) -> Result<(MessageType, Vec<u8>)> {
         let (expected, sequence) = next_request(&mut self.next_seq, msg_type)?;
         self.transport.send_message(msg_type, sequence, payload)?;
-        let (header, response) = self.transport.recv_message()?;
-        validate_response(expected, sequence, &header)?;
-        Ok((header.msg_type, response))
+        loop {
+            let (header, response) = self.transport.recv_message()?;
+            if header.msg_type.is_event() {
+                if self.events.len() >= MAX_QUEUED_EVENTS {
+                    return Err(MetisError::transport(
+                        ErrorCode::QueueFull,
+                        "Synchronous IPC remote event queue is full",
+                    ));
+                }
+                let event = decode_event(&header, &response, &mut self.last_event_id)?;
+                self.events.push_back(event);
+                continue;
+            }
+            validate_response(expected, sequence, &header)?;
+            return Ok((header.msg_type, response));
+        }
     }
 }
 
@@ -290,6 +372,25 @@ pub(crate) fn decode_capability_response(
         .into());
     }
     Ok(catalog)
+}
+
+pub(crate) fn decode_plugin_response(
+    kind: MessageType,
+    payload: &[u8],
+) -> std::result::Result<PluginInvocationResponsePayload, PluginInvocationError> {
+    if kind == MessageType::ErrorResp {
+        return Err(PluginInvocationError::Remote(ErrorResponsePayload::decode(
+            payload,
+        )?));
+    }
+    if kind != MessageType::PluginInvokeResp {
+        return Err(MetisError::protocol(
+            ErrorCode::UnexpectedMessageType,
+            "Plugin invocation response type does not match the request",
+        )
+        .into());
+    }
+    Ok(PluginInvocationResponsePayload::decode(payload)?)
 }
 
 pub(crate) fn decode_event(
@@ -408,6 +509,66 @@ mod tests {
     }
 
     #[test]
+    fn invokes_a_plugin_and_decodes_its_bounded_response() {
+        let (transport, mut peer) = MemoryTransport::pair();
+        let token = CapabilityToken::issue(
+            7,
+            [1; 16],
+            metis_core::capability::CapabilityScope::UI_RENDER,
+            10,
+            20,
+            30,
+            b"test key",
+        );
+        let request = PluginInvocationPayload::new(token, "viewer", "open", [1, 4, 9])
+            .expect("plugin invocation");
+        let response = PluginInvocationResponsePayload::new([2, 5, 10])
+            .expect("plugin response")
+            .encode()
+            .expect("encoded response");
+        peer.send_message(MessageType::PluginInvokeResp, 1, &response)
+            .expect("plugin response frame");
+
+        let mut client = IpcClient::new(transport);
+        let response = client.invoke_plugin(&request).expect("plugin response");
+        assert_eq!(response.body(), [2, 5, 10]);
+        let (header, payload) = peer.recv_message().expect("request frame");
+        assert_eq!(header.msg_type, MessageType::PluginInvokeReq);
+        assert_eq!(PluginInvocationPayload::decode(&payload), Ok(request));
+    }
+
+    #[test]
+    fn plugin_invocation_preserves_a_typed_remote_rejection() {
+        let (transport, mut peer) = MemoryTransport::pair();
+        let token = CapabilityToken::issue(
+            7,
+            [1; 16],
+            metis_core::capability::CapabilityScope::UI_RENDER,
+            10,
+            20,
+            30,
+            b"test key",
+        );
+        let request =
+            PluginInvocationPayload::new(token, "viewer", "open", []).expect("plugin invocation");
+        let rejection = ErrorResponsePayload {
+            error_code: ErrorCode::PluginNotFound as u16,
+            message: ErrorCode::PluginNotFound.as_str().to_owned(),
+        };
+        peer.send_message(
+            MessageType::ErrorResp,
+            1,
+            &rejection.encode().expect("error payload"),
+        )
+        .expect("rejection frame");
+        let mut client = IpcClient::new(transport);
+        assert_eq!(
+            client.invoke_plugin(&request),
+            Err(PluginInvocationError::Remote(rejection))
+        );
+    }
+
+    #[test]
     fn receives_a_typed_remote_event_and_rejects_replayed_ids() {
         let (transport, mut peer) = MemoryTransport::pair();
         let event = RemoteEventPayload::new(4, "test.value", [0x12, 0x34]).expect("event");
@@ -449,5 +610,28 @@ mod tests {
             client.recv_event().expect_err("version mismatch").code,
             ErrorCode::VersionMismatch
         );
+    }
+
+    #[test]
+    fn retains_an_event_seen_before_its_correlated_response() {
+        let (transport, mut peer) = MemoryTransport::pair();
+        let event = RemoteEventPayload::new(1, "test.value", [0x12, 0x34]).expect("event");
+        peer.send_message(
+            MessageType::TelemetryStreamEvent,
+            event.event_id().get(),
+            &event.encode().expect("event payload"),
+        )
+        .expect("event frame");
+        peer.send_message(MessageType::HeartbeatResp, 1, b"response")
+            .expect("response frame");
+
+        let mut client = IpcClient::new(transport);
+        assert_eq!(
+            client
+                .send_and_recv(MessageType::HeartbeatReq, b"request")
+                .expect("correlated response"),
+            (MessageType::HeartbeatResp, b"response".to_vec())
+        );
+        assert_eq!(client.recv_event().expect("queued event"), event);
     }
 }

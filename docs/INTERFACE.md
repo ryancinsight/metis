@@ -27,6 +27,7 @@ are errors. Sender-side encoding applies the same size limits as decoding.
 | Calculation response | 0x0011 | audit sequence u64; rate/drug-rate binary64; pediatric byte 0 or 1; MAC [u8;32] |
 | Error response | 0x00ff | error code u16; message byte count u16; UTF-8 message |
 | Telemetry event | 0x0030 | version u16; event id u64; name byte count u16; body byte count u32; UTF-8 name; bounded body |
+| Plugin invocation request/response | 0x0040/0x0041 | request token; plugin and operation UTF-8 byte lengths u16; body byte count u32; bounded opaque body; response body byte count u32 and body |
 
 Audit query (0x0020/0x0021) remains reserved and the backend rejects it as a
 request with `ERR_UNEXPECTED_MESSAGE_TYPE`. Telemetry (0x0030) is an unsolicited
@@ -36,14 +37,28 @@ bytes. `EventCodec` associates a stable name with a typed body without dynamic
 dispatch. A capability catalog is valid only after handshake and lists the
 request identifiers the host currently accepts.
 
-Plugin manifests are host-local metadata rather than a wire message. A
-`Plugin` implementation supplies one static `PluginDescriptor` to a bounded
-`PluginRegistry` (maximum 16 manifests and 16 combined operations per
-manifest). Identifiers are lower-case ASCII names within their byte bounds;
-each command or event declares a non-empty `CapabilityScope`, and duplicate
-operation names are rejected. Registration is metadata only: a host still
-performs capability checks and typed handler dispatch at its extension
-boundary.
+An authenticated server sends at most one handler-produced event immediately
+after the correlated response for the request that produced it. The clinical
+backend emits `clinical.result` with the response body and its audit sequence
+as the event identifier. Clients consume this event explicitly; synchronous
+clients retain it when it arrives before a later response, and asynchronous
+clients retain it in their bounded receive queue.
+
+Plugin manifests are host-local metadata. A `Plugin` implementation supplies
+one static `PluginDescriptor` to a bounded `PluginRegistry` (maximum 16
+manifests and 16 combined operations per manifest). Identifiers are lower-case
+ASCII names within their byte bounds; each command or event declares a
+non-empty `CapabilityScope`, and duplicate operation names are rejected.
+`PluginInvokeReq` invokes a declared command through the host's bounded
+`PluginRouter`; the host verifies the command's scope against the trusted
+session token before the plugin receives its opaque body. The plugin owns that
+body's codec. Unknown plugins, undeclared commands, malformed bodies and
+executor failures remain typed errors. Registration and invocation grant no
+operating-system authority.
+
+`IpcClient::invoke_plugin` and `AsyncIpcClient::invoke_plugin` provide typed
+client entry points. Their `PluginInvocationError` preserves local transport or
+decode failures separately from the peer's `ErrorResponsePayload`.
 
 A token is 84 bytes: id u64, principal [u8;16], scope u32, issuance u64,
 expiration u64, issuance discriminator u64, HMAC [u8;32]. Generic token
@@ -68,6 +83,7 @@ frontend displays its received MAC without asserting that it can verify it.
 
 Each handler result records a typed audit event. Failure contexts distinguish
 receive failure with no decoded header, request rejection with identity, handler
-failure and response delivery failure. A processed request whose response fails
-has two distinct events. Audit records use canonical METIS-AUDIT-2 hashing and
-bounded in-memory retention; persistence and trusted checkpoints remain open.
+failure, response delivery failure and unsolicited-event delivery failure with
+its event identifier. A processed request whose response fails has two distinct
+events. Audit records use canonical METIS-AUDIT-2 hashing and bounded in-memory
+retention; persistence and trusted checkpoints remain open.

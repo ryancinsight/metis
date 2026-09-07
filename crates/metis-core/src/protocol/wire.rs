@@ -36,6 +36,10 @@ pub enum MessageType {
     AuditQueryResp = 0x21,
     /// Unsolicited telemetry event.
     TelemetryStreamEvent = 0x30,
+    /// Remote plugin invocation request.
+    PluginInvokeReq = 0x40,
+    /// Remote plugin invocation response.
+    PluginInvokeResp = 0x41,
     /// Structured failure response.
     ErrorResp = 0xff,
 }
@@ -55,6 +59,8 @@ impl MessageType {
             0x20 => Some(Self::AuditQueryReq),
             0x21 => Some(Self::AuditQueryResp),
             0x30 => Some(Self::TelemetryStreamEvent),
+            0x40 => Some(Self::PluginInvokeReq),
+            0x41 => Some(Self::PluginInvokeResp),
             0xff => Some(Self::ErrorResp),
             _ => None,
         }
@@ -68,6 +74,7 @@ impl MessageType {
             Self::CapabilityReq => Some(Self::CapabilityResp),
             Self::ClinicalCalcReq => Some(Self::ClinicalCalcResp),
             Self::AuditQueryReq => Some(Self::AuditQueryResp),
+            Self::PluginInvokeReq => Some(Self::PluginInvokeResp),
             _ => None,
         }
     }

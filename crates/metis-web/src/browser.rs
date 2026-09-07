@@ -3,8 +3,8 @@
 use metis_core::CapabilityScope;
 use metis_core::error::{ErrorCode, MetisError};
 use metis_core::protocol::{
-    CapabilityCatalogPayload, MAX_PLUGINS, Plugin, PluginDescriptor, PluginOperation,
-    PluginRegistry,
+    CapabilityCatalogPayload, ClinicalCalcResponsePayload, MAX_PLUGINS, Plugin, PluginDescriptor,
+    PluginOperation, PluginRegistry,
 };
 use metis_frontend::{AsyncFrontendApp, FormInputs, FormState};
 use metis_ipc::BrowserWebSocketTransport;
@@ -23,6 +23,7 @@ const BROWSER_MARKUP: &str = r#"
   <p id="metis-status" role="status">Browser controls are active.</p>
   <p id="metis-capabilities">Host capabilities: unavailable</p>
   <p id="metis-plugins">Registered frontend extensions: unavailable</p>
+  <p id="metis-events" role="status">Remote events: none</p>
 </header>
 <form id="metis-form" class="metis-form">
   <label for="patient-id">Patient reference</label>
@@ -54,6 +55,7 @@ struct BrowserState {
     bridge: BridgeStatus,
     capabilities: String,
     plugins: String,
+    event_status: String,
 }
 
 impl Default for BrowserState {
@@ -64,6 +66,7 @@ impl Default for BrowserState {
             bridge: BridgeStatus::Disabled,
             capabilities: "Host capabilities: unavailable".to_owned(),
             plugins: plugin_summary(),
+            event_status: "Remote events: none".to_owned(),
         }
     }
 }
@@ -333,8 +336,19 @@ fn submit(
     let result_document = document.clone();
     let task = spawn_local_with_handle(async move {
         let result = app.submit_calculation().await;
-        let outcome = app.state().clone();
-        let bridge = if result.is_ok() {
+        let expected = match app.state() {
+            FormState::Success(response) => Some(response.clone()),
+            _ => None,
+        };
+        let event = match expected {
+            Some(expected) if result.is_ok() => receive_result_event(&mut app, expected).await,
+            _ => Ok(None),
+        };
+        let event_error = event.as_ref().err().cloned();
+        let outcome = event_error
+            .clone()
+            .map_or_else(|| app.state().clone(), FormState::Disconnected);
+        let bridge = if result.is_ok() && event_error.is_none() {
             BridgeStatus::Ready
         } else {
             BridgeStatus::Disabled
@@ -343,8 +357,19 @@ fn submit(
         {
             let mut state = result_state.borrow_mut();
             state.bridge = bridge;
-            if result.is_err() {
+            if result.is_err() || event_error.is_some() {
                 "Host capabilities: unavailable".clone_into(&mut state.capabilities);
+            }
+            match (&event, &outcome) {
+                (Ok(Some(summary)), _) => summary.clone_into(&mut state.event_status),
+                (Ok(None), FormState::Rejected(_)) => {
+                    "Remote events: none (request rejected)".clone_into(&mut state.event_status);
+                }
+                (Err(error), _) => {
+                    state.event_status =
+                        format!("Remote event unavailable [{}]", error.code.as_str());
+                }
+                _ => {}
             }
             state.state = outcome;
             if let Err(error) = render(&result_document, &state) {
@@ -354,6 +379,34 @@ fn submit(
         let _ = task_cleanup.borrow_mut().take();
     });
     *task_slot.borrow_mut() = Some(task);
+}
+
+async fn receive_result_event(
+    app: &mut AsyncFrontendApp<BrowserWebSocketTransport>,
+    expected: ClinicalCalcResponsePayload,
+) -> metis_core::error::Result<Option<String>> {
+    let event = app.recv_event().await?;
+    let received = event.decode_as::<ClinicalCalcResponsePayload>()?;
+    if event.event_id().get() != expected.audit_sequence_id {
+        return Err(MetisError::protocol(
+            ErrorCode::SequenceMismatch,
+            "Remote event identifier differs from its correlated response",
+        ));
+    }
+    if received != expected {
+        return Err(MetisError::protocol(
+            ErrorCode::SequenceMismatch,
+            "Remote event result differs from its correlated response",
+        ));
+    }
+    Ok(Some(format!(
+        "Remote event: {} #{} (audit={} rate={:.6} ml/hr drug={:.6} mg/hr)",
+        event.name(),
+        event.event_id().get(),
+        received.audit_sequence_id,
+        received.rate_ml_hr,
+        received.drug_rate_mg_hr,
+    )))
 }
 
 fn metis_handshake_error(error: metis_ipc::client::HandshakeError) -> MetisError {
@@ -486,6 +539,7 @@ fn render(document: &WebDocument, state: &BrowserState) -> io::Result<()> {
     set_text(document, "metis-status", &message)?;
     set_text(document, "metis-capabilities", &state.capabilities)?;
     set_text(document, "metis-plugins", &state.plugins)?;
+    set_text(document, "metis-events", &state.event_status)?;
     set_text(document, "result-state", &message)
 }
 

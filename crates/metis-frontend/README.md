@@ -23,6 +23,10 @@ Initialization also obtains the host's versioned command catalog through
 from `capabilities()` before a command is submitted.
 `cancel_pending_requests` clears correlation entries left by a cancelled task
 and returns the form to idle without presenting an obsolete result.
+After a successful calculation, `recv_event().await` (or the synchronous
+`FrontendApp::recv_event`) consumes the backend's typed `clinical.result`
+event. Event receipt is a separate bounded operation so hosts can choose when
+to update an event view.
 
 ```rust
 use metis_frontend::{FormState, FrontendApp};

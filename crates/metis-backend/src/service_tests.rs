@@ -1,11 +1,60 @@
 use super::*;
+use metis_core::capability::CapabilityScope;
 use metis_core::crc32;
 use metis_core::protocol::{
-    CapabilityCatalogPayload, FrameHeader, HandshakeRequestPayload, MessageType, PROTOCOL_VERSION,
+    CapabilityCatalogPayload, FrameHeader, HandshakeRequestPayload, HandshakeResponsePayload,
+    MessageType, PROTOCOL_VERSION, PluginDescriptor, PluginInvocationPayload,
+    PluginInvocationResponsePayload, PluginOperation,
 };
 
 const KEY: [u8; 32] = [7; 32];
 const PRINCIPAL: [u8; 16] = [3; 16];
+
+static ECHO_COMMANDS: [PluginOperation; 1] = [PluginOperation::new(
+    "increment",
+    CapabilityScope::SUBMIT_CALCULATION,
+)];
+static TELEMETRY_COMMANDS: [PluginOperation; 1] = [PluginOperation::new(
+    "telemetry",
+    CapabilityScope::STREAM_TELEMETRY,
+)];
+
+struct EchoPlugin;
+
+impl Plugin for EchoPlugin {
+    const DESCRIPTOR: PluginDescriptor = PluginDescriptor::new("echo", 1, &ECHO_COMMANDS, &[]);
+}
+
+impl PluginExecutor for EchoPlugin {
+    fn invoke(&mut self, operation_name: &str, body: &[u8]) -> Result<Vec<u8>> {
+        if operation_name != "increment" {
+            return Err(MetisError::capability(
+                ErrorCode::PluginOperationNotFound,
+                "Test executor received an undeclared operation",
+            ));
+        }
+        Ok(body.iter().map(|byte| byte.wrapping_add(1)).collect())
+    }
+}
+
+struct TelemetryPlugin;
+
+impl Plugin for TelemetryPlugin {
+    const DESCRIPTOR: PluginDescriptor =
+        PluginDescriptor::new("telemetry", 1, &TELEMETRY_COMMANDS, &[]);
+}
+
+impl PluginExecutor for TelemetryPlugin {
+    fn invoke(&mut self, operation_name: &str, body: &[u8]) -> Result<Vec<u8>> {
+        if operation_name != "telemetry" {
+            return Err(MetisError::capability(
+                ErrorCode::PluginOperationNotFound,
+                "Test executor received an undeclared operation",
+            ));
+        }
+        Ok(body.to_vec())
+    }
+}
 
 fn header(message_type: MessageType, sequence: u64, payload: &[u8]) -> FrameHeader {
     FrameHeader {
@@ -48,6 +97,7 @@ fn capability_catalog_requires_handshake_and_advertises_supported_commands() {
     assert!(catalog.supports(MessageType::CapabilityReq));
     assert!(catalog.supports(MessageType::HeartbeatReq));
     assert!(catalog.supports(MessageType::ClinicalCalcReq));
+    assert!(catalog.supports(MessageType::PluginInvokeReq));
     assert!(!catalog.supports(MessageType::AuditQueryReq));
 }
 
@@ -72,4 +122,84 @@ fn known_but_unadvertised_command_returns_a_typed_protocol_error() {
     assert_eq!(response.0, MessageType::ErrorResp);
     let error = ErrorResponsePayload::decode(&response.1).expect("error payload");
     assert_eq!(error.error_code, ErrorCode::UnexpectedMessageType as u16);
+}
+
+#[test]
+fn plugin_invocation_authorizes_scope_and_returns_typed_response() {
+    let mut service = BackendService::new(KEY, SafetyEnvelope::default());
+    service.register_plugin(EchoPlugin).expect("echo plugin");
+    service
+        .register_plugin(TelemetryPlugin)
+        .expect("telemetry plugin");
+    let handshake = HandshakeRequestPayload {
+        client_version: PROTOCOL_VERSION,
+        client_process_id: 42,
+        principal_id: PRINCIPAL,
+    }
+    .encode();
+    let handshake_response = service
+        .handle_request(
+            &header(MessageType::HandshakeReq, 1, &handshake),
+            &handshake,
+        )
+        .expect("handshake");
+    let token = HandshakeResponsePayload::decode(&handshake_response.1)
+        .expect("handshake payload")
+        .initial_token;
+
+    let request = PluginInvocationPayload::new(token.clone(), "echo", "increment", [1, 4, 9])
+        .expect("invocation");
+    let encoded = request.encode().expect("invocation payload");
+    let response = service
+        .handle_request(&header(MessageType::PluginInvokeReq, 2, &encoded), &encoded)
+        .expect("plugin response");
+    assert_eq!(response.0, MessageType::PluginInvokeResp);
+    assert_eq!(
+        PluginInvocationResponsePayload::decode(&response.1)
+            .expect("plugin response payload")
+            .body(),
+        [2, 5, 10]
+    );
+
+    let request = PluginInvocationPayload::new(token.clone(), "telemetry", "telemetry", [])
+        .expect("scoped invocation");
+    let encoded = request.encode().expect("scoped invocation payload");
+    let response = service
+        .handle_request(&header(MessageType::PluginInvokeReq, 3, &encoded), &encoded)
+        .expect("scope response");
+    assert_eq!(response.0, MessageType::ErrorResp);
+    assert_eq!(
+        ErrorResponsePayload::decode(&response.1)
+            .expect("scope error payload")
+            .error_code,
+        ErrorCode::InsufficientScope as u16
+    );
+
+    let request = PluginInvocationPayload::new(token.clone(), "echo", "missing", [])
+        .expect("unknown operation invocation");
+    let encoded = request.encode().expect("unknown operation payload");
+    let response = service
+        .handle_request(&header(MessageType::PluginInvokeReq, 4, &encoded), &encoded)
+        .expect("unknown operation response");
+    assert_eq!(response.0, MessageType::ErrorResp);
+    assert_eq!(
+        ErrorResponsePayload::decode(&response.1)
+            .expect("unknown operation error payload")
+            .error_code,
+        ErrorCode::PluginOperationNotFound as u16
+    );
+
+    let request = PluginInvocationPayload::new(token, "missing", "increment", [])
+        .expect("unknown plugin invocation");
+    let encoded = request.encode().expect("unknown plugin payload");
+    let response = service
+        .handle_request(&header(MessageType::PluginInvokeReq, 5, &encoded), &encoded)
+        .expect("unknown plugin response");
+    assert_eq!(response.0, MessageType::ErrorResp);
+    assert_eq!(
+        ErrorResponsePayload::decode(&response.1)
+            .expect("unknown plugin error payload")
+            .error_code,
+        ErrorCode::PluginNotFound as u16
+    );
 }

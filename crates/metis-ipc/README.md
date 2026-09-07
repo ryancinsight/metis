@@ -35,6 +35,10 @@ Native service callers use `AsyncIpcServer` over Moirai's message-oriented
 `WebSocketStream`. One WebSocket binary message carries exactly one Metis wire
 frame; the server applies the same sequence, replay, payload and handler
 contracts as the private-pipe server and sends one bounded response message.
+After that response, an `IpcHandler` may expose one bounded unsolicited event;
+the server sends it with the event identifier as the frame sequence. This
+ordering keeps existing correlated clients valid while making backend-produced
+events observable to an explicit event receiver.
 `serve_browser_websocket` adds the host-origin validator before the HTTP 101
 response and requires a trusted `HostContext` before serving a browser session.
 
@@ -43,11 +47,19 @@ response and requires a trusted `HostContext` before serving a browser session.
 blocking or discarding an event, and `unsubscribe` removes delivery before a
 future publication. `recv_timeout` requires an explicit finite deadline.
 `IpcClient::recv_event` and `AsyncIpcClient::recv_event` decode the versioned
-`RemoteEventPayload`; the asynchronous response pump keeps remote events in a
-bounded queue while it correlates request responses.
+`RemoteEventPayload`; both clients retain at most sixteen events while they
+correlate request responses. The synchronous client also drains an event left
+after a prior response before accepting the next response.
 
 `discover_capabilities` returns `CapabilityError`, keeping local protocol
 failures separate from the peer's full `ErrorResponsePayload`.
+
+`IpcClient::invoke_plugin` and `AsyncIpcClient::invoke_plugin` send a typed
+`PluginInvocationPayload` and decode its bounded response body. The clients
+preserve local transport or envelope failures in `PluginInvocationError` and
+retain a peer's typed rejection without rewriting its error code. Plugin body
+schemas stay with the plugin executor; the transport only validates lengths,
+correlation and message direction.
 
 Fault injection modifies encoded wire bytes before delivery. CRC32 detects
 accidental corruption; it does not authenticate transport peers. Handshake
@@ -55,5 +67,6 @@ principal/version checks validate response consistency, while the application
 must establish peer trust and authorize the claimed identity.
 
 Tests exercise every truncation point, malformed UTF-8 and booleans, payload
-bounds, queue backpressure, response correlation, replay, and wire corruption.
+bounds, queue backpressure, response correlation, replay, event delivery and
+wire corruption.
 These are behavioral tests, not a certification or a formal protocol proof.
