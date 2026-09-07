@@ -121,11 +121,11 @@ an owner. “Unsupported” cannot replace delivery of a required mobile/native 
 
 <a id="METIS-MANUAL-001"></a>
 ## METIS-MANUAL-001 — Public member and user manual [patch]
-- Status: todo; priority: P1; owner: Metis documentation/integration; last-update: 2026-09-05
+- Status: done; priority: P1; owner: Metis documentation/integration; integrator: root; last-update: 2026-09-07; delivery: Atlas `c7db87d0a`
 - Scope: public GitHub repository, Atlas gitlink, user-oriented manual and actual rendered application snapshots; no registry release.
 - Acceptance: public remote contains tested source; Atlas resolves the pinned commit; manual links resolve and generated snapshot matches the renderer.
 - Decision: [ADR 0001](docs/adr/0001-process-contract.md); user manual replaces the domain-book requirement by explicit user direction.
-- Remaining: Atlas gitlink/review-path resolution; public source/manual/current software capture already exist at `9d96980`. Every later item owns its demonstration section, not a deferred documentation phase.
+- Outcome: Public source/manual and rendered captures are present; Atlas registers `repos/metis` and pins the verified `feat/process-foundation` revision. Every later item owns its demonstration section, not a deferred documentation phase.
 
 <a id="METIS-STATE-001"></a>
 ## METIS-STATE-001 — Correct form state transitions [arch] [major]
