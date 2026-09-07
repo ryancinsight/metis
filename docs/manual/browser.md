@@ -78,10 +78,13 @@ The **View options** fieldset uses semantic HTML5 controls owned by the Rust
 host. Uncheck **Show remote events** to hide the event status line while the
 event remains received and validated; select **Volume rate** or **Drug mass
 rate** to change the displayed metric; move **Result scale** with the arrow
-keys or pointer to select a bounded 50–150% presentation preference. The
+keys or pointer to select a bounded 50–150% presentation preference; choose
+**Clinical summary** or **Audit detail** from **Result detail** to change the
+rendered response annotation. The
 `options-state` text and `data-result-scale-percent` attribute expose the
 Rust-owned state after each change. Tab through the labels, press Space on the
-checkbox or radio, and use the range arrows to reproduce the keyboard path.
+checkbox or radio, use the range arrows, and open the select to reproduce the
+keyboard path.
 
 The captured service journey at revision
 `9e86e1dd3b9be39b03bacfd830c5a364a33f4f9d` used the Codex in-app
@@ -91,8 +94,10 @@ browser at 1280×720 CSS pixels and device scale 1.25. Pointer activation of
 Pointer activation of **Show remote events** changed the event line to
 `Remote events: hidden by preference` while retaining that metric. Two
 keyboard **Right** presses on **Result scale** changed the semantic value to
-`120` and the summary to `scale 120%`; the focused range received the visible
-keyboard focus ring.
+`120` and the summary to `scale 120%`; selecting **Audit detail** changed the
+semantic select value to `Audit detail`, changed the annotation to
+`Audit detail: sequence 4`, and retained the result. The focused range received
+the visible keyboard focus ring.
 
 With the service configuration above, the status becomes `Authorized backend
 session ready`, and the header lists the commands advertised by that service

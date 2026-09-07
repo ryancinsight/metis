@@ -79,7 +79,7 @@ impl BrowserApplication {
         let app = Rc::new(RefCell::new(None));
         let task = Rc::new(RefCell::new(None));
 
-        let mut listeners = Vec::with_capacity(8);
+        let mut listeners = Vec::with_capacity(9);
         listeners.push(input_listener(
             document,
             &state,
@@ -135,6 +135,13 @@ impl BrowserApplication {
             "result-scale",
             "input",
             ControlField::Scale,
+        )?);
+        listeners.push(control_listener(
+            document,
+            &state,
+            "result-detail-select",
+            "change",
+            ControlField::ResultDetail,
         )?);
 
         let form = view::element(document, "metis-form")?;

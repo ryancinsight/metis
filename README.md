@@ -93,7 +93,7 @@ trees. Standalone builds depend on the corresponding pushed provider revisions.
 Moirai is pinned to provider revision
 `9e86e1dd3b9be39b03bacfd830c5a364a33f4f9d`, which includes the merged process,
 browser/API, bounded WebSocket service, cancellable-task surfaces and the
-checked-state DOM seam. Consumer verification and any future provider advance remain tracked in
+checked/input/select DOM seams. Consumer verification and any future provider advance remain tracked in
 [the board](backlog.md#METIS-PROVIDER-001).
 
 ## Design and evidence

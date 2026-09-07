@@ -162,9 +162,9 @@ an owner. “Unsupported” cannot replace delivery of a required mobile/native 
 - Scope: buttons, checks, radios, sliders, editable fields, select/menu/dialog controls; focus, pointer capture, drag/drop, wheel/touch/modifiers, shortcuts, reusable state/actions and subscription teardown.
 - Acceptance: keyboard and pointer/touch journeys update identical model values; disabled controls reject action; focus survives rerender and subscriptions detach on close; real hit targets agree with rendered geometry.
 - Demonstration: [V02](docs/VERIFICATION.md#V02), settings workbench; repeat on each native host as it becomes supported.
-- Completed increment: `feat(web): Add semantic browser controls` adds Rust-owned checkbox, radio and bounded range state, the Moirai `WebElement::checked` seam, and split control/view modules; native `metis-web` tests pass 10/10 and the WASM gate is clean.
-- Live evidence: [browser control evidence](docs/VERIFICATION.md#browser-control-evidence--2026-09-07) records pointer radio/visibility changes and two keyboard range steps in the authenticated service trace. Presentation changes preserve the correlated backend result.
-- Residuals: select/menu/dialog, disabled-control semantics, pointer capture, drag/drop, wheel/touch/modifier events, IME, accessibility technology and native-host input remain open; re-open this item when those dependencies land.
+- Completed increment: `feat(web): Add semantic browser controls` adds Rust-owned checkbox, radio, bounded range and select state, the Moirai `WebElement::checked` and input/select value seams, and split control/view modules; native `metis-web` tests pass 10/10 and the WASM gate is clean.
+- Live evidence: [browser control evidence](docs/VERIFICATION.md#browser-control-evidence--2026-09-07) records pointer radio/visibility changes, two keyboard range steps and a native select change in the authenticated service trace. Presentation changes preserve the correlated backend result.
+- Residuals: menu/dialog, disabled-control semantics, pointer capture, drag/drop, wheel/touch/modifier events, IME, accessibility technology and native-host input remain open; re-open this item when those dependencies land.
 
 <a id="METIS-TEXT-001"></a>
 ## METIS-TEXT-001 — Text, selection and IME [minor]

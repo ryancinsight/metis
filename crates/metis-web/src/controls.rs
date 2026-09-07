@@ -39,12 +39,18 @@ pub(crate) const BROWSER_MARKUP: &str = r#"
   </label>
   <label for="result-scale">Result scale</label>
   <input id="result-scale" type="range" min="50" max="150" step="10" value="100">
-  <p id="options-state" role="status">View options: events visible; volume rate; scale 100%</p>
+  <label for="result-detail-select">Result detail</label>
+  <select id="result-detail-select" name="result-detail">
+    <option value="summary" selected>Clinical summary</option>
+    <option value="audit">Audit detail</option>
+  </select>
+  <p id="options-state" role="status">View options: events visible; volume rate; detail clinical summary; scale 100%</p>
 </fieldset>
 <section class="metis-result" aria-labelledby="result-heading">
   <h2 id="result-heading">Backend result</h2>
   <p id="result-state">No backend bridge configured.</p>
   <p id="result-metrics">Volume rate: unavailable</p>
+  <p id="result-detail">Clinical summary awaiting backend response</p>
   <dl>
     <dt>Patient</dt><dd id="result-patient">PT-9042-ALPHA</dd>
     <dt>Weight</dt><dd id="result-weight">72.50 kg</dd>
@@ -100,6 +106,7 @@ pub(crate) enum ControlField {
     ShowEvents,
     DisplayUnit(DisplayUnit),
     Scale,
+    ResultDetail,
 }
 
 impl ControlField {
@@ -108,6 +115,7 @@ impl ControlField {
             Self::ShowEvents => "show events",
             Self::DisplayUnit(_) => "display unit",
             Self::Scale => "result scale",
+            Self::ResultDetail => "result detail",
         }
     }
 }
@@ -123,6 +131,29 @@ impl DisplayUnit {
         match self {
             Self::Volume => "volume rate",
             Self::DrugMass => "drug mass rate",
+        }
+    }
+}
+
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub(crate) enum ResultDetail {
+    Summary,
+    Audit,
+}
+
+impl ResultDetail {
+    pub(crate) fn parse(value: &str) -> Option<Self> {
+        match value {
+            "summary" => Some(Self::Summary),
+            "audit" => Some(Self::Audit),
+            _ => None,
+        }
+    }
+
+    pub(crate) const fn label(self) -> &'static str {
+        match self {
+            Self::Summary => "clinical summary",
+            Self::Audit => "audit detail",
         }
     }
 }
@@ -162,6 +193,7 @@ pub(crate) struct ControlState {
     show_events: bool,
     display_unit: DisplayUnit,
     scale: ScalePercent,
+    result_detail: ResultDetail,
 }
 
 impl Default for ControlState {
@@ -170,6 +202,7 @@ impl Default for ControlState {
             show_events: true,
             display_unit: DisplayUnit::Volume,
             scale: ScalePercent::default(),
+            result_detail: ResultDetail::Summary,
         }
     }
 }
@@ -200,6 +233,12 @@ impl ControlState {
                 };
                 self.scale = scale;
             }
+            ControlField::ResultDetail => {
+                let Some(detail) = value.and_then(ResultDetail::parse) else {
+                    return false;
+                };
+                self.result_detail = detail;
+            }
         }
         true
     }
@@ -216,6 +255,10 @@ impl ControlState {
         self.scale
     }
 
+    pub(crate) const fn result_detail(&self) -> ResultDetail {
+        self.result_detail
+    }
+
     pub(crate) fn summary(&self) -> String {
         let event_visibility = if self.show_events {
             "events visible"
@@ -223,8 +266,9 @@ impl ControlState {
             "events hidden"
         };
         format!(
-            "View options: {event_visibility}; {}; scale {}%",
+            "View options: {event_visibility}; {}; detail {}; scale {}%",
             self.display_unit.label(),
+            self.result_detail.label(),
             self.scale.value(),
         )
     }
@@ -263,7 +307,7 @@ pub(crate) fn invalid_control(field: &str) -> FormState {
 #[cfg(test)]
 mod tests {
     use super::{
-        ControlField, ControlState, DisplayUnit, FormInputs, FormState, ScalePercent,
+        ControlField, ControlState, DisplayUnit, FormInputs, FormState, ResultDetail, ScalePercent,
         update_control,
     };
     use metis_core::protocol::ClinicalCalcResponsePayload;
@@ -274,6 +318,7 @@ mod tests {
         assert!(controls.show_events());
         assert_eq!(controls.display_unit(), DisplayUnit::Volume);
         assert_eq!(controls.scale().value(), 100);
+        assert_eq!(controls.result_detail(), ResultDetail::Summary);
 
         assert!(controls.apply(ControlField::ShowEvents, Some(false), None));
         assert!(!controls.show_events());
@@ -285,9 +330,11 @@ mod tests {
         assert_eq!(controls.display_unit(), DisplayUnit::DrugMass);
         assert!(controls.apply(ControlField::Scale, None, Some("150")));
         assert_eq!(controls.scale().value(), 150);
+        assert!(controls.apply(ControlField::ResultDetail, None, Some("audit")));
+        assert_eq!(controls.result_detail(), ResultDetail::Audit);
         assert_eq!(
             controls.summary(),
-            "View options: events hidden; drug mass rate; scale 150%"
+            "View options: events hidden; drug mass rate; detail audit detail; scale 150%"
         );
     }
 
@@ -301,8 +348,10 @@ mod tests {
             Some("mass"),
         ));
         assert!(!controls.apply(ControlField::Scale, None, Some("151")));
+        assert!(!controls.apply(ControlField::ResultDetail, None, Some("other")));
         assert_eq!(controls.display_unit(), DisplayUnit::Volume);
         assert_eq!(controls.scale().value(), 100);
+        assert_eq!(controls.result_detail(), ResultDetail::Summary);
     }
 
     #[test]
@@ -338,11 +387,19 @@ mod tests {
             None,
             Some("120"),
         );
+        update_control(
+            &mut controls,
+            &mut state,
+            ControlField::ResultDetail,
+            None,
+            Some("audit"),
+        );
 
         assert_eq!(state, FormState::Success(response));
         assert!(!controls.show_events());
         assert_eq!(controls.display_unit(), DisplayUnit::DrugMass);
         assert_eq!(controls.scale().value(), 120);
+        assert_eq!(controls.result_detail(), ResultDetail::Audit);
     }
 
     #[test]

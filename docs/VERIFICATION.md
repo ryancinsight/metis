@@ -234,10 +234,10 @@ permission scenarios.
 
 ## Browser control evidence — 2026-09-07
 
-The control model adds semantic HTML5 checkbox, radio and range inputs to the
+The control model adds semantic HTML5 checkbox, radio, range and select inputs to the
 same Rust/WASM workbench. `cargo nextest run --locked -p metis-web` passes
-10/10, including a regression that applies visibility, display-unit and scale
-changes to a successful response without clearing that response. Native
+10/10, including a regression that applies visibility, display-unit, scale and
+result-detail changes to a successful response without clearing that response. Native
 warning-denied Clippy, the WASM-target check and WASM-target Clippy pass for
 `metis-web`; `python scripts/browser.py build` regenerates the loader and WASM
 from the standalone lock at Moirai
@@ -252,11 +252,13 @@ the correlated event. Pointer activation of **Show remote events** changed the
 event text to `Remote events: hidden by preference` while retaining the metric.
 Two keyboard **Right** presses on **Result scale** changed its accessibility
 value to `120`, updated `View options: ... scale 120%`, and left the visible
-focus ring on the range. The browser console contained only expected Moirai
-initialization entries and no warnings or errors.
+focus ring on the range. Selecting **Audit detail** changed the select value and
+the result annotation to `Audit detail: sequence 4` while retaining
+`Drug mass rate: 2.175000 mg/hr`. The browser console contained only expected
+Moirai initialization entries and no warnings or errors.
 
-This closes the checkbox/radio/range browser slice and its real pointer and
-keyboard demonstration. Select/menu/dialog controls, pointer capture,
+This closes the checkbox/radio/range/select browser slice and its real pointer
+and keyboard demonstration. Menu/dialog controls, pointer capture,
 drag/drop, wheel/touch/modifier events, IME, accessibility technology,
 cross-engine parity, post-drop allocation and native-window input remain open
 under the linked backlog items.

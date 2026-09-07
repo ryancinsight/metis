@@ -1,5 +1,5 @@
 use super::{BridgeStatus, BrowserState};
-use crate::controls::DisplayUnit;
+use crate::controls::{DisplayUnit, ResultDetail};
 use metis_core::CapabilityScope;
 use metis_core::protocol::{
     CapabilityCatalogPayload, MAX_PLUGINS, Plugin, PluginDescriptor, PluginOperation,
@@ -79,6 +79,20 @@ pub(super) fn render(document: &WebDocument, state: &BrowserState) -> io::Result
         .to_owned(),
     };
     set_text(document, "result-metrics", &metrics)?;
+    let detail = match (&state.state, state.controls.result_detail()) {
+        (FormState::Success(response), ResultDetail::Summary) => {
+            format!(
+                "Clinical summary for response {}",
+                response.audit_sequence_id
+            )
+        }
+        (FormState::Success(response), ResultDetail::Audit) => {
+            format!("Audit detail: sequence {}", response.audit_sequence_id)
+        }
+        (_, ResultDetail::Summary) => "Clinical summary awaiting backend response".to_owned(),
+        (_, ResultDetail::Audit) => "Audit detail unavailable until backend response".to_owned(),
+    };
+    set_text(document, "result-detail", &detail)?;
     element(document, "view-options")?.set_attribute(
         "data-result-scale-percent",
         &state.controls.scale().value().to_string(),

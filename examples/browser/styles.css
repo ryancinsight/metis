@@ -13,13 +13,13 @@ h1, h2 { margin-top: 0; }
 .metis-option { display: flex; align-items: center; gap: 0.55rem; }
 .metis-option-label { color: #94a3b8; font-size: 0.9rem; }
 label { color: #cbd5e1; font-size: 0.9rem; }
-input { box-sizing: border-box; width: 100%; border: 1px solid #64748b; border-radius: 0.4rem; background: #0f172a; color: #f8fafc; padding: 0.65rem; font: inherit; }
+input, select { box-sizing: border-box; width: 100%; border: 1px solid #64748b; border-radius: 0.4rem; background: #0f172a; color: #f8fafc; padding: 0.65rem; font: inherit; }
 input[type="checkbox"], input[type="radio"] { width: auto; padding: 0; accent-color: #22d3ee; }
 input[type="range"] { padding: 0; accent-color: #22d3ee; }
 button { margin-top: 0.5rem; border: 0; border-radius: 0.4rem; background: #0891b2; color: #ecfeff; padding: 0.7rem 1rem; font: inherit; font-weight: 700; cursor: pointer; }
-button:focus-visible, input:focus-visible { outline: 3px solid #facc15; outline-offset: 2px; }
+button:focus-visible, input:focus-visible, select:focus-visible { outline: 3px solid #facc15; outline-offset: 2px; }
 .metis-result { min-height: 12rem; }
-#options-state, #result-metrics { color: #bae6fd; min-height: 1.5rem; }
+#options-state, #result-metrics, #result-detail { color: #bae6fd; min-height: 1.5rem; }
 dl { display: grid; grid-template-columns: auto 1fr; gap: 0.55rem 1rem; }
 dt { color: #94a3b8; }
 dd { margin: 0; color: #f8fafc; font-variant-numeric: tabular-nums; }
