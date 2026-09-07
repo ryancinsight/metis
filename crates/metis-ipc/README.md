@@ -54,6 +54,13 @@ after a prior response before accepting the next response.
 `discover_capabilities` returns `CapabilityError`, keeping local protocol
 failures separate from the peer's full `ErrorResponsePayload`.
 
+`IpcClient::invoke_plugin` and `AsyncIpcClient::invoke_plugin` send a typed
+`PluginInvocationPayload` and decode its bounded response body. The clients
+preserve local transport or envelope failures in `PluginInvocationError` and
+retain a peer's typed rejection without rewriting its error code. Plugin body
+schemas stay with the plugin executor; the transport only validates lengths,
+correlation and message direction.
+
 Fault injection modifies encoded wire bytes before delivery. CRC32 detects
 accidental corruption; it does not authenticate transport peers. Handshake
 principal/version checks validate response consistency, while the application

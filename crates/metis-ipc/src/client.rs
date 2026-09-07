@@ -4,7 +4,8 @@ use metis_core::capability::CapabilityToken;
 use metis_core::error::{ErrorCode, MetisError, Result};
 use metis_core::protocol::{
     CapabilityCatalogPayload, ErrorResponsePayload, FrameHeader, HandshakeRequestPayload,
-    HandshakeResponsePayload, MessageType, PROTOCOL_VERSION, RemoteEventPayload,
+    HandshakeResponsePayload, MessageType, PROTOCOL_VERSION, PluginInvocationPayload,
+    PluginInvocationResponsePayload, RemoteEventPayload,
 };
 use std::collections::VecDeque;
 
@@ -108,6 +109,44 @@ impl std::error::Error for CapabilityError {
     }
 }
 
+/// Failure to invoke a remote plugin, preserving local faults and peer errors.
+#[derive(Debug, Clone, PartialEq, Eq)]
+#[non_exhaustive]
+pub enum PluginInvocationError {
+    /// Transport, correlation, decoding, or response validation fails locally.
+    Local(MetisError),
+    /// The correlated peer rejects the plugin operation.
+    Remote(ErrorResponsePayload),
+}
+
+impl From<MetisError> for PluginInvocationError {
+    fn from(error: MetisError) -> Self {
+        Self::Local(error)
+    }
+}
+
+impl std::fmt::Display for PluginInvocationError {
+    fn fmt(&self, formatter: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self {
+            Self::Local(error) => error.fmt(formatter),
+            Self::Remote(error) => write!(
+                formatter,
+                "Peer rejected plugin invocation [0x{:04X}]: {}",
+                error.error_code, error.message
+            ),
+        }
+    }
+}
+
+impl std::error::Error for PluginInvocationError {
+    fn source(&self) -> Option<&(dyn std::error::Error + 'static)> {
+        match self {
+            Self::Local(error) => Some(error),
+            Self::Remote(_) => None,
+        }
+    }
+}
+
 /// Client with monotonically increasing sequence identifiers.
 pub struct IpcClient<T> {
     transport: T,
@@ -161,6 +200,23 @@ impl<T: IpcTransport> IpcClient<T> {
     ) -> std::result::Result<CapabilityCatalogPayload, CapabilityError> {
         let (kind, payload) = self.send_and_recv(MessageType::CapabilityReq, &[])?;
         decode_capability_response(kind, &payload)
+    }
+
+    /// Invokes one authenticated plugin operation and decodes its bounded body.
+    ///
+    /// The payload carries the capability token and the plugin-owned body
+    /// codec; this client only validates the outer response envelope.
+    ///
+    /// # Errors
+    /// Returns local transport, correlation, decoding, or response-type errors,
+    /// or the peer's decoded rejection.
+    pub fn invoke_plugin(
+        &mut self,
+        request: &PluginInvocationPayload,
+    ) -> std::result::Result<PluginInvocationResponsePayload, PluginInvocationError> {
+        let encoded = request.encode()?;
+        let (kind, payload) = self.send_and_recv(MessageType::PluginInvokeReq, &encoded)?;
+        decode_plugin_response(kind, &payload)
     }
 
     /// Receives one unsolicited event from the message-oriented transport.
@@ -318,6 +374,25 @@ pub(crate) fn decode_capability_response(
     Ok(catalog)
 }
 
+pub(crate) fn decode_plugin_response(
+    kind: MessageType,
+    payload: &[u8],
+) -> std::result::Result<PluginInvocationResponsePayload, PluginInvocationError> {
+    if kind == MessageType::ErrorResp {
+        return Err(PluginInvocationError::Remote(ErrorResponsePayload::decode(
+            payload,
+        )?));
+    }
+    if kind != MessageType::PluginInvokeResp {
+        return Err(MetisError::protocol(
+            ErrorCode::UnexpectedMessageType,
+            "Plugin invocation response type does not match the request",
+        )
+        .into());
+    }
+    Ok(PluginInvocationResponsePayload::decode(payload)?)
+}
+
 pub(crate) fn decode_event(
     header: &FrameHeader,
     payload: &[u8],
@@ -431,6 +506,66 @@ mod tests {
             error,
             CapabilityError::Local(error) if error.code == ErrorCode::VersionMismatch
         ));
+    }
+
+    #[test]
+    fn invokes_a_plugin_and_decodes_its_bounded_response() {
+        let (transport, mut peer) = MemoryTransport::pair();
+        let token = CapabilityToken::issue(
+            7,
+            [1; 16],
+            metis_core::capability::CapabilityScope::UI_RENDER,
+            10,
+            20,
+            30,
+            b"test key",
+        );
+        let request = PluginInvocationPayload::new(token, "viewer", "open", [1, 4, 9])
+            .expect("plugin invocation");
+        let response = PluginInvocationResponsePayload::new([2, 5, 10])
+            .expect("plugin response")
+            .encode()
+            .expect("encoded response");
+        peer.send_message(MessageType::PluginInvokeResp, 1, &response)
+            .expect("plugin response frame");
+
+        let mut client = IpcClient::new(transport);
+        let response = client.invoke_plugin(&request).expect("plugin response");
+        assert_eq!(response.body(), [2, 5, 10]);
+        let (header, payload) = peer.recv_message().expect("request frame");
+        assert_eq!(header.msg_type, MessageType::PluginInvokeReq);
+        assert_eq!(PluginInvocationPayload::decode(&payload), Ok(request));
+    }
+
+    #[test]
+    fn plugin_invocation_preserves_a_typed_remote_rejection() {
+        let (transport, mut peer) = MemoryTransport::pair();
+        let token = CapabilityToken::issue(
+            7,
+            [1; 16],
+            metis_core::capability::CapabilityScope::UI_RENDER,
+            10,
+            20,
+            30,
+            b"test key",
+        );
+        let request =
+            PluginInvocationPayload::new(token, "viewer", "open", []).expect("plugin invocation");
+        let rejection = ErrorResponsePayload {
+            error_code: ErrorCode::PluginNotFound as u16,
+            message: ErrorCode::PluginNotFound.as_str().to_owned(),
+        };
+        peer.send_message(
+            MessageType::ErrorResp,
+            1,
+            &rejection.encode().expect("error payload"),
+        )
+        .expect("rejection frame");
+        let mut client = IpcClient::new(transport);
+        assert_eq!(
+            client.invoke_plugin(&request),
+            Err(PluginInvocationError::Remote(rejection))
+        );
     }
 
     #[test]

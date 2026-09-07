@@ -161,12 +161,31 @@ assert_eq!(
 );
 ```
 
-The registry is host-local metadata. Remote plugin invocation and native OS
-permission enforcement remain separate host/service work items. The generated
-workbench registers a `workbench`
-manifest during each Rust mount and displays its version in
-**Registered frontend extensions**, so stop/start teardown also recreates the
-typed registration state.
+The registry is host-local metadata, and the backend can invoke a declared
+plugin command through the same authenticated bridge. A host implements both
+the static manifest and `metis_backend::PluginExecutor`, then registers it
+before accepting the session. The executor owns the body schema; the service
+checks the command's declared scope against the host-bound token before calling
+it. The sync and async clients expose the same typed entry point:
+
+```rust
+let invocation = metis_core::PluginInvocationPayload::new(
+    session_token,
+    "viewer",
+    "open",
+    encoded_viewer_request,
+)?;
+let response = client.invoke_plugin(&invocation)?;
+let body = response.body();
+```
+
+Unknown plugins and commands, malformed body envelopes, insufficient scopes and
+executor failures remain typed responses. Invocation only reaches the
+registered host executor; it does not grant file, network, process or other
+operating-system authority. The generated workbench registers a `workbench`
+manifest during each Rust mount and displays its version in **Registered
+frontend extensions**, so stop/start teardown also recreates the typed
+registration state.
 
 `AsyncIpcClient::recv_response_for` retains unsolicited events in a bounded
 queue while it waits for its request. Browser code calls

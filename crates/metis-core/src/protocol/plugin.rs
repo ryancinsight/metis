@@ -188,6 +188,17 @@ impl<const CAPACITY: usize> PluginRegistry<CAPACITY> {
             .find(|operation| operation.name == operation_name)
     }
 
+    /// Returns a registered command by plugin and exact command name.
+    #[must_use]
+    pub fn command(&self, plugin_name: &str, command_name: &str) -> Option<PluginOperation> {
+        let descriptor = self.get(plugin_name)?;
+        descriptor
+            .commands
+            .iter()
+            .copied()
+            .find(|operation| operation.name == command_name)
+    }
+
     /// Returns all registered manifests in registration order.
     #[must_use]
     pub fn plugins(&self) -> &[PluginDescriptor] {
@@ -257,7 +268,7 @@ fn validate_descriptor(descriptor: PluginDescriptor) -> Result<()> {
     Ok(())
 }
 
-fn valid_identifier(value: &str, max_bytes: usize) -> bool {
+pub(super) fn valid_identifier(value: &str, max_bytes: usize) -> bool {
     let Some(first) = value.as_bytes().first().copied() else {
         return false;
     };
@@ -308,6 +319,14 @@ mod tests {
                 .expect("event operation")
                 .required_scope(),
             CapabilityScope::STREAM_TELEMETRY
+        );
+        assert!(registry.command("viewer", "opened").is_none());
+        assert_eq!(
+            registry
+                .command("viewer", "open")
+                .expect("command operation")
+                .required_scope(),
+            CapabilityScope::UI_RENDER
         );
         assert_eq!(registry.len(), 1);
     }

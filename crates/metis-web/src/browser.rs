@@ -343,6 +343,12 @@ fn submit(
         let event = match expected {
             Some(expected) if result.is_ok() => match app.recv_event().await {
                 Ok(event) => match event.decode_as::<ClinicalCalcResponsePayload>() {
+                    Ok(received) if event.event_id().get() != expected.audit_sequence_id => {
+                        Err(MetisError::protocol(
+                            ErrorCode::SequenceMismatch,
+                            "Remote event identifier differs from its correlated response",
+                        ))
+                    }
                     Ok(received) if received == expected => Ok(Some(format!(
                         "Remote event: {} #{} (audit={} rate={:.6} ml/hr drug={:.6} mg/hr)",
                         event.name(),

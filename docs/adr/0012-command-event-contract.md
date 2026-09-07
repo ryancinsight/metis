@@ -84,11 +84,11 @@ implementation.
 
 ## Limits
 
-This increment catalogs the closed protocol set, supplies bounded local event
-delivery, serializes unsolicited remote events and validates host-local typed
-plugin manifests. It does not claim remote plugin invocation, native OS
-capability discovery, or cross-engine browser coverage. Those remain owned by
-the command, desktop, services and browser items on the board.
+The initial catalog and event increments did not claim remote plugin invocation,
+native OS capability discovery or cross-engine browser coverage. The remote
+invocation revision below closes the first of those protocol gaps; native OS
+capability discovery and cross-engine coverage remain owned by the desktop,
+services and browser items on the board.
 
 Because `MessageType` is a public enum, the extensibility marker makes this a
 major API change for the next published release. Package versions stay at
@@ -112,8 +112,8 @@ The added verification covers exact envelope round-trips, malformed bounds,
 typed name matching, synchronous send/receive, event/response interleaving,
 identifier/version mismatch and replay. A live browser trace exercises the
 capability catalog and the backend-produced clinical event; plugin descriptor
-validation is covered by the core tests. Remote plugin invocation remains
-open. `ErrorCode` is now non-exhaustive so future typed protocol and capability
+validation is covered by the core tests. This revision predates the remote
+invocation revision below. `ErrorCode` is now non-exhaustive so future typed protocol and capability
 failures do not force downstream match arms; this follows the major release
 classification already required by the public `MessageType` extension.
 
@@ -131,6 +131,43 @@ while waiting for a later response so existing request code remains ordered.
 Event delivery failures are audited as `FailureContext::Event(EventId)` and the
 public failure context is non-exhaustive. The browser workbench receives the
 event through `AsyncFrontendApp`, decodes it without dynamic dispatch and
-verifies exact equality with the correlated response before displaying it.
-Synchronous memory-transport, asynchronous WebSocket loopback and browser
-workflow evidence cover the event path. Remote plugin invocation remains open.
+verifies the event identifier and exact body equality against the correlated
+response before displaying it. Synchronous memory-transport, asynchronous
+WebSocket loopback and browser workflow evidence cover the event path. At this
+revision, the remote invocation revision below had not yet landed.
+
+## Revision 2026-09-07 (remote invocation)
+
+Remote plugin invocation now uses typed `PluginInvokeReq` and
+`PluginInvokeResp` messages in the same versioned frame contract. The request
+payload carries the authenticated session token, validated plugin and
+operation identifiers, and one bounded opaque body. The plugin owns its body
+codec; malformed body bytes return a typed protocol error at that plugin's
+boundary. The response carries one bounded body and remains correlated by the
+wire sequence, so no string command router or JSON schema is introduced.
+
+`metis-backend` owns a bounded `PluginRouter`. Registration validates the
+static `PluginDescriptor` through the existing `PluginRegistry` and stores a
+plugin executor only at the extension boundary. The object-safe executor
+trait is deliberately dynamic there because the set of externally supplied
+plugin types is open. The dynamic boundary is limited to plugin dispatch;
+clinical calculation and frame codecs remain statically dispatched.
+Invocation resolves the exact manifest and operation,
+authorizes the operation's declared `CapabilityScope` against the trusted
+host-bound session token, then invokes the executor. Unknown plugins,
+unknown operations, missing scopes and executor failures remain explicit
+typed errors. Registration and invocation grant no operating-system authority
+and never bypass the host policy.
+
+The capability catalog advertises the invocation route independently of the
+currently installed manifests. A host with no matching plugin returns
+`PluginNotFound`; a known plugin with no matching operation returns
+`PluginOperationNotFound`. This keeps command discovery deterministic while
+leaving installed plugin metadata as a separate bounded host-local concern.
+
+The invocation payload and response codecs cover exact round-trips, every
+truncation point, invalid identifiers, trailing bytes and the frame-size bound.
+Backend service tests exercise an input-sensitive executor, successful scope
+authorization, insufficient scope, unknown plugin and unknown command errors.
+Both synchronous and asynchronous clients use typed invocation helpers and
+preserve peer rejections separately from local transport/decode failures.

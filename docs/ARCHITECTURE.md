@@ -29,8 +29,13 @@ capability catalog encoding, remote event envelopes, bounded host-local plugin
 metadata registration and the host-origin/window/session policy. `metis-ipc`
 owns framing, canonical payload interpretation, transport correlation, bounded
 local and remote event delivery and typed failure reporting. Plugin registration
-stores static metadata with explicit scopes; it does not erase handlers or cross
-the OS authority boundary.
+stores static metadata with explicit scopes, while its invocation payload keeps
+the plugin body opaque to the core protocol. `metis-backend` owns the bounded
+`PluginRouter` and its `PluginExecutor` extension boundary: it resolves a
+declared command, verifies the command scope against the trusted session token,
+then invokes the executor. Dynamic dispatch is confined to that open
+extension boundary; the clinical calculation and frame codec paths remain
+static, and plugin execution never crosses the OS authority boundary.
 `metis-backend` alone owns calculation policy, session authorization and audit
 storage. A successful clinical calculation also creates one bounded
 `clinical.result` event from the typed response; `metis-ipc` emits it only after
@@ -82,9 +87,11 @@ bounded event queue while it correlates request responses, and the synchronous
 client drains the same bounded queue when a later request encounters an event.
 `IpcHandler` exposes one event slot after each response, which prevents a
 handler from creating an unbounded send loop. `EventCodec` binds a stable name
-to a typed body without a dynamic registry. `PluginRegistry` binds
-static plugin manifests to bounded command/event metadata without a dynamic
-handler list. Servers expose explicit send paths over both admitted transports.
+to a typed body without a dynamic registry. `PluginRegistry` binds static
+plugin manifests to bounded command/event metadata. `PluginRouter` adds the
+host-side command executor at the extension boundary; the invocation payload
+and response are bounded and correlated by the same frame contract. Servers
+expose explicit send paths over both admitted transports.
 `EventHub<E, CAPACITY>` remains the bounded local fan-out primitive.
 
 The browser shell keeps CSS and module bootstrap files external to satisfy the

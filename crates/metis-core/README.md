@@ -13,7 +13,10 @@ and decoding without a dynamic dispatch table. The backend uses the
 `clinical.result` codec for the event that follows an accepted calculation.
 `PluginRegistry` accepts
 statically typed plugin manifests with explicit capability scopes and a bounded
-operation set; it does not erase handlers or grant operating-system authority.
+operation set; `PluginInvocationPayload` and
+`PluginInvocationResponsePayload` carry a versioned, bounded request and opaque
+response body for the host router. This crate validates the wire envelope but
+does not execute plugin code or grant operating-system authority.
 
 ```rust
 use metis_core::{build_frame, FrameHeader, MessageType, HEADER_SIZE};

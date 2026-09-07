@@ -1,7 +1,7 @@
 //! End-to-end presentation and backend exchange on a bounded memory transport.
 use metis_backend::{BackendService, clinical::SafetyEnvelope};
 use metis_core::error::ErrorCode;
-use metis_core::protocol::MessageType;
+use metis_core::protocol::{ClinicalCalcResponsePayload, MessageType};
 use metis_frontend::{FormState, FrontendApp};
 use metis_ipc::{
     client::HandshakeError,
@@ -91,6 +91,19 @@ fn assert_result(app: &FrontendApp<MemoryTransport>, rate: f64, sequence: u64) {
     assert_current_pixels(app);
 }
 
+fn assert_clinical_event(app: &mut FrontendApp<MemoryTransport>, rate: f64, sequence: u64) {
+    let event = app.recv_event().expect("backend clinical event");
+    assert_eq!(event.name(), "clinical.result");
+    assert_eq!(event.event_id().get(), sequence);
+    let response = event
+        .decode_as::<ClinicalCalcResponsePayload>()
+        .expect("typed clinical event");
+    assert_eq!(response.audit_sequence_id, sequence);
+    let bound = 6.0 * f64::EPSILON / (1.0 - 6.0 * f64::EPSILON);
+    assert!((response.rate_ml_hr - rate).abs() <= rate * bound);
+    assert!((response.drug_rate_mg_hr - rate * 2.0).abs() <= rate * 2.0 * bound);
+}
+
 #[test]
 fn form_edits_clear_result_before_rejection_and_recovery() {
     let (_, service) = session_trace(5, |app| {
@@ -98,6 +111,7 @@ fn form_edits_clear_result_before_rejection_and_recovery() {
         app.set_inputs("demo", 60.0, 2.0, 0.2).expect("inputs");
         app.submit_calculation().expect("submission");
         assert_result(app, 0.36, 2);
+        assert_clinical_event(app, 0.36, 2);
         let success_pixels = app.framebuffer().pixels().to_vec();
         app.set_inputs("demo", 80.0, 2.0, 0.2)
             .expect("edited inputs");
@@ -113,6 +127,7 @@ fn form_edits_clear_result_before_rejection_and_recovery() {
         assert_current_pixels(app);
         app.submit_calculation().expect("changed submission");
         assert_result(app, 0.48, 3);
+        assert_clinical_event(app, 0.48, 3);
         app.set_inputs("demo", 0.0, 2.0, 0.2)
             .expect("invalid domain input");
         app.submit_calculation().expect("correlated rejection");
@@ -126,6 +141,7 @@ fn form_edits_clear_result_before_rejection_and_recovery() {
         assert_eq!(app.state(), &FormState::Idle);
         app.submit_calculation().expect("recovery");
         assert_result(app, 0.36, 5);
+        assert_clinical_event(app, 0.36, 5);
     });
     assert_eq!(
         service

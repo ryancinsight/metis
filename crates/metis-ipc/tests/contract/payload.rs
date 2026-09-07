@@ -4,7 +4,8 @@ use metis_core::error::ErrorCode;
 use metis_core::protocol::{
     ClinicalCalcRequestPayload, ClinicalCalcResponsePayload, ErrorResponsePayload,
     HandshakeRequestPayload, HandshakeResponsePayload, MAX_PAYLOAD_SIZE, MessageType,
-    PROTOCOL_VERSION, RemoteEventPayload, build_frame,
+    PROTOCOL_VERSION, PluginInvocationPayload, PluginInvocationResponsePayload, RemoteEventPayload,
+    build_frame,
 };
 
 fn request() -> ClinicalCalcRequestPayload {
@@ -87,6 +88,91 @@ fn clinical_response_codec_roundtrips_through_remote_event_envelope() {
     assert_eq!(
         event.decode_as::<ClinicalCalcResponsePayload>(),
         Ok(response)
+    );
+}
+
+#[test]
+fn plugin_invocation_and_response_roundtrip_preserve_opaque_bytes() {
+    let invocation = PluginInvocationPayload::new(
+        request().token.clone(),
+        "viewer",
+        "open.series",
+        [0, 1, 0xfe, 0xff],
+    )
+    .expect("plugin invocation");
+    let encoded = invocation.encode().expect("invocation encoding");
+    assert_eq!(PluginInvocationPayload::decode(&encoded), Ok(invocation));
+
+    let response = PluginInvocationResponsePayload::new([9, 0, 8, 0, 7]).expect("response");
+    let encoded = response.encode().expect("response encoding");
+    assert_eq!(
+        PluginInvocationResponsePayload::decode(&encoded),
+        Ok(response)
+    );
+}
+
+#[test]
+fn plugin_payloads_reject_invalid_names_truncation_and_trailing_bytes() {
+    let invocation =
+        PluginInvocationPayload::new(request().token.clone(), "viewer", "open", [1, 2, 3])
+            .expect("plugin invocation");
+    assert_eq!(
+        PluginInvocationPayload::new(request().token.clone(), "Viewer", "open", [])
+            .expect_err("uppercase plugin name")
+            .code,
+        ErrorCode::MalformedPayload
+    );
+    let wire = invocation.encode().expect("invocation encoding");
+    for length in 0..wire.len() {
+        assert_eq!(
+            PluginInvocationPayload::decode(&wire[..length])
+                .expect_err("truncated invocation")
+                .code,
+            ErrorCode::MalformedPayload
+        );
+    }
+    let mut trailing = wire;
+    trailing.push(0);
+    assert_eq!(
+        PluginInvocationPayload::decode(&trailing)
+            .expect_err("trailing invocation")
+            .code,
+        ErrorCode::MalformedPayload
+    );
+
+    let response = PluginInvocationResponsePayload::new([1, 2, 3]).expect("response");
+    let wire = response.encode().expect("response encoding");
+    for length in 0..wire.len() {
+        assert_eq!(
+            PluginInvocationResponsePayload::decode(&wire[..length])
+                .expect_err("truncated response")
+                .code,
+            ErrorCode::MalformedPayload
+        );
+    }
+    let mut trailing = wire;
+    trailing.push(0);
+    assert_eq!(
+        PluginInvocationResponsePayload::decode(&trailing)
+            .expect_err("trailing response")
+            .code,
+        ErrorCode::MalformedPayload
+    );
+}
+
+#[test]
+fn plugin_response_respects_the_frame_resource_bound() {
+    let response = PluginInvocationResponsePayload::new(vec![0; MAX_PAYLOAD_SIZE - 4])
+        .expect("maximum response body");
+    assert_eq!(
+        response.encode().expect("maximum response encoding").len(),
+        MAX_PAYLOAD_SIZE
+    );
+    assert_eq!(
+        PluginInvocationResponsePayload::new(vec![0; MAX_PAYLOAD_SIZE - 3])
+            .expect_err("oversized response body")
+            .code,
+        ErrorCode::PayloadTooLarge
     );
 }
 

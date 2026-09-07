@@ -1,10 +1,13 @@
 //! Exact-length payload codecs with validated UTF-8 and bounded strings.
 use super::event::EventCodec;
+use super::plugin::{MAX_PLUGIN_NAME_BYTES, MAX_PLUGIN_OPERATION_NAME_BYTES, valid_identifier};
 use super::wire::{MAX_PAYLOAD_SIZE, check_length, finish, malformed, take};
 use crate::capability::{CapabilityScope, CapabilityToken};
 use crate::error::{ErrorCode, MetisError, Result};
 const TOKEN_SIZE: usize = 84;
 const CLINICAL_PREFIX: usize = TOKEN_SIZE + 3 * 8 + 2;
+const PLUGIN_INVOCATION_PREFIX: usize = TOKEN_SIZE + 2 + 2 + 4;
+const PLUGIN_RESPONSE_PREFIX: usize = 4;
 
 /// Initial client identity declaration. It is not proof of identity.
 #[derive(Debug, Clone, PartialEq, Eq)]
@@ -176,6 +179,269 @@ impl EventCodec for ClinicalCalcResponsePayload {
     fn decode(payload: &[u8]) -> Result<Self> {
         ClinicalCalcResponsePayload::decode(payload)
     }
+}
+
+/// Authenticated request for one registered plugin operation.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct PluginInvocationPayload {
+    token: CapabilityToken,
+    plugin_name: String,
+    operation_name: String,
+    body: Vec<u8>,
+}
+
+impl PluginInvocationPayload {
+    /// Builds a bounded invocation with validated plugin and operation names.
+    ///
+    /// The body is opaque to Metis and is decoded by the registered plugin
+    /// executor at its extension boundary.
+    ///
+    /// # Errors
+    /// Returns a malformed-payload error for invalid identifiers or a body
+    /// that exceeds the frame resource bound.
+    pub fn new(
+        token: CapabilityToken,
+        plugin_name: impl Into<String>,
+        operation_name: impl Into<String>,
+        body: impl AsRef<[u8]>,
+    ) -> Result<Self> {
+        let plugin_name = plugin_name.into();
+        let operation_name = operation_name.into();
+        let body = body.as_ref().to_vec();
+        validate_plugin_invocation_parts(&plugin_name, &operation_name, body.len())?;
+        Ok(Self {
+            token,
+            plugin_name,
+            operation_name,
+            body,
+        })
+    }
+
+    /// Returns the capability token presented for authorization.
+    #[must_use]
+    pub const fn token(&self) -> &CapabilityToken {
+        &self.token
+    }
+
+    /// Returns the exact registered plugin identifier.
+    #[must_use]
+    pub fn plugin_name(&self) -> &str {
+        &self.plugin_name
+    }
+
+    /// Returns the exact registered operation identifier.
+    #[must_use]
+    pub fn operation_name(&self) -> &str {
+        &self.operation_name
+    }
+
+    /// Returns the opaque plugin body without copying it.
+    #[must_use]
+    pub fn body(&self) -> &[u8] {
+        &self.body
+    }
+
+    /// Encodes the invocation with exact field lengths.
+    ///
+    /// # Errors
+    /// Returns a malformed-payload or resource-bound error when the validated
+    /// invocation no longer satisfies its wire contract.
+    pub fn encode(&self) -> Result<Vec<u8>> {
+        let (plugin_len, operation_len, body_len, total) =
+            plugin_invocation_lengths(&self.plugin_name, &self.operation_name, self.body.len())?;
+        let mut encoded = Vec::with_capacity(total);
+        encode_token(&self.token, &mut encoded);
+        encoded.extend_from_slice(&plugin_len.to_be_bytes());
+        encoded.extend_from_slice(&operation_len.to_be_bytes());
+        encoded.extend_from_slice(&body_len.to_be_bytes());
+        encoded.extend_from_slice(self.plugin_name.as_bytes());
+        encoded.extend_from_slice(self.operation_name.as_bytes());
+        encoded.extend_from_slice(&self.body);
+        Ok(encoded)
+    }
+
+    /// Decodes an invocation from untrusted wire bytes.
+    ///
+    /// # Errors
+    /// Rejects truncation, invalid identifiers or UTF-8, trailing bytes and
+    /// envelopes over the frame resource bound.
+    pub fn decode(mut payload: &[u8]) -> Result<Self> {
+        check_length(payload.len())?;
+        let token = decode_token(&mut payload)?;
+        let plugin_len = usize::from(u16::from_be_bytes(take(&mut payload)?));
+        let operation_len = usize::from(u16::from_be_bytes(take(&mut payload)?));
+        let body_len = usize::try_from(u32::from_be_bytes(take(&mut payload)?)).map_err(|_| {
+            MetisError::protocol(
+                ErrorCode::PayloadTooLarge,
+                "Plugin invocation body length cannot fit this target",
+            )
+        })?;
+        let (plugin_bytes, remaining) = payload
+            .split_at_checked(plugin_len)
+            .ok_or_else(|| malformed("Plugin invocation plugin name is truncated"))?;
+        let (operation_bytes, body) = remaining
+            .split_at_checked(operation_len)
+            .ok_or_else(|| malformed("Plugin invocation operation name is truncated"))?;
+        let (body, trailing) = body
+            .split_at_checked(body_len)
+            .ok_or_else(|| malformed("Plugin invocation body is truncated"))?;
+        finish(trailing)?;
+        let plugin_name = std::str::from_utf8(plugin_bytes)
+            .map_err(|_| malformed("Plugin invocation plugin name is not valid UTF-8"))?
+            .to_owned();
+        let operation_name = std::str::from_utf8(operation_bytes)
+            .map_err(|_| malformed("Plugin invocation operation name is not valid UTF-8"))?
+            .to_owned();
+        validate_plugin_invocation_parts(&plugin_name, &operation_name, body.len())?;
+        Ok(Self {
+            token,
+            plugin_name,
+            operation_name,
+            body: body.to_vec(),
+        })
+    }
+}
+
+/// Bounded response body returned by one plugin operation.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct PluginInvocationResponsePayload {
+    body: Vec<u8>,
+}
+
+impl PluginInvocationResponsePayload {
+    /// Builds a response body within the frame resource bound.
+    ///
+    /// # Errors
+    /// Returns `PayloadTooLarge` when the body cannot fit its length field and
+    /// the bounded frame.
+    pub fn new(body: impl AsRef<[u8]>) -> Result<Self> {
+        let body = body.as_ref();
+        response_body_length(body.len())?;
+        Ok(Self {
+            body: body.to_vec(),
+        })
+    }
+
+    /// Returns the plugin response body without copying it.
+    #[must_use]
+    pub fn body(&self) -> &[u8] {
+        &self.body
+    }
+
+    /// Encodes the response with its exact body length.
+    ///
+    /// # Errors
+    /// Returns `PayloadTooLarge` when the response no longer satisfies its
+    /// resource bound.
+    pub fn encode(&self) -> Result<Vec<u8>> {
+        let body_len = response_body_length(self.body.len())?;
+        let mut encoded = Vec::with_capacity(PLUGIN_RESPONSE_PREFIX + self.body.len());
+        encoded.extend_from_slice(&body_len.to_be_bytes());
+        encoded.extend_from_slice(&self.body);
+        Ok(encoded)
+    }
+
+    /// Decodes a response body from untrusted wire bytes.
+    ///
+    /// # Errors
+    /// Rejects truncation, trailing bytes and bodies over the frame bound.
+    pub fn decode(mut payload: &[u8]) -> Result<Self> {
+        check_length(payload.len())?;
+        let body_len = usize::try_from(u32::from_be_bytes(take(&mut payload)?)).map_err(|_| {
+            MetisError::protocol(
+                ErrorCode::PayloadTooLarge,
+                "Plugin response body length cannot fit this target",
+            )
+        })?;
+        let (body, trailing) = payload
+            .split_at_checked(body_len)
+            .ok_or_else(|| malformed("Plugin response body is truncated"))?;
+        finish(trailing)?;
+        response_body_length(body.len())?;
+        Ok(Self {
+            body: body.to_vec(),
+        })
+    }
+}
+
+fn validate_plugin_invocation_parts(
+    plugin_name: &str,
+    operation_name: &str,
+    body_len: usize,
+) -> Result<()> {
+    if !valid_identifier(plugin_name, MAX_PLUGIN_NAME_BYTES)
+        || !valid_identifier(operation_name, MAX_PLUGIN_OPERATION_NAME_BYTES)
+    {
+        return Err(malformed(
+            "Plugin invocation identifiers are invalid or exceed their byte bounds",
+        ));
+    }
+    plugin_invocation_lengths(plugin_name, operation_name, body_len).map(|_| ())
+}
+
+fn plugin_invocation_lengths(
+    plugin_name: &str,
+    operation_name: &str,
+    body_len: usize,
+) -> Result<(u16, u16, u32, usize)> {
+    let plugin_len = u16::try_from(plugin_name.len()).map_err(|_| {
+        MetisError::protocol(
+            ErrorCode::PayloadTooLarge,
+            "Plugin invocation plugin name exceeds its wire length field",
+        )
+    })?;
+    let operation_len = u16::try_from(operation_name.len()).map_err(|_| {
+        MetisError::protocol(
+            ErrorCode::PayloadTooLarge,
+            "Plugin invocation operation name exceeds its wire length field",
+        )
+    })?;
+    let body_len_u32 = u32::try_from(body_len).map_err(|_| {
+        MetisError::protocol(
+            ErrorCode::PayloadTooLarge,
+            "Plugin invocation body exceeds its wire length field",
+        )
+    })?;
+    let total = PLUGIN_INVOCATION_PREFIX
+        .checked_add(plugin_name.len())
+        .and_then(|length| length.checked_add(operation_name.len()))
+        .and_then(|length| length.checked_add(body_len))
+        .ok_or_else(|| {
+            MetisError::protocol(
+                ErrorCode::PayloadTooLarge,
+                "Plugin invocation size overflows its resource bound",
+            )
+        })?;
+    if total > MAX_PAYLOAD_SIZE {
+        return Err(MetisError::protocol(
+            ErrorCode::PayloadTooLarge,
+            "Plugin invocation exceeds the payload resource bound",
+        ));
+    }
+    Ok((plugin_len, operation_len, body_len_u32, total))
+}
+
+fn response_body_length(body_len: usize) -> Result<u32> {
+    let encoded_len = PLUGIN_RESPONSE_PREFIX
+        .checked_add(body_len)
+        .ok_or_else(|| {
+            MetisError::protocol(
+                ErrorCode::PayloadTooLarge,
+                "Plugin response size overflows its resource bound",
+            )
+        })?;
+    if encoded_len > MAX_PAYLOAD_SIZE {
+        return Err(MetisError::protocol(
+            ErrorCode::PayloadTooLarge,
+            "Plugin response exceeds the payload resource bound",
+        ));
+    }
+    u32::try_from(body_len).map_err(|_| {
+        MetisError::protocol(
+            ErrorCode::PayloadTooLarge,
+            "Plugin response body exceeds its wire length field",
+        )
+    })
 }
 /// Structured remote failure.
 #[derive(Debug, Clone, PartialEq, Eq)]

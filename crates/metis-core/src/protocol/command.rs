@@ -69,6 +69,11 @@ impl MessageType {
                 Self::ClinicalCalcResp,
                 "clinical.calculate",
             )),
+            Self::PluginInvokeReq => Some(CommandDescriptor::new(
+                Self::PluginInvokeReq,
+                Self::PluginInvokeResp,
+                "plugin.invoke",
+            )),
             Self::AuditQueryReq => Some(CommandDescriptor::new(
                 Self::AuditQueryReq,
                 Self::AuditQueryResp,
@@ -80,6 +85,7 @@ impl MessageType {
             | Self::ClinicalCalcResp
             | Self::AuditQueryResp
             | Self::TelemetryStreamEvent
+            | Self::PluginInvokeResp
             | Self::ErrorResp => None,
         }
     }
@@ -96,6 +102,7 @@ pub const SUPPORTED_COMMANDS: &[MessageType] = &[
     MessageType::CapabilityReq,
     MessageType::HeartbeatReq,
     MessageType::ClinicalCalcReq,
+    MessageType::PluginInvokeReq,
 ];
 
 /// Version and bounded command identifiers advertised by a host.
@@ -262,6 +269,7 @@ mod tests {
             MessageType::CapabilityReq,
             MessageType::HeartbeatReq,
             MessageType::ClinicalCalcReq,
+            MessageType::PluginInvokeReq,
             MessageType::AuditQueryReq,
         ] {
             let descriptor = command.descriptor().expect("request descriptor");
@@ -283,6 +291,7 @@ mod tests {
         let decoded = CapabilityCatalogPayload::decode(&encoded).expect("decoded catalog");
         assert_eq!(decoded, catalog);
         assert!(decoded.supports(MessageType::ClinicalCalcReq));
+        assert!(decoded.supports(MessageType::PluginInvokeReq));
         assert!(!decoded.supports(MessageType::AuditQueryReq));
     }
 

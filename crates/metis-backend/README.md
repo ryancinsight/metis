@@ -25,4 +25,9 @@ example policy is not clinical guidance. Audit storage does not survive restart.
 [verification](../../docs/VERIFICATION.md). This package is unpublished.
 After handshake the service answers `CapabilityReq` with its bounded command
 catalog. A known command outside that catalog produces an explicit typed
-`UnexpectedMessageType` response.
+`UnexpectedMessageType` response. Hosts can register a `Plugin` together with
+a `PluginExecutor`; `PluginRouter` validates the static manifest and invokes
+declared commands after the service verifies the command's capability scope.
+The plugin owns its opaque body codec, responses remain bounded by the wire
+frame, and the route grants no operating-system authority. Unknown plugins,
+commands, missing scopes and executor failures remain typed responses.

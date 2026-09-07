@@ -13,7 +13,8 @@ pub use command::{CapabilityCatalogPayload, CommandDescriptor, MAX_COMMANDS, SUP
 pub use event::{EventCodec, EventId, MAX_EVENT_NAME_BYTES, RemoteEventPayload};
 pub use payload::{
     ClinicalCalcRequestPayload, ClinicalCalcResponsePayload, ErrorResponsePayload,
-    HandshakeRequestPayload, HandshakeResponsePayload,
+    HandshakeRequestPayload, HandshakeResponsePayload, PluginInvocationPayload,
+    PluginInvocationResponsePayload,
 };
 pub use plugin::{
     MAX_PLUGIN_NAME_BYTES, MAX_PLUGIN_OPERATION_NAME_BYTES, MAX_PLUGIN_OPERATIONS, MAX_PLUGINS,
