@@ -118,6 +118,24 @@ Rust-owned state after each change. Tab through the labels, press Space on the
 checkbox or radio, use the range arrows, and open the select to reproduce the
 keyboard path.
 
+The **Pointer capture** card demonstrates the browser pointer lifecycle that a
+drag interaction needs. Press or drag **Pointer capture surface**. On
+`pointerdown`, Rust reads the browser `pointerId` through Moirai, captures the
+identifier on the surface and verifies that the browser retained it. On
+`pointerup` or `pointercancel`, Rust releases the same identifier and updates
+the status to `Pointer capture: released (1)` for the trace's first pointer.
+The capture handle is owned by the mounted listener set, so **Stop host**
+drops the callbacks with the rest of the browser application. The surface
+accepts one active identifier at a time and reports a typed browser-host error
+if capture or release is rejected.
+
+The 2026-09-07 pointer trace used the generated browser build at a 1280×720
+CSS-pixel viewport and device scale 1.25. Its accessibility tree exposed the
+surface as a named group, and the full-page screenshot showed the pointer card,
+the semantic status and the unchanged backend-result panel. The provider
+revision and observed status are recorded in
+[browser pointer-capture evidence](../VERIFICATION.md#browser-pointer-capture-evidence--2026-09-07).
+
 The captured service journey at revision
 `d879779247c8cfc5870f62f99a5364cbbf2d3c58` used the Codex in-app
 browser at 1280×720 CSS pixels and device scale 1.25. Pointer activation of

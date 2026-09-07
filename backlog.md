@@ -169,7 +169,9 @@ an owner. “Unsupported” cannot replace delivery of a required mobile/native 
 - Live evidence: [browser control evidence](docs/VERIFICATION.md#browser-control-evidence--2026-09-07) records the disabled accessibility state before connection, the pending-state disable during a delayed response, re-enablement after the correlated result, and unchanged state after activation was rejected.
 - Completed increment: `feat(web): Add native session dialog` consumes Moirai `WebElement::dialog_open`, `show_modal`, `close_dialog` and `focus` from `8f02b8b7de6cf6361b519bd79759d8508568fbdb`; Rust mounts the semantic dialog, opens it modally, closes it through the provider and restores focus to the opener.
 - Live evidence: [browser dialog evidence](docs/VERIFICATION.md#browser-dialog-evidence--2026-09-07) records the authenticated modal screenshot, accessibility content, provider open-state read, close action, Escape dismissal and opener focus restoration.
-- Residuals: pointer capture, drag/drop, wheel/touch/modifier events, IME, accessibility technology and native-host input remain open; re-open this item when those dependencies land.
+- Completed increment: `feat(web): Add pointer capture surface` consumes Moirai `WebEvent::pointer_id`, `WebElement::set_pointer_capture`, `has_pointer_capture` and `release_pointer_capture` from `5a5e4b1540eff39bc3f082c6907f0c82fa14dcc8`; Rust captures one pointer ID on `pointerdown`, verifies the provider state and releases it on `pointerup` or `pointercancel`.
+- Live evidence: [browser pointer-capture evidence](docs/VERIFICATION.md#browser-pointer-capture-evidence--2026-09-07) records pointer ID `1`, release status, semantic surface name and the rendered surface screenshot.
+- Residuals: drag/drop policy, wheel/touch/modifier events, IME, accessibility technology and native-host input remain open; re-open this item when those dependencies land.
 
 <a id="METIS-TEXT-001"></a>
 ## METIS-TEXT-001 — Text, selection and IME [minor]

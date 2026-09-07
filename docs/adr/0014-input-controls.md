@@ -10,8 +10,10 @@ Driver: [METIS-INPUT-001](../../backlog.md#METIS-INPUT-001)
 
 Metis must reuse ordinary HTML5 controls while keeping application state and
 authority in Rust. The existing browser workbench had editable text and number
-inputs, but no typed checkbox, radio, range or select state. Browser bindings must stay
-inside the Moirai provider so a Metis consumer does not import `web-sys`.
+inputs, but no typed checkbox, radio, range or select state. Pointer transitions
+also need a Rust-owned capture boundary so a drag can keep its target when the
+pointer leaves the hit surface. Browser bindings must stay inside the Moirai
+provider so a Metis consumer does not import `web-sys`.
 
 ## Decision
 
@@ -28,6 +30,12 @@ preferences only. The range control is a bounded scale preference and the
 select chooses between a clinical summary and an audit sequence label; neither
 changes the clinical response value. The service response, capability grants
 and session identity remain authoritative outside the control model.
+
+The workbench includes a bounded pointer-capture surface. Its Rust listeners
+read the `pointerId` exposed by Moirai, call `set_pointer_capture`, verify
+`has_pointer_capture`, and release the same identifier on `pointerup` or
+`pointercancel`. A single active identifier is retained per mounted surface;
+additional pointer-down events are rejected until the current capture releases.
 
 ## Alternatives
 
@@ -62,8 +70,14 @@ The authenticated browser trace opened the native HTML dialog, verified its
 status and capability text, closed it through the Rust listener, restored focus
 to the opener on the `close` event, and exercised Escape dismissal.
 
+The pointer increment consumes Moirai pointer APIs from merged revision
+`5a5e4b1540eff39bc3f082c6907f0c82fa14dcc8`. The browser trace activated the
+pointer surface, observed the provider-backed release status with pointer ID
+`1`, and captured the rendered pointer surface and accessibility name at the
+same viewport and device scale.
+
 ## Residuals
 
-Pointer capture, drag/drop, wheel/touch/modifier events, IME, accessibility
-technology and native-window input remain under the linked backlog items. This
-increment does not claim cross-engine or native input parity.
+Drag/drop policy, wheel/touch/modifier events, IME, accessibility technology
+and native-window input remain under the linked backlog items. This increment
+does not claim cross-engine or native input parity.

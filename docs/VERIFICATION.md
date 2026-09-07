@@ -268,7 +268,7 @@ workbench rejected activation of its disabled submit control; the status and
 accessibility tree stayed unchanged.
 
 This closes the checkbox/radio/range/select and disabled-submit browser slices
-with real pointer and keyboard demonstrations. Pointer capture, drag/drop,
+with real pointer and keyboard demonstrations. Drag/drop policy,
 wheel/touch/modifier events, IME, accessibility technology, cross-engine parity,
 post-drop allocation and native-window input remain open under the linked
 backlog items.
@@ -297,8 +297,34 @@ the modal through the browser's native cancel path; the dialog had no `open`
 attribute afterward and focus again returned to the opener. The browser console
 contained only expected Moirai initialization entries and no warnings or errors.
 
-This closes the menu/dialog portion of `METIS-INPUT-001`. Pointer capture,
-drag/drop, wheel/touch/modifier events, IME, accessibility technology,
+This closes the menu/dialog portion of `METIS-INPUT-001`. Drag/drop policy,
+wheel/touch/modifier events, IME, accessibility technology, cross-engine parity,
+post-drop allocation and native-window input remain open.
+
+## Browser pointer-capture evidence — 2026-09-07
+
+The pointer increment consumes Moirai `WebEvent::pointer_id` and the
+`WebElement::set_pointer_capture`, `has_pointer_capture` and
+`release_pointer_capture` seams from merged revision
+`5a5e4b1540eff39bc3f082c6907f0c82fa14dcc8`. `metis-web` passes 10/10 native
+nextest tests, native warning-denied Clippy, the WASM-target check and
+WASM-target Clippy; `python scripts/browser.py build` produces the generated
+loader and WASM from the updated standalone lock.
+
+The Codex in-app browser trace used the generated page at a 1280×720 CSS-pixel
+viewport and device scale 1.25, served from a separate loopback HTTP origin
+without a backend bridge. The accessibility tree exposed the **Pointer
+capture** heading and a group named **Pointer capture surface**. Activating
+the surface delivered pointer ID `1`; Rust called `set_pointer_capture`, read
+`has_pointer_capture` as true, and the `pointerup` listener called
+`release_pointer_capture`. The status changed to `Pointer capture: released
+(1)`, the browser tree retained the semantic surface, and the full-page
+screenshot showed the pointer card beside the unchanged backend-result panel.
+The same release path is registered for `pointercancel`, and a second active
+pointer is rejected while the mounted surface owns its first identifier.
+
+This closes the browser pointer-capture portion of `METIS-INPUT-001`. Drag/drop
+policy, wheel/touch/modifier events, IME, accessibility technology,
 cross-engine parity, post-drop allocation and native-window input remain open.
 
 ## Browser stale-response evidence — 2026-09-07

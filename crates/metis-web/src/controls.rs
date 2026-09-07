@@ -53,6 +53,13 @@ pub(crate) const BROWSER_MARKUP: &str = r#"
   </select>
   <p id="options-state" role="status">View options: events visible; volume rate; detail clinical summary; scale 100%</p>
 </fieldset>
+<section class="metis-pointer" aria-labelledby="pointer-heading">
+  <h2 id="pointer-heading">Pointer capture</h2>
+  <p id="pointer-status" role="status">Pointer capture: idle</p>
+  <div id="pointer-surface" role="group" tabindex="0" aria-label="Pointer capture surface">
+    Press or drag this surface to exercise Rust-owned pointer capture.
+  </div>
+</section>
 <section class="metis-result" aria-labelledby="result-heading">
   <h2 id="result-heading">Backend result</h2>
   <p id="result-state">No backend bridge configured.</p>

@@ -19,7 +19,10 @@ The workbench also demonstrates Rust-owned checkbox, radio, range and native
 HTML dialog controls. Their semantic browser state is read through Moirai's DOM
 seam and rendered as bounded presentation preferences without changing the
 authoritative response. Dialog open/close operations and focus restoration stay
-inside that same seam.
+inside that same seam. The pointer-capture surface reads each browser pointer
+identifier through `WebEvent`, captures it on `pointerdown`, verifies the
+capture, and releases it on `pointerup` or `pointercancel`; the capture state
+is owned by the mounted listener set.
 
 Build the WASM artifact and generated browser glue with:
 

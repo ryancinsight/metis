@@ -6,6 +6,8 @@ mod config;
 mod dialog;
 #[path = "browser/events.rs"]
 mod events;
+#[path = "browser/pointer.rs"]
+mod pointer;
 #[path = "view.rs"]
 mod view;
 
@@ -81,7 +83,7 @@ impl BrowserApplication {
         let app = Rc::new(RefCell::new(None));
         let task = Rc::new(RefCell::new(None));
 
-        let mut listeners = Vec::with_capacity(12);
+        let mut listeners = Vec::with_capacity(16);
         listeners.push(input_listener(
             document,
             &state,
@@ -146,6 +148,7 @@ impl BrowserApplication {
             ControlField::ResultDetail,
         )?);
         listeners.extend(dialog::listeners(document)?);
+        listeners.extend(pointer::listeners(document)?);
 
         let form = view::element(document, "metis-form")?;
         let listener_document = document.clone();
