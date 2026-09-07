@@ -152,11 +152,11 @@ an owner. “Unsupported” cannot replace delivery of a required mobile/native 
 
 <a id="METIS-ASYNC-001"></a>
 ## METIS-ASYNC-001 — Bounded browser request lifecycle [arch] [minor]
-- Status: in-progress; priority: P0; owner: Moirai async/transport + Metis client; integrator: root; last-update: 2026-09-06; stage: bounded consumer seam; risk: hangs/leaks; dependencies: METIS-WEB-001
+- Status: in-progress; priority: P0; owner: Moirai async/transport + Metis client; integrator: root; last-update: 2026-09-06; stage: bounded correlation; risk: hangs/leaks; dependencies: METIS-WEB-001
 - Scope: event-driven receive/wakeup, task/request cancellation, deadlines and owned callback teardown; complete the upstream reactor gap and remove blocking browser paths.
-- Entry evidence: Moirai `95ff7ae` owns browser callbacks, bounded WebSocket state and deadlines over merged Mnemosyne backend `2eb49c1`; Metis uses one pinned Moirai source for native and WASM dependencies. Native async IPC tests pass 29/29 and the WASM IPC check/Clippy pass.
-- First increment: add the Metis async transport/client seam and preserve the finite browser lifecycle contract; published provider and consumer gates remain separate.
-- Acceptance: deliver ordered and out-of-order correlated messages, reject replay/oversize, enforce queue/in-flight bounds; cancel and shutdown leave zero live callbacks/tasks. Browser execution and concurrent correlation remain open.
+- Entry evidence: Moirai `95ff7ae` owns browser callbacks, bounded WebSocket state and deadlines over merged Mnemosyne backend `2eb49c1`; Metis uses one pinned Moirai source for native and WASM dependencies. Native async IPC tests pass 33/33 and the WASM IPC check/Clippy pass.
+- First increments: add the Metis async transport/client seam, then route ordered and out-of-order responses through one bounded receive pump; published provider and consumer gates remain separate.
+- Acceptance: native correlation and queue bounds now pass; browser execution, replay/oversize over a live WebSocket, cancellation and shutdown callback evidence remain required.
 - Demonstration: [V02](docs/VERIFICATION.md#V02) pending/cancel/disconnected states; [V12](docs/VERIFICATION.md#V12) repeat lifecycle/resource evidence.
 
 <a id="METIS-AUTHORITY-001"></a>

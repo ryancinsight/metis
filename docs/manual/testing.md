@@ -29,9 +29,10 @@ cargo clippy --locked -p metis-ipc --target wasm32-unknown-unknown -- -D warning
 cargo nextest run --locked -p metis-ipc
 ```
 
-These commands prove that frame bounds, request correlation and the native
-async-client tests compile against one pinned Moirai revision. They do not open
-a browser or produce a browser snapshot. V02 and V12 remain the acceptance
+These commands prove that frame bounds, one-pump ordered and out-of-order
+request correlation, and the native async-client tests compile against one
+pinned Moirai revision. They do not open a browser or produce a browser
+snapshot. V02 and V12 remain the acceptance
 checks for real WASM execution, cancellation, disconnect/recovery, teardown
 and resource measurements; their gallery entries must identify the actual
 engine, host and revision.

@@ -30,10 +30,14 @@ one `WebTimer`; dropping the composed future unregisters the waiter and clears
 the timer callback. The adapter decodes exactly one Metis frame and rejects
 empty, oversized, malformed or trailing data.
 
-The first client is sequential: one request awaits one correlated response.
-Out-of-order multiplexing requires a separate bounded request table and a
-conformance test before it is exposed. Authority, origin policy, browser host
-creation and HTML/CSS rendering remain separate Metis items.
+`AsyncIpcClient` exposes a bounded request table of sixteen entries. Callers
+send several requests through `send_request`, then drive one receive consumer
+through `recv_response_for`; responses that arrive for another outstanding
+sequence are retained in the same bounded table. The browser still has one
+Moirai receive waiter, so multiplexing is implemented as one pump rather than
+parallel WebSocket callbacks. The convenience `send_and_recv` path remains
+sequential. Authority, origin policy, browser host creation and HTML/CSS
+rendering remain separate Metis items.
 
 ## Alternatives
 
@@ -44,8 +48,9 @@ an open-ended receive would turn peer input into unbounded application memory.
 
 ## Verification
 
-`metis-ipc` native Nextest passes 29/29, including handshake rejection, zero
-timeout, sequence correlation and async frame round trips. Warning-denied
+`metis-ipc` native Nextest passes 33/33, including handshake rejection, zero
+timeout, bounded request capacity, ordered and out-of-order sequence
+correlation, and async frame round trips. Warning-denied
 Clippy passes for native all-targets and `wasm32-unknown-unknown`; the WASM
 check resolves all Moirai packages to `95ff7ae` and the merged Mnemosyne
 backend `2eb49c1`. These are static and native evidence only. A real browser
@@ -54,6 +59,6 @@ listener/task teardown and capture V02/V12 evidence before this item closes.
 
 ## Residuals
 
-The browser executor, desktop WebView host, origin/authority policy, concurrent
-out-of-order request table, and visual browser snapshots remain open. No
-security, memory-efficiency or Tauri-parity claim is derived from compilation.
+The browser executor, desktop WebView host, origin/authority policy and visual
+browser snapshots remain open. Native correlation tests do not establish a
+running browser, callback/task teardown, memory efficiency or Tauri parity.
