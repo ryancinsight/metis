@@ -171,7 +171,9 @@ an owner. “Unsupported” cannot replace delivery of a required mobile/native 
 - Live evidence: [browser dialog evidence](docs/VERIFICATION.md#browser-dialog-evidence--2026-09-07) records the authenticated modal screenshot, accessibility content, provider open-state read, close action, Escape dismissal and opener focus restoration.
 - Completed increment: `feat(web): Add pointer capture surface` consumes Moirai `WebEvent::pointer_id`, `WebElement::set_pointer_capture`, `has_pointer_capture` and `release_pointer_capture` from `5a5e4b1540eff39bc3f082c6907f0c82fa14dcc8`; Rust captures one pointer ID on `pointerdown`, verifies the provider state and releases it on `pointerup` or `pointercancel`.
 - Live evidence: [browser pointer-capture evidence](docs/VERIFICATION.md#browser-pointer-capture-evidence--2026-09-07) records pointer ID `1`, release status, semantic surface name and the rendered surface screenshot.
-- Residuals: drag/drop policy, wheel/touch/modifier events, IME, accessibility technology and native-host input remain open; re-open this item when those dependencies land.
+- Completed increment: `feat(web): Render pointer metadata` consumes Moirai `WebEvent::pointer_metadata` and `PointerMetadata` from merged revision `a3c86cd183a18edc35db30f1d35e79fe80092df4`; Rust renders device type, CSS-pixel coordinates, changed/held buttons, modifiers and primary-pointer state on capture and movement.
+- Live evidence: [browser pointer metadata evidence](docs/VERIFICATION.md#browser-pointer-metadata-evidence--2026-09-07) records the input-sensitive status and screenshot; gesture policy remains open.
+- Residuals: drag/drop policy, wheel/touch gesture interpretation, IME, accessibility technology and native-host input remain open; re-open this item when those dependencies land.
 
 <a id="METIS-TEXT-001"></a>
 ## METIS-TEXT-001 — Text, selection and IME [minor]

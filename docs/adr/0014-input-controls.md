@@ -36,6 +36,11 @@ read the `pointerId` exposed by Moirai, call `set_pointer_capture`, verify
 `has_pointer_capture`, and release the same identifier on `pointerup` or
 `pointercancel`. A single active identifier is retained per mounted surface;
 additional pointer-down events are rejected until the current capture releases.
+Each pointer transition also reads Moirai's copyable `PointerMetadata` snapshot
+and renders the normalized device type, CSS-pixel coordinates, changed and
+held buttons, modifier keys and primary-pointer marker. Captured `pointermove`
+events update the same status so drag policy can consume one coherent input
+record.
 
 ## Alternatives
 
@@ -74,10 +79,13 @@ The pointer increment consumes Moirai pointer APIs from merged revision
 `5a5e4b1540eff39bc3f082c6907f0c82fa14dcc8`. The browser trace activated the
 pointer surface, observed the provider-backed release status with pointer ID
 `1`, and captured the rendered pointer surface and accessibility name at the
-same viewport and device scale.
+same viewport and device scale. The metadata increment consumes
+`PointerMetadata` from merged Moirai revision
+`a3c86cd183a18edc35db30f1d35e79fe80092df4`; its live browser trace records the
+pointer type, coordinates, buttons, modifiers and primary marker.
 
 ## Residuals
 
-Drag/drop policy, wheel/touch/modifier events, IME, accessibility technology
-and native-window input remain under the linked backlog items. This increment
-does not claim cross-engine or native input parity.
+Drag/drop policy, wheel/touch gesture interpretation, IME, accessibility
+technology and native-window input remain under the linked backlog items. This
+increment does not claim cross-engine or native input parity.

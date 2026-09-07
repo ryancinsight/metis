@@ -22,7 +22,10 @@ authoritative response. Dialog open/close operations and focus restoration stay
 inside that same seam. The pointer-capture surface reads each browser pointer
 identifier through `WebEvent`, captures it on `pointerdown`, verifies the
 capture, and releases it on `pointerup` or `pointercancel`; the capture state
-is owned by the mounted listener set.
+is owned by the mounted listener set. The same events expose a Rust-owned
+metadata snapshot with device type, CSS-pixel coordinates, button state,
+modifier keys and the primary-pointer marker; `pointermove` renders the
+snapshot while the surface owns the capture.
 
 Build the WASM artifact and generated browser glue with:
 

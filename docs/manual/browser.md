@@ -120,10 +120,13 @@ keyboard path.
 
 The **Pointer capture** card demonstrates the browser pointer lifecycle that a
 drag interaction needs. Press or drag **Pointer capture surface**. On
-`pointerdown`, Rust reads the browser `pointerId` through Moirai, captures the
-identifier on the surface and verifies that the browser retained it. On
+`pointerdown`, Rust reads the browser `PointerMetadata` snapshot through
+Moirai, captures the identifier on the surface and verifies that the browser
+retained it. The status includes the pointer device, viewport coordinates,
+changed and held buttons, modifier keys and primary-pointer state. Captured
+`pointermove` events update the same metadata record while dragging. On
 `pointerup` or `pointercancel`, Rust releases the same identifier and updates
-the status to `Pointer capture: released (1)` for the trace's first pointer.
+the status to the released metadata record for the trace's first pointer.
 The capture handle is owned by the mounted listener set, so **Stop host**
 drops the callbacks with the rest of the browser application. The surface
 accepts one active identifier at a time and reports a typed browser-host error
@@ -135,6 +138,9 @@ surface as a named group, and the full-page screenshot showed the pointer card,
 the semantic status and the unchanged backend-result panel. The provider
 revision and observed status are recorded in
 [browser pointer-capture evidence](../VERIFICATION.md#browser-pointer-capture-evidence--2026-09-07).
+The metadata trace and provider revision are recorded in
+[browser pointer-metadata evidence](../VERIFICATION.md#browser-pointer-metadata-evidence--2026-09-07).
+The current provider revision is `a3c86cd183a18edc35db30f1d35e79fe80092df4`.
 
 The captured service journey at revision
 `d879779247c8cfc5870f62f99a5364cbbf2d3c58` used the Codex in-app

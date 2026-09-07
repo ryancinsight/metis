@@ -269,7 +269,7 @@ accessibility tree stayed unchanged.
 
 This closes the checkbox/radio/range/select and disabled-submit browser slices
 with real pointer and keyboard demonstrations. Drag/drop policy,
-wheel/touch/modifier events, IME, accessibility technology, cross-engine parity,
+wheel/touch gesture interpretation, IME, accessibility technology, cross-engine parity,
 post-drop allocation and native-window input remain open under the linked
 backlog items.
 
@@ -298,7 +298,7 @@ attribute afterward and focus again returned to the opener. The browser console
 contained only expected Moirai initialization entries and no warnings or errors.
 
 This closes the menu/dialog portion of `METIS-INPUT-001`. Drag/drop policy,
-wheel/touch/modifier events, IME, accessibility technology, cross-engine parity,
+wheel/touch gesture interpretation, IME, accessibility technology, cross-engine parity,
 post-drop allocation and native-window input remain open.
 
 ## Browser pointer-capture evidence — 2026-09-07
@@ -324,8 +324,35 @@ The same release path is registered for `pointercancel`, and a second active
 pointer is rejected while the mounted surface owns its first identifier.
 
 This closes the browser pointer-capture portion of `METIS-INPUT-001`. Drag/drop
-policy, wheel/touch/modifier events, IME, accessibility technology,
+policy, wheel/touch gesture interpretation, IME, accessibility technology,
 cross-engine parity, post-drop allocation and native-window input remain open.
+
+## Browser pointer-metadata evidence — 2026-09-07
+
+The metadata increment consumes Moirai `WebEvent::pointer_metadata` and the
+`PointerMetadata` value seam from merged revision
+`a3c86cd183a18edc35db30f1d35e79fe80092df4`. `metis-web` passes 10/10 native
+nextest tests, native warning-denied Clippy, the WASM-target check and
+WASM-target Clippy; `python scripts/browser.py build` produces the generated
+loader and WASM from the updated standalone lock.
+
+The Codex in-app browser trace used the generated page at a 1280×720 CSS-pixel
+viewport and device scale 1.25, served from a separate loopback HTTP origin
+without a backend bridge. The accessibility tree exposed the **Pointer
+capture** heading and named **Pointer capture surface** group. A normal click
+ended with `Pointer capture: released (1) — mouse at (386, 519), button 0,
+buttons 0, modifiers none, primary`. A Shift-click ended with
+`mouse at (386, 540), button 0, buttons 0, modifiers Shift, primary`, proving
+modifier state is read from the browser event. A right-click ended with
+`mouse at (386, 540), button 2, buttons 0, modifiers none, primary`, proving
+the changed-button value is input-sensitive. The full-page screenshot showed
+the metadata status beside the unchanged backend-result panel.
+
+Captured `pointermove` listeners render the same metadata record while the
+surface owns the pointer, and `pointercancel` uses the same release path. This
+closes the provider metadata portion of `METIS-INPUT-001`; drag/drop policy,
+touch gesture interpretation, IME, accessibility technology, cross-engine
+parity, post-drop allocation and native-window input remain open.
 
 ## Browser stale-response evidence — 2026-09-07
 
