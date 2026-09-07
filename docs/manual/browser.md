@@ -84,7 +84,7 @@ Rust-owned state after each change. Tab through the labels, press Space on the
 checkbox or radio, and use the range arrows to reproduce the keyboard path.
 
 The captured service journey at revision
-`ddbd75f61914bba195c71cb671bf6d8bf4c14eb6` used the Codex in-app
+`9f0c7fb9ed485797f3e9ab31df75b65063ac6ef3` used the Codex in-app
 browser at 1280×720 CSS pixels and device scale 1.25. Pointer activation of
 **Drug mass rate** changed the summary to `drug mass rate` and the result to
 `Drug mass rate: 2.175000 mg/hr` without clearing the accepted backend result.

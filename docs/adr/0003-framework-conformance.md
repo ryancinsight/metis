@@ -49,7 +49,7 @@ validates the browser Origin before `101 Switching Protocols`, runs the framed
 bridge in the browser. Post-drop allocation, TLS, cross-engine and desktop
 host evidence remain open.
 
-Revision 2026-09-07: Moirai `ddbd75f61914bba195c71cb671bf6d8bf4c14eb6` adds the
+Revision 2026-09-07: Moirai `9f0c7fb9ed485797f3e9ab31df75b65063ac6ef3` adds the
 checked-state DOM seam. Metis now demonstrates Rust-owned checkbox, radio and
 range controls while select/menu/dialog, pointer capture, IME, accessibility
 technology and native-window input remain open.
@@ -170,7 +170,7 @@ producer; [transport](../../crates/metis-ipc/src/transport.rs) blocks on receipt
 Moirai's merged `be87d009cd0e877beef719b47bdcbadc45659069` browser PAL and HTTP
 service own DOM/event callbacks, bounded WebSocket receipt and pre-response
 upgrade validation. The follow-up provider revision
-`ddbd75f61914bba195c71cb671bf6d8bf4c14eb6` adds checked DOM state. The Metis
+`9f0c7fb9ed485797f3e9ab31df75b65063ac6ef3` adds checked DOM state. The Metis
 browser host uses those providers, including cancellable local tasks, and the
 live service composes the trusted host policy.
 The native event producer, cross-engine runtime matrix and OS host remain
