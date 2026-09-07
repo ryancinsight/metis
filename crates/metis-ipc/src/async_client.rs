@@ -5,7 +5,24 @@ use crate::transport::AsyncIpcTransport;
 use metis_core::capability::CapabilityToken;
 use metis_core::error::{ErrorCode, MetisError, Result};
 use metis_core::protocol::{HandshakeRequestPayload, MessageType, PROTOCOL_VERSION};
+use std::collections::BTreeMap;
 use std::time::Duration;
+
+/// Maximum number of requests and completed responses retained by one client.
+pub const MAX_PENDING_REQUESTS: usize = 16;
+
+/// Correlation identifier assigned to one asynchronous request.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, PartialOrd, Ord)]
+#[repr(transparent)]
+pub struct RequestId(u64);
+
+impl RequestId {
+    /// Returns the wire sequence identifier.
+    #[must_use]
+    pub const fn sequence(self) -> u64 {
+        self.0
+    }
+}
 
 /// Client state for a non-blocking transport.
 pub struct AsyncIpcClient<T> {
@@ -13,6 +30,8 @@ pub struct AsyncIpcClient<T> {
     next_seq: Option<u64>,
     active_token: Option<CapabilityToken>,
     request_timeout: Duration,
+    pending: BTreeMap<u64, MessageType>,
+    completed: BTreeMap<u64, (MessageType, Vec<u8>)>,
 }
 
 impl<T: AsyncIpcTransport> AsyncIpcClient<T> {
@@ -32,6 +51,8 @@ impl<T: AsyncIpcTransport> AsyncIpcClient<T> {
             next_seq: Some(1),
             active_token: None,
             request_timeout,
+            pending: BTreeMap::new(),
+            completed: BTreeMap::new(),
         })
     }
 
@@ -72,6 +93,99 @@ impl<T: AsyncIpcTransport> AsyncIpcClient<T> {
         self.active_token = Some(token);
     }
 
+    /// Sends a request and records its expected response type.
+    ///
+    /// Responses are collected by one receive consumer. Callers that need
+    /// more than one request in flight send each request first, then await
+    /// [`Self::recv_response_for`] for the identifiers they own. The bounded
+    /// table matches the browser transport queue bound.
+    ///
+    /// # Errors
+    /// Returns queue-capacity, request-type, sequence, or transport failures.
+    pub fn send_request(&mut self, msg_type: MessageType, payload: &[u8]) -> Result<RequestId> {
+        if self.pending.len() + self.completed.len() >= MAX_PENDING_REQUESTS {
+            return Err(MetisError::transport(
+                ErrorCode::QueueFull,
+                "Async IPC request table is full",
+            ));
+        }
+        let (expected, sequence) = next_request(&mut self.next_seq, msg_type)?;
+        self.transport.send_message(msg_type, sequence, payload)?;
+        self.pending.insert(sequence, expected);
+        Ok(RequestId(sequence))
+    }
+
+    /// Receives the next response from the single transport receive pump.
+    ///
+    /// The returned identifier lets a caller route an out-of-order response.
+    /// Only one receive future may be polled at a time because the underlying
+    /// browser WebSocket owns one callback waiter.
+    ///
+    /// # Errors
+    /// Returns timeout, transport, sequence, or response-type failures.
+    pub async fn recv_response(&mut self) -> Result<(RequestId, MessageType, Vec<u8>)> {
+        if self.pending.is_empty() {
+            return Err(MetisError::protocol(
+                ErrorCode::SequenceMismatch,
+                "Async IPC has no pending response",
+            ));
+        }
+        let (header, response) = self.transport.recv_message(self.request_timeout).await?;
+        let Some(expected) = self.pending.remove(&header.sequence_id) else {
+            return Err(MetisError::protocol(
+                ErrorCode::SequenceMismatch,
+                "Response sequence does not match an outstanding request",
+            ));
+        };
+        validate_response(expected, header.sequence_id, &header)?;
+        Ok((RequestId(header.sequence_id), header.msg_type, response))
+    }
+
+    /// Receives the response for one request, retaining other responses.
+    ///
+    /// A single receive loop drains the transport and stores at most
+    /// [`MAX_PENDING_REQUESTS`] completed responses, so out-of-order peer
+    /// delivery cannot grow application memory without bound.
+    ///
+    /// # Errors
+    /// Returns timeout, transport, sequence, or response-type failures.
+    pub async fn recv_response_for(
+        &mut self,
+        request_id: RequestId,
+    ) -> Result<(MessageType, Vec<u8>)> {
+        if let Some(response) = self.completed.remove(&request_id.0) {
+            return Ok(response);
+        }
+        if !self.pending.contains_key(&request_id.0) {
+            return Err(MetisError::protocol(
+                ErrorCode::SequenceMismatch,
+                "Async IPC request is not outstanding",
+            ));
+        }
+        loop {
+            let (received, message_type, payload) = self.recv_response().await?;
+            if received == request_id {
+                return Ok((message_type, payload));
+            }
+            if self
+                .completed
+                .insert(received.0, (message_type, payload))
+                .is_some()
+            {
+                return Err(MetisError::protocol(
+                    ErrorCode::SequenceMismatch,
+                    "Async IPC received a duplicate response",
+                ));
+            }
+        }
+    }
+
+    /// Returns the number of requests or completed responses retained.
+    #[must_use]
+    pub fn pending_request_count(&self) -> usize {
+        self.pending.len() + self.completed.len()
+    }
+
     /// Sends one request and awaits its correlated response.
     ///
     /// The sequence is consumed before sending, so a transport failure cannot
@@ -85,11 +199,8 @@ impl<T: AsyncIpcTransport> AsyncIpcClient<T> {
         msg_type: MessageType,
         payload: &[u8],
     ) -> Result<(MessageType, Vec<u8>)> {
-        let (expected, sequence) = next_request(&mut self.next_seq, msg_type)?;
-        self.transport.send_message(msg_type, sequence, payload)?;
-        let (header, response) = self.transport.recv_message(self.request_timeout).await?;
-        validate_response(expected, sequence, &header)?;
-        Ok((header.msg_type, response))
+        let request_id = self.send_request(msg_type, payload)?;
+        self.recv_response_for(request_id).await
     }
 }
 
@@ -228,6 +339,80 @@ mod tests {
         let error = poll_ready(client.send_and_recv(MessageType::HeartbeatReq, b"request"))
             .expect_err("wrong sequence");
         assert_eq!(error.code, ErrorCode::SequenceMismatch);
+    }
+
+    #[test]
+    fn response_type_is_checked_after_async_receive() {
+        let response = frame(MessageType::ClinicalCalcResp, 1, b"response");
+        let mut client =
+            AsyncIpcClient::new(ScriptTransport::new([response]), Duration::from_secs(1))
+                .expect("positive timeout");
+
+        let error = poll_ready(client.send_and_recv(MessageType::HeartbeatReq, b"request"))
+            .expect_err("wrong response type");
+        assert_eq!(error.code, ErrorCode::UnexpectedMessageType);
+    }
+
+    #[test]
+    fn out_of_order_responses_are_correlated_with_a_bounded_table() {
+        let responses = [
+            frame(MessageType::HeartbeatResp, 2, b"second"),
+            frame(MessageType::HeartbeatResp, 1, b"first"),
+        ];
+        let mut client =
+            AsyncIpcClient::new(ScriptTransport::new(responses), Duration::from_secs(1))
+                .expect("positive timeout");
+
+        let first = client
+            .send_request(MessageType::HeartbeatReq, b"first")
+            .expect("first request");
+        let second = client
+            .send_request(MessageType::HeartbeatReq, b"second")
+            .expect("second request");
+        assert_eq!(first.sequence(), 1);
+        assert_eq!(second.sequence(), 2);
+
+        assert_eq!(
+            poll_ready(client.recv_response_for(first)).expect("first response"),
+            (MessageType::HeartbeatResp, b"first".to_vec())
+        );
+        assert_eq!(
+            poll_ready(client.recv_response_for(second)).expect("second response"),
+            (MessageType::HeartbeatResp, b"second".to_vec())
+        );
+        assert_eq!(client.pending_request_count(), 0);
+    }
+
+    #[test]
+    fn request_table_rejects_the_seventeenth_outstanding_request() {
+        let mut client = AsyncIpcClient::new(ScriptTransport::new([]), Duration::from_secs(1))
+            .expect("positive timeout");
+        for _ in 0..MAX_PENDING_REQUESTS {
+            client
+                .send_request(MessageType::HeartbeatReq, b"request")
+                .expect("bounded request capacity");
+        }
+
+        let error = client
+            .send_request(MessageType::HeartbeatReq, b"overflow")
+            .expect_err("seventeenth request must be rejected");
+        assert_eq!(error.code, ErrorCode::QueueFull);
+        assert_eq!(client.pending_request_count(), MAX_PENDING_REQUESTS);
+    }
+
+    #[test]
+    fn unknown_response_sequence_is_rejected() {
+        let response = frame(MessageType::HeartbeatResp, 9, b"unknown");
+        let mut client =
+            AsyncIpcClient::new(ScriptTransport::new([response]), Duration::from_secs(1))
+                .expect("positive timeout");
+        client
+            .send_request(MessageType::HeartbeatReq, b"request")
+            .expect("request");
+
+        let error = poll_ready(client.recv_response()).expect_err("unknown sequence");
+        assert_eq!(error.code, ErrorCode::SequenceMismatch);
+        assert_eq!(client.pending_request_count(), 1);
     }
 
     #[test]

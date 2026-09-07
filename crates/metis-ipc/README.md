@@ -1,7 +1,7 @@
 # metis-ipc
 
 Versioned frame I/O, request/response correlation, per-connection replay
-rejection, and bounded in-memory transport for Metis.
+rejection, and bounded native and browser transports for Metis.
 
 ```rust
 use metis_core::protocol::MessageType;
@@ -21,6 +21,12 @@ closure from truncated headers and payloads. Memory endpoints buffer at most
 and receive with a five-second default deadline. Stream callers configure
 read/write deadlines on their underlying I/O; generic blocking OS pipes do
 not provide cancellation through the `Read`/`Write` traits.
+
+Browser callers use `AsyncIpcClient` with the WASM-only
+`BrowserWebSocketTransport`. `send_request` permits at most sixteen requests
+or completed responses at once; one receive consumer routes out-of-order
+responses with `RequestId` and `recv_response_for`. Each receive has a finite
+deadline and Moirai owns WebSocket callback and timer teardown.
 
 Fault injection modifies encoded wire bytes before delivery. CRC32 detects
 accidental corruption; it does not authenticate transport peers. Handshake

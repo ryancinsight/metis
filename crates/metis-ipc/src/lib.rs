@@ -12,7 +12,7 @@ pub mod transport;
 #[cfg(target_arch = "wasm32")]
 mod browser;
 
-pub use async_client::AsyncIpcClient;
+pub use async_client::{AsyncIpcClient, MAX_PENDING_REQUESTS, RequestId};
 pub use client::IpcClient;
 pub use fault::{FaultConfig, FaultInjectingTransport};
 pub use frame::{read_frame, write_frame};
