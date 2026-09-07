@@ -36,6 +36,15 @@ bytes. `EventCodec` associates a stable name with a typed body without dynamic
 dispatch. A capability catalog is valid only after handshake and lists the
 request identifiers the host currently accepts.
 
+Plugin manifests are host-local metadata rather than a wire message. A
+`Plugin` implementation supplies one static `PluginDescriptor` to a bounded
+`PluginRegistry` (maximum 16 manifests and 16 combined operations per
+manifest). Identifiers are lower-case ASCII names within their byte bounds;
+each command or event declares a non-empty `CapabilityScope`, and duplicate
+operation names are rejected. Registration is metadata only: a host still
+performs capability checks and typed handler dispatch at its extension
+boundary.
+
 A token is 84 bytes: id u64, principal [u8;16], scope u32, issuance u64,
 expiration u64, issuance discriminator u64, HMAC [u8;32]. Generic token
 authentication uses the canonical fixed claims buffer with four zero padding

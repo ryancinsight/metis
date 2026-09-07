@@ -1,7 +1,11 @@
 //! Browser DOM application boundary.
 
+use metis_core::CapabilityScope;
 use metis_core::error::{ErrorCode, MetisError};
-use metis_core::protocol::CapabilityCatalogPayload;
+use metis_core::protocol::{
+    CapabilityCatalogPayload, MAX_PLUGINS, Plugin, PluginDescriptor, PluginOperation,
+    PluginRegistry,
+};
 use metis_frontend::{AsyncFrontendApp, FormInputs, FormState};
 use metis_ipc::BrowserWebSocketTransport;
 use moirai_pal::wasm::{
@@ -18,6 +22,7 @@ const BROWSER_MARKUP: &str = r#"
   <h1>Authorized clinical form boundary</h1>
   <p id="metis-status" role="status">Browser controls are active.</p>
   <p id="metis-capabilities">Host capabilities: unavailable</p>
+  <p id="metis-plugins">Registered frontend extensions: unavailable</p>
 </header>
 <form id="metis-form" class="metis-form">
   <label for="patient-id">Patient reference</label>
@@ -48,6 +53,7 @@ struct BrowserState {
     state: FormState,
     bridge: BridgeStatus,
     capabilities: String,
+    plugins: String,
 }
 
 impl Default for BrowserState {
@@ -57,6 +63,7 @@ impl Default for BrowserState {
             state: FormState::Idle,
             bridge: BridgeStatus::Disabled,
             capabilities: "Host capabilities: unavailable".to_owned(),
+            plugins: plugin_summary(),
         }
     }
 }
@@ -478,6 +485,7 @@ fn render(document: &WebDocument, state: &BrowserState) -> io::Result<()> {
     };
     set_text(document, "metis-status", &message)?;
     set_text(document, "metis-capabilities", &state.capabilities)?;
+    set_text(document, "metis-plugins", &state.plugins)?;
     set_text(document, "result-state", &message)
 }
 
@@ -495,6 +503,32 @@ fn capability_summary(catalog: &CapabilityCatalogPayload) -> String {
         return "Host capabilities: none advertised".to_owned();
     }
     format!("Host capabilities: {}", names.join(", "))
+}
+
+static WORKBENCH_EVENTS: [PluginOperation; 1] = [PluginOperation::new(
+    "form.state",
+    CapabilityScope::UI_RENDER,
+)];
+
+struct WorkbenchPlugin;
+
+impl Plugin for WorkbenchPlugin {
+    const DESCRIPTOR: PluginDescriptor =
+        PluginDescriptor::new("workbench", 1, &[], &WORKBENCH_EVENTS);
+}
+
+fn plugin_summary() -> String {
+    let mut registry = PluginRegistry::<MAX_PLUGINS>::new()
+        .expect("invariant: the browser plugin registry has a positive bounded capacity");
+    registry
+        .register::<WorkbenchPlugin>()
+        .expect("invariant: the static browser plugin manifest is valid");
+    let entries = registry
+        .plugins()
+        .iter()
+        .map(|plugin| format!("{} v{}", plugin.name(), plugin.version()))
+        .collect::<Vec<_>>();
+    format!("Registered frontend extensions: {}", entries.join(", "))
 }
 
 fn set_text(document: &WebDocument, id: &str, text: &str) -> io::Result<()> {

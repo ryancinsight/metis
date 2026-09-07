@@ -13,7 +13,7 @@ Stronger security and lower memory use are design goals, not demonstrated
 advantages over Tauri. The [target contract](docs/adr/0002-web-application-contract.md)
 defines compatibility, trust boundaries, and the measurements required for those
 claims. Migrating an existing JavaScript frontend does not automatically remove
-its JavaScript, and Tauri API/plugin compatibility remains to be implemented.
+its JavaScript, and Tauri API/plugin compatibility remains a mapped work item.
 
 The current implementation provides binary IPC, session capabilities, backend
 calculation and audit ownership, a software rasterizer, a headless form workflow
@@ -25,7 +25,9 @@ is implemented for the demonstrator. Authenticated sessions also expose a
 bounded command catalog and a local backpressure-aware event hub through the
 existing IPC seam. The same seam carries versioned unsolicited events over
 synchronous pipes and asynchronous WebSocket sessions, with strict identifiers
-and bounded async retention. This renderer's bounded markup subset is
+and bounded async retention. Hosts can register bounded, typed plugin manifests
+with explicit capability scopes; registration does not grant operating-system
+authority or erase handler types. This renderer's bounded markup subset is
 not the intended limit of web support. A desktop WebView host is not implemented. Metis does not
 yet provide Tauri feature parity, native desktop windows,
 an OS privilege sandbox, durable audit storage or regulatory certification.

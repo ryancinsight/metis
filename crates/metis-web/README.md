@@ -25,4 +25,5 @@ Configure the optional hidden host fields or the query parameters described in
 the user manual to enable the service bridge. The generated module also exports
 `metis_stop`, which drops the browser task and every Rust-owned DOM listener
 before replacing the root with a stopped message; `metis_start` mounts fresh
-state, listeners and (when configured) a new bounded service task.
+state, listeners, a typed bounded workbench extension manifest and (when
+configured) a new bounded service task.
