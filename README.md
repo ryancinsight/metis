@@ -18,8 +18,9 @@ its JavaScript, and Tauri API/plugin compatibility remains to be implemented.
 The current implementation provides binary IPC, session capabilities, backend
 calculation and audit ownership, a software rasterizer, a headless form workflow
 and a runnable HTML5/CSS browser workbench. The browser workbench keeps state and
-events in Rust/WASM while Moirai owns browser handles; its authenticated backend
-bridge is still open. This renderer's bounded markup subset is not the intended
+events in Rust/WASM while Moirai owns browser handles; its external assets use a
+strict same-origin CSP and its local host policy binds grants to origin, window
+and session. The authenticated backend bridge is still open. This renderer's bounded markup subset is not the intended
 limit of web support. A desktop WebView host is not implemented. Metis does not
 yet provide Tauri feature parity, native desktop windows,
 an OS privilege sandbox, durable audit storage or regulatory certification.

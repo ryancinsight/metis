@@ -145,6 +145,7 @@ def run(name, args, *, cwd, environment, seconds=300, expected_exit=0, required_
 
 def source_state(metadata, configs):
     inputs = {ROOT / "rust-toolchain.toml", ROOT / "metis.json", *configs}
+    inputs.update(path for path in (ROOT / "examples" / "browser").glob("*") if path.is_file())
     inputs.update((ROOT / "docs").rglob("*.md"))
     for package in metadata["packages"]:
         if package["source"] is None:

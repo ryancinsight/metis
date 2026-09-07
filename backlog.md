@@ -42,12 +42,12 @@ an owner. “Unsupported” cannot replace delivery of a required mobile/native 
 
 <a id="METIS-BROWSER-001"></a>
 ## METIS-BROWSER-001 — Browser form and command lifecycle [arch] [minor]
-- Status: in-progress; priority: P1; owner: Metis frontend/host; integrator: root; last-update: 2026-09-06; branch: `feat/browser-host`; dependencies: METIS-STATE-001, METIS-ASYNC-001, METIS-AUTHORITY-001; risk: browser/native trust boundary
+- Status: in-progress; priority: P1; owner: Metis frontend/host; integrator: root; last-update: 2026-09-07; branch: `feat/process-foundation`; dependencies: METIS-STATE-001, METIS-ASYNC-001, METIS-AUTHORITY-001; risk: browser/native trust boundary
 - Scope: actual HTML5/CSS DOM form, Rust/WASM state, asset loading and bounded asynchronous requests; portable UI never imports native authority.
 - Acceptance: Chromium/Firefox/WebKit runtime jobs load WASM and respond to two input changes; authorized service/desktop bridge verifies results; explicit unsupported native-only operations; zero pending requests/listeners after cancel/close.
 - Demonstration: [V02](docs/VERIFICATION.md#V02), actual browser captures and copyable build/run commands in the manual. A browser-only local control demo can land before the privileged bridge.
 - Constraint: no native secrets or authority in downloaded WASM; private-pipe possession cannot authenticate browser requests. Desktop bridge or service boundary must enforce origin/session authorization.
-- Evidence: `metis-web` now mounts a real DOM form through Moirai's owned handles. A local trace changed weight and dose, rejected a non-numeric edit with `ERR_NUMERIC_INSTABILITY`, surfaced `ERR_CONNECTION_CLOSED` without a backend, and verified Stop/Start remount with empty browser diagnostics. Metis request cancellation and listener teardown are covered; live service, origin/session, post-drop allocation and cross-engine evidence remain open.
+- Evidence: `metis-web` now mounts a real DOM form through Moirai's owned handles. A local trace changed weight and dose, rejected a non-numeric edit with `ERR_NUMERIC_INSTABILITY`, surfaced `ERR_CONNECTION_CLOSED` without a backend, and verified Stop/Start remount with empty browser diagnostics. Metis request cancellation, listener teardown, strict CSP assets and the local host-origin/session policy are covered; live service-side validation, post-drop allocation and cross-engine evidence remain open.
 - Decision: [ADR 0002](docs/adr/0002-web-application-contract.md), [ADR 0008](docs/adr/0008-browser-host-boundary.md).
 
 <a id="METIS-SEC-001"></a>
@@ -150,13 +150,13 @@ an owner. “Unsupported” cannot replace delivery of a required mobile/native 
 
 <a id="METIS-ASYNC-001"></a>
 ## METIS-ASYNC-001 — Bounded browser request lifecycle [arch] [minor]
-- Status: in-progress; priority: P0; owner: Moirai async/transport + Metis client; integrator: root; branch: `feat/browser-lifecycle`; last-update: 2026-09-07; stage: live WebSocket lifecycle; risk: hangs/leaks; dependencies: METIS-WEB-001
+- Status: in-progress; priority: P0; owner: Moirai async/transport + Metis client; integrator: root; branch: `feat/process-foundation`; last-update: 2026-09-07; stage: live WebSocket lifecycle; risk: hangs/leaks; dependencies: METIS-WEB-001
 - Scope: event-driven receive/wakeup, task/request cancellation, deadlines and owned callback teardown; complete the upstream reactor gap and remove blocking browser paths.
 - Entry evidence: Moirai `16a1b88` owns contained process lifecycles, browser callbacks, DOM handles, cancellable local tasks, bounded WebSocket state, deadlines and standalone authentication primitives over its merged Mnemosyne backend; Metis uses one pinned Moirai source for native and WASM dependencies. Focused Metis IPC/frontend Nextest passes 39/39, native all-targets Clippy and WASM library Clippy pass, the WASM check passes, and the browser trace proves stop/remount with empty console diagnostics.
 - First increments: add the Metis async transport/client seam, then route ordered and out-of-order responses through one bounded receive pump; the browser host now consumes the seam but remains disconnected until authority/session plumbing exists.
 - Acceptance: native correlation and queue bounds, request cancellation, late-response rejection and host stop/remount now pass; authenticated browser execution over a live WebSocket, replay/oversize handling through that service, task-handle integration, and post-drop resource evidence remain required.
 - Demonstration: [V02](docs/VERIFICATION.md#V02) pending/cancel/disconnected states; [V12](docs/VERIFICATION.md#V12) repeat lifecycle/resource evidence.
-- Takeover: the prior `feat/browser-host` claim is stale and its remote branch is gone; this increment owns the live transport fixture and cancellation/teardown evidence.
+- Takeover: the prior `feat/browser-host` claim is stale and its remote branch is gone; the merged lifecycle evidence now lives on `feat/process-foundation`, while this item still owns the live transport fixture and cancellation/teardown evidence.
 
 <a id="METIS-AUTHORITY-001"></a>
 ## METIS-AUTHORITY-001 — Host authority and origin policy [arch] [minor]
@@ -164,7 +164,7 @@ an owner. “Unsupported” cannot replace delivery of a required mobile/native 
 - Scope: deny-by-default command grants bound to session/origin/window, CSP/navigation/asset policy, target capability discovery and explicit unsupported errors.
 - Acceptance: spoofed origin/window, navigation, replay, injection and resource-exhaustion probes cannot elevate authority; backend keys absent from WASM/assets; each grant has positive and denial cases.
 - Demonstration: [V08](docs/VERIFICATION.md#V08); screenshots pair visible denial with backend/probe evidence, never substitute for it. OS enforcement lands per desktop item.
-- First increment: add a validated host-origin/window/session contract, bind backend capability verification to that contract, and ship a strict browser CSP/navigation policy. Live authenticated service and OS permission probes remain separate acceptance slices.
+- First increment: add a validated host-origin/window/session contract, bind backend capability verification to that contract, and ship a strict browser CSP/navigation policy. `HostPolicy` and host-bound HMAC checks now pass their positive and substitution tests; live authenticated service and OS permission probes remain separate acceptance slices.
 
 <a id="METIS-COMMANDS-001"></a>
 ## METIS-COMMANDS-001 — Typed commands and event streams [arch] [minor]

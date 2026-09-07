@@ -17,8 +17,9 @@ the request protocol and application deadline; it does not create another runtim
 1. The frontend handshakes over the private transport and receives a scoped token.
 2. Each subsequent request carries an increasing sequence number. Responses must
    match both the expected response family and sequence.
-3. The backend validates the exact issued token, scope, wall-clock claims and
-   monotonic session lifetime before calculating.
+3. The backend validates the exact issued token, configured `HostPolicy`
+   origin/window/session binding, scope, wall-clock claims and monotonic session
+   lifetime before calculating.
 4. Calculation and failure outcomes enter a bounded backend audit ring. The
    frontend displays the response or an explicit error.
 
@@ -31,6 +32,8 @@ active token. The [wire contract](../INTERFACE.md) defines frames and payloads.
 Do not send the backend key to the frontend. The response MAC is symmetric; the
 frontend does not possess a verification mechanism and must not claim to verify
 it. Claimed process identifiers are metadata, not operating-system identity proof.
+The default contained service policy admits only `metis://native` in window 1;
+browser and desktop hosts must pass their own trusted observed context.
 
 The internal `--metis-frontend` argument selects the child role; it is not a
 credential. Child dispatch occurs before key generation and backend construction.

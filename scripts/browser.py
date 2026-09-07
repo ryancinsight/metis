@@ -62,7 +62,15 @@ def build() -> None:
     OUTPUT.mkdir(parents=True, exist_ok=True)
     run([wasm_bindgen(), str(wasm_artifact()), "--target", "web", "--out-dir", str(OUTPUT)])
     shutil.copy2(ROOT / "examples" / "browser" / "index.html", OUTPUT / "index.html")
-    required = (OUTPUT / "index.html", OUTPUT / "metis_web.js", OUTPUT / "metis_web_bg.wasm")
+    for asset in ("styles.css", "bootstrap.js"):
+        shutil.copy2(ROOT / "examples" / "browser" / asset, OUTPUT / asset)
+    required = (
+        OUTPUT / "index.html",
+        OUTPUT / "styles.css",
+        OUTPUT / "bootstrap.js",
+        OUTPUT / "metis_web.js",
+        OUTPUT / "metis_web_bg.wasm",
+    )
     missing = [str(path) for path in required if not path.is_file()]
     if missing:
         raise SystemExit(f"browser build did not produce required artifacts: {', '.join(missing)}")

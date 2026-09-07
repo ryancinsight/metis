@@ -17,6 +17,9 @@ assert_eq!(header.sequence_id, 7);
 
 Capability validation controls application commands, not operating-system
 privileges. HMAC requires a private backend key; it is not a public signature.
+Host-bound grants authenticate the canonical origin and window as associated
+data in addition to the session principal. The wire token stays fixed-width;
+the trusted host reconstructs this binding before dispatch.
 The framing CRC detects corruption and does not authenticate a peer.
 The provider's fixed-width comparison and HMAC vectors are tested upstream;
 Metis's capability and audit tests exercise the same functions at their

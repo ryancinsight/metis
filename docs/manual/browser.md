@@ -1,10 +1,19 @@
 # Run the browser workbench
 
-The browser workbench is the first executable HTML5/CSS host. The document and
-CSS shell come from `examples/browser/index.html`; Rust owns the controls,
-captured inputs and event transitions through `metis-web`. Moirai owns the DOM
-handles and listener lifetimes. The page contains no backend key and does not
-perform the privileged clinical calculation in downloaded WASM.
+The browser workbench is the first executable HTML5/CSS host. The document,
+external stylesheet and module bootstrap come from `examples/browser/`; Rust
+owns the controls, captured inputs and event transitions through `metis-web`.
+Moirai owns the DOM handles and listener lifetimes. The page contains no
+backend key and does not perform the privileged clinical calculation in
+downloaded WASM.
+
+The page carries the same strict content-security policy emitted by
+`metis_core::HostPolicy`: scripts and styles load from the page origin,
+connections are same-origin, forms cannot post elsewhere, and plugins and
+framing are disabled. The bootstrap also cancels cross-origin anchor
+navigation as a defense-in-depth check. A host must still enforce the policy
+at the native or service boundary; downloaded page code is not an authority
+source.
 
 ## Build and serve
 

@@ -55,8 +55,8 @@ then submit to observe the typed `ERR_CONNECTION_CLOSED` result. The browser
 trace in [the manual](browser.md) records the observed semantic states and
 viewport. Use **Stop host** to remove the form and listener guards, then
 **Start host** to remount fresh controls. This is runtime evidence for the
-local HTML5/CSS host; it does not prove an authenticated service, origin grants,
-live task cancellation, or OS isolation.
+local HTML5/CSS host and its asset policy; it does not prove an authenticated
+service-side Origin check, live task cancellation, or OS isolation.
 
 ## Check authentication provider ownership
 

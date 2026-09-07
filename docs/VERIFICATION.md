@@ -169,6 +169,30 @@ module. It does not establish a live WebSocket bridge, origin/session grant,
 post-drop JavaScript allocation count, cross-engine behavior or native window
 parity.
 
+## Host authority and asset evidence — 2026-09-07
+
+The `metis-core` host contract now parses canonical ASCII network origins,
+rejects credentials/paths/wildcards/opaque schemes and invalid ports, and binds
+one exact origin and window to a nonzero session principal. Seven core tests
+cover positive authorization, origin/window/session substitutions, unbound
+tokens and retargeted host signatures. `metis-backend` stores the trusted
+context in each session and issues its fixed-width token with the host binding
+as HMAC associated data; the default contained policy is `metis://native` and
+window 1. Existing backend/IPC tests continue to cover one-handshake and
+cross-session rejection.
+
+The browser shell moved its CSS and module bootstrap to external same-origin
+assets. Two static asset tests verify that the document has no inline style or
+module body, that the CSP contains same-origin script/style/connect and
+same-origin form actions, and that the bootstrap blocks cross-origin anchor
+navigation. The existing browser screenshot/console trace remains valid after
+the asset move; it still has no authenticated service.
+
+This evidence establishes the local authority kernel and asset policy. It does
+not establish service-side Origin header validation, TLS endpoint policy, a
+live authenticated WebSocket acceptor, OS permission isolation, post-drop
+allocation counts or cross-engine host parity.
+
 <a id="visual-contract"></a>
 ## Visual and interaction contract
 

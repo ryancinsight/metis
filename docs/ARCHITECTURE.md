@@ -17,14 +17,17 @@ listener lifetimes.
 
 The following sections describe the current native foundation and the first
 browser host. The browser workbench mounts a real DOM form and reports a typed
-disconnection when no authenticated backend bridge is configured. A live browser
-service, desktop WebView host and OS permission boundary remain unimplemented.
+disconnection when no authenticated backend bridge is configured. Its external
+assets carry the strict same-origin CSP emitted by `HostPolicy`, and the
+bootstrap rejects cross-origin anchor navigation. A live browser service,
+desktop WebView host and OS permission boundary remain unimplemented.
 
-The shared `metis-core` crate owns wire types, error codes and capability claim
-encoding. `metis-ipc` owns framing, canonical payload interpretation, transport
-correlation and typed failure reporting. `metis-backend` alone owns calculation
-policy, session authorization and audit storage. The application entry generates
-a fresh backend key and transfers ownership only into the parent service.
+The shared `metis-core` crate owns wire types, error codes, capability claim
+encoding and the host-origin/window/session policy. `metis-ipc` owns framing,
+canonical payload interpretation, transport correlation and typed failure
+reporting. `metis-backend` alone owns calculation policy, session authorization
+and audit storage. The application entry generates a fresh backend key and
+transfers ownership only into the parent service.
 
 `metis-frontend` converts submitted values to a wire request and displays the
 correlated response. `metis-ui-lang` parses bounded markup and computes a display
@@ -44,6 +47,27 @@ Moirai owns execution and process lifecycle. Its transport provider is extended
 for inherited private pipes, finite teardown and Windows process-tree lifecycle
 containment. Metis retains only application dispatch and the form-session budget.
 No frontend object, memory address or backend secret crosses the IPC boundary.
+
+## Host authority boundary
+
+`HostPolicy` is the shared boundary for every future privileged command. A
+trusted native or service host supplies the observed canonical origin, window
+identity and nonzero session principal. The policy admits one exact origin and
+window, and `HostContext::issue_capability` signs the canonical origin and
+window as associated data with the capability claims. Verification reconstructs
+the same context before scope, expiry and session checks; a plain capability or
+a token retargeted to another origin/window fails signature verification.
+
+The 84-byte token wire format stays fixed-width because authority metadata is
+not copied from the browser into the payload. `BackendService` defaults to the
+contained native policy (`metis://native`, window 1) and accepts an explicit
+policy for deterministic host integration tests. The service still has no live
+browser acceptor: Origin headers, TLS, endpoint allowlists and OS permission
+checks belong to the transport and desktop host increments.
+
+The browser shell keeps CSS and module bootstrap files external to satisfy the
+same-origin CSP. CSP and the module's navigation guard reduce the page attack
+surface; neither turns downloaded WASM into a trusted authority source.
 
 ## Distribution boundary
 
