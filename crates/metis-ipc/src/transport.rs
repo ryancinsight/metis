@@ -3,6 +3,7 @@
 use crate::frame::{read_frame, write_wire};
 use metis_core::error::{ErrorCode, MetisError, Result};
 use metis_core::protocol::{FrameHeader, HEADER_SIZE, MAX_PAYLOAD_SIZE, MessageType, build_frame};
+use std::future::Future;
 use std::io::{Read, Write};
 use std::sync::mpsc::{Receiver, RecvTimeoutError, SyncSender, TrySendError, sync_channel};
 use std::time::Duration;
@@ -30,6 +31,43 @@ pub trait IpcTransport: Send {
     /// # Errors
     /// Returns deadline, transport, or wire-validation failures.
     fn recv_message(&mut self) -> Result<(FrameHeader, Vec<u8>)>;
+}
+
+/// Event-driven transport for browser and other non-blocking hosts.
+///
+/// The send side is immediate: implementations either hand bytes to a
+/// non-blocking host API or return a bounded backpressure error. Receipt is a
+/// future so a browser event thread never waits on a synchronous read. The
+/// trait deliberately has no `Send` bound because browser futures and Web API
+/// handles remain on the JavaScript event-loop thread.
+pub trait AsyncIpcTransport {
+    /// Sends encoded wire bytes immediately.
+    ///
+    /// # Errors
+    /// Returns capacity, size, or transport failures.
+    fn send_frame(&mut self, frame: &[u8]) -> Result<()>;
+
+    /// Encodes and sends a bounded message.
+    ///
+    /// # Errors
+    /// Returns payload-size, backpressure, or transport failures.
+    fn send_message(
+        &mut self,
+        msg_type: MessageType,
+        sequence_id: u64,
+        payload: &[u8],
+    ) -> Result<()> {
+        self.send_frame(&build_frame(msg_type, sequence_id, payload)?)
+    }
+
+    /// Receives and validates one frame within the supplied finite deadline.
+    ///
+    /// # Errors
+    /// The future returns timeout, transport, or wire-validation failures.
+    fn recv_message(
+        &mut self,
+        timeout: Duration,
+    ) -> impl Future<Output = Result<(FrameHeader, Vec<u8>)>> + '_;
 }
 
 /// IPC over caller-owned streams.

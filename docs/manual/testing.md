@@ -18,6 +18,24 @@ seven form captures and their recorded inputs, actions, labels and geometry with
 the committed gallery baseline. A passing WASM build does not run
 a browser; a passing process test does not exercise clicking the painted button.
 
+## Check the browser transport slice
+
+The IPC package now has a browser-thread contract backed by Moirai's bounded
+WebSocket reactor and one-shot deadline timer. Check the exact public graph with:
+
+```text
+cargo check --locked -p metis-ipc --target wasm32-unknown-unknown
+cargo clippy --locked -p metis-ipc --target wasm32-unknown-unknown -- -D warnings
+cargo nextest run --locked -p metis-ipc
+```
+
+These commands prove that frame bounds, request correlation and the native
+async-client tests compile against one pinned Moirai revision. They do not open
+a browser or produce a browser snapshot. V02 and V12 remain the acceptance
+checks for real WASM execution, cancellation, disconnect/recovery, teardown
+and resource measurements; their gallery entries must identify the actual
+engine, host and revision.
+
 Open the [application gallery](applications.md) for the committed image, or
 inspect `output/form*.bmp` and `output/form*.svg` produced by this run. The SVG
 encodes the same raster pixels; it is not a second layout implementation.

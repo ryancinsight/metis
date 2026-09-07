@@ -3,8 +3,8 @@ use crate::transport::IpcTransport;
 use metis_core::capability::CapabilityToken;
 use metis_core::error::{ErrorCode, MetisError, Result};
 use metis_core::protocol::{
-    ErrorResponsePayload, HandshakeRequestPayload, HandshakeResponsePayload, MessageType,
-    PROTOCOL_VERSION,
+    ErrorResponsePayload, FrameHeader, HandshakeRequestPayload, HandshakeResponsePayload,
+    MessageType, PROTOCOL_VERSION,
 };
 
 /// Failure to establish a session, preserving local faults and peer rejections.
@@ -100,28 +100,9 @@ impl<T: IpcTransport> IpcClient<T> {
             principal_id,
         };
         let (kind, payload) = self.send_and_recv(MessageType::HandshakeReq, &req.encode())?;
-        if kind == MessageType::ErrorResp {
-            return Err(HandshakeError::Remote(ErrorResponsePayload::decode(
-                &payload,
-            )?));
-        }
-        let response = HandshakeResponsePayload::decode(&payload)?;
-        if response.server_version != PROTOCOL_VERSION {
-            return Err(MetisError::protocol(
-                ErrorCode::VersionMismatch,
-                "Handshake server version mismatch",
-            )
-            .into());
-        }
-        if response.initial_token.principal_id != principal_id {
-            return Err(MetisError::capability(
-                ErrorCode::InvalidPrincipal,
-                "Handshake token principal mismatch",
-            )
-            .into());
-        }
-        self.active_token = Some(response.initial_token.clone());
-        Ok(response.initial_token)
+        let token = decode_handshake_response(kind, &payload, principal_id)?;
+        self.active_token = Some(token.clone());
+        Ok(token)
     }
     /// Returns the current session capability, if acquired.
     pub const fn active_token(&self) -> Option<&CapabilityToken> {
@@ -142,35 +123,80 @@ impl<T: IpcTransport> IpcClient<T> {
         msg_type: MessageType,
         payload: &[u8],
     ) -> Result<(MessageType, Vec<u8>)> {
-        let expected = msg_type.response_type().ok_or_else(|| {
-            MetisError::protocol(
-                ErrorCode::UnexpectedMessageType,
-                "Client can only send request message types",
-            )
-        })?;
-        let sequence = self.next_seq.ok_or_else(|| {
-            MetisError::protocol(
-                ErrorCode::SequenceMismatch,
-                "Client sequence space exhausted",
-            )
-        })?;
-        self.next_seq = sequence.checked_add(1);
+        let (expected, sequence) = next_request(&mut self.next_seq, msg_type)?;
         self.transport.send_message(msg_type, sequence, payload)?;
         let (header, response) = self.transport.recv_message()?;
-        if header.sequence_id != sequence {
-            return Err(MetisError::protocol(
-                ErrorCode::SequenceMismatch,
-                "Response sequence does not match request",
-            ));
-        }
-        if header.msg_type != expected && header.msg_type != MessageType::ErrorResp {
-            return Err(MetisError::protocol(
-                ErrorCode::UnexpectedMessageType,
-                "Response type does not match request",
-            ));
-        }
+        validate_response(expected, sequence, &header)?;
         Ok((header.msg_type, response))
     }
+}
+
+pub(crate) fn next_request(
+    next_seq: &mut Option<u64>,
+    msg_type: MessageType,
+) -> Result<(MessageType, u64)> {
+    let expected = msg_type.response_type().ok_or_else(|| {
+        MetisError::protocol(
+            ErrorCode::UnexpectedMessageType,
+            "Client can only send request message types",
+        )
+    })?;
+    let sequence = next_seq.ok_or_else(|| {
+        MetisError::protocol(
+            ErrorCode::SequenceMismatch,
+            "Client sequence space exhausted",
+        )
+    })?;
+    *next_seq = sequence.checked_add(1);
+    Ok((expected, sequence))
+}
+
+pub(crate) fn validate_response(
+    expected: MessageType,
+    sequence: u64,
+    header: &FrameHeader,
+) -> Result<()> {
+    if header.sequence_id != sequence {
+        return Err(MetisError::protocol(
+            ErrorCode::SequenceMismatch,
+            "Response sequence does not match request",
+        ));
+    }
+    if header.msg_type != expected && header.msg_type != MessageType::ErrorResp {
+        return Err(MetisError::protocol(
+            ErrorCode::UnexpectedMessageType,
+            "Response type does not match request",
+        ));
+    }
+    Ok(())
+}
+
+pub(crate) fn decode_handshake_response(
+    kind: MessageType,
+    payload: &[u8],
+    principal_id: [u8; 16],
+) -> std::result::Result<CapabilityToken, HandshakeError> {
+    if kind == MessageType::ErrorResp {
+        return Err(HandshakeError::Remote(ErrorResponsePayload::decode(
+            payload,
+        )?));
+    }
+    let response = HandshakeResponsePayload::decode(payload)?;
+    if response.server_version != PROTOCOL_VERSION {
+        return Err(MetisError::protocol(
+            ErrorCode::VersionMismatch,
+            "Handshake server version mismatch",
+        )
+        .into());
+    }
+    if response.initial_token.principal_id != principal_id {
+        return Err(MetisError::capability(
+            ErrorCode::InvalidPrincipal,
+            "Handshake token principal mismatch",
+        )
+        .into());
+    }
+    Ok(response.initial_token)
 }
 
 #[cfg(test)]

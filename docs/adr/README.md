@@ -8,3 +8,4 @@
 | 0004 | [Form state ownership](0004-form-state.md) | Accepted |
 | 0005 | [Application distribution](0005-application-distribution.md) | Accepted |
 | 0006 | [Single application entry](0006-application-entry.md) | Accepted |
+| 0007 | [Browser transport ownership](0007-browser-transport.md) | Accepted |

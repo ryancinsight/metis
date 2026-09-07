@@ -6,7 +6,8 @@ Date: 2026-09-05
 
 Driver: [METIS-WEB-001](../../backlog.md#METIS-WEB-001).
 
-Revision 2026-09-05: [ADR 0003](0003-framework-conformance.md), driven by
+Revision 2026-09-06: [ADR 0007](0007-browser-transport.md) records the first
+bounded asynchronous browser transport slice. [ADR 0003](0003-framework-conformance.md), driven by
 [METIS-GAPS-001](../../backlog.md#METIS-GAPS-001), adds the egui/GPUI/Tauri
 capability inventory and per-gap demonstration/verification closure. It retains
 this web/native trust boundary and does not claim API parity from toolkit breadth.
@@ -36,6 +37,15 @@ Iris owns the rendering seam; Moirai owns scheduling and transport. Implement
 missing reusable browser capabilities upstream rather than creating parallel
 runtimes in Metis. A browser uses event-driven receipt and cancellation, never
 the existing synchronous pipe receiver on its main event thread.
+
+The initial consumer seam is `metis_ipc::AsyncIpcTransport` and
+`AsyncIpcClient`. The WASM-only `BrowserWebSocketTransport` owns a bounded
+Moirai WebSocket reactor and races one receive against a finite `WebTimer`.
+Native `IpcTransport` remains the blocking stream contract. This slice proves
+frame bounds, correlation and cancellation at compile and native-test level;
+it does not claim a running browser host, concurrent request multiplexing or
+the V02/V12 browser trace. [ADR 0007](0007-browser-transport.md) owns the
+consumer contract and its residuals.
 
 Desktop privileged logic remains in a separate Rust backend. Downloaded WASM is
 frontend code: it cannot protect server secrets or establish native privilege
