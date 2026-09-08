@@ -1,0 +1,44 @@
+[graph]
+all-features = true
+
+[advisories]
+yanked = "deny"
+unused-ignored-advisory = "deny"
+# RSA remains a required Moirai crypto transitive dependency and has no safe
+# upstream release; the provider tracks its replacement separately.
+ignore = [
+    { id = "RUSTSEC-2023-0071", reason = "Moirai crypto still requires RSA and RustSec reports no safe upgrade; replacement remains tracked upstream." },
+]
+
+[licenses]
+confidence-threshold = 0.8
+allow = [
+    "0BSD",
+    "Apache-2.0",
+    "Apache-2.0 WITH LLVM-exception",
+    "BSD-1-Clause",
+    "BSD-2-Clause",
+    "BSD-3-Clause",
+    "CDLA-Permissive-2.0",
+    "ISC",
+    "MIT",
+    "Unicode-3.0",
+    "Unlicense",
+    "Zlib",
+]
+
+[bans]
+multiple-versions = "warn"
+wildcards = "warn"
+
+[sources]
+unknown-registry = "deny"
+unknown-git = "deny"
+allow-registry = ["https://github.com/rust-lang/crates.io-index"]
+allow-git = [
+    "https://github.com/ryancinsight/iris",
+    "https://github.com/ryancinsight/melinoe.git",
+    "https://github.com/ryancinsight/Mnemosyne.git",
+    "https://github.com/ryancinsight/Moirai.git",
+    "https://github.com/ryancinsight/themis",
+]

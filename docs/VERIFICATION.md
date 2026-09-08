@@ -4,7 +4,8 @@ The owning gate is `python scripts/verify.py`. It records bounded logs under the
 ignored `output/` directory and checks formatting, strict Clippy, debug and release
 nextest suites, plan identifiers/dependencies/local links, the generated
 `wasm-bindgen` browser assets, doctests, documentation, example execution and
-dependency closure.
+dependency closure. It also runs the pinned cargo-deny advisory, source, license
+and ban checks and records the reviewed Cargo build-link inventory.
 Native tests use `.config/nextest.toml`: slow at 30 seconds, terminate at 60 seconds,
 zero retries. The demonstration executable has a 60-second outer budget.
 
@@ -29,6 +30,8 @@ before reporting GitHub runner results or CI timing evidence.
 Fresh hosted runners prime the exact locked Git and registry sources with the
 pinned Rust toolchain before invoking the gate. The gate then resolves offline,
 so source acquisition is explicit while verification remains reproducible.
+The workflow installs cargo-deny 0.20.2 and primes its advisory database before
+the same offline policy check.
 
 Entry baseline: `cargo check --workspace --offline` passes with documentation and
 source warnings. The original native test build fails with E0382 in the threaded
@@ -50,6 +53,10 @@ process-isolation test. No original OS sandbox or native-window evidence exists.
   CLI tests exercise those functions at their real boundaries.
 - Process acceptance: separate instances of one application executable exchange real pipes; PID, result and standalone relocation checks distinguish executable packaging from process state. These do not prove OS least privilege.
 - Visual evidence: software framebuffer generated from actual form state and inspected independently of compilation.
+- Supply-chain evidence: cargo-deny checks the locked graph against the committed
+  source/license/advisory policy; `output/build-links.json` inventories packages
+  that declare Cargo build-link contracts. This inventory does not prove the
+  absence of unsafe code in dependencies.
 
 Use `python scripts/verify.py`. Resolving commands run with `--locked` outside
 the Atlas overlay, following Atlas's standalone-lock workflow. Inside Atlas,

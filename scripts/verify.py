@@ -5,6 +5,7 @@ import hashlib
 import os
 import pathlib
 import re
+import shutil
 import subprocess
 import sys
 import stat
@@ -16,6 +17,11 @@ ROOT = pathlib.Path(__file__).resolve().parents[1]
 OUTPUT = ROOT / "output"
 LOCK = ROOT / "Cargo.lock"
 TOOLCHAIN = None
+CARGO_DENY_VERSION = "0.20.2"
+BUILD_LINK_PACKAGES = {
+    "ring": "Moirai cryptographic provider build contract",
+    "wasm-bindgen-shared": "wasm-bindgen browser ABI build contract",
+}
 
 
 def application_targets(metadata):
@@ -144,13 +150,15 @@ def run(name, args, *, cwd, environment, seconds=300, expected_exit=0, required_
     return result.stdout
 
 def source_state(metadata, configs):
-    inputs = {ROOT / "rust-toolchain.toml", ROOT / "metis.json", *configs}
+    inputs = {ROOT / "rust-toolchain.toml", ROOT / "metis.json", ROOT / "deny.toml", *configs}
     inputs.update(path for path in (ROOT / "examples" / "browser").glob("*") if path.is_file())
     workflow_root = ROOT / ".github" / "workflows"
     if workflow_root.is_dir():
         inputs.update(path for path in workflow_root.iterdir()
                       if path.is_file() and path.suffix in {".yml", ".yaml"})
     inputs.update((ROOT / "docs").rglob("*.md"))
+    inputs.update(path for path in (ROOT / "scripts").rglob("*")
+                  if path.is_file() and "__pycache__" not in path.parts)
     for package in metadata["packages"]:
         if package["source"] is None:
             manifest = pathlib.Path(package["manifest_path"])
@@ -236,6 +244,30 @@ def main():
                     if provider and not provider.startswith("git+https://github.com/ryancinsight/") and not tooling_parser:
                         raise SystemExit(f"Non-Atlas direct dependency: {dependency}")
         output_path("provider-dependencies.json").write_text(json.dumps(external, indent=2), encoding="utf-8")
+        EVIDENCE["stages"]["build-links"] = "running"
+        evidence()
+        linked = sorted(
+            [
+                {
+                    "name": package["name"],
+                    "version": package["version"],
+                    "source": package.get("source"),
+                    "links": package["links"],
+                    "reason": BUILD_LINK_PACKAGES.get(package["name"]),
+                }
+                for package in metadata["packages"]
+                if package.get("links")
+            ],
+            key=lambda entry: (entry["name"], entry["version"], entry["source"] or ""),
+        )
+        output_path("build-links.json").write_text(json.dumps(linked, indent=2), encoding="utf-8")
+        unknown_links = [entry["name"] for entry in linked if entry["name"] not in BUILD_LINK_PACKAGES]
+        if unknown_links:
+            EVIDENCE["stages"]["build-links"] = "failed"
+            evidence()
+            raise SystemExit(f"Unreviewed Cargo build-link packages: {', '.join(unknown_links)}")
+        EVIDENCE["stages"]["build-links"] = "passed"
+        evidence()
         packages = {p["id"]: p for p in metadata["packages"]}
         nodes = {n["id"]: n for n in metadata["resolve"]["nodes"]}
         frontend = next(p["id"] for p in metadata["packages"] if p["name"] == "metis-frontend")
@@ -252,6 +284,13 @@ def main():
         version = execute("nextest-version", ["rustup", "run", TOOLCHAIN, "cargo", "nextest", "--version"])
         if not version.startswith("cargo-nextest 0.9.143 "):
             raise SystemExit("Install pinned cargo-nextest 0.9.143 before running this gate")
+        deny = shutil.which("cargo-deny")
+        if deny is None:
+            raise SystemExit(f"Install pinned cargo-deny {CARGO_DENY_VERSION} before running this gate")
+        execute("supply-chain", [deny, "--manifest-path", str(ROOT / "Cargo.toml"),
+                                  "--config", str(ROOT / "deny.toml"), "--locked", "--offline",
+                                  "check", "advisories", "bans", "licenses", "sources"],
+                seconds=180, cwd=ROOT)
         cargo("format", ["fmt", "--all", "--check"], resolve=False)
         execute("visual-tests", [sys.executable, "-m", "unittest", "discover", "-s", "scripts/tests"], seconds=60, cwd=ROOT)
         execute("plan", [sys.executable, str(ROOT / "scripts" / "plan.py"), "check"], seconds=60, cwd=ROOT)
