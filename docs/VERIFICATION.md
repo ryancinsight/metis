@@ -136,7 +136,7 @@ and bounds each test, build and suite at 30, 120 and 300 seconds. The
 reach the decoder integration contract.
 
 At revision
-`14d9f6175a238d9f5ab56327a5d34e08488ea8e5`, the run generated 14 mutants,
+`6af70734965ceb5eb94dd4ce1d663a50e4f532ab`, the run generated 14 mutants,
 caught all 6 viable mutants, and reported 0 missed, 0 timed-out and 8
 unviable mutants (viable score 1.0). The exact command, source SHA-256,
 toolchain and counts are recorded in the derived
