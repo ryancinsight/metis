@@ -27,8 +27,10 @@ the host. **Escape** or the window close control ends the child cleanly.
 
 The parent keeps this interactive session under a finite five-minute watchdog
 budget so an abandoned window cannot leave a process tree running forever.
-This role is Windows-only and does not provide WebView2, file/network/device
-permissions, accessibility semantics or native IME composition.
+This role is Windows-only. Native IME start/update/commit/cancel phases are
+consumed by the host; preedit text stays transient and committed UTF-8 text uses
+the same bounded patient-field transition as ordinary text input. WebView2,
+file/network/device permissions and accessibility semantics remain host gaps.
 
 ## Verify the provider
 
@@ -40,7 +42,8 @@ cargo clippy --locked -p metis-platform --all-targets -- -D warnings
 ```
 
 The native test creates a real hidden `HWND`, presents a production framebuffer,
-posts pointer, keyboard, text, resize and DPI messages through the provider,
+posts pointer, keyboard, text, IME composition, resize and DPI messages through
+the provider,
 observes the bounded event batch, and closes the window. The test does not use a
 mock window or a default frame. A hidden test window is lifecycle evidence; it is
 not a visible application capture.
@@ -83,10 +86,10 @@ does not model.
 ## Current limits
 
 The visible `metis-app` composition and its private-IPC workflow are now
-implemented. A committed native screenshot and keyboard journey are still
+implemented. A committed native screenshot and keyboard/IME journey are still
 required for V05 visual acceptance; the hidden provider test and host unit tests
 are lifecycle evidence, not visual evidence. WebView2 composition, OS
-permission denial, native accessibility and IME composition, macOS/Linux
-providers, two-window captures and the DICOM viewer host remain V05 and
-migration work. Do not treat a successful Windows build or hidden-window test as
-cross-platform or security evidence.
+permission denial, native accessibility, an installed CJK or other IME journey,
+macOS/Linux providers, two-window captures and the DICOM viewer host remain V05
+and migration work. Do not treat a successful Windows build or hidden-window test
+as cross-platform or security evidence.

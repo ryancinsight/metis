@@ -80,6 +80,15 @@ impl<T: IpcTransport> FrontendApp<T> {
         if self.inputs.patient_id.chars().nth(40).is_some() {
             preview.push_str("...");
         }
+        if let Some(composition) = self.composition.as_deref() {
+            preview.push_str(" [");
+            let mut composition_preview: String = composition.chars().take(24).collect();
+            if composition.chars().nth(24).is_some() {
+                composition_preview.push_str("...");
+            }
+            preview.push_str(&composition_preview);
+            preview.push(']');
+        }
         self.text("label-patient", format!("Patient ID: {preview}"))?;
         self.text(
             "label-weight",

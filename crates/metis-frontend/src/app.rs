@@ -31,6 +31,9 @@ pub enum FormState {
     SessionFailed(HandshakeError),
 }
 
+/// Maximum UTF-8 bytes retained for one uncommitted text composition.
+pub const MAX_COMPOSITION_BYTES: usize = 128;
+
 /// Raw captured inputs; domain validation remains exclusively in the backend.
 #[derive(Debug, Clone, PartialEq)]
 #[non_exhaustive]
@@ -69,6 +72,7 @@ pub struct FrontendApp<T> {
     pub(crate) doc: DomDocument,
     pub(crate) framebuffer: Framebuffer,
     pub(crate) inputs: FormInputs,
+    pub(crate) composition: Option<String>,
     pub(crate) state: FormState,
 }
 
@@ -82,6 +86,7 @@ impl<T: IpcTransport> FrontendApp<T> {
             doc: parse_markup(CLINICAL_SCREEN_XML)?,
             framebuffer: Framebuffer::new(width, height)?,
             inputs: FormInputs::new("PT-9042-ALPHA", 72.5, 4.0, 0.5),
+            composition: None,
             state: FormState::Idle,
         };
         app.render()?;
@@ -97,6 +102,12 @@ impl<T: IpcTransport> FrontendApp<T> {
     #[must_use]
     pub const fn inputs(&self) -> &FormInputs {
         &self.inputs
+    }
+
+    /// Returns the current uncommitted native text composition, if any.
+    #[must_use]
+    pub fn composition(&self) -> Option<&str> {
+        self.composition.as_deref()
     }
     /// Presentation document; mutations go through form transitions.
     #[must_use]
@@ -154,8 +165,34 @@ impl<T: IpcTransport> FrontendApp<T> {
             concentration_mg_ml: conc,
             target_dose_mcg_kg_min: dose,
         };
+        self.composition = None;
         self.state = FormState::Idle;
         self.render()
+    }
+
+    /// Replaces the uncommitted text composition and repaints the form.
+    ///
+    /// Composition text is transient and is never included in a backend
+    /// request until the host commits it through [`Self::set_inputs`].
+    ///
+    /// # Errors
+    /// Returns a bounded-input or presentation error and restores the previous
+    /// composition when repainting fails.
+    pub fn set_composition(&mut self, composition: Option<String>) -> Result<()> {
+        if let Some(value) = composition.as_ref()
+            && (value.len() > MAX_COMPOSITION_BYTES || value.chars().any(char::is_control))
+        {
+            return Err(MetisError::protocol(
+                ErrorCode::PayloadTooLarge,
+                "Native text composition exceeds the bounded patient-field limit",
+            ));
+        }
+        let previous = std::mem::replace(&mut self.composition, composition);
+        if let Err(error) = self.render() {
+            self.composition = previous;
+            return Err(error);
+        }
+        Ok(())
     }
 
     /// Replaces the presentation surface at a native host's reported client size.
@@ -274,7 +311,7 @@ impl<T: IpcTransport> FrontendApp<T> {
 
 #[cfg(test)]
 mod tests {
-    use super::FrontendApp;
+    use super::{FrontendApp, MAX_COMPOSITION_BYTES};
     use metis_core::ErrorCode;
     use metis_ipc::MemoryTransport;
 
@@ -290,5 +327,31 @@ mod tests {
         assert_eq!(error.code, ErrorCode::SurfaceAllocationError);
         assert_eq!(app.framebuffer().width(), 640);
         assert_eq!(app.framebuffer().height(), 480);
+    }
+
+    #[test]
+    fn composition_is_transient_and_bounded() {
+        let (transport, _peer) = MemoryTransport::pair();
+        let mut app = FrontendApp::new(transport, 800, 600).expect("initial form");
+        app.set_composition(Some("東京".to_owned()))
+            .expect("bounded composition");
+        assert_eq!(app.composition(), Some("東京"));
+        assert_eq!(
+            app.document()
+                .find_element_by_id("label-patient")
+                .expect("patient label")
+                .text_content(),
+            "Patient ID: PT-9042-ALPHA [東京]"
+        );
+
+        let error = app
+            .set_composition(Some("x".repeat(MAX_COMPOSITION_BYTES + 1)))
+            .expect_err("oversized composition");
+        assert_eq!(error.code, ErrorCode::PayloadTooLarge);
+        assert_eq!(app.composition(), Some("東京"));
+
+        app.set_inputs("PT-2", 70.0, 4.0, 0.5)
+            .expect("committed input edit");
+        assert_eq!(app.composition(), None);
     }
 }

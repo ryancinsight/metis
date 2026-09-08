@@ -3,7 +3,9 @@
 use metis_core::error::{ErrorCode, MetisError, Result};
 use metis_frontend::{FormState, FrontendApp};
 use metis_ipc::{IpcTransport, StreamTransport};
-use metis_platform::native::{MouseButton, NativeSurface, WindowConfig, WindowEvent};
+use metis_platform::native::{
+    CompositionPhase, MouseButton, NativeSurface, WindowConfig, WindowEvent,
+};
 use metis_platform::{Color, Rect};
 use metis_ui_lang::{DisplayCommand, compute_layout};
 use std::io::{stdin, stdout};
@@ -44,6 +46,15 @@ pub(crate) fn run(inputs: [String; 3]) -> Result<(), Box<dyn std::error::Error>>
     );
 
     let mut patient_id = app.inputs().patient_id.clone();
+    run_event_loop(&mut app, &mut surface, pid, &mut patient_id)
+}
+
+fn run_event_loop<T: IpcTransport>(
+    app: &mut FrontendApp<T>,
+    surface: &mut NativeSurface,
+    pid: u32,
+    patient_id: &mut String,
+) -> Result<(), Box<dyn std::error::Error>> {
     let mut focused = true;
     loop {
         let events = surface.wait_events(EVENT_WAIT)?;
@@ -60,7 +71,13 @@ pub(crate) fn run(inputs: [String; 3]) -> Result<(), Box<dyn std::error::Error>>
                 }
                 WindowEvent::Destroyed => return Ok(()),
                 WindowEvent::FocusGained => focused = true,
-                WindowEvent::FocusLost => focused = false,
+                WindowEvent::FocusLost => {
+                    focused = false;
+                    if app.composition().is_some() {
+                        app.set_composition(None)?;
+                        repaint = true;
+                    }
+                }
                 WindowEvent::Resized { width, height }
                     if width > 0
                         && height > 0
@@ -79,8 +96,8 @@ pub(crate) fn run(inputs: [String; 3]) -> Result<(), Box<dyn std::error::Error>>
                     button: MouseButton::Left,
                 } => {
                     focused = true;
-                    if submit_rect(&app)?.contains(x, y) {
-                        submit(&mut app, pid)?;
+                    if submit_rect(app)?.contains(x, y) {
+                        submit(app, pid)?;
                         repaint = true;
                     }
                 }
@@ -88,18 +105,30 @@ pub(crate) fn run(inputs: [String; 3]) -> Result<(), Box<dyn std::error::Error>>
                     virtual_key: RETURN_KEY,
                     repeated: false,
                 } => {
-                    submit(&mut app, pid)?;
+                    submit(app, pid)?;
                     repaint = true;
                 }
                 WindowEvent::KeyDown {
                     virtual_key: BACKSPACE_KEY,
                     ..
                 } if focused => {
-                    repaint |= remove_patient_character(&mut app, &mut patient_id)?;
+                    repaint |= remove_patient_character(app, patient_id)?;
                 }
                 WindowEvent::TextInput { character } => {
-                    repaint |=
-                        focused && append_patient_character(&mut app, &mut patient_id, character)?;
+                    repaint |= focused && append_patient_character(app, patient_id, character)?;
+                }
+                WindowEvent::TextComposition { phase, text } if focused => {
+                    repaint = true;
+                    match phase {
+                        CompositionPhase::Started | CompositionPhase::Updated => {
+                            app.set_composition(Some(text))?;
+                        }
+                        CompositionPhase::Committed => {
+                            app.set_composition(None)?;
+                            append_patient_text(app, patient_id, &text)?;
+                        }
+                        CompositionPhase::Canceled => app.set_composition(None)?,
+                    }
                 }
                 _ => {}
             }
@@ -126,7 +155,17 @@ fn append_patient_character<T: IpcTransport>(
     patient_id: &mut String,
     character: char,
 ) -> Result<bool> {
-    if character.is_control() {
+    let mut encoded = [0; 4];
+    let text = character.encode_utf8(&mut encoded);
+    append_patient_text(app, patient_id, text)
+}
+
+fn append_patient_text<T: IpcTransport>(
+    app: &mut FrontendApp<T>,
+    patient_id: &mut String,
+    text: &str,
+) -> Result<bool> {
+    if text.chars().any(char::is_control) {
         return Ok(false);
     }
     // The bounded copy lets set_inputs commit the edit only after validation
@@ -134,18 +173,18 @@ fn append_patient_character<T: IpcTransport>(
     let mut updated = patient_id.clone();
     let next_bytes = updated
         .len()
-        .checked_add(character.len_utf8())
+        .checked_add(text.len())
         .ok_or_else(input_limit_error)?;
     if next_bytes > MAX_PATIENT_ID_BYTES {
         return Err(input_limit_error());
     }
-    updated.try_reserve(character.len_utf8()).map_err(|_| {
+    updated.try_reserve(text.len()).map_err(|_| {
         MetisError::ui(
             ErrorCode::SurfaceAllocationError,
             "Patient identifier storage reservation failed",
         )
     })?;
-    updated.push(character);
+    updated.push_str(text);
     replace_patient_id(app, patient_id, updated)
 }
 
@@ -228,7 +267,10 @@ fn layout_error() -> MetisError {
 
 #[cfg(test)]
 mod tests {
-    use super::{MAX_PATIENT_ID_BYTES, append_patient_character, input_limit_error, submit_rect};
+    use super::{
+        MAX_PATIENT_ID_BYTES, append_patient_character, append_patient_text, input_limit_error,
+        submit_rect,
+    };
     use metis_frontend::FrontendApp;
     use metis_ipc::MemoryTransport;
 
@@ -243,6 +285,21 @@ mod tests {
             append_patient_character(&mut app, &mut value, 'y').expect_err("bounded input"),
             input_limit_error()
         );
+    }
+
+    #[test]
+    fn committed_composition_uses_the_same_patient_transition_as_text_input() {
+        let (transport, _peer) = MemoryTransport::pair();
+        let mut app = FrontendApp::new(transport, 800, 600).expect("form");
+        let mut value = String::from("patient");
+        app.set_inputs(&value, 70.0, 4.0, 0.5)
+            .expect("initial patient value");
+        app.set_composition(Some("東京".to_owned()))
+            .expect("preedit value");
+        append_patient_text(&mut app, &mut value, "東京").expect("commit value");
+        assert_eq!(value, "patient東京");
+        assert_eq!(app.inputs().patient_id, "patient東京");
+        assert_eq!(app.composition(), None);
     }
 
     #[test]

@@ -12,16 +12,18 @@ use std::io;
 use std::time::Duration;
 
 pub use moirai_pal::windows::window::{
-    MAX_FRAME_DIMENSION, MAX_FRAME_PIXELS, MAX_PUMP_MESSAGES, MAX_TITLE_UNITS,
-    MAX_WAIT_MILLISECONDS, MAX_WINDOW_EVENTS, MouseButton, WindowConfig, WindowEvent,
-    WindowVisibility,
+    CompositionPhase, MAX_COMPOSITION_UNITS, MAX_FRAME_DIMENSION, MAX_FRAME_PIXELS,
+    MAX_PUMP_MESSAGES, MAX_TITLE_UNITS, MAX_WAIT_MILLISECONDS, MAX_WINDOW_EVENTS, MouseButton,
+    WindowConfig, WindowEvent, WindowVisibility,
 };
 
 /// A Metis framebuffer presented by a Moirai-owned native window.
 ///
 /// The value is thread-owned: construct, poll, present and close it on the
 /// same thread. Frame dimensions and event storage remain bounded by the
-/// provider constants re-exported from this module.
+/// provider constants re-exported from this module. Native IME preedit,
+/// commit and cancellation arrive as bounded [`WindowEvent::TextComposition`]
+/// values; the application decides how committed text changes its state.
 pub struct NativeSurface {
     window: NativeWindow,
 }

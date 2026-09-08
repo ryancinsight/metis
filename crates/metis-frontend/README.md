@@ -14,6 +14,11 @@ returns one outcome: idle, pending, success, peer rejection, preparation failure
 disconnection or handshake failure. Only success carries a backend response.
 Read `inputs()`, `document()` and `framebuffer()` without mutating this association.
 
+Native hosts keep preedit text transient with `set_composition(...)` and commit
+the final UTF-8 value through the same bounded `set_inputs(...)` transition used
+by ordinary text input. Composition values are capped at 128 UTF-8 bytes and
+are cleared when inputs change or focus leaves the native surface.
+
 `AsyncFrontendApp` owns the same input/result state for a browser event loop.
 It accepts `metis_ipc::AsyncIpcTransport`, sends at most the bounded requests
 allowed by the asynchronous client, and changes to a typed disconnected state
