@@ -10,6 +10,7 @@ import subprocess
 
 ROOT = pathlib.Path(__file__).resolve().parents[1]
 OUTPUT = ROOT / "output" / "browser"
+SOURCE = ROOT / "examples" / "browser"
 CONTENT_SECURITY_POLICY = ROOT / "crates" / "metis-core" / "src" / "content_security_policy.txt"
 WASM_BINDGEN_VERSION = "0.2.128"
 
@@ -80,17 +81,24 @@ def build() -> None:
     run(["cargo", "build", "--locked", "-p", "metis-web", "--target", "wasm32-unknown-unknown", "--release"])
     OUTPUT.mkdir(parents=True, exist_ok=True)
     run([wasm_bindgen(), str(wasm_artifact()), "--target", "web", "--out-dir", str(OUTPUT)])
-    index = ROOT / "examples" / "browser" / "index.html"
+    index = SOURCE / "index.html"
     validate_index_policy(index)
     shutil.copy2(index, OUTPUT / "index.html")
     for asset in ("styles.css", "bootstrap.js"):
-        shutil.copy2(ROOT / "examples" / "browser" / asset, OUTPUT / asset)
+        shutil.copy2(SOURCE / asset, OUTPUT / asset)
+    for source in sorted(SOURCE.rglob("*")):
+        if not source.is_file() or source.name in {"index.html", "styles.css", "bootstrap.js"}:
+            continue
+        destination = OUTPUT / source.relative_to(SOURCE)
+        destination.parent.mkdir(parents=True, exist_ok=True)
+        shutil.copy2(source, destination)
     required = (
         OUTPUT / "index.html",
         OUTPUT / "styles.css",
         OUTPUT / "bootstrap.js",
         OUTPUT / "metis_web.js",
         OUTPUT / "metis_web_bg.wasm",
+        OUTPUT / "assets" / "metis-mark.png",
     )
     missing = [str(path) for path in required if not path.is_file()]
     if missing:

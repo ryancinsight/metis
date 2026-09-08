@@ -74,3 +74,19 @@ the user manual to enable the service bridge. The generated module also exports
 before replacing the root with a stopped message; `metis_start` mounts fresh
 state, listeners, a typed bounded workbench extension manifest and (when
 configured) a new bounded service task.
+
+## Theme and application branding
+
+`metis_web::Theme` is the browser host's bounded presentation contract. The
+Rust-owned selector accepts `system`, `light`, `dark` and `high-contrast`;
+`system` follows `prefers-color-scheme`. Each render writes the selected value
+to `data-metis-theme` on the document body and the application root. The
+external stylesheet maps that attribute to semantic `--metis-*` CSS variables,
+so an application can replace its palette in its own same-origin stylesheet
+without changing state, event handling or the authority boundary.
+
+The starter page also loads `examples/browser/assets/metis-mark.png` as a local
+same-origin resource and favicon. `scripts/browser.py build` copies nested
+browser assets and fails if the declared mark is absent. Applications replace
+that resource and the `.metis-mark` rule with their own project-owned artwork;
+the browser host does not fetch icons, fonts or media from an external origin.

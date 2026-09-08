@@ -1,5 +1,7 @@
 # Execution
 
+- [Responsive layout and style semantics](backlog.md#METIS-LAYOUT-001): verify the Rust-owned theme modes, semantic CSS variable override path, replaceable starter mark and packaged browser asset, then close the remaining runtime geometry and display-scale captures.
+
 ## root
 - [Browser stale-response probe](backlog.md#METIS-BROWSER-002): bounded delayed service response, stop/remount disposal and the one-engine visual trace are recorded in [VERIFICATION](docs/VERIFICATION.md#browser-stale-response-evidence--2026-09-07); native window and OS permission providers remain separate.
 - [Interactive controls](backlog.md#METIS-INPUT-001): checkbox/radio/range/select state, disabled lifecycle, native dialog open/close/focus restoration and pointer capture/release are Rust-owned through Moirai `5a5e4b1540eff39bc3f082c6907f0c82fa14dcc8`; pointer metadata and movement use Moirai `a3c86cd183a18edc35db30f1d35e79fe80092df4`, wheel metadata uses `f634b3a802ec0355da22f111ed01067d2435c5cb`, browser file access uses `5c8a9e8be32ad6beac14ed263c2f11c3663b87cb`, and native IME phases use Moirai `7ad8eeee`. The live manual traces cover pointer and keyboard controls, modal content, Escape dismissal, opener focus, pointer ID `1` release, pointer metadata, vertical and horizontal wheel deltas, bounded drag pan and the unchanged backend result; the workbench now reports the bounded DICOM header-read state. Multi-touch/pinch, trusted physical file drops, full DICOM opening, installed IME journeys, accessibility and native-host visual evidence remain open.

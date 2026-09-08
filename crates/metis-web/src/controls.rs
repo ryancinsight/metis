@@ -1,11 +1,17 @@
+use crate::Theme;
 use metis_core::error::{ErrorCode, MetisError};
 use metis_frontend::{FormInputs, FormState};
 
 #[cfg(target_arch = "wasm32")]
 pub(crate) const BROWSER_MARKUP: &str = r#"
 <header class="metis-header">
-  <p class="metis-kicker">METIS / BROWSER WORKBENCH</p>
-  <h1>Authorized clinical form boundary</h1>
+  <div class="metis-brand">
+    <img class="metis-mark" src="./assets/metis-mark.png" width="64" height="64" decoding="async" alt="Métis mark">
+    <div>
+      <p class="metis-kicker">METIS / BROWSER WORKBENCH</p>
+      <h1>Authorized clinical form boundary</h1>
+    </div>
+  </div>
   <p id="metis-status" role="status">Browser controls are active.</p>
   <p id="metis-capabilities">Host capabilities: unavailable</p>
   <p id="metis-plugins">Registered frontend extensions: unavailable</p>
@@ -51,7 +57,14 @@ pub(crate) const BROWSER_MARKUP: &str = r#"
     <option value="summary" selected>Clinical summary</option>
     <option value="audit">Audit detail</option>
   </select>
-  <p id="options-state" role="status">View options: events visible; volume rate; detail clinical summary; scale 100%</p>
+  <label for="theme-mode">Theme</label>
+  <select id="theme-mode" name="theme-mode">
+    <option value="system" selected>System preference</option>
+    <option value="light">Light</option>
+    <option value="dark">Dark</option>
+    <option value="high-contrast">High contrast</option>
+  </select>
+  <p id="options-state" role="status">View options: events visible; volume rate; detail clinical summary; scale 100%; theme system preference</p>
 </fieldset>
 <section class="metis-pointer" aria-labelledby="pointer-heading">
   <h2 id="pointer-heading">Pointer capture</h2>
@@ -140,6 +153,7 @@ pub(crate) enum ControlField {
     DisplayUnit(DisplayUnit),
     Scale,
     ResultDetail,
+    Theme,
 }
 
 impl ControlField {
@@ -149,6 +163,7 @@ impl ControlField {
             Self::DisplayUnit(_) => "display unit",
             Self::Scale => "result scale",
             Self::ResultDetail => "result detail",
+            Self::Theme => "theme",
         }
     }
 }
@@ -227,6 +242,7 @@ pub(crate) struct ControlState {
     display_unit: DisplayUnit,
     scale: ScalePercent,
     result_detail: ResultDetail,
+    theme: Theme,
 }
 
 impl Default for ControlState {
@@ -236,6 +252,7 @@ impl Default for ControlState {
             display_unit: DisplayUnit::Volume,
             scale: ScalePercent::default(),
             result_detail: ResultDetail::Summary,
+            theme: Theme::default(),
         }
     }
 }
@@ -272,6 +289,12 @@ impl ControlState {
                 };
                 self.result_detail = detail;
             }
+            ControlField::Theme => {
+                let Some(theme) = value.and_then(Theme::parse) else {
+                    return false;
+                };
+                self.theme = theme;
+            }
         }
         true
     }
@@ -292,6 +315,10 @@ impl ControlState {
         self.result_detail
     }
 
+    pub(crate) const fn theme(&self) -> Theme {
+        self.theme
+    }
+
     pub(crate) fn summary(&self) -> String {
         let event_visibility = if self.show_events {
             "events visible"
@@ -299,10 +326,11 @@ impl ControlState {
             "events hidden"
         };
         format!(
-            "View options: {event_visibility}; {}; detail {}; scale {}%",
+            "View options: {event_visibility}; {}; detail {}; scale {}%; theme {}",
             self.display_unit.label(),
             self.result_detail.label(),
             self.scale.value(),
+            self.theme.label(),
         )
     }
 }
@@ -341,7 +369,7 @@ pub(crate) fn invalid_control(field: &str) -> FormState {
 mod tests {
     use super::{
         ControlField, ControlState, DisplayUnit, FormInputs, FormState, ResultDetail, ScalePercent,
-        update_control,
+        Theme, update_control,
     };
     use metis_core::protocol::ClinicalCalcResponsePayload;
 
@@ -352,6 +380,7 @@ mod tests {
         assert_eq!(controls.display_unit(), DisplayUnit::Volume);
         assert_eq!(controls.scale().value(), 100);
         assert_eq!(controls.result_detail(), ResultDetail::Summary);
+        assert_eq!(controls.theme(), Theme::System);
 
         assert!(controls.apply(ControlField::ShowEvents, Some(false), None));
         assert!(!controls.show_events());
@@ -365,9 +394,11 @@ mod tests {
         assert_eq!(controls.scale().value(), 150);
         assert!(controls.apply(ControlField::ResultDetail, None, Some("audit")));
         assert_eq!(controls.result_detail(), ResultDetail::Audit);
+        assert!(controls.apply(ControlField::Theme, None, Some("dark")));
+        assert_eq!(controls.theme(), Theme::Dark);
         assert_eq!(
             controls.summary(),
-            "View options: events hidden; drug mass rate; detail audit detail; scale 150%"
+            "View options: events hidden; drug mass rate; detail audit detail; scale 150%; theme dark"
         );
     }
 
@@ -382,9 +413,11 @@ mod tests {
         ));
         assert!(!controls.apply(ControlField::Scale, None, Some("151")));
         assert!(!controls.apply(ControlField::ResultDetail, None, Some("other")));
+        assert!(!controls.apply(ControlField::Theme, None, Some("sepia")));
         assert_eq!(controls.display_unit(), DisplayUnit::Volume);
         assert_eq!(controls.scale().value(), 100);
         assert_eq!(controls.result_detail(), ResultDetail::Summary);
+        assert_eq!(controls.theme(), Theme::System);
     }
 
     #[test]
@@ -433,6 +466,14 @@ mod tests {
         assert_eq!(controls.display_unit(), DisplayUnit::DrugMass);
         assert_eq!(controls.scale().value(), 120);
         assert_eq!(controls.result_detail(), ResultDetail::Audit);
+        update_control(
+            &mut controls,
+            &mut state,
+            ControlField::Theme,
+            None,
+            Some("light"),
+        );
+        assert_eq!(controls.theme(), Theme::Light);
     }
 
     #[test]

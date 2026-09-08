@@ -151,7 +151,7 @@ def run(name, args, *, cwd, environment, seconds=300, expected_exit=0, required_
 
 def source_state(metadata, configs):
     inputs = {ROOT / "rust-toolchain.toml", ROOT / "metis.json", ROOT / "deny.toml", *configs}
-    inputs.update(path for path in (ROOT / "examples" / "browser").glob("*") if path.is_file())
+    inputs.update(path for path in (ROOT / "examples" / "browser").rglob("*") if path.is_file())
     workflow_root = ROOT / ".github" / "workflows"
     if workflow_root.is_dir():
         inputs.update(path for path in workflow_root.iterdir()

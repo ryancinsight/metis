@@ -9,6 +9,20 @@ execute in a browser; the separate [browser workbench](browser.md) exercises the
 HTML5/CSS host.
 The separate [process demonstration](getting-started.md) tests actual child processes.
 
+## Starter theme and mark
+
+The browser workbench ships a local starter mark for the application header and
+favicon:
+
+![Starter Métis mark](../../examples/browser/assets/metis-mark.png)
+
+The mark is generated with the built-in image generation tool on 2026-09-08
+from the prompt “transparent starter Metis app icon, abstract M from teal and
+indigo facets in a rounded hex frame, no text or watermark”. It is a replaceable
+project asset, not a remote stock download. Applications can keep the same
+`Theme` selector and replace the semantic CSS variables and this PNG in their
+own browser asset directory.
+
 ## Initial form
 
 ![Initial form](images/form.svg)

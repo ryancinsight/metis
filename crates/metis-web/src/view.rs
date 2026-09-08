@@ -13,6 +13,11 @@ use std::io;
 
 pub(super) fn render(document: &WebDocument, state: &BrowserState) -> io::Result<()> {
     let inputs = &state.inputs;
+    document
+        .body()?
+        .set_attribute("data-metis-theme", state.controls.theme().css_value())?;
+    element(document, "metis-app")?
+        .set_attribute("data-metis-theme", state.controls.theme().css_value())?;
     set_text(document, "result-patient", &inputs.patient_id)?;
     set_text(
         document,

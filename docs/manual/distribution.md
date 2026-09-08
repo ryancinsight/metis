@@ -110,6 +110,13 @@ reports distinct backend/frontend process identifiers. It also checks the
 shortcut's executable, arguments and working directory,
 removes the installed application and retains its user-created test file.
 
+The manifest's explicit `assets/metis-mark.png` resource is copied into the
+portable and MSI payloads, so browser branding remains available after
+installation. The current installer shortcut uses the application executable's
+icon; converting a project PNG into a Windows `.ico` and wiring that icon into
+the MSI shortcut is a separate `METIS-ASSETS-001` acceptance increment. The
+resource declaration does not imply that shell icon wiring is complete.
+
 The report at `output/distribution/latest/workflow.json` records exact inventory,
 commands, calculated values and install/uninstall outcomes. The gate preserves
 only the latest marked test run and refuses to replace a still-registered test

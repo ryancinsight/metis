@@ -118,6 +118,49 @@ Rust-owned state after each change. Tab through the labels, press Space on the
 checkbox or radio, use the range arrows, and open the select to reproduce the
 keyboard path.
 
+## Theme and branding
+
+The **Theme** select applies one of four bounded presentation modes:
+
+- **System preference** sets `data-metis-theme="system"` and follows the
+  browser's `prefers-color-scheme` value.
+- **Light** sets `data-metis-theme="light"`.
+- **Dark** sets `data-metis-theme="dark"`.
+- **High contrast** sets `data-metis-theme="high-contrast"` and keeps borders
+  and focus indicators legible on a black and white palette.
+
+Rust owns the selected mode through `metis_web::Theme`; the browser host writes
+the same value to the document body and `#metis-app`. `styles.css` maps those
+attributes to semantic variables such as `--metis-page`, `--metis-surface`,
+`--metis-text`, `--metis-accent` and `--metis-focus`. An application can keep
+the selector and replace those variables in a same-origin stylesheet to apply
+its own palette. Theme state changes presentation only; it does not change
+backend authority, IPC messages or DICOM data.
+
+The page loads the starter [Métis mark](../../examples/browser/assets/metis-mark.png)
+from the same-origin `assets/` directory and uses it as the favicon and header
+image. `python scripts/browser.py build` copies that directory and fails if the
+declared mark is missing. Replace the PNG and the `.metis-mark` rule with
+project-owned artwork for a branded application. The browser host does not
+fetch an icon, font or media resource from a remote origin.
+
+To demonstrate the contract, build and serve the workbench, select each mode,
+and capture the header, view-options card and focus ring at the same viewport.
+The static asset suite checks all four selector values and variable branches;
+runtime captures must record the browser engine and operating-system
+presentation settings because CSS media preferences are host behavior.
+
+The 2026-09-08 CUA trace used the generated page at 1280×720 CSS pixels and
+device scale 1.25. It selected **Light**, **High contrast** and **Dark** in the
+native Theme control; each accessibility snapshot reported the matching option
+and `View options: ... theme <mode>`, while the inspected screenshots showed the
+light, black-and-white and dark palettes with the same mark and layout. A DOM
+read after the dark selection reported `data-metis-theme="dark"` on both the
+body and `#metis-app`, dark page/text colors and a loaded local mark. This is
+explicit mode evidence for one browser engine; system media preference,
+forced-colors, the V04 viewport/scale matrix and native installer shortcut icon
+remain separate host checks.
+
 The **Pointer capture** card demonstrates the browser pointer lifecycle that a
 drag interaction needs. Press or drag **Pointer capture surface**. On
 `pointerdown`, Rust reads the browser `PointerMetadata` snapshot through

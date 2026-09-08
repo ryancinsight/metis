@@ -17,6 +17,10 @@
     {
       "source": "docs/manual/applications.md",
       "destination": "assets/applications.md"
+    },
+    {
+      "source": "examples/browser/assets/metis-mark.png",
+      "destination": "assets/metis-mark.png"
     }
   ],
   "arguments": [

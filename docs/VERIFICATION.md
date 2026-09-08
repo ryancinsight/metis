@@ -614,6 +614,30 @@ yellow focus outline in the inspected screenshot. This is one-engine browser
 evidence; it does not establish screen-reader speech, forced-colors rendering
 or native host integration.
 
+## Browser theme and starter asset evidence — 2026-09-08
+
+The browser host now exposes four Rust-owned modes: system preference, light,
+dark and high contrast. Rendering writes the selected value to the document
+body and application root; the external stylesheet maps it to semantic
+`--metis-*` variables. The header and favicon use the local
+`examples/browser/assets/metis-mark.png`, and the browser build requires that
+asset before it copies the generated page.
+
+The focused `metis-web` unit suite and `scripts.tests.test_browser_assets` pass
+for the working tree. The complete `python scripts/verify.py` gate also passed
+with 155 resolved packages, including the WASM build, strict Clippy, debug and
+release nextest suites, docs and visual baselines. The manual contains the
+starter mark and the exact mode-by-mode capture procedure. A 2026-09-08 CUA
+trace at 1280×720 CSS pixels
+and device scale 1.25 selected light, high-contrast and dark explicitly; each
+accessibility snapshot reported the matching mode and the inspected screenshots
+showed the expected palette with the unchanged local mark. A DOM read after
+dark selection found `data-metis-theme="dark"` on both the body and
+`#metis-app`, dark page/text colors and a loaded mark. This is one-engine
+explicit-mode evidence; system media preference, forced-colors, the V04
+viewport/scale matrix and the MSI shell icon remain open, and the current
+resource declaration does not establish native shortcut icon wiring.
+
 ## Browser stale-response evidence — 2026-09-07
 
 The service conformance host now accepts `--response-delay-ms` with a bounded

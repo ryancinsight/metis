@@ -223,7 +223,7 @@ fn control_listeners(
     drop_task: &Rc<RefCell<Option<LocalTaskHandle>>>,
     drop_sequence: &Rc<Cell<u64>>,
 ) -> io::Result<Vec<WebEventListener>> {
-    let mut listeners = Vec::with_capacity(34);
+    let mut listeners = Vec::with_capacity(35);
     for (id, field) in [
         ("patient-id", InputField::Patient),
         ("weight-kg", InputField::Weight),
@@ -246,6 +246,7 @@ fn control_listeners(
         ),
         ("result-scale", "input", ControlField::Scale),
         ("result-detail-select", "change", ControlField::ResultDetail),
+        ("theme-mode", "change", ControlField::Theme),
     ] {
         listeners.push(control_listener(document, state, id, event_name, field)?);
     }

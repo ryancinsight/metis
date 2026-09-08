@@ -1,6 +1,7 @@
 """Check the browser shell's static trust-boundary assets."""
 from __future__ import annotations
 
+import json
 import pathlib
 import unittest
 
@@ -18,6 +19,7 @@ class BrowserAssetContractTests(unittest.TestCase):
         self.assertNotIn("<style", document.lower())
         self.assertNotIn("<script type=\"module\">", document.lower())
         self.assertIn('<link rel="stylesheet" href="./styles.css">', document)
+        self.assertIn('<link rel="icon" type="image/png" href="./assets/metis-mark.png">', document)
         self.assertIn('<script type="module" src="./bootstrap.js"></script>', document)
         policy = document.split('http-equiv="Content-Security-Policy" content="', 1)[1].split(
             '"', 1
@@ -39,6 +41,30 @@ class BrowserAssetContractTests(unittest.TestCase):
             self.assertIn(directive, policy)
         self.assertNotIn("unsafe-inline", policy)
         self.assertNotIn("*", policy)
+
+    def test_starter_mark_is_a_local_bounded_png_asset(self):
+        icon = ROOT / "examples" / "browser" / "assets" / "metis-mark.png"
+        self.assertTrue(icon.is_file())
+        self.assertEqual(icon.read_bytes()[:8], bytes.fromhex("89504e470d0a1a0a"))
+        self.assertLessEqual(icon.stat().st_size, 1024 * 1024)
+        controls = (ROOT / "crates" / "metis-web" / "src" / "controls.rs").read_text(
+            encoding="utf-8"
+        )
+        self.assertIn('class="metis-mark"', controls)
+        self.assertIn('src="./assets/metis-mark.png"', controls)
+
+    def test_build_and_distribution_declare_the_starter_mark(self):
+        manifest = json.loads((ROOT / "metis.json").read_text(encoding="utf-8"))
+        self.assertIn(
+            {
+                "source": "examples/browser/assets/metis-mark.png",
+                "destination": "assets/metis-mark.png",
+            },
+            manifest["resources"],
+        )
+        browser_script = (ROOT / "scripts" / "browser.py").read_text(encoding="utf-8")
+        self.assertIn("SOURCE.rglob(\"*\")", browser_script)
+        self.assertIn('OUTPUT / "assets" / "metis-mark.png"', browser_script)
 
     def test_bootstrap_keeps_navigation_same_origin(self):
         bootstrap = (ROOT / "examples" / "browser" / "bootstrap.js").read_text(
@@ -118,7 +144,7 @@ class BrowserAssetContractTests(unittest.TestCase):
             ":root {",
             "box-sizing: border-box",
             "*, *::before, *::after { box-sizing: inherit; }",
-            "body { margin: 0; min-width: 320px; }",
+            "body { margin: 0; min-width: 320px; background: var(--metis-page); color: var(--metis-text); }",
             "width: 100%; max-width: 960px",
             "grid-template-columns: minmax(0, 1fr) minmax(0, 1fr)",
             "min-width: 0",
@@ -126,6 +152,12 @@ class BrowserAssetContractTests(unittest.TestCase):
             "@media (max-width: 700px)",
             ".metis-host-controls { padding-inline: 1rem; }",
             "#metis-app { grid-template-columns: 1fr; padding: 1rem; }",
+            "--metis-page:",
+            "--metis-surface:",
+            "body[data-metis-theme=\"light\"]",
+            "body[data-metis-theme=\"dark\"]",
+            "body[data-metis-theme=\"high-contrast\"]",
+            "data-metis-theme",
         ):
             self.assertIn(fragment, styles)
 
@@ -148,6 +180,7 @@ class BrowserAssetContractTests(unittest.TestCase):
             'id="composition-status" role="status" aria-live="polite"',
             'id="pointer-surface" role="group" tabindex="0"',
             'id="drop-zone" role="group" tabindex="0"',
+            'id="theme-mode" name="theme-mode"',
         ):
             self.assertIn(fragment, controls)
         focus_order = (
@@ -162,6 +195,7 @@ class BrowserAssetContractTests(unittest.TestCase):
             "dose-mass",
             "result-scale",
             "result-detail-select",
+            "theme-mode",
             "pointer-surface",
             "drop-zone",
             "text-specimen",

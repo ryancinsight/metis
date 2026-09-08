@@ -3,6 +3,8 @@
 #![deny(unsafe_code)]
 #![doc = include_str!("../README.md")]
 
+pub mod theme;
+
 #[cfg(any(target_arch = "wasm32", test))]
 mod epoch;
 
@@ -29,3 +31,5 @@ mod browser;
 
 #[cfg(target_arch = "wasm32")]
 pub use browser::{metis_start, metis_stop};
+
+pub use theme::Theme;
