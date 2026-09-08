@@ -118,11 +118,9 @@ an owner. “Unsupported” cannot replace delivery of a required mobile/native 
 
 <a id="METIS-PYTHON-001"></a>
 ## METIS-PYTHON-001 — PyO3 application binding [arch] [minor]
-- Status: in-progress; priority: P1; owner: Metis Python integration; integrator: root; last-update: 2026-09-08; branch: `feat/process-foundation`; dependencies: METIS-QUALITY-001, METIS-DISTRIBUTION-001; risk: FFI lifetime and packaging drift
-- Scope: a dedicated `metis-python` binding crate exposing the validated Rust application seam through `import metis`; typed value objects, the clinical calculation, ABI-stable wheels, Python stubs and built-wheel tests. GUI and DICOM object models enter only after their Rust contracts are public and independently verified.
-- Acceptance: Python construction rejects the same invalid values as Rust; input-sensitive calculation results match the Rust analytical oracle; compute releases the GIL; `py.typed` and stubs ship in the wheel; `maturin` builds an abi3 wheel and the provider-owned pytest suite imports that wheel; the PyPI caller uses OIDC with no repository secret or private key.
-- Demonstration: [V10](docs/VERIFICATION.md#V10), the Python binding manual page with the runnable clinical workflow, wheel inspection and failure cases.
-- Decision: [ADR 0017](docs/adr/0017-python-binding.md).
+- Status: done; priority: P1; delivery: `00f3681`; exact full gate passed 2026-09-08; owner/integrator: Metis Python integration/root.
+- Outcome: `metis-python` exposes validated clinical Rust types through an abi3 `import metis` wheel, built-wheel value tests, typed stubs, manual workflow and a tokenless PyPI OIDC caller; visual baseline refreshed for the locked dependency graph.
+- Decision: [ADR 0017](docs/adr/0017-python-binding.md); release registration remains external per [METIS-RELEASE-001](#METIS-RELEASE-001).
 
 <a id="METIS-MEMORY-001"></a>
 ## METIS-MEMORY-001 — Provider allocation count [patch]
