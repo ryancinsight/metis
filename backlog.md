@@ -305,7 +305,9 @@ an owner. “Unsupported” cannot replace delivery of a required mobile/native 
 
 <a id="METIS-QUALITY-001"></a>
 ## METIS-QUALITY-001 — Verification infrastructure [patch]
-- Status: todo; priority: P0; owner: Metis verification/integration; dependencies: METIS-VISUAL-001; risk: unreliable gates
+- Status: in-progress; priority: P0; owner: Metis verification/integration; integrator: root; last-update: 2026-09-07
+- lease: root .github/workflows/ci.yml, docs/manual/testing.md, docs/VERIFICATION.md, backlog.md, checklist.md — 2026-09-07
+- Dependencies: METIS-VISUAL-001; risk: unreliable gates
 - Scope: one pinned gate/CI definition for implemented targets, plan ID/dependency/link validation, artifact provenance, advisory/dependency/native-link audits, public-API checks, parser fuzz/property/mutation and structured redacted diagnostics; host jobs arrive with working host implementations.
 - Acceptance: current [V01](docs/VERIFICATION.md#V01), native and WASM-build suites run under committed budgets; deliberate state/image/parser regressions fail the correct gate; no nonexistent host job reports green.
 - Demonstration: manual troubleshooting shows actual gate failure and recovery artifacts. This finite infrastructure item does not close later scenario coverage.
