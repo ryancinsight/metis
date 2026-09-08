@@ -26,7 +26,9 @@ same build cache and profile settings.
 The executable process demonstration currently requires Windows. Its supervisor
 requires Windows job containment; Linux/macOS builds do not establish a working
 contained demonstration. A Windows development environment needs the MSVC build
-tools and Windows SDK. Native desktop event loops are not implemented yet.
+tools and Windows SDK. The Windows native pixel/event surface is documented in
+[Run the Windows native surface](native.md); it is a platform crate boundary and
+is not yet composed into the `metis-app` demonstration or a system WebView.
 
 ## Run the form workflow
 

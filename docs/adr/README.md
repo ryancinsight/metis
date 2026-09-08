@@ -23,3 +23,4 @@
 | [0012](0012-command-event-contract.md) | Typed command and event contract | Accepted |
 | [0013](0013-strict-style-contract.md) | Strict presentation style contract | Accepted |
 | [0014](0014-input-controls.md) | Rust-owned browser input controls | Accepted |
+| [0015](0015-native-window-provider.md) | Native window provider boundary | Accepted |

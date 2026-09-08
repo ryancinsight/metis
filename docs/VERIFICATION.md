@@ -20,7 +20,7 @@ jobs check workflow syntax, the standalone Cargo lock, the strict ADR index and
 public-API changes on ready pull requests.
 The jobs run only for the actual `feat/process-foundation` default branch, pull
 requests that are ready for review, and merge-queue events; no unsupported
-native-window or cross-platform host job is advertised.
+full native-window or cross-platform host job is advertised.
 
 The workflow contract is covered by the Python gate tests, including full
 revision pinning, draft suppression, guard references and the Windows target.
@@ -36,6 +36,23 @@ the same offline policy check.
 Entry baseline: `cargo check --workspace --offline` passes with documentation and
 source warnings. The original native test build fails with E0382 in the threaded
 process-isolation test. No original OS sandbox or native-window evidence exists.
+
+## Windows native adapter evidence — 2026-09-08
+
+Moirai PR #282 merged at `e9ed0e6` adds the thread-owned Win32 window provider.
+Metis pins that revision and `metis-platform::native::NativeSurface` presents
+the production `Framebuffer` pixels while returning the provider's bounded
+`WindowEvent` values. On `x86_64-pc-windows-msvc`,
+`cargo nextest run --locked -p metis-platform` passes 9/9, including a test that
+creates a real hidden HWND, presents a blue production frame, observes its
+resize event and closes the window. `cargo clippy --locked -p metis-platform
+--all-targets -- -D warnings` also passes.
+
+This is provider and lifecycle evidence only. It does not establish a visible
+`metis-app` desktop host, WebView2 composition, OS permission denial,
+accessibility or native IME behavior, two-window captures, or macOS/Linux
+support. Those requirements remain under [V05](#V05) and the linked backlog
+items; the hidden-window test cannot replace a real visual host capture.
 
 ## Evidence classes
 

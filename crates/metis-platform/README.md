@@ -1,9 +1,11 @@
 # metis-platform
 
 Bounded software framebuffers, clipped rectangle and bitmap text drawing, an
-application-supplied event queue, and ANSI terminal previews. This crate does
-not create native windows, receive operating-system events, or provide a GUI
-isolation boundary.
+application-supplied event queue, and ANSI terminal previews. On Windows, the
+`native` module adapts Moirai's thread-owned Win32 window provider to the
+framebuffer without bringing unsafe operating-system code into this crate.
+The virtual `PlatformSurface` remains application-supplied and does not create
+an operating-system window or provide a GUI isolation boundary.
 
 ```rust
 let mut pixels = metis_platform::Framebuffer::new(32, 16)?;
@@ -21,3 +23,9 @@ surface queue holds at most 1,024 events. Pixel storage uses straight alpha;
 source-over composition includes destination opacity. The font covers digits,
 case-insensitive Latin letters, and selected punctuation; unsupported glyphs
 produce a replacement box. It is not a Unicode shaping engine.
+
+The Windows adapter is a native pixel and event boundary, not a `WebView` or
+permission broker. Use `metis_platform::native::NativeSurface` with a
+validated `metis_platform::native::WindowConfig` for a real HWND; `WebView2`,
+OS permission enforcement, accessibility and IME composition remain host-level
+workflows.

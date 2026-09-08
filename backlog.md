@@ -82,8 +82,9 @@ an owner. “Unsupported” cannot replace delivery of a required mobile/native 
 - Scope: Windows native window/system WebView, real events, multi-window lifecycle and OS-restricted renderer; macOS/Linux have separate items below.
 - Acceptance: actual visible form, pointer/keyboard/resize/DPI/close/reopen; file/network/process denial probes; IPC remains functional under restrictions and all child processes drain.
 - Demonstration: [V05](docs/VERIFICATION.md#V05), actual Windows window captures, keyboard journey and permission-denied results in the manual.
-- Current evidence: `PlatformSurface` owns framebuffer/events only; `PlatformEvent` has no OS event producer. The ineffective original privilege assertion is removed. Native lifecycle, input dispatch and permission denial require new provider contracts and platform probes.
-- Decision: [ADR 0015](docs/adr/0015-native-window-provider.md) (claimed); the first increment adds a real Win32 event/presentation provider in Moirai and a Métis adapter, while WebView2 and OS permission enforcement remain open follow-on slices.
+- Current evidence: Moirai PR #282 (`e9ed0e6`) now supplies the real Win32 HWND, bounded message translation and retained ARGB presentation. `metis-platform::native::NativeSurface` is the safe consumer boundary; `PlatformSurface` and `PlatformEvent` remain portable application-supplied values.
+- Completed increment: the adapter test creates a real hidden HWND, presents the production framebuffer, observes resize, and closes the window; focused nextest and warning-denied Clippy pass on Windows.
+- Decision: [ADR 0015](docs/adr/0015-native-window-provider.md) (accepted); WebView2, visible `metis-app` composition, OS permission enforcement, accessibility/IME, and macOS/Linux providers remain open follow-on slices.
 
 <a id="METIS-AUDIT-001"></a>
 ## METIS-AUDIT-001 — Durable audit recovery [minor]

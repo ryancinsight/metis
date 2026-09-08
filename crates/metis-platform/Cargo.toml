@@ -6,10 +6,13 @@ rust-version.workspace = true
 authors.workspace = true
 license.workspace = true
 repository.workspace = true
-description = "Bounded software framebuffer, bitmap rasterizer, and application-supplied event queue"
+description = "Bounded software framebuffer and Windows native event/presentation adapter"
 
 [dependencies]
 metis-core = { workspace = true }
+
+[target.'cfg(windows)'.dependencies]
+moirai-pal = { workspace = true }
 
 [lints]
 workspace = true

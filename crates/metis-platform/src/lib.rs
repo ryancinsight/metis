@@ -8,6 +8,9 @@ pub mod framebuffer;
 pub mod rasterizer;
 pub mod surface;
 
+#[cfg(windows)]
+pub mod native;
+
 pub use event::PlatformEvent;
 pub use font::{FONT_HEIGHT, FONT_WIDTH, draw_glyph};
 pub use framebuffer::{Color, Framebuffer, Rect};

@@ -11,17 +11,19 @@ tests separate processes through pipes; the gallery renders real backend session
 through bounded memory transport into a software framebuffer; and the browser
 workbench runs Rust/WASM controls in an HTML5/CSS document. With the documented
 loopback service command, the workbench also completes an authenticated
-WebSocket handshake and a real backend calculation. Metis does not yet open a
-native window or restrict operating-system permissions. The browser shell
-enforces its strict CSP, and the service `HostPolicy` binds grants to an exact
-origin, window and session; TLS, desktop and OS enforcement remain separate
-workflows.
+WebSocket handshake and a real backend calculation. The Windows platform crate
+now exposes a Moirai-backed native pixel and event surface; the `metis-app`
+demonstration has not yet connected that surface to its frontend or enforced
+operating-system permissions. The browser shell enforces its strict CSP, and the
+service `HostPolicy` binds grants to an exact origin, window and session; TLS,
+desktop WebView and OS enforcement remain separate workflows.
 
 The [target contract](../adr/0002-web-application-contract.md) describes the
 Tauri migration goal and required web support. These are implementation targets,
 not features available through the build commands below.
 
 - [Build and run](getting-started.md): requirements, the demonstration and verification.
+- [Run the Windows native surface](native.md): present a framebuffer and inspect real Win32 events.
 - [Build executables and installers](distribution.md): configure an application, create a portable bundle, install and remove it.
 - [Create a presentation](presentation.md): supported markup, styles and application state.
 - [Migrate presentation styles](style-migration.md): handle strict software-style diagnostics and move full CSS to the browser path.

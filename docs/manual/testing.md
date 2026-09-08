@@ -1,12 +1,14 @@
 # Inspect application output
 
-The current Metis demonstration has three independently useful checks: a real
+The current Metis demonstration has four independently useful checks: a real
 frontend/backend process exchange, deterministic software captures of a real
 backend session through success, edit, rejection, correction, disconnect and
-recovery, and a browser workbench with Rust/WASM-driven HTML5/CSS controls. The
-workbench can connect to the documented one-shot loopback service for a real
-authenticated calculation; no desktop window host or OS permission boundary is
-implemented.
+recovery, a browser workbench with Rust/WASM-driven HTML5/CSS controls, and a
+Windows-native adapter test that creates a real hidden HWND, presents the
+production framebuffer and drains its resize/close lifecycle. The workbench can
+connect to the documented one-shot loopback service for a real authenticated
+calculation; the adapter does not establish a visible application host or an OS
+permission boundary.
 
 ## Run the checks
 
@@ -59,8 +61,9 @@ cargo nextest run --locked -p metis-ipc
 These commands prove that frame bounds, one-pump ordered and out-of-order
 request correlation, the native async server and the native async-client tests
 compile against one pinned Moirai revision. They do not open a browser or
-produce a browser snapshot. V02 and V12 remain the acceptance checks for
-cross-engine execution, post-drop resource measurements and the remaining
+produce a browser snapshot. The Windows-native adapter test is included in the
+`metis-platform` nextest package run; V05 and V12 remain the acceptance checks
+for cross-engine execution, post-drop resource measurements and the remaining
 desktop lifecycle evidence; their gallery entries must identify the actual
 engine, host and revision.
 
