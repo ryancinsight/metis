@@ -16,7 +16,8 @@ dialog p { color: #bae6fd; }
 .metis-options legend { padding: 0 0.35rem; color: #f8fafc; font-weight: 700; }
 .metis-pointer { border: 1px solid #334155; border-radius: 0.75rem; background: #1e293b; padding: 1.25rem; }
 .metis-pointer p { color: #bae6fd; min-height: 1.5rem; }
-#pointer-surface { display: grid; min-height: 6rem; place-items: center; border: 1px dashed #67e8f9; border-radius: 0.55rem; background: #0f172a; color: #bae6fd; padding: 1rem; text-align: center; user-select: none; cursor: crosshair; touch-action: none; }
+#pointer-surface { display: grid; min-height: 6rem; place-items: center; overflow: hidden; border: 1px dashed #67e8f9; border-radius: 0.55rem; background: #0f172a; color: #bae6fd; padding: 1rem; text-align: center; user-select: none; cursor: crosshair; touch-action: none; }
+#gesture-content { max-width: 28rem; transform-origin: center; }
 #pointer-surface:focus-visible { outline: 3px solid #facc15; outline-offset: 2px; }
 .metis-option { display: flex; align-items: center; gap: 0.55rem; }
 .metis-option-label { color: #94a3b8; font-size: 0.9rem; }

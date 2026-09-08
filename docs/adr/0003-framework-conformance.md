@@ -65,7 +65,7 @@ Revision 2026-09-07: Moirai PR #276 merged at
 `5a5e4b1540eff39bc3f082c6907f0c82fa14dcc8` adds pointer-event identifiers and
 owned Element capture, state and release calls. Metis now demonstrates a
 Rust-owned pointer surface that captures and releases ID `1` in the browser;
-drag/drop policy, wheel/touch/modifier events, IME, accessibility technology
+drag/drop policy, wheel input interpretation, touch gestures, IME, accessibility technology
 and native-window input remain open.
 
 Revision 2026-09-07: Moirai PR #277 merged at
@@ -75,8 +75,9 @@ state, modifier keys and primary-pointer state. Metis renders the snapshot on
 capture and movement. Moirai PR #278 merged at
 `f634b3a802ec0355da22f111ed01067d2435c5cb` adds `WheelMetadata` for bounded
 deltas, browser units, viewport coordinates and modifier state; Metis renders
-vertical and horizontal scroll traces. Drag/drop policy and gesture
-interpretation remain open.
+vertical and horizontal scroll traces. Metis now applies a Rust-owned bounded
+single-pointer drag pan, wheel pan and Ctrl+wheel zoom policy; multi-touch,
+drag/drop and native event production remain open.
 
 ## Decision and scope
 
@@ -136,7 +137,7 @@ Each row names its closing items; acceptance belongs in the
 | Layout, themes, resizing | Panels, scrolling, logical-point sizing [E1] | Styled element layout; not browser CSS [G1] | Host HTML/CSS and DOM [T1] | Sequential layout; several accepted styles do nothing. [LAYOUT](../../backlog.md#METIS-LAYOUT-001). |
 | Text editing and IME | Text editing plus integration IME contract [E4] | Selection/composition input example [G4] | Browser text/IME, subject to host integration | Bitmap Latin subset; no composition/selection. [TEXT](../../backlog.md#METIS-TEXT-001). |
 | Accessibility | AccessKit integration; custom widget semantics required [E5] | AccessKit roles/identity/actions in current source [G3] | Semantic frontend plus WebView/OS accessibility | No semantic tree/adapter. [A11Y](../../backlog.md#METIS-A11Y-001). |
-| Pointer, keyboard, touch, focus | Backend input, sensitivity and viewports [E1] | Platform events and actions [G1] | Web frontend and native window events [T1] | Browser text, checkbox, radio, range and pointer surface use semantic keyboard/pointer targets; Moirai owns browser pointer ID/capture/release and pointer metadata, while drag/drop policy, touch gesture interpretation, native event production and OS pump remain open. [INPUT](../../backlog.md#METIS-INPUT-001), desktop items. |
+| Pointer, keyboard, touch, focus | Backend input, sensitivity and viewports [E1] | Platform events and actions [G1] | Web frontend and native window events [T1] | Browser text, checkbox, radio, range and pointer surface use semantic keyboard/pointer targets; Moirai owns browser pointer ID/capture/release and pointer metadata, while Metis applies bounded single-pointer drag pan, wheel pan and Ctrl+wheel zoom. Drag/drop, multi-touch/pinch interpretation, native event production and OS pump remain open. [INPUT](../../backlog.md#METIS-INPUT-001), desktop items. |
 | Browser/WASM execution | eframe canvas host with WASM bindings [E2] | Current `gpui_web`: canvas, WebGPU/WebGL2 [G2] | Web frontend can target browser; native APIs need a host [T1] | `metis-web` loads generated WASM into an HTML5/CSS DOM host and connects through a bounded Moirai WebSocket service; target-surface discovery, lifecycle generation guards, semantic checkbox/radio/range controls and loopback success/rejection/recovery pass, while cross-engine runs remain. [BROWSER](../../backlog.md#METIS-BROWSER-001), [ASYNC](../../backlog.md#METIS-ASYNC-001). |
 | Existing HTML5/CSS frontend reuse | Canvas UI is not DOM compatibility [E2] | Canvas UI is not DOM compatibility [G2] | WebView presentation is the core model [T1] | Custom markup does not preserve DOM/CSS applications. [BROWSER](../../backlog.md#METIS-BROWSER-001), [MIGRATION](../../backlog.md#METIS-MIGRATION-001). |
 | Native windows and platform lifecycle | eframe/backend-dependent viewports [E1] [E2] | macOS, Windows, Wayland/X11 platform code [G1] | Desktop system WebViews [T1] | Headless Windows-contained process workflow. [WINDOWS](../../backlog.md#METIS-DESKTOP-001), [MACOS](../../backlog.md#METIS-MACOS-001), [LINUX](../../backlog.md#METIS-LINUX-001). |

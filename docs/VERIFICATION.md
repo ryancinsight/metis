@@ -269,9 +269,9 @@ accessibility tree stayed unchanged.
 
 This closes the checkbox/radio/range/select and disabled-submit browser slices
 with real pointer and keyboard demonstrations. Drag/drop policy,
-wheel/touch gesture interpretation, IME, accessibility technology, cross-engine parity,
-post-drop allocation and native-window input remain open under the linked
-backlog items.
+multi-touch/pinch interpretation, IME, accessibility technology, cross-engine
+parity, post-drop allocation and native-window input remain open under the
+linked backlog items.
 
 ## Browser dialog evidence — 2026-09-07
 
@@ -298,8 +298,8 @@ attribute afterward and focus again returned to the opener. The browser console
 contained only expected Moirai initialization entries and no warnings or errors.
 
 This closes the menu/dialog portion of `METIS-INPUT-001`. Drag/drop policy,
-wheel/touch gesture interpretation, IME, accessibility technology, cross-engine parity,
-post-drop allocation and native-window input remain open.
+multi-touch/pinch interpretation, IME, accessibility technology, cross-engine
+parity, post-drop allocation and native-window input remain open.
 
 ## Browser pointer-capture evidence — 2026-09-07
 
@@ -324,7 +324,7 @@ The same release path is registered for `pointercancel`, and a second active
 pointer is rejected while the mounted surface owns its first identifier.
 
 This closes the browser pointer-capture portion of `METIS-INPUT-001`. Drag/drop
-policy, wheel/touch gesture interpretation, IME, accessibility technology,
+policy, multi-touch/pinch interpretation, IME, accessibility technology,
 cross-engine parity, post-drop allocation and native-window input remain open.
 
 ## Browser pointer-metadata evidence — 2026-09-07
@@ -351,7 +351,7 @@ the metadata status beside the unchanged backend-result panel.
 Captured `pointermove` listeners render the same metadata record while the
 surface owns the pointer, and `pointercancel` uses the same release path. This
 closes the provider metadata portion of `METIS-INPUT-001`; drag/drop policy,
-touch gesture interpretation, IME, accessibility technology, cross-engine
+multi-touch/pinch interpretation, IME, accessibility technology, cross-engine
 parity, post-drop allocation and native-window input remain open.
 
 ## Browser wheel metadata evidence — 2026-09-07
@@ -379,9 +379,37 @@ not expose the browser event's hardware `isTrusted` flag, so this trace does
 not claim physical-wheel or cross-engine parity. The provider's WASM
 compile/clippy checks cover the browser binding; native provider nextest
 remains 47/47. This closes the wheel metadata transport portion of
-`METIS-INPUT-001`; zoom/pan gesture policy, drag/drop, touch interpretation,
-IME, accessibility technology, cross-engine parity, post-drop allocation and
-native-window input remain open.
+`METIS-INPUT-001`; the gesture policy is recorded below. Drag/drop,
+multi-touch/pinch interpretation, IME, accessibility technology, cross-engine
+parity, post-drop allocation and native-window input remain open.
+
+## Browser gesture policy evidence — 2026-09-07
+
+The gesture increment moves the pan/zoom state machine into the target-
+independent `gesture_policy` module so its bounded behavior is tested on the
+native target as well as compiled into WASM. `cargo nextest run --locked
+--offline -p metis-web` passes 13/13 tests, including pointer ownership,
+line/page normalization, zoom bounds and non-finite rejection. Native
+warning-denied Clippy, the WASM-target check and WASM-target Clippy pass;
+`python scripts/browser.py build` produces the generated loader and WASM from
+the standalone lock.
+
+The Codex in-app browser trace used
+`http://127.0.0.1:8093/?cache=gesture-20260907` at a 1280×720 CSS-pixel
+viewport and device scale 1.25, served from a loopback HTTP origin without a
+backend bridge. An upward scroll at the pointer surface rendered
+`Gesture: wheel pan; pan (0.0, -129.6) CSS px; zoom 100%`; a rightward scroll
+then rendered `Gesture: wheel pan; pan (426.4, -129.6) CSS px; zoom 100%`.
+Dragging from `(300, 590)` to `(420, 620)` after those scrolls rendered
+`Gesture: release; pan (546.4, -99.6) CSS px; zoom 100%`. The screenshot showed
+the translated content and the semantic gesture status beside the unchanged
+backend result panel.
+
+The trace is automation-generated. CUA does not expose the browser event's
+hardware `isTrusted` flag, physical touch or IME injection, or another browser
+engine, so it claims the observed Rust/WASM event flow and rendered transform
+only. The native policy tests cover Ctrl-wheel zoom behavior and its 50–300%
+bound; the live trace does not claim physical-input or cross-engine parity.
 
 ## Browser stale-response evidence — 2026-09-07
 
