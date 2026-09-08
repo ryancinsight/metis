@@ -101,6 +101,12 @@ resize, DPI, focus and close transitions. A committed native visual capture,
 WebView2, permissions, accessibility/IME and non-Windows providers remain
 open.
 
+Revision 2026-09-08: Moirai PR #284 merged at `7f5ddf80` makes the provider
+return retained lifecycle events before waiting on the operating-system queue.
+Metis advances its lock and verifies the initial resize event through the same
+native adapter test; visual, permission, accessibility/IME and non-Windows
+evidence remain open.
+
 ## Decision and scope
 
 Use Tauri as the application-framework migration reference and egui/GPUI/Iced

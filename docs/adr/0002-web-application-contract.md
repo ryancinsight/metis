@@ -31,6 +31,11 @@ window provider and finite event wait. `metis-platform` exposes it as
 framebuffer form with the supervised private IPC workflow. WebView2 hosting, OS
 permissions and cross-platform desktop evidence remain open.
 
+Revision 2026-09-08: Moirai PR #284 merged at `7f5ddf80` makes the finite wait
+drain retained lifecycle events before blocking on the operating-system queue.
+Metis advances its lock to that revision so the native host cannot lose initial
+window readiness.
+
 ## Intent and authority
 
 The user clarifies that Metis must support WASM and web rendering, with the goal

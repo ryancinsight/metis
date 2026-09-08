@@ -10,6 +10,11 @@ Revision 2026-09-08: Moirai PR #283 merged at `3ae43143` adds a finite native
 event wait. Metis now composes the provider with the visible `metis-app` form,
 including supervised private IPC, resize and input transitions.
 
+Revision 2026-09-08: Moirai PR #284 merged at `7f5ddf80` makes the finite wait
+drain retained lifecycle events before blocking on the operating-system queue.
+Metis advances its lock so initial window readiness is preserved by the same
+native adapter path.
+
 ## Context
 
 The framework comparison in [ADR 0003](0003-framework-conformance.md) leaves a

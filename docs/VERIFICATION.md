@@ -39,14 +39,16 @@ process-isolation test. No original OS sandbox or native-window evidence exists.
 
 ## Windows native provider and host evidence — 2026-09-08
 
-Moirai PR #283 merged at `3ae43143` adds the thread-owned Win32 window provider
-and its finite message-queue wait. Metis pins that revision and
+Moirai PR #284 merged at `7f5ddf80` extends the thread-owned Win32 window
+provider with retained-event readiness on top of PR #283's finite message-queue
+wait. Metis pins that revision and
 `metis-platform::native::NativeSurface` presents the production `Framebuffer`
 pixels while returning the provider's bounded `WindowEvent` values. On
 `x86_64-pc-windows-msvc`, the provider suite passes 60/60 with strict Clippy;
 the native tests create a real hidden HWND, present a production frame, observe
-input/resize/DPI lifecycle events, verify a posted event wakes the finite wait,
-and close the window.
+input/resize/DPI lifecycle events, verify retained initial readiness and an
+overlong-wait rejection, prove a posted event wakes the finite wait, and close
+the window.
 
 The same `metis-app` executable now composes that surface with the production
 frontend and supervised private IPC under `--metis-native-window`. The focused
