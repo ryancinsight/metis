@@ -241,7 +241,8 @@ an owner. “Unsupported” cannot replace delivery of a required mobile/native 
 
 <a id="METIS-ASSETS-001"></a>
 ## METIS-ASSETS-001 — Images, vectors and media assets [minor]
-- Status: todo; priority: P1; owner: Metis asset/presentation + existing Atlas format providers; dependencies: METIS-BROWSER-001, METIS-AUTHORITY-001; risk: hostile content
+- Status: in-progress; priority: P1; owner: Metis asset/presentation + existing Atlas format providers; integrator: root; last-update: 2026-09-09; branch: `feat/process-foundation`; dependencies: METIS-BROWSER-001, METIS-AUTHORITY-001; risk: hostile content
+- lease: root crates/metis-cli/src/manifest crates/metis-cli/src/windows metis.json examples/browser/assets docs/adr/0016-theme-and-branding.md docs/manual/distribution.md docs/manual/browser.md docs/VERIFICATION.md scripts/tests 2026-09-09T09:00:00-04:00
 - Scope: bounded local asset loading, image/SVG presentation, font loading and browser audio/video controls; validate paths/origins, dimensions/decoding budgets and target permissions.
 - Acceptance: malformed/truncated/oversized/traversal assets fail; declared colors/alpha/aspect ratio/orientation match fixtures; media error and teardown states release resources.
 - Demonstration: [V06](docs/VERIFICATION.md#V06), actual asset gallery with source attribution and load/error states.
