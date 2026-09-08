@@ -21,6 +21,11 @@ does not execute plugin code or grant operating-system authority.
 installed surfaces. It does not infer native windows, operating-system
 permissions, accessibility or IME support from a platform identifier.
 
+`MetisError` keeps its detailed message for `Display`; `Debug` and
+`MetisError::redacted()` expose only its stable code and trace identifier.
+Remote error payloads apply the same message redaction under `Debug` so
+structured diagnostics do not copy untrusted paths or identifiers.
+
 ```rust
 use metis_core::{build_frame, FrameHeader, MessageType, HEADER_SIZE};
 let bytes = build_frame(MessageType::HandshakeReq, 7, b"request")?;

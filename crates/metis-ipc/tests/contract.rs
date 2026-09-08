@@ -3,6 +3,8 @@
 mod client;
 #[path = "contract/payload.rs"]
 mod payload;
+#[path = "contract/robustness.rs"]
+mod robustness;
 use metis_core::capability::{CapabilityScope, CapabilityToken};
 use metis_core::error::{ErrorCode, MetisError, Result};
 use metis_core::protocol::{

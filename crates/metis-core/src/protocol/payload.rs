@@ -444,7 +444,7 @@ fn response_body_length(body_len: usize) -> Result<u32> {
     })
 }
 /// Structured remote failure.
-#[derive(Debug, Clone, PartialEq, Eq)]
+#[derive(Clone, PartialEq, Eq)]
 pub struct ErrorResponsePayload {
     /// Remote error classification.
     pub error_code: u16,

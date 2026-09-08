@@ -47,6 +47,33 @@ Repair the source or reviewed baseline, rerun `python scripts/verify.py` locally
 and push the fix. CI never refreshes snapshots, so a state, image or parser
 regression remains a failing artifact until the implementation is corrected.
 
+## Exercise parser and diagnostic safeguards
+
+The protocol contract suite includes a bounded deterministic generator over
+arbitrary byte strings, Unicode and IEEE-754 payload values, deterministic
+truncation and bit mutations, and oversized length fields. These cases call
+every public wire decoder and treat a panic as a failure. The standalone
+LibFuzzer target covers
+the same decoder boundary without entering the application dependency graph;
+its locked manifest is checked with:
+
+```text
+cargo check --manifest-path fuzz/Cargo.toml --locked
+```
+
+On a host with a working LibFuzzer toolchain, run the bounded campaign from the
+`fuzz/` directory with `cargo fuzz run protocol -- -runs=1000`. The Windows
+MSVC environment used for the current evidence cannot link the sanitizer
+runtime, so the deterministic property and mutation suite remains the
+reproducible parser oracle there.
+
+`MetisError` retains its full message for `Display`, while `Debug` and
+`MetisError::redacted()` expose only the stable error code and trace identifier.
+The remote `ErrorResponsePayload` follows the same rule for `Debug`, replacing
+the message with `[REDACTED]`. This keeps paths, identifiers and other
+untrusted values out of structured diagnostics without changing the user-facing
+error text.
+
 ## Check the browser transport slice
 
 The IPC package now has a browser-thread contract backed by Moirai's bounded
