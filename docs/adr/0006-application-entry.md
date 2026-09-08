@@ -18,9 +18,11 @@ state and bounded IPC. This decision revises the executable topology in
 A concern-owned `metis-app` crate composes the backend and frontend libraries.
 Its default invocation creates the backend session and launches the exact path
 returned by `std::env::current_exe()`, adding `--metis-frontend` and the three
-submitted inputs. The child role dispatches before OS entropy generation or
-backend service construction. Role parsing is closed: `--help` describes the
-public command; malformed arguments fail rather than selecting a default role.
+submitted inputs. The Windows native invocation selects the same supervised
+backend with `--metis-native-window`, which launches a native frontend child.
+Child roles dispatch before OS entropy generation or backend service
+construction. Role parsing is closed: `--help` describes the public commands;
+malformed arguments fail rather than selecting a default role.
 
 Backend service, protocol and supervision stay in their existing libraries.
 The application entry owns OS entropy and process-role composition. The
@@ -45,11 +47,12 @@ Duplicating supervision in the application entry would fork Moirai lifecycle
 ownership without adding a capability. These alternatives are rejected.
 
 A generic plugin or runtime role registry has no current requirement. A closed
-entry dispatcher expresses the two existing roles without adding public library
-API. Platform-specific lifecycle extensions belong upstream in Moirai when a
-consumer actually requires them. Non-Windows process-tree containment remains an
-explicit unsupported capability; this change does not supply a browser host,
-native window, privilege sandbox or cross-platform installer.
+entry dispatcher expresses the backend, headless frontend, browser service and
+Windows native roles without adding public library API. Platform-specific
+lifecycle extensions belong upstream in Moirai when a consumer actually requires
+them. Non-Windows process-tree containment remains an explicit unsupported
+capability; the native role supplies a visible software window but does not
+supply a browser host, privilege sandbox or cross-platform installer.
 
 ## Trust model and failure behavior
 
@@ -71,10 +74,10 @@ protocol validation, request sequencing and exact issued-capability checks.
 Unknown roles, missing or excess inputs and malformed protocol return failure.
 The child never falls through into parent launch, creates a backend key, or
 reports a successful calculation after rejection. Under normal parent launch,
-Moirai supervises pipe closure and termination under the existing session and
-cleanup deadlines. Arbitrary direct child-role invocation can block on an open
-input stream; no standalone read deadline is claimed. EOF and malformed input
-remain explicit negative test cases.
+Moirai supervises pipe closure and termination under the headless ten-second or
+native five-minute finite session budget and cleanup deadline. Arbitrary direct
+child-role invocation can block on an open input stream; no standalone read
+deadline is claimed. EOF and malformed input remain explicit negative test cases.
 
 `current_exe()` selects the running application path, allowing relocation and
 renaming without sibling lookup. It is not publisher authentication or an
@@ -89,6 +92,7 @@ Build and run the application with:
 
 ```text
 cargo run --locked -p metis-app -- 60 2 0.2
+cargo run --locked -p metis-app -- --metis-native-window 60 2 0.2
 cargo run --locked -p metis-app -- --help
 ```
 
@@ -113,7 +117,9 @@ The distribution workflow must verify exactly one application executable in
 both portable and installed inventories, then perform real MSI installation,
 input-sensitive execution and uninstall preserving a user-created file.
 Formatting, dependency closure, strict Clippy, debug/release tests, doctests,
-WASM library compilation and warning-clean documentation remain gate inputs.
+WASM library compilation, native provider/host tests and warning-clean
+documentation remain gate inputs. A committed visible native screenshot and
+permission-denial trace are still required for the desktop acceptance item.
 Source-bound visual fixtures must be regenerated and compared after removing
 the frontend entry point; no changed image is presumed acceptable from a source
 fingerprint change alone. [Verification](../VERIFICATION.md) distinguishes these

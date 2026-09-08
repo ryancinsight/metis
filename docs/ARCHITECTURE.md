@@ -22,9 +22,10 @@ bounded native service when the host supplies explicit endpoint configuration.
 requires a trusted host context before it serves requests. Its external assets
 carry the strict same-origin CSP from the policy source consumed by
 `HostPolicy`, and the bootstrap rejects cross-origin anchor navigation. The
-Windows `metis-platform::native::NativeSurface` now supplies a Moirai-owned
-HWND, bounded event queue and ARGB presenter; the desktop WebView host and OS
-permission boundary remain unimplemented.
+Windows `metis-platform::native::NativeSurface` supplies a Moirai-owned
+HWND, bounded event queue and ARGB presenter. The `metis-app --metis-native-window`
+role composes that surface with the existing frontend and supervised private
+IPC; the desktop WebView host and OS permission boundary remain unimplemented.
 
 The shared `metis-core` crate owns wire types, typed command descriptors,
 capability catalog and target-surface encoding, remote event envelopes, bounded
@@ -101,9 +102,10 @@ expose explicit send paths over both admitted transports.
 surfaces. The native service advertises its process boundary, the one-
 executable application adds private-process IPC, and the browser acceptor adds
 the authenticated WebSocket bridge. The WASM workbench reports its own
-WASM/DOM/CSS surfaces. The Windows platform provider now supplies a native
-window/event boundary, but it is not yet composed into `metis-app`; operating-
-system permissions, accessibility and IME remain host-level gaps.
+WASM/DOM/CSS surfaces. The Windows platform provider supplies a native
+window/event boundary and the `metis-app` native role composes it with the
+frontend; operating-system permissions, accessibility and IME remain host-level
+gaps.
 
 The browser shell keeps CSS and module bootstrap files external to satisfy the
 same-origin CSP. The build checks the HTML policy against
@@ -132,7 +134,7 @@ budgets, native FFI boundary and platform expansion contract.
 | Role | Owner | Decision |
 | --- | --- | --- |
 | Scheduling/process lifecycle | Moirai | Reuse executor and process transport; fill missing pipe/deadline support upstream. |
-| Native window and event lifecycle | Moirai PAL + Metis platform adapter | Moirai owns the thread-affine Win32 HWND, bounded message translation and retained ARGB frame; Metis exposes `NativeSurface` without importing unsafe OS code into domain crates. WebView, permissions and non-Windows hosts remain separate items. |
+| Native window and event lifecycle | Moirai PAL + Metis platform adapter | Moirai owns the thread-affine Win32 HWND, bounded message translation, finite event waiting and retained ARGB frame; Metis exposes `NativeSurface` and the application composes it with the frontend without importing unsafe OS code into domain crates. WebView, permissions and non-Windows hosts remain separate items. |
 | Rendering contract | Iris | Implement its borrowed-frame interface; retain byte-packed pixel storage. |
 | General allocation | Mnemosyne | Already reachable through Moirai; no extra global allocator override without an allocation contract/measurement. |
 | Recoverable framebuffer allocation | Metis | Mnemosyne aligned storage currently aborts on allocation failure; Metis checks size and uses fallible reservation. |
@@ -141,14 +143,14 @@ budgets, native FFI boundary and platform expansion contract.
 
 ## Platform coverage
 
-The visible desktop application loop and OS permission sandbox remain
-incomplete. Moirai's Windows provider now creates and destroys a real HWND,
-translates messages and presents a retained software frame; the adapter test
-does not establish a visible `metis-app` host or deny file, network or device
-access. Process address-space separation and lifecycle containment do not deny
-those resources. Platform support claims require separate host tests and denial
-probes, not merely `cfg` branches or successful compilation. The loopback
-browser service is a one-connection conformance host; it is not a production
-TLS listener or a substitute for the native desktop host.
+The visible Windows application loop now creates a real HWND, presents the
+frontend framebuffer, consumes bounded native events and keeps the backend on a
+supervised private pipe. The native host still has no OS permission sandbox;
+process address-space separation and lifecycle containment do not deny file,
+network or device access. A committed visual host capture and denial probes are
+required before the desktop item closes. Platform support claims require
+separate host tests, not merely `cfg` branches or successful compilation. The
+loopback browser service is a one-connection conformance host; it is not a
+production TLS listener or a substitute for the native desktop host.
 
 See [ADR 0001](adr/0001-process-contract.md) for the trust boundary and alternatives.

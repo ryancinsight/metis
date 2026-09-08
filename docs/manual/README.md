@@ -12,9 +12,10 @@ through bounded memory transport into a software framebuffer; and the browser
 workbench runs Rust/WASM controls in an HTML5/CSS document. With the documented
 loopback service command, the workbench also completes an authenticated
 WebSocket handshake and a real backend calculation. The Windows platform crate
-now exposes a Moirai-backed native pixel and event surface; the `metis-app`
-demonstration has not yet connected that surface to its frontend or enforced
-operating-system permissions. The browser shell enforces its strict CSP, and the
+exposes a Moirai-backed native pixel and event surface, and the `metis-app`
+demonstration connects it to the frontend through the same private process
+workflow. Operating-system permissions remain a host gap. The browser shell
+enforces its strict CSP, and the
 service `HostPolicy` binds grants to an exact origin, window and session; TLS,
 desktop WebView and OS enforcement remain separate workflows.
 

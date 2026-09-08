@@ -93,11 +93,13 @@ bounded textarea policy with input, selection and composition lifecycle
 listeners; grapheme segmentation, bidi/layout metrics, clipboard/undo, trusted
 native IME, accessibility technology and native event production remain open.
 
-Revision 2026-09-08: Moirai PR #282 merged at `e9ed0e6` adds a bounded Win32
-window provider. Metis now exposes `NativeSurface` over that provider; the
-adapter presents the production ARGB framebuffer and returns complete native
-window events, while the visible `metis-app` host, WebView2, permissions,
-accessibility/IME and non-Windows providers remain open.
+Revision 2026-09-08: Moirai PR #283 merged at `3ae43143` adds a bounded Win32
+window provider and finite event wait. Metis exposes `NativeSurface` over that
+provider, and the `metis-app --metis-native-window` role composes the adapter
+with the production frontend and supervised private IPC, including input,
+resize, DPI, focus and close transitions. A committed native visual capture,
+WebView2, permissions, accessibility/IME and non-Windows providers remain
+open.
 
 ## Decision and scope
 
@@ -160,7 +162,7 @@ Each row names its closing items; acceptance belongs in the
 | Pointer, keyboard, touch, focus | Backend input, sensitivity and viewports [E1] | Platform events and actions [G1] | Web frontend and native window events [T1] | Browser text, checkbox, radio, range and pointer surface use semantic keyboard/pointer targets; Moirai owns browser pointer ID/capture/release, pointer metadata and bounded file-drop metadata, while Metis applies bounded single-pointer drag pan, wheel pan, Ctrl+wheel zoom and file-drop state. The Windows `NativeSurface` now returns provider pointer, key, focus and text events; multi-touch/pinch interpretation, file-byte access, native IME and OS pump integration remain open. [INPUT](../../backlog.md#METIS-INPUT-001), desktop items. |
 | Browser/WASM execution | eframe canvas host with WASM bindings [E2] | Current `gpui_web`: canvas, WebGPU/WebGL2 [G2] | Web frontend can target browser; native APIs need a host [T1] | `metis-web` loads generated WASM into an HTML5/CSS DOM host and connects through a bounded Moirai WebSocket service; target-surface discovery, lifecycle generation guards, semantic checkbox/radio/range controls and loopback success/rejection/recovery pass, while cross-engine runs remain. [BROWSER](../../backlog.md#METIS-BROWSER-001), [ASYNC](../../backlog.md#METIS-ASYNC-001). |
 | Existing HTML5/CSS frontend reuse | Canvas UI is not DOM compatibility [E2] | Canvas UI is not DOM compatibility [G2] | WebView presentation is the core model [T1] | Custom markup does not preserve DOM/CSS applications. [BROWSER](../../backlog.md#METIS-BROWSER-001), [MIGRATION](../../backlog.md#METIS-MIGRATION-001). |
-| Native windows and platform lifecycle | eframe/backend-dependent viewports [E1] [E2] | macOS, Windows, Wayland/X11 platform code [G1] | Desktop system WebViews [T1] | Moirai's Windows PAL plus `metis-platform::native::NativeSurface` create a real thread-owned HWND, present the Metis framebuffer and return bounded events; visible application composition, WebView2, permission probes and macOS/Linux hosts remain open. [WINDOWS](../../backlog.md#METIS-DESKTOP-001), [MACOS](../../backlog.md#METIS-MACOS-001), [LINUX](../../backlog.md#METIS-LINUX-001). |
+| Native windows and platform lifecycle | eframe/backend-dependent viewports [E1] [E2] | macOS, Windows, Wayland/X11 platform code [G1] | Desktop system WebViews [T1] | Moirai's Windows PAL plus `metis-platform::native::NativeSurface` create a real thread-owned HWND, present the Metis framebuffer and return bounded events; `metis-app --metis-native-window` composes the visible frontend and private IPC, while native visual capture, WebView2, permission probes and macOS/Linux hosts remain open. [WINDOWS](../../backlog.md#METIS-DESKTOP-001), [MACOS](../../backlog.md#METIS-MACOS-001), [LINUX](../../backlog.md#METIS-LINUX-001). |
 | Async commands, events, cancellation | Application/host concern | Executor and action facilities [G1] | Commands, events and channels [T2] [T3] | Async client/server, bounded correlation, request cancellation, browser task handle and pre-response Origin validation exist. A versioned capability catalog, target-surface descriptor, bounded local event hub, versioned remote event envelope, typed plugin invocation and host-local plugin registry now cover command discovery and delivery metadata; lifecycle generation guards and the delayed-response stop/remount trace prevent stale browser completions, while cross-engine service traces remain. [COMMANDS](../../backlog.md#METIS-COMMANDS-001), [BROWSER](../../backlog.md#METIS-BROWSER-001). |
 | Scoped native authority | Tauri-like broker not established by toolkit docs | Tauri-like broker not established by toolkit docs | Capability scopes and host boundaries [T4] | `HostPolicy` enforces exact origin/window/session binding and host-bound HMAC associated data; the live service validates Origin before `101`; OS permission enforcement remains open. [AUTHORITY](../../backlog.md#METIS-AUTHORITY-001), desktop items. |
 | Images, vector content and media | Extras loaders; renderer integrations [E6] | Image/list examples and GPU elements [G1] | Browser assets/media and host permissions | Rectangle/border/bitmap-text commands only. [ASSETS](../../backlog.md#METIS-ASSETS-001), [GRAPHICS](../../backlog.md#METIS-GRAPHICS-001). |
@@ -188,7 +190,7 @@ after the corresponding Metis implementation and target evidence pass.
 | State and control flow | Elm-style state, messages, `update` and `view`; `Task` and `Subscription` support asynchronous work [I0] [I1] | Use the state/message split as a design reference, while keeping Metis's typed command and authority boundary. [STATE](../../backlog.md#METIS-STATE-001), [COMMANDS](../../backlog.md#METIS-COMMANDS-001), [ASYNC](../../backlog.md#METIS-ASYNC-001) remain open for the DOM and broker contracts. |
 | Layout and widgets | Responsive layout, built-in text inputs and scrollables, and custom widgets are documented [I0] [I1] | Metis must implement or reject each admitted CSS/layout property and provide reusable DOM controls. [LAYOUT](../../backlog.md#METIS-LAYOUT-001), [INPUT](../../backlog.md#METIS-INPUT-001), [DATA](../../backlog.md#METIS-DATA-001). |
 | Text, IME and accessibility | Iced documents text input/widgets; the comparator does not establish Metis's DOM IME or assistive-technology contract | Keep DOM text, composition, selection, semantic roles and OS bridge in Metis's target items. [TEXT](../../backlog.md#METIS-TEXT-001), [A11Y](../../backlog.md#METIS-A11Y-001). |
-| Native windows | The native runtime manages windows and events on supported desktop targets [I0] | Moirai's Windows provider and Metis `NativeSurface` now establish the HWND/frame/event boundary; restricted application hosts, process/permission probes and macOS/Linux providers remain required. [DESKTOP](../../backlog.md#METIS-DESKTOP-001), [MACOS](../../backlog.md#METIS-MACOS-001), [LINUX](../../backlog.md#METIS-LINUX-001). |
+| Native windows | The native runtime manages windows and events on supported desktop targets [I0] | Moirai's Windows provider and Metis `NativeSurface` establish the HWND/frame/event boundary; the restricted visible application host is composed, while native visual capture, process/permission probes and macOS/Linux providers remain required. [DESKTOP](../../backlog.md#METIS-DESKTOP-001), [MACOS](../../backlog.md#METIS-MACOS-001), [LINUX](../../backlog.md#METIS-LINUX-001). |
 | Browser and WebAssembly | Iced examples run on native and web; current renderer direction uses the browser canvas/GPU path [I1] [I2] | This establishes a useful renderer comparator but does not provide an HTML/CSS DOM replacement. Metis now has a local DOM host; authenticated lifecycle and cross-engine evidence remain. [BROWSER](../../backlog.md#METIS-BROWSER-001), [ASYNC](../../backlog.md#METIS-ASYNC-001). |
 | HTML/CSS reuse | The old `iced_web` DOM runtime is archived and read-only [I3] | Do not claim DOM compatibility from Iced. Metis's DOM route remains an owned implementation with CSS semantics and migration diagnostics. [BROWSER](../../backlog.md#METIS-BROWSER-001), [MIGRATION](../../backlog.md#METIS-MIGRATION-001). |
 | Renderers and assets | Native renderer abstraction includes wgpu and tiny-skia; current docs identify WebGPU/WebGL-oriented browser rendering [I0] [I4] | Compare renderer correctness and resource bounds through Iris and Metis fixtures; do not add an Iced dependency or duplicate a renderer. [GRAPHICS](../../backlog.md#METIS-GRAPHICS-001), [ASSETS](../../backlog.md#METIS-ASSETS-001), [PERF](../../backlog.md#METIS-PERF-001). |
@@ -221,10 +223,11 @@ upgrade validation. The follow-up provider revision
 `5a5e4b1540eff39bc3f082c6907f0c82fa14dcc8` adds pointer IDs and capture. The
 Metis browser host uses those providers, including cancellable local tasks, and
 the live service composes the trusted host policy.
-The Windows event producer is now a delivered boundary; the visible application
-host, cross-engine runtime matrix and OS permission probes remain closure
-requirements, not reasons to add another runtime. Consumer checks are against
-the pushed provider revision, not local provider edits.
+The Windows event producer and visible application host are delivered boundaries;
+the committed native visual capture, cross-engine runtime matrix and OS
+permission probes remain closure requirements, not reasons to add another
+runtime. Consumer checks are against the pushed provider revision, not local
+provider edits.
 Iris's current lending rendering seam is sufficient for the software path and
 does not block a DOM host.
 

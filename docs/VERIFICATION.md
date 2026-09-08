@@ -37,22 +37,31 @@ Entry baseline: `cargo check --workspace --offline` passes with documentation an
 source warnings. The original native test build fails with E0382 in the threaded
 process-isolation test. No original OS sandbox or native-window evidence exists.
 
-## Windows native adapter evidence — 2026-09-08
+## Windows native provider and host evidence — 2026-09-08
 
-Moirai PR #282 merged at `e9ed0e6` adds the thread-owned Win32 window provider.
-Metis pins that revision and `metis-platform::native::NativeSurface` presents
-the production `Framebuffer` pixels while returning the provider's bounded
-`WindowEvent` values. On `x86_64-pc-windows-msvc`,
-`cargo nextest run --locked -p metis-platform` passes 9/9, including a test that
-creates a real hidden HWND, presents a blue production frame, observes its
-resize event and closes the window. `cargo clippy --locked -p metis-platform
---all-targets -- -D warnings` also passes.
+Moirai PR #283 merged at `3ae43143` adds the thread-owned Win32 window provider
+and its finite message-queue wait. Metis pins that revision and
+`metis-platform::native::NativeSurface` presents the production `Framebuffer`
+pixels while returning the provider's bounded `WindowEvent` values. On
+`x86_64-pc-windows-msvc`, the provider suite passes 60/60 with strict Clippy;
+the native tests create a real hidden HWND, present a production frame, observe
+input/resize/DPI lifecycle events, verify a posted event wakes the finite wait,
+and close the window.
 
-This is provider and lifecycle evidence only. It does not establish a visible
-`metis-app` desktop host, WebView2 composition, OS permission denial,
-accessibility or native IME behavior, two-window captures, or macOS/Linux
-support. Those requirements remain under [V05](#V05) and the linked backlog
-items; the hidden-window test cannot replace a real visual host capture.
+The same `metis-app` executable now composes that surface with the production
+frontend and supervised private IPC under `--metis-native-window`. The focused
+frontend/backend/application suite passes 32/32 with strict Clippy. Its tests
+cover role selection, bounded Unicode editing, an authored submit hit region,
+resize replacement with rollback on invalid dimensions, input-sensitive process
+results and child cleanup. The interactive role uses a finite five-minute
+watchdog; the headless role retains the ten-second budget.
+
+This establishes provider, lifecycle and code-level host composition evidence.
+It does not establish a committed visible screenshot or keyboard journey,
+WebView2 composition, OS permission denial, accessibility or native IME
+behavior, two-window captures, or macOS/Linux support. Those requirements remain
+under [V05](#V05) and the linked backlog items; a hidden-window test and a
+passing build cannot replace real visual or denial-probe evidence.
 
 ## Evidence classes
 

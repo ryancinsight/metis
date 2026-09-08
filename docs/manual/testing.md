@@ -1,14 +1,14 @@
 # Inspect application output
 
-The current Metis demonstration has four independently useful checks: a real
+The current Metis demonstration has five independently useful checks: a real
 frontend/backend process exchange, deterministic software captures of a real
 backend session through success, edit, rejection, correction, disconnect and
-recovery, a browser workbench with Rust/WASM-driven HTML5/CSS controls, and a
-Windows-native adapter test that creates a real hidden HWND, presents the
-production framebuffer and drains its resize/close lifecycle. The workbench can
+recovery, a browser workbench with Rust/WASM-driven HTML5/CSS controls, a
+Windows-native adapter test that creates a real hidden HWND, and the visible
+`metis-app --metis-native-window` host workflow. The native checks present the
+production framebuffer and drain bounded lifecycle events; the workbench can
 connect to the documented one-shot loopback service for a real authenticated
-calculation; the adapter does not establish a visible application host or an OS
-permission boundary.
+calculation. A committed visual capture and OS permission boundary remain open.
 
 ## Run the checks
 

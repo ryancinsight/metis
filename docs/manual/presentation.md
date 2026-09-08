@@ -36,7 +36,8 @@ failure boundaries, not recommendations to construct maximum-sized documents.
 `FrontendApp::set_inputs(...)?` updates the form values and labels, clears any
 previous result and renders immediately. `submit_calculation` paints pending
 before sending the values through IPC, then paints success or failure. The
-current client blocks while waiting; this is not yet a responsive event loop.
+synchronous client blocks while waiting; the Windows native application role
+uses Moirai's finite event wait to keep its host loop responsive.
 
 Match `state()` to distinguish a backend response, peer rejection, request
 preparation failure and disconnection. Full typed diagnostics remain available
@@ -56,9 +57,9 @@ the session. The [migration contract](../adr/0004-form-state.md) lists the API c
 `PlatformSurface` continues to receive application-supplied events only. On
 Windows, [`metis_platform::native::NativeSurface`] presents the same framebuffer
 through a real HWND and returns Moirai's complete `WindowEvent` values, including
-focus, key-up and DPI events. The native surface does not yet connect those
-events to frontend widgets or a system WebView; a software snapshot does not
-demonstrate native interaction.
+focus, key-up and DPI events. The `metis-app --metis-native-window` role connects
+those events to the authored form and private IPC workflow; a system WebView,
+native visual capture and OS permission boundary remain separate host work.
 
 Keep calculation rules in the backend. The frontend dependency closure excludes
 `metis-backend`; presentation code submits values and renders responses.

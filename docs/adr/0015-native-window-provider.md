@@ -6,6 +6,10 @@ Date: 2026-09-08
 
 Driver: [METIS-DESKTOP-001](../../backlog.md#METIS-DESKTOP-001)
 
+Revision 2026-09-08: Moirai PR #283 merged at `3ae43143` adds a finite native
+event wait. Metis now composes the provider with the visible `metis-app` form,
+including supervised private IPC, resize and input transitions.
+
 ## Context
 
 The framework comparison in [ADR 0003](0003-framework-conformance.md) leaves a
@@ -40,12 +44,14 @@ consumer sees them. `WM_PAINT` repaints the retained frame and never calls into
 application code.
 
 Metis adds a Windows adapter at its platform boundary. `NativeSurface` presents
-the existing `Framebuffer` and exposes Moirai's complete `WindowEvent` values,
-so focus, key-up, DPI and lifecycle information are not discarded by the
-portable `PlatformEvent` vocabulary. It imports no Win32 types into frontend or
-UI-language crates and owns no authorization, process or filesystem
-capability. The `metis-app` entry remains the owner of role composition; a
-later desktop slice will connect this surface to the frontend and broker.
+the existing `Framebuffer`, exposes Moirai's complete `WindowEvent` values and
+waits for input with a finite timeout, so focus, key-up, DPI and lifecycle
+information are not discarded by the portable `PlatformEvent` vocabulary. It
+imports no Win32 types into frontend or UI-language crates and owns no
+authorization, process or filesystem capability. The `metis-app` entry owns
+role composition: its native role presents the frontend framebuffer, applies
+text and resize transitions, and sends calculation requests over the same
+supervised private pipe as the headless role.
 
 This increment deliberately supplies a native software surface. WebView2 COM
 hosting, HTML/CSS DOM embedding, OS file/network/process denial, accessibility
@@ -72,20 +78,20 @@ and performs no fallible application operation across the ABI boundary. The
 presenter treats pixels as data only and does not grant file, network, process or
 WebView authority.
 
-The provider is Windows-only in this increment. Cross-platform native windows,
-WebView2 integration, OS sandbox enforcement, native accessibility/IME and
-actual two-window permission captures remain open under the linked backlog
-items. A successful Windows build or off-screen frame does not close those
-runtime requirements.
+The provider and visible host are Windows-only in this increment. Cross-platform
+native windows, WebView2 integration, OS sandbox enforcement, native
+accessibility/IME, a committed visual capture and actual two-window permission
+captures remain open under the linked backlog items. A successful Windows build
+or off-screen frame does not close those runtime requirements.
 
 ## Verification
 
 Provider tests exercise configuration rejection, queue bounds, UTF-16 pairing,
-event translation, resize/DPI values and retained-frame validation. A Windows
-host test creates a real hidden window, pumps its lifecycle and destroys it
-without retained callback state. The Metis adapter test presents the actual
-framebuffer storage, observes the provider's resize event and closes the
-window. `PlatformSurface` and its application-supplied `PlatformEvent` queue
-remain unchanged on every target. Warning-denied Clippy, native tests and the
-WASM library gate remain required; visual V05 evidence is added when a native
-window can be driven by the host capture harness.
+finite waiting, event translation, resize/DPI values and retained-frame
+validation. A Windows host test creates a real hidden window, pumps its
+lifecycle and destroys it without retained callback state. The Metis adapter
+and frontend host tests present actual framebuffer storage, derive the submit
+hit region from the authored display list, exercise bounded text and preserve
+the old surface across an invalid resize. Warning-denied Clippy, native tests
+and the WASM library gate remain required; visual V05 evidence is added when a
+native window can be driven by the host capture harness.

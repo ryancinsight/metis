@@ -57,7 +57,7 @@ fn child_entry() {
             let (sender, completion) = mpsc::sync_channel(1);
             sender.send(Completion::Closed).expect("completion");
             assert_eq!(
-                watch(child, &completion, Instant::now())
+                watch(child, &completion, Instant::now(), SESSION_DEADLINE)
                     .expect("job cleanup")
                     .code,
                 Some(0)
@@ -108,7 +108,7 @@ fn expired_watchdog_terminates_child_and_reports_timeout() {
         .checked_sub(SESSION_DEADLINE)
         .expect("test clock interval");
     assert_eq!(
-        watch(child, &completion, started)
+        watch(child, &completion, started, SESSION_DEADLINE)
             .expect_err("deadline")
             .code,
         ErrorCode::Timeout
@@ -119,7 +119,8 @@ fn failed_session_requests_immediate_child_termination() {
     let child = child("set /p INPUT=");
     let (sender, completion) = mpsc::sync_channel(1);
     sender.send(Completion::Failed).expect("completion signal");
-    let status = watch(child, &completion, Instant::now()).expect("termination confirmed");
+    let status =
+        watch(child, &completion, Instant::now(), SESSION_DEADLINE).expect("termination confirmed");
     assert_eq!(
         status.outcome,
         moirai_transport::process::ProcessOutcome::Failed
@@ -131,7 +132,7 @@ fn closed_session_preserves_child_exit_status() {
     let (sender, completion) = mpsc::sync_channel(1);
     sender.send(Completion::Closed).expect("completion signal");
     assert_eq!(
-        watch(child, &completion, Instant::now())
+        watch(child, &completion, Instant::now(), SESSION_DEADLINE)
             .expect("child exit")
             .code,
         Some(7)

@@ -1,10 +1,13 @@
 //! Parent-process application state and supervised presentation launch.
 use crate::{
     entropy,
-    invocation::{BrowserResponseDelay, FRONTEND_ROLE},
+    invocation::{BrowserResponseDelay, FRONTEND_ROLE, NATIVE_FRONTEND_ROLE},
 };
 use metis_backend::service::SystemClock;
-use metis_backend::{BackendService, clinical::SafetyEnvelope, supervisor::run_session};
+use metis_backend::{
+    BackendService, INTERACTIVE_SESSION_DEADLINE, SESSION_DEADLINE, clinical::SafetyEnvelope,
+    supervisor::run_session_with_deadline,
+};
 use metis_backend::{serve_browser_websocket, serve_browser_websocket_with_response_delay};
 use metis_core::host::{HostContext, HostOrigin, HostPolicy, HostSessionId, WindowId};
 use metis_core::protocol::TargetCapability;
@@ -13,14 +16,51 @@ use moirai_http::WebSocketConfig;
 use std::time::Duration;
 
 pub(crate) fn run(inputs: [String; 3]) -> Result<(), Box<dyn std::error::Error>> {
+    run_with_mode(inputs, FrontendMode::Headless)
+}
+
+/// Runs the same supervised workflow with the Windows native frontend.
+pub(crate) fn run_native(inputs: [String; 3]) -> Result<(), Box<dyn std::error::Error>> {
+    #[cfg(windows)]
+    {
+        run_with_mode(inputs, FrontendMode::NativeWindow)
+    }
+    #[cfg(not(windows))]
+    {
+        let _ = inputs;
+        Err("the native window role requires Windows".into())
+    }
+}
+
+#[derive(Clone, Copy)]
+enum FrontendMode {
+    Headless,
+    NativeWindow,
+}
+
+fn run_with_mode(
+    inputs: [String; 3],
+    mode: FrontendMode,
+) -> Result<(), Box<dyn std::error::Error>> {
     // Binary reporter boundary erases errors; no hot-path dispatch.
     let executable = std::env::current_exe()?;
     let mut service = BackendService::new(entropy::session_key()?, SafetyEnvelope::default());
     service.add_target_capability(TargetCapability::PrivateProcessIpc)?;
+    let (frontend_role, native_capability, deadline) = match mode {
+        FrontendMode::Headless => (FRONTEND_ROLE, None, SESSION_DEADLINE),
+        FrontendMode::NativeWindow => (
+            NATIVE_FRONTEND_ROLE,
+            Some(TargetCapability::NativeWindow),
+            INTERACTIVE_SESSION_DEADLINE,
+        ),
+    };
+    if let Some(capability) = native_capability {
+        service.add_target_capability(capability)?;
+    }
     let [weight, concentration, dose] = inputs;
-    let arguments = [FRONTEND_ROLE.to_owned(), weight, concentration, dose];
+    let arguments = [frontend_role.to_owned(), weight, concentration, dose];
     eprintln!("backend_pid={}", std::process::id());
-    run_session(&executable, &arguments, &mut service)?;
+    run_session_with_deadline(&executable, &arguments, &mut service, deadline)?;
     service.ledger().verify_chain()?;
     eprintln!(
         "Metis session completed; {} audit records verified",

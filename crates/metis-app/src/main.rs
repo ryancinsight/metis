@@ -23,7 +23,9 @@ fn run() -> Result<(), Box<dyn std::error::Error>> {
     // Select the child before constructing any parent authority or secret state.
     match Invocation::parse(std::env::args_os().skip(1))? {
         Invocation::Backend(inputs) => backend::run(inputs),
+        Invocation::NativeWindow(inputs) => backend::run_native(inputs),
         Invocation::Frontend(inputs) => frontend::run(inputs),
+        Invocation::NativeFrontend(inputs) => frontend::run_native(inputs),
         Invocation::BrowserService {
             origin,
             port,

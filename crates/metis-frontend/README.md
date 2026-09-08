@@ -5,7 +5,8 @@ library dependency closure excludes backend calculation and audit storage. The
 `metis-app` executable composes both libraries and runs this presentation in a
 child process exchanging requests over inherited pipes. Its shared executable
 image contains backend code, but the child role creates no backend key or service.
-Native window and operating-system sandbox integration remain unfinished.
+The Windows native role presents the same framebuffer through the Moirai window
+provider; operating-system sandbox integration remains a host concern.
 
 `FrontendApp` owns its inputs, document and framebuffer. `set_inputs(...)?`
 clears any previous result and paints the edited form immediately. `state()`

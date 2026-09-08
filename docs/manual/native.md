@@ -6,6 +6,30 @@ Win32 provider. It owns one native window, translates its messages into bounded
 `Framebuffer`. The adapter does not host HTML/CSS, grant file or network access,
 or change the portable `PlatformEvent` queue.
 
+## Run the visible form
+
+The application entry composes the adapter with the existing frontend and the
+supervised backend process. On Windows, run:
+
+```powershell
+cargo run --locked -p metis-app -- --metis-native-window 60 2 0.2
+```
+
+The `Metis native form` window renders the production software framebuffer.
+While the window is focused, typed Unicode characters extend the patient
+reference and Backspace removes its last scalar; every edit clears a prior
+calculation through `FrontendApp::set_inputs`. Press **Enter** or click the
+blue **[ SUBMIT CALCULATION TO BACKEND ]** surface to send the exact numeric
+inputs through the private pipe. The result and audit sequence are painted by
+the same frontend state machine as the headless workflow. Resize the window to
+exercise framebuffer replacement; DPI, focus and close events are consumed by
+the host. **Escape** or the window close control ends the child cleanly.
+
+The parent keeps this interactive session under a finite five-minute watchdog
+budget so an abandoned window cannot leave a process tree running forever.
+This role is Windows-only and does not provide WebView2, file/network/device
+permissions, accessibility semantics or native IME composition.
+
 ## Verify the provider
 
 Run the focused package gate on Windows:
@@ -29,6 +53,7 @@ thread:
 ```rust
 use metis_platform::{Color, Framebuffer};
 use metis_platform::native::{NativeSurface, WindowConfig, WindowEvent};
+use std::time::Duration;
 
 let config = WindowConfig::new("My Metis window", 800, 600)?;
 let mut surface = NativeSurface::new(&config)?;
@@ -36,7 +61,7 @@ let mut frame = Framebuffer::new(800, 600)?;
 frame.clear(Color::DARK_BLUE);
 surface.present(&frame)?;
 
-for event in surface.poll_events()? {
+for event in surface.wait_events(Duration::from_millis(250))? {
     match event {
         WindowEvent::CloseRequested | WindowEvent::Destroyed => surface.close()?,
         WindowEvent::Resized { width, height } => {
@@ -49,17 +74,19 @@ for event in surface.poll_events()? {
 # Ok::<(), Box<dyn std::error::Error>>(())
 ```
 
-Call `poll_events` from the host's bounded scheduler and present only validated
-frames. `CloseRequested` is a policy signal; the host decides when to call
-`close`. `WindowEvent` preserves focus, key-up, Unicode text and DPI values that
-the portable application-supplied `PlatformEvent` type does not model.
+Call `wait_events` with a finite duration from the host's bounded scheduler and
+present only validated frames. `CloseRequested` is a policy signal; the host
+decides when to call `close`. `WindowEvent` preserves focus, key-up, Unicode
+text and DPI values that the portable application-supplied `PlatformEvent` type
+does not model.
 
 ## Current limits
 
-This slice proves the Windows provider and Metis framebuffer boundary. The
-`metis-app` demonstration still runs its process workflow without a visible
-native window, and the browser path continues to use Moirai's HTML5/CSS host.
-WebView2 composition, OS permission denial, native accessibility and IME
-composition, macOS/Linux providers, two-window captures and the DICOM viewer
-host remain V05 and migration work. Do not treat a successful Windows build or
-the hidden-window test as cross-platform or security evidence.
+The visible `metis-app` composition and its private-IPC workflow are now
+implemented. A committed native screenshot and keyboard journey are still
+required for V05 visual acceptance; the hidden provider test and host unit tests
+are lifecycle evidence, not visual evidence. WebView2 composition, OS
+permission denial, native accessibility and IME composition, macOS/Linux
+providers, two-window captures and the DICOM viewer host remain V05 and
+migration work. Do not treat a successful Windows build or hidden-window test as
+cross-platform or security evidence.

@@ -25,11 +25,11 @@ response and binds the session to the host policy. The live trace covers
 success, rejection, disconnect and recovery; TLS, cross-engine and desktop
 evidence remain open.
 
-Revision 2026-09-08: Moirai PR #282 adds the bounded Win32 window provider and
-`metis-platform` exposes it as `NativeSurface`. The provider creates a real
-thread-owned HWND, translates native events and presents the Metis ARGB
-framebuffer. The `metis-app` composition, WebView2 host, OS permissions and
-cross-platform desktop evidence remain open.
+Revision 2026-09-08: Moirai PR #283 merged at `3ae43143` adds the bounded Win32
+window provider and finite event wait. `metis-platform` exposes it as
+`NativeSurface`, and `metis-app --metis-native-window` composes the visible
+framebuffer form with the supervised private IPC workflow. WebView2 hosting, OS
+permissions and cross-platform desktop evidence remain open.
 
 ## Intent and authority
 
@@ -86,7 +86,7 @@ The existing custom binary protocol is not the Tauri invoke protocol.
 | HTML5/CSS/assets | Preserve existing web presentation in browser/system WebView | `metis-web` mounts a real DOM form and page CSS; broader DOM/layout parity and visual cases remain required. |
 | Rust/WASM | Shared portable application code with asynchronous host bindings | `metis-web` compiles and runs in the local browser workbench; the configured loopback bridge and binding-lifetime tests pass, while cross-engine runtime evidence remains required. |
 | Commands/events | Typed requests, correlated responses, bounded event delivery and cancellation | Versioned command and target-surface discovery, bounded local and remote event delivery, typed plugin invocation and cancellation now sit on the shared IPC seam; Tauri migration mappings remain required. |
-| Windows/lifecycle | Desktop window creation, input, navigation, close and teardown | `metis-platform::native::NativeSurface` now creates a bounded Win32 window, presents the Metis framebuffer and returns Moirai `WindowEvent` values; application composition, WebView2 navigation, denial probes and non-Windows hosts remain required. |
+| Windows/lifecycle | Desktop window creation, input, navigation, close and teardown | `metis-platform::native::NativeSurface` creates a bounded Win32 window, and `metis-app --metis-native-window` composes the Metis framebuffer with private IPC; WebView2 navigation, denial probes and non-Windows hosts remain required. |
 | Plugins/native APIs | Explicit permission-scoped supported operations | Typed host plugin manifests, scoped command invocation and typed unsupported-plugin errors exist; inventory file/dialog/clipboard/shell/window capabilities against migrated examples and add OS permission enforcement. |
 | Configuration/distribution | Reviewed mappings for assets, permissions, build, packaging and updates | No configuration importer, bundler or updater parity claim; migration diagnostics and install/update tests required. |
 

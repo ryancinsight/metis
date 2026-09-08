@@ -3,6 +3,22 @@ use metis_frontend::{FormState, FrontendApp};
 use metis_ipc::transport::StreamTransport;
 use std::io::{stdin, stdout};
 
+#[cfg(windows)]
+mod native;
+
+/// Runs the visible native host on supported desktop targets.
+pub(crate) fn run_native(inputs: [String; 3]) -> Result<(), Box<dyn std::error::Error>> {
+    #[cfg(windows)]
+    {
+        native::run(inputs)
+    }
+    #[cfg(not(windows))]
+    {
+        let _ = inputs;
+        Err("the native frontend role requires Windows".into())
+    }
+}
+
 pub(crate) fn run(inputs: [String; 3]) -> Result<(), Box<dyn std::error::Error>> {
     // Binary error reporter is the non-hot type-erasure boundary.
     let [weight, concentration, dose] = inputs;

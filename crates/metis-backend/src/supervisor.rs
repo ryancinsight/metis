@@ -18,6 +18,8 @@ use std::{
 
 /// Deadline for the demonstration child and its IPC session.
 pub const SESSION_DEADLINE: Duration = Duration::from_secs(10);
+/// Finite interaction budget for a visible desktop demonstration window.
+pub const INTERACTIVE_SESSION_DEADLINE: Duration = Duration::from_mins(5);
 /// Additional budget to confirm requested process termination.
 const CLEANUP_DEADLINE: Duration = Duration::from_secs(1);
 enum Completion {
@@ -37,6 +39,23 @@ pub fn run_session<H: IpcHandler>(
     binary: &Path,
     args: &[String],
     handler: &mut H,
+) -> Result<ExitStatus> {
+    run_session_with_deadline(binary, args, handler, SESSION_DEADLINE)
+}
+
+/// Starts a contained presentation process with an explicit finite deadline.
+///
+/// The deadline is a host policy input, not an unbounded wait: every child
+/// session is terminated after it expires and its descendants are drained by
+/// the same Moirai containment path as [`run_session`].
+///
+/// # Errors
+/// Returns spawn, task admission, protocol, process, cleanup, or deadline errors.
+pub fn run_session_with_deadline<H: IpcHandler>(
+    binary: &Path,
+    args: &[String],
+    handler: &mut H,
+    deadline: Duration,
 ) -> Result<ExitStatus> {
     let mut executor = ExecutorBuilder::new()
         .worker_threads(1)
@@ -68,7 +87,7 @@ pub fn run_session<H: IpcHandler>(
         let started = Instant::now();
         // Failed admission drops the closure and its owned kill-on-close job.
         let watchdog = executor
-            .spawn_blocking(move || watch(child, &completion, started))
+            .spawn_blocking(move || watch(child, &completion, started, deadline))
             .map_err(|error| task_error(&error))?;
         let processing: Result<()> = {
             let mut server = IpcServer::new(StreamTransport::new(reader, writer));
@@ -117,12 +136,13 @@ fn watch(
     mut child: ManagedProcess,
     completion: &Receiver<Completion>,
     started: Instant,
+    deadline: Duration,
 ) -> Result<ProcessStatus> {
-    let remaining = SESSION_DEADLINE.saturating_sub(started.elapsed());
+    let remaining = deadline.saturating_sub(started.elapsed());
     match completion.recv_timeout(remaining) {
         Ok(Completion::Closed) => {
             if child
-                .wait_timeout(SESSION_DEADLINE.saturating_sub(started.elapsed()))
+                .wait_timeout(deadline.saturating_sub(started.elapsed()))
                 .map_err(process_error)?
                 .is_some()
             {

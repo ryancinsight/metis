@@ -158,6 +158,25 @@ impl<T: IpcTransport> FrontendApp<T> {
         self.render()
     }
 
+    /// Replaces the presentation surface at a native host's reported client size.
+    ///
+    /// The previous surface remains intact when allocation or the first render
+    /// of the replacement fails, so a resize cannot leave the application with
+    /// a partially initialized framebuffer.
+    ///
+    /// # Errors
+    /// Returns a bounded surface-allocation or layout error and preserves the
+    /// previous framebuffer when the replacement cannot be rendered.
+    pub fn resize(&mut self, width: u32, height: u32) -> Result<()> {
+        let replacement = Framebuffer::new(width, height)?;
+        let previous = std::mem::replace(&mut self.framebuffer, replacement);
+        if let Err(error) = self.render() {
+            self.framebuffer = previous;
+            return Err(error);
+        }
+        Ok(())
+    }
+
     /// Submits inputs; peer rejection is a completed exchange in `state()`.
     /// # Errors
     /// Preparation failures retain the session. Dispatch, correlation and decoding
@@ -250,5 +269,26 @@ impl<T: IpcTransport> FrontendApp<T> {
                 format!("Unexpected response type: {other:?}"),
             )),
         }
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::FrontendApp;
+    use metis_core::ErrorCode;
+    use metis_ipc::MemoryTransport;
+
+    #[test]
+    fn resize_replaces_surface_and_preserves_it_on_invalid_dimensions() {
+        let (transport, _peer) = MemoryTransport::pair();
+        let mut app = FrontendApp::new(transport, 800, 600).expect("initial form");
+        app.resize(640, 480).expect("valid resize");
+        assert_eq!(app.framebuffer().width(), 640);
+        assert_eq!(app.framebuffer().height(), 480);
+
+        let error = app.resize(0, 480).expect_err("zero width");
+        assert_eq!(error.code, ErrorCode::SurfaceAllocationError);
+        assert_eq!(app.framebuffer().width(), 640);
+        assert_eq!(app.framebuffer().height(), 480);
     }
 }

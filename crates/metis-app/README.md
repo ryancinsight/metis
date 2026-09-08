@@ -13,7 +13,17 @@ The console demonstration prints a flow of 0.36 mL/hour and a drug rate of
 0.72 mg/hour. `--help` prints invocation syntax. The internal
 `--metis-frontend` argument selects a child role; it grants no authority.
 Windows job containment bounds the managed session, not OS permissions.
-Native GUI hosting and other platform containment remain separate capabilities.
+On Windows, the visible native host uses the same executable and private IPC:
+
+```powershell
+cargo run --locked -p metis-app -- --metis-native-window 60 2 0.2
+```
+
+The window paints the real frontend framebuffer, routes Unicode text to the
+patient reference while focused, accepts Enter or the authored submit surface,
+and handles resize, DPI, focus and close events. The interactive session has a
+finite five-minute supervisor budget; it does not grant file, network or device
+permissions.
 
 The same executable can serve one authenticated browser session through the
 bounded loopback WebSocket role:

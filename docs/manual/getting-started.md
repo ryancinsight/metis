@@ -26,19 +26,22 @@ same build cache and profile settings.
 The executable process demonstration currently requires Windows. Its supervisor
 requires Windows job containment; Linux/macOS builds do not establish a working
 contained demonstration. A Windows development environment needs the MSVC build
-tools and Windows SDK. The Windows native pixel/event surface is documented in
-[Run the Windows native surface](native.md); it is a platform crate boundary and
-is not yet composed into the `metis-app` demonstration or a system WebView.
+tools and Windows SDK. The Windows native pixel/event surface and visible form
+workflow are documented in [Run the Windows native surface](native.md); the
+system WebView and OS permission broker remain separate host capabilities.
 
 ## Run the form workflow
 
 ```text
 cargo build --locked --workspace --bins
 cargo run --locked -p metis-app -- 60 2 0.2
+cargo run --locked -p metis-app -- --metis-native-window 60 2 0.2
 cargo run --locked -p metis-app -- --help
 ```
 
-The arguments are weight in kilograms, concentration in milligrams per milliliter,
+The first command is the bounded headless process workflow. The native command
+opens the visible Windows form over the same supervised private pipe. The
+arguments are weight in kilograms, concentration in milligrams per milliliter,
 and target dose in micrograms per kilogram per minute. These inputs produce
 `rate_ml_hr=0.36` and `drug_rate_mg_hr=0.72`, with two verified in-memory audit
 records. Backend and frontend report different process identifiers while using
@@ -60,9 +63,10 @@ frontend binary is required.
   calculations with default results.
 - A numeric rejection reports a stable error such as `ERR_NUMERIC_INSTABILITY`.
   `NaN` is rejected and no result is displayed.
-- A session timeout terminates the contained frontend tree. The demonstration's
-  ten-second session budget applies to the child; application handlers must also
-  finish their own synchronous computation.
+- A session timeout terminates the contained frontend tree. The headless
+  demonstration has a ten-second budget; the visible native role has a finite
+  five-minute interaction budget. Application handlers must also finish their
+  own synchronous computation.
 - A snapshot mismatch means a visible artifact changed. Inspect the rendered
   `output/form.bmp`, then use `python scripts/verify.py --update-snapshots` to
   regenerate the tracked gallery image deliberately.

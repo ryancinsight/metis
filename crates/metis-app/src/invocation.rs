@@ -3,10 +3,12 @@
 use std::time::Duration;
 
 pub(crate) const FRONTEND_ROLE: &str = "--metis-frontend";
+pub(crate) const NATIVE_WINDOW_ROLE: &str = "--metis-native-window";
+pub(crate) const NATIVE_FRONTEND_ROLE: &str = "--metis-native-frontend";
 pub(crate) const BROWSER_SERVICE_ROLE: &str = "--metis-browser-service";
 pub(crate) const RESPONSE_DELAY_FLAG: &str = "--response-delay-ms";
 const MAX_RESPONSE_DELAY_MILLISECONDS: u64 = 30_000;
-pub(crate) const USAGE: &str = "usage: metis-app WEIGHT_KG CONCENTRATION_MG_ML DOSE_MCG_KG_MIN\n       metis-app --metis-browser-service ORIGIN PORT PRINCIPAL_HEX [--response-delay-ms MILLISECONDS]\n       metis-app --help";
+pub(crate) const USAGE: &str = "usage: metis-app WEIGHT_KG CONCENTRATION_MG_ML DOSE_MCG_KG_MIN\n       metis-app --metis-native-window WEIGHT_KG CONCENTRATION_MG_ML DOSE_MCG_KG_MIN\n       metis-app --metis-browser-service ORIGIN PORT PRINCIPAL_HEX [--response-delay-ms MILLISECONDS]\n       metis-app --help";
 
 /// Bounded delay used by the browser stale-response conformance probe.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -31,6 +33,8 @@ impl BrowserResponseDelay {
 pub(crate) enum Invocation {
     Backend([String; 3]),
     Frontend([String; 3]),
+    NativeWindow([String; 3]),
+    NativeFrontend([String; 3]),
     BrowserService {
         origin: String,
         port: u16,
@@ -99,11 +103,16 @@ impl Invocation {
                 response_delay,
             });
         }
-        let child = first == FRONTEND_ROLE;
-        let weight = if child {
-            arguments.next().ok_or(InvocationError)??
-        } else {
+        let role = match first.as_str() {
+            FRONTEND_ROLE => InputRole::Frontend,
+            NATIVE_WINDOW_ROLE => InputRole::NativeWindow,
+            NATIVE_FRONTEND_ROLE => InputRole::NativeFrontend,
+            _ => InputRole::Backend,
+        };
+        let weight = if role == InputRole::Backend {
             first
+        } else {
+            arguments.next().ok_or(InvocationError)??
         };
         let concentration = arguments.next().ok_or(InvocationError)??;
         let dose = arguments.next().ok_or(InvocationError)??;
@@ -111,12 +120,21 @@ impl Invocation {
         if arguments.next().is_some() || inputs.iter().any(|input| input.starts_with("--")) {
             return Err(InvocationError);
         }
-        Ok(if child {
-            Self::Frontend(inputs)
-        } else {
-            Self::Backend(inputs)
+        Ok(match role {
+            InputRole::Backend => Self::Backend(inputs),
+            InputRole::Frontend => Self::Frontend(inputs),
+            InputRole::NativeWindow => Self::NativeWindow(inputs),
+            InputRole::NativeFrontend => Self::NativeFrontend(inputs),
         })
     }
+}
+
+#[derive(Clone, Copy, PartialEq, Eq)]
+enum InputRole {
+    Backend,
+    Frontend,
+    NativeWindow,
+    NativeFrontend,
 }
 
 fn parse_principal(value: &str) -> Result<[u8; 16], InvocationError> {
@@ -149,7 +167,7 @@ fn hex_digit(value: u8) -> Result<u8, InvocationError> {
 mod tests {
     use super::{
         BROWSER_SERVICE_ROLE, BrowserResponseDelay, FRONTEND_ROLE, Invocation, InvocationError,
-        RESPONSE_DELAY_FLAG,
+        NATIVE_FRONTEND_ROLE, NATIVE_WINDOW_ROLE, RESPONSE_DELAY_FLAG,
     };
     use std::time::Duration;
 
@@ -163,6 +181,23 @@ mod tests {
         assert_eq!(
             Invocation::parse([FRONTEND_ROLE.to_owned()].into_iter().chain(inputs.clone())),
             Ok(Invocation::Frontend(inputs))
+        );
+        let native_inputs = ["60".to_owned(), "2".to_owned(), "0.2".to_owned()];
+        assert_eq!(
+            Invocation::parse(
+                [NATIVE_WINDOW_ROLE.to_owned()]
+                    .into_iter()
+                    .chain(native_inputs.clone())
+            ),
+            Ok(Invocation::NativeWindow(native_inputs.clone()))
+        );
+        assert_eq!(
+            Invocation::parse(
+                [NATIVE_FRONTEND_ROLE.to_owned()]
+                    .into_iter()
+                    .chain(native_inputs.clone())
+            ),
+            Ok(Invocation::NativeFrontend(native_inputs))
         );
         assert_eq!(
             Invocation::parse(["--help".to_owned()]),
@@ -205,8 +240,11 @@ mod tests {
         for arguments in [
             vec![],
             vec![FRONTEND_ROLE],
+            vec![NATIVE_WINDOW_ROLE],
+            vec![NATIVE_FRONTEND_ROLE],
             vec!["--unknown", "2", "0.2"],
             vec![FRONTEND_ROLE, FRONTEND_ROLE, "2", "0.2"],
+            vec![NATIVE_WINDOW_ROLE, NATIVE_FRONTEND_ROLE, "2", "0.2"],
             vec!["60", "2"],
             vec!["60", "2", "0.2", "extra"],
             vec!["60", "--metis-frontend", "0.2"],

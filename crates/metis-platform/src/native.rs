@@ -9,10 +9,12 @@
 use crate::Framebuffer;
 use moirai_pal::windows::window::NativeWindow;
 use std::io;
+use std::time::Duration;
 
 pub use moirai_pal::windows::window::{
-    MAX_FRAME_DIMENSION, MAX_FRAME_PIXELS, MAX_PUMP_MESSAGES, MAX_TITLE_UNITS, MAX_WINDOW_EVENTS,
-    MouseButton, WindowConfig, WindowEvent, WindowVisibility,
+    MAX_FRAME_DIMENSION, MAX_FRAME_PIXELS, MAX_PUMP_MESSAGES, MAX_TITLE_UNITS,
+    MAX_WAIT_MILLISECONDS, MAX_WINDOW_EVENTS, MouseButton, WindowConfig, WindowEvent,
+    WindowVisibility,
 };
 
 /// A Metis framebuffer presented by a Moirai-owned native window.
@@ -41,6 +43,14 @@ impl NativeSurface {
     /// Returns a queue-overflow or native message-pump error from Moirai.
     pub fn poll_events(&mut self) -> io::Result<Vec<WindowEvent>> {
         self.window.poll_events()
+    }
+
+    /// Waits for native input for a finite duration and returns one event batch.
+    ///
+    /// # Errors
+    /// Returns an invalid-duration, native wait, or bounded queue error.
+    pub fn wait_events(&mut self, timeout: Duration) -> io::Result<Vec<WindowEvent>> {
+        self.window.wait_events(timeout)
     }
 
     /// Presents a Metis ARGB framebuffer through the native window.
@@ -88,7 +98,9 @@ mod tests {
         let mut framebuffer = Framebuffer::new(320, 240).expect("bounded framebuffer");
         framebuffer.clear(Color::BLUE);
         surface.present(&framebuffer).expect("native presentation");
-        let events = surface.poll_events().expect("native event batch");
+        let events = surface
+            .wait_events(Duration::ZERO)
+            .expect("native event batch");
         assert!(events.iter().any(|event| matches!(
             event,
             WindowEvent::Resized {

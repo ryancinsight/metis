@@ -14,7 +14,9 @@ assert_eq!(error.code, ErrorCode::NumericInstability);
 The `metis-app` application entry obtains a fresh key from the operating system
 and launches the presentation role using the same executable. This package
 provides a library, not a separate executable. Windows process tree containment
-bounds child lifetimes; it does not restrict file or network permissions. The
+bounds child lifetimes; the default session budget is ten seconds and the
+interactive native host uses the explicit finite five-minute budget. It does not
+restrict file or network permissions. The
 default `BackendService` policy binds grants to the contained native origin and
 window; browser and desktop hosts must supply their observed context before
 they can expose privileged commands. A live acceptor uses

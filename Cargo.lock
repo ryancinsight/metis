@@ -665,6 +665,8 @@ dependencies = [
  "metis-core",
  "metis-frontend",
  "metis-ipc",
+ "metis-platform",
+ "metis-ui-lang",
  "moirai-async",
  "moirai-executor",
  "moirai-http",
@@ -844,7 +846,7 @@ dependencies = [
 [[package]]
 name = "moirai-async"
 version = "0.6.0"
-source = "git+https://github.com/ryancinsight/Moirai.git?rev=e9ed0e6#e9ed0e6bf1cbf3f50152b699edfd562fce567619"
+source = "git+https://github.com/ryancinsight/Moirai.git?rev=3ae43143#3ae431436b38e4db91369f4c58cec6a9fa19e7ae"
 dependencies = [
  "futures",
  "libc",
@@ -860,7 +862,7 @@ dependencies = [
 [[package]]
 name = "moirai-async-macros"
 version = "0.6.0"
-source = "git+https://github.com/ryancinsight/Moirai.git?rev=e9ed0e6#e9ed0e6bf1cbf3f50152b699edfd562fce567619"
+source = "git+https://github.com/ryancinsight/Moirai.git?rev=3ae43143#3ae431436b38e4db91369f4c58cec6a9fa19e7ae"
 dependencies = [
  "proc-macro2",
  "quote",
@@ -870,7 +872,7 @@ dependencies = [
 [[package]]
 name = "moirai-core"
 version = "0.6.0"
-source = "git+https://github.com/ryancinsight/Moirai.git?rev=e9ed0e6#e9ed0e6bf1cbf3f50152b699edfd562fce567619"
+source = "git+https://github.com/ryancinsight/Moirai.git?rev=3ae43143#3ae431436b38e4db91369f4c58cec6a9fa19e7ae"
 dependencies = [
  "bytemuck",
  "libc",
@@ -882,7 +884,7 @@ dependencies = [
 [[package]]
 name = "moirai-crypto"
 version = "0.6.0"
-source = "git+https://github.com/ryancinsight/Moirai.git?rev=e9ed0e6#e9ed0e6bf1cbf3f50152b699edfd562fce567619"
+source = "git+https://github.com/ryancinsight/Moirai.git?rev=3ae43143#3ae431436b38e4db91369f4c58cec6a9fa19e7ae"
 dependencies = [
  "aes-gcm",
  "chacha20poly1305",
@@ -906,7 +908,7 @@ dependencies = [
 [[package]]
 name = "moirai-executor"
 version = "0.6.0"
-source = "git+https://github.com/ryancinsight/Moirai.git?rev=e9ed0e6#e9ed0e6bf1cbf3f50152b699edfd562fce567619"
+source = "git+https://github.com/ryancinsight/Moirai.git?rev=3ae43143#3ae431436b38e4db91369f4c58cec6a9fa19e7ae"
 dependencies = [
  "melinoe",
  "mnemosyne-memory",
@@ -920,7 +922,7 @@ dependencies = [
 [[package]]
 name = "moirai-http"
 version = "0.6.0"
-source = "git+https://github.com/ryancinsight/Moirai.git?rev=e9ed0e6#e9ed0e6bf1cbf3f50152b699edfd562fce567619"
+source = "git+https://github.com/ryancinsight/Moirai.git?rev=3ae43143#3ae431436b38e4db91369f4c58cec6a9fa19e7ae"
 dependencies = [
  "http",
  "httparse",
@@ -932,7 +934,7 @@ dependencies = [
 [[package]]
 name = "moirai-pal"
 version = "0.6.0"
-source = "git+https://github.com/ryancinsight/Moirai.git?rev=e9ed0e6#e9ed0e6bf1cbf3f50152b699edfd562fce567619"
+source = "git+https://github.com/ryancinsight/Moirai.git?rev=3ae43143#3ae431436b38e4db91369f4c58cec6a9fa19e7ae"
 dependencies = [
  "js-sys",
  "libc",
@@ -947,7 +949,7 @@ dependencies = [
 [[package]]
 name = "moirai-scheduler"
 version = "0.6.0"
-source = "git+https://github.com/ryancinsight/Moirai.git?rev=e9ed0e6#e9ed0e6bf1cbf3f50152b699edfd562fce567619"
+source = "git+https://github.com/ryancinsight/Moirai.git?rev=3ae43143#3ae431436b38e4db91369f4c58cec6a9fa19e7ae"
 dependencies = [
  "loom",
  "mnemosyne-memory",
@@ -959,7 +961,7 @@ dependencies = [
 [[package]]
 name = "moirai-tls"
 version = "0.6.0"
-source = "git+https://github.com/ryancinsight/Moirai.git?rev=e9ed0e6#e9ed0e6bf1cbf3f50152b699edfd562fce567619"
+source = "git+https://github.com/ryancinsight/Moirai.git?rev=3ae43143#3ae431436b38e4db91369f4c58cec6a9fa19e7ae"
 dependencies = [
  "futures-io",
  "futures-rustls",
@@ -972,7 +974,7 @@ dependencies = [
 [[package]]
 name = "moirai-transport"
 version = "0.6.0"
-source = "git+https://github.com/ryancinsight/Moirai.git?rev=e9ed0e6#e9ed0e6bf1cbf3f50152b699edfd562fce567619"
+source = "git+https://github.com/ryancinsight/Moirai.git?rev=3ae43143#3ae431436b38e4db91369f4c58cec6a9fa19e7ae"
 dependencies = [
  "bytemuck",
  "moirai-core",
@@ -983,7 +985,7 @@ dependencies = [
 [[package]]
 name = "moirai-utils"
 version = "0.6.0"
-source = "git+https://github.com/ryancinsight/Moirai.git?rev=e9ed0e6#e9ed0e6bf1cbf3f50152b699edfd562fce567619"
+source = "git+https://github.com/ryancinsight/Moirai.git?rev=3ae43143#3ae431436b38e4db91369f4c58cec6a9fa19e7ae"
 
 [[package]]
 name = "nu-ansi-term"
