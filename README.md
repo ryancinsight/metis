@@ -94,10 +94,10 @@ have transitive dependencies; the gate records the actual graph instead of descr
 dependency-free. The Atlas development overlay resolves first-party code to local
 trees. Standalone builds depend on the corresponding pushed provider revisions.
 Moirai is pinned to provider revision
-`f634b3a802ec0355da22f111ed01067d2435c5cb`, which includes the merged process,
+`5c8a9e8be32ad6beac14ed263c2f11c3663b87cb`, which includes the merged process,
 browser/API, bounded WebSocket service, cancellable-task surfaces, semantic
-control seams, pointer metadata and wheel metadata. Consumer verification and
-any future provider advance remain tracked in
+control seams, pointer metadata, wheel metadata and bounded browser file
+access. Consumer verification and any future provider advance remain tracked in
 [the board](backlog.md#METIS-PROVIDER-001).
 
 ## Design and evidence

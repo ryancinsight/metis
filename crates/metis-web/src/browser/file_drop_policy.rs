@@ -6,12 +6,76 @@ const MAX_FILES: usize = 64;
 const MAX_FILE_NAME_BYTES: usize = 4_096;
 const MAX_MEDIA_TYPE_BYTES: usize = 256;
 const MAX_DISPLAY_NAME_BYTES: usize = 96;
+const DICOM_HEADER_BYTES: usize = 132;
 
 #[derive(Clone, Debug, Eq, PartialEq)]
 pub(crate) struct FileDropEntry {
     name: String,
     media_type: String,
     size_bytes: u64,
+}
+
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+pub(crate) enum DicomHeader {
+    Part10,
+    MissingMarker,
+    TooShort,
+}
+
+#[derive(Clone, Copy, Debug, Default, Eq, PartialEq)]
+pub(crate) enum DropReadState {
+    #[default]
+    Idle,
+    Reading,
+    Complete {
+        bytes_read: usize,
+        header: DicomHeader,
+    },
+    Failed,
+}
+
+impl DropReadState {
+    pub(crate) const fn state_name(self) -> &'static str {
+        match self {
+            Self::Idle => "idle",
+            Self::Reading => "reading",
+            Self::Complete { .. } => "complete",
+            Self::Failed => "failed",
+        }
+    }
+
+    pub(crate) fn status_message(self) -> String {
+        match self {
+            Self::Idle => "Byte access: waiting for a selected file".to_owned(),
+            Self::Reading => "Byte access: reading a bounded DICOM header".to_owned(),
+            Self::Complete {
+                bytes_read,
+                header: DicomHeader::Part10,
+            } => format!("Byte access: read {bytes_read} bytes; DICOM Part 10 marker present"),
+            Self::Complete {
+                bytes_read,
+                header: DicomHeader::MissingMarker,
+            } => format!("Byte access: read {bytes_read} bytes; DICOM Part 10 marker absent"),
+            Self::Complete {
+                bytes_read,
+                header: DicomHeader::TooShort,
+            } => format!(
+                "Byte access: read {bytes_read} bytes; DICOM Part 10 header is shorter than 132 bytes"
+            ),
+            Self::Failed => "Byte access: host rejected the selected file".to_owned(),
+        }
+    }
+}
+
+pub(crate) fn classify_dicom_header(bytes: &[u8]) -> DicomHeader {
+    if bytes.len() < DICOM_HEADER_BYTES {
+        return DicomHeader::TooShort;
+    }
+    if bytes[128..DICOM_HEADER_BYTES] == *b"DICM" {
+        DicomHeader::Part10
+    } else {
+        DicomHeader::MissingMarker
+    }
 }
 
 impl FileDropEntry {
@@ -185,7 +249,10 @@ fn truncate_text(value: &str, maximum_bytes: usize) -> String {
 
 #[cfg(test)]
 mod tests {
-    use super::{DropState, FileDropEntry, FileDropError, MAX_FILES};
+    use super::{
+        DicomHeader, DropReadState, DropState, FileDropEntry, FileDropError, MAX_FILES,
+        classify_dicom_header,
+    };
 
     fn entry(name: &str, media_type: &str) -> FileDropEntry {
         FileDropEntry::new(name.to_owned(), media_type.to_owned(), 1024)
@@ -249,5 +316,34 @@ mod tests {
             DropState::accept([entry(&"é".repeat(100), "")]).expect("bounded metadata is accepted");
         let status = state.status_message();
         assert!(status.contains("... (1024 bytes)"));
+    }
+
+    #[test]
+    fn dicom_header_classifier_requires_the_part10_marker() {
+        let short = [0_u8; 131];
+        assert_eq!(classify_dicom_header(&short), DicomHeader::TooShort);
+        let mut header = [0_u8; 132];
+        assert_eq!(classify_dicom_header(&header), DicomHeader::MissingMarker);
+        header[128..].copy_from_slice(b"DICM");
+        assert_eq!(classify_dicom_header(&header), DicomHeader::Part10);
+    }
+
+    #[test]
+    fn byte_read_status_exposes_bounded_progress() {
+        assert_eq!(DropReadState::default().state_name(), "idle");
+        assert!(
+            DropReadState::Reading
+                .status_message()
+                .contains("bounded DICOM header")
+        );
+        assert!(
+            DropReadState::Complete {
+                bytes_read: 132,
+                header: DicomHeader::Part10,
+            }
+            .status_message()
+            .contains("marker present")
+        );
+        assert_eq!(DropReadState::Failed.state_name(), "failed");
     }
 }

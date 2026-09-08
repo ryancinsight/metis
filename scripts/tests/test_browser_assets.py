@@ -59,9 +59,11 @@ class BrowserAssetContractTests(unittest.TestCase):
         )
         for fragment in (
             'id="drop-status" role="status"',
+            'id="drop-byte-status" role="status" aria-live="polite"',
             'id="drop-zone" role="group" tabindex="0"',
             'aria-label="DICOM file drop zone"',
             'data-drop-state="idle"',
+            'data-byte-state="idle"',
         ):
             self.assertIn(fragment, controls)
         for selector in (

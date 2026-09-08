@@ -30,7 +30,7 @@ use metis_ipc::client::HandshakeError;
 use moirai_pal::wasm::{
     LocalTaskHandle, WebDocument, WebElement, WebEventListener, spawn_local_with_handle,
 };
-use std::cell::RefCell;
+use std::cell::{Cell, RefCell};
 use std::io;
 use std::rc::Rc;
 use std::time::Duration;
@@ -46,6 +46,7 @@ struct BrowserState {
     plugins: String,
     event_status: String,
     drop_state: crate::file_drop_policy::DropState,
+    drop_read_state: crate::file_drop_policy::DropReadState,
     text_state: crate::text_policy::TextState,
     controls: controls::ControlState,
 }
@@ -60,6 +61,7 @@ impl Default for BrowserState {
             plugins: view::plugin_summary(),
             event_status: "Remote events: none".to_owned(),
             drop_state: crate::file_drop_policy::DropState::default(),
+            drop_read_state: crate::file_drop_policy::DropReadState::default(),
             text_state: crate::text_policy::TextState::default(),
             controls: controls::ControlState::default(),
         }
@@ -82,6 +84,7 @@ struct BrowserApplication {
     state: Rc<RefCell<BrowserState>>,
     app: Rc<RefCell<Option<AsyncFrontendApp<BrowserWebSocketTransport>>>>,
     task: Rc<RefCell<Option<LocalTaskHandle>>>,
+    drop_task: Rc<RefCell<Option<LocalTaskHandle>>>,
     generation: Generation,
 }
 
@@ -94,8 +97,17 @@ impl BrowserApplication {
         view::render(document, &state.borrow())?;
         let app = Rc::new(RefCell::new(None));
         let task = Rc::new(RefCell::new(None));
+        let drop_task = Rc::new(RefCell::new(None));
+        let drop_sequence = Rc::new(Cell::new(0));
 
-        let mut listeners = control_listeners(document, &state, &app)?;
+        let mut listeners = control_listeners(
+            document,
+            &state,
+            &app,
+            generation,
+            &drop_task,
+            &drop_sequence,
+        )?;
 
         let form = view::element(document, "metis-form")?;
         let listener_document = document.clone();
@@ -117,6 +129,7 @@ impl BrowserApplication {
             state,
             app,
             task,
+            drop_task,
             generation,
         };
         if let Some(config) = bridge_config {
@@ -195,10 +208,20 @@ impl BrowserApplication {
     }
 }
 
+impl Drop for BrowserApplication {
+    fn drop(&mut self) {
+        let _ = self.task.borrow_mut().take();
+        let _ = self.drop_task.borrow_mut().take();
+    }
+}
+
 fn control_listeners(
     document: &WebDocument,
     state: &Rc<RefCell<BrowserState>>,
     app: &Rc<RefCell<Option<AsyncFrontendApp<BrowserWebSocketTransport>>>>,
+    generation: Generation,
+    drop_task: &Rc<RefCell<Option<LocalTaskHandle>>>,
+    drop_sequence: &Rc<Cell<u64>>,
 ) -> io::Result<Vec<WebEventListener>> {
     let mut listeners = Vec::with_capacity(34);
     for (id, field) in [
@@ -230,7 +253,13 @@ fn control_listeners(
     listeners.extend(pointer::listeners(document)?);
     listeners.extend(wheel::listeners(document)?);
     listeners.extend(gesture::listeners(document)?);
-    listeners.extend(file_drop::listeners(document, state)?);
+    listeners.extend(file_drop::listeners(
+        document,
+        state,
+        generation,
+        drop_task,
+        drop_sequence,
+    )?);
     listeners.extend(text::listeners(document, state)?);
     Ok(listeners)
 }

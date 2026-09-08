@@ -38,12 +38,17 @@ changing the viewport. The policy writes one CSS transform and exposes its
 state through `gesture-status`. Single-pointer touch follows the same drag
 path; multi-touch and pinch interpretation remain host work.
 
-The **DICOM file drop** surface consumes Moirai's bounded `DropMetadata`
-snapshot. Rust validates the copied display metadata again, caps the accepted
-batch at 64 files and reports names, media types, byte sizes and DICOM
-candidates in a semantic status region. The browser seam does not read file
-bytes or turn a browser name into a filesystem path; a native or trusted host
-must provide the byte-reading grant before a viewer can open a study.
+The **DICOM file drop** surface consumes Moirai's bounded `DropFiles` capture.
+Rust validates the copied display metadata again, caps the accepted batch at 64
+files and reports names, media types, byte sizes and DICOM candidates in a
+semantic status region. The first selected entry is read through Moirai's
+browser-owned file handle into a fixed 132-byte buffer; the consumer classifies
+the DICOM Part 10 marker and reports the byte-read state. Moirai bounds one
+read to 1 MiB, while this workflow never requests more than the DICOM header.
+No browser name becomes a filesystem path, and the browser file remains outside
+Rust-owned persistent storage. RITK retains full DICOM parsing and study
+decoding; a native or trusted browser host still supplies the authorization and
+the subsequent viewer workflow.
 
 The **Text and composition** surface consumes Moirai's bounded text snapshots.
 The textarea keeps Unicode values in Rust-owned state, preserves browser

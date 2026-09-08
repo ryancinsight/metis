@@ -181,33 +181,42 @@ touch, IME or another browser engine. Native policy tests cover line/page
 normalization, bounded zoom and non-finite rejection; the live trace does not
 claim physical-input or cross-engine parity.
 
-The **DICOM file drop** card demonstrates the browser file metadata workflow.
-Drag one or more files onto **DICOM file drop**. Rust prevents the browser's
-default navigation, asks Moirai for a bounded `DropMetadata` snapshot, and
-renders the file count, the first three display names with byte sizes and the
-number of names or media types that look like DICOM. The zone exposes
+The **DICOM file drop** card demonstrates the browser file and metadata
+workflow. Drag one or more files onto **DICOM file drop**. Rust prevents the
+browser's default navigation, asks Moirai for a bounded `DropFiles` capture,
+and renders the file count, the first three display names with byte sizes and
+the number of names or media types that look like DICOM. The zone exposes
 `dragenter`, `dragover`, `dragleave` and `drop` state through the semantic
 `drop-status` region and its `data-drop-state` attribute. A rejected metadata
 record leaves the zone in the typed rejected state and reports the provider
 error without retaining the batch.
 
+For an accepted drop, the browser host reads the first selected file through
+Moirai's owned browser `File` handle. The consumer requests exactly the first
+132 bytes, reports `reading` and then `complete` or `failed` through
+`drop-byte-status` and `data-byte-state`, and classifies the DICOM Part 10
+marker at byte offsets 128–131. The provider bounds each read at 1 MiB; this
+workflow keeps its request at the fixed DICOM header size. No browser name is
+turned into a filesystem path and no full file is copied into Rust storage.
+RITK remains responsible for parsing the dataset, decoding pixels and opening a
+study; this slice establishes the authorized byte-read seam only.
+
 The provider caps one drop at 64 files, 4096 UTF-8 bytes per name and 256 bytes
-per media type. The browser host never reads file bytes and never treats a
-browser name as a filesystem path. Opening a DICOM therefore still requires a
-trusted native or browser file-reading grant; this increment proves metadata
-capture and rendering only. The CUA browser surface cannot synthesize a
-trusted operating-system file drop or expose `isTrusted`, so a manual trace
-must record the browser engine and whether the drop came from a physical file
-operation. Native policy tests cover bounds, typed rejection and DICOM
-candidate classification.
+per media type. The CUA browser surface cannot synthesize a trusted
+operating-system file drop, attach a local file to a synthetic event or expose
+`isTrusted`, so a manual trace must record the browser engine and whether the
+drop came from a physical file operation. Native policy tests cover bounds,
+typed rejection, DICOM candidate classification and the Part 10 header state;
+the WASM gate compiles the real provider-backed read path.
 
 The 2026-09-08 CUA trace opened the generated build at a 1280×720 CSS-pixel
 viewport with device scale 1.25. The accessibility tree exposed **DICOM file
-drop**, the `drop-status` status and the named **DICOM file drop zone** group;
-the screenshot showed the drop card between the pointer and backend-result
-cards with its ready state and focus outline. The browser engine version was
+drop**, both status regions and the named **DICOM file drop zone** group; the
+screenshot showed the drop card between the pointer and backend-result cards
+with its ready state and focus outline. The browser engine version was
 unavailable, and no trusted local file was attached, so the trace does not
-claim a successful byte read or DICOM decode.
+claim a successful live byte read or DICOM decode. The provider-backed read
+path is established by the native policy suite and the strict WASM build.
 
 The **Text and composition** card exercises the browser's native editing
 surface while keeping application state in Rust. Focus **Clinical note**, type

@@ -68,13 +68,7 @@ pub(super) fn render(document: &WebDocument, state: &BrowserState) -> io::Result
     };
     set_text(document, "metis-events", event_status)?;
     set_text(document, "options-state", &state.controls.summary())?;
-    set_text(document, "drop-status", &state.drop_state.status_message())?;
-    let drop_zone = element(document, "drop-zone")?;
-    drop_zone.set_attribute("data-drop-state", state.drop_state.state_name())?;
-    drop_zone.set_attribute(
-        "data-drop-count",
-        &state.drop_state.file_count().to_string(),
-    )?;
+    render_drop(document, state)?;
     render_text(document, state)?;
     let submit_disabled =
         !matches!(state.bridge, BridgeStatus::Ready) || matches!(state.state, FormState::Pending);
@@ -112,6 +106,22 @@ pub(super) fn render(document: &WebDocument, state: &BrowserState) -> io::Result
         &state.controls.scale().value().to_string(),
     )?;
     set_text(document, "result-state", &message)
+}
+
+fn render_drop(document: &WebDocument, state: &BrowserState) -> io::Result<()> {
+    set_text(document, "drop-status", &state.drop_state.status_message())?;
+    set_text(
+        document,
+        "drop-byte-status",
+        &state.drop_read_state.status_message(),
+    )?;
+    let drop_zone = element(document, "drop-zone")?;
+    drop_zone.set_attribute("data-drop-state", state.drop_state.state_name())?;
+    drop_zone.set_attribute(
+        "data-drop-count",
+        &state.drop_state.file_count().to_string(),
+    )?;
+    drop_zone.set_attribute("data-byte-state", state.drop_read_state.state_name())
 }
 
 pub(super) fn capability_summary(

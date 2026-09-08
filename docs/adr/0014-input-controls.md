@@ -6,6 +6,11 @@ Date: 2026-09-07
 
 Driver: [METIS-INPUT-001](../../backlog.md#METIS-INPUT-001)
 
+Revision 2026-09-08: Moirai PR #289 merged at
+`5c8a9e8be32ad6beac14ed263c2f11c3663b87cb` adds bounded browser file access.
+The file-drop consumer now reads the first selected DICOM header through the
+provider-owned browser `File` handle; full dataset parsing remains with RITK.
+
 ## Context
 
 Metis must reuse ordinary HTML5 controls while keeping application state and
@@ -52,6 +57,15 @@ and Ctrl+wheel zooms between 50% and 300%. Line and page units normalize to
 fixed CSS-pixel scales; non-finite deltas are rejected without mutation. The
 single-pointer path also handles a touch pointer as a drag; multi-touch and
 pinch interpretation remain open.
+
+The workbench uses Moirai's `DropFiles` capture for the DICOM file-drop card.
+Validated metadata remains bounded to 64 entries. An accepted drop retains the
+provider-owned browser file handles only for the asynchronous read task; Metis
+requests a fixed 132-byte prefix from the first entry, classifies the Part 10
+marker and renders `reading`, `complete` or `failed` in semantic status
+attributes. The provider bounds each read to 1 MiB, and neither the browser
+name nor a filesystem path crosses into the consumer. RITK remains the owner
+of dataset parsing, pixel decoding and study selection.
 
 The workbench also uses a semantic textarea for text and composition. Metis
 owns a bounded `TextState` that receives Moirai's UTF-16 selection snapshots,
@@ -114,9 +128,16 @@ trace renders the labelled textarea, bounded value preview, semantic status
 regions and focus state; CUA cannot provide trusted OS IME input or expose the
 browser `isTrusted` flag.
 
+The file-drop increment consumes `DropFiles` from Moirai revision
+`5c8a9e8be32ad6beac14ed263c2f11c3663b87cb`. The native `metis-web` suite
+covers the DICOM header classifier and byte-read status states; strict native
+Clippy, the WASM check and WASM Clippy compile the provider-backed path. CUA
+cannot attach a trusted local file, so no live browser trace claims a byte read
+or DICOM decode.
+
 ## Residuals
 
-Drag/drop policy, multi-touch/pinch interpretation, grapheme/bidi layout,
+Multi-touch/pinch interpretation, grapheme/bidi layout,
 clipboard/undo, native IME, accessibility technology and native-window input
 remain under the linked backlog items. This
 increment does not claim cross-engine or native input parity.
