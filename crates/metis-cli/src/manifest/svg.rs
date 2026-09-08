@@ -278,7 +278,7 @@ fn parse_view_box(value: &str) -> Result<[u32; 4]> {
     let values = value
         .split_ascii_whitespace()
         .map(|part| part.trim_matches(','))
-        .map(|part| part.parse::<u32>())
+        .map(str::parse::<u32>)
         .collect::<std::result::Result<Vec<_>, _>>()?;
     if values.len() != 4 || values[2] == 0 || values[3] == 0 {
         return Err("SVG viewBox must contain four positive integer coordinates".into());
