@@ -82,9 +82,9 @@ an owner. “Unsupported” cannot replace delivery of a required mobile/native 
 - Scope: Windows native window/system WebView, real events, multi-window lifecycle and OS-restricted renderer; macOS/Linux have separate items below.
 - Acceptance: actual visible form, pointer/keyboard/resize/DPI/close/reopen; file/network/process denial probes; IPC remains functional under restrictions and all child processes drain.
 - Demonstration: [V05](docs/VERIFICATION.md#V05), actual Windows window captures, keyboard journey and permission-denied results in the manual.
-- Current evidence: Moirai PR #284 (`7f5ddf80`, following PR #283) supplies the real Win32 HWND, bounded message translation, retained ARGB presentation, finite queue waiting and retained-event readiness. `metis-platform::native::NativeSurface` is the safe consumer boundary; `PlatformSurface` and `PlatformEvent` remain portable application-supplied values.
-- Completed increments: the adapter test creates a real hidden HWND, presents the production framebuffer, observes resize and closes the window; the `metis-app --metis-native-window` role now composes that surface with the real frontend and supervised private IPC, handling text, Enter/click submit, resize, DPI, focus and close; focused nextest and warning-denied Clippy pass on Windows.
-- Decision: [ADR 0015](docs/adr/0015-native-window-provider.md) (accepted); a committed visual capture, WebView2 composition, OS permission enforcement, accessibility/IME and macOS/Linux providers remain open follow-on slices.
+- Current evidence: Moirai PR #287 (`7ad8eeee`, following PRs #286 and #284) supplies the real Win32 HWND, bounded message translation including IME composition phases, retained ARGB presentation, finite queue waiting and retained-event readiness. `metis-platform::native::NativeSurface` is the safe consumer boundary; `PlatformSurface` and `PlatformEvent` remain portable application-supplied values.
+- Completed increments: the adapter test creates a real hidden HWND, presents the production framebuffer, observes resize and closes the window; the `metis-app --metis-native-window` role now composes that surface with the real frontend and supervised private IPC, handling text, transient IME preedit/commit/cancel, Enter/click submit, resize, DPI, focus and close; focused nextest and warning-denied Clippy pass on Windows.
+- Decision: [ADR 0015](docs/adr/0015-native-window-provider.md) (accepted); a committed visual capture, installed IME journey, WebView2 composition, OS permission enforcement, accessibility and macOS/Linux providers remain open follow-on slices.
 
 <a id="METIS-AUDIT-001"></a>
 ## METIS-AUDIT-001 — Durable audit recovery [minor]
@@ -181,7 +181,7 @@ an owner. “Unsupported” cannot replace delivery of a required mobile/native 
 - Live evidence: [browser gesture policy evidence](docs/VERIFICATION.md#browser-gesture-policy-evidence--2026-09-07) records vertical/horizontal wheel pan and a pointer drag with the transformed content; the CUA hardware-trust limitation is explicit.
 - Completed increment: `feat(web): Add bounded browser file drops` consumes Moirai `DropMetadata` and `DroppedFile` from merged revision `630f914bcb34d4d65cc5e3db27a121163d040199`; Rust revalidates metadata, caps the retained batch at 64 entries, classifies DICOM candidates and renders a semantic drop status without reading bytes or trusting paths.
 - Live evidence: [browser file-drop evidence](docs/VERIFICATION.md#browser-file-drop-evidence--2026-09-08) records the native policy suite, wasm build and rendered drop-zone state; CUA cannot provide trusted OS file-drop evidence.
-- Residuals: trusted file-byte access for opening DICOMs, multi-touch/pinch interpretation, IME, accessibility technology, cross-engine parity, post-drop allocation measurement and native-host input remain open; re-open this item when those dependencies land.
+- Residuals: trusted file-byte access for opening DICOMs, multi-touch/pinch interpretation, installed IME journeys, accessibility technology, cross-engine parity, post-drop allocation measurement and native-host visual/assistive evidence remain open; re-open this item when those dependencies land.
 
 <a id="METIS-TEXT-001"></a>
 ## METIS-TEXT-001 — Text, selection and IME [minor]
@@ -191,7 +191,8 @@ an owner. “Unsupported” cannot replace delivery of a required mobile/native 
 - Demonstration: [V03](docs/VERIFICATION.md#V03), editing specimen with actual composition and committed captures, locale/font details and keyboard instructions.
 - Completed increment: browser `TextState` keeps bounded Unicode values, UTF-16 selection coordinates, input metadata and composition start/update/commit/cancel transitions; Moirai provider revision `0862716265d657b8069d5a47fd1e77ae26ddd006` owns the DOM snapshots and listener lifetime.
 - Evidence: [browser text and composition evidence](docs/VERIFICATION.md#browser-text-and-composition-evidence--2026-09-08) records 21/21 native policy tests, warning-denied native/WASM Clippy, WASM build and the semantic textarea/value-preview surface.
-- Residuals: grapheme-safe editing, bidi and line geometry, fallback-font metrics, clipboard/undo, trusted native IME and assistive-technology acceptance remain open; CUA evidence is limited to HTML/WASM rendering and synthetic browser input.
+- Completed increment: native `TextComposition` phases from Moirai `7ad8eeee` are consumed by `metis-app`; preedit text is bounded and transient, commit uses the ordinary bounded patient-field transition, and cancellation/focus loss clears it. The focused Metis suite covers the value transition.
+- Residuals: grapheme-safe editing, bidi and line geometry, fallback-font metrics, clipboard/undo, an installed CJK or other native IME journey and assistive-technology acceptance remain open; CUA evidence is limited to HTML/WASM rendering and synthetic browser input.
 
 <a id="METIS-A11Y-001"></a>
 ## METIS-A11Y-001 — Accessible application interaction [minor]

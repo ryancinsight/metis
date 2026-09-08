@@ -15,6 +15,11 @@ drain retained lifecycle events before blocking on the operating-system queue.
 Metis advances its lock so initial window readiness is preserved by the same
 native adapter path.
 
+Revision 2026-09-08: Moirai PR #286 merged at `c91e2cdd` adds bounded native
+IME start, preedit, commit and cancellation events. PR #287 merged at
+`7ad8eeee` closes the empty-composition cancellation edge. Metis consumes the
+phases through the same native adapter path.
+
 ## Context
 
 The framework comparison in [ADR 0003](0003-framework-conformance.md) leaves a
@@ -42,11 +47,13 @@ thread, and the callback state remains valid until the window has completed
 `WM_NCDESTROY`.
 
 The provider emits close-request, destroyed, focus, pointer, key, Unicode text,
-resize and DPI events. `WM_CHAR` UTF-16 code units are paired before a scalar is
-emitted; malformed pairs produce the replacement character rather than silently
-dropping input. All event values are copied into bounded Rust values before a
-consumer sees them. `WM_PAINT` repaints the retained frame and never calls into
-application code.
+bounded IME composition phases, resize and DPI events. `WM_CHAR` UTF-16 code
+units are paired before a scalar is emitted; malformed pairs produce the
+replacement character rather than silently dropping input. IME buffers are
+bounded by `MAX_COMPOSITION_UNITS`, validated as UTF-16 and canceled when the
+composition message carries no string or the composition ends. All event values
+are copied into bounded Rust values before a consumer sees them. `WM_PAINT`
+repaints the retained frame and never calls into application code.
 
 Metis adds a Windows adapter at its platform boundary. `NativeSurface` presents
 the existing `Framebuffer`, exposes Moirai's complete `WindowEvent` values and
@@ -55,13 +62,15 @@ information are not discarded by the portable `PlatformEvent` vocabulary. It
 imports no Win32 types into frontend or UI-language crates and owns no
 authorization, process or filesystem capability. The `metis-app` entry owns
 role composition: its native role presents the frontend framebuffer, applies
-text and resize transitions, and sends calculation requests over the same
+text and IME composition transitions, handles resize, and sends calculation
+requests over the same
 supervised private pipe as the headless role.
 
-This increment deliberately supplies a native software surface. WebView2 COM
-hosting, HTML/CSS DOM embedding, OS file/network/process denial, accessibility
-providers and native IME composition remain separate host increments with their
-own contracts and captures.
+This increment deliberately supplies a native software surface and provider
+owned IME event production. WebView2 COM hosting, HTML/CSS DOM embedding, OS
+file/network/process denial, accessibility providers, an installed IME journey
+and consumer editing policy remain separate host increments with their own
+contracts and captures.
 
 ## Alternatives
 
@@ -85,9 +94,10 @@ WebView authority.
 
 The provider and visible host are Windows-only in this increment. Cross-platform
 native windows, WebView2 integration, OS sandbox enforcement, native
-accessibility/IME, a committed visual capture and actual two-window permission
-captures remain open under the linked backlog items. A successful Windows build
-or off-screen frame does not close those runtime requirements.
+accessibility, an installed CJK or other IME journey, a committed visual capture
+and actual two-window permission captures remain open under the linked backlog
+items. A successful Windows build or off-screen frame does not close those
+runtime requirements.
 
 ## Verification
 

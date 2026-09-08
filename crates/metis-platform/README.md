@@ -26,6 +26,7 @@ produce a replacement box. It is not a Unicode shaping engine.
 
 The Windows adapter is a native pixel and event boundary, not a `WebView` or
 permission broker. Use `metis_platform::native::NativeSurface` with a
-validated `metis_platform::native::WindowConfig` for a real HWND; `WebView2`,
-OS permission enforcement, accessibility and IME composition remain host-level
-workflows.
+validated `metis_platform::native::WindowConfig` for a real HWND; the adapter
+now exposes bounded native IME composition phases through `WindowEvent`.
+Application editing policy, `WebView2`, OS permission enforcement and
+accessibility remain host-level workflows.

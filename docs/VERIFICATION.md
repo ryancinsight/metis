@@ -39,31 +39,33 @@ process-isolation test. No original OS sandbox or native-window evidence exists.
 
 ## Windows native provider and host evidence — 2026-09-08
 
-Moirai PR #284 merged at `7f5ddf80` extends the thread-owned Win32 window
-provider with retained-event readiness on top of PR #283's finite message-queue
-wait. Metis pins that revision and
-`metis-platform::native::NativeSurface` presents the production `Framebuffer`
-pixels while returning the provider's bounded `WindowEvent` values. On
-`x86_64-pc-windows-msvc`, the provider suite passes 60/60 with strict Clippy;
-the native tests create a real hidden HWND, present a production frame, observe
-input/resize/DPI lifecycle events, verify retained initial readiness and an
-overlong-wait rejection, prove a posted event wakes the finite wait, and close
-the window.
+Moirai PR #286 merged at `c91e2cdd` adds bounded native IME composition events,
+and PR #287 merged at `7ad8eeee` closes the empty-composition cancellation edge.
+Metis pins the latter revision and `metis-platform::native::NativeSurface`
+presents the production `Framebuffer` pixels while returning the provider's
+bounded `WindowEvent` values. On `x86_64-pc-windows-msvc`, the provider suite
+passes 61/61 with strict Clippy; the native tests create a real hidden HWND,
+present a production frame, observe input/IME/resize/DPI lifecycle events,
+validate bounded UTF-16 composition decoding, verify retained initial readiness
+and an overlong-wait rejection, prove a posted event wakes the finite wait, and
+close the window.
 
 The same `metis-app` executable now composes that surface with the production
 frontend and supervised private IPC under `--metis-native-window`. The focused
-frontend/backend/application suite passes 32/32 with strict Clippy. Its tests
-cover role selection, bounded Unicode editing, an authored submit hit region,
+frontend/platform/application suite passes 26/26 with strict Clippy. Its tests
+cover role selection, bounded Unicode editing, transient composition and commit
+through the ordinary patient-field transition, an authored submit hit region,
 resize replacement with rollback on invalid dimensions, input-sensitive process
 results and child cleanup. The interactive role uses a finite five-minute
 watchdog; the headless role retains the ten-second budget.
 
-This establishes provider, lifecycle and code-level host composition evidence.
-It does not establish a committed visible screenshot or keyboard journey,
-WebView2 composition, OS permission denial, accessibility or native IME
-behavior, two-window captures, or macOS/Linux support. Those requirements remain
-under [V05](#V05) and the linked backlog items; a hidden-window test and a
-passing build cannot replace real visual or denial-probe evidence.
+This establishes provider, lifecycle, bounded native IME event production and
+code-level host composition evidence. It does not establish a committed visible
+screenshot or an installed CJK/other IME keyboard journey, WebView2 composition,
+OS permission denial, accessibility behavior, two-window captures, or macOS/Linux
+support. Those requirements remain under [V05](#V05) and the linked backlog
+items; a hidden-window test and a passing build cannot replace real visual,
+assistive-technology or denial-probe evidence.
 
 ## Evidence classes
 
