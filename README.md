@@ -75,6 +75,9 @@ authors a per-user MSI with a Start Menu shortcut and registered uninstall.
 See the [distribution manual](docs/manual/distribution.md) for the complete
 workflow, host prerequisites and current limits. The bundled example is a
 console application; packaging does not supply the missing desktop GUI host.
+Crates.io release validation and publication use the Atlas OIDC workflow in
+`.github/workflows/rust-release.yml`; Metis has no PyO3 package to publish to
+PyPI.
 
 ## Atlas ownership
 

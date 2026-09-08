@@ -11,6 +11,11 @@ replaces the demonstration's mandatory executable pair with one application
 entry. [ADR 0006](0006-application-entry.md) defines process-role dispatch and the
 command migration. The manifest remains the single payload inventory.
 
+Revision 2026-09-08: [METIS-RELEASE-001](../../backlog.md#METIS-RELEASE-001)
+adds the Atlas-pinned crates.io release caller. Registry authentication remains
+tokenless through GitHub Actions OIDC; Metis has no PyO3 package and therefore
+does not emit a PyPI caller.
+
 ## Decision
 
 One versioned application manifest declares identity, Cargo binary targets,

@@ -201,5 +201,48 @@ class WorkflowContractTests(unittest.TestCase):
         self.assertIn("runs-on: windows-latest", self.source)
 
 
+class ReleaseWorkflowContractTests(unittest.TestCase):
+    """Keep registry publication tokenless and release-triggered."""
+
+    @classmethod
+    def setUpClass(cls):
+        cls.workflow = SCRIPTS.parent / ".github" / "workflows" / "rust-release.yml"
+        cls.source = cls.workflow.read_text(encoding="utf-8")
+
+    def test_release_caller_uses_atlas_oidc_workflows(self):
+        required = (
+            "release:\n    types: [published]",
+            "workflow_dispatch:",
+            "release-gate: true",
+            "needs: identify",
+            "package: ${{ needs.identify.outputs.package }}",
+            "metis|metis-backend|metis-core|metis-frontend|metis-ipc|metis-platform|metis-ui-lang|metis-app|metis-web",
+            "id-token: write",
+            "ryancinsight/atlas/.github/workflows/semver-gate.yml@c73c3dabe9573f09df7f1e2eacfccac17f685c6c",
+            "ryancinsight/atlas/.github/workflows/crates-publish.yml@c73c3dabe9573f09df7f1e2eacfccac17f685c6c",
+        )
+        for fragment in required:
+            with self.subTest(fragment=fragment):
+                self.assertIn(fragment, self.source)
+
+    def test_caller_has_no_registry_secret_or_implicit_publish_trigger(self):
+        self.assertNotIn("secrets:", self.source)
+        self.assertNotIn("CARGO_REGISTRY_TOKEN", self.source)
+        for forbidden in ("private_key", "signing-key", "GPG", "SSH_PRIVATE_KEY"):
+            with self.subTest(forbidden=forbidden):
+                self.assertNotIn(forbidden, self.source)
+        self.assertNotIn("push:", self.source)
+        references = re.findall(
+            r"^\s*(?:-\s+)?uses:\s+([^@\s]+)@([^\s#]+)",
+            self.source,
+            re.MULTILINE,
+        )
+        self.assertEqual(len(references), 2)
+        for action, revision in references:
+            with self.subTest(action=action):
+                self.assertRegex(revision, r"\A[0-9a-f]{40}\Z")
+        self.assertNotIn("metis-cli", self.source)
+
+
 if __name__ == "__main__":
     unittest.main()

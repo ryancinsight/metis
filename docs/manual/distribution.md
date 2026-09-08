@@ -123,6 +123,27 @@ only the latest marked test run and refuses to replace a still-registered test
 installation. Normal verification also exercises packaging and portable execution;
 `--install` opts into the current-user OS installation workflow.
 
+## Publish crates through CI
+
+`.github/workflows/rust-release.yml` is a thin caller of Atlas's pinned
+`crates-publish.yml` and `semver-gate.yml` workflows. A GitHub Release tagged
+`crate-<package>-v<version>` runs the release gate and publishes one validated
+workspace package. `workflow_dispatch` runs the same package and version checks
+without publishing.
+
+The publish job requests a short-lived crates.io token through GitHub Actions
+OIDC and the `crates-io` environment. The repository stores no Cargo token,
+private signing key or other registry credential. Each crate must have its
+trusted publisher registered at crates.io with owner `ryancinsight`, repository
+`metis`, workflow `.github/workflows/rust-release.yml` and environment
+`crates-io`; registry setup and the first publication remain explicit release
+authority actions.
+
+Metis currently has no PyO3 package, so it has no PyPI workflow or publisher.
+When a binding package is added, its caller will use Atlas's `python-wheels.yml`
+and the `pypi` environment with OIDC; a long-lived PyPI token will not be added
+to the repository.
+
 The [application gallery](applications.md) shows the existing renderer workflows.
 The [verification contract](../VERIFICATION.md#V10) distinguishes installation,
 rendering and host interaction evidence. Executable and installer creation does

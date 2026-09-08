@@ -1,6 +1,7 @@
 # Execution
 
 - [Responsive layout and style semantics](backlog.md#METIS-LAYOUT-001): verify the Rust-owned theme modes, semantic CSS variable override path, replaceable starter mark and packaged browser asset, then close the remaining runtime geometry and display-scale captures.
+- [Publication readiness](backlog.md#METIS-RELEASE-001): the Atlas-pinned crates.io OIDC caller and tokenless contract are implemented; registry publisher registration and first release remain external.
 
 ## root
 - [Browser stale-response probe](backlog.md#METIS-BROWSER-002): bounded delayed service response, stop/remount disposal and the one-engine visual trace are recorded in [VERIFICATION](docs/VERIFICATION.md#browser-stale-response-evidence--2026-09-07); native window and OS permission providers remain separate.

@@ -27,6 +27,29 @@ revision pinning, draft suppression, guard references and the Windows target.
 This local check validates the committed definition; a hosted run is required
 before reporting GitHub runner results or CI timing evidence.
 
+## Registry publication workflow — 2026-09-08
+
+`.github/workflows/rust-release.yml` delegates release validation and crates.io
+publication to the Atlas reusable `semver-gate.yml` and `crates-publish.yml`
+workflows at Atlas revision `c73c3dabe9573f09df7f1e2eacfccac17f685c6c`.
+The caller triggers only on a published GitHub Release or an explicit
+`workflow_dispatch`; it carries no registry secret and grants `id-token: write`
+only to the reusable publish job. The Atlas workflow obtains a short-lived
+crates.io token through OIDC and gates it with the `crates-io` environment.
+
+The local package inventory contains nine publishable Cargo packages and one
+`publish = false` tooling package (`metis-cli`). Metis has no PyO3 package, so
+no PyPI caller is configured; a future binding package must add a separate
+Atlas `python-wheels.yml` caller and `pypi` OIDC environment. This source-level
+check does not prove registry publisher registration, first publication,
+release authority or package upload; those are external release actions.
+
+`cargo package --locked --allow-dirty --list` succeeded for `metis-core`,
+`metis-web` and the root `metis` package. A local
+`cargo publish --locked --package metis-core --dry-run` could not reach the
+crates.io index in this environment, so hosted package validation remains
+unverified.
+
 Fresh hosted runners prime the exact locked Git and registry sources with the
 pinned Rust toolchain before invoking the gate. The gate then resolves offline,
 so source acquisition is explicit while verification remains reproducible.

@@ -110,9 +110,10 @@ an owner. “Unsupported” cannot replace delivery of a required mobile/native 
 
 <a id="METIS-RELEASE-001"></a>
 ## METIS-RELEASE-001 — Publication readiness [patch]
-- Status: todo; priority: P3; owner: Metis delivery; dependencies: METIS-DISTRIBUTION-001, METIS-CONFORMANCE-001
-- Scope: release-readiness metadata, package dry runs, final manual and platform evidence; preparation continues without release authority.
-- Acceptance: dependency-closed packages and exact-revision evidence; release execution alone is blocked until explicit authority, signing/rollout/rollback details are available.
+- Status: in-progress; priority: P3; owner: Metis delivery; integrator: root; last-update: 2026-09-08; branch: `feat/process-foundation`; dependencies: METIS-DISTRIBUTION-001, METIS-CONFORMANCE-001
+- Scope: release-readiness metadata, package dry runs, final manual and platform evidence; registry authentication uses Atlas OIDC workflows without personal keys; preparation continues without release authority.
+- Acceptance: dependency-closed packages and exact-revision evidence; release execution is blocked until explicit authority, registry publisher registration, rollout and rollback details are available.
+- Current increment: the thin crates.io caller is pinned to Atlas's reusable OIDC workflow; its contract tests and committed full gate pass. Local crates.io publish validation is blocked by index network access, while registry registration and release authority remain open. Metis has no PyO3 package, so no PyPI caller is emitted until a binding package exists.
 - Demonstration: [V10](docs/VERIFICATION.md#V10), locally built package installation/recovery instructions and actual captures before any publication.
 
 <a id="METIS-MEMORY-001"></a>
