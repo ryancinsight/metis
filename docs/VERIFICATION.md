@@ -553,6 +553,17 @@ output, or provide an operating-system accessibility bridge. Runtime captures
 under those preferences, supported screen-reader traversal, zoom-scale
 geometry and native host accessibility remain open under `METIS-A11Y-001`.
 
+The fresh CUA trace started from **Start host**, advanced to **Stop host** and
+**Session details**, then traversed **Patient reference**, **Weight (kg)**,
+**Drug concentration (mg/mL)**, **Target dose (mcg/kg/min)**, **Show remote
+events**, **Volume rate**, **Result scale**, **Result detail**, **Pointer
+capture surface**, **DICOM file drop zone** and **Clinical note**. The disabled
+submit control and the unselected radio option were correctly skipped by the
+browser's tab sequence. Refocusing **Clinical note** produced the visible
+yellow focus outline in the inspected screenshot. This is one-engine browser
+evidence; it does not establish screen-reader speech, forced-colors rendering
+or native host integration.
+
 ## Browser stale-response evidence — 2026-09-07
 
 The service conformance host now accepts `--response-delay-ms` with a bounded

@@ -194,10 +194,12 @@ an owner. “Unsupported” cannot replace delivery of a required mobile/native 
 <a id="METIS-A11Y-001"></a>
 ## METIS-A11Y-001 — Accessible application interaction [minor]
 - Status: in-progress; priority: P1; owner: Metis host/UI; integrator: root; last-update: 2026-09-08; branch: `feat/process-foundation`; dependencies: METIS-INPUT-001; risk: inaccessible controls
-- lease: root `examples/browser/styles.css`, `scripts/tests/test_browser_assets.py`, `docs/manual/browser.md`, `docs/VERIFICATION.md`
 - Scope: semantic DOM roles/names/states, focus/action mapping, announcements, reduced motion/high contrast/zoom; OS accessibility bridge for any custom UI path.
 - Acceptance: semantic tree identity/actions and keyboard-only completion pass; actual supported screen readers traverse and operate the application; document platform limits instead of claiming certification from tree presence.
 - Demonstration: [V03](docs/VERIFICATION.md#V03), readable focus/contrast/zoom captures plus semantic/action and assistive-technology evidence.
+- Completed increment: `feat(web): Honor accessibility preferences` adds reduced-motion and forced-colors presentation rules, semantic focus-order assertions and synchronized manual/evidence text.
+- Evidence: revision `6bbbd00` passes the full Metis gate and 51 Python tests; the CUA trace observes the document focus path and a visible focus outline on **Clinical note**.
+- Residuals: supported screen-reader speech, forced-colors/reduced-motion runtime captures, zoom-scale geometry and native host accessibility bridge evidence remain open.
 
 <a id="METIS-LAYOUT-001"></a>
 ## METIS-LAYOUT-001 — Responsive layout and style semantics [minor]

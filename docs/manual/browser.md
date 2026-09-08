@@ -261,9 +261,12 @@ or high-DPI cases.
 
 The workbench keeps the normal keyboard path in document order. From the
 header, press **Tab** through **Session details**, the patient and numeric form
-fields, **Submit to authorized backend**, the **View options** controls, the
-named **Pointer capture surface**, the named **DICOM file drop zone**, and
-**Clinical note**. The closed session dialog is not in the active tab order.
+fields, **Submit to authorized backend** when the authorized bridge enables it,
+the **View options** controls, the named **Pointer capture surface**, the named
+**DICOM file drop zone**, and **Clinical note**. A disabled submit control is
+skipped by the browser, and a radio group has one tab stop; use its arrow keys
+to choose the other unit. The closed session dialog is not in the active tab
+order.
 Opening **Session details** uses the browser dialog semantics; **Close** is the
 dialog action and focus returns to the opener after dismissal. Status and
 composition regions use polite live announcements, while labels and headings
