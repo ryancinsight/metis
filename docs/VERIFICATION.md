@@ -125,6 +125,30 @@ assert that untrusted path, authorization and patient text is absent while
 the typed code remains present. `Display` remains the user-facing full
 diagnostic contract.
 
+### Bounded decoder mutation evidence — 2026-09-08
+
+The committed `scripts/mutation.py` runner pins cargo-mutants 27.1.0 and the
+1.97.0 workspace toolchain. It mutates
+`crates/metis-core/src/protocol/payload.rs` at `decode`, runs the `metis-ipc`
+integration tests through nextest, uses `--locked --offline` with two jobs,
+and bounds each test, build and suite at 30, 120 and 300 seconds. The
+`--test-package metis-ipc` selection is material: a package-only run cannot
+reach the decoder integration contract.
+
+At revision
+`14d9f6175a238d9f5ab56327a5d34e08488ea8e5`, the run generated 14 mutants,
+caught all 6 viable mutants, and reported 0 missed, 0 timed-out and 8
+unviable mutants (viable score 1.0). The exact command, source SHA-256,
+toolchain and counts are recorded in the derived
+`output/mutation/latest/manifest.json`. The report is a scoped decoder result,
+not a workspace-wide mutation score. The Windows MSVC sanitizer limitation
+still leaves the nightly LibFuzzer campaign open.
+
+The runner follows cargo-mutants' [nextest integration](https://mutants.rs/nextest.html)
+and [workspace test-package selection](https://mutants.rs/workspaces.html)
+contracts; the pinned tool installation is documented in the
+[testing manual](manual/testing.md#run-bounded-mutation-analysis).
+
 ## Evidence classes
 
 - WASM portability: compile `metis-core`, `metis-platform`, `metis-ui-lang` and

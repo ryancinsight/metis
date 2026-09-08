@@ -67,6 +67,34 @@ MSVC environment used for the current evidence cannot link the sanitizer
 runtime, so the deterministic property and mutation suite remains the
 reproducible parser oracle there.
 
+## Run bounded mutation analysis
+
+The decoder mutation slice uses cargo-mutants 27.1.0 with the locked
+`metis-ipc` contract tests. Install the pinned tool into the ignored local tool
+directory, then run the committed bounded runner from the repository root:
+
+```text
+rustup run 1.97.0 cargo install cargo-mutants --version 27.1.0 --locked --root output/cargo-tools
+python scripts/mutation.py
+```
+
+The runner requires the pinned toolchain and shared Cargo target directory,
+uses nextest with two jobs, and enforces 30-second test, 120-second build and
+300-second suite budgets. It records the exact revision, source hash, command
+and outcome counts at `output/mutation/latest/manifest.json`; the output is
+derived and ignored by Git. In managed environments, clear any `RUSTC` or
+`RUSTDOC` overrides before invoking the runner so they cannot replace the
+workspace toolchain.
+
+The slice mutates `metis-core` decoder code and runs the integration tests from
+`metis-ipc`; the cross-package `--test-package metis-ipc` selection is required
+to exercise those tests. A score is computed over viable mutants only, while
+unviable, missed and timed-out counts remain visible in the manifest. See the
+[cargo-mutants nextest](https://mutants.rs/nextest.html) and
+[workspace test-package](https://mutants.rs/workspaces.html) documentation for
+the underlying selection contract. The Windows host still needs a separate
+nightly LibFuzzer run with a working sanitizer runtime.
+
 `MetisError` retains its full message for `Display`, while `Debug` and
 `MetisError::redacted()` expose only the stable error code and trace identifier.
 The remote `ErrorResponsePayload` follows the same rule for `Debug`, replacing

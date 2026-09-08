@@ -336,7 +336,8 @@ an owner. “Unsupported” cannot replace delivery of a required mobile/native 
 - Demonstration: manual troubleshooting shows actual gate failure and recovery artifacts. This finite infrastructure item does not close later scenario coverage.
 - Completed increment (2026-09-07): pinned workflow and local gate validate plan identifiers, dependencies and local links before artifact-producing stages; cargo-deny audits the locked graph and the gate records reviewed Cargo build-link contracts; 47 Python checks pass.
 - Completed increment (2026-09-08, commit `866822016d8ee02b2b38149efee2e26783c77bb2`): bounded arbitrary-byte, Unicode, IEEE-754, truncation, bit-mutation and oversized-length properties cover every public wire decoder; the standalone `fuzz/` LibFuzzer target passes a locked manifest check; `MetisError` and remote error payload `Debug` output redact untrusted message text. Focused nextest passes 96/96 with strict Clippy. The Windows MSVC host cannot link the LibFuzzer sanitizer runtime, so no runtime fuzz result is claimed.
-- Residual: mutation score and a nightly LibFuzzer campaign on a host with a working sanitizer runtime remain open; full-gate evidence is collected when this increment is integrated.
+- Completed increment (2026-09-08): `scripts/mutation.py` pins cargo-mutants 27.1.0, nextest, the shared target and finite budgets for the decoder slice; at revision `14d9f6175a238d9f5ab56327a5d34e08488ea8e5` it generated 14 mutants, caught all 6 viable mutants, and reported 0 missed, 0 timed-out and 8 unviable. The derived report is `output/mutation/latest/manifest.json`.
+- Residual: a nightly LibFuzzer campaign on a host with a working sanitizer runtime remains open; the full gate is rerun when this increment is integrated.
 
 <a id="METIS-CONFORMANCE-001"></a>
 ## METIS-CONFORMANCE-001 — Final capability and target closure [patch]
