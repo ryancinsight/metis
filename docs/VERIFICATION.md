@@ -36,6 +36,9 @@ The caller triggers only on a published GitHub Release or an explicit
 `workflow_dispatch`; it carries no registry secret and grants `id-token: write`
 only to the reusable publish job. The Atlas workflow obtains a short-lived
 crates.io token through OIDC and gates it with the `crates-io` environment.
+An interactive private-key prompt during local development belongs to Git
+commit or tag signing, not to this release path; the publication jobs never
+invoke local signing.
 
 The local package inventory contains ten publishable Cargo packages and one
 `publish = false` tooling package (`metis-cli`). `metis-python` builds the
@@ -44,6 +47,10 @@ delegates wheel construction to Atlas's `python-wheels.yml`, then uploads
 through PyPI Trusted Publishing with `id-token: write`. This source-level
 check does not prove registry publisher registration, first publication,
 release authority or package upload; those are external release actions.
+Public branch inspection at revision `2b32d1f` confirmed the crates.io and PyPI
+callers expose OIDC permissions without registry-token, SSH, GPG or private-key
+secrets. The inspection was logged out and therefore did not inspect account
+environment settings.
 
 `cargo package --locked --allow-dirty --list` succeeded for `metis-core`,
 `metis-web` and the root `metis` package. A local

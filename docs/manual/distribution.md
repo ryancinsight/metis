@@ -144,6 +144,11 @@ trusted publisher registered at crates.io with owner `ryancinsight`, repository
 `crates-io`; registry setup and the first publication remain explicit release
 authority actions.
 
+An interactive private-key prompt during local development is Git commit or tag
+signing (for example, `git commit -S` or `git tag -s`), not this release path.
+Metis publication does not invoke local signing; the GitHub jobs exchange their
+OIDC identity for a short-lived registry credential.
+
 The `metis-python` crate builds the `metis-rs` PyPI distribution for
 `import metis`. Its caller uses Atlas's `python-wheels.yml` and the `pypi`
 environment with OIDC; a long-lived PyPI token or developer private key is not

@@ -246,7 +246,7 @@ an owner. “Unsupported” cannot replace delivery of a required mobile/native 
 - Acceptance: malformed/truncated/oversized/traversal assets fail; declared colors/alpha/aspect ratio/orientation match fixtures; media error and teardown states release resources.
 - Demonstration: [V06](docs/VERIFICATION.md#V06), actual asset gallery with source attribution and load/error states.
 - Completed increment: local project artwork now includes a seven-resolution PNG-in-ICO asset; `metis.json` validates the optional `icon`, portable/MSI payloads copy the ICO resource, and the Windows package stores `MetisIcon` in `Icon` and references it from `Shortcut.Icon_`.
-- Evidence: [ADR 0016](docs/adr/0016-theme-and-branding.md), [distribution manual](docs/manual/distribution.md), [native icon evidence](docs/VERIFICATION.md#native-icon-asset-evidence--2026-09-08), focused `metis-cli` package tests and browser asset tests.
+- Evidence: [ADR 0016](docs/adr/0016-theme-and-branding.md), [distribution manual](docs/manual/distribution.md), [native icon evidence](docs/VERIFICATION.md#native-icon-asset-evidence--2026-09-08), focused `metis-cli` package tests and browser asset tests; full install gate at `2b32d1f`.
 - Residuals: image/SVG decode and orientation, font loading, media controls/error teardown, and runtime shell rendering on a Windows install remain open under V06; the ICO packaging contract itself is closed.
 
 <a id="METIS-GRAPHICS-001"></a>
