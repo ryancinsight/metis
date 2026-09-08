@@ -145,6 +145,42 @@ environment with OIDC; a long-lived PyPI token or developer private key is not
 added to the repository. See the [Python binding manual](python.md) for the
 local wheel test and release tag contract.
 
+### Configure trusted publishers without keys
+
+Create the GitHub environments named `crates-io` and `pypi` and apply the
+repository's normal tag or reviewer protection rules. Leave registry secrets,
+passwords and signing keys out of these environments. The environment is an
+approval and trust boundary; it is not a credential store.
+
+For every publishable Cargo package, add a crates.io GitHub Actions trusted
+publisher with these exact values:
+
+```text
+Owner: ryancinsight
+Repository: metis
+Workflow: .github/workflows/rust-release.yml
+Environment: crates-io
+```
+
+The first crates.io publication still requires the registry's normal initial
+release step. After that, the publisher entry authorizes the reusable Atlas job
+to exchange its GitHub OIDC identity for a short-lived upload token. See the
+[Rust Forge trusted-publishing guide](https://forge.rust-lang.org/infra/docs/trusted-publishing.html).
+
+For the `metis-rs` project on PyPI, add a GitHub Actions trusted publisher (or
+a pending publisher before the project is created) with:
+
+```text
+Owner: ryancinsight
+Repository: metis
+Workflow: .github/workflows/python-release.yml
+Environment: pypi
+```
+
+PyPI exchanges the job's OIDC identity for a short-lived upload authorization;
+the workflow does not read `PYPI_TOKEN`, `TWINE_PASSWORD`, SSH keys or GPG
+material. See [PyPI's publisher setup](https://docs.pypi.org/trusted-publishers/adding-a-publisher/).
+
 The [application gallery](applications.md) shows the existing renderer workflows.
 The [verification contract](../VERIFICATION.md#V10) distinguishes installation,
 rendering and host interaction evidence. Executable and installer creation does
