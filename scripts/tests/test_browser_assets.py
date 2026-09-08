@@ -72,6 +72,42 @@ class BrowserAssetContractTests(unittest.TestCase):
         ):
             self.assertIn(selector, styles)
 
+    def test_text_surface_is_semantic_and_tracks_composition(self):
+        controls = (ROOT / "crates" / "metis-web" / "src" / "controls.rs").read_text(
+            encoding="utf-8"
+        )
+        listeners = (ROOT / "crates" / "metis-web" / "src" / "browser" / "text.rs").read_text(
+            encoding="utf-8"
+        )
+        styles = (ROOT / "examples" / "browser" / "styles.css").read_text(
+            encoding="utf-8"
+        )
+        for fragment in (
+            'id="text-specimen"',
+            'aria-describedby="text-status composition-status selection-status"',
+            'id="text-status" role="status" aria-live="polite"',
+            'id="composition-status" role="status" aria-live="polite"',
+            'id="selection-status" role="status"',
+            'data-selection-direction="none"',
+        ):
+            self.assertIn(fragment, controls)
+        for event_name in (
+            '"input"',
+            '"compositionstart"',
+            '"compositionupdate"',
+            '"compositionend"',
+            '"compositioncancel"',
+            '"select"',
+        ):
+            self.assertIn(event_name, listeners)
+        for selector in (
+            '.metis-text',
+            '#text-specimen[data-text-state="composing"]',
+            '#text-specimen[data-composing="true"]',
+            '#text-specimen:focus-visible',
+        ):
+            self.assertIn(selector, styles)
+
 
 if __name__ == "__main__":
     unittest.main()

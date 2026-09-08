@@ -53,6 +53,14 @@ fixed CSS-pixel scales; non-finite deltas are rejected without mutation. The
 single-pointer path also handles a touch pointer as a drag; multi-touch and
 pinch interpretation remain open.
 
+The workbench also uses a semantic textarea for text and composition. Metis
+owns a bounded `TextState` that receives Moirai's UTF-16 selection snapshots,
+`InputEvent` metadata and `CompositionEvent` transitions. The state validates
+selection ranges against the current Unicode value and renders text,
+composition and selection status without importing `web-sys`. Grapheme
+segmentation, bidi shaping, clipboard/undo, fallback-font metrics and native
+IME production remain host contracts.
+
 ## Alternatives
 
 Duplicating a widget renderer would lose browser-native focus and keyboard
@@ -66,9 +74,9 @@ current browser contract.
 `ControlState` tests cover default values, checked, radio and select transitions,
 bounded scale parsing, invalid control input, numeric-field validation and
 preservation of a successful response while presentation controls change.
-`metis-web` passes native warning-denied Clippy, 10 native tests, and the WASM
+`metis-web` passes native warning-denied Clippy, 21 native tests, and the WASM
 compile and Clippy checks against Moirai
-`d879779247c8cfc5870f62f99a5364cbbf2d3c58`. The authenticated browser trace at
+`0862716265d657b8069d5a47fd1e77ae26ddd006`. The authenticated browser trace at
 1280×720 CSS pixels and device scale 1.25 selected the radio and checkbox with
 pointer actions, moved the range twice with the keyboard and selected Audit
 detail through the native select; the accessibility values, status text, focus
@@ -100,8 +108,15 @@ renders input-sensitive vertical and horizontal pixel deltas with the target
 coordinates and modifier state. The gesture increment adds native-tested
 bounded pan/zoom state and a live drag/scroll transform trace.
 
+The text increment adds 21 native policy tests for UTF-16 coordinates,
+selection bounds, input metadata and composition transitions. The browser
+trace renders the labelled textarea, bounded value preview, semantic status
+regions and focus state; CUA cannot provide trusted OS IME input or expose the
+browser `isTrusted` flag.
+
 ## Residuals
 
-Drag/drop policy, multi-touch/pinch interpretation, IME, accessibility
-technology and native-window input remain under the linked backlog items. This
+Drag/drop policy, multi-touch/pinch interpretation, grapheme/bidi layout,
+clipboard/undo, native IME, accessibility technology and native-window input
+remain under the linked backlog items. This
 increment does not claim cross-engine or native input parity.

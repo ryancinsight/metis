@@ -86,6 +86,13 @@ vertical and horizontal scroll traces. Metis now applies a Rust-owned bounded
 single-pointer drag pan, wheel pan and Ctrl+wheel zoom policy; multi-touch,
 drag/drop and native event production remain open.
 
+Revision 2026-09-08: Moirai PR #280 merged at
+`0862716265d657b8069d5a47fd1e77ae26ddd006` adds bounded browser text values,
+UTF-16 selection snapshots and input/composition metadata. Metis now owns a
+bounded textarea policy with input, selection and composition lifecycle
+listeners; grapheme segmentation, bidi/layout metrics, clipboard/undo, trusted
+native IME, accessibility technology and native event production remain open.
+
 ## Decision and scope
 
 Use Tauri as the application-framework migration reference and egui/GPUI/Iced

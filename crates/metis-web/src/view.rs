@@ -1,5 +1,6 @@
 use super::{BridgeStatus, BrowserState};
 use crate::controls::{DisplayUnit, ResultDetail};
+use crate::text_policy::CompositionState;
 use metis_core::CapabilityScope;
 use metis_core::protocol::{
     CapabilityCatalogPayload, MAX_PLUGINS, Plugin, PluginDescriptor, PluginOperation,
@@ -74,6 +75,7 @@ pub(super) fn render(document: &WebDocument, state: &BrowserState) -> io::Result
         "data-drop-count",
         &state.drop_state.file_count().to_string(),
     )?;
+    render_text(document, state)?;
     let submit_disabled =
         !matches!(state.bridge, BridgeStatus::Ready) || matches!(state.state, FormState::Pending);
     element(document, "submit-calculation")?.set_disabled(submit_disabled)?;
@@ -144,6 +146,33 @@ pub(super) fn capability_summary(
         browser.platform().name(),
         browser_surfaces.join(", "),
     )
+}
+
+fn render_text(document: &WebDocument, state: &BrowserState) -> io::Result<()> {
+    let text = &state.text_state;
+    set_text(document, "text-status", &text.text_status())?;
+    set_text(
+        document,
+        "text-preview",
+        &format!("Text value preview: {}", text.value_display()),
+    )?;
+    set_text(document, "composition-status", &text.composition_status())?;
+    set_text(document, "selection-status", &text.selection_status())?;
+    let control = element(document, "text-specimen")?;
+    let selection = text.selection();
+    control.set_attribute("data-text-state", text.state_name())?;
+    control.set_attribute("data-selection-start", &selection.start().to_string())?;
+    control.set_attribute("data-selection-end", &selection.end().to_string())?;
+    control.set_attribute("data-selection-direction", selection.direction().label())?;
+    control.set_attribute(
+        "data-composing",
+        if matches!(text.composition(), CompositionState::Active) {
+            "true"
+        } else {
+            "false"
+        },
+    )?;
+    control.set_attribute("data-input-type", text.input_type())
 }
 
 static WORKBENCH_EVENTS: [PluginOperation; 1] = [PluginOperation::new(

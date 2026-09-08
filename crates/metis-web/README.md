@@ -45,6 +45,15 @@ candidates in a semantic status region. The browser seam does not read file
 bytes or turn a browser name into a filesystem path; a native or trusted host
 must provide the byte-reading grant before a viewer can open a study.
 
+The **Text and composition** surface consumes Moirai's bounded text snapshots.
+The textarea keeps Unicode values in Rust-owned state, preserves browser
+UTF-16 selection offsets and direction, and records `InputEvent` data,
+operation type and composition state. Composition start, update, commit and
+cancel transitions render separate status values. The policy bounds values and
+metadata, leaves grapheme segmentation, bidi layout, clipboard/undo and native
+IME production to the host contract, and exposes the selection and composition
+state through semantic status elements and data attributes.
+
 Build the WASM artifact and generated browser glue with:
 
 ```text

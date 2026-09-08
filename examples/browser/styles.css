@@ -3,7 +3,7 @@ body { margin: 0; min-width: 320px; }
 .metis-host-controls { display: flex; gap: 0.65rem; max-width: 960px; margin: 0 auto; padding: 1rem 2rem 0; }
 .metis-host-controls button { margin-top: 0; }
 #metis-app { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 1.5rem; max-width: 960px; margin: 0 auto; padding: 2rem; }
-.metis-header, .metis-form, .metis-options, .metis-drop, .metis-result { border: 1px solid #334155; border-radius: 0.75rem; background: #1e293b; padding: 1.25rem; }
+.metis-header, .metis-form, .metis-options, .metis-drop, .metis-text, .metis-result { border: 1px solid #334155; border-radius: 0.75rem; background: #1e293b; padding: 1.25rem; }
 .metis-header { grid-column: 1 / -1; }
 .metis-header > button { margin-top: 1rem; }
 .metis-kicker { margin: 0 0 0.5rem; color: #67e8f9; font-size: 0.75rem; letter-spacing: 0.12em; }
@@ -27,6 +27,12 @@ dialog p { color: #bae6fd; }
 #drop-zone[data-drop-state="accepted"] { border-color: #34d399; background: #064e3b; }
 #drop-zone[data-drop-state="rejected"] { border-color: #fb7185; background: #4c0519; }
 #drop-zone:focus-visible { outline: 3px solid #facc15; outline-offset: 2px; }
+.metis-text { grid-column: 1 / -1; }
+.metis-text > p { color: #bae6fd; min-height: 1.5rem; }
+#text-specimen { box-sizing: border-box; width: 100%; min-height: 7rem; resize: vertical; border: 1px solid #64748b; border-radius: 0.4rem; background: #0f172a; color: #f8fafc; padding: 0.75rem; font: inherit; line-height: 1.5; }
+#text-specimen[data-text-state="composing"] { border-color: #facc15; background: #422006; }
+#text-specimen[data-composing="true"] { text-decoration: underline wavy #facc15; text-underline-offset: 0.2em; }
+#text-specimen:focus-visible { outline: 3px solid #facc15; outline-offset: 2px; }
 .metis-option { display: flex; align-items: center; gap: 0.55rem; }
 .metis-option-label { color: #94a3b8; font-size: 0.9rem; }
 label { color: #cbd5e1; font-size: 0.9rem; }
@@ -35,9 +41,9 @@ input[type="checkbox"], input[type="radio"] { width: auto; padding: 0; accent-co
 input[type="range"] { padding: 0; accent-color: #22d3ee; }
 button { margin-top: 0.5rem; border: 0; border-radius: 0.4rem; background: #0891b2; color: #ecfeff; padding: 0.7rem 1rem; font: inherit; font-weight: 700; cursor: pointer; }
 button:disabled { background: #475569; color: #cbd5e1; cursor: not-allowed; opacity: 0.75; }
-button:focus-visible, input:focus-visible, select:focus-visible { outline: 3px solid #facc15; outline-offset: 2px; }
+button:focus-visible, input:focus-visible, select:focus-visible, textarea:focus-visible { outline: 3px solid #facc15; outline-offset: 2px; }
 .metis-result { min-height: 12rem; }
-#options-state, #result-metrics, #result-detail { color: #bae6fd; min-height: 1.5rem; }
+#options-state, #result-metrics, #result-detail, #text-status, #composition-status, #selection-status { color: #bae6fd; min-height: 1.5rem; }
 dl { display: grid; grid-template-columns: auto 1fr; gap: 0.55rem 1rem; }
 dt { color: #94a3b8; }
 dd { margin: 0; color: #f8fafc; font-variant-numeric: tabular-nums; }

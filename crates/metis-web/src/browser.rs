@@ -12,6 +12,8 @@ mod file_drop;
 mod gesture;
 #[path = "browser/pointer.rs"]
 mod pointer;
+#[path = "browser/text.rs"]
+mod text;
 #[path = "view.rs"]
 mod view;
 #[path = "browser/wheel.rs"]
@@ -44,6 +46,7 @@ struct BrowserState {
     plugins: String,
     event_status: String,
     drop_state: crate::file_drop_policy::DropState,
+    text_state: crate::text_policy::TextState,
     controls: controls::ControlState,
 }
 
@@ -57,6 +60,7 @@ impl Default for BrowserState {
             plugins: view::plugin_summary(),
             event_status: "Remote events: none".to_owned(),
             drop_state: crate::file_drop_policy::DropState::default(),
+            text_state: crate::text_policy::TextState::default(),
             controls: controls::ControlState::default(),
         }
     }
@@ -196,7 +200,7 @@ fn control_listeners(
     state: &Rc<RefCell<BrowserState>>,
     app: &Rc<RefCell<Option<AsyncFrontendApp<BrowserWebSocketTransport>>>>,
 ) -> io::Result<Vec<WebEventListener>> {
-    let mut listeners = Vec::with_capacity(27);
+    let mut listeners = Vec::with_capacity(34);
     for (id, field) in [
         ("patient-id", InputField::Patient),
         ("weight-kg", InputField::Weight),
@@ -227,6 +231,7 @@ fn control_listeners(
     listeners.extend(wheel::listeners(document)?);
     listeners.extend(gesture::listeners(document)?);
     listeners.extend(file_drop::listeners(document, state)?);
+    listeners.extend(text::listeners(document, state)?);
     Ok(listeners)
 }
 

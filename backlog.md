@@ -183,10 +183,13 @@ an owner. “Unsupported” cannot replace delivery of a required mobile/native 
 
 <a id="METIS-TEXT-001"></a>
 ## METIS-TEXT-001 — Text, selection and IME [minor]
-- Status: todo; priority: P1; owner: Metis input/presentation; dependencies: METIS-INPUT-001; risk: text corruption
+- Status: in-progress; priority: P1; owner: Metis input/presentation; integrator: root; last-update: 2026-09-08; branch: `feat/process-foundation`; dependencies: METIS-INPUT-001; risk: text corruption
 - Scope: DOM text first; grapheme selection, composition/preedit/commit/cancel, clipboard/undo, wrapping, fallback fonts, bidi and text scaling. Custom renderer requires its own admitted text contract.
 - Acceptance: Unicode fixture strings/selection ranges and caret/line geometry match the contract; native IME exercised per OS, including CJK, combining marks, emoji and mixed-direction input.
 - Demonstration: [V03](docs/VERIFICATION.md#V03), editing specimen with actual composition and committed captures, locale/font details and keyboard instructions.
+- Completed increment: browser `TextState` keeps bounded Unicode values, UTF-16 selection coordinates, input metadata and composition start/update/commit/cancel transitions; Moirai provider revision `0862716265d657b8069d5a47fd1e77ae26ddd006` owns the DOM snapshots and listener lifetime.
+- Evidence: [browser text and composition evidence](docs/VERIFICATION.md#browser-text-and-composition-evidence--2026-09-08) records 21/21 native policy tests, warning-denied native/WASM Clippy, WASM build and the semantic textarea/value-preview surface.
+- Residuals: grapheme-safe editing, bidi and line geometry, fallback-font metrics, clipboard/undo, trusted native IME and assistive-technology acceptance remain open; CUA evidence is limited to HTML/WASM rendering and synthetic browser input.
 
 <a id="METIS-A11Y-001"></a>
 ## METIS-A11Y-001 — Accessible application interaction [minor]

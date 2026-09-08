@@ -69,6 +69,15 @@ pub(crate) const BROWSER_MARKUP: &str = r#"
     <p>Drop DICOM files here to inspect bounded metadata. File bytes remain with the host.</p>
   </div>
 </section>
+<section class="metis-text" aria-labelledby="text-heading">
+  <h2 id="text-heading">Text and composition</h2>
+  <p id="text-status" role="status" aria-live="polite">Text: ready; Unicode specimen loaded</p>
+  <label for="text-specimen">Clinical note</label>
+  <textarea id="text-specimen" name="clinical-note" rows="4" autocomplete="off" spellcheck="false" aria-describedby="text-status composition-status selection-status" data-text-state="ready">Résumé — 東京 / 影像</textarea>
+  <p id="text-preview" role="status">Text value preview: Résumé — 東京 / 影像</p>
+  <p id="composition-status" role="status" aria-live="polite">Composition: idle; last data none; locale unspecified</p>
+  <p id="selection-status" role="status" data-selection-start="16" data-selection-end="16" data-selection-direction="none">Selection: caret 16 UTF-16 code units; direction none</p>
+</section>
 <section class="metis-result" aria-labelledby="result-heading">
   <h2 id="result-heading">Backend result</h2>
   <p id="result-state">No backend bridge configured.</p>

@@ -209,6 +209,44 @@ cards with its ready state and focus outline. The browser engine version was
 unavailable, and no trusted local file was attached, so the trace does not
 claim a successful byte read or DICOM decode.
 
+The **Text and composition** card exercises the browser's native editing
+surface while keeping application state in Rust. Focus **Clinical note**, type
+ordinary text, select a range with the pointer or keyboard, and inspect
+`text-status`, `selection-status` and the `data-selection-*` attributes. The
+seeded value includes an accented character, an em dash, CJK text and mixed
+symbols so the displayed selection offsets make the browser's UTF-16
+coordinate convention visible. The `text-preview` line is regenerated from
+the bounded Rust value after every input event.
+
+For an IME-capable environment, switch to a CJK input method and type into
+**Clinical note**. `compositionstart` and `compositionupdate` show the bounded
+preedit and locale, `compositionend` reports the commit transition, and
+`compositioncancel` clears the preedit without inventing a committed value.
+The browser `InputEvent` snapshot also reports its operation name, optional
+data and composing marker. The listener set is dropped with **Stop host**, so
+remounting starts with the seeded value and a fresh selection.
+
+The 2026-09-08 CUA trace opened the generated page at
+`http://127.0.0.1:8095/?cache=text-clean-20260908` in a 1280×720 CSS-pixel
+viewport at device scale 1.25. The accessibility tree and inspected screenshot
+showed the seeded value and a `16`-unit caret. Browser `typeText` input appended
+` typedX`; the rendered value became `Résumé — 東京 / 影像 typedX`, the text
+status reported `Text: input insertText applied; data X`, and the selection
+status reported a `23`-unit forward caret. This is ordinary browser input
+evidence; CUA does not expose a trusted operating-system IME or `isTrusted`.
+
+The policy caps the value at 1 MiB, event metadata at 128 UTF-8 bytes and the
+locale at 64 bytes. UTF-16 offsets are transport coordinates; they are not
+grapheme boundaries. This workflow therefore does not claim grapheme-safe
+caret movement, bidi shaping, fallback-font metrics, clipboard/undo behavior,
+assistive-technology behavior or native IME delivery. CUA can show the real
+HTML textarea, statuses and focus ring, but it cannot provide a trusted OS IME
+event or expose `isTrusted`; record the browser engine and input method when
+collecting host evidence.
+The browser provider for this workflow is Moirai revision
+`0862716265d657b8069d5a47fd1e77ae26ddd006`; the consumer lock is updated to the
+same merged revision.
+
 The captured service journey at revision
 `d879779247c8cfc5870f62f99a5364cbbf2d3c58` used the Codex in-app
 browser at 1280×720 CSS pixels and device scale 1.25. Pointer activation of
