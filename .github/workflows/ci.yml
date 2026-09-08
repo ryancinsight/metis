@@ -1,0 +1,115 @@
+name: Metis verification
+
+on:
+  pull_request:
+    types: [opened, synchronize, reopened, ready_for_review]
+    paths:
+      - 'Cargo.toml'
+      - 'Cargo.lock'
+      - 'rust-toolchain.toml'
+      - '.config/**'
+      - 'crates/**'
+      - 'src/**'
+      - 'tests/**'
+      - 'examples/**'
+      - 'docs/**'
+      - 'scripts/**'
+      - 'metis.json'
+      - '.github/workflows/**'
+  merge_group:
+  push:
+    branches: [feat/process-foundation]
+    paths:
+      - 'Cargo.toml'
+      - 'Cargo.lock'
+      - 'rust-toolchain.toml'
+      - '.config/**'
+      - 'crates/**'
+      - 'src/**'
+      - 'tests/**'
+      - 'examples/**'
+      - 'docs/**'
+      - 'scripts/**'
+      - 'metis.json'
+      - '.github/workflows/**'
+
+permissions:
+  contents: read
+
+concurrency:
+  group: metis-verification-${{ github.event_name == 'pull_request' && github.ref || github.sha }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
+jobs:
+  verify:
+    name: Windows gate
+    if: github.event_name != 'pull_request' || github.event.pull_request.draft == false
+    runs-on: windows-latest
+    timeout-minutes: 20
+    env:
+      CARGO_TERM_COLOR: always
+      CARGO_INCREMENTAL: '0'
+      RUST_BACKTRACE: '1'
+    steps:
+      - name: Checkout
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - name: Setup Python
+        uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
+        with:
+          python-version: '3.13'
+      - name: Setup Rust
+        uses: dtolnay/rust-toolchain@4cda84d5c5c54efe2404f9d843567869ab1699d4 # stable
+        with:
+          toolchain: 1.97.0
+          components: rustfmt, clippy
+          targets: wasm32-unknown-unknown
+      - name: Install pinned gate tools
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = 'Stop'
+          cargo install cargo-nextest --version 0.9.143 --locked --root output/cargo-tools
+          cargo install wasm-bindgen-cli --version 0.2.128 --locked --root output/wasm-bindgen-cli
+          Add-Content -Path $env:GITHUB_PATH -Value "$PWD\output\cargo-tools\bin"
+          Add-Content -Path $env:GITHUB_PATH -Value "$PWD\output\wasm-bindgen-cli\bin"
+      - name: Run the committed Metis gate
+        shell: pwsh
+        run: python scripts/verify.py
+      - name: Upload gate evidence
+        if: always()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        with:
+          name: metis-verification-${{ github.run_id }}
+          path: |
+            output/verification.json
+            output/*.log
+            output/provider-dependencies.json
+            output/visual/latest/**
+            output/distribution/latest/**
+            output/browser/**
+          if-no-files-found: ignore
+          retention-days: 7
+
+  workflow-lint:
+    name: Workflows are valid
+    if: github.event_name != 'pull_request' || github.event.pull_request.draft == false
+    uses: ryancinsight/atlas/.github/workflows/workflow-lint.yml@dba8369f5df4e890fdc2aed2f097e48544b817ee
+    permissions:
+      contents: read
+
+  lockfile:
+    name: Lockfile integrity
+    if: github.event_name != 'pull_request' || github.event.pull_request.draft == false
+    uses: ryancinsight/atlas/.github/workflows/lockfile-guard.yml@dba8369f5df4e890fdc2aed2f097e48544b817ee
+    permissions:
+      contents: read
+
+  adr-index:
+    name: ADR index is current
+    if: github.event_name != 'pull_request' || github.event.pull_request.draft == false
+    uses: ryancinsight/atlas/.github/workflows/adr-index-guard.yml@dba8369f5df4e890fdc2aed2f097e48544b817ee
+    with:
+      strict: true
+    permissions:
+      contents: read

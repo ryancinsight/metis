@@ -23,6 +23,26 @@ labels and geometry with the committed gallery baseline. A passing WASM build
 does not run a browser; use the browser workbench command below for that
 runtime evidence.
 
+## Inspect hosted verification
+
+The single [Metis verification workflow](../../.github/workflows/ci.yml) runs the
+same `python scripts/verify.py` gate on `windows-latest`, where the executable
+and MSI workflow is implemented. It installs the pinned `cargo-nextest` and
+`wasm-bindgen-cli` tools, runs the native and WASM targets, and uploads the
+bounded report and stage logs even when a stage fails. Atlas's pinned reusable
+workflow jobs check workflow syntax, the standalone Cargo lock and the ADR
+index; they do not claim a native window, macOS/Linux host, accessibility
+technology or another unsupported target.
+
+For a failed run, download the `metis-verification-<run-id>` artifact and open
+`output/verification.json` first. Its `status`, `revision`, source/lock hashes,
+stage outcome and command budgets identify the exact failed gate; the matching
+`output/<stage>.log` contains the bounded command diagnostic and
+`output/visual/latest/report.json` describes semantic and pixel differences.
+Repair the source or reviewed baseline, rerun `python scripts/verify.py` locally,
+and push the fix. CI never refreshes snapshots, so a state, image or parser
+regression remains a failing artifact until the implementation is corrected.
+
 ## Check the browser transport slice
 
 The IPC package now has a browser-thread contract backed by Moirai's bounded

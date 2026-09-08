@@ -2,9 +2,27 @@
 
 The owning gate is `python scripts/verify.py`. It records bounded logs under the
 ignored `output/` directory and checks formatting, strict Clippy, debug and release
-nextest suites, doctests, documentation, example execution and dependency closure.
+nextest suites, the generated `wasm-bindgen` browser assets, doctests, documentation,
+example execution and dependency closure.
 Native tests use `.config/nextest.toml`: slow at 30 seconds, terminate at 60 seconds,
 zero retries. The demonstration executable has a 60-second outer budget.
+
+## Verification workflow definition — 2026-09-07
+
+`.github/workflows/ci.yml` is the one hosted verification pipeline. Its Windows
+job installs `cargo-nextest` 0.9.143 and `wasm-bindgen-cli` 0.2.128, then invokes
+the same `python scripts/verify.py` gate used locally. The workflow records its
+source hash through the gate, uploads `output/verification.json` and bounded
+stage logs on failure, and never updates visual baselines. Pinned Atlas reusable
+jobs check workflow syntax, the standalone Cargo lock and the strict ADR index.
+The jobs run only for the actual `feat/process-foundation` default branch, pull
+requests that are ready for review, and merge-queue events; no unsupported
+native-window or cross-platform host job is advertised.
+
+The workflow contract is covered by the Python gate tests, including full
+revision pinning, draft suppression, guard references and the Windows target.
+This local check validates the committed definition; a hosted run is required
+before reporting GitHub runner results or CI timing evidence.
 
 Entry baseline: `cargo check --workspace --offline` passes with documentation and
 source warnings. The original native test build fails with E0382 in the threaded

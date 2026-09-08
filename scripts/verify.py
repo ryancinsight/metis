@@ -146,6 +146,10 @@ def run(name, args, *, cwd, environment, seconds=300, expected_exit=0, required_
 def source_state(metadata, configs):
     inputs = {ROOT / "rust-toolchain.toml", ROOT / "metis.json", *configs}
     inputs.update(path for path in (ROOT / "examples" / "browser").glob("*") if path.is_file())
+    workflow_root = ROOT / ".github" / "workflows"
+    if workflow_root.is_dir():
+        inputs.update(path for path in workflow_root.iterdir()
+                      if path.is_file() and path.suffix in {".yml", ".yaml"})
     inputs.update((ROOT / "docs").rglob("*.md"))
     for package in metadata["packages"]:
         if package["source"] is None:
@@ -255,6 +259,8 @@ def main():
         cargo("wasm-libraries", ["build", "--lib", "--target", "wasm32-unknown-unknown",
                                  "-p", "metis-core", "-p", "metis-platform", "-p", "metis-ui-lang",
                                  "-p", "metis-web"])
+        execute("browser-assets", [sys.executable, str(ROOT / "scripts" / "browser.py"), "build"],
+                seconds=300, cwd=ROOT)
         cargo("clippy", ["clippy", "--workspace", "--all-targets"], tail=["--", "-D", "warnings"])
         cargo("build", ["build", "--workspace", "--bins", "--examples"])
         cargo("tests", ["nextest", "run", "--workspace", "--profile", "ci"])

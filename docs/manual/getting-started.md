@@ -1,10 +1,11 @@
 # Build and run
 
-Install Rust through rustup, Python 3.11 or later for repository automation, and
-the pinned `cargo-nextest` runner:
+Install Rust through rustup, Python 3.11 or later for repository automation, the
+pinned `cargo-nextest` runner and the browser loader tool:
 
 ```text
 cargo install cargo-nextest --version 0.9.143 --locked
+cargo install wasm-bindgen-cli --version 0.2.128 --locked --root output/wasm-bindgen-cli
 git clone https://github.com/ryancinsight/metis
 cd metis
 cargo fetch --locked
@@ -13,8 +14,9 @@ python scripts/verify.py
 
 `rust-toolchain.toml` selects Rust 1.97.0 and the `wasm32-unknown-unknown` target.
 The gate builds the core, pixel storage, presentation and browser-host libraries
-for WASM; this checks compilation, while [Run the browser workbench](browser.md)
-provides the runtime trace. The verification script builds
+for WASM and regenerates the pinned `wasm-bindgen` loader; this checks compilation
+and packaging, while [Run the browser workbench](browser.md) provides the runtime
+trace. The verification script builds
 the application, distribution tool and examples, runs debug/release tests and
 documentation, and checks that the gallery snapshot matches the renderer. Subsequent Cargo commands in the
 gate use the committed lockfile offline. When run inside Atlas, the gate resolves

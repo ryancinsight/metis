@@ -44,12 +44,15 @@ limits are not treatment guidance.
 
 ## Build and run
 
-Use the pinned Rust toolchain and cargo-nextest 0.9.143. From this directory:
+Use the pinned Rust toolchain, cargo-nextest 0.9.143 and wasm-bindgen-cli 0.2.128.
+From this directory:
 
 ```text
 cargo build --workspace --bins
 cargo run -p metis-app -- 60 2 0.2
 cargo run -p metis-app -- --help
+cargo install cargo-nextest --version 0.9.143 --locked
+cargo install wasm-bindgen-cli --version 0.2.128 --locked --root output/wasm-bindgen-cli
 python scripts/verify.py
 ```
 

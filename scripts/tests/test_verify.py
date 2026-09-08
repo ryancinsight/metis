@@ -2,6 +2,7 @@
 import json
 import os
 import pathlib
+import re
 import shutil
 import subprocess
 import sys
@@ -144,6 +145,53 @@ class BootstrapEvidenceTests(unittest.TestCase):
             self.addCleanup(output.unlink)
         self.assertEqual(output.resolve(), sentinel.parent.resolve())
         self.assert_rejected_alias(sentinel)
+
+class WorkflowContractTests(unittest.TestCase):
+    """Keep the hosted workflow aligned with the committed local gate."""
+
+    @classmethod
+    def setUpClass(cls):
+        cls.workflow = SCRIPTS.parent / ".github" / "workflows" / "ci.yml"
+        cls.source = cls.workflow.read_text(encoding="utf-8")
+
+    def test_one_pinned_pipeline_covers_supported_targets(self):
+        required = (
+            "pull_request:",
+            "merge_group:",
+            "push:",
+            "branches: [feat/process-foundation]",
+            "permissions:\n  contents: read",
+            "concurrency:",
+            "cancel-in-progress:",
+            "python scripts/verify.py",
+            "cargo install cargo-nextest --version 0.9.143 --locked",
+            "cargo install wasm-bindgen-cli --version 0.2.128 --locked",
+            "output/verification.json",
+            "if-no-files-found: ignore",
+            "workflow-lint:",
+            "lockfile:",
+            "adr-index:",
+        )
+        for fragment in required:
+            with self.subTest(fragment=fragment):
+                self.assertIn(fragment, self.source)
+
+    def test_external_actions_and_guards_are_revision_pinned(self):
+        references = re.findall(r"^\s*(?:-\s+)?uses:\s+([^@\s]+)@([^\s#]+)", self.source, re.MULTILINE)
+        self.assertGreaterEqual(len(references), 4)
+        for action, revision in references:
+            with self.subTest(action=action):
+                self.assertRegex(revision, r"\A[0-9a-f]{40}\Z")
+        atlas = "dba8369f5df4e890fdc2aed2f097e48544b817ee"
+        for guard in ("workflow-lint.yml", "lockfile-guard.yml", "adr-index-guard.yml"):
+            with self.subTest(guard=guard):
+                self.assertIn(f"ryancinsight/atlas/.github/workflows/{guard}@{atlas}", self.source)
+
+    def test_draft_pull_requests_and_unsupported_hosts_are_excluded(self):
+        draft_guard = "if: github.event_name != 'pull_request' || github.event.pull_request.draft == false"
+        self.assertEqual(self.source.count(draft_guard), 4)
+        self.assertNotIn("pull_request_target", self.source)
+        self.assertIn("runs-on: windows-latest", self.source)
 
 
 if __name__ == "__main__":
