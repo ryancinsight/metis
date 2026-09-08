@@ -105,7 +105,8 @@ body[data-metis-theme="high-contrast"] {
 .metis-header { grid-column: 1 / -1; }
 .metis-header > button { margin-top: 1rem; }
 .metis-brand { display: flex; align-items: center; gap: 1rem; }
-.metis-mark { flex: 0 0 4rem; width: 4rem; height: 4rem; object-fit: contain; }
+.metis-mark-frame { flex: 0 0 4rem; width: 4rem; height: 4rem; }
+.metis-mark { display: block; width: 100%; height: 100%; object-fit: contain; }
 .metis-kicker { margin: 0 0 0.5rem; color: var(--metis-accent); font-size: 0.75rem; letter-spacing: 0.12em; }
 h1, h2 { margin-top: 0; }
 dialog { max-width: min(32rem, calc(100vw - 3rem)); border: 1px solid var(--metis-accent); border-radius: 0.75rem; background: var(--metis-surface); color: var(--metis-text); padding: 1.25rem; }

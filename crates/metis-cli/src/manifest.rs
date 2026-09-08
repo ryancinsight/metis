@@ -1,5 +1,6 @@
 //! Validated application identity and explicit payload ownership.
 mod icon;
+mod svg;
 
 use crate::Result;
 use serde::{Deserialize, Serialize};
@@ -15,6 +16,16 @@ pub(crate) const MANIFEST_LIMIT: u64 = 1024 * 1024;
 pub(crate) const FILE_LIMIT: usize = 4096;
 pub(crate) const PAYLOAD_LIMIT: u64 = 1024 * 1024 * 1024;
 pub(crate) use icon::{ICON_LIMIT, source as icon_source, validate_file as validate_icon_file};
+
+pub(crate) fn validate_resource_file(path: &Path) -> Result<()> {
+    if path
+        .extension()
+        .is_some_and(|extension| extension.eq_ignore_ascii_case("svg"))
+    {
+        svg::validate_file(path)?;
+    }
+    Ok(())
+}
 
 #[derive(Debug, Deserialize, Serialize)]
 #[serde(deny_unknown_fields)]

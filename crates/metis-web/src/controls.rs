@@ -6,7 +6,10 @@ use metis_frontend::{FormInputs, FormState};
 pub(crate) const BROWSER_MARKUP: &str = r#"
 <header class="metis-header">
   <div class="metis-brand">
-    <img class="metis-mark" src="./assets/metis-mark.png" width="64" height="64" decoding="async" alt="Métis mark">
+    <picture class="metis-mark-frame">
+      <source srcset="./assets/metis-mark.svg" type="image/svg+xml">
+      <img class="metis-mark" src="./assets/metis-mark.png" width="64" height="64" decoding="async" alt="Métis mark">
+    </picture>
     <div>
       <p class="metis-kicker">METIS / BROWSER WORKBENCH</p>
       <h1>Authorized clinical form boundary</h1>

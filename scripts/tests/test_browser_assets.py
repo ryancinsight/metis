@@ -20,7 +20,8 @@ class BrowserAssetContractTests(unittest.TestCase):
         self.assertNotIn("<style", document.lower())
         self.assertNotIn("<script type=\"module\">", document.lower())
         self.assertIn('<link rel="stylesheet" href="./styles.css">', document)
-        self.assertIn('<link rel="icon" type="image/png" href="./assets/metis-mark.png">', document)
+        self.assertIn('<link rel="icon" type="image/svg+xml" href="./assets/metis-mark.svg">', document)
+        self.assertIn('<link rel="alternate icon" type="image/png" href="./assets/metis-mark.png">', document)
         self.assertIn('<script type="module" src="./bootstrap.js"></script>', document)
         policy = document.split('http-equiv="Content-Security-Policy" content="', 1)[1].split(
             '"', 1
@@ -54,10 +55,17 @@ class BrowserAssetContractTests(unittest.TestCase):
         self.assertEqual(data[:4], b"\x00\x00\x01\x00")
         self.assertEqual(int.from_bytes(data[4:6], "little"), 7)
         self.assertLessEqual(len(data), 1024 * 1024)
+        svg = ROOT / "examples" / "browser" / "assets" / "metis-mark.svg"
+        svg_text = svg.read_text(encoding="utf-8")
+        self.assertLessEqual(svg.stat().st_size, 256 * 1024)
+        self.assertTrue(svg_text.startswith('<svg xmlns="http://www.w3.org/2000/svg"'))
+        for forbidden in ("<!", "<script", "href=", "url(", "javascript:", "https://"):
+            self.assertNotIn(forbidden, svg_text.lower())
         controls = (ROOT / "crates" / "metis-web" / "src" / "controls.rs").read_text(
             encoding="utf-8"
         )
         self.assertIn('class="metis-mark"', controls)
+        self.assertIn('srcset="./assets/metis-mark.svg"', controls)
         self.assertIn('src="./assets/metis-mark.png"', controls)
 
     def test_build_and_distribution_declare_the_starter_mark(self):
@@ -77,10 +85,18 @@ class BrowserAssetContractTests(unittest.TestCase):
             },
             manifest["resources"],
         )
+        self.assertIn(
+            {
+                "source": "examples/browser/assets/metis-mark.svg",
+                "destination": "assets/metis-mark.svg",
+            },
+            manifest["resources"],
+        )
         browser_script = (ROOT / "scripts" / "browser.py").read_text(encoding="utf-8")
         self.assertIn("SOURCE.rglob(\"*\")", browser_script)
         self.assertIn('OUTPUT / "assets" / "metis-mark.png"', browser_script)
         self.assertIn('OUTPUT / "assets" / "metis-mark.ico"', browser_script)
+        self.assertIn('OUTPUT / "assets" / "metis-mark.svg"', browser_script)
 
     def test_bootstrap_keeps_navigation_same_origin(self):
         bootstrap = (ROOT / "examples" / "browser" / "bootstrap.js").read_text(

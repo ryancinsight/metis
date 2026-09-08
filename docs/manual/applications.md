@@ -11,22 +11,23 @@ The separate [process demonstration](getting-started.md) tests actual child proc
 
 ## Starter theme and mark
 
-The browser workbench ships a local starter mark for the application header and
-favicon:
+The browser workbench ships a local starter vector mark for the application
+header and favicon:
 
-![Starter Métis mark](../../examples/browser/assets/metis-mark.png)
+![Starter Métis mark](../../examples/browser/assets/metis-mark.svg)
 
-The mark is generated with the built-in image generation tool on 2026-09-08
-from the prompt “transparent starter Metis app icon, abstract M from teal and
-indigo facets in a rounded hex frame, no text or watermark”. It is a replaceable
-project asset, not a remote stock download. Applications can keep the same
-`Theme` selector and replace the semantic CSS variables and this PNG in their
-own browser asset directory.
+The SVG is a local, scriptless vector asset with a fixed viewport and literal
+path colors. It is a replaceable project asset, not a remote stock download.
+Applications can keep the same `Theme` selector and replace the semantic CSS
+variables and this SVG in their own browser asset directory. The browser build
+also carries a PNG alternate for user agents that do not select SVG sources.
 
 The package demonstration derives `metis-mark.ico` from the same local artwork
 for the Windows Start Menu shortcut. Its seven embedded PNG resolutions are
 validated by `metis-cli` before the MSI is written; the portable package keeps
-the ICO under `assets/` as well.
+the SVG, PNG and ICO under `assets/` as well. The CLI applies the bounded SVG
+contract before copying the vector resource, rejecting XML expansion, external
+references, unknown attributes, malformed geometry and oversized viewports.
 
 ## Initial form
 

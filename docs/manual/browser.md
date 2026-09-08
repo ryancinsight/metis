@@ -167,15 +167,22 @@ the selector and replace those variables in a same-origin stylesheet to apply
 its own palette. Theme state changes presentation only; it does not change
 backend authority, IPC messages or DICOM data.
 
-The page loads the starter [Métis mark](../../examples/browser/assets/metis-mark.png)
+The page loads the starter [Métis vector mark](../../examples/browser/assets/metis-mark.svg)
 from the same-origin `assets/` directory and uses it as the favicon and header
-image. The same directory carries the multi-resolution
-[native icon](../../examples/browser/assets/metis-mark.ico) for packaged
-applications. `python scripts/browser.py build` copies both local assets and
-fails if either declared mark is missing. Replace the PNG, ICO and the
-`.metis-mark` rule with project-owned artwork for a branded application. The
-browser host does not fetch an icon, font or media resource from a remote
-origin.
+image. A PNG alternate and the multi-resolution
+[native icon](../../examples/browser/assets/metis-mark.ico) remain in the same
+directory for browsers and packaged applications that need those formats.
+`python scripts/browser.py build` copies all three local assets and fails if a
+declared mark is missing. Replace the SVG, PNG, ICO and the `.metis-mark` rule
+with project-owned artwork for a branded application. The browser host does
+not fetch an icon, font or media resource from a remote origin.
+
+The packaging boundary admits a strict SVG subset so an installer never stores
+an unbounded document language: one fixed positive viewport, optional
+`xMidYMid meet`, literal hexadecimal paints, finite numeric opacity and
+self-closing path elements. XML declarations, entities, scripts, external
+references, unknown attributes, malformed geometry and dimensions over 4096
+pixels are rejected before the resource enters a portable or MSI payload.
 
 To demonstrate the contract, build and serve the workbench, select each mode,
 and capture the header, view-options card and focus ring at the same viewport.

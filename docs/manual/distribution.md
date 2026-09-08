@@ -110,14 +110,16 @@ reports distinct backend/frontend process identifiers. It also checks the
 shortcut's executable, arguments and working directory,
 removes the installed application and retains its user-created test file.
 
-The manifest's explicit PNG and ICO resources are copied into the portable and
-MSI payloads, so browser and native branding remain available after
+The manifest's explicit SVG, PNG and ICO resources are copied into the portable
+and MSI payloads, so browser and native branding remain available after
 installation. Set `icon` to the ICO source when packaging an application. Métis
-validates the ICO before writing the MSI `Icon` table, and the Start Menu
-shortcut's `Icon_` field references the embedded `MetisIcon` row. The starter
-ICO contains seven PNG resolutions from 16×16 through 256×256 and is generated
-from the local project mark; replace it with project-owned artwork that meets
-the same bounded format contract.
+validates the SVG and ICO before staging them; the SVG validator admits one
+fixed viewport with literal path geometry and colors, while the ICO validator
+checks its bounded PNG entries. The Start Menu shortcut's `Icon_` field
+references the embedded `MetisIcon` row. The starter ICO contains seven PNG
+resolutions from 16×16 through 256×256 and is generated from the local project
+mark; replace the SVG, PNG and ICO with project-owned artwork that meets the
+same bounded format contracts.
 
 The report at `output/distribution/latest/workflow.json` records exact inventory,
 commands, calculated values and install/uninstall outcomes. With `--install`,

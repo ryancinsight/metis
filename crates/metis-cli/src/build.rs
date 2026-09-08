@@ -55,10 +55,9 @@ pub(crate) fn application(input: &Path, output: &Path, kind: OutputKind) -> Resu
     }
     let mut resources = Vec::new();
     for resource in &application.resources {
-        resources.push((
-            manifest::source(&root, &resource.source)?,
-            resource.destination.clone(),
-        ));
+        let source = manifest::source(&root, &resource.source)?;
+        manifest::validate_resource_file(&source)?;
+        resources.push((source, resource.destination.clone()));
     }
     let artifacts = compile(cargo_manifest, &application)?;
     let entry = format!("{}{}", application.entry, std::env::consts::EXE_SUFFIX);

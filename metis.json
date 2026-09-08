@@ -26,6 +26,10 @@
     {
       "source": "examples/browser/assets/metis-mark.ico",
       "destination": "assets/metis-mark.ico"
+    },
+    {
+      "source": "examples/browser/assets/metis-mark.svg",
+      "destination": "assets/metis-mark.svg"
     }
   ],
   "arguments": [
