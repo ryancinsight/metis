@@ -12,6 +12,10 @@ mod session;
 #[cfg(any(target_arch = "wasm32", test))]
 mod controls;
 
+#[cfg(any(target_arch = "wasm32", test))]
+#[path = "browser/gesture_policy.rs"]
+mod gesture_policy;
+
 #[cfg(target_arch = "wasm32")]
 mod browser;
 

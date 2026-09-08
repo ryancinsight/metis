@@ -30,6 +30,13 @@ The same surface listens for browser wheel events through Moirai's
 `WheelMetadata` snapshot and renders pixel/line/page deltas, viewport position
 and modifier state without importing `web-sys`. The listener prevents the
 browser default action after the provider has validated the event kind.
+The Rust-owned gesture policy consumes those records as a bounded viewport:
+one captured pointer drags a CSS-pixel pan, ordinary wheel input pans, and
+Ctrl+wheel changes zoom between 50% and 300%. Line and page deltas are
+normalized to fixed CSS-pixel units; non-finite deltas are rejected without
+changing the viewport. The policy writes one CSS transform and exposes its
+state through `gesture-status`. Single-pointer touch follows the same drag
+path; multi-touch and pinch interpretation remain host work.
 
 Build the WASM artifact and generated browser glue with:
 

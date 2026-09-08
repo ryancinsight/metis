@@ -147,7 +147,7 @@ boundary. Scroll the named **Pointer capture surface**. Rust reads Moirai's
 `WheelMetadata` record and renders the horizontal, vertical and depth deltas,
 their pixel/line/page unit, viewport coordinates and modifier keys. The
 listener prevents the browser default action after the event kind is
-validated; a viewer may then apply its own bounded zoom or pan policy.
+validated; the gesture section below applies the bounded pan and zoom policy.
 
 The 2026-09-07 wheel trace used the generated browser build at 1280×720 CSS
 pixels and device scale 1.25. An in-app browser scroll action produced
@@ -159,6 +159,27 @@ physical-wheel or cross-engine result. The provider revision is
 `f634b3a802ec0355da22f111ed01067d2435c5cb`; full command output and the
 rendered screenshot are recorded in
 [browser wheel metadata evidence](../VERIFICATION.md#browser-wheel-metadata-evidence--2026-09-07).
+
+The pointer surface also exercises the Rust-owned gesture policy. Drag from
+one point to another to pan the content; ordinary wheel input pans by its
+normalized CSS-pixel delta; hold Control while scrolling to zoom. The policy
+accepts one active pointer, clamps pan to ±1024 CSS pixels and zoom to 50–300%,
+normalizes line and page units to 16 and 640 CSS pixels, and rejects non-finite
+deltas without changing state. `gesture-status` reports the action, pan and
+zoom, while the content's CSS transform provides the visible result. A
+single-pointer touch drag follows the same path; multi-touch and pinch remain
+outside this browser slice.
+
+The 2026-09-07 gesture trace used the generated build at the same 1280×720
+CSS-pixel viewport and device scale 1.25. An upward scroll rendered
+`Gesture: wheel pan; pan (0.0, -129.6) CSS px; zoom 100%`; a rightward scroll
+then rendered `pan (426.4, -129.6) CSS px`; dragging from `(300, 590)` to
+`(420, 620)` rendered `Gesture: release; pan (546.4, -99.6) CSS px; zoom 100%`.
+The live screenshot showed the translated content and the semantic status.
+The trace is automation-generated; CUA cannot expose hardware trust, native
+touch, IME or another browser engine. Native policy tests cover line/page
+normalization, bounded zoom and non-finite rejection; the live trace does not
+claim physical-input or cross-engine parity.
 
 The captured service journey at revision
 `d879779247c8cfc5870f62f99a5364cbbf2d3c58` used the Codex in-app

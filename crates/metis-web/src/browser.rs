@@ -6,6 +6,8 @@ mod config;
 mod dialog;
 #[path = "browser/events.rs"]
 mod events;
+#[path = "browser/gesture.rs"]
+mod gesture;
 #[path = "browser/pointer.rs"]
 mod pointer;
 #[path = "view.rs"]
@@ -85,73 +87,7 @@ impl BrowserApplication {
         let app = Rc::new(RefCell::new(None));
         let task = Rc::new(RefCell::new(None));
 
-        let mut listeners = Vec::with_capacity(18);
-        listeners.push(input_listener(
-            document,
-            &state,
-            &app,
-            "patient-id",
-            InputField::Patient,
-        )?);
-        listeners.push(input_listener(
-            document,
-            &state,
-            &app,
-            "weight-kg",
-            InputField::Weight,
-        )?);
-        listeners.push(input_listener(
-            document,
-            &state,
-            &app,
-            "concentration-mg-ml",
-            InputField::Concentration,
-        )?);
-        listeners.push(input_listener(
-            document,
-            &state,
-            &app,
-            "target-dose",
-            InputField::Dose,
-        )?);
-        listeners.push(control_listener(
-            document,
-            &state,
-            "show-events",
-            "change",
-            ControlField::ShowEvents,
-        )?);
-        listeners.push(control_listener(
-            document,
-            &state,
-            "dose-volume",
-            "change",
-            ControlField::DisplayUnit(DisplayUnit::Volume),
-        )?);
-        listeners.push(control_listener(
-            document,
-            &state,
-            "dose-mass",
-            "change",
-            ControlField::DisplayUnit(DisplayUnit::DrugMass),
-        )?);
-        listeners.push(control_listener(
-            document,
-            &state,
-            "result-scale",
-            "input",
-            ControlField::Scale,
-        )?);
-        listeners.push(control_listener(
-            document,
-            &state,
-            "result-detail-select",
-            "change",
-            ControlField::ResultDetail,
-        )?);
-        listeners.extend(dialog::listeners(document)?);
-        listeners.extend(pointer::listeners(document)?);
-        listeners.extend(wheel::listeners(document)?);
+        let mut listeners = control_listeners(document, &state, &app)?;
 
         let form = view::element(document, "metis-form")?;
         let listener_document = document.clone();
@@ -249,6 +185,44 @@ impl BrowserApplication {
         });
         *self.task.borrow_mut() = Some(task);
     }
+}
+
+fn control_listeners(
+    document: &WebDocument,
+    state: &Rc<RefCell<BrowserState>>,
+    app: &Rc<RefCell<Option<AsyncFrontendApp<BrowserWebSocketTransport>>>>,
+) -> io::Result<Vec<WebEventListener>> {
+    let mut listeners = Vec::with_capacity(23);
+    for (id, field) in [
+        ("patient-id", InputField::Patient),
+        ("weight-kg", InputField::Weight),
+        ("concentration-mg-ml", InputField::Concentration),
+        ("target-dose", InputField::Dose),
+    ] {
+        listeners.push(input_listener(document, state, app, id, field)?);
+    }
+    for (id, event_name, field) in [
+        ("show-events", "change", ControlField::ShowEvents),
+        (
+            "dose-volume",
+            "change",
+            ControlField::DisplayUnit(DisplayUnit::Volume),
+        ),
+        (
+            "dose-mass",
+            "change",
+            ControlField::DisplayUnit(DisplayUnit::DrugMass),
+        ),
+        ("result-scale", "input", ControlField::Scale),
+        ("result-detail-select", "change", ControlField::ResultDetail),
+    ] {
+        listeners.push(control_listener(document, state, id, event_name, field)?);
+    }
+    listeners.extend(dialog::listeners(document)?);
+    listeners.extend(pointer::listeners(document)?);
+    listeners.extend(wheel::listeners(document)?);
+    listeners.extend(gesture::listeners(document)?);
+    Ok(listeners)
 }
 
 fn input_listener(

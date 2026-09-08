@@ -46,8 +46,12 @@ The pointer surface also listens for wheel events. Moirai converts the browser
 event into a copyable `WheelMetadata` snapshot containing all three deltas,
 their browser unit, viewport coordinates and modifier keys. Metis renders that
 record and prevents the browser default action after the event kind is
-validated; interpreting scrolling as a viewer gesture remains an application
-policy.
+validated. A Rust-owned `GestureViewport` then applies the application policy:
+one captured pointer drags a bounded CSS-pixel pan, ordinary wheel input pans,
+and Ctrl+wheel zooms between 50% and 300%. Line and page units normalize to
+fixed CSS-pixel scales; non-finite deltas are rejected without mutation. The
+single-pointer path also handles a touch pointer as a drag; multi-touch and
+pinch interpretation remain open.
 
 ## Alternatives
 
@@ -93,10 +97,11 @@ pointer type, coordinates, buttons, modifiers and primary marker. The wheel
 increment consumes `WheelMetadata` from merged Moirai revision
 `f634b3a802ec0355da22f111ed01067d2435c5cb`; an in-app browser scroll action
 renders input-sensitive vertical and horizontal pixel deltas with the target
-coordinates and modifier state.
+coordinates and modifier state. The gesture increment adds native-tested
+bounded pan/zoom state and a live drag/scroll transform trace.
 
 ## Residuals
 
-Drag/drop policy, touch gesture interpretation, IME, accessibility
+Drag/drop policy, multi-touch/pinch interpretation, IME, accessibility
 technology and native-window input remain under the linked backlog items. This
 increment does not claim cross-engine or native input parity.
