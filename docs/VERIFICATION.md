@@ -309,6 +309,30 @@ accessibility technology support and OS permission isolation remain open in
 [METIS-SERVICES-001](../backlog.md#METIS-SERVICES-001) and
 [METIS-DESKTOP-001](../backlog.md#METIS-DESKTOP-001).
 
+<a id="browser-delegated-control-evidence"></a>
+## Browser delegated-control and text-boundary evidence — 2026-09-08
+
+At Metis revision `c08dcbd`, the generated workbench was rebuilt and loaded in
+the Codex in-app browser at a 1280×720 CSS-pixel viewport and device scale 1.25.
+The browser engine version was unavailable. With no service endpoint configured,
+the trace exercised only the local Rust/WASM host and its semantic DOM state.
+
+Changing **Weight (kg)** from `72.5` to `80` produced an accessibility update for
+the same `weight-kg` control and changed the Rust-owned result to `80.00 kg`.
+Changing **Result scale** from `100` to `120` updated the same `result-scale`
+slider and the `options-state` text to `scale 120%`. Changing **Theme** from
+system preference to **Dark** selected the existing `theme-mode` control and
+updated `options-state` to `theme dark`. These three transitions arrived through
+the delegated `input`/`change` listeners on `#metis-app`; the semantic control
+identities and surrounding form remained present after each render.
+
+The trace then selected **Clinical note**, replaced its value with the literal
+`<img src=x onerror=alert(1)>`, and typed it through the browser input path. The
+accessibility tree and screenshot showed the exact characters in the textarea and
+the preview, with no added image or other element. This verifies the text-only
+rendering boundary for that input; it does not claim cross-engine or
+assistive-technology coverage.
+
 ## Browser lifecycle evidence — 2026-09-07
 
 After rebuilding the generated artifacts from the standalone lock at Moirai

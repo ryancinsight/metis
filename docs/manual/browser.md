@@ -145,7 +145,8 @@ viewport. The semantic tree must retain the same controls while the result text,
 `<img src=x onerror=alert(1)>` in **Clinical note**; the preview must show the
 literal characters and the DOM must contain no added element. The existing
 browser visual and semantic capture records the target engine, viewport and
-rendered state for this check.
+rendered state for this check; the committed trace is in the [delegated-control
+evidence](../VERIFICATION.md#browser-delegated-control-evidence).
 
 ## Theme and branding
 
