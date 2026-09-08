@@ -67,6 +67,13 @@ pub(super) fn render(document: &WebDocument, state: &BrowserState) -> io::Result
     };
     set_text(document, "metis-events", event_status)?;
     set_text(document, "options-state", &state.controls.summary())?;
+    set_text(document, "drop-status", &state.drop_state.status_message())?;
+    let drop_zone = element(document, "drop-zone")?;
+    drop_zone.set_attribute("data-drop-state", state.drop_state.state_name())?;
+    drop_zone.set_attribute(
+        "data-drop-count",
+        &state.drop_state.file_count().to_string(),
+    )?;
     let submit_disabled =
         !matches!(state.bridge, BridgeStatus::Ready) || matches!(state.state, FormState::Pending);
     element(document, "submit-calculation")?.set_disabled(submit_disabled)?;

@@ -3,7 +3,7 @@ body { margin: 0; min-width: 320px; }
 .metis-host-controls { display: flex; gap: 0.65rem; max-width: 960px; margin: 0 auto; padding: 1rem 2rem 0; }
 .metis-host-controls button { margin-top: 0; }
 #metis-app { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 1.5rem; max-width: 960px; margin: 0 auto; padding: 2rem; }
-.metis-header, .metis-form, .metis-options, .metis-result { border: 1px solid #334155; border-radius: 0.75rem; background: #1e293b; padding: 1.25rem; }
+.metis-header, .metis-form, .metis-options, .metis-drop, .metis-result { border: 1px solid #334155; border-radius: 0.75rem; background: #1e293b; padding: 1.25rem; }
 .metis-header { grid-column: 1 / -1; }
 .metis-header > button { margin-top: 1rem; }
 .metis-kicker { margin: 0 0 0.5rem; color: #67e8f9; font-size: 0.75rem; letter-spacing: 0.12em; }
@@ -19,6 +19,14 @@ dialog p { color: #bae6fd; }
 #pointer-surface { display: grid; min-height: 6rem; place-items: center; overflow: hidden; border: 1px dashed #67e8f9; border-radius: 0.55rem; background: #0f172a; color: #bae6fd; padding: 1rem; text-align: center; user-select: none; cursor: crosshair; touch-action: none; }
 #gesture-content { max-width: 28rem; transform-origin: center; }
 #pointer-surface:focus-visible { outline: 3px solid #facc15; outline-offset: 2px; }
+.metis-drop { grid-column: 1 / -1; }
+.metis-drop > p { color: #bae6fd; min-height: 1.5rem; }
+#drop-zone { display: grid; min-height: 5rem; place-items: center; border: 1px dashed #a78bfa; border-radius: 0.55rem; background: #0f172a; color: #ddd6fe; padding: 1rem; text-align: center; transition: border-color 120ms ease, background-color 120ms ease; }
+#drop-zone p { margin: 0; max-width: 38rem; }
+#drop-zone[data-drop-state="hovering"] { border-color: #22d3ee; background: #164e63; }
+#drop-zone[data-drop-state="accepted"] { border-color: #34d399; background: #064e3b; }
+#drop-zone[data-drop-state="rejected"] { border-color: #fb7185; background: #4c0519; }
+#drop-zone:focus-visible { outline: 3px solid #facc15; outline-offset: 2px; }
 .metis-option { display: flex; align-items: center; gap: 0.55rem; }
 .metis-option-label { color: #94a3b8; font-size: 0.9rem; }
 label { color: #cbd5e1; font-size: 0.9rem; }

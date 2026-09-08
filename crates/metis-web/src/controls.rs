@@ -62,6 +62,13 @@ pub(crate) const BROWSER_MARKUP: &str = r#"
     <div id="gesture-content">Press or drag this surface to exercise Rust-owned pointer capture, metadata, wheel pan and Ctrl+wheel zoom.</div>
   </div>
 </section>
+<section class="metis-drop" aria-labelledby="drop-heading">
+  <h2 id="drop-heading">DICOM file drop</h2>
+  <p id="drop-status" role="status">Drop status: ready; no files captured</p>
+  <div id="drop-zone" role="group" tabindex="0" aria-describedby="drop-status" aria-label="DICOM file drop zone" data-drop-state="idle" data-drop-count="0">
+    <p>Drop DICOM files here to inspect bounded metadata. File bytes remain with the host.</p>
+  </div>
+</section>
 <section class="metis-result" aria-labelledby="result-heading">
   <h2 id="result-heading">Backend result</h2>
   <p id="result-state">No backend bridge configured.</p>

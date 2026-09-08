@@ -181,6 +181,34 @@ touch, IME or another browser engine. Native policy tests cover line/page
 normalization, bounded zoom and non-finite rejection; the live trace does not
 claim physical-input or cross-engine parity.
 
+The **DICOM file drop** card demonstrates the browser file metadata workflow.
+Drag one or more files onto **DICOM file drop**. Rust prevents the browser's
+default navigation, asks Moirai for a bounded `DropMetadata` snapshot, and
+renders the file count, the first three display names with byte sizes and the
+number of names or media types that look like DICOM. The zone exposes
+`dragenter`, `dragover`, `dragleave` and `drop` state through the semantic
+`drop-status` region and its `data-drop-state` attribute. A rejected metadata
+record leaves the zone in the typed rejected state and reports the provider
+error without retaining the batch.
+
+The provider caps one drop at 64 files, 4096 UTF-8 bytes per name and 256 bytes
+per media type. The browser host never reads file bytes and never treats a
+browser name as a filesystem path. Opening a DICOM therefore still requires a
+trusted native or browser file-reading grant; this increment proves metadata
+capture and rendering only. The CUA browser surface cannot synthesize a
+trusted operating-system file drop or expose `isTrusted`, so a manual trace
+must record the browser engine and whether the drop came from a physical file
+operation. Native policy tests cover bounds, typed rejection and DICOM
+candidate classification.
+
+The 2026-09-08 CUA trace opened the generated build at a 1280×720 CSS-pixel
+viewport with device scale 1.25. The accessibility tree exposed **DICOM file
+drop**, the `drop-status` status and the named **DICOM file drop zone** group;
+the screenshot showed the drop card between the pointer and backend-result
+cards with its ready state and focus outline. The browser engine version was
+unavailable, and no trusted local file was attached, so the trace does not
+claim a successful byte read or DICOM decode.
+
 The captured service journey at revision
 `d879779247c8cfc5870f62f99a5364cbbf2d3c58` used the Codex in-app
 browser at 1280×720 CSS pixels and device scale 1.25. Pointer activation of

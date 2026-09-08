@@ -177,7 +177,9 @@ an owner. “Unsupported” cannot replace delivery of a required mobile/native 
 - Live evidence: [browser wheel metadata evidence](docs/VERIFICATION.md#browser-wheel-metadata-evidence--2026-09-07) records input-sensitive vertical and horizontal scroll actions and the rendered status; the automation trust limitation is explicit.
 - Completed increment: `feat(web): Add bounded gesture policy` moves the Rust-owned `GestureViewport` state machine into a native-tested policy module; pointer drag pans, ordinary wheel input pans and Ctrl+wheel zooms with finite-input checks and bounded CSS transforms.
 - Live evidence: [browser gesture policy evidence](docs/VERIFICATION.md#browser-gesture-policy-evidence--2026-09-07) records vertical/horizontal wheel pan and a pointer drag with the transformed content; the CUA hardware-trust limitation is explicit.
-- Residuals: drag/drop policy, multi-touch/pinch interpretation, IME, accessibility technology and native-host input remain open; re-open this item when those dependencies land.
+- Completed increment: `feat(web): Add bounded browser file drops` consumes Moirai `DropMetadata` and `DroppedFile` from merged revision `630f914bcb34d4d65cc5e3db27a121163d040199`; Rust revalidates metadata, caps the retained batch at 64 entries, classifies DICOM candidates and renders a semantic drop status without reading bytes or trusting paths.
+- Live evidence: [browser file-drop evidence](docs/VERIFICATION.md#browser-file-drop-evidence--2026-09-08) records the native policy suite, wasm build and rendered drop-zone state; CUA cannot provide trusted OS file-drop evidence.
+- Residuals: trusted file-byte access for opening DICOMs, multi-touch/pinch interpretation, IME, accessibility technology, cross-engine parity, post-drop allocation measurement and native-host input remain open; re-open this item when those dependencies land.
 
 <a id="METIS-TEXT-001"></a>
 ## METIS-TEXT-001 — Text, selection and IME [minor]

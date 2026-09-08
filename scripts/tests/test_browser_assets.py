@@ -50,6 +50,28 @@ class BrowserAssetContractTests(unittest.TestCase):
         self.assertIn("destination.origin !== window.location.origin", bootstrap)
         self.assertIn("event.preventDefault()", bootstrap)
 
+    def test_file_drop_surface_is_semantic_and_bounded(self):
+        controls = (ROOT / "crates" / "metis-web" / "src" / "controls.rs").read_text(
+            encoding="utf-8"
+        )
+        styles = (ROOT / "examples" / "browser" / "styles.css").read_text(
+            encoding="utf-8"
+        )
+        for fragment in (
+            'id="drop-status" role="status"',
+            'id="drop-zone" role="group" tabindex="0"',
+            'aria-label="DICOM file drop zone"',
+            'data-drop-state="idle"',
+        ):
+            self.assertIn(fragment, controls)
+        for selector in (
+            '#drop-zone[data-drop-state="hovering"]',
+            '#drop-zone[data-drop-state="accepted"]',
+            '#drop-zone[data-drop-state="rejected"]',
+            "#drop-zone:focus-visible",
+        ):
+            self.assertIn(selector, styles)
+
 
 if __name__ == "__main__":
     unittest.main()

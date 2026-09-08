@@ -38,6 +38,13 @@ changing the viewport. The policy writes one CSS transform and exposes its
 state through `gesture-status`. Single-pointer touch follows the same drag
 path; multi-touch and pinch interpretation remain host work.
 
+The **DICOM file drop** surface consumes Moirai's bounded `DropMetadata`
+snapshot. Rust validates the copied display metadata again, caps the accepted
+batch at 64 files and reports names, media types, byte sizes and DICOM
+candidates in a semantic status region. The browser seam does not read file
+bytes or turn a browser name into a filesystem path; a native or trusted host
+must provide the byte-reading grant before a viewer can open a study.
+
 Build the WASM artifact and generated browser glue with:
 
 ```text

@@ -442,6 +442,40 @@ engine, so it claims the observed Rust/WASM event flow and rendered transform
 only. The native policy tests cover Ctrl-wheel zoom behavior and its 50–300%
 bound; the live trace does not claim physical-input or cross-engine parity.
 
+## Browser file-drop evidence — 2026-09-08
+
+The file-drop increment consumes Moirai `DropMetadata` and `DroppedFile` from
+merged revision `630f914bcb34d4d65cc5e3db27a121163d040199`. The provider bounds
+one event to 64 files, 4096 UTF-8 bytes per name and 256 bytes per media type;
+Metis revalidates those values and retains only a bounded `Box<[FileDropEntry]>`.
+The browser listener prevents default navigation for drag events, renders
+`data-drop-state` transitions and reports the first three names with sizes plus
+the DICOM-candidate count. No file bytes are read and no browser name becomes a
+filesystem path.
+
+The provider revision itself passes `cargo nextest run --locked -p moirai-pal`
+(50/50), native and wasm32 warning-denied Clippy and the wasm32 check before
+the Metis dependency update.
+
+The focused evidence against the standalone lock is:
+
+```text
+cargo nextest run --locked -p metis-web — 17/17 passed
+cargo clippy --locked -p metis-web --all-targets -- -D warnings — passed
+cargo check --locked -p metis-web --target wasm32-unknown-unknown — passed
+cargo clippy --locked -p metis-web --target wasm32-unknown-unknown -- -D warnings — passed
+python scripts/browser.py build — passed
+```
+
+The native policy tests cover empty names, NUL and oversized metadata, empty
+and 65-file drops, DICOM media/extension classification and UTF-8-safe display
+truncation. The generated HTML5/CSS page renders the **DICOM file drop** card,
+its semantic `drop-status` region and the focusable `drop-zone`; the visual
+capture records the ready state. CUA does not expose `isTrusted` and cannot
+attach a local operating-system file to a synthetic browser event, so this is
+metadata and rendering evidence, not proof of trusted file-byte access or DICOM
+opening. A native or authenticated browser host still owns that grant.
+
 ## Browser stale-response evidence — 2026-09-07
 
 The service conformance host now accepts `--response-delay-ms` with a bounded
