@@ -333,6 +333,24 @@ the preview, with no added image or other element. This verifies the text-only
 rendering boundary for that input; it does not claim cross-engine or
 assistive-technology coverage.
 
+<a id="browser-svg-asset-evidence"></a>
+## Browser SVG asset evidence — 2026-09-08
+
+At Metis revision `c1bc89f`, `python scripts/browser.py build` copied the local
+`metis-mark.svg` (368 bytes), PNG alternate and ICO into the generated browser
+directory. The Codex in-app browser loaded that exact output at a 1280×720
+CSS-pixel viewport and device scale 1.25. Its accessibility tree exposed the
+header image as `Métis mark`, and the inspected screenshot showed the teal and
+indigo vector mark in the header while the surrounding form remained intact.
+
+The focused `metis-cli` suite passed 19/19 tests, including the project SVG and
+rejections for XML expansion, external references, remote paints, missing paths,
+trailing markup and an oversized viewport. The browser asset suite passed 9/9
+tests and checks the same-origin SVG favicon, PNG alternate, manifest resource
+and copied output. This proves the local asset admission and generated browser
+presentation for one engine; browser decode behavior in other engines, installed
+MSI rendering and font/media resource lifecycles remain open V06 evidence.
+
 ## Browser lifecycle evidence — 2026-09-07
 
 After rebuilding the generated artifacts from the standalone lock at Moirai

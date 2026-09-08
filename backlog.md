@@ -248,7 +248,7 @@ an owner. “Unsupported” cannot replace delivery of a required mobile/native 
 - Acceptance: malformed/truncated/oversized/traversal assets fail; declared colors/alpha/aspect ratio/orientation match fixtures; media error and teardown states release resources.
 - Demonstration: [V06](docs/VERIFICATION.md#V06), actual asset gallery with source attribution and load/error states.
 - Completed increment: local project artwork now includes a scriptless fixed-viewport SVG, a PNG alternate and a seven-resolution PNG-in-ICO asset; `metis.json` declares each format, the CLI validates SVG and ICO bytes before staging, and portable/MSI payloads retain the resources.
-- Evidence: [ADR 0016](docs/adr/0016-theme-and-branding.md), [browser manual](docs/manual/browser.md), [distribution manual](docs/manual/distribution.md), focused `metis-cli` package tests and browser asset tests; runtime asset capture is recorded in [VERIFICATION](docs/VERIFICATION.md#V06).
+- Evidence: [ADR 0016](docs/adr/0016-theme-and-branding.md), [browser manual](docs/manual/browser.md), [distribution manual](docs/manual/distribution.md), focused `metis-cli` package tests and browser asset tests; runtime asset capture is recorded in [VERIFICATION](docs/VERIFICATION.md#browser-svg-asset-evidence).
 - Residuals: browser/native image decode and orientation, font loading, media controls/error teardown, and runtime shell rendering on a Windows install remain open under V06; the SVG admission and ICO packaging contracts are closed.
 
 <a id="METIS-GRAPHICS-001"></a>
