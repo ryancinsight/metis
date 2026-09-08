@@ -17,6 +17,9 @@ on:
       - 'metis.json'
       - '.github/workflows/**'
   merge_group:
+  schedule:
+    - cron: '17 3 * * 1'
+  workflow_dispatch:
   push:
     branches: [feat/process-foundation]
     paths:
@@ -43,7 +46,7 @@ concurrency:
 jobs:
   verify:
     name: Windows gate
-    if: github.event_name != 'pull_request' || github.event.pull_request.draft == false
+    if: github.event_name != 'schedule' && (github.event_name != 'pull_request' || github.event.pull_request.draft == false)
     runs-on: windows-latest
     timeout-minutes: 20
     env:
@@ -133,3 +136,53 @@ jobs:
       package: metis,metis-core,metis-backend,metis-frontend,metis-ipc,metis-ui-lang,metis-platform,metis-web
     permissions:
       contents: read
+
+  fuzz:
+    name: LibFuzzer parser campaign
+    if: github.event_name == 'schedule' || github.event_name == 'workflow_dispatch'
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    env:
+      CARGO_INCREMENTAL: '0'
+      CARGO_TERM_COLOR: always
+      RUSTUP_TOOLCHAIN: nightly-2026-08-01
+    steps:
+      - name: Checkout source
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+          fetch-depth: 2
+      - name: Setup pinned nightly Rust
+        uses: dtolnay/rust-toolchain@4cda84d5c5c54efe2404f9d843567869ab1699d4 # pinned action revision
+        with:
+          toolchain: nightly-2026-08-01
+          targets: x86_64-unknown-linux-gnu
+      - name: Assert the fuzz toolchain
+        shell: bash
+        run: |
+          set -euo pipefail
+          case "$(rustc --version)" in
+            *nightly*) ;;
+            *) echo 'ERROR: fuzz job requires the pinned nightly compiler' >&2; exit 1 ;;
+          esac
+      - name: Verify the fuzz lockfile
+        working-directory: fuzz
+        run: cargo metadata --locked --format-version 1 --no-deps
+      - name: Install cargo-fuzz
+        uses: taiki-e/install-action@a6b2e2dcd845ddd7f509ce4f3ed3d922b80cc5d9 # v2.84.0
+        with:
+          tool: cargo-fuzz@0.13.2
+          checksum: true
+      - name: Run bounded parser campaign
+        working-directory: fuzz
+        run: >-
+          cargo fuzz run --target x86_64-unknown-linux-gnu protocol --
+          -max_total_time=300 -rss_limit_mb=2048 -timeout=25 -print_final_stats=1
+      - name: Upload crash artifacts
+        if: failure()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        with:
+          name: metis-fuzz-artifacts-${{ github.run_id }}
+          path: fuzz/artifacts/
+          if-no-files-found: ignore
+          retention-days: 7

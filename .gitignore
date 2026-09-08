@@ -1,3 +1,6 @@
 /output/
 /target/
+/fuzz/artifacts/
+/fuzz/corpus/
+/fuzz/target/
 __pycache__/

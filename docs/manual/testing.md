@@ -32,11 +32,14 @@ The single [Metis verification workflow](../../.github/workflows/ci.yml) runs th
 same `python scripts/verify.py` gate on `windows-latest`, where the executable
 and MSI workflow is implemented. It installs the pinned `cargo-nextest` and
 `wasm-bindgen-cli` tools, runs the native and WASM targets, and uploads the
-bounded report and stage logs even when a stage fails. Atlas's pinned reusable
-workflow jobs check workflow syntax, the standalone Cargo lock and the ADR
-index, while the Atlas SemVer job reports public-API changes on ready pull
-requests. They do not claim a native window, macOS/Linux host, accessibility
-technology or another unsupported target.
+bounded report and stage logs even when a stage fails. Its scheduled and manual
+Ubuntu job runs the standalone LibFuzzer parser campaign with the pinned
+nightly toolchain and bounded time, RSS and per-input limits; a crash uploads
+the reproducer directory. Atlas's pinned reusable workflow jobs check workflow
+syntax, the standalone Cargo lock and the ADR index, while the Atlas SemVer job
+reports public-API changes on ready pull requests. They do not claim a native
+window, macOS/Linux host, accessibility technology or another unsupported
+target.
 
 For a failed run, download the `metis-verification-<run-id>` artifact and open
 `output/verification.json` first. Its `status`, `revision`, source/lock hashes,
@@ -62,10 +65,11 @@ cargo check --manifest-path fuzz/Cargo.toml --locked
 ```
 
 On a host with a working LibFuzzer toolchain, run the bounded campaign from the
-`fuzz/` directory with `cargo fuzz run protocol -- -runs=1000`. The Windows
-MSVC environment used for the current evidence cannot link the sanitizer
-runtime, so the deterministic property and mutation suite remains the
-reproducible parser oracle there.
+`fuzz/` directory with the pinned command in [the fuzz harness README](../../fuzz/README.md).
+The Windows MSVC environment used for the current local evidence cannot link
+the sanitizer runtime; the scheduled Ubuntu job is the runtime campaign, while
+the deterministic property and mutation suite remains the reproducible parser
+oracle on Windows.
 
 ## Run bounded mutation analysis
 

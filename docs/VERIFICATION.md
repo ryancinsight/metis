@@ -47,7 +47,7 @@ delegates wheel construction to Atlas's `python-wheels.yml`, then uploads
 through PyPI Trusted Publishing with `id-token: write`. This source-level
 check does not prove registry publisher registration, first publication,
 release authority or package upload; those are external release actions.
-Public branch inspection at revision `2b32d1f` confirmed the crates.io and PyPI
+Public branch inspection at revision `850d8f0` confirmed the crates.io and PyPI
 callers expose OIDC permissions without registry-token, SSH, GPG or private-key
 secrets. The inspection was logged out and therefore did not inspect account
 environment settings.
@@ -149,7 +149,12 @@ unviable mutants (viable score 1.0). The exact command, source SHA-256,
 toolchain and counts are recorded in the derived
 `output/mutation/latest/manifest.json`. The report is a scoped decoder result,
 not a workspace-wide mutation score. The Windows MSVC sanitizer limitation
-still leaves the nightly LibFuzzer campaign open.
+still leaves the runtime campaign result open. The single verification workflow
+now contains a scheduled and manually dispatchable Ubuntu job that selects
+`nightly-2026-08-01`, checks the locked fuzz manifest, and runs the protocol
+target with a 300-second campaign, 2 GiB RSS limit and 25-second input timeout.
+Crash reproducers are uploaded from `fuzz/artifacts/`; no hosted campaign result
+is claimed until that job completes on GitHub.
 
 The runner follows cargo-mutants' [nextest integration](https://mutants.rs/nextest.html)
 and [workspace test-package selection](https://mutants.rs/workspaces.html)

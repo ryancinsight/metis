@@ -158,6 +158,8 @@ class WorkflowContractTests(unittest.TestCase):
         required = (
             "pull_request:",
             "merge_group:",
+            "schedule:",
+            "workflow_dispatch:",
             "push:",
             "branches: [feat/process-foundation]",
             "permissions:\n  contents: read",
@@ -177,6 +179,9 @@ class WorkflowContractTests(unittest.TestCase):
             "adr-index:",
             "semver:",
             "semver-gate.yml",
+            "fuzz:",
+            "cargo fuzz run --target x86_64-unknown-linux-gnu protocol",
+            "-max_total_time=300 -rss_limit_mb=2048 -timeout=25",
         )
         for fragment in required:
             with self.subTest(fragment=fragment):
@@ -195,10 +200,31 @@ class WorkflowContractTests(unittest.TestCase):
 
     def test_draft_pull_requests_and_unsupported_hosts_are_excluded(self):
         draft_guard = "if: github.event_name != 'pull_request' || github.event.pull_request.draft == false"
-        self.assertEqual(self.source.count(draft_guard), 4)
+        self.assertEqual(self.source.count(draft_guard), 3)
+        self.assertIn("if: github.event_name != 'schedule' && (github.event_name != 'pull_request'", self.source)
         self.assertIn("github.event_name == 'pull_request' && github.event.pull_request.draft == false", self.source)
         self.assertNotIn("pull_request_target", self.source)
         self.assertIn("runs-on: windows-latest", self.source)
+
+    def test_scheduled_fuzz_campaign_is_pinned_and_bounded(self):
+        for fragment in (
+            "name: LibFuzzer parser campaign",
+            "if: github.event_name == 'schedule' || github.event_name == 'workflow_dispatch'",
+            "timeout-minutes: 10",
+            "RUSTUP_TOOLCHAIN: nightly-2026-08-01",
+            "toolchain: nightly-2026-08-01",
+            "targets: x86_64-unknown-linux-gnu",
+            "tool: cargo-fuzz@0.13.2",
+            "checksum: true",
+            "actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02",
+            "metis-fuzz-artifacts-${{ github.run_id }}",
+        ):
+            with self.subTest(fragment=fragment):
+                self.assertIn(fragment, self.source)
+        self.assertIn("working-directory: fuzz", self.source)
+        self.assertIn("cargo metadata --locked --format-version 1 --no-deps", self.source)
+        self.assertIn("-print_final_stats=1", self.source)
+        self.assertIn("if: failure()", self.source)
 
 
 class ReleaseWorkflowContractTests(unittest.TestCase):
