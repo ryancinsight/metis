@@ -13,8 +13,9 @@ command migration. The manifest remains the single payload inventory.
 
 Revision 2026-09-08: [METIS-RELEASE-001](../../backlog.md#METIS-RELEASE-001)
 adds the Atlas-pinned crates.io release caller. Registry authentication remains
-tokenless through GitHub Actions OIDC; Metis has no PyO3 package and therefore
-does not emit a PyPI caller.
+tokenless through GitHub Actions OIDC. [METIS-PYTHON-001](../../backlog.md#METIS-PYTHON-001)
+adds the `metis-rs` PyPI caller; its publish job uses the same OIDC model and
+does not carry a registry token or developer key.
 
 ## Decision
 

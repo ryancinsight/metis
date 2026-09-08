@@ -1,0 +1,24 @@
+[package]
+name = "metis-python"
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+authors.workspace = true
+license.workspace = true
+repository.workspace = true
+description = "Thin PyO3 bindings for the Metis Rust application framework"
+readme = "README.md"
+
+[lib]
+name = "_metis"
+crate-type = ["cdylib"]
+test = false
+doc = false
+
+[dependencies]
+metis-backend.workspace = true
+metis-core.workspace = true
+pyo3.workspace = true
+
+[lints]
+workspace = true

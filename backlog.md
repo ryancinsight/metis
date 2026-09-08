@@ -113,8 +113,16 @@ an owner. “Unsupported” cannot replace delivery of a required mobile/native 
 - Status: blocked; priority: P3; owner: Metis delivery; integrator: root; last-update: 2026-09-08; branch: `feat/process-foundation`; dependencies: METIS-DISTRIBUTION-001, METIS-CONFORMANCE-001; blocker: crates.io trusted-publisher registration and explicit release authority are external; re-open: registrations and release authority are available without adding repository secrets
 - Scope: release-readiness metadata, package dry runs, final manual and platform evidence; registry authentication uses Atlas OIDC workflows without personal keys; preparation continues without release authority.
 - Acceptance: dependency-closed packages and exact-revision evidence; release execution is blocked until explicit authority, registry publisher registration, rollout and rollback details are available.
-- Current increment: the thin crates.io caller is pinned to Atlas's reusable OIDC workflow; its contract tests and committed full gate pass. Local crates.io publish validation is blocked by index network access, while registry registration and release authority remain open. Metis has no PyO3 package, so no PyPI caller is emitted until a binding package exists.
+- Current increment: the thin crates.io caller is pinned to Atlas's reusable OIDC workflow; its contract tests and committed full gate pass. Local crates.io publish validation is blocked by index network access, while registry registration and release authority remain open. The PyO3 package and PyPI caller are tracked by [METIS-PYTHON-001](#METIS-PYTHON-001); PyPI trusted-publisher registration remains an external release action.
 - Demonstration: [V10](docs/VERIFICATION.md#V10), locally built package installation/recovery instructions and actual captures before any publication.
+
+<a id="METIS-PYTHON-001"></a>
+## METIS-PYTHON-001 — PyO3 application binding [arch] [minor]
+- Status: in-progress; priority: P1; owner: Metis Python integration; integrator: root; last-update: 2026-09-08; branch: `feat/process-foundation`; dependencies: METIS-QUALITY-001, METIS-DISTRIBUTION-001; risk: FFI lifetime and packaging drift
+- Scope: a dedicated `metis-python` binding crate exposing the validated Rust application seam through `import metis`; typed value objects, the clinical calculation, ABI-stable wheels, Python stubs and built-wheel tests. GUI and DICOM object models enter only after their Rust contracts are public and independently verified.
+- Acceptance: Python construction rejects the same invalid values as Rust; input-sensitive calculation results match the Rust analytical oracle; compute releases the GIL; `py.typed` and stubs ship in the wheel; `maturin` builds an abi3 wheel and the provider-owned pytest suite imports that wheel; the PyPI caller uses OIDC with no repository secret or private key.
+- Demonstration: [V10](docs/VERIFICATION.md#V10), the Python binding manual page with the runnable clinical workflow, wheel inspection and failure cases.
+- Decision: [ADR 0017](docs/adr/0017-python-binding.md).
 
 <a id="METIS-MEMORY-001"></a>
 ## METIS-MEMORY-001 — Provider allocation count [patch]

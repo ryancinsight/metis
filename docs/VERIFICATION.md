@@ -3,8 +3,8 @@
 The owning gate is `python scripts/verify.py`. It records bounded logs under the
 ignored `output/` directory and checks formatting, strict Clippy, debug and release
 nextest suites, plan identifiers/dependencies/local links, the generated
-`wasm-bindgen` browser assets, doctests, documentation, example execution and
-dependency closure. It also runs the pinned cargo-deny advisory, source, license
+`wasm-bindgen` browser assets, doctests, documentation, example execution,
+dependency closure and the built `metis-rs` Python wheel test. It also runs the pinned cargo-deny advisory, source, license
 and ban checks and records the reviewed Cargo build-link inventory.
 Native tests use `.config/nextest.toml`: slow at 30 seconds, terminate at 60 seconds,
 zero retries. The demonstration executable has a 60-second outer budget.
@@ -37,10 +37,11 @@ The caller triggers only on a published GitHub Release or an explicit
 only to the reusable publish job. The Atlas workflow obtains a short-lived
 crates.io token through OIDC and gates it with the `crates-io` environment.
 
-The local package inventory contains nine publishable Cargo packages and one
-`publish = false` tooling package (`metis-cli`). Metis has no PyO3 package, so
-no PyPI caller is configured; a future binding package must add a separate
-Atlas `python-wheels.yml` caller and `pypi` OIDC environment. This source-level
+The local package inventory contains ten publishable Cargo packages and one
+`publish = false` tooling package (`metis-cli`). `metis-python` builds the
+`metis-rs` PyPI distribution and `.github/workflows/python-release.yml`
+delegates wheel construction to Atlas's `python-wheels.yml`, then uploads
+through PyPI Trusted Publishing with `id-token: write`. This source-level
 check does not prove registry publisher registration, first publication,
 release authority or package upload; those are external release actions.
 
@@ -55,6 +56,18 @@ pinned Rust toolchain before invoking the gate. The gate then resolves offline,
 so source acquisition is explicit while verification remains reproducible.
 The workflow installs cargo-deny 0.20.2 and primes its advisory database before
 the same offline policy check.
+
+## Python binding verification — 2026-09-08
+
+`metis-python` is the only Metis crate that depends directly on PyO3. The local
+gate invokes `scripts/python_binding.py`, which builds a locked release wheel
+with `maturin`, extracts that generated artifact into a temporary directory and
+runs the provider-owned pytest suite against the extracted `metis._metis`
+extension. The suite compares adult and pediatric results with the Rust
+formula, checks input sensitivity and rejects non-finite, out-of-range and
+envelope-violating values. The wheel contains the `metis` package,
+`py.typed` marker and `_metis.pyi` stub. The gate's wheel build and pytest
+stages are required; an import-only check does not close the binding contract.
 
 Entry baseline: `cargo check --workspace --offline` passes with documentation and
 source warnings. The original native test build fails with E0382 in the threaded

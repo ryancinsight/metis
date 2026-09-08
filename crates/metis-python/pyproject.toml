@@ -1,0 +1,50 @@
+[build-system]
+requires = ["maturin>=1.9.4,<2.0"]
+build-backend = "maturin"
+
+[project]
+name = "metis-rs"
+dynamic = ["version"]
+description = "Typed Python bindings for the Metis Rust application framework"
+readme = "README.md"
+requires-python = ">=3.9"
+license = { text = "MIT OR Apache-2.0" }
+authors = [{ name = "Ryan Clanton", email = "ryanclanton@outlook.com" }]
+keywords = ["rust", "gui", "wasm", "html5", "css", "pyo3", "medical-imaging"]
+classifiers = [
+    "Development Status :: 3 - Alpha",
+    "Intended Audience :: Developers",
+    "Intended Audience :: Science/Research",
+    "License :: OSI Approved :: MIT License",
+    "License :: OSI Approved :: Apache Software License",
+    "Operating System :: POSIX :: Linux",
+    "Operating System :: Microsoft :: Windows",
+    "Operating System :: MacOS",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.9",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Programming Language :: Python :: 3.13",
+    "Programming Language :: Python :: 3.14",
+    "Programming Language :: Python :: Implementation :: CPython",
+    "Programming Language :: Rust",
+    "Topic :: Scientific/Engineering :: Medical Science Apps.",
+    "Typing :: Typed",
+]
+dependencies = []
+
+[project.optional-dependencies]
+test = ["pytest>=8.4,<9"]
+
+[project.urls]
+Homepage = "https://github.com/ryancinsight/metis"
+Repository = "https://github.com/ryancinsight/metis"
+Documentation = "https://github.com/ryancinsight/metis/tree/main/docs/manual"
+Issues = "https://github.com/ryancinsight/metis/issues"
+
+[tool.maturin]
+manifest-path = "Cargo.toml"
+module-name = "metis._metis"
+python-source = "python"
+features = []

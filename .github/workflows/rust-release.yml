@@ -67,7 +67,7 @@ jobs:
             version="$INPUT_VERSION"
           fi
           case "$package" in
-            metis|metis-backend|metis-core|metis-frontend|metis-ipc|metis-platform|metis-ui-lang|metis-app|metis-web) ;;
+            metis|metis-backend|metis-core|metis-frontend|metis-ipc|metis-platform|metis-ui-lang|metis-app|metis-web|metis-python) ;;
             *)
               echo "unknown publishable package for this repository: $package" >&2
               exit 1

@@ -20,6 +20,8 @@ TOOLCHAIN = None
 CARGO_DENY_VERSION = "0.20.2"
 BUILD_LINK_PACKAGES = {
     "ring": "Moirai cryptographic provider build contract",
+    "pyo3": "PyO3 interpreter ABI build contract",
+    "pyo3-ffi": "PyO3 interpreter FFI build contract",
     "wasm-bindgen-shared": "wasm-bindgen browser ABI build contract",
 }
 
@@ -166,8 +168,10 @@ def source_state(metadata, configs):
             directory = manifest.parent
             inputs.update(directory.glob("*.rs"))
             inputs.update(directory.glob("*.md"))
-            for folder in ("src", "tests", "examples", "scripts", ".config"):
+            for folder in ("src", "tests", "examples", "scripts", "python", ".config"):
                 inputs.update(path for path in (directory / folder).rglob("*") if path.is_file() and "__pycache__" not in path.parts)
+            if package["name"] == "metis-python":
+                inputs.add(directory / "pyproject.toml")
     return {str(path): hashlib.sha256(path.read_bytes()).hexdigest() for path in sorted(inputs)}
 
 def main():
@@ -240,8 +244,14 @@ def main():
             if package["name"].startswith("metis"):
                 for dependency in package["dependencies"]:
                     provider = dependency.get("source") or ""
-                    tooling_parser = package["name"] == "metis-cli" and dependency["name"] in {"serde", "serde_json"} and provider.startswith("registry+")
-                    if provider and not provider.startswith("git+https://github.com/ryancinsight/") and not tooling_parser:
+                    registry_boundary = (
+                        provider.startswith("registry+")
+                        and (
+                            (package["name"] == "metis-cli" and dependency["name"] in {"serde", "serde_json"})
+                            or (package["name"] == "metis-python" and dependency["name"] == "pyo3")
+                        )
+                    )
+                    if provider and not provider.startswith("git+https://github.com/ryancinsight/") and not registry_boundary:
                         raise SystemExit(f"Non-Atlas direct dependency: {dependency}")
         output_path("provider-dependencies.json").write_text(json.dumps(external, indent=2), encoding="utf-8")
         EVIDENCE["stages"]["build-links"] = "running"
@@ -304,6 +314,7 @@ def main():
         cargo("clippy", ["clippy", "--workspace", "--all-targets"], tail=["--", "-D", "warnings"])
         cargo("build", ["build", "--workspace", "--bins", "--examples"])
         cargo("tests", ["nextest", "run", "--workspace", "--profile", "ci"])
+        execute("python-binding", [sys.executable, str(ROOT / "scripts" / "python_binding.py")], seconds=720, cwd=ROOT)
         cargo("release-build", ["build", "--workspace", "--bins", "--release"])
         distribution_tool = pathlib.Path(metadata["target_directory"]) / "release" / "metis.exe"
         execute("distribution", [sys.executable, str(ROOT / "scripts" / "distribution.py"),

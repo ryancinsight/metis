@@ -76,8 +76,12 @@ See the [distribution manual](docs/manual/distribution.md) for the complete
 workflow, host prerequisites and current limits. The bundled example is a
 console application; packaging does not supply the missing desktop GUI host.
 Crates.io release validation and publication use the Atlas OIDC workflow in
-`.github/workflows/rust-release.yml`; Metis has no PyO3 package to publish to
-PyPI.
+`.github/workflows/rust-release.yml`. The `metis-python` crate builds the
+`metis-rs` distribution for `import metis`; `.github/workflows/python-release.yml`
+uses the same tokenless OIDC model for PyPI. Both registries require their
+trusted publishers and environments to be registered by the release authority.
+The Python binding workflow and the runnable clinical example are documented in
+the [Python binding manual](docs/manual/python.md).
 
 ## Atlas ownership
 

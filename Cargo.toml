@@ -21,6 +21,7 @@ members = [
     "crates/metis-cli",
     "crates/metis-app",
     "crates/metis-web",
+    "crates/metis-python",
 ]
 
 [workspace.package]
@@ -49,6 +50,7 @@ metis-platform = { path = "crates/metis-platform", version = "0.1.0" }
 metis-backend = { path = "crates/metis-backend", version = "0.1.0" }
 metis-frontend = { path = "crates/metis-frontend", version = "0.1.0" }
 metis-web = { path = "crates/metis-web", version = "0.1.0" }
+pyo3 = { version = "0.29.2", features = ["extension-module", "abi3-py39"] }
 
 [dev-dependencies]
 iris.workspace = true

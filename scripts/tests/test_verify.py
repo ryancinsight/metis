@@ -216,7 +216,7 @@ class ReleaseWorkflowContractTests(unittest.TestCase):
             "release-gate: true",
             "needs: identify",
             "package: ${{ needs.identify.outputs.package }}",
-            "metis|metis-backend|metis-core|metis-frontend|metis-ipc|metis-platform|metis-ui-lang|metis-app|metis-web",
+            "metis|metis-backend|metis-core|metis-frontend|metis-ipc|metis-platform|metis-ui-lang|metis-app|metis-web|metis-python",
             "id-token: write",
             "ryancinsight/atlas/.github/workflows/semver-gate.yml@c73c3dabe9573f09df7f1e2eacfccac17f685c6c",
             "ryancinsight/atlas/.github/workflows/crates-publish.yml@c73c3dabe9573f09df7f1e2eacfccac17f685c6c",
@@ -242,6 +242,65 @@ class ReleaseWorkflowContractTests(unittest.TestCase):
             with self.subTest(action=action):
                 self.assertRegex(revision, r"\A[0-9a-f]{40}\Z")
         self.assertNotIn("metis-cli", self.source)
+
+
+class PythonBindingContractTests(unittest.TestCase):
+    """Keep the PyO3 package, wheel metadata and OIDC caller aligned."""
+
+    @classmethod
+    def setUpClass(cls):
+        cls.root = SCRIPTS.parent
+        cls.manifest = (cls.root / "crates" / "metis-python" / "Cargo.toml").read_text(encoding="utf-8")
+        cls.pyproject = (cls.root / "crates" / "metis-python" / "pyproject.toml").read_text(encoding="utf-8")
+        cls.workflow = (cls.root / ".github" / "workflows" / "python-release.yml").read_text(encoding="utf-8")
+
+    def test_package_is_abi3_typed_and_workspace_owned(self):
+        for fragment in (
+            'name = "metis-python"',
+            'name = "_metis"',
+            'crate-type = ["cdylib"]',
+            'metis-backend.workspace = true',
+            'pyo3.workspace = true',
+            'name = "metis-rs"',
+            'requires-python = ">=3.9"',
+            'module-name = "metis._metis"',
+            'python-source = "python"',
+        ):
+            with self.subTest(fragment=fragment):
+                self.assertIn(fragment, self.manifest + self.pyproject)
+        package = self.root / "crates" / "metis-python" / "python" / "metis"
+        self.assertTrue((package / "__init__.py").is_file())
+        self.assertTrue((package / "_metis.pyi").is_file())
+        self.assertTrue((package / "py.typed").is_file())
+
+    def test_release_caller_is_tokenless_and_uses_atlas_wheels(self):
+        for fragment in (
+            "release:\n    types: [published]",
+            "metis-python-v",
+            "distribution: metis-rs",
+            "import-name: metis",
+            "manifest-path: crates/metis-python/Cargo.toml",
+            "abi3: true",
+            "abi3-python: \"3.9\"",
+            "python-test-path: crates/metis-python/tests",
+            "id-token: write",
+            "ryancinsight/atlas/.github/workflows/python-wheels.yml@49db31fc93f087945b3445483f7d49b5b49a6c35",
+            "pypa/gh-action-pypi-publish@ba38be9e461d3875417946c167d0b5f3d385a247",
+        ):
+            with self.subTest(fragment=fragment):
+                self.assertIn(fragment, self.workflow)
+        for forbidden in ("secrets:", "PYPI_TOKEN", "TWINE_PASSWORD", "private_key", "signing-key", "GPG", "SSH_PRIVATE_KEY"):
+            with self.subTest(forbidden=forbidden):
+                self.assertNotIn(forbidden, self.workflow)
+        references = re.findall(
+            r"^\s*(?:-\s+)?uses:\s+([^@\s]+)@([^\s#]+)",
+            self.workflow,
+            re.MULTILINE,
+        )
+        self.assertEqual(len(references), 3)
+        for action, revision in references:
+            with self.subTest(action=action):
+                self.assertRegex(revision, r"\A[0-9a-f]{40}\Z")
 
 
 if __name__ == "__main__":

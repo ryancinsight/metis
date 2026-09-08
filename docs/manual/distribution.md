@@ -139,10 +139,11 @@ trusted publisher registered at crates.io with owner `ryancinsight`, repository
 `crates-io`; registry setup and the first publication remain explicit release
 authority actions.
 
-Metis currently has no PyO3 package, so it has no PyPI workflow or publisher.
-When a binding package is added, its caller will use Atlas's `python-wheels.yml`
-and the `pypi` environment with OIDC; a long-lived PyPI token will not be added
-to the repository.
+The `metis-python` crate builds the `metis-rs` PyPI distribution for
+`import metis`. Its caller uses Atlas's `python-wheels.yml` and the `pypi`
+environment with OIDC; a long-lived PyPI token or developer private key is not
+added to the repository. See the [Python binding manual](python.md) for the
+local wheel test and release tag contract.
 
 The [application gallery](applications.md) shows the existing renderer workflows.
 The [verification contract](../VERIFICATION.md#V10) distinguishes installation,
