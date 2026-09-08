@@ -23,6 +23,11 @@ project asset, not a remote stock download. Applications can keep the same
 `Theme` selector and replace the semantic CSS variables and this PNG in their
 own browser asset directory.
 
+The package demonstration derives `metis-mark.ico` from the same local artwork
+for the Windows Start Menu shortcut. Its seven embedded PNG resolutions are
+validated by `metis-cli` before the MSI is written; the portable package keeps
+the ICO under `assets/` as well.
+
 ## Initial form
 
 ![Initial form](images/form.svg)

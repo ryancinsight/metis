@@ -110,17 +110,22 @@ reports distinct backend/frontend process identifiers. It also checks the
 shortcut's executable, arguments and working directory,
 removes the installed application and retains its user-created test file.
 
-The manifest's explicit `assets/metis-mark.png` resource is copied into the
-portable and MSI payloads, so browser branding remains available after
-installation. The current installer shortcut uses the application executable's
-icon; converting a project PNG into a Windows `.ico` and wiring that icon into
-the MSI shortcut is a separate `METIS-ASSETS-001` acceptance increment. The
-resource declaration does not imply that shell icon wiring is complete.
+The manifest's explicit PNG and ICO resources are copied into the portable and
+MSI payloads, so browser and native branding remain available after
+installation. Set `icon` to the ICO source when packaging an application. Métis
+validates the ICO before writing the MSI `Icon` table, and the Start Menu
+shortcut's `Icon_` field references the embedded `MetisIcon` row. The starter
+ICO contains seven PNG resolutions from 16×16 through 256×256 and is generated
+from the local project mark; replace it with project-owned artwork that meets
+the same bounded format contract.
 
 The report at `output/distribution/latest/workflow.json` records exact inventory,
-commands, calculated values and install/uninstall outcomes. The gate preserves
-only the latest marked test run and refuses to replace a still-registered test
-installation. Normal verification also exercises packaging and portable execution;
+commands, calculated values and install/uninstall outcomes. With `--install`,
+the shortcut probe also records `IconLocation` and requires the Windows
+Installer cache reference to end in `MetisIcon,0`; this is the shell-visible
+proof that the MSI `Icon` row is used. The gate preserves only the latest
+marked test run and refuses to replace a still-registered test installation.
+Normal verification exercises packaging and portable execution;
 `--install` opts into the current-user OS installation workflow.
 
 ## Publish crates through CI

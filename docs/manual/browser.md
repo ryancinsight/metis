@@ -139,10 +139,13 @@ backend authority, IPC messages or DICOM data.
 
 The page loads the starter [Métis mark](../../examples/browser/assets/metis-mark.png)
 from the same-origin `assets/` directory and uses it as the favicon and header
-image. `python scripts/browser.py build` copies that directory and fails if the
-declared mark is missing. Replace the PNG and the `.metis-mark` rule with
-project-owned artwork for a branded application. The browser host does not
-fetch an icon, font or media resource from a remote origin.
+image. The same directory carries the multi-resolution
+[native icon](../../examples/browser/assets/metis-mark.ico) for packaged
+applications. `python scripts/browser.py build` copies both local assets and
+fails if either declared mark is missing. Replace the PNG, ICO and the
+`.metis-mark` rule with project-owned artwork for a branded application. The
+browser host does not fetch an icon, font or media resource from a remote
+origin.
 
 To demonstrate the contract, build and serve the workbench, select each mode,
 and capture the header, view-options card and focus ring at the same viewport.
@@ -158,8 +161,9 @@ light, black-and-white and dark palettes with the same mark and layout. A DOM
 read after the dark selection reported `data-metis-theme="dark"` on both the
 body and `#metis-app`, dark page/text colors and a loaded local mark. This is
 explicit mode evidence for one browser engine; system media preference,
-forced-colors, the V04 viewport/scale matrix and native installer shortcut icon
-remain separate host checks.
+forced-colors, the V04 viewport/scale matrix and native host integration remain
+separate host checks. MSI shortcut icon wiring is covered by the native package
+database test and the distribution workflow.
 
 The **Pointer capture** card demonstrates the browser pointer lifecycle that a
 drag interaction needs. Press or drag **Pointer capture surface**. On

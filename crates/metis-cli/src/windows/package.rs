@@ -20,6 +20,7 @@ pub(crate) struct InstallerSpec<'a> {
     pub entry: &'a str,
     pub arguments: &'a [String],
     pub files: &'a [(PathBuf, String)],
+    pub icon: Option<&'a Path>,
 }
 
 /// Reads package identity and cabinet membership through the native MSI reader.
@@ -116,6 +117,7 @@ fn populate(
     // OnlyDetect | VersionMinInclusive, no maximum: older, equal, and newer
     // related products all reject. Same ProductCode maintenance remains allowed.
     database.execute("INSERT INTO `Upgrade` (`UpgradeCode`,`VersionMin`,`VersionMax`,`Language`,`Attributes`,`Remove`,`ActionProperty`) VALUES (?,?,?,?,?,?,?)", &[Text(spec.upgrade_code), Text("0.0.0"), Null, Null, Number(258), Null, Text("METISRELATED")])?;
+    write_icon(database, spec)?;
     let registry_key = format!("Software\\Metis\\Applications\\{}", spec.id);
     // A registry keypath cannot recover the component's file directory. Search
     // the recorded REG_SZ before costing, including when files are missing.
@@ -175,7 +177,7 @@ fn populate(
                 "INSERT INTO `CreateFolder` (`Directory_`,`Component_`) VALUES (?,?)",
                 &[Text("APPLICATIONMENU"), Text(&component)],
             )?;
-            database.execute("INSERT INTO `Shortcut` (`Shortcut`,`Directory_`,`Name`,`Component_`,`Target`,`Arguments`,`Description`,`Hotkey`,`Icon_`,`IconIndex`,`ShowCmd`,`WkDir`) VALUES (?,?,?,?,?,?,?,?,?,?,?,?)", &[Text("ApplicationShortcut"), Text("APPLICATIONMENU"), Text(&format!("{}|{}.lnk", &product[1..9], spec.name)), Text(&component), Text(&format!("[#{file}]")), Text(&arguments), Text(spec.name), Null, Null, Null, Number(1), Text("INSTALLDIR")])?;
+            write_shortcut(database, spec, product, &component, &file, &arguments)?;
         }
     }
     database.execute("INSERT INTO `Media` (`DiskId`,`LastSequence`,`DiskPrompt`,`Cabinet`,`VolumeLabel`,`Source`) VALUES (?,?,?,?,?,?)", &[Number(1), Number(i32::try_from(spec.files.len())?), Null, Text("#payload.cab"), Null, Null])?;
@@ -183,6 +185,32 @@ fn populate(
         "INSERT INTO `_Streams` (`Name`,`Data`) VALUES (?,?)",
         &[Text("payload.cab"), Stream(cabinet)],
     )
+}
+
+fn write_icon(database: &Database, spec: &InstallerSpec<'_>) -> Result<(), Box<dyn Error>> {
+    if let Some(icon) = spec.icon {
+        database.execute(
+            "INSERT INTO `Icon` (`Name`,`Data`) VALUES (?,?)",
+            &[Text("MetisIcon"), Stream(icon)],
+        )?;
+    }
+    Ok(())
+}
+
+fn write_shortcut(
+    database: &Database,
+    spec: &InstallerSpec<'_>,
+    product: &str,
+    component: &str,
+    file: &str,
+    arguments: &str,
+) -> Result<(), Box<dyn Error>> {
+    let (icon_name, icon_index) = if spec.icon.is_some() {
+        (Text("MetisIcon"), Number(0))
+    } else {
+        (Null, Null)
+    };
+    database.execute("INSERT INTO `Shortcut` (`Shortcut`,`Directory_`,`Name`,`Component_`,`Target`,`Arguments`,`Description`,`Hotkey`,`Icon_`,`IconIndex`,`ShowCmd`,`WkDir`) VALUES (?,?,?,?,?,?,?,?,?,?,?,?)", &[Text("ApplicationShortcut"), Text("APPLICATIONMENU"), Text(&format!("{}|{}.lnk", &product[1..9], spec.name)), Text(component), Text(&format!("[#{file}]")), Text(arguments), Text(spec.name), Null, icon_name, icon_index, Number(1), Text("INSTALLDIR")])
 }
 
 fn make_directories(

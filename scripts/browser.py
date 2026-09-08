@@ -99,6 +99,7 @@ def build() -> None:
         OUTPUT / "metis_web.js",
         OUTPUT / "metis_web_bg.wasm",
         OUTPUT / "assets" / "metis-mark.png",
+        OUTPUT / "assets" / "metis-mark.ico",
     )
     missing = [str(path) for path in required if not path.is_file()]
     if missing:

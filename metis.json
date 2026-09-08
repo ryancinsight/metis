@@ -7,6 +7,7 @@
   "upgrade_code": "{D7C5AA09-4B62-4612-B0CC-965D7767BCB8}",
   "cargo_manifest": "Cargo.toml",
   "entry": "metis-app",
+  "icon": "examples/browser/assets/metis-mark.ico",
   "binaries": [
     {
       "package": "metis-app",
@@ -21,6 +22,10 @@
     {
       "source": "examples/browser/assets/metis-mark.png",
       "destination": "assets/metis-mark.png"
+    },
+    {
+      "source": "examples/browser/assets/metis-mark.ico",
+      "destination": "assets/metis-mark.ico"
     }
   ],
   "arguments": [

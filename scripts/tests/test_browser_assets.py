@@ -43,11 +43,17 @@ class BrowserAssetContractTests(unittest.TestCase):
         self.assertNotIn("unsafe-inline", policy)
         self.assertNotIn("*", policy)
 
-    def test_starter_mark_is_a_local_bounded_png_asset(self):
-        icon = ROOT / "examples" / "browser" / "assets" / "metis-mark.png"
-        self.assertTrue(icon.is_file())
-        self.assertEqual(icon.read_bytes()[:8], bytes.fromhex("89504e470d0a1a0a"))
-        self.assertLessEqual(icon.stat().st_size, 1024 * 1024)
+    def test_starter_marks_are_local_bounded_assets(self):
+        png = ROOT / "examples" / "browser" / "assets" / "metis-mark.png"
+        self.assertTrue(png.is_file())
+        self.assertEqual(png.read_bytes()[:8], bytes.fromhex("89504e470d0a1a0a"))
+        self.assertLessEqual(png.stat().st_size, 1024 * 1024)
+        ico = ROOT / "examples" / "browser" / "assets" / "metis-mark.ico"
+        data = ico.read_bytes()
+        self.assertGreaterEqual(len(data), 6)
+        self.assertEqual(data[:4], b"\x00\x00\x01\x00")
+        self.assertEqual(int.from_bytes(data[4:6], "little"), 7)
+        self.assertLessEqual(len(data), 1024 * 1024)
         controls = (ROOT / "crates" / "metis-web" / "src" / "controls.rs").read_text(
             encoding="utf-8"
         )
@@ -56,6 +62,7 @@ class BrowserAssetContractTests(unittest.TestCase):
 
     def test_build_and_distribution_declare_the_starter_mark(self):
         manifest = json.loads((ROOT / "metis.json").read_text(encoding="utf-8"))
+        self.assertEqual(manifest["icon"], "examples/browser/assets/metis-mark.ico")
         self.assertIn(
             {
                 "source": "examples/browser/assets/metis-mark.png",
@@ -63,9 +70,17 @@ class BrowserAssetContractTests(unittest.TestCase):
             },
             manifest["resources"],
         )
+        self.assertIn(
+            {
+                "source": "examples/browser/assets/metis-mark.ico",
+                "destination": "assets/metis-mark.ico",
+            },
+            manifest["resources"],
+        )
         browser_script = (ROOT / "scripts" / "browser.py").read_text(encoding="utf-8")
         self.assertIn("SOURCE.rglob(\"*\")", browser_script)
         self.assertIn('OUTPUT / "assets" / "metis-mark.png"', browser_script)
+        self.assertIn('OUTPUT / "assets" / "metis-mark.ico"', browser_script)
 
     def test_bootstrap_keeps_navigation_same_origin(self):
         bootstrap = (ROOT / "examples" / "browser" / "bootstrap.js").read_text(

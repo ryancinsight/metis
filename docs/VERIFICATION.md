@@ -690,8 +690,8 @@ The browser host now exposes four Rust-owned modes: system preference, light,
 dark and high contrast. Rendering writes the selected value to the document
 body and application root; the external stylesheet maps it to semantic
 `--metis-*` variables. The header and favicon use the local
-`examples/browser/assets/metis-mark.png`, and the browser build requires that
-asset before it copies the generated page.
+`examples/browser/assets/metis-mark.png`; the browser build also copies the
+multi-resolution `metis-mark.ico` required by native packaging.
 
 The focused `metis-web` unit suite and `scripts.tests.test_browser_assets` pass
 for the working tree. The complete `python scripts/verify.py` gate also passed
@@ -704,9 +704,26 @@ accessibility snapshot reported the matching mode and the inspected screenshots
 showed the expected palette with the unchanged local mark. A DOM read after
 dark selection found `data-metis-theme="dark"` on both the body and
 `#metis-app`, dark page/text colors and a loaded mark. This is one-engine
-explicit-mode evidence; system media preference, forced-colors, the V04
-viewport/scale matrix and the MSI shell icon remain open, and the current
-resource declaration does not establish native shortcut icon wiring.
+explicit-mode evidence; system media preference, forced-colors and the V04
+viewport/scale matrix remain open. Native packaging additionally validates the
+ICO header, PNG chunk CRCs, dimensions and non-overlapping ranges, then stores
+the stream in `Icon` and references it from `Shortcut.Icon_`; the focused CLI
+suite and distribution workflow cover those rows.
+
+## Native icon asset evidence — 2026-09-08
+
+`examples/browser/assets/metis-mark.ico` is a local seven-entry PNG-in-ICO
+asset generated from the project mark. Entries cover 16×16, 24×24, 32×32,
+48×48, 64×64, 128×128 and 256×256 resolutions. `metis-cli` reads at most the
+1 MiB icon budget, rejects invalid ICO headers, table/range overlap, truncated
+PNG chunks, CRC mismatches and declared/decoded dimension mismatches, and only
+then persists an MSI package. The package test reads `Icon.Name = MetisIcon`
+and `Shortcut.Icon_ = MetisIcon`; the portable inventory includes
+`assets/metis-mark.ico` as an explicit resource. Windows shell rendering is
+exercised when `python scripts/verify.py --install` is run on Windows x64. The
+install probe reads the real `.lnk` through `WScript.Shell` and requires its
+`IconLocation` to end in the cached `MetisIcon,0` reference; the 2026-09-08
+run produced `...\\MetisIcon,0` and then removed the exact test ProductCode.
 
 ## Browser stale-response evidence — 2026-09-07
 

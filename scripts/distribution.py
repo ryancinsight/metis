@@ -273,12 +273,16 @@ class Workflow:
             shortcut_script = (
                 "[Console]::OutputEncoding = [Text.UTF8Encoding]::new(); "
                 "$shortcut = (New-Object -ComObject WScript.Shell).CreateShortcut('" + quoted_shortcut + "'); "
-                "@{target=$shortcut.TargetPath; arguments=$shortcut.Arguments; working_directory=$shortcut.WorkingDirectory} | ConvertTo-Json -Compress")
+                "@{target=$shortcut.TargetPath; arguments=$shortcut.Arguments; working_directory=$shortcut.WorkingDirectory; "
+                "icon_location=$shortcut.IconLocation} | ConvertTo-Json -Compress")
             shortcut_fields = json.loads(self.run("shortcut", ["powershell.exe", "-NoProfile", "-NonInteractive", "-Command", shortcut_script]))
+            icon_location = shortcut_fields.get("icon_location")
             if (pathlib.Path(shortcut_fields["target"]) != destination(installed, inventory["entry"])
                     or shortcut_fields["arguments"] != '"60" "2" "0.2"'
-                    or pathlib.Path(shortcut_fields["working_directory"]) != installed):
-                raise ValueError("Start Menu shortcut does not launch the declared application")
+                    or pathlib.Path(shortcut_fields["working_directory"]) != installed
+                    or not isinstance(icon_location, str)
+                    or not icon_location.casefold().endswith("\\metisicon,0")):
+                raise ValueError("Start Menu shortcut fields do not match the declared application")
             with winreg.OpenKey(winreg.HKEY_CURRENT_USER, key) as registry:
                 values = {winreg.EnumValue(registry, index)[0]: winreg.EnumValue(registry, index)[1]
                           for index in range(winreg.QueryInfoKey(registry)[1])}

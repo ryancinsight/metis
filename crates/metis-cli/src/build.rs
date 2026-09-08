@@ -48,6 +48,7 @@ pub(crate) fn application(input: &Path, output: &Path, kind: OutputKind) -> Resu
     }
     let (application, root) = Application::read(input)?;
     let cargo_manifest = manifest::source(&root, &application.cargo_manifest)?;
+    let icon = icon(&application, &root)?;
     let output = absolute_output(output)?;
     if output.try_exists()? {
         return Err("output already exists; choose a new output directory".into());
@@ -66,19 +67,7 @@ pub(crate) fn application(input: &Path, output: &Path, kind: OutputKind) -> Resu
         .map(|(name, path)| (path, format!("{name}{}", std::env::consts::EXE_SUFFIX)))
         .chain(resources)
         .collect::<Vec<_>>();
-    let mut total = 0_u64;
-    for (path, _) in &payload {
-        let meta = fs::symlink_metadata(path)?;
-        if !meta.is_file() || manifest::linked(&meta) {
-            return Err("artifact is not a regular, unlinked file".into());
-        }
-        total = total
-            .checked_add(meta.len())
-            .ok_or("payload size overflow")?;
-        if total > PAYLOAD_LIMIT {
-            return Err("application payload exceeds the 1 GiB budget".into());
-        }
-    }
+    validate_payload(&payload)?;
     // Create-new ownership is the rollback boundary: no pre-existing output is
     // overwritten or recursively erased, including on partial build failure.
     fs::create_dir(&output)?;
@@ -110,6 +99,7 @@ pub(crate) fn application(input: &Path, output: &Path, kind: OutputKind) -> Resu
                     entry: &entry,
                     arguments: &application.arguments,
                     files: &staged,
+                    icon: icon.as_deref(),
                 };
                 let product_code = crate::windows::build(&spec, &path)?;
                 let (stored_code, stored_files) = crate::windows::inspect(&path)?;
@@ -143,6 +133,31 @@ pub(crate) fn application(input: &Path, output: &Path, kind: OutputKind) -> Resu
     report.write_all(b"\n")?;
     report.sync_all()?;
     println!("{}", output.join("inventory.json").display());
+    Ok(())
+}
+
+fn icon(application: &Application, root: &Path) -> Result<Option<PathBuf>> {
+    application
+        .icon
+        .as_deref()
+        .map(|path| manifest::icon_source(root, path))
+        .transpose()
+}
+
+fn validate_payload(payload: &[(PathBuf, String)]) -> Result<()> {
+    let mut total = 0_u64;
+    for (path, _) in payload {
+        let meta = fs::symlink_metadata(path)?;
+        if !meta.is_file() || manifest::linked(&meta) {
+            return Err("artifact is not a regular, unlinked file".into());
+        }
+        total = total
+            .checked_add(meta.len())
+            .ok_or("payload size overflow")?;
+        if total > PAYLOAD_LIMIT {
+            return Err("application payload exceeds the 1 GiB budget".into());
+        }
+    }
     Ok(())
 }
 

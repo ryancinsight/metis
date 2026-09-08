@@ -15,6 +15,7 @@ fn authored_package_retains_payload_identity_and_actions() {
     let directory = directory.canonicalize().expect("canonical test directory");
     let source = directory.join("source.bin");
     std::fs::write(&source, b"input-sensitive cabinet content\n").expect("fixture content");
+    let icon = write_icon_fixture(&directory);
     let output = directory.join("test.msi");
     let files = [
         (source.clone(), "app.exe".to_owned()),
@@ -30,6 +31,7 @@ fn authored_package_retains_payload_identity_and_actions() {
         entry: "app.exe",
         arguments: &["60".into(), "2".into(), "0.2".into()],
         files: &files,
+        icon: Some(&icon),
     };
     let product = build(&spec, &output).expect("real MSI build");
     let (actual_product, names) = inspect(&output).expect("native MSI inspection");
@@ -54,6 +56,7 @@ fn authored_package_retains_payload_identity_and_actions() {
                 .expect("shortcut arguments"),
             ["\"60\" \"2\" \"0.2\""]
         );
+        assert_embedded_icon(&database);
         assert_eq!(
             database
                 .strings("SELECT `Value` FROM `Property` WHERE `Property`='Manufacturer'")
@@ -104,8 +107,34 @@ fn authored_package_retains_payload_identity_and_actions() {
     }
     std::fs::remove_file(second_output).expect("remove second owned MSI");
     std::fs::remove_file(output).expect("remove owned MSI");
+    std::fs::remove_file(icon).expect("remove owned icon fixture");
     std::fs::remove_file(source).expect("remove owned fixture");
     std::fs::remove_dir(directory).expect("no unexpected staging residue");
+}
+
+fn write_icon_fixture(directory: &std::path::Path) -> std::path::PathBuf {
+    let icon = directory.join("metis.ico");
+    std::fs::write(
+        &icon,
+        include_bytes!("../../../../examples/browser/assets/metis-mark.ico"),
+    )
+    .expect("icon fixture");
+    icon
+}
+
+fn assert_embedded_icon(database: &super::database::Database) {
+    assert_eq!(
+        database
+            .strings("SELECT `Name` FROM `Icon`")
+            .expect("embedded application icon"),
+        ["MetisIcon"]
+    );
+    assert_eq!(
+        database
+            .strings("SELECT `Icon_` FROM `Shortcut`")
+            .expect("shortcut icon reference"),
+        ["MetisIcon"]
+    );
 }
 
 fn assert_maintenance_location(database: &Database) {

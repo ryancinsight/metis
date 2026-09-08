@@ -1,4 +1,6 @@
 //! Validated application identity and explicit payload ownership.
+mod icon;
+
 use crate::Result;
 use serde::{Deserialize, Serialize};
 use std::{
@@ -12,6 +14,7 @@ use std::{
 pub(crate) const MANIFEST_LIMIT: u64 = 1024 * 1024;
 pub(crate) const FILE_LIMIT: usize = 4096;
 pub(crate) const PAYLOAD_LIMIT: u64 = 1024 * 1024 * 1024;
+pub(crate) use icon::{ICON_LIMIT, source as icon_source, validate_file as validate_icon_file};
 
 #[derive(Debug, Deserialize, Serialize)]
 #[serde(deny_unknown_fields)]
@@ -24,6 +27,8 @@ pub(crate) struct Application {
     pub(crate) upgrade_code: String,
     pub(crate) cargo_manifest: String,
     pub(crate) entry: String,
+    #[serde(default)]
+    pub(crate) icon: Option<String>,
     #[serde(default)]
     pub(crate) arguments: Vec<String>,
     pub(crate) binaries: Vec<Binary>,
@@ -111,6 +116,9 @@ impl Application {
         }
         relative(&self.cargo_manifest)?;
         identifier(&self.entry)?;
+        if let Some(icon) = &self.icon {
+            relative(icon)?;
+        }
         if self.arguments.iter().map(String::len).sum::<usize>() > 4096
             || self.arguments.iter().any(|argument| {
                 argument

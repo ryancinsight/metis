@@ -33,11 +33,14 @@ forced-colors rules retain their host accessibility contracts. Applications
 may override these variables in a same-origin stylesheet without changing the
 Rust state machine, IPC messages or authority checks.
 
-The starter mark is a local PNG under `examples/browser/assets/`. The browser
-build copies nested assets and requires that mark; `metis.json` declares the
-same destination so portable and MSI payloads retain the resource. No browser
-asset is fetched from a remote origin. Native installer shell icon conversion
-is outside this increment and remains an asset-gallery follow-on.
+The starter mark is local artwork under `examples/browser/assets/`. The browser
+build copies the PNG and multi-resolution ICO; `metis.json` declares both
+destinations so portable and MSI payloads retain the resources. The optional
+manifest `icon` identifies the ICO used for native shell branding. The CLI
+validates its bounded entry table, PNG chunks, CRCs, dimensions and ranges
+before an MSI is written. The MSI `Icon` table and `Shortcut.Icon_` reference
+the validated stream. No browser or installer asset is fetched from a remote
+origin.
 
 ## Alternatives
 
@@ -45,9 +48,10 @@ Per-application hardcoded colors would duplicate the palette contract and make
 theme selection impossible to test through the host. A runtime CSS parser in
 Rust would duplicate the browser's CSS engine and add an unbounded surface to
 the trusted state path. A remote stock icon or stylesheet would violate the
-same-origin asset policy and make builds depend on network availability. A
-Windows `.ico` conversion now would conflate browser resource packaging with
-MSI shell integration; the latter has a separate acceptance oracle.
+same-origin asset policy and make builds depend on network availability.
+Windows-specific icon conversion would duplicate the source artwork and could
+drift from browser branding. A bounded local ICO keeps one project asset while
+the MSI schema supplies a separate native shell reference.
 
 ## Threat model and limits
 
@@ -59,15 +63,24 @@ mark is replaceable project artwork; its provenance and replacement path are
 documented in the user manual.
 
 This decision does not establish screen-reader speech, forced-colors runtime
-behavior, high-DPI geometry, cross-engine CSS parity, native WebView2
-integration or MSI shortcut icon rendering. Those remain in the linked layout,
-asset and host verification items.
+behavior, high-DPI geometry, cross-engine CSS parity or native WebView2
+integration. Those remain in the linked layout and host verification items.
 
 ## Verification
 
 `metis-web` unit tests cover every mode, stable CSS value and invalid option.
 The browser asset tests cover the semantic variables, all mode selectors,
-favicon and focus-order markup, while the build script requires the copied PNG.
-The manual includes the mark and a reproducible mode-by-mode capture procedure.
+favicon and focus-order markup, while the build script requires the copied PNG
+and ICO. `metis-cli` tests exercise the generated ICO, malformed header and
+dimension rejection, and MSI `Icon`/`Shortcut` rows. The manual includes the
+mark and a reproducible mode-by-mode capture procedure.
 Runtime captures must record the browser engine, viewport, scale factor and
 host presentation settings before they can close the remaining V04/V06 gaps.
+
+## Revision — 2026-09-08
+
+`METIS-ASSETS-001` closed the native icon wiring gap. The local mark is emitted
+as a seven-resolution PNG-in-ICO asset; the manifest and MSI packaging path
+validate it before persistence, and the Start Menu shortcut points to the
+embedded `MetisIcon` row. The acceptance evidence is the focused CLI suite,
+the browser asset tests and the full gate at the delivery revision.

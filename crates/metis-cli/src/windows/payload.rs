@@ -1,6 +1,6 @@
 //! Cabinet input validation and bounded, shell-free invocation of the OS tool.
 use super::InstallerSpec;
-use crate::manifest::{self, FILE_LIMIT, PAYLOAD_LIMIT};
+use crate::manifest::{self, FILE_LIMIT, ICON_LIMIT, PAYLOAD_LIMIT};
 use std::{
     collections::BTreeSet, error::Error, ffi::OsString, fmt::Write as _, path::Path, time::Duration,
 };
@@ -51,6 +51,19 @@ pub(super) fn validate(spec: &InstallerSpec<'_>, output: &Path) -> Result<(), Bo
     }
     if !valid_guid(spec.upgrade_code) {
         return Err("MSI upgrade code must be an uppercase braced GUID".into());
+    }
+    if let Some(icon) = spec.icon {
+        if !icon.is_absolute() {
+            return Err("MSI icon source must be an absolute path".into());
+        }
+        let metadata = icon.symlink_metadata()?;
+        if !metadata.is_file() || manifest::linked(&metadata) {
+            return Err("MSI icon source must be a regular file, not a reparse point".into());
+        }
+        if metadata.len() > ICON_LIMIT {
+            return Err("MSI icon exceeds the 1 MiB budget".into());
+        }
+        manifest::validate_icon_file(icon)?;
     }
     let mut destinations = BTreeSet::new();
     let mut directories = BTreeSet::new();
