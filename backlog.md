@@ -40,12 +40,13 @@ an owner. “Unsupported” cannot replace delivery of a required mobile/native 
 
 <a id="METIS-BROWSER-001"></a>
 ## METIS-BROWSER-001 — Browser form and command lifecycle [arch] [minor]
-- Status: in-progress; priority: P1; owner: Metis frontend/host; integrator: root; last-update: 2026-09-07; branch: `feat/process-foundation`; dependencies: METIS-STATE-001, METIS-ASYNC-001, METIS-AUTHORITY-001; risk: browser/native trust boundary
+- Status: in-progress; priority: P1; owner: Metis frontend/host; integrator: root; last-update: 2026-09-08; branch: `feat/process-foundation`; dependencies: METIS-STATE-001, METIS-ASYNC-001, METIS-AUTHORITY-001; risk: browser/native trust boundary
 - Scope: actual HTML5/CSS DOM form, Rust/WASM state, asset loading and bounded asynchronous requests; portable UI never imports native authority.
 - Acceptance: Chromium/Firefox/WebKit runtime jobs load WASM and respond to two input changes; authorized service/desktop bridge verifies results; explicit unsupported native-only operations; zero pending requests/listeners after cancel/close.
 - Demonstration: [V02](docs/VERIFICATION.md#V02), actual browser captures and copyable build/run commands in the manual. A browser-only local control demo can land before the privileged bridge.
 - Constraint: no native secrets or authority in downloaded WASM; private-pipe possession cannot authenticate browser requests. Desktop bridge or service boundary must enforce origin/session authorization.
 - Evidence: `metis-web` mounts a real DOM form through Moirai's owned handles and connects `AsyncFrontendApp` through `BrowserWebSocketTransport` when host configuration is present. The live trace completed an authenticated loopback handshake, exact backend results, numeric rejection, service disconnect, stop/remount cancellation and recovery with no browser console diagnostics. Native loopback tests reject an unauthorized Origin before `101 Switching Protocols`; post-drop allocation, TLS, accessibility/IME, cross-engine and desktop evidence remain open.
+- Completed increment (2026-09-08): ordinary `input` and `change` events are delegated at `#metis-app`; closed ID bindings preserve typed field updates while specialized pointer, file, text and dialog listeners remain provider-owned. `metis-web` nextest passes 26/26 and the WASM target check is clean; the htmx-informed event→action→target boundary is recorded in ADRs 0002/0003 and the browser manual.
 - Decision: [ADR 0002](docs/adr/0002-web-application-contract.md), [ADR 0008](docs/adr/0008-browser-host-boundary.md).
 
 <a id="METIS-BROWSER-002"></a>

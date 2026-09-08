@@ -120,10 +120,19 @@ through the provider-owned browser `File` handle and reports the Part 10 marker.
 Full DICOM parsing and study decoding remain RITK work; native file grants,
 trusted physical-drop evidence and cross-engine evidence remain open.
 
+Revision 2026-09-08: htmx is added as a hypermedia interaction comparator. Its
+event→request→target→swap model informs a typed Rust/WASM dispatcher and
+allowlisted DOM targets, while arbitrary server markup, JavaScript filters and
+response-header commands remain outside Metis's admitted contract. The browser
+host now delegates ordinary input and control events at the mounted root;
+specialized pointer, file, text and dialog listeners retain their own typed
+providers.
+
 ## Decision and scope
 
-Use Tauri as the application-framework migration reference and egui/GPUI/Iced
-as interaction, text, rendering and test-tooling references. Resolve all gaps in
+Use Tauri as the application-framework migration reference, egui/GPUI/Iced as
+interaction, text, rendering and test-tooling references, and htmx as a
+hypermedia boundary reference. Resolve all gaps in
 the audited capability matrix below through the linked development items.
 This is a capability contract, not a promise to clone four incompatible APIs,
 every third-party extension, or future upstream releases. New upstream surfaces
@@ -135,7 +144,7 @@ application behavior. Custom rendering has its own contract through Iris.
 Moirai owns execution/transport; Metis owns application state, host integration
 and permission policy. A GPU renderer is not a prerequisite for a DOM form.
 
-egui, GPUI, Iced and Tauri are comparison subjects, not newly adopted
+egui, GPUI, Iced, Tauri and htmx are comparison subjects, not newly adopted
 dependencies.
 Their companion crates are named separately. Native GPU rendering, mobile
 support and distribution are separate increments, not reasons to delay the
@@ -180,6 +189,7 @@ Each row names its closing items; acceptance belongs in the
 | Accessibility | AccessKit integration; custom widget semantics required [E5] | AccessKit roles/identity/actions in current source [G3] | Semantic frontend plus WebView/OS accessibility | No semantic tree/adapter. [A11Y](../../backlog.md#METIS-A11Y-001). |
 | Pointer, keyboard, touch, focus | Backend input, sensitivity and viewports [E1] | Platform events and actions [G1] | Web frontend and native window events [T1] | Browser text, checkbox, radio, range and pointer surface use semantic keyboard/pointer targets; Moirai owns browser pointer ID/capture/release, pointer metadata, bounded file-drop metadata and bounded browser file access, while Metis applies bounded single-pointer drag pan, wheel pan, Ctrl+wheel zoom, DICOM header classification and file-drop state. The Windows `NativeSurface` now returns provider pointer, key, focus, text and bounded IME composition events; multi-touch/pinch interpretation, trusted physical-drop evidence, installed IME journeys and OS pump integration remain open. [INPUT](../../backlog.md#METIS-INPUT-001), desktop items. |
 | Browser/WASM execution | eframe canvas host with WASM bindings [E2] | Current `gpui_web`: canvas, WebGPU/WebGL2 [G2] | Web frontend can target browser; native APIs need a host [T1] | `metis-web` loads generated WASM into an HTML5/CSS DOM host and connects through a bounded Moirai WebSocket service; target-surface discovery, lifecycle generation guards, semantic checkbox/radio/range controls and loopback success/rejection/recovery pass, while cross-engine runs remain. [BROWSER](../../backlog.md#METIS-BROWSER-001), [ASYNC](../../backlog.md#METIS-ASYNC-001). |
+| Hypermedia actions and fragments | HTML-driven request and target/swap attributes [H0] [H1] [H2] | WebView/browser concern; response markup and script policy remain application-owned | HTML forms and links run in the system WebView; fragment behavior depends on the frontend/runtime | Metis delegates DOM events to a typed Rust/WASM action map and updates allowlisted text/attribute targets. No htmx runtime or HTTP fragment endpoint is admitted; a real HTTP consumer would add an authenticated fragment contract. [BROWSER](../../backlog.md#METIS-BROWSER-001), [MIGRATION](../../backlog.md#METIS-MIGRATION-001). |
 | Existing HTML5/CSS frontend reuse | Canvas UI is not DOM compatibility [E2] | Canvas UI is not DOM compatibility [G2] | WebView presentation is the core model [T1] | Custom markup does not preserve DOM/CSS applications. [BROWSER](../../backlog.md#METIS-BROWSER-001), [MIGRATION](../../backlog.md#METIS-MIGRATION-001). |
 | Native windows and platform lifecycle | eframe/backend-dependent viewports [E1] [E2] | macOS, Windows, Wayland/X11 platform code [G1] | Desktop system WebViews [T1] | Moirai's Windows PAL plus `metis-platform::native::NativeSurface` create a real thread-owned HWND, present the Metis framebuffer and return bounded pointer, key, text and IME composition events; `metis-app --metis-native-window` composes the visible frontend and private IPC, while native visual capture, installed IME journey, WebView2, permission probes and macOS/Linux hosts remain open. [WINDOWS](../../backlog.md#METIS-DESKTOP-001), [MACOS](../../backlog.md#METIS-MACOS-001), [LINUX](../../backlog.md#METIS-LINUX-001). |
 | Async commands, events, cancellation | Application/host concern | Executor and action facilities [G1] | Commands, events and channels [T2] [T3] | Async client/server, bounded correlation, request cancellation, browser task handle and pre-response Origin validation exist. A versioned capability catalog, target-surface descriptor, bounded local event hub, versioned remote event envelope, typed plugin invocation and host-local plugin registry now cover command discovery and delivery metadata; lifecycle generation guards and the delayed-response stop/remount trace prevent stale browser completions, while cross-engine service traces remain. [COMMANDS](../../backlog.md#METIS-COMMANDS-001), [BROWSER](../../backlog.md#METIS-BROWSER-001). |
@@ -334,3 +344,6 @@ observations; future implementation fixtures must pin the actual dependencies.
 [I2]: https://github.com/iced-rs/iced/releases
 [I3]: https://github.com/iced-rs/iced_web
 [I4]: https://github.com/iced-rs/iced/blob/master/Cargo.toml
+[H0]: https://htmx.org/docs/
+[H1]: https://htmx.org/attributes/hx-target/
+[H2]: https://htmx.org/attributes/hx-swap/

@@ -118,6 +118,35 @@ Rust-owned state after each change. Tab through the labels, press Space on the
 checkbox or radio, use the range arrows, and open the select to reproduce the
 keyboard path.
 
+## Hypermedia boundary
+
+The [htmx documentation](https://htmx.org/docs/) models a browser interaction as
+an event that issues a request and places the response in a selected target.
+`hx-target` names the target and `hx-swap` defines standard DOM replacement
+modes ([target reference](https://htmx.org/attributes/hx-target/), [swap
+reference](https://htmx.org/attributes/hx-swap/)). Metis uses that separation as
+an implementation rule without shipping an htmx runtime or accepting arbitrary
+HTML from a backend.
+
+Ordinary `input` and `change` events bubble to `#metis-app`. Rust maps the
+target ID to a closed input/control binding, applies the typed state transition,
+and updates only the allowlisted text and attributes. Pointer, file, text and
+dialog events keep their specialized Moirai provider listeners. Static
+application markup is installed once; backend values and diagnostics always use
+text or attribute setters, so a message cannot create a script or element.
+The authenticated binary WebSocket remains the current service contract. An
+HTTP fragment endpoint would need its own route, authority, target allowlist and
+response schema before it is added.
+
+To demonstrate the boundary, serve the workbench, change **Weight (kg)** and
+**Result scale**, and capture the form before and after each action at the same
+viewport. The semantic tree must retain the same controls while the result text,
+`data-result-scale-percent` attribute and `options-state` value change. Enter
+`<img src=x onerror=alert(1)>` in **Clinical note**; the preview must show the
+literal characters and the DOM must contain no added element. The existing
+browser visual and semantic capture records the target engine, viewport and
+rendered state for this check.
+
 ## Theme and branding
 
 The **Theme** select applies one of four bounded presentation modes:

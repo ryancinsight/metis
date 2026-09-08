@@ -114,6 +114,16 @@ pub(crate) enum InputField {
     Dose,
 }
 
+pub(crate) fn input_field(id: &str) -> Option<InputField> {
+    match id {
+        "patient-id" => Some(InputField::Patient),
+        "weight-kg" => Some(InputField::Weight),
+        "concentration-mg-ml" => Some(InputField::Concentration),
+        "target-dose" => Some(InputField::Dose),
+        _ => None,
+    }
+}
+
 pub(crate) fn update_input(
     inputs: &mut FormInputs,
     form_state: &mut FormState,
@@ -154,6 +164,21 @@ pub(crate) enum ControlField {
     Scale,
     ResultDetail,
     Theme,
+}
+
+pub(crate) fn input_control_field(id: &str) -> Option<ControlField> {
+    (id == "result-scale").then_some(ControlField::Scale)
+}
+
+pub(crate) fn change_control_field(id: &str) -> Option<ControlField> {
+    match id {
+        "show-events" => Some(ControlField::ShowEvents),
+        "dose-volume" => Some(ControlField::DisplayUnit(DisplayUnit::Volume)),
+        "dose-mass" => Some(ControlField::DisplayUnit(DisplayUnit::DrugMass)),
+        "result-detail-select" => Some(ControlField::ResultDetail),
+        "theme-mode" => Some(ControlField::Theme),
+        _ => None,
+    }
 }
 
 impl ControlField {
@@ -368,8 +393,9 @@ pub(crate) fn invalid_control(field: &str) -> FormState {
 #[cfg(test)]
 mod tests {
     use super::{
-        ControlField, ControlState, DisplayUnit, FormInputs, FormState, ResultDetail, ScalePercent,
-        Theme, update_control,
+        ControlField, ControlState, DisplayUnit, FormInputs, FormState, InputField, ResultDetail,
+        ScalePercent, Theme, change_control_field, input_control_field, input_field,
+        update_control,
     };
     use metis_core::protocol::ClinicalCalcResponsePayload;
 
@@ -400,6 +426,47 @@ mod tests {
             controls.summary(),
             "View options: events hidden; drug mass rate; detail audit detail; scale 150%; theme dark"
         );
+    }
+
+    #[test]
+    fn delegated_bindings_cover_each_control_event() {
+        assert!(matches!(
+            input_field("patient-id"),
+            Some(InputField::Patient)
+        ));
+        assert!(matches!(input_field("weight-kg"), Some(InputField::Weight)));
+        assert!(matches!(
+            input_field("concentration-mg-ml"),
+            Some(InputField::Concentration)
+        ));
+        assert!(matches!(input_field("target-dose"), Some(InputField::Dose)));
+        assert!(matches!(
+            input_control_field("result-scale"),
+            Some(ControlField::Scale)
+        ));
+        assert!(matches!(
+            change_control_field("show-events"),
+            Some(ControlField::ShowEvents)
+        ));
+        assert!(matches!(
+            change_control_field("dose-volume"),
+            Some(ControlField::DisplayUnit(DisplayUnit::Volume))
+        ));
+        assert!(matches!(
+            change_control_field("dose-mass"),
+            Some(ControlField::DisplayUnit(DisplayUnit::DrugMass))
+        ));
+        assert!(matches!(
+            change_control_field("result-detail-select"),
+            Some(ControlField::ResultDetail)
+        ));
+        assert!(matches!(
+            change_control_field("theme-mode"),
+            Some(ControlField::Theme)
+        ));
+        assert!(input_field("unknown").is_none());
+        assert!(input_control_field("unknown").is_none());
+        assert!(change_control_field("result-scale").is_none());
     }
 
     #[test]

@@ -36,6 +36,14 @@ drain retained lifecycle events before blocking on the operating-system queue.
 Metis advances its lock to that revision so the native host cannot lose initial
 window readiness.
 
+Revision 2026-09-08: htmx's HTML-driven request, target and swap model is added
+as a web interaction reference. Metis adopts the boundary principle—an event
+selects a typed action and an allowlisted presentation target—without adding an
+htmx JavaScript runtime or accepting arbitrary response markup. The current
+authenticated browser contract remains the binary Moirai WebSocket path; a
+future HTTP fragment surface requires its own route, authority and response
+contract before it can be admitted.
+
 ## Intent and authority
 
 The user clarifies that Metis must support WASM and web rendering, with the goal
@@ -61,6 +69,16 @@ Iris owns the rendering seam; Moirai owns scheduling and transport. Implement
 missing reusable browser capabilities upstream rather than creating parallel
 runtimes in Metis. A browser uses event-driven receipt and cancellation, never
 the existing synchronous pipe receiver on its main event thread.
+
+The browser host applies the htmx interaction boundary as typed Rust state
+transitions: DOM events are delegated to the mounted root, their target IDs map
+to a closed set of input/control fields, and rendering updates only the
+allowlisted text and attribute targets. Static application-authored markup is
+the only `set_inner_html` input; backend values and diagnostics use text or
+attribute setters. This preserves focus and lifecycle ownership while keeping
+the injection boundary explicit. Metis does not implement htmx attributes,
+server HTML fragments, JavaScript filters or response-header commands until a
+real HTTP consumer requires a separately authenticated contract.
 
 The initial consumer seam is `metis_ipc::AsyncIpcTransport` and
 `AsyncIpcClient`. The WASM-only `BrowserWebSocketTransport` owns a bounded
@@ -90,6 +108,7 @@ The existing custom binary protocol is not the Tauri invoke protocol.
 | --- | --- | --- |
 | HTML5/CSS/assets | Preserve existing web presentation in browser/system WebView | `metis-web` mounts a real DOM form and page CSS; broader DOM/layout parity and visual cases remain required. |
 | Rust/WASM | Shared portable application code with asynchronous host bindings | `metis-web` compiles and runs in the local browser workbench; the configured loopback bridge and binding-lifetime tests pass, while cross-engine runtime evidence remains required. |
+| Hypermedia actions and fragments | HTML attributes can trigger requests, choose a target and select a swap [H0] [H1] [H2] | WebView/browser concern; server response and script policy remain application-owned | Metis keeps a typed event→action→target path in Rust/WASM and text/attribute-only dynamic updates. No htmx runtime or HTTP fragment endpoint is admitted; a real HTTP consumer would add an authenticated, allowlisted fragment contract. [BROWSER](../../backlog.md#METIS-BROWSER-001), [MIGRATION](../../backlog.md#METIS-MIGRATION-001). |
 | Commands/events | Typed requests, correlated responses, bounded event delivery and cancellation | Versioned command and target-surface discovery, bounded local and remote event delivery, typed plugin invocation and cancellation now sit on the shared IPC seam; Tauri migration mappings remain required. |
 | Windows/lifecycle | Desktop window creation, input, navigation, close and teardown | `metis-platform::native::NativeSurface` creates a bounded Win32 window, and `metis-app --metis-native-window` composes the Metis framebuffer with private IPC; WebView2 navigation, denial probes and non-Windows hosts remain required. |
 | Plugins/native APIs | Explicit permission-scoped supported operations | Typed host plugin manifests, scoped command invocation and typed unsupported-plugin errors exist; inventory file/dialog/clipboard/shell/window capabilities against migrated examples and add OS permission enforcement. |
@@ -154,6 +173,13 @@ these mechanisms alone are not differentiators.
 - [Tauri architecture](https://v2.tauri.app/concept/architecture/), introduction and API/tooling sections: web frontend, Rust host, command surface and distribution roles.
 - [Tauri process model](https://v2.tauri.app/concept/process-model/): core and WebView process responsibilities.
 - [WebAssembly security](https://webassembly.org/docs/security/), security goals and execution semantics: isolated execution and host embedding responsibilities.
+- [htmx documentation][H0]: HTML-driven requests and the event/request lifecycle.
+- [htmx `hx-target`][H1]: selector-based response targets.
+- [htmx `hx-swap`][H2]: standard DOM replacement modes and text-only swapping.
+
+[H0]: https://htmx.org/docs/
+[H1]: https://htmx.org/attributes/hx-target/
+[H2]: https://htmx.org/attributes/hx-swap/
 
 Source inspection at the Metis browser-host increment based on `fb0c944` finds
 a bounded software renderer, an async browser client seam and the runnable

@@ -20,7 +20,7 @@ mod view;
 mod wheel;
 
 use crate::controls;
-use crate::controls::{ControlField, DisplayUnit, InputField};
+use crate::controls::ControlField;
 use crate::epoch::{Epoch, Generation};
 use crate::session::connect_failure_state;
 use metis_core::error::{ErrorCode, MetisError};
@@ -223,33 +223,10 @@ fn control_listeners(
     drop_task: &Rc<RefCell<Option<LocalTaskHandle>>>,
     drop_sequence: &Rc<Cell<u64>>,
 ) -> io::Result<Vec<WebEventListener>> {
-    let mut listeners = Vec::with_capacity(35);
-    for (id, field) in [
-        ("patient-id", InputField::Patient),
-        ("weight-kg", InputField::Weight),
-        ("concentration-mg-ml", InputField::Concentration),
-        ("target-dose", InputField::Dose),
-    ] {
-        listeners.push(input_listener(document, state, app, id, field)?);
-    }
-    for (id, event_name, field) in [
-        ("show-events", "change", ControlField::ShowEvents),
-        (
-            "dose-volume",
-            "change",
-            ControlField::DisplayUnit(DisplayUnit::Volume),
-        ),
-        (
-            "dose-mass",
-            "change",
-            ControlField::DisplayUnit(DisplayUnit::DrugMass),
-        ),
-        ("result-scale", "input", ControlField::Scale),
-        ("result-detail-select", "change", ControlField::ResultDetail),
-        ("theme-mode", "change", ControlField::Theme),
-    ] {
-        listeners.push(control_listener(document, state, id, event_name, field)?);
-    }
+    let root = view::element(document, "metis-app")?;
+    let mut listeners = Vec::new();
+    listeners.push(input_listener(document, state, app, &root)?);
+    listeners.push(change_listener(document, state, &root)?);
     listeners.extend(dialog::listeners(document)?);
     listeners.extend(pointer::listeners(document)?);
     listeners.extend(wheel::listeners(document)?);
@@ -269,64 +246,85 @@ fn input_listener(
     document: &WebDocument,
     state: &Rc<RefCell<BrowserState>>,
     app: &Rc<RefCell<Option<AsyncFrontendApp<BrowserWebSocketTransport>>>>,
-    id: &'static str,
-    field: InputField,
+    root: &WebElement,
 ) -> io::Result<WebEventListener> {
-    let input = view::element(document, id)?;
     let listener_document = document.clone();
     let listener_state = Rc::clone(state);
     let listener_app = Rc::clone(app);
-    input.add_event_listener("input", move |event| {
-        let Some(value) = event.value() else {
+    root.add_event_listener("input", move |event| {
+        let Some(target) = event.target() else {
             return;
         };
-        let mut state = listener_state.borrow_mut();
-        let BrowserState {
-            inputs,
-            state: form_state,
-            ..
-        } = &mut *state;
-        controls::update_input(inputs, form_state, field, &value);
-        if let Some(app) = listener_app.borrow_mut().as_mut() {
-            let inputs = &state.inputs;
-            app.set_inputs(
-                &inputs.patient_id,
-                inputs.weight_kg,
-                inputs.concentration_mg_ml,
-                inputs.target_dose_mcg_kg_min,
-            );
+        let id = target.id();
+        if let Some(field) = controls::input_field(&id) {
+            let Some(value) = event.value() else {
+                return;
+            };
+            let mut state = listener_state.borrow_mut();
+            let BrowserState {
+                inputs,
+                state: form_state,
+                ..
+            } = &mut *state;
+            controls::update_input(inputs, form_state, field, &value);
+            if let Some(app) = listener_app.borrow_mut().as_mut() {
+                let inputs = &state.inputs;
+                app.set_inputs(
+                    &inputs.patient_id,
+                    inputs.weight_kg,
+                    inputs.concentration_mg_ml,
+                    inputs.target_dose_mcg_kg_min,
+                );
+            }
+            if let Err(error) = view::render(&listener_document, &state) {
+                view::set_mount_error(&listener_document, &error);
+            }
+            return;
         }
-        if let Err(error) = view::render(&listener_document, &state) {
-            view::set_mount_error(&listener_document, &error);
-        }
+        let Some(field) = controls::input_control_field(&id) else {
+            return;
+        };
+        apply_control_event(&listener_document, &listener_state, field, &event);
     })
 }
 
-fn control_listener(
+fn change_listener(
     document: &WebDocument,
     state: &Rc<RefCell<BrowserState>>,
-    id: &'static str,
-    event_name: &'static str,
-    field: ControlField,
+    root: &WebElement,
 ) -> io::Result<WebEventListener> {
-    let input = view::element(document, id)?;
     let listener_document = document.clone();
     let listener_state = Rc::clone(state);
-    input.add_event_listener(event_name, move |event| {
-        let target = event.target();
-        let checked = target.as_ref().and_then(WebElement::checked);
-        let value = event.value();
-        let mut state = listener_state.borrow_mut();
-        let BrowserState {
-            controls,
-            state: form_state,
-            ..
-        } = &mut *state;
-        controls::update_control(controls, form_state, field, checked, value.as_deref());
-        if let Err(error) = view::render(&listener_document, &state) {
-            view::set_mount_error(&listener_document, &error);
-        }
+    root.add_event_listener("change", move |event| {
+        let Some(target) = event.target() else {
+            return;
+        };
+        let Some(field) = controls::change_control_field(&target.id()) else {
+            return;
+        };
+        apply_control_event(&listener_document, &listener_state, field, &event);
     })
+}
+
+fn apply_control_event(
+    document: &WebDocument,
+    state: &Rc<RefCell<BrowserState>>,
+    field: ControlField,
+    event: &moirai_pal::wasm::WebEvent,
+) {
+    let target = event.target();
+    let checked = target.as_ref().and_then(WebElement::checked);
+    let value = event.value();
+    let mut state = state.borrow_mut();
+    let BrowserState {
+        controls,
+        state: form_state,
+        ..
+    } = &mut *state;
+    controls::update_control(controls, form_state, field, checked, value.as_deref());
+    if let Err(error) = view::render(document, &state) {
+        view::set_mount_error(document, &error);
+    }
 }
 
 fn submit(
