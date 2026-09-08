@@ -151,8 +151,9 @@ toolchain and counts are recorded in the derived
 not a workspace-wide mutation score. The Windows MSVC sanitizer limitation
 still leaves the runtime campaign result open. The single verification workflow
 now contains a scheduled and manually dispatchable Ubuntu job that selects
-`nightly-2026-08-01`, checks the locked fuzz manifest, and runs the protocol
-target with a 300-second campaign, 2 GiB RSS limit and 25-second input timeout.
+`nightly-2026-08-01`, checks the locked fuzz manifest, and runs the combined
+protocol/SVG target with a 300-second campaign, 2 GiB RSS limit and 25-second
+input timeout.
 Crash reproducers are uploaded from `fuzz/artifacts/`; no hosted campaign result
 is claimed until that job completes on GitHub.
 

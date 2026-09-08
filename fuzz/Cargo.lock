@@ -145,7 +145,7 @@ dependencies = [
 [[package]]
 name = "moirai-crypto"
 version = "0.6.0"
-source = "git+https://github.com/ryancinsight/Moirai.git?rev=7ad8eeee#7ad8eeeee829a0d59affd2e979e086cc5ac8d557"
+source = "git+https://github.com/ryancinsight/Moirai.git?rev=5c8a9e8b#5c8a9e8be32ad6beac14ed263c2f11c3663b87cb"
 dependencies = [
  "hmac",
  "sha2",

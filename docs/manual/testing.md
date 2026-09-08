@@ -57,7 +57,8 @@ arbitrary byte strings, Unicode and IEEE-754 payload values, deterministic
 truncation and bit mutations, and oversized length fields. These cases call
 every public wire decoder and treat a panic as a failure. The standalone
 LibFuzzer target covers
-the same decoder boundary without entering the application dependency graph;
+the same decoder boundary and the packaged SVG admission parser without
+entering the application dependency graph;
 its locked manifest is checked with:
 
 ```text

@@ -14,11 +14,24 @@ use metis_core::protocol::{
     RemoteEventPayload, TargetCapabilityPayload,
 };
 
+type Result<T> = std::result::Result<T, Box<dyn std::error::Error>>;
+
+// Include the packaging parser itself so this campaign exercises the exact
+// source that admits user-supplied SVG resources without adding the CLI's
+// Windows-only binary to the fuzz workspace.
+#[path = "../../crates/metis-cli/src/manifest/svg.rs"]
+#[expect(
+    dead_code,
+    reason = "fuzz input calls byte validation, not file loading"
+)]
+mod svg;
+
 fn consume<T>(value: T) {
     drop(std::hint::black_box(value));
 }
 
 fuzz_target!(|data: &[u8]| {
+    consume(svg::validate(data));
     consume(HandshakeRequestPayload::decode(data));
     consume(HandshakeResponsePayload::decode(data));
     consume(ClinicalCalcRequestPayload::decode(data));
