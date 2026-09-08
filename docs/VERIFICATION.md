@@ -14,7 +14,8 @@ job installs `cargo-nextest` 0.9.143 and `wasm-bindgen-cli` 0.2.128, then invoke
 the same `python scripts/verify.py` gate used locally. The workflow records its
 source hash through the gate, uploads `output/verification.json` and bounded
 stage logs on failure, and never updates visual baselines. Pinned Atlas reusable
-jobs check workflow syntax, the standalone Cargo lock and the strict ADR index.
+jobs check workflow syntax, the standalone Cargo lock, the strict ADR index and
+public-API changes on ready pull requests.
 The jobs run only for the actual `feat/process-foundation` default branch, pull
 requests that are ready for review, and merge-queue events; no unsupported
 native-window or cross-platform host job is advertised.

@@ -171,6 +171,8 @@ class WorkflowContractTests(unittest.TestCase):
             "workflow-lint:",
             "lockfile:",
             "adr-index:",
+            "semver:",
+            "semver-gate.yml",
         )
         for fragment in required:
             with self.subTest(fragment=fragment):
@@ -190,6 +192,7 @@ class WorkflowContractTests(unittest.TestCase):
     def test_draft_pull_requests_and_unsupported_hosts_are_excluded(self):
         draft_guard = "if: github.event_name != 'pull_request' || github.event.pull_request.draft == false"
         self.assertEqual(self.source.count(draft_guard), 4)
+        self.assertIn("github.event_name == 'pull_request' && github.event.pull_request.draft == false", self.source)
         self.assertNotIn("pull_request_target", self.source)
         self.assertIn("runs-on: windows-latest", self.source)
 

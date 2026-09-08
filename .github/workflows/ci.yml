@@ -113,3 +113,12 @@ jobs:
       strict: true
     permissions:
       contents: read
+
+  semver:
+    name: Public API (informational)
+    if: github.event_name == 'pull_request' && github.event.pull_request.draft == false
+    uses: ryancinsight/atlas/.github/workflows/semver-gate.yml@dba8369f5df4e890fdc2aed2f097e48544b817ee
+    with:
+      package: metis,metis-core,metis-backend,metis-frontend,metis-ipc,metis-ui-lang,metis-platform,metis-web
+    permissions:
+      contents: read

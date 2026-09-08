@@ -31,7 +31,8 @@ and MSI workflow is implemented. It installs the pinned `cargo-nextest` and
 `wasm-bindgen-cli` tools, runs the native and WASM targets, and uploads the
 bounded report and stage logs even when a stage fails. Atlas's pinned reusable
 workflow jobs check workflow syntax, the standalone Cargo lock and the ADR
-index; they do not claim a native window, macOS/Linux host, accessibility
+index, while the Atlas SemVer job reports public-API changes on ready pull
+requests. They do not claim a native window, macOS/Linux host, accessibility
 technology or another unsupported target.
 
 For a failed run, download the `metis-verification-<run-id>` artifact and open
