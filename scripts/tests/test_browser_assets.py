@@ -1,6 +1,7 @@
 """Check the browser shell's static trust-boundary assets."""
 from __future__ import annotations
 
+import hashlib
 import json
 import pathlib
 import unittest
@@ -145,6 +146,7 @@ class BrowserAssetContractTests(unittest.TestCase):
             "box-sizing: border-box",
             "*, *::before, *::after { box-sizing: inherit; }",
             "body { margin: 0; min-width: 320px; background: var(--metis-page); color: var(--metis-text); }",
+            "--metis-hit-target: 2.75rem;",
             "width: 100%; max-width: 960px",
             "grid-template-columns: minmax(0, 1fr) minmax(0, 1fr)",
             "min-width: 0",
@@ -158,8 +160,42 @@ class BrowserAssetContractTests(unittest.TestCase):
             "body[data-metis-theme=\"dark\"]",
             "body[data-metis-theme=\"high-contrast\"]",
             "data-metis-theme",
+            ".metis-option { display: flex; align-items: center; gap: 0.55rem; min-height: var(--metis-hit-target); }",
+            'input[type="range"] { min-height: var(--metis-hit-target); padding: 0; accent-color: var(--metis-accent); }',
         ):
             self.assertIn(fragment, styles)
+
+    def test_runtime_layout_manifest_covers_scale_one_viewports(self):
+        styles_path = ROOT / "examples" / "browser" / "styles.css"
+        manifest = json.loads(
+            (ROOT / "docs" / "manual" / "images" / "browser-layout-metrics.json").read_text(
+                encoding="utf-8"
+            )
+        )
+        self.assertEqual(
+            manifest["source_sha256"],
+            hashlib.sha256(styles_path.read_bytes()).hexdigest(),
+        )
+        expected = {
+            "360x640": (360, 640, "312.8px"),
+            "800x600": (800, 600, "348.4px 348.4px"),
+            "1440x900": (1440, 900, "436px 436px"),
+        }
+        for name, (width, height, columns) in expected.items():
+            capture = manifest["captures"][name]
+            self.assertEqual(capture["viewport"], {"height": height, "scale": 1, "width": width})
+            self.assertEqual(capture["grid"]["columns"], columns)
+            self.assertLessEqual(capture["document"]["maxRight"], width)
+            self.assertLessEqual(capture["document"]["scrollWidth"], width)
+            targets = [
+                target
+                for target in capture["hitTargets"]
+                if target["tag"] == "label" or target["id"] == "result-scale"
+            ]
+            self.assertEqual(len(targets), 4)
+            self.assertTrue(all(target["rect"]["height"] >= 44 for target in targets))
+            image = ROOT / "docs" / "manual" / "images" / f"browser-layout-{name}.jpg"
+            self.assertEqual(image.read_bytes()[:2], bytes.fromhex("ffd8"))
 
     def test_accessibility_presentation_contract(self):
         controls = (ROOT / "crates" / "metis-web" / "src" / "controls.rs").read_text(

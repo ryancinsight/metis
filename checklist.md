@@ -1,6 +1,6 @@
 # Execution
 
-- [Responsive layout and style semantics](backlog.md#METIS-LAYOUT-001): verify the Rust-owned theme modes, semantic CSS variable override path, replaceable starter mark and packaged browser asset, then close the remaining runtime geometry and display-scale captures.
+- [Responsive layout and style semantics](backlog.md#METIS-LAYOUT-001): Rust-owned theme modes, semantic CSS variable overrides, replaceable starter mark, packaged browser asset and scale-1 runtime geometry captures are recorded; scale-2 and custom-style diagnostics remain open.
 - [Publication readiness](backlog.md#METIS-RELEASE-001): the Atlas-pinned crates.io OIDC caller and tokenless contract are implemented; registry publisher registration and first release remain external.
 
 ## root

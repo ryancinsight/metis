@@ -1,0 +1,1161 @@
+{
+  "schema": 1,
+  "source": "examples/browser/styles.css",
+  "source_sha256": "bd7c0e8fe2f9758f887de4f7dade5bb90aee2e1307bfa30f3e77ecc0f54fc61f",
+  "engine": "Codex In-app Browser",
+  "engine_version": "unavailable",
+  "captures": {
+    "360x640": {
+      "cards": [
+        {
+          "class": "metis-header",
+          "rect": {
+            "bottom": 584.64,
+            "height": 507.84,
+            "right": 328.8,
+            "width": 312.8,
+            "x": 16,
+            "y": 76.8
+          },
+          "tag": "header"
+        },
+        {
+          "class": "metis-form",
+          "rect": {
+            "bottom": 1045.44,
+            "height": 436.8,
+            "right": 328.8,
+            "width": 312.8,
+            "x": 16,
+            "y": 608.64
+          },
+          "tag": "form"
+        },
+        {
+          "class": "metis-options",
+          "rect": {
+            "bottom": 1688.64,
+            "height": 619.2,
+            "right": 328.8,
+            "width": 312.8,
+            "x": 16,
+            "y": 1069.44
+          },
+          "tag": "fieldset"
+        },
+        {
+          "class": "metis-pointer",
+          "rect": {
+            "bottom": 2070.95,
+            "height": 358.31,
+            "right": 328.8,
+            "width": 312.8,
+            "x": 16,
+            "y": 1712.64
+          },
+          "tag": "section"
+        },
+        {
+          "class": "metis-drop",
+          "rect": {
+            "bottom": 2392.46,
+            "height": 297.51,
+            "right": 328.8,
+            "width": 312.8,
+            "x": 16,
+            "y": 2094.95
+          },
+          "tag": "section"
+        },
+        {
+          "class": "metis-text",
+          "rect": {
+            "bottom": 2898.78,
+            "height": 482.31,
+            "right": 328.8,
+            "width": 312.8,
+            "x": 16,
+            "y": 2416.46
+          },
+          "tag": "section"
+        },
+        {
+          "class": "metis-result",
+          "rect": {
+            "bottom": 3310.69,
+            "height": 387.91,
+            "right": 328.8,
+            "width": 312.8,
+            "x": 16,
+            "y": 2922.78
+          },
+          "tag": "section"
+        }
+      ],
+      "document": {
+        "maxRight": 328.8,
+        "overflowX": "visible",
+        "scrollHeight": 3326,
+        "scrollWidth": 345
+      },
+      "grid": {
+        "columns": "312.8px"
+      },
+      "hitTargets": [
+        {
+          "disabled": false,
+          "id": "metis-start",
+          "rect": {
+            "bottom": 60.8,
+            "height": 44.8,
+            "right": 123.2,
+            "width": 107.2,
+            "x": 16,
+            "y": 16
+          },
+          "tag": "button",
+          "type": "button"
+        },
+        {
+          "disabled": false,
+          "id": "metis-stop",
+          "rect": {
+            "bottom": 60.8,
+            "height": 44.8,
+            "right": 237.6,
+            "width": 104,
+            "x": 133.6,
+            "y": 16
+          },
+          "tag": "button",
+          "type": "button"
+        },
+        {
+          "disabled": false,
+          "id": "open-session-dialog",
+          "rect": {
+            "bottom": 563.84,
+            "height": 44.8,
+            "right": 180,
+            "width": 143.2,
+            "x": 36.8,
+            "y": 519.04
+          },
+          "tag": "button",
+          "type": "button"
+        },
+        {
+          "disabled": false,
+          "id": "patient-id",
+          "rect": {
+            "bottom": 704.64,
+            "height": 44.8,
+            "right": 308,
+            "width": 271.2,
+            "x": 36.8,
+            "y": 659.84
+          },
+          "tag": "input",
+          "type": null
+        },
+        {
+          "disabled": false,
+          "id": "weight-kg",
+          "rect": {
+            "bottom": 790.24,
+            "height": 44.8,
+            "right": 308,
+            "width": 271.2,
+            "x": 36.8,
+            "y": 745.44
+          },
+          "tag": "input",
+          "type": "number"
+        },
+        {
+          "disabled": false,
+          "id": "concentration-mg-ml",
+          "rect": {
+            "bottom": 875.84,
+            "height": 44.8,
+            "right": 308,
+            "width": 271.2,
+            "x": 36.8,
+            "y": 831.04
+          },
+          "tag": "input",
+          "type": "number"
+        },
+        {
+          "disabled": false,
+          "id": "target-dose",
+          "rect": {
+            "bottom": 961.44,
+            "height": 44.8,
+            "right": 308,
+            "width": 271.2,
+            "x": 36.8,
+            "y": 916.64
+          },
+          "tag": "input",
+          "type": "number"
+        },
+        {
+          "disabled": true,
+          "id": "submit-calculation",
+          "rect": {
+            "bottom": 1024.64,
+            "height": 44.8,
+            "right": 308,
+            "width": 271.2,
+            "x": 36.8,
+            "y": 979.84
+          },
+          "tag": "button",
+          "type": "submit"
+        },
+        {
+          "disabled": false,
+          "id": "show-events",
+          "rect": {
+            "bottom": 1155.84,
+            "height": 44,
+            "right": 308,
+            "width": 271.2,
+            "x": 36.8,
+            "y": 1111.84
+          },
+          "tag": "label",
+          "type": null
+        },
+        {
+          "disabled": false,
+          "id": "show-events",
+          "rect": {
+            "bottom": 1140.34,
+            "height": 13,
+            "right": 53.8,
+            "width": 13,
+            "x": 40.8,
+            "y": 1127.34
+          },
+          "tag": "input",
+          "type": "checkbox"
+        },
+        {
+          "disabled": false,
+          "id": "dose-volume",
+          "rect": {
+            "bottom": 1240.64,
+            "height": 44,
+            "right": 308,
+            "width": 271.2,
+            "x": 36.8,
+            "y": 1196.64
+          },
+          "tag": "label",
+          "type": null
+        },
+        {
+          "disabled": false,
+          "id": "dose-volume",
+          "rect": {
+            "bottom": 1226.64,
+            "height": 13,
+            "right": 54.8,
+            "width": 13,
+            "x": 41.8,
+            "y": 1213.64
+          },
+          "tag": "input",
+          "type": "radio"
+        },
+        {
+          "disabled": false,
+          "id": "dose-mass",
+          "rect": {
+            "bottom": 1295.04,
+            "height": 44,
+            "right": 308,
+            "width": 271.2,
+            "x": 36.8,
+            "y": 1251.04
+          },
+          "tag": "label",
+          "type": null
+        },
+        {
+          "disabled": false,
+          "id": "dose-mass",
+          "rect": {
+            "bottom": 1281.04,
+            "height": 13,
+            "right": 54.8,
+            "width": 13,
+            "x": 41.8,
+            "y": 1268.04
+          },
+          "tag": "input",
+          "type": "radio"
+        },
+        {
+          "disabled": false,
+          "id": "result-scale",
+          "rect": {
+            "bottom": 1381.84,
+            "height": 44,
+            "right": 310,
+            "width": 271.2,
+            "x": 38.8,
+            "y": 1337.84
+          },
+          "tag": "input",
+          "type": "range"
+        },
+        {
+          "disabled": false,
+          "id": "result-detail-select",
+          "rect": {
+            "bottom": 1471.04,
+            "height": 46.4,
+            "right": 308,
+            "width": 271.2,
+            "x": 36.8,
+            "y": 1424.64
+          },
+          "tag": "select",
+          "type": null
+        },
+        {
+          "disabled": false,
+          "id": "theme-mode",
+          "rect": {
+            "bottom": 1558.24,
+            "height": 46.4,
+            "right": 308,
+            "width": 271.2,
+            "x": 36.8,
+            "y": 1511.84
+          },
+          "tag": "select",
+          "type": null
+        },
+        {
+          "disabled": false,
+          "id": "pointer-surface",
+          "rect": {
+            "bottom": 2050.15,
+            "height": 123.2,
+            "right": 308,
+            "width": 271.2,
+            "x": 36.8,
+            "y": 1926.95
+          },
+          "tag": "div",
+          "type": null
+        },
+        {
+          "disabled": false,
+          "id": "drop-zone",
+          "rect": {
+            "bottom": 2371.66,
+            "height": 123.2,
+            "right": 308,
+            "width": 271.2,
+            "x": 36.8,
+            "y": 2248.46
+          },
+          "tag": "div",
+          "type": null
+        },
+        {
+          "disabled": false,
+          "id": "text-specimen",
+          "rect": {
+            "bottom": 2673.97,
+            "height": 121.6,
+            "right": 308,
+            "width": 271.2,
+            "x": 36.8,
+            "y": 2552.38
+          },
+          "tag": "textarea",
+          "type": null
+        }
+      ],
+      "viewport": {
+        "height": 640,
+        "scale": 1,
+        "width": 360
+      }
+    },
+    "800x600": {
+      "cards": [
+        {
+          "class": "metis-header",
+          "rect": {
+            "bottom": 455.04,
+            "height": 362.24,
+            "right": 752.8,
+            "width": 720.8,
+            "x": 32,
+            "y": 92.8
+          },
+          "tag": "header"
+        },
+        {
+          "class": "metis-form",
+          "rect": {
+            "bottom": 1098.24,
+            "height": 619.2,
+            "right": 380.4,
+            "width": 348.4,
+            "x": 32,
+            "y": 479.04
+          },
+          "tag": "form"
+        },
+        {
+          "class": "metis-options",
+          "rect": {
+            "bottom": 1098.24,
+            "height": 619.2,
+            "right": 752.8,
+            "width": 348.4,
+            "x": 404.4,
+            "y": 479.04
+          },
+          "tag": "fieldset"
+        },
+        {
+          "class": "metis-pointer",
+          "rect": {
+            "bottom": 1458.15,
+            "height": 335.91,
+            "right": 380.4,
+            "width": 348.4,
+            "x": 32,
+            "y": 1122.24
+          },
+          "tag": "section"
+        },
+        {
+          "class": "metis-drop",
+          "rect": {
+            "bottom": 1736.46,
+            "height": 254.31,
+            "right": 752.8,
+            "width": 720.8,
+            "x": 32,
+            "y": 1482.15
+          },
+          "tag": "section"
+        },
+        {
+          "class": "metis-text",
+          "rect": {
+            "bottom": 2178.78,
+            "height": 418.31,
+            "right": 752.8,
+            "width": 720.8,
+            "x": 32,
+            "y": 1760.46
+          },
+          "tag": "section"
+        },
+        {
+          "class": "metis-result",
+          "rect": {
+            "bottom": 2590.69,
+            "height": 387.91,
+            "right": 380.4,
+            "width": 348.4,
+            "x": 32,
+            "y": 2202.78
+          },
+          "tag": "section"
+        }
+      ],
+      "document": {
+        "maxRight": 752.8,
+        "overflowX": "visible",
+        "scrollHeight": 2622,
+        "scrollWidth": 785
+      },
+      "grid": {
+        "columns": "348.4px 348.4px"
+      },
+      "hitTargets": [
+        {
+          "disabled": false,
+          "id": "metis-start",
+          "rect": {
+            "bottom": 60.8,
+            "height": 44.8,
+            "right": 139.2,
+            "width": 107.2,
+            "x": 32,
+            "y": 16
+          },
+          "tag": "button",
+          "type": "button"
+        },
+        {
+          "disabled": false,
+          "id": "metis-stop",
+          "rect": {
+            "bottom": 60.8,
+            "height": 44.8,
+            "right": 253.6,
+            "width": 104,
+            "x": 149.6,
+            "y": 16
+          },
+          "tag": "button",
+          "type": "button"
+        },
+        {
+          "disabled": false,
+          "id": "open-session-dialog",
+          "rect": {
+            "bottom": 434.24,
+            "height": 44.8,
+            "right": 196,
+            "width": 143.2,
+            "x": 52.8,
+            "y": 389.44
+          },
+          "tag": "button",
+          "type": "button"
+        },
+        {
+          "disabled": false,
+          "id": "patient-id",
+          "rect": {
+            "bottom": 615.56,
+            "height": 65.06,
+            "right": 359.6,
+            "width": 306.8,
+            "x": 52.8,
+            "y": 550.5
+          },
+          "tag": "input",
+          "type": null
+        },
+        {
+          "disabled": false,
+          "id": "weight-kg",
+          "rect": {
+            "bottom": 741.69,
+            "height": 65.06,
+            "right": 359.6,
+            "width": 306.8,
+            "x": 52.8,
+            "y": 676.63
+          },
+          "tag": "input",
+          "type": "number"
+        },
+        {
+          "disabled": false,
+          "id": "concentration-mg-ml",
+          "rect": {
+            "bottom": 867.81,
+            "height": 65.06,
+            "right": 359.6,
+            "width": 306.8,
+            "x": 52.8,
+            "y": 802.75
+          },
+          "tag": "input",
+          "type": "number"
+        },
+        {
+          "disabled": false,
+          "id": "target-dose",
+          "rect": {
+            "bottom": 993.96,
+            "height": 65.08,
+            "right": 359.6,
+            "width": 306.8,
+            "x": 52.8,
+            "y": 928.89
+          },
+          "tag": "input",
+          "type": "number"
+        },
+        {
+          "disabled": true,
+          "id": "submit-calculation",
+          "rect": {
+            "bottom": 1077.44,
+            "height": 65.08,
+            "right": 359.6,
+            "width": 306.8,
+            "x": 52.8,
+            "y": 1012.36
+          },
+          "tag": "button",
+          "type": "submit"
+        },
+        {
+          "disabled": false,
+          "id": "show-events",
+          "rect": {
+            "bottom": 565.44,
+            "height": 44,
+            "right": 732,
+            "width": 306.8,
+            "x": 425.2,
+            "y": 521.44
+          },
+          "tag": "label",
+          "type": null
+        },
+        {
+          "disabled": false,
+          "id": "show-events",
+          "rect": {
+            "bottom": 549.94,
+            "height": 13,
+            "right": 442.2,
+            "width": 13,
+            "x": 429.2,
+            "y": 536.94
+          },
+          "tag": "input",
+          "type": "checkbox"
+        },
+        {
+          "disabled": false,
+          "id": "dose-volume",
+          "rect": {
+            "bottom": 650.24,
+            "height": 44,
+            "right": 732,
+            "width": 306.8,
+            "x": 425.2,
+            "y": 606.24
+          },
+          "tag": "label",
+          "type": null
+        },
+        {
+          "disabled": false,
+          "id": "dose-volume",
+          "rect": {
+            "bottom": 636.24,
+            "height": 13,
+            "right": 443.2,
+            "width": 13,
+            "x": 430.2,
+            "y": 623.24
+          },
+          "tag": "input",
+          "type": "radio"
+        },
+        {
+          "disabled": false,
+          "id": "dose-mass",
+          "rect": {
+            "bottom": 704.64,
+            "height": 44,
+            "right": 732,
+            "width": 306.8,
+            "x": 425.2,
+            "y": 660.64
+          },
+          "tag": "label",
+          "type": null
+        },
+        {
+          "disabled": false,
+          "id": "dose-mass",
+          "rect": {
+            "bottom": 690.64,
+            "height": 13,
+            "right": 443.2,
+            "width": 13,
+            "x": 430.2,
+            "y": 677.64
+          },
+          "tag": "input",
+          "type": "radio"
+        },
+        {
+          "disabled": false,
+          "id": "result-scale",
+          "rect": {
+            "bottom": 791.44,
+            "height": 44,
+            "right": 734,
+            "width": 306.8,
+            "x": 427.2,
+            "y": 747.44
+          },
+          "tag": "input",
+          "type": "range"
+        },
+        {
+          "disabled": false,
+          "id": "result-detail-select",
+          "rect": {
+            "bottom": 880.64,
+            "height": 46.4,
+            "right": 732,
+            "width": 306.8,
+            "x": 425.2,
+            "y": 834.24
+          },
+          "tag": "select",
+          "type": null
+        },
+        {
+          "disabled": false,
+          "id": "theme-mode",
+          "rect": {
+            "bottom": 967.84,
+            "height": 46.4,
+            "right": 732,
+            "width": 306.8,
+            "x": 425.2,
+            "y": 921.44
+          },
+          "tag": "select",
+          "type": null
+        },
+        {
+          "disabled": false,
+          "id": "pointer-surface",
+          "rect": {
+            "bottom": 1437.35,
+            "height": 100.8,
+            "right": 359.6,
+            "width": 306.8,
+            "x": 52.8,
+            "y": 1336.55
+          },
+          "tag": "div",
+          "type": null
+        },
+        {
+          "disabled": false,
+          "id": "drop-zone",
+          "rect": {
+            "bottom": 1715.66,
+            "height": 80,
+            "right": 732,
+            "width": 679.2,
+            "x": 52.8,
+            "y": 1635.66
+          },
+          "tag": "div",
+          "type": null
+        },
+        {
+          "disabled": false,
+          "id": "text-specimen",
+          "rect": {
+            "bottom": 2017.97,
+            "height": 121.6,
+            "right": 732,
+            "width": 679.2,
+            "x": 52.8,
+            "y": 1896.38
+          },
+          "tag": "textarea",
+          "type": null
+        }
+      ],
+      "viewport": {
+        "height": 600,
+        "scale": 1,
+        "width": 800
+      }
+    },
+    "1440x900": {
+      "cards": [
+        {
+          "class": "metis-header",
+          "rect": {
+            "bottom": 455.04,
+            "height": 362.24,
+            "right": 1160.4,
+            "width": 896,
+            "x": 264.4,
+            "y": 92.8
+          },
+          "tag": "header"
+        },
+        {
+          "class": "metis-form",
+          "rect": {
+            "bottom": 1075.84,
+            "height": 596.8,
+            "right": 700.4,
+            "width": 436,
+            "x": 264.4,
+            "y": 479.04
+          },
+          "tag": "form"
+        },
+        {
+          "class": "metis-options",
+          "rect": {
+            "bottom": 1075.84,
+            "height": 596.8,
+            "right": 1160.4,
+            "width": 436,
+            "x": 724.4,
+            "y": 479.04
+          },
+          "tag": "fieldset"
+        },
+        {
+          "class": "metis-pointer",
+          "rect": {
+            "bottom": 1414.95,
+            "height": 315.11,
+            "right": 700.4,
+            "width": 436,
+            "x": 264.4,
+            "y": 1099.84
+          },
+          "tag": "section"
+        },
+        {
+          "class": "metis-drop",
+          "rect": {
+            "bottom": 1693.26,
+            "height": 254.31,
+            "right": 1160.4,
+            "width": 896,
+            "x": 264.4,
+            "y": 1438.95
+          },
+          "tag": "section"
+        },
+        {
+          "class": "metis-text",
+          "rect": {
+            "bottom": 2135.58,
+            "height": 418.31,
+            "right": 1160.4,
+            "width": 896,
+            "x": 264.4,
+            "y": 1717.26
+          },
+          "tag": "section"
+        },
+        {
+          "class": "metis-result",
+          "rect": {
+            "bottom": 2526.69,
+            "height": 367.11,
+            "right": 700.4,
+            "width": 436,
+            "x": 264.4,
+            "y": 2159.57
+          },
+          "tag": "section"
+        }
+      ],
+      "document": {
+        "maxRight": 1160.4,
+        "overflowX": "visible",
+        "scrollHeight": 2558,
+        "scrollWidth": 1425
+      },
+      "grid": {
+        "columns": "436px 436px"
+      },
+      "hitTargets": [
+        {
+          "disabled": false,
+          "id": "metis-start",
+          "rect": {
+            "bottom": 60.8,
+            "height": 44.8,
+            "right": 371.6,
+            "width": 107.2,
+            "x": 264.4,
+            "y": 16
+          },
+          "tag": "button",
+          "type": "button"
+        },
+        {
+          "disabled": false,
+          "id": "metis-stop",
+          "rect": {
+            "bottom": 60.8,
+            "height": 44.8,
+            "right": 486,
+            "width": 104,
+            "x": 382,
+            "y": 16
+          },
+          "tag": "button",
+          "type": "button"
+        },
+        {
+          "disabled": false,
+          "id": "open-session-dialog",
+          "rect": {
+            "bottom": 434.24,
+            "height": 44.8,
+            "right": 428.4,
+            "width": 143.2,
+            "x": 285.2,
+            "y": 389.44
+          },
+          "tag": "button",
+          "type": "button"
+        },
+        {
+          "disabled": false,
+          "id": "patient-id",
+          "rect": {
+            "bottom": 610.59,
+            "height": 62.58,
+            "right": 679.6,
+            "width": 394.4,
+            "x": 285.2,
+            "y": 548.01
+          },
+          "tag": "input",
+          "type": null
+        },
+        {
+          "disabled": false,
+          "id": "weight-kg",
+          "rect": {
+            "bottom": 731.74,
+            "height": 62.58,
+            "right": 679.6,
+            "width": 394.4,
+            "x": 285.2,
+            "y": 669.16
+          },
+          "tag": "input",
+          "type": "number"
+        },
+        {
+          "disabled": false,
+          "id": "concentration-mg-ml",
+          "rect": {
+            "bottom": 852.89,
+            "height": 62.58,
+            "right": 679.6,
+            "width": 394.4,
+            "x": 285.2,
+            "y": 790.31
+          },
+          "tag": "input",
+          "type": "number"
+        },
+        {
+          "disabled": false,
+          "id": "target-dose",
+          "rect": {
+            "bottom": 974.05,
+            "height": 62.59,
+            "right": 679.6,
+            "width": 394.4,
+            "x": 285.2,
+            "y": 911.46
+          },
+          "tag": "input",
+          "type": "number"
+        },
+        {
+          "disabled": true,
+          "id": "submit-calculation",
+          "rect": {
+            "bottom": 1055.04,
+            "height": 62.59,
+            "right": 679.6,
+            "width": 394.4,
+            "x": 285.2,
+            "y": 992.45
+          },
+          "tag": "button",
+          "type": "submit"
+        },
+        {
+          "disabled": false,
+          "id": "show-events",
+          "rect": {
+            "bottom": 565.44,
+            "height": 44,
+            "right": 1139.6,
+            "width": 394.4,
+            "x": 745.2,
+            "y": 521.44
+          },
+          "tag": "label",
+          "type": null
+        },
+        {
+          "disabled": false,
+          "id": "show-events",
+          "rect": {
+            "bottom": 549.94,
+            "height": 13,
+            "right": 762.2,
+            "width": 13,
+            "x": 749.2,
+            "y": 536.94
+          },
+          "tag": "input",
+          "type": "checkbox"
+        },
+        {
+          "disabled": false,
+          "id": "dose-volume",
+          "rect": {
+            "bottom": 650.24,
+            "height": 44,
+            "right": 1139.6,
+            "width": 394.4,
+            "x": 745.2,
+            "y": 606.24
+          },
+          "tag": "label",
+          "type": null
+        },
+        {
+          "disabled": false,
+          "id": "dose-volume",
+          "rect": {
+            "bottom": 636.24,
+            "height": 13,
+            "right": 763.2,
+            "width": 13,
+            "x": 750.2,
+            "y": 623.24
+          },
+          "tag": "input",
+          "type": "radio"
+        },
+        {
+          "disabled": false,
+          "id": "dose-mass",
+          "rect": {
+            "bottom": 704.64,
+            "height": 44,
+            "right": 1139.6,
+            "width": 394.4,
+            "x": 745.2,
+            "y": 660.64
+          },
+          "tag": "label",
+          "type": null
+        },
+        {
+          "disabled": false,
+          "id": "dose-mass",
+          "rect": {
+            "bottom": 690.64,
+            "height": 13,
+            "right": 763.2,
+            "width": 13,
+            "x": 750.2,
+            "y": 677.64
+          },
+          "tag": "input",
+          "type": "radio"
+        },
+        {
+          "disabled": false,
+          "id": "result-scale",
+          "rect": {
+            "bottom": 791.44,
+            "height": 44,
+            "right": 1141.6,
+            "width": 394.4,
+            "x": 747.2,
+            "y": 747.44
+          },
+          "tag": "input",
+          "type": "range"
+        },
+        {
+          "disabled": false,
+          "id": "result-detail-select",
+          "rect": {
+            "bottom": 880.64,
+            "height": 46.4,
+            "right": 1139.6,
+            "width": 394.4,
+            "x": 745.2,
+            "y": 834.24
+          },
+          "tag": "select",
+          "type": null
+        },
+        {
+          "disabled": false,
+          "id": "theme-mode",
+          "rect": {
+            "bottom": 967.84,
+            "height": 46.4,
+            "right": 1139.6,
+            "width": 394.4,
+            "x": 745.2,
+            "y": 921.44
+          },
+          "tag": "select",
+          "type": null
+        },
+        {
+          "disabled": false,
+          "id": "pointer-surface",
+          "rect": {
+            "bottom": 1394.15,
+            "height": 100.8,
+            "right": 679.6,
+            "width": 394.4,
+            "x": 285.2,
+            "y": 1293.35
+          },
+          "tag": "div",
+          "type": null
+        },
+        {
+          "disabled": false,
+          "id": "drop-zone",
+          "rect": {
+            "bottom": 1672.46,
+            "height": 80,
+            "right": 1139.6,
+            "width": 854.4,
+            "x": 285.2,
+            "y": 1592.46
+          },
+          "tag": "div",
+          "type": null
+        },
+        {
+          "disabled": false,
+          "id": "text-specimen",
+          "rect": {
+            "bottom": 1974.78,
+            "height": 121.6,
+            "right": 1139.6,
+            "width": 854.4,
+            "x": 285.2,
+            "y": 1853.18
+          },
+          "tag": "textarea",
+          "type": null
+        }
+      ],
+      "viewport": {
+        "height": 900,
+        "scale": 1,
+        "width": 1440
+      }
+    }
+  }
+}

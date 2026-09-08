@@ -299,15 +299,35 @@ The browser provider for this workflow is Moirai revision
 `0862716265d657b8069d5a47fd1e77ae26ddd006`; the consumer lock is updated to the
 same merged revision.
 
+## Responsive runtime capture
+
 The page uses a bounded responsive grid. At widths below `700px`, the form and
 options stack in one column with `1rem` page padding; wider viewports use two
 `minmax(0, 1fr)` columns inside a `960px` content bound. Grid items accept
 long status and clinical strings without widening the page, and the host
-buttons use the same narrow-viewport padding. The CSS contract test checks
-these declarations, while V04 still requires runtime captures at
-`360×640`, `800×600` and `1440×900` CSS pixels at scale factors `1` and `2`.
-The current CUA surface is fixed at `1280×720` and cannot close those viewport
-or high-DPI cases.
+buttons use the same narrow-viewport padding. Option rows and the result-scale
+slider expose a `44px` CSS hit target so their labels remain usable on touch
+and keyboard layouts. The CSS contract test checks these declarations.
+
+The Browser viewport capability captured the generated workbench at
+`360×640`, `800×600` and `1440×900` CSS pixels with device scale `1`. The
+runtime manifest records the exact card rectangles, grid columns, scroll
+extents and interactive target rectangles in
+[`browser-layout-metrics.json`](images/browser-layout-metrics.json), bound to
+the stylesheet SHA-256 recorded in that file. The captures show the narrow
+single-column layout, the two-column fixture and the bounded wide layout:
+
+![Metis at 360 by 640 CSS pixels](images/browser-layout-360x640.jpg)
+
+![Metis at 800 by 600 CSS pixels](images/browser-layout-800x600.jpg)
+
+![Metis at 1440 by 900 CSS pixels](images/browser-layout-1440x900.jpg)
+
+The measured pages have no horizontal overflow; every card and required
+interactive target ends inside the viewport, and the option rows and slider
+measure `44px` high at all three widths. The viewport capability does not
+expose a device-scale override, so scale `2`, custom-style diagnostics and
+platform fractional-scale cases remain open under V04.
 
 ## Exercise the accessibility presentation
 

@@ -612,13 +612,23 @@ The browser stylesheet now constrains the page to `width: 100%` with a
 `960px` bound, uses `minmax(0, 1fr)` columns above the `700px` breakpoint, and
 stacks the form and options below that breakpoint. Shared box sizing, zero
 minimum grid items and `overflow-wrap: anywhere` keep long status and clinical
-strings inside their cards. The static browser contract suite checks the
-responsive declarations and the full Metis gate passes after the change.
+strings inside their cards. Option rows and the result-scale slider use a
+`44px` CSS hit target. The static browser contract suite checks the responsive
+declarations.
 
-Runtime V04 evidence at `360×640`, `800×600` and `1440×900` CSS pixels with
-scale factors `1` and `2` remains open. The available CUA surface is fixed at
-`1280×720` with device scale `1.25`, so it cannot establish those additional
-viewport or high-DPI geometries.
+The Browser viewport capability captured the generated page at
+`360×640`, `800×600` and `1440×900` CSS pixels with device scale `1`. The
+runtime manifest and JPEG captures are committed under
+`docs/manual/images/browser-layout-*`; its source hash binds the measurements to
+`examples/browser/styles.css`. The narrow capture resolves to one `312.8px`
+grid column; the fixture resolves to two `348.4px` columns; the wide capture
+resolves to two `436px` columns. All three have no horizontal overflow and every
+required card or target ends inside the viewport. The full Metis gate passes on
+the delivered revision.
+
+The viewport capability does not expose a device-scale override. Scale `2`,
+custom-style diagnostics and platform fractional-scale cases remain open under
+V04; these captures do not claim those paths.
 
 ## Browser accessibility presentation evidence — 2026-09-08
 
