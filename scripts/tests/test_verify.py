@@ -166,6 +166,7 @@ class WorkflowContractTests(unittest.TestCase):
             "python scripts/verify.py",
             "cargo install cargo-nextest --version 0.9.143 --locked",
             "cargo install wasm-bindgen-cli --version 0.2.128 --locked",
+            "cargo fetch --locked --manifest-path Cargo.toml",
             "output/verification.json",
             "if-no-files-found: ignore",
             "workflow-lint:",

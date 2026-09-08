@@ -65,6 +65,9 @@ jobs:
           toolchain: 1.97.0
           components: rustfmt, clippy
           targets: wasm32-unknown-unknown
+      - name: Prime locked Cargo sources
+        shell: pwsh
+        run: rustup run 1.97.0 cargo fetch --locked --manifest-path Cargo.toml
       - name: Install pinned gate tools
         shell: pwsh
         run: |

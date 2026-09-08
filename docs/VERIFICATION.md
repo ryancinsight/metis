@@ -26,6 +26,10 @@ revision pinning, draft suppression, guard references and the Windows target.
 This local check validates the committed definition; a hosted run is required
 before reporting GitHub runner results or CI timing evidence.
 
+Fresh hosted runners prime the exact locked Git and registry sources with the
+pinned Rust toolchain before invoking the gate. The gate then resolves offline,
+so source acquisition is explicit while verification remains reproducible.
+
 Entry baseline: `cargo check --workspace --offline` passes with documentation and
 source warnings. The original native test build fails with E0382 in the threaded
 process-isolation test. No original OS sandbox or native-window evidence exists.
