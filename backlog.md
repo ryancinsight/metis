@@ -204,6 +204,9 @@ an owner. “Unsupported” cannot replace delivery of a required mobile/native 
 - Scope: reject or implement currently ineffective custom styles; DOM route uses actual CSS flex/grid, overflow/scrolling, nesting/clipping, min/max sizes, theme and scale. No custom browser-engine rewrite.
 - Acceptance: admitted geometry is independently asserted at narrow/wide viewports and display scales; clipping/hit targets match; unsupported custom properties produce diagnostics, not silent success.
 - Demonstration: [V04](docs/VERIFICATION.md#V04); browser captures follow BROWSER, custom subset tests can land before it.
+- Completed increment: browser CSS now applies shared border-box sizing, zero-minimum grid items and long-string wrapping; the page uses a bounded two-column grid above `700px` and a one-column layout with `1rem` padding below it.
+- Evidence: [browser responsive-layout evidence](docs/VERIFICATION.md#browser-responsive-layout-evidence--2026-09-08) and the static asset contract test cover the declarations; the full Metis gate passes on the committed revision.
+- Residuals: runtime captures at `360×640`, `800×600` and `1440×900` with scale factors `1` and `2`, hit-target geometry and custom-style diagnostics remain open because the available browser surface is fixed at `1280×720`/1.25.
 
 <a id="METIS-MACOS-001"></a>
 ## METIS-MACOS-001 — macOS restricted desktop [arch] [minor]

@@ -520,6 +520,20 @@ appended ` typedX`; the observed value became `Résumé — 東京 / 影像 type
 browser input and Rust/WASM state updates; it does not claim native IME,
 trusted hardware input, or cross-engine behavior.
 
+## Browser responsive-layout evidence — 2026-09-08
+
+The browser stylesheet now constrains the page to `width: 100%` with a
+`960px` bound, uses `minmax(0, 1fr)` columns above the `700px` breakpoint, and
+stacks the form and options below that breakpoint. Shared box sizing, zero
+minimum grid items and `overflow-wrap: anywhere` keep long status and clinical
+strings inside their cards. The static browser contract suite checks the
+responsive declarations and the full Metis gate passes after the change.
+
+Runtime V04 evidence at `360×640`, `800×600` and `1440×900` CSS pixels with
+scale factors `1` and `2` remains open. The available CUA surface is fixed at
+`1280×720` with device scale `1.25`, so it cannot establish those additional
+viewport or high-DPI geometries.
+
 ## Browser stale-response evidence — 2026-09-07
 
 The service conformance host now accepts `--response-delay-ms` with a bounded

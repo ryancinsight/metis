@@ -247,6 +247,16 @@ The browser provider for this workflow is Moirai revision
 `0862716265d657b8069d5a47fd1e77ae26ddd006`; the consumer lock is updated to the
 same merged revision.
 
+The page uses a bounded responsive grid. At widths below `700px`, the form and
+options stack in one column with `1rem` page padding; wider viewports use two
+`minmax(0, 1fr)` columns inside a `960px` content bound. Grid items accept
+long status and clinical strings without widening the page, and the host
+buttons use the same narrow-viewport padding. The CSS contract test checks
+these declarations, while V04 still requires runtime captures at
+`360×640`, `800×600` and `1440×900` CSS pixels at scale factors `1` and `2`.
+The current CUA surface is fixed at `1280×720` and cannot close those viewport
+or high-DPI cases.
+
 The captured service journey at revision
 `d879779247c8cfc5870f62f99a5364cbbf2d3c58` used the Codex in-app
 browser at 1280×720 CSS pixels and device scale 1.25. Pointer activation of

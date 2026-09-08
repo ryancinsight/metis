@@ -108,6 +108,25 @@ class BrowserAssetContractTests(unittest.TestCase):
         ):
             self.assertIn(selector, styles)
 
+    def test_layout_contract_constrains_grid_items_and_narrow_viewport(self):
+        styles = (ROOT / "examples" / "browser" / "styles.css").read_text(
+            encoding="utf-8"
+        )
+        for fragment in (
+            ":root {",
+            "box-sizing: border-box",
+            "*, *::before, *::after { box-sizing: inherit; }",
+            "body { margin: 0; min-width: 320px; }",
+            "width: 100%; max-width: 960px",
+            "grid-template-columns: minmax(0, 1fr) minmax(0, 1fr)",
+            "min-width: 0",
+            "overflow-wrap: anywhere",
+            "@media (max-width: 700px)",
+            ".metis-host-controls { padding-inline: 1rem; }",
+            "#metis-app { grid-template-columns: 1fr; padding: 1rem; }",
+        ):
+            self.assertIn(fragment, styles)
+
 
 if __name__ == "__main__":
     unittest.main()
