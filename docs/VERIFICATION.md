@@ -534,6 +534,25 @@ scale factors `1` and `2` remains open. The available CUA surface is fixed at
 `1280×720` with device scale `1.25`, so it cannot establish those additional
 viewport or high-DPI geometries.
 
+## Browser accessibility presentation evidence — 2026-09-08
+
+The browser asset contract now checks semantic group names, polite live
+regions, non-positive focus order and the responsive presentation preferences.
+The stylesheet honors `prefers-reduced-motion: reduce` by removing scroll and
+transition motion, and `forced-colors: active` by mapping surfaces, controls
+and focus outlines to system colors. The keyboard order follows the active
+document path from **Session details** through the form, view options, pointer
+surface, DICOM drop zone and clinical note; the closed dialog remains outside
+that path.
+
+The focused native suite and full Metis gate pass on the committed revision.
+The available CUA browser can inspect the semantic tree and visible focus ring
+at 1280×720 CSS pixels and device scale 1.25. It cannot change the browser's
+reduced-motion or forced-colors media preferences, expose spoken screen-reader
+output, or provide an operating-system accessibility bridge. Runtime captures
+under those preferences, supported screen-reader traversal, zoom-scale
+geometry and native host accessibility remain open under `METIS-A11Y-001`.
+
 ## Browser stale-response evidence — 2026-09-07
 
 The service conformance host now accepts `--response-delay-ms` with a bounded

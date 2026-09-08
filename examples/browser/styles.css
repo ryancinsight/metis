@@ -50,3 +50,35 @@ dt { color: #94a3b8; }
 dd { margin: 0; color: #f8fafc; font-variant-numeric: tabular-nums; }
 #metis-status, #result-state { color: #67e8f9; min-height: 1.5rem; }
 @media (max-width: 700px) { .metis-host-controls { padding-inline: 1rem; } #metis-app { grid-template-columns: 1fr; padding: 1rem; } .metis-header { grid-column: auto; } }
+@media (prefers-reduced-motion: reduce) {
+  html { scroll-behavior: auto; }
+  *, *::before, *::after {
+    animation-duration: 0.001ms;
+    animation-iteration-count: 1;
+    scroll-behavior: auto;
+    transition-duration: 0.001ms;
+    transition-delay: 0s;
+  }
+}
+@media (forced-colors: active) {
+  :root { forced-color-adjust: auto; background: Canvas; color: CanvasText; }
+  body { background: Canvas; color: CanvasText; }
+  .metis-header, .metis-form, .metis-options, .metis-drop, .metis-text, .metis-result, .metis-pointer {
+    border-color: ButtonText;
+    background: Canvas;
+    color: CanvasText;
+  }
+  dialog { border-color: ButtonText; background: Canvas; color: CanvasText; }
+  dialog::backdrop { background: Canvas; }
+  #pointer-surface, #drop-zone, #text-specimen, input, select {
+    border-color: ButtonText;
+    background: Canvas;
+    color: CanvasText;
+  }
+  button { border: 1px solid ButtonText; background: ButtonFace; color: ButtonText; }
+  button:disabled { border-color: GrayText; background: Canvas; color: GrayText; }
+  button:focus-visible, input:focus-visible, select:focus-visible, textarea:focus-visible,
+  #pointer-surface:focus-visible, #drop-zone:focus-visible {
+    outline-color: Highlight;
+  }
+}

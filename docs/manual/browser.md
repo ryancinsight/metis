@@ -257,6 +257,35 @@ these declarations, while V04 still requires runtime captures at
 The current CUA surface is fixed at `1280×720` and cannot close those viewport
 or high-DPI cases.
 
+## Exercise the accessibility presentation
+
+The workbench keeps the normal keyboard path in document order. From the
+header, press **Tab** through **Session details**, the patient and numeric form
+fields, **Submit to authorized backend**, the **View options** controls, the
+named **Pointer capture surface**, the named **DICOM file drop zone**, and
+**Clinical note**. The closed session dialog is not in the active tab order.
+Opening **Session details** uses the browser dialog semantics; **Close** is the
+dialog action and focus returns to the opener after dismissal. Status and
+composition regions use polite live announcements, while labels and headings
+provide names for each control group.
+
+The stylesheet responds to the user's presentation preferences. With
+`prefers-reduced-motion: reduce`, scrolling is immediate and transitions or
+animations resolve to a single short frame. With `forced-colors: active`, cards
+and controls use system `Canvas`, `CanvasText`, `ButtonFace`, `ButtonText` and
+`Highlight` colors so borders and focus indicators remain visible. Browser zoom
+remains available; the responsive grid stacks below `700px` and keeps content
+inside the `960px` bound.
+
+The static browser asset contract checks the semantic names, live regions,
+non-positive focus order and both media-query branches. For a host acceptance
+run, enable a supported screen reader, reduced-motion setting, forced-colors
+setting and browser zoom, then capture the accessibility tree, focus ring and
+spoken action for each state. Record the browser engine, operating system,
+scale factor and assistive-technology version. A semantic tree or CSS rule by
+itself does not establish screen-reader support or an operating-system
+accessibility bridge.
+
 The captured service journey at revision
 `d879779247c8cfc5870f62f99a5364cbbf2d3c58` used the Codex in-app
 browser at 1280×720 CSS pixels and device scale 1.25. Pointer activation of

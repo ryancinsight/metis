@@ -127,6 +127,59 @@ class BrowserAssetContractTests(unittest.TestCase):
         ):
             self.assertIn(fragment, styles)
 
+    def test_accessibility_presentation_contract(self):
+        controls = (ROOT / "crates" / "metis-web" / "src" / "controls.rs").read_text(
+            encoding="utf-8"
+        )
+        styles = (ROOT / "examples" / "browser" / "styles.css").read_text(
+            encoding="utf-8"
+        )
+        for fragment in (
+            'aria-haspopup="dialog"',
+            'aria-controls="session-dialog"',
+            'aria-labelledby="pointer-heading"',
+            'aria-labelledby="drop-heading"',
+            'aria-labelledby="text-heading"',
+            'id="metis-status" role="status"',
+            'id="metis-events" role="status"',
+            'id="drop-status" role="status"',
+            'id="composition-status" role="status" aria-live="polite"',
+            'id="pointer-surface" role="group" tabindex="0"',
+            'id="drop-zone" role="group" tabindex="0"',
+        ):
+            self.assertIn(fragment, controls)
+        focus_order = (
+            "open-session-dialog",
+            "patient-id",
+            "weight-kg",
+            "concentration-mg-ml",
+            "target-dose",
+            "submit-calculation",
+            "show-events",
+            "dose-volume",
+            "dose-mass",
+            "result-scale",
+            "result-detail-select",
+            "pointer-surface",
+            "drop-zone",
+            "text-specimen",
+        )
+        offsets = [controls.index(f'id="{control_id}"') for control_id in focus_order]
+        self.assertEqual(offsets, sorted(offsets))
+        self.assertNotIn('tabindex="1"', controls)
+        for fragment in (
+            "@media (prefers-reduced-motion: reduce)",
+            "animation-duration: 0.001ms",
+            "transition-duration: 0.001ms",
+            "@media (forced-colors: active)",
+            "forced-color-adjust: auto",
+            "background: Canvas",
+            "color: CanvasText",
+            "background: ButtonFace",
+            "outline-color: Highlight",
+        ):
+            self.assertIn(fragment, styles)
+
 
 if __name__ == "__main__":
     unittest.main()
