@@ -78,11 +78,12 @@ an owner. “Unsupported” cannot replace delivery of a required mobile/native 
 
 <a id="METIS-DESKTOP-001"></a>
 ## METIS-DESKTOP-001 — Native restricted desktop [arch] [minor]
-- Status: todo; priority: P1; owner: Metis Windows host + Moirai; dependencies: METIS-AUTHORITY-001, METIS-COMMANDS-001; risk: trust boundary
+- Status: in-progress; priority: P1; owner: Metis Windows host + Moirai; integrator: root; last-update: 2026-09-08; branch: `feat/process-foundation`; dependencies: METIS-AUTHORITY-001, METIS-COMMANDS-001; risk: trust boundary
 - Scope: Windows native window/system WebView, real events, multi-window lifecycle and OS-restricted renderer; macOS/Linux have separate items below.
 - Acceptance: actual visible form, pointer/keyboard/resize/DPI/close/reopen; file/network/process denial probes; IPC remains functional under restrictions and all child processes drain.
 - Demonstration: [V05](docs/VERIFICATION.md#V05), actual Windows window captures, keyboard journey and permission-denied results in the manual.
 - Current evidence: `PlatformSurface` owns framebuffer/events only; `PlatformEvent` has no OS event producer. The ineffective original privilege assertion is removed. Native lifecycle, input dispatch and permission denial require new provider contracts and platform probes.
+- Decision: [ADR 0015](docs/adr/0015-native-window-provider.md) (claimed); the first increment adds a real Win32 event/presentation provider in Moirai and a Métis adapter, while WebView2 and OS permission enforcement remain open follow-on slices.
 
 <a id="METIS-AUDIT-001"></a>
 ## METIS-AUDIT-001 — Durable audit recovery [minor]
