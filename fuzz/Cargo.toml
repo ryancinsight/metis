@@ -1,0 +1,23 @@
+[package]
+name = "metis-fuzz"
+version = "0.0.0"
+publish = false
+edition = "2024"
+
+[package.metadata]
+cargo-fuzz = true
+
+[dependencies]
+libfuzzer-sys = "0.4"
+metis-core = { path = "../crates/metis-core" }
+
+# The fuzz harness is kept out of the normal workspace so libFuzzer's native
+# runtime never enters application builds or the release dependency graph.
+[workspace]
+
+[[bin]]
+name = "protocol"
+path = "fuzz_targets/protocol.rs"
+test = false
+doc = false
+bench = false

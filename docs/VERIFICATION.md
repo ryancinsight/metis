@@ -67,6 +67,27 @@ support. Those requirements remain under [V05](#V05) and the linked backlog
 items; a hidden-window test and a passing build cannot replace real visual,
 assistive-technology or denial-probe evidence.
 
+## Parser and diagnostic safeguards — 2026-09-08
+
+The `METIS-QUALITY-001` increment adds bounded property-style and mutation
+coverage to the public wire decoders using a deterministic Rust generator.
+`metis-ipc` runs 128 generated arbitrary-byte cases
+with payload lengths capped at 1024 bytes, plus Unicode and IEEE-754 round-trip
+properties, deterministic truncation and bit-flip mutations across every
+payload, and explicit oversized-length rejection. The focused native suite
+passes 96/96 tests and strict Clippy; the standalone `fuzz/Cargo.toml` manifest
+passes `cargo check --locked` and carries a LibFuzzer target for the same
+decoder boundary. A runtime campaign was attempted with nightly cargo-fuzz on
+the Windows MSVC host but cannot link `clang_rt.asan_dynamic_runtime_thunk`;
+therefore no LibFuzzer execution result is claimed for this host.
+
+`MetisError` now has a structured redacted `Debug` representation and an
+explicit `redacted()` view containing only `ErrorCode` and `trace_id`.
+`ErrorResponsePayload` similarly redacts its message under `Debug`. Unit tests
+assert that untrusted path, authorization and patient text is absent while
+the typed code remains present. `Display` remains the user-facing full
+diagnostic contract.
+
 ## Evidence classes
 
 - WASM portability: compile `metis-core`, `metis-platform`, `metis-ui-lang` and

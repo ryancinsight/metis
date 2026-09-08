@@ -162,13 +162,28 @@ impl ErrorCode {
 }
 
 /// The core error type for Metis medical device architecture.
-#[derive(Debug, Clone, PartialEq, Eq)]
+#[derive(Clone, PartialEq, Eq)]
 pub struct MetisError {
     /// Error category code.
     pub code: ErrorCode,
     /// Detailed diagnostic message.
     pub message: String,
     /// Traceability reference (e.g. IEC 62304 safety requirement tag).
+    pub trace_id: &'static str,
+}
+
+/// Non-sensitive diagnostic identity suitable for structured logs.
+///
+/// The full [`MetisError`] keeps its message for the user-facing `Display`
+/// contract. This view contains only the stable error code and traceability
+/// reference, so formatting it cannot disclose a path, identifier, or other
+/// untrusted value that a lower layer included in the message.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+#[non_exhaustive]
+pub struct RedactedDiagnostic {
+    /// Stable error classification.
+    pub code: ErrorCode,
+    /// Requirement or traceability reference for the failure.
     pub trace_id: &'static str,
 }
 
@@ -206,6 +221,25 @@ impl MetisError {
     pub fn transport(code: ErrorCode, message: impl Into<String>) -> Self {
         Self::new(code, message, "REQ-METIS-IPC-005")
     }
+
+    /// Returns the message-free identity used for structured diagnostics.
+    #[must_use]
+    pub const fn redacted(&self) -> RedactedDiagnostic {
+        RedactedDiagnostic {
+            code: self.code,
+            trace_id: self.trace_id,
+        }
+    }
+}
+
+impl fmt::Debug for MetisError {
+    fn fmt(&self, formatter: &mut fmt::Formatter<'_>) -> fmt::Result {
+        formatter
+            .debug_struct("MetisError")
+            .field("code", &self.code)
+            .field("trace_id", &self.trace_id)
+            .finish_non_exhaustive()
+    }
 }
 
 impl fmt::Display for MetisError {
@@ -231,3 +265,28 @@ impl From<std::io::Error> for MetisError {
 
 /// Type alias for Results carrying `MetisError`.
 pub type Result<T, E = MetisError> = std::result::Result<T, E>;
+
+#[cfg(test)]
+mod tests {
+    use super::{ErrorCode, MetisError, RedactedDiagnostic};
+
+    #[test]
+    fn debug_diagnostic_omits_untrusted_message_text() {
+        let error = MetisError::transport(
+            ErrorCode::TransportBroken,
+            "private path C:\\patients\\scan.dcm",
+        );
+        assert_eq!(
+            error.redacted(),
+            RedactedDiagnostic {
+                code: ErrorCode::TransportBroken,
+                trace_id: "REQ-METIS-IPC-005",
+            }
+        );
+        let debug = format!("{error:?}");
+        assert!(debug.contains("TransportBroken"));
+        assert!(debug.contains("REQ-METIS-IPC-005"));
+        assert!(!debug.contains("scan.dcm"));
+        assert!(format!("{error}").contains("scan.dcm"));
+    }
+}

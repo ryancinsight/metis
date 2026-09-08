@@ -5,6 +5,7 @@
 //! IEEE-754 binary64 clinical fields use big-endian byte order. CRC detects
 //! accidental corruption; it does not authenticate a peer or a payload.
 mod command;
+mod diagnostic;
 mod event;
 mod payload;
 mod plugin;

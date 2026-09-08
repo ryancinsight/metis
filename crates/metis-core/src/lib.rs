@@ -10,7 +10,7 @@ pub mod protocol;
 
 pub use capability::{CapabilityGrantSpec, CapabilityScope, CapabilityToken, VerifiedCapability};
 pub use crypto::crc32;
-pub use error::{ErrorCode, MetisError, Result};
+pub use error::{ErrorCode, MetisError, RedactedDiagnostic, Result};
 pub use host::{
     HostContext, HostOrigin, HostPolicy, HostSessionId, VerifiedHostCapability, WindowId,
 };
