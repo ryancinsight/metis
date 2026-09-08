@@ -18,8 +18,9 @@ python scripts/verify.py
 
 The gate builds the pinned code, exercises native debug/release tests and the
 process example, builds the portable WASM libraries including `metis-web`, and
-compares the current seven form captures and their recorded inputs, actions,
-labels and geometry with the committed gallery baseline. A passing WASM build
+validates the backlog/checklist plan references. It compares the current seven
+form captures and their recorded inputs, actions, labels and geometry with the
+committed gallery baseline. A passing WASM build
 does not run a browser; use the browser workbench command below for that
 runtime evidence.
 

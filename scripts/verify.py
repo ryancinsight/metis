@@ -254,6 +254,7 @@ def main():
             raise SystemExit("Install pinned cargo-nextest 0.9.143 before running this gate")
         cargo("format", ["fmt", "--all", "--check"], resolve=False)
         execute("visual-tests", [sys.executable, "-m", "unittest", "discover", "-s", "scripts/tests"], seconds=60, cwd=ROOT)
+        execute("plan", [sys.executable, str(ROOT / "scripts" / "plan.py"), "check"], seconds=60, cwd=ROOT)
         # Compile the browser host in the same locked gate; runtime evidence is
         # collected by scripts/browser.py and the manual browser trace.
         cargo("wasm-libraries", ["build", "--lib", "--target", "wasm32-unknown-unknown",

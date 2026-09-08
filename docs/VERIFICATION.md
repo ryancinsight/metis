@@ -2,8 +2,9 @@
 
 The owning gate is `python scripts/verify.py`. It records bounded logs under the
 ignored `output/` directory and checks formatting, strict Clippy, debug and release
-nextest suites, the generated `wasm-bindgen` browser assets, doctests, documentation,
-example execution and dependency closure.
+nextest suites, plan identifiers/dependencies/local links, the generated
+`wasm-bindgen` browser assets, doctests, documentation, example execution and
+dependency closure.
 Native tests use `.config/nextest.toml`: slow at 30 seconds, terminate at 60 seconds,
 zero retries. The demonstration executable has a 60-second outer budget.
 
