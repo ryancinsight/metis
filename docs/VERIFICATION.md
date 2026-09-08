@@ -69,7 +69,8 @@ assistive-technology or denial-probe evidence.
 
 ## Parser and diagnostic safeguards — 2026-09-08
 
-The `METIS-QUALITY-001` increment adds bounded property-style and mutation
+The `METIS-QUALITY-001` increment is implemented in commit
+`866822016d8ee02b2b38149efee2e26783c77bb2` and adds bounded property-style and mutation
 coverage to the public wire decoders using a deterministic Rust generator.
 `metis-ipc` runs 128 generated arbitrary-byte cases
 with payload lengths capped at 1024 bytes, plus Unicode and IEEE-754 round-trip
