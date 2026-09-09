@@ -349,7 +349,7 @@ an owner. “Unsupported” cannot replace delivery of a required mobile/native 
 
 <a id="METIS-DISTRIBUTION-002"></a>
 ## METIS-DISTRIBUTION-002 — Developer application lifecycle [minor]
-- Status: todo; priority: P2; owner: Metis tooling; dependencies: METIS-DISTRIBUTION-001; risk: stale build/runtime state
+- Status: in-progress; priority: P2; owner: Metis tooling; integrator: root; last-update: 2026-09-09; branch: `feat/distribution-lifecycle-002`; regions: `crates/metis-cli/src/main.rs`, `crates/metis-cli/src/dev.rs`, `crates/metis-cli/README.md`, `docs/manual/distribution.md`, `docs/VERIFICATION.md`; dependencies: METIS-DISTRIBUTION-001; risk: stale build/runtime state
 - Scope: init/dev commands, generated help/completions and asset invalidation using the existing manifest; no second configuration grammar.
 - Acceptance: scaffold builds/runs, actual source/resource changes reload, invalid builds report and never run stale output; repeated reload retains bounded state. [V10](docs/VERIFICATION.md#V10).
 
