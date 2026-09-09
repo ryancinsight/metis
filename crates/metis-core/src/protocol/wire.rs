@@ -50,7 +50,7 @@ pub enum MessageType {
 impl MessageType {
     /// Resolves a known wire identifier.
     #[must_use]
-    pub const fn from_u16(value: u16) -> Option<Self> {
+    pub const fn from_wire(value: u16) -> Option<Self> {
         match value {
             1 => Some(Self::HandshakeReq),
             2 => Some(Self::HandshakeResp),
@@ -134,7 +134,7 @@ impl FrameHeader {
             ));
         }
         let msg_type =
-            MessageType::from_u16(u16::from_be_bytes([buf[6], buf[7]])).ok_or_else(|| {
+            MessageType::from_wire(u16::from_be_bytes([buf[6], buf[7]])).ok_or_else(|| {
                 MetisError::protocol(
                     ErrorCode::UnexpectedMessageType,
                     "Unknown wire message identifier",
