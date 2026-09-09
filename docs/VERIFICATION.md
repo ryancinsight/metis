@@ -98,7 +98,9 @@ validate bounded UTF-16 composition decoding, verify retained initial readiness
 and an overlong-wait rejection, prove a posted event wakes the finite wait, and
 close the window. A lifecycle regression test rejects reopening a live surface,
 closes it, and creates a fresh hidden HWND from the same validated configuration;
-pending events from the destroyed provider are not retained.
+pending events from the destroyed provider are not retained. A two-window test
+creates independent hidden HWNDs with different dimensions, presents separate
+frames, verifies each event batch and confirms closing one leaves the other live.
 
 The same `metis-app` executable now composes that surface with the production
 frontend and supervised private IPC under `--metis-native-window`. The focused

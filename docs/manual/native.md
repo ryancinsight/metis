@@ -45,12 +45,13 @@ cargo nextest run --locked -p metis-platform
 cargo clippy --locked -p metis-platform --all-targets -- -D warnings
 ```
 
-The native test creates a real hidden `HWND`, presents a production framebuffer,
-posts pointer, keyboard, text, IME composition, resize and DPI messages through
-the provider,
-observes the bounded event batch, and closes the window. The test does not use a
-mock window or a default frame. A hidden test window is lifecycle evidence; it is
-not a visible application capture.
+The native tests create real hidden `HWND` values, present production
+framebuffers, post pointer, keyboard, text, IME composition, resize and DPI
+messages through the provider, observe bounded event batches, and close the
+windows. The two-window test confirms each surface retains its own dimensions
+and that closing one leaves the other live. The tests do not use mock windows or
+default frames. Hidden test windows are lifecycle evidence; they are not visible
+application captures.
 
 ## Connect a host
 
@@ -90,9 +91,10 @@ does not model.
 ## Current limits
 
 The visible `metis-app` composition and its private-IPC workflow are now
-implemented. The provider test also closes and reopens a real hidden HWND only
-after close, reusing the validated configuration; it rejects reopening a live
-surface. A committed native screenshot and keyboard/IME journey are still
+implemented. The provider tests exercise two independent hidden HWNDs and close
+and reopen one only after close, reusing its validated configuration; reopening
+a live surface is rejected. A committed native screenshot and keyboard/IME
+journey are still
 required for V05 visual acceptance; the hidden provider test and host unit tests
 are lifecycle evidence, not visual evidence. WebView2 composition, OS
 permission denial, native accessibility, an installed CJK or other IME journey,

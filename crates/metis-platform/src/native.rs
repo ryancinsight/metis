@@ -153,4 +153,53 @@ mod tests {
         surface.close().expect("reopened native close");
         assert!(surface.is_destroyed());
     }
+
+    #[test]
+    fn adapter_keeps_two_hidden_windows_independent() {
+        let first_config =
+            WindowConfig::with_visibility("Metis first window", 320, 240, WindowVisibility::Hidden)
+                .expect("first bounded native configuration");
+        let second_config = WindowConfig::with_visibility(
+            "Metis second window",
+            400,
+            300,
+            WindowVisibility::Hidden,
+        )
+        .expect("second bounded native configuration");
+        let mut first = NativeSurface::new(&first_config).expect("first native surface");
+        let mut second = NativeSurface::new(&second_config).expect("second native surface");
+        let mut first_frame = Framebuffer::new(320, 240).expect("first framebuffer");
+        let mut second_frame = Framebuffer::new(400, 300).expect("second framebuffer");
+        first_frame.clear(Color::BLUE);
+        second_frame.clear(Color::DARK_BLUE);
+        first.present(&first_frame).expect("first presentation");
+        second.present(&second_frame).expect("second presentation");
+
+        let first_events = first
+            .wait_events(Duration::ZERO)
+            .expect("first native event batch");
+        let second_events = second
+            .wait_events(Duration::ZERO)
+            .expect("second native event batch");
+        assert!(first_events.iter().any(|event| matches!(
+            event,
+            WindowEvent::Resized {
+                width: 320,
+                height: 240
+            }
+        )));
+        assert!(second_events.iter().any(|event| matches!(
+            event,
+            WindowEvent::Resized {
+                width: 400,
+                height: 300
+            }
+        )));
+
+        first.close().expect("first native close");
+        assert!(first.is_destroyed());
+        assert!(!second.is_destroyed());
+        second.close().expect("second native close");
+        assert!(second.is_destroyed());
+    }
 }
