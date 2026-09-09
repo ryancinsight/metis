@@ -78,7 +78,6 @@ an owner. “Unsupported” cannot replace delivery of a required mobile/native 
 <a id="METIS-DESKTOP-001"></a>
 ## METIS-DESKTOP-001 — Native restricted desktop [arch] [minor]
 - Status: in-progress; priority: P1; owner: Metis Windows host + Moirai; integrator: root; last-update: 2026-09-09; branch: `feat/process-foundation`; dependencies: METIS-AUTHORITY-001, METIS-COMMANDS-001; risk: trust boundary
-- Lease: root — `crates/metis-backend/src/supervisor.rs`, `crates/metis-app/src/backend.rs`, native capture evidence and manual records — 2026-09-09T12:37:00-04:00
 - Scope: Windows native window/system WebView, real events, multi-window lifecycle and OS-restricted renderer; macOS/Linux have separate items below.
 - Acceptance: actual visible form, pointer/keyboard/resize/DPI/close/reopen; file/network/process denial probes; IPC remains functional under restrictions and all child processes drain.
 - Demonstration: [V05](docs/VERIFICATION.md#V05), actual Windows window captures, keyboard journey and permission-denied results in the manual.
