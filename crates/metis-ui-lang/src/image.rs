@@ -25,24 +25,7 @@ impl RasterImage {
     /// pixel count does not match the dimensions.
     pub fn new(width: u32, height: u32, pixels: impl Into<Arc<[Color]>>) -> Result<Self> {
         let pixels = pixels.into();
-        let count = u64::from(width) * u64::from(height);
-        if width == 0
-            || height == 0
-            || width > i32::MAX as u32
-            || height > i32::MAX as u32
-            || count > MAX_PIXELS as u64
-        {
-            return Err(MetisError::ui(
-                ErrorCode::SurfaceAllocationError,
-                "Raster image dimensions exceed storage or coordinate limits",
-            ));
-        }
-        let expected = usize::try_from(count).map_err(|_| {
-            MetisError::ui(
-                ErrorCode::SurfaceAllocationError,
-                "Raster image pixel count exceeds addressable storage",
-            )
-        })?;
+        let expected = pixel_count(width, height)?;
         if pixels.len() != expected {
             return Err(MetisError::ui(
                 ErrorCode::RenderFailure,
@@ -59,6 +42,55 @@ impl RasterImage {
             height,
             pixels,
         })
+    }
+
+    /// Creates an image from row-major RGBA bytes.
+    ///
+    /// The byte length must equal four channels for every pixel. Conversion is
+    /// performed once at the boundary, after the shared image dimensions and
+    /// storage limits have been validated.
+    ///
+    /// # Errors
+    /// Returns [`ErrorCode::SurfaceAllocationError`] for invalid dimensions or
+    /// allocation failure, and [`ErrorCode::RenderFailure`] for a byte-length
+    /// mismatch.
+    pub fn from_rgba_bytes(width: u32, height: u32, rgba: impl AsRef<[u8]>) -> Result<Self> {
+        let rgba = rgba.as_ref();
+        let expected_pixels = pixel_count(width, height)?;
+        let expected_bytes = expected_pixels.checked_mul(4).ok_or_else(|| {
+            MetisError::ui(
+                ErrorCode::SurfaceAllocationError,
+                "Raster image byte count exceeds addressable storage",
+            )
+        })?;
+        if rgba.len() != expected_bytes {
+            return Err(MetisError::ui(
+                ErrorCode::RenderFailure,
+                format!(
+                    "Raster image byte count {} does not match dimensions {}x{}",
+                    rgba.len(),
+                    width,
+                    height
+                ),
+            ));
+        }
+        let mut pixels = Vec::new();
+        pixels.try_reserve_exact(expected_pixels).map_err(|_| {
+            MetisError::ui(
+                ErrorCode::SurfaceAllocationError,
+                "Unable to reserve raster image pixel storage",
+            )
+        })?;
+        for channels in rgba.chunks_exact(4) {
+            let &[red, green, blue, alpha] = channels else {
+                return Err(MetisError::ui(
+                    ErrorCode::RenderFailure,
+                    "RGBA byte chunks do not contain four channels",
+                ));
+            };
+            pixels.push(Color::rgba(red, green, blue, alpha));
+        }
+        Self::new(width, height, pixels)
     }
 
     /// Horizontal pixel count.
@@ -78,6 +110,27 @@ impl RasterImage {
     pub fn pixels(&self) -> &[Color] {
         &self.pixels
     }
+}
+
+fn pixel_count(width: u32, height: u32) -> Result<usize> {
+    let count = u64::from(width) * u64::from(height);
+    if width == 0
+        || height == 0
+        || width > i32::MAX as u32
+        || height > i32::MAX as u32
+        || count > MAX_PIXELS as u64
+    {
+        return Err(MetisError::ui(
+            ErrorCode::SurfaceAllocationError,
+            "Raster image dimensions exceed storage or coordinate limits",
+        ));
+    }
+    usize::try_from(count).map_err(|_| {
+        MetisError::ui(
+            ErrorCode::SurfaceAllocationError,
+            "Raster image pixel count exceeds addressable storage",
+        )
+    })
 }
 
 /// Sampling policy for a raster image placement.
@@ -166,7 +219,16 @@ impl ImagePlacement {
         self.sampling
     }
 
-    pub(crate) fn render_to(&self, framebuffer: &mut Framebuffer) {
+    /// Renders the validated placement into a framebuffer.
+    ///
+    /// The destination is clipped to the framebuffer, and source-over alpha
+    /// uses the framebuffer's existing compositor. Rendering performs no
+    /// allocation.
+    ///
+    /// # Panics
+    /// Panics only if an invariant established by [`Self::new`] or the
+    /// framebuffer's validated dimensions is broken internally.
+    pub fn render_to(&self, framebuffer: &mut Framebuffer) {
         match self.sampling {
             ImageSampling::Nearest => {}
         }
@@ -242,6 +304,20 @@ mod tests {
         let error = RasterImage::new(2, 1, vec![Color::RED]).expect_err("mismatched pixels");
         assert_eq!(error.code, ErrorCode::RenderFailure);
         assert!(error.message.contains("2x1"));
+    }
+
+    #[test]
+    fn rgba_bytes_preserve_row_major_channels_and_reject_length_mismatch() {
+        let image =
+            RasterImage::from_rgba_bytes(2, 1, [1, 2, 3, 4, 5, 6, 7, 8]).expect("rgba bytes");
+        assert_eq!(
+            image.pixels(),
+            &[Color::rgba(1, 2, 3, 4), Color::rgba(5, 6, 7, 8)]
+        );
+
+        let error = RasterImage::from_rgba_bytes(2, 1, [0; 4]).expect_err("short rgba bytes");
+        assert_eq!(error.code, ErrorCode::RenderFailure);
+        assert!(error.message.contains("byte count"));
     }
 
     #[test]

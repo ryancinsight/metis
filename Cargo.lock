@@ -747,6 +747,8 @@ version = "0.1.0"
 dependencies = [
  "metis-backend",
  "metis-core",
+ "metis-platform",
+ "metis-ui-lang",
  "pyo3",
 ]
 

@@ -35,10 +35,11 @@ clipped rasterization path without allocating another frame.
 
 Raster presentation uses [`RasterImage`](https://docs.rs/metis-ui-lang/latest/metis_ui_lang/struct.RasterImage.html)
 and [`ImagePlacement`](https://docs.rs/metis-ui-lang/latest/metis_ui_lang/struct.ImagePlacement.html).
-Images validate dimensions and row-major pixel storage at construction; placements
-validate the source crop, clip the destination to the framebuffer and composite
-with source-over alpha. Decoding formats and orientation metadata remain an
-upstream asset-provider concern.
+Images validate dimensions and row-major pixel storage at construction;
+`RasterImage::from_rgba_bytes` converts a bounded RGBA byte boundary once.
+Placements validate the source crop, clip the destination to the framebuffer
+and composite with source-over alpha. Decoding formats and orientation metadata
+remain an upstream asset-provider concern.
 
 ```rust
 use metis_platform::{Color, Framebuffer, Rect};

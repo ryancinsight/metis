@@ -85,6 +85,17 @@ Entry baseline: `cargo check --workspace --offline` passes with documentation an
 source warnings. The original native test build fails with E0382 in the threaded
 process-isolation test. No original OS sandbox or native-window evidence exists.
 
+## Python presentation verification — 2026-09-09
+
+The presentation-surface increment adds Rust-owned `RasterImage`, `Rect` and
+`Canvas` values to the same wheel. The extracted-wheel suite compares exact
+row-major RGBA bytes after asymmetric nearest-neighbor scaling and destination
+clipping, verifies source-over alpha over white, and rejects invalid crops,
+dimensions and byte lengths with stable error codes. `Canvas.to_rgba()` is an
+explicit cold-boundary copy; the wheel exposes no Python renderer, native
+window, filesystem path or DICOM decoder. The image fixture and visual
+semantics are shared with the inspected [software raster image evidence](#software-raster-image-evidence--2026-09-09).
+
 ## Windows native provider and host evidence — 2026-09-08
 
 Moirai PR #286 merged at `c91e2cdd` adds bounded native IME composition events,

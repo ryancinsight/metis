@@ -73,3 +73,60 @@ def test_default_envelope_matches_explicit_defaults() -> None:
     assert implicit.rate_ml_hr == explicit.rate_ml_hr
     assert implicit.drug_rate_mg_hr == explicit.drug_rate_mg_hr
     assert implicit.is_pediatric == explicit.is_pediatric
+
+
+def test_rust_canvas_renders_clipped_image_with_exact_rgba_output() -> None:
+    image = metis.RasterImage(
+        2,
+        1,
+        bytes((229, 62, 62, 255, 49, 130, 206, 255)),
+    )
+    canvas = metis.Canvas(3, 2)
+    canvas.clear(255, 255, 255, 255)
+    canvas.draw_image(image, metis.Rect(0, 0, 2, 1), metis.Rect(-1, 0, 4, 2))
+
+    row = bytes(
+        (
+            229,
+            62,
+            62,
+            255,
+            49,
+            130,
+            206,
+            255,
+            49,
+            130,
+            206,
+            255,
+        )
+    )
+    assert canvas.to_rgba() == row + row
+
+
+def test_rust_canvas_preserves_alpha_and_rejects_invalid_image_geometry() -> None:
+    image = metis.RasterImage(1, 1, bytes((0, 0, 0, 128)))
+    canvas = metis.Canvas(1, 1)
+    canvas.clear(255, 255, 255, 255)
+    canvas.draw_image(image, metis.Rect(0, 0, 1, 1), metis.Rect(0, 0, 1, 1))
+    assert canvas.to_rgba() == bytes((127, 127, 127, 255))
+
+    with pytest.raises(ValueError, match="ERR_RENDER_FAILURE"):
+        canvas.draw_image(image, metis.Rect(1, 0, 1, 1), metis.Rect(0, 0, 1, 1))
+
+    with pytest.raises(ValueError, match="ERR_RENDER_FAILURE"):
+        metis.RasterImage(2, 1, bytes((0, 0, 0, 255)))
+
+
+@pytest.mark.parametrize(
+    "constructor, arguments, code",
+    [
+        (metis.Canvas, (0, 1), "ERR_SURFACE_ALLOCATION_ERROR"),
+        (metis.RasterImage, (0, 1, b""), "ERR_SURFACE_ALLOCATION_ERROR"),
+    ],
+)
+def test_presentation_limits_are_reported_as_stable_errors(
+    constructor, arguments, code: str
+) -> None:
+    with pytest.raises(ValueError, match=code):
+        constructor(*arguments)

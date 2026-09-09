@@ -54,6 +54,37 @@ result = metis.calculate_infusion_rate(
 assert result.is_pediatric
 ```
 
+## Compose a Rust-owned image frame
+
+The wheel exposes the same bounded software image contract used by the Metis
+presentation path. Pixels are row-major RGBA bytes; crops and destinations are
+validated in Rust, and destinations may be clipped by the canvas.
+
+```python
+import metis
+
+image = metis.RasterImage(
+    2,
+    1,
+    bytes((229, 62, 62, 255, 49, 130, 206, 255)),
+)
+canvas = metis.Canvas(3, 2)
+canvas.clear(255, 255, 255, 255)
+canvas.draw_image(
+    image,
+    metis.Rect(0, 0, 2, 1),
+    metis.Rect(-1, 0, 4, 2),
+)
+assert canvas.to_rgba()[:4] == bytes((229, 62, 62, 255))
+```
+
+`Canvas.to_rgba()` returns a cold-boundary copy so Python code can hand the
+frame to another renderer without sharing Rust storage. The inspected
+software-renderer fixture shows the same placement and alpha semantics in the
+[image presentation demonstration](applications.md#raster-image-presentation).
+This surface does not open a native window, run a second event loop or decode
+DICOM bytes; those capabilities stay with the Metis host and RITK contracts.
+
 `ValueError` messages retain the stable Metis error code and trace identifier,
 so a caller can distinguish invalid input from a rate interlock without
 reimplementing Rust's error taxonomy. The calculation releases the Python

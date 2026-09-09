@@ -18,6 +18,8 @@ doc = false
 [dependencies]
 metis-backend.workspace = true
 metis-core.workspace = true
+metis-platform.workspace = true
+metis-ui-lang.workspace = true
 pyo3.workspace = true
 
 [lints]

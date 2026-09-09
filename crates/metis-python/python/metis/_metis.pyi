@@ -3,6 +3,50 @@
 from typing import Optional
 
 
+class Rect:
+    def __init__(self, x: int, y: int, width: int, height: int) -> None: ...
+
+    @property
+    def x(self) -> int: ...
+
+    @property
+    def y(self) -> int: ...
+
+    @property
+    def width(self) -> int: ...
+
+    @property
+    def height(self) -> int: ...
+
+
+class RasterImage:
+    def __init__(self, width: int, height: int, rgba: bytes) -> None: ...
+
+    @property
+    def width(self) -> int: ...
+
+    @property
+    def height(self) -> int: ...
+
+
+class Canvas:
+    def __init__(self, width: int, height: int) -> None: ...
+
+    @property
+    def width(self) -> int: ...
+
+    @property
+    def height(self) -> int: ...
+
+    def clear(self, red: int, green: int, blue: int, alpha: int) -> None: ...
+
+    def draw_image(
+        self, image: RasterImage, source: Rect, destination: Rect
+    ) -> None: ...
+
+    def to_rgba(self) -> bytes: ...
+
+
 class PatientWeight:
     def __init__(self, kilograms: float) -> None: ...
 

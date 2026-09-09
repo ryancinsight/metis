@@ -2,6 +2,7 @@
 
 - [Responsive layout and style semantics](backlog.md#METIS-LAYOUT-001): Rust-owned theme modes, semantic CSS variable overrides, replaceable starter mark, packaged browser asset, scale-1 runtime geometry captures and typed custom-style diagnostics are recorded; scale-2 and fractional-scale evidence remain open.
 - [Raster image presentation](backlog.md#METIS-ASSETS-001): bounded `RasterImage`/`ImagePlacement` source-over rendering, clipping and nearest-neighbor scaling are covered by unit tests and the inspected `examples/image.rs` artifact; browser/native decode and orientation remain open.
+- [Python presentation](backlog.md#METIS-PYTHON-002): the abi3 wheel exposes Rust-owned `RasterImage`, `Rect` and bounded `Canvas` composition with exact RGBA, clipping, alpha and invalid-input tests; native window/event and DICOM contracts remain provider-owned.
 - [Publication readiness](backlog.md#METIS-RELEASE-001): the Atlas-pinned crates.io caller separates validation-only dispatch from release-only OIDC publication; registry publisher registration and first release remain external.
 - [Theme and native icon](backlog.md#METIS-ASSETS-001): local scriptless SVG, PNG alternate and ICO assets, bounded SVG/ICO validation, MSI `Icon`/`Shortcut` wiring and portable/browser copying are implemented; focused package/browser tests pass and the browser capture is recorded at [`c1bc89f`](docs/VERIFICATION.md#browser-svg-asset-evidence).
 

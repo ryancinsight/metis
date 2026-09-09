@@ -1,21 +1,11 @@
 //! Python value objects for the validated clinical backend contract.
 
+use crate::error::map_error;
 use metis_backend::clinical::{
     DrugConcentrationMgMl, PatientWeightKg, SafetyEnvelope as RustSafetyEnvelope, TargetDoseRate,
     calculate_infusion_rate as calculate,
 };
-use metis_core::MetisError;
-use pyo3::exceptions::PyValueError;
 use pyo3::prelude::*;
-
-fn map_error(error: &MetisError) -> PyErr {
-    PyValueError::new_err(format!(
-        "{} [{} | {}]",
-        error.message,
-        error.code.as_str(),
-        error.trace_id
-    ))
-}
 
 /// Validated patient weight in kilograms.
 #[pyclass(frozen, name = "PatientWeight")]

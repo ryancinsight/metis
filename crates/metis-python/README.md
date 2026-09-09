@@ -39,9 +39,13 @@ the Python interpreter lock while the Rust backend evaluates the safety
 envelope. Invalid values raise `ValueError` with the stable Metis error code
 and trace identifier.
 
-This first binding is deliberately bounded to the existing clinical contract.
-Native window, application lifecycle and DICOM objects will be added only when
-their Rust contracts and independent host or decoder evidence are available.
+The binding also exposes the Rust-owned software presentation contract through
+`RasterImage`, `Rect` and `Canvas`. Python supplies composition commands; Rust
+validates dimensions, clips placements and performs alpha compositing. The
+canvas is a bounded frame surface, not a native window or a DICOM decoder.
+Native window and application lifecycle objects will be added only when their
+Rust contracts and independent host evidence are available. RITK remains the
+owner of DICOM parsing and medical-display semantics.
 
 The PyPI release caller uses GitHub Actions OIDC Trusted Publishing. It stores
 no PyPI token, signing key or developer private key in the repository.
