@@ -335,7 +335,7 @@ an owner. “Unsupported” cannot replace delivery of a required mobile/native 
 
 <a id="METIS-QUALITY-001"></a>
 ## METIS-QUALITY-001 — Verification infrastructure [patch]
-- Status: in-progress; priority: P0; owner: Metis verification/integration; integrator: root; last-update: 2026-09-08
+- Status: done; priority: P0; owner: Metis verification/integration; integrator: root; last-update: 2026-09-09; delivery: hosted run 34293187709
 - Dependencies: METIS-VISUAL-001; risk: unreliable gates
 - Scope: one pinned gate/CI definition for implemented targets, plan ID/dependency/link validation, artifact provenance, advisory/dependency/native-link audits, public-API checks, parser fuzz/property/mutation and structured redacted diagnostics; host jobs arrive with working host implementations.
 - Acceptance: current [V01](docs/VERIFICATION.md#V01), native and WASM-build suites run under committed budgets; deliberate state/image/parser regressions fail the correct gate; no nonexistent host job reports green.
@@ -344,7 +344,7 @@ an owner. “Unsupported” cannot replace delivery of a required mobile/native 
 - Completed increment (2026-09-08, commit `866822016d8ee02b2b38149efee2e26783c77bb2`): bounded arbitrary-byte, Unicode, IEEE-754, truncation, bit-mutation and oversized-length properties cover every public wire decoder; the standalone `fuzz/` LibFuzzer target passes a locked manifest check; `MetisError` and remote error payload `Debug` output redact untrusted message text. Focused nextest passes 96/96 with strict Clippy. The Windows MSVC host cannot link the LibFuzzer sanitizer runtime, so no runtime fuzz result is claimed.
 - Completed increment (2026-09-08): `scripts/mutation.py` pins cargo-mutants 27.1.0, nextest, the shared target and finite budgets for the decoder slice; at revision `6af70734965ceb5eb94dd4ce1d663a50e4f532ab` it generated 14 mutants, caught all 6 viable mutants, and reported 0 missed, 0 timed-out and 8 unviable. The derived report is `output/mutation/latest/manifest.json`.
 - Completed increment (2026-09-08): the single verification workflow adds a scheduled and manually dispatchable Ubuntu LibFuzzer campaign with pinned nightly, locked-manifest verification, bounded time/RSS/input limits and crash-artifact upload; the local full gate passes with the existing Windows sanitizer limitation recorded.
-- Residual: hosted LibFuzzer execution remains unverified until the scheduled or manually dispatched Ubuntu job completes.
+- Outcome: hosted Ubuntu LibFuzzer job passed at source revision `0998e63748faa2c76f963574353374658329e20` in [run 34293187709](https://github.com/ryancinsight/metis/actions/runs/34293187709); the Windows sanitizer limitation remains explicitly covered by that cross-target job.
 
 <a id="METIS-CONFORMANCE-001"></a>
 ## METIS-CONFORMANCE-001 — Final capability and target closure [patch]

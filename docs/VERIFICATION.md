@@ -152,14 +152,19 @@ caught all 6 viable mutants, and reported 0 missed, 0 timed-out and 8
 unviable mutants (viable score 1.0). The exact command, source SHA-256,
 toolchain and counts are recorded in the derived
 `output/mutation/latest/manifest.json`. The report is a scoped decoder result,
-not a workspace-wide mutation score. The Windows MSVC sanitizer limitation
-still leaves the runtime campaign result open. The single verification workflow
-now contains a scheduled and manually dispatchable Ubuntu job that selects
-`nightly-2026-08-01`, checks the locked fuzz manifest, and runs the combined
-protocol/SVG target with a 300-second campaign, 2 GiB RSS limit and 25-second
-input timeout.
-Crash reproducers are uploaded from `fuzz/artifacts/`; no hosted campaign result
-is claimed until that job completes on GitHub.
+not a workspace-wide mutation score. The Windows MSVC sanitizer limitation is
+covered by the hosted Ubuntu campaign in the single scheduled and manually
+dispatchable verification workflow. That job selects `nightly-2026-08-01`,
+checks the locked fuzz manifest, and runs the combined protocol/SVG target with
+a 300-second campaign, 2 GiB RSS limit and 25-second input timeout.
+
+The hosted run at
+<https://github.com/ryancinsight/metis/actions/runs/34293187709> completed the
+`LibFuzzer parser campaign` job successfully at source revision
+`0998e63748faa2c76f963574353374658329e20` (job
+<https://github.com/ryancinsight/metis/actions/runs/34293187709/job/102289671960>).
+Crash reproducers are uploaded from `fuzz/artifacts/` only when the campaign
+fails; this run produced no failure artifact.
 
 The runner follows cargo-mutants' [nextest integration](https://mutants.rs/nextest.html)
 and [workspace test-package selection](https://mutants.rs/workspaces.html)
