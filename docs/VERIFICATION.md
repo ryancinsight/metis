@@ -143,6 +143,16 @@ co-evolution increment. Consumer configuration tests pass on
 ignored on hosts without the runtime, so no installed-runtime or visual capture
 claim is made here.
 
+The application now exposes `--metis-webview`, which uses the same executable
+and supervised private pipe as the software-rendered native role. Its child
+creates a bounded temporary HTML/CSS package, receives typed submit messages
+through the provider callback, sends the existing capability-authorized
+calculation to the backend and posts the value-semantic result back to the page.
+The package applies a no-network CSP and is removed after the bounded session.
+The source and parser tests cover this bridge contract; an installed runtime,
+visible screenshot, OS permission denial and assistive-technology journey remain
+unverified until a WebView2-capable Windows host is available.
+
 ## Parser and diagnostic safeguards — 2026-09-08
 
 The `METIS-QUALITY-001` increment is implemented in commit

@@ -45,6 +45,20 @@ requests are denied and page messages are bounded JSON values. The surface
 does not grant page code filesystem, network or process authority. The
 WebView2 runtime must be installed on the Windows machine.
 
+The application executable includes a complete supervised form path over this
+boundary:
+
+```powershell
+cargo run --locked -p metis-app -- --metis-webview 60 2 0.2
+```
+
+The host writes a bounded temporary package containing the form, stylesheet and
+bridge script, then removes it after the window closes. Submitting the form
+crosses the WebView2 message callback, the unprivileged frontend's private pipe
+and the backend's existing capability and audit checks before the result is
+posted back to the page. The page has no network or arbitrary navigation
+permission. Escape or the close button ends the finite five-minute session.
+
 ```rust
 use metis_platform::native::{
     WebViewConfig, WebViewHostEvent, WebViewSurface, WindowConfig, WindowVisibility,

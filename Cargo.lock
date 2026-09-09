@@ -676,6 +676,8 @@ dependencies = [
  "moirai-async",
  "moirai-executor",
  "moirai-http",
+ "serde",
+ "serde_json",
 ]
 
 [[package]]

@@ -5,6 +5,8 @@ use std::io::{stdin, stdout};
 
 #[cfg(windows)]
 mod native;
+#[cfg(windows)]
+mod webview;
 
 /// Runs the visible native host on supported desktop targets.
 pub(crate) fn run_native(inputs: [String; 3]) -> Result<(), Box<dyn std::error::Error>> {
@@ -16,6 +18,19 @@ pub(crate) fn run_native(inputs: [String; 3]) -> Result<(), Box<dyn std::error::
     {
         let _ = inputs;
         Err("the native frontend role requires Windows".into())
+    }
+}
+
+/// Runs the visible Windows `WebView2` host over the supervised pipe.
+pub(crate) fn run_webview(inputs: [String; 3]) -> Result<(), Box<dyn std::error::Error>> {
+    #[cfg(windows)]
+    {
+        webview::run(inputs)
+    }
+    #[cfg(not(windows))]
+    {
+        let _ = inputs;
+        Err("the WebView2 frontend role requires Windows".into())
     }
 }
 

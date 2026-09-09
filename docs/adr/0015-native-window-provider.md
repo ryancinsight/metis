@@ -84,13 +84,16 @@ The same boundary exposes `WebViewSurface` for packaged HTML/CSS applications.
 It owns one Moirai `WebViewHost`, aligns its controller bounds and visibility
 with `WindowConfig`, forwards the combined window/WebView event batch and keeps
 navigation and JSON bridge policy in the provider. The adapter exposes no
-filesystem, network, process or authorization capability to page code.
+filesystem, network, process or authorization capability to page code. The
+`metis-app --metis-webview` role composes this surface with the existing
+supervised private-pipe frontend and backend, using a bounded temporary page
+package for the end-to-end form workflow.
 
 This increment deliberately supplies a native software surface, provider-owned
-IME event production and the WebView2 consumer seam. Application-level
-WebView2 composition, HTML/CSS bridge policy, OS file/network/process denial,
-accessibility providers, an installed IME journey and consumer editing policy
-remain separate host increments with their own contracts and captures.
+IME event production, the WebView2 consumer seam and the application bridge.
+OS file/network/process denial, accessibility providers, an installed IME
+journey, visible WebView capture and consumer editing policy remain separate
+host increments with their own contracts and captures.
 
 ## Alternatives
 

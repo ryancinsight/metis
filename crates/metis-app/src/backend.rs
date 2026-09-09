@@ -1,7 +1,9 @@
 //! Parent-process application state and supervised presentation launch.
 use crate::{
     entropy,
-    invocation::{BrowserResponseDelay, FRONTEND_ROLE, NATIVE_FRONTEND_ROLE},
+    invocation::{
+        BrowserResponseDelay, FRONTEND_ROLE, NATIVE_FRONTEND_ROLE, WEBVIEW_FRONTEND_ROLE,
+    },
 };
 use metis_backend::service::SystemClock;
 use metis_backend::{
@@ -32,10 +34,24 @@ pub(crate) fn run_native(inputs: [String; 3]) -> Result<(), Box<dyn std::error::
     }
 }
 
+/// Runs the same supervised workflow with the Windows `WebView2` frontend.
+pub(crate) fn run_webview(inputs: [String; 3]) -> Result<(), Box<dyn std::error::Error>> {
+    #[cfg(windows)]
+    {
+        run_with_mode(inputs, FrontendMode::WebView)
+    }
+    #[cfg(not(windows))]
+    {
+        let _ = inputs;
+        Err("the WebView2 role requires Windows".into())
+    }
+}
+
 #[derive(Clone, Copy)]
 enum FrontendMode {
     Headless,
     NativeWindow,
+    WebView,
 }
 
 fn run_with_mode(
@@ -50,6 +66,11 @@ fn run_with_mode(
         FrontendMode::Headless => (FRONTEND_ROLE, None, SESSION_DEADLINE),
         FrontendMode::NativeWindow => (
             NATIVE_FRONTEND_ROLE,
+            Some(TargetCapability::NativeWindow),
+            INTERACTIVE_SESSION_DEADLINE,
+        ),
+        FrontendMode::WebView => (
+            WEBVIEW_FRONTEND_ROLE,
             Some(TargetCapability::NativeWindow),
             INTERACTIVE_SESSION_DEADLINE,
         ),

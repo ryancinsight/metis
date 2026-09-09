@@ -5,10 +5,12 @@ use std::time::Duration;
 pub(crate) const FRONTEND_ROLE: &str = "--metis-frontend";
 pub(crate) const NATIVE_WINDOW_ROLE: &str = "--metis-native-window";
 pub(crate) const NATIVE_FRONTEND_ROLE: &str = "--metis-native-frontend";
+pub(crate) const WEBVIEW_ROLE: &str = "--metis-webview";
+pub(crate) const WEBVIEW_FRONTEND_ROLE: &str = "--metis-webview-frontend";
 pub(crate) const BROWSER_SERVICE_ROLE: &str = "--metis-browser-service";
 pub(crate) const RESPONSE_DELAY_FLAG: &str = "--response-delay-ms";
 const MAX_RESPONSE_DELAY_MILLISECONDS: u64 = 30_000;
-pub(crate) const USAGE: &str = "usage: metis-app WEIGHT_KG CONCENTRATION_MG_ML DOSE_MCG_KG_MIN\n       metis-app --metis-native-window WEIGHT_KG CONCENTRATION_MG_ML DOSE_MCG_KG_MIN\n       metis-app --metis-browser-service ORIGIN PORT PRINCIPAL_HEX [--response-delay-ms MILLISECONDS]\n       metis-app --help";
+pub(crate) const USAGE: &str = "usage: metis-app WEIGHT_KG CONCENTRATION_MG_ML DOSE_MCG_KG_MIN\n       metis-app --metis-native-window WEIGHT_KG CONCENTRATION_MG_ML DOSE_MCG_KG_MIN\n       metis-app --metis-webview WEIGHT_KG CONCENTRATION_MG_ML DOSE_MCG_KG_MIN\n       metis-app --metis-browser-service ORIGIN PORT PRINCIPAL_HEX [--response-delay-ms MILLISECONDS]\n       metis-app --help";
 
 /// Bounded delay used by the browser stale-response conformance probe.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -35,6 +37,8 @@ pub(crate) enum Invocation {
     Frontend([String; 3]),
     NativeWindow([String; 3]),
     NativeFrontend([String; 3]),
+    WebView([String; 3]),
+    WebViewFrontend([String; 3]),
     BrowserService {
         origin: String,
         port: u16,
@@ -107,6 +111,8 @@ impl Invocation {
             FRONTEND_ROLE => InputRole::Frontend,
             NATIVE_WINDOW_ROLE => InputRole::NativeWindow,
             NATIVE_FRONTEND_ROLE => InputRole::NativeFrontend,
+            WEBVIEW_ROLE => InputRole::WebView,
+            WEBVIEW_FRONTEND_ROLE => InputRole::WebViewFrontend,
             _ => InputRole::Backend,
         };
         let weight = if role == InputRole::Backend {
@@ -125,6 +131,8 @@ impl Invocation {
             InputRole::Frontend => Self::Frontend(inputs),
             InputRole::NativeWindow => Self::NativeWindow(inputs),
             InputRole::NativeFrontend => Self::NativeFrontend(inputs),
+            InputRole::WebView => Self::WebView(inputs),
+            InputRole::WebViewFrontend => Self::WebViewFrontend(inputs),
         })
     }
 }
@@ -135,6 +143,8 @@ enum InputRole {
     Frontend,
     NativeWindow,
     NativeFrontend,
+    WebView,
+    WebViewFrontend,
 }
 
 fn parse_principal(value: &str) -> Result<[u8; 16], InvocationError> {
@@ -167,7 +177,8 @@ fn hex_digit(value: u8) -> Result<u8, InvocationError> {
 mod tests {
     use super::{
         BROWSER_SERVICE_ROLE, BrowserResponseDelay, FRONTEND_ROLE, Invocation, InvocationError,
-        NATIVE_FRONTEND_ROLE, NATIVE_WINDOW_ROLE, RESPONSE_DELAY_FLAG,
+        NATIVE_FRONTEND_ROLE, NATIVE_WINDOW_ROLE, RESPONSE_DELAY_FLAG, WEBVIEW_FRONTEND_ROLE,
+        WEBVIEW_ROLE,
     };
     use std::time::Duration;
 
@@ -198,6 +209,23 @@ mod tests {
                     .chain(native_inputs.clone())
             ),
             Ok(Invocation::NativeFrontend(native_inputs))
+        );
+        let webview_inputs = ["60".to_owned(), "2".to_owned(), "0.2".to_owned()];
+        assert_eq!(
+            Invocation::parse(
+                [WEBVIEW_ROLE.to_owned()]
+                    .into_iter()
+                    .chain(webview_inputs.clone())
+            ),
+            Ok(Invocation::WebView(webview_inputs.clone()))
+        );
+        assert_eq!(
+            Invocation::parse(
+                [WEBVIEW_FRONTEND_ROLE.to_owned()]
+                    .into_iter()
+                    .chain(webview_inputs.clone())
+            ),
+            Ok(Invocation::WebViewFrontend(webview_inputs))
         );
         assert_eq!(
             Invocation::parse(["--help".to_owned()]),
@@ -242,9 +270,12 @@ mod tests {
             vec![FRONTEND_ROLE],
             vec![NATIVE_WINDOW_ROLE],
             vec![NATIVE_FRONTEND_ROLE],
+            vec![WEBVIEW_ROLE],
+            vec![WEBVIEW_FRONTEND_ROLE],
             vec!["--unknown", "2", "0.2"],
             vec![FRONTEND_ROLE, FRONTEND_ROLE, "2", "0.2"],
             vec![NATIVE_WINDOW_ROLE, NATIVE_FRONTEND_ROLE, "2", "0.2"],
+            vec![WEBVIEW_ROLE, WEBVIEW_FRONTEND_ROLE, "2", "0.2"],
             vec!["60", "2"],
             vec!["60", "2", "0.2", "extra"],
             vec!["60", "--metis-frontend", "0.2"],

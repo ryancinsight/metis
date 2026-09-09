@@ -305,10 +305,14 @@ def run_gate():
             if package["name"].startswith("metis"):
                 for dependency in package["dependencies"]:
                     provider = dependency.get("source") or ""
+                    # Serialization stays at declared text-boundary crates: the
+                    # CLI manifest and the WebView bridge; clinical crates stay
+                    # on the binary IPC contract.
                     registry_boundary = (
                         provider.startswith("registry+")
                         and (
                             (package["name"] == "metis-cli" and dependency["name"] in {"serde", "serde_json"})
+                            or (package["name"] == "metis-app" and dependency["name"] in {"serde", "serde_json"})
                             or (package["name"] == "metis-python" and dependency["name"] == "pyo3")
                         )
                     )

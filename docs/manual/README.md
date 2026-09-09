@@ -17,8 +17,9 @@ demonstration connects it to the frontend through the same private process
 workflow. Operating-system permissions remain a host gap. The browser shell
 enforces its strict CSP, and the service `HostPolicy` binds grants to an exact
 origin, window and session. The platform crate also exposes a bounded Windows
-WebView2 consumer seam; application composition, TLS and OS enforcement remain
-separate workflows.
+WebView2 consumer seam, and `metis-app --metis-webview` demonstrates an
+HTML5/CSS form over the same supervised private IPC. Installed-runtime capture,
+TLS and OS enforcement remain separate workflows.
 
 The [target contract](../adr/0002-web-application-contract.md) describes the
 Tauri migration goal and required web support. These are implementation targets,

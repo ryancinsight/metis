@@ -25,6 +25,20 @@ and handles resize, DPI, focus and close events. The interactive session has a
 finite five-minute supervisor budget; it does not grant file, network or device
 permissions.
 
+On Windows with the `WebView2` runtime installed, the same executable can host
+the packaged HTML5/CSS form. The page-to-host bridge forwards bounded typed
+JSON to the unprivileged presentation process, which submits through the same
+supervised private IPC and returns the backend result to the page:
+
+```powershell
+cargo run --locked -p metis-app -- --metis-webview 60 2 0.2
+```
+
+The `WebView` host disables devtools and default context menus, denies new-window
+navigation, restricts resources to its generated package directory and grants
+no filesystem, network or process authority to page code. Close the window or
+press Escape to complete the bounded session.
+
 The same executable can serve one authenticated browser session through the
 bounded loopback WebSocket role:
 

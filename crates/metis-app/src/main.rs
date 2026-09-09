@@ -24,8 +24,10 @@ fn run() -> Result<(), Box<dyn std::error::Error>> {
     match Invocation::parse(std::env::args_os().skip(1))? {
         Invocation::Backend(inputs) => backend::run(inputs),
         Invocation::NativeWindow(inputs) => backend::run_native(inputs),
+        Invocation::WebView(inputs) => backend::run_webview(inputs),
         Invocation::Frontend(inputs) => frontend::run(inputs),
         Invocation::NativeFrontend(inputs) => frontend::run_native(inputs),
+        Invocation::WebViewFrontend(inputs) => frontend::run_webview(inputs),
         Invocation::BrowserService {
             origin,
             port,
