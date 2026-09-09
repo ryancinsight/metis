@@ -228,7 +228,7 @@ class WorkflowContractTests(unittest.TestCase):
 
 
 class ReleaseWorkflowContractTests(unittest.TestCase):
-    """Keep registry publication tokenless and release-triggered."""
+    """Keep registry publication tokenless and release-only."""
 
     @classmethod
     def setUpClass(cls):
@@ -258,12 +258,22 @@ class ReleaseWorkflowContractTests(unittest.TestCase):
             with self.subTest(forbidden=forbidden):
                 self.assertNotIn(forbidden, self.source)
         self.assertNotIn("push:", self.source)
+        self.assertIn(
+            "validate:\n    needs: [identify, semver]\n    if: github.event_name == 'workflow_dispatch'",
+            self.source,
+        )
+        self.assertIn(
+            "publish:\n    needs: [identify, semver]\n    if: github.event_name == 'release' && startsWith(github.event.release.tag_name, 'crate-')",
+            self.source,
+        )
+        dispatch_block = self.source.split("  validate:\n", 1)[1].split("  publish:\n", 1)[0]
+        self.assertNotIn("id-token: write", dispatch_block)
         references = re.findall(
             r"^\s*(?:-\s+)?uses:\s+([^@\s]+)@([^\s#]+)",
             self.source,
             re.MULTILINE,
         )
-        self.assertEqual(len(references), 2)
+        self.assertEqual(len(references), 3)
         for action, revision in references:
             with self.subTest(action=action):
                 self.assertRegex(revision, r"\A[0-9a-f]{40}\Z")

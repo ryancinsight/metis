@@ -34,7 +34,8 @@ publication to the Atlas reusable `semver-gate.yml` and `crates-publish.yml`
 workflows at Atlas revision `c73c3dabe9573f09df7f1e2eacfccac17f685c6c`.
 The caller triggers only on a published GitHub Release or an explicit
 `workflow_dispatch`; it carries no registry secret and grants `id-token: write`
-only to the reusable publish job. The Atlas workflow obtains a short-lived
+only to the release-only reusable publish job. Manual dispatch calls the
+validation-only reusable job without `id-token: write`. The Atlas workflow obtains a short-lived
 crates.io token through OIDC and gates it with the `crates-io` environment.
 No private-key prompt or local signing step belongs to this release path. If a
 developer's Git installation asks for a signing key, that prompt comes from

@@ -135,8 +135,8 @@ Normal verification exercises packaging and portable execution;
 `.github/workflows/rust-release.yml` is a thin caller of Atlas's pinned
 `crates-publish.yml` and `semver-gate.yml` workflows. A GitHub Release tagged
 `crate-<package>-v<version>` runs the release gate and publishes one validated
-workspace package. `workflow_dispatch` runs the same package and version checks
-without publishing.
+workspace package. `workflow_dispatch` calls a separate validation-only job;
+that path has no OIDC permission and cannot publish.
 
 The publish job requests a short-lived crates.io token through GitHub Actions
 OIDC and the `crates-io` environment. The repository stores no Cargo token,

@@ -87,11 +87,21 @@ jobs:
     permissions:
       contents: read
 
+  validate:
+    needs: [identify, semver]
+    if: github.event_name == 'workflow_dispatch'
+    uses: ryancinsight/atlas/.github/workflows/crates-publish.yml@c73c3dabe9573f09df7f1e2eacfccac17f685c6c
+    permissions:
+      contents: read
+    with:
+      rust-toolchain: "1.97.0"
+      tag-prefix: "crate-"
+      dispatch-package: ${{ inputs.package }}
+      dispatch-version: ${{ inputs.version }}
+
   publish:
     needs: [identify, semver]
-    if: >-
-      github.event_name == 'workflow_dispatch' ||
-      startsWith(github.event.release.tag_name, 'crate-')
+    if: github.event_name == 'release' && startsWith(github.event.release.tag_name, 'crate-')
     uses: ryancinsight/atlas/.github/workflows/crates-publish.yml@c73c3dabe9573f09df7f1e2eacfccac17f685c6c
     permissions:
       contents: read
