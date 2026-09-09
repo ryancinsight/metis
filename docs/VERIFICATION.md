@@ -700,7 +700,7 @@ UTF-16 surrogate pair, and handles `input`, `select`,
 The focused commands against the updated standalone lock are:
 
 ```text
-cargo nextest run --locked -p metis-web — 21/21 passed
+cargo nextest run --locked -p metis-web — 32/32 passed
 cargo clippy --locked -p metis-web --all-targets -- -D warnings — passed
 cargo check --locked -p metis-web --target wasm32-unknown-unknown — passed
 cargo clippy --locked -p metis-web --target wasm32-unknown-unknown -- -D warnings — passed
