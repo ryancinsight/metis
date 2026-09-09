@@ -75,12 +75,17 @@ fn pointer_down_listener(
             return;
         }
         event.prevent_default();
+        let action = if viewport.is_pinching() {
+            "pinch start"
+        } else {
+            "press"
+        };
         if let Err(error) = render(
             &listener_document,
             &listener_content,
             &listener_status,
             *viewport,
-            &format!("press {}", metadata.pointer_type().as_str()),
+            action,
         ) {
             set_error(&listener_document, &listener_status, &error.to_string());
         }
@@ -115,12 +120,17 @@ fn pointer_move_listener(
             return;
         }
         event.prevent_default();
+        let action = if viewport.is_pinching() {
+            "pinch"
+        } else {
+            "pan"
+        };
         if let Err(error) = render(
             &listener_document,
             &listener_content,
             &listener_status,
             *viewport,
-            "pan",
+            action,
         ) {
             set_error(&listener_document, &listener_status, &error.to_string());
         }

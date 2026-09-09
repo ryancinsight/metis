@@ -246,8 +246,9 @@ changed and held buttons, modifier keys and primary-pointer state. Captured
 the status to the released metadata record for the trace's first pointer.
 The capture handle is owned by the mounted listener set, so **Stop host**
 drops the callbacks with the rest of the browser application. The surface
-accepts one active identifier at a time and reports a typed browser-host error
-if capture or release is rejected.
+accepts at most two distinct identifiers at a time, captures each through
+Moirai and reports a typed browser-host error if a duplicate, third pointer or
+provider capture/release operation is rejected.
 
 The 2026-09-07 pointer trace used the generated browser build at a 1280×720
 CSS-pixel viewport and device scale 1.25. Its accessibility tree exposed the
@@ -279,13 +280,15 @@ rendered screenshot are recorded in
 
 The pointer surface also exercises the Rust-owned gesture policy. Drag from
 one point to another to pan the content; ordinary wheel input pans by its
-normalized CSS-pixel delta; hold Control while scrolling to zoom. The policy
-accepts one active pointer, clamps pan to ±1024 CSS pixels and zoom to 50–300%,
+normalized CSS-pixel delta; hold Control while scrolling to zoom. With two
+captured pointers, move either contact to pan by the pair's centroid and zoom
+by its distance ratio. The policy accepts at most two distinct pointers,
+rejects a third, clamps pan to ±1024 CSS pixels and zoom to 50–300%,
 normalizes line and page units to 16 and 640 CSS pixels, and rejects non-finite
 deltas without changing state. `gesture-status` reports the action, pan and
 zoom, while the content's CSS transform provides the visible result. A
-single-pointer touch drag follows the same path; multi-touch and pinch remain
-outside this browser slice.
+zero-distance pair waits for a valid baseline before changing zoom. Touch
+pointers use the same bounded policy.
 
 The 2026-09-07 gesture trace used the generated build at the same 1280×720
 CSS-pixel viewport and device scale 1.25. An upward scroll rendered
@@ -297,6 +300,14 @@ The trace is automation-generated; CUA cannot expose hardware trust, native
 touch, IME or another browser engine. Native policy tests cover line/page
 normalization, bounded zoom and non-finite rejection; the live trace does not
 claim physical-input or cross-engine parity.
+
+The two-pointer policy is covered by the native Rust suite: the second pointer
+establishes a centroid and finite-distance baseline, movement updates pan and
+zoom from that baseline, a zero-distance pair waits for valid separation, and
+a third pointer is rejected. The generated page instruction and semantic
+pointer card are visible in the [pinch gesture evidence](../VERIFICATION.md#browser-pinch-gesture-evidence--2026-09-08).
+The Codex browser cannot inject trusted physical touch, so a live screenshot
+does not claim hardware multi-touch behavior.
 
 The **DICOM file drop** card demonstrates the browser file and metadata
 workflow. Drag one or more files onto **DICOM file drop**. Rust prevents the

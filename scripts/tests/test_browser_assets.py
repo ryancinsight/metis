@@ -281,6 +281,7 @@ class BrowserAssetContractTests(unittest.TestCase):
             'id="drop-status" role="status"',
             'id="composition-status" role="status" aria-live="polite"',
             'id="pointer-surface" role="group" tabindex="0"',
+            "one pointer, or use two pointers to pinch",
             'id="drop-zone" role="group" tabindex="0"',
             'id="theme-mode" name="theme-mode"',
         ):

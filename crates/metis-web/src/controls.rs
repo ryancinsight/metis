@@ -75,7 +75,7 @@ pub(crate) const BROWSER_MARKUP: &str = r#"
   <p id="wheel-status" role="status">Wheel: idle</p>
   <p id="gesture-status" role="status">Gesture: idle; pan (0.0, 0.0) CSS px; zoom 100%</p>
   <div id="pointer-surface" role="group" tabindex="0" aria-label="Pointer capture surface">
-    <div id="gesture-content">Press or drag this surface to exercise Rust-owned pointer capture, metadata, wheel pan and Ctrl+wheel zoom.</div>
+    <div id="gesture-content">Press or drag with one pointer, or use two pointers to pinch, for Rust-owned capture, metadata, pan and zoom.</div>
   </div>
 </section>
 <section class="metis-drop" aria-labelledby="drop-heading">

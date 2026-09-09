@@ -12,6 +12,11 @@ The file-drop consumer now reads the complete accepted batch through
 provider-owned browser `File` handles and exposes one owned handoff slot;
 full dataset parsing remains with RITK.
 
+Revision 2026-09-08: the gesture policy now retains at most two captured
+pointer identifiers. A second pointer establishes a finite pinch baseline;
+centroid movement pans and distance changes zoom, while a third pointer-down
+is rejected. The provider captures and releases each accepted identifier.
+
 ## Context
 
 Metis must reuse ordinary HTML5 controls while keeping application state and
@@ -40,8 +45,10 @@ and session identity remain authoritative outside the control model.
 The workbench includes a bounded pointer-capture surface. Its Rust listeners
 read the `pointerId` exposed by Moirai, call `set_pointer_capture`, verify
 `has_pointer_capture`, and release the same identifier on `pointerup` or
-`pointercancel`. A single active identifier is retained per mounted surface;
-additional pointer-down events are rejected until the current capture releases.
+`pointercancel`. At most two active identifiers are retained per mounted
+surface; duplicate and third pointer-down events are rejected until an
+accepted capture releases. Each accepted identifier is captured and verified
+independently.
 Each pointer transition also reads Moirai's copyable `PointerMetadata` snapshot
 and renders the normalized device type, CSS-pixel coordinates, changed and
 held buttons, modifier keys and primary-pointer marker. Captured `pointermove`
@@ -53,11 +60,12 @@ event into a copyable `WheelMetadata` snapshot containing all three deltas,
 their browser unit, viewport coordinates and modifier keys. Metis renders that
 record and prevents the browser default action after the event kind is
 validated. A Rust-owned `GestureViewport` then applies the application policy:
-one captured pointer drags a bounded CSS-pixel pan, ordinary wheel input pans,
-and Ctrl+wheel zooms between 50% and 300%. Line and page units normalize to
-fixed CSS-pixel scales; non-finite deltas are rejected without mutation. The
-single-pointer path also handles a touch pointer as a drag; multi-touch and
-pinch interpretation remain open.
+one captured pointer drags a bounded CSS-pixel pan, two captured pointers use
+their centroid for bounded pan and their finite distance ratio for zoom,
+ordinary wheel input pans, and Ctrl+wheel zooms between 50% and 300%. Line and
+page units normalize to fixed CSS-pixel scales; non-finite deltas are rejected
+without mutation. A zero-distance pair waits for a valid baseline, and a
+third pointer is rejected. Touch pointers use the same bounded policy.
 
 The workbench uses Moirai's `DropFiles` capture for the DICOM file-drop card.
 Validated metadata remains bounded to 64 entries. An accepted drop retains the
@@ -123,7 +131,10 @@ increment consumes `WheelMetadata` from merged Moirai revision
 `f634b3a802ec0355da22f111ed01067d2435c5cb`; an in-app browser scroll action
 renders input-sensitive vertical and horizontal pixel deltas with the target
 coordinates and modifier state. The gesture increment adds native-tested
-bounded pan/zoom state and a live drag/scroll transform trace.
+bounded pan/zoom state and a live drag/scroll transform trace. The two-pointer
+increment adds bounded capture slots, duplicate/third-pointer rejection,
+centroid pan, distance-ratio zoom and zero-distance baseline handling; its
+native policy tests and WASM checks are recorded in the verification artifact.
 
 The text increment adds 21 native policy tests for UTF-16 coordinates,
 selection bounds, input metadata and composition transitions. The browser
@@ -140,7 +151,7 @@ live browser trace claims a byte read or DICOM decode.
 
 ## Residuals
 
-Multi-touch/pinch interpretation, grapheme/bidi layout,
-clipboard/undo, native IME, accessibility technology and native-window input
-remain under the linked backlog items. This
-increment does not claim cross-engine or native input parity.
+Grapheme/bidi layout, clipboard/undo, native IME, accessibility technology and
+native-window input remain under the linked backlog items. CUA cannot provide
+trusted physical touch or expose the browser `isTrusted` flag, so this
+increment does not claim cross-engine or physical-input parity.

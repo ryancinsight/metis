@@ -618,6 +618,25 @@ engine, so it claims the observed Rust/WASM event flow and rendered transform
 only. The native policy tests cover Ctrl-wheel zoom behavior and its 50–300%
 bound; the live trace does not claim physical-input or cross-engine parity.
 
+## Browser pinch gesture evidence — 2026-09-08
+
+The pinch increment extends the Rust-owned capture and gesture policy to two
+distinct pointer identifiers. A second pointer establishes a finite baseline;
+centroid movement updates bounded pan and the distance ratio updates bounded
+zoom. Duplicate and third-pointer presses are rejected, a zero-distance pair
+waits for a valid baseline, and releasing either pointer clears the pinch
+state. `cargo nextest run -p metis-web --locked --offline` passes 30/30;
+native warning-denied Clippy, the WASM-target check and WASM-target Clippy
+pass for the same package.
+
+The generated browser workbench renders the pointer surface instruction for
+one-pointer drag and two-pointer pinch. The policy's input-sensitive transform
+is covered by native tests because the Codex in-app browser can inject mouse
+and wheel actions but cannot provide trusted physical touch or expose the
+browser `isTrusted` flag. The screenshot and source evidence therefore claim
+the Rust/WASM policy and semantic surface only; physical touch and
+cross-engine parity remain open.
+
 ## Browser file-drop evidence — 2026-09-08
 
 The file-drop consumer now captures Moirai `DropFiles` at merged revision

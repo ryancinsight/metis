@@ -31,12 +31,13 @@ The same surface listens for browser wheel events through Moirai's
 and modifier state without importing `web-sys`. The listener prevents the
 browser default action after the provider has validated the event kind.
 The Rust-owned gesture policy consumes those records as a bounded viewport:
-one captured pointer drags a CSS-pixel pan, ordinary wheel input pans, and
-Ctrl+wheel changes zoom between 50% and 300%. Line and page deltas are
+one captured pointer drags a CSS-pixel pan, two captured pointers pan by their
+centroid and zoom by their finite distance ratio, ordinary wheel input pans,
+and Ctrl+wheel changes zoom between 50% and 300%. Line and page deltas are
 normalized to fixed CSS-pixel units; non-finite deltas are rejected without
-changing the viewport. The policy writes one CSS transform and exposes its
-state through `gesture-status`. Single-pointer touch follows the same drag
-path; multi-touch and pinch interpretation remain host work.
+changing the viewport. A zero-distance pair waits for a valid baseline and a
+third pointer is rejected. The policy writes one CSS transform and exposes its
+state through `gesture-status`; touch pointers use the same bounded policy.
 
 The **DICOM file drop** surface consumes Moirai's bounded `DropFiles` capture.
 Rust validates the copied display metadata again, caps the accepted batch at 64
