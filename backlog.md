@@ -325,10 +325,9 @@ an owner. “Unsupported” cannot replace delivery of a required mobile/native 
 
 <a id="METIS-DICOM-002"></a>
 ## METIS-DICOM-002 — Keep the browser handoff format-neutral [patch]
-- Status: review; priority: P1; owner: Metis browser; integrator: root; branch: `fix/metis-format-neutral-handoff`; dependency: METIS-DICOM-001; risk: duplicated format policy.
-- Scope: remove DICOM candidate and Part 10 marker classification from `metis-web`; retain bounded file metadata, byte ownership and the viewer-facing drop surface. RITK scanner, loader, geometry and visual evidence remain the owner.
-- Acceptance: `metis-web` has no DICOM classifier symbols or format-dependent status transitions; generic byte-progress tests, browser asset checks and the full Metis gate pass; RITK DICOM documentation remains the linked opening demonstration.
-- Evidence: commit `49d2c98`; `metis-web` 31/31 native tests, WASM build, and full `python scripts/verify.py` gate pass on the committed revision.
+- Status: done; priority: P1; delivery: [PR #32](https://github.com/ryancinsight/metis/pull/32), merge `10e7966`.
+- Outcome: `metis-web` retains bounded metadata and named-byte ownership without DICOM candidate or Part 10 classification; RITK remains the scanner, decoder, geometry, and visual-workflow owner.
+- Evidence: `49d2c98` plus `00ed7b9`; 31/31 native tests, WASM build, and full `python scripts/verify.py` gate passed before merge; [RITK DICOM workflow](../../ritk/docs/manual/dicom-workflow.md) remains authoritative.
 
 <a id="METIS-DISTRIBUTION-001"></a>
 ## METIS-DISTRIBUTION-001 — Executables and Windows MSI [arch] [minor]
