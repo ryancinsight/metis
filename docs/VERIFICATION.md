@@ -132,8 +132,8 @@ assistive-technology or denial-probe evidence.
 
 ### WebView2 consumer seam — 2026-09-09
 
-Metis `metis-platform::native::WebViewSurface` now consumes Moirai provider
-revision `0310280a341d3ae8eb9009c26d2ea9dc2285ac42` through a safe, thread-affine
+Metis `metis-platform::native::WebViewSurface` now consumes Moirai main revision
+`a58344b00ccc4a062c71659a463dd188d67bf1f4` through a safe, thread-affine
 adapter. The adapter creates the provider-owned HWND, sizes and maps visibility
 for the controller, forwards combined window/WebView events and preserves the
 provider's packaged-URI, new-window and bounded-JSON policies. The workspace
@@ -143,7 +143,9 @@ co-evolution increment. Consumer configuration tests pass on
 `152.0.4191.66`, the ignored adapter smoke was run outside the sandbox with
 `cargo nextest` and passed; it loads a packaged page, observes its ready bridge
 message, verifies successful navigation, rejects an external HTTPS navigation
-with a denied-navigation event and closes the surface. The test stays
+with a denied-navigation event and closes the surface. The direct Moirai
+requirements no longer carry a temporary revision pin; the standalone lock
+records `a58344b00ccc4a062c71659a463dd188d67bf1f4`. The test stays
 ignored in the ordinary suite because the runtime and native host are not
 available on every target. This is lifecycle and bridge evidence; the visible
 form and bridge-result captures are recorded below.

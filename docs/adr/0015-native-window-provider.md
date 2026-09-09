@@ -34,7 +34,7 @@ Revision 2026-09-09: Metis now exposes `native::WebViewSurface`, which creates
 the provider-owned HWND, sizes the controller to the validated client area and
 maps visibility, event pumping, navigation and bounded JSON messaging without
 leaking WebView2 or Win32 types into the frontend. The Moirai revision remains
-an explicit co-evolution pin until its branch merges; application composition
+an explicit co-evolution pin at this historical revision; application composition
 and installed-runtime visual evidence were open at this revision.
 
 Revision 2026-09-09: the supervised WebView2 role admits only the operating-system
@@ -43,6 +43,10 @@ credentials remain cleared. A real Windows capture records native and WebView2
 initial/submit states and the trusted keyboard/pointer bridge result in
 [`native-captures.json`](../manual/images/native-captures.json), on runtime
 `152.0.4191.66`.
+
+Revision 2026-09-09: Moirai PR #299 merged the provider to `main` at `f4eb4f2b`.
+Metis removes the temporary revision pin, keeps git-plus-version requirements,
+and records Moirai main `a58344b00ccc4a062c71659a463dd188d67bf1f4` in Cargo.lock.
 
 ## Context
 

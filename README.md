@@ -105,15 +105,14 @@ Serde and serde_json for validated manifests and Cargo artifact messages, as
 recorded in [ADR 0005](docs/adr/0005-application-distribution.md). Atlas providers
 have transitive dependencies; the gate records the actual graph instead of describing it as
 dependency-free. The Atlas development overlay resolves first-party code to local
-trees. Standalone builds depend on the corresponding pushed provider revisions.
-Moirai is temporarily pinned to provider revision
-`0310280a341d3ae8eb9009c26d2ea9dc2285ac42` while its WebView2 host branch
-co-evolves with this consumer. The revision includes the merged process,
-browser/API, bounded WebSocket service, cancellable-task surfaces, semantic
-control seams, pointer metadata, wheel metadata, bounded browser file access and
-the thread-affine Windows WebView2 provider. The pin is removed when the
-provider branch merges to Moirai main. The provider and Metis adapter have
-passed the installed WebView2 navigation/bridge smoke on runtime
+trees. Standalone builds use the corresponding pushed provider revisions recorded
+in Cargo.lock. Metis now consumes Moirai through git-plus-version requirements;
+the lock records audited main revision `a58344b00ccc4a062c71659a463dd188d67bf1f4`
+after WebView2 provider PR #299 merged. That revision includes the merged
+process, browser/API, bounded WebSocket service, cancellable-task surfaces,
+semantic control seams, pointer metadata, wheel metadata, bounded browser file
+access and the thread-affine Windows WebView2 provider. The provider and Metis
+adapter pass the installed WebView2 navigation/bridge smoke on runtime
 `152.0.4191.66`; visible capture, permission and accessibility evidence remain
 tracked in [the desktop item](backlog.md#METIS-DESKTOP-001).
 
