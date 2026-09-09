@@ -125,6 +125,15 @@ an owner. “Unsupported” cannot replace delivery of a required mobile/native 
 - Outcome: `metis-python` exposes validated clinical Rust types through an abi3 `import metis` wheel, built-wheel value tests, typed stubs, manual workflow and a tokenless PyPI OIDC caller; visual baseline refreshed for the locked dependency graph.
 - Decision: [ADR 0017](docs/adr/0017-python-binding.md); release registration remains external per [METIS-RELEASE-001](#METIS-RELEASE-001).
 
+<a id="METIS-PYTHON-002"></a>
+## METIS-PYTHON-002 — Rust-owned Python presentation surface [minor]
+- Status: in-progress; priority: P1; owner: Metis Python/presentation; integrator: root; last-update: 2026-09-09; branch: `feat/process-foundation`; dependencies: METIS-PYTHON-001, METIS-ASSETS-001; risk: binding contract and bounded pixel storage
+- Lease: root `crates/metis-python/`, `crates/metis-ui-lang/src/image.rs`, `python/`, `docs/adr/`, `docs/manual/python.md`, `crates/metis-python/tests/`, `backlog.md`, `checklist.md` (2026-09-09)
+- Scope: expose validated RGBA images, rectangles and a Rust-owned bounded software canvas through the existing abi3 wheel; Python composes values while Rust owns validation, clipping, alpha and storage limits. Native window/event lifecycle and DICOM decoding remain provider-owned follow-ons.
+- Acceptance: built-wheel tests prove exact pixel output, clipping, alpha composition, invalid geometry and bounded allocation errors; typed stubs, manual workflow and ADR describe the contract and its limits; no Python-side rendering or domain logic.
+- Demonstration: the existing inspected raster fixture is rendered through the Rust canvas and linked from the Python manual; `python scripts/python_binding.py` exercises the extracted wheel.
+- Decision: [ADR 0020](docs/adr/0020-python-presentation.md).
+
 <a id="METIS-MEMORY-001"></a>
 ## METIS-MEMORY-001 — Provider allocation count [patch]
 - Status: done; priority: P0; delivery: `f246c81`; exact locked-provider and reachable-path audit passed 2026-09-07.
