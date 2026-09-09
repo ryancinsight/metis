@@ -198,7 +198,7 @@ attributes to semantic variables such as `--metis-page`, `--metis-surface`,
 `--metis-text`, `--metis-accent` and `--metis-focus`. An application can keep
 the selector and replace those variables in a same-origin stylesheet to apply
 its own palette. Theme state changes presentation only; it does not change
-backend authority, IPC messages or DICOM data.
+backend authority, IPC messages or application data.
 
 The page loads the starter [Métis vector mark](../../examples/browser/assets/metis-mark.svg)
 from the same-origin `assets/` directory and uses it as the favicon and header
@@ -311,8 +311,8 @@ pointer card are visible in the [pinch gesture evidence](../VERIFICATION.md#brow
 The Codex browser cannot inject trusted physical touch, so a live screenshot
 does not claim hardware multi-touch behavior.
 
-The **DICOM file drop** card demonstrates the browser file and metadata workflow.
-Drag one or more files onto **DICOM file drop**. Rust prevents the browser's default
+The **File drop** card demonstrates the browser file and metadata workflow.
+Drag one or more files onto **File drop**. Rust prevents the browser's default
 navigation, asks Moirai for a bounded `DropFiles` capture, and renders the file
 count and the first three display names with byte sizes. The zone exposes
 `dragenter`, `dragover`, `dragleave` and `drop` state through the semantic
@@ -334,7 +334,7 @@ the tuple preserves each byte allocation. A later drop replaces an unconsumed
 batch, and stop/remount drops it. No browser name is turned into a filesystem
 path. A RITK adapter receives the named bytes and performs any format-specific
 scan, decode and study opening; this slice closes the bounded zero-copy byte
-handoff, not the DICOM workflow.
+handoff, not a format-specific workflow.
 
 The provider caps one drop at 64 files, 4096 UTF-8 bytes per name and 256 bytes
 per media type. The CUA browser surface cannot synthesize a trusted
@@ -345,14 +345,14 @@ typed rejection and payload size budgets; the WASM gate compiles the real
 provider-backed read path.
 
 The 2026-09-08 CUA trace opened the generated build at a 1280×720 CSS-pixel
-viewport with device scale 1.25. The accessibility tree exposed **DICOM file
-drop**, both status regions and the named **DICOM file drop zone** group; the
+viewport with device scale 1.25. The accessibility tree exposed **File drop**,
+both status regions and the named **File drop zone** group; the
 screenshot showed the drop card between the pointer and backend-result cards
 with its ready state and focus outline. The browser engine version was
 unavailable, and no trusted local file was attached, so the trace does not
-claim a successful live byte read or DICOM decode. The provider-backed full
-batch path is established by the native policy suite and the strict WASM build;
-the RITK consumer trace remains open. The ownership-consuming API is covered by
+claim a successful live byte read or format-specific decode. The provider-backed
+full batch path is established by the native policy suite and the strict WASM
+build; the RITK consumer trace remains open. The ownership-consuming API is covered by
 a pointer-identity test, so moving a completed batch does not copy its file
 contents.
 
@@ -431,7 +431,7 @@ The workbench keeps the normal keyboard path in document order. From the
 header, press **Tab** through **Session details**, the patient and numeric form
 fields, **Submit to authorized backend** when the authorized bridge enables it,
 the **View options** controls, the named **Pointer capture surface**, the named
-**DICOM file drop zone**, and **Clinical note**. A disabled submit control is
+**File drop zone**, and **Clinical note**. A disabled submit control is
 skipped by the browser, and a radio group has one tab stop; use its arrow keys
 to choose the other unit. The closed session dialog is not in the active tab
 order.

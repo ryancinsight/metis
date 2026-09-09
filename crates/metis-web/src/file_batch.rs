@@ -129,16 +129,16 @@ mod tests {
     fn batch_preserves_names_media_types_and_bytes() {
         let batch = FileDropBatch::from_payloads(vec![
             FileDropPayload::from_parts(
-                "first.dcm".to_owned(),
-                "application/dicom".to_owned(),
+                "first.bin".to_owned(),
+                "application/octet-stream".to_owned(),
                 Box::from([1, 2, 3]),
             ),
-            FileDropPayload::from_parts("second.dcm".to_owned(), String::new(), Box::from([4, 5])),
+            FileDropPayload::from_parts("second.bin".to_owned(), String::new(), Box::from([4, 5])),
         ]);
         assert_eq!(batch.file_count(), 2);
         assert_eq!(batch.total_bytes(), 5);
-        assert_eq!(batch.files()[0].name(), "first.dcm");
-        assert_eq!(batch.files()[0].media_type(), "application/dicom");
+        assert_eq!(batch.files()[0].name(), "first.bin");
+        assert_eq!(batch.files()[0].media_type(), "application/octet-stream");
         assert_eq!(batch.files()[0].bytes(), [1, 2, 3]);
         assert_eq!(batch.files()[1].bytes(), [4, 5]);
     }
@@ -146,8 +146,8 @@ mod tests {
     #[test]
     fn consuming_batch_preserves_allocations_and_parts() {
         let batch = FileDropBatch::from_payloads(vec![FileDropPayload::from_parts(
-            "study.dcm".to_owned(),
-            "application/dicom".to_owned(),
+            "study.bin".to_owned(),
+            "application/octet-stream".to_owned(),
             Box::from([7, 8, 9]),
         )]);
         let files_address = batch.files().as_ptr();
@@ -161,8 +161,8 @@ mod tests {
             .expect("invariant: test batch contains one payload");
         let (name, media_type, bytes) = payload.into_parts();
 
-        assert_eq!(name, "study.dcm");
-        assert_eq!(media_type, "application/dicom");
+        assert_eq!(name, "study.bin");
+        assert_eq!(media_type, "application/octet-stream");
         assert_eq!(bytes.as_ptr(), payload_address);
         assert_eq!(&*bytes, [7, 8, 9]);
     }

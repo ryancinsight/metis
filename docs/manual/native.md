@@ -207,7 +207,7 @@ visual evidence. The four committed captures above
 now establish the visible native and WebView2 initial/submit journeys, including
 the page-to-host bridge result. Physical resize/DPI and close/reopen captures,
 OS permission denial, native accessibility, an installed CJK or other IME
-journey, macOS/Linux providers, two-window captures and the DICOM viewer host
+journey, macOS/Linux providers, two-window captures and the viewer host
 remain V05 and migration work. Do not treat a successful Windows build or a
 hidden-window test as cross-platform, assistive-technology or permission
 evidence.

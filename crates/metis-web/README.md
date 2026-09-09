@@ -39,7 +39,7 @@ changing the viewport. A zero-distance pair waits for a valid baseline and a
 third pointer is rejected. The policy writes one CSS transform and exposes its
 state through `gesture-status`; touch pointers use the same bounded policy.
 
-The **DICOM file drop** surface consumes Moirai's bounded `DropFiles` capture. Rust
+The **file drop** surface consumes Moirai's bounded `DropFiles` capture. Rust
 validates the copied display metadata again, caps the accepted batch at 64 files
 and reports names, media types and byte sizes in a semantic status region. Each
 accepted entry is read asynchronously through its Moirai browser-owned handle
@@ -51,9 +51,10 @@ handoff, which transfers ownership and leaves one bounded slot for a later drop.
 No browser name becomes a filesystem path, and stopping or remounting drops
 unconsumed bytes. Consumers that need to retain the payload call
 [`FileDropBatch::into_files`] and then [`FileDropPayload::into_parts`]; both
-moves preserve the existing byte allocations. RITK owns DICOM parsing and study
-decoding; its adapter can borrow those bytes for a synchronous load or retain
-the buffers for a decode job without copying the file contents.
+moves preserve the existing byte allocations. Format-specific parsing and study
+decoding belong to the consuming application, such as RITK; its adapter can
+borrow those bytes for a synchronous load or retain the buffers for a decode
+job without copying the file contents.
 
 The **Text and composition** surface consumes Moirai's bounded text snapshots.
 The textarea keeps Unicode values in Rust-owned state, preserves browser
