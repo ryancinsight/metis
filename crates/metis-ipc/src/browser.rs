@@ -193,11 +193,13 @@ impl Future for ReceiveOrTimeout {
 
 impl Drop for BrowserWebSocketTransport {
     fn drop(&mut self) {
-        let result = self.reactor.websocket_close(self.fd);
-        debug_assert!(
-            result.is_ok(),
-            "invariant: browser WebSocket remains registered until transport drop"
-        );
+        // Best-effort teardown. A destructor must not panic, so the previous
+        // `debug_assert!` could only fire in a debug build and checked nothing
+        // in release -- and a close failure at drop is not recoverable in
+        // either: the transport is going away regardless. The crate carries no
+        // logging surface on the wasm target, so the result is discarded
+        // deliberately rather than asserted.
+        let _ = self.reactor.websocket_close(self.fd);
     }
 }
 

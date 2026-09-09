@@ -26,6 +26,12 @@ an owner. “Unsupported” cannot replace delivery of a required mobile/native 
 - Status: done; delivery: [PR 2](https://github.com/ryancinsight/metis/pull/2), content `a6855aa`.
 - Outcome: [ADR 0003](docs/adr/0003-framework-conformance.md) maps 22 capability areas to owned work and twelve semantic/visual/manual scenarios; source review and existing gate pass. Runtime gaps remain open in the linked items.
 
+<a id="METIS-GAPS-002"></a>
+## METIS-GAPS-002 — Synchronize the framework matrix [patch]
+- Status: in-progress; priority: P1; owner: Metis documentation; integrator: root; branch: `docs/metis-framework-matrix-002`; dependency: METIS-DICOM-002; risk: stale ownership claims.
+- Scope: update current framework-matrix, input-ADR, and repository-pointer claims after the format-neutral DICOM handoff; preserve historical evidence as historical records.
+- Acceptance: current documentation contains no Metis DICOM classifier claim, current pointers identify the merged Metis revision, ADR index and plan checks pass, and the full documentation gate passes.
+
 <a id="METIS-ICED-001"></a>
 ## METIS-ICED-001 — Iced comparator and backend decision [arch] [patch]
 - Status: done; priority: P1; delivery: `def5f85`; source and artifact audit passed 2026-09-07.
