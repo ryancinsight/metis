@@ -36,9 +36,10 @@ The caller triggers only on a published GitHub Release or an explicit
 `workflow_dispatch`; it carries no registry secret and grants `id-token: write`
 only to the reusable publish job. The Atlas workflow obtains a short-lived
 crates.io token through OIDC and gates it with the `crates-io` environment.
-An interactive private-key prompt during local development belongs to Git
-commit or tag signing, not to this release path; the publication jobs never
-invoke local signing.
+No private-key prompt or local signing step belongs to this release path. If a
+developer's Git installation asks for a signing key, that prompt comes from
+their local Git configuration and can be cancelled; the repository workflows
+do not invoke it.
 
 The local package inventory contains ten publishable Cargo packages and one
 `publish = false` tooling package (`metis-cli`). `metis-python` builds the
@@ -49,8 +50,11 @@ check does not prove registry publisher registration, first publication,
 release authority or package upload; those are external release actions.
 Public branch inspection at revision `850d8f0` confirmed the crates.io and PyPI
 callers expose OIDC permissions without registry-token, SSH, GPG or private-key
-secrets. The inspection was logged out and therefore did not inspect account
-environment settings.
+secrets. A live GitHub API inspection on 2026-09-08 found zero repository
+Actions secrets, variables, environments or rulesets; the workflows therefore
+have no stored key material. Creating the named `crates-io` and `pypi`
+environments is an explicit release-owner configuration step and remains
+outside the local source gate.
 
 `cargo package --locked --allow-dirty --list` succeeded for `metis-core`,
 `metis-web` and the root `metis` package. A local
@@ -616,15 +620,17 @@ The file-drop consumer now captures Moirai `DropFiles` at merged revision
 files, validates names/media types and owns each browser `File` handle without
 exposing a filesystem path. Metis revalidates the copied metadata, retains a
 bounded `Box<[FileDropEntry]>` for presentation and starts one cancellable task
-for the first selected entry. That task requests a fixed 132-byte prefix,
-classifies the DICOM Part 10 marker at offsets 128–131 and renders
-`drop-byte-status` plus `data-byte-state` transitions. Moirai rejects any read
-larger than 1 MiB; the consumer never requests more than the header.
+for the accepted batch. Each file is read to its declared end through 64 KiB
+continuations, with a 64 MiB per-file and 256 MiB batch budget. The first
+payload is classified at the DICOM Part 10 marker at offsets 128–131; the
+completed named bytes are exposed through one `FileDropBatch` handoff slot.
+Moirai rejects any individual read larger than 1 MiB, and the consumer stays
+below that provider bound.
 
 The focused evidence against the updated standalone lock is:
 
 ```text
-cargo nextest run --locked -p metis-web --profile default — 23/23 passed
+cargo nextest run --locked -p metis-web --profile default — 28/28 passed
 cargo clippy --locked -p metis-web --all-targets -- -D warnings — passed
 cargo check --locked -p metis-web --target wasm32-unknown-unknown — passed
 cargo clippy --locked -p metis-web --target wasm32-unknown-unknown -- -D warnings — passed
@@ -632,14 +638,15 @@ cargo clippy --locked -p metis-web --target wasm32-unknown-unknown -- -D warning
 
 The native policy tests cover empty names, NUL and oversized metadata, empty
 and 65-file drops, DICOM media/extension classification, UTF-8-safe display
-truncation, the Part 10 marker and bounded read-status transitions. The
+truncation, the Part 10 marker, payload budget edges, batch ownership and
+bounded read-status transitions. The
 generated HTML5/CSS page renders the **DICOM file drop** card, both semantic
 status regions and the focusable **DICOM file drop zone**; the visual capture
 records the idle state. CUA does not expose `isTrusted`, cannot attach a local
 operating-system file to a synthetic browser event and cannot establish the
 browser engine version, so this evidence does not claim a trusted live byte
-read or DICOM opening. Full dataset parsing and study decoding remain RITK
-responsibilities.
+read or DICOM opening. The handoff is ready for the RITK adapter; full dataset
+parsing and study decoding remain RITK responsibilities.
 
 ## Browser text and composition evidence — 2026-09-08
 

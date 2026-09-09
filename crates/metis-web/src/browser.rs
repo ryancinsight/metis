@@ -19,6 +19,7 @@ mod view;
 #[path = "browser/wheel.rs"]
 mod wheel;
 
+use crate::FileDropBatch;
 use crate::controls;
 use crate::controls::ControlField;
 use crate::epoch::{Epoch, Generation};
@@ -37,7 +38,6 @@ use std::time::Duration;
 
 use config::BridgeConfig;
 
-#[derive(Clone)]
 struct BrowserState {
     inputs: FormInputs,
     state: FormState,
@@ -47,6 +47,7 @@ struct BrowserState {
     event_status: String,
     drop_state: crate::file_drop_policy::DropState,
     drop_read_state: crate::file_drop_policy::DropReadState,
+    drop_batch: Option<FileDropBatch>,
     text_state: crate::text_policy::TextState,
     controls: controls::ControlState,
 }
@@ -62,6 +63,7 @@ impl Default for BrowserState {
             event_status: "Remote events: none".to_owned(),
             drop_state: crate::file_drop_policy::DropState::default(),
             drop_read_state: crate::file_drop_policy::DropReadState::default(),
+            drop_batch: None,
             text_state: crate::text_policy::TextState::default(),
             controls: controls::ControlState::default(),
         }
@@ -441,6 +443,13 @@ fn next_generation() -> io::Result<Generation> {
 
 fn generation_is_current(generation: Generation) -> bool {
     APPLICATION_EPOCH.with_borrow(|epoch| epoch.accepts(generation))
+}
+
+pub(super) fn take_file_drop() -> Option<FileDropBatch> {
+    APPLICATION.with_borrow_mut(|slot| {
+        slot.as_ref()
+            .and_then(|application| application.state.borrow_mut().drop_batch.take())
+    })
 }
 
 /// Mounts the Metis browser application into the page's `#metis-app` element.

@@ -7,6 +7,8 @@ const MAX_FILE_NAME_BYTES: usize = 4_096;
 const MAX_MEDIA_TYPE_BYTES: usize = 256;
 const MAX_DISPLAY_NAME_BYTES: usize = 96;
 const DICOM_HEADER_BYTES: usize = 132;
+pub(crate) const MAX_FILE_BYTES: u64 = 64 * 1024 * 1024;
+pub(crate) const MAX_BATCH_BYTES: u64 = 256 * 1024 * 1024;
 
 #[derive(Clone, Debug, Eq, PartialEq)]
 pub(crate) struct FileDropEntry {
@@ -29,6 +31,7 @@ pub(crate) enum DropReadState {
     Reading,
     Complete {
         bytes_read: usize,
+        files_read: usize,
         header: DicomHeader,
     },
     Failed,
@@ -47,23 +50,66 @@ impl DropReadState {
     pub(crate) fn status_message(self) -> String {
         match self {
             Self::Idle => "Byte access: waiting for a selected file".to_owned(),
-            Self::Reading => "Byte access: reading a bounded DICOM header".to_owned(),
+            Self::Reading => "Byte access: reading a bounded DICOM file batch".to_owned(),
             Self::Complete {
                 bytes_read,
+                files_read,
                 header: DicomHeader::Part10,
-            } => format!("Byte access: read {bytes_read} bytes; DICOM Part 10 marker present"),
+            } => format!(
+                "Byte access: read {bytes_read} bytes from {files_read} file(s); DICOM Part 10 marker present"
+            ),
             Self::Complete {
                 bytes_read,
+                files_read,
                 header: DicomHeader::MissingMarker,
-            } => format!("Byte access: read {bytes_read} bytes; DICOM Part 10 marker absent"),
+            } => format!(
+                "Byte access: read {bytes_read} bytes from {files_read} file(s); DICOM Part 10 marker absent"
+            ),
             Self::Complete {
                 bytes_read,
+                files_read,
                 header: DicomHeader::TooShort,
             } => format!(
-                "Byte access: read {bytes_read} bytes; DICOM Part 10 header is shorter than 132 bytes"
+                "Byte access: read {bytes_read} bytes from {files_read} file(s); DICOM Part 10 header is shorter than 132 bytes"
             ),
             Self::Failed => "Byte access: host rejected the selected file".to_owned(),
         }
+    }
+}
+
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+pub(crate) enum PayloadSizeError {
+    FileTooLarge,
+    BatchTooLarge,
+    SizeNotRepresentable,
+}
+
+pub(crate) fn check_payload_size(
+    size_bytes: u64,
+    total_bytes: u64,
+) -> Result<usize, PayloadSizeError> {
+    if size_bytes > MAX_FILE_BYTES {
+        return Err(PayloadSizeError::FileTooLarge);
+    }
+    let next_total = total_bytes
+        .checked_add(size_bytes)
+        .ok_or(PayloadSizeError::BatchTooLarge)?;
+    if next_total > MAX_BATCH_BYTES {
+        return Err(PayloadSizeError::BatchTooLarge);
+    }
+    usize::try_from(size_bytes).map_err(|_| PayloadSizeError::SizeNotRepresentable)
+}
+
+impl fmt::Display for PayloadSizeError {
+    fn fmt(&self, formatter: &mut fmt::Formatter<'_>) -> fmt::Result {
+        let message = match self {
+            Self::FileTooLarge => "a browser file exceeds the 64 MiB payload bound",
+            Self::BatchTooLarge => "the browser file batch exceeds the 256 MiB payload bound",
+            Self::SizeNotRepresentable => {
+                "a browser file size cannot be represented by this target"
+            }
+        };
+        formatter.write_str(message)
     }
 }
 
@@ -123,6 +169,9 @@ impl FileDropEntry {
 pub(crate) enum FileDropError {
     EmptyDrop,
     TooManyFiles,
+    FileTooLarge,
+    BatchTooLarge,
+    SizeNotRepresentable,
     EmptyName,
     NameTooLong,
     EmbeddedNul,
@@ -136,6 +185,11 @@ impl fmt::Display for FileDropError {
         let message = match self {
             Self::EmptyDrop => "the drop did not contain files",
             Self::TooManyFiles => "the drop exceeds the 64-file bound",
+            Self::FileTooLarge => "a dropped file exceeds the 64 MiB payload bound",
+            Self::BatchTooLarge => "the dropped batch exceeds the 256 MiB payload bound",
+            Self::SizeNotRepresentable => {
+                "a dropped file size cannot be represented by this target"
+            }
             Self::EmptyName => "a dropped file has an empty name",
             Self::NameTooLong => "a dropped file name exceeds the 4096-byte bound",
             Self::EmbeddedNul => "a dropped file name contains NUL",
@@ -169,10 +223,15 @@ impl DropState {
         I: IntoIterator<Item = FileDropEntry>,
     {
         let mut accepted = Vec::with_capacity(MAX_FILES);
+        let mut total_bytes = 0_u64;
         for entry in entries {
             if accepted.len() == MAX_FILES {
                 return Err(FileDropError::TooManyFiles);
             }
+            check_payload_size(entry.size_bytes(), total_bytes).map_err(map_payload_error)?;
+            total_bytes = total_bytes
+                .checked_add(entry.size_bytes())
+                .expect("invariant: accepted payload total passed the batch bound");
             accepted.push(entry);
         }
         if accepted.is_empty() {
@@ -213,6 +272,14 @@ impl DropState {
     }
 }
 
+fn map_payload_error(error: PayloadSizeError) -> FileDropError {
+    match error {
+        PayloadSizeError::FileTooLarge => FileDropError::FileTooLarge,
+        PayloadSizeError::BatchTooLarge => FileDropError::BatchTooLarge,
+        PayloadSizeError::SizeNotRepresentable => FileDropError::SizeNotRepresentable,
+    }
+}
+
 fn accepted_status(files: &[FileDropEntry]) -> String {
     let dicom_count = files
         .iter()
@@ -250,8 +317,8 @@ fn truncate_text(value: &str, maximum_bytes: usize) -> String {
 #[cfg(test)]
 mod tests {
     use super::{
-        DicomHeader, DropReadState, DropState, FileDropEntry, FileDropError, MAX_FILES,
-        classify_dicom_header,
+        DicomHeader, DropReadState, DropState, FileDropEntry, FileDropError, MAX_BATCH_BYTES,
+        MAX_FILE_BYTES, MAX_FILES, PayloadSizeError, check_payload_size, classify_dicom_header,
     };
 
     fn entry(name: &str, media_type: &str) -> FileDropEntry {
@@ -308,6 +375,20 @@ mod tests {
             DropState::accept(entries).expect_err("oversized drops must be rejected"),
             FileDropError::TooManyFiles
         );
+        assert_eq!(
+            DropState::accept([FileDropEntry::new(
+                "large.dcm".to_owned(),
+                "application/dicom".to_owned(),
+                MAX_FILE_BYTES + 1,
+            )
+            .expect("metadata is valid")])
+            .expect_err("oversized files must be rejected before reading"),
+            FileDropError::FileTooLarge
+        );
+        assert_eq!(
+            check_payload_size(1, u64::MAX),
+            Err(PayloadSizeError::BatchTooLarge)
+        );
     }
 
     #[test]
@@ -334,16 +415,34 @@ mod tests {
         assert!(
             DropReadState::Reading
                 .status_message()
-                .contains("bounded DICOM header")
+                .contains("bounded DICOM file batch")
         );
         assert!(
             DropReadState::Complete {
                 bytes_read: 132,
+                files_read: 1,
                 header: DicomHeader::Part10,
             }
             .status_message()
-            .contains("marker present")
+            .contains("read 132 bytes from 1 file(s); DICOM Part 10 marker present")
         );
         assert_eq!(DropReadState::Failed.state_name(), "failed");
+    }
+
+    #[test]
+    fn payload_budget_accepts_file_and_batch_edges() {
+        assert_eq!(
+            check_payload_size(MAX_FILE_BYTES, 0),
+            Ok(usize::try_from(MAX_FILE_BYTES).expect("test bound fits target"))
+        );
+        assert_eq!(check_payload_size(1, MAX_BATCH_BYTES - 1), Ok(1));
+        assert_eq!(
+            check_payload_size(MAX_FILE_BYTES + 1, 0),
+            Err(PayloadSizeError::FileTooLarge)
+        );
+        assert_eq!(
+            check_payload_size(1, MAX_BATCH_BYTES),
+            Err(PayloadSizeError::BatchTooLarge)
+        );
     }
 }

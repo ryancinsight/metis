@@ -127,9 +127,10 @@ Patient-coordinate fusion and transformed measurement semantics remain required;
 correct image proportions alone do not establish either property.
 The manual explains the current input limits and how to reproduce both the
 pixel checks and native capture. These results establish the existing viewer
-baseline for [V09](../VERIFICATION.md#V09); Métis host execution, browser input,
-multiframe/color presentation and matched memory measurements remain required
-before accepting the migration.
+baseline for [V09](../VERIFICATION.md#V09). Metis now provides a bounded browser
+named-byte batch handoff; RITK host execution, decoder integration, browser
+input, multiframe/color presentation and matched memory measurements remain
+required before accepting the migration.
 
 ## Browser service workflow
 

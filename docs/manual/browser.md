@@ -275,23 +275,26 @@ the number of names or media types that look like DICOM. The zone exposes
 record leaves the zone in the typed rejected state and reports the provider
 error without retaining the batch.
 
-For an accepted drop, the browser host reads the first selected file through
-Moirai's owned browser `File` handle. The consumer requests exactly the first
-132 bytes, reports `reading` and then `complete` or `failed` through
-`drop-byte-status` and `data-byte-state`, and classifies the DICOM Part 10
-marker at byte offsets 128–131. The provider bounds each read at 1 MiB; this
-workflow keeps its request at the fixed DICOM header size. No browser name is
-turned into a filesystem path and no full file is copied into Rust storage.
+For an accepted drop, the browser host reads every selected file asynchronously
+through Moirai's owned browser `File` handles. Each file is limited to 64 MiB
+and the batch to 256 MiB; a 64 KiB continuation buffer keeps each `FileReader`
+turn bounded while the provider still enforces its 1 MiB maximum read. The
+consumer reports `reading` and then `complete` or `failed` through
+`drop-byte-status` and `data-byte-state`, and classifies the first payload's
+DICOM Part 10 marker at byte offsets 128–131. A completed batch is available to
+a trusted WASM consumer through `metis_web::take_file_drop`, which transfers
+ownership of the named byte slices. A later drop replaces an unconsumed batch,
+and stop/remount drops it. No browser name is turned into a filesystem path.
 RITK remains responsible for parsing the dataset, decoding pixels and opening a
-study; this slice establishes the authorized byte-read seam only.
+study; this slice closes the bounded byte handoff, not the RITK decoder.
 
 The provider caps one drop at 64 files, 4096 UTF-8 bytes per name and 256 bytes
 per media type. The CUA browser surface cannot synthesize a trusted
 operating-system file drop, attach a local file to a synthetic event or expose
 `isTrusted`, so a manual trace must record the browser engine and whether the
 drop came from a physical file operation. Native policy tests cover bounds,
-typed rejection, DICOM candidate classification and the Part 10 header state;
-the WASM gate compiles the real provider-backed read path.
+typed rejection, DICOM candidate classification, payload size budgets and the
+Part 10 header state; the WASM gate compiles the real provider-backed read path.
 
 The 2026-09-08 CUA trace opened the generated build at a 1280×720 CSS-pixel
 viewport with device scale 1.25. The accessibility tree exposed **DICOM file
@@ -299,8 +302,9 @@ drop**, both status regions and the named **DICOM file drop zone** group; the
 screenshot showed the drop card between the pointer and backend-result cards
 with its ready state and focus outline. The browser engine version was
 unavailable, and no trusted local file was attached, so the trace does not
-claim a successful live byte read or DICOM decode. The provider-backed read
-path is established by the native policy suite and the strict WASM build.
+claim a successful live byte read or DICOM decode. The provider-backed full
+batch path is established by the native policy suite and the strict WASM build;
+the RITK consumer trace remains open.
 
 The **Text and composition** card exercises the browser's native editing
 surface while keeping application state in Rust. Focus **Clinical note**, type

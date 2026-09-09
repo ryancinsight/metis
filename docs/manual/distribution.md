@@ -146,10 +146,10 @@ trusted publisher registered at crates.io with owner `ryancinsight`, repository
 `crates-io`; registry setup and the first publication remain explicit release
 authority actions.
 
-An interactive private-key prompt during local development is Git commit or tag
-signing (for example, `git commit -S` or `git tag -s`), not this release path.
-Metis publication does not invoke local signing; the GitHub jobs exchange their
-OIDC identity for a short-lived registry credential.
+No private-key prompt is part of this release path. If a developer's local Git
+installation asks for a signing key, cancel it and inspect that local Git
+configuration; Metis publication does not invoke local signing. The GitHub
+jobs exchange their OIDC identity for a short-lived registry credential.
 
 The `metis-python` crate builds the `metis-rs` PyPI distribution for
 `import metis`. Its caller uses Atlas's `python-wheels.yml` and the `pypi`
@@ -162,7 +162,9 @@ local wheel test and release tag contract.
 Create the GitHub environments named `crates-io` and `pypi` and apply the
 repository's normal tag or reviewer protection rules. Leave registry secrets,
 passwords and signing keys out of these environments. The environment is an
-approval and trust boundary; it is not a credential store.
+approval and trust boundary; it is not a credential store. The current public
+repository audit has no Actions secrets, variables or environments yet, so this
+setup remains a release-owner action.
 
 For every publishable Cargo package, add a crates.io GitHub Actions trusted
 publisher with these exact values:

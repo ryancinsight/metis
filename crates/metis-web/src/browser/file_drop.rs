@@ -5,14 +5,19 @@ use super::generation_is_current;
 use super::view;
 use crate::epoch::Generation;
 use crate::file_drop_policy::{
-    DicomHeader, DropReadState, DropState, FileDropEntry, FileDropError, classify_dicom_header,
+    DicomHeader, DropReadState, DropState, FileDropEntry, FileDropError, PayloadSizeError,
+    check_payload_size, classify_dicom_header,
 };
+use crate::{FileDropBatch, FileDropPayload};
 use moirai_pal::wasm::{
-    DropFiles, LocalTaskHandle, WebDocument, WebElement, WebEventListener, spawn_local_with_handle,
+    DropFiles, DroppedFileAccess, LocalTaskHandle, WebDocument, WebElement, WebEventListener,
+    spawn_local_with_handle,
 };
 use std::cell::{Cell, RefCell};
 use std::io;
 use std::rc::Rc;
+
+const READ_CHUNK_BYTES: usize = 64 * 1024;
 
 struct DropReadContext {
     document: WebDocument,
@@ -141,13 +146,14 @@ fn handle_drop(
     match accepted {
         Ok(next_state) => {
             update_state(document, state, status, next_state);
+            state.borrow_mut().drop_batch = None;
             let Some(sequence) = next_sequence(drop_sequence) else {
                 update_read_state(document, state, status, DropReadState::Failed);
                 return;
             };
             let _ = drop_task.borrow_mut().take();
             update_read_state(document, state, status, DropReadState::Reading);
-            read_first_header(
+            read_drop_batch(
                 DropReadContext {
                     document: document.clone(),
                     state: Rc::clone(state),
@@ -164,7 +170,7 @@ fn handle_drop(
     }
 }
 
-fn read_first_header(context: DropReadContext, mut files: DropFiles, sequence: u64) {
+fn read_drop_batch(context: DropReadContext, mut files: DropFiles, sequence: u64) {
     let DropReadContext {
         document,
         state,
@@ -175,16 +181,26 @@ fn read_first_header(context: DropReadContext, mut files: DropFiles, sequence: u
     } = context;
     let task_slot_for_task = Rc::clone(&task_slot);
     let task = spawn_local_with_handle(async move {
-        let result = read_header(&mut files).await;
+        let result = read_batch(&mut files).await;
         if !generation_is_current(generation) || task_sequence.get() != sequence {
             // A newer sequence or mount owns the shared slot and its task.
             return;
         }
-        let next_state = match result {
-            Ok((bytes_read, header)) => DropReadState::Complete { bytes_read, header },
-            Err(_) => DropReadState::Failed,
-        };
-        state.borrow_mut().drop_read_state = next_state;
+        if let Ok((batch, header)) = result {
+            let bytes_read = batch.total_bytes();
+            let files_read = batch.file_count();
+            let mut state = state.borrow_mut();
+            state.drop_batch = Some(batch);
+            state.drop_read_state = DropReadState::Complete {
+                bytes_read,
+                files_read,
+                header,
+            };
+        } else {
+            let mut state = state.borrow_mut();
+            state.drop_batch = None;
+            state.drop_read_state = DropReadState::Failed;
+        }
         if let Err(error) = view::render(&document, &state.borrow()) {
             view::set_status_error(&document, &status, "File bytes", &error.to_string());
         }
@@ -193,22 +209,69 @@ fn read_first_header(context: DropReadContext, mut files: DropFiles, sequence: u
     *task_slot.borrow_mut() = Some(task);
 }
 
-async fn read_header(files: &mut DropFiles) -> io::Result<(usize, DicomHeader)> {
-    let file = files.files_mut().first_mut().ok_or_else(|| {
+async fn read_batch(files: &mut DropFiles) -> io::Result<(FileDropBatch, DicomHeader)> {
+    let mut payloads = Vec::with_capacity(files.files().len());
+    let mut total_bytes = 0_u64;
+    let mut first_header = DicomHeader::TooShort;
+    for (index, file) in files.files_mut().iter_mut().enumerate() {
+        let size_bytes = file.size_bytes();
+        let expected = check_payload_size(size_bytes, total_bytes).map_err(payload_error)?;
+        let bytes = read_file(file, expected).await?;
+        if index == 0 {
+            first_header = classify_dicom_header(&bytes);
+        }
+        total_bytes = total_bytes
+            .checked_add(size_bytes)
+            .ok_or_else(|| payload_error(PayloadSizeError::BatchTooLarge))?;
+        payloads.push(FileDropPayload::from_parts(
+            file.name().to_owned(),
+            file.media_type().to_owned(),
+            bytes.into_boxed_slice(),
+        ));
+    }
+    Ok((FileDropBatch::from_payloads(payloads), first_header))
+}
+
+async fn read_file(file: &mut DroppedFileAccess, expected: usize) -> io::Result<Vec<u8>> {
+    let mut bytes = Vec::new();
+    bytes
+        .try_reserve_exact(expected)
+        .map_err(|_| io::Error::other("browser file payload allocation failed"))?;
+    let mut chunk = vec![0_u8; READ_CHUNK_BYTES].into_boxed_slice();
+    while bytes.len() < expected {
+        let request = (expected - bytes.len()).min(chunk.len());
+        let count = file.read(&mut chunk[..request]).await?;
+        if count == 0 {
+            return Err(io::Error::new(
+                io::ErrorKind::UnexpectedEof,
+                "browser file ended before its declared size",
+            ));
+        }
+        if count > request {
+            return Err(io::Error::new(
+                io::ErrorKind::InvalidData,
+                "browser file reader returned more bytes than requested",
+            ));
+        }
+        bytes.extend_from_slice(&chunk[..count]);
+    }
+    let expected_position = u64::try_from(expected).map_err(|_| {
         io::Error::new(
             io::ErrorKind::InvalidInput,
-            "browser drop contains no readable file",
+            "browser file payload size cannot be represented",
         )
     })?;
-    let mut prefix = [0_u8; 132];
-    let bytes_read = file.read(&mut prefix).await?;
-    let prefix = prefix.get(..bytes_read).ok_or_else(|| {
-        io::Error::new(
-            io::ErrorKind::InvalidInput,
-            "browser file reader returned an invalid byte count",
-        )
-    })?;
-    Ok((bytes_read, classify_dicom_header(prefix)))
+    if file.position() != expected_position {
+        return Err(io::Error::new(
+            io::ErrorKind::InvalidData,
+            "browser file reader position disagrees with its declared size",
+        ));
+    }
+    Ok(bytes)
+}
+
+fn payload_error(error: PayloadSizeError) -> io::Error {
+    io::Error::new(io::ErrorKind::InvalidInput, error.to_string())
 }
 
 fn next_sequence(sequence: &Cell<u64>) -> Option<u64> {
@@ -251,6 +314,7 @@ fn update_rejection(
     let mut current = state.borrow_mut();
     current.drop_state = DropState::Rejected(error);
     current.drop_read_state = DropReadState::Failed;
+    current.drop_batch = None;
     drop(current);
     if let Err(render_error) = view::render(document, &state.borrow()) {
         view::set_status_error(document, status, "File drop", &render_error.to_string());

@@ -5,6 +5,10 @@
 
 pub mod theme;
 
+mod file_batch;
+
+pub use file_batch::{FileDropBatch, FileDropPayload};
+
 #[cfg(any(target_arch = "wasm32", test))]
 mod epoch;
 
@@ -31,5 +35,17 @@ mod browser;
 
 #[cfg(target_arch = "wasm32")]
 pub use browser::{metis_start, metis_stop};
+
+/// Takes the latest completed browser file batch, if one is waiting.
+///
+/// The browser host keeps one bounded handoff slot so a decoder can poll from
+/// its own application loop without registering an unbounded callback. Taking
+/// the value transfers ownership of the bytes to the caller. A later drop
+/// replaces an unconsumed batch, and [`metis_stop`] drops any remaining batch.
+#[cfg(target_arch = "wasm32")]
+#[must_use]
+pub fn take_file_drop() -> Option<FileDropBatch> {
+    browser::take_file_drop()
+}
 
 pub use theme::Theme;
