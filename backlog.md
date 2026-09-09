@@ -334,6 +334,13 @@ an owner. “Unsupported” cannot replace delivery of a required mobile/native 
 - Outcome: `metis-web` retains bounded metadata and named-byte ownership without DICOM candidate or Part 10 classification; RITK remains the scanner, decoder, geometry, and visual-workflow owner.
 - Evidence: `49d2c98` plus `00ed7b9`; 31/31 native tests, WASM build, and full `python scripts/verify.py` gate passed before merge; [RITK DICOM workflow](../../ritk/docs/manual/dicom-workflow.md) remains authoritative.
 
+<a id="METIS-DICOM-003"></a>
+## METIS-DICOM-003 — Remove format-specific browser presentation [patch]
+- Status: in-progress; priority: P1; owner: Metis browser presentation; integrator: root; last-update: 2026-09-09; branch: `docs/metis-format-neutral-drop-003`; dependencies: METIS-DICOM-002; risk: ownership drift
+- Scope: rename the browser sample, package README and test fixtures to describe bounded file handoff; retain DICOM only in RITK integration and ownership documentation.
+- Acceptance: no DICOM-specific label, fixture or classifier remains in `metis-web` or the browser sample; static browser checks, native tests, WASM checks and the full gate pass; the manual states that RITK consumes format-specific bytes.
+- Demonstration: [browser file-drop evidence](docs/VERIFICATION.md#browser-file-drop-evidence--2026-09-08) and the [RITK DICOM workflow](../../ritk/docs/manual/dicom-workflow.md).
+
 <a id="METIS-DISTRIBUTION-001"></a>
 ## METIS-DISTRIBUTION-001 — Executables and Windows MSI [arch] [minor]
 - Status: done; delivery: `feat(distribution): Build executables and MSI`; decision: [ADR 0005](docs/adr/0005-application-distribution.md).
