@@ -39,10 +39,11 @@ extension boundary. This renderer's bounded
 markup subset is
 not the intended limit of web support. Windows now exposes a bounded WebView2
 consumer through `metis_platform::native::WebViewSurface`; the `metis-app`
-demonstration does not yet compose that host or provide an installed-runtime
-capture. Metis does not yet provide Tauri feature parity, a system WebView host
-on all targets, an OS privilege sandbox, durable audit storage or regulatory
-certification.
+demonstration composes that host through `--metis-webview`. The provider and
+adapter installed-runtime navigation/bridge smoke passes, while a committed
+visible application capture remains open. Metis does not yet provide Tauri
+feature parity, a system WebView host on all targets, an OS privilege sandbox,
+durable audit storage or regulatory certification.
 The infusion arithmetic is a synthetic engineering example; its configurable
 limits are not treatment guidance.
 
