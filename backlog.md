@@ -28,10 +28,8 @@ an owner. “Unsupported” cannot replace delivery of a required mobile/native 
 
 <a id="METIS-GAPS-002"></a>
 ## METIS-GAPS-002 — Synchronize the framework matrix [patch]
-- Status: in-progress; priority: P1; owner: Metis documentation; integrator: root; branch: `docs/metis-framework-matrix-002`; dependency: METIS-DICOM-002; risk: stale ownership claims.
-- Scope: update current framework-matrix, input-ADR, and repository-pointer claims after the format-neutral DICOM handoff; preserve historical evidence as historical records; make visual fixture provenance stable across configured text line endings.
-- Acceptance: current documentation contains no Metis DICOM classifier claim, current pointers identify the merged Metis revision, ADR index and plan checks pass, source and lock digests normalize the repository's LF text contract, and the full documentation gate passes.
-- lease: root scripts/visual.py scripts/verify.py scripts/tests/test_visual.py docs/manual/images/captures.json 2026-09-09T00:00:00-04:00
+- Status: done; priority: P1; owner: Metis documentation; delivery: [PR 34](https://github.com/ryancinsight/metis/pull/34), merge `056e252`; dependency: METIS-DICOM-002.
+- Outcome: Current framework and input records assign DICOM decisions to RITK after the format-neutral handoff; LF-normalized provenance passes the full gate at `a397b18`.
 
 <a id="METIS-ICED-001"></a>
 ## METIS-ICED-001 — Iced comparator and backend decision [arch] [patch]
