@@ -76,8 +76,11 @@ reads each file to its declared end, limits one file to 64 MiB and the batch to
 `complete` or `failed` in semantic status attributes. A completed
 `FileDropBatch` is available through the WASM-only `take_file_drop` handoff and
 replaces an unconsumed batch. The provider bounds each read to 1 MiB, and
-neither a browser name nor a filesystem path crosses into the consumer. RITK
-remains the owner of dataset parsing, pixel decoding and study selection.
+neither a browser name nor a filesystem path crosses into the consumer. A
+consumer that needs ownership calls `FileDropBatch::into_files` followed by
+`FileDropPayload::into_parts`; these moves preserve the byte allocations and
+allow a decoder to borrow or retain them without a second file-content copy.
+RITK remains the owner of dataset parsing, pixel decoding and study selection.
 
 The workbench also uses a semantic textarea for text and composition. Metis
 owns a bounded `TextState` that receives Moirai's UTF-16 selection snapshots,
@@ -145,10 +148,11 @@ browser `isTrusted` flag.
 
 The file-drop increment consumes `DropFiles` from Moirai revision
 `5c8a9e8be32ad6beac14ed263c2f11c3663b87cb`. The native `metis-web` suite
-covers the DICOM header classifier, payload budget edges and batch value
-ownership; strict native Clippy, the WASM check and WASM Clippy compile the
-provider-backed full-read path. CUA cannot attach a trusted local file, so no
-live browser trace claims a byte read or DICOM decode.
+covers the DICOM header classifier, payload budget edges, batch value ownership
+and ownership-consuming allocation preservation; strict native Clippy, the WASM
+check and WASM Clippy compile the provider-backed full-read path. CUA cannot
+attach a trusted local file, so no live browser trace claims a byte read or
+DICOM decode.
 
 ## Residuals
 

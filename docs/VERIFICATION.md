@@ -668,8 +668,9 @@ including the generated browser visual run.
 
 The native policy tests cover empty names, NUL and oversized metadata, empty
 and 65-file drops, DICOM media/extension classification, UTF-8-safe display
-truncation, the Part 10 marker, payload budget edges, batch ownership and
-bounded read-status transitions. The
+truncation, the Part 10 marker, payload budget edges, batch ownership,
+ownership-consuming allocation preservation and bounded read-status
+transitions. The
 generated HTML5/CSS page renders the **DICOM file drop** card, both semantic
 status regions and the focusable **DICOM file drop zone**; the visual capture
 records the idle state. CUA does not expose `isTrusted`, cannot attach a local
@@ -677,6 +678,12 @@ operating-system file to a synthetic browser event and cannot establish the
 browser engine version, so this evidence does not claim a trusted live byte
 read or DICOM opening. The handoff is ready for the RITK adapter; full dataset
 parsing and study decoding remain RITK responsibilities.
+
+The ownership increment adds `FileDropBatch::into_files` and
+`FileDropPayload::into_parts`. The test records the collection and byte-buffer
+addresses before and after the moves, then asserts the names, media type and
+bytes; this is evidence of move-only handoff, not evidence of a decoded DICOM
+dataset.
 
 ## Browser text and composition evidence — 2026-09-08
 

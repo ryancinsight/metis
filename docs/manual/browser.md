@@ -327,10 +327,13 @@ consumer reports `reading` and then `complete` or `failed` through
 `drop-byte-status` and `data-byte-state`, and classifies the first payload's
 DICOM Part 10 marker at byte offsets 128–131. A completed batch is available to
 a trusted WASM consumer through `metis_web::take_file_drop`, which transfers
-ownership of the named byte slices. A later drop replaces an unconsumed batch,
-and stop/remount drops it. No browser name is turned into a filesystem path.
-RITK remains responsible for parsing the dataset, decoding pixels and opening a
-study; this slice closes the bounded byte handoff, not the RITK decoder.
+ownership of the batch. Call `FileDropBatch::into_files` and
+`FileDropPayload::into_parts` when the consumer must retain the entries; moving
+the tuple preserves each byte allocation. A later drop replaces an unconsumed
+batch, and stop/remount drops it. No browser name is turned into a filesystem
+path. RITK remains responsible for parsing the dataset, decoding pixels and
+opening a study; this slice closes the bounded zero-copy byte handoff, not the
+RITK decoder.
 
 The provider caps one drop at 64 files, 4096 UTF-8 bytes per name and 256 bytes
 per media type. The CUA browser surface cannot synthesize a trusted
@@ -348,7 +351,9 @@ with its ready state and focus outline. The browser engine version was
 unavailable, and no trusted local file was attached, so the trace does not
 claim a successful live byte read or DICOM decode. The provider-backed full
 batch path is established by the native policy suite and the strict WASM build;
-the RITK consumer trace remains open.
+the RITK consumer trace remains open. The ownership-consuming API is covered by
+a pointer-identity test, so moving a completed batch does not copy its file
+contents.
 
 The **Text and composition** card exercises the browser's native editing
 surface while keeping application state in Rust. Focus **Clinical note**, type

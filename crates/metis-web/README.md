@@ -50,8 +50,12 @@ The first payload is classified at the DICOM Part 10 marker, and the status
 reports the complete file and byte counts. A trusted application polls the
 WASM-only `take_file_drop` handoff, which transfers ownership and leaves one
 bounded slot for a later drop. No browser name becomes a filesystem path, and
-stopping or remounting drops unconsumed bytes. RITK retains full DICOM parsing
-and study decoding; its adapter consumes the named byte slices from this batch.
+stopping or remounting drops unconsumed bytes. Consumers that need to retain the
+payload call [`FileDropBatch::into_files`] and then
+[`FileDropPayload::into_parts`]; both moves preserve the existing byte
+allocations. RITK retains full DICOM parsing and study decoding; its adapter can
+borrow those bytes for a synchronous load or retain the buffers for a decode
+job without copying the file contents.
 
 The **Text and composition** surface consumes Moirai's bounded text snapshots.
 The textarea keeps Unicode values in Rust-owned state, preserves browser

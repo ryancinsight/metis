@@ -47,6 +47,21 @@ impl FileDropPayload {
     pub fn size_bytes(&self) -> usize {
         self.bytes.len()
     }
+
+    /// Transfers the display metadata and byte buffer to the consumer.
+    ///
+    /// Moving this tuple does not copy the byte allocation. A decoder can use
+    /// the returned name and media type while borrowing the returned bytes,
+    /// or retain the buffer for an owned decode job.
+    #[must_use]
+    pub fn into_parts(self) -> (String, String, Box<[u8]>) {
+        let Self {
+            name,
+            media_type,
+            bytes,
+        } = self;
+        (name, media_type, bytes)
+    }
 }
 
 /// A bounded, named byte batch ready for a trusted application decoder.
@@ -93,6 +108,17 @@ impl FileDropBatch {
     pub fn file_count(&self) -> usize {
         self.files.len()
     }
+
+    /// Transfers the complete payload collection to the consumer.
+    ///
+    /// The collection and each byte buffer move without copying. This is the
+    /// ownership boundary for a decoder such as RITK: consume the batch, then
+    /// borrow each payload's bytes for the synchronous load or move the
+    /// buffers into a longer-lived decode task.
+    #[must_use]
+    pub fn into_files(self) -> Box<[FileDropPayload]> {
+        self.files
+    }
 }
 
 #[cfg(test)]
@@ -115,5 +141,29 @@ mod tests {
         assert_eq!(batch.files()[0].media_type(), "application/dicom");
         assert_eq!(batch.files()[0].bytes(), [1, 2, 3]);
         assert_eq!(batch.files()[1].bytes(), [4, 5]);
+    }
+
+    #[test]
+    fn consuming_batch_preserves_allocations_and_parts() {
+        let batch = FileDropBatch::from_payloads(vec![FileDropPayload::from_parts(
+            "study.dcm".to_owned(),
+            "application/dicom".to_owned(),
+            Box::from([7, 8, 9]),
+        )]);
+        let files_address = batch.files().as_ptr();
+        let payload_address = batch.files()[0].bytes().as_ptr();
+
+        let files = batch.into_files();
+        assert_eq!(files.as_ptr(), files_address);
+        let payload = files
+            .into_vec()
+            .pop()
+            .expect("invariant: test batch contains one payload");
+        let (name, media_type, bytes) = payload.into_parts();
+
+        assert_eq!(name, "study.dcm");
+        assert_eq!(media_type, "application/dicom");
+        assert_eq!(bytes.as_ptr(), payload_address);
+        assert_eq!(&*bytes, [7, 8, 9]);
     }
 }

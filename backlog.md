@@ -171,7 +171,6 @@ an owner. “Unsupported” cannot replace delivery of a required mobile/native 
 <a id="METIS-INPUT-001"></a>
 ## METIS-INPUT-001 — Interactive controls and shared UI state [minor]
 - Status: in-progress; priority: P1; owner: Metis UI/host; integrator: root; last-update: 2026-09-07; branch: `feat/process-foundation`; dependencies: METIS-BROWSER-001; risk: input/state mismatch; ADR: 0014 (claimed)
-- Lease: root — `crates/metis-web/src/browser/{gesture_policy.rs,gesture.rs,pointer.rs}`, input evidence and manual docs; 2026-09-08T13:00:00-04:00
 - Scope: buttons, checks, radios, sliders, editable fields, select/menu/dialog controls; focus, pointer capture, drag/drop, wheel/touch/modifiers, shortcuts, reusable state/actions and subscription teardown.
 - Acceptance: keyboard and pointer/touch journeys update identical model values; disabled controls reject action; focus survives rerender and subscriptions detach on close; real hit targets agree with rendered geometry.
 - Demonstration: [V02](docs/VERIFICATION.md#V02), settings workbench; repeat on each native host as it becomes supported.
@@ -195,6 +194,8 @@ an owner. “Unsupported” cannot replace delivery of a required mobile/native 
 - Completed increment (prior): `feat(web): Read bounded DICOM headers` advances the consumer to Moirai `DropFiles` at merged revision `5c8a9e8be32ad6beac14ed263c2f11c3663b87cb`; the first selected browser file is read through the provider-owned handle into a fixed 132-byte buffer, the Part 10 marker is classified and `reading`/`complete`/`failed` states render in the workbench.
 - Completed increment (2026-09-08): commit `eee0cd14bc8be102526b045ff46b4445a0314509` makes the browser host read the accepted files to their declared ends through bounded asynchronous chunks, enforces a 64 MiB per-file and 256 MiB batch budget, and exposes the named bytes as one `metis_web::take_file_drop` handoff slot. The first payload retains the Part 10 classification; stop, remount and a later drop release unconsumed bytes.
 - Live evidence: [browser file-drop evidence](docs/VERIFICATION.md#browser-file-drop-evidence--2026-09-08) records the native policy suite, batch ownership tests, strict WASM checks and rendered drop-zone state; CUA cannot provide trusted OS file-drop evidence or a live byte-read trace.
+- Completed increment (2026-09-08): `feat(web): Transfer dropped file ownership` adds `FileDropBatch::into_files` and `FileDropPayload::into_parts`; pointer-identity tests prove the RITK handoff moves the collection and byte allocations without a second file-content copy.
+- Evidence: [browser file-drop evidence](docs/VERIFICATION.md#browser-file-drop-evidence--2026-09-08) records the ownership-consuming test and its limits; no DICOM decoder claim is made.
 - Residuals: trusted physical file-drop evidence, full RITK DICOM opening/decoding, installed IME journeys, accessibility technology, cross-engine parity, post-drop allocation measurement and native-host visual/assistive evidence remain open; re-open this item when those dependencies land.
 
 <a id="METIS-TEXT-001"></a>
