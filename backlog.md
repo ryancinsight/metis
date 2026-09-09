@@ -127,12 +127,9 @@ an owner. “Unsupported” cannot replace delivery of a required mobile/native 
 
 <a id="METIS-PYTHON-002"></a>
 ## METIS-PYTHON-002 — Rust-owned Python presentation surface [minor]
-- Status: in-progress; priority: P1; owner: Metis Python/presentation; integrator: root; last-update: 2026-09-09; branch: `feat/process-foundation`; dependencies: METIS-PYTHON-001, METIS-ASSETS-001; risk: binding contract and bounded pixel storage
-- Lease: root `crates/metis-python/`, `crates/metis-ui-lang/src/image.rs`, `python/`, `docs/adr/`, `docs/manual/python.md`, `crates/metis-python/tests/`, `backlog.md`, `checklist.md` (2026-09-09)
-- Scope: expose validated RGBA images, rectangles and a Rust-owned bounded software canvas through the existing abi3 wheel; Python composes values while Rust owns validation, clipping, alpha and storage limits. Native window/event lifecycle and DICOM decoding remain provider-owned follow-ons.
-- Acceptance: built-wheel tests prove exact pixel output, clipping, alpha composition, invalid geometry and bounded allocation errors; typed stubs, manual workflow and ADR describe the contract and its limits; no Python-side rendering or domain logic.
-- Demonstration: the existing inspected raster fixture is rendered through the Rust canvas and linked from the Python manual; `python scripts/python_binding.py` exercises the extracted wheel.
-- Decision: [ADR 0020](docs/adr/0020-python-presentation.md).
+- Status: done; priority: P1; delivery: `1d77de9`, `3bf7697`; owner/integrator: Metis Python/presentation/root.
+- Outcome: The abi3 wheel exposes Rust-owned `RasterImage`, `Rect` and bounded `Canvas` composition with exact RGBA, clipping, alpha and invalid-input tests; the manual and inspected fixture demonstrate the workflow.
+- Decision: [ADR 0020](docs/adr/0020-python-presentation.md); native window/event lifecycle and DICOM decoding remain provider-owned follow-ons.
 
 <a id="METIS-MEMORY-001"></a>
 ## METIS-MEMORY-001 — Provider allocation count [patch]
