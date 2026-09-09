@@ -636,6 +636,10 @@ cargo check --locked -p metis-web --target wasm32-unknown-unknown — passed
 cargo clippy --locked -p metis-web --target wasm32-unknown-unknown -- -D warnings — passed
 ```
 
+The full repository gate passed against Metis commit
+`eee0cd14bc8be102526b045ff46b4445a0314509`; every configured stage passed,
+including the generated browser visual run.
+
 The native policy tests cover empty names, NUL and oversized metadata, empty
 and 65-file drops, DICOM media/extension classification, UTF-8-safe display
 truncation, the Part 10 marker, payload budget edges, batch ownership and
