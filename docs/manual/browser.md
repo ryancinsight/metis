@@ -41,6 +41,70 @@ Open `http://127.0.0.1:8080/` in a browser for the disconnected local-control
 workflow. A file URL is not accepted because module and WASM loading require an
 HTTP origin.
 
+## Run the cross-engine conformance trace
+
+The repository includes a dependency-free W3C WebDriver runner. It uses the
+same Rust/WASM page and scenario for Chromium, Firefox and WebKit, then writes
+one schema-1 JSON trace at `output/browser/runtime/<engine>.json` and PNG
+screenshots under `output/browser/runtime/screenshots/<engine>/`. The browser
+and its WebDriver endpoint are host or CI prerequisites; the runner does not
+install a driver or add a JavaScript test runtime. Configure one endpoint per
+engine, for example:
+
+```powershell
+$env:METIS_WEBDRIVER_CHROMIUM_URL = "http://127.0.0.1:9515"
+$env:METIS_WEBDRIVER_FIREFOX_URL = "http://127.0.0.1:4444"
+$env:METIS_WEBDRIVER_WEBKIT_URL = "http://127.0.0.1:4444"
+```
+
+Run the disconnected format-neutral workflow against the generated assets:
+
+```text
+python scripts/browser_runtime.py --engine chromium --serve-dir output/browser --bridge disconnected
+python scripts/browser_runtime.py --engine firefox --serve-dir output/browser --bridge disconnected
+python scripts/browser_runtime.py --engine webkit --serve-dir output/browser --bridge disconnected
+```
+
+Each command fails if its endpoint is missing, the page does not mount the
+Rust-owned form, either of the two input changes is not reflected in the DOM,
+or the stop/remount generation retains application controls or an old result.
+Waits run inside the browser with a `MutationObserver` or one bounded timer;
+the host does not sleep or poll. The trace includes the negotiated browser
+capabilities, exact actions and observed values, semantic snapshots, screenshot
+hashes/dimensions, the three explicitly unsupported native operations and
+cleanup evidence. Review the screenshots and the semantic states together.
+
+For the authorized service path, keep the static server and service running,
+then pass the host-provided session tuple in the URL. The runner validates the
+`ws`/`wss` endpoint, decimal process identifier and 32-hex-digit principal
+before navigation:
+
+```text
+python scripts/browser_runtime.py --engine chromium --driver-url http://127.0.0.1:9515 --url "http://127.0.0.1:8080/?endpoint=ws%3A%2F%2F127.0.0.1%3A8765%2Fsocket&process=42&principal=66666666666666666666666666666666" --bridge authorized
+```
+
+The query separators in a shell URL must remain `&`; the encoded endpoint is
+shown only so the WebSocket value stays one query field. The authorized trace
+waits for **Authorized backend session ready**, submits the real service
+request, and asserts `Volume rate: 0.900000 mL/hr`. Add `--cancel` while the
+service is running with `--response-delay-ms 4000` to stop and remount during a
+pending response; the delayed response must not change the new generation:
+
+```text
+python scripts/browser_runtime.py --engine chromium --driver-url http://127.0.0.1:9515 --url "http://127.0.0.1:8080/?endpoint=ws%3A%2F%2F127.0.0.1%3A8765%2Fsocket&process=42&principal=66666666666666666666666666666666" --bridge authorized --cancel --cancel-grace-ms 4500
+```
+
+The browser runner does not open native file dialogs, launch native processes,
+grant operating-system permissions or parse DICOM. RITK owns DICOM opening,
+series selection, decoding, geometry and viewer state; see the
+[RITK DICOM workflow manual](https://github.com/ryancinsight/ritk/blob/main/docs/manual/dicom-workflow.md). The
+runner's cleanup statement means that the stopped DOM has zero mounted
+controls, the remounted form reports `aria-busy=false`, and no stale completion
+appears after remount. Provider-private
+listener registries, OS handles, installed IMEs and post-drop allocations
+require their owning Moirai/RITK/native evidence and are not inferred from a
+browser screenshot.
+
 ## Connect the real browser service
 
 The service executable is the same `metis-app` image used by the native
