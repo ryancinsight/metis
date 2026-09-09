@@ -15,7 +15,7 @@ impl ResultExplorer {
     ///
     /// # Errors
     /// Rejects control characters or a filter above
-    /// [`MAX_RESULT_FILTER_BYTES`].
+    /// [`crate::MAX_RESULT_FILTER_BYTES`].
     pub fn set_filter(&mut self, value: &str) -> Result<()> {
         validate_filter(value)?;
         self.filter = value.into();

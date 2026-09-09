@@ -52,7 +52,7 @@ impl GroupId {
     }
 }
 
-/// One validated calculation result displayed by [`ResultExplorer`].
+/// One validated calculation result displayed by [`crate::ResultExplorer`].
 pub struct ResultRow {
     id: ResultId,
     patient_id: Box<str>,
