@@ -18,6 +18,8 @@ from typing import Any, Dict, Mapping, Optional, Sequence
 
 ROOT = pathlib.Path(__file__).resolve().parents[1]
 MAX_SCREENSHOT_BYTES = 8 * 1024 * 1024
+# Base64 expands the decoded budget by four-thirds; 256 bytes cover the JSON envelope.
+MAX_SCREENSHOT_RESPONSE_BYTES = ((MAX_SCREENSHOT_BYTES + 2) // 3) * 4 + 256
 MAX_TRACE_BYTES = 512 * 1024
 MAX_WAIT_MILLISECONDS = 120_000
 MAX_URL_BYTES = 8 * 1024
@@ -94,7 +96,16 @@ class WebDriverClient:
         self.session_id: Optional[str] = None
         self.capabilities: Dict[str, Any] = {}
 
-    def _request(self, method: str, path: str, payload: Optional[Mapping[str, Any]] = None) -> Any:
+    def _request(
+        self,
+        method: str,
+        path: str,
+        payload: Optional[Mapping[str, Any]] = None,
+        *,
+        response_limit: int = MAX_TRACE_BYTES,
+    ) -> Any:
+        if not 1 <= response_limit <= MAX_SCREENSHOT_RESPONSE_BYTES:
+            raise BrowserRuntimeError("WebDriver response limit is outside the configured bound")
         body = json.dumps(payload, separators=(",", ":")).encode("utf-8") if payload is not None else None
         request = urllib.request.Request(
             f"{self._endpoint}/{path.lstrip('/')}",
@@ -104,15 +115,15 @@ class WebDriverClient:
         )
         try:
             with urllib.request.urlopen(request, timeout=self._timeout) as response:
-                raw = response.read(MAX_TRACE_BYTES + 1)
+                raw = response.read(response_limit + 1)
         except urllib.error.HTTPError as error:
             raw = error.read(MAX_TRACE_BYTES + 1)
             detail = _bounded_text(raw.decode("utf-8", errors="replace"), "driver error")
             raise BrowserRuntimeError(f"WebDriver {method} {path} returned HTTP {error.code}: {detail}") from error
         except (urllib.error.URLError, TimeoutError) as error:
             raise BrowserRuntimeError(f"WebDriver {method} {path} failed: {error}") from error
-        if len(raw) > MAX_TRACE_BYTES:
-            raise BrowserRuntimeError(f"WebDriver {method} {path} response exceeds {MAX_TRACE_BYTES} bytes")
+        if len(raw) > response_limit:
+            raise BrowserRuntimeError(f"WebDriver {method} {path} response exceeds {response_limit} bytes")
         try:
             document = json.loads(raw.decode("utf-8"))
         except (UnicodeDecodeError, json.JSONDecodeError) as error:
@@ -220,7 +231,11 @@ class WebDriverClient:
 
     def screenshot(self) -> bytes:
         """Decode one PNG screenshot and enforce its byte budget."""
-        value = self._request("GET", self._session_path("screenshot"))
+        value = self._request(
+            "GET",
+            self._session_path("screenshot"),
+            response_limit=MAX_SCREENSHOT_RESPONSE_BYTES,
+        )
         if not isinstance(value, str):
             raise BrowserRuntimeError("WebDriver screenshot response is not base64 text")
         try:

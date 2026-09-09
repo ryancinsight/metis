@@ -2,13 +2,16 @@
 from __future__ import annotations
 
 import base64
+import json
 import pathlib
 import sys
 import tempfile
 import unittest
 import zlib
+from unittest import mock
 
 sys.path.insert(0, str(pathlib.Path(__file__).resolve().parents[1]))
+import browser_protocol
 from browser_runtime import (
     BrowserEngine,
     BrowserRuntimeError,
@@ -19,6 +22,7 @@ from browser_runtime import (
     _validate_bridge_url,
     run_scenario,
 )
+from browser_protocol import MAX_SCREENSHOT_BYTES, MAX_SCREENSHOT_RESPONSE_BYTES, MAX_TRACE_BYTES
 
 
 def _png() -> bytes:
@@ -27,6 +31,32 @@ def _png() -> bytes:
     compressed = zlib.compress(raw)
     chunk = lambda name, data: len(data).to_bytes(4, "big") + name + data + zlib.crc32(name + data).to_bytes(4, "big")
     return b"\x89PNG\r\n\x1a\n" + chunk(b"IHDR", (1).to_bytes(4, "big") + (1).to_bytes(4, "big") + b"\x08\x06\x00\x00\x00") + chunk(b"IDAT", compressed) + chunk(b"IEND", b"")
+
+
+def _png_with_text(payload_bytes: int) -> bytes:
+    """Return a valid-dimension PNG with a bounded ancillary payload."""
+    image = _png()
+    data = b"Comment\x00" + b"x" * payload_bytes
+    chunk = len(data).to_bytes(4, "big") + b"tEXt" + data + zlib.crc32(b"tEXt" + data).to_bytes(4, "big")
+    return image[:-12] + chunk + image[-12:]
+
+
+class JsonResponse:
+    """Small context-manager response used to exercise the production transport."""
+
+    def __init__(self, payload: bytes) -> None:
+        self.payload = payload
+        self.read_limit = 0
+
+    def __enter__(self):
+        return self
+
+    def __exit__(self, exc_type, exc, traceback):
+        del exc_type, exc, traceback
+
+    def read(self, limit: int) -> bytes:
+        self.read_limit = limit
+        return self.payload[: limit]
 
 
 class FakeDriver:
@@ -64,9 +94,11 @@ class FakeDriver:
     def click(self, element_id: str) -> None:
         if element_id == "submit-calculation":
             self.pending = True
-            self.success = True
+            self.success = False
         elif element_id == "metis-stop":
             self.stopped = True
+            self.pending = False
+            self.success = False
         elif element_id == "metis-start":
             self.stopped = False
             self.success = False
@@ -74,13 +106,28 @@ class FakeDriver:
 
     def execute(self, script: str, arguments=()):
         if "result-metrics" in script and "return document" in script:
-            return "Volume rate: 0.900000 mL/hr"
+            return "Volume rate: 0.900000 mL/hr" if self.success else ""
         if "Object.fromEntries(ids.map" in script:
             return self.snapshot()
         return None
 
     def execute_async(self, script: str, arguments=()):
-        return {"ok": True}
+        if "MutationObserver" not in script:
+            return {"ok": True}
+        selector, expected, include, _timeout = arguments
+        if expected == "Backend result received" and self.pending and not self.stopped:
+            self.success = True
+            self.pending = False
+        snapshot = self.snapshot()
+        if selector == "#metis-app":
+            text = snapshot.get("app_text", "")
+        else:
+            element = snapshot["elements"].get(selector.removeprefix("#"))
+            if not isinstance(element, dict):
+                return {"ok": False}
+            text = element.get("text", "")
+        matched = expected in text if include else expected == text
+        return {"ok": matched}
 
     def screenshot(self) -> bytes:
         return _png()
@@ -88,15 +135,17 @@ class FakeDriver:
     def snapshot(self):
         if self.stopped:
             return {"app_text": "Metis browser host stopped.", "mounted_controls": 0, "elements": {}}
-        state = "Backend result received" if self.success else "Browser controls are active."
+        state = "Backend result received" if self.success else "Request in progress" if self.pending else "Browser controls are active."
+        metrics = "Volume rate: 0.900000 mL/hr" if self.success else ""
         return {
             "app_text": "Authorized clinical form boundary",
             "mounted_controls": 12,
             "elements": {
                 "metis-status": {"text": "Authorized backend session ready", "value": None, "disabled": False},
-                "metis-form": {"text": "", "value": None, "disabled": False, "busy": "false"},
+                "metis-form": {"text": "", "value": None, "disabled": False, "busy": "true" if self.pending else "false"},
                 "submit-calculation": {"text": "Submit", "value": None, "disabled": False},
                 "result-state": {"text": state, "value": None, "disabled": False},
+                "result-metrics": {"text": metrics, "value": None, "disabled": False},
                 "result-weight": {"text": f"{float(self.values['weight-kg']):.2f} kg", "value": None, "disabled": False},
                 "result-dose": {"text": f"{float(self.values['target-dose']):.3f} mcg/kg/min", "value": None, "disabled": False},
             },
@@ -104,6 +153,28 @@ class FakeDriver:
 
     def close(self) -> None:
         self.closed = True
+
+
+class NoInputDriver(FakeDriver):
+    """Driver mutant that ignores both input mutations."""
+
+    def clear(self, element_id: str) -> None:
+        del element_id
+
+    def send_keys(self, element_id: str, value: str) -> None:
+        del element_id, value
+
+
+class RetainingDriver(FakeDriver):
+    """Driver mutant that leaves controls mounted after the stop command."""
+
+    def snapshot(self):
+        snapshot = super().snapshot()
+        if self.stopped:
+            snapshot["mounted_controls"] = 12
+        else:
+            snapshot["elements"]["submit-calculation"]["disabled"] = True
+        return snapshot
 
 
 class BrowserRuntimeTests(unittest.TestCase):
@@ -144,6 +215,47 @@ class BrowserRuntimeTests(unittest.TestCase):
         self.assertEqual(document["schema"], 1)
         self.assertEqual(document["unsupported_native_operations"], ["native-file-dialog", "native-process-launch", "os-permission-grant"])
 
+    def test_cancel_trace_requires_pending_and_discards_delayed_result(self):
+        output = pathlib.Path(__file__).resolve().parents[2] / "output" / "browser" / "runtime-test"
+        output.mkdir(parents=True, exist_ok=True)
+        with tempfile.TemporaryDirectory(dir=output) as directory:
+            driver = FakeDriver()
+            trace = run_scenario(
+                driver,
+                BrowserEngine.CHROMIUM,
+                "http://127.0.0.1:8080/?endpoint=ws%3A%2F%2F127.0.0.1%3A8765%2Fsocket&process=42&principal=66666666666666666666666666666666",
+                "authorized",
+                "0" * 40,
+                pathlib.Path(directory),
+                5_000,
+                True,
+                4_000,
+            )
+        self.assertTrue(driver.closed)
+        self.assertIn({"action": "submit", "state": "pending"}, trace.actions)
+        self.assertIn({"action": "cancel-stop-remount", "stale_result": False}, trace.actions)
+        self.assertFalse(any(action.get("state") == "success" for action in trace.actions))
+        self.assertFalse(driver.pending)
+        self.assertFalse(driver.success)
+
+    def test_input_mutation_failure_is_observed(self):
+        output = pathlib.Path(__file__).resolve().parents[2] / "output" / "browser" / "runtime-test"
+        output.mkdir(parents=True, exist_ok=True)
+        with tempfile.TemporaryDirectory(dir=output) as directory:
+            driver = NoInputDriver()
+            with self.assertRaisesRegex(BrowserRuntimeError, "result-weight"):
+                run_scenario(driver, BrowserEngine.CHROMIUM, "http://127.0.0.1:8080/", "disconnected", "0" * 40, pathlib.Path(directory), 5_000, False, 4_000)
+        self.assertTrue(driver.closed)
+
+    def test_teardown_failure_is_observed(self):
+        output = pathlib.Path(__file__).resolve().parents[2] / "output" / "browser" / "runtime-test"
+        output.mkdir(parents=True, exist_ok=True)
+        with tempfile.TemporaryDirectory(dir=output) as directory:
+            driver = RetainingDriver()
+            with self.assertRaisesRegex(BrowserRuntimeError, "stopped DOM"):
+                run_scenario(driver, BrowserEngine.FIREFOX, "http://127.0.0.1:8080/", "disconnected", "0" * 40, pathlib.Path(directory), 5_000, False, 4_000)
+        self.assertTrue(driver.closed)
+
     def test_disconnected_trace_rejects_privileged_submit(self):
         output = pathlib.Path(__file__).resolve().parents[2] / "output" / "browser" / "runtime-test"
         output.mkdir(parents=True, exist_ok=True)
@@ -177,6 +289,32 @@ class BrowserRuntimeTests(unittest.TestCase):
         encoded = base64.b64encode(_png()).decode()
         self.assertTrue(encoded)
         self.assertEqual(base64.b64decode(encoded)[:8], b"\x89PNG\r\n\x1a\n")
+
+    def test_screenshot_transport_and_decoding_bounds_are_enforced(self):
+        image = _png_with_text(600 * 1024)
+        response = JsonResponse(json.dumps({"value": base64.b64encode(image).decode()}).encode())
+        client = browser_protocol.WebDriverClient("http://127.0.0.1:9515", 1)
+        client.session_id = "session"
+        with mock.patch.object(browser_protocol.urllib.request, "urlopen", return_value=response):
+            self.assertEqual(client.screenshot(), image)
+        self.assertGreater(response.read_limit, MAX_TRACE_BYTES)
+        self.assertEqual(response.read_limit, MAX_SCREENSHOT_RESPONSE_BYTES + 1)
+
+        for value in ("not-base64", base64.b64encode(b"not png").decode()):
+            malformed = JsonResponse(json.dumps({"value": value}).encode())
+            client = browser_protocol.WebDriverClient("http://127.0.0.1:9515", 1)
+            client.session_id = "session"
+            with mock.patch.object(browser_protocol.urllib.request, "urlopen", return_value=malformed):
+                with self.assertRaises(BrowserRuntimeError):
+                    client.screenshot()
+
+        oversized = _png_with_text(MAX_SCREENSHOT_BYTES)
+        oversized_response = JsonResponse(json.dumps({"value": base64.b64encode(oversized).decode()}).encode())
+        client = browser_protocol.WebDriverClient("http://127.0.0.1:9515", 1)
+        client.session_id = "session"
+        with mock.patch.object(browser_protocol.urllib.request, "urlopen", return_value=oversized_response):
+            with self.assertRaises(BrowserRuntimeError):
+                client.screenshot()
 
     def test_driver_escapes_opaque_element_identifiers(self):
         client = WebDriverClient("http://127.0.0.1:9515", 1)

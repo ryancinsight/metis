@@ -210,7 +210,7 @@ def _screenshot(client: WebDriverClient, trace: Trace, directory: pathlib.Path, 
     path.parent.mkdir(parents=True, exist_ok=True)
     path.write_bytes(content)
     width, height = struct.unpack(">II", content[16:24])
-    trace.screenshots.append({"label": label, "path": str(path.relative_to(ROOT)), "sha256": hashlib.sha256(content).hexdigest(), "width": width, "height": height, "bytes": len(content)})
+    trace.screenshots.append({"label": label, "path": path.relative_to(ROOT).as_posix(), "sha256": hashlib.sha256(content).hexdigest(), "width": width, "height": height, "bytes": len(content)})
 
 
 def _dispatch_change(client: WebDriverClient, element_id: str) -> None:
@@ -266,9 +266,9 @@ def run_scenario(
         if bridge == "authorized":
             submit = client.find("#submit-calculation")
             client.click(submit)
-            _wait_for_text(client, "result-state", "Request in progress", include=True, timeout_ms=timeout_ms)
-            trace.actions.append({"action": "submit", "state": "pending"})
             if cancel:
+                _wait_for_text(client, "result-state", "Request in progress", include=True, timeout_ms=timeout_ms)
+                trace.actions.append({"action": "submit", "state": "pending"})
                 client.click(client.find("#metis-stop"))
                 _wait_for_text(client, "metis-app", "Metis browser host stopped.", include=True, timeout_ms=timeout_ms)
                 stopped_snapshot = _snapshot(client, trace, "stopped-after-cancel")

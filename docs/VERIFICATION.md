@@ -1198,12 +1198,13 @@ native operations. Browser-side `MutationObserver` and timer callbacks provide
 the waits; no host sleep or polling loop is part of the runner. Output and
 screenshots are confined to `output`.
 
-The deterministic Python suite passes 74/74 tests and `python -m py_compile`
+The deterministic Python suite passes 78/78 tests and `python -m py_compile`
 passes for the runner and its tests. The protocol-shaped driver tests verify
 the exact displayed values (`80.00 kg`, `0.750 mcg/kg/min` and
 `Volume rate: 0.900000 mL/hr`), disconnected privileged-submit rejection,
-stop/remount stale-result rejection, screenshot bounds and the unsupported
-operation list. These tests do not stand in for a browser engine.
+stop/remount stale-result rejection, cancellation, input and teardown failure
+observations, screenshot transport/decoded bounds and the unsupported operation
+list. These tests do not stand in for a browser engine.
 
 No Chromium, Firefox or WebKit WebDriver endpoint is installed or configured
 in the current Windows environment, so no real cross-engine trace or screenshot
