@@ -79,11 +79,11 @@ pub(crate) const BROWSER_MARKUP: &str = r#"
   </div>
 </section>
 <section class="metis-drop" aria-labelledby="drop-heading">
-  <h2 id="drop-heading">DICOM file drop</h2>
+  <h2 id="drop-heading">File drop</h2>
   <p id="drop-status" role="status">Drop status: ready; no files captured</p>
   <p id="drop-byte-status" role="status" aria-live="polite">Byte access: waiting for a selected file</p>
-  <div id="drop-zone" role="group" tabindex="0" aria-describedby="drop-status drop-byte-status" aria-label="DICOM file drop zone" data-drop-state="idle" data-drop-count="0" data-byte-state="idle">
-    <p>Drop DICOM files here to inspect bounded metadata and hand the selected bytes to a trusted decoder.</p>
+  <div id="drop-zone" role="group" tabindex="0" aria-describedby="drop-status drop-byte-status" aria-label="File drop zone" data-drop-state="idle" data-drop-count="0" data-byte-state="idle">
+    <p>Drop files here to inspect bounded metadata and hand the selected bytes to a trusted decoder.</p>
   </div>
 </section>
 <section class="metis-text" aria-labelledby="text-heading">

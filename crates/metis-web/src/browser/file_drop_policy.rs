@@ -295,7 +295,7 @@ mod tests {
             FileDropError::NameTooLong
         );
         assert_eq!(
-            FileDropEntry::new("scan.dcm".to_owned(), "x".repeat(257), 0)
+            FileDropEntry::new("scan.bin".to_owned(), "x".repeat(257), 0)
                 .expect_err("oversized media types must be rejected"),
             FileDropError::MediaTypeTooLong
         );

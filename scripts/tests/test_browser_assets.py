@@ -119,7 +119,7 @@ class BrowserAssetContractTests(unittest.TestCase):
             'id="drop-status" role="status"',
             'id="drop-byte-status" role="status" aria-live="polite"',
             'id="drop-zone" role="group" tabindex="0"',
-            'aria-label="DICOM file drop zone"',
+            'aria-label="File drop zone"',
             'data-drop-state="idle"',
             'data-byte-state="idle"',
         ):

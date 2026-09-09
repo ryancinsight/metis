@@ -715,6 +715,11 @@ cross-engine parity remain open.
 
 ## Browser file-drop evidence — 2026-09-08
 
+This dated capture predates [METIS-DICOM-003](../backlog.md#METIS-DICOM-003),
+which removes the format-specific sample labels. It remains as provenance for
+the bounded handoff; the current browser source uses the generic **File drop**
+label and makes no format decision.
+
 The file-drop consumer now captures Moirai `DropFiles` at merged revision
 `5c8a9e8be32ad6beac14ed263c2f11c3663b87cb`. The provider bounds one event to 64
 files, validates names/media types and owns each browser `File` handle without
@@ -842,6 +847,9 @@ the parser and programmatic-layout paths; the full local gate is the acceptance
 oracle for the synchronized documentation and visual fixtures.
 
 ## Browser accessibility presentation evidence — 2026-09-08
+
+The capture below predates [METIS-DICOM-003](../backlog.md#METIS-DICOM-003);
+the current source names the same semantic group **File drop zone**.
 
 The browser asset contract now checks semantic group names, polite atomic live
 regions, dynamic `aria-busy` wiring for form/result loading, non-positive focus

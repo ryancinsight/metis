@@ -274,7 +274,7 @@ mod tests {
     fn debug_diagnostic_omits_untrusted_message_text() {
         let error = MetisError::transport(
             ErrorCode::TransportBroken,
-            "private path C:\\patients\\scan.dcm",
+            "private path C:\\patients\\scan.bin",
         );
         assert_eq!(
             error.redacted(),
@@ -286,7 +286,7 @@ mod tests {
         let debug = format!("{error:?}");
         assert!(debug.contains("TransportBroken"));
         assert!(debug.contains("REQ-METIS-IPC-005"));
-        assert!(!debug.contains("scan.dcm"));
-        assert!(format!("{error}").contains("scan.dcm"));
+        assert!(!debug.contains("scan.bin"));
+        assert!(format!("{error}").contains("scan.bin"));
     }
 }

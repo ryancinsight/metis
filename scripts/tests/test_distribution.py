@@ -131,7 +131,7 @@ class DistributionTests(unittest.TestCase):
             for name in ("", "../escape", "/absolute", "a//b", "a/./b", "C:/Windows", "a\\b", "entry.exe:stream"):
                 with self.subTest(name=name), self.assertRaises(ValueError):
                     distribution.destination(root, name)
-            self.assertEqual(distribution.destination(root, "assets/scan.dcm"), root / "assets" / "scan.dcm")
+            self.assertEqual(distribution.destination(root, "assets/scan.bin"), root / "assets" / "scan.bin")
 
     def test_registry_records_actual_uninstall_directory_and_component_versions(self):
         with tempfile.TemporaryDirectory() as temporary:
