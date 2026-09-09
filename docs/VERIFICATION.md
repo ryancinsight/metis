@@ -625,7 +625,9 @@ distinct pointer identifiers. A second pointer establishes a finite baseline;
 centroid movement updates bounded pan and the distance ratio updates bounded
 zoom. Duplicate and third-pointer presses are rejected, a zero-distance pair
 waits for a valid baseline, and releasing either pointer clears the pinch
-state. `cargo nextest run -p metis-web --locked --offline` passes 30/30;
+state. Commit `16e14afaf3ee8c993e840a06a539dfd3bb0ff5bc` carries this
+implementation and documentation. `cargo nextest run -p metis-web --locked
+--offline` passes 30/30;
 native warning-denied Clippy, the WASM-target check and WASM-target Clippy
 pass for the same package.
 

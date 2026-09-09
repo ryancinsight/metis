@@ -12,10 +12,11 @@ The file-drop consumer now reads the complete accepted batch through
 provider-owned browser `File` handles and exposes one owned handoff slot;
 full dataset parsing remains with RITK.
 
-Revision 2026-09-08: the gesture policy now retains at most two captured
-pointer identifiers. A second pointer establishes a finite pinch baseline;
-centroid movement pans and distance changes zoom, while a third pointer-down
-is rejected. The provider captures and releases each accepted identifier.
+Revision 2026-09-08: commit `16e14afaf3ee8c993e840a06a539dfd3bb0ff5bc`
+updates the gesture policy to retain at most two captured pointer identifiers.
+A second pointer establishes a finite pinch baseline; centroid movement pans
+and distance changes zoom, while a third pointer-down is rejected. The provider
+captures and releases each accepted identifier.
 
 ## Context
 
