@@ -3,12 +3,12 @@
 /// Default declarative UI markup template for the medical data entry screen.
 pub const CLINICAL_SCREEN_XML: &str = r#"<screen id="main-screen" style="display: flex; flex-direction: column; height: 100%; background-color: #f0f4f8; padding: 20px; gap: 15px;">
   <div id="header" style="display: flex; flex-direction: column; gap: 8px; background-color: #1a365d; padding: 12px;">
-    <text style="color: #ffffff; font-size: 16px; font-weight: bold;">METIS FORM DEMONSTRATION</text>
+    <text style="color: #ffffff; font-size: 16px;">METIS FORM DEMONSTRATION</text>
     <text id="status-badge" style="color: #38a169; font-size: 12px;">SYSTEM READY</text>
   </div>
 
-  <card id="patient-card" style="display: flex; flex-direction: column; background-color: #ffffff; padding: 16px; border-radius: 6px; border-width: 1px; border-color: #e2e8f0; gap: 10px;">
-    <text style="color: #2d3748; font-size: 14px; font-weight: bold;">Patient Demographics and Drug Prescription</text>
+  <card id="patient-card" style="display: flex; flex-direction: column; background-color: #ffffff; padding: 16px; border-width: 1px; border-color: #e2e8f0; gap: 10px;">
+    <text style="color: #2d3748; font-size: 14px;">Patient Demographics and Drug Prescription</text>
     <div id="row-patient" style="display: flex; flex-direction: row; gap: 10px;">
       <text id="label-patient" style="color: #4a5568; font-size: 12px;">Patient ID: PT-9042-ALPHA</text>
     </div>
@@ -22,15 +22,15 @@ pub const CLINICAL_SCREEN_XML: &str = r#"<screen id="main-screen" style="display
       <text id="label-dose" style="color: #4a5568; font-size: 12px;">Target Dose: 0.500 mcg/kg/min</text>
     </div>
     <div id="actions" style="display: flex; flex-direction: row; gap: 10px; margin: 10px 0 0 0;">
-      <button id="btn-calc" style="background-color: #3182ce; color: #ffffff; padding: 8px 16px; border-radius: 4px; font-weight: bold;">
-        <text style="color: #ffffff; font-size: 12px; font-weight: bold;">[ SUBMIT CALCULATION TO BACKEND ]</text>
+      <button id="btn-calc" style="background-color: #3182ce; color: #ffffff; padding: 8px 16px;">
+        <text style="color: #ffffff; font-size: 12px;">[ SUBMIT CALCULATION TO BACKEND ]</text>
       </button>
     </div>
   </card>
 
-  <card id="results-card" style="display: flex; flex-direction: column; background-color: #ffffff; padding: 16px; border-radius: 6px; border-width: 1px; border-color: #e2e8f0; gap: 8px;">
-    <text style="color: #2d3748; font-size: 14px; font-weight: bold;">Backend Calculation Output</text>
-    <text id="output-rate" style="color: #3182ce; font-size: 16px; font-weight: bold;">Rate: Awaiting Backend Calculation...</text>
+  <card id="results-card" style="display: flex; flex-direction: column; background-color: #ffffff; padding: 16px; border-width: 1px; border-color: #e2e8f0; gap: 8px;">
+    <text style="color: #2d3748; font-size: 14px;">Backend Calculation Output</text>
+    <text id="output-rate" style="color: #3182ce; font-size: 16px;">Rate: Awaiting Backend Calculation...</text>
     <text id="output-status" style="color: #718096; font-size: 12px;">Safety Status: Idle</text>
     <text id="output-signature" style="color: #718096; font-size: 10px;">Backend MAC: None</text>
   </card>

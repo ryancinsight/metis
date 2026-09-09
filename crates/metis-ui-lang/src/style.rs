@@ -28,26 +28,26 @@ pub enum FlexDirection {
 /// Justify content alignment.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum JustifyContent {
-    /// Alignment at the start edge (stored only).
+    /// Alignment at the start edge.
     FlexStart,
-    /// Centered alignment (stored only).
+    /// Centered alignment.
     Center,
-    /// Alignment at the end edge (stored only).
+    /// Alignment at the end edge.
     FlexEnd,
-    /// Distribute free space between items (stored only).
+    /// Distribute free space between items.
     SpaceBetween,
 }
 
 /// Align items cross-axis alignment.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum AlignItems {
-    /// Alignment at the start edge (stored only).
+    /// Alignment at the start edge.
     FlexStart,
-    /// Centered alignment (stored only).
+    /// Centered alignment.
     Center,
-    /// Alignment at the end edge (stored only).
+    /// Alignment at the end edge.
     FlexEnd,
-    /// Stretch cross-axis items (stored only).
+    /// Stretch cross-axis items.
     Stretch,
 }
 
@@ -104,7 +104,7 @@ pub enum Size {
 pub enum FontWeight {
     /// Normal weight.
     Normal,
-    /// Bold weight declaration (stored only).
+    /// Bold weight declaration.
     Bold,
 }
 
@@ -115,9 +115,9 @@ pub struct ComputedStyle {
     pub display: Display,
     /// Sequential child layout direction.
     pub flex_direction: FlexDirection,
-    /// Main-axis alignment declaration (stored only).
+    /// Main-axis alignment; non-default values are unsupported by the software renderer.
     pub justify_content: JustifyContent,
-    /// Cross-axis alignment declaration (stored only).
+    /// Cross-axis alignment; non-default values are unsupported by the software renderer.
     pub align_items: AlignItems,
     /// Space between adjacent children in pixels.
     pub gap: i32,
@@ -125,9 +125,9 @@ pub struct ComputedStyle {
     pub width: Size,
     /// Requested height.
     pub height: Size,
-    /// Minimum width declaration (stored only).
+    /// Minimum width; non-automatic values are unsupported by the software renderer.
     pub min_width: Size,
-    /// Minimum height declaration (stored only).
+    /// Minimum height; non-automatic values are unsupported by the software renderer.
     pub min_height: Size,
     /// Inner spacing.
     pub padding: EdgeValues,
@@ -137,7 +137,7 @@ pub struct ComputedStyle {
     pub border_width: EdgeValues,
     /// Straight RGBA border color.
     pub border_color: Color,
-    /// Corner radius declaration (stored only).
+    /// Corner radius; nonzero values are unsupported by the software renderer.
     pub border_radius: i32,
     /// Optional straight RGBA background fill.
     pub background_color: Option<Color>,
@@ -145,7 +145,7 @@ pub struct ComputedStyle {
     pub text_color: Color,
     /// Requested font size; bitmap scale is max(1, size / 14).
     pub font_size: u32,
-    /// Weight declaration (stored only).
+    /// Weight; bold is unsupported by the software renderer.
     pub font_weight: FontWeight,
 }
 
@@ -175,6 +175,28 @@ impl Default for ComputedStyle {
 }
 
 impl ComputedStyle {
+    pub(crate) fn validate_renderer_support(&self) -> Result<()> {
+        if self.justify_content != JustifyContent::FlexStart {
+            return Err(unsupported_style("justify-content"));
+        }
+        if self.align_items != AlignItems::Stretch {
+            return Err(unsupported_style("align-items"));
+        }
+        if !matches!(self.min_width, Size::Auto) {
+            return Err(unsupported_style("min-width"));
+        }
+        if !matches!(self.min_height, Size::Auto) {
+            return Err(unsupported_style("min-height"));
+        }
+        if self.border_radius != 0 {
+            return Err(unsupported_style("border-radius"));
+        }
+        if self.font_weight != FontWeight::Normal {
+            return Err(unsupported_style("font-weight"));
+        }
+        Ok(())
+    }
+
     /// Parses an inline declaration list such as `display: flex; gap: 10px`.
     ///
     ///
@@ -220,36 +242,17 @@ impl ComputedStyle {
                         _ => return Err(invalid_value(&key, val)),
                     }
                 }
-                "justify-content" => {
-                    style.justify_content = match val {
-                        "flex-start" | "start" => JustifyContent::FlexStart,
-                        "center" => JustifyContent::Center,
-                        "flex-end" | "end" => JustifyContent::FlexEnd,
-                        "space-between" => JustifyContent::SpaceBetween,
-                        _ => return Err(invalid_value(&key, val)),
-                    }
-                }
-                "align-items" => {
-                    style.align_items = match val {
-                        "flex-start" | "start" => AlignItems::FlexStart,
-                        "center" => AlignItems::Center,
-                        "flex-end" | "end" => AlignItems::FlexEnd,
-                        "stretch" => AlignItems::Stretch,
-                        _ => return Err(invalid_value(&key, val)),
-                    }
-                }
+                "justify-content" | "align-items" | "min-width" | "min-height"
+                | "border-radius" | "font-weight" => return Err(unsupported_style(&key)),
                 "gap" => style.gap = parse_nonnegative_px(&key, val)?,
                 "width" => style.width = parse_size(&key, val)?,
                 "height" => style.height = parse_size(&key, val)?,
-                "min-width" => style.min_width = parse_size(&key, val)?,
-                "min-height" => style.min_height = parse_size(&key, val)?,
                 "padding" => style.padding = parse_edges(&key, val)?,
                 "margin" => style.margin = parse_edges(&key, val)?,
                 "border-width" => style.border_width = parse_edges(&key, val)?,
                 "border-color" => {
                     style.border_color = parse_color(&key, val)?;
                 }
-                "border-radius" => style.border_radius = parse_nonnegative_px(&key, val)?,
                 "background-color" | "background" => {
                     style.background_color = Some(parse_color(&key, val)?);
                 }
@@ -257,13 +260,6 @@ impl ComputedStyle {
                 "font-size" => {
                     let px = parse_nonnegative_px(&key, val)?.max(8);
                     style.font_size = u32::try_from(px).map_err(|_| invalid_value(&key, val))?;
-                }
-                "font-weight" => {
-                    style.font_weight = match val {
-                        "normal" | "400" => FontWeight::Normal,
-                        "bold" | "700" => FontWeight::Bold,
-                        _ => return Err(invalid_value(&key, val)),
-                    };
                 }
                 _ => {
                     return Err(MetisError::ui(
@@ -273,8 +269,16 @@ impl ComputedStyle {
                 }
             }
         }
+        style.validate_renderer_support()?;
         Ok(style)
     }
+}
+
+fn unsupported_style(property: &str) -> MetisError {
+    MetisError::ui(
+        ErrorCode::InvalidCssStyle,
+        format!("CSS property '{property}' is unsupported by the software renderer"),
+    )
 }
 
 fn invalid_style(message: &str) -> MetisError {
@@ -375,20 +379,16 @@ mod tests {
     }
 
     #[test]
-    fn parses_admitted_values_and_stored_properties() {
+    fn parses_admitted_values() {
         let style = ComputedStyle::parse(
-            "display: block; flex-direction: row; justify-content: center; align-items: end; \
-             gap: 4px; width: 50%; height: 12px; min-width: auto; min-height: 3; \
+            "display: block; flex-direction: row; gap: 4px; width: 50%; height: 12px; \
              padding: 1px 2px 3px 4px; margin: 5px 6px; border-width: 1px; \
-             border-color: #123456; border-radius: 2px; background: #abcdef80; \
-             color: #fedcba; font-size: 10px; font-weight: 700;",
+             border-color: #123456; background: #abcdef80; color: #fedcba; font-size: 10px;",
         )
         .expect("admitted style");
 
         assert_eq!(style.display, Display::Block);
         assert_eq!(style.flex_direction, FlexDirection::Row);
-        assert_eq!(style.justify_content, JustifyContent::Center);
-        assert_eq!(style.align_items, AlignItems::FlexEnd);
         assert_eq!(style.gap, 4);
         assert_eq!(style.width, Size::Percent(0.5));
         assert_eq!(style.height, Size::Px(12));
@@ -407,11 +407,33 @@ mod tests {
             style.background_color,
             Some(Color::rgba(0xab, 0xcd, 0xef, 0x80))
         );
-        assert_eq!(style.font_weight, FontWeight::Bold);
+        assert_eq!(style.justify_content, JustifyContent::FlexStart);
+        assert_eq!(style.align_items, AlignItems::Stretch);
+        assert_eq!(style.min_width, Size::Auto);
+        assert_eq!(style.min_height, Size::Auto);
+        assert_eq!(style.border_radius, 0);
+        assert_eq!(style.font_weight, FontWeight::Normal);
     }
 
     #[test]
-    fn rejects_unsupported_and_malformed_values_with_one_code() {
+    fn rejects_unsupported_rendering_properties_with_property_diagnostic() {
+        for (property, value) in [
+            ("justify-content", "center"),
+            ("align-items", "end"),
+            ("min-width", "8px"),
+            ("min-height", "8px"),
+            ("border-radius", "2px"),
+            ("font-weight", "700"),
+        ] {
+            let css = format!("{property}: {value}");
+            let error = ComputedStyle::parse(&css).expect_err("unsupported style");
+            assert_eq!(error.code, ErrorCode::InvalidCssStyle);
+            assert!(error.message.contains(property), "{css}");
+        }
+    }
+
+    #[test]
+    fn rejects_malformed_values_with_one_code() {
         for css in [
             "unknown: value",
             "display",
@@ -421,7 +443,6 @@ mod tests {
             "width: NaN%",
             "padding: 1px nope",
             "color: #xyz",
-            "font-weight: 500",
         ] {
             let error = ComputedStyle::parse(css).expect_err("invalid style");
             assert_eq!(error.code, ErrorCode::InvalidCssStyle, "{css}");

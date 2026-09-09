@@ -757,8 +757,20 @@ required card or target ends inside the viewport. The full Metis gate passes on
 the delivered revision.
 
 The viewport capability does not expose a device-scale override. Scale `2`,
-custom-style diagnostics and platform fractional-scale cases remain open under
-V04; these captures do not claim those paths.
+and platform fractional-scale cases remain open under V04; these captures do not
+claim those paths.
+
+## Software style diagnostic evidence — 2026-09-09
+
+`metis-ui-lang` now rejects `justify-content`, `align-items`, `min-width`,
+`min-height`, `border-radius` and `font-weight` declarations because the
+software renderer has no layout or paint semantics for them. The parser returns
+`ERR_INVALID_CSS_STYLE` with the property name, and layout applies the same
+check to programmatically constructed DOMs before emitting a display list. The
+presentation fixture was migrated to the admitted subset, preserving its
+software-rendered geometry and pixels. Focused strict Clippy and nextest cover
+the parser and programmatic-layout paths; the full local gate is the acceptance
+oracle for the synchronized documentation and visual fixtures.
 
 ## Browser accessibility presentation evidence — 2026-09-08
 

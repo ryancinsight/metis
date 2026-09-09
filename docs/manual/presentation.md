@@ -20,9 +20,10 @@ Layout supports sequential rows and columns, pixel/percentage dimensions,
 automatic width/content height, padding, margins, gaps, colors and square borders.
 Each row child with automatic width can consume the available width; assign
 explicit widths or stack content in a column when that is the intended result.
-Stored alignment, minimum-size, font-weight and radius declarations currently
-have no rendering effect. Unknown properties, malformed declarations and
-invalid values fail with the typed `ERR_INVALID_CSS_STYLE` diagnostic; the
+Alignment, minimum-size, font-weight and radius declarations are outside this
+software subset and fail with the typed `ERR_INVALID_CSS_STYLE` diagnostic.
+Unknown properties, malformed declarations and invalid values use the same
+diagnostic; programmatically constructed DOMs receive it during layout. The
 software parser never silently changes a style. The exact implementation
 limits are documented in [metis-ui-lang](../../crates/metis-ui-lang/README.md),
 and the migration steps are in [Migrate presentation styles](style-migration.md).

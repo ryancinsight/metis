@@ -18,8 +18,10 @@ scripts, and browser error recovery are not implemented.
 
 Layout supports sequential row/column flow, explicit and percentage dimensions,
 automatic width/content height, spacing, colors, square borders, and bitmap text.
-Stored alignment, minimum-size, font-weight, and radius declarations currently
-have no rendering effect. The font and glyph coverage belong to metis-platform.
+Alignment, minimum-size, font-weight, and radius declarations are outside the
+software renderer contract and return `ErrorCode::InvalidCssStyle`; direct DOM
+construction receives the same diagnostic during layout. The font and glyph
+coverage belong to metis-platform.
 `ComputedStyle::parse` strictly rejects unknown properties, malformed
 declarations and invalid values with `ErrorCode::InvalidCssStyle`; an empty
 style and a trailing semicolon are valid. Layout rejects coordinate overflow

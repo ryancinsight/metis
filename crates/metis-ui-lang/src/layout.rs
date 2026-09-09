@@ -1,8 +1,8 @@
 //! Sequential row/column box layout and display-list generation.
 //!
 //! Supports explicit or automatic sizes, margins, padding, backgrounds, text, and
-//! uniform square borders. Alignment, minimum sizes, rounded corners, wrapping,
-//! and font-weight style values are stored but are not implemented by this renderer.
+//! uniform square borders. Unsupported browser layout declarations are rejected
+//! before a display list is emitted so programmatic DOMs cannot silently diverge.
 
 use crate::dom::{DomDocument, DomElement, DomNode};
 use crate::parser::{MAX_DEPTH, MAX_INPUT_BYTES, MAX_NODES, copy_text, limit_error};
@@ -169,6 +169,7 @@ impl DisplayList {
 
     fn element(&mut self, element: &DomElement, available: Rect) -> Result<Rect> {
         let style = &element.computed_style;
+        style.validate_renderer_support()?;
         if style.display == Display::None {
             return Ok(Rect::new(available.x, available.y, 0, 0));
         }
@@ -351,6 +352,17 @@ mod tests {
             compute_layout(&doc, 8, 16).expect_err("invalid size").code,
             ErrorCode::LayoutOverflow
         );
+    }
+
+    #[test]
+    fn programmatic_unsupported_style_is_rejected_before_painting() {
+        let mut root = DomElement::new("root");
+        root.computed_style.border_radius = 2;
+        root.computed_style.background_color = Some(Color::RED);
+        let error = compute_layout(&DomDocument::new(root), 4, 4)
+            .expect_err("unsupported style must not be silently ignored");
+        assert_eq!(error.code, ErrorCode::InvalidCssStyle);
+        assert!(error.message.contains("border-radius"));
     }
 
     #[test]

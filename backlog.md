@@ -234,7 +234,9 @@ an owner. “Unsupported” cannot replace delivery of a required mobile/native 
 - Evidence: [ADR 0016](docs/adr/0016-theme-and-branding.md), the browser asset contract, [runtime manifest](docs/manual/images/browser-layout-metrics.json) and [manual captures](docs/manual/browser.md#responsive-runtime-capture) cover the selected modes and geometries.
 - Completed increment: browser CSS now applies shared border-box sizing, zero-minimum grid items and long-string wrapping; the page uses a bounded two-column grid above `700px` and a one-column layout with `1rem` padding below it.
 - Evidence: [browser responsive-layout evidence](docs/VERIFICATION.md#browser-responsive-layout-evidence--2026-09-08) and the static asset contract test cover the declarations; the full Metis gate passes on the committed revision.
-- Residuals: device scale `2`, custom-style diagnostics and platform fractional-scale cases remain open because the available viewport capability does not expose a device-scale override.
+- Completed increment: software-renderer styles without layout or paint semantics (`justify-content`, `align-items`, `min-width`, `min-height`, `border-radius` and `font-weight`) now return `ERR_INVALID_CSS_STYLE`; programmatic DOMs receive the same validation during layout.
+- Evidence: [ADR 0013](docs/adr/0013-strict-style-contract.md), style/layout tests, the migrated presentation fixture and the full Metis gate.
+- Residuals: device scale `2` and platform fractional-scale cases remain open because the available viewport capability does not expose a device-scale override.
 
 <a id="METIS-MACOS-001"></a>
 ## METIS-MACOS-001 — macOS restricted desktop [arch] [minor]

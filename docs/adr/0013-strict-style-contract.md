@@ -6,6 +6,10 @@ Date: 2026-09-07
 
 Driver: [METIS-UI-001](../../backlog.md#METIS-UI-001).
 
+Revision: 2026-09-09 — [METIS-LAYOUT-001](../../backlog.md#METIS-LAYOUT-001)
+closes the silent custom-renderer style gap by rejecting declarations without
+software-renderer semantics.
+
 ## Context
 
 `metis-ui-lang` parses a bounded CSS-inspired subset for the software
@@ -31,10 +35,10 @@ browser CSS engine or change browser DOM parsing.
   missing separators, empty values, invalid enum values, malformed pixel or
   percentage dimensions, negative spacing, malformed edge lists, invalid
   colors and unsupported font weights return `ErrorCode::InvalidCssStyle`.
-- Valid alignment, minimum-size, font-weight and radius declarations remain
-  accepted even when the current software renderer stores them without using
-  them. Their lack of rendering semantics stays explicit in the manual and
-  crate README.
+- Alignment, minimum-size, font-weight and radius declarations are outside the
+  software renderer contract and return `ErrorCode::InvalidCssStyle`. The
+  same validation runs during layout for programmatically constructed DOMs, so
+  a public field cannot silently request an ineffective style.
 - `parse_markup` propagates style errors at the element boundary. Layout keeps
   ownership of representability errors for programmatically constructed DOMs,
   including non-finite percentages and coordinate overflow.
@@ -66,13 +70,13 @@ The user-facing steps and examples are in
 
 ## Verification
 
-Style tests cover valid admitted declarations, stored-only declarations,
-unknown properties, malformed separators and invalid enum, numeric, edge and
-color values. Parser tests verify propagation as `ERR_INVALID_CSS_STYLE`.
-Layout tests retain a programmatic non-finite percentage case and continue to
-classify it as `ERR_LAYOUT_OVERFLOW`. The presentation example and V01/V04
-software captures still render from the authored form; the manual records the
-typed rejection path beside those captures. Focused nextest, strict Clippy,
+Style tests cover valid admitted declarations, unsupported rendering
+declarations, unknown properties, malformed separators and invalid numeric,
+edge and color values. Parser tests verify propagation as
+`ERR_INVALID_CSS_STYLE`. Layout tests reject unsupported programmatic styles and
+retain a non-finite percentage case classified as `ERR_LAYOUT_OVERFLOW`. The
+presentation example uses only declarations with software-renderer semantics;
+the manual records the typed rejection path. Focused nextest, strict Clippy,
 documentation and the full visual gate run against the delivered revision.
 
 ## Limits
