@@ -260,11 +260,8 @@ an owner. “Unsupported” cannot replace delivery of a required mobile/native 
 
 <a id="METIS-DATA-001"></a>
 ## METIS-DATA-001 — Tables, lists and live data views [minor]
-- Status: in-progress; priority: P1; owner: Metis component/state; integrator: root; dependencies: METIS-INPUT-001, METIS-COMMANDS-001; risk: growth/selection drift; last-update: 2026-09-08
-- Lease: root — crates/metis-frontend/src/result_explorer/, crates/metis-frontend/src/lib.rs, crates/metis-frontend/README.md, crates/metis-web/src/browser.rs, crates/metis-web/src/browser/explorer.rs, crates/metis-web/src/controls.rs, crates/metis-web/src/view.rs, examples/browser/styles.css, scripts/tests/test_browser_assets.py, docs/adr/0018-result-explorer.md, docs/adr/README.md, docs/manual/browser.md, docs/manual/applications.md, docs/manual/images/browser-layout-metrics.json, docs/VERIFICATION.md — 2026-09-08T21:00:00-04:00
-- Scope: sort/filter/selection, virtualized rows, tree disclosure and asynchronous loading/error/empty states; pure data operations remain independent of the GUI host.
-- Acceptance: exact row order/filter values and stable selected identity after updates; bounded visible-window storage and subscriptions; keyboard operation and accessible semantics.
-- Demonstration: [V07](docs/VERIFICATION.md#V07), result explorer from deterministic fixtures, including empty/error/live-update captures.
+- Status: done; priority: P1; owner: Metis component/state; integrator: root; last-update: 2026-09-08
+- Outcome: bounded typed explorer with exact ordering/filtering, stable selection, disclosure and browser paging; commits `56aae2b`, `f93a556`, `e34830f`; [ADR 0018](docs/adr/0018-result-explorer.md), [V07 evidence](docs/VERIFICATION.md#result-explorer-evidence--2026-09-08).
 
 <a id="METIS-FILES-001"></a>
 ## METIS-FILES-001 — Scoped files and persistent state [minor]

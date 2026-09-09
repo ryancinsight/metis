@@ -148,6 +148,8 @@ and then `X` updated the table caption and returned `Entries 0 of 0`; keyboard
 deletion cleared it. No backend bridge was configured for this capture, so it
 does not claim a live-row rendering; the real row path is covered by the Rust
 tests and the connected-service trace remains required for viewer acceptance.
+The exact gate and runtime limitations are recorded in the [V07 result explorer
+evidence](../VERIFICATION.md#result-explorer-evidence--2026-09-08).
 
 ## Hypermedia boundary
 

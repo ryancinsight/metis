@@ -1085,6 +1085,34 @@ middle, selected and loading/error views. Measure allocated visible rows and
 subscriptions against explicit capacity. Do not equate a screenshot of a large
 list with virtualization or bounded-memory evidence.
 
+<a id="result-explorer-evidence--2026-09-08"></a>
+### Result explorer evidence — 2026-09-08
+
+The bounded explorer landed at `e34830f9cac9553dbe2357edcbed88eba0a94633` after the
+implementation commit `56aae2b` and rustdoc fix `f93a556`. The shared
+frontend contract owns typed rows, bounded patient labels and filters, exact
+ordering, stable selection, group disclosure and an eight-entry visible page.
+
+The exact-revision focused run `cargo nextest run -p metis-frontend --locked`
+passed 10/10 tests, including the four explorer value-semantic cases. The
+browser asset and plan checks passed 14/14 tests. The full `python scripts/verify.py`
+gate passed on the pinned 1.97.0 Windows toolchain: supply-chain, format,
+visual, plan, WASM libraries, browser assets, clippy, workspace build and
+tests, Python binding, release build/tests, doctests, docs, example and the
+capture-failure probe all returned their required outcomes.
+
+The software visual report has seven existing form captures with zero changed
+pixels and zero semantic differences; its fixture digest is `7fd54e7f34e0adc241bbc3710576b1f7aa07a78d02f528b2d6240b1c1219ed3f`.
+A separate CUA trace inspected the generated browser page at
+`http://127.0.0.1:8095/?cache=explorer-20260908` in a 1280×720 CSS-pixel viewport
+at device scale 1.25. It showed the empty result card, live status, filter,
+order select, table caption and disabled pager; changing the filter to `PT`
+and `X` returned `Entries 0 of 0`, and keyboard deletion cleared it.
+
+The CUA page had no configured backend bridge, so this capture does not prove
+live-row rendering. Connected-service rows, native host rendering, and the
+RITK DICOM result-history workflow remain required under V09.
+
 <a id="V08"></a>
 ### V08 — Scoped services and recovery console
 
