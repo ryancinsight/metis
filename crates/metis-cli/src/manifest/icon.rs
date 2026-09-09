@@ -71,10 +71,10 @@ pub(crate) fn validate(bytes: &[u8]) -> Result<()> {
         if entry[3] != 0 {
             return Err("ICO entry reserved byte must be zero".into());
         }
-        let payload_size = u64::from(little_u32(
+        let payload_size = u64::from(little_endian(
             entry.get(8..12).ok_or("ICO payload size is truncated")?,
         )?);
-        let payload_offset = u64::from(little_u32(
+        let payload_offset = u64::from(little_endian(
             entry.get(12..16).ok_or("ICO payload offset is truncated")?,
         )?);
         let table_size = u64::try_from(table_size)?;
@@ -119,7 +119,7 @@ fn png_dimensions(bytes: &[u8]) -> Result<(u32, u32)> {
         let chunk_header = bytes
             .get(cursor..cursor.checked_add(8).ok_or("PNG chunk offset overflows")?)
             .ok_or("PNG chunk header is truncated")?;
-        let length = usize::try_from(big_u32(
+        let length = usize::try_from(big_endian(
             chunk_header
                 .get(..4)
                 .ok_or("PNG chunk length is truncated")?,
@@ -135,7 +135,7 @@ fn png_dimensions(bytes: &[u8]) -> Result<(u32, u32)> {
         let chunk_type = bytes
             .get(cursor + 4..cursor + 8)
             .ok_or("PNG chunk type is truncated")?;
-        let crc = big_u32(
+        let crc = big_endian(
             bytes
                 .get(data_end..chunk_end)
                 .ok_or("PNG CRC is truncated")?,
@@ -150,8 +150,8 @@ fn png_dimensions(bytes: &[u8]) -> Result<(u32, u32)> {
             let ihdr = bytes
                 .get(data_start..data_end)
                 .ok_or("PNG IHDR is truncated")?;
-            let width = big_u32(ihdr.get(..4).ok_or("PNG width is truncated")?)?;
-            let height = big_u32(ihdr.get(4..8).ok_or("PNG height is truncated")?)?;
+            let width = big_endian(ihdr.get(..4).ok_or("PNG width is truncated")?)?;
+            let height = big_endian(ihdr.get(4..8).ok_or("PNG height is truncated")?)?;
             if !(1..=256).contains(&width) || !(1..=256).contains(&height) {
                 return Err("PNG icon dimensions must be 1..=256".into());
             }
@@ -172,11 +172,11 @@ fn png_dimensions(bytes: &[u8]) -> Result<(u32, u32)> {
     }
 }
 
-fn little_u32(bytes: &[u8]) -> Result<u32> {
+fn little_endian(bytes: &[u8]) -> Result<u32> {
     Ok(u32::from_le_bytes(bytes.try_into()?))
 }
 
-fn big_u32(bytes: &[u8]) -> Result<u32> {
+fn big_endian(bytes: &[u8]) -> Result<u32> {
     Ok(u32::from_be_bytes(bytes.try_into()?))
 }
 

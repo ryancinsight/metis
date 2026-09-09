@@ -227,7 +227,7 @@ impl CapabilityCatalogPayload {
         let mut commands = Vec::with_capacity(command_count);
         for _ in 0..command_count {
             let raw = u16::from_be_bytes(take(&mut payload)?);
-            let command = MessageType::from_u16(raw).ok_or_else(|| {
+            let command = MessageType::from_wire(raw).ok_or_else(|| {
                 MetisError::protocol(
                     ErrorCode::UnexpectedMessageType,
                     "Capability catalog contains an unknown command identifier",
