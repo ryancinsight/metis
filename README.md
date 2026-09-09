@@ -37,9 +37,12 @@ typed sync/async client methods. Registration and invocation do not grant
 operating-system authority; handler erasure is confined to the backend's open
 extension boundary. This renderer's bounded
 markup subset is
-not the intended limit of web support. A desktop WebView host is not implemented. Metis does not
-yet provide Tauri feature parity, a system WebView host on all targets, an OS
-privilege sandbox, durable audit storage or regulatory certification.
+not the intended limit of web support. Windows now exposes a bounded WebView2
+consumer through `metis_platform::native::WebViewSurface`; the `metis-app`
+demonstration does not yet compose that host or provide an installed-runtime
+capture. Metis does not yet provide Tauri feature parity, a system WebView host
+on all targets, an OS privilege sandbox, durable audit storage or regulatory
+certification.
 The infusion arithmetic is a synthetic engineering example; its configurable
 limits are not treatment guidance.
 
@@ -101,12 +104,14 @@ recorded in [ADR 0005](docs/adr/0005-application-distribution.md). Atlas provide
 have transitive dependencies; the gate records the actual graph instead of describing it as
 dependency-free. The Atlas development overlay resolves first-party code to local
 trees. Standalone builds depend on the corresponding pushed provider revisions.
-Moirai is pinned to provider revision
-`5c8a9e8be32ad6beac14ed263c2f11c3663b87cb`, which includes the merged process,
+Moirai is temporarily pinned to provider revision
+`9e045f73be49b9ae6272045dd71705dcf14eccf8` while its WebView2 host branch
+co-evolves with this consumer. The revision includes the merged process,
 browser/API, bounded WebSocket service, cancellable-task surfaces, semantic
-control seams, pointer metadata, wheel metadata and bounded browser file
-access. Consumer verification and any future provider advance remain tracked in
-[the board](backlog.md#METIS-PROVIDER-001).
+control seams, pointer metadata, wheel metadata, bounded browser file access and
+the thread-affine Windows WebView2 provider. The pin is removed when the
+provider branch merges to Moirai main; consumer verification and that advance
+remain tracked in [the desktop item](backlog.md#METIS-DESKTOP-001).
 
 ## Design and evidence
 

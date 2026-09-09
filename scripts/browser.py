@@ -8,7 +8,8 @@ import pathlib
 import shutil
 import subprocess
 
-ROOT = pathlib.Path(__file__).resolve().parents[1]
+PHYSICAL_ROOT = pathlib.Path(__file__).resolve().parents[1]
+ROOT = pathlib.Path(os.environ.get("METIS_NEUTRAL_ROOT", PHYSICAL_ROOT))
 OUTPUT = ROOT / "output" / "browser"
 SOURCE = ROOT / "examples" / "browser"
 CONTENT_SECURITY_POLICY = ROOT / "crates" / "metis-core" / "src" / "content_security_policy.txt"

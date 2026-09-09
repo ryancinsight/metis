@@ -258,7 +258,9 @@ revision and observed status are recorded in
 [browser pointer-capture evidence](../VERIFICATION.md#browser-pointer-capture-evidence--2026-09-07).
 The metadata trace and provider revision are recorded in
 [browser pointer-metadata evidence](../VERIFICATION.md#browser-pointer-metadata-evidence--2026-09-07).
-The current provider revision is `a3c86cd183a18edc35db30f1d35e79fe80092df4`.
+The pointer trace used provider revision
+`a3c86cd183a18edc35db30f1d35e79fe80092df4`; the current consumer lock uses
+the co-evolution revision `9e045f73be49b9ae6272045dd71705dcf14eccf8`.
 
 The **Wheel** status below the pointer status demonstrates the browser scroll
 boundary. Scroll the named **Pointer capture surface**. Rust reads Moirai's

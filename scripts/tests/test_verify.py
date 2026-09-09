@@ -3,6 +3,7 @@ import json
 import os
 import pathlib
 import re
+import runpy
 import shutil
 import subprocess
 import sys
@@ -11,6 +12,27 @@ import unittest
 
 
 SCRIPTS = pathlib.Path(__file__).resolve().parents[1]
+
+
+class NeutralWorkspaceTests(unittest.TestCase):
+    """Keep the standalone gate independent of an Atlas parent overlay."""
+
+    def test_neutral_workspace_hides_ancestor_cargo_configuration(self):
+        module = runpy.run_path(str(SCRIPTS / "verify.py"))
+        physical = module["PHYSICAL_ROOT"]
+        has_configuration = any(
+            (directory / ".cargo" / name).is_file()
+            for directory in (physical, *physical.parents)
+            for name in ("config", "config.toml")
+        )
+
+        with module["neutral_workspace"]() as root:
+            self.assertTrue((root / "Cargo.toml").is_file())
+            if os.name == "nt" and has_configuration:
+                self.assertNotEqual(root.drive, physical.drive)
+                self.assertFalse((root / ".cargo" / "config.toml").is_file())
+            else:
+                self.assertEqual(root, physical)
 
 
 class BootstrapEvidenceTests(unittest.TestCase):

@@ -24,11 +24,13 @@ source-over composition includes destination opacity. The font covers digits,
 case-insensitive Latin letters, and selected punctuation; unsupported glyphs
 produce a replacement box. It is not a Unicode shaping engine.
 
-The Windows adapter is a native pixel and event boundary, not a `WebView` or
-permission broker. Use `metis_platform::native::NativeSurface` with a
-validated `metis_platform::native::WindowConfig` for a real HWND; the adapter
-now exposes bounded native IME composition phases through `WindowEvent`.
-Multiple `NativeSurface` values can coexist on their creating thread; call
-`reopen` only after `close` to reuse a surface's validated configuration.
-Application editing policy, `WebView2`, OS permission enforcement and
+The Windows adapter is a native pixel, event and `WebView2` boundary, not a
+permission broker. Use `metis_platform::native::NativeSurface` with a validated
+`metis_platform::native::WindowConfig` for a real framebuffer HWND, or use
+`WebViewSurface` with a validated `WebViewConfig` for a packaged `file:///`
+entry. Both surfaces keep their callbacks and operating-system handles on the
+creating thread; `WebView` navigation and messages remain bounded and
+allowlisted. Multiple `NativeSurface` values can coexist on their creating
+thread; call `reopen` only after `close` to reuse a surface's validated
+configuration. Application editing policy, OS permission enforcement and
 accessibility remain host-level workflows.

@@ -1,6 +1,7 @@
 """Run the same bounded local checks used for Metis delivery."""
 import json
 import argparse
+import contextlib
 import hashlib
 import os
 import pathlib
@@ -13,7 +14,8 @@ import tomllib
 import tempfile
 from urllib.parse import unquote, urlsplit
 
-ROOT = pathlib.Path(__file__).resolve().parents[1]
+PHYSICAL_ROOT = pathlib.Path(__file__).resolve().parents[1]
+ROOT = PHYSICAL_ROOT
 OUTPUT = ROOT / "output"
 LOCK = ROOT / "Cargo.lock"
 TOOLCHAIN = None
@@ -52,13 +54,71 @@ BASELINE = None
 EVIDENCE = {"schema": 1, "status": "running", "stages": {}, "commands": {}}
 
 
+@contextlib.contextmanager
+def neutral_workspace():
+    """Expose the workspace without inheriting an ancestor stack overlay."""
+    if os.name != "nt":
+        yield PHYSICAL_ROOT
+        return
+
+    has_ancestor_configuration = any(
+        (directory / ".cargo" / name).is_file()
+        for directory in (PHYSICAL_ROOT, *PHYSICAL_ROOT.parents)
+        for name in ("config", "config.toml")
+    )
+    if not has_ancestor_configuration:
+        yield PHYSICAL_ROOT
+        return
+
+    import ctypes
+
+    used_drives = ctypes.windll.kernel32.GetLogicalDrives()
+    drive = next(
+        (
+            f"{chr(code)}:"
+            for code in range(ord("Z"), ord("D") - 1, -1)
+            if not used_drives & (1 << (code - ord("A")))
+        ),
+        None,
+    )
+    if drive is None:
+        raise RuntimeError("no unused drive letter is available for neutral verification")
+
+    mapping = subprocess.run(
+        ["subst.exe", drive, str(PHYSICAL_ROOT)],
+        capture_output=True,
+        text=True,
+        encoding="utf-8",
+        errors="replace",
+        check=False,
+    )
+    if mapping.returncode != 0:
+        diagnostic = (mapping.stderr or mapping.stdout).strip()
+        raise RuntimeError(f"cannot create neutral verification drive {drive}: {diagnostic}")
+
+    try:
+        yield pathlib.Path(f"{drive}\\")
+    finally:
+        cleanup = subprocess.run(
+            ["subst.exe", drive, "/D"],
+            capture_output=True,
+            text=True,
+            encoding="utf-8",
+            errors="replace",
+            check=False,
+        )
+        if cleanup.returncode != 0:
+            diagnostic = (cleanup.stderr or cleanup.stdout).strip()
+            raise RuntimeError(f"cannot remove neutral verification drive {drive}: {diagnostic}")
+
+
 def output_path(name):
     """Keep fixed gate artifacts inside the repository, without following links."""
     path = OUTPUT / name
     linked = any(part.is_symlink() or (part.exists() and
                  getattr(part.lstat(), "st_file_attributes", 0) & stat.FILE_ATTRIBUTE_REPARSE_POINT)
                  for part in (OUTPUT, path))
-    if (not path.resolve().is_relative_to(ROOT)
+    if (not path.resolve().is_relative_to(PHYSICAL_ROOT)
             or linked
             or (path.is_file() and path.stat().st_nlink != 1)):
         raise ValueError(f"Unsafe gate output path: {path}")
@@ -86,7 +146,7 @@ def inherited_configuration():
                 yield path, value
 
     # Cargo merges ancestor configuration first, with the nearest value winning.
-    for directory in reversed((ROOT, *ROOT.parents)):
+    for directory in reversed((PHYSICAL_ROOT, *PHYSICAL_ROOT.parents)):
         candidates = [directory / ".cargo" / name for name in ("config", "config.toml")]
         config = next((path for path in candidates if path.is_file()), None)
         if config is None:
@@ -120,7 +180,7 @@ def manual_links():
             if link.scheme or link.netloc:
                 raise SystemExit(f"Unsupported manual link in {document}: {destination}")
             target = (document.parent / unquote(link.path)).resolve() if link.path else document
-            if not target.is_relative_to(ROOT) or not target.is_file():
+            if not target.is_relative_to(PHYSICAL_ROOT) or not target.is_file():
                 raise SystemExit(f"Missing or external manual target in {document}: {destination}")
 
 
@@ -172,9 +232,9 @@ def source_state(metadata, configs):
                 inputs.update(path for path in (directory / folder).rglob("*") if path.is_file() and "__pycache__" not in path.parts)
             if package["name"] == "metis-python":
                 inputs.add(directory / "pyproject.toml")
-    return {str(path): hashlib.sha256(path.read_bytes()).hexdigest() for path in sorted(inputs)}
+    return {str(path.resolve()): hashlib.sha256(path.read_bytes()).hexdigest() for path in sorted(inputs)}
 
-def main():
+def run_gate():
     global BASELINE, TOOLCHAIN
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--update-snapshots", action="store_true",
@@ -197,6 +257,7 @@ def main():
         raise SystemExit("Unset RUSTC/RUSTDOC overrides; verification requires the pinned toolchain")
     environment["RUSTUP_TOOLCHAIN"] = TOOLCHAIN
     environment["RUSTDOCFLAGS"] = environment.get("RUSTDOCFLAGS", "") + " -D warnings"
+    environment["METIS_NEUTRAL_ROOT"] = str(ROOT)
     if target is not None:
         # Outside-overlay exception: carry the exact inherited target directory,
         # as Atlas's canonical lock runner does; this does not fork the cache.
@@ -348,6 +409,20 @@ def main():
         EVIDENCE["status"] = "passed"
         evidence()
         print(f"Verified Metis with {len(metadata['packages'])} resolved packages; provider transitive graph recorded", flush=True)
+
+
+def main():
+    """Run the gate from a workspace path that cannot inherit stack patches."""
+    global LOCK, OUTPUT, ROOT
+    previous = ROOT, OUTPUT, LOCK
+    try:
+        with neutral_workspace() as root:
+            ROOT = root
+            OUTPUT = ROOT / "output"
+            LOCK = ROOT / "Cargo.lock"
+            run_gate()
+    finally:
+        ROOT, OUTPUT, LOCK = previous
 
 
 if __name__ == "__main__":

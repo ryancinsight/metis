@@ -27,6 +27,13 @@ messages, denies new windows and removes every callback before teardown. The
 provider's installed-runtime smoke and Metis bundle capture remain open; the
 provider does not require a registry or signing key. See the [Moirai ADR](../../moirai/docs/adr/0052-bounded-webview2-host.md).
 
+Revision 2026-09-09: Metis now exposes `native::WebViewSurface`, which creates
+the provider-owned HWND, sizes the controller to the validated client area and
+maps visibility, event pumping, navigation and bounded JSON messaging without
+leaking WebView2 or Win32 types into the frontend. The Moirai revision remains
+an explicit co-evolution pin until its branch merges; application composition
+and installed-runtime visual evidence remain open.
+
 ## Context
 
 The framework comparison in [ADR 0003](0003-framework-conformance.md) leaves a
@@ -73,11 +80,17 @@ text and IME composition transitions, handles resize, and sends calculation
 requests over the same
 supervised private pipe as the headless role.
 
-This increment deliberately supplies a native software surface and provider
-owned IME event production. WebView2 COM hosting, HTML/CSS DOM embedding, OS
-file/network/process denial, accessibility providers, an installed IME journey
-and consumer editing policy remain separate host increments with their own
-contracts and captures.
+The same boundary exposes `WebViewSurface` for packaged HTML/CSS applications.
+It owns one Moirai `WebViewHost`, aligns its controller bounds and visibility
+with `WindowConfig`, forwards the combined window/WebView event batch and keeps
+navigation and JSON bridge policy in the provider. The adapter exposes no
+filesystem, network, process or authorization capability to page code.
+
+This increment deliberately supplies a native software surface, provider-owned
+IME event production and the WebView2 consumer seam. Application-level
+WebView2 composition, HTML/CSS bridge policy, OS file/network/process denial,
+accessibility providers, an installed IME journey and consumer editing policy
+remain separate host increments with their own contracts and captures.
 
 ## Alternatives
 

@@ -8,7 +8,9 @@ Windows-native adapter test that creates a real hidden HWND, and the visible
 `metis-app --metis-native-window` host workflow. The native checks present the
 production framebuffer and drain bounded lifecycle events; the workbench can
 connect to the documented one-shot loopback service for a real authenticated
-calculation. A committed visual capture and OS permission boundary remain open.
+calculation. The Windows platform suite also checks the WebView2 consumer's
+packaged-URI configuration without requiring the installed runtime. A committed
+visual capture and OS permission boundary remain open.
 
 ## Run the checks
 

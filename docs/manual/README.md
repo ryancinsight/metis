@@ -15,9 +15,10 @@ WebSocket handshake and a real backend calculation. The Windows platform crate
 exposes a Moirai-backed native pixel and event surface, and the `metis-app`
 demonstration connects it to the frontend through the same private process
 workflow. Operating-system permissions remain a host gap. The browser shell
-enforces its strict CSP, and the
-service `HostPolicy` binds grants to an exact origin, window and session; TLS,
-desktop WebView and OS enforcement remain separate workflows.
+enforces its strict CSP, and the service `HostPolicy` binds grants to an exact
+origin, window and session. The platform crate also exposes a bounded Windows
+WebView2 consumer seam; application composition, TLS and OS enforcement remain
+separate workflows.
 
 The [target contract](../adr/0002-web-application-contract.md) describes the
 Tauri migration goal and required web support. These are implementation targets,

@@ -98,11 +98,11 @@ semantics are shared with the inspected [software raster image evidence](#softwa
 
 ## Windows native provider and host evidence — 2026-09-08
 
-Moirai PR #286 merged at `c91e2cdd` adds bounded native IME composition events,
-and PR #287 merged at `7ad8eeee` closes the empty-composition cancellation edge.
-Metis pins the latter revision and `metis-platform::native::NativeSurface`
-presents the production `Framebuffer` pixels while returning the provider's
-bounded `WindowEvent` values. On `x86_64-pc-windows-msvc`, the provider suite
+Moirai PR #286 merged at `c91e2cdd` added bounded native IME composition events,
+and PR #287 merged at `7ad8eeee` closed the empty-composition cancellation edge.
+That evidence revision used `metis-platform::native::NativeSurface` to present
+the production `Framebuffer` pixels while returning the provider's bounded
+`WindowEvent` values. On `x86_64-pc-windows-msvc`, the provider suite
 passes 61/61 with strict Clippy; the native tests create a real hidden HWND,
 present a production frame, observe input/IME/resize/DPI lifecycle events,
 validate bounded UTF-16 composition decoding, verify retained initial readiness
@@ -129,6 +129,19 @@ OS permission denial, accessibility behavior, two-window captures, or macOS/Linu
 support. Those requirements remain under [V05](#V05) and the linked backlog
 items; a hidden-window test and a passing build cannot replace real visual,
 assistive-technology or denial-probe evidence.
+
+### WebView2 consumer seam — 2026-09-09
+
+Metis `metis-platform::native::WebViewSurface` now consumes Moirai provider
+revision `9e045f73be49b9ae6272045dd71705dcf14eccf8` through a safe, thread-affine
+adapter. The adapter creates the provider-owned HWND, sizes and maps visibility
+for the controller, forwards combined window/WebView events and preserves the
+provider's packaged-URI, new-window and bounded-JSON policies. The workspace
+lock records one Moirai revision for every direct provider crate during this
+co-evolution increment. Consumer configuration tests pass on
+`x86_64-pc-windows-msvc`; the installed WebView2 runtime smoke is intentionally
+ignored on hosts without the runtime, so no installed-runtime or visual capture
+claim is made here.
 
 ## Parser and diagnostic safeguards — 2026-09-08
 

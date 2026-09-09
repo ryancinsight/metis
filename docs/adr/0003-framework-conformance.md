@@ -261,9 +261,9 @@ syntax with different behavior; [ADR 0013](0013-strict-style-contract.md) owns
 the parser contract.
 
 The portable [event surface](../../crates/metis-platform/src/event.rs) remains
-application-supplied; the Windows [native adapter](../../crates/metis-platform/src/native.rs)
-now supplies a real event producer over Moirai's HWND provider, including
-bounded native IME composition phases. The
+application-supplied; the Windows [native adapter](../../crates/metis-platform/src/native/mod.rs)
+supplies a real event producer over Moirai's HWND provider, including bounded
+native IME composition phases. The
 [transport](../../crates/metis-ipc/src/transport.rs) still blocks on receipt.
 Moirai's merged `be87d009cd0e877beef719b47bdcbadc45659069` browser PAL and HTTP
 service own DOM/event callbacks, bounded WebSocket receipt and pre-response

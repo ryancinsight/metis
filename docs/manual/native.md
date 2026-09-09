@@ -33,8 +33,46 @@ The parent keeps this interactive session under a finite five-minute watchdog
 budget so an abandoned window cannot leave a process tree running forever.
 This role is Windows-only. Native IME start/update/commit/cancel phases are
 consumed by the host; preedit text stays transient and committed UTF-8 text uses
-the same bounded patient-field transition as ordinary text input. WebView2,
-file/network/device permissions and accessibility semantics remain host gaps.
+the same bounded patient-field transition as ordinary text input. WebView2
+composition remains a separate host role.
+
+## Embed packaged HTML and CSS with WebView2
+
+`metis_platform::native::WebViewSurface` embeds the Moirai WebView2 provider in
+the same thread-owned HWND boundary. The entry page must be a validated
+`file:///` URI; navigation is restricted to that entry directory, new-window
+requests are denied and page messages are bounded JSON values. The surface
+does not grant page code filesystem, network or process authority. The
+WebView2 runtime must be installed on the Windows machine.
+
+```rust
+use metis_platform::native::{
+    WebViewConfig, WebViewHostEvent, WebViewSurface, WindowConfig, WindowVisibility,
+};
+use std::time::Duration;
+
+let window = WindowConfig::with_visibility(
+    "My Metis web application",
+    1024,
+    768,
+    WindowVisibility::Visible,
+)?;
+let page = WebViewConfig::new("file:///C:/Apps/MyMetis/index.html")?;
+let mut surface = WebViewSurface::new(&window, page)?;
+
+for event in surface.wait_events(Duration::from_millis(250))? {
+    match event {
+        WebViewHostEvent::Window(_) | WebViewHostEvent::WebView(_) => {}
+    }
+}
+surface.close()?;
+# Ok::<(), Box<dyn std::error::Error>>(())
+```
+
+Resize the surface when the parent window reports a new client size. Use
+`set_visibility` for explicit visibility transitions and `post_json` for a
+bounded page bridge. Keep command authorization in the host or service layer;
+the browser page is an untrusted renderer.
 
 ## Verify the provider
 
@@ -96,8 +134,11 @@ and reopen one only after close, reusing its validated configuration; reopening
 a live surface is rejected. A committed native screenshot and keyboard/IME
 journey are still
 required for V05 visual acceptance; the hidden provider test and host unit tests
-are lifecycle evidence, not visual evidence. WebView2 composition, OS
-permission denial, native accessibility, an installed CJK or other IME journey,
-macOS/Linux providers, two-window captures and the DICOM viewer host remain V05
-and migration work. Do not treat a successful Windows build or hidden-window test
-as cross-platform or security evidence.
+are lifecycle evidence, not visual evidence. The WebView2 consumer and provider
+configuration tests compile and enforce URI/message bounds; the installed
+runtime smoke is ignored unless WebView2 is present. A visible WebView2 capture,
+page-to-host bridge journey, OS permission denial, native accessibility, an
+installed CJK or other IME journey, macOS/Linux providers, two-window captures
+and the DICOM viewer host remain V05 and migration work. Do not treat a
+successful Windows build or hidden-window test as cross-platform or security
+evidence.

@@ -17,7 +17,8 @@ import subprocess
 import time
 from fractions import Fraction
 
-ROOT = pathlib.Path(__file__).resolve().parents[1]
+PHYSICAL_ROOT = pathlib.Path(__file__).resolve().parents[1]
+ROOT = pathlib.Path(os.environ.get("METIS_NEUTRAL_ROOT", PHYSICAL_ROOT))
 OUTPUT = ROOT / "output" / "distribution"
 MARKER = "metis-distribution-workflow-1\n"
 TOTAL_SECONDS = 720
