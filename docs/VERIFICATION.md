@@ -51,11 +51,11 @@ check does not prove registry publisher registration, first publication,
 release authority or package upload; those are external release actions.
 Public branch inspection at revision `f266180` confirmed the crates.io and PyPI
 callers expose OIDC permissions without registry-token, SSH, GPG or private-key
-secrets. A live GitHub API inspection on 2026-09-08 found zero repository
-Actions secrets, variables, environments or rulesets; the workflows therefore
-have no stored key material. Creating the named `crates-io` and `pypi`
-environments is an explicit release-owner configuration step and remains
-outside the local source gate.
+secrets. A live GitHub API inspection on 2026-09-09 found zero repository
+Actions secrets or variables and two empty environments, `crates-io` and
+`pypi`, with no protection rules. The environments provide the named release
+boundary; trusted-publisher registration, protection rules and release
+authority remain external to the local source gate.
 
 `cargo package --locked --allow-dirty --list` succeeded for `metis-core`,
 `metis-web` and the root `metis` package. A local

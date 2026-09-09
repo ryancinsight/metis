@@ -162,9 +162,10 @@ local wheel test and release tag contract.
 Create the GitHub environments named `crates-io` and `pypi` and apply the
 repository's normal tag or reviewer protection rules. Leave registry secrets,
 passwords and signing keys out of these environments. The environment is an
-approval and trust boundary; it is not a credential store. The current public
-repository audit has no Actions secrets, variables or environments yet, so this
-setup remains a release-owner action.
+approval and trust boundary; it is not a credential store. The `crates-io` and
+`pypi` environments now exist without protection rules, secrets or variables.
+Add reviewer/tag protection and registry trusted publishers as release-owner
+actions.
 
 For every publishable Cargo package, add a crates.io GitHub Actions trusted
 publisher with these exact values:

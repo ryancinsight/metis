@@ -83,7 +83,8 @@ Crates.io release validation and publication use the Atlas OIDC workflow in
 `.github/workflows/rust-release.yml`. The `metis-python` crate builds the
 `metis-rs` distribution for `import metis`; `.github/workflows/python-release.yml`
 uses the same tokenless OIDC model for PyPI. Both registries require their
-trusted publishers and environments to be registered by the release authority.
+trusted publishers to be registered by the release authority; the empty
+`crates-io` and `pypi` GitHub environments are present and contain no secrets.
 The Python binding workflow and the runnable clinical example are documented in
 the [Python binding manual](docs/manual/python.md).
 
