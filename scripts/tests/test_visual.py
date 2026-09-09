@@ -173,7 +173,7 @@ class EvidenceTests(unittest.TestCase):
             path = self.root / relative
             path.parent.mkdir(parents=True, exist_ok=True)
             path.write_text(f"// Fixture source: {relative}\n", encoding="utf-8")
-            self.sources[str(path.resolve())] = hashlib.sha256(path.read_bytes()).hexdigest()
+            self.sources[str(path.resolve())] = visual.source_digest(path)
         self.lock = b"# Independent comparison fixture lock\n"
         (self.root / "Cargo.lock").write_bytes(self.lock)
         self.provenance = {"sources": self.sources, "host": "independent-fixture",
@@ -300,11 +300,23 @@ class EvidenceTests(unittest.TestCase):
         path.write_text("// Changed trace\n", encoding="utf-8")
         with self.assertRaisesRegex(visual.VisualError, "Stale source"):
             visual._fixture(self.root, self.provenance)
-        self.provenance["sources"][str(path.resolve())] = hashlib.sha256(path.read_bytes()).hexdigest()
+        self.provenance["sources"][str(path.resolve())] = visual.source_digest(path)
         self.assertNotEqual(visual._fixture(self.root, self.provenance), digest)
         del self.provenance["sources"][str(path.resolve())]
         with self.assertRaisesRegex(visual.VisualError, "Missing fixture source"):
             visual._fixture(self.root, self.provenance)
+
+    def test_fixture_digest_uses_canonical_lf_source_bytes(self):
+        digest = visual._fixture(self.root, self.provenance)
+        path = self.root / "examples/presentation/capture.rs"
+        original = path.read_bytes()
+        canonical = original.replace(b"\r\n", b"\n").replace(b"\r", b"\n")
+        path.write_bytes(canonical.replace(b"\n", b"\r\n"))
+        self.assertEqual(visual.source_digest(path), self.sources[str(path.resolve())])
+        lock = self.root / "Cargo.lock"
+        lock.write_bytes(self.lock.replace(b"\n", b"\r\n"))
+        self.assertEqual(visual.source_digest(lock), self.provenance["lock_sha256"])
+        self.assertEqual(visual._fixture(self.root, self.provenance), digest)
 
     def test_source_provenance_rejects_stale_lock_and_missing_host(self):
         for changed, message in (({"lock_sha256": "a" * 64}, "Stale lock provenance"),

@@ -232,7 +232,8 @@ def source_state(metadata, configs):
                 inputs.update(path for path in (directory / folder).rglob("*") if path.is_file() and "__pycache__" not in path.parts)
             if package["name"] == "metis-python":
                 inputs.add(directory / "pyproject.toml")
-    return {str(path.resolve()): hashlib.sha256(path.read_bytes()).hexdigest() for path in sorted(inputs)}
+    from visual import source_digest
+    return {str(path.resolve()): source_digest(path) for path in sorted(inputs)}
 
 def run_gate():
     global BASELINE, TOOLCHAIN
@@ -244,7 +245,7 @@ def run_gate():
     arguments = parser.parse_args()
     evidence()
     # Import and configuration failures must invalidate the previous success too.
-    from visual import begin_run
+    from visual import begin_run, source_digest
     run_nonce = begin_run(OUTPUT)
     TOOLCHAIN = tomllib.loads((ROOT / "rust-toolchain.toml").read_text(encoding="utf-8"))["toolchain"]["channel"]
     BASELINE = resolution()
@@ -297,7 +298,7 @@ def run_gate():
                       "host_capabilities": {"focus_order": "unsupported", "accessibility_tree": "unsupported",
                                             "pointer_dispatch": "unsupported", "responsive_cancellation": "unsupported"},
                       "source_sha256": hashlib.sha256(json.dumps(source, sort_keys=True).encode()).hexdigest(),
-                      "lock_sha256": hashlib.sha256(BASELINE).hexdigest()}
+                      "lock_sha256": source_digest(LOCK)}
         EVIDENCE.update(provenance)
         evidence()
         external = sorted({p["name"] for p in metadata["packages"] if (p.get("source") or "").startswith("registry+")})

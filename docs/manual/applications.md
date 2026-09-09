@@ -117,6 +117,8 @@ Inspect the generated images and semantic records before accepting the baseline.
 `output/visual/latest/report.json` records each comparison; adjacent expected,
 actual and difference images make failures inspectable. See
 [Inspect application output](testing.md) for report interpretation and retention.
+Source and lock digests normalize repository text to LF, matching the committed
+`.gitattributes` contract across Windows and Unix checkouts.
 `output/verification.json` records the complete gate, including failures before
 capture. Additional browser responsive pending/cancellation and remaining
 desktop host scenarios remain in the [visual scenario contract](../VERIFICATION.md#visual-contract).

@@ -89,6 +89,12 @@ def _read(path, limit=MAX_BYTES):
     return content
 
 
+def source_digest(path):
+    """Hash a repository text source using its canonical LF representation."""
+    content = path.read_bytes()
+    return hashlib.sha256(content.replace(b"\r\n", b"\n").replace(b"\r", b"\n")).hexdigest()
+
+
 def _dimensions(width, height):
     _require(0 < width <= MAX_WIDTH and 0 < height <= MAX_HEIGHT,
              "Image dimensions exceed the 800x600 software budget")
@@ -321,7 +327,7 @@ def _fixture(root, provenance):
              and isinstance(provenance.get("host"), str) and provenance["host"], "Missing source provenance")
     _require(re.fullmatch(r"[0-9a-f]{64}", provenance.get("lock_sha256", "")) is not None,
              "Malformed lock provenance")
-    _require(hashlib.sha256(_read(root / "Cargo.lock")).hexdigest() == provenance["lock_sha256"],
+    _require(source_digest(root / "Cargo.lock") == provenance["lock_sha256"],
              "Stale lock provenance")
     selected = {}
     sources = provenance["sources"]
@@ -329,7 +335,7 @@ def _fixture(root, provenance):
         path = pathlib.Path(path_text).resolve()
         _require(isinstance(digest, str) and re.fullmatch(r"[0-9a-f]{64}", digest) is not None,
                  "Malformed source digest")
-        _require(path.is_file() and hashlib.sha256(path.read_bytes()).hexdigest() == digest,
+        _require(path.is_file() and source_digest(path) == digest,
                  f"Stale source provenance: {path}")
     roots = (root / "examples" / "presentation", root / "crates" / "metis-frontend" / "src",
              root / "crates" / "metis-platform" / "src", root / "crates" / "metis-ui-lang" / "src")

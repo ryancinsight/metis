@@ -1075,6 +1075,8 @@ alongside independently supplied expected outcomes. The comparator binds these
 to the current source/lock/compiler and rendering fixture, checks exact SVG bytes
 and decoded BMP pixels, and compares reviewed semantic records. It rejects missing
 captures, stale source mappings and wrong state even when an image appears valid.
+Repository text and lock digests use the committed LF representation, so a CRLF
+working-tree checkout cannot create a different fixture identity.
 
 Three deliberately altered renders change a label, geometry and color. Each must
 produce a nonempty pixel difference against the initial form. They test the
