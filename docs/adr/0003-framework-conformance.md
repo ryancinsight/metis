@@ -135,6 +135,12 @@ host now delegates ordinary input and control events at the mounted root;
 specialized pointer, file, text and dialog listeners retain their own typed
 providers.
 
+Revision 2026-09-09: the matrix now reflects the delivered state and style
+contract. State, command and async rows point to their completed current
+surfaces; native Windows HWND support is distinguished from the unimplemented
+system WebView host; and the software renderer rejects custom declarations it
+cannot honor.
+
 ## Decision and scope
 
 Use Tauri as the application-framework migration reference, egui/GPUI/Iced as
@@ -191,7 +197,7 @@ Each row names its closing items; acceptance belongs in the
 | Capability | egui ecosystem | GPUI | Tauri | Metis state and closing items |
 | --- | --- | --- | --- | --- |
 | Application state and controls | Immediate-mode widgets and responses [E1] | Entities, views, actions [G1] | Frontend framework supplies widgets/state [T1] | One form with Rust-owned checkbox, radio, range, select, dialog and pointer-capture dispatch; general component lifecycle remains open. [STATE](../../backlog.md#METIS-STATE-001), [INPUT](../../backlog.md#METIS-INPUT-001). |
-| Layout, themes, resizing | Panels, scrolling, logical-point sizing [E1] | Styled element layout; not browser CSS [G1] | Host HTML/CSS and DOM [T1] | Sequential layout; several accepted styles do nothing. [LAYOUT](../../backlog.md#METIS-LAYOUT-001). |
+| Layout, themes, resizing | Panels, scrolling, logical-point sizing [E1] | Styled element layout; not browser CSS [G1] | Host HTML/CSS and DOM [T1] | Sequential layout; unsupported custom declarations return typed diagnostics. [LAYOUT](../../backlog.md#METIS-LAYOUT-001). |
 | Text editing and IME | Text editing plus integration IME contract [E4] | Selection/composition input example [G4] | Browser text/IME, subject to host integration | Browser text and native preedit/commit/cancel events are bounded; the software renderer remains a bitmap Latin subset without selection or shaping. [TEXT](../../backlog.md#METIS-TEXT-001). |
 | Accessibility | AccessKit integration; custom widget semantics required [E5] | AccessKit roles/identity/actions in current source [G3] | Semantic frontend plus WebView/OS accessibility | Browser markup now exposes named groups, polite atomic live regions, and dynamic `aria-busy` state for backend/result work; screen-reader speech, WebView/OS accessibility and custom-renderer semantics remain open. [A11Y](../../backlog.md#METIS-A11Y-001). |
 | Pointer, keyboard, touch, focus | Backend input, sensitivity and viewports [E1] | Platform events and actions [G1] | Web frontend and native window events [T1] | Browser text, checkbox, radio, range and pointer surface use semantic keyboard/pointer targets; Moirai owns browser pointer ID/capture/release, pointer metadata, bounded file-drop metadata and bounded browser file access, while Metis applies bounded single-pointer drag pan, two-pointer centroid/distance pinch pan/zoom, wheel pan, Ctrl+wheel zoom, first-payload DICOM marker classification and file-drop state. The Windows `NativeSurface` now returns provider pointer, key, focus, text and bounded IME composition events; trusted physical-drop evidence, installed IME journeys, accessibility technology, cross-engine parity and OS pump integration remain open. [INPUT](../../backlog.md#METIS-INPUT-001), desktop items. |
@@ -223,7 +229,7 @@ after the corresponding Metis implementation and target evidence pass.
 
 | Capability | Iced 0.14 evidence | Metis consequence and closing work |
 | --- | --- | --- |
-| State and control flow | Elm-style state, messages, `update` and `view`; `Task` and `Subscription` support asynchronous work [I0] [I1] | Use the state/message split as a design reference, while keeping Metis's typed command and authority boundary. [STATE](../../backlog.md#METIS-STATE-001), [COMMANDS](../../backlog.md#METIS-COMMANDS-001), [ASYNC](../../backlog.md#METIS-ASYNC-001) remain open for the DOM and broker contracts. |
+| State and control flow | Elm-style state, messages, `update` and `view`; `Task` and `Subscription` support asynchronous work [I0] [I1] | Use the state/message split as a design reference; Metis's typed form state, command catalog, bounded async lifecycle and authority boundary are implemented for the current browser/native workflows. General component lifecycle remains open. [STATE](../../backlog.md#METIS-STATE-001), [COMMANDS](../../backlog.md#METIS-COMMANDS-001), [ASYNC](../../backlog.md#METIS-ASYNC-001) |
 | Layout and widgets | Responsive layout, built-in text inputs and scrollables, and custom widgets are documented [I0] [I1] | Metis must implement or reject each admitted CSS/layout property and provide reusable DOM controls. [LAYOUT](../../backlog.md#METIS-LAYOUT-001), [INPUT](../../backlog.md#METIS-INPUT-001), [DATA](../../backlog.md#METIS-DATA-001). |
 | Text, IME and accessibility | Iced documents text input/widgets; the comparator does not establish Metis's DOM IME or assistive-technology contract | Keep DOM text, composition, selection, semantic roles and OS bridge in Metis's target items. [TEXT](../../backlog.md#METIS-TEXT-001), [A11Y](../../backlog.md#METIS-A11Y-001). |
 | Native windows | The native runtime manages windows and events on supported desktop targets [I0] | Moirai's Windows provider and Metis `NativeSurface` establish the HWND/frame/event boundary; the restricted visible application host is composed, while native visual capture, process/permission probes and macOS/Linux providers remain required. [DESKTOP](../../backlog.md#METIS-DESKTOP-001), [MACOS](../../backlog.md#METIS-MACOS-001), [LINUX](../../backlog.md#METIS-LINUX-001). |
@@ -243,10 +249,10 @@ Real backend traces and seven software captures verify the transitions. This
 2026-09-05 revision replaces the original stale-result finding; responsive host
 events remain dependent on asynchronous transport and browser/native hosting.
 The [style contract](../../crates/metis-ui-lang/README.md) admits a bounded set
-of declarations, stores some properties whose renderer semantics are pending,
-and rejects unknown or malformed declarations with a typed diagnostic. It never
-silently accepts browser-like syntax with different behavior; [ADR 0013](0013-strict-style-contract.md)
-owns the parser contract.
+of declarations and rejects unknown, malformed or unsupported custom-renderer
+properties with a typed diagnostic. It never silently accepts browser-like
+syntax with different behavior; [ADR 0013](0013-strict-style-contract.md) owns
+the parser contract.
 
 The portable [event surface](../../crates/metis-platform/src/event.rs) remains
 application-supplied; the Windows [native adapter](../../crates/metis-platform/src/native.rs)

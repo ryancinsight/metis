@@ -28,7 +28,8 @@ synchronous pipes and asynchronous WebSocket sessions, with strict identifiers
 and bounded retention; an accepted clinical calculation emits a typed
 `clinical.result` event after its correlated response. They also expose a
 versioned target descriptor naming the host platform and installed transport
-surfaces; unsupported native window and OS permission surfaces remain absent.
+surfaces; the native window role advertises its installed HWND surface while
+OS permission surfaces remain absent.
 Hosts can register bounded, typed plugin manifests with explicit capability
 scopes; the versioned
 IPC seam also invokes declared plugin commands through a bounded host router and
@@ -37,8 +38,8 @@ operating-system authority; handler erasure is confined to the backend's open
 extension boundary. This renderer's bounded
 markup subset is
 not the intended limit of web support. A desktop WebView host is not implemented. Metis does not
-yet provide Tauri feature parity, native desktop windows,
-an OS privilege sandbox, durable audit storage or regulatory certification.
+yet provide Tauri feature parity, a system WebView host on all targets, an OS
+privilege sandbox, durable audit storage or regulatory certification.
 The infusion arithmetic is a synthetic engineering example; its configurable
 limits are not treatment guidance.
 
