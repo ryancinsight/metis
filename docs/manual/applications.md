@@ -142,6 +142,22 @@ the Codex in-app browser at 1280×720 CSS pixels and device scale 1.25 with no
 console warnings or errors. These browser captures are runtime observations;
 the software gallery remains the deterministic image baseline.
 
+## Result explorer
+
+The browser workbench includes a bounded result explorer for applications that
+receive more than one calculation response. It groups real responses by
+patient, orders them by audit sequence or rate, filters patient references,
+keeps selection stable across updates and exposes keyboard disclosure and
+paging. The explorer is shared frontend state, so a native host can render the
+same rows without adopting the browser controls. Empty, loading and typed
+error states remain visible when the service is disconnected.
+
+The current manual capture shows the empty explorer card and its semantic
+controls at 1280×720; the connected-service workflow must add a live-row
+capture before the RITK migration claims DICOM result-history parity. Native
+value-semantic tests already cover insertion, update, eviction, filtering,
+ordering, selection and tree disclosure from real typed responses.
+
 ## Framework comparison evidence
 
 The complete comparison is maintained in

@@ -101,7 +101,7 @@ body[data-metis-theme="high-contrast"] {
 .metis-host-controls { display: flex; gap: 0.65rem; width: 100%; max-width: 960px; margin: 0 auto; padding: 1rem 2rem 0; }
 .metis-host-controls button { margin-top: 0; }
 #metis-app { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 1.5rem; width: 100%; max-width: 960px; margin: 0 auto; padding: 2rem; background: var(--metis-page); }
-.metis-header, .metis-form, .metis-options, .metis-drop, .metis-text, .metis-result { min-width: 0; border: 1px solid var(--metis-border); border-radius: 0.75rem; background: var(--metis-surface); padding: 1.25rem; overflow-wrap: anywhere; }
+.metis-header, .metis-form, .metis-options, .metis-drop, .metis-text, .metis-result, .metis-explorer { min-width: 0; border: 1px solid var(--metis-border); border-radius: 0.75rem; background: var(--metis-surface); padding: 1.25rem; overflow-wrap: anywhere; }
 .metis-header { grid-column: 1 / -1; }
 .metis-header > button { margin-top: 1rem; }
 .metis-brand { display: flex; align-items: center; gap: 1rem; }
@@ -134,6 +134,22 @@ dialog p { color: var(--metis-copy); }
 #text-specimen[data-text-state="composing"] { border-color: var(--metis-focus); background: var(--metis-warning); }
 #text-specimen[data-composing="true"] { text-decoration: underline wavy var(--metis-focus); text-underline-offset: 0.2em; }
 #text-specimen:focus-visible { outline: 3px solid var(--metis-focus); outline-offset: 2px; }
+.metis-explorer { grid-column: 1 / -1; }
+.metis-explorer-controls { display: grid; grid-template-columns: minmax(10rem, 0.7fr) minmax(12rem, 1.3fr); gap: 0.55rem 0.8rem; align-items: center; margin-bottom: 1rem; }
+.metis-explorer-controls label { color: var(--metis-muted); }
+#explorer-table { width: 100%; border-collapse: collapse; color: var(--metis-text-strong); }
+#explorer-table caption { padding: 0 0 0.65rem; color: var(--metis-copy); text-align: left; }
+#explorer-table th { padding: 0.55rem 0.7rem; color: var(--metis-muted); font-size: 0.8rem; font-weight: 700; text-align: left; text-transform: uppercase; letter-spacing: 0.06em; }
+#explorer-table td { border-top: 1px solid var(--metis-border); padding: 0.3rem 0; }
+.explorer-entry { box-sizing: border-box; width: 100%; min-height: var(--metis-hit-target); margin: 0; border: 1px solid transparent; border-radius: 0.4rem; background: transparent; color: var(--metis-text-strong); padding: 0.6rem 0.7rem; text-align: left; font: inherit; font-weight: 500; }
+.explorer-entry:hover { border-color: var(--metis-border); background: var(--metis-info); }
+.explorer-entry:focus-visible { outline: 3px solid var(--metis-focus); outline-offset: 2px; }
+.explorer-group { color: var(--metis-accent-strong); font-weight: 700; }
+.explorer-row { padding-left: 2rem; }
+.explorer-row-selected { border-color: var(--metis-accent); background: var(--metis-success); }
+.explorer-entry-empty { display: none; }
+.metis-explorer-pagination { display: flex; align-items: center; justify-content: space-between; gap: 0.75rem; margin-top: 0.8rem; }
+#explorer-window-status { min-height: 1.5rem; color: var(--metis-copy); text-align: center; font-variant-numeric: tabular-nums; }
 .metis-option { display: flex; align-items: center; gap: 0.55rem; min-height: var(--metis-hit-target); }
 .metis-option-label { color: var(--metis-muted); font-size: 0.9rem; }
 label { color: var(--metis-text); font-size: 0.9rem; }
@@ -148,7 +164,7 @@ button:focus-visible, input:focus-visible, select:focus-visible, textarea:focus-
 dl { display: grid; grid-template-columns: auto 1fr; gap: 0.55rem 1rem; }
 dt { color: var(--metis-muted); }
 dd { margin: 0; color: var(--metis-text-strong); font-variant-numeric: tabular-nums; }
-#metis-status, #result-state { color: var(--metis-accent); min-height: 1.5rem; }
+#metis-status, #result-state, #explorer-status { color: var(--metis-accent); min-height: 1.5rem; }
 @media (max-width: 700px) { .metis-host-controls { padding-inline: 1rem; } #metis-app { grid-template-columns: 1fr; padding: 1rem; } .metis-header { grid-column: auto; } }
 @media (prefers-reduced-motion: reduce) {
   html { scroll-behavior: auto; }
@@ -163,14 +179,14 @@ dd { margin: 0; color: var(--metis-text-strong); font-variant-numeric: tabular-n
 @media (forced-colors: active) {
   :root { forced-color-adjust: auto; background: Canvas; color: CanvasText; }
   body { background: Canvas; color: CanvasText; }
-  .metis-header, .metis-form, .metis-options, .metis-drop, .metis-text, .metis-result, .metis-pointer {
+  .metis-header, .metis-form, .metis-options, .metis-drop, .metis-text, .metis-result, .metis-explorer, .metis-pointer {
     border-color: ButtonText;
     background: Canvas;
     color: CanvasText;
   }
   dialog { border-color: ButtonText; background: Canvas; color: CanvasText; }
   dialog::backdrop { background: Canvas; }
-  #pointer-surface, #drop-zone, #text-specimen, input, select {
+  #pointer-surface, #drop-zone, #text-specimen, #explorer-table, input, select {
     border-color: ButtonText;
     background: Canvas;
     color: CanvasText;

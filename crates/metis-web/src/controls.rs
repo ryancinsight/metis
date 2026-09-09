@@ -107,6 +107,46 @@ pub(crate) const BROWSER_MARKUP: &str = r#"
     <dt>Dose</dt><dd id="result-dose">0.500 mcg/kg/min</dd>
   </dl>
 </section>
+<section class="metis-explorer" aria-labelledby="explorer-heading">
+  <h2 id="explorer-heading">Result explorer</h2>
+  <p id="explorer-status" role="status" aria-live="polite">Explorer: no backend results</p>
+  <div class="metis-explorer-controls">
+    <label for="explorer-filter">Filter patient references</label>
+    <input id="explorer-filter" type="search" maxlength="128" autocomplete="off" aria-describedby="explorer-status">
+    <label for="explorer-sort">Order results</label>
+    <select id="explorer-sort" name="explorer-sort" aria-describedby="explorer-status">
+      <option value="sequence-descending" selected>Newest audit sequence</option>
+      <option value="sequence-ascending">Oldest audit sequence</option>
+      <option value="patient-ascending">Patient A–Z</option>
+      <option value="patient-descending">Patient Z–A</option>
+      <option value="volume-ascending">Lowest volume rate</option>
+      <option value="volume-descending">Highest volume rate</option>
+      <option value="drug-ascending">Lowest drug rate</option>
+      <option value="drug-descending">Highest drug rate</option>
+    </select>
+  </div>
+  <table id="explorer-table">
+    <caption id="explorer-caption">Retained results grouped by patient</caption>
+    <thead>
+      <tr><th scope="col">Result tree</th></tr>
+    </thead>
+    <tbody>
+      <tr><td><button id="explorer-entry-0" class="explorer-entry explorer-entry-empty" type="button" disabled aria-hidden="true">No visible result</button></td></tr>
+      <tr><td><button id="explorer-entry-1" class="explorer-entry explorer-entry-empty" type="button" disabled aria-hidden="true">No visible result</button></td></tr>
+      <tr><td><button id="explorer-entry-2" class="explorer-entry explorer-entry-empty" type="button" disabled aria-hidden="true">No visible result</button></td></tr>
+      <tr><td><button id="explorer-entry-3" class="explorer-entry explorer-entry-empty" type="button" disabled aria-hidden="true">No visible result</button></td></tr>
+      <tr><td><button id="explorer-entry-4" class="explorer-entry explorer-entry-empty" type="button" disabled aria-hidden="true">No visible result</button></td></tr>
+      <tr><td><button id="explorer-entry-5" class="explorer-entry explorer-entry-empty" type="button" disabled aria-hidden="true">No visible result</button></td></tr>
+      <tr><td><button id="explorer-entry-6" class="explorer-entry explorer-entry-empty" type="button" disabled aria-hidden="true">No visible result</button></td></tr>
+      <tr><td><button id="explorer-entry-7" class="explorer-entry explorer-entry-empty" type="button" disabled aria-hidden="true">No visible result</button></td></tr>
+    </tbody>
+  </table>
+  <div class="metis-explorer-pagination">
+    <button id="explorer-previous" type="button" disabled>Previous results</button>
+    <span id="explorer-window-status" role="status">Entries 0 of 0</span>
+    <button id="explorer-next" type="button" disabled>Next results</button>
+  </div>
+</section>
 "#;
 
 #[derive(Clone, Copy)]

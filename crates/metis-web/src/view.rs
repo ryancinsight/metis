@@ -6,7 +6,7 @@ use metis_core::protocol::{
     CapabilityCatalogPayload, MAX_PLUGINS, Plugin, PluginDescriptor, PluginOperation,
     PluginRegistry, TargetCapabilityPayload,
 };
-use metis_frontend::FormState;
+use metis_frontend::{ExplorerStatus, FormState, RESULT_PAGE_SIZE, VisibleEntry};
 use metis_ipc::client::HandshakeError;
 use moirai_pal::wasm::{WebDocument, WebElement};
 use std::io;
@@ -110,7 +110,164 @@ pub(super) fn render(document: &WebDocument, state: &BrowserState) -> io::Result
         "data-result-scale-percent",
         &state.controls.scale().value().to_string(),
     )?;
-    set_text(document, "result-state", &message)
+    set_text(document, "result-state", &message)?;
+    render_explorer(document, state)
+}
+
+fn render_explorer(document: &WebDocument, state: &BrowserState) -> io::Result<()> {
+    let explorer = &state.result_explorer;
+    render_explorer_summary(document, explorer)?;
+    render_explorer_entries(document, explorer)?;
+    render_explorer_pagination(document, explorer)
+}
+
+fn render_explorer_summary(
+    document: &WebDocument,
+    explorer: &metis_frontend::ResultExplorer,
+) -> io::Result<()> {
+    let status = match explorer.status() {
+        ExplorerStatus::Empty => "Explorer: no backend results".to_owned(),
+        ExplorerStatus::Loading => "Explorer: loading backend result".to_owned(),
+        ExplorerStatus::Ready => format!(
+            "Explorer: {} result{} retained",
+            explorer.row_count(),
+            if explorer.row_count() == 1 { "" } else { "s" }
+        ),
+        ExplorerStatus::Error(error) => {
+            format!("Explorer error [{}]", error.code.as_str())
+        }
+        _ => "Explorer: unsupported state".to_owned(),
+    };
+    set_text(document, "explorer-status", &status)?;
+    set_text(
+        document,
+        "explorer-caption",
+        &format!(
+            "Retained results grouped by patient; filter `{}`; order {} {}",
+            explorer.filter(),
+            explorer.sort().key().label(),
+            explorer.sort().direction().value(),
+        ),
+    )?;
+    let table = element(document, "explorer-table")?;
+    table.set_attribute(
+        "data-result-status",
+        explorer_status_name(explorer.status()),
+    )?;
+    table.set_attribute("data-window-start", &explorer.window_start().to_string())?;
+    Ok(())
+}
+
+fn render_explorer_entries(
+    document: &WebDocument,
+    explorer: &metis_frontend::ResultExplorer,
+) -> io::Result<()> {
+    for slot in 0..RESULT_PAGE_SIZE {
+        let button = element(document, &format!("explorer-entry-{slot}"))?;
+        let entry = explorer.visible_entry(slot);
+        render_explorer_entry(&button, entry.as_ref(), explorer.selected_id())?;
+    }
+    Ok(())
+}
+
+fn render_explorer_entry(
+    button: &WebElement,
+    entry: Option<&VisibleEntry<'_>>,
+    selected_id: Option<metis_frontend::ResultId>,
+) -> io::Result<()> {
+    match entry {
+        Some(VisibleEntry::Group {
+            id,
+            label,
+            expanded,
+            row_count,
+        }) => {
+            let disclosure = if *expanded { "expanded" } else { "collapsed" };
+            let text = format!("{label} — {row_count} result(s) — {disclosure}");
+            button.set_text(&text);
+            button.set_attribute("class", "explorer-entry explorer-group")?;
+            button.set_attribute("aria-label", &text)?;
+            button.set_attribute("aria-hidden", "false")?;
+            button.set_attribute("aria-expanded", if *expanded { "true" } else { "false" })?;
+            button.set_attribute("aria-level", "1")?;
+            button.set_attribute("data-entry-kind", "group")?;
+            button.set_attribute("data-group-id", &id.get().to_string())?;
+            button.set_disabled(false)?;
+        }
+        Some(VisibleEntry::Row(row)) => {
+            let selected = selected_id == Some(row.id());
+            let selection = if selected { " — selected" } else { "" };
+            let text = format!(
+                "{} — sequence {} — {:.3} mL/hr — {:.3} mg/hr{selection}",
+                row.patient_id(),
+                row.id().get(),
+                row.rate_ml_hr(),
+                row.drug_rate_mg_hr(),
+            );
+            button.set_text(&text);
+            button.set_attribute(
+                "class",
+                if selected {
+                    "explorer-entry explorer-row explorer-row-selected"
+                } else {
+                    "explorer-entry explorer-row"
+                },
+            )?;
+            button.set_attribute("aria-label", &text)?;
+            button.set_attribute("aria-hidden", "false")?;
+            button.set_attribute("aria-expanded", "false")?;
+            button.set_attribute("aria-level", "2")?;
+            button.set_attribute("aria-pressed", if selected { "true" } else { "false" })?;
+            button.set_attribute("data-entry-kind", "row")?;
+            button.set_attribute("data-result-id", &row.id().get().to_string())?;
+            button.set_disabled(false)?;
+        }
+        None => {
+            button.set_text("No visible result");
+            button.set_attribute("class", "explorer-entry explorer-entry-empty")?;
+            button.set_attribute("aria-label", "No visible result")?;
+            button.set_attribute("aria-hidden", "true")?;
+            button.set_attribute("aria-expanded", "false")?;
+            button.set_attribute("aria-level", "1")?;
+            button.set_attribute("aria-pressed", "false")?;
+            button.set_attribute("data-entry-kind", "empty")?;
+            button.set_attribute("data-group-id", "")?;
+            button.set_attribute("data-result-id", "")?;
+            button.set_disabled(true)?;
+        }
+    }
+    Ok(())
+}
+
+fn render_explorer_pagination(
+    document: &WebDocument,
+    explorer: &metis_frontend::ResultExplorer,
+) -> io::Result<()> {
+    let window_status = if explorer.visible_count() == 0 {
+        "Entries 0 of 0".to_owned()
+    } else {
+        let first = explorer.window_start() + 1;
+        let last = (explorer.window_start() + RESULT_PAGE_SIZE).min(explorer.visible_count());
+        format!(
+            "Entries {first}–{last} of {}; {} retained",
+            explorer.visible_count(),
+            explorer.row_count()
+        )
+    };
+    set_text(document, "explorer-window-status", &window_status)?;
+    element(document, "explorer-previous")?.set_disabled(!explorer.can_previous())?;
+    element(document, "explorer-next")?.set_disabled(!explorer.can_next())?;
+    Ok(())
+}
+
+fn explorer_status_name(status: &ExplorerStatus) -> &'static str {
+    match status {
+        ExplorerStatus::Empty => "empty",
+        ExplorerStatus::Loading => "loading",
+        ExplorerStatus::Ready => "ready",
+        ExplorerStatus::Error(_) => "error",
+        _ => "unknown",
+    }
 }
 
 fn render_drop(document: &WebDocument, state: &BrowserState) -> io::Result<()> {

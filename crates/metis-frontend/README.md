@@ -37,6 +37,13 @@ After a successful calculation, `recv_event().await` (or the synchronous
 event. Event receipt is a separate bounded operation so hosts can choose when
 to update an event view.
 
+`ResultExplorer` owns a bounded history of typed backend responses for table
+and tree views. `record_response` validates and inserts a response,
+`set_filter` and `set_sort` rebuild the visible projection, and
+`selected_id` remains stable while a row is retained. `visible_entries()`
+yields at most `RESULT_PAGE_SIZE` borrowed group or row entries for a native
+or browser renderer without allocating a second result list.
+
 ```rust
 use metis_frontend::{FormState, FrontendApp};
 let (transport, peer) = metis_ipc::MemoryTransport::pair();

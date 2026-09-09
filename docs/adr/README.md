@@ -26,3 +26,4 @@
 | [0015](0015-native-window-provider.md) | Native window provider boundary | Accepted |
 | [0016](0016-theme-and-branding.md) | Theme and branding | Accepted |
 | [0017](0017-python-binding.md) | Python binding boundary | Accepted |
+| [0018](0018-result-explorer.md) | Bounded result explorer | Accepted |

@@ -118,6 +118,37 @@ Rust-owned state after each change. Tab through the labels, press Space on the
 checkbox or radio, use the range arrows, and open the select to reproduce the
 keyboard path.
 
+## Explore retained results
+
+The **Result explorer** is a bounded, host-independent view of real backend
+responses. Each accepted response is retained under its validated patient
+reference and audit sequence. Duplicate audit sequences update their row; the
+history evicts its oldest row at the fixed capacity. The explorer never
+calculates a value in the browser and never renders the response signature.
+
+Use **Filter patient references** to restrict the visible tree, and choose an
+order from **Order results** to sort by audit sequence, patient, volume rate or
+drug rate. Patient groups are keyboard-operable disclosure buttons. Their rows
+are keyboard-operable selection buttons, and the pager exposes at most eight
+visible tree entries at once. The live status reports `empty`, `loading`,
+`ready` or a typed producer error; a failed refresh leaves previously accepted
+rows available for inspection.
+
+The native `metis-frontend` tests exercise inserted and updated responses,
+exact sort and filter values, stable selection, eviction, replacement,
+disclosure, paging and malformed input. The browser asset test checks the
+labels, table caption, live region, control IDs and delegated listener events.
+For a browser capture, build and serve the workbench, scroll to **Result
+explorer**, and inspect its empty state before connecting a service. The
+2026-09-08 CUA trace used the generated page at
+`http://127.0.0.1:8095/?cache=explorer-20260908` in a 1280×720 CSS-pixel
+viewport at device scale 1.25. The screenshot showed the result card, filter,
+order select, table caption and disabled pager. Changing the filter to `PT`
+and then `X` updated the table caption and returned `Entries 0 of 0`; keyboard
+deletion cleared it. No backend bridge was configured for this capture, so it
+does not claim a live-row rendering; the real row path is covered by the Rust
+tests and the connected-service trace remains required for viewer acceptance.
+
 ## Hypermedia boundary
 
 The [htmx documentation](https://htmx.org/docs/) models a browser interaction as

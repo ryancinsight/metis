@@ -168,6 +168,41 @@ class BrowserAssetContractTests(unittest.TestCase):
         ):
             self.assertIn(selector, styles)
 
+    def test_result_explorer_is_bounded_and_keyboard_accessible(self):
+        controls = (ROOT / "crates" / "metis-web" / "src" / "controls.rs").read_text(
+            encoding="utf-8"
+        )
+        listeners = (ROOT / "crates" / "metis-web" / "src" / "browser" / "explorer.rs").read_text(
+            encoding="utf-8"
+        )
+        styles = (ROOT / "examples" / "browser" / "styles.css").read_text(
+            encoding="utf-8"
+        )
+        for fragment in (
+            'aria-labelledby="explorer-heading"',
+            'id="explorer-status" role="status" aria-live="polite"',
+            'id="explorer-filter" type="search" maxlength="128"',
+            'id="explorer-sort" name="explorer-sort"',
+            'id="explorer-table"',
+            'scope="col"',
+            'id="explorer-entry-0"',
+            'id="explorer-entry-7"',
+            'id="explorer-previous" type="button"',
+            'id="explorer-next" type="button"',
+        ):
+            self.assertIn(fragment, controls)
+        for event_name in ('"input"', '"change"', '"click"'):
+            self.assertIn(event_name, listeners)
+        for selector in (
+            '.metis-explorer',
+            '#explorer-table',
+            '.explorer-entry:focus-visible',
+            '.explorer-entry-empty { display: none; }',
+            '.explorer-row-selected',
+            '.metis-explorer-pagination',
+        ):
+            self.assertIn(selector, styles)
+
     def test_layout_contract_constrains_grid_items_and_narrow_viewport(self):
         styles = (ROOT / "examples" / "browser" / "styles.css").read_text(
             encoding="utf-8"

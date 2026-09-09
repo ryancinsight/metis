@@ -6,6 +6,8 @@ mod config;
 mod dialog;
 #[path = "browser/events.rs"]
 mod events;
+#[path = "browser/explorer.rs"]
+mod explorer;
 #[path = "browser/file_drop.rs"]
 mod file_drop;
 #[path = "browser/gesture.rs"]
@@ -49,6 +51,7 @@ struct BrowserState {
     drop_read_state: crate::file_drop_policy::DropReadState,
     drop_batch: Option<FileDropBatch>,
     text_state: crate::text_policy::TextState,
+    result_explorer: metis_frontend::ResultExplorer,
     controls: controls::ControlState,
 }
 
@@ -65,6 +68,7 @@ impl Default for BrowserState {
             drop_read_state: crate::file_drop_policy::DropReadState::default(),
             drop_batch: None,
             text_state: crate::text_policy::TextState::default(),
+            result_explorer: metis_frontend::ResultExplorer::new(),
             controls: controls::ControlState::default(),
         }
     }
@@ -241,6 +245,7 @@ fn control_listeners(
         drop_sequence,
     )?);
     listeners.extend(text::listeners(document, state)?);
+    listeners.extend(explorer::listeners(document, state)?);
     Ok(listeners)
 }
 
@@ -345,6 +350,7 @@ fn submit(
     if task_slot.borrow().is_some() {
         let mut state = state.borrow_mut();
         state.state = FormState::Pending;
+        state.result_explorer.begin_loading();
         if let Err(error) = view::render(document, &state) {
             view::set_mount_error(document, &error);
         }
@@ -371,6 +377,7 @@ fn submit(
     {
         let mut state = state.borrow_mut();
         state.state = FormState::Pending;
+        state.result_explorer.begin_loading();
         if let Err(error) = view::render(document, &state) {
             view::set_mount_error(document, &error);
         }
@@ -399,11 +406,7 @@ fn submit(
             let _ = task_cleanup.borrow_mut().take();
             return;
         }
-        let bridge = if result.is_ok() && event_error.is_none() {
-            BridgeStatus::Ready
-        } else {
-            BridgeStatus::Disabled
-        };
+        let bridge = submission_bridge(&result, event_error.as_ref());
         *result_app.borrow_mut() = Some(app);
         {
             let mut state = result_state.borrow_mut();
@@ -423,6 +426,12 @@ fn submit(
                 _ => {}
             }
             state.state = outcome;
+            update_result_explorer(
+                &mut state,
+                &inputs.patient_id,
+                &result,
+                event_error.as_ref(),
+            );
             if let Err(error) = view::render(&result_document, &state) {
                 view::set_mount_error(&result_document, &error);
             }
@@ -430,6 +439,61 @@ fn submit(
         let _ = task_cleanup.borrow_mut().take();
     });
     *task_slot.borrow_mut() = Some(task);
+}
+
+fn submission_bridge(
+    result: &metis_core::error::Result<()>,
+    event_error: Option<&MetisError>,
+) -> BridgeStatus {
+    if result.is_ok() && event_error.is_none() {
+        BridgeStatus::Ready
+    } else {
+        BridgeStatus::Disabled
+    }
+}
+
+fn result_state_update(
+    state: &mut BrowserState,
+    patient_id: &str,
+    result: &metis_core::error::Result<()>,
+    event_error: Option<&MetisError>,
+) -> metis_core::error::Result<()> {
+    if let Err(error) = result {
+        state.result_explorer.fail(error.clone());
+        return Ok(());
+    }
+    if let Some(error) = event_error {
+        state.result_explorer.fail(error.clone());
+        return Ok(());
+    }
+    match &state.state {
+        FormState::Success(response) => state
+            .result_explorer
+            .record_response(patient_id, response)
+            .map(|_| ()),
+        FormState::Rejected(error) => {
+            state.result_explorer.fail(MetisError::clinical(
+                ErrorCode::ClinicalInterlockBlocked,
+                format!(
+                    "Backend rejected explorer response [0x{:04X}]",
+                    error.error_code
+                ),
+            ));
+            Ok(())
+        }
+        _ => Ok(()),
+    }
+}
+
+fn update_result_explorer(
+    state: &mut BrowserState,
+    patient_id: &str,
+    result: &metis_core::error::Result<()>,
+    event_error: Option<&MetisError>,
+) {
+    if let Err(error) = result_state_update(state, patient_id, result, event_error) {
+        state.result_explorer.fail(error);
+    }
 }
 
 thread_local! {
