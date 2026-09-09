@@ -336,10 +336,8 @@ an owner. “Unsupported” cannot replace delivery of a required mobile/native 
 
 <a id="METIS-DICOM-003"></a>
 ## METIS-DICOM-003 — Remove format-specific browser presentation [patch]
-- Status: in-progress; priority: P1; owner: Metis browser presentation; integrator: root; last-update: 2026-09-09; branch: `docs/metis-format-neutral-drop-003`; dependencies: METIS-DICOM-002; risk: ownership drift
-- Scope: rename the browser sample, package README and test fixtures to describe bounded file handoff; retain DICOM only in RITK integration and ownership documentation.
-- Acceptance: no DICOM-specific label, fixture or classifier remains in `metis-web` or the browser sample; static browser checks, native tests, WASM checks and the full gate pass; the manual states that RITK consumes format-specific bytes.
-- Demonstration: [browser file-drop evidence](docs/VERIFICATION.md#browser-file-drop-evidence--2026-09-08) and the [RITK DICOM workflow](../../ritk/docs/manual/dicom-workflow.md).
+- Status: done; priority: P1; owner: Metis browser presentation; integrator: root; last-update: 2026-09-09; delivery: `c4bcd74`; dependencies: METIS-DICOM-002; risk: ownership drift
+- Outcome: browser labels, package README and fixtures describe generic bounded file handoff; format-specific parsing remains in RITK. Static contracts and the full locked gate pass on `c4bcd74`.
 
 <a id="METIS-DISTRIBUTION-001"></a>
 ## METIS-DISTRIBUTION-001 — Executables and Windows MSI [arch] [minor]
