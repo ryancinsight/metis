@@ -1,0 +1,71 @@
+{
+  "schema": 1,
+  "source_revision": "0c8bcc32911c087bf686588cd4a7c56a29d0b92e",
+  "runtime": {
+    "target": "x86_64-pc-windows-msvc",
+    "webview2": "152.0.4191.66",
+    "timezone": "America/New_York"
+  },
+  "captures": [
+    {
+      "id": "native_initial",
+      "image": "native-form.png",
+      "captured_at": "2026-09-09T12:32:39-04:00",
+      "outer_size": [816, 639],
+      "client_size": [800, 600],
+      "launch": "metis-app --metis-native-window 60 2 0.2",
+      "input": "focused window observed before submission",
+      "observed": [
+        "METIS FORM DEMONSTRATION",
+        "SESSION ACTIVE",
+        "PATIENT ID: DEMO",
+        "RATE: WAITING FOR BACKEND CALCULATION...",
+        "BACKEND MAC: NONE"
+      ],
+      "sha256": "A78D39EC9859EC853E20533D81BABA5934FC976FFAED9E221DB3A5AF96231746"
+    },
+    {
+      "id": "native_success",
+      "image": "native-form-success.png",
+      "captured_at": "2026-09-09T12:33:35-04:00",
+      "outer_size": [816, 639],
+      "client_size": [800, 600],
+      "launch": "metis-app --metis-native-window 60 2 0.2",
+      "input": "trusted OS Enter key",
+      "observed": [
+        "RATE: 0.360 ML/HR (0.72 MG/HR)",
+        "BACKEND RESPONSE (AUDIT SEQ 2)",
+        "BACKEND MAC: PRESENT (NOT VERIFIED BY FRONTEND)"
+      ],
+      "sha256": "03BA3B5D2E5F31D2C46F4DAED05F9C72F65CE1DDB98ACF7DDDA61F35D548D330"
+    },
+    {
+      "id": "webview_initial",
+      "image": "webview-form.png",
+      "captured_at": "2026-09-09T12:42:20-04:00",
+      "outer_size": [1040, 807],
+      "client_size": [1024, 768],
+      "launch": "metis-app --metis-webview 60 2 0.2",
+      "input": "focused window observed before submission",
+      "observed": [
+        "Metis clinical calculation",
+        "Host bridge connected; backend authority remains outside the page.",
+        "No calculation submitted."
+      ],
+      "sha256": "C017E77CFC30F598224CA66DEC807728BF3E0ED7F51018FB174DAB20579A7F9F"
+    },
+    {
+      "id": "webview_success",
+      "image": "webview-form-success.png",
+      "captured_at": "2026-09-09T12:43:13-04:00",
+      "outer_size": [1040, 807],
+      "client_size": [1024, 768],
+      "launch": "metis-app --metis-webview 60 2 0.2",
+      "input": "trusted OS pointer click on Submit calculation",
+      "observed": [
+        "Rate 0.36 mL/hour; drug 0.72 mg/hour; audit 2"
+      ],
+      "sha256": "C6C3F41DA0ACD737BC13D857A7EF913AD379FFD933F2B5AF418B95033715B8C1"
+    }
+  ]
+}

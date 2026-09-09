@@ -123,10 +123,10 @@ results and child cleanup. The interactive role uses a finite five-minute
 watchdog; the headless role retains the ten-second budget.
 
 This establishes provider, lifecycle, bounded native IME event production and
-code-level host composition evidence. It does not establish a committed visible
-screenshot or an installed CJK/other IME keyboard journey, WebView2 composition,
-OS permission denial, accessibility behavior, two-window captures, or macOS/Linux
-support. Those requirements remain under [V05](#V05) and the linked backlog
+code-level host composition evidence. The committed Windows host captures are
+recorded below. An installed CJK/other IME keyboard journey, WebView2
+composition, OS permission denial, accessibility behavior, two-window captures,
+and macOS/Linux support remain open under [V05](#V05) and the linked backlog
 items; a hidden-window test and a passing build cannot replace real visual,
 assistive-technology or denial-probe evidence.
 
@@ -145,8 +145,8 @@ co-evolution increment. Consumer configuration tests pass on
 message, verifies successful navigation, rejects an external HTTPS navigation
 with a denied-navigation event and closes the surface. The test stays
 ignored in the ordinary suite because the runtime and native host are not
-available on every target. This is lifecycle and bridge evidence, not a visible
-capture.
+available on every target. This is lifecycle and bridge evidence; the visible
+form and bridge-result captures are recorded below.
 
 The application now exposes `--metis-webview`, which uses the same executable
 and supervised private pipe as the software-rendered native role. Its child
@@ -154,9 +154,37 @@ creates a bounded temporary HTML/CSS package, receives typed submit messages
 through the provider callback, sends the existing capability-authorized
 calculation to the backend and posts the value-semantic result back to the page.
 The package applies a no-network CSP and is removed after the bounded session.
-The source and parser tests cover the application bridge contract; the visible
-`--metis-webview` form journey, screenshot, OS permission denial and
-assistive-technology evidence remain unverified.
+The source and parser tests cover the application bridge contract. The visible
+`--metis-webview` initial and submit journey is now captured below; OS permission
+denial and assistive-technology evidence remain unverified.
+
+### Windows visible host captures — 2026-09-09
+
+The application capture increment is recorded in
+[`docs/manual/images/native-captures.json`](manual/images/native-captures.json)
+and is bound to Metis revision `0c8bcc32911c087bf686588cd4a7c56a29d0b92e`.
+The executable ran on `x86_64-pc-windows-msvc` with WebView2 runtime
+`152.0.4191.66`. The native framebuffer capture has an 800×600 client area in
+an 816×639 outer window; its initial and trusted-Enter states show the waiting
+form and `0.360 mL/hr (0.72 MG/hr)` at audit sequence 2. The WebView2 capture
+has a 1024×768 client area in a 1040×807 outer window; its initial page reports
+the connected host bridge and no submitted calculation, and a trusted
+operating-system pointer click produces `Rate 0.36 mL/hour; drug 0.72 mg/hour;
+audit 2`.
+
+The four PNGs are committed beside the manual:
+[`native-form.png`](manual/images/native-form.png),
+[`native-form-success.png`](manual/images/native-form-success.png),
+[`webview-form.png`](manual/images/webview-form.png) and
+[`webview-form-success.png`](manual/images/webview-form-success.png). The
+supervisor's runtime environment policy clears the child environment and admits
+only nine operating-system path variables needed by WebView2; application
+settings, registry tokens and the `github-cli` environment name are not passed.
+The focused regression test verifies that a runtime child has no `PATH` and that
+the allowlist does not contain `github-cli`. The capture parent and child were
+closed after each workflow. This evidence does not establish physical
+resize/DPI, native accessibility, installed-IME, OS permission denial,
+two-window visual or macOS/Linux behavior.
 
 ## Parser and diagnostic safeguards — 2026-09-08
 

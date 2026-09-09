@@ -71,9 +71,8 @@ cargo nextest run --locked -p metis-platform --all-targets --run-ignored all ins
 The smoke uses a hidden native host, loads a temporary packaged page, checks a
 successful navigation, rejects an external HTTPS navigation and observes the
 denied-navigation event, then closes the surface. It passed against WebView2
-runtime `152.0.4191.66`. A hidden smoke is
-not a visual or accessibility capture; the visible form and those user journeys
-remain required for desktop acceptance.
+runtime `152.0.4191.66`. A hidden smoke is not a visual or accessibility
+capture; the visible form workflow is recorded below.
 
 ```rust
 use metis_platform::native::{
@@ -121,6 +120,47 @@ and that closing one leaves the other live. The tests do not use mock windows or
 default frames. Hidden test windows are lifecycle evidence; they are not visible
 application captures.
 
+## Captured Windows workflows
+
+The following captures were taken from the production `metis-app` executable
+built at revision `0c8bcc32911c087bf686588cd4a7c56a29d0b92e` on
+`x86_64-pc-windows-msvc`. The installed WebView2 runtime was
+`152.0.4191.66`. Exact image hashes, window sizes and action traces are stored
+in [`native-captures.json`](images/native-captures.json).
+
+### Software framebuffer window
+
+The initial native window is an 800×600 client area inside an 816×639 outer
+window. It shows the production form, an active supervised session and the
+waiting backend state:
+
+![Metis native window before submission](images/native-form.png)
+
+Pressing **Enter** while the window is focused submits the same values through
+the private pipe. The captured response is input-sensitive and includes audit
+sequence 2 and a present backend MAC:
+
+![Metis native window after submission](images/native-form-success.png)
+
+### Packaged WebView2 window
+
+The WebView2 page is a 1024×768 client area inside a 1040×807 outer window. The
+initial capture shows the local HTML/CSS package and the connected host bridge;
+the page still reports that no calculation has been submitted:
+
+![Metis WebView2 page before submission](images/webview-form.png)
+
+A trusted operating-system pointer click on **Submit calculation** sends the
+typed message through the WebView2 callback and private backend pipe. The page
+then displays `Rate 0.36 mL/hour; drug 0.72 mg/hour; audit 2`:
+
+![Metis WebView2 page after submission](images/webview-form-success.png)
+
+The capture session closed the supervised parent and child processes after each
+workflow. These images establish the visible initial and successful journeys;
+they do not establish native accessibility technology, an installed CJK IME,
+OS permission denial, physical resize/DPI journeys, or macOS/Linux hosts.
+
 ## Connect a host
 
 Create the validated configuration and keep all operations on the creating
@@ -161,14 +201,13 @@ does not model.
 The visible `metis-app` composition and its private-IPC workflow are now
 implemented. The provider tests exercise two independent hidden HWNDs and close
 and reopen one only after close, reusing its validated configuration; reopening
-a live surface is rejected. A committed native screenshot and keyboard/IME
-journey are still
-required for V05 visual acceptance; the hidden provider test and host unit tests
-are lifecycle evidence, not visual evidence. The WebView2 consumer and provider
-configuration tests compile and enforce URI/message bounds; the installed
-runtime smoke passes when WebView2 is present. A visible WebView2 capture,
-page-to-host bridge journey, OS permission denial, native accessibility, an
-installed CJK or other IME journey, macOS/Linux providers, two-window captures
-and the DICOM viewer host remain V05 and migration work. Do not treat a
-successful Windows build or hidden-window test as cross-platform or security
+a live surface is rejected. A native keyboard/IME journey is still required for
+V05 input acceptance; the hidden provider tests are lifecycle evidence, not
+visual evidence. The four committed captures above
+now establish the visible native and WebView2 initial/submit journeys, including
+the page-to-host bridge result. Physical resize/DPI and close/reopen captures,
+OS permission denial, native accessibility, an installed CJK or other IME
+journey, macOS/Linux providers, two-window captures and the DICOM viewer host
+remain V05 and migration work. Do not treat a successful Windows build or a
+hidden-window test as cross-platform, assistive-technology or permission
 evidence.

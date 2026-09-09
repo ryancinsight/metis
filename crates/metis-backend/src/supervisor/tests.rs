@@ -17,6 +17,41 @@ fn fixture(mode: &str, policy: ProcessDropPolicy) -> ManagedProcess {
 }
 
 #[test]
+fn runtime_environment_excludes_application_values() {
+    let arguments = [
+        "/d".to_owned(),
+        "/c".to_owned(),
+        "if defined PATH exit /b 1".to_owned(),
+    ];
+    let mut child = ProcessSupervisor::new()
+        .spawn(
+            process_spec(&shell(), &arguments, ProcessEnvironment::Runtime),
+            ProcessDropPolicy::TerminateOnDrop,
+        )
+        .expect("runtime policy fixture");
+    let mut output = String::new();
+    child
+        .take_stdout()
+        .expect("runtime policy stdout")
+        .read_to_string(&mut output)
+        .expect("runtime policy output");
+    let status = child
+        .wait_timeout(Duration::from_secs(5))
+        .expect("runtime policy wait")
+        .expect("runtime policy exit");
+    assert_eq!(status.code, Some(0));
+    assert!(
+        output.is_empty(),
+        "unexpected application environment: {output}"
+    );
+    assert!(
+        !RUNTIME_ENVIRONMENT_KEYS
+            .iter()
+            .any(|key| key.eq_ignore_ascii_case("github-cli"))
+    );
+}
+
+#[test]
 fn child_entry() {
     let Ok(mode) = std::env::var("METIS_SUPERVISOR_FIXTURE") else {
         return;

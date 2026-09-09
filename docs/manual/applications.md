@@ -44,6 +44,21 @@ concentration 2 mg/mL and dose 0.2 mcg/kg/min. The backend returns 0.72 mg/hour
 and 0.36 mL/hour at audit sequence 2. The MAC is present but not verified by the
 frontend. These synthetic values demonstrate the protocol, not treatment guidance.
 
+## Windows host snapshots
+
+The production form also runs in the Windows native framebuffer and packaged
+WebView2 hosts. These snapshots are captured from the supervised executable,
+not reconstructed images; the initial and submitted states share the same
+input-sensitive backend result.
+
+![Native framebuffer host](images/native-form.png)
+
+![Packaged WebView2 host after submission](images/webview-form-success.png)
+
+The complete native/WebView2 initial and submitted pairs, trusted input actions,
+window sizes and SHA-256 records are in the [Windows host workflow](native.md#captured-windows-workflows)
+and its [capture manifest](images/native-captures.json).
+
 ## Edit invalidates the result
 
 ![Edited form awaiting submission](images/form-edited.svg)
@@ -103,8 +118,8 @@ Inspect the generated images and semantic records before accepting the baseline.
 actual and difference images make failures inspectable. See
 [Inspect application output](testing.md) for report interpretation and retention.
 `output/verification.json` records the complete gate, including failures before
-capture. Browser/OS capture and responsive pending/cancellation remain in the
-[visual scenario contract](../VERIFICATION.md#visual-contract).
+capture. Additional browser responsive pending/cancellation and remaining
+desktop host scenarios remain in the [visual scenario contract](../VERIFICATION.md#visual-contract).
 
 ## Raster image presentation
 
