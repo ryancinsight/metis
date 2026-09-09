@@ -18,6 +18,10 @@ A second pointer establishes a finite pinch baseline; centroid movement pans
 and distance changes zoom, while a third pointer-down is rejected. The provider
 captures and releases each accepted identifier.
 
+Revision 2026-09-09: Metis PR #32 removes the browser-side DICOM candidate and
+Part 10 marker decisions. The file-drop state reports bounded metadata and byte
+progress only; RITK receives the named bytes before format-specific scanning.
+
 ## Context
 
 Metis must reuse ordinary HTML5 controls while keeping application state and
@@ -72,8 +76,8 @@ The workbench uses Moirai's `DropFiles` capture for the DICOM file-drop card.
 Validated metadata remains bounded to 64 entries. An accepted drop retains the
 provider-owned browser file handles only for the asynchronous read task; Metis
 reads each file to its declared end, limits one file to 64 MiB and the batch to
-256 MiB, classifies the first payload's Part 10 marker and renders `reading`,
-`complete` or `failed` in semantic status attributes. A completed
+256 MiB, and renders `reading`, `complete` or `failed` in semantic status
+attributes without classifying the file format. A completed
 `FileDropBatch` is available through the WASM-only `take_file_drop` handoff and
 replaces an unconsumed batch. The provider bounds each read to 1 MiB, and
 neither a browser name nor a filesystem path crosses into the consumer. A
@@ -149,8 +153,8 @@ browser `isTrusted` flag.
 
 The file-drop increment consumes `DropFiles` from Moirai revision
 `5c8a9e8be32ad6beac14ed263c2f11c3663b87cb`. The native `metis-web` suite
-covers the DICOM header classifier, payload budget edges, batch value ownership
-and ownership-consuming allocation preservation; strict native Clippy, the WASM
+covers bounded metadata, payload budget edges, batch value ownership and
+ownership-consuming allocation preservation; strict native Clippy, the WASM
 check and WASM Clippy compile the provider-backed full-read path. CUA cannot
 attach a trusted local file, so no live browser trace claims a byte read or
 DICOM decode.
