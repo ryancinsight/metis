@@ -183,6 +183,18 @@ mod tests {
             WebViewHostEvent::WebView(WebViewEvent::Message { json, .. })
                 if json.contains("\"ready\"")
         )));
+        assert_eq!(
+            surface
+                .navigate("https://example.test/blocked")
+                .expect_err("external navigation must be denied")
+                .kind(),
+            io::ErrorKind::PermissionDenied
+        );
+        let denied = surface.poll_events().expect("denied navigation event");
+        assert!(denied.iter().any(|event| matches!(
+            event,
+            WebViewHostEvent::WebView(WebViewEvent::NavigationStarting { allowed: false, .. })
+        )));
         surface.close().expect("WebView2 close");
         assert!(surface.is_closed());
         std::fs::remove_dir_all(root).expect("temporary package cleanup");

@@ -24,9 +24,10 @@ Revision 2026-09-09: Moirai branch `arch/webview2-provider` at `0310280a`
 adds the thread-affine WebView2 host below the existing HWND boundary. It
 restricts navigation to a validated packaged `file:///` prefix, bounds bridge
 messages, denies new windows and removes every callback before teardown. The
-provider's installed-runtime smoke and the Metis adapter's packaged-page bridge
-smoke pass on WebView2 `152.0.4191.66`; the visible Metis bundle capture
-remains open. The provider does not require a registry or signing key. See the
+provider's installed-runtime smoke and the Metis adapter's packaged-page
+navigation, bridge and external-denial smoke pass on WebView2
+`152.0.4191.66`; the visible Metis bundle capture remains open. The provider
+does not require a registry or signing key. See the
 [Moirai ADR](../../moirai/docs/adr/0052-bounded-webview2-host.md).
 
 Revision 2026-09-09: Metis now exposes `native::WebViewSurface`, which creates

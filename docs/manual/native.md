@@ -69,8 +69,9 @@ cargo nextest run --locked -p metis-platform --all-targets --run-ignored all ins
 ```
 
 The smoke uses a hidden native host, loads a temporary packaged page, checks a
-successful navigation and the page's ready bridge message, then closes the
-surface. It passed against WebView2 runtime `152.0.4191.66`. A hidden smoke is
+successful navigation, rejects an external HTTPS navigation and observes the
+denied-navigation event, then closes the surface. It passed against WebView2
+runtime `152.0.4191.66`. A hidden smoke is
 not a visual or accessibility capture; the visible form and those user journeys
 remain required for desktop acceptance.
 

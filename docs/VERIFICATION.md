@@ -142,7 +142,8 @@ co-evolution increment. Consumer configuration tests pass on
 `x86_64-pc-windows-msvc`. On a Windows host with WebView2 runtime
 `152.0.4191.66`, the ignored adapter smoke was run outside the sandbox with
 `cargo nextest` and passed; it loads a packaged page, observes its ready bridge
-message, verifies successful navigation and closes the surface. The test stays
+message, verifies successful navigation, rejects an external HTTPS navigation
+with a denied-navigation event and closes the surface. The test stays
 ignored in the ordinary suite because the runtime and native host are not
 available on every target. This is lifecycle and bridge evidence, not a visible
 capture.
