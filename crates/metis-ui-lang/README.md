@@ -33,6 +33,32 @@ The software framebuffer implements Iris `RenderBackend<DisplayList>`. Rendering
 returns a slice borrowed from the existing pixel storage, preserving the same
 clipped rasterization path without allocating another frame.
 
+Raster presentation uses [`RasterImage`](https://docs.rs/metis-ui-lang/latest/metis_ui_lang/struct.RasterImage.html)
+and [`ImagePlacement`](https://docs.rs/metis-ui-lang/latest/metis_ui_lang/struct.ImagePlacement.html).
+Images validate dimensions and row-major pixel storage at construction; placements
+validate the source crop, clip the destination to the framebuffer and composite
+with source-over alpha. Decoding formats and orientation metadata remain an
+upstream asset-provider concern.
+
+```rust
+use metis_platform::{Color, Framebuffer, Rect};
+use metis_ui_lang::{DisplayList, ImagePlacement, ImageSampling, RasterImage};
+
+let image = RasterImage::new(1, 1, vec![Color::RED])?;
+let placement = ImagePlacement::new(
+    image,
+    Rect::new(0, 0, 1, 1),
+    Rect::new(0, 0, 2, 2),
+    ImageSampling::Nearest,
+)?;
+let mut display = DisplayList::default();
+display.append_image(placement)?;
+let mut framebuffer = Framebuffer::new(2, 2)?;
+display.render_to(&mut framebuffer);
+assert_eq!(framebuffer.get_pixel(1, 1), Color::RED);
+# Ok::<(), metis_core::error::MetisError>(())
+```
+
 ```rust
 use iris::render::RenderBackend;
 let document = metis_ui_lang::parse_markup("<root style='height:8px;background:#123456'/>")?;

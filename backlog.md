@@ -253,14 +253,17 @@ an owner. “Unsupported” cannot replace delivery of a required mobile/native 
 - Demonstration: actual captures and distribution/display prerequisites in the manual; no support inferred from a Linux build.
 
 <a id="METIS-ASSETS-001"></a>
-## METIS-ASSETS-001 — Images, vectors and media assets [minor]
+## METIS-ASSETS-001 — Images, vectors and media assets [major]
 - Status: in-progress; priority: P1; owner: Metis asset/presentation + existing Atlas format providers; integrator: root; last-update: 2026-09-09; branch: `feat/process-foundation`; dependencies: METIS-BROWSER-001, METIS-AUTHORITY-001; risk: hostile content
+- ADR: [0019](docs/adr/0019-raster-display-command.md); the public `DisplayCommand` enum addition is a major release change and has no version bump until release authority opens a release increment.
 - Scope: bounded local asset loading, image/SVG presentation, font loading and browser audio/video controls; validate paths/origins, dimensions/decoding budgets and target permissions.
 - Acceptance: malformed/truncated/oversized/traversal assets fail; declared colors/alpha/aspect ratio/orientation match fixtures; media error and teardown states release resources.
 - Demonstration: [V06](docs/VERIFICATION.md#V06), actual asset gallery with source attribution and load/error states.
 - Completed increment: local project artwork now includes a scriptless fixed-viewport SVG, a PNG alternate and a seven-resolution PNG-in-ICO asset; `metis.json` declares each format, the CLI validates SVG and ICO bytes before staging, and portable/MSI payloads retain the resources.
+- Completed increment: `RasterImage` validates bounded row-major RGBA storage and `ImagePlacement` validates crops, clips off-screen destinations and composites nearest-neighbor pixels; the `image` example emits the inspected software-renderer artifact.
 - Evidence: [ADR 0016](docs/adr/0016-theme-and-branding.md), [browser manual](docs/manual/browser.md), [distribution manual](docs/manual/distribution.md), focused `metis-cli` package tests and browser asset tests; runtime asset capture is recorded in [VERIFICATION](docs/VERIFICATION.md#browser-svg-asset-evidence).
-- Residuals: browser/native image decode and orientation, font loading, media controls/error teardown, and runtime shell rendering on a Windows install remain open under V06; the SVG admission and ICO packaging contracts are closed.
+- Evidence: `metis-ui-lang` image validation/compositing tests, `cargo run --locked --example image`, and [software image evidence](docs/VERIFICATION.md#software-raster-image-evidence--2026-09-09) cover pixel, alpha and clipping semantics.
+- Residuals: browser/native image decode and orientation, font loading, media controls/error teardown, GPU vectors, and runtime shell rendering on a Windows install remain open under V06; the SVG admission and ICO packaging contracts are closed.
 
 <a id="METIS-GRAPHICS-001"></a>
 ## METIS-GRAPHICS-001 — Custom graphics conformance [arch] [minor]

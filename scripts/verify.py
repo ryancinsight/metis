@@ -325,6 +325,8 @@ def main():
         cargo("docs", ["doc", "--workspace", "--no-deps"])
         example = pathlib.Path(metadata["target_directory"]) / "debug" / "examples" / ("clinical_infusion_workflow" + (".exe" if sys.platform == "win32" else ""))
         execute("example", [str(example)], seconds=60, cwd=ROOT)
+        image = example.with_name("image" + (".exe" if sys.platform == "win32" else ""))
+        execute("image", [str(image)], seconds=60, cwd=ROOT)
         presentation = example.with_name("presentation" + (".exe" if sys.platform == "win32" else ""))
         with tempfile.TemporaryDirectory(prefix="metis-capture-failure-") as failure_root:
             # A real directory at the CSV file path forces the OS write failure

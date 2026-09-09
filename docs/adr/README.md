@@ -27,3 +27,4 @@
 | [0016](0016-theme-and-branding.md) | Theme and branding | Accepted |
 | [0017](0017-python-binding.md) | Python binding boundary | Accepted |
 | [0018](0018-result-explorer.md) | Bounded result explorer | Accepted |
+| [0019](0019-raster-display-command.md) | Raster display command | Accepted |

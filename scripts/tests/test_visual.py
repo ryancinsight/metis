@@ -164,9 +164,11 @@ class EvidenceTests(unittest.TestCase):
         self.addCleanup(self.temp.cleanup)
         self.root = pathlib.Path(self.temp.name).resolve()
         self.output = self.root / "output"
+        self.asset_pixels = bytes((0, 0, 255, 255, 0, 255, 0, 128,
+                                  255, 0, 0, 255, 0, 0, 0, 255))
         (self.root / "docs/manual/images").mkdir(parents=True)
         self.sources = {}
-        for relative in ("examples/presentation.rs", "examples/presentation/capture.rs",
+        for relative in ("examples/presentation.rs", "examples/presentation/capture.rs", "examples/image.rs",
                          "crates/metis-platform/src/font.rs", "crates/metis-frontend/src/presentation.rs"):
             path = self.root / relative
             path.parent.mkdir(parents=True, exist_ok=True)
@@ -187,6 +189,7 @@ class EvidenceTests(unittest.TestCase):
         for name in visual.PROBES:
             (self.output / f"{name}.svg").write_bytes(solid_svg("#ff0000", 1))
             (self.output / f"{name}.bmp").write_bytes(bmp_fixture(800, 600, bytes((0, 0, 255, 255)) + black[4:]))
+        (self.output / "image-placement.svg").write_bytes(svg_fixture(2, 2, self.asset_pixels))
 
     def report_failure(self, update=False):
         with self.assertRaises(visual.VisualError) as failure:
@@ -199,6 +202,7 @@ class EvidenceTests(unittest.TestCase):
         first = visual.compare(self.root, self.output, self.provenance, update=True)
         self.assertEqual(first["status"], "passed")
         self.assertEqual(set(first["captures"]), set(visual.CAPTURES))
+        self.assertEqual(first["assets"]["image-placement"]["status"], "passed")
         self.assertEqual(first["probes"]["probe-label"]["pixels"], {"changed_pixels": 1, "bounds": [0, 0, 1, 1]})
         baseline_path = self.root / "docs/manual/images/captures.json"
         baseline = baseline_path.read_bytes()
@@ -256,6 +260,15 @@ class EvidenceTests(unittest.TestCase):
         self.assertEqual(failed["captures"]["form"]["pixels"],
                          {"changed_pixels": 0, "bounds": None})
         self.assertFalse((self.output / "visual/latest/manifest.json").exists())
+
+    def test_asset_golden_mismatch_is_reported(self):
+        self.produce()
+        visual.compare(self.root, self.output, self.provenance, update=True)
+        (self.output / "image-placement.svg").write_bytes(svg_fixture(2, 2, bytes(16)))
+        failed = self.report_failure()
+        self.assertEqual(failed["assets"]["image-placement"]["status"], "failed")
+        self.assertIn("Exact SVG baseline differs", failed["assets"]["image-placement"]["errors"])
+        self.assertEqual(failed["assets"]["image-placement"]["pixels"]["changed_pixels"], 4)
 
     def test_bad_oracles_or_provenance_never_update_baselines(self):
         self.produce()

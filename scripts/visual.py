@@ -16,12 +16,15 @@ import xml.etree.ElementTree as ET
 CAPTURES = ("form", "form-success", "form-edited", "form-rejected",
             "form-corrected", "form-disconnected", "form-recovered")
 PROBES = ("probe-label", "probe-geometry", "probe-color")
+ASSETS = ("image-placement",)
 MAX_BYTES, MAX_WIDTH, MAX_HEIGHT = 4 * 1024 * 1024, 800, 600
 NS = "{http://www.w3.org/2000/svg}"
 _ARTIFACTS = ("report.json", "manifest.json", "run.json") + tuple(
     f"{name}-{kind}.svg" for name in (*CAPTURES, *PROBES)
     for kind in ("expected", "actual", "difference")) + tuple(
-    f"{name}-semantics.json" for name in CAPTURES)
+    f"{name}-semantics.json" for name in CAPTURES) + tuple(
+    f"{name}-{kind}.svg" for name in ASSETS
+    for kind in ("expected", "actual", "difference"))
 
 
 class VisualError(ValueError):
@@ -70,7 +73,7 @@ def begin_run(output):
         old.unlink(missing_ok=True)
         if current.exists():
             current.replace(old)
-    for name in (*CAPTURES, *PROBES):
+    for name in (*CAPTURES, *PROBES, *ASSETS):
         for suffix in (".svg", ".bmp", ".csv"):
             _owned(output / (name + suffix), output).unlink(missing_ok=True)
     nonce = uuid.uuid4().hex
@@ -330,7 +333,8 @@ def _fixture(root, provenance):
                  f"Stale source provenance: {path}")
     roots = (root / "examples" / "presentation", root / "crates" / "metis-frontend" / "src",
              root / "crates" / "metis-platform" / "src", root / "crates" / "metis-ui-lang" / "src")
-    paths = {root / "examples" / "presentation.rs", root / "crates" / "metis-platform" / "src" / "font.rs"}
+    paths = {root / "examples" / "presentation.rs", root / "examples" / "image.rs",
+             root / "crates" / "metis-platform" / "src" / "font.rs"}
     paths.update(path for directory in roots for path in directory.rglob("*.rs"))
     for path in paths:
         digest = sources.get(str(path.resolve()))
@@ -367,7 +371,7 @@ def compare(root, output, provenance, update=False):
     # must never leave the preceding invocation's success artifact discoverable.
     _owned(latest / "manifest.json", output).unlink(missing_ok=True)
     report_path = latest / "report.json"
-    report = {"schema": 1, "status": "failed", "errors": [], "captures": {}, "probes": {}}
+    report = {"schema": 1, "status": "failed", "errors": [], "captures": {}, "probes": {}, "assets": {}}
     _record(latest, report)
     fixture, baseline = None, {}
     try:
@@ -443,7 +447,34 @@ def compare(root, output, provenance, update=False):
             result["status"] = "passed"
         except (VisualError, OSError) as error:
             result["errors"].append(str(error))
-    failed = report["errors"] or any(item["status"] != "passed" for group in ("captures", "probes") for item in report[group].values())
+    for name in ASSETS:
+        result = {"status": "failed", "errors": []}
+        report["assets"][name] = result
+        actual_bytes, expected_bytes = None, None
+        actual, expected = None, None
+        try:
+            actual_bytes = _read(output / f"{name}.svg")
+            actual = decode_svg(actual_bytes)
+            _owned(latest / f"{name}-actual.svg", output).write_bytes(actual_bytes)
+        except (VisualError, OSError) as error:
+            result["errors"].append(str(error))
+        try:
+            expected_bytes = _read(root / "docs" / "manual" / "images" / f"{name}.svg")
+            expected = decode_svg(expected_bytes)
+            _owned(latest / f"{name}-expected.svg", output).write_bytes(expected_bytes)
+        except (VisualError, OSError) as error:
+            if not update:
+                result["errors"].append(str(error))
+        if actual is not None and expected is not None:
+            result["pixels"], mask = difference(expected, actual)
+            _owned(latest / f"{name}-difference.svg", output).write_bytes(encode_svg(mask))
+            if not update and expected_bytes != actual_bytes:
+                result["errors"].append("Exact SVG baseline differs")
+        if not result["errors"]:
+            result["status"] = "passed"
+    failed = report["errors"] or any(item["status"] != "passed"
+                                     for group in ("captures", "probes", "assets")
+                                     for item in report[group].values())
     report["fixture_sha256"], report["provenance"] = fixture, provenance
     if not failed and update:
         try:
@@ -452,6 +483,8 @@ def compare(root, output, provenance, update=False):
             destinations = [_owned(baseline_path, root)] + [
                 _owned(baseline_path.parent / f"{name}.svg", root) for name in CAPTURES]
             for name in CAPTURES:
+                (baseline_path.parent / f"{name}.svg").write_bytes(_read(output / f"{name}.svg"))
+            for name in ASSETS:
                 (baseline_path.parent / f"{name}.svg").write_bytes(_read(output / f"{name}.svg"))
             _json(destinations[0], new_baseline)
         except (VisualError, OSError) as error:

@@ -5,6 +5,7 @@
 //! before a display list is emitted so programmatic DOMs cannot silently diverge.
 
 use crate::dom::{DomDocument, DomElement, DomNode};
+use crate::image::ImagePlacement;
 use crate::parser::{MAX_DEPTH, MAX_INPUT_BYTES, MAX_NODES, copy_text, limit_error};
 use crate::style::{Color, Display, FlexDirection, Size};
 use metis_core::error::Result;
@@ -14,6 +15,7 @@ use metis_platform::rasterizer::{draw_rect_outline, draw_text, fill_rect};
 
 /// Primitive command in painter order.
 #[derive(Debug, Clone, PartialEq)]
+#[non_exhaustive]
 pub enum DisplayCommand {
     /// Rectangle fill.
     FillRect {
@@ -44,6 +46,11 @@ pub enum DisplayCommand {
         /// Integer bitmap scale.
         scale: u32,
     },
+    /// Raster image crop composited with source-over alpha.
+    DrawImage {
+        /// Validated source and destination placement.
+        placement: ImagePlacement,
+    },
 }
 
 /// Drawing commands emitted by bounded layout.
@@ -69,8 +76,18 @@ impl DisplayList {
                     color,
                     scale,
                 } => draw_text(fb, *x, *y, text, *color, *scale),
+                DisplayCommand::DrawImage { placement } => placement.render_to(fb),
             }
         }
+    }
+
+    /// Appends a validated image command in painter order.
+    ///
+    /// # Errors
+    /// Returns [`metis_core::error::ErrorCode::LayoutOverflow`] when the
+    /// display command storage cannot grow.
+    pub fn append_image(&mut self, placement: ImagePlacement) -> Result<()> {
+        self.push(DisplayCommand::DrawImage { placement })
     }
 
     fn push(&mut self, command: DisplayCommand) -> Result<()> {

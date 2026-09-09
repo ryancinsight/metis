@@ -106,6 +106,26 @@ actual and difference images make failures inspectable. See
 capture. Browser/OS capture and responsive pending/cancellation remain in the
 [visual scenario contract](../VERIFICATION.md#visual-contract).
 
+## Raster image presentation
+
+The software display list now accepts validated raster placements for local
+decoded image data. `RasterImage` rejects empty, oversized and mismatched pixel
+storage; `ImagePlacement` validates an in-bounds source crop, clips an off-screen
+destination and uses nearest-neighbor sampling with source-over alpha. Format
+decoding, orientation metadata and DICOM transfer syntax selection stay with the
+owning Atlas provider, so this surface can receive RITK pixels without moving
+medical parsing into Metis.
+
+The deterministic [image example](../../examples/image.rs) renders a 3×2 color
+fixture into a 240×180 framebuffer. Its generated artifact is inspected here:
+
+![Software raster image placement](images/image-placement.svg)
+
+Run it with `cargo run --locked --example image`; the BMP and SVG captures are
+written under `output/`. This is software-renderer evidence for V06 and does not
+establish browser decoding, orientation, fonts, media controls or native shell
+presentation.
+
 ## DICOM viewer migration baseline
 
 RITK's [synthetic DICOM workflow](https://github.com/ryancinsight/ritk/blob/8152f483/docs/manual/dicom-workflow.md)
