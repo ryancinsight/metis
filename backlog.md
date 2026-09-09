@@ -2,7 +2,7 @@
 
 Registration: [Atlas member item](../../backlog.md#atlas-member-registration-defects)
 is done. Public source and executable packaging are merged, and Atlas pins the
-verified Metis `main` commit `5489f47` (Atlas pointer `c512354d8`).
+verified Metis `main` commit `a957a99` (Atlas pointer `688579435`).
 
 The [framework gap matrix](docs/adr/0003-framework-conformance.md) is the scope
 inventory. Every implementation item follows the [visual contract](docs/VERIFICATION.md#visual-contract)
@@ -399,7 +399,7 @@ an owner. “Unsupported” cannot replace delivery of a required mobile/native 
 <a id="METIS-REGISTRATION-001"></a>
 ## METIS-REGISTRATION-001 — Public Atlas member registration [patch] — done
 - Status: done; priority: P0; delivery: Atlas `8380a789e`; recursive registration and coherence evidence passed 2026-09-09.
-- Outcome: Atlas pins `repos/metis` to public `main` `5489f47`; the fresh long-path checkout initialized all 28 registered members. No runtime or signing capability depends on this metadata change.
+- Outcome: Atlas pins `repos/metis` to public `main` `a957a99`; the fresh long-path checkout initialized all 28 registered members. No runtime or signing capability depends on this metadata change.
 
 <a id="METIS-APPLICATION-001"></a>
 ## METIS-APPLICATION-001 — Single executable application [arch] [major]
