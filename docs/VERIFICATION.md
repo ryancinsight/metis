@@ -49,7 +49,7 @@ delegates wheel construction to Atlas's `python-wheels.yml`, then uploads
 through PyPI Trusted Publishing with `id-token: write`. This source-level
 check does not prove registry publisher registration, first publication,
 release authority or package upload; those are external release actions.
-Public branch inspection at revision `850d8f0` confirmed the crates.io and PyPI
+Public branch inspection at revision `5cd8bde` confirmed the crates.io and PyPI
 callers expose OIDC permissions without registry-token, SSH, GPG or private-key
 secrets. A live GitHub API inspection on 2026-09-08 found zero repository
 Actions secrets, variables, environments or rulesets; the workflows therefore
