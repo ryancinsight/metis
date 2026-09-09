@@ -133,15 +133,19 @@ assistive-technology or denial-probe evidence.
 ### WebView2 consumer seam — 2026-09-09
 
 Metis `metis-platform::native::WebViewSurface` now consumes Moirai provider
-revision `9e045f73be49b9ae6272045dd71705dcf14eccf8` through a safe, thread-affine
+revision `0310280a341d3ae8eb9009c26d2ea9dc2285ac42` through a safe, thread-affine
 adapter. The adapter creates the provider-owned HWND, sizes and maps visibility
 for the controller, forwards combined window/WebView events and preserves the
 provider's packaged-URI, new-window and bounded-JSON policies. The workspace
 lock records one Moirai revision for every direct provider crate during this
 co-evolution increment. Consumer configuration tests pass on
-`x86_64-pc-windows-msvc`; the installed WebView2 runtime smoke is intentionally
-ignored on hosts without the runtime, so no installed-runtime or visual capture
-claim is made here.
+`x86_64-pc-windows-msvc`. On a Windows host with WebView2 runtime
+`152.0.4191.66`, the ignored adapter smoke was run outside the sandbox with
+`cargo nextest` and passed; it loads a packaged page, observes its ready bridge
+message, verifies successful navigation and closes the surface. The test stays
+ignored in the ordinary suite because the runtime and native host are not
+available on every target. This is lifecycle and bridge evidence, not a visible
+capture.
 
 The application now exposes `--metis-webview`, which uses the same executable
 and supervised private pipe as the software-rendered native role. Its child
@@ -149,9 +153,9 @@ creates a bounded temporary HTML/CSS package, receives typed submit messages
 through the provider callback, sends the existing capability-authorized
 calculation to the backend and posts the value-semantic result back to the page.
 The package applies a no-network CSP and is removed after the bounded session.
-The source and parser tests cover this bridge contract; an installed runtime,
-visible screenshot, OS permission denial and assistive-technology journey remain
-unverified until a WebView2-capable Windows host is available.
+The source and parser tests cover the application bridge contract; the visible
+`--metis-webview` form journey, screenshot, OS permission denial and
+assistive-technology evidence remain unverified.
 
 ## Parser and diagnostic safeguards — 2026-09-08
 

@@ -39,13 +39,13 @@ iris = { package = "iris-viz", git = "https://github.com/ryancinsight/iris", ver
 # Temporary co-evolution pin for the Metis WebView2 consumer. Remove this
 # revision when the provider branch merges to Moirai main and advance the
 # workspace graph in one consumer sweep.
-moirai-core = { git = "https://github.com/ryancinsight/Moirai.git", rev = "9e045f73be49b9ae6272045dd71705dcf14eccf8", version = "0.6", default-features = false, features = ["std"] }
-moirai-executor = { git = "https://github.com/ryancinsight/Moirai.git", rev = "9e045f73be49b9ae6272045dd71705dcf14eccf8", version = "0.6", default-features = false }
-moirai-transport = { git = "https://github.com/ryancinsight/Moirai.git", rev = "9e045f73be49b9ae6272045dd71705dcf14eccf8", version = "0.6", default-features = false }
-moirai-pal = { git = "https://github.com/ryancinsight/Moirai.git", rev = "9e045f73be49b9ae6272045dd71705dcf14eccf8", version = "0.6", default-features = false }
-moirai-crypto = { git = "https://github.com/ryancinsight/Moirai.git", rev = "9e045f73be49b9ae6272045dd71705dcf14eccf8", version = "0.6", default-features = false }
-moirai-async = { git = "https://github.com/ryancinsight/Moirai.git", rev = "9e045f73be49b9ae6272045dd71705dcf14eccf8", version = "0.6", default-features = false }
-moirai-http = { git = "https://github.com/ryancinsight/Moirai.git", rev = "9e045f73be49b9ae6272045dd71705dcf14eccf8", version = "0.6", default-features = false }
+moirai-core = { git = "https://github.com/ryancinsight/Moirai.git", rev = "0310280a341d3ae8eb9009c26d2ea9dc2285ac42", version = "0.6", default-features = false, features = ["std"] }
+moirai-executor = { git = "https://github.com/ryancinsight/Moirai.git", rev = "0310280a341d3ae8eb9009c26d2ea9dc2285ac42", version = "0.6", default-features = false }
+moirai-transport = { git = "https://github.com/ryancinsight/Moirai.git", rev = "0310280a341d3ae8eb9009c26d2ea9dc2285ac42", version = "0.6", default-features = false }
+moirai-pal = { git = "https://github.com/ryancinsight/Moirai.git", rev = "0310280a341d3ae8eb9009c26d2ea9dc2285ac42", version = "0.6", default-features = false }
+moirai-crypto = { git = "https://github.com/ryancinsight/Moirai.git", rev = "0310280a341d3ae8eb9009c26d2ea9dc2285ac42", version = "0.6", default-features = false }
+moirai-async = { git = "https://github.com/ryancinsight/Moirai.git", rev = "0310280a341d3ae8eb9009c26d2ea9dc2285ac42", version = "0.6", default-features = false }
+moirai-http = { git = "https://github.com/ryancinsight/Moirai.git", rev = "0310280a341d3ae8eb9009c26d2ea9dc2285ac42", version = "0.6", default-features = false }
 metis-core = { path = "crates/metis-core", version = "0.1.0" }
 metis-ipc = { path = "crates/metis-ipc", version = "0.1.0" }
 metis-ui-lang = { path = "crates/metis-ui-lang", version = "0.1.0" }

@@ -59,6 +59,21 @@ and the backend's existing capability and audit checks before the result is
 posted back to the page. The page has no network or arbitrary navigation
 permission. Escape or the close button ends the finite five-minute session.
 
+### Verify the installed WebView2 adapter
+
+On Windows with WebView2 installed, run the ignored adapter smoke from the
+workspace root:
+
+```powershell
+cargo nextest run --locked -p metis-platform --all-targets --run-ignored all installed_runtime_loads_packaged_page_and_closes_surface
+```
+
+The smoke uses a hidden native host, loads a temporary packaged page, checks a
+successful navigation and the page's ready bridge message, then closes the
+surface. It passed against WebView2 runtime `152.0.4191.66`. A hidden smoke is
+not a visual or accessibility capture; the visible form and those user journeys
+remain required for desktop acceptance.
+
 ```rust
 use metis_platform::native::{
     WebViewConfig, WebViewHostEvent, WebViewSurface, WindowConfig, WindowVisibility,
@@ -150,7 +165,7 @@ journey are still
 required for V05 visual acceptance; the hidden provider test and host unit tests
 are lifecycle evidence, not visual evidence. The WebView2 consumer and provider
 configuration tests compile and enforce URI/message bounds; the installed
-runtime smoke is ignored unless WebView2 is present. A visible WebView2 capture,
+runtime smoke passes when WebView2 is present. A visible WebView2 capture,
 page-to-host bridge journey, OS permission denial, native accessibility, an
 installed CJK or other IME journey, macOS/Linux providers, two-window captures
 and the DICOM viewer host remain V05 and migration work. Do not treat a

@@ -20,12 +20,14 @@ IME start, preedit, commit and cancellation events. PR #287 merged at
 `7ad8eeee` closes the empty-composition cancellation edge. Metis consumes the
 phases through the same native adapter path.
 
-Revision 2026-09-09: Moirai branch `arch/webview2-provider` at `9e045f73`
+Revision 2026-09-09: Moirai branch `arch/webview2-provider` at `0310280a`
 adds the thread-affine WebView2 host below the existing HWND boundary. It
 restricts navigation to a validated packaged `file:///` prefix, bounds bridge
 messages, denies new windows and removes every callback before teardown. The
-provider's installed-runtime smoke and Metis bundle capture remain open; the
-provider does not require a registry or signing key. See the [Moirai ADR](../../moirai/docs/adr/0052-bounded-webview2-host.md).
+provider's installed-runtime smoke and the Metis adapter's packaged-page bridge
+smoke pass on WebView2 `152.0.4191.66`; the visible Metis bundle capture
+remains open. The provider does not require a registry or signing key. See the
+[Moirai ADR](../../moirai/docs/adr/0052-bounded-webview2-host.md).
 
 Revision 2026-09-09: Metis now exposes `native::WebViewSurface`, which creates
 the provider-owned HWND, sizes the controller to the validated client area and

@@ -136,7 +136,7 @@ mod tests {
         let entry = root.join("index.html");
         std::fs::write(
             &entry,
-            r"<!doctype html><script>window.chrome.webview.postMessage(JSON.stringify({ready:true}));</script>",
+            r"<!doctype html><script>window.chrome.webview.postMessage({ready:true});</script>",
         )
         .expect("temporary packaged entry");
         let path = entry
@@ -144,6 +144,7 @@ mod tests {
             .expect("canonical package entry")
             .to_string_lossy()
             .replace('\\', "/");
+        let path = path.strip_prefix("//?/").unwrap_or(&path);
         let uri = format!("file:///{path}");
         let window = WindowConfig::with_visibility(
             "Metis WebView2 adapter",
@@ -154,12 +155,33 @@ mod tests {
         .expect("bounded window configuration");
         let config = WebViewConfig::new(uri).expect("bounded WebView configuration");
         let mut surface = WebViewSurface::new(&window, config).expect("installed WebView2 host");
-        let events = surface
-            .wait_events(Duration::from_secs(1))
-            .expect("initial WebView2 events");
+        let mut events = surface.poll_events().expect("initial WebView2 events");
+        if !events.iter().any(|event| {
+            matches!(
+                event,
+                WebViewHostEvent::WebView(WebViewEvent::NavigationCompleted { success: true, .. })
+            )
+        }) || !events.iter().any(|event| {
+            matches!(
+                event,
+                WebViewHostEvent::WebView(WebViewEvent::Message { json, .. })
+                    if json.contains("\"ready\"")
+            )
+        }) {
+            events.extend(
+                surface
+                    .wait_events(Duration::from_secs(1))
+                    .expect("WebView2 events"),
+            );
+        }
         assert!(events.iter().any(|event| matches!(
             event,
             WebViewHostEvent::WebView(WebViewEvent::NavigationCompleted { success: true, .. })
+        )));
+        assert!(events.iter().any(|event| matches!(
+            event,
+            WebViewHostEvent::WebView(WebViewEvent::Message { json, .. })
+                if json.contains("\"ready\"")
         )));
         surface.close().expect("WebView2 close");
         assert!(surface.is_closed());
