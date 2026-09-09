@@ -44,6 +44,10 @@ adapter installed-runtime navigation/bridge smoke passes, while a committed
 visible application capture remains open. Metis does not yet provide Tauri
 feature parity, a system WebView host on all targets, an OS privilege sandbox,
 durable audit storage or regulatory certification.
+Metis does not parse DICOM or define medical volume semantics. Presentation
+hosts hand bounded file-drop bytes to RITK's public scanner and receive its
+validated image and metadata result; the owning workflow and visual evidence
+live in the [RITK manual](https://github.com/ryancinsight/ritk/blob/main/docs/manual/dicom-workflow.md).
 The infusion arithmetic is a synthetic engineering example; its configurable
 limits are not treatment guidance.
 

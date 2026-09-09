@@ -1340,6 +1340,15 @@ items; none are established by a screenshot. Migrated-viewer captures must come
 from actual Métis execution and use the same synthetic studies. Browser host
 input and native host input retain separate verification requirements.
 
+Metis does not implement a DICOM parser or volume model. Its browser file-drop
+tests stop at the bounded named-byte handoff; RITK owns the subsequent scan,
+decode, geometry, and medical display contracts. The RITK
+[DICOM workflow](../../ritk/docs/manual/dicom-workflow.md) is the authoritative
+visual demonstration: it runs the real byte and filesystem loaders, asserts
+exact pixels and physical landmarks, and compares all three slice captures to
+reviewed images. A future Métis viewer capture must consume that RITK result
+through the presentation seam and must not duplicate the DICOM workflow.
+
 <a id="V10"></a>
 ### V10 — Developer and package lifecycle
 

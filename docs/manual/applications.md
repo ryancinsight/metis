@@ -163,9 +163,19 @@ correct image proportions alone do not establish either property.
 The manual explains the current input limits and how to reproduce both the
 pixel checks and native capture. These results establish the existing viewer
 baseline for [V09](../VERIFICATION.md#V09). Metis now provides a bounded browser
-named-byte batch handoff; RITK host execution, decoder integration, browser
-input, multiframe/color presentation and matched memory measurements remain
-required before accepting the migration.
+named-byte batch handoff. RITK owns the scanner, decoder, volume geometry and
+medical display semantics; the presentation adapter passes the completed
+`(&str, &[u8])` batch to `ritk_io::scan_dicom_part10_bytes` and then consumes
+the RITK image/metadata result. Metis has no DICOM decoder or volume model.
+RITK host execution, browser input, multiframe/color presentation and matched
+memory measurements remain required before accepting the migration.
+
+The reproducible DICOM opening and visual workflow is maintained in the
+[RITK user manual](https://github.com/ryancinsight/ritk/blob/main/docs/manual/dicom-workflow.md).
+It runs the real scanner and loader, checks exact pixels and physical geometry,
+and compares axial, coronal and sagittal captures with reviewed goldens. The
+Metis browser capture proves only bounded input handoff and does not claim
+DICOM decoding.
 
 ## Browser service workflow
 
