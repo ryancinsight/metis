@@ -59,8 +59,10 @@ the session. The [migration contract](../adr/0004-form-state.md) lists the API c
 Windows, [`metis_platform::native::NativeSurface`] presents the same framebuffer
 through a real HWND and returns Moirai's complete `WindowEvent` values, including
 focus, key-up and DPI events. The `metis-app --metis-native-window` role connects
-those events to the authored form and private IPC workflow; a system WebView,
-native visual capture and OS permission boundary remain separate host work.
+those events to the authored form and private IPC workflow; non-Windows system
+WebView targets and the OS permission boundary remain separate host work. See
+the [captured Windows workflows](native.md#captured-windows-workflows)
+for the current native and packaged-page evidence.
 
 Keep calculation rules in the backend. The frontend dependency closure excludes
 `metis-backend`; presentation code submits values and renders responses.

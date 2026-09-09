@@ -7,8 +7,8 @@ use crate::{
 };
 use metis_backend::service::SystemClock;
 use metis_backend::{
-    BackendService, INTERACTIVE_SESSION_DEADLINE, SESSION_DEADLINE, clinical::SafetyEnvelope,
-    supervisor::run_session_with_deadline,
+    BackendService, INTERACTIVE_SESSION_DEADLINE, ProcessEnvironment, SESSION_DEADLINE,
+    clinical::SafetyEnvelope, supervisor::run_session_with_deadline_and_environment,
 };
 use metis_backend::{serve_browser_websocket, serve_browser_websocket_with_response_delay};
 use metis_core::host::{HostContext, HostOrigin, HostPolicy, HostSessionId, WindowId};
@@ -81,7 +81,17 @@ fn run_with_mode(
     let [weight, concentration, dose] = inputs;
     let arguments = [frontend_role.to_owned(), weight, concentration, dose];
     eprintln!("backend_pid={}", std::process::id());
-    run_session_with_deadline(&executable, &arguments, &mut service, deadline)?;
+    let environment = match mode {
+        FrontendMode::WebView => ProcessEnvironment::Runtime,
+        FrontendMode::Headless | FrontendMode::NativeWindow => ProcessEnvironment::Isolated,
+    };
+    run_session_with_deadline_and_environment(
+        &executable,
+        &arguments,
+        &mut service,
+        deadline,
+        environment,
+    )?;
     service.ledger().verify_chain()?;
     eprintln!(
         "Metis session completed; {} audit records verified",

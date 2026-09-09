@@ -26,7 +26,7 @@ restricts navigation to a validated packaged `file:///` prefix, bounds bridge
 messages, denies new windows and removes every callback before teardown. The
 provider's installed-runtime smoke and the Metis adapter's packaged-page
 navigation, bridge and external-denial smoke pass on WebView2
-`152.0.4191.66`; the visible Metis bundle capture remains open. The provider
+`152.0.4191.66`; the visible Metis bundle capture was open at this revision. The provider
 does not require a registry or signing key. See the
 [Moirai ADR](../../moirai/docs/adr/0052-bounded-webview2-host.md).
 
@@ -35,7 +35,14 @@ the provider-owned HWND, sizes the controller to the validated client area and
 maps visibility, event pumping, navigation and bounded JSON messaging without
 leaking WebView2 or Win32 types into the frontend. The Moirai revision remains
 an explicit co-evolution pin until its branch merges; application composition
-and installed-runtime visual evidence remain open.
+and installed-runtime visual evidence were open at this revision.
+
+Revision 2026-09-09: the supervised WebView2 role admits only the operating-system
+path variables required to create the runtime; application settings and
+credentials remain cleared. A real Windows capture records native and WebView2
+initial/submit states and the trusted keyboard/pointer bridge result in
+[`native-captures.json`](../manual/images/native-captures.json), on runtime
+`152.0.4191.66`.
 
 ## Context
 
@@ -95,8 +102,8 @@ package for the end-to-end form workflow.
 This increment deliberately supplies a native software surface, provider-owned
 IME event production, the WebView2 consumer seam and the application bridge.
 OS file/network/process denial, accessibility providers, an installed IME
-journey, visible WebView capture and consumer editing policy remain separate
-host increments with their own contracts and captures.
+journey, physical resize/DPI and consumer editing policy remain separate host
+increments with their own contracts and captures.
 
 ## Alternatives
 
@@ -119,10 +126,11 @@ presenter treats pixels as data only and does not grant file, network, process o
 WebView authority.
 
 The provider and visible host are Windows-only in this increment. Cross-platform
-native windows, WebView2 integration, OS sandbox enforcement, native
-accessibility, an installed CJK or other IME journey, a committed visual capture
-and actual two-window permission captures remain open under the linked backlog
-items. A successful Windows build or off-screen frame does not close those
+native windows, OS sandbox enforcement, native accessibility, an installed CJK
+or other IME journey, and actual two-window permission captures remain open
+under the linked backlog items. The committed capture covers only the initial
+and successful form states;
+a successful Windows build or off-screen frame does not close the remaining
 runtime requirements.
 
 ## Verification
@@ -134,5 +142,7 @@ lifecycle and destroys it without retained callback state. The Metis adapter
 and frontend host tests present actual framebuffer storage, derive the submit
 hit region from the authored display list, exercise bounded text and preserve
 the old surface across an invalid resize. Warning-denied Clippy, native tests
-and the WASM library gate remain required; visual V05 evidence is added when a
-native window can be driven by the host capture harness.
+and the WASM library gate remain required. The capture manifest and four PNGs
+provide visual V05 evidence for the initial and successful native/WebView2 form
+journeys; installed-IME, accessibility, permission, physical resize/DPI and
+cross-platform host evidence remain required.

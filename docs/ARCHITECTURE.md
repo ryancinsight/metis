@@ -152,7 +152,8 @@ frontend framebuffer, consumes bounded native events including IME composition
 phases and keeps the backend on a supervised private pipe. The native host still
 has no OS permission sandbox;
 process address-space separation and lifecycle containment do not deny file,
-network or device access. A committed visual host capture and denial probes are
+network or device access. The committed visual host captures are now recorded in
+the user manual and verification manifest; independent denial probes are still
 required before the desktop item closes. Platform support claims require
 separate host tests, not merely `cfg` branches or successful compilation. The
 loopback browser service is a one-connection conformance host; it is not a

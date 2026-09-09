@@ -4,13 +4,14 @@ The current Metis demonstration has five independently useful checks: a real
 frontend/backend process exchange, deterministic software captures of a real
 backend session through success, edit, rejection, correction, disconnect and
 recovery, a browser workbench with Rust/WASM-driven HTML5/CSS controls, a
-Windows-native adapter test that creates a real hidden HWND, and the visible
-`metis-app --metis-native-window` host workflow. The native checks present the
+Windows-native adapter test that creates a real hidden HWND, and visible native
+and packaged-WebView2 `metis-app` host workflows. The native checks present the
 production framebuffer and drain bounded lifecycle events; the workbench can
 connect to the documented one-shot loopback service for a real authenticated
 calculation. The Windows platform suite also checks the WebView2 consumer's
-packaged-URI configuration without requiring the installed runtime. A committed
-visual capture and OS permission boundary remain open.
+packaged-URI configuration without requiring the installed runtime. The
+committed host captures cover initial and successful submission states; the OS
+permission boundary and remaining host journeys remain open.
 
 ## Run the checks
 
@@ -206,8 +207,10 @@ Three deliberately changed renders test detection of text, position and color
 regressions. Their difference images are test evidence, not application states.
 The software gallery exercises production state transitions through API calls;
 the browser workbench exercises editable controls, focus, real service
-requests, explicit disconnects and task/listener teardown. Browser accessibility
-technology, IME and native input capture remain unimplemented.
+requests, explicit disconnects and task/listener teardown. Browser
+accessibility technology, installed IME, native accessibility and OS permission
+journeys remain open; native input and visible form capture are covered by the
+Windows evidence in [native.md](native.md#captured-windows-workflows).
 
 ## What a demonstration proves
 

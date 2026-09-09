@@ -22,6 +22,32 @@ pub const SESSION_DEADLINE: Duration = Duration::from_secs(10);
 pub const INTERACTIVE_SESSION_DEADLINE: Duration = Duration::from_mins(5);
 /// Additional budget to confirm requested process termination.
 const CLEANUP_DEADLINE: Duration = Duration::from_secs(1);
+
+/// Environment policy applied to a supervised presentation process.
+///
+/// `Isolated` is the default and starts the child with no inherited values.
+/// `Runtime` admits only operating-system path variables required by a desktop
+/// runtime such as `WebView2`; application variables and credentials remain out
+/// of the child environment.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum ProcessEnvironment {
+    /// Start the child with an empty environment block.
+    Isolated,
+    /// Admit the bounded operating-system runtime environment allowlist.
+    Runtime,
+}
+
+const RUNTIME_ENVIRONMENT_KEYS: [&str; 9] = [
+    "APPDATA",
+    "LOCALAPPDATA",
+    "PROGRAMDATA",
+    "PROGRAMFILES",
+    "PROGRAMFILES(X86)",
+    "SystemRoot",
+    "TEMP",
+    "TMP",
+    "USERPROFILE",
+];
 enum Completion {
     Closed,
     Failed,
@@ -40,7 +66,13 @@ pub fn run_session<H: IpcHandler>(
     args: &[String],
     handler: &mut H,
 ) -> Result<ExitStatus> {
-    run_session_with_deadline(binary, args, handler, SESSION_DEADLINE)
+    run_session_with_deadline_and_environment(
+        binary,
+        args,
+        handler,
+        SESSION_DEADLINE,
+        ProcessEnvironment::Isolated,
+    )
 }
 
 /// Starts a contained presentation process with an explicit finite deadline.
@@ -57,17 +89,38 @@ pub fn run_session_with_deadline<H: IpcHandler>(
     handler: &mut H,
     deadline: Duration,
 ) -> Result<ExitStatus> {
+    run_session_with_deadline_and_environment(
+        binary,
+        args,
+        handler,
+        deadline,
+        ProcessEnvironment::Isolated,
+    )
+}
+
+/// Starts a contained presentation process with an explicit deadline and
+/// bounded environment policy.
+///
+/// The runtime policy is intentionally an allowlist. It supplies only the
+/// operating-system locations needed by desktop `WebView` creation while keeping
+/// application settings, tokens and credentials outside the child process.
+///
+/// # Errors
+/// Returns spawn, task admission, protocol, process, cleanup, or deadline errors.
+pub fn run_session_with_deadline_and_environment<H: IpcHandler>(
+    binary: &Path,
+    args: &[String],
+    handler: &mut H,
+    deadline: Duration,
+    environment: ProcessEnvironment,
+) -> Result<ExitStatus> {
     let mut executor = ExecutorBuilder::new()
         .worker_threads(1)
         .async_threads(1)
         .build()
         .map_err(|error| task_error(&error))?;
     let session = (|| {
-        let spec = ProcessSpec::new(binary)
-            .args(args)
-            .env_clear()
-            .piped_stdio()
-            .tree_containment();
+        let spec = process_spec(binary, args, environment);
         let mut child = ProcessSupervisor::new()
             .spawn(spec, ProcessDropPolicy::TerminateOnDrop)
             .map_err(process_error)?;
@@ -131,6 +184,22 @@ pub fn run_session_with_deadline<H: IpcHandler>(
     // result-handle failure. Only this session's finite watchdog is submitted.
     let shutdown = executor.shutdown().map_err(|error| task_error(&error));
     session.and_then(|status| shutdown.map(|()| status))
+}
+
+fn process_spec(binary: &Path, args: &[String], environment: ProcessEnvironment) -> ProcessSpec {
+    let mut spec = ProcessSpec::new(binary)
+        .args(args)
+        .env_clear()
+        .piped_stdio()
+        .tree_containment();
+    if environment == ProcessEnvironment::Runtime {
+        for key in RUNTIME_ENVIRONMENT_KEYS {
+            if let Some(value) = std::env::var_os(key) {
+                spec = spec.env(key, value);
+            }
+        }
+    }
+    spec
 }
 fn watch(
     mut child: ManagedProcess,
