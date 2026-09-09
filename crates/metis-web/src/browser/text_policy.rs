@@ -103,6 +103,7 @@ pub(crate) enum TextError {
     LocaleTooLong,
     SelectionReversed,
     SelectionOutOfBounds,
+    SelectionSplitsScalar,
 }
 
 impl fmt::Display for TextError {
@@ -113,6 +114,7 @@ impl fmt::Display for TextError {
             Self::LocaleTooLong => "composition locale exceeds the 64-byte bound",
             Self::SelectionReversed => "text selection start follows end",
             Self::SelectionOutOfBounds => "text selection exceeds the current value",
+            Self::SelectionSplitsScalar => "text selection splits a UTF-16 surrogate pair",
         };
         formatter.write_str(message)
     }
@@ -321,7 +323,30 @@ fn validate_selection(value: &str, selection: Selection) -> Result<(), TextError
     if selection.end > utf16_length(value)? {
         return Err(TextError::SelectionOutOfBounds);
     }
+    for offset in [selection.start(), selection.end()] {
+        if !is_utf16_boundary(value, offset)? {
+            return Err(TextError::SelectionSplitsScalar);
+        }
+    }
     Ok(())
+}
+
+fn is_utf16_boundary(value: &str, offset: u32) -> Result<bool, TextError> {
+    if offset == 0 {
+        return Ok(true);
+    }
+    let mut position = 0_u32;
+    for character in value.chars() {
+        let width = u32::try_from(character.len_utf16()).map_err(|_| TextError::TextTooLong)?;
+        position = position.checked_add(width).ok_or(TextError::TextTooLong)?;
+        if position == offset {
+            return Ok(true);
+        }
+        if position > offset {
+            return Ok(false);
+        }
+    }
+    Ok(false)
 }
 
 fn locale_label(locale: &str) -> &str {
@@ -409,6 +434,21 @@ mod tests {
                 selection,
             ),
             Err(TextError::TextTooLong)
+        );
+        assert_eq!(state, before);
+    }
+
+    #[test]
+    fn selection_rejects_offsets_inside_a_surrogate_pair() {
+        let mut state = TextState::new("A😀é".to_owned()).expect("Unicode value is bounded");
+        let before = state.clone();
+        let split =
+            Selection::new(2, 2, SelectionDirection::None).expect("selection ordering is valid");
+        assert_eq!(
+            state
+                .apply_selection(split)
+                .expect_err("selection must stay on a scalar boundary"),
+            TextError::SelectionSplitsScalar
         );
         assert_eq!(state, before);
     }

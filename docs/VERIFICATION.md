@@ -692,7 +692,8 @@ The text increment consumes Moirai's merged browser text contract at
 event data, input-operation names and composition locales before copying them
 into owned values; selection snapshots retain UTF-16 code-unit offsets and a
 direction enum. `metis-web` keeps its own bounded `TextState`, validates
-selection ranges against the current value, and handles `input`, `select`,
+selection ranges against the current value and rejects offsets inside a
+UTF-16 surrogate pair, and handles `input`, `select`,
 `compositionstart`, `compositionupdate`, `compositionend` and
 `compositioncancel` through Rust-owned listener guards.
 
@@ -708,7 +709,8 @@ python scripts/browser.py build — passed
 ```
 
 The native policy suite covers an accented character and emoji UTF-16 span,
-selection ordering and bounds, forward/backward/unknown direction labels,
+scalar-boundary rejection, selection ordering and bounds,
+forward/backward/unknown direction labels,
 input metadata rejection without state mutation, and composition start/update,
 commit and cancellation. The generated page renders a labelled textarea,
 separate text/composition/selection status regions, a bounded value preview and

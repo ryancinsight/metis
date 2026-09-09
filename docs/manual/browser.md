@@ -382,13 +382,14 @@ status reported a `23`-unit forward caret. This is ordinary browser input
 evidence; CUA does not expose a trusted operating-system IME or `isTrusted`.
 
 The policy caps the value at 1 MiB, event metadata at 128 UTF-8 bytes and the
-locale at 64 bytes. UTF-16 offsets are transport coordinates; they are not
-grapheme boundaries. This workflow therefore does not claim grapheme-safe
-caret movement, bidi shaping, fallback-font metrics, clipboard/undo behavior,
-assistive-technology behavior or native IME delivery. CUA can show the real
-HTML textarea, statuses and focus ring, but it cannot provide a trusted OS IME
-event or expose `isTrusted`; record the browser engine and input method when
-collecting host evidence.
+locale at 64 bytes. UTF-16 offsets are transport coordinates; the Rust policy
+rejects an offset inside a surrogate pair before it changes state, while
+grapheme boundaries remain a host contract. This workflow therefore does not
+claim grapheme-safe caret movement, bidi shaping, fallback-font metrics,
+clipboard/undo behavior, assistive-technology behavior or native IME delivery.
+CUA can show the real HTML textarea, statuses and focus ring, but it cannot
+provide a trusted OS IME event or expose `isTrusted`; record the browser engine
+and input method when collecting host evidence.
 The browser provider for this workflow is Moirai revision
 `0862716265d657b8069d5a47fd1e77ae26ddd006`; the consumer lock is updated to the
 same merged revision.

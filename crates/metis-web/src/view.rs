@@ -12,6 +12,13 @@ use moirai_pal::wasm::{WebDocument, WebElement};
 use std::io;
 
 pub(super) fn render(document: &WebDocument, state: &BrowserState) -> io::Result<()> {
+    let message = status_message(state);
+    render_theme_and_inputs(document, state)?;
+    render_status(document, state, &message)?;
+    render_result(document, state, &message)
+}
+
+fn render_theme_and_inputs(document: &WebDocument, state: &BrowserState) -> io::Result<()> {
     let inputs = &state.inputs;
     document
         .body()?
@@ -34,7 +41,11 @@ pub(super) fn render(document: &WebDocument, state: &BrowserState) -> io::Result
         "result-dose",
         &format!("{:.3} mcg/kg/min", inputs.target_dose_mcg_kg_min),
     )?;
-    let message = match &state.state {
+    Ok(())
+}
+
+fn status_message(state: &BrowserState) -> String {
+    match &state.state {
         FormState::Idle => match state.bridge {
             BridgeStatus::Disabled => "Controls active; no authorized backend bridge configured",
             BridgeStatus::Connecting => "Connecting to authorized backend",
@@ -60,19 +71,13 @@ pub(super) fn render(document: &WebDocument, state: &BrowserState) -> io::Result
             _ => "Backend session failed".to_owned(),
         },
         _ => "Unsupported form state".to_owned(),
-    };
-    let request_busy = matches!(state.state, FormState::Pending);
-    let busy_value = if request_busy { "true" } else { "false" };
-    for id in [
-        "metis-status",
-        "session-dialog-status",
-        "metis-form",
-        "result-state",
-    ] {
-        element(document, id)?.set_attribute("aria-busy", busy_value)?;
     }
-    set_text(document, "metis-status", &message)?;
-    set_text(document, "session-dialog-status", &message)?;
+}
+
+fn render_status(document: &WebDocument, state: &BrowserState, message: &str) -> io::Result<()> {
+    set_request_busy_attributes(document, state)?;
+    set_text(document, "metis-status", message)?;
+    set_text(document, "session-dialog-status", message)?;
     set_text(document, "metis-capabilities", &state.capabilities)?;
     set_text(document, "session-dialog-capabilities", &state.capabilities)?;
     set_text(document, "metis-plugins", &state.plugins)?;
@@ -88,6 +93,24 @@ pub(super) fn render(document: &WebDocument, state: &BrowserState) -> io::Result
     let submit_disabled =
         !matches!(state.bridge, BridgeStatus::Ready) || matches!(state.state, FormState::Pending);
     element(document, "submit-calculation")?.set_disabled(submit_disabled)?;
+    Ok(())
+}
+
+fn set_request_busy_attributes(document: &WebDocument, state: &BrowserState) -> io::Result<()> {
+    let request_busy = matches!(state.state, FormState::Pending);
+    let busy_value = if request_busy { "true" } else { "false" };
+    for id in [
+        "metis-status",
+        "session-dialog-status",
+        "metis-form",
+        "result-state",
+    ] {
+        element(document, id)?.set_attribute("aria-busy", busy_value)?;
+    }
+    Ok(())
+}
+
+fn render_result(document: &WebDocument, state: &BrowserState, message: &str) -> io::Result<()> {
     let metrics = match &state.state {
         FormState::Success(response) => match state.controls.display_unit() {
             DisplayUnit::Volume => format!("Volume rate: {:.6} mL/hr", response.rate_ml_hr),
@@ -120,7 +143,7 @@ pub(super) fn render(document: &WebDocument, state: &BrowserState) -> io::Result
         "data-result-scale-percent",
         &state.controls.scale().value().to_string(),
     )?;
-    set_text(document, "result-state", &message)?;
+    set_text(document, "result-state", message)?;
     render_explorer(document, state)
 }
 

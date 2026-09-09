@@ -85,10 +85,11 @@ RITK remains the owner of dataset parsing, pixel decoding and study selection.
 The workbench also uses a semantic textarea for text and composition. Metis
 owns a bounded `TextState` that receives Moirai's UTF-16 selection snapshots,
 `InputEvent` metadata and `CompositionEvent` transitions. The state validates
-selection ranges against the current Unicode value and renders text,
-composition and selection status without importing `web-sys`. Grapheme
-segmentation, bidi shaping, clipboard/undo, fallback-font metrics and native
-IME production remain host contracts.
+selection ranges against the current Unicode value, rejects offsets inside a
+UTF-16 surrogate pair, and renders text, composition and selection status
+without importing `web-sys`. Grapheme segmentation, bidi shaping,
+clipboard/undo, fallback-font metrics and native IME production remain host
+contracts.
 
 ## Alternatives
 
@@ -140,8 +141,8 @@ increment adds bounded capture slots, duplicate/third-pointer rejection,
 centroid pan, distance-ratio zoom and zero-distance baseline handling; its
 native policy tests and WASM checks are recorded in the verification artifact.
 
-The text increment adds 21 native policy tests for UTF-16 coordinates,
-selection bounds, input metadata and composition transitions. The browser
+The text increment adds native policy tests for UTF-16 coordinates, scalar
+boundary and selection bounds, input metadata and composition transitions. The browser
 trace renders the labelled textarea, bounded value preview, semantic status
 regions and focus state; CUA cannot provide trusted OS IME input or expose the
 browser `isTrusted` flag.
