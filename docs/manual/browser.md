@@ -311,11 +311,10 @@ pointer card are visible in the [pinch gesture evidence](../VERIFICATION.md#brow
 The Codex browser cannot inject trusted physical touch, so a live screenshot
 does not claim hardware multi-touch behavior.
 
-The **DICOM file drop** card demonstrates the browser file and metadata
-workflow. Drag one or more files onto **DICOM file drop**. Rust prevents the
-browser's default navigation, asks Moirai for a bounded `DropFiles` capture,
-and renders the file count, the first three display names with byte sizes and
-the number of names or media types that look like DICOM. The zone exposes
+The **DICOM file drop** card demonstrates the browser file and metadata workflow.
+Drag one or more files onto **DICOM file drop**. Rust prevents the browser's default
+navigation, asks Moirai for a bounded `DropFiles` capture, and renders the file
+count and the first three display names with byte sizes. The zone exposes
 `dragenter`, `dragover`, `dragleave` and `drop` state through the semantic
 `drop-status` region and its `data-drop-state` attribute. A rejected metadata
 record leaves the zone in the typed rejected state and reports the provider
@@ -326,24 +325,24 @@ through Moirai's owned browser `File` handles. Each file is limited to 64 MiB
 and the batch to 256 MiB; a 64 KiB continuation buffer keeps each `FileReader`
 turn bounded while the provider still enforces its 1 MiB maximum read. The
 consumer reports `reading` and then `complete` or `failed` through
-`drop-byte-status` and `data-byte-state`, and classifies the first payload's
-DICOM Part 10 marker at byte offsets 128–131. A completed batch is available to
-a trusted WASM consumer through `metis_web::take_file_drop`, which transfers
-ownership of the batch. Call `FileDropBatch::into_files` and
+`drop-byte-status` and `data-byte-state`. The handoff performs no format
+classification. A completed batch is available to a trusted WASM consumer
+through `metis_web::take_file_drop`, which transfers ownership of the batch.
+Call `FileDropBatch::into_files` and
 `FileDropPayload::into_parts` when the consumer must retain the entries; moving
 the tuple preserves each byte allocation. A later drop replaces an unconsumed
 batch, and stop/remount drops it. No browser name is turned into a filesystem
-path. RITK remains responsible for parsing the dataset, decoding pixels and
-opening a study; this slice closes the bounded zero-copy byte handoff, not the
-RITK decoder.
+path. A RITK adapter receives the named bytes and performs any format-specific
+scan, decode and study opening; this slice closes the bounded zero-copy byte
+handoff, not the DICOM workflow.
 
 The provider caps one drop at 64 files, 4096 UTF-8 bytes per name and 256 bytes
 per media type. The CUA browser surface cannot synthesize a trusted
 operating-system file drop, attach a local file to a synthetic event or expose
 `isTrusted`, so a manual trace must record the browser engine and whether the
 drop came from a physical file operation. Native policy tests cover bounds,
-typed rejection, DICOM candidate classification, payload size budgets and the
-Part 10 header state; the WASM gate compiles the real provider-backed read path.
+typed rejection and payload size budgets; the WASM gate compiles the real
+provider-backed read path.
 
 The 2026-09-08 CUA trace opened the generated build at a 1280×720 CSS-pixel
 viewport with device scale 1.25. The accessibility tree exposed **DICOM file

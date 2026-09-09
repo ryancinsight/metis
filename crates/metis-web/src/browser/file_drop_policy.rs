@@ -6,7 +6,6 @@ const MAX_FILES: usize = 64;
 const MAX_FILE_NAME_BYTES: usize = 4_096;
 const MAX_MEDIA_TYPE_BYTES: usize = 256;
 const MAX_DISPLAY_NAME_BYTES: usize = 96;
-const DICOM_HEADER_BYTES: usize = 132;
 pub(crate) const MAX_FILE_BYTES: u64 = 64 * 1024 * 1024;
 pub(crate) const MAX_BATCH_BYTES: u64 = 256 * 1024 * 1024;
 
@@ -17,13 +16,6 @@ pub(crate) struct FileDropEntry {
     size_bytes: u64,
 }
 
-#[derive(Clone, Copy, Debug, Eq, PartialEq)]
-pub(crate) enum DicomHeader {
-    Part10,
-    MissingMarker,
-    TooShort,
-}
-
 #[derive(Clone, Copy, Debug, Default, Eq, PartialEq)]
 pub(crate) enum DropReadState {
     #[default]
@@ -32,7 +24,6 @@ pub(crate) enum DropReadState {
     Complete {
         bytes_read: usize,
         files_read: usize,
-        header: DicomHeader,
     },
     Failed,
 }
@@ -50,28 +41,11 @@ impl DropReadState {
     pub(crate) fn status_message(self) -> String {
         match self {
             Self::Idle => "Byte access: waiting for a selected file".to_owned(),
-            Self::Reading => "Byte access: reading a bounded DICOM file batch".to_owned(),
+            Self::Reading => "Byte access: reading a bounded file batch".to_owned(),
             Self::Complete {
                 bytes_read,
                 files_read,
-                header: DicomHeader::Part10,
-            } => format!(
-                "Byte access: read {bytes_read} bytes from {files_read} file(s); DICOM Part 10 marker present"
-            ),
-            Self::Complete {
-                bytes_read,
-                files_read,
-                header: DicomHeader::MissingMarker,
-            } => format!(
-                "Byte access: read {bytes_read} bytes from {files_read} file(s); DICOM Part 10 marker absent"
-            ),
-            Self::Complete {
-                bytes_read,
-                files_read,
-                header: DicomHeader::TooShort,
-            } => format!(
-                "Byte access: read {bytes_read} bytes from {files_read} file(s); DICOM Part 10 header is shorter than 132 bytes"
-            ),
+            } => format!("Byte access: read {bytes_read} bytes from {files_read} file(s)"),
             Self::Failed => "Byte access: host rejected the selected file".to_owned(),
         }
     }
@@ -113,17 +87,6 @@ impl fmt::Display for PayloadSizeError {
     }
 }
 
-pub(crate) fn classify_dicom_header(bytes: &[u8]) -> DicomHeader {
-    if bytes.len() < DICOM_HEADER_BYTES {
-        return DicomHeader::TooShort;
-    }
-    if bytes[128..DICOM_HEADER_BYTES] == *b"DICM" {
-        DicomHeader::Part10
-    } else {
-        DicomHeader::MissingMarker
-    }
-}
-
 impl FileDropEntry {
     pub(crate) fn new(
         name: String,
@@ -151,13 +114,6 @@ impl FileDropEntry {
 
     pub(crate) const fn size_bytes(&self) -> u64 {
         self.size_bytes
-    }
-
-    fn is_dicom_candidate(&self) -> bool {
-        self.media_type.eq_ignore_ascii_case("application/dicom")
-            || self.name.rsplit_once('.').is_some_and(|(_, extension)| {
-                extension.eq_ignore_ascii_case("dcm") || extension.eq_ignore_ascii_case("dicom")
-            })
     }
 
     fn display_name(&self) -> String {
@@ -281,10 +237,6 @@ fn map_payload_error(error: PayloadSizeError) -> FileDropError {
 }
 
 fn accepted_status(files: &[FileDropEntry]) -> String {
-    let dicom_count = files
-        .iter()
-        .filter(|file| file.is_dicom_candidate())
-        .count();
     let details = files
         .iter()
         .take(3)
@@ -293,9 +245,8 @@ fn accepted_status(files: &[FileDropEntry]) -> String {
         .join(", ");
     let suffix = if files.len() > 3 { "; ..." } else { "" };
     format!(
-        "Drop status: accepted {} file(s); DICOM candidates {}; {}{}",
+        "Drop status: accepted {} file(s); {}{}",
         files.len(),
-        dicom_count,
         details,
         suffix
     )
@@ -317,8 +268,8 @@ fn truncate_text(value: &str, maximum_bytes: usize) -> String {
 #[cfg(test)]
 mod tests {
     use super::{
-        DicomHeader, DropReadState, DropState, FileDropEntry, FileDropError, MAX_BATCH_BYTES,
-        MAX_FILE_BYTES, MAX_FILES, PayloadSizeError, check_payload_size, classify_dicom_header,
+        DropReadState, DropState, FileDropEntry, FileDropError, MAX_BATCH_BYTES, MAX_FILE_BYTES,
+        MAX_FILES, PayloadSizeError, check_payload_size,
     };
 
     fn entry(name: &str, media_type: &str) -> FileDropEntry {
@@ -351,16 +302,16 @@ mod tests {
     }
 
     #[test]
-    fn accepted_state_is_bounded_and_reports_dicom_candidates() {
+    fn accepted_state_is_bounded_and_reports_metadata() {
         let state = DropState::accept([
-            entry("scan.dcm", "application/dicom"),
+            entry("scan.bin", "application/octet-stream"),
             entry("notes.txt", "text/plain"),
         ])
         .expect("bounded metadata is accepted");
         assert_eq!(state.file_count(), 2);
         assert_eq!(state.state_name(), "accepted");
-        assert!(state.status_message().contains("DICOM candidates 1"));
-        assert!(state.status_message().contains("scan.dcm (1024 bytes)"));
+        assert!(state.status_message().contains("accepted 2 file(s)"));
+        assert!(state.status_message().contains("scan.bin (1024 bytes)"));
     }
 
     #[test]
@@ -369,16 +320,16 @@ mod tests {
             DropState::accept([]).expect_err("empty drops must be rejected"),
             FileDropError::EmptyDrop
         );
-        let entries =
-            std::iter::repeat_with(|| entry("scan.dcm", "application/dicom")).take(MAX_FILES + 1);
+        let entries = std::iter::repeat_with(|| entry("scan.bin", "application/octet-stream"))
+            .take(MAX_FILES + 1);
         assert_eq!(
             DropState::accept(entries).expect_err("oversized drops must be rejected"),
             FileDropError::TooManyFiles
         );
         assert_eq!(
             DropState::accept([FileDropEntry::new(
-                "large.dcm".to_owned(),
-                "application/dicom".to_owned(),
+                "large.bin".to_owned(),
+                "application/octet-stream".to_owned(),
                 MAX_FILE_BYTES + 1,
             )
             .expect("metadata is valid")])
@@ -400,31 +351,20 @@ mod tests {
     }
 
     #[test]
-    fn dicom_header_classifier_requires_the_part10_marker() {
-        let short = [0_u8; 131];
-        assert_eq!(classify_dicom_header(&short), DicomHeader::TooShort);
-        let mut header = [0_u8; 132];
-        assert_eq!(classify_dicom_header(&header), DicomHeader::MissingMarker);
-        header[128..].copy_from_slice(b"DICM");
-        assert_eq!(classify_dicom_header(&header), DicomHeader::Part10);
-    }
-
-    #[test]
     fn byte_read_status_exposes_bounded_progress() {
         assert_eq!(DropReadState::default().state_name(), "idle");
         assert!(
             DropReadState::Reading
                 .status_message()
-                .contains("bounded DICOM file batch")
+                .contains("bounded file batch")
         );
         assert!(
             DropReadState::Complete {
                 bytes_read: 132,
                 files_read: 1,
-                header: DicomHeader::Part10,
             }
             .status_message()
-            .contains("read 132 bytes from 1 file(s); DICOM Part 10 marker present")
+            .contains("read 132 bytes from 1 file(s)")
         );
         assert_eq!(DropReadState::Failed.state_name(), "failed");
     }

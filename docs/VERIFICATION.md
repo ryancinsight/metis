@@ -1349,6 +1349,11 @@ exact pixels and physical landmarks, and compares all three slice captures to
 reviewed images. A future Métis viewer capture must consume that RITK result
 through the presentation seam and must not duplicate the DICOM workflow.
 
+The format-neutral handoff follow-up removes the remaining browser-side DICOM
+candidate and Part 10 marker decisions. Metis now reports bounded file metadata
+and byte progress only; a RITK adapter receives the named bytes before any
+format-specific scan or decode decision.
+
 <a id="V10"></a>
 ### V10 — Developer and package lifecycle
 

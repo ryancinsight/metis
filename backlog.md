@@ -323,6 +323,13 @@ an owner. “Unsupported” cannot replace delivery of a required mobile/native 
 - Status: done; outcome: removed the duplicate GUI-side DICOM crate and retained RITK as the scanner, loader, geometry, and visual-workflow owner; [RITK-SNAP-DICOM-SUBSTRATE-001](../ritk/backlog.md#RITK-SNAP-DICOM-SUBSTRATE-001).
 - Evidence: the Metis browser handoff remains bounded and parser-free; the RITK manual and locked workflow cover byte/file opening, rejection, geometry, and captures. Decision: [RITK ADR 0026](../ritk/docs/adr/0026-viewer-presentation-migration.md).
 
+<a id="METIS-DICOM-002"></a>
+## METIS-DICOM-002 — Keep the browser handoff format-neutral [patch]
+- Status: review; priority: P1; owner: Metis browser; integrator: root; branch: `fix/metis-format-neutral-handoff`; dependency: METIS-DICOM-001; risk: duplicated format policy.
+- Scope: remove DICOM candidate and Part 10 marker classification from `metis-web`; retain bounded file metadata, byte ownership and the viewer-facing drop surface. RITK scanner, loader, geometry and visual evidence remain the owner.
+- Acceptance: `metis-web` has no DICOM classifier symbols or format-dependent status transitions; generic byte-progress tests, browser asset checks and the full Metis gate pass; RITK DICOM documentation remains the linked opening demonstration.
+- Evidence: commit `49d2c98`; `metis-web` 31/31 native tests, WASM build, and full `python scripts/verify.py` gate pass on the committed revision.
+
 <a id="METIS-DISTRIBUTION-001"></a>
 ## METIS-DISTRIBUTION-001 — Executables and Windows MSI [arch] [minor]
 - Status: done; delivery: `feat(distribution): Build executables and MSI`; decision: [ADR 0005](docs/adr/0005-application-distribution.md).

@@ -5,8 +5,7 @@ use super::generation_is_current;
 use super::view;
 use crate::epoch::Generation;
 use crate::file_drop_policy::{
-    DicomHeader, DropReadState, DropState, FileDropEntry, FileDropError, PayloadSizeError,
-    check_payload_size, classify_dicom_header,
+    DropReadState, DropState, FileDropEntry, FileDropError, PayloadSizeError, check_payload_size,
 };
 use crate::{FileDropBatch, FileDropPayload};
 use moirai_pal::wasm::{
@@ -186,7 +185,7 @@ fn read_drop_batch(context: DropReadContext, mut files: DropFiles, sequence: u64
             // A newer sequence or mount owns the shared slot and its task.
             return;
         }
-        if let Ok((batch, header)) = result {
+        if let Ok(batch) = result {
             let bytes_read = batch.total_bytes();
             let files_read = batch.file_count();
             let mut state = state.borrow_mut();
@@ -194,7 +193,6 @@ fn read_drop_batch(context: DropReadContext, mut files: DropFiles, sequence: u64
             state.drop_read_state = DropReadState::Complete {
                 bytes_read,
                 files_read,
-                header,
             };
         } else {
             let mut state = state.borrow_mut();
@@ -209,17 +207,13 @@ fn read_drop_batch(context: DropReadContext, mut files: DropFiles, sequence: u64
     *task_slot.borrow_mut() = Some(task);
 }
 
-async fn read_batch(files: &mut DropFiles) -> io::Result<(FileDropBatch, DicomHeader)> {
+async fn read_batch(files: &mut DropFiles) -> io::Result<FileDropBatch> {
     let mut payloads = Vec::with_capacity(files.files().len());
     let mut total_bytes = 0_u64;
-    let mut first_header = DicomHeader::TooShort;
-    for (index, file) in files.files_mut().iter_mut().enumerate() {
+    for file in files.files_mut() {
         let size_bytes = file.size_bytes();
         let expected = check_payload_size(size_bytes, total_bytes).map_err(payload_error)?;
         let bytes = read_file(file, expected).await?;
-        if index == 0 {
-            first_header = classify_dicom_header(&bytes);
-        }
         total_bytes = total_bytes
             .checked_add(size_bytes)
             .ok_or_else(|| payload_error(PayloadSizeError::BatchTooLarge))?;
@@ -229,7 +223,7 @@ async fn read_batch(files: &mut DropFiles) -> io::Result<(FileDropBatch, DicomHe
             bytes.into_boxed_slice(),
         ));
     }
-    Ok((FileDropBatch::from_payloads(payloads), first_header))
+    Ok(FileDropBatch::from_payloads(payloads))
 }
 
 async fn read_file(file: &mut DroppedFileAccess, expected: usize) -> io::Result<Vec<u8>> {
