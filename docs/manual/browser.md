@@ -435,8 +435,11 @@ to choose the other unit. The closed session dialog is not in the active tab
 order.
 Opening **Session details** uses the browser dialog semantics; **Close** is the
 dialog action and focus returns to the opener after dismissal. Status and
-composition regions use polite live announcements, while labels and headings
-provide names for each control group.
+composition regions use polite, atomic live announcements, while labels and
+headings provide names for each control group. The form and result status set
+`aria-busy="true"` during an in-flight backend request and return it to
+`"false"` when the result settles; the explorer table follows the same state
+for a loading result page.
 
 The stylesheet responds to the user's presentation preferences. With
 `prefers-reduced-motion: reduce`, scrolling is immediate and transitions or
@@ -447,6 +450,7 @@ remains available; the responsive grid stacks below `700px` and keeps content
 inside the `960px` bound.
 
 The static browser asset contract checks the semantic names, live regions,
+atomic announcements and busy-state wiring,
 non-positive focus order and both media-query branches. For a host acceptance
 run, enable a supported screen reader, reduced-motion setting, forced-colors
 setting and browser zoom, then capture the accessibility tree, focus ring and
@@ -492,6 +496,15 @@ progress** and marked the control disabled; after the delayed response, the
 button became enabled and the result showed `Volume rate: 0.543750 mL/hr`.
 On a disconnected workbench, attempting to activate the disabled control timed
 out without changing the status or accessibility tree.
+
+The 2026-09-08 service-backed CUA trace also inspected the live attributes
+while the delayed request was in flight. `metis-status`, `metis-form`,
+`result-state` and `explorer-table` all reported `aria-busy="true"` alongside
+the **Request in progress** announcement. After the four-second response,
+each returned to `"false"`; the tree exposed **Backend result received**, the
+retained result row and the enabled submit control. This demonstrates that the
+busy state follows the Rust pending/loading state and settles with the real
+backend result in the browser engine.
 
 With the service configuration above, the status becomes `Authorized backend
 session ready`, and the header lists the commands advertised by that service

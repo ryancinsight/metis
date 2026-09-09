@@ -267,6 +267,9 @@ class BrowserAssetContractTests(unittest.TestCase):
         controls = (ROOT / "crates" / "metis-web" / "src" / "controls.rs").read_text(
             encoding="utf-8"
         )
+        view = (ROOT / "crates" / "metis-web" / "src" / "view.rs").read_text(
+            encoding="utf-8"
+        )
         styles = (ROOT / "examples" / "browser" / "styles.css").read_text(
             encoding="utf-8"
         )
@@ -276,7 +279,9 @@ class BrowserAssetContractTests(unittest.TestCase):
             'aria-labelledby="pointer-heading"',
             'aria-labelledby="drop-heading"',
             'aria-labelledby="text-heading"',
-            'id="metis-status" role="status"',
+            'id="metis-status" role="status" aria-live="polite" aria-atomic="true" aria-busy="false"',
+            'id="metis-form" class="metis-form" aria-describedby="metis-status" aria-busy="false"',
+            'id="result-state" role="status" aria-live="polite" aria-atomic="true" aria-busy="false"',
             'id="metis-events" role="status"',
             'id="drop-status" role="status"',
             'id="composition-status" role="status" aria-live="polite"',
@@ -286,6 +291,12 @@ class BrowserAssetContractTests(unittest.TestCase):
             'id="theme-mode" name="theme-mode"',
         ):
             self.assertIn(fragment, controls)
+        for fragment in (
+            'let request_busy = matches!(state.state, FormState::Pending);',
+            'set_attribute("aria-busy", busy_value)',
+            'matches!(explorer.status(), ExplorerStatus::Loading)',
+        ):
+            self.assertIn(fragment, view)
         focus_order = (
             "open-session-dialog",
             "patient-id",

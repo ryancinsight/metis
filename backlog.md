@@ -217,6 +217,8 @@ an owner. “Unsupported” cannot replace delivery of a required mobile/native 
 - Demonstration: [V03](docs/VERIFICATION.md#V03), readable focus/contrast/zoom captures plus semantic/action and assistive-technology evidence.
 - Completed increment: `feat(web): Honor accessibility preferences` adds reduced-motion and forced-colors presentation rules, semantic focus-order assertions and synchronized manual/evidence text.
 - Evidence: revision `6bbbd00` passes the full Metis gate and 51 Python tests; the CUA trace observes the document focus path and a visible focus outline on **Clinical note**.
+- Completed increment (2026-09-08): `feat(web): Announce busy application state` marks the form, primary/result status and explorer table with atomic polite announcements and Rust-owned `aria-busy` transitions during pending or loading work.
+- Evidence: [browser accessibility presentation evidence](docs/VERIFICATION.md#browser-accessibility-presentation-evidence--2026-09-08) records the static semantic contract and its one-engine runtime limits.
 - Residuals: supported screen-reader speech, forced-colors/reduced-motion runtime captures, zoom-scale geometry and native host accessibility bridge evidence remain open.
 
 <a id="METIS-LAYOUT-001"></a>

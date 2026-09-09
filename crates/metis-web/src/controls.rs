@@ -15,7 +15,7 @@ pub(crate) const BROWSER_MARKUP: &str = r#"
       <h1>Authorized clinical form boundary</h1>
     </div>
   </div>
-  <p id="metis-status" role="status">Browser controls are active.</p>
+  <p id="metis-status" role="status" aria-live="polite" aria-atomic="true" aria-busy="false">Browser controls are active.</p>
   <p id="metis-capabilities">Host capabilities: unavailable</p>
   <p id="metis-plugins">Registered frontend extensions: unavailable</p>
   <p id="metis-events" role="status">Remote events: none</p>
@@ -27,7 +27,7 @@ pub(crate) const BROWSER_MARKUP: &str = r#"
   <p id="session-dialog-capabilities">Host capabilities: unavailable</p>
   <button id="session-dialog-close" type="button">Close</button>
 </dialog>
-<form id="metis-form" class="metis-form">
+<form id="metis-form" class="metis-form" aria-describedby="metis-status" aria-busy="false">
   <label for="patient-id">Patient reference</label>
   <input id="patient-id" name="patient-id" value="PT-9042-ALPHA" autocomplete="off">
   <label for="weight-kg">Weight (kg)</label>
@@ -97,7 +97,7 @@ pub(crate) const BROWSER_MARKUP: &str = r#"
 </section>
 <section class="metis-result" aria-labelledby="result-heading">
   <h2 id="result-heading">Backend result</h2>
-  <p id="result-state">No backend bridge configured.</p>
+  <p id="result-state" role="status" aria-live="polite" aria-atomic="true" aria-busy="false">No backend bridge configured.</p>
   <p id="result-metrics">Volume rate: unavailable</p>
   <p id="result-detail">Clinical summary awaiting backend response</p>
   <dl>

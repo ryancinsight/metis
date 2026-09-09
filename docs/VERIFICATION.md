@@ -755,8 +755,9 @@ V04; these captures do not claim those paths.
 
 ## Browser accessibility presentation evidence — 2026-09-08
 
-The browser asset contract now checks semantic group names, polite live
-regions, non-positive focus order and the responsive presentation preferences.
+The browser asset contract now checks semantic group names, polite atomic live
+regions, dynamic `aria-busy` wiring for form/result loading, non-positive focus
+order and the responsive presentation preferences.
 The stylesheet honors `prefers-reduced-motion: reduce` by removing scroll and
 transition motion, and `forced-colors: active` by mapping surfaces, controls
 and focus outlines to system colors. The keyboard order follows the active
@@ -765,6 +766,10 @@ surface, DICOM drop zone and clinical note; the closed dialog remains outside
 that path.
 
 The focused native suite and full Metis gate pass on the committed revision.
+The Rust view sets `aria-busy` on the form, primary status, result status and
+result explorer from the same pending/loading states that drive the visible
+messages, so assistive technology receives the same lifecycle as the visual
+surface.
 The available CUA browser can inspect the semantic tree and visible focus ring
 at 1280×720 CSS pixels and device scale 1.25. It cannot change the browser's
 reduced-motion or forced-colors media preferences, expose spoken screen-reader
@@ -782,6 +787,17 @@ browser's tab sequence. Refocusing **Clinical note** produced the visible
 yellow focus outline in the inspected screenshot. This is one-engine browser
 evidence; it does not establish screen-reader speech, forced-colors rendering
 or native host integration.
+
+The service-backed CUA trace used the real loopback service with
+`--response-delay-ms 4000`. Immediately after activating **Submit to authorized
+backend**, the accessibility tree announced **Request in progress** and all
+four busy targets (`metis-status`, `metis-form`, `result-state` and
+`explorer-table`) returned `aria-busy="true"`; the button was disabled. After
+the delayed response, those attributes returned to `"false"`, the tree
+announced **Backend result received**, and the retained result row appeared
+with the enabled submit control. This is one-engine lifecycle evidence from
+the Rust view and real backend exchange; it does not establish spoken
+screen-reader output or a native accessibility bridge.
 
 ## Browser theme and starter asset evidence — 2026-09-08
 

@@ -61,6 +61,16 @@ pub(super) fn render(document: &WebDocument, state: &BrowserState) -> io::Result
         },
         _ => "Unsupported form state".to_owned(),
     };
+    let request_busy = matches!(state.state, FormState::Pending);
+    let busy_value = if request_busy { "true" } else { "false" };
+    for id in [
+        "metis-status",
+        "session-dialog-status",
+        "metis-form",
+        "result-state",
+    ] {
+        element(document, id)?.set_attribute("aria-busy", busy_value)?;
+    }
     set_text(document, "metis-status", &message)?;
     set_text(document, "session-dialog-status", &message)?;
     set_text(document, "metis-capabilities", &state.capabilities)?;
@@ -153,6 +163,14 @@ fn render_explorer_summary(
     table.set_attribute(
         "data-result-status",
         explorer_status_name(explorer.status()),
+    )?;
+    table.set_attribute(
+        "aria-busy",
+        if matches!(explorer.status(), ExplorerStatus::Loading) {
+            "true"
+        } else {
+            "false"
+        },
     )?;
     table.set_attribute("data-window-start", &explorer.window_start().to_string())?;
     Ok(())
