@@ -1,7 +1,7 @@
-//! Private session key generation through the operating system.
+//! Ephemeral symmetric session MAC-key generation through the operating system.
 use metis_core::error::Result;
 
-/// Generates one private session key with no deterministic fallback.
+/// Generates one ephemeral symmetric session MAC key with no deterministic fallback.
 ///
 /// # Errors
 /// Returns the OS entropy failure or an unsupported-platform error.

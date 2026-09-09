@@ -36,7 +36,8 @@ assert_eq!(header.sequence_id, 7);
 ```
 
 Capability validation controls application commands, not operating-system
-privileges. HMAC requires a private backend key; it is not a public signature.
+privileges. HMAC uses the backend's ephemeral symmetric session key; it is not a
+public signature or a registry credential.
 Host-bound grants authenticate the canonical origin and window as associated
 data in addition to the session principal. The wire token stays fixed-width;
 the trusted host reconstructs this binding before dispatch.

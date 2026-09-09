@@ -30,11 +30,13 @@ The application launcher connects separate instances of its own executable
 through inherited anonymous pipes. The frontend library still has no backend
 dependency; the composition binary contains both roles.
 Pipe possession constrains the session endpoint; claimed PIDs are metadata, not
-OS-authenticated identity. A private OS-generated backend key authenticates
-capability claims. Ordered requests and exact response correlation reject replay
-within a live transport session. HMAC is a symmetric authentication code, not a
-publicly verifiable digital signature. The frontend must not claim MAC verification
-without possessing and using a verification mechanism.
+OS-authenticated identity. An ephemeral symmetric backend MAC key is generated
+from OS entropy for each launch and authenticates capability claims. It is runtime
+state, never persisted or exposed to CI, and is unrelated to registry or signing
+credentials. Ordered requests and exact response correlation reject replay within
+a live transport session. HMAC is a symmetric authentication code, not a publicly
+verifiable digital signature. The frontend must not claim MAC verification without
+possessing and using a verification mechanism.
 
 ## Alternatives and evidence
 

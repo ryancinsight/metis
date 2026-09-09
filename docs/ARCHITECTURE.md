@@ -44,8 +44,10 @@ static, and plugin execution never crosses the OS authority boundary.
 `metis-backend` alone owns calculation policy, session authorization and audit
 storage. A successful clinical calculation also creates one bounded
 `clinical.result` event from the typed response; `metis-ipc` emits it only after
-the correlated response. The application entry generates a fresh backend key and
-transfers ownership only into the parent service.
+the correlated response. The application entry generates a fresh ephemeral
+symmetric session MAC key and transfers ownership only into the parent service.
+This runtime key is unrelated to registry or signing credentials and is never
+persisted or exposed to CI.
 
 `metis-frontend` converts submitted values to a wire request and displays the
 correlated response. `metis-ui-lang` parses bounded markup and computes a display
@@ -54,7 +56,8 @@ implements Iris's lending `RenderBackend<DisplayList>` contract.
 
 `metis-app` is the application composition boundary. Its default backend role
 relaunches the exact `current_exe()` path with `--metis-frontend` and the submitted
-inputs. The child dispatches before backend key generation or service creation.
+inputs. The child dispatches before backend session-key generation or service
+creation.
 The application links both role libraries while the frontend library dependency
 closure remains independent of backend authority and distribution tooling.
 One executable image serves separate address spaces; this is not a claim that

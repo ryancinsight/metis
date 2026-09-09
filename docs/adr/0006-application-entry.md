@@ -56,9 +56,10 @@ supply a browser host, privilege sandbox or cross-platform installer.
 
 ## Trust model and failure behavior
 
-Assets are the backend session key, authorization policy and audit records.
-The key is generated only in the parent and never passed through arguments,
-environment or IPC. The child receives the existing private pipe endpoints.
+Assets are the ephemeral symmetric backend session MAC key, authorization policy
+and audit records. The key is generated only in the parent and never passed
+through arguments, environment or IPC. It is unrelated to CI publisher or
+signing credentials. The child receives the existing private pipe endpoints.
 Claimed PIDs and the internal role argument are metadata and routing, not
 OS-authenticated credentials. A standalone invocation of the child role cannot
 attach itself to an already-running session simply by knowing the argument.

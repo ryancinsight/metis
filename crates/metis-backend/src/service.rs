@@ -3,7 +3,8 @@
 //! A service belongs to one supervisor-created private transport. A supplied
 //! principal is a session label, not OS identity proof. The supervisor owns peer
 //! authentication through private pipe transfer. The launcher supplies a fresh
-//! OS-generated key which never crosses that transport.
+//! OS-generated symmetric session MAC key which never crosses that transport and
+//! is unrelated to registry or signing credentials.
 
 use crate::audit::{AuditEvent, AuditLedger};
 use crate::clinical::{

@@ -1,8 +1,9 @@
 # Connect a backend
 
 The [application entry](../../crates/metis-app/src/main.rs) runs the backend role
-by default. That role owns calculation policy, a fresh OS-generated key and its
-audit ledger. It launches the same executable in its presentation role through
+by default. That role owns calculation policy, a fresh ephemeral symmetric
+session MAC key and its audit ledger. It launches the same executable in its
+presentation role through
 Moirai, transfers only the intended standard streams, and services the resulting
 `StreamTransport` until completion or failure.
 
@@ -29,9 +30,11 @@ active token. The [wire contract](../INTERFACE.md) defines frames and payloads.
 
 ## Boundaries to preserve
 
-Do not send the backend key to the frontend. The response MAC is symmetric; the
-frontend does not possess a verification mechanism and must not claim to verify
-it. Claimed process identifiers are metadata, not operating-system identity proof.
+Do not send the backend session MAC key to the frontend. The response MAC is
+symmetric; the frontend does not possess a verification mechanism and must not
+claim to verify it. This runtime-only key is generated from OS entropy, is never
+persisted or exposed to CI, and is unrelated to registry or signing credentials.
+Claimed process identifiers are metadata, not operating-system identity proof.
 The default contained service policy admits only `metis://native` in window 1;
 browser and desktop hosts must pass their own trusted observed context.
 
