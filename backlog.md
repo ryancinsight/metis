@@ -320,10 +320,8 @@ an owner. “Unsupported” cannot replace delivery of a required mobile/native 
 
 <a id="METIS-DICOM-001"></a>
 ## METIS-DICOM-001 — RITK-backed DICOM open boundary [arch] [minor]
-- Status: in-progress; priority: P1; owner: Metis/RITK integration; integrator: root; last-update: 2026-09-09; branch: `main`; dependencies: RITK-SNAP-METIS-001; risk: decoded clinical data crossing the host boundary; ADR: 0021 (claimed)
-- Scope: add one `metis-dicom` library that accepts the bounded named-byte handoff, delegates Part 10 scanning and scalar pixel decoding to RITK, and returns an immutable, framework-neutral volume summary with physical metadata. File-path opening remains a separate host-authority operation; color, multiframe, VOI, three-view navigation, and browser runtime integration remain follow-on items.
-- Acceptance: a synthetic multi-slice Part 10 study opens through the public byte API with exact voxel values, sorted shape, spacing, origin, direction and study/series identity; empty, malformed, mixed-series, unsupported and decoded-budget inputs return typed errors without partial success; focused tests, doctests and the user manual show the real RITK call path and its current native/WASM limits.
-- Demonstration: [V09](docs/VERIFICATION.md#V09), a reproducible byte-batch workflow and an inspectable axial slice capture from the same decoded values. This increment does not claim a migrated viewer or clinical display parity.
+- Status: done; outcome: removed the duplicate GUI-side DICOM crate and retained RITK as the scanner, loader, geometry, and visual-workflow owner; [RITK-SNAP-DICOM-SUBSTRATE-001](../ritk/backlog.md#RITK-SNAP-DICOM-SUBSTRATE-001).
+- Evidence: the Metis browser handoff remains bounded and parser-free; the RITK manual and locked workflow cover byte/file opening, rejection, geometry, and captures. Decision: [RITK ADR 0026](../ritk/docs/adr/0026-viewer-presentation-migration.md).
 
 <a id="METIS-DISTRIBUTION-001"></a>
 ## METIS-DISTRIBUTION-001 — Executables and Windows MSI [arch] [minor]
