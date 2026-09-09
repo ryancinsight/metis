@@ -96,7 +96,9 @@ passes 61/61 with strict Clippy; the native tests create a real hidden HWND,
 present a production frame, observe input/IME/resize/DPI lifecycle events,
 validate bounded UTF-16 composition decoding, verify retained initial readiness
 and an overlong-wait rejection, prove a posted event wakes the finite wait, and
-close the window.
+close the window. A lifecycle regression test rejects reopening a live surface,
+closes it, and creates a fresh hidden HWND from the same validated configuration;
+pending events from the destroyed provider are not retained.
 
 The same `metis-app` executable now composes that surface with the production
 frontend and supervised private IPC under `--metis-native-window`. The focused

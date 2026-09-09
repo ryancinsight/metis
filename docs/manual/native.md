@@ -25,6 +25,10 @@ the same frontend state machine as the headless workflow. Resize the window to
 exercise framebuffer replacement; DPI, focus and close events are consumed by
 the host. **Escape** or the window close control ends the child cleanly.
 
+A host that owns the validated `WindowConfig` can call
+`NativeSurface::reopen` after `close` to create a fresh HWND with the same
+bounded configuration; reopening a live surface is rejected.
+
 The parent keeps this interactive session under a finite five-minute watchdog
 budget so an abandoned window cannot leave a process tree running forever.
 This role is Windows-only. Native IME start/update/commit/cancel phases are
@@ -86,7 +90,9 @@ does not model.
 ## Current limits
 
 The visible `metis-app` composition and its private-IPC workflow are now
-implemented. A committed native screenshot and keyboard/IME journey are still
+implemented. The provider test also closes and reopens a real hidden HWND only
+after close, reusing the validated configuration; it rejects reopening a live
+surface. A committed native screenshot and keyboard/IME journey are still
 required for V05 visual acceptance; the hidden provider test and host unit tests
 are lifecycle evidence, not visual evidence. WebView2 composition, OS
 permission denial, native accessibility, an installed CJK or other IME journey,

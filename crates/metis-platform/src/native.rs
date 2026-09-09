@@ -26,6 +26,7 @@ pub use moirai_pal::windows::window::{
 /// values; the application decides how committed text changes its state.
 pub struct NativeSurface {
     window: NativeWindow,
+    config: WindowConfig,
 }
 
 impl NativeSurface {
@@ -36,6 +37,7 @@ impl NativeSurface {
     pub fn new(config: &WindowConfig) -> io::Result<Self> {
         Ok(Self {
             window: NativeWindow::new(config)?,
+            config: config.clone(),
         })
     }
 
@@ -79,6 +81,26 @@ impl NativeSurface {
         self.window.close()
     }
 
+    /// Recreates a window after [`Self::close`] using its validated configuration.
+    ///
+    /// A closed surface has no live event stream; pending terminal events are
+    /// discarded when the old provider is replaced. The new surface starts with
+    /// the same title, client dimensions and visibility policy.
+    ///
+    /// # Errors
+    /// Returns an invalid-state error when the current window is still live, or
+    /// the native/configuration error reported while creating the new window.
+    pub fn reopen(&mut self) -> io::Result<()> {
+        if !self.window.is_destroyed() {
+            return Err(io::Error::new(
+                io::ErrorKind::InvalidInput,
+                "native window must be closed before reopening",
+            ));
+        }
+        self.window = NativeWindow::new(&self.config)?;
+        Ok(())
+    }
+
     /// Returns whether the native window has completed destruction.
     #[must_use]
     pub const fn is_destroyed(&self) -> bool {
@@ -112,6 +134,23 @@ mod tests {
         )));
         assert!(!surface.is_destroyed());
         surface.close().expect("native close");
+        assert!(surface.is_destroyed());
+    }
+
+    #[test]
+    fn adapter_reopens_only_after_close_and_reuses_validated_configuration() {
+        let config =
+            WindowConfig::with_visibility("Metis reopen test", 320, 240, WindowVisibility::Hidden)
+                .expect("bounded native configuration");
+        let mut surface = NativeSurface::new(&config).expect("native surface");
+        let error = surface.reopen().expect_err("live window cannot reopen");
+        assert_eq!(error.kind(), io::ErrorKind::InvalidInput);
+
+        surface.close().expect("native close");
+        assert!(surface.is_destroyed());
+        surface.reopen().expect("native reopen");
+        assert!(!surface.is_destroyed());
+        surface.close().expect("reopened native close");
         assert!(surface.is_destroyed());
     }
 }
