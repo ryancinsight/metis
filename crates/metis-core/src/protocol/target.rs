@@ -26,7 +26,7 @@ pub enum TargetPlatform {
 impl TargetPlatform {
     /// Resolves a target identifier from its wire representation.
     #[must_use]
-    pub const fn from_u8(value: u8) -> Option<Self> {
+    pub const fn from_wire(value: u8) -> Option<Self> {
         match value {
             1 => Some(Self::Windows),
             2 => Some(Self::MacOs),
@@ -110,7 +110,7 @@ pub enum TargetCapability {
 impl TargetCapability {
     /// Resolves a capability identifier from its wire representation.
     #[must_use]
-    pub const fn from_u16(value: u16) -> Option<Self> {
+    pub const fn from_wire(value: u16) -> Option<Self> {
         match value {
             1 => Some(Self::NativeProcess),
             2 => Some(Self::PrivateProcessIpc),
@@ -309,7 +309,7 @@ impl TargetCapabilityPayload {
             ));
         }
         let protocol_version = u16::from_be_bytes(take(&mut payload)?);
-        let platform = TargetPlatform::from_u8(take::<1>(&mut payload)?[0]).ok_or_else(|| {
+        let platform = TargetPlatform::from_wire(take::<1>(&mut payload)?[0]).ok_or_else(|| {
             MetisError::protocol(
                 ErrorCode::UnexpectedMessageType,
                 "Target capability descriptor contains an unknown platform",
@@ -325,7 +325,7 @@ impl TargetCapabilityPayload {
         let mut capabilities = Vec::with_capacity(count);
         for _ in 0..count {
             let raw = u16::from_be_bytes(take(&mut payload)?);
-            let capability = TargetCapability::from_u16(raw).ok_or_else(|| {
+            let capability = TargetCapability::from_wire(raw).ok_or_else(|| {
                 MetisError::protocol(
                     ErrorCode::UnexpectedMessageType,
                     "Target capability descriptor contains an unknown surface",
