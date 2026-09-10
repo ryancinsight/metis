@@ -224,7 +224,7 @@ class WorkflowContractTests(unittest.TestCase):
         for action, revision in references:
             with self.subTest(action=action):
                 self.assertRegex(revision, r"\A[0-9a-f]{40}\Z")
-        atlas = "dba8369f5df4e890fdc2aed2f097e48544b817ee"
+        atlas = "76eba18883595ad8906586d72de3c8b854cf3d7e"
         for guard in ("workflow-lint.yml", "lockfile-guard.yml", "adr-index-guard.yml"):
             with self.subTest(guard=guard):
                 self.assertIn(f"ryancinsight/atlas/.github/workflows/{guard}@{atlas}", self.source)
@@ -275,8 +275,8 @@ class ReleaseWorkflowContractTests(unittest.TestCase):
             "package: ${{ needs.identify.outputs.package }}",
             "metis|metis-backend|metis-core|metis-frontend|metis-ipc|metis-platform|metis-ui-lang|metis-app|metis-web|metis-python",
             "id-token: write",
-            "ryancinsight/atlas/.github/workflows/semver-gate.yml@c73c3dabe9573f09df7f1e2eacfccac17f685c6c",
-            "ryancinsight/atlas/.github/workflows/crates-publish.yml@c73c3dabe9573f09df7f1e2eacfccac17f685c6c",
+            "ryancinsight/atlas/.github/workflows/semver-gate.yml@76eba18883595ad8906586d72de3c8b854cf3d7e",
+            "ryancinsight/atlas/.github/workflows/crates-publish.yml@76eba18883595ad8906586d72de3c8b854cf3d7e",
         )
         for fragment in required:
             with self.subTest(fragment=fragment):
@@ -402,7 +402,7 @@ class PythonBindingContractTests(unittest.TestCase):
             "abi3-python: \"3.9\"",
             "python-test-path: crates/metis-python/tests",
             "id-token: write",
-            "ryancinsight/atlas/.github/workflows/python-wheels.yml@49db31fc93f087945b3445483f7d49b5b49a6c35",
+            "ryancinsight/atlas/.github/workflows/python-wheels.yml@76eba18883595ad8906586d72de3c8b854cf3d7e",
             "pypa/gh-action-pypi-publish@ba38be9e461d3875417946c167d0b5f3d385a247",
         ):
             with self.subTest(fragment=fragment):

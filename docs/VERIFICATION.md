@@ -31,7 +31,7 @@ before reporting GitHub runner results or CI timing evidence.
 
 `.github/workflows/rust-release.yml` delegates release validation and crates.io
 publication to the Atlas reusable `semver-gate.yml` and `crates-publish.yml`
-workflows at Atlas revision `c73c3dabe9573f09df7f1e2eacfccac17f685c6c`.
+workflows at Atlas revision `76eba18883595ad8906586d72de3c8b854cf3d7e`.
 The caller triggers only on a published GitHub Release or an explicit
 `workflow_dispatch`; it carries no registry secret and grants `id-token: write`
 only to the release-only reusable publish job. Manual dispatch calls the
