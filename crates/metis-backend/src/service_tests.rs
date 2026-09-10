@@ -1,11 +1,12 @@
 use super::*;
+use crate::UiFragmentPlugin;
 use metis_core::capability::CapabilityScope;
 use metis_core::crc32;
 use metis_core::protocol::{
-    CapabilityCatalogPayload, FrameHeader, HandshakeRequestPayload, HandshakeResponsePayload,
-    MessageType, PROTOCOL_VERSION, PluginDescriptor, PluginInvocationPayload,
-    PluginInvocationResponsePayload, PluginOperation, TargetCapability, TargetCapabilityPayload,
-    TargetPlatform,
+    CapabilityCatalogPayload, FragmentAction, FragmentPatchSet, FrameHeader,
+    HandshakeRequestPayload, HandshakeResponsePayload, MessageType, PROTOCOL_VERSION,
+    PluginDescriptor, PluginInvocationPayload, PluginInvocationResponsePayload, PluginOperation,
+    TargetCapability, TargetCapabilityPayload, TargetPlatform,
 };
 
 const KEY: [u8; 32] = [7; 32];
@@ -240,4 +241,46 @@ fn plugin_invocation_authorizes_scope_and_returns_typed_response() {
             .error_code,
         ErrorCode::PluginNotFound as u16
     );
+}
+
+#[test]
+fn browser_ui_plugin_returns_a_scoped_typed_fragment() {
+    let mut service = BackendService::new(KEY, SafetyEnvelope::default());
+    service
+        .register_plugin(UiFragmentPlugin)
+        .expect("UI plugin");
+    let handshake = HandshakeRequestPayload {
+        client_version: PROTOCOL_VERSION,
+        client_process_id: 42,
+        principal_id: PRINCIPAL,
+    }
+    .encode();
+    let handshake_response = service
+        .handle_request(
+            &header(MessageType::HandshakeReq, 1, &handshake),
+            &handshake,
+        )
+        .expect("handshake");
+    let token = HandshakeResponsePayload::decode(&handshake_response.1)
+        .expect("handshake payload")
+        .initial_token;
+    assert!(token.scope.contains(CapabilityScope::UI_RENDER));
+
+    let action =
+        FragmentAction::new(2, "status.describe", "metis-events", "session").expect("action");
+    let request =
+        PluginInvocationPayload::new(token, "ui", "action", action.encode().expect("action body"))
+            .expect("invocation");
+    let encoded = request.encode().expect("invocation body");
+    let response = service
+        .handle_request(&header(MessageType::PluginInvokeReq, 2, &encoded), &encoded)
+        .expect("fragment response");
+    assert_eq!(response.0, MessageType::PluginInvokeResp);
+    let body = PluginInvocationResponsePayload::decode(&response.1)
+        .expect("response envelope")
+        .body()
+        .to_vec();
+    let patches = FragmentPatchSet::decode(&body).expect("typed patch set");
+    assert_eq!(patches.generation(), 2);
+    assert_eq!(patches.patches().len(), 1);
 }

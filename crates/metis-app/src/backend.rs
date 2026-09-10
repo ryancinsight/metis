@@ -5,6 +5,7 @@ use crate::{
         BrowserResponseDelay, FRONTEND_ROLE, NATIVE_FRONTEND_ROLE, WEBVIEW_FRONTEND_ROLE,
     },
 };
+use metis_backend::UiFragmentPlugin;
 use metis_backend::service::SystemClock;
 use metis_backend::{
     BackendService, INTERACTIVE_SESSION_DEADLINE, ProcessEnvironment, SESSION_DEADLINE,
@@ -110,13 +111,14 @@ pub(crate) fn run_browser_service(
     let window = WindowId::new(1)?;
     let policy = HostPolicy::new(origin.clone(), window);
     let context = HostContext::new(origin.clone(), window, HostSessionId::new(principal)?);
-    let service = BackendService::with_trusted_context(
+    let mut service = BackendService::with_trusted_context(
         entropy::session_key()?,
         SafetyEnvelope::default(),
         SystemClock::default(),
         policy,
         context,
     )?;
+    service.register_plugin(UiFragmentPlugin)?;
     let listener = moirai_executor::block_on(TcpListener::bind(&format!("127.0.0.1:{port}")))?;
     let address = listener.local_addr()?;
     eprintln!("browser_service_endpoint=ws://{address}/socket");

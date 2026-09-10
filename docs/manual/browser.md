@@ -231,9 +231,25 @@ and updates only the allowlisted text and attributes. Pointer, file, text and
 dialog events keep their specialized Moirai provider listeners. Static
 application markup is installed once; backend values and diagnostics always use
 text or attribute setters, so a message cannot create a script or element.
-The authenticated binary WebSocket remains the current service contract. An
-HTTP fragment endpoint would need its own route, authority, target allowlist and
-response schema before it is added.
+The authenticated binary WebSocket remains the current service contract. The
+first typed fragment action uses it: activating **Session details** sends a
+generation-bound `FragmentAction` for `status.describe` through the scoped
+`ui` plugin. The backend returns a bounded `FragmentPatchSet`; the browser
+preflights the allowlisted target and applies the result with a text setter. The
+response cannot add markup, scripts, selectors or navigation, and the existing
+`metis-events` status target keeps the static control inventory unchanged.
+
+Exercise it with an authorized service session by activating **Session details**
+and inspecting `metis-events`. The value must contain
+`Fragment action status.describe accepted: session-dialog`. Stop and remount the
+host while a request is pending; the old generation must not update the new
+mount. A configured WebDriver run is still required for cross-engine captures;
+the native protocol and policy suites are the current deterministic evidence.
+
+An HTTP fragment endpoint would still need its own route, authority, target
+allowlist and response schema before it is added. RITK remains responsible for
+DICOM scanning, decoding, series selection, geometry and viewer state; this
+fragment contract carries presentation messages only.
 
 To demonstrate the boundary, serve the workbench, change **Weight (kg)** and
 **Result scale**, and capture the form before and after each action at the same

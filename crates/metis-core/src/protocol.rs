@@ -7,12 +7,18 @@
 mod command;
 mod diagnostic;
 mod event;
+mod fragment;
 mod payload;
 mod plugin;
 mod target;
 mod wire;
 pub use command::{CapabilityCatalogPayload, CommandDescriptor, MAX_COMMANDS, SUPPORTED_COMMANDS};
 pub use event::{EventCodec, EventId, MAX_EVENT_NAME_BYTES, RemoteEventPayload};
+pub use fragment::{
+    FragmentAction, FragmentPatch, FragmentPatchSet, MAX_FRAGMENT_ACTION_BYTES,
+    MAX_FRAGMENT_ATTRIBUTE_BYTES, MAX_FRAGMENT_BODY_BYTES, MAX_FRAGMENT_PATCHES,
+    MAX_FRAGMENT_TARGET_BYTES, MAX_FRAGMENT_VALUE_BYTES,
+};
 pub use payload::{
     ClinicalCalcRequestPayload, ClinicalCalcResponsePayload, ErrorResponsePayload,
     HandshakeRequestPayload, HandshakeResponsePayload, PluginInvocationPayload,

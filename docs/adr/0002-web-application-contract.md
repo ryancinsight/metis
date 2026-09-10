@@ -44,6 +44,14 @@ authenticated browser contract remains the binary Moirai WebSocket path; a
 future HTTP fragment surface requires its own route, authority and response
 contract before it can be admitted.
 
+Revision 2026-09-09: [ADR 0022](0022-typed-browser-actions.md) closes the first
+typed action/patch increment. The existing session-details trigger sends a
+generation-bound action through the scoped `ui` plugin, and the backend returns
+a bounded text-only patch set. Browser target and attribute policy preflights
+the complete response before mutation; stale generations are discarded. This
+surface is presentation-only and carries no DICOM knowledge; RITK remains the
+owner of DICOM scanning, decoding, series selection, geometry and viewer state.
+
 ## Intent and authority
 
 The user clarifies that Metis must support WASM and web rendering, with the goal
@@ -76,9 +84,11 @@ to a closed set of input/control fields, and rendering updates only the
 allowlisted text and attribute targets. Static application-authored markup is
 the only `set_inner_html` input; backend values and diagnostics use text or
 attribute setters. This preserves focus and lifecycle ownership while keeping
-the injection boundary explicit. Metis does not implement htmx attributes,
-server HTML fragments, JavaScript filters or response-header commands until a
-real HTTP consumer requires a separately authenticated contract.
+the injection boundary explicit. The admitted action/patch path is the
+authenticated binary contract in [ADR 0022](0022-typed-browser-actions.md);
+htmx attributes, server HTML fragments, JavaScript filters and response-header
+commands remain outside the contract until a real HTTP consumer requires a
+separately authenticated surface.
 
 The initial consumer seam is `metis_ipc::AsyncIpcTransport` and
 `AsyncIpcClient`. The WASM-only `BrowserWebSocketTransport` owns a bounded

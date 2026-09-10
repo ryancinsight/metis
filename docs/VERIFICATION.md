@@ -96,6 +96,33 @@ explicit cold-boundary copy; the wheel exposes no Python renderer, native
 window, filesystem path or DICOM decoder. The image fixture and visual
 semantics are shared with the inspected [software raster image evidence](#software-raster-image-evidence--2026-09-09).
 
+## Typed browser action verification — 2026-09-09
+
+[ADR 0022](adr/0022-typed-browser-actions.md) adds one presentation-only
+action path to the existing authenticated plugin transport. `metis-core`
+tests exact `FragmentAction` and `FragmentPatchSet` round trips, UTF-8 and
+resource bounds, reserved bytes, unknown patch kinds, trailing data and
+generation checks. The `metis-backend` service test performs a real handshake,
+checks the `UI_RENDER` scope and decodes the input-sensitive `status.describe`
+patch. `metis-frontend` preserves a missing-session error through the plugin
+invocation seam. `metis-web` tests the closed target set, safe attributes and
+literal text values; the WASM path preflights every target before mutation and
+rejects stale generations.
+
+The native focused suites pass 29/29 (`metis-core`), 32/32
+(`metis-frontend` and `metis-backend`) and 34/34 (`metis-web`). The browser
+manual documents the Session details demonstration and the stop/remount
+generation case. A configured WebDriver endpoint is not available in this
+environment, so no new cross-engine screenshot is claimed and the reviewed
+visual baseline remains unchanged. The full gate reached the visual stage and
+all captures and probes matched their pixels; it stopped because the baseline
+metadata is stale for this revision. The WASM check is blocked before Metis
+compilation by the existing `mnemosyne-memory-core` 32-bit overflowing-literal
+diagnostic; weakening that lint is not an acceptable workaround. This action
+contract carries generic presentation data only. DICOM scanning, decoding,
+series selection, geometry and viewer state remain RITK-owned and are verified
+by the [RITK DICOM workflow](../../ritk/docs/manual/dicom-workflow.md).
+
 ## Windows native provider and host evidence — 2026-09-08
 
 Moirai PR #286 merged at `c91e2cdd` added bounded native IME composition events,
