@@ -75,8 +75,9 @@ migration; those remain separate backlog items.
 
 ## Verification
 
-The native platform and application suites pass with warning-denied Clippy and
-nextest. The host tests create real hidden HWNDs and verify initial frame
+At delivery revision `bb1f4f626bc8c3c301d11d717d5521a0fffcd314`, the native
+platform and application suites pass with warning-denied Clippy and nextest.
+The host tests create real hidden HWNDs and verify initial frame
 presentation, provider readiness, empty-batch delivery, repaint reporting,
 typed application errors and typed finite-wait errors. Existing provider tests
 cover close/destroy classification, retained-frame validation and two-window

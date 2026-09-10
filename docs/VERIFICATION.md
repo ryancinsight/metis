@@ -132,6 +132,7 @@ assistive-technology or denial-probe evidence.
 
 ### Format-neutral native application host — 2026-09-10
 
+At Metis revision `bb1f4f626bc8c3c301d11d717d5521a0fffcd314`,
 `metis-platform::native::NativeApplication` and
 `run_native_application` now own the reusable Windows frame/event loop. The
 application supplies its current `Framebuffer`, consumes complete Moirai
