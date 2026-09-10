@@ -36,6 +36,61 @@ consumed by the host; preedit text stays transient and committed UTF-8 text uses
 the same bounded patient-field transition as ordinary text input. WebView2
 composition remains a separate host role.
 
+## Share the native frame/event loop
+
+Applications with a software framebuffer can use the reusable host contract
+instead of writing a second wait, repaint and close loop. The application keeps
+its own state and interprets the complete Moirai event batch; the host creates
+the window, presents the initial frame, waits for a finite duration and closes
+on a terminal event or `NativeFlow::Exit`:
+
+```rust,no_run
+use metis_core::error::MetisError;
+use metis_platform::native::{
+    run_native_application, NativeApplication, NativeFlow, WindowConfig, WindowEvent,
+};
+use metis_platform::{Color, Framebuffer};
+use std::time::Duration;
+
+struct ViewerApplication {
+    frame: Framebuffer,
+}
+
+impl NativeApplication for ViewerApplication {
+    type Error = MetisError;
+
+    fn framebuffer(&self) -> &Framebuffer {
+        &self.frame
+    }
+
+    fn handle_events(&mut self, events: &[WindowEvent]) -> Result<NativeFlow, Self::Error> {
+        if events.iter().any(|event| {
+            matches!(event, WindowEvent::CloseRequested | WindowEvent::Destroyed)
+        }) {
+            return Ok(NativeFlow::Exit);
+        }
+        Ok(NativeFlow::Continue { repaint: false })
+    }
+}
+
+let mut frame = Framebuffer::new(800, 600)?;
+frame.clear(Color::DARK_BLUE);
+let config = WindowConfig::new("My Metis application", 800, 600)?;
+run_native_application(
+    &config,
+    ViewerApplication { frame },
+    Duration::from_millis(250),
+)?;
+# Ok::<(), Box<dyn std::error::Error>>(())
+```
+
+An empty batch means that the finite wait expired and is still delivered to
+the application, so bounded animations or timers do not require a second event
+loop. A resize handler must replace its frame before returning `repaint: true`.
+The contract carries pixels and platform events only. RITK continues to scan,
+decode and interpret DICOM data and supplies the resulting viewer presentation
+to this boundary; no DICOM knowledge enters Metis.
+
 ## Embed packaged HTML and CSS with WebView2
 
 `metis_platform::native::WebViewSurface` embeds the Moirai WebView2 provider in

@@ -130,6 +130,24 @@ and macOS/Linux support remain open under [V05](#V05) and the linked backlog
 items; a hidden-window test and a passing build cannot replace real visual,
 assistive-technology or denial-probe evidence.
 
+### Format-neutral native application host — 2026-09-10
+
+`metis-platform::native::NativeApplication` and
+`run_native_application` now own the reusable Windows frame/event loop. The
+application supplies its current `Framebuffer`, consumes complete Moirai
+`WindowEvent` batches (including an empty batch after a finite wait) and returns
+`NativeFlow::Continue { repaint }` or `NativeFlow::Exit`. The host owns only
+initial presentation, finite waiting, repaint dispatch and terminal-window
+cleanup. The `metis-app --metis-native-window` form runs through this contract;
+text, IME, submit, resize and clinical state remain in the application adapter.
+
+The focused platform/application gate passed 34/34 native tests with
+warning-denied Clippy. Host tests use real hidden HWNDs and cover readiness,
+initial presentation, empty-batch delivery, repaint reporting, typed
+application errors and typed finite-wait errors. This is a lifecycle and
+format-neutral seam check, not DICOM or viewer migration evidence; RITK remains
+the owner of DICOM parsing, geometry and medical display semantics.
+
 ### WebView2 consumer seam — 2026-09-09
 
 Metis `metis-platform::native::WebViewSurface` now consumes Moirai main revision

@@ -13,7 +13,10 @@ The console demonstration prints a flow of 0.36 mL/hour and a drug rate of
 0.72 mg/hour. `--help` prints invocation syntax. The internal
 `--metis-frontend` argument selects a child role; it grants no authority.
 Windows job containment bounds the managed session, not OS permissions.
-On Windows, the visible native host uses the same executable and private IPC:
+On Windows, the visible native host uses the same executable and private IPC.
+Its form implements Metis's reusable format-neutral `NativeApplication` host
+contract; the platform loop owns the HWND, finite event wait, initial frame and
+terminal cleanup while the form keeps text, IME and submit policy:
 
 ```powershell
 cargo run --locked -p metis-app -- --metis-native-window 60 2 0.2

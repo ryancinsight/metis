@@ -48,6 +48,13 @@ Revision 2026-09-09: Moirai PR #299 merged the provider to `main` at `f4eb4f2b`.
 Metis removes the temporary revision pin, keeps git-plus-version requirements,
 and records Moirai main `a58344b00ccc4a062c71659a463dd188d67bf1f4` in Cargo.lock.
 
+Revision 2026-09-10: [ADR 0024](0024-native-application-host.md) adds the
+format-neutral `NativeApplication` loop above `NativeSurface`. The application
+now owns event interpretation and frame production while the platform adapter
+owns finite waiting, initial presentation and terminal cleanup. The existing
+form host is migrated through this seam; no DICOM or viewer behavior moves into
+Metis.
+
 ## Context
 
 The framework comparison in [ADR 0003](0003-framework-conformance.md) leaves a

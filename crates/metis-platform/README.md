@@ -34,3 +34,12 @@ allowlisted. Multiple `NativeSurface` values can coexist on their creating
 thread; call `reopen` only after `close` to reuse a surface's validated
 configuration. Application editing policy, OS permission enforcement and
 accessibility remain host-level workflows.
+
+Applications that use the native pixel surface can share the bounded host loop
+through `metis_platform::native::NativeApplication` and
+`run_native_application`. The application owns its state and frame, applies
+each complete `WindowEvent` batch and reports whether to repaint; the host owns
+only finite waiting, initial presentation and terminal-window cleanup. The
+contract is format-neutral: RITK keeps DICOM decoding and medical display
+semantics in its own repository and can supply validated viewer frames to this
+seam without adding a parser or a GUI dependency to Metis.
