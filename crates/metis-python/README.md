@@ -39,6 +39,14 @@ the Python interpreter lock while the Rust backend evaluates the safety
 envelope. Invalid values raise `ValueError` with the stable Metis error code
 and trace identifier.
 
+The native module declares `gil_used = false` after a compile-time `Send + Sync`
+audit of every exposed Rust class. The test suite exercises concurrent mutation
+of one `Application` and checks `sys._is_gil_enabled()` when a free-threaded
+interpreter is running. The published CPython 3.9 `abi3` wheel remains the
+current release artifact; it cannot load on free-threaded CPython. Free-threaded
+distribution waits for the shared Atlas wheel workflow to add and verify a
+`cp3XXt` or `abi3t` matrix.
+
 The binding also exposes the Rust-owned software presentation contract through
 `RasterImage`, `Rect` and `Canvas`. Python supplies composition commands; Rust
 validates dimensions, clips placements and performs alpha compositing. The

@@ -162,7 +162,14 @@ an owner. “Unsupported” cannot replace delivery of a required mobile/native 
 - Acceptance: FIFO input events, bounded queue rejection, deterministic framebuffer output, close invalidation, generation-safe reopen and typed invalid-operation errors; concurrent calls are synchronized without Python callbacks or a second event loop.
 - Demonstration: built-wheel pytest and the Python manual exercise input, render, close and reopen, including a concurrent free-threaded probe when the module audit permits it.
 - Decision: [ADR 0023](docs/adr/0023-python-application-lifecycle.md).
-- Verification: built-wheel pytest covers FIFO input, bounded queue rejection, exact framebuffer bytes, close invalidation, generation-safe reopen and concurrent synchronized reads.
+- Verification: built-wheel pytest covers FIFO input, bounded queue rejection, exact framebuffer bytes, close invalidation, generation-safe reopen and concurrent synchronized reads and mutation. The module's exposed classes pass a `Send + Sync` audit and declare `gil_used = false`; the free-threaded runtime assertion is skipped when no free-threaded interpreter is available.
+
+<a id="METIS-PYTHON-004"></a>
+## METIS-PYTHON-004 — Free-threaded Python wheel matrix [arch] [minor]
+- Status: todo; priority: P1; owner: Atlas integration; dependencies: METIS-PYTHON-003, ATLAS-PUBLISH-001; risk: shared release workflow and CPython ABI coverage
+- Scope: extend Atlas's reusable Python wheel workflow with version-specific `cp3XXt` and Python 3.15 `abi3t` builds, installation tests and `sys._is_gil_enabled()` assertions; keep Metis's `abi3` caller and tokenless OIDC publication.
+- Acceptance: the shared workflow owns the matrix, Metis's release caller opts in without duplicating wheel logic, GIL and free-threaded wheels install and run the same value-semantic suite, and the manual/ADR record exact artifact support.
+- Re-open trigger: Atlas workflow input and a hosted free-threaded run are available.
 
 <a id="METIS-MEMORY-001"></a>
 ## METIS-MEMORY-001 — Provider allocation count [patch]

@@ -330,6 +330,10 @@ class PythonBindingContractTests(unittest.TestCase):
         self.assertTrue((package / "__init__.py").is_file())
         self.assertTrue((package / "_metis.pyi").is_file())
         self.assertTrue((package / "py.typed").is_file())
+        module_source = (
+            self.root / "crates" / "metis-python" / "src" / "lib.rs"
+        ).read_text(encoding="utf-8")
+        self.assertIn("#[pymodule(gil_used = false)]", module_source)
 
     def test_release_caller_is_tokenless_and_uses_atlas_wheels(self):
         for fragment in (

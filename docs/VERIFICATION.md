@@ -69,7 +69,7 @@ so source acquisition is explicit while verification remains reproducible.
 The workflow installs cargo-deny 0.20.2 and primes its advisory database before
 the same offline policy check.
 
-## Python binding verification — 2026-09-08
+## Python binding verification — 2026-09-09
 
 `metis-python` is the only Metis crate that depends directly on PyO3. The local
 gate invokes `scripts/python_binding.py`, which builds a locked release wheel
@@ -84,6 +84,17 @@ stages are required; an import-only check does not close the binding contract.
 Entry baseline: `cargo check --workspace --offline` passes with documentation and
 source warnings. The original native test build fails with E0382 in the threaded
 process-isolation test. No original OS sandbox or native-window evidence exists.
+
+The application lifecycle binding now performs a compile-time `Send + Sync`
+assertion for every exposed class and declares `gil_used = false`. The extracted
+wheel suite covers concurrent reads and concurrent event mutation on one
+`Application`; the free-threaded probe runs only when the interpreter reports
+that the GIL is disabled. On this host, the release wheel build and extracted
+suite pass with 19 tests and one expected skip under CPython 3.13.12, while no
+free-threaded interpreter is installed. The current release caller therefore
+continues to claim only its CPython 3.9 `abi3` wheel. A free-threaded artifact
+requires the shared Atlas workflow's `cp3XXt` or `abi3t` matrix, tracked by
+`METIS-PYTHON-004`.
 
 ## Python presentation verification — 2026-09-09
 

@@ -91,6 +91,15 @@ reimplementing Rust's error taxonomy. The calculation releases the Python
 interpreter lock while Rust computes, allowing unrelated Python threads to
 progress.
 
+The extension module declares `gil_used = false` after a compile-time `Send +
+Sync` audit of every exposed Rust class. The lifecycle tests exercise concurrent
+mutation of one `Application` and, when run by a free-threaded interpreter,
+assert that importing `metis` leaves `sys._is_gil_enabled()` false. The current
+release caller still ships the CPython 3.9 `abi3` wheel; that artifact cannot be
+loaded by free-threaded CPython. A free-threaded release requires the shared
+Atlas wheel workflow's `cp3XXt` or `abi3t` matrix, so no such wheel is claimed
+until that workflow is extended and run.
+
 ## Release path
 
 `.github/workflows/python-release.yml` accepts a GitHub Release tag of the form

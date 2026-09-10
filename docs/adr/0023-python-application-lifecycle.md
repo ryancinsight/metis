@@ -48,3 +48,14 @@ This proves the virtual software lifecycle contract. It does not prove native
 window integration, browser scheduling or OS sandboxing; those remain provider
 tests. Free-threaded Python execution also requires a `cp3XXt` wheel and
 interpreter matrix before it can be claimed as release evidence.
+
+## Revision 2026-09-09
+
+The exposed classes now pass a compile-time `Send + Sync` audit, and the module
+declares `gil_used = false`. The binding tests add concurrent mutation of one
+`Application` and a runtime assertion that a free-threaded interpreter remains
+free-threaded after import. The release caller still publishes the CPython 3.9
+`abi3` wheel only: an `abi3` wheel cannot load on free-threaded CPython, and the
+shared Atlas wheel workflow does not yet build or test the required `cp3XXt` or
+`abi3t` artifacts. This revision attests the source binding contract without
+claiming a free-threaded release artifact.

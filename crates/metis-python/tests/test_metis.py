@@ -1,6 +1,7 @@
 """Value-semantic tests for the built Metis PyO3 wheel."""
 
 import math
+import sys
 from concurrent.futures import ThreadPoolExecutor
 
 import pytest
@@ -182,3 +183,25 @@ def test_application_serializes_concurrent_frame_access() -> None:
     with ThreadPoolExecutor(max_workers=4) as pool:
         frames = list(pool.map(lambda _: read_frame(), range(16)))
     assert all(frame == bytes(16) for frame in frames)
+
+
+def test_application_serializes_concurrent_mutation() -> None:
+    application = metis.Application(1, 1)
+    generation = application.generation
+
+    def enqueue(key: int) -> None:
+        application.key_down(generation, key)
+
+    with ThreadPoolExecutor(max_workers=8) as pool:
+        list(pool.map(enqueue, range(128)))
+
+    events = [application.poll_event(generation) for _ in range(128)]
+    keys = sorted(event["key"] for event in events if event is not None)
+    assert keys == list(range(128))
+
+
+def test_free_threaded_runtime_keeps_the_gil_disabled() -> None:
+    gil_probe = getattr(sys, "_is_gil_enabled", None)
+    if gil_probe is None or gil_probe():
+        pytest.skip("free-threaded CPython is required for this runtime probe")
+    assert gil_probe() is False
