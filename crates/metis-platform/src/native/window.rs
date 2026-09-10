@@ -13,8 +13,8 @@ use std::time::Duration;
 
 pub use moirai_pal::windows::window::{
     CompositionPhase, MAX_COMPOSITION_UNITS, MAX_FRAME_DIMENSION, MAX_FRAME_PIXELS,
-    MAX_PUMP_MESSAGES, MAX_TITLE_UNITS, MAX_WAIT_MILLISECONDS, MAX_WINDOW_EVENTS, MouseButton,
-    WindowConfig, WindowEvent, WindowVisibility,
+    MAX_PUMP_MESSAGES, MAX_TITLE_UNITS, MAX_WAIT_MILLISECONDS, MAX_WINDOW_EVENTS, ModifierState,
+    MouseButton, WindowConfig, WindowEvent, WindowVisibility,
 };
 
 /// A Metis framebuffer presented by a Moirai-owned native window.
