@@ -1186,6 +1186,36 @@ assert no remaining listeners, requests or tasks after teardown. A local-only
 settings pane is allowed without backend authority; an authoritative calculation
 must use the authenticated configured host/service and its real response.
 
+<a id="browser-cross-engine-conformance-runner-evidence--2026-09-09"></a>
+## Browser cross-engine conformance runner evidence — 2026-09-09
+
+`scripts/browser_runtime.py` now drives the same Rust/WASM page through the W3C
+WebDriver HTTP protocol for the closed `chromium`, `firefox` and `webkit`
+engine set. It records negotiated capabilities, two input-sensitive DOM
+changes, the authorized service result when a host session tuple is supplied,
+bounded cancellation/stop/remount state, PNG hashes and explicit unsupported
+native operations. Browser-side `MutationObserver` and timer callbacks provide
+the waits; no host sleep or polling loop is part of the runner. Output and
+screenshots are confined to `output`.
+
+The deterministic Python suite passes 78/78 tests and `python -m py_compile`
+passes for the runner and its tests. The protocol-shaped driver tests verify
+the exact displayed values (`80.00 kg`, `0.750 mcg/kg/min` and
+`Volume rate: 0.900000 mL/hr`), disconnected privileged-submit rejection,
+stop/remount stale-result rejection, cancellation, input and teardown failure
+observations, screenshot transport/decoded bounds and the unsupported operation
+list. These tests do not stand in for a browser engine.
+
+No Chromium, Firefox or WebKit WebDriver endpoint is installed or configured
+in the current Windows environment, so no real cross-engine trace or screenshot
+is claimed at this revision. The earlier Codex in-app capture remains useful
+single-engine lifecycle evidence but does not identify its engine. The browser
+item stays open until each configured engine supplies a trace and the real
+service/cancellation run is reviewed. Provider-private listener registries,
+native handles, accessibility technology, IME behavior and post-drop allocation
+counts remain owned by their Moirai, native-host and RITK items; this runner
+contains no DICOM parsing or viewer semantics.
+
 <a id="V03"></a>
 ### V03 — Text and accessibility specimen
 

@@ -30,6 +30,9 @@ and bounded retention; an accepted clinical calculation emits a typed
 versioned target descriptor naming the host platform and installed transport
 surfaces; the native window role advertises its installed HWND surface while
 OS permission surfaces remain absent.
+The [browser manual](docs/manual/browser.md) also carries a dependency-free W3C
+WebDriver runner for the Chromium, Firefox and WebKit conformance matrix; a
+configured driver is required for runtime evidence.
 Hosts can register bounded, typed plugin manifests with explicit capability
 scopes; the versioned
 IPC seam also invokes declared plugin commands through a bounded host router and

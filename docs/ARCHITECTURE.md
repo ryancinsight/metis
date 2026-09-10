@@ -14,6 +14,8 @@ reactor and timer. Shared provider capabilities belong in Moirai and Iris.
 `metis-web` is the WASM host crate: it owns application state and rendering for
 an HTML5 document, while Moirai owns `WebDocument`, `WebElement` and event
 listener lifetimes.
+The cross-engine WebDriver runner in `scripts/browser_runtime.py` is verification
+tooling outside the downloaded page and carries no native or DICOM authority.
 
 The following sections describe the current native foundation and the first
 browser host. The browser workbench mounts a real DOM form and can connect to a
