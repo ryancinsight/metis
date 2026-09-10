@@ -247,7 +247,9 @@ mount. A configured WebDriver run is still required for cross-engine captures;
 the native protocol and policy suites are the current deterministic evidence.
 
 An HTTP fragment endpoint would still need its own route, authority, target
-allowlist and response schema before it is added. RITK remains responsible for
+allowlist and response schema before it is added. [ADR 0025](../adr/0025-axum-server-boundary.md)
+records the Axum comparison and the first-party boundary required for an
+admitted server deployment. RITK remains responsible for
 DICOM scanning, decoding, series selection, geometry and viewer state; this
 fragment contract carries presentation messages only.
 

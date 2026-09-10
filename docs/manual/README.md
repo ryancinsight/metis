@@ -37,7 +37,7 @@ not features available through the build commands below.
 - [Inspect application output](testing.md): run visual checks, interpret the current demonstration and review snapshot changes.
 - [Run the browser workbench](browser.md): build the WASM host, serve the generated HTML/CSS and inspect real Rust-driven control transitions.
 - [Theme and branding](browser.md#theme-and-branding): select a bounded palette, override semantic CSS variables and replace the starter mark.
-- [Framework comparison](../adr/0003-framework-conformance.md): source-pinned gaps against Tauri, egui, GPUI and Iced.
+- [Framework comparison](../adr/0003-framework-conformance.md): source-pinned gaps against Tauri, egui, GPUI, Iced and Axum, with htmx as the hypermedia reference.
 
 Public repository: [ryancinsight/metis](https://github.com/ryancinsight/metis).
 For individual Rust API contracts, build `cargo doc --workspace --no-deps`.

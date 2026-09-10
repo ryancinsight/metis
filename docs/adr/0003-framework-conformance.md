@@ -167,13 +167,22 @@ candidate and Part 10 marker decisions. The browser handoff reports bounded
 file metadata and byte progress only; RITK owns format scanning, decoding,
 geometry and medical-display semantics.
 
+Revision 2026-09-10: Axum's current 0.8 server/router contract is added as a
+server-side comparator. Its `Router`, typed `State`, extractors, middleware and
+`IntoResponse` surfaces describe the missing HTTP deployment boundary; they do
+not establish a Metis runtime dependency or an HTTP service. Moirai remains the
+first-party transport owner, and [METIS-AXUM-001](../../backlog.md#METIS-AXUM-001)
+is conditional on an admitted server deployment. DICOM parsing, study
+selection, geometry and medical display remain exclusively in RITK.
+
 ## Decision and scope
 
 Use Tauri as the application-framework migration reference, egui/GPUI/Iced as
-interaction, text, rendering and test-tooling references, and htmx as a
-hypermedia boundary reference. Resolve all gaps in
+interaction, text, rendering and test-tooling references, Axum as a server and
+router boundary reference, and htmx as a hypermedia boundary reference. Resolve
+all gaps in
 the audited capability matrix below through the linked development items.
-This is a capability contract, not a promise to clone four incompatible APIs,
+This is a capability contract, not a promise to clone five incompatible APIs,
 every third-party extension, or future upstream releases. New upstream surfaces
 reopen the inventory; none inherit a support claim without a test.
 
@@ -183,8 +192,10 @@ application behavior. Custom rendering has its own contract through Iris.
 Moirai owns execution/transport; Metis owns application state, host integration
 and permission policy. A GPU renderer is not a prerequisite for a DOM form.
 
-egui, GPUI, Iced, Tauri and htmx are comparison subjects, not newly adopted
-dependencies.
+egui, GPUI, Iced, Tauri, Axum and htmx are comparison subjects, not newly
+adopted dependencies. The conditional Axum boundary is specified in [ADR
+0025](0025-axum-server-boundary.md); no server deployment is admitted by this
+decision alone.
 Their companion crates are named separately. Native GPU rendering, mobile
 support and distribution are separate increments, not reasons to delay the
 first working browser and Windows applications. Unsupported target operations
@@ -206,6 +217,7 @@ initial comparison limits.
 | GPUI / Zed | Official `main` sources read on the inspection date; observed head `5a9b9558db01a6b906cec2fb70a797affdc58cdd` | Source inventory, not a checked-out build or proof every API is in the published GPUI crate. |
 | Tauri | [tauri-v2.11.5 release][T0], 2026-07-01; v2 documentation read on inspection date | Documentation can describe newer integrations than a release; pin application/driver revisions when building comparison fixtures. |
 | Iced | [0.14.0 crate and API docs][I0], released 2025-12-07; official examples and release notes [I1] [I2] | Versioned docs describe Windows/macOS/Linux/Web, Elm-style state/messages/view/update, async tasks, native rendering and wgpu/tiny-skia paths. The former DOM runtime is archived [I3]; DOM reuse is not inferred from current Iced. |
+| Axum | [0.8 API documentation][A0], inspected 2026-09-10 | Server/router reference for typed routes, state, extraction, middleware and response conversion. No Axum dependency or server build is present in Metis; the conditional first-party boundary is tracked by [METIS-AXUM-001](../../backlog.md#METIS-AXUM-001). |
 
 “Provided” below means documented or present in inspected source, not
 independently executed in the initial comparison. “Host” means the browser/OS or
@@ -228,7 +240,7 @@ Each row names its closing items; acceptance belongs in the
 | Accessibility | AccessKit integration; custom widget semantics required [E5] | AccessKit roles/identity/actions in current source [G3] | Semantic frontend plus WebView/OS accessibility | Browser markup now exposes named groups, polite atomic live regions, and dynamic `aria-busy` state for backend/result work; screen-reader speech, WebView/OS accessibility and custom-renderer semantics remain open. [A11Y](../../backlog.md#METIS-A11Y-001). |
 | Pointer, keyboard, touch, focus | Backend input, sensitivity and viewports [E1] | Platform events and actions [G1] | Web frontend and native window events [T1] | Browser text, checkbox, radio, range and pointer surface use semantic keyboard/pointer targets; Moirai owns browser pointer ID/capture/release, pointer metadata, bounded file-drop metadata and bounded browser file access, while Metis applies bounded single-pointer drag pan, two-pointer centroid/distance pinch pan/zoom, wheel pan, Ctrl+wheel zoom and format-neutral file-drop state. The Windows `NativeSurface` now returns provider pointer, key, focus, text and bounded IME composition events; trusted physical-drop evidence, installed IME journeys, accessibility technology, cross-engine parity and OS pump integration remain open. RITK owns DICOM format decisions after the byte handoff. [INPUT](../../backlog.md#METIS-INPUT-001), desktop items. |
 | Browser/WASM execution | eframe canvas host with WASM bindings [E2] | Current `gpui_web`: canvas, WebGPU/WebGL2 [G2] | Web frontend can target browser; native APIs need a host [T1] | `metis-web` loads generated WASM into an HTML5/CSS DOM host and connects through a bounded Moirai WebSocket service; target-surface discovery, lifecycle generation guards, semantic checkbox/radio/range controls and loopback success/rejection/recovery pass, while cross-engine runs remain. [BROWSER](../../backlog.md#METIS-BROWSER-001), [ASYNC](../../backlog.md#METIS-ASYNC-001). |
-| Hypermedia actions and fragments | HTML-driven request and target/swap attributes [H0] [H1] [H2] | WebView/browser concern; response markup and script policy remain application-owned | HTML forms and links run in the system WebView; fragment behavior depends on the frontend/runtime | Metis delegates the session-details event to a generation-bound typed Rust/WASM action, invokes the scoped `ui` plugin over the authenticated binary transport and preflights bounded text/attribute patches against an allowlisted target set. No htmx runtime, arbitrary markup or HTTP fragment endpoint is admitted; a real HTTP consumer would add a separate authenticated fragment contract. [ADR 0022](0022-typed-browser-actions.md), [BROWSER](../../backlog.md#METIS-BROWSER-001), [FRAGMENT](../../backlog.md#METIS-FRAGMENT-001). |
+| Hypermedia actions and fragments | HTML-driven request and target/swap attributes [H0] [H1] [H2] | WebView/browser concern; response markup and script policy remain application-owned | HTML forms and links run in the system WebView; fragment behavior depends on the frontend/runtime | Metis delegates the session-details event to a generation-bound typed Rust/WASM action, invokes the scoped `ui` plugin over the authenticated binary transport and preflights bounded text/attribute patches against an allowlisted target set. No htmx runtime, arbitrary markup or HTTP fragment endpoint is admitted; a real HTTP consumer would add the authenticated, bounded server contract in [ADR 0025](0025-axum-server-boundary.md). [ADR 0022](0022-typed-browser-actions.md), [BROWSER](../../backlog.md#METIS-BROWSER-001), [FRAGMENT](../../backlog.md#METIS-FRAGMENT-001), [AXUM](../../backlog.md#METIS-AXUM-001). |
 | Existing HTML5/CSS frontend reuse | Canvas UI is not DOM compatibility [E2] | Canvas UI is not DOM compatibility [G2] | WebView presentation is the core model [T1] | Custom markup does not preserve DOM/CSS applications. [BROWSER](../../backlog.md#METIS-BROWSER-001), [MIGRATION](../../backlog.md#METIS-MIGRATION-001). |
 | Native windows and platform lifecycle | eframe/backend-dependent viewports [E1] [E2] | macOS, Windows, Wayland/X11 platform code [G1] | Desktop system WebViews [T1] | Moirai's Windows PAL plus `metis-platform::native::NativeSurface` create a real thread-owned HWND, present the Metis framebuffer and return bounded pointer, key, text and IME composition events; the generic `NativeApplication` loop owns finite waiting, initial presentation and terminal cleanup while `metis-app --metis-native-window` composes the software-rendered frontend and private IPC. `metis-app --metis-webview` composes a packaged HTML/CSS form through `WebViewSurface` and the same supervised pipe. The installed WebView2 navigation/bridge smoke and Windows initial/submit captures pass; installed IME journey, WebView2 composition, permission probes and macOS/Linux hosts remain open. [WINDOWS](../../backlog.md#METIS-DESKTOP-001), [MACOS](../../backlog.md#METIS-MACOS-001), [LINUX](../../backlog.md#METIS-LINUX-001). |
 | Async commands, events, cancellation | Application/host concern | Executor and action facilities [G1] | Commands, events and channels [T2] [T3] | Async client/server, bounded correlation, request cancellation, browser task handle and pre-response Origin validation exist. A versioned capability catalog, target-surface descriptor, bounded local event hub, versioned remote event envelope, typed plugin invocation and host-local plugin registry now cover command discovery and delivery metadata; lifecycle generation guards and the delayed-response stop/remount trace prevent stale browser completions, while cross-engine service traces remain. [COMMANDS](../../backlog.md#METIS-COMMANDS-001), [BROWSER](../../backlog.md#METIS-BROWSER-001). |
@@ -266,6 +278,30 @@ after the corresponding Metis implementation and target evidence pass.
 | Packaging and updates | The versioned Iced docs describe application execution and rendering, not Tauri-style installers, signing or updater recovery | Keep packaging, install/uninstall preservation, signing and update recovery in Metis's distribution items. [DISTRIBUTION](../../backlog.md#METIS-DISTRIBUTION-001), [RELEASE](../../backlog.md#METIS-RELEASE-001). |
 | Semantic and visual tests | Iced 0.14 release notes identify headless mode and first-class E2E testing; exact test APIs require a pinned fixture before adoption [I2] | Metis keeps its own semantic/raster snapshots and must add browser/native capture providers. [VISUAL](../../backlog.md#METIS-VISUAL-001), [QUALITY](../../backlog.md#METIS-QUALITY-001). |
 | Memory and performance | A renderer/framework description does not establish memory reduction or latency parity | Measure Metis against matched workloads and process boundaries after live browser/native apps exist. [MEMORY](../../backlog.md#METIS-MEMORY-001), [PERF](../../backlog.md#METIS-PERF-001), [CONFORMANCE](../../backlog.md#METIS-CONFORMANCE-001). |
+
+## Axum server and router comparison
+
+Axum is evaluated as a server boundary, not as a GUI renderer or a replacement
+for Moirai. Its `Router` composes routes and state, extractors validate request
+inputs, middleware wraps the request lifecycle, and `IntoResponse` converts a
+typed result into an HTTP response ([A0]–[A4]). These are useful contract
+shapes for a future server deployment, but documentation inspection is not
+runtime or security evidence.
+
+| Server concern | Axum reference surface | Metis consequence and closing work |
+| --- | --- | --- |
+| Route composition | `Router` and nested routes [A0] | A future service needs an explicit route table with bounded paths; no HTTP endpoint is currently admitted. [AXUM](../../backlog.md#METIS-AXUM-001) |
+| State and extraction | `State<S>`, `FromRef` and extractors [A1] [A2] | Service state must remain Rust-owned and typed, with bounded body sizes and no frontend authority; the existing browser transport remains Moirai-owned. [COMMANDS](../../backlog.md#METIS-COMMANDS-001), [AUTHORITY](../../backlog.md#METIS-AUTHORITY-001) |
+| Middleware and deadlines | Request middleware layers [A3] | A server increment must enforce origin/session authorization, deadlines, cancellation and backpressure before dispatching a command. [AXUM](../../backlog.md#METIS-AXUM-001), [SERVICES](../../backlog.md#METIS-SERVICES-001) |
+| Typed responses and fragments | `IntoResponse` [A4] | Responses must be versioned typed envelopes or allowlisted text/attribute patches; arbitrary HTML, scripts and DICOM data remain outside Metis. [FRAGMENT](../../backlog.md#METIS-FRAGMENT-001), [AXUM](../../backlog.md#METIS-AXUM-001) |
+| Operational evidence | Axum docs describe APIs, not deployment behavior | A real admitted target must add local server integration tests, denial cases, timeout/size bounds, teardown evidence and manual captures before the matrix row can close. [AXUM](../../backlog.md#METIS-AXUM-001), [VISUAL](../../backlog.md#METIS-VISUAL-001) |
+
+The selected design is a first-party boundary over the Atlas transport stack if
+an application requires server rendering or HTTP fragments. Adding Axum before
+that requirement would duplicate transport ownership and would make a
+third-party dependency look like a security boundary. This decision does not
+authorize a server, and it does not move DICOM parsing, metadata, geometry or
+viewer state out of RITK.
 
 ## Concrete findings driving priority
 
@@ -312,7 +348,10 @@ The board owns the exact dependency graph and acceptance. Work proceeds through:
 3. Input, text, accessibility, responsive layout, assets and data views; complete
    macOS/Linux containment and host probes alongside platform integrations.
 4. Tauri command/configuration migration, scoped native services, packaging and
-   update recovery; mobile is a separate target with explicit capability limits.
+   update recovery. If a server deployment is admitted, implement the bounded
+   first-party HTTP boundary in [METIS-AXUM-001](../../backlog.md#METIS-AXUM-001)
+   before adding routes or fragments; mobile is a separate target with explicit
+   capability limits.
 5. Close measured performance/security claims and all target-specific quality
    evidence. Measurement instrumentation begins with the first live application,
    not after implementation choices become fixed.
@@ -385,3 +424,8 @@ observations; future implementation fixtures must pin the actual dependencies.
 [H0]: https://htmx.org/docs/
 [H1]: https://htmx.org/attributes/hx-target/
 [H2]: https://htmx.org/attributes/hx-swap/
+[A0]: https://docs.rs/axum/latest/axum/struct.Router.html
+[A1]: https://docs.rs/axum/latest/axum/extract/struct.State.html
+[A2]: https://docs.rs/axum/latest/axum/extract/index.html
+[A3]: https://docs.rs/axum/latest/axum/middleware/index.html
+[A4]: https://docs.rs/axum/latest/axum/response/trait.IntoResponse.html

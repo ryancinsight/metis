@@ -166,10 +166,11 @@ an owner. “Unsupported” cannot replace delivery of a required mobile/native 
 
 <a id="METIS-PYTHON-004"></a>
 ## METIS-PYTHON-004 — Free-threaded Python wheel matrix [arch] [minor]
-- Status: todo; priority: P1; owner: Atlas integration; dependencies: METIS-PYTHON-003, ATLAS-PUBLISH-001; risk: shared release workflow and CPython ABI coverage
+- Status: review; priority: P1; owner: Metis delivery; integrator: root; dependencies: METIS-PYTHON-003, ATLAS-PUBLISH-001; risk: hosted CPython ABI coverage
 - Scope: extend Atlas's reusable Python wheel workflow with version-specific `cp3XXt` and Python 3.15 `abi3t` builds, installation tests and `sys._is_gil_enabled()` assertions; keep Metis's `abi3` caller and tokenless OIDC publication.
 - Acceptance: the shared workflow owns the matrix, Metis's release caller opts in without duplicating wheel logic, GIL and free-threaded wheels install and run the same value-semantic suite, and the manual/ADR record exact artifact support.
-- Re-open trigger: Atlas workflow input and a hosted free-threaded run are available.
+- Current increment: the release caller opts into Atlas `cp314t`/`cp315t` version-specific wheels and Python 3.15 `abi3t` wheels through the explicit `abi3t` package feature, while the default remains CPython 3.9 `abi3`. The caller and package use tokenless OIDC; musllinux is excluded from the `abi3t` job until a compatible 3.15t image exists. Hosted artifact and value-test evidence remain pending.
+- Re-open trigger: a hosted free-threaded run or Atlas contract change invalidates the declared matrix.
 
 <a id="METIS-MEMORY-001"></a>
 ## METIS-MEMORY-001 — Provider allocation count [patch]
@@ -344,6 +345,14 @@ an owner. “Unsupported” cannot replace delivery of a required mobile/native 
 - Acceptance: unauthorized endpoints/commands/arguments fail; transient errors, deadlines, cancellation, crash and cleanup are exercised against real processes/local servers; no shell-string injection or secret output.
 - Demonstration: [V08](docs/VERIFICATION.md#V08), connection/process status and denial journey; browsers never receive arbitrary native shell access.
 
+<a id="METIS-AXUM-001"></a>
+## METIS-AXUM-001 — First-party bounded HTTP boundary [arch] [minor]
+- Status: todo; priority: P2; owner: Moirai service + Metis policy; dependencies: METIS-SERVICES-001, METIS-AUTHORITY-001, METIS-FRAGMENT-001; risk: server trust boundary
+- Scope: conditional server deployment with typed routes, bounded extraction, origin/session authorization, deadlines, cancellation, backpressure and text/attribute fragment responses; no Axum dependency, arbitrary markup, scripts or DICOM behavior.
+- Acceptance: an admitted target has a real local server integration suite covering route isolation, malformed/oversized bodies, unauthorized origin/session, timeout/cancel, bounded response size, client disconnect and orderly teardown; browser and native captures tie results to one revision.
+- Demonstration: [V08](docs/VERIFICATION.md#V08) server journey and [browser manual](docs/manual/browser.md#hypermedia-boundary) capture; keep this item todo until a deployment target is explicitly admitted.
+- Decision: [ADR 0025](docs/adr/0025-axum-server-boundary.md). Re-open when a named Atlas application requires HTTP server rendering or fragment delivery.
+
 <a id="METIS-MIGRATION-001"></a>
 ## METIS-MIGRATION-001 — egui and Tauri application migration [arch] [minor]
 - Status: in-progress; priority: P1; owner: Metis framework + application owners; integrator: root; last-update: 2026-09-10; risk: lost application behavior.
@@ -369,8 +378,8 @@ an owner. “Unsupported” cannot replace delivery of a required mobile/native 
 <a id="METIS-DICOM-002"></a>
 ## METIS-DICOM-002 — Keep the browser handoff format-neutral [patch]
 - Status: done; priority: P1; delivery: [PR #32](https://github.com/ryancinsight/metis/pull/32), merge `10e7966`.
-- Outcome: `metis-web` retains bounded metadata and named-byte ownership without DICOM candidate or Part 10 classification; RITK remains the scanner, decoder, geometry, and visual-workflow owner.
-- Evidence: `49d2c98` plus `00ed7b9`; 31/31 native tests, WASM build, and full `python scripts/verify.py` gate passed before merge; [RITK DICOM workflow](../../ritk/docs/manual/dicom-workflow.md) remains authoritative.
+- Outcome: `metis-web` retains bounded metadata and named-byte ownership without DICOM candidate or Part 10 classification; the verification gate rejects a direct DICOM package in the Metis workspace, and RITK remains the scanner, decoder, geometry, and visual-workflow owner.
+- Evidence: `49d2c98` plus `00ed7b9`; 31/31 native tests, WASM build, the format-neutral positive/negative guard tests and full `python scripts/verify.py` gate passed before merge; [RITK DICOM workflow](../../ritk/docs/manual/dicom-workflow.md) remains authoritative.
 
 <a id="METIS-DICOM-003"></a>
 ## METIS-DICOM-003 — Remove format-specific browser presentation [patch]

@@ -3,9 +3,8 @@
 use super::{
     MAX_FRAGMENT_ATTRIBUTE_BYTES, MAX_FRAGMENT_BODY_BYTES, MAX_FRAGMENT_PATCHES,
     MAX_FRAGMENT_TARGET_BYTES, MAX_FRAGMENT_VALUE_BYTES, PATCH_SET_PREFIX_BYTES,
-    check_fragment_length, encode_string_u16, encode_string_u32, finish, malformed, take,
-    take_string_u16, take_string_u32, too_large, validate_attribute_name, validate_identifier,
-    validate_text,
+    check_fragment_length, encode_string, finish, malformed, take, take_string, too_large,
+    validate_attribute_name, validate_identifier, validate_text,
 };
 use crate::error::Result;
 
@@ -182,8 +181,8 @@ impl FragmentPatch {
         match self {
             Self::SetText { target, value } => {
                 encoded.push(1);
-                encode_string_u16(encoded, target, "Fragment target identifier")?;
-                encode_string_u32(encoded, value, "Fragment text value")?;
+                encode_string::<2>(encoded, target, "Fragment target identifier")?;
+                encode_string::<4>(encoded, value, "Fragment text value")?;
             }
             Self::SetAttribute {
                 target,
@@ -191,14 +190,14 @@ impl FragmentPatch {
                 value,
             } => {
                 encoded.push(2);
-                encode_string_u16(encoded, target, "Fragment target identifier")?;
-                encode_string_u16(encoded, name, "Fragment attribute name")?;
-                encode_string_u32(encoded, value, "Fragment attribute value")?;
+                encode_string::<2>(encoded, target, "Fragment target identifier")?;
+                encode_string::<2>(encoded, name, "Fragment attribute name")?;
+                encode_string::<4>(encoded, value, "Fragment attribute value")?;
             }
             Self::ReplaceChildren { target, text } => {
                 encoded.push(3);
-                encode_string_u16(encoded, target, "Fragment target identifier")?;
-                encode_string_u32(encoded, text, "Fragment child text")?;
+                encode_string::<2>(encoded, target, "Fragment target identifier")?;
+                encode_string::<4>(encoded, text, "Fragment child text")?;
             }
         }
         Ok(())
@@ -282,41 +281,41 @@ impl FragmentPatchSet {
             let kind = take::<1>(&mut payload)?[0];
             let patch = match kind {
                 1 => FragmentPatch::set_text(
-                    take_string_u16(
+                    take_string::<2>(
                         &mut payload,
                         MAX_FRAGMENT_TARGET_BYTES,
                         "Fragment target identifier",
                     )?,
-                    take_string_u32(
+                    take_string::<4>(
                         &mut payload,
                         MAX_FRAGMENT_VALUE_BYTES,
                         "Fragment text value",
                     )?,
                 )?,
                 2 => FragmentPatch::set_attribute(
-                    take_string_u16(
+                    take_string::<2>(
                         &mut payload,
                         MAX_FRAGMENT_TARGET_BYTES,
                         "Fragment target identifier",
                     )?,
-                    take_string_u16(
+                    take_string::<2>(
                         &mut payload,
                         MAX_FRAGMENT_ATTRIBUTE_BYTES,
                         "Fragment attribute name",
                     )?,
-                    take_string_u32(
+                    take_string::<4>(
                         &mut payload,
                         MAX_FRAGMENT_VALUE_BYTES,
                         "Fragment attribute value",
                     )?,
                 )?,
                 3 => FragmentPatch::replace_children(
-                    take_string_u16(
+                    take_string::<2>(
                         &mut payload,
                         MAX_FRAGMENT_TARGET_BYTES,
                         "Fragment target identifier",
                     )?,
-                    take_string_u32(
+                    take_string::<4>(
                         &mut payload,
                         MAX_FRAGMENT_VALUE_BYTES,
                         "Fragment child text",

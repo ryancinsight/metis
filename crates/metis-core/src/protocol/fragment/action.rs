@@ -2,8 +2,8 @@
 
 use super::{
     MAX_FRAGMENT_ACTION_BYTES, MAX_FRAGMENT_TARGET_BYTES, MAX_FRAGMENT_VALUE_BYTES, action_length,
-    check_fragment_length, finish, malformed, take, take_string, too_large, validate_identifier,
-    validate_text,
+    check_fragment_length, finish, malformed, take, take_string_bytes, too_large,
+    validate_identifier, validate_text,
 };
 use crate::error::Result;
 
@@ -115,19 +115,19 @@ impl FragmentAction {
         let target_len = usize::from(u16::from_be_bytes(take(&mut payload)?));
         let input_len = usize::try_from(u32::from_be_bytes(take(&mut payload)?))
             .map_err(|_| too_large("Fragment action input length cannot fit this target"))?;
-        let action = take_string(
+        let action = take_string_bytes(
             &mut payload,
             action_len,
             MAX_FRAGMENT_ACTION_BYTES,
             "Fragment action identifier",
         )?;
-        let target = take_string(
+        let target = take_string_bytes(
             &mut payload,
             target_len,
             MAX_FRAGMENT_TARGET_BYTES,
             "Fragment target identifier",
         )?;
-        let input = take_string(
+        let input = take_string_bytes(
             &mut payload,
             input_len,
             MAX_FRAGMENT_VALUE_BYTES,

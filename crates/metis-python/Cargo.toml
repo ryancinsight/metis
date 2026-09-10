@@ -15,6 +15,11 @@ crate-type = ["cdylib"]
 test = false
 doc = false
 
+[features]
+default = ["abi3"]
+abi3 = ["pyo3/macros", "pyo3/extension-module", "pyo3/abi3-py39"]
+abi3t = ["pyo3/macros", "pyo3/extension-module", "pyo3/abi3t-py315"]
+
 [dependencies]
 metis-backend.workspace = true
 metis-core.workspace = true

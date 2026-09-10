@@ -96,11 +96,13 @@ progress.
 The extension module declares `gil_used = false` after a compile-time `Send +
 Sync` audit of every exposed Rust class. The lifecycle tests exercise concurrent
 mutation of one `Application` and, when run by a free-threaded interpreter,
-assert that importing `metis` leaves `sys._is_gil_enabled()` false. The current
-release caller still ships the CPython 3.9 `abi3` wheel; that artifact cannot be
-loaded by free-threaded CPython. A free-threaded release requires the shared
-Atlas wheel workflow's `cp3XXt` or `abi3t` matrix, so no such wheel is claimed
-until that workflow is extended and run.
+assert that importing `metis` leaves `sys._is_gil_enabled()` false. The release
+caller ships separate CPython 3.9 `abi3` wheels, `cp314-cp314t` and `cp315-cp315t`
+free-threaded wheels, and Python 3.15 `abi3t` wheels. The package `abi3t`
+feature selects PyO3 `abi3t-py315`; the default feature selects `abi3-py39`.
+Atlas installs each artifact and runs the same value-semantic suite. The
+`abi3t` matrix currently excludes musllinux because its Python 3.15t image is
+unavailable.
 
 ## Release path
 

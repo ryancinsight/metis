@@ -56,8 +56,10 @@ interpreter matrix before it can be claimed as release evidence.
 The exposed classes now pass a compile-time `Send + Sync` audit, and the module
 declares `gil_used = false`. The binding tests add concurrent mutation of one
 `Application` and a runtime assertion that a free-threaded interpreter remains
-free-threaded after import. The release caller still publishes the CPython 3.9
-`abi3` wheel only: an `abi3` wheel cannot load on free-threaded CPython, and the
-shared Atlas wheel workflow does not yet build or test the required `cp3XXt` or
-`abi3t` artifacts. This revision attests the source binding contract without
-claiming a free-threaded release artifact.
+free-threaded after import. The release caller publishes separate CPython 3.9
+`abi3` wheels, version-specific `cp314-cp314t` and `cp315-cp315t` wheels, and Python 3.15
+`abi3t` wheels. Metis exposes `abi3t` as a package feature forwarding PyO3
+`abi3t-py315`; the default feature forwards `abi3-py39`. Atlas runs the same
+installed-wheel value tests for each artifact family. The `abi3t` job excludes
+musllinux until a compatible Python 3.15t image exists. No registry token,
+signing key or private key is used.

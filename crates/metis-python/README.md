@@ -42,10 +42,13 @@ and trace identifier.
 The native module declares `gil_used = false` after a compile-time `Send + Sync`
 audit of every exposed Rust class. The test suite exercises concurrent mutation
 of one `Application` and checks `sys._is_gil_enabled()` when a free-threaded
-interpreter is running. The published CPython 3.9 `abi3` wheel remains the
-current release artifact; it cannot load on free-threaded CPython. Free-threaded
-distribution waits for the shared Atlas wheel workflow to add and verify a
-`cp3XXt` or `abi3t` matrix.
+interpreter is running. The release contains separate CPython 3.9 `abi3` wheels,
+version-specific `cp314-cp314t` and `cp315-cp315t` free-threaded wheels, and Python 3.15
+`abi3t` wheels. The free-threaded artifacts use the package `abi3t` feature,
+which selects PyO3 `abi3t-py315`; the regular artifact keeps the default `abi3`
+feature. The same installed-wheel value tests run for both ABI families. The
+`abi3t` stable ABI is supported on the platforms provided by Atlas; musllinux
+is excluded from the `abi3t` job until a compatible Python 3.15t image exists.
 
 The binding also exposes the Rust-owned software presentation contract through
 `RasterImage`, `Rect` and `Canvas`. Python supplies composition commands; Rust
