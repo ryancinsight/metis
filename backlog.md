@@ -344,10 +344,8 @@ an owner. “Unsupported” cannot replace delivery of a required mobile/native 
 
 <a id="METIS-DICOM-004"></a>
 ## METIS-DICOM-004 — Remove stale DICOM claims from Metis docs [patch]
-- Status: review; priority: P1; owner: Metis documentation; integrator: root; last-update: 2026-09-09; branch: `docs/dicom-ownership-004`; dependencies: METIS-DICOM-003; risk: ownership drift
-- Scope: active Metis backlog, verification evidence and ADR wording that describes the superseded browser format classification; preserve RITK links and clearly label historical captures.
-- Acceptance: current Metis behavior is described as bounded generic metadata/bytes only; no active artifact assigns DICOM scanning, decoding or viewer state to Metis; `rg` audit and full locked gate pass.
-- Evidence: current source and crate README remain format-neutral; stale claims are marked superseded or rewritten; full `python scripts/verify.py` gate passes on the corrected anchor and docs.
+- Status: done; commit: `25014a6`; PR: <https://github.com/ryancinsight/metis/pull/40>; last-update: 2026-09-09.
+- Outcome: Active Metis artifacts now describe only generic bounded metadata/bytes; superseded captures are labeled, and RITK remains the DICOM owner. Full locked gate passes.
 
 <a id="METIS-DISTRIBUTION-001"></a>
 ## METIS-DISTRIBUTION-001 — Executables and Windows MSI [arch] [minor]
