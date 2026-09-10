@@ -72,7 +72,8 @@ page units normalize to fixed CSS-pixel scales; non-finite deltas are rejected
 without mutation. A zero-distance pair waits for a valid baseline, and a
 third pointer is rejected. Touch pointers use the same bounded policy.
 
-The workbench uses Moirai's `DropFiles` capture for the DICOM file-drop card.
+The workbench uses Moirai's `DropFiles` capture for the format-neutral file-drop
+card.
 Validated metadata remains bounded to 64 entries. An accepted drop retains the
 provider-owned browser file handles only for the asynchronous read task; Metis
 reads each file to its declared end, limits one file to 64 MiB and the batch to

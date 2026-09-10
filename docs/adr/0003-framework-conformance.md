@@ -123,9 +123,9 @@ Revision 2026-09-08: Moirai PR #289 merged at
 `5c8a9e8be32ad6beac14ed263c2f11c3663b87cb` adds bounded browser file access.
 Metis now captures validated `DropFiles`, reads the accepted batch through
 provider-owned browser `File` handles and exposes one bounded named-byte handoff
-slot. The first payload still reports the Part 10 marker. Full DICOM parsing
-and study decoding remain RITK work; native file grants, trusted physical-drop
-evidence and cross-engine evidence remain open.
+slot. That pre-boundary revision still surfaced a format marker; PR #32 removed
+the decision. Full DICOM parsing and study decoding remain RITK work; native file
+grants, trusted physical-drop evidence and cross-engine evidence remain open.
 
 Revision 2026-09-08: htmx is added as a hypermedia interaction comparator. Its
 event→request→target→swap model informs a typed Rust/WASM dispatcher and

@@ -716,9 +716,9 @@ cross-engine parity remain open.
 ## Browser file-drop evidence — 2026-09-08
 
 This dated capture predates [METIS-DICOM-003](../backlog.md#METIS-DICOM-003),
-which removes the format-specific sample labels. It remains as provenance for
-the bounded handoff; the current browser source uses the generic **File drop**
-label and makes no format decision.
+which removes the format-specific sample labels and decisions. It remains only
+as historical provenance for the bounded handoff; current Metis uses the
+generic **File drop** label and makes no format decision.
 
 The file-drop consumer now captures Moirai `DropFiles` at merged revision
 `5c8a9e8be32ad6beac14ed263c2f11c3663b87cb`. The provider bounds one event to 64
@@ -726,11 +726,12 @@ files, validates names/media types and owns each browser `File` handle without
 exposing a filesystem path. Metis revalidates the copied metadata, retains a
 bounded `Box<[FileDropEntry]>` for presentation and starts one cancellable task
 for the accepted batch. Each file is read to its declared end through 64 KiB
-continuations, with a 64 MiB per-file and 256 MiB batch budget. The first
-payload is classified at the DICOM Part 10 marker at offsets 128–131; the
-completed named bytes are exposed through one `FileDropBatch` handoff slot.
-Moirai rejects any individual read larger than 1 MiB, and the consumer stays
-below that provider bound.
+continuations, with a 64 MiB per-file and 256 MiB batch budget. The captured
+revision classified the first payload at a format marker; that decision was
+removed by [METIS-DICOM-002](../backlog.md#METIS-DICOM-002). Current Metis
+exposes completed named bytes through one `FileDropBatch` handoff slot. Moirai
+rejects any individual read larger than 1 MiB, and the consumer stays below
+that provider bound.
 
 The focused evidence against the updated standalone lock is:
 
@@ -745,24 +746,22 @@ The full repository gate passed against Metis commit
 `eee0cd14bc8be102526b045ff46b4445a0314509`; every configured stage passed,
 including the generated browser visual run.
 
-The native policy tests cover empty names, NUL and oversized metadata, empty
-and 65-file drops, DICOM media/extension classification, UTF-8-safe display
-truncation, the Part 10 marker, payload budget edges, batch ownership,
-ownership-consuming allocation preservation and bounded read-status
-transitions. The
-generated HTML5/CSS page renders the **DICOM file drop** card, both semantic
-status regions and the focusable **DICOM file drop zone**; the visual capture
-records the idle state. CUA does not expose `isTrusted`, cannot attach a local
-operating-system file to a synthetic browser event and cannot establish the
-browser engine version, so this evidence does not claim a trusted live byte
-read or DICOM opening. The handoff is ready for the RITK adapter; full dataset
-parsing and study decoding remain RITK responsibilities.
+The superseded policy tests covered empty names, NUL and oversized metadata,
+empty and 65-file drops, the former format classification, UTF-8-safe display
+truncation, payload budget edges, batch ownership, ownership-consuming
+allocation preservation and bounded read-status transitions. The superseded
+HTML5/CSS capture rendered the former format-specific card; current source
+renders the generic **File drop** card and zone. CUA does not expose `isTrusted`,
+cannot attach a local operating-system file to a synthetic browser event and
+cannot establish the browser engine version, so this evidence does not claim a
+trusted live byte read or DICOM opening. The handoff is ready for the RITK
+adapter; full dataset parsing and study decoding remain RITK responsibilities.
 
 The ownership increment adds `FileDropBatch::into_files` and
 `FileDropPayload::into_parts`. The test records the collection and byte-buffer
 addresses before and after the moves, then asserts the names, media type and
-bytes; this is evidence of move-only handoff, not evidence of a decoded DICOM
-dataset.
+bytes; this is evidence of a move-only generic handoff, not evidence of a
+format decode.
 
 ## Browser text and composition evidence — 2026-09-08
 
@@ -858,7 +857,7 @@ The stylesheet honors `prefers-reduced-motion: reduce` by removing scroll and
 transition motion, and `forced-colors: active` by mapping surfaces, controls
 and focus outlines to system colors. The keyboard order follows the active
 document path from **Session details** through the form, view options, pointer
-surface, DICOM drop zone and clinical note; the closed dialog remains outside
+surface, File drop zone and clinical note; the closed dialog remains outside
 that path.
 
 The focused native suite and full Metis gate pass on the committed revision.
@@ -877,7 +876,7 @@ The fresh CUA trace started from **Start host**, advanced to **Stop host** and
 **Session details**, then traversed **Patient reference**, **Weight (kg)**,
 **Drug concentration (mg/mL)**, **Target dose (mcg/kg/min)**, **Show remote
 events**, **Volume rate**, **Result scale**, **Result detail**, **Pointer
-capture surface**, **DICOM file drop zone** and **Clinical note**. The disabled
+capture surface**, **File drop zone** and **Clinical note**. The disabled
 submit control and the unselected radio option were correctly skipped by the
 browser's tab sequence. Refocusing **Clinical note** produced the visible
 yellow focus outline in the inspected screenshot. This is one-engine browser
