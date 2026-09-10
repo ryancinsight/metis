@@ -6,6 +6,13 @@ use std::num::NonZeroU64;
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub(crate) struct Generation(NonZeroU64);
 
+impl Generation {
+    #[cfg(target_arch = "wasm32")]
+    pub(crate) const fn value(self) -> u64 {
+        self.0.get()
+    }
+}
+
 pub(crate) struct Epoch {
     generation: NonZeroU64,
     exhausted: bool,

@@ -30,4 +30,6 @@
 | [0019](0019-raster-display-command.md) | Raster display command | Accepted |
 | [0020](0020-python-presentation.md) | Python presentation surface | Accepted |
 | [0021](0021-browser-conformance-runner.md) | Cross-engine browser conformance runner | Accepted |
+| [0022](0022-typed-browser-actions.md) | Authenticated typed browser actions | Accepted |
+| [0023](0023-python-application-lifecycle.md) | Python application lifecycle | Accepted |
 | [0024](0024-native-application-host.md) | Native application host seam | Accepted |

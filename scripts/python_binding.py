@@ -9,6 +9,8 @@ import subprocess
 import sys
 import tempfile
 import zipfile
+from email.parser import Parser
+from pathlib import PurePosixPath
 
 
 PHYSICAL_ROOT = pathlib.Path(__file__).resolve().parents[1]
@@ -17,11 +19,16 @@ PACKAGE = ROOT / "crates" / "metis-python"
 TESTS = PACKAGE / "tests"
 
 
-def run(command: list[str], *, environment: dict[str, str]) -> None:
+def run(
+    command: list[str],
+    *,
+    environment: dict[str, str],
+    cwd: pathlib.Path | None = None,
+) -> None:
     """Run one bounded binding build or test command."""
     completed = subprocess.run(
         command,
-        cwd=ROOT,
+        cwd=ROOT if cwd is None else cwd,
         env=environment,
         check=False,
         text=True,
@@ -39,6 +46,78 @@ def extract_wheel(wheel: pathlib.Path, destination: pathlib.Path) -> None:
             if not target.is_relative_to(destination):
                 raise SystemExit(f"wheel member escapes extraction root: {member.filename}")
         archive.extractall(destination)
+
+
+def validate_wheel_surface(wheel: pathlib.Path) -> None:
+    """Verify the typed package and stable ABI metadata before extraction."""
+    with zipfile.ZipFile(wheel) as archive:
+        member_names = archive.namelist()
+        members = set(member_names)
+        if len(member_names) != len(members):
+            raise SystemExit("wheel contains duplicate archive members")
+        required = {
+            "metis/__init__.py",
+            "metis/_metis.pyi",
+            "metis/py.typed",
+        }
+        missing = sorted(required - members)
+        if missing:
+            raise SystemExit(f"wheel is missing typed package members: {missing}")
+        if any("__pycache__/" in member or member.endswith(".pyc") for member in members):
+            raise SystemExit("wheel contains generated Python bytecode")
+
+        native_extensions = sorted(
+            member
+            for member in members
+            if PurePosixPath(member).suffix.lower() in {".pyd", ".so", ".dylib"}
+        )
+        if len(native_extensions) != 1 or not native_extensions[0].startswith("metis/_metis."):
+            raise SystemExit(
+                f"expected one metis native extension, found {native_extensions}"
+            )
+
+        metadata_members = sorted(
+            member for member in members if member.endswith(".dist-info/METADATA")
+        )
+        if len(metadata_members) != 1:
+            raise SystemExit(f"expected one wheel METADATA file, found {metadata_members}")
+        metadata = Parser().parsestr(
+            archive.read(metadata_members[0]).decode("utf-8")
+        )
+        if metadata.get("Name") != "metis-rs":
+            raise SystemExit(f"wheel metadata has unexpected Name: {metadata.get('Name')!r}")
+        if metadata.get("Requires-Python") != ">=3.9":
+            raise SystemExit(
+                "wheel metadata must retain the declared Python floor >=3.9"
+            )
+        if "Typing :: Typed" not in metadata.get_all("Classifier", []):
+            raise SystemExit("wheel metadata is missing the typed classifier")
+
+        wheel_members = sorted(
+            member for member in members if member.endswith(".dist-info/WHEEL")
+        )
+        if len(wheel_members) != 1:
+            raise SystemExit(f"expected one wheel metadata file, found {wheel_members}")
+        wheel_metadata = Parser().parsestr(
+            archive.read(wheel_members[0]).decode("utf-8")
+        )
+        tags = wheel_metadata.get_all("Tag", [])
+        abi3_tags = [
+            tag
+            for tag in tags
+            if len(tag.split("-")) == 3 and tag.split("-")[1] == "abi3"
+        ]
+        if not abi3_tags:
+            raise SystemExit(f"wheel metadata has no exact stable abi3 tag: {tags}")
+
+    filename_parts = wheel.name.removesuffix(".whl").split("-")
+    if len(filename_parts) < 5 or filename_parts[-2] != "abi3":
+        raise SystemExit(f"wheel filename has no exact abi3 tag: {wheel.name}")
+    filename_tag = "-".join(filename_parts[-3:])
+    if filename_tag not in tags:
+        raise SystemExit(
+            f"wheel filename tag {filename_tag!r} is absent from WHEEL metadata"
+        )
 
 
 def main() -> None:
@@ -67,15 +146,17 @@ def main() -> None:
                 str(distribution),
             ],
             environment=environment,
+            cwd=root,
         )
         wheels = sorted(distribution.glob("*.whl"))
         if len(wheels) != 1:
             raise SystemExit(f"expected one Metis wheel, found {len(wheels)}")
+        validate_wheel_surface(wheels[0])
         extract_wheel(wheels[0], extraction)
         environment["PYTHONPATH"] = os.pathsep.join(
             filter(None, (str(extraction), environment.get("PYTHONPATH", "")))
         )
-        run([*pytest, str(TESTS)], environment=environment)
+        run([*pytest, str(TESTS)], environment=environment, cwd=root)
 
 
 if __name__ == "__main__":

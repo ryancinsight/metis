@@ -69,13 +69,14 @@ so source acquisition is explicit while verification remains reproducible.
 The workflow installs cargo-deny 0.20.2 and primes its advisory database before
 the same offline policy check.
 
-## Python binding verification — 2026-09-08
+## Python binding verification — 2026-09-09
 
 `metis-python` is the only Metis crate that depends directly on PyO3. The local
 gate invokes `scripts/python_binding.py`, which builds a locked release wheel
-with `maturin`, extracts that generated artifact into a temporary directory and
-runs the provider-owned pytest suite against the extracted `metis._metis`
-extension. The suite compares adult and pediatric results with the Rust
+with `maturin`, validates the generated wheel's typed package members and
+`abi3` metadata, extracts that artifact into a temporary directory and runs the
+provider-owned pytest suite against the extracted `metis._metis` extension. The
+suite compares adult and pediatric results with the Rust
 formula, checks input sensitivity and rejects non-finite, out-of-range and
 envelope-violating values. The wheel contains the `metis` package,
 `py.typed` marker and `_metis.pyi` stub. The gate's wheel build and pytest
@@ -84,6 +85,18 @@ stages are required; an import-only check does not close the binding contract.
 Entry baseline: `cargo check --workspace --offline` passes with documentation and
 source warnings. The original native test build fails with E0382 in the threaded
 process-isolation test. No original OS sandbox or native-window evidence exists.
+
+The application lifecycle binding now performs a compile-time `Send + Sync`
+assertion for every exposed class, uses PyO3's interpreter-aware mutex path and
+declares `gil_used = false`. The extracted wheel suite covers concurrent reads
+and concurrent event mutation on one `Application`; the free-threaded probe
+runs on a free-threaded interpreter and asserts that importing the extension
+leaves the GIL disabled. On this host, the release wheel build and extracted
+suite pass with 19 tests and one expected skip under CPython 3.13.12, while no
+free-threaded interpreter is installed. The current release caller therefore
+continues to claim only its CPython 3.9 `abi3` wheel. A free-threaded artifact
+requires the shared Atlas workflow's `cp3XXt` or `abi3t` matrix, tracked by
+`METIS-PYTHON-004`.
 
 ## Python presentation verification — 2026-09-09
 
@@ -95,6 +108,30 @@ dimensions and byte lengths with stable error codes. `Canvas.to_rgba()` is an
 explicit cold-boundary copy; the wheel exposes no Python renderer, native
 window, filesystem path or DICOM decoder. The image fixture and visual
 semantics are shared with the inspected [software raster image evidence](#software-raster-image-evidence--2026-09-09).
+
+## Typed browser action verification — 2026-09-09
+
+[ADR 0022](adr/0022-typed-browser-actions.md) adds one presentation-only
+action path to the existing authenticated plugin transport. `metis-core`
+tests exact `FragmentAction` and `FragmentPatchSet` round trips, UTF-8 and
+resource bounds, reserved bytes, unknown patch kinds, trailing data and
+generation checks. The `metis-backend` service test performs a real handshake,
+checks the `UI_RENDER` scope and decodes the input-sensitive `status.describe`
+patch. `metis-frontend` preserves a missing-session error through the plugin
+invocation seam. `metis-web` tests the closed target set, safe attributes and
+literal text values; the WASM path preflights every target before mutation and
+rejects stale generations.
+
+The native focused suites pass 29/29 (`metis-core`), 32/32
+(`metis-frontend` and `metis-backend`) and 34/34 (`metis-web`). The browser
+manual documents the Session details demonstration and the stop/remount
+generation case. A configured WebDriver endpoint is not available in this
+environment, so no new cross-engine screenshot is claimed. The exact full gate
+for this revision reached the visual stage, refreshed the reviewed baseline and
+matched all capture pixels and semantics; the WASM library build also passed.
+This action contract carries generic presentation data only. DICOM scanning, decoding,
+series selection, geometry and viewer state remain RITK-owned and are verified
+by the [RITK DICOM workflow](../../ritk/docs/manual/dicom-workflow.md).
 
 ## Windows native provider and host evidence — 2026-09-08
 

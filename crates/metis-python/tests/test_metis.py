@@ -1,6 +1,9 @@
 """Value-semantic tests for the built Metis PyO3 wheel."""
 
 import math
+import sys
+import sysconfig
+from concurrent.futures import ThreadPoolExecutor
 
 import pytest
 
@@ -130,3 +133,81 @@ def test_presentation_limits_are_reported_as_stable_errors(
 ) -> None:
     with pytest.raises(ValueError, match=code):
         constructor(*arguments)
+
+
+def test_application_preserves_fifo_and_framebuffer_generation() -> None:
+    application = metis.Application(2, 1)
+    generation = application.generation
+    application.clear(generation, 10, 20, 30, 255)
+    assert application.to_rgba(generation) == bytes((10, 20, 30, 255)) * 2
+    application.key_down(generation, 41)
+    application.pointer_down(generation, 7, 9)
+    assert application.poll_event(generation) == {"kind": "key_down", "key": 41}
+    assert application.poll_event(generation) == {
+        "kind": "pointer_down",
+        "x": 7,
+        "y": 9,
+    }
+    assert application.poll_event(generation) is None
+
+
+def test_application_close_reopen_rejects_stale_generation() -> None:
+    application = metis.Application(1, 1)
+    old_generation = application.generation
+    application.close(old_generation)
+    with pytest.raises(ValueError, match="Application is closed"):
+        application.to_rgba(old_generation)
+    new_generation = application.reopen(1, 1)
+    assert new_generation == old_generation + 1
+    with pytest.raises(ValueError, match="generation is stale"):
+        application.clear(old_generation, 1, 2, 3, 255)
+    application.clear(new_generation, 1, 2, 3, 255)
+    assert application.to_rgba(new_generation) == bytes((1, 2, 3, 255))
+
+
+def test_application_queue_is_bounded() -> None:
+    application = metis.Application(1, 1)
+    generation = application.generation
+    for key in range(1024):
+        application.key_down(generation, key)
+    with pytest.raises(ValueError, match="ERR_RENDER_FAILURE"):
+        application.key_down(generation, 1024)
+
+
+def test_application_serializes_concurrent_frame_access() -> None:
+    application = metis.Application(2, 2)
+    generation = application.generation
+
+    def read_frame() -> bytes:
+        return application.to_rgba(generation)
+
+    with ThreadPoolExecutor(max_workers=4) as pool:
+        frames = list(pool.map(lambda _: read_frame(), range(16)))
+    assert all(frame == bytes(16) for frame in frames)
+
+
+def test_application_serializes_concurrent_mutation() -> None:
+    application = metis.Application(1, 1)
+    generation = application.generation
+
+    def enqueue(key: int) -> None:
+        application.key_down(generation, key)
+
+    with ThreadPoolExecutor(max_workers=8) as pool:
+        list(pool.map(enqueue, range(128)))
+
+    events = [application.poll_event(generation) for _ in range(128)]
+    keys = sorted(event["key"] for event in events if event is not None)
+    assert keys == list(range(128))
+
+
+def test_free_threaded_runtime_keeps_the_gil_disabled() -> None:
+    gil_probe = getattr(sys, "_is_gil_enabled", None)
+    gil_disabled_build = sysconfig.get_config_var("Py_GIL_DISABLED") == 1
+    soabi = sysconfig.get_config_var("SOABI") or ""
+    abi_name = soabi.split("-", 1)[0]
+    gil_disabled_build = gil_disabled_build or abi_name.endswith("t")
+    if not gil_disabled_build:
+        pytest.skip("a free-threaded CPython build is required for this runtime probe")
+    assert gil_probe is not None, "free-threaded CPython must expose _is_gil_enabled"
+    assert gil_probe() is False

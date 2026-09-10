@@ -63,6 +63,17 @@ an owner. “Unsupported” cannot replace delivery of a required mobile/native 
 - Demonstration: [V02](docs/VERIFICATION.md#V02), [browser stale-response evidence](docs/VERIFICATION.md#browser-stale-response-evidence--2026-09-07) and the delayed-response section in the [browser manual](docs/manual/browser.md#verify-stopremount-disposal-at-the-service-boundary).
 - Outcome: The single `metis-app` executable exposes a bounded `--response-delay-ms` service probe backed by Moirai's async timer. The live stop/remount trace leaves the remounted DOM at `Backend unavailable [ERR_TRANSPORT_BROKEN]` with no stale result or event after the deadline.
 
+<a id="METIS-FRAGMENT-001"></a>
+## METIS-FRAGMENT-001 — Authenticated typed browser actions [arch] [minor]
+- Status: review; priority: P1; owner: Metis protocol/browser; integrator: root; last-update: 2026-09-10; branch: `feat/framework-slices-001`; dependencies: METIS-BROWSER-001, METIS-COMMANDS-001, METIS-AUTHORITY-001; risk: remote markup and stale lifecycle
+- Scope: event→request→target→swap interaction inspired by htmx, with versioned authenticated actions and bounded typed patches; arbitrary markup, scripts, unrestricted selectors and navigation stay outside the contract.
+- Acceptance: capability-bound action requests, allowlisted targets, bounded patch count/bytes and atomic application; invalid capability/target/patch/size and stale generation return typed errors without changing prior state; mount/unmount releases listeners and tasks exactly once.
+- Demonstration: browser trace and inspected snapshots cover action success, rejected target/patch, stop/remount during an in-flight request and zero retained mounted controls.
+- Decision: [ADR 0022](docs/adr/0022-typed-browser-actions.md).
+- Completed increment: `FragmentAction`, `FragmentPatchSet`, the scoped `ui` plugin and the WASM target policy use the existing authenticated plugin envelope; all mutations are bounded text/attribute operations with generation checks and atomic preflight. No DICOM knowledge or dependency enters Metis; RITK remains the format and viewer owner.
+- Evidence: native focused suites pass 29/29 (`metis-core`), 32/32 (`metis-frontend`/`metis-backend`) and 34/34 (`metis-web`); [typed browser action verification](docs/VERIFICATION.md#typed-browser-action-verification--2026-09-09) and the [browser manual](docs/manual/browser.md#hypermedia-boundary) record the protocol and demonstration.
+- Residuals: configured WebDriver success/rejection/stale-generation captures and provider-private listener/allocation counts remain open. The exact full gate reports matching pixels and semantics with the reviewed capture baseline refreshed, and the locked WASM library build passes.
+
 <a id="METIS-SEC-001"></a>
 ## METIS-SEC-001 — Backend authority [arch] [patch]
 - Status: done; priority: P0; delivery: `1517ce5`; authority audit passed 2026-09-07.
@@ -142,6 +153,22 @@ an owner. “Unsupported” cannot replace delivery of a required mobile/native 
 - Status: done; priority: P1; delivery: `1d77de9`, `3bf7697`; owner/integrator: Metis Python/presentation/root.
 - Outcome: The abi3 wheel exposes Rust-owned `RasterImage`, `Rect` and bounded `Canvas` composition with exact RGBA, clipping, alpha and invalid-input tests; the manual and inspected fixture demonstrate the workflow.
 - Decision: [ADR 0020](docs/adr/0020-python-presentation.md); native window/event lifecycle and DICOM decoding remain provider-owned follow-ons.
+
+<a id="METIS-PYTHON-003"></a>
+## METIS-PYTHON-003 — Rust-owned Python application lifecycle [arch] [minor]
+- Status: review; priority: P1; owner: Metis Python integration; integrator: root; last-update: 2026-09-10; dependencies: METIS-PYTHON-002, METIS-STATE-001, METIS-INPUT-001; risk: cross-thread lifecycle and bounded state
+- Scope: expose a cross-platform Rust-owned software application surface through PyO3 with bounded events, framebuffer extraction and close/reopen generations; native windows and browser hosts remain provider-owned.
+- Acceptance: FIFO input events, bounded queue rejection, deterministic framebuffer output, close invalidation, generation-safe reopen and typed invalid-operation errors; concurrent calls are synchronized without Python callbacks or a second event loop.
+- Demonstration: built-wheel pytest and the Python manual exercise input, render, close and reopen, including a concurrent free-threaded probe when the module audit permits it.
+- Decision: [ADR 0023](docs/adr/0023-python-application-lifecycle.md).
+- Verification: exact full gate at `bf6a9a2` passes the locked wheel build, typed `abi3` metadata validation, extracted-wheel pytest, Rust nextest, doctests, release tests and visual checks. Built-wheel pytest covers FIFO input, bounded queue rejection, exact framebuffer bytes, close invalidation, generation-safe reopen and concurrent synchronized reads and mutation. The module's exposed classes pass a `Send + Sync` audit and declare `gil_used = false`; the free-threaded runtime assertion is skipped when no free-threaded interpreter is available.
+
+<a id="METIS-PYTHON-004"></a>
+## METIS-PYTHON-004 — Free-threaded Python wheel matrix [arch] [minor]
+- Status: todo; priority: P1; owner: Atlas integration; dependencies: METIS-PYTHON-003, ATLAS-PUBLISH-001; risk: shared release workflow and CPython ABI coverage
+- Scope: extend Atlas's reusable Python wheel workflow with version-specific `cp3XXt` and Python 3.15 `abi3t` builds, installation tests and `sys._is_gil_enabled()` assertions; keep Metis's `abi3` caller and tokenless OIDC publication.
+- Acceptance: the shared workflow owns the matrix, Metis's release caller opts in without duplicating wheel logic, GIL and free-threaded wheels install and run the same value-semantic suite, and the manual/ADR record exact artifact support.
+- Re-open trigger: Atlas workflow input and a hosted free-threaded run are available.
 
 <a id="METIS-MEMORY-001"></a>
 ## METIS-MEMORY-001 — Provider allocation count [patch]

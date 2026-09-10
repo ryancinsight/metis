@@ -75,14 +75,13 @@ jobs:
         shell: pwsh
         run: rustup run 1.97.0 cargo fetch --locked --manifest-path Cargo.toml
       - name: Install pinned gate tools
-        shell: pwsh
-        run: |
-          $ErrorActionPreference = 'Stop'
-          cargo install cargo-nextest --version 0.9.143 --locked --root output/cargo-tools
-          cargo install cargo-deny --version 0.20.2 --locked --root output/cargo-tools
-          cargo install wasm-bindgen-cli --version 0.2.128 --locked --root output/wasm-bindgen-cli
-          Add-Content -Path $env:GITHUB_PATH -Value "$PWD\output\cargo-tools\bin"
-          Add-Content -Path $env:GITHUB_PATH -Value "$PWD\output\wasm-bindgen-cli\bin"
+        uses: taiki-e/install-action@a6b2e2dcd845ddd7f509ce4f3ed3d922b80cc5d9 # v2.84.0
+        with:
+          tool: |
+            cargo-nextest@0.9.143
+            cargo-deny@0.20.2
+            wasm-bindgen@0.2.128
+          checksum: true
       - name: Prime advisory database
         shell: pwsh
         run: cargo-deny fetch db

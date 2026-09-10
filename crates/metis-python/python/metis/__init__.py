@@ -1,6 +1,7 @@
 """Typed Python bindings for the Metis Rust application framework."""
 
 from ._metis import (
+    Application,
     Canvas,
     DrugConcentration,
     InfusionResult,
@@ -13,6 +14,7 @@ from ._metis import (
 )
 
 __all__ = [
+    "Application",
     "Canvas",
     "DrugConcentration",
     "InfusionResult",

@@ -19,8 +19,10 @@ python scripts/python_binding.py
 The script builds a locked release wheel from
 `crates/metis-python/pyproject.toml`, extracts it into a temporary directory
 and runs the tests in `crates/metis-python/tests`. It does not install into the
-active interpreter. The wheel uses the CPython 3.9 stable ABI and includes the
-`py.typed` marker and `_metis.pyi` stub.
+active interpreter. Before extraction, the gate verifies the wheel's single
+native extension, `metis/__init__.py`, `py.typed`, `_metis.pyi`, typed package
+metadata, Python 3.9 floor and `abi3` tags. The wheel uses the CPython 3.9
+stable ABI.
 
 ## Calculate through Rust
 
@@ -91,6 +93,15 @@ reimplementing Rust's error taxonomy. The calculation releases the Python
 interpreter lock while Rust computes, allowing unrelated Python threads to
 progress.
 
+The extension module declares `gil_used = false` after a compile-time `Send +
+Sync` audit of every exposed Rust class. The lifecycle tests exercise concurrent
+mutation of one `Application` and, when run by a free-threaded interpreter,
+assert that importing `metis` leaves `sys._is_gil_enabled()` false. The current
+release caller still ships the CPython 3.9 `abi3` wheel; that artifact cannot be
+loaded by free-threaded CPython. A free-threaded release requires the shared
+Atlas wheel workflow's `cp3XXt` or `abi3t` matrix, so no such wheel is claimed
+until that workflow is extended and run.
+
 ## Release path
 
 `.github/workflows/python-release.yml` accepts a GitHub Release tag of the form
@@ -105,3 +116,32 @@ This binding increment does not expose native window classes or DICOM objects.
 Those surfaces will follow their public Rust contracts and host or decoder
 evidence, so the Python API cannot silently diverge from the desktop and web
 paths.
+
+## Own a bounded software application
+
+`Application` is the Python entry point for a Rust-owned virtual surface. It is
+portable across Python hosts because it does not create an operating-system
+window or run an event loop. The host supplies input and consumes frames.
+
+```python
+import metis
+
+app = metis.Application(2, 1)
+generation = app.generation
+app.clear(generation, 10, 20, 30, 255)
+app.key_down(generation, 41)
+assert app.poll_event(generation) == {"kind": "key_down", "key": 41}
+assert app.to_rgba(generation) == bytes((10, 20, 30, 255)) * 2
+app.close(generation)
+generation = app.reopen(2, 1)
+```
+
+The generation token makes close and reopen safe: operations from an earlier
+surface cannot write or read the new one. The event queue has a fixed capacity
+and rejects additional input with `ERR_RENDER_FAILURE`; draining is explicit
+through `poll_event`. `Application` is synchronized by Rust's `Mutex`, so
+concurrent Python calls share one state machine without callbacks, Python-owned
+framebuffer storage or a second event loop. The lock uses PyO3's
+interpreter-aware acquisition path, and Python objects are created after the
+state guard is released. Native window providers and RITK's
+DICOM decoding remain separate boundaries.

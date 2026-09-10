@@ -319,7 +319,7 @@ impl<C: Clock> BackendService<C> {
             CapabilityGrantSpec {
                 token_id,
                 principal_id: request.principal_id,
-                scope: CapabilityScope::SUBMIT_CALCULATION,
+                scope: CapabilityScope::SUBMIT_CALCULATION.union(CapabilityScope::UI_RENDER),
                 issued_at_secs: reading.unix_time.as_secs(),
                 duration_secs: SESSION_LIFETIME.as_secs(),
                 nonce: token_id,

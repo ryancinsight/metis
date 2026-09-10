@@ -25,6 +25,7 @@ use crate::FileDropBatch;
 use crate::controls;
 use crate::controls::ControlField;
 use crate::epoch::{Epoch, Generation};
+use crate::fragment;
 use crate::session::connect_failure_state;
 use metis_core::error::{ErrorCode, MetisError};
 use metis_frontend::{AsyncFrontendApp, FormInputs, FormState};
@@ -91,6 +92,7 @@ struct BrowserApplication {
     app: Rc<RefCell<Option<AsyncFrontendApp<BrowserWebSocketTransport>>>>,
     task: Rc<RefCell<Option<LocalTaskHandle>>>,
     drop_task: Rc<RefCell<Option<LocalTaskHandle>>>,
+    fragment_task: Rc<RefCell<Option<LocalTaskHandle>>>,
     generation: Generation,
 }
 
@@ -104,6 +106,7 @@ impl BrowserApplication {
         let app = Rc::new(RefCell::new(None));
         let task = Rc::new(RefCell::new(None));
         let drop_task = Rc::new(RefCell::new(None));
+        let fragment_task = Rc::new(RefCell::new(None));
         let drop_sequence = Rc::new(Cell::new(0));
 
         let mut listeners = control_listeners(
@@ -113,6 +116,7 @@ impl BrowserApplication {
             generation,
             &drop_task,
             &drop_sequence,
+            &fragment_task,
         )?;
 
         let form = view::element(document, "metis-form")?;
@@ -120,6 +124,7 @@ impl BrowserApplication {
         let listener_state = Rc::clone(&state);
         let listener_app = Rc::clone(&app);
         let listener_task = Rc::clone(&task);
+        let listener_fragment_task = Rc::clone(&fragment_task);
         listeners.push(form.add_event_listener("submit", move |event| {
             event.prevent_default();
             submit(
@@ -127,6 +132,7 @@ impl BrowserApplication {
                 &listener_state,
                 &listener_app,
                 &listener_task,
+                &listener_fragment_task,
                 generation,
             );
         })?);
@@ -136,6 +142,7 @@ impl BrowserApplication {
             app,
             task,
             drop_task,
+            fragment_task,
             generation,
         };
         if let Some(config) = bridge_config {
@@ -218,6 +225,7 @@ impl Drop for BrowserApplication {
     fn drop(&mut self) {
         let _ = self.task.borrow_mut().take();
         let _ = self.drop_task.borrow_mut().take();
+        let _ = self.fragment_task.borrow_mut().take();
     }
 }
 
@@ -228,12 +236,19 @@ fn control_listeners(
     generation: Generation,
     drop_task: &Rc<RefCell<Option<LocalTaskHandle>>>,
     drop_sequence: &Rc<Cell<u64>>,
+    fragment_task: &Rc<RefCell<Option<LocalTaskHandle>>>,
 ) -> io::Result<Vec<WebEventListener>> {
     let root = view::element(document, "metis-app")?;
     let mut listeners = Vec::new();
     listeners.push(input_listener(document, state, app, &root)?);
     listeners.push(change_listener(document, state, &root)?);
     listeners.extend(dialog::listeners(document)?);
+    listeners.extend(fragment::listeners(
+        document,
+        app,
+        generation,
+        fragment_task,
+    )?);
     listeners.extend(pointer::listeners(document)?);
     listeners.extend(wheel::listeners(document)?);
     listeners.extend(gesture::listeners(document)?);
@@ -339,6 +354,7 @@ fn submit(
     state: &Rc<RefCell<BrowserState>>,
     app_slot: &Rc<RefCell<Option<AsyncFrontendApp<BrowserWebSocketTransport>>>>,
     task_slot: &Rc<RefCell<Option<LocalTaskHandle>>>,
+    fragment_task_slot: &Rc<RefCell<Option<LocalTaskHandle>>>,
     generation: Generation,
 ) {
     if !generation_is_current(generation) {
@@ -354,6 +370,12 @@ fn submit(
         if let Err(error) = view::render(document, &state) {
             view::set_mount_error(document, &error);
         }
+        return;
+    }
+    // Fragment dispatch temporarily owns the same frontend slot. Ignore a
+    // concurrent submit while that task holds it instead of translating the
+    // temporary absence into a false disconnected bridge state.
+    if fragment_task_slot.borrow().is_some() {
         return;
     }
     let Some(mut app) = app_slot.borrow_mut().take() else {
@@ -505,7 +527,7 @@ fn next_generation() -> io::Result<Generation> {
     APPLICATION_EPOCH.with_borrow_mut(Epoch::advance)
 }
 
-fn generation_is_current(generation: Generation) -> bool {
+pub(crate) fn generation_is_current(generation: Generation) -> bool {
     APPLICATION_EPOCH.with_borrow(|epoch| epoch.accepts(generation))
 }
 

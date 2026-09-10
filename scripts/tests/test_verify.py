@@ -9,6 +9,7 @@ import subprocess
 import sys
 import tempfile
 import unittest
+import zipfile
 
 
 SCRIPTS = pathlib.Path(__file__).resolve().parents[1]
@@ -188,9 +189,11 @@ class WorkflowContractTests(unittest.TestCase):
             "concurrency:",
             "cancel-in-progress:",
             "python scripts/verify.py",
-            "cargo install cargo-nextest --version 0.9.143 --locked",
-            "cargo install cargo-deny --version 0.20.2 --locked",
-            "cargo install wasm-bindgen-cli --version 0.2.128 --locked",
+            "taiki-e/install-action@a6b2e2dcd845ddd7f509ce4f3ed3d922b80cc5d9",
+            "cargo-nextest@0.9.143",
+            "cargo-deny@0.20.2",
+            "wasm-bindgen@0.2.128",
+            "checksum: true",
             "cargo fetch --locked --manifest-path Cargo.toml",
             "cargo-deny fetch db",
             "output/verification.json",
@@ -208,6 +211,12 @@ class WorkflowContractTests(unittest.TestCase):
         for fragment in required:
             with self.subTest(fragment=fragment):
                 self.assertIn(fragment, self.source)
+
+    def test_gate_tools_use_release_binaries_with_checksums(self):
+        self.assertNotIn("cargo install cargo-nextest", self.source)
+        self.assertNotIn("cargo install cargo-deny", self.source)
+        self.assertNotIn("cargo install wasm-bindgen-cli", self.source)
+        self.assertIn("checksum: true", self.source)
 
     def test_external_actions_and_guards_are_revision_pinned(self):
         references = re.findall(r"^\s*(?:-\s+)?uses:\s+([^@\s]+)@([^\s#]+)", self.source, re.MULTILINE)
@@ -308,6 +317,9 @@ class PythonBindingContractTests(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
         cls.root = SCRIPTS.parent
+        cls.validate_wheel_surface = staticmethod(
+            runpy.run_path(str(SCRIPTS / "python_binding.py"))["validate_wheel_surface"]
+        )
         cls.manifest = (cls.root / "crates" / "metis-python" / "Cargo.toml").read_text(encoding="utf-8")
         cls.pyproject = (cls.root / "crates" / "metis-python" / "pyproject.toml").read_text(encoding="utf-8")
         cls.workflow = (cls.root / ".github" / "workflows" / "python-release.yml").read_text(encoding="utf-8")
@@ -330,6 +342,54 @@ class PythonBindingContractTests(unittest.TestCase):
         self.assertTrue((package / "__init__.py").is_file())
         self.assertTrue((package / "_metis.pyi").is_file())
         self.assertTrue((package / "py.typed").is_file())
+        module_source = (
+            self.root / "crates" / "metis-python" / "src" / "lib.rs"
+        ).read_text(encoding="utf-8")
+        self.assertIn("#[pymodule(gil_used = false)]", module_source)
+
+    def write_wheel_fixture(self, tag, extra_members=()):
+        temporary = tempfile.TemporaryDirectory(prefix="metis-wheel-contract-")
+        self.addCleanup(temporary.cleanup)
+        root = pathlib.Path(temporary.name)
+        wheel = root / f"metis_rs-0.1.0-{tag}.whl"
+        dist_info = "metis_rs-0.1.0.dist-info"
+        members = {
+            "metis/__init__.py": b"from ._metis import Application\n",
+            "metis/_metis.pyi": b"class Application: ...\n",
+            "metis/py.typed": b"",
+            "metis/_metis.cp39-win_amd64.pyd": b"extension",
+            f"{dist_info}/METADATA": (
+                b"Metadata-Version: 2.1\n"
+                b"Name: metis-rs\n"
+                b"Version: 0.1.0\n"
+                b"Requires-Python: >=3.9\n"
+                b"Classifier: Typing :: Typed\n"
+            ),
+            f"{dist_info}/WHEEL": (
+                b"Wheel-Version: 1.0\n"
+                b"Generator: contract-test\n"
+                b"Root-Is-Purelib: false\n"
+                + f"Tag: {tag}\n".encode()
+            ),
+        }
+        members.update(extra_members)
+        with zipfile.ZipFile(wheel, "w") as archive:
+            for name, content in members.items():
+                archive.writestr(name, content)
+        return wheel
+
+    def test_wheel_validation_rejects_unexpected_native_extension(self):
+        wheel = self.write_wheel_fixture(
+            "cp39-abi3-win_amd64",
+            {"metis/extra.pyd": b"unexpected"},
+        )
+        with self.assertRaisesRegex(SystemExit, "expected one metis native extension"):
+            self.validate_wheel_surface(wheel)
+
+    def test_wheel_validation_rejects_substring_abi_tag(self):
+        wheel = self.write_wheel_fixture("cp39-notabi3-win_amd64")
+        with self.assertRaisesRegex(SystemExit, "exact stable abi3 tag"):
+            self.validate_wheel_surface(wheel)
 
     def test_release_caller_is_tokenless_and_uses_atlas_wheels(self):
         for fragment in (

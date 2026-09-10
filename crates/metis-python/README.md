@@ -39,6 +39,14 @@ the Python interpreter lock while the Rust backend evaluates the safety
 envelope. Invalid values raise `ValueError` with the stable Metis error code
 and trace identifier.
 
+The native module declares `gil_used = false` after a compile-time `Send + Sync`
+audit of every exposed Rust class. The test suite exercises concurrent mutation
+of one `Application` and checks `sys._is_gil_enabled()` when a free-threaded
+interpreter is running. The published CPython 3.9 `abi3` wheel remains the
+current release artifact; it cannot load on free-threaded CPython. Free-threaded
+distribution waits for the shared Atlas wheel workflow to add and verify a
+`cp3XXt` or `abi3t` matrix.
+
 The binding also exposes the Rust-owned software presentation contract through
 `RasterImage`, `Rect` and `Canvas`. Python supplies composition commands; Rust
 validates dimensions, clips placements and performs alpha compositing. The
@@ -46,6 +54,13 @@ canvas is a bounded frame surface, not a native window or a DICOM decoder.
 Native window and application lifecycle objects will be added only when their
 Rust contracts and independent host evidence are available. RITK remains the
 owner of DICOM parsing and medical-display semantics.
+
+`Application(width, height)` provides the bounded cross-platform software
+lifecycle. Read its `generation`, pass that token to `clear`, `to_rgba`, input
+methods and `poll_event`, then call `close`. `reopen` allocates a fresh surface
+and returns a new token; stale tokens fail with a typed `ValueError`. Events are
+FIFO and bounded by the Rust platform queue. The object synchronizes access
+with Rust locking and uses no Python callbacks or second event loop.
 
 The PyPI release caller uses GitHub Actions OIDC Trusted Publishing. It stores
 no PyPI token, signing key or developer private key in the repository.

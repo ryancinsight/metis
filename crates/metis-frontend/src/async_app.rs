@@ -4,10 +4,13 @@ use crate::{FormInputs, FormState};
 use metis_core::error::{ErrorCode, MetisError, Result};
 use metis_core::protocol::{
     CapabilityCatalogPayload, ClinicalCalcRequestPayload, ClinicalCalcResponsePayload,
-    ErrorResponsePayload, MessageType, RemoteEventPayload, TargetCapabilityPayload,
+    ErrorResponsePayload, FragmentAction, FragmentPatchSet, MessageType, PluginInvocationPayload,
+    RemoteEventPayload, TargetCapabilityPayload,
 };
 use metis_ipc::async_client::AsyncIpcClient;
-use metis_ipc::client::{CapabilityError, HandshakeError, TargetCapabilityError};
+use metis_ipc::client::{
+    CapabilityError, HandshakeError, PluginInvocationError, TargetCapabilityError,
+};
 use metis_ipc::transport::AsyncIpcTransport;
 use std::time::Duration;
 
@@ -174,6 +177,40 @@ impl<T: AsyncIpcTransport> AsyncFrontendApp<T> {
         }
     }
 
+    /// Dispatches one authenticated browser action and decodes its typed patch
+    /// response.
+    ///
+    /// The action body is owned by the UI plugin contract. This frontend only
+    /// carries the session token through the existing bounded plugin transport;
+    /// DOM target authorization remains a browser-host responsibility.
+    ///
+    /// # Errors
+    /// Returns local transport, encoding, or patch-decoding failures through
+    /// [`PluginInvocationError::Local`], or preserves the peer's typed
+    /// rejection through [`PluginInvocationError::Remote`].
+    pub async fn dispatch_fragment_action(
+        &mut self,
+        action: &FragmentAction,
+    ) -> std::result::Result<FragmentPatchSet, PluginInvocationError> {
+        let client = self.client.as_mut().ok_or_else(|| {
+            PluginInvocationError::Local(MetisError::transport(
+                ErrorCode::ConnectionClosed,
+                "Create a new browser app with a new transport to dispatch a fragment action",
+            ))
+        })?;
+        let token = client.active_token().cloned().ok_or_else(|| {
+            PluginInvocationError::Local(MetisError::capability(
+                ErrorCode::MissingCapability,
+                "Establish a session before dispatching a fragment action",
+            ))
+        })?;
+        let body = action.encode().map_err(PluginInvocationError::from)?;
+        let request = PluginInvocationPayload::new(token, "ui", "action", body)
+            .map_err(PluginInvocationError::from)?;
+        let response = client.invoke_plugin(&request).await?;
+        FragmentPatchSet::decode(response.body()).map_err(PluginInvocationError::from)
+    }
+
     /// Receives the next unsolicited event from the authenticated backend.
     ///
     /// Event delivery is separate from the correlated calculation response;
@@ -305,6 +342,21 @@ mod tests {
         assert!(
             matches!(app.state(), FormState::Failed(error) if error.code == ErrorCode::MissingCapability)
         );
+    }
+
+    #[test]
+    fn fragment_action_without_a_session_preserves_missing_capability() {
+        let mut app = AsyncFrontendApp::new(OpenTransport, Duration::from_secs(1)).expect("app");
+        let action =
+            FragmentAction::new(1, "status.describe", "metis-events", "session").expect("action");
+        let error = poll_ready(app.dispatch_fragment_action(&action)).expect_err("session");
+        match error {
+            PluginInvocationError::Local(error) => {
+                assert_eq!(error.code, ErrorCode::MissingCapability);
+            }
+            PluginInvocationError::Remote(_) => panic!("local session failure became remote"),
+            _ => panic!("unknown plugin invocation error variant"),
+        }
     }
 
     #[test]
