@@ -342,6 +342,12 @@ an owner. “Unsupported” cannot replace delivery of a required mobile/native 
 - Status: done; priority: P1; owner: Metis browser presentation; integrator: root; last-update: 2026-09-09; delivery: `c4bcd74`; dependencies: METIS-DICOM-002; risk: ownership drift
 - Outcome: browser labels, package README and fixtures describe generic bounded file handoff; format-specific parsing remains in RITK. Static contracts and the full locked gate pass on `c4bcd74`.
 
+<a id="METIS-DICOM-004"></a>
+## METIS-DICOM-004 — Remove stale DICOM claims from Metis docs [patch]
+- Status: in-progress; priority: P1; owner: Metis documentation; integrator: root; last-update: 2026-09-09; branch: `docs/dicom-ownership-004`; dependencies: METIS-DICOM-003; risk: ownership drift
+- Scope: active Metis backlog, verification evidence and ADR wording that describes the superseded browser format classification; preserve RITK links and clearly label historical captures.
+- Acceptance: current Metis behavior is described as bounded generic metadata/bytes only; no active artifact assigns DICOM scanning, decoding or viewer state to Metis; `rg` audit and full locked gate pass.
+
 <a id="METIS-DISTRIBUTION-001"></a>
 ## METIS-DISTRIBUTION-001 — Executables and Windows MSI [arch] [minor]
 - Status: done; delivery: `feat(distribution): Build executables and MSI`; decision: [ADR 0005](docs/adr/0005-application-distribution.md).
