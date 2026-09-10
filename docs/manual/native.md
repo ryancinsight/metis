@@ -123,8 +123,12 @@ rendered pixels:
 ![Format-neutral Metis native host frame](images/native-host-frame.svg)
 
 The older OS-window captures below demonstrate the visible form and WebView2
-shell. A future RITK integration adds a viewer-specific capture after RITK
-supplies validated DICOM frames; Metis remains format-neutral.
+shell. RITK's migrated Windows viewer session now supplies a validated frame
+through the format-neutral boundary; the integration is tracked in
+[RITK PR #267](https://github.com/ryancinsight/ritk/pull/267) and its
+[DICOM workflow manual](https://github.com/ryancinsight/ritk/blob/main/docs/manual/dicom-workflow.md).
+Metis remains format-neutral: it owns the host window, events and framebuffer,
+while RITK owns DICOM opening, decoding and medical display semantics.
 
 ## Embed packaged HTML and CSS with WebView2
 

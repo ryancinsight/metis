@@ -65,13 +65,14 @@ an owner. “Unsupported” cannot replace delivery of a required mobile/native 
 
 <a id="METIS-FRAGMENT-001"></a>
 ## METIS-FRAGMENT-001 — Authenticated typed browser actions [arch] [minor]
-- Status: review; priority: P1; owner: Metis protocol/browser; integrator: root; last-update: 2026-09-10; branch: `feat/framework-slices-001`; dependencies: METIS-BROWSER-001, METIS-COMMANDS-001, METIS-AUTHORITY-001; risk: remote markup and stale lifecycle
+- Status: review; priority: P1; owner: Metis protocol/browser; integrator: root; last-update: 2026-09-10; dependencies: METIS-BROWSER-001, METIS-COMMANDS-001, METIS-AUTHORITY-001; risk: remote markup and stale lifecycle
 - Scope: event→request→target→swap interaction inspired by htmx, with versioned authenticated actions and bounded typed patches; arbitrary markup, scripts, unrestricted selectors and navigation stay outside the contract.
 - Acceptance: capability-bound action requests, allowlisted targets, bounded patch count/bytes and atomic application; invalid capability/target/patch/size and stale generation return typed errors without changing prior state; mount/unmount releases listeners and tasks exactly once.
 - Demonstration: browser trace and inspected snapshots cover action success, rejected target/patch, stop/remount during an in-flight request and zero retained mounted controls.
 - Decision: [ADR 0022](docs/adr/0022-typed-browser-actions.md).
 - Completed increment: `FragmentAction`, `FragmentPatchSet`, the scoped `ui` plugin and the WASM target policy use the existing authenticated plugin envelope; all mutations are bounded text/attribute operations with generation checks and atomic preflight. No DICOM knowledge or dependency enters Metis; RITK remains the format and viewer owner.
 - Evidence: native focused suites pass 29/29 (`metis-core`), 32/32 (`metis-frontend`/`metis-backend`) and 34/34 (`metis-web`); [typed browser action verification](docs/VERIFICATION.md#typed-browser-action-verification--2026-09-09) and the [browser manual](docs/manual/browser.md#hypermedia-boundary) record the protocol and demonstration.
+- Reconciliation: the checksum-verified release-binary gate-tool workflow fix from stale `feat/framework-slices-001` is already in `main` through PR #41 (`e508b4c`); no duplicate patch or DICOM behavior change is required.
 - Residuals: configured WebDriver success/rejection/stale-generation captures and provider-private listener/allocation counts remain open. The exact full gate reports matching pixels and semantics with the reviewed capture baseline refreshed, and the locked WASM library build passes.
 
 <a id="METIS-SEC-001"></a>
