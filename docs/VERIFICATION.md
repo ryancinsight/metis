@@ -31,7 +31,7 @@ before reporting GitHub runner results or CI timing evidence.
 
 `.github/workflows/rust-release.yml` delegates release validation and crates.io
 publication to the Atlas reusable `semver-gate.yml` and `crates-publish.yml`
-workflows at Atlas revision `bf220afe5f008f1a4e4acedbeeed3ecc533855c7`.
+workflows at Atlas revision `848e6649c52e8226a9abf7bc336f8cbf0e39ba08`.
 The caller triggers only on a published GitHub Release or an explicit
 `workflow_dispatch`; it carries no registry secret and grants `id-token: write`
 only to the release-only reusable publish job. Manual dispatch calls the
@@ -93,10 +93,10 @@ and concurrent event mutation on one `Application`; the free-threaded probe
 runs on a free-threaded interpreter and asserts that importing the extension
 leaves the GIL disabled. On this host, the release wheel build and extracted
 suite pass with 19 tests and one expected skip under CPython 3.13.12, while no
-free-threaded interpreter is installed. The current release caller therefore
-continues to claim only its CPython 3.9 `abi3` wheel. A free-threaded artifact
-requires the shared Atlas workflow's `cp3XXt` or `abi3t` matrix, tracked by
-`METIS-PYTHON-004`.
+free-threaded interpreter is installed. The release caller now opts into the
+shared Atlas `cp314t`/`cp315t` and Python 3.15 `abi3t` matrix at revision
+`848e6649c52e8226a9abf7bc336f8cbf0e39ba08`; hosted artifact and value-test
+evidence remain pending under `METIS-PYTHON-004`.
 
 ## Python presentation verification — 2026-09-09
 
