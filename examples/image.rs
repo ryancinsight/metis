@@ -2,7 +2,8 @@
 
 use metis_platform::{Color, Framebuffer, Rect};
 use metis_ui_lang::{DisplayCommand, DisplayList, ImagePlacement, ImageSampling, RasterImage};
-use std::io::Write;
+#[path = "support/framebuffer.rs"]
+mod framebuffer_artifacts;
 
 fn main() -> Result<(), Box<dyn std::error::Error>> {
     std::fs::create_dir_all("output")?;
@@ -46,79 +47,13 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         assert_eq!(framebuffer.get_pixel(x, y), expected);
     }
     assert_eq!(framebuffer.get_pixel(0, 0), background);
-    write_bmp(&framebuffer, "output/image-placement.bmp")?;
-    write_svg(&framebuffer, "output/image-placement.svg")?;
-    Ok(())
-}
-
-fn write_bmp(framebuffer: &Framebuffer, path: &str) -> Result<(), Box<dyn std::error::Error>> {
-    let width = framebuffer.width();
-    let height = framebuffer.height();
-    let image_size = width
-        .checked_mul(height)
-        .and_then(|pixels| pixels.checked_mul(4))
-        .ok_or("BMP image size overflow")?;
-    let file = std::fs::File::create(path)?;
-    let mut output = std::io::BufWriter::new(file);
-    output.write_all(b"BM")?;
-    output.write_all(&(54_u32 + image_size).to_le_bytes())?;
-    output.write_all(&[0; 4])?;
-    output.write_all(&54_u32.to_le_bytes())?;
-    output.write_all(&40_u32.to_le_bytes())?;
-    output.write_all(&width.to_le_bytes())?;
-    output.write_all(&height.to_le_bytes())?;
-    output.write_all(&1_u16.to_le_bytes())?;
-    output.write_all(&32_u16.to_le_bytes())?;
-    output.write_all(&0_u32.to_le_bytes())?;
-    output.write_all(&image_size.to_le_bytes())?;
-    output.write_all(&[0; 16])?;
-    for row in framebuffer
-        .pixels()
-        .chunks_exact(usize::try_from(width)?)
-        .rev()
-    {
-        for pixel in row {
-            output.write_all(&pixel.to_le_bytes())?;
-        }
-    }
-    output.flush()?;
-    Ok(())
-}
-
-fn write_svg(framebuffer: &Framebuffer, path: &str) -> Result<(), Box<dyn std::error::Error>> {
-    let width = framebuffer.width();
-    let height = framebuffer.height();
-    let file = std::fs::File::create(path)?;
-    let mut output = std::io::BufWriter::new(file);
-    writeln!(
-        output,
-        "<svg xmlns=\"http://www.w3.org/2000/svg\" width=\"{width}\" height=\"{height}\" viewBox=\"0 0 {width} {height}\" shape-rendering=\"crispEdges\">"
+    std::fs::write(
+        "output/image-placement.bmp",
+        framebuffer_artifacts::bmp_bytes(&framebuffer)?,
     )?;
-    writeln!(output, "<title>Metis form software framebuffer</title>")?;
-    for y in 0..height {
-        let y = i32::try_from(y)?;
-        let mut x = 0_u32;
-        while x < width {
-            let x_i32 = i32::try_from(x)?;
-            let color = framebuffer.get_pixel(x_i32, y);
-            let mut length = 1_u32;
-            while x + length < width
-                && framebuffer.get_pixel(i32::try_from(x + length)?, y) == color
-            {
-                length += 1;
-            }
-            writeln!(
-                output,
-                "<path fill=\"#{:02x}{:02x}{:02x}\" fill-opacity=\"{}\" d=\"M{x} {y}h{length}v1H{x}z\"/>",
-                color.r,
-                color.g,
-                color.b,
-                f32::from(color.a) / 255.0
-            )?;
-            x += length;
-        }
-    }
-    writeln!(output, "</svg>")?;
-    output.flush()?;
+    std::fs::write(
+        "output/image-placement.svg",
+        framebuffer_artifacts::svg_text(&framebuffer)?,
+    )?;
     Ok(())
 }
