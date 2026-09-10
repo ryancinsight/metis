@@ -33,6 +33,11 @@ jobs:
       abi3: true
       abi3-python: "3.9"
       python-test-path: crates/metis-python/tests
+      free-threaded: true
+      free-threaded-versions: '["3.14t", "3.15t"]'
+      abi3t: true
+      abi3t-python: "3.15t"
+      abi3t-features: abi3t
 
   publish:
     if: startsWith(github.event.release.tag_name, 'metis-python-v')

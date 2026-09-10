@@ -166,10 +166,11 @@ an owner. “Unsupported” cannot replace delivery of a required mobile/native 
 
 <a id="METIS-PYTHON-004"></a>
 ## METIS-PYTHON-004 — Free-threaded Python wheel matrix [arch] [minor]
-- Status: todo; priority: P1; owner: Atlas integration; dependencies: METIS-PYTHON-003, ATLAS-PUBLISH-001; risk: shared release workflow and CPython ABI coverage
+- Status: review; priority: P1; owner: Metis delivery; integrator: root; dependencies: METIS-PYTHON-003, ATLAS-PUBLISH-001; risk: hosted CPython ABI coverage
 - Scope: extend Atlas's reusable Python wheel workflow with version-specific `cp3XXt` and Python 3.15 `abi3t` builds, installation tests and `sys._is_gil_enabled()` assertions; keep Metis's `abi3` caller and tokenless OIDC publication.
 - Acceptance: the shared workflow owns the matrix, Metis's release caller opts in without duplicating wheel logic, GIL and free-threaded wheels install and run the same value-semantic suite, and the manual/ADR record exact artifact support.
-- Re-open trigger: Atlas workflow input and a hosted free-threaded run are available.
+- Current increment: the release caller opts into Atlas `cp314t`/`cp315t` version-specific wheels and Python 3.15 `abi3t` wheels through the explicit `abi3t` package feature, while the default remains CPython 3.9 `abi3`. The caller and package use tokenless OIDC; musllinux is excluded from the `abi3t` job until a compatible 3.15t image exists. Hosted artifact and value-test evidence remain pending.
+- Re-open trigger: a hosted free-threaded run or Atlas contract change invalidates the declared matrix.
 
 <a id="METIS-MEMORY-001"></a>
 ## METIS-MEMORY-001 — Provider allocation count [patch]
