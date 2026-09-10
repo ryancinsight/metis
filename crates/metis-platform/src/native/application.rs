@@ -48,6 +48,28 @@ pub enum NativeHostError<E> {
     Application(E),
 }
 
+trait NativeSurfaceDriver {
+    fn wait_events(&mut self, timeout: Duration) -> io::Result<Vec<WindowEvent>>;
+
+    fn present(&mut self, framebuffer: &Framebuffer) -> io::Result<()>;
+
+    fn close(&mut self) -> io::Result<()>;
+}
+
+impl NativeSurfaceDriver for NativeSurface {
+    fn wait_events(&mut self, timeout: Duration) -> io::Result<Vec<WindowEvent>> {
+        NativeSurface::wait_events(self, timeout)
+    }
+
+    fn present(&mut self, framebuffer: &Framebuffer) -> io::Result<()> {
+        NativeSurface::present(self, framebuffer)
+    }
+
+    fn close(&mut self) -> io::Result<()> {
+        NativeSurface::close(self)
+    }
+}
+
 impl<E> fmt::Display for NativeHostError<E>
 where
     E: fmt::Display,
@@ -85,13 +107,26 @@ where
 /// batch.
 pub fn run_native_application<A>(
     config: &WindowConfig,
-    mut application: A,
+    application: A,
     wait: Duration,
 ) -> Result<(), NativeHostError<A::Error>>
 where
     A: NativeApplication,
 {
-    let mut surface = NativeSurface::new(config).map_err(NativeHostError::Surface)?;
+    let surface = NativeSurface::new(config).map_err(NativeHostError::Surface)?;
+    run_application_loop(surface, application, wait)
+}
+
+fn run_application_loop<S, A>(
+    mut surface: S,
+    application: A,
+    wait: Duration,
+) -> Result<(), NativeHostError<A::Error>>
+where
+    S: NativeSurfaceDriver,
+    A: NativeApplication,
+{
+    let mut application = application;
     surface
         .present(application.framebuffer())
         .map_err(NativeHostError::Surface)?;
@@ -133,7 +168,9 @@ fn is_terminal(event: &WindowEvent) -> bool {
 mod tests {
     use super::*;
     use crate::native::{MAX_WAIT_MILLISECONDS, WindowVisibility};
+    use std::collections::VecDeque;
     use std::io;
+    use std::sync::atomic::{AtomicBool, AtomicUsize, Ordering};
     use std::sync::{Arc, Mutex};
 
     #[derive(Debug)]
@@ -208,6 +245,110 @@ mod tests {
         }
     }
 
+    struct PresentedFrame {
+        width: u32,
+        height: u32,
+        pixels: Vec<u32>,
+    }
+
+    #[derive(Clone)]
+    struct RecordingTrace {
+        presentations: Arc<Mutex<Vec<PresentedFrame>>>,
+        close_calls: Arc<AtomicUsize>,
+        destroyed: Arc<AtomicBool>,
+        drops: Arc<AtomicUsize>,
+    }
+
+    struct RecordingSurface {
+        events: VecDeque<Vec<WindowEvent>>,
+        trace: RecordingTrace,
+    }
+
+    impl RecordingSurface {
+        fn new(events: impl IntoIterator<Item = Vec<WindowEvent>>) -> (Self, RecordingTrace) {
+            let trace = RecordingTrace {
+                presentations: Arc::new(Mutex::new(Vec::new())),
+                close_calls: Arc::new(AtomicUsize::new(0)),
+                destroyed: Arc::new(AtomicBool::new(false)),
+                drops: Arc::new(AtomicUsize::new(0)),
+            };
+            (
+                Self {
+                    events: events.into_iter().collect(),
+                    trace: trace.clone(),
+                },
+                trace,
+            )
+        }
+    }
+
+    impl NativeSurfaceDriver for RecordingSurface {
+        fn wait_events(&mut self, _timeout: Duration) -> io::Result<Vec<WindowEvent>> {
+            Ok(self.events.pop_front().unwrap_or_default())
+        }
+
+        fn present(&mut self, framebuffer: &Framebuffer) -> io::Result<()> {
+            self.trace
+                .presentations
+                .lock()
+                .expect("presentation trace lock remains healthy")
+                .push(PresentedFrame {
+                    width: framebuffer.width(),
+                    height: framebuffer.height(),
+                    pixels: framebuffer.pixels().to_vec(),
+                });
+            Ok(())
+        }
+
+        fn close(&mut self) -> io::Result<()> {
+            self.trace.close_calls.fetch_add(1, Ordering::SeqCst);
+            self.trace.destroyed.store(true, Ordering::SeqCst);
+            Ok(())
+        }
+    }
+
+    impl Drop for RecordingSurface {
+        fn drop(&mut self) {
+            self.trace.destroyed.store(true, Ordering::SeqCst);
+            self.trace.drops.fetch_add(1, Ordering::SeqCst);
+        }
+    }
+
+    struct PresentationApplication {
+        framebuffer: Framebuffer,
+        resized_frame: Option<Framebuffer>,
+    }
+
+    impl NativeApplication for PresentationApplication {
+        type Error = ProbeError;
+
+        fn framebuffer(&self) -> &Framebuffer {
+            &self.framebuffer
+        }
+
+        fn handle_events(&mut self, events: &[WindowEvent]) -> Result<NativeFlow, Self::Error> {
+            if events
+                .iter()
+                .any(|event| matches!(event, WindowEvent::CloseRequested))
+            {
+                return Ok(NativeFlow::Exit);
+            }
+            if events.iter().any(|event| {
+                matches!(
+                    event,
+                    WindowEvent::Resized {
+                        width: 3,
+                        height: 2
+                    }
+                )
+            }) {
+                self.framebuffer = self.resized_frame.take().expect("single resize fixture");
+                return Ok(NativeFlow::Continue { repaint: true });
+            }
+            Ok(NativeFlow::Continue { repaint: false })
+        }
+    }
+
     #[test]
     fn terminal_event_classification_is_explicit() {
         let close = [WindowEvent::CloseRequested];
@@ -216,6 +357,71 @@ mod tests {
         assert!(close.iter().any(is_terminal));
         assert!(destroyed.iter().any(is_destroyed));
         assert!(!input.iter().any(is_terminal));
+    }
+
+    #[test]
+    fn generic_host_presents_initial_and_resized_frames_then_closes() {
+        let mut initial = Framebuffer::new(2, 2).expect("bounded initial framebuffer");
+        initial.clear(crate::Color::BLUE);
+        let initial_pixels = initial.pixels().to_vec();
+        let mut resized = Framebuffer::new(3, 2).expect("bounded resized framebuffer");
+        resized.clear(crate::Color::GREEN);
+        let resized_pixels = resized.pixels().to_vec();
+        let application = PresentationApplication {
+            framebuffer: initial,
+            resized_frame: Some(resized),
+        };
+        let (surface, trace) = RecordingSurface::new([
+            vec![WindowEvent::Resized {
+                width: 3,
+                height: 2,
+            }],
+            vec![WindowEvent::CloseRequested],
+        ]);
+
+        run_application_loop(surface, application, Duration::ZERO).expect("recording host loop");
+
+        let presentations = trace
+            .presentations
+            .lock()
+            .expect("presentation trace lock remains healthy");
+        assert_eq!(presentations.len(), 2);
+        assert_eq!((presentations[0].width, presentations[0].height), (2, 2));
+        assert_eq!(presentations[0].pixels, initial_pixels);
+        assert_eq!((presentations[1].width, presentations[1].height), (3, 2));
+        assert_eq!(presentations[1].pixels, resized_pixels);
+        assert_eq!(trace.close_calls.load(Ordering::SeqCst), 1);
+        assert!(trace.destroyed.load(Ordering::SeqCst));
+        assert_eq!(trace.drops.load(Ordering::SeqCst), 1);
+    }
+
+    #[test]
+    fn generic_host_returns_after_destroyed_surface_without_reclosing() {
+        let (surface, trace) = RecordingSurface::new([vec![WindowEvent::Destroyed]]);
+        run_application_loop(surface, ProbeApplication::new(false), Duration::ZERO)
+            .expect("destroyed surface exits host");
+        assert_eq!(
+            trace
+                .presentations
+                .lock()
+                .expect("presentation trace lock remains healthy")
+                .len(),
+            1
+        );
+        assert_eq!(trace.close_calls.load(Ordering::SeqCst), 0);
+        assert!(trace.destroyed.load(Ordering::SeqCst));
+        assert_eq!(trace.drops.load(Ordering::SeqCst), 1);
+    }
+
+    #[test]
+    fn generic_host_drops_surface_after_application_error() {
+        let (surface, trace) = RecordingSurface::new([vec![WindowEvent::FocusGained]]);
+        let error = run_application_loop(surface, ProbeApplication::new(true), Duration::ZERO)
+            .expect_err("application error");
+        assert!(matches!(error, NativeHostError::Application(ProbeError)));
+        assert_eq!(trace.close_calls.load(Ordering::SeqCst), 0);
+        assert!(trace.destroyed.load(Ordering::SeqCst));
+        assert_eq!(trace.drops.load(Ordering::SeqCst), 1);
     }
 
     #[test]
