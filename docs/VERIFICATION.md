@@ -1412,6 +1412,21 @@ bound. Native database tests use the ordinary nextest 30/60-second budgets.
 These checks cover the Windows x64 MSI increment, not the remaining lifecycle
 requirements below. Native system calls are covered by host tests, not Miri.
 
+The developer lifecycle increment adds a real `metis init` scaffold, a bounded
+`dev --once` run and a Windows `dev --watch` loop. The focused locked nextest
+run passes 25/25 tests, including manifest-preserving scaffold creation,
+source/resource fingerprint changes, generated completion parity and linked
+input rejection (the latter records Windows error 1314 when the host does not
+grant symbolic-link creation). An end-to-end run creates the scaffold, compiles
+the generated Cargo workspace with `--locked` and prints
+`Métis application scaffold: ready`. An event-driven Windows host smoke starts
+the generated entry, edits its source twice and observes two marker writes and
+two reload messages; logs are kept outside the watched tree, so build output
+cannot create a reload loop. A separate malformed-source run exits with status 1 and
+reports Cargo's unclosed-delimiter diagnostic without launching an old binary.
+These command-level checks do not claim a GUI viewport or DICOM behavior.
+DICOM parsing, decoding and viewer state remain owned by RITK.
+
 
 Create/build/run using the CLI, deliberately introduce a compile error, fix it
 and exercise reload. Install locally built packages in isolated supported hosts;
