@@ -349,9 +349,10 @@ an owner. “Unsupported” cannot replace delivery of a required mobile/native 
 
 <a id="METIS-DISTRIBUTION-002"></a>
 ## METIS-DISTRIBUTION-002 — Developer application lifecycle [minor]
-- Status: todo; priority: P2; owner: Metis tooling; dependencies: METIS-DISTRIBUTION-001; risk: stale build/runtime state
+- Status: review; priority: P2; owner: Metis tooling; integrator: root; last-update: 2026-09-09; branch: `feat/distribution-lifecycle-002`; regions: `Cargo.toml`, `Cargo.lock`, `crates/metis-cli/Cargo.toml`, `crates/metis-cli/src/main.rs`, `crates/metis-cli/src/commands.rs`, `crates/metis-cli/src/init.rs`, `crates/metis-cli/src/dev.rs`, `crates/metis-cli/src/dev/watcher.rs`, `crates/metis-cli/src/process.rs`, `crates/metis-cli/README.md`, `scripts/verify.py`, `docs/manual/distribution.md`, `docs/VERIFICATION.md`, `docs/adr/0005-application-distribution.md`; dependencies: METIS-DISTRIBUTION-001; risk: stale build/runtime state
 - Scope: init/dev commands, generated help/completions and asset invalidation using the existing manifest; no second configuration grammar.
 - Acceptance: scaffold builds/runs, actual source/resource changes reload, invalid builds report and never run stale output; repeated reload retains bounded state. [V10](docs/VERIFICATION.md#V10).
+- Evidence: focused locked nextest 25/25, scaffold `--locked` run, event-driven Windows reload (two marker writes), malformed-source failure diagnostic pass, and full locked repository gate; DICOM remains owned by RITK.
 
 <a id="METIS-DISTRIBUTION-003"></a>
 ## METIS-DISTRIBUTION-003 — macOS and Linux installers [arch] [minor]

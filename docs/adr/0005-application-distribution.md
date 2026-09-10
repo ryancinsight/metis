@@ -17,6 +17,17 @@ tokenless through GitHub Actions OIDC. [METIS-PYTHON-001](../../backlog.md#METIS
 adds the `metis-rs` PyPI caller; its publish job uses the same OIDC model and
 does not carry a registry token or developer key.
 
+Revision 2026-09-09: [METIS-DISTRIBUTION-002](../../backlog.md#METIS-DISTRIBUTION-002)
+adds `init`, `dev` and `completions` to the same manifest-driven tool. `init`
+emits a complete locked Cargo workspace, `dev --once` is a bounded run on every
+host, and Windows `dev --watch` uses native directory notifications plus a
+content fingerprint. A failed generation never selects an earlier executable;
+the watcher excludes generated output from its fingerprint. Shell help and
+completions are generated from one command table, so a second command grammar
+cannot drift from the CLI. The generated entry is format-neutral: DICOM parsing,
+decoding, geometry and viewer state remain RITK responsibilities, while Métis
+provides the shell and presentation handoff.
+
 ## Decision
 
 One versioned application manifest declares identity, Cargo binary targets,

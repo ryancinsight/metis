@@ -2,7 +2,9 @@
 use crate::Result;
 use moirai_core::executor::TaskSpawner;
 use moirai_executor::ExecutorBuilder;
-use moirai_transport::process::{ProcessDropPolicy, ProcessSpec, ProcessSupervisor};
+use moirai_transport::process::{
+    ManagedProcess, ProcessDropPolicy, ProcessSpec, ProcessSupervisor,
+};
 use std::{
     ffi::OsString,
     io::Read,
@@ -11,6 +13,12 @@ use std::{
 };
 
 const CAPTURE_LIMIT: u64 = 16 * 1024 * 1024;
+
+#[derive(Clone, Copy)]
+pub(crate) enum Containment {
+    Required,
+    Uncontained,
+}
 
 pub(crate) fn tool(name: &str) -> Result<PathBuf> {
     let path = std::env::var_os("PATH").ok_or("PATH is absent")?;
@@ -21,10 +29,7 @@ pub(crate) fn tool(name: &str) -> Result<PathBuf> {
 }
 
 pub(crate) fn run(program: &Path, args: &[OsString], timeout: Duration) -> Result<()> {
-    let mut child = ProcessSupervisor::new().spawn(
-        ProcessSpec::new(program).args(args).tree_containment(),
-        ProcessDropPolicy::TerminateOnDrop,
-    )?;
+    let mut child = spawn(program, args, Containment::Required)?;
     let Some(status) = child.wait_timeout(timeout)? else {
         child.terminate_timeout(Duration::from_secs(1))?;
         return Err(format!(
@@ -43,6 +48,19 @@ pub(crate) fn run(program: &Path, args: &[OsString], timeout: Duration) -> Resul
         .into());
     }
     Ok(())
+}
+
+pub(crate) fn spawn(
+    program: &Path,
+    args: &[OsString],
+    containment: Containment,
+) -> Result<ManagedProcess> {
+    let spec = ProcessSpec::new(program).args(args);
+    let spec = match containment {
+        Containment::Required => spec.tree_containment(),
+        Containment::Uncontained => spec,
+    };
+    Ok(ProcessSupervisor::new().spawn(spec, ProcessDropPolicy::TerminateOnDrop)?)
 }
 
 pub(crate) fn capture(program: &Path, args: &[OsString], timeout: Duration) -> Result<Vec<u8>> {

@@ -80,7 +80,7 @@ impl Application {
         Ok((value, root))
     }
 
-    fn validate(&self) -> Result<()> {
+    pub(crate) fn validate(&self) -> Result<()> {
         if self.schema != 1 {
             return Err("unsupported application manifest schema".into());
         }

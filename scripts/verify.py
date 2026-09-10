@@ -306,9 +306,9 @@ def run_gate():
             if package["name"].startswith("metis"):
                 for dependency in package["dependencies"]:
                     provider = dependency.get("source") or ""
-                    # Serialization stays at declared text-boundary crates: the
-                    # CLI manifest and the WebView bridge; clinical crates stay
-                    # on the binary IPC contract.
+                    # Serialization stays at declared text boundaries: the CLI
+                    # manifest and the application protocol; clinical crates
+                    # stay on the binary IPC contract.
                     registry_boundary = (
                         provider.startswith("registry+")
                         and (

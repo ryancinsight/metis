@@ -36,6 +36,54 @@ lock; `python scripts/verify.py` uses the standalone resolution while retaining
 the shared build cache. Missing or ambiguous compiler artifacts are errors.
 Building runs the selected project's build scripts with your developer account.
 
+## Start a project and reload it
+
+Create a new application in a directory whose parent already exists:
+
+```powershell
+metis init .\sample-app
+metis dev .\sample-app\metis.json --once
+```
+
+`init` refuses an existing directory and writes `Cargo.toml`, a complete
+dependency-free `Cargo.lock`, `app/Cargo.toml`, `app/src/main.rs` and
+`metis.json`. The generated entry is intentionally format-neutral: it prints
+one supplied argument and has no DICOM, image or clinical-domain behavior.
+Replace that entry with the application you own, then keep the manifest's
+explicit binary and resource inventory synchronized with it.
+
+Use the Windows filesystem notification host for a live development session:
+
+```powershell
+metis dev .\sample-app\metis.json --watch
+```
+
+The watcher observes the manifest directory through a bounded native handle and
+hashes regular source/resource bytes. Cargo is run with `--locked` for every
+generation. A source or resource change terminates the contained child and
+starts a new Cargo run; changes under `.git`, `target`, `output` and
+`node_modules` are excluded from the fingerprint so compiler output cannot
+trigger a reload loop. If the manifest or source does not parse, or Cargo
+returns a failure status, the diagnostic is shown and no previously built
+executable is launched. Fix the input and save it again to retry. `--once` is
+available on every host and has a 300-second process deadline; `--watch`
+currently requires Windows filesystem notifications. Watch mode prints a
+readiness line before the first build, an idle line after each generation and a
+reload line for every accepted source or resource change.
+
+Generate completions from the same command descriptions used by `--help`:
+
+```powershell
+metis completions powershell | Out-File -Encoding utf8 metis-completion.ps1
+metis completions bash > metis-completion.bash
+metis completions fish > metis-completion.fish
+metis completions zsh > _metis
+```
+
+The generated scripts list `init`, `dev`, `build`, `package` and `completions`
+plus the `dev` lifecycle flags. They contain no credentials and do not change
+the manifest grammar.
+
 The installed Windows cabinet tool and MSI API supply packaging; no WiX/NSIS
 installation is needed. Cabinet staging paths must currently be ASCII. Legacy installer-tool paths
 must fit 259 UTF-16 characters, including generated staging components; known
