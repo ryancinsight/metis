@@ -326,6 +326,13 @@ an owner. “Unsupported” cannot replace delivery of a required mobile/native 
 - Acceptance: [V09](docs/VERIFICATION.md#V09) plus RITK opening/frames/color/grayscale prerequisites; required symbols/config/plugins and viewer actions are mapped/tested. Existing bugs cannot serve as parity oracles. No retained egui/eframe/Tauri runtime or forwarding shim in the completed migrated viewer.
 - Demonstration: actual same-study before/after workflows, verified voxels/physical coordinates and real host captures in the user manual; record JavaScript retained versus Rust/WASM replacement and matched memory evidence.
 
+<a id="METIS-RITK-HOST-001"></a>
+## METIS-RITK-HOST-001 — Format-neutral native frame host [arch] [minor]
+- Status: in-progress; priority: P1; owner: Metis platform + RITK viewer; integrator: root; branch: `feat/native-host-contract-001`; last-update: 2026-09-10; dependencies: METIS-DESKTOP-001; risk: viewer behavior lost at the host seam.
+- Scope: reusable Windows host loop over Moirai `WindowEvent` batches and application-produced `Framebuffer` values, with finite waits, repaint, resize, close and destruction; DICOM parsing, geometry and medical display remain exclusively in RITK.
+- Acceptance: the existing Metis form runs through the seam; focused tests cover initial presentation, empty-batch ticks, resize, event delivery, repaint, terminal events and typed application/surface errors; RITK can consume the contract without egui/eframe or a forwarding shim.
+- Demonstration: format-neutral native frame/event trace and manual capture linked from [RITK-SNAP-METIS-001](../ritk/backlog.md#RITK-SNAP-METIS-001); decision: [ADR 0024](docs/adr/0024-native-application-host.md).
+
 <a id="METIS-DICOM-001"></a>
 ## METIS-DICOM-001 — RITK-backed DICOM open boundary [arch] [minor]
 - Status: done; outcome: removed the duplicate GUI-side DICOM crate and retained RITK as the scanner, loader, geometry, and visual-workflow owner; [RITK-SNAP-DICOM-SUBSTRATE-001](../ritk/backlog.md#RITK-SNAP-DICOM-SUBSTRATE-001).
