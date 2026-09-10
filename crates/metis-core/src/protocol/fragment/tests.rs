@@ -1,6 +1,9 @@
 //! Regression tests for the fragment wire protocol.
 
 use super::*;
+// The manifest no longer re-exports the error vocabulary -- it names
+// modules now -- so the cases that assert on a code import it directly.
+use crate::error::ErrorCode;
 
 #[test]
 fn action_round_trip_preserves_generation_and_input() {
