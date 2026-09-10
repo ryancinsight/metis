@@ -342,10 +342,18 @@ class PythonBindingContractTests(unittest.TestCase):
         self.assertTrue((package / "__init__.py").is_file())
         self.assertTrue((package / "_metis.pyi").is_file())
         self.assertTrue((package / "py.typed").is_file())
-        module_source = (
-            self.root / "crates" / "metis-python" / "src" / "lib.rs"
-        ).read_text(encoding="utf-8")
-        self.assertIn("#[pymodule(gil_used = false)]", module_source)
+        # The declaration is what a free-threaded interpreter reads on import;
+        # which file in the crate carries it is a module-tree decision, and
+        # `#[pymodule]` emits `PyInit__metis` as `#[no_mangle]` from wherever
+        # it sits. Scanning the crate keeps the contract and lets `lib.rs`
+        # stay a manifest.
+        binding_source = "\n".join(
+            path.read_text(encoding="utf-8")
+            for path in sorted(
+                (self.root / "crates" / "metis-python" / "src").rglob("*.rs")
+            )
+        )
+        self.assertIn("#[pymodule(gil_used = false)]", binding_source)
 
     def write_wheel_fixture(self, tag, extra_members=()):
         temporary = tempfile.TemporaryDirectory(prefix="metis-wheel-contract-")
