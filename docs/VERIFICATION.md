@@ -132,7 +132,7 @@ assistive-technology or denial-probe evidence.
 
 ### Format-neutral native application host — 2026-09-10
 
-At Metis revision `bb1f4f626bc8c3c301d11d717d5521a0fffcd314`,
+At Metis revision `9934eeb5c05dedfdcd9c6da3088458b6ebaa07fe`,
 `metis-platform::native::NativeApplication` and
 `run_native_application` now own the reusable Windows frame/event loop. The
 application supplies its current `Framebuffer`, consumes complete Moirai
@@ -142,12 +142,19 @@ initial presentation, finite waiting, repaint dispatch and terminal-window
 cleanup. The `metis-app --metis-native-window` form runs through this contract;
 text, IME, submit, resize and clinical state remain in the application adapter.
 
-The focused platform/application gate passed 34/34 native tests with
-warning-denied Clippy. Host tests use real hidden HWNDs and cover readiness,
-initial presentation, empty-batch delivery, repaint reporting, typed
-application errors and typed finite-wait errors. This is a lifecycle and
-format-neutral seam check, not DICOM or viewer migration evidence; RITK remains
-the owner of DICOM parsing, geometry and medical display semantics.
+The focused platform/application gate passed 37/37 native tests with
+warning-denied Clippy. The deterministic host-driver test records exact
+initial and resized pixel vectors, changed dimensions, repaint dispatch and
+orderly close; companion tests cover destroyed-surface handling without a
+second close and surface destruction after an application error. Real hidden
+HWND tests cover readiness, empty-batch delivery, typed application errors and
+typed finite-wait errors. The inspected format-neutral frame is
+[`native-host-frame.png`](manual/images/native-host-frame.png), with its event
+sequence and ARGB values in
+[`native-host-trace.json`](manual/images/native-host-trace.json). This is a
+lifecycle and format-neutral seam check, not DICOM or viewer migration
+evidence; RITK remains the owner of DICOM parsing, geometry and medical display
+semantics.
 
 ### WebView2 consumer seam — 2026-09-09
 

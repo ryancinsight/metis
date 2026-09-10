@@ -75,11 +75,16 @@ migration; those remain separate backlog items.
 
 ## Verification
 
-At delivery revision `bb1f4f626bc8c3c301d11d717d5521a0fffcd314`, the native
-platform and application suites pass with warning-denied Clippy and nextest.
-The host tests create real hidden HWNDs and verify initial frame
-presentation, provider readiness, empty-batch delivery, repaint reporting,
-typed application errors and typed finite-wait errors. Existing provider tests
-cover close/destroy classification, retained-frame validation and two-window
-lifecycle behavior. No DICOM dependency, parser or viewer state enters Metis;
-RITK remains the format and medical-display owner.
+At delivery revision `9934eeb5c05dedfdcd9c6da3088458b6ebaa07fe`, the native
+platform and application suites pass with warning-denied Clippy and nextest. A
+deterministic host-driver test records the exact initial and resized pixel
+vectors, changed frame dimensions, repaint dispatch and orderly close;
+companion tests cover destroyed-surface handling without a second close and
+surface destruction after an application error.
+The host tests also create real hidden HWNDs and verify provider readiness,
+empty-batch delivery, typed application errors and typed finite-wait errors.
+Existing provider tests cover retained-frame validation and two-window
+lifecycle behavior. The frame-level capture and event trace are recorded in the
+[native manual](../manual/native.md#inspect-the-host-trace-and-frame). No DICOM
+dependency, parser or viewer state enters Metis; RITK remains the format and
+medical-display owner.

@@ -331,9 +331,9 @@ an owner. “Unsupported” cannot replace delivery of a required mobile/native 
 - Status: review; priority: P1; owner: Metis platform + RITK viewer; integrator: root; branch: `feat/native-host-contract-001`; last-update: 2026-09-10; delivery: `bb1f4f626bc8c3c301d11d717d5521a0fffcd314`; dependencies: METIS-DESKTOP-001; risk: viewer behavior lost at the host seam.
 - Scope: reusable Windows host loop over Moirai `WindowEvent` batches and application-produced `Framebuffer` values, with finite waits, repaint, resize, close and destruction; DICOM parsing, geometry and medical display remain exclusively in RITK.
 - Acceptance: the existing Metis form runs through the seam; focused tests cover initial presentation, empty-batch ticks, resize, event delivery, repaint, terminal events and typed application/surface errors; RITK can consume the contract without egui/eframe or a forwarding shim.
-- Demonstration: format-neutral native frame/event trace and manual capture linked from [RITK-SNAP-METIS-001](../ritk/backlog.md#RITK-SNAP-METIS-001); decision: [ADR 0024](docs/adr/0024-native-application-host.md).
-- Evidence: 34/34 focused nextest tests, warning-denied Clippy, format, rustdoc and doctests pass at the delivery revision; the existing form uses the generic host and no DICOM source enters Metis.
-- Residuals: RITK's viewer adapter, browser frame surface, cross-platform hosts, accessibility, permission probes and visual capture at this seam remain open under their owning items.
+- Demonstration: [native host trace](docs/manual/images/native-host-trace.json) and [inspected framebuffer capture](docs/manual/images/native-host-frame.png), linked from [RITK-SNAP-METIS-001](../ritk/backlog.md#RITK-SNAP-METIS-001); decision: [ADR 0024](docs/adr/0024-native-application-host.md).
+- Evidence: 37/37 focused nextest tests, warning-denied Clippy, format, rustdoc and doctests pass at `9934eeb5c05dedfdcd9c6da3088458b6ebaa07fe`; the deterministic host test records exact initial/resized pixels, repaint and cleanup, the existing form uses the generic host, and no DICOM source enters Metis.
+- Residuals: RITK's viewer adapter, browser frame surface, cross-platform hosts, accessibility and permission probes remain open under their owning items; the frame capture is format-neutral and does not establish a DICOM viewer workflow.
 
 <a id="METIS-DICOM-001"></a>
 ## METIS-DICOM-001 — RITK-backed DICOM open boundary [arch] [minor]
