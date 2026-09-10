@@ -75,16 +75,19 @@ migration; those remain separate backlog items.
 
 ## Verification
 
-At delivery revision `9934eeb5c05dedfdcd9c6da3088458b6ebaa07fe`, the native
+At code revision `dff3bd39aefb73a5c8f78f5e999392c804ac87dd`, the native
 platform and application suites pass with warning-denied Clippy and nextest. A
 deterministic host-driver test records the exact initial and resized pixel
 vectors, changed frame dimensions, repaint dispatch and orderly close;
 companion tests cover destroyed-surface handling without a second close and
-surface destruction after an application error.
-The host tests also create real hidden HWNDs and verify provider readiness,
-empty-batch delivery, typed application errors and typed finite-wait errors.
-Existing provider tests cover retained-frame validation and two-window
-lifecycle behavior. The frame-level capture and event trace are recorded in the
-[native manual](../manual/native.md#inspect-the-host-trace-and-frame). No DICOM
-dependency, parser or viewer state enters Metis; RITK remains the format and
-medical-display owner.
+surface destruction after an application error. The host tests also create real
+hidden HWNDs and verify provider readiness, empty-batch delivery, typed
+application errors and typed finite-wait errors. The committed
+`native_host_capture` example runs that public loop with a real hidden
+`Moirai NativeSurface`, records the event and presentation sequence, emits the
+manual trace and frame, and validates the bitmap's every pixel against the
+frame supplied to the host before succeeding. Existing provider tests cover
+retained-frame validation and two-window lifecycle behavior. The generated
+artifacts are linked from the [native manual](../manual/native.md#inspect-the-host-trace-and-frame).
+No DICOM dependency, parser or viewer state enters Metis; RITK remains the
+format and medical-display owner.
