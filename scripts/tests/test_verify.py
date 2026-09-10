@@ -343,7 +343,7 @@ class PythonBindingContractTests(unittest.TestCase):
         self.assertTrue((package / "_metis.pyi").is_file())
         self.assertTrue((package / "py.typed").is_file())
         module_source = (
-            self.root / "crates" / "metis-python" / "src" / "lib.rs"
+            self.root / "crates" / "metis-python" / "src" / "module.rs"
         ).read_text(encoding="utf-8")
         self.assertIn("#[pymodule(gil_used = false)]", module_source)
 

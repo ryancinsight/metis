@@ -1,6 +1,7 @@
 //! Regression tests for the fragment wire protocol.
 
 use super::*;
+use crate::error::ErrorCode;
 
 #[test]
 fn action_round_trip_preserves_generation_and_input() {
