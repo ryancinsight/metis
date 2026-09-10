@@ -328,12 +328,9 @@ an owner. “Unsupported” cannot replace delivery of a required mobile/native 
 
 <a id="METIS-RITK-HOST-001"></a>
 ## METIS-RITK-HOST-001 — Format-neutral native frame host [arch] [minor]
-- Status: review; priority: P1; owner: Metis platform + RITK viewer; integrator: root; branch: `feat/native-host-contract-001`; last-update: 2026-09-10; delivery: `dff3bd39aefb73a5c8f78f5e999392c804ac87dd`; dependencies: METIS-DESKTOP-001; risk: viewer behavior lost at the host seam.
-- Scope: reusable Windows host loop over Moirai `WindowEvent` batches and application-produced `Framebuffer` values, with finite waits, repaint, resize, close and destruction; DICOM parsing, geometry and medical display remain exclusively in RITK.
-- Acceptance: the existing Metis form runs through the seam; focused tests cover initial presentation, empty-batch ticks, resize, event delivery, repaint, terminal events and typed application/surface errors; RITK can consume the contract without egui/eframe or a forwarding shim.
-- Demonstration: the committed `native_host_capture` example runs a real hidden `Moirai NativeSurface` through `run_native_application` and emits [the host trace](docs/manual/images/native-host-trace.json), [the BMP frame](docs/manual/images/native-host-frame.bmp) and [the SVG frame](docs/manual/images/native-host-frame.svg), linked from [RITK-SNAP-METIS-001](../ritk/backlog.md#RITK-SNAP-METIS-001); decision: [ADR 0024](docs/adr/0024-native-application-host.md).
-- Evidence: 37/37 focused nextest tests, warning-denied Clippy, format, rustdoc and doctests pass at `9934eeb5c05dedfdcd9c6da3088458b6ebaa07fe`; `native_host_capture` records the actual resize and finite empty tick, validates the event/presentation sequence, and compares every emitted bitmap pixel to the frame supplied to the host; no DICOM source enters Metis.
-- Residuals: RITK's viewer adapter, browser frame surface, cross-platform hosts, accessibility and permission probes remain open under their owning items; the frame capture is format-neutral and does not establish a DICOM viewer workflow.
+- Status: done; priority: P1; owner: Metis platform + RITK viewer; integrator: root; delivery: `ecc00a52514ecca4dba439f2626f91a8a17cb07d`; decision: [ADR 0024](docs/adr/0024-native-application-host.md).
+- Outcome: `run_native_application` now hosts the existing Metis form and a real hidden Moirai surface; the committed `native_host_capture` example generates and round-trips the trace and BMP/SVG frame, while DICOM parsing, geometry and medical display remain exclusively in [RITK-SNAP-METIS-001](../ritk/backlog.md#RITK-SNAP-METIS-001).
+- Evidence: full `python scripts/verify.py` gate passed at `ecc00a5` (173 packages; native-host-capture and visual stages passed), focused 37/37 nextest plus warning-denied Clippy, format, docs and doctests; residual viewer adapter, browser, cross-platform, accessibility and permission work remains in owning items.
 
 <a id="METIS-DICOM-001"></a>
 ## METIS-DICOM-001 — RITK-backed DICOM open boundary [arch] [minor]
