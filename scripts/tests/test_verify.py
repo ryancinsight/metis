@@ -189,9 +189,11 @@ class WorkflowContractTests(unittest.TestCase):
             "concurrency:",
             "cancel-in-progress:",
             "python scripts/verify.py",
-            "cargo install cargo-nextest --version 0.9.143 --locked",
-            "cargo install cargo-deny --version 0.20.2 --locked",
-            "cargo install wasm-bindgen-cli --version 0.2.128 --locked",
+            "taiki-e/install-action@a6b2e2dcd845ddd7f509ce4f3ed3d922b80cc5d9",
+            "cargo-nextest@0.9.143",
+            "cargo-deny@0.20.2",
+            "wasm-bindgen@0.2.128",
+            "checksum: true",
             "cargo fetch --locked --manifest-path Cargo.toml",
             "cargo-deny fetch db",
             "output/verification.json",
@@ -209,6 +211,12 @@ class WorkflowContractTests(unittest.TestCase):
         for fragment in required:
             with self.subTest(fragment=fragment):
                 self.assertIn(fragment, self.source)
+
+    def test_gate_tools_use_release_binaries_with_checksums(self):
+        self.assertNotIn("cargo install cargo-nextest", self.source)
+        self.assertNotIn("cargo install cargo-deny", self.source)
+        self.assertNotIn("cargo install wasm-bindgen-cli", self.source)
+        self.assertIn("checksum: true", self.source)
 
     def test_external_actions_and_guards_are_revision_pinned(self):
         references = re.findall(r"^\s*(?:-\s+)?uses:\s+([^@\s]+)@([^\s#]+)", self.source, re.MULTILINE)
