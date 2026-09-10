@@ -36,6 +36,34 @@ class NeutralWorkspaceTests(unittest.TestCase):
                 self.assertEqual(root, physical)
 
 
+class FormatNeutralWorkspaceTests(unittest.TestCase):
+    """Keep DICOM parsing and medical display in the RITK boundary."""
+
+    @classmethod
+    def setUpClass(cls):
+        cls.verify = runpy.run_path(str(SCRIPTS / "verify.py"))
+
+    def test_format_neutral_workspace_accepts_host_packages(self):
+        metadata = {
+            "packages": [
+                {"id": "core", "name": "metis-core", "dependencies": []},
+                {"id": "web", "name": "metis-web", "dependencies": [{"name": "moirai-http"}]},
+            ],
+            "workspace_members": ["core", "web"],
+        }
+        self.verify["format_neutral_workspace"](metadata)
+
+    def test_format_neutral_workspace_rejects_dicom_dependency(self):
+        metadata = {
+            "packages": [
+                {"id": "host", "name": "metis-platform", "dependencies": [{"name": "ritk-dicom"}]},
+            ],
+            "workspace_members": ["host"],
+        }
+        with self.assertRaisesRegex(ValueError, "DICOM belongs in RITK"):
+            self.verify["format_neutral_workspace"](metadata)
+
+
 class BootstrapEvidenceTests(unittest.TestCase):
     """A failed new invocation must never retain an earlier green report."""
 

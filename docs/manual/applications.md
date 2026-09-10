@@ -222,11 +222,14 @@ ordering, selection and tree disclosure from real typed responses.
 
 The complete comparison is maintained in
 [ADR 0003](../adr/0003-framework-conformance.md). Iced 0.14 is included as a
-renderer, state-model and testing comparator; the current Metis build does not
-depend on Iced and this gallery contains no Iced runtime capture. The official
+renderer, state-model and testing comparator, and Axum 0.8 as a server/router
+comparator; the current Metis build does not depend on either and this gallery
+contains no Iced or Axum runtime capture. The official
 [Iced examples](https://docs.rs/crate/iced/0.14.0/source/examples/README.md)
 are the source reference for its native and web demonstrations. The former
 [`iced_web`](https://github.com/iced-rs/iced_web) DOM runtime is archived, so
 its existence does not establish HTML5/CSS compatibility for a current Iced
-application or for Metis. A future comparator capture requires a pinned,
-runnable fixture and belongs to its own verification item.
+application or for Metis. Axum documentation likewise does not establish a
+running Metis HTTP service; [ADR 0025](../adr/0025-axum-server-boundary.md)
+defines the conditional first-party boundary. Future comparator captures
+require pinned, runnable fixtures and belong to their own verification items.

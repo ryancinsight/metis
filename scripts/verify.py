@@ -42,6 +42,23 @@ def application_targets(metadata):
     return binaries
 
 
+def format_neutral_workspace(metadata):
+    """Keep medical-format dependencies in RITK rather than the Metis host."""
+    members = [package for package in metadata["packages"] if package["id"] in metadata["workspace_members"]]
+    violations = []
+    for package in members:
+        if "dicom" in package["name"].casefold():
+            violations.append(package["name"])
+        violations.extend(
+            f"{package['name']} -> {dependency['name']}"
+            for dependency in package.get("dependencies", ())
+            if "dicom" in dependency["name"].casefold()
+        )
+    if violations:
+        joined = ", ".join(sorted(set(violations)))
+        raise ValueError(f"Metis must remain format-neutral; DICOM belongs in RITK: {joined}")
+
+
 def resolution():
     """Preserve every byte of the standalone lock, rejecting overlay residue."""
     lock = LOCK.read_bytes()
@@ -291,6 +308,7 @@ def run_gate():
         if target is not None and pathlib.Path(metadata["target_directory"]).resolve() != target:
             raise SystemExit("Cargo target directory differs from the inherited shared target")
         application_targets(metadata)
+        format_neutral_workspace(metadata)
         source = source_state(metadata, configs)
         revision = execute("revision", ["git", "rev-parse", "HEAD"], seconds=30, cwd=ROOT).strip()
         provenance = {"mode": "standalone", "host": host, "sources": source, "run_nonce": run_nonce,

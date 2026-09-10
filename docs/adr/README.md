@@ -33,3 +33,4 @@
 | [0022](0022-typed-browser-actions.md) | Authenticated typed browser actions | Accepted |
 | [0023](0023-python-application-lifecycle.md) | Python application lifecycle | Accepted |
 | [0024](0024-native-application-host.md) | Native application host seam | Accepted |
+| [0025](0025-axum-server-boundary.md) | Axum server boundary comparison | Accepted |
