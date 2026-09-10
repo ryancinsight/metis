@@ -1400,9 +1400,10 @@ Metis implementations. Use a form/settings application and a document/result
 explorer to exercise different native surfaces. Neither canvas resemblance nor
 forwarding requests into Tauri proves migration completion.
 
-The named viewer target is RITK's `ritk-snap`, inspected at
-`341228ee3861c5e9a091dcf58de500510f948505`. It currently uses egui/eframe,
-including the web canvas entrypoint; no Tauri dependency was found in its
+The named viewer target is RITK's `ritk-snap`, inspected at the merged
+Métis-host increment `2f2058062c56acf7baffcdb1a9ed170a7ab7cbcc`. Its original
+path still uses egui/eframe, including the web canvas entrypoint, and the same
+binary now exposes `--metis-native`; no Tauri dependency was found in its
 manifest or workspace lock. It supplies the concrete egui migration scenario;
 a separate real Tauri fixture still establishes Tauri API/configuration coverage.
 Implementation and DICOM prerequisites belong to the
@@ -1431,28 +1432,34 @@ Required tests use small synthetic studies with known values and physical
 landmarks; missing external datasets cannot turn a required test into success.
 Source inspection found file-path dispatch, tied-series selection, frame-zero,
 RGB display and grayscale coverage gaps, now owned by the RITK prerequisites.
-The [RITK workflow manual](../../ritk/docs/manual/dicom-workflow.md) now records
+The [RITK workflow manual](../../ritk/docs/manual/dicom-workflow.md) records
 required synthetic file/byte pixel and coordinate checks, explicit acquisition
 selection, DICOMDIR membership, failed replacement and session restoration,
-plus a real Windows egui/eframe viewport capture and invalid-study rejection.
+plus real Windows egui/eframe and Métis-host captures with invalid-study
+rejection. The merged [RITK PR 267](https://github.com/ryancinsight/ritk/pull/267)
+keeps DICOM loading, decoding, geometry and viewer state in RITK and passes a
+validated `PresentationFrame` to the format-neutral Métis native host.
 RITK `8152f483` additionally verifies physical image proportions across layouts,
 rotations and zoom, with explicit rejection of collapsed screen rectangles;
 710 debug and 710 release viewer tests pass and the native capture is regenerated.
 That is original-viewer baseline evidence. Remaining patient-coordinate fusion,
 transformed measurements, media-directory semantics, resource bounds, frames,
-color and grayscale gaps keep their RITK acceptance
-items; none are established by a screenshot. Migrated-viewer captures must come
-from actual Métis execution and use the same synthetic studies. Browser host
-input and native host input retain separate verification requirements.
+color and grayscale gaps keep their RITK acceptance items; none are established
+by a screenshot. The first Métis-host capture comes from actual RITK execution
+and uses the same synthetic study, but it covers one frame handoff rather than
+full three-view parity. Browser host input and native host input retain separate
+verification requirements.
 
 Metis does not implement a DICOM parser or volume model. Its browser file-drop
 tests stop at the bounded named-byte handoff; RITK owns the subsequent scan,
-decode, geometry, and medical display contracts. The RITK
+decode, geometry, and medical display contracts. The first Métis native host
+consumes the validated RITK frame without moving those semantics across the
+repository boundary. The RITK
 [DICOM workflow](../../ritk/docs/manual/dicom-workflow.md) is the authoritative
 visual demonstration: it runs the real byte and filesystem loaders, asserts
 exact pixels and physical landmarks, and compares all three slice captures to
-reviewed images. A future Métis viewer capture must consume that RITK result
-through the presentation seam and must not duplicate the DICOM workflow.
+reviewed images. Full migration captures must continue to consume that RITK
+result through the presentation seam and must not duplicate the DICOM workflow.
 
 The format-neutral handoff follow-up removes the remaining browser-side DICOM
 candidate and Part 10 marker decisions. Metis now reports bounded file metadata

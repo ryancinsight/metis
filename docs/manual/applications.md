@@ -145,11 +145,11 @@ presentation.
 
 ## DICOM viewer migration baseline
 
-RITK's [synthetic DICOM workflow](https://github.com/ryancinsight/ritk/blob/8152f483/docs/manual/dicom-workflow.md)
-now includes a capture of the running egui/eframe viewer alongside exact
+RITK's [synthetic DICOM workflow](https://github.com/ryancinsight/ritk/blob/main/docs/manual/dicom-workflow.md)
+includes a capture of the running egui/eframe viewer alongside exact
 software slice images. Selected-study workflows landed in
 [RITK PR 236](https://github.com/ryancinsight/ritk/pull/236); physical display
-proportions and the current capture follow in
+proportions and the original viewer capture follow in
 [RITK PR 237](https://github.com/ryancinsight/ritk/pull/237) at `8152f483`.
 Its three-instance study has known decoded values,
 anisotropic spacing and physical coordinates; no patient data is required.
@@ -162,15 +162,20 @@ Physical image proportions now follow voxel spacing across layouts and texture
 rotations, with paint and hit testing sharing a validated screen rectangle.
 Patient-coordinate fusion and transformed measurement semantics remain required;
 correct image proportions alone do not establish either property.
-The manual explains the current input limits and how to reproduce both the
-pixel checks and native capture. These results establish the existing viewer
-baseline for [V09](../VERIFICATION.md#V09). Metis now provides a bounded browser
-named-byte batch handoff. RITK owns the scanner, decoder, volume geometry and
-medical display semantics; the presentation adapter passes the completed
-`(&str, &[u8])` batch to `ritk_io::scan_dicom_part10_bytes` and then consumes
-the RITK image/metadata result. Metis has no DICOM decoder or volume model.
-RITK host execution, browser input, multiframe/color presentation and matched
-memory measurements remain required before accepting the migration.
+The manual explains the current input limits and how to reproduce the pixel
+checks and native captures. These results establish the original viewer
+baseline for [V09](../VERIFICATION.md#V09). Metis provides a bounded browser
+named-byte batch handoff, while RITK owns the scanner, decoder, volume geometry
+and medical display semantics. The merged
+[RITK PR 267](https://github.com/ryancinsight/ritk/pull/267) adds
+`ritk-snap --metis-native`: RITK opens and decodes the study, produces a
+validated `PresentationFrame`, and Métis owns the native window, event pump and
+framebuffer. Metis has no DICOM decoder or volume model.
+
+The first Windows handoff opens the synthetic study, renders a real RITK frame,
+and rejects a missing study. Full migration acceptance still requires the
+three-view workflow, browser input integration, multiframe/color presentation,
+matched memory measurements, full app-window goldens and packaging evidence.
 
 The reproducible DICOM opening and visual workflow is maintained in the
 [RITK user manual](https://github.com/ryancinsight/ritk/blob/main/docs/manual/dicom-workflow.md).
