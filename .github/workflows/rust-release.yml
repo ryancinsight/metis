@@ -79,7 +79,7 @@ jobs:
   semver:
     name: SemVer gate (release)
     needs: identify
-    uses: ryancinsight/atlas/.github/workflows/semver-gate.yml@76eba18883595ad8906586d72de3c8b854cf3d7e
+    uses: ryancinsight/atlas/.github/workflows/semver-gate.yml@bf220afe5f008f1a4e4acedbeeed3ecc533855c7
     with:
       release-gate: true
       package: ${{ needs.identify.outputs.package }}
@@ -90,7 +90,7 @@ jobs:
   validate:
     needs: [identify, semver]
     if: github.event_name == 'workflow_dispatch'
-    uses: ryancinsight/atlas/.github/workflows/crates-publish.yml@76eba18883595ad8906586d72de3c8b854cf3d7e
+    uses: ryancinsight/atlas/.github/workflows/crates-publish.yml@bf220afe5f008f1a4e4acedbeeed3ecc533855c7
     permissions:
       contents: read
     with:
@@ -102,7 +102,7 @@ jobs:
   publish:
     needs: [identify, semver]
     if: github.event_name == 'release' && startsWith(github.event.release.tag_name, 'crate-')
-    uses: ryancinsight/atlas/.github/workflows/crates-publish.yml@76eba18883595ad8906586d72de3c8b854cf3d7e
+    uses: ryancinsight/atlas/.github/workflows/crates-publish.yml@bf220afe5f008f1a4e4acedbeeed3ecc533855c7
     permissions:
       contents: read
       id-token: write

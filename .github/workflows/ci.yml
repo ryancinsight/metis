@@ -107,21 +107,21 @@ jobs:
   workflow-lint:
     name: Workflows are valid
     if: github.event_name != 'pull_request' || github.event.pull_request.draft == false
-    uses: ryancinsight/atlas/.github/workflows/workflow-lint.yml@76eba18883595ad8906586d72de3c8b854cf3d7e
+    uses: ryancinsight/atlas/.github/workflows/workflow-lint.yml@bf220afe5f008f1a4e4acedbeeed3ecc533855c7
     permissions:
       contents: read
 
   lockfile:
     name: Lockfile integrity
     if: github.event_name != 'pull_request' || github.event.pull_request.draft == false
-    uses: ryancinsight/atlas/.github/workflows/lockfile-guard.yml@76eba18883595ad8906586d72de3c8b854cf3d7e
+    uses: ryancinsight/atlas/.github/workflows/lockfile-guard.yml@bf220afe5f008f1a4e4acedbeeed3ecc533855c7
     permissions:
       contents: read
 
   adr-index:
     name: ADR index is current
     if: github.event_name != 'pull_request' || github.event.pull_request.draft == false
-    uses: ryancinsight/atlas/.github/workflows/adr-index-guard.yml@76eba18883595ad8906586d72de3c8b854cf3d7e
+    uses: ryancinsight/atlas/.github/workflows/adr-index-guard.yml@bf220afe5f008f1a4e4acedbeeed3ecc533855c7
     with:
       strict: true
     permissions:
@@ -130,7 +130,7 @@ jobs:
   semver:
     name: Public API (informational)
     if: github.event_name == 'pull_request' && github.event.pull_request.draft == false
-    uses: ryancinsight/atlas/.github/workflows/semver-gate.yml@76eba18883595ad8906586d72de3c8b854cf3d7e
+    uses: ryancinsight/atlas/.github/workflows/semver-gate.yml@bf220afe5f008f1a4e4acedbeeed3ecc533855c7
     with:
       package: metis,metis-core,metis-backend,metis-frontend,metis-ipc,metis-ui-lang,metis-platform,metis-web
     permissions:
