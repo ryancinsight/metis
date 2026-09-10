@@ -1,7 +1,10 @@
 //! Windows-native window and `WebView2` adapters backed by Moirai.
 
+mod application;
 mod webview;
 mod window;
+
+pub use application::{NativeApplication, NativeFlow, NativeHostError, run_native_application};
 
 pub use webview::{
     MAX_WEBVIEW_EVENTS, MAX_WEBVIEW_MESSAGE_BYTES, MAX_WEBVIEW_MESSAGE_UNITS,

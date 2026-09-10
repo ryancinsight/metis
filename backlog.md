@@ -326,6 +326,12 @@ an owner. “Unsupported” cannot replace delivery of a required mobile/native 
 - Acceptance: [V09](docs/VERIFICATION.md#V09) plus RITK opening/frames/color/grayscale prerequisites; required symbols/config/plugins and viewer actions are mapped/tested. Existing bugs cannot serve as parity oracles. No retained egui/eframe/Tauri runtime or forwarding shim in the completed migrated viewer.
 - Demonstration: actual same-study before/after workflows, verified voxels/physical coordinates and real host captures in the user manual; record JavaScript retained versus Rust/WASM replacement and matched memory evidence.
 
+<a id="METIS-RITK-HOST-001"></a>
+## METIS-RITK-HOST-001 — Format-neutral native frame host [arch] [minor]
+- Status: done; priority: P1; owner: Metis platform + RITK viewer; integrator: root; delivery: `ecc00a52514ecca4dba439f2626f91a8a17cb07d`; decision: [ADR 0024](docs/adr/0024-native-application-host.md).
+- Outcome: `run_native_application` now hosts the existing Metis form and a real hidden Moirai surface; the committed `native_host_capture` example generates and round-trips the trace and BMP/SVG frame, while DICOM parsing, geometry and medical display remain exclusively in [RITK-SNAP-METIS-001](../ritk/backlog.md#RITK-SNAP-METIS-001).
+- Evidence: full `python scripts/verify.py` gate passed at `ecc00a5` (173 packages; native-host-capture and visual stages passed), focused 37/37 nextest plus warning-denied Clippy, format, docs and doctests; residual viewer adapter, browser, cross-platform, accessibility and permission work remains in owning items.
+
 <a id="METIS-DICOM-001"></a>
 ## METIS-DICOM-001 — RITK-backed DICOM open boundary [arch] [minor]
 - Status: done; outcome: removed the duplicate GUI-side DICOM crate and retained RITK as the scanner, loader, geometry, and visual-workflow owner; [RITK-SNAP-DICOM-SUBSTRATE-001](../ritk/backlog.md#RITK-SNAP-DICOM-SUBSTRATE-001).

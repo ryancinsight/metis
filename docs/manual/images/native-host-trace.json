@@ -1,0 +1,15 @@
+{
+  "schema": 2,
+  "source_revision": "dff3bd39aefb73a5c8f78f5e999392c804ac87dd",
+  "example": "native_host_capture",
+  "surface": "real hidden Moirai NativeSurface",
+  "host_result": "ok",
+  "event_batches": [
+    {"index": 0, "events": ["Resized { width: 320, height: 180 }"], "application_action": "replace framebuffer", "repaint": true},
+    {"index": 1, "events": [], "application_action": "exit", "repaint": false}
+  ],
+  "presentations": [
+    {"phase": "initial", "width": 320, "height": 180, "pixel_count": 57600, "pixel_checksum_fnv1a64": "0xe26da0980a8e17f5", "sample_argb8888": ["0xff1a365d", "0xff3182ce", "0xff1a365d", "0xff1a365d"]},
+    {"phase": "repaint", "width": 320, "height": 180, "pixel_count": 57600, "pixel_checksum_fnv1a64": "0x03221fa3455c9355", "sample_argb8888": ["0xff1a365d", "0xff38a169", "0xff1a365d", "0xff1a365d"]}
+  ]
+}

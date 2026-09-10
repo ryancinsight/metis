@@ -379,6 +379,32 @@ def run_gate():
                 seconds=300, cwd=ROOT)
         cargo("clippy", ["clippy", "--workspace", "--all-targets"], tail=["--", "-D", "warnings"])
         cargo("build", ["build", "--workspace", "--bins", "--examples"])
+        native_capture = pathlib.Path(metadata["target_directory"]) / "debug" / "examples" / (
+            "native_host_capture" + (".exe" if sys.platform == "win32" else "")
+        )
+        if sys.platform == "win32":
+            native_output = output_path("native-host")
+            execute(
+                "native-host-capture",
+                [
+                    str(native_capture),
+                    "--output",
+                    str(native_output),
+                    "--source-revision",
+                    revision,
+                ],
+                seconds=60,
+                cwd=ROOT,
+            )
+            native_trace_path = native_output / "native-host-trace.json"
+            if not native_trace_path.is_file():
+                raise SystemExit("native-host-capture did not emit its execution trace")
+            native_trace = json.loads(native_trace_path.read_text(encoding="utf-8"))
+            if native_trace.get("source_revision") != revision or native_trace.get("host_result") != "ok":
+                raise SystemExit("native-host-capture trace is not tied to the verified revision")
+            EVIDENCE["native_host"] = native_trace
+        else:
+            EVIDENCE["stages"]["native-host-capture"] = "skipped: Windows-only host"
         cargo("tests", ["nextest", "run", "--workspace", "--profile", "ci"])
         execute("python-binding", [sys.executable, str(ROOT / "scripts" / "python_binding.py")], seconds=720, cwd=ROOT)
         cargo("release-build", ["build", "--workspace", "--bins", "--release"])

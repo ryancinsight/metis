@@ -4,9 +4,10 @@ use metis_core::error::{ErrorCode, MetisError, Result};
 use metis_frontend::{FormState, FrontendApp};
 use metis_ipc::{IpcTransport, StreamTransport};
 use metis_platform::native::{
-    CompositionPhase, MouseButton, NativeSurface, WindowConfig, WindowEvent,
+    CompositionPhase, MouseButton, NativeApplication, NativeFlow, WindowConfig, WindowEvent,
+    run_native_application,
 };
-use metis_platform::{Color, Rect};
+use metis_platform::{Color, Framebuffer, Rect};
 use metis_ui_lang::{DisplayCommand, compute_layout};
 use std::io::{stdin, stdout};
 use std::time::Duration;
@@ -37,54 +38,62 @@ pub(crate) fn run(inputs: [String; 3]) -> Result<(), Box<dyn std::error::Error>>
     )?;
 
     let config = WindowConfig::new("Metis native form", INITIAL_WIDTH, INITIAL_HEIGHT)?;
-    let mut surface = NativeSurface::new(&config)?;
-    surface.present(app.framebuffer())?;
     eprintln!(
         "native_frontend_pid={pid} window={}x{}",
         app.framebuffer().width(),
         app.framebuffer().height()
     );
 
-    let mut patient_id = app.inputs().patient_id.clone();
-    run_event_loop(&mut app, &mut surface, pid, &mut patient_id)
+    let patient_id = app.inputs().patient_id.clone();
+    let application = NativeForm {
+        app,
+        pid,
+        patient_id,
+        focused: true,
+    };
+    run_native_application(&config, application, EVENT_WAIT)?;
+    Ok(())
 }
 
-fn run_event_loop<T: IpcTransport>(
-    app: &mut FrontendApp<T>,
-    surface: &mut NativeSurface,
+struct NativeForm<T> {
+    app: FrontendApp<T>,
     pid: u32,
-    patient_id: &mut String,
-) -> Result<(), Box<dyn std::error::Error>> {
-    let mut focused = true;
-    loop {
-        let events = surface.wait_events(EVENT_WAIT)?;
+    patient_id: String,
+    focused: bool,
+}
+
+impl<T: IpcTransport> NativeApplication for NativeForm<T> {
+    type Error = MetisError;
+
+    fn framebuffer(&self) -> &Framebuffer {
+        self.app.framebuffer()
+    }
+
+    fn handle_events(&mut self, events: &[WindowEvent]) -> Result<NativeFlow> {
         let mut repaint = false;
         for event in events {
             match event {
                 WindowEvent::CloseRequested
+                | WindowEvent::Destroyed
                 | WindowEvent::KeyDown {
                     virtual_key: ESCAPE_KEY,
                     ..
-                } => {
-                    surface.close()?;
-                    return Ok(());
-                }
-                WindowEvent::Destroyed => return Ok(()),
-                WindowEvent::FocusGained => focused = true,
+                } => return Ok(NativeFlow::Exit),
+                WindowEvent::FocusGained => self.focused = true,
                 WindowEvent::FocusLost => {
-                    focused = false;
-                    if app.composition().is_some() {
-                        app.set_composition(None)?;
+                    self.focused = false;
+                    if self.app.composition().is_some() {
+                        self.app.set_composition(None)?;
                         repaint = true;
                     }
                 }
                 WindowEvent::Resized { width, height }
-                    if width > 0
-                        && height > 0
-                        && (width != app.framebuffer().width()
-                            || height != app.framebuffer().height()) =>
+                    if *width > 0
+                        && *height > 0
+                        && (*width != self.app.framebuffer().width()
+                            || *height != self.app.framebuffer().height()) =>
                 {
-                    app.resize(width, height)?;
+                    self.app.resize(*width, *height)?;
                     repaint = true;
                 }
                 WindowEvent::DpiChanged { dpi } => {
@@ -95,9 +104,9 @@ fn run_event_loop<T: IpcTransport>(
                     y,
                     button: MouseButton::Left,
                 } => {
-                    focused = true;
-                    if submit_rect(app)?.contains(x, y) {
-                        submit(app, pid)?;
+                    self.focused = true;
+                    if submit_rect(&self.app)?.contains(*x, *y) {
+                        submit(&mut self.app, self.pid)?;
                         repaint = true;
                     }
                 }
@@ -105,37 +114,40 @@ fn run_event_loop<T: IpcTransport>(
                     virtual_key: RETURN_KEY,
                     repeated: false,
                 } => {
-                    submit(app, pid)?;
+                    submit(&mut self.app, self.pid)?;
                     repaint = true;
                 }
                 WindowEvent::KeyDown {
                     virtual_key: BACKSPACE_KEY,
                     ..
-                } if focused => {
-                    repaint |= remove_patient_character(app, patient_id)?;
+                } if self.focused => {
+                    repaint |= remove_patient_character(&mut self.app, &mut self.patient_id)?;
                 }
                 WindowEvent::TextInput { character } => {
-                    repaint |= focused && append_patient_character(app, patient_id, character)?;
+                    repaint |= self.focused
+                        && append_patient_character(
+                            &mut self.app,
+                            &mut self.patient_id,
+                            *character,
+                        )?;
                 }
-                WindowEvent::TextComposition { phase, text } if focused => {
+                WindowEvent::TextComposition { phase, text } if self.focused => {
                     repaint = true;
                     match phase {
                         CompositionPhase::Started | CompositionPhase::Updated => {
-                            app.set_composition(Some(text))?;
+                            self.app.set_composition(Some(text.clone()))?;
                         }
                         CompositionPhase::Committed => {
-                            app.set_composition(None)?;
-                            append_patient_text(app, patient_id, &text)?;
+                            self.app.set_composition(None)?;
+                            append_patient_text(&mut self.app, &mut self.patient_id, text)?;
                         }
-                        CompositionPhase::Canceled => app.set_composition(None)?,
+                        CompositionPhase::Canceled => self.app.set_composition(None)?,
                     }
                 }
                 _ => {}
             }
         }
-        if repaint {
-            surface.present(app.framebuffer())?;
-        }
+        Ok(NativeFlow::Continue { repaint })
     }
 }
 

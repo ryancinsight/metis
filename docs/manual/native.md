@@ -36,6 +36,96 @@ consumed by the host; preedit text stays transient and committed UTF-8 text uses
 the same bounded patient-field transition as ordinary text input. WebView2
 composition remains a separate host role.
 
+## Share the native frame/event loop
+
+Applications with a software framebuffer can use the reusable host contract
+instead of writing a second wait, repaint and close loop. The application keeps
+its own state and interprets the complete Moirai event batch; the host creates
+the window, presents the initial frame, waits for a finite duration and closes
+on a terminal event or `NativeFlow::Exit`:
+
+```rust,no_run
+use metis_core::error::MetisError;
+use metis_platform::native::{
+    run_native_application, NativeApplication, NativeFlow, WindowConfig, WindowEvent,
+};
+use metis_platform::{Color, Framebuffer};
+use std::time::Duration;
+
+struct ViewerApplication {
+    frame: Framebuffer,
+}
+
+impl NativeApplication for ViewerApplication {
+    type Error = MetisError;
+
+    fn framebuffer(&self) -> &Framebuffer {
+        &self.frame
+    }
+
+    fn handle_events(&mut self, events: &[WindowEvent]) -> Result<NativeFlow, Self::Error> {
+        if events.iter().any(|event| {
+            matches!(event, WindowEvent::CloseRequested | WindowEvent::Destroyed)
+        }) {
+            return Ok(NativeFlow::Exit);
+        }
+        Ok(NativeFlow::Continue { repaint: false })
+    }
+}
+
+let mut frame = Framebuffer::new(800, 600)?;
+frame.clear(Color::DARK_BLUE);
+let config = WindowConfig::new("My Metis application", 800, 600)?;
+run_native_application(
+    &config,
+    ViewerApplication { frame },
+    Duration::from_millis(250),
+)?;
+# Ok::<(), Box<dyn std::error::Error>>(())
+```
+
+An empty batch means that the finite wait expired and is still delivered to
+the application, so bounded animations or timers do not require a second event
+loop. A resize handler must replace its frame before returning `repaint: true`.
+The contract carries pixels and platform events only. RITK continues to scan,
+decode and interpret DICOM data and supplies the resulting viewer presentation
+to this boundary; no DICOM knowledge enters Metis.
+
+### Inspect the host trace and frame
+
+The committed `native_host_capture` example runs the real hidden
+`NativeSurface` through `run_native_application`; it does not use the
+in-memory test driver. Run it from a Windows checkout with a revision label:
+
+```powershell
+$revision = git rev-parse HEAD
+cargo run --locked --example native_host_capture -- --output output/native-host --source-revision $revision
+```
+
+The example records every event batch and framebuffer handed to the host in
+[`native-host-trace.json`](images/native-host-trace.json). The reviewed trace
+was generated at revision
+`dff3bd39aefb73a5c8f78f5e999392c804ac87dd`: the hidden window reports its
+320×180 readiness resize, the application replaces the blue frame with the
+green resized frame and requests one repaint, then exits on the finite empty
+tick. The trace includes the two presentation dimensions, deterministic pixel
+checksums and representative ARGB values. The example validates the event and
+presentation sequence before writing, then reads the trace back byte-for-byte.
+
+The paired [`native-host-frame.svg`](images/native-host-frame.svg) and
+[`native-host-frame.bmp`](images/native-host-frame.bmp) files are generated
+from the final framebuffer supplied to the real host. The example decodes the
+written bitmap and compares every row-major ARGB pixel to that presented
+frame; the SVG is also read back byte-for-byte. The image contains the
+software framebuffer only, so operating-system chrome cannot obscure the
+rendered pixels:
+
+![Format-neutral Metis native host frame](images/native-host-frame.svg)
+
+The older OS-window captures below demonstrate the visible form and WebView2
+shell. A future RITK integration adds a viewer-specific capture after RITK
+supplies validated DICOM frames; Metis remains format-neutral.
+
 ## Embed packaged HTML and CSS with WebView2
 
 `metis_platform::native::WebViewSurface` embeds the Moirai WebView2 provider in
@@ -201,13 +291,12 @@ does not model.
 The visible `metis-app` composition and its private-IPC workflow are now
 implemented. The provider tests exercise two independent hidden HWNDs and close
 and reopen one only after close, reusing its validated configuration; reopening
-a live surface is rejected. A native keyboard/IME journey is still required for
-V05 input acceptance; the hidden provider tests are lifecycle evidence, not
-visual evidence. The four committed captures above
-now establish the visible native and WebView2 initial/submit journeys, including
-the page-to-host bridge result. Physical resize/DPI and close/reopen captures,
-OS permission denial, native accessibility, an installed CJK or other IME
-journey, macOS/Linux providers, two-window captures and the viewer host
-remain V05 and migration work. Do not treat a successful Windows build or a
-hidden-window test as cross-platform, assistive-technology or permission
-evidence.
+a live surface is rejected. The host trace and framebuffer image above verify
+the format-neutral frame/event seam, while the four OS-window captures establish
+the visible native and WebView2 initial/submit journeys. A native keyboard/IME
+journey is still required for V05 input acceptance. Physical resize/DPI and
+close/reopen captures, OS permission denial, native accessibility, an installed
+CJK or other IME journey, macOS/Linux providers, two-window captures and the
+viewer host remain V05 and migration work. Do not treat a successful Windows
+build or a hidden-window test as cross-platform, assistive-technology or
+permission evidence.

@@ -30,3 +30,4 @@
 | [0019](0019-raster-display-command.md) | Raster display command | Accepted |
 | [0020](0020-python-presentation.md) | Python presentation surface | Accepted |
 | [0021](0021-browser-conformance-runner.md) | Cross-engine browser conformance runner | Accepted |
+| [0024](0024-native-application-host.md) | Native application host seam | Accepted |

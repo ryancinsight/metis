@@ -130,6 +130,35 @@ and macOS/Linux support remain open under [V05](#V05) and the linked backlog
 items; a hidden-window test and a passing build cannot replace real visual,
 assistive-technology or denial-probe evidence.
 
+### Format-neutral native application host — 2026-09-10
+
+At Metis revision `dff3bd39aefb73a5c8f78f5e999392c804ac87dd`,
+`metis-platform::native::NativeApplication` and
+`run_native_application` now own the reusable Windows frame/event loop. The
+application supplies its current `Framebuffer`, consumes complete Moirai
+`WindowEvent` batches (including an empty batch after a finite wait) and returns
+`NativeFlow::Continue { repaint }` or `NativeFlow::Exit`. The host owns only
+initial presentation, finite waiting, repaint dispatch and terminal-window
+cleanup. The `metis-app --metis-native-window` form runs through this contract;
+text, IME, submit, resize and clinical state remain in the application adapter.
+
+The focused platform/application gate passed 37/37 native tests with
+warning-denied Clippy. The deterministic host-driver test records exact
+initial and resized pixel vectors, changed dimensions, repaint dispatch and
+orderly close; companion tests cover destroyed-surface handling without a
+second close and surface destruction after an application error. Real hidden
+HWND tests cover readiness, empty-batch delivery, typed application errors and
+typed finite-wait errors. The committed `native_host_capture` example then
+runs the public host loop with a real hidden `Moirai NativeSurface`, records the
+two presented frames and finite empty tick, and validates the written BMP,
+SVG and JSON artifacts against that execution. The reviewed artifacts are
+[`native-host-frame.svg`](manual/images/native-host-frame.svg),
+[`native-host-frame.bmp`](manual/images/native-host-frame.bmp) and
+[`native-host-trace.json`](manual/images/native-host-trace.json). This is a
+lifecycle and format-neutral seam check, not DICOM or viewer migration
+evidence; RITK remains the owner of DICOM parsing, geometry and medical display
+semantics.
+
 ### WebView2 consumer seam — 2026-09-09
 
 Metis `metis-platform::native::WebViewSurface` now consumes Moirai main revision
