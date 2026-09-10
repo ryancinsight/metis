@@ -19,8 +19,10 @@ python scripts/python_binding.py
 The script builds a locked release wheel from
 `crates/metis-python/pyproject.toml`, extracts it into a temporary directory
 and runs the tests in `crates/metis-python/tests`. It does not install into the
-active interpreter. The wheel uses the CPython 3.9 stable ABI and includes the
-`py.typed` marker and `_metis.pyi` stub.
+active interpreter. Before extraction, the gate verifies the wheel's single
+native extension, `metis/__init__.py`, `py.typed`, `_metis.pyi`, typed package
+metadata, Python 3.9 floor and `abi3` tags. The wheel uses the CPython 3.9
+stable ABI.
 
 ## Calculate through Rust
 

@@ -73,9 +73,10 @@ the same offline policy check.
 
 `metis-python` is the only Metis crate that depends directly on PyO3. The local
 gate invokes `scripts/python_binding.py`, which builds a locked release wheel
-with `maturin`, extracts that generated artifact into a temporary directory and
-runs the provider-owned pytest suite against the extracted `metis._metis`
-extension. The suite compares adult and pediatric results with the Rust
+with `maturin`, validates the generated wheel's typed package members and
+`abi3` metadata, extracts that artifact into a temporary directory and runs the
+provider-owned pytest suite against the extracted `metis._metis` extension. The
+suite compares adult and pediatric results with the Rust
 formula, checks input sensitivity and rejects non-finite, out-of-range and
 envelope-violating values. The wheel contains the `metis` package,
 `py.typed` marker and `_metis.pyi` stub. The gate's wheel build and pytest
