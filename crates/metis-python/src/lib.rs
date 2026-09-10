@@ -5,10 +5,12 @@
 
 #![forbid(unsafe_code)]
 #![deny(missing_docs)]
+mod application;
 mod clinical;
 mod error;
 mod presentation;
 
+use application::Application;
 use clinical::{
     DrugConcentration, InfusionResult, PatientWeight, SafetyEnvelope, TargetDose,
     calculate_infusion_rate,
@@ -19,6 +21,7 @@ use pyo3::prelude::*;
 /// Native extension module loaded as `metis._metis`.
 #[pymodule]
 fn _metis(module: &Bound<'_, PyModule>) -> PyResult<()> {
+    module.add_class::<Application>()?;
     module.add_class::<PatientWeight>()?;
     module.add_class::<DrugConcentration>()?;
     module.add_class::<TargetDose>()?;

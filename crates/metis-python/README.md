@@ -47,6 +47,13 @@ Native window and application lifecycle objects will be added only when their
 Rust contracts and independent host evidence are available. RITK remains the
 owner of DICOM parsing and medical-display semantics.
 
+`Application(width, height)` provides the bounded cross-platform software
+lifecycle. Read its `generation`, pass that token to `clear`, `to_rgba`, input
+methods and `poll_event`, then call `close`. `reopen` allocates a fresh surface
+and returns a new token; stale tokens fail with a typed `ValueError`. Events are
+FIFO and bounded by the Rust platform queue. The object synchronizes access
+with Rust locking and uses no Python callbacks or second event loop.
+
 The PyPI release caller uses GitHub Actions OIDC Trusted Publishing. It stores
 no PyPI token, signing key or developer private key in the repository.
 

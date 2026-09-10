@@ -105,3 +105,30 @@ This binding increment does not expose native window classes or DICOM objects.
 Those surfaces will follow their public Rust contracts and host or decoder
 evidence, so the Python API cannot silently diverge from the desktop and web
 paths.
+
+## Own a bounded software application
+
+`Application` is the Python entry point for a Rust-owned virtual surface. It is
+portable across Python hosts because it does not create an operating-system
+window or run an event loop. The host supplies input and consumes frames.
+
+```python
+import metis
+
+app = metis.Application(2, 1)
+generation = app.generation
+app.clear(generation, 10, 20, 30, 255)
+app.key_down(generation, 41)
+assert app.poll_event(generation) == {"kind": "key_down", "key": 41}
+assert app.to_rgba(generation) == bytes((10, 20, 30, 255)) * 2
+app.close(generation)
+generation = app.reopen(2, 1)
+```
+
+The generation token makes close and reopen safe: operations from an earlier
+surface cannot write or read the new one. The event queue has a fixed capacity
+and rejects additional input with `ERR_RENDER_FAILURE`; draining is explicit
+through `poll_event`. `Application` is synchronized by Rust's `Mutex`, so
+concurrent Python calls share one state machine without callbacks, Python-owned
+framebuffer storage or a second event loop. Native window providers and RITK's
+DICOM decoding remain separate boundaries.
