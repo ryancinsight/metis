@@ -96,7 +96,5 @@ preflights all patches before DOM mutation and generation checks run before
 application.
 
 The browser manual documents the action/target/swap workflow and the
-authenticated demonstration. A configured WebDriver trace is still required
-for cross-engine visual evidence; the local WASM target is currently blocked by
-an existing 32-bit `mnemosyne-memory-core` overflowing-literal diagnostic, so
-no workaround or weakened lint is used.
+authenticated demonstration. The locked WASM library build passes; a
+configured WebDriver trace is still required for cross-engine visual evidence.

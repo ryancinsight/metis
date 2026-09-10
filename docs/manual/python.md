@@ -141,5 +141,7 @@ surface cannot write or read the new one. The event queue has a fixed capacity
 and rejects additional input with `ERR_RENDER_FAILURE`; draining is explicit
 through `poll_event`. `Application` is synchronized by Rust's `Mutex`, so
 concurrent Python calls share one state machine without callbacks, Python-owned
-framebuffer storage or a second event loop. Native window providers and RITK's
+framebuffer storage or a second event loop. The lock uses PyO3's
+interpreter-aware acquisition path, and Python objects are created after the
+state guard is released. Native window providers and RITK's
 DICOM decoding remain separate boundaries.

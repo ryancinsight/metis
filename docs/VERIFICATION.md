@@ -87,10 +87,11 @@ source warnings. The original native test build fails with E0382 in the threaded
 process-isolation test. No original OS sandbox or native-window evidence exists.
 
 The application lifecycle binding now performs a compile-time `Send + Sync`
-assertion for every exposed class and declares `gil_used = false`. The extracted
-wheel suite covers concurrent reads and concurrent event mutation on one
-`Application`; the free-threaded probe runs only when the interpreter reports
-that the GIL is disabled. On this host, the release wheel build and extracted
+assertion for every exposed class, uses PyO3's interpreter-aware mutex path and
+declares `gil_used = false`. The extracted wheel suite covers concurrent reads
+and concurrent event mutation on one `Application`; the free-threaded probe
+runs on a free-threaded interpreter and asserts that importing the extension
+leaves the GIL disabled. On this host, the release wheel build and extracted
 suite pass with 19 tests and one expected skip under CPython 3.13.12, while no
 free-threaded interpreter is installed. The current release caller therefore
 continues to claim only its CPython 3.9 `abi3` wheel. A free-threaded artifact
@@ -125,13 +126,10 @@ The native focused suites pass 29/29 (`metis-core`), 32/32
 (`metis-frontend` and `metis-backend`) and 34/34 (`metis-web`). The browser
 manual documents the Session details demonstration and the stop/remount
 generation case. A configured WebDriver endpoint is not available in this
-environment, so no new cross-engine screenshot is claimed and the reviewed
-visual baseline remains unchanged. The full gate reached the visual stage and
-all captures and probes matched their pixels; it stopped because the baseline
-metadata is stale for this revision. The WASM check is blocked before Metis
-compilation by the existing `mnemosyne-memory-core` 32-bit overflowing-literal
-diagnostic; weakening that lint is not an acceptable workaround. This action
-contract carries generic presentation data only. DICOM scanning, decoding,
+environment, so no new cross-engine screenshot is claimed. The exact full gate
+for this revision reached the visual stage, refreshed the reviewed baseline and
+matched all capture pixels and semantics; the WASM library build also passed.
+This action contract carries generic presentation data only. DICOM scanning, decoding,
 series selection, geometry and viewer state remain RITK-owned and are verified
 by the [RITK DICOM workflow](../../ritk/docs/manual/dicom-workflow.md).
 

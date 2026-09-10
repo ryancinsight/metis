@@ -28,8 +28,10 @@ mapping.
 The queue remains bounded by `metis-platform::MAX_EVENTS`; no callback is
 stored, no Python object crosses into Rust state, and no second event loop is
 created. Python receives a cold-boundary byte copy of the frame and a small
-dictionary for each event. Native windows remain provider-owned, while RITK
-continues to own DICOM parsing and medical-display semantics.
+dictionary for each event. The mutex uses PyO3's interpreter-aware lock path,
+and state guards drop before Python objects are constructed. Native windows
+remain provider-owned, while RITK continues to own DICOM parsing and
+medical-display semantics.
 
 ## Alternatives
 

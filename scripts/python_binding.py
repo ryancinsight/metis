@@ -10,6 +10,7 @@ import sys
 import tempfile
 import zipfile
 from email.parser import Parser
+from pathlib import PurePosixPath
 
 
 PHYSICAL_ROOT = pathlib.Path(__file__).resolve().parents[1]
@@ -50,7 +51,10 @@ def extract_wheel(wheel: pathlib.Path, destination: pathlib.Path) -> None:
 def validate_wheel_surface(wheel: pathlib.Path) -> None:
     """Verify the typed package and stable ABI metadata before extraction."""
     with zipfile.ZipFile(wheel) as archive:
-        members = set(archive.namelist())
+        member_names = archive.namelist()
+        members = set(member_names)
+        if len(member_names) != len(members):
+            raise SystemExit("wheel contains duplicate archive members")
         required = {
             "metis/__init__.py",
             "metis/_metis.pyi",
@@ -62,13 +66,15 @@ def validate_wheel_surface(wheel: pathlib.Path) -> None:
         if any("__pycache__/" in member or member.endswith(".pyc") for member in members):
             raise SystemExit("wheel contains generated Python bytecode")
 
-        extensions = sorted(
+        native_extensions = sorted(
             member
             for member in members
-            if member.startswith("metis/_metis.") and member not in required
+            if PurePosixPath(member).suffix.lower() in {".pyd", ".so", ".dylib"}
         )
-        if len(extensions) != 1:
-            raise SystemExit(f"expected one native extension, found {extensions}")
+        if len(native_extensions) != 1 or not native_extensions[0].startswith("metis/_metis."):
+            raise SystemExit(
+                f"expected one metis native extension, found {native_extensions}"
+            )
 
         metadata_members = sorted(
             member for member in members if member.endswith(".dist-info/METADATA")
@@ -96,11 +102,22 @@ def validate_wheel_surface(wheel: pathlib.Path) -> None:
             archive.read(wheel_members[0]).decode("utf-8")
         )
         tags = wheel_metadata.get_all("Tag", [])
-        if not tags or not any("abi3" in tag for tag in tags):
-            raise SystemExit(f"wheel metadata has no stable abi3 tag: {tags}")
+        abi3_tags = [
+            tag
+            for tag in tags
+            if len(tag.split("-")) == 3 and tag.split("-")[1] == "abi3"
+        ]
+        if not abi3_tags:
+            raise SystemExit(f"wheel metadata has no exact stable abi3 tag: {tags}")
 
-    if "-abi3-" not in wheel.name:
-        raise SystemExit(f"wheel filename has no abi3 tag: {wheel.name}")
+    filename_parts = wheel.name.removesuffix(".whl").split("-")
+    if len(filename_parts) < 5 or filename_parts[-2] != "abi3":
+        raise SystemExit(f"wheel filename has no exact abi3 tag: {wheel.name}")
+    filename_tag = "-".join(filename_parts[-3:])
+    if filename_tag not in tags:
+        raise SystemExit(
+            f"wheel filename tag {filename_tag!r} is absent from WHEEL metadata"
+        )
 
 
 def main() -> None:

@@ -72,7 +72,7 @@ an owner. “Unsupported” cannot replace delivery of a required mobile/native 
 - Decision: [ADR 0022](docs/adr/0022-typed-browser-actions.md).
 - Completed increment: `FragmentAction`, `FragmentPatchSet`, the scoped `ui` plugin and the WASM target policy use the existing authenticated plugin envelope; all mutations are bounded text/attribute operations with generation checks and atomic preflight. No DICOM knowledge or dependency enters Metis; RITK remains the format and viewer owner.
 - Evidence: native focused suites pass 29/29 (`metis-core`), 32/32 (`metis-frontend`/`metis-backend`) and 34/34 (`metis-web`); [typed browser action verification](docs/VERIFICATION.md#typed-browser-action-verification--2026-09-09) and the [browser manual](docs/manual/browser.md#hypermedia-boundary) record the protocol and demonstration.
-- Residuals: configured WebDriver success/rejection/stale-generation captures and provider-private listener/allocation counts remain open; the WASM check is blocked by the existing first-party `mnemosyne-memory-core` overflowing-literal diagnostic and is not weakened. The exact full gate at `bf6a9a2` reports matching pixels and semantics with the reviewed capture baseline refreshed.
+- Residuals: configured WebDriver success/rejection/stale-generation captures and provider-private listener/allocation counts remain open. The exact full gate reports matching pixels and semantics with the reviewed capture baseline refreshed, and the locked WASM library build passes.
 
 <a id="METIS-SEC-001"></a>
 ## METIS-SEC-001 — Backend authority [arch] [patch]

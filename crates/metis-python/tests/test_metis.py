@@ -2,6 +2,7 @@
 
 import math
 import sys
+import sysconfig
 from concurrent.futures import ThreadPoolExecutor
 
 import pytest
@@ -202,6 +203,11 @@ def test_application_serializes_concurrent_mutation() -> None:
 
 def test_free_threaded_runtime_keeps_the_gil_disabled() -> None:
     gil_probe = getattr(sys, "_is_gil_enabled", None)
-    if gil_probe is None or gil_probe():
-        pytest.skip("free-threaded CPython is required for this runtime probe")
+    gil_disabled_build = sysconfig.get_config_var("Py_GIL_DISABLED") == 1
+    soabi = sysconfig.get_config_var("SOABI") or ""
+    abi_name = soabi.split("-", 1)[0]
+    gil_disabled_build = gil_disabled_build or abi_name.endswith("t")
+    if not gil_disabled_build:
+        pytest.skip("a free-threaded CPython build is required for this runtime probe")
+    assert gil_probe is not None, "free-threaded CPython must expose _is_gil_enabled"
     assert gil_probe() is False

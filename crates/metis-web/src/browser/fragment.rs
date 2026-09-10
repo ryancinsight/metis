@@ -1,6 +1,6 @@
 //! Browser-side target policy for typed fragment responses.
 
-use metis_core::protocol::{FragmentPatch, FragmentPatchSet, MAX_FRAGMENT_ATTRIBUTE_BYTES};
+use metis_core::protocol::{FragmentPatchSet, MAX_FRAGMENT_ATTRIBUTE_BYTES};
 
 const TARGET_IDS: &[&str] = &[
     "metis-status",
@@ -75,9 +75,7 @@ pub(crate) fn listeners(
     generation: crate::epoch::Generation,
     task_slot: &std::rc::Rc<std::cell::RefCell<Option<moirai_pal::wasm::LocalTaskHandle>>>,
 ) -> std::io::Result<Vec<moirai_pal::wasm::WebEventListener>> {
-    use moirai_pal::wasm::{
-        LocalTaskHandle, WebDocument, WebEventListener, spawn_local_with_handle,
-    };
+    use moirai_pal::wasm::{LocalTaskHandle, WebDocument, spawn_local_with_handle};
     use std::cell::RefCell;
     use std::io::{Error, ErrorKind};
     use std::rc::Rc;
@@ -204,6 +202,7 @@ pub(crate) fn apply_patch_set(
 #[cfg(test)]
 mod tests {
     use super::*;
+    use metis_core::protocol::FragmentPatch;
 
     #[test]
     fn target_policy_accepts_mounted_status_surfaces_only() {

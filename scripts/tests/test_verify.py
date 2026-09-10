@@ -9,6 +9,7 @@ import subprocess
 import sys
 import tempfile
 import unittest
+import zipfile
 
 
 SCRIPTS = pathlib.Path(__file__).resolve().parents[1]
@@ -308,6 +309,9 @@ class PythonBindingContractTests(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
         cls.root = SCRIPTS.parent
+        cls.validate_wheel_surface = staticmethod(
+            runpy.run_path(str(SCRIPTS / "python_binding.py"))["validate_wheel_surface"]
+        )
         cls.manifest = (cls.root / "crates" / "metis-python" / "Cargo.toml").read_text(encoding="utf-8")
         cls.pyproject = (cls.root / "crates" / "metis-python" / "pyproject.toml").read_text(encoding="utf-8")
         cls.workflow = (cls.root / ".github" / "workflows" / "python-release.yml").read_text(encoding="utf-8")
@@ -334,6 +338,50 @@ class PythonBindingContractTests(unittest.TestCase):
             self.root / "crates" / "metis-python" / "src" / "lib.rs"
         ).read_text(encoding="utf-8")
         self.assertIn("#[pymodule(gil_used = false)]", module_source)
+
+    def write_wheel_fixture(self, tag, extra_members=()):
+        temporary = tempfile.TemporaryDirectory(prefix="metis-wheel-contract-")
+        self.addCleanup(temporary.cleanup)
+        root = pathlib.Path(temporary.name)
+        wheel = root / f"metis_rs-0.1.0-{tag}.whl"
+        dist_info = "metis_rs-0.1.0.dist-info"
+        members = {
+            "metis/__init__.py": b"from ._metis import Application\n",
+            "metis/_metis.pyi": b"class Application: ...\n",
+            "metis/py.typed": b"",
+            "metis/_metis.cp39-win_amd64.pyd": b"extension",
+            f"{dist_info}/METADATA": (
+                b"Metadata-Version: 2.1\n"
+                b"Name: metis-rs\n"
+                b"Version: 0.1.0\n"
+                b"Requires-Python: >=3.9\n"
+                b"Classifier: Typing :: Typed\n"
+            ),
+            f"{dist_info}/WHEEL": (
+                b"Wheel-Version: 1.0\n"
+                b"Generator: contract-test\n"
+                b"Root-Is-Purelib: false\n"
+                + f"Tag: {tag}\n".encode()
+            ),
+        }
+        members.update(extra_members)
+        with zipfile.ZipFile(wheel, "w") as archive:
+            for name, content in members.items():
+                archive.writestr(name, content)
+        return wheel
+
+    def test_wheel_validation_rejects_unexpected_native_extension(self):
+        wheel = self.write_wheel_fixture(
+            "cp39-abi3-win_amd64",
+            {"metis/extra.pyd": b"unexpected"},
+        )
+        with self.assertRaisesRegex(SystemExit, "expected one metis native extension"):
+            self.validate_wheel_surface(wheel)
+
+    def test_wheel_validation_rejects_substring_abi_tag(self):
+        wheel = self.write_wheel_fixture("cp39-notabi3-win_amd64")
+        with self.assertRaisesRegex(SystemExit, "exact stable abi3 tag"):
+            self.validate_wheel_surface(wheel)
 
     def test_release_caller_is_tokenless_and_uses_atlas_wheels(self):
         for fragment in (

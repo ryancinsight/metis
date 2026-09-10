@@ -4,6 +4,7 @@ use crate::error::map_error;
 use metis_core::error::{ErrorCode, MetisError, Result};
 use metis_platform::{Color, PlatformEvent, PlatformSurface};
 use pyo3::prelude::*;
+use pyo3::sync::MutexExt;
 use pyo3::types::{PyBytes, PyDict};
 use std::sync::{Mutex, MutexGuard};
 
@@ -26,9 +27,9 @@ pub(crate) struct Application {
 }
 
 impl Application {
-    fn lock(&self) -> PyResult<MutexGuard<'_, ApplicationState>> {
+    fn lock(&self, py: Python<'_>) -> PyResult<MutexGuard<'_, ApplicationState>> {
         self.state
-            .lock()
+            .lock_py_attached(py)
             .map_err(|_| map_error(&lifecycle_error("Application state lock is poisoned")))
     }
 
@@ -72,85 +73,108 @@ impl Application {
 
     /// Returns the generation token required by operations on the current surface.
     #[getter]
-    fn generation(&self) -> PyResult<u64> {
-        Ok(self.lock()?.generation)
+    fn generation(&self, py: Python<'_>) -> PyResult<u64> {
+        Ok(self.lock(py)?.generation)
     }
 
     /// Returns the current surface width.
     #[getter]
-    fn width(&self) -> PyResult<u32> {
-        let state = self.lock()?;
-        state
-            .surface
-            .as_ref()
-            .map(|surface| surface.framebuffer.width())
-            .ok_or_else(|| map_error(&lifecycle_error("Application is closed")))
+    fn width(&self, py: Python<'_>) -> PyResult<u32> {
+        let result = {
+            let state = self.lock(py)?;
+            state
+                .surface
+                .as_ref()
+                .map(|surface| surface.framebuffer.width())
+                .ok_or_else(|| lifecycle_error("Application is closed"))
+        };
+        result.map_err(|error| map_error(&error))
     }
 
     /// Returns the current surface height.
     #[getter]
-    fn height(&self) -> PyResult<u32> {
-        let state = self.lock()?;
-        state
-            .surface
-            .as_ref()
-            .map(|surface| surface.framebuffer.height())
-            .ok_or_else(|| map_error(&lifecycle_error("Application is closed")))
+    fn height(&self, py: Python<'_>) -> PyResult<u32> {
+        let result = {
+            let state = self.lock(py)?;
+            state
+                .surface
+                .as_ref()
+                .map(|surface| surface.framebuffer.height())
+                .ok_or_else(|| lifecycle_error("Application is closed"))
+        };
+        result.map_err(|error| map_error(&error))
     }
 
     /// Clears the current framebuffer after validating its generation token.
-    fn clear(&self, generation: u64, red: u8, green: u8, blue: u8, alpha: u8) -> PyResult<()> {
-        let mut state = self.lock()?;
-        Self::active_surface(&mut state, generation)
-            .map_err(|error| map_error(&error))?
-            .framebuffer
-            .clear(Color::rgba(red, green, blue, alpha));
-        Ok(())
+    fn clear(
+        &self,
+        py: Python<'_>,
+        generation: u64,
+        red: u8,
+        green: u8,
+        blue: u8,
+        alpha: u8,
+    ) -> PyResult<()> {
+        let result = {
+            let mut state = self.lock(py)?;
+            Self::active_surface(&mut state, generation).map(|surface| {
+                surface
+                    .framebuffer
+                    .clear(Color::rgba(red, green, blue, alpha));
+            })
+        };
+        result.map_err(|error| map_error(&error))
     }
 
     /// Returns a bounded copy of the current row-major RGBA framebuffer.
     fn to_rgba<'py>(&self, py: Python<'py>, generation: u64) -> PyResult<Bound<'py, PyBytes>> {
-        let state = self.lock()?;
-        let surface =
-            Self::active_surface_ref(&state, generation).map_err(|error| map_error(&error))?;
-        let mut bytes = Vec::new();
-        let pixels = u64::from(surface.framebuffer.width())
-            .checked_mul(u64::from(surface.framebuffer.height()))
-            .and_then(|count| count.checked_mul(4))
-            .and_then(|count| usize::try_from(count).ok())
-            .ok_or_else(|| map_error(&lifecycle_error("Framebuffer byte count overflows")))?;
-        bytes
-            .try_reserve_exact(pixels)
-            .map_err(|_| map_error(&lifecycle_error("Framebuffer byte allocation failed")))?;
-        for y in 0..surface.framebuffer.height() {
-            for x in 0..surface.framebuffer.width() {
-                let x = i32::try_from(x).expect("invariant: framebuffer width fits i32");
-                let y = i32::try_from(y).expect("invariant: framebuffer height fits i32");
-                let color = surface.framebuffer.get_pixel(x, y);
-                bytes.extend([color.r, color.g, color.b, color.a]);
-            }
-        }
+        let bytes = {
+            let state = self.lock(py)?;
+            let result: Result<Vec<u8>> = (|| {
+                let surface = Self::active_surface_ref(&state, generation)?;
+                let mut bytes = Vec::new();
+                let pixels = u64::from(surface.framebuffer.width())
+                    .checked_mul(u64::from(surface.framebuffer.height()))
+                    .and_then(|count| count.checked_mul(4))
+                    .and_then(|count| usize::try_from(count).ok())
+                    .ok_or_else(|| lifecycle_error("Framebuffer byte count overflows"))?;
+                bytes
+                    .try_reserve_exact(pixels)
+                    .map_err(|_| lifecycle_error("Framebuffer byte allocation failed"))?;
+                for y in 0..surface.framebuffer.height() {
+                    for x in 0..surface.framebuffer.width() {
+                        let x = i32::try_from(x).expect("invariant: framebuffer width fits i32");
+                        let y = i32::try_from(y).expect("invariant: framebuffer height fits i32");
+                        let color = surface.framebuffer.get_pixel(x, y);
+                        bytes.extend([color.r, color.g, color.b, color.a]);
+                    }
+                }
+                Ok(bytes)
+            })();
+            result
+        };
+        let bytes = bytes.map_err(|error| map_error(&error))?;
         Ok(PyBytes::new(py, &bytes))
     }
 
     /// Enqueues a key event in the bounded FIFO queue.
-    fn key_down(&self, generation: u64, key: u32) -> PyResult<()> {
-        self.push_event(generation, PlatformEvent::KeyDown(key))
+    fn key_down(&self, py: Python<'_>, generation: u64, key: u32) -> PyResult<()> {
+        self.push_event(py, generation, PlatformEvent::KeyDown(key))
     }
 
     /// Enqueues a pointer press in the bounded FIFO queue.
-    fn pointer_down(&self, generation: u64, x: i32, y: i32) -> PyResult<()> {
-        self.push_event(generation, PlatformEvent::PointerDown { x, y })
+    fn pointer_down(&self, py: Python<'_>, generation: u64, x: i32, y: i32) -> PyResult<()> {
+        self.push_event(py, generation, PlatformEvent::PointerDown { x, y })
     }
 
     /// Enqueues a Unicode character event in the bounded FIFO queue.
-    fn char_input(&self, generation: u64, value: char) -> PyResult<()> {
-        self.push_event(generation, PlatformEvent::CharInput(value))
+    fn char_input(&self, py: Python<'_>, generation: u64, value: char) -> PyResult<()> {
+        self.push_event(py, generation, PlatformEvent::CharInput(value))
     }
 
     /// Enqueues a quit event in the bounded FIFO queue.
-    fn quit(&self, generation: u64) -> PyResult<()> {
-        self.push_event(generation, PlatformEvent::Quit)
+    fn quit(&self, py: Python<'_>, generation: u64) -> PyResult<()> {
+        self.push_event(py, generation, PlatformEvent::Quit)
     }
 
     /// Removes the next event as a dictionary, preserving FIFO order.
@@ -159,10 +183,11 @@ impl Application {
         py: Python<'py>,
         generation: u64,
     ) -> PyResult<Option<Bound<'py, PyDict>>> {
-        let mut state = self.lock()?;
-        let event = Self::active_surface(&mut state, generation)
-            .map_err(|error| map_error(&error))?
-            .poll_event();
+        let event = {
+            let mut state = self.lock(py)?;
+            Self::active_surface(&mut state, generation).map(PlatformSurface::poll_event)
+        };
+        let event = event.map_err(|error| map_error(&error))?;
         let Some(event) = event else {
             return Ok(None);
         };
@@ -192,37 +217,50 @@ impl Application {
     }
 
     /// Closes the surface and invalidates the supplied generation token.
-    fn close(&self, generation: u64) -> PyResult<()> {
-        let mut state = self.lock()?;
-        Self::active_surface(&mut state, generation).map_err(|error| map_error(&error))?;
-        state.surface = None;
-        Ok(())
+    fn close(&self, py: Python<'_>, generation: u64) -> PyResult<()> {
+        let result = {
+            let mut state = self.lock(py)?;
+            if state.generation != generation {
+                Err(lifecycle_error("Application generation is stale"))
+            } else if state.surface.is_none() {
+                Err(lifecycle_error("Application is closed"))
+            } else {
+                state.surface = None;
+                Ok(())
+            }
+        };
+        result.map_err(|error| map_error(&error))
     }
 
     /// Reopens a closed surface and returns its new generation token.
-    fn reopen(&self, width: u32, height: u32) -> PyResult<u64> {
-        let mut state = self.lock()?;
-        if state.surface.is_some() {
-            return Err(map_error(&lifecycle_error(
-                "Application must be closed before reopen",
-            )));
-        }
-        let surface = PlatformSurface::new(width, height).map_err(|error| map_error(&error))?;
-        state.generation = state
-            .generation
-            .checked_add(1)
-            .ok_or_else(|| map_error(&lifecycle_error("Application generation exhausted")))?;
-        state.surface = Some(surface);
-        Ok(state.generation)
+    fn reopen(&self, py: Python<'_>, width: u32, height: u32) -> PyResult<u64> {
+        let result: Result<u64> = {
+            let mut state = self.lock(py)?;
+            (|| {
+                if state.surface.is_some() {
+                    return Err(lifecycle_error("Application must be closed before reopen"));
+                }
+                let surface = PlatformSurface::new(width, height)?;
+                let generation = state
+                    .generation
+                    .checked_add(1)
+                    .ok_or_else(|| lifecycle_error("Application generation exhausted"))?;
+                state.generation = generation;
+                state.surface = Some(surface);
+                Ok(generation)
+            })()
+        };
+        result.map_err(|error| map_error(&error))
     }
 }
 
 impl Application {
-    fn push_event(&self, generation: u64, event: PlatformEvent) -> PyResult<()> {
-        let mut state = self.lock()?;
-        Self::active_surface(&mut state, generation)
-            .map_err(|error| map_error(&error))?
-            .push_event(event)
-            .map_err(|error| map_error(&error))
+    fn push_event(&self, py: Python<'_>, generation: u64, event: PlatformEvent) -> PyResult<()> {
+        let result = {
+            let mut state = self.lock(py)?;
+            Self::active_surface(&mut state, generation)
+                .and_then(|surface| surface.push_event(event))
+        };
+        result.map_err(|error| map_error(&error))
     }
 }
