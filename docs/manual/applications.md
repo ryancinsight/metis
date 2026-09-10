@@ -167,15 +167,23 @@ checks and native captures. These results establish the original viewer
 baseline for [V09](../VERIFICATION.md#V09). Metis provides a bounded browser
 named-byte batch handoff, while RITK owns the scanner, decoder, volume geometry
 and medical display semantics. The merged
-[RITK PR 267](https://github.com/ryancinsight/ritk/pull/267) adds
-`ritk-snap --metis-native`: RITK opens and decodes the study, produces a
-validated `PresentationFrame`, and Métis owns the native window, event pump and
-framebuffer. Metis has no DICOM decoder or volume model.
+[RITK PR 269](https://github.com/ryancinsight/ritk/pull/269) adds the
+`ritk-snap --metis-native` three-plane workflow: RITK opens and decodes the
+study, selects the axial, coronal and sagittal planes, and produces one
+spacing-aware `PresentationFrame`; Métis owns the native window, event pump and
+framebuffer. Metis has no DICOM decoder or volume model. The follow-up
+[RITK PR 271](https://github.com/ryancinsight/ritk/pull/271) keeps browser file
+handles and bounded bytes in Métis while RITK performs the same classification
+and decoding after the handoff.
 
-The first Windows handoff opens the synthetic study, renders a real RITK frame,
-and rejects a missing study. Full migration acceptance still requires the
-three-view workflow, browser input integration, multiframe/color presentation,
-matched memory measurements, full app-window goldens and packaging evidence.
+The first Windows handoff opens the synthetic study, renders the three real
+RITK planes, routes wheel navigation by panel and rejects a missing study. The
+deterministic content capture is
+[`dicom-metis-native.png`](https://github.com/ryancinsight/ritk/blob/main/docs/manual/images/dicom-metis-native.png)
+at 1280×800; it is a framebuffer oracle rather than an operating-system window
+golden. Full migration acceptance still requires browser runtime capture,
+multiframe/color presentation, matched memory measurements, full app-window
+overlays and packaging evidence.
 
 The reproducible DICOM opening and visual workflow is maintained in the
 [RITK user manual](https://github.com/ryancinsight/ritk/blob/main/docs/manual/dicom-workflow.md).
