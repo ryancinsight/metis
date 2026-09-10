@@ -13,6 +13,6 @@ pub use webview::{
 };
 pub use window::{
     CompositionPhase, MAX_COMPOSITION_UNITS, MAX_FRAME_DIMENSION, MAX_FRAME_PIXELS,
-    MAX_PUMP_MESSAGES, MAX_TITLE_UNITS, MAX_WAIT_MILLISECONDS, MAX_WINDOW_EVENTS, MouseButton,
-    NativeSurface, WindowConfig, WindowEvent, WindowVisibility,
+    MAX_PUMP_MESSAGES, MAX_TITLE_UNITS, MAX_WAIT_MILLISECONDS, MAX_WINDOW_EVENTS, ModifierState,
+    MouseButton, NativeSurface, WindowConfig, WindowEvent, WindowVisibility,
 };
