@@ -952,3 +952,32 @@ session and stops its local server. Browser waits terminate within 60 seconds.
 Browser chrome is excluded. The trace is automated file-backed browser input
 evidence; physical mouse/file-manager input and Firefox/WebKit remain separate
 claims.
+
+To capture the canvas interaction on the same loaded study, add a paired
+format-neutral trace and the consumer's opaque attribute names. The file-drop
+trace still records the file manifest, byte count and RGBA oracle; the paired
+trace records one trusted pointer drag and wheel action per canvas, the seven
+consumer attributes, full-window and element screenshots, and input-source
+release:
+
+```powershell
+python scripts/browser_drop.py --driver-url http://127.0.0.1:9515 `
+  --browser-name MicrosoftEdge --input chromium `
+  --files D:/atlas/repos/ritk/test_data/3_head_ct_mridir/DICOM --pattern '*.dcm' `
+  --oracle docs/manual/images/browser-gallery-oracle.json `
+  --consumer-revision $revision `
+  --canvas-trace output/browser/runtime/chromium-canvas.json `
+  --canvas-attribute data-ritk-load-state `
+  --canvas-attribute data-ritk-frame-state `
+  --canvas-attribute data-ritk-axis `
+  --canvas-attribute data-ritk-slice-index `
+  --canvas-attribute data-ritk-slice-count `
+  --canvas-attribute data-ritk-frame-width `
+  --canvas-attribute data-ritk-frame-height
+```
+
+Validate the paired trace from the RITK checkout with
+`--validate-browser-trace`. The host runner does not interpret those names or
+values; RITK owns their meaning and the DICOM/viewer assertions. A missing
+attribute, malformed action, incomplete screenshot set or unreleased input
+source fails the consumer validator.

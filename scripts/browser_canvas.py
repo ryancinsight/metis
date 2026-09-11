@@ -18,6 +18,7 @@ CANVAS_DRAG_START = (24, 24)
 CANVAS_DRAG_END = (64, 48)
 CANVAS_WHEEL_POSITION = (64, 48)
 CANVAS_WHEEL_DELTA = (0, 120)
+CANVAS_FRAME_SETTLE_COUNT = 2
 MAX_CANVAS_DIMENSION = 4096
 MAX_CANVAS_CSS_SIZE = 16_384.0
 MAX_CANVAS_POSITION = 16_384.0
@@ -40,6 +41,21 @@ return {
   top: rect.top,
   attributes: Object.fromEntries(attributeNames.map((name) => [name, canvas.getAttribute(name)])),
 };
+"""
+
+CANVAS_FRAME_SETTLE_SCRIPT = """
+const done = arguments[arguments.length - 1];
+let remaining = arguments[0];
+const settle = () => {
+  if (remaining === 0) { done({ok: true}); return; }
+  remaining -= 1;
+  window.requestAnimationFrame(settle);
+};
+if (typeof window.requestAnimationFrame !== 'function') {
+  done({ok: false});
+} else {
+  settle();
+}
 """
 
 
@@ -161,6 +177,13 @@ def _element_screenshot(client: WebDriverClient, trace: Trace, directory: pathli
     )
 
 
+def settle_canvas_input(client: WebDriverClient) -> None:
+    """Yield through two browser frames so queued canvas input is observable."""
+    result = client.execute_async(CANVAS_FRAME_SETTLE_SCRIPT, [CANVAS_FRAME_SETTLE_COUNT])
+    if not isinstance(result, dict) or result.get("ok") is not True:
+        raise BrowserRuntimeError("browser did not expose requestAnimationFrame for canvas settling")
+
+
 def capture_canvas_trace(
     client: WebDriverClient,
     trace: Trace,
@@ -197,6 +220,7 @@ def capture_canvas_trace(
                     "delta": list(CANVAS_WHEEL_DELTA),
                 }
             )
+            settle_canvas_input(client)
             _canvas_snapshot(client, trace, canvas_id, f"{canvas_id}-after-input", canvas_attributes)
             _element_screenshot(client, trace, screenshot_directory, f"{canvas_id}-after-input", element)
         client.release_actions()
