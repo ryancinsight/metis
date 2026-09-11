@@ -188,6 +188,14 @@ policy in RITK while allowing the browser viewer to migrate from eframe in a
 later increment. The typed consumer boundary is verified; a live browser
 canvas capture and the complete three-view viewer shell remain open.
 
+Revision 2026-09-11 (provider pin): Moirai PR #321 merged at
+`ccdc878dad21d9daeedc966f1cb97364e2558593`, including the bounded canvas
+provider and its stabilized worker-quiescence test. Metis's standalone lock
+now resolves every direct Moirai package to that merged revision so the
+borrowed canvas seam is available to the locked browser gate. This changes no
+ownership boundary: DICOM parsing, geometry and medical-display policy remain
+in RITK.
+
 ## Decision and scope
 
 Use Tauri as the application-framework migration reference, egui/GPUI/Iced as
