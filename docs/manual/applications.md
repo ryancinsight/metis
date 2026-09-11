@@ -229,7 +229,8 @@ contains no Iced or Axum runtime capture. The official
 are the source reference for its native and web demonstrations. The former
 [`iced_web`](https://github.com/iced-rs/iced_web) DOM runtime is archived, so
 its existence does not establish HTML5/CSS compatibility for a current Iced
-application or for Metis. Axum documentation likewise does not establish a
-running Metis HTTP service; [ADR 0025](../adr/0025-axum-server-boundary.md)
-defines the conditional first-party boundary. Future comparator captures
-require pinned, runnable fixtures and belong to their own verification items.
+application or for Metis. Metis now demonstrates a bounded loopback HTTP
+service over Moirai; [ADR 0025](../adr/0025-axum-server-boundary.md) defines
+that first-party boundary and its public-deployment limits. Future comparator
+captures require pinned, runnable fixtures and belong to their own verification
+items.

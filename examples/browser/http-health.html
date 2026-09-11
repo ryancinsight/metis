@@ -21,12 +21,19 @@
       </div>
       <p id="metis-status" role="status" aria-live="polite" aria-atomic="true">Probing the local Metis service…</p>
       <button id="metis-health" type="button">Probe /health</button>
+      <label for="fragment-input">Fragment input</label>
+      <input id="fragment-input" type="text" value="session" maxlength="128" autocomplete="off">
+      <button id="metis-fragment" type="button" disabled>Run authenticated fragment</button>
+      <button id="metis-reset" type="button">Reset mount</button>
       <dl>
         <dt>Endpoint</dt><dd id="http-endpoint">http://127.0.0.1:8766/health</dd>
         <dt>Origin</dt><dd id="http-origin"></dd>
         <dt>Response</dt><dd id="http-response">—</dd>
+        <dt>Fragment</dt><dd id="metis-events">—</dd>
+        <dt>Negative</dt><dd id="metis-negative">—</dd>
+        <dt>Lifecycle</dt><dd id="metis-lifecycle">generation 1</dd>
       </dl>
-      <p>This page exercises the bounded Moirai HTTP transport. DICOM loading and viewer state remain in RITK.</p>
+      <p>This page exercises a real handshake and generation-bound typed fragment over the bounded Moirai HTTP transport. DICOM loading and viewer state remain in RITK.</p>
     </section>
   </main>
   <script type="module" src="./http-health.js"></script>

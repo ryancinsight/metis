@@ -124,13 +124,36 @@ class BrowserAssetContractTests(unittest.TestCase):
         self.assertNotIn("<script type=\"module\">", document.lower())
         self.assertIn('id="metis-status" role="status"', document)
         self.assertIn('id="metis-health" type="button"', document)
+        for fragment in (
+            'id="fragment-input" type="text"',
+            'id="metis-fragment" type="button" disabled',
+            'id="metis-reset" type="button"',
+            'id="metis-events"',
+            'id="metis-negative"',
+            'id="metis-lifecycle"',
+            "DICOM loading and viewer state remain in RITK.",
+        ):
+            self.assertIn(fragment, document)
 
         script = (ROOT / "examples" / "browser" / "http-health.js").read_text(
             encoding="utf-8"
         )
         self.assertIn('new URL("http://127.0.0.1:8766/health")', script)
+        self.assertIn('new URL("http://127.0.0.1:8766/v1/session")', script)
+        self.assertIn('new URL("http://127.0.0.1:8766/v1/fragments")', script)
         self.assertIn('body !== "metis-http-ready\\n"', script)
-        self.assertIn('button.addEventListener("click", probe)', script)
+        for fragment in (
+            "function encodeHandshake()",
+            "function encodeInvocation(token, action)",
+            'Content-Type": "application/metis"',
+            "function applyPatchSet(patchSet)",
+            "stale fragment generation",
+            "malformed probe returned",
+            "unauthorized probe returned",
+            'fragmentButton.addEventListener("click", runFragment)',
+            'resetButton.addEventListener("click", resetMount)',
+        ):
+            self.assertIn(fragment, script)
 
     def test_file_drop_surface_is_semantic_and_bounded(self):
         controls = (ROOT / "crates" / "metis-web" / "src" / "controls.rs").read_text(
