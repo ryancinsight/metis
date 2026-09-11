@@ -1483,6 +1483,15 @@ exact pixels and physical landmarks, and compares all three slice captures to
 reviewed images. Full migration captures must continue to consume that RITK
 result through the presentation seam and must not duplicate the DICOM workflow.
 
+RITK PR #284 additionally records a local browser smoke of the packaged
+`start_web_canvas` path: three synthetic Part 10 files were dispatched through
+a browser `DataTransfer`, the host reported three accepted 654-byte files and
+1,962 bytes read, and the RITK canvas returned a visible 4 × 2 RGBA frame. The
+reviewed snapshot and exact evidence limits are in the
+[RITK DICOM workflow](../../ritk/docs/manual/dicom-workflow.md#inspect-the-browser-canvas-visual-smoke).
+The event is untrusted and this does not close physical browser input,
+cross-engine drivers, pointer/three-view/GPU behavior or full-window capture.
+
 The format-neutral handoff follow-up removes the remaining browser-side DICOM
 candidate and Part 10 marker decisions. Metis now reports bounded file metadata
 and byte progress only; a RITK adapter receives the named bytes before any
