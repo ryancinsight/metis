@@ -136,26 +136,29 @@ impl Canvas {
     /// # Errors
     /// Returns a `ValueError` if the result buffer cannot be reserved.
     fn to_rgba<'py>(&self, py: Python<'py>) -> PyResult<Bound<'py, PyBytes>> {
-        let pixel_count = usize::try_from(
-            u64::from(self.framebuffer.width()) * u64::from(self.framebuffer.height()),
-        )
-        .map_err(|_| map_error(&allocation_error()))?;
-        let byte_count = pixel_count
-            .checked_mul(4)
-            .ok_or_else(|| map_error(&allocation_error()))?;
-        let mut bytes = Vec::new();
-        bytes
-            .try_reserve_exact(byte_count)
-            .map_err(|_| map_error(&allocation_error()))?;
-        for y in 0..self.framebuffer.height() {
-            for x in 0..self.framebuffer.width() {
-                let color = self.framebuffer.get_pixel(
-                    i32::try_from(x).expect("invariant: framebuffer width fits i32"),
-                    i32::try_from(y).expect("invariant: framebuffer height fits i32"),
-                );
-                bytes.extend([color.r, color.g, color.b, color.a]);
-            }
-        }
+        let bytes = py
+            .detach(|| {
+                let pixel_count = usize::try_from(
+                    u64::from(self.framebuffer.width()) * u64::from(self.framebuffer.height()),
+                )
+                .map_err(|_| allocation_error())?;
+                let byte_count = pixel_count.checked_mul(4).ok_or_else(allocation_error)?;
+                let mut bytes = Vec::new();
+                bytes
+                    .try_reserve_exact(byte_count)
+                    .map_err(|_| allocation_error())?;
+                for y in 0..self.framebuffer.height() {
+                    for x in 0..self.framebuffer.width() {
+                        let color = self.framebuffer.get_pixel(
+                            i32::try_from(x).expect("invariant: framebuffer width fits i32"),
+                            i32::try_from(y).expect("invariant: framebuffer height fits i32"),
+                        );
+                        bytes.extend([color.r, color.g, color.b, color.a]);
+                    }
+                }
+                Ok::<Vec<u8>, metis_core::MetisError>(bytes)
+            })
+            .map_err(|error| map_error(&error))?;
         Ok(PyBytes::new(py, &bytes))
     }
 }

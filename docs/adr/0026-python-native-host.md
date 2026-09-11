@@ -55,3 +55,12 @@ owned by `METIS-PYTHON-004`. The implementation increment built the release
 hidden windows whose close state and event batches remain isolated. Trusted
 installed-IME, visual two-window and non-Windows provider evidence remain open
 under V05.
+
+## Revision 2026-09-11
+
+The native binding now detaches the Rust provider request for frame submission,
+finite event waits, close and reopen. Borrowed Python frame bytes are converted
+before detachment; event dictionaries are constructed after reattachment. The
+host thread and bounded command waits therefore do not retain the interpreter
+lock, while the public Python signatures and the `Send + Sync`/`gil_used =
+false` contract remain unchanged.

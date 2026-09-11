@@ -67,18 +67,16 @@ impl NativeApplication {
     }
 
     /// Presents one row-major RGBA frame.
-    fn present(&self, generation: u64, rgba: &[u8]) -> PyResult<()> {
+    fn present(&self, py: Python<'_>, generation: u64, rgba: &[u8]) -> PyResult<()> {
         let framebuffer =
             frame_from_rgba(self.width, self.height, rgba).map_err(|error| map_error(&error))?;
-        let client = self.client.lock().map_err(|_| {
-            map_error(&MetisError::ui(
-                ErrorCode::RenderFailure,
-                "native host lock is poisoned",
-            ))
-        })?;
-        client
-            .present(generation, framebuffer)
-            .map_err(|error| map_error(&error))
+        let result = py.detach(|| {
+            let client = self.client.lock().map_err(|_| {
+                MetisError::ui(ErrorCode::RenderFailure, "native host lock is poisoned")
+            })?;
+            client.present(generation, framebuffer)
+        });
+        result.map_err(|error| map_error(&error))
     }
 
     /// Waits for one bounded native event batch.
@@ -94,18 +92,16 @@ impl NativeApplication {
                 "native wait exceeds the provider limit",
             )));
         }
-        let client = self.client.lock().map_err(|_| {
-            map_error(&MetisError::ui(
-                ErrorCode::RenderFailure,
-                "native host lock is poisoned",
-            ))
-        })?;
-        let events = client
-            .wait(
+        let events = py.detach(|| {
+            let client = self.client.lock().map_err(|_| {
+                MetisError::ui(ErrorCode::RenderFailure, "native host lock is poisoned")
+            })?;
+            client.wait(
                 generation,
                 std::time::Duration::from_millis(u64::from(timeout_ms)),
             )
-            .map_err(|error| map_error(&error))?;
+        });
+        let events = events.map_err(|error| map_error(&error))?;
         let list = PyList::empty(py);
         for event in events {
             append_event(py, &list, event)?;
@@ -114,25 +110,25 @@ impl NativeApplication {
     }
 
     /// Closes the native window and invalidates its generation.
-    fn close(&self, generation: u64) -> PyResult<()> {
-        let mut client = self.client.lock().map_err(|_| {
-            map_error(&MetisError::ui(
-                ErrorCode::RenderFailure,
-                "native host lock is poisoned",
-            ))
-        })?;
-        client.close(generation).map_err(|error| map_error(&error))
+    fn close(&self, py: Python<'_>, generation: u64) -> PyResult<()> {
+        let result = py.detach(|| {
+            let mut client = self.client.lock().map_err(|_| {
+                MetisError::ui(ErrorCode::RenderFailure, "native host lock is poisoned")
+            })?;
+            client.close(generation)
+        });
+        result.map_err(|error| map_error(&error))
     }
 
     /// Reopens a closed window and returns its new generation.
-    fn reopen(&self) -> PyResult<u64> {
-        let mut client = self.client.lock().map_err(|_| {
-            map_error(&MetisError::ui(
-                ErrorCode::RenderFailure,
-                "native host lock is poisoned",
-            ))
-        })?;
-        client.reopen().map_err(|error| map_error(&error))
+    fn reopen(&self, py: Python<'_>) -> PyResult<u64> {
+        let result = py.detach(|| {
+            let mut client = self.client.lock().map_err(|_| {
+                MetisError::ui(ErrorCode::RenderFailure, "native host lock is poisoned")
+            })?;
+            client.reopen()
+        });
+        result.map_err(|error| map_error(&error))
     }
 }
 
