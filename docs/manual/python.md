@@ -132,6 +132,27 @@ without attempting a native provider. This facade owns no filesystem,
 network, process, medical-format or DICOM authority; RITK remains responsible
 for DICOM and viewer state.
 
+### Inspect a captured native frame
+
+Build an extracted wheel and use the committed Windows capture tool to present
+a Rust-owned checkerboard through a visible `NativeApplication` window. The
+tool pumps the provider thread while GDI captures the HWND, then closes the
+window and prints the image digest:
+
+```powershell
+maturin build --release --locked --manifest-path crates/metis-python/Cargo.toml --out output/python-native
+python scripts/python_native_capture.py `
+  --wheel output/python-native/metis_rs-0.1.0-cp39-abi3-win_amd64.whl `
+  --output docs/manual/images/python-native-window.bmp
+```
+
+The inspected capture is a 320×240 client area in a 336×279 window. It shows
+the two input-sensitive colors, the visible title bar and two bounded resize
+events from generation `0`. Its source revision, runtime, and SHA-256 digest
+are recorded in [`python-native-captures.json`](images/python-native-captures.json).
+
+![Visible NativeApplication checkerboard capture](images/python-native-window.bmp)
+
 ## Release path
 
 `.github/workflows/python-release.yml` accepts a GitHub Release tag of the form
