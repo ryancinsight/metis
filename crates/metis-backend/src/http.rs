@@ -1,8 +1,8 @@
 //! Authenticated, format-neutral HTTP fragment service over Moirai.
 //!
 //! This module owns only the presentation boundary. It accepts typed Metis
-//! envelopes and returns bounded text or attribute patch bytes; file formats,
-//! including DICOM, remain owned by the consuming application such as RITK.
+//! envelopes and returns bounded text or attribute patch bytes; application
+//! data formats and domain semantics remain owned by the consuming application.
 
 use crate::clinical::SafetyEnvelope;
 use crate::fragment::UiFragmentPlugin;
