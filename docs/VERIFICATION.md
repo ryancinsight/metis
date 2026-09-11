@@ -1534,8 +1534,11 @@ a browser `DataTransfer`, the host reported three accepted 654-byte files and
 1,962 bytes read, and the RITK canvas returned a visible 4 × 2 RGBA frame. The
 reviewed snapshot and exact evidence limits are in the
 [RITK DICOM workflow](../../ritk/docs/manual/dicom-workflow.md#inspect-the-browser-canvas-visual-smoke).
-The event is untrusted and this does not close physical browser input,
-cross-engine drivers, pointer/three-view/GPU behavior or full-window capture.
+The event is untrusted and this does not close trusted physical browser input,
+cross-engine drivers, GPU presentation or full-window capture. RITK's merged
+browser adapter now covers bounded pointer and wheel routing, including
+orthogonal-axis dispatch and pointer-cancel cleanup; that code path remains
+format-neutral in Métis and does not move DICOM authority into the GUI repo.
 
 Revision 2026-09-11 (format-neutral host comments): commit `8ea5935` changes
 only ownership comments in the host boundary. The visual fixture provenance was
