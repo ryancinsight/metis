@@ -194,6 +194,8 @@ Métis framebuffer; Metis still owns no DICOM parser, metadata, geometry or
 clinical display policy. Private clinical studies remain local and are never
 committed to either repository.
 
+![Actual MRI-DIR CT study rendered through the Métis native surface](https://github.com/ryancinsight/ritk/blob/main/docs/manual/images/dicom-metis-real-ct.png?raw=true)
+
 The reproducible DICOM opening and visual workflow is maintained in the
 [RITK user manual](https://github.com/ryancinsight/ritk/blob/main/docs/manual/dicom-workflow.md).
 It runs the real scanner and loader, checks exact pixels and physical geometry,
