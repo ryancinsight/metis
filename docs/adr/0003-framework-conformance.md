@@ -196,6 +196,13 @@ borrowed canvas seam is available to the locked browser gate. This changes no
 ownership boundary: DICOM parsing, geometry and medical-display policy remain
 in RITK.
 
+Revision 2026-09-11 (visual provenance): the provider pin changes the visual
+fixture identity without changing any capture pixels or semantic observations.
+The committed `captures.json` provenance was refreshed through
+`scripts/verify.py --update-snapshots`; the exact full gate then passed through
+the software visual comparison. This is a fixture provenance update, not a
+relaxed image or semantic oracle.
+
 ## Decision and scope
 
 Use Tauri as the application-framework migration reference, egui/GPUI/Iced as
