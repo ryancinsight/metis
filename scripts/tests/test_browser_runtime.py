@@ -13,16 +13,14 @@ from unittest import mock
 sys.path.insert(0, str(pathlib.Path(__file__).resolve().parents[1]))
 import browser_protocol
 from browser_runtime import (
-    BrowserEngine,
-    BrowserRuntimeError,
     StaticServer,
-    Trace,
-    WebDriverClient,
     _write_trace,
     _validate_bridge_url,
     run_scenario,
 )
-from browser_protocol import MAX_SCREENSHOT_BYTES, MAX_SCREENSHOT_RESPONSE_BYTES, MAX_TRACE_BYTES
+from browser_canvas import run_canvas_scenario, validate_canvas_ids, validate_consumer_revision
+from browser_protocol import BrowserRuntimeError, MAX_SCREENSHOT_BYTES, MAX_SCREENSHOT_RESPONSE_BYTES, MAX_TRACE_BYTES, WebDriverClient
+from browser_trace import BrowserEngine, Trace
 
 
 def _png() -> bytes:
@@ -65,13 +63,17 @@ class FakeDriver:
     capabilities = {"browserName": "test", "browserVersion": "1"}
 
     def __init__(self) -> None:
+        self.session_id = None
         self.closed = False
         self.stopped = False
         self.success = False
         self.pending = False
+        self.released = False
+        self.canvas_actions = []
         self.values = {"weight-kg": "72.5", "target-dose": "0.5"}
 
     def create_session(self, browser_name: str) -> None:
+        self.session_id = "session"
         self.capabilities = {"browserName": browser_name, "browserVersion": "test"}
 
     def set_timeouts(self, milliseconds: int) -> None:
@@ -105,6 +107,17 @@ class FakeDriver:
             self.pending = False
 
     def execute(self, script: str, arguments=()):
+        if "canvas.tagName.toLowerCase()" in script:
+            canvas_id = arguments[0]
+            return {
+                "id": canvas_id,
+                "width": 512,
+                "height": 512,
+                "css_width": 512.0,
+                "css_height": 512.0,
+                "left": 0.0,
+                "top": 0.0,
+            }
         if "result-metrics" in script and "return document" in script:
             return "Volume rate: 0.900000 mL/hr" if self.success else ""
         if "Object.fromEntries(ids.map" in script:
@@ -132,6 +145,19 @@ class FakeDriver:
     def screenshot(self) -> bytes:
         return _png()
 
+    def element_screenshot(self, element_id: str) -> bytes:
+        self.canvas_actions.append(("element-screenshot", element_id))
+        return _png()
+
+    def pointer_drag(self, element_id, start, end) -> None:
+        self.canvas_actions.append(("pointer-drag", element_id, start, end))
+
+    def wheel(self, element_id, position, delta) -> None:
+        self.canvas_actions.append(("wheel", element_id, position, delta))
+
+    def release_actions(self) -> None:
+        self.released = True
+
     def snapshot(self):
         if self.stopped:
             return {"app_text": "Metis browser host stopped.", "mounted_controls": 0, "elements": {}}
@@ -152,6 +178,7 @@ class FakeDriver:
         }
 
     def close(self) -> None:
+        self.session_id = None
         self.closed = True
 
 
@@ -214,6 +241,49 @@ class BrowserRuntimeTests(unittest.TestCase):
         document = Trace(BrowserEngine.FIREFOX, "http://127.0.0.1/", "disconnected", "0" * 40, {}).document()
         self.assertEqual(document["schema"], 1)
         self.assertEqual(document["unsupported_native_operations"], ["native-file-dialog", "native-process-launch", "os-permission-grant"])
+
+    def test_canvas_trace_records_trusted_actions_and_element_captures(self):
+        output = pathlib.Path(__file__).resolve().parents[2] / "output" / "browser" / "runtime-test"
+        output.mkdir(parents=True, exist_ok=True)
+        with tempfile.TemporaryDirectory(dir=output) as directory:
+            driver = FakeDriver()
+            trace = run_canvas_scenario(
+                driver,
+                BrowserEngine.CHROMIUM,
+                "http://127.0.0.1:8080/ritk.html",
+                "0" * 40,
+                pathlib.Path(directory),
+                5_000,
+                ["ritk-snap-axial", "ritk-snap-coronal", "ritk-snap-sagittal"],
+                "1" * 40,
+            )
+        self.assertTrue(driver.closed)
+        self.assertTrue(driver.released)
+        self.assertEqual(trace.bridge, "canvas")
+        self.assertEqual(trace.consumer_revision, "1" * 40)
+        self.assertEqual(trace.document()["consumer_revision"], "1" * 40)
+        self.assertEqual(trace.cleanup["canvas_count"], 3)
+        self.assertEqual(
+            [action["action"] for action in trace.actions],
+            ["trusted-pointer-drag", "trusted-wheel"] * 3,
+        )
+        self.assertEqual(len(trace.snapshots), 6)
+        self.assertEqual(len(trace.screenshots), 8)
+        self.assertTrue(all(item["scope"] == "element" for item in trace.screenshots[1:-1]))
+
+    def test_canvas_identifier_validation_is_bounded_and_unique(self):
+        self.assertEqual(validate_canvas_ids(["axial", "coronal"]), ("axial", "coronal"))
+        with self.assertRaisesRegex(BrowserRuntimeError, "bounded HTML id"):
+            validate_canvas_ids(["#axial"])
+        with self.assertRaisesRegex(BrowserRuntimeError, "between one and eight"):
+            validate_canvas_ids(3)
+        with self.assertRaisesRegex(BrowserRuntimeError, "repeated"):
+            validate_canvas_ids(["axial", "axial"])
+        self.assertEqual(validate_consumer_revision("A" * 40), "a" * 40)
+        with self.assertRaisesRegex(BrowserRuntimeError, "40-hex"):
+            validate_consumer_revision("short")
+        with self.assertRaisesRegex(BrowserRuntimeError, "40-hex"):
+            validate_consumer_revision(3)
 
     def test_cancel_trace_requires_pending_and_discards_delayed_result(self):
         output = pathlib.Path(__file__).resolve().parents[2] / "output" / "browser" / "runtime-test"
@@ -299,6 +369,20 @@ class BrowserRuntimeTests(unittest.TestCase):
             self.assertEqual(client.screenshot(), image)
         self.assertGreater(response.read_limit, MAX_TRACE_BYTES)
         self.assertEqual(response.read_limit, MAX_SCREENSHOT_RESPONSE_BYTES + 1)
+
+        element_response = JsonResponse(json.dumps({"value": base64.b64encode(_png()).decode()}).encode())
+        requests = []
+
+        def open_element(request, timeout):
+            del timeout
+            requests.append(request.full_url)
+            return element_response
+
+        client = browser_protocol.WebDriverClient("http://127.0.0.1:9515", 1)
+        client.session_id = "session"
+        with mock.patch.object(browser_protocol.urllib.request, "urlopen", side_effect=open_element):
+            self.assertEqual(client.element_screenshot("opaque/id"), _png())
+        self.assertEqual(requests, ["http://127.0.0.1:9515/session/session/element/opaque%2Fid/screenshot"])
 
         for value in ("not-base64", base64.b64encode(b"not png").decode()):
             malformed = JsonResponse(json.dumps({"value": value}).encode())

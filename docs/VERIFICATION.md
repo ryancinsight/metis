@@ -1264,7 +1264,7 @@ the waits; no host sleep or polling loop is part of the runner. Output and
 screenshots are confined to `output`.
 
 The browser and asset suites pass 22/22 tests; the full deterministic Python
-suite passes 84/84 tests, and `python -m py_compile` passes for the runner and
+suite passes 88/88 tests, and `python -m py_compile` passes for the runner and
 its tests. The protocol-shaped driver tests verify
 the exact displayed values (`80.00 kg`, `0.750 mcg/kg/min` and
 `Volume rate: 0.900000 mL/hr`), disconnected privileged-submit rejection,
@@ -1281,6 +1281,26 @@ service/cancellation run is reviewed. Provider-private listener registries,
 native handles, accessibility technology, IME behavior and post-drop allocation
 counts remain owned by their Moirai, native-host and RITK items; this runner
 contains no DICOM parsing or viewer semantics.
+
+<a id="browser-canvas-consumer-trace-evidence--2026-09-11"></a>
+## Browser canvas consumer trace evidence — 2026-09-11
+
+The conformance runner now has a format-neutral `canvas` scenario for an
+application-owned list of HTML5 canvas identifiers. It records each canvas's
+intrinsic and CSS dimensions, captures the complete browser window and each
+element, dispatches bounded trusted pointer-drag and wheel actions, records the
+Metis revision plus an optional consumer revision, and releases all WebDriver
+input sources before session teardown. The scenario is reusable by RITK without
+placing DICOM, series, slice or viewer state in Metis.
+
+The protocol-shaped suite passes 15/15 tests after adding the canvas scenario,
+element screenshot endpoint, bounded identifier validation and cross-repository
+consumer-revision field. This is deterministic transport evidence only. No
+Chromium, Firefox or WebKit endpoint is configured in this Windows environment,
+so no real RITK cross-engine canvas trace, trusted browser capture or clinical
+pixel oracle is claimed here. RITK must run the scenario against its own page
+and assert DICOM opening, axis routing and slice changes in its workflow
+evidence.
 
 <a id="V03"></a>
 ### V03 — Text and accessibility specimen

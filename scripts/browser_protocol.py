@@ -342,20 +342,17 @@ class WebDriverClient:
             self._session_path("screenshot"),
             response_limit=MAX_SCREENSHOT_RESPONSE_BYTES,
         )
-        if not isinstance(value, str):
-            raise BrowserRuntimeError("WebDriver screenshot response is not base64 text")
-        try:
-            content = base64.b64decode(value, validate=True)
-        except (ValueError, binascii.Error) as error:
-            raise BrowserRuntimeError("WebDriver screenshot is not valid base64") from error
-        if len(content) > MAX_SCREENSHOT_BYTES:
-            raise BrowserRuntimeError("browser screenshot exceeds the 8 MiB budget")
-        if content[:8] != b"\x89PNG\r\n\x1a\n" or len(content) < 24 or content[12:16] != b"IHDR":
-            raise BrowserRuntimeError("browser screenshot is not a PNG")
-        width, height = struct.unpack(">II", content[16:24])
-        if not (0 < width <= 4096 and 0 < height <= 4096):
-            raise BrowserRuntimeError("browser screenshot dimensions exceed the 4096-pixel bound")
-        return content
+        return _decode_screenshot(value)
+
+    def element_screenshot(self, element_id: str) -> bytes:
+        """Capture one element's PNG through the W3C element endpoint."""
+        encoded = self._element_component(element_id)
+        value = self._request(
+            "GET",
+            self._session_path(f"element/{encoded}/screenshot"),
+            response_limit=MAX_SCREENSHOT_RESPONSE_BYTES,
+        )
+        return _decode_screenshot(value)
 
     def close(self) -> None:
         """Close the session exactly once when it exists."""
@@ -364,3 +361,21 @@ class WebDriverClient:
         session = self.session_id
         self.session_id = None
         self._request("DELETE", f"/session/{session}")
+
+
+def _decode_screenshot(value: Any) -> bytes:
+    """Decode and validate a W3C base64 PNG response."""
+    if not isinstance(value, str):
+        raise BrowserRuntimeError("WebDriver screenshot response is not base64 text")
+    try:
+        content = base64.b64decode(value, validate=True)
+    except (ValueError, binascii.Error) as error:
+        raise BrowserRuntimeError("WebDriver screenshot is not valid base64") from error
+    if len(content) > MAX_SCREENSHOT_BYTES:
+        raise BrowserRuntimeError("browser screenshot exceeds the 8 MiB budget")
+    if content[:8] != b"\x89PNG\r\n\x1a\n" or len(content) < 24 or content[12:16] != b"IHDR":
+        raise BrowserRuntimeError("browser screenshot is not a PNG")
+    width, height = struct.unpack(">II", content[16:24])
+    if not (0 < width <= 4096 and 0 < height <= 4096):
+        raise BrowserRuntimeError("browser screenshot dimensions exceed the 4096-pixel bound")
+    return content
