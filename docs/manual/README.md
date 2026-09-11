@@ -26,6 +26,10 @@ The [target contract](../adr/0002-web-application-contract.md) describes the
 Tauri migration goal and required web support. These are implementation targets,
 not features available through the build commands below.
 
+Metis stays format-neutral: it does not parse DICOM or retain medical viewer
+state. RITK owns DICOM discovery, decoding, geometry and clinical presentation;
+Metis carries only the bounded host, event and framebuffer handoff.
+
 - [Build and run](getting-started.md): requirements, the demonstration and verification.
 - [Run the Windows native surface](native.md): present a framebuffer and inspect real Win32 events.
 - [Build executables and installers](distribution.md): configure an application, create a portable bundle, install and remove it.
