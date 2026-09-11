@@ -1398,6 +1398,15 @@ it does not claim public deployment, TLS, or DICOM behavior. DICOM parsing,
 study selection, geometry and viewer state remain in the [RITK
 workflow](../../ritk/docs/manual/dicom-workflow.md).
 
+An in-app browser capture at revision
+`cadb684ca7c8bda3f1c873f93286871e620e6196` rendered the generated page and
+reported `Authenticated fragment boundary ready`, `200 metis-http-ready`,
+handshake `200`, fragment `200 (1 patch)`, accepted `session` action, malformed
+`400`, unauthorized `401`, unchanged stale state and lifecycle generation `1`.
+This is visual evidence for one live browser surface; configured Chromium,
+Firefox and WebKit WebDriver captures remain open and are not inferred from
+this result.
+
 The current review revision adds explicit native assertions for a missing
 session, an inadmissible method, the eight-session capacity boundary and the
 configured response-byte limit. The focused `cargo nextest` run passes 47/47

@@ -56,6 +56,14 @@ must leave the previous text unchanged. The page is an HTML5/CSS demonstration
 of the presentation boundary; it does not load, decode or retain DICOM data.
 RITK owns that workflow.
 
+The in-app browser capture on 2026-09-11 at Metis revision
+`cadb684ca7c8bda3f1c873f93286871e620e6196` showed the complete live state:
+`Authenticated fragment boundary ready`, `200 metis-http-ready`, handshake
+`200`, fragment `200 (1 patch)`, accepted `session` action, malformed `400`,
+unauthorized `401`, unchanged stale state and lifecycle generation `1`. This
+is one real browser-rendered visual trace of the local presentation boundary;
+it is not cross-engine WebDriver evidence. No DICOM data entered the page.
+
 ## Run the cross-engine conformance trace
 
 The repository includes a dependency-free W3C WebDriver runner. It uses the
