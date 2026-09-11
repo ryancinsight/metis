@@ -67,6 +67,10 @@ methods and `poll_event`, then call `close`. `reopen` allocates a fresh surface
 and returns a new token; stale tokens fail with a typed `ValueError`. Events are
 FIFO and bounded by the Rust platform queue. The object synchronizes access
 with Rust locking and uses no Python callbacks or second event loop.
+RGBA extraction runs in a detached Rust region and creates Python `bytes` only
+after reattachment. The Windows native host likewise detaches provider frame
+submission, bounded waits, close and reopen operations; event dictionaries are
+constructed after the provider call returns.
 
 The PyPI release caller uses GitHub Actions OIDC Trusted Publishing. It stores
 no PyPI token, signing key or developer private key in the repository.
