@@ -3,6 +3,23 @@
 from typing import Optional
 
 
+class NativeApplication:
+    def __init__(
+        self, title: str, width: int, height: int, visibility: str = "visible"
+    ) -> None: ...
+
+    @property
+    def generation(self) -> int: ...
+
+    def present(self, generation: int, rgba: bytes) -> None: ...
+
+    def wait_events(self, generation: int, timeout_ms: int = 0) -> list[dict[str, object]]: ...
+
+    def close(self, generation: int) -> None: ...
+
+    def reopen(self) -> int: ...
+
+
 class Application:
     def __init__(self, width: int, height: int) -> None: ...
 

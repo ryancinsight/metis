@@ -9,4 +9,5 @@ mod application;
 mod clinical;
 mod error;
 mod module;
+mod native;
 mod presentation;
