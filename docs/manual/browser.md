@@ -86,7 +86,7 @@ empty reset state after the four-second response window.
 
 The repository includes a dependency-free W3C WebDriver runner. It uses the
 same Rust/WASM page and scenario for Chromium, Firefox and WebKit, then writes
-one schema-1 JSON trace at `output/browser/runtime/<engine>.json` and PNG
+one schema-1 JSON trace at `output/browser/runtime/<engine>-<scenario>.json` and PNG
 screenshots under `output/browser/runtime/screenshots/<engine>/`. The browser
 and its WebDriver endpoint are host or CI prerequisites; the runner does not
 install a driver or add a JavaScript test runtime. Configure one endpoint per
@@ -133,6 +133,32 @@ per-source action count and serialized request size. RITK owns the DICOM
 workflow and interprets these format-neutral events; Métis records transport
 and screenshot evidence only. A configured engine endpoint is required before
 the action trace can claim Chromium, Firefox or WebKit evidence.
+
+### Run a consumer-owned canvas trace
+
+The same runner has a canvas scenario for an application that owns one or more
+HTML5 canvases. It captures the full browser window and each named canvas,
+records its intrinsic and CSS dimensions, sends one trusted pointer drag and
+wheel action to each element, and releases all WebDriver input sources before
+closing the session. The trace keeps the Metis revision and the optional
+consumer revision separate; the consumer revision must be a 40-hex Git
+revision when supplied.
+
+For the RITK browser viewer, run the page that mounts the RITK-owned canvases
+and pass their IDs. The runner has no DICOM knowledge and does not interpret a
+slice, voxel, series or medical state:
+
+```text
+python scripts/browser_runtime.py --scenario canvas --engine chromium --url http://127.0.0.1:8080/ritk.html --consumer-revision <RITK-40-HEX> --canvas-id ritk-snap-axial --canvas-id ritk-snap-coronal --canvas-id ritk-snap-sagittal
+```
+
+Repeat the command for `firefox` and `webkit` with their configured driver
+endpoints. The resulting schema-1 trace uses `bridge: "canvas"`, records
+`consumer_revision`, and stores both window and element PNG hashes under the
+engine's output directory. RITK remains responsible for the DICOM byte drop,
+viewer reducer, axis/slice assertions and the clinical visual oracle. A
+missing driver endpoint is an unfulfilled evidence requirement, not a passing
+or skipped engine result.
 
 For the authorized service path, keep the static server and service running,
 then pass the host-provided session tuple in the URL. The runner validates the

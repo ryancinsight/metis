@@ -8,17 +8,13 @@ Chromium, Firefox and WebKit.
 from __future__ import annotations
 
 import argparse
-import enum
-import hashlib
 import json
 import os
 import pathlib
 import re
-import struct
 import subprocess
 import urllib.parse
-from dataclasses import dataclass, field
-from typing import Any, Dict, List, Mapping, Optional, Tuple
+from typing import Any, Dict, List, Mapping, Optional
 
 from browser_protocol import (
     ELEMENT_KEY,
@@ -32,36 +28,10 @@ from browser_protocol import (
     _bounded_text,
     _safe_path,
 )
+from browser_trace import BrowserEngine, Trace, UNSUPPORTED_NATIVE_OPERATIONS, screenshot
 
 
-UNSUPPORTED_NATIVE_OPERATIONS = (
-    "native-file-dialog",
-    "native-process-launch",
-    "os-permission-grant",
-)
 BRIDGE_MODES = ("disconnected", "authorized")
-
-
-class BrowserEngine(str, enum.Enum):
-    """The browser engines admitted by the conformance matrix."""
-
-    CHROMIUM = "chromium"
-    FIREFOX = "firefox"
-    WEBKIT = "webkit"
-
-    @property
-    def webdriver_name(self) -> str:
-        """Return the W3C ``browserName`` capability for this engine."""
-        return {self.CHROMIUM: "chrome", self.FIREFOX: "firefox", self.WEBKIT: "safari"}[self]
-
-    @classmethod
-    def parse(cls, value: str) -> "BrowserEngine":
-        """Parse a matrix name and reject an untracked engine."""
-        try:
-            return cls(value.lower())
-        except ValueError as error:
-            admitted = ", ".join(engine.value for engine in cls)
-            raise BrowserRuntimeError(f"unsupported browser engine {value!r}; choose {admitted}") from error
 
 
 WAIT_FOR_SCRIPT = """
@@ -124,39 +94,6 @@ return {
 """
 
 
-@dataclass
-class Trace:
-    """Structured evidence emitted by one browser-engine run."""
-
-    engine: BrowserEngine
-    url: str
-    bridge: str
-    revision: str
-    capabilities: Mapping[str, Any]
-    actions: List[Dict[str, Any]] = field(default_factory=list)
-    snapshots: List[Dict[str, Any]] = field(default_factory=list)
-    screenshots: List[Dict[str, Any]] = field(default_factory=list)
-    unsupported_operations: Tuple[str, ...] = UNSUPPORTED_NATIVE_OPERATIONS
-    cleanup: Dict[str, Any] = field(default_factory=dict)
-
-    def document(self, status: str = "passed") -> Dict[str, Any]:
-        """Return the stable JSON schema consumed by the manual and CI."""
-        return {
-            "schema": 1,
-            "status": status,
-            "engine": self.engine.value,
-            "url": self.url,
-            "bridge": self.bridge,
-            "revision": self.revision,
-            "capabilities": dict(self.capabilities),
-            "actions": self.actions,
-            "snapshots": self.snapshots,
-            "screenshots": self.screenshots,
-            "unsupported_native_operations": list(self.unsupported_operations),
-            "cleanup": self.cleanup,
-        }
-
-
 def _wait_for_text(client: WebDriverClient, element_id: str, expected: str, *, include: bool, timeout_ms: int) -> None:
     """Wait on a DOM mutation rather than polling or sleeping in the host."""
     result = client.execute_async(WAIT_FOR_SCRIPT, [f"#{element_id}", expected, include, timeout_ms])
@@ -202,17 +139,6 @@ def _snapshot(client: WebDriverClient, trace: Trace, label: str) -> Dict[str, An
     return result
 
 
-def _screenshot(client: WebDriverClient, trace: Trace, directory: pathlib.Path, label: str) -> None:
-    """Save one PNG and record its digest and dimensions."""
-    _safe_path(directory, directory=ROOT / "output")
-    content = client.screenshot()
-    path = _safe_path(directory / f"{label}.png", directory=directory)
-    path.parent.mkdir(parents=True, exist_ok=True)
-    path.write_bytes(content)
-    width, height = struct.unpack(">II", content[16:24])
-    trace.screenshots.append({"label": label, "path": path.relative_to(ROOT).as_posix(), "sha256": hashlib.sha256(content).hexdigest(), "width": width, "height": height, "bytes": len(content)})
-
-
 def _dispatch_change(client: WebDriverClient, element_id: str) -> None:
     """Deliver the delegated Rust change action after WebDriver input."""
     client.execute(
@@ -245,7 +171,7 @@ def run_scenario(
         client.navigate(url)
         _wait_for_selector(client, "#metis-form", timeout_ms=timeout_ms)
         initial = _snapshot(client, trace, "initial")
-        _screenshot(client, trace, screenshot_directory, "initial")
+        screenshot(client, trace, screenshot_directory, "initial")
         if bridge == "authorized":
             _wait_for_text(client, "metis-status", "Authorized backend session ready", include=True, timeout_ms=timeout_ms)
             trace.actions.append({"action": "await-authorized-bridge", "result": "ready"})
@@ -261,7 +187,7 @@ def run_scenario(
             _wait_for_text(client, "result-weight" if element_id == "weight-kg" else "result-dose", expected, include=False, timeout_ms=timeout_ms)
             trace.actions.append({"action": "input-change", "field": element_id, "value": value, "observed": expected})
             _snapshot(client, trace, f"after-{element_id}")
-            _screenshot(client, trace, screenshot_directory, f"after-{element_id}")
+            screenshot(client, trace, screenshot_directory, f"after-{element_id}")
 
         if bridge == "authorized":
             submit = client.find("#submit-calculation")
@@ -272,7 +198,7 @@ def run_scenario(
                 client.click(client.find("#metis-stop"))
                 _wait_for_text(client, "metis-app", "Metis browser host stopped.", include=True, timeout_ms=timeout_ms)
                 stopped_snapshot = _snapshot(client, trace, "stopped-after-cancel")
-                _screenshot(client, trace, screenshot_directory, "stopped-after-cancel")
+                screenshot(client, trace, screenshot_directory, "stopped-after-cancel")
                 _assert_stopped(stopped_snapshot)
                 client.click(client.find("#metis-start"))
                 _wait_for_selector(client, "#metis-form", timeout_ms=timeout_ms)
@@ -288,7 +214,7 @@ def run_scenario(
                     raise BrowserRuntimeError(f"authorized result differs: {metrics!r}")
                 trace.actions.append({"action": "submit", "state": "success", "metrics": metrics})
                 _snapshot(client, trace, "success")
-                _screenshot(client, trace, screenshot_directory, "success")
+                screenshot(client, trace, screenshot_directory, "success")
         else:
             submit_state = initial["elements"]["submit-calculation"]
             if not isinstance(submit_state, dict) or submit_state.get("disabled") is not True:
@@ -299,14 +225,14 @@ def run_scenario(
             client.click(client.find("#metis-stop"))
             _wait_for_text(client, "metis-app", "Metis browser host stopped.", include=True, timeout_ms=timeout_ms)
             stopped_snapshot = _snapshot(client, trace, "stopped")
-            _screenshot(client, trace, screenshot_directory, "stopped")
+            screenshot(client, trace, screenshot_directory, "stopped")
             _assert_stopped(stopped_snapshot)
             client.click(client.find("#metis-start"))
             _wait_for_selector(client, "#metis-form", timeout_ms=timeout_ms)
             remounted_snapshot = _snapshot(client, trace, "remounted")
             _assert_remount_has_no_result(remounted_snapshot)
             _assert_no_pending_request(remounted_snapshot)
-            _screenshot(client, trace, screenshot_directory, "remounted")
+            screenshot(client, trace, screenshot_directory, "remounted")
             trace.actions.append({"action": "stop-remount", "stale_result": False})
 
         if stopped_snapshot is None or remounted_snapshot is None:
@@ -374,14 +300,17 @@ def _write_trace(path: pathlib.Path, document: Mapping[str, Any]) -> None:
 def _arguments() -> argparse.Namespace:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--engine", required=True, choices=[engine.value for engine in BrowserEngine])
+    parser.add_argument("--scenario", choices=("workbench", "canvas"), default="workbench")
     parser.add_argument("--driver-url", help="W3C WebDriver endpoint; defaults to METIS_WEBDRIVER_<ENGINE>_URL")
     parser.add_argument("--url", help="already-running browser workbench URL")
     parser.add_argument("--serve-dir", type=pathlib.Path, help="serve one generated output/browser directory on loopback")
+    parser.add_argument("--canvas-id", action="append", default=[], help="canvas DOM id for the format-neutral trusted-input scenario; repeat per canvas")
+    parser.add_argument("--consumer-revision", help="40-hex revision of the application consuming the format-neutral canvas seam")
     parser.add_argument("--bridge", choices=BRIDGE_MODES, default="disconnected")
     parser.add_argument("--cancel", action="store_true", help="submit a delayed authorized request, stop, remount and check stale-response disposal")
     parser.add_argument("--cancel-grace-ms", type=int, default=4_000)
     parser.add_argument("--timeout-seconds", type=float, default=30.0)
-    parser.add_argument("--output", type=pathlib.Path, help="trace path; defaults to output/browser/runtime/<engine>.json")
+    parser.add_argument("--output", type=pathlib.Path, help="trace path; defaults to output/browser/runtime/<engine>-<scenario>.json")
     return parser.parse_args()
 
 
@@ -410,7 +339,7 @@ def main() -> int:
     """Run one selected engine and return a process status."""
     arguments = _arguments()
     engine = BrowserEngine.parse(arguments.engine)
-    output = (arguments.output or ROOT / "output" / "browser" / "runtime" / f"{engine.value}.json").resolve()
+    output = (arguments.output or ROOT / "output" / "browser" / "runtime" / f"{engine.value}-{arguments.scenario}.json").resolve()
     trace: Optional[Trace] = None
     client: Optional[WebDriverClient] = None
     try:
@@ -421,6 +350,21 @@ def main() -> int:
             raise BrowserRuntimeError(f"cancel-grace-ms must be between 1 and {MAX_WAIT_MILLISECONDS}")
         if arguments.cancel and arguments.bridge != "authorized":
             raise BrowserRuntimeError("--cancel requires --bridge authorized")
+        run_canvas_scenario = None
+        consumer_revision = None
+        if arguments.scenario == "canvas":
+            from browser_canvas import run_canvas_scenario, validate_canvas_ids, validate_consumer_revision
+
+            if arguments.bridge != "disconnected":
+                raise BrowserRuntimeError("canvas scenarios do not use the workbench bridge")
+            if arguments.cancel:
+                raise BrowserRuntimeError("--cancel is only valid for the workbench scenario")
+            canvas_ids = validate_canvas_ids(arguments.canvas_id)
+            consumer_revision = validate_consumer_revision(arguments.consumer_revision)
+        elif arguments.canvas_id:
+            raise BrowserRuntimeError("--canvas-id requires --scenario canvas")
+        elif arguments.consumer_revision is not None:
+            raise BrowserRuntimeError("--consumer-revision requires --scenario canvas")
         driver_url = arguments.driver_url or os.environ.get(f"METIS_WEBDRIVER_{engine.value.upper()}_URL")
         if not driver_url:
             raise BrowserRuntimeError(f"set --driver-url or METIS_WEBDRIVER_{engine.value.upper()}_URL")
@@ -436,14 +380,20 @@ def main() -> int:
             with server as origin:
                 url = origin
                 client = WebDriverClient(driver_url, arguments.timeout_seconds)
-                trace = run_scenario(client, engine, url, arguments.bridge, revision, output.parent / "screenshots" / engine.value, timeout_ms, arguments.cancel, arguments.cancel_grace_ms)
+                if arguments.scenario == "canvas":
+                    trace = run_canvas_scenario(client, engine, url, revision, output.parent / "screenshots" / engine.value / "canvas", timeout_ms, canvas_ids, consumer_revision)
+                else:
+                    trace = run_scenario(client, engine, url, arguments.bridge, revision, output.parent / "screenshots" / engine.value, timeout_ms, arguments.cancel, arguments.cancel_grace_ms)
         else:
             url = arguments.url
             if url is None:
                 raise BrowserRuntimeError("browser URL was not provided")
             _validate_bridge_url(url, arguments.bridge)
             client = WebDriverClient(driver_url, arguments.timeout_seconds)
-            trace = run_scenario(client, engine, url, arguments.bridge, revision, output.parent / "screenshots" / engine.value, timeout_ms, arguments.cancel, arguments.cancel_grace_ms)
+            if arguments.scenario == "canvas":
+                trace = run_canvas_scenario(client, engine, url, revision, output.parent / "screenshots" / engine.value / "canvas", timeout_ms, canvas_ids, consumer_revision)
+            else:
+                trace = run_scenario(client, engine, url, arguments.bridge, revision, output.parent / "screenshots" / engine.value, timeout_ms, arguments.cancel, arguments.cancel_grace_ms)
         _write_trace(output, trace.document())
         print(json.dumps(trace.document(), sort_keys=True))
         return 0

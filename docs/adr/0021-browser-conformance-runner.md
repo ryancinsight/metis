@@ -57,6 +57,14 @@ validated before the driver request. These methods carry no application or
 medical semantics. RITK owns the consumer scenario and maps the resulting
 events to its viewer reducer.
 
+The runner also has a `canvas` scenario. It validates a finite list of HTML
+canvas identifiers, captures the complete browser window and each element,
+records intrinsic/CSS dimensions, applies the bounded pointer and wheel actions
+to every canvas, and explicitly releases all WebDriver sources. The trace
+stores the Metis revision and an optional 40-hex consumer revision separately.
+This makes the runner reusable for RITK and other Atlas consumers without
+moving their state or format policy into Metis.
+
 The runner declares `native-file-dialog`, `native-process-launch` and
 `os-permission-grant` unsupported for this browser surface. Native authority,
 filesystem handles and DICOM parsing remain outside Metis: RITK owns the DICOM
@@ -96,10 +104,11 @@ missing endpoint is a failed invocation, never a skipped matrix cell.
 ## Verification
 
 `python -m unittest discover -s scripts/tests` covers the protocol-shaped
-scenario across engine names, input-sensitive result assertions, bounded W3C
-pointer/wheel payloads, disconnected privilege rejection, teardown state,
-screenshot validation and explicit unsupported operations. `python -m py_compile`
-checks the runner and tests.
+workbench and canvas scenarios across engine names, input-sensitive result
+assertions, bounded W3C pointer/wheel payloads, element and full-window
+screenshot validation, disconnected privilege rejection, teardown state and
+explicit unsupported operations. `python -m py_compile` checks the runner and
+tests.
 Each configured engine is run with the commands in the browser manual, and its
 schema-1 trace plus PNGs are reviewed before the browser item can close. The
 current Windows environment has no configured Chromium, Firefox or WebKit
