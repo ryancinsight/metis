@@ -14,6 +14,14 @@ the dimensions and exact byte length, then uploads the frame without retaining
 the source allocation or interpreting its format. RITK uses this seam for
 viewer pixels; DICOM parsing, geometry and display policy stay in RITK.
 
+`CanvasSurface::from_current_document_with_input` retains Moirai pointer and
+wheel listeners and exposes a bounded `CanvasEvent` batch. Pointer capture,
+target-local CSS-pixel coordinates, modifier state, wheel units and listener
+teardown remain host concerns; the events contain no file, medical or viewer
+state. A consumer such as RITK translates the format-neutral batch into its
+own presentation reducer and cancels an active gesture when the queue reports
+overflow or a provider failure.
+
 The host reports a typed disconnected outcome when no authorized backend bridge
 is configured. When the page host supplies an endpoint, process identifier and
 session principal, it connects `AsyncFrontendApp` to the Metis service over the

@@ -35,3 +35,4 @@
 | [0024](0024-native-application-host.md) | Native application host seam | Accepted |
 | [0025](0025-axum-server-boundary.md) | Axum server boundary comparison | Accepted |
 | [0026](0026-python-native-host.md) | Python native host facade | Accepted |
+| [0027](0027-bounded-canvas-input.md) | Bounded format-neutral canvas input | Accepted |

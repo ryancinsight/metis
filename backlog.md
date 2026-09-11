@@ -403,6 +403,12 @@ an owner. “Unsupported” cannot replace delivery of a required mobile/native 
 - Status: done; commit: `25014a6`; PR: <https://github.com/ryancinsight/metis/pull/40>; last-update: 2026-09-09.
 - Outcome: Active Metis artifacts now describe only generic bounded metadata/bytes; superseded captures are labeled, and RITK remains the DICOM owner. Full locked gate passes.
 
+<a id="METIS-CANVAS-INPUT-001"></a>
+## METIS-CANVAS-INPUT-001 — Bounded format-neutral canvas input [minor]
+- Status: in-progress; priority: P1; owner: Metis browser host; integrator: root; last-update: 2026-09-11; branch: `feat/metis-canvas-input-001`; dependencies: METIS-BROWSER-001, METIS-INPUT-001; risk: unbounded browser callbacks and ownership drift.
+- Scope: expose bounded pointer and wheel records with target-local coordinates, capture teardown and typed overflow/provider errors; RITK translates them into viewer actions. DICOM parsing, metadata, geometry and viewer state remain outside Metis.
+- Acceptance: native queue tests cover order, capacity, failure disposal and recovery; the Metis WASM target checks Moirai listener wiring; the RITK consumer routes single and orthogonal canvases through its existing presentation reducer and cancels gestures on failure; no DICOM dependency or parser enters the Metis graph. Decision: [ADR 0027](docs/adr/0027-bounded-canvas-input.md).
+
 <a id="METIS-DISTRIBUTION-001"></a>
 ## METIS-DISTRIBUTION-001 — Executables and Windows MSI [arch] [minor]
 - Status: done; delivery: `feat(distribution): Build executables and MSI`; decision: [ADR 0005](docs/adr/0005-application-distribution.md).
