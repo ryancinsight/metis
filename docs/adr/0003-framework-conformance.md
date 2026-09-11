@@ -212,6 +212,11 @@ smoke only. Trusted physical browser input, configured cross-engine drivers,
 pointer/three-view/GPU behavior and full-window capture remain open; Métis still
 contains no DICOM parser, metadata, geometry or viewer state.
 
+Revision 2026-09-11 (format-neutral host comments): commit `8ea5935` changes
+only ownership comments in the host boundary. The visual fixture provenance was
+regenerated for that source revision; capture hashes and semantic records remain
+unchanged, and the exact full gate passes.
+
 ## Decision and scope
 
 Use Tauri as the application-framework migration reference, egui/GPUI/Iced as

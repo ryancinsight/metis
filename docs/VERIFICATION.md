@@ -1492,6 +1492,12 @@ reviewed snapshot and exact evidence limits are in the
 The event is untrusted and this does not close physical browser input,
 cross-engine drivers, pointer/three-view/GPU behavior or full-window capture.
 
+Revision 2026-09-11 (format-neutral host comments): commit `8ea5935` changes
+only ownership comments in the host boundary. The visual fixture provenance was
+regenerated for that source revision; capture hashes, semantic records and all
+visual assertions remain unchanged. The exact full gate passes at that
+revision.
+
 The format-neutral handoff follow-up removes the remaining browser-side DICOM
 candidate and Part 10 marker decisions. Metis now reports bounded file metadata
 and byte progress only; a RITK adapter receives the named bytes before any
