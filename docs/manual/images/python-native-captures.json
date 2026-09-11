@@ -1,0 +1,27 @@
+{
+  "schema": 1,
+  "source_revision": "c27326419684eefba59901dea52fb3f7077e5457",
+  "runtime": {
+    "target": "x86_64-pc-windows-msvc",
+    "python_abi": "cp39-abi3-win_amd64",
+    "timezone": "America/New_York"
+  },
+  "captures": [
+    {
+      "id": "python_native_initial",
+      "image": "python-native-window.bmp",
+      "captured_at": "2026-09-11T05:16:08-04:00",
+      "outer_size": [336, 279],
+      "client_size": [320, 240],
+      "launch": "python scripts/python_native_capture.py --wheel <wheel> --output docs/manual/images/python-native-window.bmp",
+      "input": "Rust-owned checkerboard framebuffer presented through NativeApplication generation 0",
+      "observed": [
+        "visible native window title bar",
+        "red and blue checkerboard pixels",
+        "two bounded resize events",
+        "deterministic close after capture"
+      ],
+      "sha256": "d15b9327cdc47e274c315d1d7100970dd9e9afec5e7808b8daea346ea1bce943"
+    }
+  ]
+}

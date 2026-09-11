@@ -1332,6 +1332,16 @@ window capture, the two-window/IME journey, and macOS/Linux provider evidence
 remain open; the facade has no DICOM or viewer authority, which remains in
 RITK.
 
+The same revision also produced a visible Python-host capture through the
+committed `scripts/python_native_capture.py` tool. The tool presented a
+checkerboard RGBA frame, pumped the provider while GDI rendered the HWND, and
+closed generation `0`. The inspected 336×279 window contains the 320×240
+client frame and two bounded resize events; the exact image and SHA-256 digest
+are recorded in [`python-native-captures.json`](manual/images/python-native-captures.json).
+This closes only the single-window Python binding capture. Two-window focus,
+native IME, resize/DPI journeys, permission denial and non-Windows providers
+remain open under V05.
+
 <a id="V06"></a>
 ### V06 — Asset and graphics gallery
 
