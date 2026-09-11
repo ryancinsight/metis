@@ -349,6 +349,10 @@ fn apply_control_event(
     }
 }
 
+#[expect(
+    clippy::too_many_lines,
+    reason = "one browser submission owns the bounded request, event and render transition"
+)]
 fn submit(
     document: &WebDocument,
     state: &Rc<RefCell<BrowserState>>,

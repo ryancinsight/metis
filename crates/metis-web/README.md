@@ -5,6 +5,15 @@ Rust owns the captured form state and browser event transitions; the page owns
 ordinary CSS and the document shell. Moirai owns the DOM handles and callback
 lifetime so this crate does not import `web-sys` or a second browser runtime.
 
+## Format-neutral canvas
+
+`metis_web::CanvasSurface` presents a consumer-owned borrowed RGBA8 frame through
+Moirai's bounded HTML5 canvas provider. Consumers implement
+`metis_web::CanvasFrame` on their existing presentation value; the host checks
+the dimensions and exact byte length, then uploads the frame without retaining
+the source allocation or interpreting its format. RITK uses this seam for
+viewer pixels; DICOM parsing, geometry and display policy stay in RITK.
+
 The host reports a typed disconnected outcome when no authorized backend bridge
 is configured. When the page host supplies an endpoint, process identifier and
 session principal, it connects `AsyncFrontendApp` to the Metis service over the

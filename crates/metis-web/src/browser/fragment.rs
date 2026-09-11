@@ -99,17 +99,14 @@ pub(crate) fn listeners(
         let Some(mut frontend) = listener_app.borrow_mut().take() else {
             return;
         };
-        let action = match metis_core::protocol::FragmentAction::new(
+        let Ok(action) = metis_core::protocol::FragmentAction::new(
             generation.value(),
             "status.describe",
             "metis-events",
             "session-dialog",
-        ) {
-            Ok(action) => action,
-            Err(_) => {
-                *listener_app.borrow_mut() = Some(frontend);
-                return;
-            }
+        ) else {
+            *listener_app.borrow_mut() = Some(frontend);
+            return;
         };
         let task_cleanup: Rc<RefCell<Option<LocalTaskHandle>>> = Rc::clone(&listener_task);
         let result_app = Rc::clone(&listener_app);

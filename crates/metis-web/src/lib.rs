@@ -5,6 +5,13 @@
 
 pub mod theme;
 
+mod canvas;
+
+pub use canvas::CanvasFrame;
+
+#[cfg(target_arch = "wasm32")]
+pub use canvas::CanvasSurface;
+
 mod file_batch;
 
 pub use file_batch::{FileDropBatch, FileDropPayload};
