@@ -455,7 +455,7 @@ an owner. “Unsupported” cannot replace delivery of a required mobile/native 
 <a id="METIS-REGISTRATION-001"></a>
 ## METIS-REGISTRATION-001 — Public Atlas member registration [patch] — done
 - Status: done; priority: P0; delivery: Atlas `8380a789e`; recursive registration and coherence evidence passed 2026-09-09.
-- Outcome: Atlas pins `repos/metis` to public `main` `a957a99`; the fresh long-path checkout initialized all 28 registered members. No runtime or signing capability depends on this metadata change.
+- Outcome: Atlas main `e038deb75` pins `repos/metis` to merged public `main` `2e21146c`; the fresh long-path checkout initialized all 28 registered members. No runtime or signing capability depends on this metadata change.
 
 <a id="METIS-APPLICATION-001"></a>
 ## METIS-APPLICATION-001 — Single executable application [arch] [major]
