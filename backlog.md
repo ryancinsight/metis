@@ -347,10 +347,11 @@ an owner. “Unsupported” cannot replace delivery of a required mobile/native 
 
 <a id="METIS-AXUM-001"></a>
 ## METIS-AXUM-001 — First-party bounded HTTP boundary [arch] [minor]
-- Status: todo; priority: P2; owner: Moirai service + Metis policy; dependencies: METIS-SERVICES-001, METIS-AUTHORITY-001, METIS-FRAGMENT-001; risk: server trust boundary
-- Scope: conditional server deployment with typed routes, bounded extraction, origin/session authorization, deadlines, cancellation, backpressure and text/attribute fragment responses; no Axum dependency, arbitrary markup, scripts or DICOM behavior.
-- Acceptance: an admitted target has a real local server integration suite covering route isolation, malformed/oversized bodies, unauthorized origin/session, timeout/cancel, bounded response size, client disconnect and orderly teardown; browser and native captures tie results to one revision.
-- Demonstration: [V08](docs/VERIFICATION.md#V08) server journey and [browser manual](docs/manual/browser.md#hypermedia-boundary) capture; keep this item todo until a deployment target is explicitly admitted.
+- Status: in-progress; priority: P2; owner: Moirai service + Metis policy; integrator: root; branch: `feat/metis-http-boundary`; dependencies: METIS-SERVICES-001, METIS-AUTHORITY-001, METIS-FRAGMENT-001; risk: server trust boundary
+- Named target: the local `metis-app` server demonstration used by the user manual. It is a loopback deployment target for typed browser fragments, not a public network listener.
+- Scope: typed routes, bounded extraction, origin/session authorization, deadlines, cancellation, backpressure and text/attribute fragment responses; no Axum dependency, arbitrary markup, scripts or DICOM behavior.
+- Acceptance: the admitted target has a real local server integration suite covering route isolation, malformed/oversized bodies, unauthorized origin/session, timeout/cancel, bounded response size, client disconnect and orderly teardown; browser and native captures tie results to one revision.
+- Demonstration: [V08](docs/VERIFICATION.md#V08) server journey and [browser manual](docs/manual/browser.md#hypermedia-boundary) capture; RITK remains the DICOM and viewer owner.
 - Decision: [ADR 0025](docs/adr/0025-axum-server-boundary.md). Re-open when a named Atlas application requires HTTP server rendering or fragment delivery.
 
 <a id="METIS-MIGRATION-001"></a>

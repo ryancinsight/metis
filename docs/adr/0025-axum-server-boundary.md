@@ -6,6 +6,12 @@ Date: 2026-09-10
 
 Driver: [METIS-AXUM-001](../../backlog.md#METIS-AXUM-001)
 
+Revision 2026-09-11: [METIS-AXUM-001](../../backlog.md#METIS-AXUM-001)
+admits a loopback-only `metis-app` server demonstration for the user manual.
+The target exercises the first-party Moirai HTTP transport and Metis policy;
+it does not authorize a public listener, production deployment, or a DICOM
+boundary in Metis.
+
 ## Context
 
 Axum's 0.8 documentation describes a typed server boundary built from
