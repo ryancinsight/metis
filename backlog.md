@@ -347,11 +347,13 @@ an owner. “Unsupported” cannot replace delivery of a required mobile/native 
 
 <a id="METIS-AXUM-001"></a>
 ## METIS-AXUM-001 — First-party bounded HTTP boundary [arch] [minor]
-- Status: review; priority: P2; owner: Moirai service + Metis policy; integrator: root; branch: `feat/metis-http-boundary`; dependencies: METIS-SERVICES-001, METIS-AUTHORITY-001, METIS-FRAGMENT-001; risk: server trust boundary
+- Status: done; priority: P2; owner: Moirai service + Metis policy; integrator: root; last-update: 2026-09-10; delivery: `bcd3a0c`; dependencies: METIS-SERVICES-001, METIS-AUTHORITY-001, METIS-FRAGMENT-001; risk: server trust boundary
 - Named target: the local `metis-app` server demonstration used by the user manual. It is a loopback deployment target for typed browser fragments, not a public network listener.
 - Scope: typed routes, bounded extraction, origin/session authorization, deadlines, cancellation, backpressure and text/attribute fragment responses; no Axum dependency, arbitrary markup, scripts or DICOM behavior.
 - Acceptance: the admitted target has a real local server integration suite covering route isolation, malformed/oversized bodies, unauthorized origin/session, timeout/cancel, bounded response size, client disconnect and orderly teardown; browser and native captures tie results to one revision.
 - Demonstration: [V08](docs/VERIFICATION.md#V08) server journey and [browser manual](docs/manual/browser.md#hypermedia-boundary) capture; RITK remains the DICOM and viewer owner.
+- Outcome: the Moirai loopback target asserts missing-session and method denial, session capacity, response-byte limits, malformed/oversized input, origin policy, idle deadlines, disconnect handling and finite teardown; the 47/47 focused native suite, warning-denied Clippy, 84/84 Python suite and updated verification record pass.
+- Residual: public deployment, TLS, cross-engine traces and the broader scoped-services item remain outside this finite loopback target; the item reopens only when a named Atlas application requires server rendering or fragment delivery.
 - Decision: [ADR 0025](docs/adr/0025-axum-server-boundary.md). Re-open when a named Atlas application requires HTTP server rendering or fragment delivery.
 
 <a id="METIS-MIGRATION-001"></a>
