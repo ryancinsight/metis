@@ -1388,29 +1388,45 @@ authenticated fragment request, serves an exact-origin CORS preflight, rejects
 a mismatched origin and unknown route, and proves malformed or oversized
 bodies, a disconnected peer and an idle peer's request deadline terminate
 before application dispatch. The `metis-app` invocation suite also parses the
-bounded `--metis-http-service ORIGIN PORT PRINCIPAL_HEX` role and rejects
-response-delay flags on that role. The generated `http-health.html` page
+bounded `--metis-http-service ORIGIN PORT PRINCIPAL_HEX` role and its bounded
+asynchronous `--response-delay-ms` probe. The generated `http-health.html` page
 visually exercises the real cross-origin `/health`, binary handshake and
 generation-bound fragment response, then records malformed, unauthorized and
-stale-generation probes. The service retains at most eight sessions and closes
-after a finite request budget. This is local presentation transport evidence;
+stale-generation probes. The delayed service trace resets the page while
+`/health` is pending and confirms that the new generation retains an empty
+response, fragment and negative state after the delayed completion window. The
+service retains at most eight sessions and closes after a finite request budget.
+This is local presentation transport evidence;
 it does not claim public deployment, TLS, or DICOM behavior. DICOM parsing,
 study selection, geometry and viewer state remain in the [RITK
 workflow](../../ritk/docs/manual/dicom-workflow.md).
 
-An in-app browser capture at revision
+An in-app browser capture at the pre-change revision
 `cadb684ca7c8bda3f1c873f93286871e620e6196` rendered the generated page and
 reported `Authenticated fragment boundary ready`, `200 metis-http-ready`,
 handshake `200`, fragment `200 (1 patch)`, accepted `session` action, malformed
 `400`, unauthorized `401`, unchanged stale state and lifecycle generation `1`.
-This is visual evidence for one live browser surface; configured Chromium,
+This remains the baseline visual evidence for one live browser surface; configured Chromium,
 Firefox and WebKit WebDriver captures remain open and are not inferred from
 this result.
 
+The current increment at revision
+`e6b84432bc8a94515f0a332592ff392127788f00` adds a second in-app browser trace
+against the same loopback service with `--response-delay-ms 4000`. The page entered
+`Probing the local Metis service…`, **Reset mount** advanced the lifecycle from
+generation `1` to `2`, and after the delayed response window the page still
+reported `Mount reset; the previous fragment generation is stale`, response
+`—`, fragment `—`, and negative `—`. The screenshot showed the same controls,
+the reset status and no prior fragment result. This is direct stale-completion
+evidence for one browser engine; it does not claim cross-engine or provider
+allocation proof.
+
 The current review revision adds explicit native assertions for a missing
-session, an inadmissible method, the eight-session capacity boundary and the
-configured response-byte limit. The focused `cargo nextest` run passes 47/47
-tests and warning-denied Clippy passes for `metis-backend` and `metis-app`.
+session, an inadmissible method, the eight-session capacity boundary, the
+configured response-byte limit and the bounded HTTP delay. The focused
+`cargo nextest` run passes 114/114 tests across `metis-app`, `metis-backend`,
+`metis-core` and `metis-web`; warning-denied Clippy passes for `metis-backend`
+and `metis-app`.
 
 The authentication slice uses the Moirai provider with its TLS feature
 disabled. `cargo tree --locked -p metis-core --edges normal` and the Metis

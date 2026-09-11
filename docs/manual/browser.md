@@ -56,13 +56,31 @@ must leave the previous text unchanged. The page is an HTML5/CSS demonstration
 of the presentation boundary; it does not load, decode or retain DICOM data.
 RITK owns that workflow.
 
-The in-app browser capture on 2026-09-11 at Metis revision
+To exercise cancellation at the same boundary, start the service with a
+bounded asynchronous response delay:
+
+```text
+cargo run --locked -p metis-app -- --metis-http-service http://127.0.0.1:8080 8766 66666666666666666666666666666666 --response-delay-ms 4000
+```
+
+Activate **Reset mount** while the initial probe is pending. The new
+generation must retain the reset status, empty response, fragment and negative
+diagnostics after the four-second response window; no completion from the
+aborted request may update the remounted page. The probe is bounded to 30,000
+milliseconds and uses Moirai's timer, so it does not block the executor.
+
+The in-app browser capture on 2026-09-11 at the pre-change Metis revision
 `cadb684ca7c8bda3f1c873f93286871e620e6196` showed the complete live state:
 `Authenticated fragment boundary ready`, `200 metis-http-ready`, handshake
 `200`, fragment `200 (1 patch)`, accepted `session` action, malformed `400`,
 unauthorized `401`, unchanged stale state and lifecycle generation `1`. This
 is one real browser-rendered visual trace of the local presentation boundary;
 it is not cross-engine WebDriver evidence. No DICOM data entered the page.
+
+The delayed-reset capture was run against Metis revision
+`e6b84432bc8a94515f0a332592ff392127788f00`. It entered the pending probe,
+advanced from generation `1` to `2` on **Reset mount**, and remained at the
+empty reset state after the four-second response window.
 
 ## Run the cross-engine conformance trace
 
@@ -262,6 +280,13 @@ preflights the allowlisted target and applies the result with a text setter. The
 response cannot add markup, scripts, selectors or navigation, and the existing
 `metis-events` status target keeps the static control inventory unchanged.
 
+The HTTP demonstration applies the same contract in its own request lifecycle.
+It preflights every target and attribute before any DOM setter, reads response
+bodies through a 16 KiB streamed bound, and associates health, handshake,
+fragment and negative-probe requests with the current mount lease. Reset aborts
+the lease and clears the old fragment result before incrementing the generation;
+stale completions cannot update the new page.
+
 Exercise it with an authorized service session by activating **Session details**
 and inspecting `metis-events`. The value must contain
 `Fragment action status.describe accepted: session-dialog`. Stop and remount the
@@ -290,7 +315,9 @@ connection limits; the application closes after its finite request budget.
 The server's real loopback suite covers the successful handshake/fragment
 journey, exact-origin CORS preflight, origin and route denial, malformed and
 oversized bodies, a disconnected peer, idle-peer deadline and finite teardown.
-It does not add an Axum or htmx runtime and it never accepts arbitrary markup
+The optional response-delay probe is bounded and asynchronous so the browser
+reset path can be observed against a pending real request. It does not add an
+Axum or htmx runtime and it never accepts arbitrary markup
 or scripts. [ADR 0025](../adr/0025-axum-server-boundary.md) records the
 comparison and the first-party boundary. RITK remains responsible for DICOM
 scanning, decoding, series selection, geometry and viewer state; this fragment

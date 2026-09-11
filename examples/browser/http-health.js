@@ -4,6 +4,7 @@ const fragmentEndpoint = new URL("http://127.0.0.1:8766/v1/fragments");
 const protocolVersion = 0x0100;
 const principal = new Uint8Array(16).fill(0x66);
 const tokenBytes = 84;
+const maxHttpBodyBytes = 16 * 1024;
 const textEncoder = new TextEncoder();
 const textDecoder = new TextDecoder("utf-8", { fatal: true });
 const allowedTargets = new Set(["metis-events", "metis-status"]);
@@ -94,6 +95,48 @@ function encodeInvocation(token, action) {
   return buffer;
 }
 
+async function readBoundedBody(result) {
+  const declaredLength = result.headers.get("content-length");
+  if (declaredLength !== null) {
+    if (!/^\d+$/.test(declaredLength)) {
+      throw new Error("Metis HTTP content length is invalid");
+    }
+    const length = Number(declaredLength);
+    if (!Number.isSafeInteger(length) || length > maxHttpBodyBytes) {
+      throw new Error("Metis HTTP response exceeds its bound");
+    }
+  }
+  if (!result.body) {
+    throw new Error("Metis HTTP response body stream is unavailable");
+  }
+  const reader = result.body.getReader();
+  const chunks = [];
+  let total = 0;
+  try {
+    while (true) {
+      const next = await reader.read();
+      if (next.done) {
+        break;
+      }
+      total += next.value.byteLength;
+      if (total > maxHttpBodyBytes) {
+        await reader.cancel();
+        throw new Error("Metis HTTP response exceeds its bound");
+      }
+      chunks.push(next.value);
+    }
+  } finally {
+    reader.releaseLock();
+  }
+  const body = new Uint8Array(total);
+  let offset = 0;
+  for (const chunk of chunks) {
+    body.set(chunk, offset);
+    offset += chunk.byteLength;
+  }
+  return body.buffer;
+}
+
 async function requestBinary(url, body, signal) {
   const result = await fetch(url, {
     method: "POST",
@@ -102,7 +145,7 @@ async function requestBinary(url, body, signal) {
     cache: "no-store",
     signal,
   });
-  return { status: result.status, body: await result.arrayBuffer() };
+  return { status: result.status, body: await readBoundedBody(result) };
 }
 
 function readError(buffer) {
@@ -178,7 +221,12 @@ function decodePatchSet(buffer) {
 }
 
 function attributeAllowed(name) {
-  return name === "class" || name === "value" || name.startsWith("aria-") || name.startsWith("data-");
+  return name.length > 0 &&
+    name.length <= 64 &&
+    /^[a-z0-9:_-]+$/.test(name) &&
+    (name === "class" || name === "value" ||
+      (name.startsWith("aria-") && name.length > "aria-".length) ||
+      (name.startsWith("data-") && name.length > "data-".length));
 }
 
 function applyPatchSet(patchSet) {
@@ -207,42 +255,88 @@ function applyPatchSet(patchSet) {
   }
 }
 
-async function openSession() {
+function isCurrentLease(lease) {
+  return lease.generation === mountGeneration &&
+    lease.controller === requestController &&
+    !lease.controller.signal.aborted;
+}
+
+function requireCurrentLease(lease) {
+  if (!isCurrentLease(lease)) {
+    throw new Error("stale fragment generation");
+  }
+}
+
+function isAbort(error) {
+  return error && typeof error === "object" && error.name === "AbortError";
+}
+
+function beginRequest() {
+  requestController?.abort();
+  const controller = new AbortController();
+  requestController = controller;
+  return { generation: mountGeneration, controller };
+}
+
+async function openSession(lease) {
+  requireCurrentLease(lease);
   if (sessionToken) {
     return sessionToken;
   }
-  const result = await requestBinary(sessionEndpoint, encodeHandshake());
+  const result = await requestBinary(
+    sessionEndpoint,
+    encodeHandshake(),
+    lease.controller.signal,
+  );
+  requireCurrentLease(lease);
   if (result.status !== 200) {
     throw new Error(`handshake ${result.status}: ${readError(result.body)}`);
   }
-  sessionToken = decodeHandshake(result.body);
+  const token = decodeHandshake(result.body);
+  requireCurrentLease(lease);
+  sessionToken = token;
   return sessionToken;
 }
 
-async function dispatchFragment(input, generation = mountGeneration, signal) {
-  const token = await openSession();
+async function dispatchFragment(input, lease, generation = lease.generation) {
+  const token = await openSession(lease);
+  requireCurrentLease(lease);
   const action = encodeAction(generation, input);
-  const result = await requestBinary(fragmentEndpoint, encodeInvocation(token, action), signal);
+  const result = await requestBinary(
+    fragmentEndpoint,
+    encodeInvocation(token, action),
+    lease.controller.signal,
+  );
+  requireCurrentLease(lease);
   if (result.status !== 200) {
     throw new Error(`fragment ${result.status}: ${readError(result.body)}`);
   }
   return decodePatchSet(result.body);
 }
 
-async function runNegativeProbes() {
-  const malformed = await requestBinary(fragmentEndpoint, new Uint8Array());
+async function runNegativeProbes(lease) {
+  requireCurrentLease(lease);
+  const malformed = await requestBinary(
+    fragmentEndpoint,
+    new Uint8Array(),
+    lease.controller.signal,
+  );
+  requireCurrentLease(lease);
   if (malformed.status !== 400) {
     throw new Error(`malformed probe returned ${malformed.status}`);
   }
   const unauthorized = await requestBinary(
     fragmentEndpoint,
     encodeInvocation(new Uint8Array(tokenBytes), encodeAction(mountGeneration, fragmentInput.value)),
+    lease.controller.signal,
   );
+  requireCurrentLease(lease);
   if (unauthorized.status !== 401) {
     throw new Error(`unauthorized probe returned ${unauthorized.status}`);
   }
   const before = events.textContent;
-  const stale = await dispatchFragment(fragmentInput.value, mountGeneration + 1);
+  const stale = await dispatchFragment(fragmentInput.value, lease, lease.generation + 1);
+  requireCurrentLease(lease);
   let staleRejected = false;
   try {
     applyPatchSet(stale);
@@ -252,52 +346,80 @@ async function runNegativeProbes() {
   if (!staleRejected || events.textContent !== before) {
     throw new Error("stale fragment was applied");
   }
+  requireCurrentLease(lease);
   negative.textContent = "malformed 400 · unauthorized 401 · stale unchanged";
 }
 
+async function renderFragment(lease) {
+  const patchSet = await dispatchFragment(fragmentInput.value, lease);
+  requireCurrentLease(lease);
+  applyPatchSet(patchSet);
+  requireCurrentLease(lease);
+  response.textContent = `200 metis-http-ready · handshake 200 · fragment 200 (${patchSet.patches.length} patch)`;
+  status.textContent = "Authenticated fragment boundary ready";
+}
+
 async function runFragment() {
-  requestController?.abort();
-  requestController = new AbortController();
+  const lease = beginRequest();
   fragmentButton.disabled = true;
   try {
-    const patchSet = await dispatchFragment(fragmentInput.value, mountGeneration, requestController.signal);
-    applyPatchSet(patchSet);
-    response.textContent = `200 metis-http-ready · handshake 200 · fragment 200 (${patchSet.patches.length} patch)`;
-    status.textContent = "Authenticated fragment boundary ready";
+    await renderFragment(lease);
   } catch (error) {
-    status.textContent = "Authenticated fragment boundary unavailable";
-    response.textContent = error instanceof Error ? error.message : "fragment request failed";
+    if (isCurrentLease(lease) && !isAbort(error)) {
+      status.textContent = "Authenticated fragment boundary unavailable";
+      response.textContent = error instanceof Error ? error.message : "fragment request failed";
+    }
   } finally {
-    fragmentButton.disabled = !sessionToken;
+    if (isCurrentLease(lease)) {
+      fragmentButton.disabled = !sessionToken;
+      requestController = undefined;
+    }
   }
 }
 
-async function probe() {
+async function performProbe(lease) {
+  requireCurrentLease(lease);
+  const result = await fetch(healthEndpoint, {
+    cache: "no-store",
+    signal: lease.controller.signal,
+  });
+  const body = textDecoder.decode(new Uint8Array(await readBoundedBody(result)));
+  requireCurrentLease(lease);
+  if (!result.ok || body !== "metis-http-ready\n") {
+    throw new Error(`health ${result.status}`);
+  }
+  await openSession(lease);
+  await renderFragment(lease);
+  await runNegativeProbes(lease);
+  requireCurrentLease(lease);
+}
+
+function probe() {
+  const lease = beginRequest();
   healthButton.disabled = true;
   fragmentButton.disabled = true;
   status.textContent = "Probing the local Metis service…";
   response.textContent = "—";
   negative.textContent = "—";
-  try {
-    const result = await fetch(healthEndpoint, { cache: "no-store" });
-    const body = await result.text();
-    if (!result.ok || body !== "metis-http-ready\n") {
-      throw new Error(`health ${result.status}`);
-    }
-    await openSession();
-    await runFragment();
-    await runNegativeProbes();
-  } catch (error) {
-    status.textContent = "Loopback HTTP boundary unavailable";
-    response.textContent = error instanceof Error ? error.message : "request failed";
-  } finally {
-    healthButton.disabled = false;
-    fragmentButton.disabled = !sessionToken;
-  }
+  void performProbe(lease)
+    .catch((error) => {
+      if (isCurrentLease(lease) && !isAbort(error)) {
+        status.textContent = "Loopback HTTP boundary unavailable";
+        response.textContent = error instanceof Error ? error.message : "request failed";
+      }
+    })
+    .finally(() => {
+      if (isCurrentLease(lease)) {
+        healthButton.disabled = false;
+        fragmentButton.disabled = !sessionToken;
+        requestController = undefined;
+      }
+    });
 }
 
 function resetMount() {
   requestController?.abort();
+  requestController = undefined;
   if (mountGeneration === Number.MAX_SAFE_INTEGER) {
     status.textContent = "Mount generation exhausted";
     return;
@@ -305,6 +427,11 @@ function resetMount() {
   mountGeneration += 1;
   lifecycle.textContent = `generation ${mountGeneration}`;
   status.textContent = "Mount reset; the previous fragment generation is stale";
+  response.textContent = "—";
+  events.textContent = "—";
+  negative.textContent = "—";
+  healthButton.disabled = false;
+  fragmentButton.disabled = !sessionToken;
 }
 
 healthButton.addEventListener("click", probe);

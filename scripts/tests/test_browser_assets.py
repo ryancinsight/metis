@@ -145,15 +145,28 @@ class BrowserAssetContractTests(unittest.TestCase):
         for fragment in (
             "function encodeHandshake()",
             "function encodeInvocation(token, action)",
+            "const maxHttpBodyBytes = 16 * 1024",
+            "async function readBoundedBody(result)",
+            "result.body.getReader()",
             'Content-Type": "application/metis"',
             "function applyPatchSet(patchSet)",
+            "name.length <= 64",
+            "/^[a-z0-9:_-]+$/.test(name)",
+            "function isCurrentLease(lease)",
+            "function beginRequest()",
+            "requireCurrentLease(lease)",
+            "signal: lease.controller.signal",
             "stale fragment generation",
             "malformed probe returned",
             "unauthorized probe returned",
+            'events.textContent = "—";',
+            "await runNegativeProbes(lease)",
             'fragmentButton.addEventListener("click", runFragment)',
             'resetButton.addEventListener("click", resetMount)',
         ):
             self.assertIn(fragment, script)
+        self.assertNotIn("async function openSession()", script)
+        self.assertNotIn("await runFragment();", script)
 
     def test_file_drop_surface_is_semantic_and_bounded(self):
         controls = (ROOT / "crates" / "metis-web" / "src" / "controls.rs").read_text(

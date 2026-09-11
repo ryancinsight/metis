@@ -214,6 +214,10 @@ mod tests {
         assert!(attribute_allowed("aria-busy"));
         assert!(attribute_allowed("data-result-id"));
         assert!(attribute_allowed("class"));
+        assert!(!attribute_allowed("aria-"));
+        assert!(!attribute_allowed("data-"));
+        assert!(!attribute_allowed("data-invalid name"));
+        assert!(!attribute_allowed("DATA-result-id"));
         assert!(!attribute_allowed("data-!"));
         assert!(!attribute_allowed("onclick"));
         assert!(!attribute_allowed("style"));

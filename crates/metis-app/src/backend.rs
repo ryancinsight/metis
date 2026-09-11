@@ -12,8 +12,8 @@ use metis_backend::{
     clinical::SafetyEnvelope, supervisor::run_session_with_deadline_and_environment,
 };
 use metis_backend::{
-    BrowserHttpService, MAX_HTTP_REQUESTS, serve_browser_http, serve_browser_websocket,
-    serve_browser_websocket_with_response_delay,
+    BrowserHttpService, MAX_HTTP_REQUESTS, serve_browser_http_with_response_delay,
+    serve_browser_websocket, serve_browser_websocket_with_response_delay,
 };
 use metis_core::host::{HostContext, HostOrigin, HostPolicy, HostSessionId, WindowId};
 use metis_core::protocol::TargetCapability;
@@ -154,6 +154,7 @@ pub(crate) fn run_http_service(
     raw_origin: &str,
     port: u16,
     principal: [u8; 16],
+    response_delay: Option<BrowserResponseDelay>,
 ) -> Result<(), Box<dyn std::error::Error>> {
     let origin = HostOrigin::parse(raw_origin)?;
     let window = WindowId::new(1)?;
@@ -176,7 +177,12 @@ pub(crate) fn run_http_service(
     eprintln!("browser_http_principal={}", principal_hex(principal));
     let application =
         BrowserHttpService::new(entropy::session_key()?, SafetyEnvelope::default(), policy);
-    moirai_executor::block_on(serve_browser_http(server, application, MAX_HTTP_REQUESTS))?;
+    moirai_executor::block_on(serve_browser_http_with_response_delay(
+        server,
+        application,
+        MAX_HTTP_REQUESTS,
+        response_delay.map(BrowserResponseDelay::duration),
+    ))?;
     Ok(())
 }
 
