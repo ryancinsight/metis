@@ -19,12 +19,16 @@ use metis_ipc::server::IpcHandler;
 use moirai_http::{HttpRequest, HttpResponse, HttpServer};
 use std::collections::BTreeMap;
 use std::io;
+use std::time::Duration;
 
 /// Maximum authenticated browser sessions retained by one HTTP host.
 pub const MAX_HTTP_SESSIONS: usize = 8;
 
 /// Maximum requests served before a demonstration host performs orderly teardown.
 pub const MAX_HTTP_REQUESTS: usize = 64;
+
+/// Largest response delay admitted by the HTTP browser conformance probe.
+pub const MAX_HTTP_RESPONSE_DELAY: Duration = Duration::from_secs(30);
 
 const SESSION_ROUTE: &str = "/v1/session";
 const FRAGMENT_ROUTE: &str = "/v1/fragments";
@@ -298,8 +302,27 @@ impl BrowserHttpService {
 /// timed-out, or disconnected connection is terminal for this invocation.
 pub async fn serve_browser_http(
     server: HttpServer,
+    application: BrowserHttpService,
+    max_requests: usize,
+) -> Result<()> {
+    serve_browser_http_with_response_delay(server, application, max_requests, None).await
+}
+
+/// Serves bounded HTTP requests with an optional asynchronous response delay.
+///
+/// The delay is a conformance probe for browser cancellation and remount
+/// handling. It uses Moirai's timer, never blocks the executor, and is applied
+/// only before the response is written. A zero delay is equivalent to `None`.
+///
+/// # Errors
+/// Returns [`ErrorCode::Timeout`] when `response_delay` exceeds
+/// [`MAX_HTTP_RESPONSE_DELAY`], or a bounded transport/response-construction
+/// failure from the underlying HTTP service.
+pub async fn serve_browser_http_with_response_delay(
+    server: HttpServer,
     mut application: BrowserHttpService,
     max_requests: usize,
+    response_delay: Option<Duration>,
 ) -> Result<()> {
     if max_requests == 0 || max_requests > MAX_HTTP_REQUESTS {
         return Err(MetisError::transport(
@@ -307,6 +330,19 @@ pub async fn serve_browser_http(
             "HTTP request budget is outside the bounded demonstration range",
         ));
     }
+    let response_delay = match response_delay {
+        Some(delay) if delay > MAX_HTTP_RESPONSE_DELAY => {
+            return Err(MetisError::transport(
+                ErrorCode::Timeout,
+                format!(
+                    "HTTP response delay exceeds the {} second probe bound",
+                    MAX_HTTP_RESPONSE_DELAY.as_secs()
+                ),
+            ));
+        }
+        Some(delay) if !delay.is_zero() => Some(delay),
+        Some(_) | None => None,
+    };
     for _ in 0..max_requests {
         let connection = server
             .accept()
@@ -319,6 +355,9 @@ pub async fn serve_browser_http(
         let response = application.respond(&request).map_err(|_| {
             MetisError::transport(ErrorCode::IoError, "HTTP response construction failed")
         })?;
+        if let Some(delay) = response_delay {
+            moirai_async::timer::sleep(delay).await;
+        }
         connection
             .write_response(response)
             .await

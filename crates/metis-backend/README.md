@@ -29,7 +29,10 @@ The native-only `BrowserHttpService` composes the first-party Moirai HTTP
 transport for a bounded loopback demonstration. It exposes only typed session,
 fragment and health routes, checks the exact browser origin before dispatch,
 retains at most eight sessions and closes after the application's finite
-request budget. It does not parse files or own DICOM; a RITK consumer remains
+request budget. The conformance-only
+`serve_browser_http_with_response_delay` entry applies a bounded asynchronous
+response delay so browser abort and reset behavior can be exercised against a
+real pending request. It does not parse files or own DICOM; a RITK consumer remains
 responsible for format-specific loading and viewer state.
 After handshake the service answers `CapabilityReq` with its bounded command
 catalog. A known command outside that catalog produces an explicit typed

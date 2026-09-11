@@ -67,6 +67,11 @@ capability policy; it serves at most 64 requests before orderly teardown:
 cargo run --locked -p metis-app -- --metis-http-service http://127.0.0.1:8080 8766 66666666666666666666666666666666
 ```
 
+The HTTP role accepts the same bounded `--response-delay-ms MILLISECONDS`
+probe (1 through 30,000). It delays each response with Moirai's asynchronous
+timer so the HTTP page can verify abort, reset and stale-generation handling
+against the real service boundary.
+
 `POST /v1/session` accepts a `HandshakeRequestPayload`, and authenticated
 `POST /v1/fragments` returns a bounded `FragmentPatchSet` for the registered
 UI plugin. `GET /health` is a text-only readiness probe. Every route requires

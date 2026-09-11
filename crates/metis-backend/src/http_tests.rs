@@ -473,6 +473,23 @@ fn public_server_budget_closes_after_a_health_probe() {
 }
 
 #[test]
+fn response_delay_probe_rejects_unbounded_values() {
+    let runtime = moirai_executor::global();
+    let server = runtime
+        .block_on(HttpServer::bind("127.0.0.1:0", config()))
+        .expect("server bind");
+    let error = runtime
+        .block_on(serve_browser_http_with_response_delay(
+            server,
+            application(),
+            1,
+            Some(MAX_HTTP_RESPONSE_DELAY + Duration::from_nanos(1)),
+        ))
+        .expect_err("response delay above the probe bound must fail");
+    assert_eq!(error.code, ErrorCode::Timeout);
+}
+
+#[test]
 fn session_capacity_is_bounded_and_reports_queue_full() {
     let runtime = moirai_executor::global();
     let server = runtime

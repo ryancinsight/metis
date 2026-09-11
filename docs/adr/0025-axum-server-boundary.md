@@ -42,6 +42,11 @@ Moirai and Metis policy. It provides:
 - allowlisted text/attribute patches rather than arbitrary markup, scripts or
   navigation.
 
+The finite conformance host also admits a bounded `--response-delay-ms` probe.
+The delay uses Moirai's asynchronous timer and exists to exercise client abort,
+mount reset and stale-completion handling against a real pending response; it
+does not turn the loopback demonstration into a production server.
+
 The browser WebSocket contract remains the default browser bridge; the HTTP
 target is a finite loopback demonstration rather than a public deployment. The
 service boundary carries presentation messages only; RITK remains the owner of
@@ -77,6 +82,9 @@ idle-peer deadline handling and finite teardown. The generated browser
 `http-health.html` probe performs the real cross-origin health request,
 authenticated handshake and generation-bound fragment request, then records
 malformed, unauthorized and stale-generation outcomes without changing the
-mounted text. The invocation suite proves the closed CLI role. This evidence
+mounted text. The browser implementation preflights patch targets and
+attributes atomically, bounds streamed response bodies and guards every
+completion with the current mount lease. The invocation suite proves the
+closed CLI role, including the bounded HTTP delay probe. This evidence
 does not claim a public deployment, TLS, cross-engine capture or DICOM
 behavior; those remain separate controls and RITK-owned workflow evidence.
