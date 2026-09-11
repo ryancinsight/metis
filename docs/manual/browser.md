@@ -469,9 +469,10 @@ with its ready state and focus outline. The browser engine version was
 unavailable, and no trusted local file was attached, so the trace does not
 claim a successful live byte read or format-specific decode. The provider-backed
 full batch path is established by the native policy suite and the strict WASM
-build; the RITK consumer trace remains open. The ownership-consuming API is covered by
-a pointer-identity test, so moving a completed batch does not copy its file
-contents.
+build; the RITK consumer smoke is now recorded in the
+[RITK DICOM workflow](https://github.com/ryancinsight/ritk/blob/main/docs/manual/dicom-workflow.md#inspect-the-browser-canvas-visual-smoke).
+The ownership-consuming API is covered by a pointer-identity test, so moving
+a completed batch does not copy its file contents.
 
 The **Text and composition** card exercises the browser's native editing
 surface while keeping application state in Rust. Focus **Clinical note**, type
