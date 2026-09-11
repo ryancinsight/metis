@@ -104,6 +104,34 @@ Atlas installs each artifact and runs the same value-semantic suite. The
 `abi3t` matrix currently excludes musllinux because its Python 3.15t image is
 unavailable.
 
+## Host a native window
+
+`NativeApplication` is the wxPython-like host boundary for Python composition.
+It is a thin handle over a Rust-owned provider thread; Python does not receive
+callbacks or run a second event loop. On Windows, create a bounded visible or
+hidden window, present row-major RGBA bytes, and consume finite typed event
+batches:
+
+```python
+import metis
+
+host = metis.NativeApplication("Metis example", 320, 240, "visible")
+generation = host.generation
+host.present(generation, bytes((49, 130, 206, 255)) * (320 * 240))
+events = host.wait_events(generation, 0)
+host.close(generation)
+generation = host.reopen()
+host.close(generation)
+```
+
+The provider validates the title, dimensions, frame length, wait bound and
+close/reopen generation. Event dictionaries preserve pointer, keyboard, text,
+IME composition, resize, DPI and lifecycle fields. Non-Windows builds retain
+the typed class but construction returns `ERR_UNSUPPORTED_PLATFORM_EVENT`
+without attempting a native provider. This facade owns no filesystem,
+network, process, medical-format or DICOM authority; RITK remains responsible
+for DICOM and viewer state.
+
 ## Release path
 
 `.github/workflows/python-release.yml` accepts a GitHub Release tag of the form

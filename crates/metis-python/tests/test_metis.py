@@ -211,3 +211,26 @@ def test_free_threaded_runtime_keeps_the_gil_disabled() -> None:
         pytest.skip("a free-threaded CPython build is required for this runtime probe")
     assert gil_probe is not None, "free-threaded CPython must expose _is_gil_enabled"
     assert gil_probe() is False
+
+
+def test_native_application_is_typed_on_unsupported_platforms() -> None:
+    if sys.platform.startswith("win"):
+        return
+    with pytest.raises(ValueError, match="ERR_UNSUPPORTED_PLATFORM_EVENT"):
+        metis.NativeApplication("Metis test", 2, 1, "hidden")
+
+
+def test_native_application_window_lifecycle_on_windows() -> None:
+    if not sys.platform.startswith("win"):
+        pytest.skip("Windows native provider is required")
+    application = metis.NativeApplication("Metis test", 2, 1, "hidden")
+    generation = application.generation
+    application.present(generation, bytes((229, 62, 62, 255, 49, 130, 206, 255)))
+    events = application.wait_events(generation, 0)
+    assert any(event["kind"] == "resized" for event in events)
+    application.close(generation)
+    with pytest.raises(ValueError, match="ERR_RENDER_FAILURE"):
+        application.wait_events(generation, 0)
+    reopened = application.reopen()
+    assert reopened == generation + 1
+    application.close(reopened)

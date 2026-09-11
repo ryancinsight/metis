@@ -3,6 +3,7 @@ use super::clinical::{
     DrugConcentration, InfusionResult, PatientWeight, SafetyEnvelope, TargetDose,
     calculate_infusion_rate,
 };
+use super::native::NativeApplication;
 use super::presentation::{Canvas, PyRasterImage, PyRect};
 use pyo3::prelude::*;
 
@@ -18,6 +19,7 @@ fn audit_exposed_types() {
     assert_thread_safe::<PyRect>();
     assert_thread_safe::<PyRasterImage>();
     assert_thread_safe::<Canvas>();
+    super::native::assert_thread_safe();
 }
 
 /// Native extension module loaded as `metis._metis`.
@@ -33,6 +35,7 @@ fn _metis(module: &Bound<'_, PyModule>) -> PyResult<()> {
     module.add_class::<PyRect>()?;
     module.add_class::<PyRasterImage>()?;
     module.add_class::<Canvas>()?;
+    module.add_class::<NativeApplication>()?;
     module.add_function(wrap_pyfunction!(calculate_infusion_rate, module)?)?;
     module.add("__version__", env!("CARGO_PKG_VERSION"))?;
     Ok(())

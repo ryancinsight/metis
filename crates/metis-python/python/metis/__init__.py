@@ -10,11 +10,13 @@ from ._metis import (
     Rect,
     SafetyEnvelope,
     TargetDose,
+    NativeApplication,
     calculate_infusion_rate,
 )
 
 __all__ = [
     "Application",
+    "NativeApplication",
     "Canvas",
     "DrugConcentration",
     "InfusionResult",

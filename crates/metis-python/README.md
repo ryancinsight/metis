@@ -54,9 +54,12 @@ The binding also exposes the Rust-owned software presentation contract through
 `RasterImage`, `Rect` and `Canvas`. Python supplies composition commands; Rust
 validates dimensions, clips placements and performs alpha compositing. The
 canvas is a bounded frame surface, not a native window or a DICOM decoder.
-Native window and application lifecycle objects will be added only when their
-Rust contracts and independent host evidence are available. RITK remains the
-owner of DICOM parsing and medical-display semantics.
+`NativeApplication` now provides a thin Windows host over the existing
+Rust-owned native provider. It presents bounded RGBA frames and returns finite
+typed event dictionaries without Python callbacks or a second event loop.
+Non-Windows construction returns `ERR_UNSUPPORTED_PLATFORM_EVENT` until a
+provider is admitted. RITK remains the owner of DICOM parsing and
+medical-display semantics.
 
 `Application(width, height)` provides the bounded cross-platform software
 lifecycle. Read its `generation`, pass that token to `clear`, `to_rgba`, input

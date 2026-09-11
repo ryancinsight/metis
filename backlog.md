@@ -173,6 +173,14 @@ an owner. “Unsupported” cannot replace delivery of a required mobile/native 
 - Current increment: the release caller uses Atlas merge `848e6649c52e8226a9abf7bc336f8cbf0e39ba08` for the shared `cp314t`/`cp315t` and Python 3.15 `abi3t` matrix, while the default remains CPython 3.9 `abi3`. The caller and package use tokenless OIDC; musllinux is excluded from the `abi3t` job until a compatible 3.15t image exists. Hosted artifact and value-test evidence remain pending.
 - Re-open trigger: a hosted free-threaded run or Atlas contract change invalidates the declared matrix.
 
+<a id="METIS-PYTHON-005"></a>
+## METIS-PYTHON-005 — Rust-owned native Python host [arch] [minor]
+- Status: in-progress; priority: P1; owner: Metis Python/platform; integrator: root; branch: current; dependencies: METIS-PYTHON-003, METIS-DESKTOP-001; risk: thread-affine native lifecycle
+- Scope: thin PyO3 facade over the existing Rust `NativeSurface`; bounded window configuration, frame presentation, finite typed event batches, close/reopen generations; no Python callbacks, second event loop, OS authority or DICOM.
+- Acceptance: Windows extracted-wheel smoke creates a visible window, presents a known RGBA frame, returns resize/keyboard/text/close events, rejects stale generations, closes/reopens safely and preserves `Send + Sync`/`gil_used = false`; non-Windows returns `ERR_UNSUPPORTED_PLATFORM_EVENT` without provider access. [ADR 0026](docs/adr/0026-python-native-host.md), [V05](docs/VERIFICATION.md#V05).
+- Current increment (2026-09-11): `python scripts/python_binding.py` built the release `cp39-abi3` wheel and passed 21 value-semantic tests; the one free-threaded runtime probe was skipped because no free-threaded interpreter is installed. Rust formatting and warning-denied Clippy passed for `metis-python`; visible-window capture and non-Windows provider evidence remain open under V05.
+- Verification: `python scripts/python_binding.py`, focused native/platform tests, warning-denied Clippy, doctests, native capture and `cargo-semver-checks`; hosted free-threaded wheel evidence remains [METIS-PYTHON-004](#METIS-PYTHON-004). RITK retains DICOM scanning, decoding, geometry and viewer state.
+
 <a id="METIS-MEMORY-001"></a>
 ## METIS-MEMORY-001 — Provider allocation count [patch]
 - Status: done; priority: P0; delivery: `f246c81`; exact locked-provider and reachable-path audit passed 2026-09-07.

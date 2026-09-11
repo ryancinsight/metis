@@ -1323,6 +1323,15 @@ positive authorized IPC and independent unauthorized file/network/process denial
 probes. OS windows cannot be replaced by browser screenshots. Engine/driver
 requirements are recorded per host; cross compilation is not runtime evidence.
 
+The 2026-09-11 Python-host increment adds a Rust-owned `NativeApplication`
+facade over the Windows `NativeSurface`. The extracted release wheel built with
+`python scripts/python_binding.py` and passed 21 value-semantic tests; the
+free-threaded probe was skipped because no free-threaded interpreter is
+installed. This is lifecycle evidence for the thin binding only. A visible
+window capture, the two-window/IME journey, and macOS/Linux provider evidence
+remain open; the facade has no DICOM or viewer authority, which remains in
+RITK.
+
 <a id="V06"></a>
 ### V06 — Asset and graphics gallery
 
