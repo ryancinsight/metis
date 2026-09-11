@@ -34,6 +34,11 @@ fn run() -> Result<(), Box<dyn std::error::Error>> {
             principal,
             response_delay,
         } => backend::run_browser_service(&origin, port, principal, response_delay),
+        Invocation::HttpService {
+            origin,
+            port,
+            principal,
+        } => backend::run_http_service(&origin, port, principal),
         Invocation::Help => {
             println!("{USAGE}");
             Ok(())

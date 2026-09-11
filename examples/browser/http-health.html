@@ -1,0 +1,34 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'wasm-unsafe-eval'; style-src 'self'; connect-src 'self' http://127.0.0.1:8766 ws://127.0.0.1:8765; img-src 'self'; object-src 'none'; base-uri 'none'; frame-ancestors 'none'; form-action 'self'">
+  <title>Metis HTTP boundary</title>
+  <link rel="icon" type="image/svg+xml" href="./assets/metis-mark.svg">
+  <link rel="alternate icon" type="image/png" href="./assets/metis-mark.png">
+  <link rel="stylesheet" href="./styles.css">
+</head>
+<body data-metis-theme="dark">
+  <main id="metis-app">
+    <section class="metis-header" aria-labelledby="http-heading">
+      <div class="metis-brand">
+        <span class="metis-mark-frame"><img class="metis-mark" src="./assets/metis-mark.svg" alt="Metis mark"></span>
+        <div>
+          <p class="metis-kicker">FORMAT-NEUTRAL PRESENTATION HOST</p>
+          <h1 id="http-heading">Loopback HTTP boundary</h1>
+        </div>
+      </div>
+      <p id="metis-status" role="status" aria-live="polite" aria-atomic="true">Probing the local Metis service…</p>
+      <button id="metis-health" type="button">Probe /health</button>
+      <dl>
+        <dt>Endpoint</dt><dd id="http-endpoint">http://127.0.0.1:8766/health</dd>
+        <dt>Origin</dt><dd id="http-origin"></dd>
+        <dt>Response</dt><dd id="http-response">—</dd>
+      </dl>
+      <p>This page exercises the bounded Moirai HTTP transport. DICOM loading and viewer state remain in RITK.</p>
+    </section>
+  </main>
+  <script type="module" src="./http-health.js"></script>
+</body>
+</html>

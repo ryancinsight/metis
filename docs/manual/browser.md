@@ -41,6 +41,19 @@ Open `http://127.0.0.1:8080/` in a browser for the disconnected local-control
 workflow. A file URL is not accepted because module and WASM loading require an
 HTTP origin.
 
+The same generated assets include a format-neutral HTTP boundary probe. Start
+the bounded service in a second terminal:
+
+```text
+cargo run --locked -p metis-app -- --metis-http-service http://127.0.0.1:8080 8766 66666666666666666666666666666666
+```
+
+Open `http://127.0.0.1:8080/http-health.html`. The page sends a real
+cross-origin `GET /health` request, checks the exact CORS origin and displays
+the typed readiness text. The page is an HTML5/CSS demonstration of the
+presentation boundary; it does not load, decode or retain DICOM data. RITK
+owns that workflow.
+
 ## Run the cross-engine conformance trace
 
 The repository includes a dependency-free W3C WebDriver runner. It uses the
@@ -246,12 +259,32 @@ host while a request is pending; the old generation must not update the new
 mount. A configured WebDriver run is still required for cross-engine captures;
 the native protocol and policy suites are the current deterministic evidence.
 
-An HTTP fragment endpoint would still need its own route, authority, target
-allowlist and response schema before it is added. [ADR 0025](../adr/0025-axum-server-boundary.md)
-records the Axum comparison and the first-party boundary required for an
-admitted server deployment. RITK remains responsible for
-DICOM scanning, decoding, series selection, geometry and viewer state; this
-fragment contract carries presentation messages only.
+The admitted loopback HTTP demonstration implements that boundary over
+Moirai. Start it beside the static workbench with a fixed browser origin:
+
+```powershell
+cargo run --locked -p metis-app -- --metis-http-service http://127.0.0.1:8080 8766 66666666666666666666666666666666
+```
+
+`GET /health` returns the bounded readiness text. `POST /v1/session` accepts a
+binary `HandshakeRequestPayload`; the response is a typed
+`HandshakeResponsePayload`. After that response, send the returned capability
+token in a `PluginInvocationPayload` to `POST /v1/fragments`. The response body
+is a `FragmentPatchSet` whose text and attribute operations are applied through
+the same browser allowlists as the WebSocket path. Every request must carry the
+exact configured `Origin`. Unknown routes, wrong methods, malformed envelopes,
+missing sessions and a full session table return bounded
+`ErrorResponsePayload` values. Moirai owns body, header, response, deadline and
+connection limits; the application closes after its finite request budget.
+
+The server's real loopback suite covers the successful handshake/fragment
+journey, exact-origin CORS preflight, origin and route denial, malformed and
+oversized bodies, a disconnected peer, idle-peer deadline and finite teardown.
+It does not add an Axum or htmx runtime and it never accepts arbitrary markup
+or scripts. [ADR 0025](../adr/0025-axum-server-boundary.md) records the
+comparison and the first-party boundary. RITK remains responsible for DICOM
+scanning, decoding, series selection, geometry and viewer state; this fragment
+contract carries presentation messages only.
 
 To demonstrate the boundary, serve the workbench, change **Weight (kg)** and
 **Result scale**, and capture the form before and after each action at the same

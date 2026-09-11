@@ -108,6 +108,30 @@ class BrowserAssetContractTests(unittest.TestCase):
         self.assertIn("destination.origin !== window.location.origin", bootstrap)
         self.assertIn("event.preventDefault()", bootstrap)
 
+    def test_http_boundary_demo_uses_the_canonical_policy(self):
+        document = (ROOT / "examples" / "browser" / "http-health.html").read_text(
+            encoding="utf-8"
+        )
+        policy = document.split('http-equiv="Content-Security-Policy" content="', 1)[1].split(
+            '"', 1
+        )[0]
+        canonical = (ROOT / "crates" / "metis-core" / "src" / "content_security_policy.txt").read_text(
+            encoding="utf-8"
+        )
+        self.assertEqual(policy, canonical)
+        self.assertIn('<link rel="stylesheet" href="./styles.css">', document)
+        self.assertIn('<script type="module" src="./http-health.js"></script>', document)
+        self.assertNotIn("<script type=\"module\">", document.lower())
+        self.assertIn('id="metis-status" role="status"', document)
+        self.assertIn('id="metis-health" type="button"', document)
+
+        script = (ROOT / "examples" / "browser" / "http-health.js").read_text(
+            encoding="utf-8"
+        )
+        self.assertIn('new URL("http://127.0.0.1:8766/health")', script)
+        self.assertIn('body !== "metis-http-ready\\n"', script)
+        self.assertIn('button.addEventListener("click", probe)', script)
+
     def test_file_drop_surface_is_semantic_and_bounded(self):
         controls = (ROOT / "crates" / "metis-web" / "src" / "controls.rs").read_text(
             encoding="utf-8"
