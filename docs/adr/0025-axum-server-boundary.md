@@ -22,19 +22,18 @@ as Rust/WASM and uses Moirai for its bounded WebSocket transport; it does not
 ship an HTTP server or depend on Axum.
 
 The current htmx-informed action path already limits mutations to authenticated
-generation-bound text and attribute patches. Adding an HTTP endpoint without a
-server contract would leave route authorization, request limits, cancellation,
-response size and client teardown unspecified. DICOM parsing, study selection,
-geometry and medical display are RITK responsibilities and are outside this
-boundary.
+generation-bound text and attribute patches. The admitted loopback endpoint
+specifies route authorization, request limits, cancellation, response size and
+client teardown through the first-party Moirai transport. DICOM parsing, study
+selection, geometry and medical display are RITK responsibilities and are
+outside this boundary.
 
 ## Decision
 
 Treat Axum as a source-pinned server/router comparator. Do not add Axum as a
-Metis dependency or present its API as implemented behavior. If an Atlas
-application explicitly admits server rendering or HTTP fragments, implement
-[METIS-AXUM-001](../../backlog.md#METIS-AXUM-001) as a first-party service
-boundary over Moirai and Metis policy. The implementation must provide:
+Metis dependency or present its API as implemented behavior. The admitted
+`metis-app --metis-http-service` target is a first-party service boundary over
+Moirai and Metis policy. It provides:
 
 - a closed route table and typed request/response envelopes;
 - bounded body, response, queue and connection resources;
@@ -43,9 +42,10 @@ boundary over Moirai and Metis policy. The implementation must provide:
 - allowlisted text/attribute patches rather than arbitrary markup, scripts or
   navigation.
 
-The browser WebSocket contract remains the default until that item has a named
-deployment target and its integration evidence. The service boundary carries
-presentation messages only; RITK remains the owner of DICOM and viewer state.
+The browser WebSocket contract remains the default browser bridge; the HTTP
+target is a finite loopback demonstration rather than a public deployment. The
+service boundary carries presentation messages only; RITK remains the owner of
+DICOM and viewer state.
 
 ## Alternatives
 
@@ -69,10 +69,12 @@ security-superiority claim.
 
 ## Verification
 
-The current evidence is the source inspection recorded in
-[ADR 0003](0003-framework-conformance.md) and the typed browser action tests
-under [METIS-FRAGMENT-001](../../backlog.md#METIS-FRAGMENT-001). No HTTP server
-integration, Axum build or cross-engine capture is claimed. When a deployment
-target is admitted, the backlog acceptance oracle requires real local route,
-authorization, limit, timeout, disconnect and teardown tests plus browser and
-native manual captures from one revision.
+The admitted local target is implemented by `metis-backend::BrowserHttpService`
+and `metis-app --metis-http-service`. The native suite proves a real Moirai
+loopback handshake and fragment exchange, origin and route denial, malformed
+and oversized request rejection, exact-origin CORS preflight, disconnected and
+idle-peer deadline handling and finite teardown. The generated browser
+`http-health.html` probe exercises the real cross-origin readiness response;
+the invocation suite proves the closed CLI role. This evidence does not claim
+a public deployment, TLS, cross-engine capture or DICOM behavior; those remain
+separate controls and RITK-owned workflow evidence.

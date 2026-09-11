@@ -1381,6 +1381,20 @@ servers. Capture user-visible outcomes and independently assert effects, audit
 events, restart recovery and cleanup. No credentials or real patient data enter
 the fixture, diagnostic trace or screenshot.
 
+The loopback HTTP boundary is exercised by the `metis-backend` native suite:
+the real Moirai TCP server completes a typed handshake followed by an
+authenticated fragment request, serves an exact-origin CORS preflight, rejects
+a mismatched origin and unknown route, and proves malformed or oversized
+bodies, a disconnected peer and an idle peer's request deadline terminate
+before application dispatch. The `metis-app` invocation suite also parses the
+bounded `--metis-http-service ORIGIN PORT PRINCIPAL_HEX` role and rejects
+response-delay flags on that role. The generated `http-health.html` page is a
+browser visual probe of the real cross-origin `/health` response. The service
+retains at most eight sessions and closes after a finite request budget. This
+is local presentation transport evidence; it does not claim public deployment,
+TLS, or DICOM behavior. DICOM parsing, study selection, geometry and viewer
+state remain in the [RITK workflow](../../ritk/docs/manual/dicom-workflow.md).
+
 The authentication slice uses the Moirai provider with its TLS feature
 disabled. `cargo tree --locked -p metis-core --edges normal` and the Metis
 WASM check show the protocol graph contains only the provider's `hmac` and

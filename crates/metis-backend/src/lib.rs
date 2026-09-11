@@ -4,6 +4,8 @@
 pub mod audit;
 pub mod clinical;
 mod fragment;
+#[cfg(not(target_arch = "wasm32"))]
+mod http;
 mod plugins;
 pub mod service;
 pub mod supervisor;
@@ -11,6 +13,8 @@ pub mod supervisor;
 pub mod websocket;
 
 pub use fragment::UiFragmentPlugin;
+#[cfg(not(target_arch = "wasm32"))]
+pub use http::{BrowserHttpService, MAX_HTTP_REQUESTS, MAX_HTTP_SESSIONS, serve_browser_http};
 pub use plugins::PluginExecutor;
 pub use service::BackendService;
 pub use supervisor::{

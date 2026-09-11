@@ -11,11 +11,14 @@ use metis_backend::{
     BackendService, INTERACTIVE_SESSION_DEADLINE, ProcessEnvironment, SESSION_DEADLINE,
     clinical::SafetyEnvelope, supervisor::run_session_with_deadline_and_environment,
 };
-use metis_backend::{serve_browser_websocket, serve_browser_websocket_with_response_delay};
+use metis_backend::{
+    BrowserHttpService, MAX_HTTP_REQUESTS, serve_browser_http, serve_browser_websocket,
+    serve_browser_websocket_with_response_delay,
+};
 use metis_core::host::{HostContext, HostOrigin, HostPolicy, HostSessionId, WindowId};
 use metis_core::protocol::TargetCapability;
 use moirai_async::net::TcpListener;
-use moirai_http::WebSocketConfig;
+use moirai_http::{HttpServer, ServerConfig, WebSocketConfig};
 use std::time::Duration;
 
 pub(crate) fn run(inputs: [String; 3]) -> Result<(), Box<dyn std::error::Error>> {
@@ -143,6 +146,37 @@ pub(crate) fn run_browser_service(
     } else {
         moirai_executor::block_on(serve_browser_websocket(stream, config, service))?;
     }
+    Ok(())
+}
+
+/// Runs the bounded loopback HTTP fragment demonstration.
+pub(crate) fn run_http_service(
+    raw_origin: &str,
+    port: u16,
+    principal: [u8; 16],
+) -> Result<(), Box<dyn std::error::Error>> {
+    let origin = HostOrigin::parse(raw_origin)?;
+    let window = WindowId::new(1)?;
+    let policy = HostPolicy::new(origin.clone(), window);
+    let server_config = ServerConfig::new(
+        16,
+        16 * 1024,
+        64,
+        metis_core::MAX_PAYLOAD_SIZE,
+        128 * 1024,
+        Duration::from_secs(30),
+    )?;
+    let server = moirai_executor::block_on(HttpServer::bind(
+        &format!("127.0.0.1:{port}"),
+        server_config,
+    ))?;
+    let address = server.local_addr()?;
+    eprintln!("browser_http_endpoint=http://{address}");
+    eprintln!("browser_http_origin={origin}");
+    eprintln!("browser_http_principal={}", principal_hex(principal));
+    let application =
+        BrowserHttpService::new(entropy::session_key()?, SafetyEnvelope::default(), policy);
+    moirai_executor::block_on(serve_browser_http(server, application, MAX_HTTP_REQUESTS))?;
     Ok(())
 }
 

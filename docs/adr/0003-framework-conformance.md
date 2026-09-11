@@ -175,6 +175,12 @@ first-party transport owner, and [METIS-AXUM-001](../../backlog.md#METIS-AXUM-00
 is conditional on an admitted server deployment. DICOM parsing, study
 selection, geometry and medical display remain exclusively in RITK.
 
+Revision 2026-09-11: [METIS-AXUM-001](../../backlog.md#METIS-AXUM-001) admits
+and implements a loopback-only `metis-app --metis-http-service` demonstration
+over Moirai. The route, session, deadline and typed-fragment evidence closes
+the local presentation boundary; public deployment, TLS and DICOM behavior
+remain outside this decision and RITK remains the format owner.
+
 ## Decision and scope
 
 Use Tauri as the application-framework migration reference, egui/GPUI/Iced as
@@ -194,8 +200,8 @@ and permission policy. A GPU renderer is not a prerequisite for a DOM form.
 
 egui, GPUI, Iced, Tauri, Axum and htmx are comparison subjects, not newly
 adopted dependencies. The conditional Axum boundary is specified in [ADR
-0025](0025-axum-server-boundary.md); no server deployment is admitted by this
-decision alone.
+0025](0025-axum-server-boundary.md); the admitted loopback demonstration is
+not a public deployment or a DICOM service.
 Their companion crates are named separately. Native GPU rendering, mobile
 support and distribution are separate increments, not reasons to delay the
 first working browser and Windows applications. Unsupported target operations
@@ -240,7 +246,7 @@ Each row names its closing items; acceptance belongs in the
 | Accessibility | AccessKit integration; custom widget semantics required [E5] | AccessKit roles/identity/actions in current source [G3] | Semantic frontend plus WebView/OS accessibility | Browser markup now exposes named groups, polite atomic live regions, and dynamic `aria-busy` state for backend/result work; screen-reader speech, WebView/OS accessibility and custom-renderer semantics remain open. [A11Y](../../backlog.md#METIS-A11Y-001). |
 | Pointer, keyboard, touch, focus | Backend input, sensitivity and viewports [E1] | Platform events and actions [G1] | Web frontend and native window events [T1] | Browser text, checkbox, radio, range and pointer surface use semantic keyboard/pointer targets; Moirai owns browser pointer ID/capture/release, pointer metadata, bounded file-drop metadata and bounded browser file access, while Metis applies bounded single-pointer drag pan, two-pointer centroid/distance pinch pan/zoom, wheel pan, Ctrl+wheel zoom and format-neutral file-drop state. The Windows `NativeSurface` now returns provider pointer, key, focus, text and bounded IME composition events; trusted physical-drop evidence, installed IME journeys, accessibility technology, cross-engine parity and OS pump integration remain open. RITK owns DICOM format decisions after the byte handoff. [INPUT](../../backlog.md#METIS-INPUT-001), desktop items. |
 | Browser/WASM execution | eframe canvas host with WASM bindings [E2] | Current `gpui_web`: canvas, WebGPU/WebGL2 [G2] | Web frontend can target browser; native APIs need a host [T1] | `metis-web` loads generated WASM into an HTML5/CSS DOM host and connects through a bounded Moirai WebSocket service; target-surface discovery, lifecycle generation guards, semantic checkbox/radio/range controls and loopback success/rejection/recovery pass, while cross-engine runs remain. [BROWSER](../../backlog.md#METIS-BROWSER-001), [ASYNC](../../backlog.md#METIS-ASYNC-001). |
-| Hypermedia actions and fragments | HTML-driven request and target/swap attributes [H0] [H1] [H2] | WebView/browser concern; response markup and script policy remain application-owned | HTML forms and links run in the system WebView; fragment behavior depends on the frontend/runtime | Metis delegates the session-details event to a generation-bound typed Rust/WASM action, invokes the scoped `ui` plugin over the authenticated binary transport and preflights bounded text/attribute patches against an allowlisted target set. No htmx runtime, arbitrary markup or HTTP fragment endpoint is admitted; a real HTTP consumer would add the authenticated, bounded server contract in [ADR 0025](0025-axum-server-boundary.md). [ADR 0022](0022-typed-browser-actions.md), [BROWSER](../../backlog.md#METIS-BROWSER-001), [FRAGMENT](../../backlog.md#METIS-FRAGMENT-001), [AXUM](../../backlog.md#METIS-AXUM-001). |
+| Hypermedia actions and fragments | HTML-driven request and target/swap attributes [H0] [H1] [H2] | WebView/browser concern; response markup and script policy remain application-owned | HTML forms and links run in the system WebView; fragment behavior depends on the frontend/runtime | Metis delegates the session-details event to a generation-bound typed Rust/WASM action, invokes the scoped `ui` plugin over the authenticated binary transport and preflights bounded text/attribute patches against an allowlisted target set. Its loopback `metis-app --metis-http-service` role carries the same authenticated, allowlisted fragment contract over Moirai; it does not ship htmx, arbitrary markup or DICOM behavior. [ADR 0022](0022-typed-browser-actions.md), [BROWSER](../../backlog.md#METIS-BROWSER-001), [FRAGMENT](../../backlog.md#METIS-FRAGMENT-001), [AXUM](../../backlog.md#METIS-AXUM-001). |
 | Existing HTML5/CSS frontend reuse | Canvas UI is not DOM compatibility [E2] | Canvas UI is not DOM compatibility [G2] | WebView presentation is the core model [T1] | Custom markup does not preserve DOM/CSS applications. [BROWSER](../../backlog.md#METIS-BROWSER-001), [MIGRATION](../../backlog.md#METIS-MIGRATION-001). |
 | Native windows and platform lifecycle | eframe/backend-dependent viewports [E1] [E2] | macOS, Windows, Wayland/X11 platform code [G1] | Desktop system WebViews [T1] | Moirai's Windows PAL plus `metis-platform::native::NativeSurface` create a real thread-owned HWND, present the Metis framebuffer and return bounded pointer, key, text and IME composition events; the generic `NativeApplication` loop owns finite waiting, initial presentation and terminal cleanup while `metis-app --metis-native-window` composes the software-rendered frontend and private IPC. `metis-app --metis-webview` composes a packaged HTML/CSS form through `WebViewSurface` and the same supervised pipe. The installed WebView2 navigation/bridge smoke and Windows initial/submit captures pass; installed IME journey, WebView2 composition, permission probes and macOS/Linux hosts remain open. [WINDOWS](../../backlog.md#METIS-DESKTOP-001), [MACOS](../../backlog.md#METIS-MACOS-001), [LINUX](../../backlog.md#METIS-LINUX-001). |
 | Async commands, events, cancellation | Application/host concern | Executor and action facilities [G1] | Commands, events and channels [T2] [T3] | Async client/server, bounded correlation, request cancellation, browser task handle and pre-response Origin validation exist. A versioned capability catalog, target-surface descriptor, bounded local event hub, versioned remote event envelope, typed plugin invocation and host-local plugin registry now cover command discovery and delivery metadata; lifecycle generation guards and the delayed-response stop/remount trace prevent stale browser completions, while cross-engine service traces remain. [COMMANDS](../../backlog.md#METIS-COMMANDS-001), [BROWSER](../../backlog.md#METIS-BROWSER-001). |
@@ -290,18 +296,18 @@ runtime or security evidence.
 
 | Server concern | Axum reference surface | Metis consequence and closing work |
 | --- | --- | --- |
-| Route composition | `Router` and nested routes [A0] | A future service needs an explicit route table with bounded paths; no HTTP endpoint is currently admitted. [AXUM](../../backlog.md#METIS-AXUM-001) |
+| Route composition | `Router` and nested routes [A0] | The admitted loopback service uses a closed `/health`, `/v1/session` and `/v1/fragments` route table over Moirai; public deployment remains out of scope. [AXUM](../../backlog.md#METIS-AXUM-001) |
 | State and extraction | `State<S>`, `FromRef` and extractors [A1] [A2] | Service state must remain Rust-owned and typed, with bounded body sizes and no frontend authority; the existing browser transport remains Moirai-owned. [COMMANDS](../../backlog.md#METIS-COMMANDS-001), [AUTHORITY](../../backlog.md#METIS-AUTHORITY-001) |
 | Middleware and deadlines | Request middleware layers [A3] | A server increment must enforce origin/session authorization, deadlines, cancellation and backpressure before dispatching a command. [AXUM](../../backlog.md#METIS-AXUM-001), [SERVICES](../../backlog.md#METIS-SERVICES-001) |
 | Typed responses and fragments | `IntoResponse` [A4] | Responses must be versioned typed envelopes or allowlisted text/attribute patches; arbitrary HTML, scripts and DICOM data remain outside Metis. [FRAGMENT](../../backlog.md#METIS-FRAGMENT-001), [AXUM](../../backlog.md#METIS-AXUM-001) |
-| Operational evidence | Axum docs describe APIs, not deployment behavior | A real admitted target must add local server integration tests, denial cases, timeout/size bounds, teardown evidence and manual captures before the matrix row can close. [AXUM](../../backlog.md#METIS-AXUM-001), [VISUAL](../../backlog.md#METIS-VISUAL-001) |
+| Operational evidence | Axum docs describe APIs, not deployment behavior | The loopback target has real handshake/fragment, denial, malformed/oversized, deadline and teardown tests; public deployment and cross-engine captures remain separate work. [AXUM](../../backlog.md#METIS-AXUM-001), [VISUAL](../../backlog.md#METIS-VISUAL-001) |
 
-The selected design is a first-party boundary over the Atlas transport stack if
-an application requires server rendering or HTTP fragments. Adding Axum before
-that requirement would duplicate transport ownership and would make a
-third-party dependency look like a security boundary. This decision does not
-authorize a server, and it does not move DICOM parsing, metadata, geometry or
-viewer state out of RITK.
+The selected design is a first-party boundary over the Atlas transport stack.
+The current target is a loopback demonstration for typed fragments; adding Axum
+would duplicate transport ownership and would make a third-party dependency
+look like a security boundary. This decision does not authorize public
+deployment and does not move DICOM parsing, metadata, geometry or viewer state
+out of RITK.
 
 ## Concrete findings driving priority
 
@@ -348,10 +354,10 @@ The board owns the exact dependency graph and acceptance. Work proceeds through:
 3. Input, text, accessibility, responsive layout, assets and data views; complete
    macOS/Linux containment and host probes alongside platform integrations.
 4. Tauri command/configuration migration, scoped native services, packaging and
-   update recovery. If a server deployment is admitted, implement the bounded
-   first-party HTTP boundary in [METIS-AXUM-001](../../backlog.md#METIS-AXUM-001)
-   before adding routes or fragments; mobile is a separate target with explicit
-   capability limits.
+   update recovery. The admitted loopback HTTP boundary in
+   [METIS-AXUM-001](../../backlog.md#METIS-AXUM-001) supplies only typed
+   presentation routes; mobile and public deployment are separate targets with
+   explicit capability limits.
 5. Close measured performance/security claims and all target-specific quality
    evidence. Measurement instrumentation begins with the first live application,
    not after implementation choices become fixed.

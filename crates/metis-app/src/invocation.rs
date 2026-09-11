@@ -8,9 +8,10 @@ pub(crate) const NATIVE_FRONTEND_ROLE: &str = "--metis-native-frontend";
 pub(crate) const WEBVIEW_ROLE: &str = "--metis-webview";
 pub(crate) const WEBVIEW_FRONTEND_ROLE: &str = "--metis-webview-frontend";
 pub(crate) const BROWSER_SERVICE_ROLE: &str = "--metis-browser-service";
+pub(crate) const HTTP_SERVICE_ROLE: &str = "--metis-http-service";
 pub(crate) const RESPONSE_DELAY_FLAG: &str = "--response-delay-ms";
 const MAX_RESPONSE_DELAY_MILLISECONDS: u64 = 30_000;
-pub(crate) const USAGE: &str = "usage: metis-app WEIGHT_KG CONCENTRATION_MG_ML DOSE_MCG_KG_MIN\n       metis-app --metis-native-window WEIGHT_KG CONCENTRATION_MG_ML DOSE_MCG_KG_MIN\n       metis-app --metis-webview WEIGHT_KG CONCENTRATION_MG_ML DOSE_MCG_KG_MIN\n       metis-app --metis-browser-service ORIGIN PORT PRINCIPAL_HEX [--response-delay-ms MILLISECONDS]\n       metis-app --help";
+pub(crate) const USAGE: &str = "usage: metis-app WEIGHT_KG CONCENTRATION_MG_ML DOSE_MCG_KG_MIN\n       metis-app --metis-native-window WEIGHT_KG CONCENTRATION_MG_ML DOSE_MCG_KG_MIN\n       metis-app --metis-webview WEIGHT_KG CONCENTRATION_MG_ML DOSE_MCG_KG_MIN\n       metis-app --metis-browser-service ORIGIN PORT PRINCIPAL_HEX [--response-delay-ms MILLISECONDS]\n       metis-app --metis-http-service ORIGIN PORT PRINCIPAL_HEX\n       metis-app --help";
 
 /// Bounded delay used by the browser stale-response conformance probe.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -45,6 +46,11 @@ pub(crate) enum Invocation {
         principal: [u8; 16],
         response_delay: Option<BrowserResponseDelay>,
     },
+    HttpService {
+        origin: String,
+        port: u16,
+        principal: [u8; 16],
+    },
     Help,
 }
 
@@ -76,7 +82,7 @@ impl Invocation {
                 Err(InvocationError)
             };
         }
-        if first == BROWSER_SERVICE_ROLE {
+        if first == BROWSER_SERVICE_ROLE || first == HTTP_SERVICE_ROLE {
             let origin = arguments.next().ok_or(InvocationError)??;
             let port = arguments
                 .next()
@@ -100,12 +106,22 @@ impl Invocation {
             if arguments.next().is_some() {
                 return Err(InvocationError);
             }
-            return Ok(Self::BrowserService {
-                origin,
-                port,
-                principal,
-                response_delay,
-            });
+            return if first == BROWSER_SERVICE_ROLE {
+                Ok(Self::BrowserService {
+                    origin,
+                    port,
+                    principal,
+                    response_delay,
+                })
+            } else if response_delay.is_none() {
+                Ok(Self::HttpService {
+                    origin,
+                    port,
+                    principal,
+                })
+            } else {
+                Err(InvocationError)
+            };
         }
         let role = match first.as_str() {
             FRONTEND_ROLE => InputRole::Frontend,
@@ -176,9 +192,9 @@ fn hex_digit(value: u8) -> Result<u8, InvocationError> {
 #[cfg(test)]
 mod tests {
     use super::{
-        BROWSER_SERVICE_ROLE, BrowserResponseDelay, FRONTEND_ROLE, Invocation, InvocationError,
-        NATIVE_FRONTEND_ROLE, NATIVE_WINDOW_ROLE, RESPONSE_DELAY_FLAG, WEBVIEW_FRONTEND_ROLE,
-        WEBVIEW_ROLE,
+        BROWSER_SERVICE_ROLE, BrowserResponseDelay, FRONTEND_ROLE, HTTP_SERVICE_ROLE, Invocation,
+        InvocationError, NATIVE_FRONTEND_ROLE, NATIVE_WINDOW_ROLE, RESPONSE_DELAY_FLAG,
+        WEBVIEW_FRONTEND_ROLE, WEBVIEW_ROLE,
     };
     use std::time::Duration;
 
@@ -243,6 +259,19 @@ mod tests {
                 port: 8765,
                 principal: [0x66; 16],
                 response_delay: None,
+            })
+        );
+        assert_eq!(
+            Invocation::parse([
+                HTTP_SERVICE_ROLE.to_owned(),
+                "http://127.0.0.1:8080".to_owned(),
+                "8765".to_owned(),
+                "66".repeat(16),
+            ]),
+            Ok(Invocation::HttpService {
+                origin: "http://127.0.0.1:8080".to_owned(),
+                port: 8765,
+                principal: [0x66; 16],
             })
         );
         assert_eq!(
@@ -316,6 +345,14 @@ mod tests {
                 "8765",
                 &"66".repeat(16),
                 "--unexpected",
+                "4000",
+            ],
+            vec![
+                HTTP_SERVICE_ROLE,
+                "http://127.0.0.1:8080",
+                "8765",
+                &"66".repeat(16),
+                RESPONSE_DELAY_FLAG,
                 "4000",
             ],
         ] {

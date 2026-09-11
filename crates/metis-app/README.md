@@ -59,6 +59,20 @@ configured session context and exits after the peer closes. This role is a
 local conformance host; it does not provide TLS or operating-system permission
 isolation. The complete browser workflow is in the [user manual](../../docs/manual/browser.md).
 
+The same executable also exposes a bounded loopback HTTP fragment role. It
+uses the first-party Moirai HTTP transport and the same origin, session and
+capability policy; it serves at most 64 requests before orderly teardown:
+
+```powershell
+cargo run --locked -p metis-app -- --metis-http-service http://127.0.0.1:8080 8766 66666666666666666666666666666666
+```
+
+`POST /v1/session` accepts a `HandshakeRequestPayload`, and authenticated
+`POST /v1/fragments` returns a bounded `FragmentPatchSet` for the registered
+UI plugin. `GET /health` is a text-only readiness probe. Every route requires
+the exact configured `Origin`; arbitrary HTML, scripts and DICOM data are not
+part of this service boundary.
+
 See the [user manual](../../docs/manual/distribution.md) for portable and
 installer workflows and the [application decision](../../docs/adr/0006-application-entry.md)
 for process boundaries and migration from the removed demonstration commands.
