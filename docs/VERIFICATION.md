@@ -1410,8 +1410,9 @@ This remains the baseline visual evidence for one live browser surface; configur
 Firefox and WebKit WebDriver captures remain open and are not inferred from
 this result.
 
-The current increment adds a second in-app browser trace against the same
-loopback service with `--response-delay-ms 4000`. The page entered
+The current increment at revision
+`e6b84432bc8a94515f0a332592ff392127788f00` adds a second in-app browser trace
+against the same loopback service with `--response-delay-ms 4000`. The page entered
 `Probing the local Metis service…`, **Reset mount** advanced the lifecycle from
 generation `1` to `2`, and after the delayed response window the page still
 reported `Mount reset; the previous fragment generation is stale`, response

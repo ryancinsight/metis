@@ -8,6 +8,8 @@ Driver: [METIS-AXUM-001](../../backlog.md#METIS-AXUM-001)
 
 Revision 2026-09-11: [METIS-AXUM-001](../../backlog.md#METIS-AXUM-001)
 admits a loopback-only `metis-app` server demonstration for the user manual.
+The lifecycle probe implementation is recorded at Metis revision
+`e6b84432bc8a94515f0a332592ff392127788f00`.
 The target exercises the first-party Moirai HTTP transport and Metis policy;
 it does not authorize a public listener, production deployment, or a DICOM
 boundary in Metis.

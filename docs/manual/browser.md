@@ -69,13 +69,18 @@ diagnostics after the four-second response window; no completion from the
 aborted request may update the remounted page. The probe is bounded to 30,000
 milliseconds and uses Moirai's timer, so it does not block the executor.
 
-The in-app browser capture on 2026-09-11 at Metis revision
+The in-app browser capture on 2026-09-11 at the pre-change Metis revision
 `cadb684ca7c8bda3f1c873f93286871e620e6196` showed the complete live state:
 `Authenticated fragment boundary ready`, `200 metis-http-ready`, handshake
 `200`, fragment `200 (1 patch)`, accepted `session` action, malformed `400`,
 unauthorized `401`, unchanged stale state and lifecycle generation `1`. This
 is one real browser-rendered visual trace of the local presentation boundary;
 it is not cross-engine WebDriver evidence. No DICOM data entered the page.
+
+The delayed-reset capture was run against Metis revision
+`e6b84432bc8a94515f0a332592ff392127788f00`. It entered the pending probe,
+advanced from generation `1` to `2` on **Reset mount**, and remained at the
+empty reset state after the four-second response window.
 
 ## Run the cross-engine conformance trace
 
