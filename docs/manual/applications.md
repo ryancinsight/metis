@@ -196,7 +196,7 @@ committed to either repository.
 
 ![Actual MRI-DIR CT study rendered through the Métis native surface](https://github.com/ryancinsight/ritk/blob/main/docs/manual/images/dicom-metis-real-ct.png?raw=true)
 
-The same saved public series was opened through the RITK browser adapter and
+The same saved public CT series was opened through the RITK browser adapter and
 presented by the live Metis HTML5 canvas path. This is a runtime pixel capture,
 not an illustration: RITK read all 409 Part 10 files (216,156,416 bytes),
 decoded the study and supplied the axial, coronal and sagittal frames through
@@ -217,6 +217,48 @@ The reproducible DICOM opening and visual workflow remains in the
 [RITK user manual](https://github.com/ryancinsight/ritk/blob/main/docs/manual/dicom-workflow.md),
 which owns the scanner, decoder, geometry and clinical display checks. Metis
 owns the bounded file handoff, browser canvas and host lifecycle only.
+
+The same current native host also opens the saved MRI-DIR T2 series. RITK
+decoded 94 real DICOM files and transferred the axial, coronal and sagittal
+MRI planes through the same format-neutral Métis framebuffer:
+
+![Actual MRI-DIR T2 study rendered through the Métis native surface](https://github.com/ryancinsight/ritk/blob/main/docs/manual/images/dicom-metis-real-mri.png?raw=true)
+
+The run's file count, byte count, executable digest and image digest are in
+[the RITK provenance record](https://github.com/ryancinsight/ritk/blob/main/docs/manual/images/dicom-metis-real-mri.json).
+Both captures are public MRI-DIR porcine-phantom data, not generated
+illustrations or private patient studies. A private clinical path is accepted
+for a local run only and is never committed to this repository.
+
+The same saved MRI-DIR T2 study was then opened through the packaged RITK
+WASM browser path in the Codex in-app Chromium host. Métis accepted the 94 real
+DICOM files as one bounded batch (49,807,236 bytes); RITK decoded them and
+presented all three non-black canvases:
+
+| Canvas | Presented pixels | Non-black pixels |
+| --- | ---: | ---: |
+| axial | 512 × 512 | 190,836 |
+| coronal | 512 × 94 | 41,863 |
+| sagittal | 512 × 94 | 38,843 |
+
+![Actual MRI-DIR T2 axial frame through the Métis browser canvas](https://github.com/ryancinsight/ritk/blob/main/docs/manual/images/dicom-metis-real-browser-mri-axial.png?raw=true)
+
+![Actual MRI-DIR T2 coronal frame through the Métis browser canvas](https://github.com/ryancinsight/ritk/blob/main/docs/manual/images/dicom-metis-real-browser-mri-coronal.png?raw=true)
+
+![Actual MRI-DIR T2 sagittal frame through the Métis browser canvas](https://github.com/ryancinsight/ritk/blob/main/docs/manual/images/dicom-metis-real-browser-mri-sagittal.png?raw=true)
+
+These are live canvas exports from real DICOM decoding, not generated images.
+The [RITK provenance record](https://github.com/ryancinsight/ritk/blob/main/docs/manual/images/dicom-metis-real-browser-mri.json)
+binds the PNG hashes, source revisions and bounds. The capture excludes browser
+chrome and uses a bounded programmatic drop in one Chromium host; physical
+drag-and-drop, Firefox/WebKit, WebGPU and complete application-window capture
+remain separate acceptance work.
+The reproducible DICOM opening and visual workflow is maintained in the
+[RITK user manual](https://github.com/ryancinsight/ritk/blob/main/docs/manual/dicom-workflow.md).
+It runs the real scanner and loader, checks exact pixels and physical geometry,
+and compares axial, coronal and sagittal captures with reviewed goldens. The
+Metis browser capture proves only bounded input handoff and does not claim
+DICOM decoding.
 
 ## Browser service workflow
 
