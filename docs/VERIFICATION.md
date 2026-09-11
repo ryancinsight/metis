@@ -1566,6 +1566,17 @@ content-only and excludes operating-system chrome. It demonstrates the native
 RITK-to-Métis frame path and does not close browser-driver, GPU, accessibility,
 IME or cross-platform host requirements.
 
+The saved MRI-DIR T2 browser workflow is also recorded as a real-data visual
+check. The packaged RITK WASM viewer mounted Métis in the Codex in-app Chromium
+host, accepted 94 DICOM files (49,807,236 bytes), and reported non-black axial
+(512 × 512; 190,836 pixels), coronal (512 × 94; 41,863 pixels), and sagittal
+(512 × 94; 38,843 pixels) canvases. The three PNGs and their source revisions,
+SHA-256 digests and bounded-drop record are in the
+[RITK browser MRI provenance record](../../ritk/docs/manual/images/dicom-metis-real-browser-mri.json)
+and [manual section](../../ritk/docs/manual/dicom-workflow.md#inspect-the-saved-mri-study-in-the-browser).
+This is actual DICOM pixel output, not a generated image. It is a single
+Chromium host using a bounded programmatic `DataTransfer`; physical browser
+drag-and-drop, Firefox/WebKit, WebGPU and complete-window evidence remain open.
 RITK PR #284 additionally records a local browser smoke of the packaged
 `start_web_canvas` path: three synthetic Part 10 files were dispatched through
 a browser `DataTransfer`, the host reported three accepted 654-byte files and
