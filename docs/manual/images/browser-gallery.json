@@ -1,0 +1,171 @@
+{
+  "schema": 1,
+  "status": "passed",
+  "engine": "chromium",
+  "url": "http://127.0.0.1:62165/gallery.html",
+  "bridge": "disconnected",
+  "revision": "24da737d2299cfc5356998853e5750ca1d20500f",
+  "capabilities": {
+    "browserName": "MicrosoftEdge",
+    "browserVersion": "153.0.4234.19",
+    "platformName": "windows"
+  },
+  "actions": [
+    {
+      "input": "chromium",
+      "events": [
+        {
+          "bytes": 0,
+          "files": 0,
+          "trusted": true,
+          "type": "dragenter"
+        },
+        {
+          "bytes": 0,
+          "files": 0,
+          "trusted": true,
+          "type": "dragover"
+        },
+        {
+          "bytes": 0,
+          "files": 0,
+          "trusted": true,
+          "type": "dragover"
+        },
+        {
+          "bytes": 216156416,
+          "files": 409,
+          "trusted": true,
+          "type": "drop"
+        }
+      ]
+    },
+    {
+      "rejected": "count",
+      "files": 513,
+      "bytes": 0,
+      "observer": {
+        "rejected": "drop evidence exceeds host bounds"
+      }
+    },
+    {
+      "rejected": "file-bytes",
+      "files": 1,
+      "bytes": 67108865,
+      "observer": {
+        "rejected": "drop evidence exceeds host bounds"
+      }
+    },
+    {
+      "rejected": "batch-bytes",
+      "files": 5,
+      "bytes": 335544320,
+      "observer": {
+        "rejected": "drop evidence exceeds host bounds"
+      }
+    }
+  ],
+  "snapshots": [
+    {
+      "transfer": {
+        "bytes": "Byte access: read 216156416 bytes from 409 file(s)",
+        "status": "Drop status: accepted 409 file(s); 00000001.dcm (528502 bytes), 00000002.dcm (528502 bytes), 00000003.dcm (528496 bytes); ..."
+      }
+    },
+    {
+      "id": "ritk-snap-axial",
+      "height": 512,
+      "non_black_pixels": 124466,
+      "rgba_sha256": "15b191108b506136a6dd8d2923f8e9a21baad9e2ad25d4c3ff858a8a7f798fea",
+      "width": 512
+    },
+    {
+      "id": "ritk-snap-coronal",
+      "height": 409,
+      "non_black_pixels": 106343,
+      "rgba_sha256": "cb1462edad7fe0f6e06c389e3a05ce0344381be65be8c016bc958f5fcbabeaa0",
+      "width": 512
+    },
+    {
+      "id": "ritk-snap-sagittal",
+      "height": 409,
+      "non_black_pixels": 140317,
+      "rgba_sha256": "94b7adc8980ef1cf4323c35781f3a57e5d5811380cf9988df5e6b831140f6cf3",
+      "width": 512
+    }
+  ],
+  "screenshots": [
+    {
+      "label": "before-drop",
+      "path": "output/browser/drop/before-drop.png",
+      "sha256": "cfb65d6a6d733c89e353c29d3c27cb55c9ffadd993fa60a2c48997f1288579e1",
+      "width": 1773,
+      "height": 1203,
+      "bytes": 24176
+    },
+    {
+      "label": "ritk-snap-axial",
+      "path": "output/browser/drop/ritk-snap-axial.png",
+      "sha256": "2a5a7103f6f4b7eb0eebb57827d6d3a6da3372590b8a3bb7a7dbc44aa65c59c5",
+      "width": 561,
+      "height": 561,
+      "bytes": 109476,
+      "scope": "element"
+    },
+    {
+      "label": "ritk-snap-coronal",
+      "path": "output/browser/drop/ritk-snap-coronal.png",
+      "sha256": "868b093bb857106aac5b6bc80f6764fd81426ee1a87c1355e340dd9e52374fd6",
+      "width": 561,
+      "height": 449,
+      "bytes": 104424,
+      "scope": "element"
+    },
+    {
+      "label": "ritk-snap-sagittal",
+      "path": "output/browser/drop/ritk-snap-sagittal.png",
+      "sha256": "0ded49e3e7231b15af8ae80b829edcfba31cacb9f7bdbb2b3c230058ccbe6e68",
+      "width": 561,
+      "height": 449,
+      "bytes": 122893,
+      "scope": "element"
+    },
+    {
+      "label": "gallery",
+      "path": "output/browser/drop/gallery.png",
+      "sha256": "2e3074d89764d7650f1207b478dd6935fb15da92073e7f819b2b326a54a24662",
+      "width": 1773,
+      "height": 1203,
+      "bytes": 364379
+    }
+  ],
+  "unsupported_native_operations": [
+    "native-file-dialog",
+    "native-process-launch",
+    "os-permission-grant"
+  ],
+  "cleanup": {
+    "session_closed": true
+  },
+  "consumer_revision": "0bad9eb2c77b91e57fff3e9dc472a42201e061aa",
+  "files": 409,
+  "bytes": 216156416,
+  "viewport": {
+    "device_scale": 1.25,
+    "height": 962,
+    "width": 1418
+  },
+  "file_manifest_sha256": "a2a438f9f806848012a9683df146ddf5cc65e632c290c5f58f2edf9e6f8da6da",
+  "oracle_sha256": "07574079c71cbadf5def6ed892357b9f3b7d335878bf387a8f41fd620ad0d455",
+  "assets": {
+    "gallery.html": "6ccd008d5a3caa6a066127e85be924e81cf373cdbfd77925a54ad79ac5b18ac9",
+    "gallery.js": "6d63e48f8510cce13317ab7b0150bbe059d6e8a903d733e6dee952436a59fea9",
+    "gallery.css": "372b8662375a56ec999e28196656474ae95a08f2feaaf12baf1800a8f0917e4b",
+    "consumer/ritk_snap.js": "c02ae557b5845e7f0be253171b711b06675c251e498af8482c177a6607ee079d",
+    "consumer/ritk_snap_bg.wasm": "2c9995e81cb2551f524e0441a6772e9da0a2a8cadef0adeacd541b0d3572b368"
+  },
+  "sources": {
+    "browser.py": "78d71d8087fd4e6a4b04bbbd6f734ffebf35a719db70e1ba3eef02fa08b71069",
+    "browser_drop.py": "9c68a42e171d0cefeae8427dc769b05532b5e2c45994c25a736046bcbf40996d"
+  }
+}
