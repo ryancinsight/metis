@@ -305,6 +305,7 @@ def _arguments() -> argparse.Namespace:
     parser.add_argument("--url", help="already-running browser workbench URL")
     parser.add_argument("--serve-dir", type=pathlib.Path, help="serve one generated output/browser directory on loopback")
     parser.add_argument("--canvas-id", action="append", default=[], help="canvas DOM id for the format-neutral trusted-input scenario; repeat per canvas")
+    parser.add_argument("--canvas-attribute", action="append", default=[], help="consumer-selected data-* attribute to capture on each canvas; repeat per attribute")
     parser.add_argument("--consumer-revision", help="40-hex revision of the application consuming the format-neutral canvas seam")
     parser.add_argument("--bridge", choices=BRIDGE_MODES, default="disconnected")
     parser.add_argument("--cancel", action="store_true", help="submit a delayed authorized request, stop, remount and check stale-response disposal")
@@ -353,18 +354,26 @@ def main() -> int:
         run_canvas_scenario = None
         consumer_revision = None
         if arguments.scenario == "canvas":
-            from browser_canvas import run_canvas_scenario, validate_canvas_ids, validate_consumer_revision
+            from browser_canvas import (
+                run_canvas_scenario,
+                validate_canvas_attributes,
+                validate_canvas_ids,
+                validate_consumer_revision,
+            )
 
             if arguments.bridge != "disconnected":
                 raise BrowserRuntimeError("canvas scenarios do not use the workbench bridge")
             if arguments.cancel:
                 raise BrowserRuntimeError("--cancel is only valid for the workbench scenario")
             canvas_ids = validate_canvas_ids(arguments.canvas_id)
+            canvas_attributes = validate_canvas_attributes(arguments.canvas_attribute)
             consumer_revision = validate_consumer_revision(arguments.consumer_revision)
         elif arguments.canvas_id:
             raise BrowserRuntimeError("--canvas-id requires --scenario canvas")
         elif arguments.consumer_revision is not None:
             raise BrowserRuntimeError("--consumer-revision requires --scenario canvas")
+        elif arguments.canvas_attribute:
+            raise BrowserRuntimeError("--canvas-attribute requires --scenario canvas")
         driver_url = arguments.driver_url or os.environ.get(f"METIS_WEBDRIVER_{engine.value.upper()}_URL")
         if not driver_url:
             raise BrowserRuntimeError(f"set --driver-url or METIS_WEBDRIVER_{engine.value.upper()}_URL")
@@ -381,7 +390,17 @@ def main() -> int:
                 url = origin
                 client = WebDriverClient(driver_url, arguments.timeout_seconds)
                 if arguments.scenario == "canvas":
-                    trace = run_canvas_scenario(client, engine, url, revision, output.parent / "screenshots" / engine.value / "canvas", timeout_ms, canvas_ids, consumer_revision)
+                    trace = run_canvas_scenario(
+                        client,
+                        engine,
+                        url,
+                        revision,
+                        output.parent / "screenshots" / engine.value / "canvas",
+                        timeout_ms,
+                        canvas_ids,
+                        consumer_revision,
+                        canvas_attributes,
+                    )
                 else:
                     trace = run_scenario(client, engine, url, arguments.bridge, revision, output.parent / "screenshots" / engine.value, timeout_ms, arguments.cancel, arguments.cancel_grace_ms)
         else:
@@ -391,7 +410,17 @@ def main() -> int:
             _validate_bridge_url(url, arguments.bridge)
             client = WebDriverClient(driver_url, arguments.timeout_seconds)
             if arguments.scenario == "canvas":
-                trace = run_canvas_scenario(client, engine, url, revision, output.parent / "screenshots" / engine.value / "canvas", timeout_ms, canvas_ids, consumer_revision)
+                trace = run_canvas_scenario(
+                    client,
+                    engine,
+                    url,
+                    revision,
+                    output.parent / "screenshots" / engine.value / "canvas",
+                    timeout_ms,
+                    canvas_ids,
+                    consumer_revision,
+                    canvas_attributes,
+                )
             else:
                 trace = run_scenario(client, engine, url, arguments.bridge, revision, output.parent / "screenshots" / engine.value, timeout_ms, arguments.cancel, arguments.cancel_grace_ms)
         _write_trace(output, trace.document())

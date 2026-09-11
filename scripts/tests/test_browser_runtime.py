@@ -16,9 +16,16 @@ from browser_runtime import (
     StaticServer,
     _write_trace,
     _validate_bridge_url,
+    main,
     run_scenario,
 )
-from browser_canvas import run_canvas_scenario, validate_canvas_ids, validate_consumer_revision
+from browser_canvas import (
+    MAX_CANVAS_ATTRIBUTES,
+    run_canvas_scenario,
+    validate_canvas_attributes,
+    validate_canvas_ids,
+    validate_consumer_revision,
+)
 from browser_protocol import BrowserRuntimeError, MAX_SCREENSHOT_BYTES, MAX_SCREENSHOT_RESPONSE_BYTES, MAX_TRACE_BYTES, WebDriverClient
 from browser_trace import BrowserEngine, Trace
 
@@ -109,6 +116,7 @@ class FakeDriver:
     def execute(self, script: str, arguments=()):
         if "canvas.tagName.toLowerCase()" in script:
             canvas_id = arguments[0]
+            attribute_names = arguments[1]
             return {
                 "id": canvas_id,
                 "width": 512,
@@ -117,6 +125,10 @@ class FakeDriver:
                 "css_height": 512.0,
                 "left": 0.0,
                 "top": 0.0,
+                "attributes": {
+                    name: "opaque-value" if name == "data-consumer-state" else None
+                    for name in attribute_names
+                },
             }
         if "result-metrics" in script and "return document" in script:
             return "Volume rate: 0.900000 mL/hr" if self.success else ""
@@ -192,6 +204,20 @@ class NoInputDriver(FakeDriver):
         del element_id, value
 
 
+class InvalidAttributeDriver(FakeDriver):
+    """Driver mutant that violates the opaque attribute response contract."""
+
+    def __init__(self, attributes) -> None:
+        super().__init__()
+        self.attributes = attributes
+
+    def execute(self, script: str, arguments=()):
+        value = super().execute(script, arguments)
+        if "canvas.tagName.toLowerCase()" in script:
+            value["attributes"] = self.attributes
+        return value
+
+
 class RetainingDriver(FakeDriver):
     """Driver mutant that leaves controls mounted after the stop command."""
 
@@ -263,6 +289,7 @@ class BrowserRuntimeTests(unittest.TestCase):
         self.assertEqual(trace.consumer_revision, "1" * 40)
         self.assertEqual(trace.document()["consumer_revision"], "1" * 40)
         self.assertEqual(trace.cleanup["canvas_count"], 3)
+        self.assertEqual(trace.cleanup["canvas_attribute_names"], [])
         self.assertEqual(
             [action["action"] for action in trace.actions],
             ["trusted-pointer-drag", "trusted-wheel"] * 3,
@@ -270,6 +297,31 @@ class BrowserRuntimeTests(unittest.TestCase):
         self.assertEqual(len(trace.snapshots), 6)
         self.assertEqual(len(trace.screenshots), 8)
         self.assertTrue(all(item["scope"] == "element" for item in trace.screenshots[1:-1]))
+
+    def test_canvas_trace_captures_only_requested_opaque_attributes(self):
+        output = pathlib.Path(__file__).resolve().parents[2] / "output" / "browser" / "runtime-test"
+        output.mkdir(parents=True, exist_ok=True)
+        with tempfile.TemporaryDirectory(dir=output) as directory:
+            trace = run_canvas_scenario(
+                FakeDriver(),
+                BrowserEngine.CHROMIUM,
+                "http://127.0.0.1:8080/ritk.html",
+                "0" * 40,
+                pathlib.Path(directory),
+                5_000,
+                ["ritk-snap-axial"],
+                canvas_attributes=("data-consumer-state", "data-consumer-missing"),
+            )
+        self.assertEqual(
+            trace.cleanup["canvas_attribute_names"],
+            ["data-consumer-state", "data-consumer-missing"],
+        )
+        self.assertEqual(len(trace.snapshots), 2)
+        for snapshot in trace.snapshots:
+            self.assertEqual(
+                snapshot["canvas"]["attributes"],
+                {"data-consumer-state": "opaque-value", "data-consumer-missing": None},
+            )
 
     def test_canvas_identifier_validation_is_bounded_and_unique(self):
         self.assertEqual(validate_canvas_ids(["axial", "coronal"]), ("axial", "coronal"))
@@ -279,11 +331,69 @@ class BrowserRuntimeTests(unittest.TestCase):
             validate_canvas_ids(3)
         with self.assertRaisesRegex(BrowserRuntimeError, "repeated"):
             validate_canvas_ids(["axial", "axial"])
+        self.assertEqual(validate_canvas_attributes([]), ())
+        self.assertEqual(validate_canvas_attributes(["data-consumer-state"]), ("data-consumer-state",))
+        with self.assertRaisesRegex(BrowserRuntimeError, "bounded HTML name"):
+            validate_canvas_attributes(["aria-label"])
+        with self.assertRaisesRegex(BrowserRuntimeError, "repeated"):
+            validate_canvas_attributes(["data-state", "data-state"])
+        with self.assertRaisesRegex(BrowserRuntimeError, "at most"):
+            validate_canvas_attributes([f"data-value-{index}" for index in range(MAX_CANVAS_ATTRIBUTES + 1)])
+        with self.assertRaisesRegex(BrowserRuntimeError, "bounded HTML name"):
+            validate_canvas_attributes(["data-" + "x" * 124])
         self.assertEqual(validate_consumer_revision("A" * 40), "a" * 40)
         with self.assertRaisesRegex(BrowserRuntimeError, "40-hex"):
             validate_consumer_revision("short")
         with self.assertRaisesRegex(BrowserRuntimeError, "40-hex"):
             validate_consumer_revision(3)
+
+    def test_canvas_trace_rejects_malformed_attribute_responses(self):
+        output = pathlib.Path(__file__).resolve().parents[2] / "output" / "browser" / "runtime-test"
+        output.mkdir(parents=True, exist_ok=True)
+        cases = (
+            ({"data-requested": "ok", "data-extra": "unexpected"}, "invalid attribute snapshot"),
+            ({"data-requested": 3}, "exceeds its value bound"),
+            ({"data-requested": "x" * 1025}, "exceeds its value bound"),
+        )
+        for attributes, message in cases:
+            with self.subTest(attributes=attributes):
+                with tempfile.TemporaryDirectory(dir=output) as directory:
+                    with self.assertRaisesRegex(BrowserRuntimeError, message):
+                        run_canvas_scenario(
+                            InvalidAttributeDriver(attributes),
+                            BrowserEngine.CHROMIUM,
+                            "http://127.0.0.1:8080/ritk.html",
+                            "0" * 40,
+                            pathlib.Path(directory),
+                            5_000,
+                            ["ritk-snap-axial"],
+                            canvas_attributes=("data-requested",),
+                        )
+
+    def test_cli_rejects_consumer_attributes_on_workbench_scenario(self):
+        output = pathlib.Path(__file__).resolve().parents[2] / "output" / "browser" / "runtime-test"
+        output.mkdir(parents=True, exist_ok=True)
+        with tempfile.TemporaryDirectory(dir=output) as directory:
+            trace_path = pathlib.Path(directory) / "invalid-cli.json"
+            with mock.patch.object(
+                sys,
+                "argv",
+                [
+                    "browser_runtime.py",
+                    "--engine",
+                    "chromium",
+                    "--scenario",
+                    "workbench",
+                    "--canvas-attribute",
+                    "data-consumer-state",
+                    "--output",
+                    str(trace_path),
+                ],
+            ):
+                self.assertEqual(main(), 1)
+            document = json.loads(trace_path.read_text(encoding="utf-8"))
+        self.assertEqual(document["status"], "failed")
+        self.assertIn("requires --scenario canvas", document["error"])
 
     def test_cancel_trace_requires_pending_and_discards_delayed_result(self):
         output = pathlib.Path(__file__).resolve().parents[2] / "output" / "browser" / "runtime-test"

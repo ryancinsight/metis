@@ -152,11 +152,23 @@ slice, voxel, series or medical state:
 python scripts/browser_runtime.py --scenario canvas --engine chromium --url http://127.0.0.1:8080/ritk.html --consumer-revision <RITK-40-HEX> --canvas-id ritk-snap-axial --canvas-id ritk-snap-coronal --canvas-id ritk-snap-sagittal
 ```
 
+Consumers may add a bounded `--canvas-attribute data-*` argument for each
+opaque DOM attribute they own. The runner records the requested values under
+each canvas snapshot, uses `null` when an attribute is absent, and never
+interprets the name or value. At most 16 names are accepted and each returned
+value is limited to 1024 UTF-8 bytes. This lets a consumer such as RITK carry
+its own semantic evidence without moving that meaning into Metis:
+
+```text
+python scripts/browser_runtime.py --scenario canvas --engine chromium --url http://127.0.0.1:8080/ritk.html --consumer-revision <RITK-40-HEX> --canvas-id ritk-snap-axial --canvas-id ritk-snap-coronal --canvas-id ritk-snap-sagittal --canvas-attribute data-ritk-load-state --canvas-attribute data-ritk-frame-state --canvas-attribute data-ritk-axis --canvas-attribute data-ritk-slice-index --canvas-attribute data-ritk-slice-count --canvas-attribute data-ritk-frame-width --canvas-attribute data-ritk-frame-height
+```
+
 Repeat the command for `firefox` and `webkit` with their configured driver
 endpoints. The resulting schema-1 trace uses `bridge: "canvas"`, records
-`consumer_revision`, and stores both window and element PNG hashes under the
-engine's output directory. RITK remains responsible for the DICOM byte drop,
-viewer reducer, axis/slice assertions and the clinical visual oracle. A
+`consumer_revision`, stores both window and element PNG hashes, and records
+the requested opaque attributes under each canvas snapshot. RITK remains
+responsible for the DICOM byte drop, viewer reducer, axis/slice assertions and
+the clinical visual oracle. A
 missing driver endpoint is an unfulfilled evidence requirement, not a passing
 or skipped engine result.
 
