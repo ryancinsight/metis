@@ -147,3 +147,17 @@ framebuffer storage or a second event loop. The lock uses PyO3's
 interpreter-aware acquisition path, and Python objects are created after the
 state guard is released. Native window providers and RITK's
 DICOM decoding remain separate boundaries.
+
+Run the same built-wheel check used by the repository gate when changing this
+surface:
+
+```powershell
+python scripts/python_binding.py
+```
+
+The command builds one locked wheel, validates its typed stable-ABI metadata,
+extracts it into an isolated directory, and runs the value-semantic suite
+against that extracted artifact. The free-threaded runtime probe is expected to
+be skipped on a regular GIL-enabled interpreter; the hosted `cp3XXt` and
+`abi3t` artifact checks are owned by the release matrix in
+`METIS-PYTHON-004`.
