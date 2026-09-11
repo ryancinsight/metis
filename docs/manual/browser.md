@@ -922,6 +922,15 @@ reads content, and verifies that the rendered pixels remain unchanged. The expec
 in the [consumer oracle](images/browser-gallery-oracle.json), derived from
 RITK's `dicom-metis-real-browser-orthogonal.json` and its three PNGs.
 
+The committed trace was rerun on 2026-09-11 with the current Metis mainline
+(`0f7093e6701af4ab4a3779925206d7a31f964319`) and RITK consumer revision
+`0bad9eb2c77b91e57fff3e9dc472a42201e061aa`. Edge 153.0.4234.19 negotiated a
+W3C session, delivered trusted file-backed drag events, matched every file and
+RGBA oracle, rejected all three overflow cases, captured the complete window
+and each canvas, and closed the session with `session_closed: true`.
+This closes the configured Chromium/Edge gallery run; it does not claim
+physical file-manager input or Firefox/WebKit behavior.
+
 ![Browser gallery after the bounded file drop](images/browser-gallery.png)
 
 Reproduce with a matching local Chromium WebDriver already listening on port
@@ -940,7 +949,6 @@ browser. The same bounded observer checks event trust, file identities and
 rendered pixels; it never injects the input in manual mode. Each run replaces
 `output/browser/drop/trace.json` and fixed capture names, closes its driver
 session and stops its local server. Browser waits terminate within 60 seconds.
-The captured run uses Edge 153.0.4234.19 on Windows. It is automated file-backed
-browser input evidence, not a physical mouse/file-manager or Firefox/WebKit
-claim. Windows Computer Use could not verify the active browser URL in this
-session, so no physical drag capture is claimed. Browser chrome is excluded.
+Browser chrome is excluded. The trace is automated file-backed browser input
+evidence; physical mouse/file-manager input and Firefox/WebKit remain separate
+claims.

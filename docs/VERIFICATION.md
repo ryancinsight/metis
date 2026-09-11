@@ -1279,19 +1279,19 @@ stop/remount stale-result rejection, cancellation, input and teardown failure
 observations, screenshot transport/decoded bounds and the unsupported operation
 list. These tests do not stand in for a browser engine.
 
-No Chromium, Firefox or WebKit WebDriver endpoint is installed or configured
-in the current Windows environment, so this runner has no cross-engine trace or
-trusted physical-input screenshot. A separate Codex in-app Chromium capture is
-recorded by RITK: it opens the public MRI-DIR series, reads all 409 Part 10
-files, and presents actual axial, coronal and sagittal pixels through the Metis
-canvas. That capture is single-engine and uses a bounded programmatic
-`DataTransfer`; it is not evidence for physical drag-and-drop, Firefox/WebKit,
-WebGPU or full-window capture. The browser item stays open until each
-configured engine supplies a trace and the real service/cancellation run is
-reviewed. Provider-private listener registries, native handles, accessibility
-technology, IME behavior and post-drop allocation counts remain owned by their
-Moirai, native-host and RITK items; this runner contains no DICOM parsing or
-viewer semantics. See the [RITK browser capture record](../../ritk/docs/manual/dicom-workflow.md#three-orthogonal-canvases-from-the-complete-bounded-real-series).
+The generic workbench and canvas runner still requires one configured endpoint
+per engine for its workbench, pointer/wheel and lifecycle scenarios. A separate
+`browser_drop.py` run now supplies configured Chromium/Edge evidence for the
+RITK gallery: Edge 153.0.4234.19 accepted the public 409-file MRI-DIR CT study,
+matched all file and RGBA hashes, rejected count/file/batch overflow, captured
+the window and elements, and closed its session. The current Metis and RITK
+revisions plus the complete trace are recorded in the [gallery manual](manual/browser.md#drop-a-study-into-the-gallery).
+This does not prove physical file-manager input, Firefox/WebKit, WebGPU or
+provider-private resource counts. Provider-private listener registries, native
+handles, accessibility technology, IME behavior and post-drop allocation counts
+remain owned by their Moirai, native-host and RITK items; the Metis runner
+contains no DICOM parsing or viewer semantics. See the [RITK browser capture
+record](../../ritk/docs/manual/dicom-workflow.md#three-orthogonal-canvases-from-the-complete-bounded-real-series).
 
 <a id="browser-canvas-consumer-trace-evidence--2026-09-11"></a>
 ## Browser canvas consumer trace evidence — 2026-09-11
@@ -1306,14 +1306,13 @@ placing DICOM, series, slice or viewer state in Metis.
 
 The protocol-shaped suite passes 15/15 tests after adding the canvas scenario,
 element screenshot endpoint, bounded identifier validation and cross-repository
-consumer-revision field. This is deterministic transport evidence only. No
-Chromium, Firefox or WebKit WebDriver endpoint is configured in this Windows
-environment, so no cross-engine trace or trusted browser-driver capture is
-claimed here. RITK's separate in-app Chromium workflow does provide the
-clinical pixel oracle: the public MRI-DIR study is opened and the three actual
-orthogonal canvases are hashed in its provenance record. RITK must still run
-this reusable scenario against configured engines and assert DICOM opening,
-axis routing and slice changes in its own workflow evidence.
+consumer-revision field. This remains deterministic transport evidence. The
+configured Edge gallery run supplies a real file-backed browser session and
+clinical pixel oracle, but it uses the drop-specific runner and does not replace
+the generic canvas scenario: RITK must still run that reusable pointer/wheel
+scenario against configured engines and assert DICOM opening, axis routing and
+slice changes in its own workflow evidence. Firefox/WebKit, physical input,
+WebGPU and provider-private resource counts remain open.
 
 <a id="V03"></a>
 ### V03 — Text and accessibility specimen
