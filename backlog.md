@@ -494,9 +494,8 @@ an owner. “Unsupported” cannot replace delivery of a required mobile/native 
 
 <a id="METIS-GALLERY-001"></a>
 ## METIS-GALLERY-001 — User file drop gallery [patch]
-- Status: in-progress; priority: P1; integrator: codex-gallery; last-update: 2026-09-11.
+- Status: review; priority: P1; integrator: codex-gallery; last-update: 2026-09-11.
 - Outcome: A committed browser gallery accepts study files through the existing bounded host drop area and renders RITK-owned orthogonal views.
 - Scope: browser gallery assets, packaging and end-to-end evidence; no DICOM parsing or limit changes in Metis.
 - Acceptance: actual file-backed browser drop reads the complete 409-file public study, produces three inspectable frames, and retains native count/byte rejection coverage.
 - Verification: native web tests, browser asset/protocol tests, WASM build, end-to-end capture, full configured gate.
-- Lease: codex-gallery `examples/browser/gallery.*`, `scripts/browser.py`, browser proof runner/tests, gallery documentation; 2026-09-11T22:00:00Z.

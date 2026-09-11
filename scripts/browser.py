@@ -111,9 +111,30 @@ def build() -> None:
 def main() -> None:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("command", choices=("build",))
+    parser.add_argument("--ritk-package", type=pathlib.Path,
+                        help="Include a locally built wasm-bindgen RITK package for gallery.html")
     args = parser.parse_args()
     if args.command == "build":
         build()
+        if args.ritk_package is not None:
+            package_gallery(args.ritk_package)
+
+
+def package_gallery(package: pathlib.Path) -> None:
+    """Copy the consumer's generated module; medical logic stays in RITK."""
+    names = ("ritk_snap.js", "ritk_snap_bg.wasm")
+    sources = [package / name for name in names]
+    for source in sources:
+        if not source.is_file() or source.is_symlink():
+            raise SystemExit(f"RITK package must contain a regular file: {source}")
+    with sources[1].open("rb") as module:
+        if module.read(8) != b"\0asm\x01\0\0\0":
+            raise SystemExit("RITK package contains an invalid WASM header")
+    validate_index_policy(SOURCE / "gallery.html")
+    destination = OUTPUT / "consumer"
+    destination.mkdir(parents=True, exist_ok=True)
+    for source in sources:
+        shutil.copy2(source, destination / source.name)
 
 
 if __name__ == "__main__":

@@ -888,3 +888,59 @@ initialization log entries and no warnings or errors. These captures establish
 HTML5/CSS execution and focusable controls and pair with the native loopback
 tests. They do not close post-drop allocation measurement, cross-engine
 behavior, TLS, accessibility technology support or OS permission isolation.
+
+## Drop a study into the gallery
+
+The [gallery shell](../../examples/browser/gallery.html) exposes the mounted
+Metis file drop area beside three RITK canvases. Select the study's DICOM files
+in your file manager and drag them onto that area; do not drop the enclosing
+folder or its license/readme files. The page does not fetch a study or synthesize
+drop events. RITK owns classification, decoding, geometry and viewer state;
+Metis retains its 512-file, 64 MiB/file and 256 MiB/batch limits.
+
+Build RITK's locked WASM library and package it with the pinned wasm-bindgen CLI
+as described in the RITK browser workflow linked above. From Metis, include that
+fresh package when building the gallery:
+
+```powershell
+python scripts/browser.py build --ritk-package D:/atlas/target/wasm-bindgen/ritk-snap
+python -m http.server 8000 --bind 127.0.0.1 --directory output/browser
+```
+
+Open `http://127.0.0.1:8000/gallery.html`. The RITK package must be rebuilt after
+its Metis dependency changes; an old package can still embed the old file limit.
+Without the package, the page reports a viewer startup failure.
+
+The [capture](images/browser-gallery.png) and [trace](images/browser-gallery.json)
+record the public CC BY 4.0 MRI-DIR CT phantom: 409 files, 216,156,416 bytes.
+The browser delivered trusted `dragenter`, `dragover` and `drop` events through
+Chromium's file-backed input protocol. Every file's content hash matched the
+local fixture; each canvas's complete RGBA hash matched RITK's existing reference
+PNG, including pixel positions, intensity and alpha. The same browser run rejects
+file-count, per-file-byte and batch-byte overflow before the evidence reader
+reads content, and verifies that the rendered pixels remain unchanged. The expected values live
+in the [consumer oracle](images/browser-gallery-oracle.json), derived from
+RITK's `dicom-metis-real-browser-orthogonal.json` and its three PNGs.
+
+![Browser gallery after the bounded file drop](images/browser-gallery.png)
+
+Reproduce with a matching local Chromium WebDriver already listening on port
+9515 (use `--browser-name chrome` for Chrome):
+
+```powershell
+$revision = git -C D:/atlas/repos/ritk rev-parse HEAD
+python scripts/browser_drop.py --driver-url http://127.0.0.1:9515 `
+  --browser-name MicrosoftEdge --input chromium `
+  --files D:/atlas/repos/ritk/test_data/3_head_ct_mridir/DICOM --pattern '*.dcm' `
+  --oracle docs/manual/images/browser-gallery-oracle.json --consumer-revision $revision
+```
+
+Use `--input manual` to perform the file-manager drag yourself into the opened
+browser. The same bounded observer checks event trust, file identities and
+rendered pixels; it never injects the input in manual mode. Each run replaces
+`output/browser/drop/trace.json` and fixed capture names, closes its driver
+session and stops its local server. Browser waits terminate within 60 seconds.
+The captured run uses Edge 153.0.4234.19 on Windows. It is automated file-backed
+browser input evidence, not a physical mouse/file-manager or Firefox/WebKit
+claim. Windows Computer Use could not verify the active browser URL in this
+session, so no physical drag capture is claimed. Browser chrome is excluded.
