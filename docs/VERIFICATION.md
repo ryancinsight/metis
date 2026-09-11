@@ -1313,6 +1313,13 @@ opaque consumer attributes, axis order, dimensions, screenshots and cleanup;
 Metis continues to interpret none of the DICOM or viewer meaning. Firefox/WebKit,
 physical input, WebGPU and provider-private resource counts remain open.
 
+The paired Edge run at Metis `1fd44680d1a15a12efda2e2cf0f2ed560da92db6` and
+RITK `0bad9eb2c77b91e57fff3e9dc472a42201e061aa` accepted the public 409-file
+study, then moved the axial slice 204→203 and coronal/sagittal slices 256→255
+through trusted wheel actions. The RITK validator passed the six semantic
+snapshots, six actions, eight PNG scopes and released-input cleanup. The
+revision-bound artifact is [the paired canvas trace](manual/images/browser-gallery-canvas.json).
+
 <a id="V03"></a>
 ### V03 — Text and accessibility specimen
 

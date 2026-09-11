@@ -981,3 +981,24 @@ Validate the paired trace from the RITK checkout with
 values; RITK owns their meaning and the DICOM/viewer assertions. A missing
 attribute, malformed action, incomplete screenshot set or unreleased input
 source fails the consumer validator.
+
+The paired Edge run at Metis revision
+`1fd44680d1a15a12efda2e2cf0f2ed560da92db6` produced six semantic snapshots:
+the 409-slice axial view moved from slice 204 to 203, and the coronal and
+sagittal views moved from slice 256 to 255 after the trusted wheel actions.
+All three remained presented at their expected dimensions. The revision-bound
+trace is [`browser-gallery-canvas.json`](images/browser-gallery-canvas.json);
+its eight screenshots are the paired initial/after-input window and canvas
+captures. This is the same public CT study as the file-drop trace, not a
+synthetic image.
+
+The final browser window below shows the three live orthogonal views after the
+input actions. The element captures preserve the individual canvases for visual
+inspection: axial [initial](images/browser-gallery-canvas-ritk-snap-axial-initial.png)
+and [after input](images/browser-gallery-canvas-ritk-snap-axial-after-input.png),
+coronal [initial](images/browser-gallery-canvas-ritk-snap-coronal-initial.png)
+and [after input](images/browser-gallery-canvas-ritk-snap-coronal-after-input.png),
+and sagittal [initial](images/browser-gallery-canvas-ritk-snap-sagittal-initial.png)
+and [after input](images/browser-gallery-canvas-ritk-snap-sagittal-after-input.png).
+
+![Live Edge window after the trusted canvas actions](images/browser-gallery-canvas-window-final.png)

@@ -1,0 +1,335 @@
+{
+  "actions": [
+    {
+      "action": "trusted-pointer-drag",
+      "canvas": "ritk-snap-axial",
+      "end": [
+        64,
+        48
+      ],
+      "start": [
+        24,
+        24
+      ]
+    },
+    {
+      "action": "trusted-wheel",
+      "canvas": "ritk-snap-axial",
+      "delta": [
+        0,
+        120
+      ],
+      "position": [
+        64,
+        48
+      ]
+    },
+    {
+      "action": "trusted-pointer-drag",
+      "canvas": "ritk-snap-coronal",
+      "end": [
+        64,
+        48
+      ],
+      "start": [
+        24,
+        24
+      ]
+    },
+    {
+      "action": "trusted-wheel",
+      "canvas": "ritk-snap-coronal",
+      "delta": [
+        0,
+        120
+      ],
+      "position": [
+        64,
+        48
+      ]
+    },
+    {
+      "action": "trusted-pointer-drag",
+      "canvas": "ritk-snap-sagittal",
+      "end": [
+        64,
+        48
+      ],
+      "start": [
+        24,
+        24
+      ]
+    },
+    {
+      "action": "trusted-wheel",
+      "canvas": "ritk-snap-sagittal",
+      "delta": [
+        0,
+        120
+      ],
+      "position": [
+        64,
+        48
+      ]
+    }
+  ],
+  "bridge": "canvas",
+  "capabilities": {
+    "acceptInsecureCerts": false,
+    "browserName": "MicrosoftEdge",
+    "browserVersion": "153.0.4234.19",
+    "fedcm:accounts": true,
+    "goog:processID": 4000,
+    "ms:edgeOptions": {
+      "debuggerAddress": "localhost:63428"
+    },
+    "msedge": {
+      "msedgedriverVersion": "153.0.4234.19 (877eb25981392e298707bfbf8873b24fdf4b6fb1)",
+      "userDataDir": "C:\\Users\\RYANCL~1\\AppData\\Local\\Temp\\scoped_dir42172_1142857925"
+    },
+    "networkConnectionEnabled": false,
+    "pageLoadStrategy": "normal",
+    "platformName": "windows",
+    "proxy": {},
+    "setWindowRect": true,
+    "strictFileInteractability": false,
+    "timeouts": {
+      "implicit": 0,
+      "pageLoad": 300000,
+      "script": 30000
+    },
+    "unhandledPromptBehavior": "dismiss and notify",
+    "webauthn:extension:cmtgKey": true,
+    "webauthn:extension:credBlob": true,
+    "webauthn:extension:largeBlob": true,
+    "webauthn:extension:minPinLength": true,
+    "webauthn:extension:prf": true,
+    "webauthn:virtualAuthenticators": true
+  },
+  "cleanup": {
+    "active_input_sources_released": true,
+    "canvas_attribute_names": [
+      "data-ritk-load-state",
+      "data-ritk-frame-state",
+      "data-ritk-axis",
+      "data-ritk-slice-index",
+      "data-ritk-slice-count",
+      "data-ritk-frame-width",
+      "data-ritk-frame-height"
+    ],
+    "canvas_count": 3,
+    "provider_listener_count": "unavailable from WebDriver",
+    "session_closed": true
+  },
+  "consumer_revision": "0bad9eb2c77b91e57fff3e9dc472a42201e061aa",
+  "engine": "chromium",
+  "revision": "1fd44680d1a15a12efda2e2cf0f2ed560da92db6",
+  "schema": 1,
+  "screenshots": [
+    {
+      "bytes": 363979,
+      "height": 1203,
+      "label": "window-initial",
+      "path": "output/browser/runtime/screenshots/chromium/canvas/window-initial.png",
+      "sha256": "d7e5472e3652c2d6bd5b9a24a95e3f6525564153844bb3fa5feaff2e22fe0230",
+      "width": 1773
+    },
+    {
+      "bytes": 109496,
+      "height": 561,
+      "label": "ritk-snap-axial-initial",
+      "path": "output/browser/runtime/screenshots/chromium/canvas/ritk-snap-axial-initial.png",
+      "scope": "element",
+      "sha256": "7009fa63a828a5620f8a0d213b235109d03235e43fe2054c1d850dcdb3fb546a",
+      "width": 561
+    },
+    {
+      "bytes": 105310,
+      "height": 561,
+      "label": "ritk-snap-axial-after-input",
+      "path": "output/browser/runtime/screenshots/chromium/canvas/ritk-snap-axial-after-input.png",
+      "scope": "element",
+      "sha256": "6de77b861af912add415d6e2b4af74c93399aad1a4c380cf1bd4d72d0f8288d7",
+      "width": 561
+    },
+    {
+      "bytes": 108600,
+      "height": 449,
+      "label": "ritk-snap-coronal-initial",
+      "path": "output/browser/runtime/screenshots/chromium/canvas/ritk-snap-coronal-initial.png",
+      "scope": "element",
+      "sha256": "70b0b22c002416334f7889268db26d95154e038caaa5d2adfe130826fbb4d5b1",
+      "width": 561
+    },
+    {
+      "bytes": 106015,
+      "height": 449,
+      "label": "ritk-snap-coronal-after-input",
+      "path": "output/browser/runtime/screenshots/chromium/canvas/ritk-snap-coronal-after-input.png",
+      "scope": "element",
+      "sha256": "b5028aa3bbd8f10b229b1535583d1a86bb6e10881cc54ecdeaefeaf6200bf1e2",
+      "width": 561
+    },
+    {
+      "bytes": 113599,
+      "height": 449,
+      "label": "ritk-snap-sagittal-initial",
+      "path": "output/browser/runtime/screenshots/chromium/canvas/ritk-snap-sagittal-initial.png",
+      "scope": "element",
+      "sha256": "d0605ad955fbd4bb757551a416f24010e6ea0b9b544326c19ff4df6ee6802140",
+      "width": 561
+    },
+    {
+      "bytes": 108417,
+      "height": 449,
+      "label": "ritk-snap-sagittal-after-input",
+      "path": "output/browser/runtime/screenshots/chromium/canvas/ritk-snap-sagittal-after-input.png",
+      "scope": "element",
+      "sha256": "c2e2436239436cf0e8682ccd722198531b444518fc3acb1b8f567c91cf1679eb",
+      "width": 561
+    },
+    {
+      "bytes": 337142,
+      "height": 1203,
+      "label": "window-final",
+      "path": "output/browser/runtime/screenshots/chromium/canvas/window-final.png",
+      "sha256": "0c9e529d41a764a1cd566f486a52fdf3af0f7cde39dcf9335a6e489d8e4b8c3a",
+      "width": 1773
+    }
+  ],
+  "snapshots": [
+    {
+      "canvas": {
+        "attributes": {
+          "data-ritk-axis": "0",
+          "data-ritk-frame-height": "512",
+          "data-ritk-frame-state": "presented",
+          "data-ritk-frame-width": "512",
+          "data-ritk-load-state": "ready",
+          "data-ritk-slice-count": "409",
+          "data-ritk-slice-index": "204"
+        },
+        "css_height": 448.8000183105469,
+        "css_width": 448.8000183105469,
+        "height": 512,
+        "id": "ritk-snap-axial",
+        "left": 16,
+        "top": 404.8000183105469,
+        "width": 512
+      },
+      "label": "ritk-snap-axial-initial"
+    },
+    {
+      "canvas": {
+        "attributes": {
+          "data-ritk-axis": "0",
+          "data-ritk-frame-height": "512",
+          "data-ritk-frame-state": "presented",
+          "data-ritk-frame-width": "512",
+          "data-ritk-load-state": "ready",
+          "data-ritk-slice-count": "409",
+          "data-ritk-slice-index": "203"
+        },
+        "css_height": 448.8000183105469,
+        "css_width": 448.8000183105469,
+        "height": 512,
+        "id": "ritk-snap-axial",
+        "left": 16,
+        "top": 404.8000183105469,
+        "width": 512
+      },
+      "label": "ritk-snap-axial-after-input"
+    },
+    {
+      "canvas": {
+        "attributes": {
+          "data-ritk-axis": "1",
+          "data-ritk-frame-height": "409",
+          "data-ritk-frame-state": "presented",
+          "data-ritk-frame-width": "512",
+          "data-ritk-load-state": "ready",
+          "data-ritk-slice-count": "512",
+          "data-ritk-slice-index": "256"
+        },
+        "css_height": 358.51251220703125,
+        "css_width": 448.8000183105469,
+        "height": 409,
+        "id": "ritk-snap-coronal",
+        "left": 484.8000183105469,
+        "top": 404.8000183105469,
+        "width": 512
+      },
+      "label": "ritk-snap-coronal-initial"
+    },
+    {
+      "canvas": {
+        "attributes": {
+          "data-ritk-axis": "1",
+          "data-ritk-frame-height": "409",
+          "data-ritk-frame-state": "presented",
+          "data-ritk-frame-width": "512",
+          "data-ritk-load-state": "ready",
+          "data-ritk-slice-count": "512",
+          "data-ritk-slice-index": "255"
+        },
+        "css_height": 358.51251220703125,
+        "css_width": 448.8000183105469,
+        "height": 409,
+        "id": "ritk-snap-coronal",
+        "left": 484.8000183105469,
+        "top": 404.8000183105469,
+        "width": 512
+      },
+      "label": "ritk-snap-coronal-after-input"
+    },
+    {
+      "canvas": {
+        "attributes": {
+          "data-ritk-axis": "2",
+          "data-ritk-frame-height": "409",
+          "data-ritk-frame-state": "presented",
+          "data-ritk-frame-width": "512",
+          "data-ritk-load-state": "ready",
+          "data-ritk-slice-count": "512",
+          "data-ritk-slice-index": "256"
+        },
+        "css_height": 358.51251220703125,
+        "css_width": 448.8000183105469,
+        "height": 409,
+        "id": "ritk-snap-sagittal",
+        "left": 953.6000366210938,
+        "top": 404.8000183105469,
+        "width": 512
+      },
+      "label": "ritk-snap-sagittal-initial"
+    },
+    {
+      "canvas": {
+        "attributes": {
+          "data-ritk-axis": "2",
+          "data-ritk-frame-height": "409",
+          "data-ritk-frame-state": "presented",
+          "data-ritk-frame-width": "512",
+          "data-ritk-load-state": "ready",
+          "data-ritk-slice-count": "512",
+          "data-ritk-slice-index": "255"
+        },
+        "css_height": 358.51251220703125,
+        "css_width": 448.8000183105469,
+        "height": 409,
+        "id": "ritk-snap-sagittal",
+        "left": 953.6000366210938,
+        "top": 404.8000183105469,
+        "width": 512
+      },
+      "label": "ritk-snap-sagittal-after-input"
+    }
+  ],
+  "status": "passed",
+  "unsupported_native_operations": [
+    "native-file-dialog",
+    "native-process-launch",
+    "os-permission-grant"
+  ],
+  "url": "http://127.0.0.1:63426/gallery.html"
+}
