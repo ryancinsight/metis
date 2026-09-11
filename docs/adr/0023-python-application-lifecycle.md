@@ -63,3 +63,14 @@ free-threaded after import. The release caller publishes separate CPython 3.9
 installed-wheel value tests for each artifact family. The `abi3t` job excludes
 musllinux until a compatible Python 3.15t image exists. No registry token,
 signing key or private key is used.
+
+## Revision 2026-09-11
+
+The cold-boundary RGBA copies in `Application` and `Canvas` now execute inside
+`Python::detach`; only the final Python `bytes` allocation is attached. The
+Windows native binding converts borrowed frame bytes before detaching and runs
+provider submission, bounded event waits, close and reopen outside the
+interpreter lock. Native event dictionaries are built after reattachment. The
+Rust closures carry only owned Rust state and `MetisError` values, preserving
+the `Send + Sync` and `gil_used = false` contract while leaving DICOM ownership
+with RITK.

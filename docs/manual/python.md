@@ -86,6 +86,10 @@ software-renderer fixture shows the same placement and alpha semantics in the
 [image presentation demonstration](applications.md#raster-image-presentation).
 This surface does not open a native window, run a second event loop or decode
 DICOM bytes; those capabilities stay with the Metis host and RITK contracts.
+The bounded allocation and row-major copy run inside PyO3's detached region;
+the `bytes` object is created only after the copy returns to Python. A large
+software frame therefore does not hold the interpreter lock while Rust reads
+the framebuffer.
 
 `ValueError` messages retain the stable Metis error code and trace identifier,
 so a caller can distinguish invalid input from a rate interlock without
@@ -130,7 +134,10 @@ IME composition, resize, DPI and lifecycle fields. Non-Windows builds retain
 the typed class but construction returns `ERR_UNSUPPORTED_PLATFORM_EVENT`
 without attempting a native provider. This facade owns no filesystem,
 network, process, medical-format or DICOM authority; RITK remains responsible
-for DICOM and viewer state.
+for DICOM and viewer state. Frame submission converts the borrowed Python bytes
+before detaching; the Rust provider request, bounded event wait, close and
+reopen operations then run without the interpreter lock. Event dictionaries
+are created after reattachment, so no Python object crosses the host thread.
 
 ### Host independent windows
 
@@ -225,9 +232,10 @@ and rejects additional input with `ERR_RENDER_FAILURE`; draining is explicit
 through `poll_event`. `Application` is synchronized by Rust's `Mutex`, so
 concurrent Python calls share one state machine without callbacks, Python-owned
 framebuffer storage or a second event loop. The lock uses PyO3's
-interpreter-aware acquisition path, and Python objects are created after the
-state guard is released. Native window providers and RITK's
-DICOM decoding remain separate boundaries.
+interpreter-aware acquisition path. `to_rgba` detaches the bounded Rust frame
+copy and creates `bytes` after the state guard is released; Python objects are
+created only on the attached side. Native window providers and RITK's DICOM
+decoding remain separate boundaries.
 
 Run the same built-wheel check used by the repository gate when changing this
 surface:
