@@ -157,7 +157,7 @@ an owner. “Unsupported” cannot replace delivery of a required mobile/native 
 
 <a id="METIS-PYTHON-003"></a>
 ## METIS-PYTHON-003 — Rust-owned Python application lifecycle [arch] [minor]
-- Status: review; priority: P1; owner: Metis Python integration; integrator: root; last-update: 2026-09-10; dependencies: METIS-PYTHON-002, METIS-STATE-001, METIS-INPUT-001; risk: cross-thread lifecycle and bounded state
+- Status: in-progress; priority: P1; owner: Metis Python integration; integrator: root; last-update: 2026-09-11; branch: `codex/metis-python-lifecycle-20260911`; regions: `crates/metis-python`, `scripts/python_binding.py`, `crates/metis-python/tests`, `docs/manual/python.md`, `docs/adr/0023-python-application-lifecycle.md`; dependencies: METIS-PYTHON-002, METIS-STATE-001, METIS-INPUT-001; risk: cross-thread lifecycle and bounded state
 - Scope: expose a cross-platform Rust-owned software application surface through PyO3 with bounded events, framebuffer extraction and close/reopen generations; native windows and browser hosts remain provider-owned.
 - Acceptance: FIFO input events, bounded queue rejection, deterministic framebuffer output, close invalidation, generation-safe reopen and typed invalid-operation errors; concurrent calls are synchronized without Python callbacks or a second event loop.
 - Demonstration: built-wheel pytest and the Python manual exercise input, render, close and reopen, including a concurrent free-threaded probe when the module audit permits it.
