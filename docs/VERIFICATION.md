@@ -1273,14 +1273,18 @@ observations, screenshot transport/decoded bounds and the unsupported operation
 list. These tests do not stand in for a browser engine.
 
 No Chromium, Firefox or WebKit WebDriver endpoint is installed or configured
-in the current Windows environment, so no real cross-engine trace or screenshot
-is claimed at this revision. The earlier Codex in-app capture remains useful
-single-engine lifecycle evidence but does not identify its engine. The browser
-item stays open until each configured engine supplies a trace and the real
-service/cancellation run is reviewed. Provider-private listener registries,
-native handles, accessibility technology, IME behavior and post-drop allocation
-counts remain owned by their Moirai, native-host and RITK items; this runner
-contains no DICOM parsing or viewer semantics.
+in the current Windows environment, so this runner has no cross-engine trace or
+trusted physical-input screenshot. A separate Codex in-app Chromium capture is
+recorded by RITK: it opens the public MRI-DIR series, reads all 409 Part 10
+files, and presents actual axial, coronal and sagittal pixels through the Metis
+canvas. That capture is single-engine and uses a bounded programmatic
+`DataTransfer`; it is not evidence for physical drag-and-drop, Firefox/WebKit,
+WebGPU or full-window capture. The browser item stays open until each
+configured engine supplies a trace and the real service/cancellation run is
+reviewed. Provider-private listener registries, native handles, accessibility
+technology, IME behavior and post-drop allocation counts remain owned by their
+Moirai, native-host and RITK items; this runner contains no DICOM parsing or
+viewer semantics. See the [RITK browser capture record](../../ritk/docs/manual/dicom-workflow.md#three-orthogonal-canvases-from-the-complete-bounded-real-series).
 
 <a id="browser-canvas-consumer-trace-evidence--2026-09-11"></a>
 ## Browser canvas consumer trace evidence — 2026-09-11
@@ -1296,11 +1300,13 @@ placing DICOM, series, slice or viewer state in Metis.
 The protocol-shaped suite passes 15/15 tests after adding the canvas scenario,
 element screenshot endpoint, bounded identifier validation and cross-repository
 consumer-revision field. This is deterministic transport evidence only. No
-Chromium, Firefox or WebKit endpoint is configured in this Windows environment,
-so no real RITK cross-engine canvas trace, trusted browser capture or clinical
-pixel oracle is claimed here. RITK must run the scenario against its own page
-and assert DICOM opening, axis routing and slice changes in its workflow
-evidence.
+Chromium, Firefox or WebKit WebDriver endpoint is configured in this Windows
+environment, so no cross-engine trace or trusted browser-driver capture is
+claimed here. RITK's separate in-app Chromium workflow does provide the
+clinical pixel oracle: the public MRI-DIR study is opened and the three actual
+orthogonal canvases are hashed in its provenance record. RITK must still run
+this reusable scenario against configured engines and assert DICOM opening,
+axis routing and slice changes in its own workflow evidence.
 
 <a id="V03"></a>
 ### V03 — Text and accessibility specimen
