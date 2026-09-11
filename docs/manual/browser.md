@@ -545,8 +545,9 @@ path. A RITK adapter receives the named bytes and performs any format-specific
 scan, decode and study opening; this slice closes the bounded zero-copy byte
 handoff, not a format-specific workflow.
 
-The provider caps one drop at 64 files, 4096 UTF-8 bytes per name and 256 bytes
-per media type. The CUA browser surface cannot synthesize a trusted
+The provider caps one drop at 512 files, 4096 UTF-8 bytes per name and 256 bytes
+per media type; the consumer keeps the batch below its separate 256 MiB byte
+budget. The CUA browser surface cannot synthesize a trusted
 operating-system file drop, attach a local file to a synthetic event or expose
 `isTrusted`, so a manual trace must record the browser engine and whether the
 drop came from a physical file operation. Native policy tests cover bounds,

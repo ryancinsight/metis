@@ -75,6 +75,12 @@ types before retaining at most 64 entries. File bytes, filesystem paths,
 multi-touch/pinch interpretation, IME, accessibility technology, native event
 production and OS pump remain open.
 
+Revision 2026-09-11: Moirai PR #327 merged at
+`fd836cd1715e1cd6f537290ce670829ba875be94` raises the shared browser metadata
+bound to 512 entries so the committed 409-slice DICOM study fits one bounded
+drop. The consumer-owned 256 MiB byte budget remains unchanged; DICOM parsing,
+geometry and viewer state remain in RITK.
+
 Revision 2026-09-07: Moirai PR #277 merged at
 `a3c86cd183a18edc35db30f1d35e79fe80092df4` adds the copyable
 `PointerMetadata` snapshot for device type, CSS-pixel coordinates, button

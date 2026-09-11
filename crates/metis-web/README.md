@@ -57,8 +57,9 @@ third pointer is rejected. The policy writes one CSS transform and exposes its
 state through `gesture-status`; touch pointers use the same bounded policy.
 
 The **file drop** surface consumes Moirai's bounded `DropFiles` capture. Rust
-validates the copied display metadata again, caps the accepted batch at 64 files
-and reports names, media types and byte sizes in a semantic status region. Each
+validates the copied display metadata again, caps the accepted batch at 512 files
+and reports names, media types and byte sizes in a semantic status region. The
+metadata bound is separate from the 256 MiB consumer byte batch limit. Each
 accepted entry is read asynchronously through its Moirai browser-owned handle
 into a [`FileDropBatch`]. One file is limited to 64 MiB and one batch to 256 MiB;
 a 64 KiB continuation buffer keeps each `FileReader` turn bounded even though
