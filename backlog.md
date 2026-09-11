@@ -386,6 +386,7 @@ an owner. “Unsupported” cannot replace delivery of a required mobile/native 
 - Documentation increment (2026-09-11): the application manual now links the RITK-reviewed capture produced from the public MRI-DIR CT series. The image is real application output through the format-neutral Métis framebuffer; DICOM parsing, geometry, and clinical display remain RITK-owned, and private studies remain local.
 - Documentation increment (2026-09-11): the application manual now also links the RITK-reviewed MRI-DIR T2 capture from 94 real DICOM files through the same native Métis framebuffer. The provenance record carries the source, executable and image digests; the public porcine phantom is not private patient data, and private studies remain local.
 - Documentation increment (2026-09-11): the application manual now links the RITK-reviewed Chromium browser capture for the same 94-file MRI-DIR T2 study. Métis accepted the bounded file batch while RITK decoded and rendered three non-black canvases; the manual links all three PNGs and the hash-bound provenance record. Physical and cross-engine browser input, WebGPU and full-window capture remain open.
+- Documentation increment (2026-09-11): the application manual now also links the RITK-reviewed Chromium browser capture for the complete 409-file MRI-DIR CT series. The three runtime canvases and hash-bound provenance record are public application output through the format-neutral Métis browser path; RITK owns DICOM parsing, geometry, and clinical display, while physical drag-and-drop and cross-engine driver evidence remain open.
 
 <a id="METIS-RITK-HOST-001"></a>
 ## METIS-RITK-HOST-001 — Format-neutral native frame host [arch] [minor]
@@ -490,3 +491,12 @@ an owner. “Unsupported” cannot replace delivery of a required mobile/native 
 <a id="METIS-APPLICATION-001"></a>
 ## METIS-APPLICATION-001 — Single executable application [arch] [major]
 - Status: done; outcome: one relocated application image runs distinct process roles through Moirai; 108 debug/release tests, 38 Python checks, real single-executable MSI install/run/uninstall and unchanged visual snapshots pass. [Design and migration](docs/adr/0006-application-entry.md).
+
+<a id="METIS-GALLERY-001"></a>
+## METIS-GALLERY-001 — User file drop gallery [patch]
+- Status: in-progress; priority: P1; integrator: codex-gallery; last-update: 2026-09-11.
+- Outcome: A committed browser gallery accepts study files through the existing bounded host drop area and renders RITK-owned orthogonal views.
+- Scope: browser gallery assets, packaging and end-to-end evidence; no DICOM parsing or limit changes in Metis.
+- Acceptance: actual file-backed browser drop reads the complete 409-file public study, produces three inspectable frames, and retains native count/byte rejection coverage.
+- Verification: native web tests, browser asset/protocol tests, WASM build, end-to-end capture, full configured gate.
+- Lease: codex-gallery `examples/browser/gallery.*`, `scripts/browser.py`, browser proof runner/tests, gallery documentation; 2026-09-11T22:00:00Z.

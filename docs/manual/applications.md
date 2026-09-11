@@ -196,6 +196,28 @@ committed to either repository.
 
 ![Actual MRI-DIR CT study rendered through the Métis native surface](https://github.com/ryancinsight/ritk/blob/main/docs/manual/images/dicom-metis-real-ct.png?raw=true)
 
+The same saved public CT series was opened through the RITK browser adapter and
+presented by the live Metis HTML5 canvas path. This is a runtime pixel capture,
+not an illustration: RITK read all 409 Part 10 files (216,156,416 bytes),
+decoded the study and supplied the axial, coronal and sagittal frames through
+the format-neutral presentation boundary. The one Chromium capture used a
+bounded programmatic `DataTransfer`; browser chrome is excluded, and the
+capture does not claim physical drag-and-drop or cross-engine coverage.
+
+![Actual MRI-DIR CT axial frame through the Metis browser canvas](https://github.com/ryancinsight/ritk/blob/main/docs/manual/images/dicom-metis-real-browser-orthogonal-axial.png?raw=true)
+
+![Actual MRI-DIR CT coronal frame through the Metis browser canvas](https://github.com/ryancinsight/ritk/blob/main/docs/manual/images/dicom-metis-real-browser-orthogonal-coronal.png?raw=true)
+
+![Actual MRI-DIR CT sagittal frame through the Metis browser canvas](https://github.com/ryancinsight/ritk/blob/main/docs/manual/images/dicom-metis-real-browser-orthogonal-sagittal.png?raw=true)
+
+The frame dimensions, non-black-pixel counts, SHA-256 values, source
+revisions and input bounds are recorded in RITK's
+[`dicom-metis-real-browser-orthogonal.json`](https://github.com/ryancinsight/ritk/blob/main/docs/manual/images/dicom-metis-real-browser-orthogonal.json).
+The reproducible DICOM opening and visual workflow remains in the
+[RITK user manual](https://github.com/ryancinsight/ritk/blob/main/docs/manual/dicom-workflow.md),
+which owns the scanner, decoder, geometry and clinical display checks. Metis
+owns the bounded file handoff, browser canvas and host lifecycle only.
+
 The same current native host also opens the saved MRI-DIR T2 series. RITK
 decoded 94 real DICOM files and transferred the axial, coronal and sagittal
 MRI planes through the same format-neutral Métis framebuffer:
