@@ -172,18 +172,13 @@ class BootstrapEvidenceTests(unittest.TestCase):
         self.report.unlink()
         output.rmdir()
         if os.name == "nt":
-            # Junction creation needs no administrator symlink privilege. Paths
-            # travel through environment values rather than PowerShell source.
-            shell = shutil.which("powershell.exe")
-            self.assertIsNotNone(shell, "Windows PowerShell creates the real junction fixture")
-            environment = os.environ.copy()
-            environment["METIS_TEST_LINK"] = str(output)
-            environment["METIS_TEST_TARGET"] = str(sentinel.parent)
+            # Junction creation needs no administrator symlink privilege. The
+            # native command avoids starting a second PowerShell host, which
+            # can exceed the bounded fixture timeout on hosted Windows runners.
+            shell = os.environ.get("COMSPEC") or shutil.which("cmd.exe")
+            self.assertIsNotNone(shell, "Windows cmd creates the real junction fixture")
             result = subprocess.run(
-                [shell, "-NoProfile", "-NonInteractive", "-Command",
-                 "$ErrorActionPreference = 'Stop'; New-Item -ItemType Junction "
-                 "-Path $env:METIS_TEST_LINK -Value $env:METIS_TEST_TARGET | Out-Null"],
-                env=environment,
+                [shell, "/d", "/c", "mklink", "/J", str(output), str(sentinel.parent)],
                 capture_output=True,
                 text=True,
                 timeout=10,
