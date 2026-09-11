@@ -51,6 +51,8 @@ Metis does not parse DICOM or define medical volume semantics. Presentation
 hosts hand bounded file-drop bytes to RITK's public scanner and receive its
 validated image and metadata result; the owning workflow and visual evidence
 live in the [RITK manual](https://github.com/ryancinsight/ritk/blob/main/docs/manual/dicom-workflow.md).
+The `METIS-DICOM-*` backlog entries record removal and boundary checks for that
+ownership decision; they do not add DICOM implementation to Metis.
 The infusion arithmetic is a synthetic engineering example; its configurable
 limits are not treatment guidance.
 

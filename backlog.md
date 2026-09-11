@@ -401,7 +401,7 @@ an owner. “Unsupported” cannot replace delivery of a required mobile/native 
 
 <a id="METIS-DICOM-004"></a>
 ## METIS-DICOM-004 — Remove stale DICOM claims from Metis docs [patch]
-- Status: done; commit: `25014a6`; PR: <https://github.com/ryancinsight/metis/pull/40>; last-update: 2026-09-09.
+- Status: done; commit: `25014a6`; PR: <https://github.com/ryancinsight/metis/pull/40>; clarification: <https://github.com/ryancinsight/metis/pull/70>; last-update: 2026-09-11.
 - Outcome: Active Metis artifacts now describe only generic bounded metadata/bytes; superseded captures are labeled, and RITK remains the DICOM owner. Full locked gate passes.
 
 <a id="METIS-CANVAS-INPUT-001"></a>
