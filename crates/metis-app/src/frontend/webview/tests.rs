@@ -5,9 +5,44 @@ use super::{
 #[test]
 fn package_assets_are_script_scoped_and_bridge_bound() {
     assert!(INDEX_HTML.contains("script-src 'self'"));
-    assert!(INDEX_HTML.contains("connect-src 'none'"));
+    assert!(INDEX_HTML.contains("default-src 'none'"));
+    for directive in [
+        "img-src 'none'",
+        "font-src 'none'",
+        "media-src 'none'",
+        "connect-src 'none'",
+        "object-src 'none'",
+        "frame-src 'none'",
+        "child-src 'none'",
+        "worker-src 'none'",
+        "manifest-src 'none'",
+        "form-action 'none'",
+        "base-uri 'none'",
+    ] {
+        assert!(
+            INDEX_HTML.contains(directive),
+            "missing CSP directive: {directive}"
+        );
+    }
     assert!(STYLES_CSS.contains("#0f172a"));
     assert!(APP_JS.contains("chrome.webview"));
+}
+
+#[test]
+fn page_script_has_no_unscoped_authority_bridge() {
+    for forbidden in [
+        "hostObjects",
+        "fetch(",
+        "XMLHttpRequest",
+        "WebSocket",
+        "window.open",
+        "navigator.geolocation",
+    ] {
+        assert!(
+            !APP_JS.contains(forbidden),
+            "page script must not acquire unscoped authority: {forbidden}"
+        );
+    }
 }
 
 #[test]
