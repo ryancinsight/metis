@@ -98,8 +98,8 @@ where
 ///
 /// The host owns only window creation, finite waiting, retained-frame
 /// presentation and terminal-window cleanup. The application owns all state,
-/// event policy and format-specific interpretation. This keeps DICOM and
-/// other domain protocols outside the platform crate.
+/// event policy and format-specific interpretation. This keeps application
+/// domain protocols outside the platform crate.
 ///
 /// # Errors
 /// Returns [`NativeHostError::Surface`] when the provider rejects an operation
