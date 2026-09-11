@@ -13,6 +13,7 @@ from browser_trace import BrowserEngine, Trace, screenshot
 
 
 CANVAS_ID_PATTERN = re.compile(r"[A-Za-z][A-Za-z0-9_-]{0,127}")
+CANVAS_ATTRIBUTE_PATTERN = re.compile(r"data-[a-z][a-z0-9_.:-]{0,122}")
 CANVAS_DRAG_START = (24, 24)
 CANVAS_DRAG_END = (64, 48)
 CANVAS_WHEEL_POSITION = (64, 48)
@@ -20,9 +21,12 @@ CANVAS_WHEEL_DELTA = (0, 120)
 MAX_CANVAS_DIMENSION = 4096
 MAX_CANVAS_CSS_SIZE = 16_384.0
 MAX_CANVAS_POSITION = 16_384.0
+MAX_CANVAS_ATTRIBUTES = 16
+MAX_CANVAS_ATTRIBUTE_VALUE_BYTES = 1024
 
 CANVAS_SNAPSHOT_SCRIPT = """
 const id = arguments[0];
+const attributeNames = arguments[1];
 const canvas = document.getElementById(id);
 if (!canvas || canvas.tagName.toLowerCase() !== 'canvas') return null;
 const rect = canvas.getBoundingClientRect();
@@ -34,6 +38,7 @@ return {
   css_height: rect.height,
   left: rect.left,
   top: rect.top,
+  attributes: Object.fromEntries(attributeNames.map((name) => [name, canvas.getAttribute(name)])),
 };
 """
 
@@ -58,6 +63,28 @@ def validate_canvas_ids(canvas_ids: Sequence[str]) -> Tuple[str, ...]:
     return tuple(validated)
 
 
+def validate_canvas_attributes(attribute_names: Sequence[str]) -> Tuple[str, ...]:
+    """Validate consumer-selected DOM attributes for bounded canvas snapshots."""
+    if (
+        isinstance(attribute_names, (str, bytes))
+        or not isinstance(attribute_names, Sequence)
+        or len(attribute_names) > MAX_CANVAS_ATTRIBUTES
+    ):
+        raise BrowserRuntimeError(
+            f"canvas attribute names must be a sequence of at most {MAX_CANVAS_ATTRIBUTES} values"
+        )
+    validated = []
+    seen = set()
+    for name in attribute_names:
+        if not isinstance(name, str) or not CANVAS_ATTRIBUTE_PATTERN.fullmatch(name):
+            raise BrowserRuntimeError(f"canvas attribute name is not a bounded HTML name: {name!r}")
+        if name in seen:
+            raise BrowserRuntimeError(f"canvas attribute name is repeated: {name!r}")
+        seen.add(name)
+        validated.append(name)
+    return tuple(validated)
+
+
 def validate_consumer_revision(value: Optional[str]) -> Optional[str]:
     """Validate an optional consumer revision carried in a cross-repo trace."""
     if value is None:
@@ -69,9 +96,15 @@ def validate_consumer_revision(value: Optional[str]) -> Optional[str]:
     return value.lower()
 
 
-def _canvas_snapshot(client: WebDriverClient, trace: Trace, canvas_id: str, label: str) -> None:
-    """Record one canvas's DOM dimensions and CSS placement."""
-    value = client.execute(CANVAS_SNAPSHOT_SCRIPT, [canvas_id])
+def _canvas_snapshot(
+    client: WebDriverClient,
+    trace: Trace,
+    canvas_id: str,
+    label: str,
+    attribute_names: Sequence[str],
+) -> None:
+    """Record one canvas's dimensions, placement and consumer-selected attributes."""
+    value = client.execute(CANVAS_SNAPSHOT_SCRIPT, [canvas_id, list(attribute_names)])
     if not isinstance(value, dict) or value.get("id") != canvas_id:
         raise BrowserRuntimeError(f"canvas {canvas_id!r} was not found as an HTML canvas")
     for key in ("width", "height"):
@@ -94,6 +127,16 @@ def _canvas_snapshot(client: WebDriverClient, trace: Trace, canvas_id: str, labe
             or not -MAX_CANVAS_POSITION <= float(coordinate) <= MAX_CANVAS_POSITION
         ):
             raise BrowserRuntimeError(f"canvas {canvas_id!r} has an invalid {key}: {coordinate!r}")
+    attributes = value.get("attributes")
+    if not isinstance(attributes, dict) or set(attributes) != set(attribute_names):
+        raise BrowserRuntimeError(f"canvas {canvas_id!r} returned an invalid attribute snapshot")
+    for name in attribute_names:
+        attribute_value = attributes[name]
+        if attribute_value is not None and (
+            not isinstance(attribute_value, str)
+            or len(attribute_value.encode("utf-8")) > MAX_CANVAS_ATTRIBUTE_VALUE_BYTES
+        ):
+            raise BrowserRuntimeError(f"canvas {canvas_id!r} attribute {name!r} exceeds its value bound")
     trace.snapshots.append({"label": label, "canvas": value})
 
 
@@ -127,9 +170,11 @@ def run_canvas_scenario(
     timeout_ms: int,
     canvas_ids: Sequence[str],
     consumer_revision: Optional[str] = None,
+    canvas_attributes: Sequence[str] = (),
 ) -> Trace:
     """Exercise trusted pointer and wheel input for format-neutral canvases."""
     canvas_ids = validate_canvas_ids(canvas_ids)
+    canvas_attributes = validate_canvas_attributes(canvas_attributes)
     trace: Optional[Trace] = None
     actions_released = False
     try:
@@ -141,7 +186,7 @@ def run_canvas_scenario(
         screenshot(client, trace, screenshot_directory, "window-initial")
         for canvas_id in canvas_ids:
             element = elements[canvas_id]
-            _canvas_snapshot(client, trace, canvas_id, f"{canvas_id}-initial")
+            _canvas_snapshot(client, trace, canvas_id, f"{canvas_id}-initial", canvas_attributes)
             _element_screenshot(client, trace, screenshot_directory, f"{canvas_id}-initial", element)
             client.pointer_drag(element, CANVAS_DRAG_START, CANVAS_DRAG_END)
             trace.actions.append(
@@ -161,7 +206,7 @@ def run_canvas_scenario(
                     "delta": list(CANVAS_WHEEL_DELTA),
                 }
             )
-            _canvas_snapshot(client, trace, canvas_id, f"{canvas_id}-after-input")
+            _canvas_snapshot(client, trace, canvas_id, f"{canvas_id}-after-input", canvas_attributes)
             _element_screenshot(client, trace, screenshot_directory, f"{canvas_id}-after-input", element)
         client.release_actions()
         actions_released = True
@@ -170,6 +215,7 @@ def run_canvas_scenario(
             "session_closed": False,
             "active_input_sources_released": True,
             "canvas_count": len(canvas_ids),
+            "canvas_attribute_names": list(canvas_attributes),
             "provider_listener_count": "unavailable from WebDriver",
         }
         return trace

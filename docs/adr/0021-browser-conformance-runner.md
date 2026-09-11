@@ -65,6 +65,14 @@ stores the Metis revision and an optional 40-hex consumer revision separately.
 This makes the runner reusable for RITK and other Atlas consumers without
 moving their state or format policy into Metis.
 
+Revision 2026-09-11: the canvas scenario accepts a finite allowlist of
+consumer-selected `data-*` attributes. It records each requested value, or
+`null` when absent, under the canvas snapshot with a 16-name and 1024-byte
+per-value bound. The runner treats names and values as opaque; a consumer
+owns their interpretation and assertions. This supplies RITK's browser
+workflow with semantic evidence while keeping DICOM and viewer meaning out of
+Metis.
+
 The runner declares `native-file-dialog`, `native-process-launch` and
 `os-permission-grant` unsupported for this browser surface. Native authority,
 filesystem handles and DICOM parsing remain outside Metis: RITK owns the DICOM
@@ -106,9 +114,9 @@ missing endpoint is a failed invocation, never a skipped matrix cell.
 `python -m unittest discover -s scripts/tests` covers the protocol-shaped
 workbench and canvas scenarios across engine names, input-sensitive result
 assertions, bounded W3C pointer/wheel payloads, element and full-window
-screenshot validation, disconnected privilege rejection, teardown state and
-explicit unsupported operations. `python -m py_compile` checks the runner and
-tests.
+screenshot validation, opaque consumer-attribute capture and bounds,
+disconnected privilege rejection, teardown state and explicit unsupported
+operations. `python -m py_compile` checks the runner and tests.
 Each configured engine is run with the commands in the browser manual, and its
 schema-1 trace plus PNGs are reviewed before the browser item can close. The
 current Windows environment has no configured Chromium, Firefox or WebKit
