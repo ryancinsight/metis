@@ -16,10 +16,10 @@ boundary in Metis.
 
 Axum's 0.8 documentation describes a typed server boundary built from
 `Router`, request extractors, shared `State`, middleware layers and
-`IntoResponse`. These surfaces are relevant to a future Metis deployment that
-serves HTML or typed fragments. Metis currently hosts browser application logic
-as Rust/WASM and uses Moirai for its bounded WebSocket transport; it does not
-ship an HTTP server or depend on Axum.
+`IntoResponse`. These surfaces are relevant to a Metis deployment that serves
+HTML or typed fragments. Metis hosts browser application logic as Rust/WASM
+and uses Moirai for its bounded WebSocket and loopback HTTP transports; it
+does not depend on Axum.
 
 The current htmx-informed action path already limits mutations to authenticated
 generation-bound text and attribute patches. The admitted loopback endpoint
@@ -59,12 +59,12 @@ current graph small and gives an admitted deployment a testable contract.
 
 ## Threat model and limits
 
-The future service must treat routes, request bodies, origins, sessions,
+The service must treat routes, request bodies, origins, sessions,
 capability identifiers and client disconnects as untrusted. Route confusion,
 oversized allocation, stale responses, cross-session replay, slow-client
 retention and fragment injection are rejected by the bounds and checks above.
 TLS termination, operating-system permissions, durable audit and deployment
-topology remain separate controls. This ADR contains no runtime server or
+topology remain separate controls. This ADR contains no public-deployment or
 security-superiority claim.
 
 ## Verification
@@ -74,7 +74,9 @@ and `metis-app --metis-http-service`. The native suite proves a real Moirai
 loopback handshake and fragment exchange, origin and route denial, malformed
 and oversized request rejection, exact-origin CORS preflight, disconnected and
 idle-peer deadline handling and finite teardown. The generated browser
-`http-health.html` probe exercises the real cross-origin readiness response;
-the invocation suite proves the closed CLI role. This evidence does not claim
-a public deployment, TLS, cross-engine capture or DICOM behavior; those remain
-separate controls and RITK-owned workflow evidence.
+`http-health.html` probe performs the real cross-origin health request,
+authenticated handshake and generation-bound fragment request, then records
+malformed, unauthorized and stale-generation outcomes without changing the
+mounted text. The invocation suite proves the closed CLI role. This evidence
+does not claim a public deployment, TLS, cross-engine capture or DICOM
+behavior; those remain separate controls and RITK-owned workflow evidence.

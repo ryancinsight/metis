@@ -49,10 +49,12 @@ cargo run --locked -p metis-app -- --metis-http-service http://127.0.0.1:8080 87
 ```
 
 Open `http://127.0.0.1:8080/http-health.html`. The page sends a real
-cross-origin `GET /health` request, checks the exact CORS origin and displays
-the typed readiness text. The page is an HTML5/CSS demonstration of the
-presentation boundary; it does not load, decode or retain DICOM data. RITK
-owns that workflow.
+cross-origin `GET /health`, performs a binary session handshake, dispatches a
+generation-bound fragment action and displays the returned text patch. It then
+probes malformed, unauthorized and stale-generation requests; the stale probe
+must leave the previous text unchanged. The page is an HTML5/CSS demonstration
+of the presentation boundary; it does not load, decode or retain DICOM data.
+RITK owns that workflow.
 
 ## Run the cross-engine conformance trace
 
