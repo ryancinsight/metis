@@ -1555,6 +1555,17 @@ exact pixels and physical landmarks, and compares all three slice captures to
 reviewed images. Full migration captures must continue to consume that RITK
 result through the presentation seam and must not duplicate the DICOM workflow.
 
+The current Windows host has also been exercised with the saved MRI-DIR T2
+series: 94 real DICOM files (49,807,236 bytes) decode in RITK and produce a
+1280 × 800 axial/coronal/sagittal Métis framebuffer. The reviewed image and
+machine-readable source/executable/image digests are in the
+[RITK MRI provenance record](../../ritk/docs/manual/images/dicom-metis-real-mri.json)
+and [manual capture](../../ritk/docs/manual/dicom-workflow.md#capture-the-saved-mri-study-through-métis).
+This is public porcine-phantom data, not private patient data; the capture is
+content-only and excludes operating-system chrome. It demonstrates the native
+RITK-to-Métis frame path and does not close browser-driver, GPU, accessibility,
+IME or cross-platform host requirements.
+
 RITK PR #284 additionally records a local browser smoke of the packaged
 `start_web_canvas` path: three synthetic Part 10 files were dispatched through
 a browser `DataTransfer`, the host reported three accepted 654-byte files and

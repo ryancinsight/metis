@@ -384,6 +384,7 @@ an owner. “Unsupported” cannot replace delivery of a required mobile/native 
 - Acceptance: [V09](docs/VERIFICATION.md#V09) plus RITK opening/frames/color/grayscale prerequisites; required symbols/config/plugins and viewer actions are mapped/tested. Existing bugs cannot serve as parity oracles. No retained egui/eframe/Tauri runtime or forwarding shim in the completed migrated viewer.
 - Demonstration: actual same-study before/after workflows, verified voxels/physical coordinates and real host captures in the user manual; record JavaScript retained versus Rust/WASM replacement and matched memory evidence.
 - Documentation increment (2026-09-11): the application manual now links the RITK-reviewed capture produced from the public MRI-DIR CT series. The image is real application output through the format-neutral Métis framebuffer; DICOM parsing, geometry, and clinical display remain RITK-owned, and private studies remain local.
+- Documentation increment (2026-09-11): the application manual now also links the RITK-reviewed MRI-DIR T2 capture from 94 real DICOM files through the same native Métis framebuffer. The provenance record carries the source, executable and image digests; the public porcine phantom is not private patient data, and private studies remain local.
 
 <a id="METIS-RITK-HOST-001"></a>
 ## METIS-RITK-HOST-001 — Format-neutral native frame host [arch] [minor]

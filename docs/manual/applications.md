@@ -196,6 +196,18 @@ committed to either repository.
 
 ![Actual MRI-DIR CT study rendered through the Métis native surface](https://github.com/ryancinsight/ritk/blob/main/docs/manual/images/dicom-metis-real-ct.png?raw=true)
 
+The same current native host also opens the saved MRI-DIR T2 series. RITK
+decoded 94 real DICOM files and transferred the axial, coronal and sagittal
+MRI planes through the same format-neutral Métis framebuffer:
+
+![Actual MRI-DIR T2 study rendered through the Métis native surface](https://github.com/ryancinsight/ritk/blob/main/docs/manual/images/dicom-metis-real-mri.png?raw=true)
+
+The run's file count, byte count, executable digest and image digest are in
+[the RITK provenance record](https://github.com/ryancinsight/ritk/blob/main/docs/manual/images/dicom-metis-real-mri.json).
+Both captures are public MRI-DIR porcine-phantom data, not generated
+illustrations or private patient studies. A private clinical path is accepted
+for a local run only and is never committed to this repository.
+
 The reproducible DICOM opening and visual workflow is maintained in the
 [RITK user manual](https://github.com/ryancinsight/ritk/blob/main/docs/manual/dicom-workflow.md).
 It runs the real scanner and loader, checks exact pixels and physical geometry,
