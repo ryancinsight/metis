@@ -185,6 +185,17 @@ golden. Full migration acceptance still requires browser runtime capture,
 multiframe/color presentation, matched memory measurements, full app-window
 overlays and packaging evidence.
 
+The native handoff has also been exercised with the acquired MRI-DIR CT series,
+not only the generated Part 10 study. RITK's user manual records the command,
+the public CC BY 4.0 source, the reviewed 1280×800 output and its SHA-256 in
+[the actual DICOM capture section](https://github.com/ryancinsight/ritk/blob/main/docs/manual/dicom-workflow.md).
+That image is RITK application output transferred through the format-neutral
+Métis framebuffer; Metis still owns no DICOM parser, metadata, geometry or
+clinical display policy. Private clinical studies remain local and are never
+committed to either repository.
+
+![Actual MRI-DIR CT study rendered through the Métis native surface](https://github.com/ryancinsight/ritk/blob/main/docs/manual/images/dicom-metis-real-ct.png?raw=true)
+
 The reproducible DICOM opening and visual workflow is maintained in the
 [RITK user manual](https://github.com/ryancinsight/ritk/blob/main/docs/manual/dicom-workflow.md).
 It runs the real scanner and loader, checks exact pixels and physical geometry,
