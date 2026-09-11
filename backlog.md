@@ -405,9 +405,10 @@ an owner. “Unsupported” cannot replace delivery of a required mobile/native 
 
 <a id="METIS-CANVAS-INPUT-001"></a>
 ## METIS-CANVAS-INPUT-001 — Bounded format-neutral canvas input [minor]
-- Status: in-progress; priority: P1; owner: Metis browser host; integrator: root; last-update: 2026-09-11; branch: `feat/metis-canvas-input-001`; dependencies: METIS-BROWSER-001, METIS-INPUT-001; risk: unbounded browser callbacks and ownership drift.
+- Status: done; delivery: [Metis PR #64](https://github.com/ryancinsight/metis/pull/64), merge `5373312`; last-update: 2026-09-11.
 - Scope: expose bounded pointer and wheel records with target-local coordinates, capture teardown and typed overflow/provider errors; RITK translates them into viewer actions. DICOM parsing, metadata, geometry and viewer state remain outside Metis.
 - Acceptance: native queue tests cover order, capacity, failure disposal and recovery; the Metis WASM target checks Moirai listener wiring; the RITK consumer routes single and orthogonal canvases through its existing presentation reducer and cancels gestures on failure; no DICOM dependency or parser enters the Metis graph. Decision: [ADR 0027](docs/adr/0027-bounded-canvas-input.md).
+- Outcome: Metis now owns the bounded format-neutral pointer and wheel transport; RITK remains the DICOM and viewer owner. Full locked Metis verification and the RITK consumer package gates pass.
 
 <a id="METIS-DISTRIBUTION-001"></a>
 ## METIS-DISTRIBUTION-001 — Executables and Windows MSI [arch] [minor]
