@@ -321,13 +321,48 @@ class BrowserRuntimeTests(unittest.TestCase):
         client.session_id = "session"
         requests = []
 
-        def record(method, path, payload):
+        def record(method, path, payload=None):
             requests.append((method, path, payload))
             return None
 
         client._request = record
         client.click("opaque/id")
         self.assertEqual(requests[0][1], "/session/session/element/opaque%2Fid/click")
+
+    def test_driver_dispatches_bounded_pointer_and_wheel_actions(self):
+        client = WebDriverClient("http://127.0.0.1:9515", 1)
+        client.session_id = "session"
+        requests = []
+
+        def record(method, path, payload=None):
+            requests.append((method, path, payload))
+            return None
+
+        client._request = record
+        client.pointer_drag("opaque/id", (4, 8), (20, 28))
+        client.wheel("opaque/id", (12, 16), (0, 120))
+        client.release_actions()
+
+        self.assertEqual(requests[0][0:2], ("POST", "/session/session/actions"))
+        pointer = requests[0][2]["actions"][0]
+        self.assertEqual(pointer["parameters"], {"pointerType": "mouse"})
+        self.assertEqual(pointer["actions"][0]["origin"], {browser_protocol.ELEMENT_KEY: "opaque/id"})
+        self.assertEqual(pointer["actions"][2]["x"], 16)
+        self.assertEqual(requests[1][2]["actions"][0]["actions"][0]["deltaY"], 120)
+        self.assertEqual(requests[2][0:2], ("DELETE", "/session/session/actions"))
+
+    def test_driver_rejects_unbounded_or_malformed_actions(self):
+        client = WebDriverClient("http://127.0.0.1:9515", 1)
+        client.session_id = "session"
+        client._request = lambda method, path, payload=None: None
+        with self.assertRaisesRegex(BrowserRuntimeError, "source count"):
+            client.perform_actions([])
+        with self.assertRaisesRegex(BrowserRuntimeError, "source type"):
+            client.perform_actions([{"type": "none", "id": "x", "actions": [{"type": "pause", "duration": 0}]}])
+        with self.assertRaisesRegex(BrowserRuntimeError, "coordinates"):
+            client.pointer_drag("canvas", (0, 0), (5000, 0))
+        with self.assertRaisesRegex(BrowserRuntimeError, "deltas"):
+            client.wheel("canvas", (0, 0), (0, 1_000_001))
 
     def test_authorized_url_requires_a_typed_session_tuple(self):
         valid = "http://127.0.0.1:8080/?endpoint=wss%3A%2F%2F127.0.0.1%3A8765%2Fsocket&process=42&principal=" + "a" * 32

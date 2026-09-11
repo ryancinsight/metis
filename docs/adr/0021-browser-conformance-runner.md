@@ -49,6 +49,14 @@ operation restrictions and cleanup evidence. A stopped root must contain the
 stopped message and zero application controls; a remounted generation must not
 contain the old result.
 
+The same client exposes bounded W3C `actions` and `release actions` commands
+for format-neutral canvas consumers. `pointer_drag` emits a trusted pointer
+source with element-local coordinates, and `wheel` emits a trusted wheel
+source; source count, action count, coordinates and serialized trace size are
+validated before the driver request. These methods carry no application or
+medical semantics. RITK owns the consumer scenario and maps the resulting
+events to its viewer reducer.
+
 The runner declares `native-file-dialog`, `native-process-launch` and
 `os-permission-grant` unsupported for this browser surface. Native authority,
 filesystem handles and DICOM parsing remain outside Metis: RITK owns the DICOM
@@ -88,9 +96,10 @@ missing endpoint is a failed invocation, never a skipped matrix cell.
 ## Verification
 
 `python -m unittest discover -s scripts/tests` covers the protocol-shaped
-scenario across engine names, input-sensitive result assertions, disconnected
-privilege rejection, teardown state, screenshot validation and explicit
-unsupported operations. `python -m py_compile` checks the runner and tests.
+scenario across engine names, input-sensitive result assertions, bounded W3C
+pointer/wheel payloads, disconnected privilege rejection, teardown state,
+screenshot validation and explicit unsupported operations. `python -m py_compile`
+checks the runner and tests.
 Each configured engine is run with the commands in the browser manual, and its
 schema-1 trace plus PNGs are reviewed before the browser item can close. The
 current Windows environment has no configured Chromium, Firefox or WebKit

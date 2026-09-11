@@ -23,6 +23,10 @@ MAX_SCREENSHOT_RESPONSE_BYTES = ((MAX_SCREENSHOT_BYTES + 2) // 3) * 4 + 256
 MAX_TRACE_BYTES = 512 * 1024
 MAX_WAIT_MILLISECONDS = 120_000
 MAX_URL_BYTES = 8 * 1024
+# W3C input sources are deliberately bounded so a malformed scenario cannot
+# turn the driver into an unbounded action queue.
+MAX_ACTION_SOURCES = 8
+MAX_SOURCE_ACTIONS = 64
 ELEMENT_KEY = "element-6066-11e4-a52e-4f735466cecf"
 
 
@@ -208,6 +212,108 @@ class WebDriverClient:
             raise BrowserRuntimeError("input value exceeds the browser trace bound")
         encoded = self._element_component(element_id)
         self._request("POST", self._session_path(f"element/{encoded}/value"), {"text": value, "value": list(value)})
+
+    def perform_actions(self, actions: Sequence[Mapping[str, Any]]) -> None:
+        """Dispatch a bounded W3C action sequence through the browser input source."""
+        if isinstance(actions, (str, bytes)) or not isinstance(actions, Sequence):
+            raise BrowserRuntimeError("W3C action sources must be a sequence")
+        if not 1 <= len(actions) <= MAX_ACTION_SOURCES:
+            raise BrowserRuntimeError(
+                f"W3C action source count must be between 1 and {MAX_ACTION_SOURCES}"
+            )
+        sources = []
+        for source in actions:
+            if not isinstance(source, Mapping):
+                raise BrowserRuntimeError("W3C action source is not an object")
+            source_actions = source.get("actions")
+            if not isinstance(source_actions, list) or not 1 <= len(source_actions) <= MAX_SOURCE_ACTIONS:
+                raise BrowserRuntimeError(
+                    f"W3C action source length must be between 1 and {MAX_SOURCE_ACTIONS}"
+                )
+            source_type = source.get("type")
+            if not isinstance(source_type, str) or source_type not in {"key", "pointer", "wheel"}:
+                raise BrowserRuntimeError(f"unsupported W3C action source type: {source_type!r}")
+            sources.append(dict(source))
+        payload = {"actions": sources}
+        if len(json.dumps(payload, separators=(",", ":")).encode("utf-8")) > MAX_TRACE_BYTES:
+            raise BrowserRuntimeError("W3C action sequence exceeds the trace bound")
+        self._request("POST", self._session_path("actions"), payload)
+
+    def release_actions(self) -> None:
+        """Release all active W3C input sources and pointer captures."""
+        self._request("DELETE", self._session_path("actions"))
+
+    def pointer_drag(
+        self,
+        element_id: str,
+        start: Tuple[int, int],
+        end: Tuple[int, int],
+        *,
+        button: int = 0,
+        pointer_type: str = "mouse",
+        source_id: str = "metis-pointer",
+    ) -> None:
+        """Perform one trusted pointer drag relative to a DOM element."""
+        if pointer_type not in {"mouse", "pen", "touch"}:
+            raise BrowserRuntimeError(f"unsupported pointer type: {pointer_type!r}")
+        if button not in range(5):
+            raise BrowserRuntimeError("pointer button must be between 0 and 4")
+        for coordinate in (*start, *end):
+            if not isinstance(coordinate, int) or not -4096 <= coordinate <= 4096:
+                raise BrowserRuntimeError("pointer coordinates must be bounded integers")
+        if not element_id:
+            raise BrowserRuntimeError("WebDriver element identifier is empty")
+        origin = {ELEMENT_KEY: element_id}
+        self.perform_actions(
+            [
+                {
+                    "type": "pointer",
+                    "id": source_id,
+                    "parameters": {"pointerType": pointer_type},
+                    "actions": [
+                        {"type": "pointerMove", "origin": origin, "x": start[0], "y": start[1], "duration": 0},
+                        {"type": "pointerDown", "button": button},
+                        {"type": "pointerMove", "origin": "pointer", "x": end[0] - start[0], "y": end[1] - start[1], "duration": 0},
+                        {"type": "pointerUp", "button": button},
+                    ],
+                }
+            ]
+        )
+
+    def wheel(
+        self,
+        element_id: str,
+        position: Tuple[int, int],
+        delta: Tuple[int, int],
+        *,
+        source_id: str = "metis-wheel",
+    ) -> None:
+        """Perform one trusted wheel scroll relative to a DOM element."""
+        for value in (*position, *delta):
+            if not isinstance(value, int) or not -1_000_000 <= value <= 1_000_000:
+                raise BrowserRuntimeError("wheel coordinates and deltas must be bounded integers")
+        if not element_id:
+            raise BrowserRuntimeError("WebDriver element identifier is empty")
+        origin = {ELEMENT_KEY: element_id}
+        self.perform_actions(
+            [
+                {
+                    "type": "wheel",
+                    "id": source_id,
+                    "actions": [
+                        {
+                            "type": "scroll",
+                            "origin": origin,
+                            "x": position[0],
+                            "y": position[1],
+                            "deltaX": delta[0],
+                            "deltaY": delta[1],
+                            "duration": 0,
+                        }
+                    ],
+                }
+            ]
+        )
 
     def execute(self, script: str, arguments: Sequence[Any] = ()) -> Any:
         """Execute a synchronous script and return its bounded JSON value."""
