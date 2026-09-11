@@ -1251,8 +1251,8 @@ assert no remaining listeners, requests or tasks after teardown. A local-only
 settings pane is allowed without backend authority; an authoritative calculation
 must use the authenticated configured host/service and its real response.
 
-<a id="browser-cross-engine-conformance-runner-evidence--2026-09-09"></a>
-## Browser cross-engine conformance runner evidence — 2026-09-09
+<a id="browser-cross-engine-conformance-runner-evidence--2026-09-10"></a>
+## Browser cross-engine conformance runner evidence — 2026-09-10
 
 `scripts/browser_runtime.py` now drives the same Rust/WASM page through the W3C
 WebDriver HTTP protocol for the closed `chromium`, `firefox` and `webkit`
@@ -1263,8 +1263,9 @@ native operations. Browser-side `MutationObserver` and timer callbacks provide
 the waits; no host sleep or polling loop is part of the runner. Output and
 screenshots are confined to `output`.
 
-The deterministic Python suite passes 78/78 tests and `python -m py_compile`
-passes for the runner and its tests. The protocol-shaped driver tests verify
+The browser and asset suites pass 22/22 tests; the full deterministic Python
+suite passes 84/84 tests, and `python -m py_compile` passes for the runner and
+its tests. The protocol-shaped driver tests verify
 the exact displayed values (`80.00 kg`, `0.750 mcg/kg/min` and
 `Volume rate: 0.900000 mL/hr`), disconnected privileged-submit rejection,
 stop/remount stale-result rejection, cancellation, input and teardown failure
@@ -1396,6 +1397,11 @@ after a finite request budget. This is local presentation transport evidence;
 it does not claim public deployment, TLS, or DICOM behavior. DICOM parsing,
 study selection, geometry and viewer state remain in the [RITK
 workflow](../../ritk/docs/manual/dicom-workflow.md).
+
+The current review revision adds explicit native assertions for a missing
+session, an inadmissible method, the eight-session capacity boundary and the
+configured response-byte limit. The focused `cargo nextest` run passes 47/47
+tests and warning-denied Clippy passes for `metis-backend` and `metis-app`.
 
 The authentication slice uses the Moirai provider with its TLS feature
 disabled. `cargo tree --locked -p metis-core --edges normal` and the Metis
