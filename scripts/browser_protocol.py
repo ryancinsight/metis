@@ -215,6 +215,8 @@ class WebDriverClient:
 
     def perform_actions(self, actions: Sequence[Mapping[str, Any]]) -> None:
         """Dispatch a bounded W3C action sequence through the browser input source."""
+        if isinstance(actions, (str, bytes)) or not isinstance(actions, Sequence):
+            raise BrowserRuntimeError("W3C action sources must be a sequence")
         if not 1 <= len(actions) <= MAX_ACTION_SOURCES:
             raise BrowserRuntimeError(
                 f"W3C action source count must be between 1 and {MAX_ACTION_SOURCES}"
@@ -229,7 +231,7 @@ class WebDriverClient:
                     f"W3C action source length must be between 1 and {MAX_SOURCE_ACTIONS}"
                 )
             source_type = source.get("type")
-            if source_type not in {"key", "pointer", "wheel"}:
+            if not isinstance(source_type, str) or source_type not in {"key", "pointer", "wheel"}:
                 raise BrowserRuntimeError(f"unsupported W3C action source type: {source_type!r}")
             sources.append(dict(source))
         payload = {"actions": sources}
