@@ -2,7 +2,9 @@
 
 use std::fmt;
 
-const MAX_FILES: usize = 64;
+// The bound admits the largest committed Atlas DICOM study while the byte
+// budget below remains the primary consumer memory limit.
+const MAX_FILES: usize = 512;
 const MAX_FILE_NAME_BYTES: usize = 4_096;
 const MAX_MEDIA_TYPE_BYTES: usize = 256;
 const MAX_DISPLAY_NAME_BYTES: usize = 96;
@@ -140,7 +142,7 @@ impl fmt::Display for FileDropError {
     fn fmt(&self, formatter: &mut fmt::Formatter<'_>) -> fmt::Result {
         let message = match self {
             Self::EmptyDrop => "the drop did not contain files",
-            Self::TooManyFiles => "the drop exceeds the 64-file bound",
+            Self::TooManyFiles => "the drop exceeds the 512-file bound",
             Self::FileTooLarge => "a dropped file exceeds the 64 MiB payload bound",
             Self::BatchTooLarge => "the dropped batch exceeds the 256 MiB payload bound",
             Self::SizeNotRepresentable => {
@@ -316,9 +318,18 @@ mod tests {
 
     #[test]
     fn empty_and_oversized_drops_have_typed_rejections() {
+        assert_eq!(MAX_FILES, 512);
         assert_eq!(
             DropState::accept([]).expect_err("empty drops must be rejected"),
             FileDropError::EmptyDrop
+        );
+        let admitted = std::iter::repeat_with(|| entry("scan.bin", "application/octet-stream"))
+            .take(MAX_FILES);
+        assert_eq!(
+            DropState::accept(admitted)
+                .expect("the bounded file-count edge must be accepted")
+                .file_count(),
+            MAX_FILES
         );
         let entries = std::iter::repeat_with(|| entry("scan.bin", "application/octet-stream"))
             .take(MAX_FILES + 1);

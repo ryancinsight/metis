@@ -22,6 +22,10 @@ Revision 2026-09-09: Metis PR #32 removes the browser-side DICOM candidate and
 Part 10 marker decisions. The file-drop state reports bounded metadata and byte
 progress only; RITK receives the named bytes before format-specific scanning.
 
+Revision 2026-09-11: Moirai PR #327 raises the shared browser file metadata
+bound to 512 entries so the committed 409-slice DICOM study fits in one bounded
+drop. The consumer-owned 256 MiB byte batch limit is unchanged.
+
 ## Context
 
 Metis must reuse ordinary HTML5 controls while keeping application state and
@@ -74,7 +78,7 @@ third pointer is rejected. Touch pointers use the same bounded policy.
 
 The workbench uses Moirai's `DropFiles` capture for the format-neutral file-drop
 card.
-Validated metadata remains bounded to 64 entries. An accepted drop retains the
+Validated metadata remains bounded to 512 entries. An accepted drop retains the
 provider-owned browser file handles only for the asynchronous read task; Metis
 reads each file to its declared end, limits one file to 64 MiB and the batch to
 256 MiB, and renders `reading`, `complete` or `failed` in semantic status
