@@ -222,8 +222,15 @@ creates a bounded temporary HTML/CSS package, receives typed submit messages
 through the provider callback, sends the existing capability-authorized
 calculation to the backend and posts the value-semantic result back to the page.
 The package applies a no-network CSP and is removed after the bounded session.
-The source and parser tests cover the application bridge contract. The visible
-`--metis-webview` initial and submit journey is now captured below; OS permission
+The CSP now denies image, font, media, connection, object, frame, child,
+worker, manifest and form channels, while admitting only the package's own
+script and stylesheet. The page script contains no WebView2 host-object,
+network, popup, geolocation or process API; its only native bridge is the
+bounded `chrome.webview.postMessage` call. Static package tests enforce these
+restrictions, and the installed provider smoke supplies the runtime
+outside-package navigation denial. This establishes the application/provider
+boundary policy, not OS-level sandbox enforcement. The visible
+`--metis-webview` initial and submit journey is captured below; OS permission
 denial and assistive-technology evidence remain unverified.
 
 ### Windows visible host captures — 2026-09-09

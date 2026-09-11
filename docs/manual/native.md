@@ -150,8 +150,14 @@ The host writes a bounded temporary package containing the form, stylesheet and
 bridge script, then removes it after the window closes. Submitting the form
 crosses the WebView2 message callback, the unprivileged frontend's private pipe
 and the backend's existing capability and audit checks before the result is
-posted back to the page. The page has no network or arbitrary navigation
-permission. Escape or the close button ends the finite five-minute session.
+posted back to the page. Its content-security policy admits only the package's
+own script and stylesheet; images, fonts, media, network connections, objects,
+frames, workers, manifests and forms are denied. The page script uses only the
+bounded `chrome.webview.postMessage` bridge; WebView2 host objects and process
+APIs are not registered. The provider separately rejects arbitrary navigation
+and new-window requests. These are package/provider restrictions, not a claim
+that the operating system sandbox has been proven. Escape or the close button
+ends the finite five-minute session.
 
 ### Verify the installed WebView2 adapter
 
