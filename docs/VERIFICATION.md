@@ -1325,12 +1325,13 @@ requirements are recorded per host; cross compilation is not runtime evidence.
 
 The 2026-09-11 Python-host increment adds a Rust-owned `NativeApplication`
 facade over the Windows `NativeSurface`. The extracted release wheel built with
-`python scripts/python_binding.py` and passed 21 value-semantic tests; the
+`python scripts/python_binding.py` and passed 22 value-semantic tests; the
 free-threaded probe was skipped because no free-threaded interpreter is
-installed. This is lifecycle evidence for the thin binding only. A visible
-window capture, the two-window/IME journey, and macOS/Linux provider evidence
-remain open; the facade has no DICOM or viewer authority, which remains in
-RITK.
+installed. The suite includes two independent hidden windows and confirms that
+closing one leaves the other usable. This is lifecycle evidence for the thin
+binding only. Trusted installed-IME and visual two-window capture, plus
+macOS/Linux provider evidence, remain open; the facade has no DICOM or viewer
+authority, which remains in RITK.
 
 The same revision also produced a visible Python-host capture through the
 committed `scripts/python_native_capture.py` tool. The tool presented a

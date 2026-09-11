@@ -132,6 +132,38 @@ without attempting a native provider. This facade owns no filesystem,
 network, process, medical-format or DICOM authority; RITK remains responsible
 for DICOM and viewer state.
 
+### Host independent windows
+
+Each `NativeApplication` owns one Rust provider thread and one generation-bound
+surface. Multiple applications can therefore be created without sharing window
+dimensions, event queues or close state:
+
+```python
+first = metis.NativeApplication("First", 320, 240, "hidden")
+second = metis.NativeApplication("Second", 640, 480, "hidden")
+first_generation = first.generation
+second_generation = second.generation
+first.present(first_generation, bytes((229, 62, 62, 255)) * (320 * 240))
+second.present(second_generation, bytes((49, 130, 206, 255)) * (640 * 480))
+assert any(
+    event["kind"] == "resized" and event["width"] == 320
+    for event in first.wait_events(first_generation, 0)
+)
+assert any(
+    event["kind"] == "resized" and event["width"] == 640
+    for event in second.wait_events(second_generation, 0)
+)
+first.close(first_generation)
+second.present(second_generation, bytes((12, 34, 56, 255)) * (640 * 480))
+second.close(second_generation)
+```
+
+The value-semantic wheel suite runs this journey with two independent hidden
+windows and confirms that closing the first does not invalidate the second.
+The provider's native tests separately exercise keyboard, text and IME event
+translation; a trusted installed-IME capture remains host evidence rather than
+a Python API assumption.
+
 ### Inspect a captured native frame
 
 Build an extracted wheel and use the committed Windows capture tool to present
