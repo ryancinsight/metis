@@ -161,28 +161,19 @@ def _element_screenshot(client: WebDriverClient, trace: Trace, directory: pathli
     )
 
 
-def run_canvas_scenario(
+def capture_canvas_trace(
     client: WebDriverClient,
-    engine: BrowserEngine,
-    url: str,
-    revision: str,
+    trace: Trace,
     screenshot_directory: pathlib.Path,
-    timeout_ms: int,
     canvas_ids: Sequence[str],
-    consumer_revision: Optional[str] = None,
     canvas_attributes: Sequence[str] = (),
-) -> Trace:
-    """Exercise trusted pointer and wheel input for format-neutral canvases."""
+) -> None:
+    """Capture one trusted canvas interaction on an open browser session."""
     canvas_ids = validate_canvas_ids(canvas_ids)
     canvas_attributes = validate_canvas_attributes(canvas_attributes)
-    trace: Optional[Trace] = None
+    elements = {canvas_id: client.find(f"#{canvas_id}") for canvas_id in canvas_ids}
     actions_released = False
     try:
-        client.create_session(engine.webdriver_name)
-        client.set_timeouts(timeout_ms)
-        trace = Trace(engine, url, "canvas", revision, client.capabilities, consumer_revision)
-        client.navigate(url)
-        elements = {canvas_id: client.find(f"#{canvas_id}") for canvas_id in canvas_ids}
         screenshot(client, trace, screenshot_directory, "window-initial")
         for canvas_id in canvas_ids:
             element = elements[canvas_id]
@@ -218,8 +209,32 @@ def run_canvas_scenario(
             "canvas_attribute_names": list(canvas_attributes),
             "provider_listener_count": "unavailable from WebDriver",
         }
+    finally:
+        if not actions_released:
+            client.release_actions()
+
+
+def run_canvas_scenario(
+    client: WebDriverClient,
+    engine: BrowserEngine,
+    url: str,
+    revision: str,
+    screenshot_directory: pathlib.Path,
+    timeout_ms: int,
+    canvas_ids: Sequence[str],
+    consumer_revision: Optional[str] = None,
+    canvas_attributes: Sequence[str] = (),
+) -> Trace:
+    """Exercise trusted pointer and wheel input for format-neutral canvases."""
+    canvas_ids = validate_canvas_ids(canvas_ids)
+    canvas_attributes = validate_canvas_attributes(canvas_attributes)
+    trace: Optional[Trace] = None
+    try:
+        client.create_session(engine.webdriver_name)
+        client.set_timeouts(timeout_ms)
+        trace = Trace(engine, url, "canvas", revision, client.capabilities, consumer_revision)
+        client.navigate(url)
+        capture_canvas_trace(client, trace, screenshot_directory, canvas_ids, canvas_attributes)
         return trace
     finally:
-        if client.session_id is not None and not actions_released:
-            client.release_actions()
         client.close()

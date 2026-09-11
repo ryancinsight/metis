@@ -18,10 +18,11 @@ from browser_protocol import (
     ROOT, BrowserRuntimeError, StaticServer, WebDriverClient, _safe_path,
 )
 from browser_canvas import (
+    capture_canvas_trace,
     validate_canvas_ids, validate_canvas_attributes, validate_consumer_revision,
     _element_screenshot,
 )
-from browser_runtime import _wait_for_text, _wait_for_selector
+from browser_runtime import _wait_for_text, _wait_for_selector, _write_trace
 from browser_trace import BrowserEngine, Trace, screenshot
 
 
@@ -150,10 +151,15 @@ def run(args: argparse.Namespace) -> dict:
     validate_consumer_revision(args.consumer_revision)
     oracle = json.loads(args.oracle.read_text(encoding="utf-8"))
     ids = validate_canvas_ids(list(oracle))
+    canvas_attributes = validate_canvas_attributes(args.canvas_attribute)
+    canvas_trace_path = None
+    if args.canvas_trace is not None:
+        canvas_trace_path = _safe_path(args.canvas_trace.resolve(), directory=ROOT / "output")
     output = _safe_path(args.output.resolve(), directory=ROOT / "output")
     output.mkdir(parents=True, exist_ok=True)
     revision = subprocess.check_output(["git", "rev-parse", "HEAD"], cwd=ROOT, text=True, timeout=30).strip()
     client = WebDriverClient(args.driver_url, 120)
+    canvas_trace: Trace | None = None
     trace = Trace(BrowserEngine.CHROMIUM, "", "disconnected", revision, {}, args.consumer_revision)
     document = {"status": "failed"}
     try:
@@ -211,6 +217,22 @@ def run(args: argparse.Namespace) -> dict:
                     actual = client.execute_async(CANVAS_PIXELS, [canvas_id])
                     if actual["rgba_sha256"] != oracle[canvas_id]["rgba_sha256"]:
                         raise BrowserRuntimeError("a rejected file batch changed the consumer frame")
+            if canvas_trace_path is not None:
+                canvas_trace = Trace(
+                    BrowserEngine.CHROMIUM,
+                    trace.url,
+                    "canvas",
+                    revision,
+                    client.capabilities,
+                    args.consumer_revision,
+                )
+                capture_canvas_trace(
+                    client,
+                    canvas_trace,
+                    canvas_trace_path.parent / "screenshots" / "chromium" / "canvas",
+                    ids,
+                    canvas_attributes,
+                )
             document = trace.document()
             document["files"] = len(files)
             document["bytes"] = total
@@ -237,8 +259,10 @@ def run(args: argparse.Namespace) -> dict:
         raise
     finally:
         primary_error = sys.exc_info()[1]
+        closed = False
         try:
             client.close()
+            closed = True
             document["cleanup"] = {"session_closed": True}
         except BrowserRuntimeError as cleanup_error:
             document["status"] = "failed"
@@ -247,6 +271,9 @@ def run(args: argparse.Namespace) -> dict:
                 raise
         finally:
             (output / "trace.json").write_text(json.dumps(document, indent=2) + "\n", encoding="utf-8")
+            if canvas_trace is not None and canvas_trace_path is not None:
+                canvas_trace.cleanup["session_closed"] = closed
+                _write_trace(canvas_trace_path, canvas_trace.document())
     return document
 
 
@@ -259,6 +286,10 @@ def main() -> None:
     parser.add_argument("--oracle", type=pathlib.Path, required=True,
                         help="Consumer JSON mapping canvas IDs to exact dimensions, non-black pixel counts and attributes")
     parser.add_argument("--consumer-revision", required=True)
+    parser.add_argument("--canvas-trace", type=pathlib.Path,
+                        help="write a paired trusted canvas trace after the file drop")
+    parser.add_argument("--canvas-attribute", action="append", default=[],
+                        help="consumer-selected data-* attribute for the paired canvas trace")
     parser.add_argument("--input", choices=("manual", "chromium"), default="manual")
     parser.add_argument("--output", type=pathlib.Path, default=ROOT / "output" / "browser" / "drop")
     run(parser.parse_args())
