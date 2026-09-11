@@ -115,6 +115,25 @@ capabilities, exact actions and observed values, semantic snapshots, screenshot
 hashes/dimensions, the three explicitly unsupported native operations and
 cleanup evidence. Review the screenshots and the semantic states together.
 
+The protocol client also provides the format-neutral physical-input seam used
+by application-owned canvas scenarios. A consumer resolves its canvas element
+through WebDriver and sends trusted pointer and wheel actions without placing
+application state in Métis:
+
+```python
+from scripts.browser_protocol import WebDriverClient
+
+client.pointer_drag(canvas_element_id, (24, 24), (64, 48))
+client.wheel(canvas_element_id, (64, 48), (0, 120))
+client.release_actions()
+```
+
+The client bounds element-local coordinates, wheel deltas, action-source count,
+per-source action count and serialized request size. RITK owns the DICOM
+workflow and interprets these format-neutral events; Métis records transport
+and screenshot evidence only. A configured engine endpoint is required before
+the action trace can claim Chromium, Firefox or WebKit evidence.
+
 For the authorized service path, keep the static server and service running,
 then pass the host-provided session tuple in the URL. The runner validates the
 `ws`/`wss` endpoint, decimal process identifier and 32-hex-digit principal
