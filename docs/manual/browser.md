@@ -952,3 +952,53 @@ session and stops its local server. Browser waits terminate within 60 seconds.
 Browser chrome is excluded. The trace is automated file-backed browser input
 evidence; physical mouse/file-manager input and Firefox/WebKit remain separate
 claims.
+
+To capture the canvas interaction on the same loaded study, add a paired
+format-neutral trace and the consumer's opaque attribute names. The file-drop
+trace still records the file manifest, byte count and RGBA oracle; the paired
+trace records one trusted pointer drag and wheel action per canvas, the seven
+consumer attributes, full-window and element screenshots, and input-source
+release:
+
+```powershell
+python scripts/browser_drop.py --driver-url http://127.0.0.1:9515 `
+  --browser-name MicrosoftEdge --input chromium `
+  --files D:/atlas/repos/ritk/test_data/3_head_ct_mridir/DICOM --pattern '*.dcm' `
+  --oracle docs/manual/images/browser-gallery-oracle.json `
+  --consumer-revision $revision `
+  --canvas-trace output/browser/runtime/chromium-canvas.json `
+  --canvas-attribute data-ritk-load-state `
+  --canvas-attribute data-ritk-frame-state `
+  --canvas-attribute data-ritk-axis `
+  --canvas-attribute data-ritk-slice-index `
+  --canvas-attribute data-ritk-slice-count `
+  --canvas-attribute data-ritk-frame-width `
+  --canvas-attribute data-ritk-frame-height
+```
+
+Validate the paired trace from the RITK checkout with
+`--validate-browser-trace`. The host runner does not interpret those names or
+values; RITK owns their meaning and the DICOM/viewer assertions. A missing
+attribute, malformed action, incomplete screenshot set or unreleased input
+source fails the consumer validator.
+
+The paired Edge run at Metis revision
+`1fd44680d1a15a12efda2e2cf0f2ed560da92db6` produced six semantic snapshots:
+the 409-slice axial view moved from slice 204 to 203, and the coronal and
+sagittal views moved from slice 256 to 255 after the trusted wheel actions.
+All three remained presented at their expected dimensions. The revision-bound
+trace is [`browser-gallery-canvas.json`](images/browser-gallery-canvas.json);
+its eight screenshots are the paired initial/after-input window and canvas
+captures. This is the same public CT study as the file-drop trace, not a
+synthetic image.
+
+The final browser window below shows the three live orthogonal views after the
+input actions. The element captures preserve the individual canvases for visual
+inspection: axial [initial](images/browser-gallery-canvas-ritk-snap-axial-initial.png)
+and [after input](images/browser-gallery-canvas-ritk-snap-axial-after-input.png),
+coronal [initial](images/browser-gallery-canvas-ritk-snap-coronal-initial.png)
+and [after input](images/browser-gallery-canvas-ritk-snap-coronal-after-input.png),
+and sagittal [initial](images/browser-gallery-canvas-ritk-snap-sagittal-initial.png)
+and [after input](images/browser-gallery-canvas-ritk-snap-sagittal-after-input.png).
+
+![Live Edge window after the trusted canvas actions](images/browser-gallery-canvas-window-final.png)

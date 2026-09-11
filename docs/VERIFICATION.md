@@ -1306,13 +1306,19 @@ placing DICOM, series, slice or viewer state in Metis.
 
 The protocol-shaped suite passes 15/15 tests after adding the canvas scenario,
 element screenshot endpoint, bounded identifier validation and cross-repository
-consumer-revision field. This remains deterministic transport evidence. The
-configured Edge gallery run supplies a real file-backed browser session and
-clinical pixel oracle, but it uses the drop-specific runner and does not replace
-the generic canvas scenario: RITK must still run that reusable pointer/wheel
-scenario against configured engines and assert DICOM opening, axis routing and
-slice changes in its own workflow evidence. Firefox/WebKit, physical input,
-WebGPU and provider-private resource counts remain open.
+consumer-revision field. The file-backed gallery runner can now emit the same
+schema-1 canvas trace after the real study is loaded, reusing the canonical
+pointer/wheel capture instead of a second browser session. RITK validates the
+opaque consumer attributes, axis order, dimensions, screenshots and cleanup;
+Metis continues to interpret none of the DICOM or viewer meaning. Firefox/WebKit,
+physical input, WebGPU and provider-private resource counts remain open.
+
+The paired Edge run at Metis `1fd44680d1a15a12efda2e2cf0f2ed560da92db6` and
+RITK `0bad9eb2c77b91e57fff3e9dc472a42201e061aa` accepted the public 409-file
+study, then moved the axial slice 204→203 and coronal/sagittal slices 256→255
+through trusted wheel actions. The RITK validator passed the six semantic
+snapshots, six actions, eight PNG scopes and released-input cleanup. The
+revision-bound artifact is [the paired canvas trace](manual/images/browser-gallery-canvas.json).
 
 <a id="V03"></a>
 ### V03 — Text and accessibility specimen

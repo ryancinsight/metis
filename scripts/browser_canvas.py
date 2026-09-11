@@ -18,6 +18,7 @@ CANVAS_DRAG_START = (24, 24)
 CANVAS_DRAG_END = (64, 48)
 CANVAS_WHEEL_POSITION = (64, 48)
 CANVAS_WHEEL_DELTA = (0, 120)
+CANVAS_FRAME_SETTLE_COUNT = 2
 MAX_CANVAS_DIMENSION = 4096
 MAX_CANVAS_CSS_SIZE = 16_384.0
 MAX_CANVAS_POSITION = 16_384.0
@@ -40,6 +41,21 @@ return {
   top: rect.top,
   attributes: Object.fromEntries(attributeNames.map((name) => [name, canvas.getAttribute(name)])),
 };
+"""
+
+CANVAS_FRAME_SETTLE_SCRIPT = """
+const done = arguments[arguments.length - 1];
+let remaining = arguments[0];
+const settle = () => {
+  if (remaining === 0) { done({ok: true}); return; }
+  remaining -= 1;
+  window.requestAnimationFrame(settle);
+};
+if (typeof window.requestAnimationFrame !== 'function') {
+  done({ok: false});
+} else {
+  settle();
+}
 """
 
 
@@ -161,28 +177,26 @@ def _element_screenshot(client: WebDriverClient, trace: Trace, directory: pathli
     )
 
 
-def run_canvas_scenario(
+def settle_canvas_input(client: WebDriverClient) -> None:
+    """Yield through two browser frames so queued canvas input is observable."""
+    result = client.execute_async(CANVAS_FRAME_SETTLE_SCRIPT, [CANVAS_FRAME_SETTLE_COUNT])
+    if not isinstance(result, dict) or result.get("ok") is not True:
+        raise BrowserRuntimeError("browser did not expose requestAnimationFrame for canvas settling")
+
+
+def capture_canvas_trace(
     client: WebDriverClient,
-    engine: BrowserEngine,
-    url: str,
-    revision: str,
+    trace: Trace,
     screenshot_directory: pathlib.Path,
-    timeout_ms: int,
     canvas_ids: Sequence[str],
-    consumer_revision: Optional[str] = None,
     canvas_attributes: Sequence[str] = (),
-) -> Trace:
-    """Exercise trusted pointer and wheel input for format-neutral canvases."""
+) -> None:
+    """Capture one trusted canvas interaction on an open browser session."""
     canvas_ids = validate_canvas_ids(canvas_ids)
     canvas_attributes = validate_canvas_attributes(canvas_attributes)
-    trace: Optional[Trace] = None
+    elements = {canvas_id: client.find(f"#{canvas_id}") for canvas_id in canvas_ids}
     actions_released = False
     try:
-        client.create_session(engine.webdriver_name)
-        client.set_timeouts(timeout_ms)
-        trace = Trace(engine, url, "canvas", revision, client.capabilities, consumer_revision)
-        client.navigate(url)
-        elements = {canvas_id: client.find(f"#{canvas_id}") for canvas_id in canvas_ids}
         screenshot(client, trace, screenshot_directory, "window-initial")
         for canvas_id in canvas_ids:
             element = elements[canvas_id]
@@ -206,6 +220,7 @@ def run_canvas_scenario(
                     "delta": list(CANVAS_WHEEL_DELTA),
                 }
             )
+            settle_canvas_input(client)
             _canvas_snapshot(client, trace, canvas_id, f"{canvas_id}-after-input", canvas_attributes)
             _element_screenshot(client, trace, screenshot_directory, f"{canvas_id}-after-input", element)
         client.release_actions()
@@ -218,8 +233,32 @@ def run_canvas_scenario(
             "canvas_attribute_names": list(canvas_attributes),
             "provider_listener_count": "unavailable from WebDriver",
         }
+    finally:
+        if not actions_released:
+            client.release_actions()
+
+
+def run_canvas_scenario(
+    client: WebDriverClient,
+    engine: BrowserEngine,
+    url: str,
+    revision: str,
+    screenshot_directory: pathlib.Path,
+    timeout_ms: int,
+    canvas_ids: Sequence[str],
+    consumer_revision: Optional[str] = None,
+    canvas_attributes: Sequence[str] = (),
+) -> Trace:
+    """Exercise trusted pointer and wheel input for format-neutral canvases."""
+    canvas_ids = validate_canvas_ids(canvas_ids)
+    canvas_attributes = validate_canvas_attributes(canvas_attributes)
+    trace: Optional[Trace] = None
+    try:
+        client.create_session(engine.webdriver_name)
+        client.set_timeouts(timeout_ms)
+        trace = Trace(engine, url, "canvas", revision, client.capabilities, consumer_revision)
+        client.navigate(url)
+        capture_canvas_trace(client, trace, screenshot_directory, canvas_ids, canvas_attributes)
         return trace
     finally:
-        if client.session_id is not None and not actions_released:
-            client.release_actions()
         client.close()
