@@ -2,9 +2,9 @@
   "schema": 1,
   "status": "passed",
   "engine": "chromium",
-  "url": "http://127.0.0.1:62165/gallery.html",
+  "url": "http://127.0.0.1:57645/gallery.html",
   "bridge": "disconnected",
-  "revision": "24da737d2299cfc5356998853e5750ca1d20500f",
+  "revision": "0f7093e6701af4ab4a3779925206d7a31f964319",
   "capabilities": {
     "browserName": "MicrosoftEdge",
     "browserVersion": "153.0.4234.19",
