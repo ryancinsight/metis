@@ -1,8 +1,8 @@
 # Metis delivery
 
 Registration: [Atlas member item](../../backlog.md#atlas-member-registration-defects)
-is done. Public source and executable packaging are merged, and Atlas pins the
-verified Metis `main` commit `a957a99` (Atlas pointer `688579435`).
+is done. Public source and executable packaging are merged, and the Atlas stack
+records the verified Metis and RITK revisions through its gitlinks.
 
 The [framework gap matrix](docs/adr/0003-framework-conformance.md) is the scope
 inventory. Every implementation item follows the [visual contract](docs/VERIFICATION.md#visual-contract)
