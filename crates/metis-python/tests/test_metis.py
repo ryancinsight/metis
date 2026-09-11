@@ -234,3 +234,43 @@ def test_native_application_window_lifecycle_on_windows() -> None:
     reopened = application.reopen()
     assert reopened == generation + 1
     application.close(reopened)
+
+
+def test_native_applications_keep_two_windows_independent_on_windows() -> None:
+    if not sys.platform.startswith("win"):
+        pytest.skip("Windows native provider is required")
+
+    first = metis.NativeApplication("Metis first", 320, 240, "hidden")
+    second = metis.NativeApplication("Metis second", 400, 300, "hidden")
+    first_generation = first.generation
+    second_generation = second.generation
+    first_open = True
+    second_open = True
+    try:
+        first.present(first_generation, bytes((229, 62, 62, 255)) * (320 * 240))
+        second.present(second_generation, bytes((49, 130, 206, 255)) * (400 * 300))
+
+        first_events = first.wait_events(first_generation, 0)
+        second_events = second.wait_events(second_generation, 0)
+        assert any(
+            event["kind"] == "resized"
+            and event["width"] == 320
+            and event["height"] == 240
+            for event in first_events
+        )
+        assert any(
+            event["kind"] == "resized"
+            and event["width"] == 400
+            and event["height"] == 300
+            for event in second_events
+        )
+
+        first.close(first_generation)
+        first_open = False
+        second.present(second_generation, bytes((12, 34, 56, 255)) * (400 * 300))
+        second.wait_events(second_generation, 0)
+    finally:
+        if first_open:
+            first.close(first_generation)
+        if second_open:
+            second.close(second_generation)

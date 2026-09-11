@@ -51,5 +51,7 @@ warning-denied Clippy, doctests and the existing native host capture. The
 Windows visible capture is tied to the source revision; `cargo-semver-checks`
 reviews the added Python surface. Hosted free-threaded wheel evidence remains
 owned by `METIS-PYTHON-004`. The implementation increment built the release
-`cp39-abi3` wheel and passed 21 value-semantic tests; visible-window and
-non-Windows provider evidence remain open under V05.
+`cp39-abi3` wheel and passed 22 value-semantic tests, including two independent
+hidden windows whose close state and event batches remain isolated. Trusted
+installed-IME, visual two-window and non-Windows provider evidence remain open
+under V05.
