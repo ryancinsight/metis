@@ -247,6 +247,17 @@ process boundaries differ, so the measurements remain lifecycle evidence and
 do not establish a framework memory or latency ranking. The matched native
 run is recorded in [its resource provenance](images/dicom-metis-real-ct-mip-resource.json).
 
+The complete visible window for the native four-panel MIP run is also captured
+from the running Windows HWND. The [RITK-owned window image](https://github.com/ryancinsight/ritk/blob/main/docs/manual/images/dicom-metis-real-ct-mip-window.png?raw=true)
+shows the saved public CT in axial, coronal, sagittal, and axial-MIP panels
+inside the Windows frame. Two independent launches produced the same digest;
+the source, executable, panel counts, dimensions, and orderly close are in the
+[window provenance record](https://github.com/ryancinsight/ritk/blob/main/docs/manual/images/dicom-metis-real-ct-mip-window.json).
+This is a real application capture, not generated artwork. RITK owns the DICOM
+decode and MIP policy; Metis owns the native window and framebuffer seam.
+
+![Complete Métis application window showing the saved CT and axial MIP](https://github.com/ryancinsight/ritk/blob/main/docs/manual/images/dicom-metis-real-ct-mip-window.png?raw=true)
+
 The same saved public CT series was opened through the RITK browser adapter and
 presented by the live Metis HTML5 canvas path. This is a runtime pixel capture,
 not an illustration: RITK read all 409 Part 10 files (216,156,416 bytes),
