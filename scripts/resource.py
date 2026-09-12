@@ -26,6 +26,7 @@ from typing import Iterable, Mapping, Sequence
 MAX_SAMPLES = 30_000
 MAX_SAMPLE_INTERVAL_MS = 1_000
 MAX_TIMEOUT_SECONDS = 300
+NORMAL_95_CRITICAL = 1.96
 PROCESS_QUERY_LIMITED_INFORMATION = 0x1000
 TH32CS_SNAPPROCESS = 0x00000002
 
@@ -248,6 +249,52 @@ def summarize(samples: Iterable[ProcessSample]) -> Mapping[str, object]:
     }
 
 
+def _statistics(values: Iterable[int]) -> Mapping[str, float | int | None]:
+    """Return a bounded sample spread and an explicitly approximate interval."""
+    numbers = tuple(float(value) for value in values)
+    if not numbers:
+        return {"count": 0, "mean": None, "sample_stddev": None, "approximate_95_half_width": None}
+    mean = sum(numbers) / len(numbers)
+    if len(numbers) < 2:
+        deviation = None
+        half_width = None
+    else:
+        deviation = (sum((value - mean) ** 2 for value in numbers) / (len(numbers) - 1)) ** 0.5
+        half_width = NORMAL_95_CRITICAL * deviation / (len(numbers) ** 0.5)
+    return {
+        "count": len(numbers),
+        "mean": mean,
+        "sample_stddev": deviation,
+        "approximate_95_half_width": half_width,
+    }
+
+
+def aggregate_measurements(measurements: Iterable[Mapping[str, object]]) -> Mapping[str, object]:
+    """Aggregate repeated runs while preserving missing counters as missing."""
+    runs = tuple(measurements)
+    scalar_fields = ("duration_ms", "startup_observation_ms")
+    scalars = {
+        field: _statistics(
+            measurement[field] for measurement in runs
+            if isinstance(measurement.get(field), (int, float))
+        )
+        for field in scalar_fields
+    }
+    summary_fields = ("working_set_bytes", "private_bytes", "handle_count")
+    summary = {}
+    for field in summary_fields:
+        summary[field] = {}
+        for phase in ("initial", "final", "peak", "growth"):
+            summary[field][phase] = _statistics(
+                measurement["summary"][field][phase]
+                for measurement in runs
+                if isinstance(measurement.get("summary"), Mapping)
+                and isinstance(measurement["summary"].get(field), Mapping)
+                and isinstance(measurement["summary"][field].get(phase), (int, float))
+            )
+    return {"run_count": len(runs), "scalars": scalars, "summary": summary}
+
+
 def _terminate(process: subprocess.Popen[bytes]) -> None:
     """Terminate only the process launched by this measurement."""
     if process.poll() is not None:
@@ -263,7 +310,8 @@ def _terminate(process: subprocess.Popen[bytes]) -> None:
         process.wait(timeout=5)
 
 
-def run(command: Sequence[str], interval_ms: int, timeout_seconds: float) -> Mapping[str, object]:
+def run(command: Sequence[str], interval_ms: int, timeout_seconds: float,
+        max_samples: int = MAX_SAMPLES) -> Mapping[str, object]:
     """Run and sample a command until exit or the explicit timeout."""
     started = time.perf_counter_ns()
     process = subprocess.Popen(command, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
@@ -278,7 +326,7 @@ def run(command: Sequence[str], interval_ms: int, timeout_seconds: float) -> Map
             break
         if first_observation_ms is None:
             first_observation_ms = int(elapsed_ms)
-        if len(samples) >= MAX_SAMPLES:
+        if len(samples) >= max_samples:
             timed_out = True
             break
         sample = sample_process_tree(process.pid, int(elapsed_ms))
@@ -315,6 +363,7 @@ def _parser() -> argparse.ArgumentParser:
     parser.add_argument("--phase", default="lifecycle", choices=("startup", "idle", "active", "lifecycle"))
     parser.add_argument("--sample-ms", type=int, default=100, help="Sampling interval, 10-1000 ms")
     parser.add_argument("--timeout-seconds", type=float, default=60, help="Finite lifecycle timeout, 0.1-300 s")
+    parser.add_argument("--repeat", type=int, default=1, help="Sequential runs for a fixture, 1-20")
     parser.add_argument("command", nargs=argparse.REMAINDER, help="Command after --")
     return parser
 
@@ -331,10 +380,21 @@ def main(arguments: Sequence[str] | None = None) -> int:
         raise SystemExit("--sample-ms must be between 10 and 1000")
     if not 0.1 <= args.timeout_seconds <= MAX_TIMEOUT_SECONDS:
         raise SystemExit("--timeout-seconds must be between 0.1 and 300")
+    if not 1 <= args.repeat <= 20:
+        raise SystemExit("--repeat must be between 1 and 20")
+    if args.repeat * args.timeout_seconds > MAX_TIMEOUT_SECONDS:
+        raise SystemExit("repeat count multiplied by timeout must not exceed 300 seconds")
     executable = shutil.which(command[0]) or command[0]
     report_path = _validate_output(args.output)
     try:
-        measurement = run(command, args.sample_ms, args.timeout_seconds)
+        measurements = []
+        for _ in range(args.repeat):
+            measurement = run(command, args.sample_ms, args.timeout_seconds,
+                              max_samples=max(1, MAX_SAMPLES // args.repeat))
+            measurements.append(measurement)
+            if measurement["status"] != "passed":
+                break
+        measurements = tuple(measurements)
     except OSError as error:
         report = {
             "schema": 1,
@@ -349,9 +409,11 @@ def main(arguments: Sequence[str] | None = None) -> int:
         }
         report_path.write_text(json.dumps(report, indent=2, sort_keys=True) + "\n", encoding="utf-8")
         return 1
+    statuses = {measurement["status"] for measurement in measurements}
+    status = "timeout" if "timeout" in statuses else ("passed" if statuses == {"passed"} else "failed")
     report = {
         "schema": 1,
-        "status": measurement["status"],
+        "status": status,
         "label": args.label,
         "phase": args.phase,
         "platform": {"system": platform.system(), "release": platform.release(), "machine": platform.machine()},
@@ -361,11 +423,13 @@ def main(arguments: Sequence[str] | None = None) -> int:
         "command_sha256": command_fingerprint(command),
         "sample_interval_ms": args.sample_ms,
         "timeout_seconds": args.timeout_seconds,
+        "repeat": args.repeat,
         "revision": args.revision,
-        "measurement": measurement,
+        "measurements": measurements,
+        "aggregate": aggregate_measurements(measurements),
     }
     report_path.write_text(json.dumps(report, indent=2, sort_keys=True) + "\n", encoding="utf-8")
-    return 0 if measurement["status"] == "passed" else 1
+    return 0 if report["status"] == "passed" else 1
 
 
 if __name__ == "__main__":

@@ -1687,9 +1687,11 @@ it samples the launched command and visible descendants at a fixed interval,
 records startup observation and lifecycle duration, and reports initial, final,
 peak and growth for working-set, private-byte and handle counters. It hashes
 the command arguments and discards child output so private study paths do not
-enter a report. A single lifecycle report is evidence for that fixture only;
-matched Tauri, GPUI and egui runs with the same asset, host and trace are
-required before a comparative claim.
+enter a report. `--repeat` adds the per-run mean, sample spread and an
+explicitly approximate 95% half-width while retaining each bounded sample
+series. A single lifecycle report is evidence for that fixture only; matched
+Tauri, GPUI and egui runs with the same asset, host and trace are required
+before a comparative claim.
 
 Input traces and workload sizes are fixed before comparison, chosen to exercise
 the relevant working-set regimes under the committed budget. Profile production

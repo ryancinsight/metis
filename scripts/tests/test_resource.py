@@ -66,10 +66,11 @@ class ResourceProcessTests(unittest.TestCase):
             report = json.loads(output.read_text(encoding="utf-8"))
             self.assertEqual(report["schema"], 1)
             self.assertEqual(report["status"], "passed")
-            self.assertEqual(report["measurement"]["exit_code"], 0)
-            self.assertGreaterEqual(report["measurement"]["summary"]["sample_count"], 2)
+            measurement = report["measurements"][0]
+            self.assertEqual(measurement["exit_code"], 0)
+            self.assertGreaterEqual(measurement["summary"]["sample_count"], 2)
             self.assertEqual(report["argument_count"], 2)
-            self.assertEqual(report["measurement"]["output_capture"], "disabled")
+            self.assertEqual(measurement["output_capture"], "disabled")
 
     def test_timeout_terminates_only_the_launched_process(self):
         resource = runpy.run_path(str(SCRIPTS / "resource.py"))
@@ -83,5 +84,22 @@ class ResourceProcessTests(unittest.TestCase):
             self.assertEqual(result, 1)
             report = json.loads(output.read_text(encoding="utf-8"))
             self.assertEqual(report["status"], "timeout")
-            self.assertEqual(report["measurement"]["timeout_seconds"], 0.1)
-            self.assertLess(report["measurement"]["duration_ms"], 5_000)
+            measurement = report["measurements"][0]
+            self.assertEqual(measurement["timeout_seconds"], 0.1)
+            self.assertLess(measurement["duration_ms"], 5_000)
+
+    def test_repeat_records_baseline_spread(self):
+        resource = runpy.run_path(str(SCRIPTS / "resource.py"))
+        with tempfile.TemporaryDirectory(prefix="metis-resource-repeat-") as directory:
+            output = pathlib.Path(directory) / "report.json"
+            result = resource["main"]([
+                "--output", str(output), "--label", "repeated child", "--sample-ms", "20",
+                "--timeout-seconds", "5", "--repeat", "3", "--", sys.executable, "-c",
+                "import time; time.sleep(0.06)",
+            ])
+            self.assertEqual(result, 0)
+            report = json.loads(output.read_text(encoding="utf-8"))
+            self.assertEqual(report["repeat"], 3)
+            self.assertEqual(report["aggregate"]["run_count"], 3)
+            self.assertEqual(report["aggregate"]["scalars"]["duration_ms"]["count"], 3)
+            self.assertGreaterEqual(report["aggregate"]["scalars"]["duration_ms"]["mean"], 0)

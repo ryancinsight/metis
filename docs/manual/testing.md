@@ -236,6 +236,7 @@ python D:\atlas\repos\metis\scripts\resource.py `
   --phase lifecycle `
   --sample-ms 100 `
   --timeout-seconds 120 `
+  --repeat 3 `
   -- `
   D:\atlas\target\debug\ritk-snap.exe $study `
   --series-instance-uid $series `
@@ -246,11 +247,15 @@ Get-Content $report
 
 The command measures the real RITK decoder and Métis presentation process until
 the capture completes; it does not substitute a synthetic image or a mock
-process. Keep the report and capture local when the study is private. For a
-comparison, run the same command shape, source asset, window and host protocol
-for each fixture and compare reports only after recording the machine, target,
-engine and revision. One report is lifecycle evidence; it does not establish a
-memory or latency ranking against Tauri, GPUI or egui.
+process. `--repeat` runs the same fixture sequentially and adds the measured
+mean, sample standard deviation and explicitly approximate 95% half-width to
+the `aggregate` object; the per-run records remain available for inspection.
+The product of repeat count and per-run timeout is bounded at 300 seconds.
+Keep the report and capture local when the study is private. For a comparison,
+run the same command shape, source asset, window and host protocol for each
+fixture and compare reports only after recording the machine, target, engine
+and revision. One report is lifecycle evidence; it does not establish a memory
+or latency ranking against Tauri, GPUI or egui.
 
 ## What a demonstration proves
 
