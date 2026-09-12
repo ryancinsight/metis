@@ -25,9 +25,18 @@ from python_binding import extract_wheel, validate_wheel_surface
 
 MAX_PUMP_ROUNDS = 300
 EVENT_WAIT_MILLISECONDS = 100
-PRINT_WINDOW_FULL_CONTENT = 2
+# The Moirai presenter handles the standard WM_PRINT path. PW_RENDERFULLCONTENT
+# is intended for framework-managed surfaces and bypasses this custom GDI client
+# render on the Windows host, yielding a black client area.
+PRINT_WINDOW_FLAGS = 0
 PROCESS_WINDOW_TIMEOUT_SECONDS = 30
 PROCESS_EXIT_TIMEOUT_SECONDS = 10
+DEFAULT_WIDTH = 320
+DEFAULT_HEIGHT = 240
+MAX_INPUT_BYTES = 64 * 1024 * 1024
+MAX_FRAME_PIXELS = 16 * 1024 * 1024
+MAX_FRAME_DIMENSION = 16_384
+PNG_SIGNATURE = b"\x89PNG\r\n\x1a\n"
 
 
 class _BitmapInfoHeader(ctypes.Structure):
@@ -72,6 +81,16 @@ class _WindowBounds:
     height: int
 
 
+@dataclass(frozen=True)
+class _Frame:
+    """Bounded row-major RGBA pixels ready for the Rust host."""
+
+    width: int
+    height: int
+    rgba: bytes
+    sha256: str
+
+
 def _parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(
         description="Capture a visible NativeApplication frame as a Windows BMP or PNG."
@@ -96,10 +115,15 @@ def _parser() -> argparse.ArgumentParser:
         type=pathlib.Path,
         help="working directory for --command",
     )
+    parser.add_argument(
+        "--frame",
+        type=pathlib.Path,
+        help="an existing RGBA PNG frame to present through NativeApplication",
+    )
     parser.add_argument("--output", type=pathlib.Path, required=True)
     parser.add_argument("--title", default="Metis Python native capture")
-    parser.add_argument("--width", type=int, default=320)
-    parser.add_argument("--height", type=int, default=240)
+    parser.add_argument("--width", type=int)
+    parser.add_argument("--height", type=int)
     return parser
 
 
@@ -298,9 +322,7 @@ def _capture_window(bounds: _WindowBounds) -> bytes:
 
     previous = gdi32.SelectObject(memory_dc, bitmap)
     try:
-        if not user32.PrintWindow(
-            bounds.handle, memory_dc, PRINT_WINDOW_FULL_CONTENT
-        ):
+        if not user32.PrintWindow(bounds.handle, memory_dc, PRINT_WINDOW_FLAGS):
             raise ctypes.WinError()
         info = _BitmapInfo()
         info.header = _BitmapInfoHeader(
@@ -416,19 +438,153 @@ def _write_capture(path: pathlib.Path, bounds: _WindowBounds, pixels: bytes) -> 
     raise ValueError("capture output must use the .bmp or .png extension")
 
 
+def _paeth(left: int, above: int, upper_left: int) -> int:
+    estimate = left + above - upper_left
+    left_distance = abs(estimate - left)
+    above_distance = abs(estimate - above)
+    upper_left_distance = abs(estimate - upper_left)
+    if left_distance <= above_distance and left_distance <= upper_left_distance:
+        return left
+    if above_distance <= upper_left_distance:
+        return above
+    return upper_left
+
+
+def _read_png(path: pathlib.Path) -> _Frame:
+    """Read a bounded, non-interlaced 8-bit RGBA PNG into row-major bytes.
+
+    This is the interchange boundary for an already-decoded application frame;
+    it never inspects DICOM or other medical-format data. The decoder accepts
+    all PNG scanline filters so a RITK framebuffer capture can be handed to the
+    Python host without a third-party image package.
+    """
+    path = path.resolve(strict=True)
+    if not path.is_file():
+        raise ValueError(f"frame is not a regular file: {path}")
+    size = path.stat().st_size
+    if size > MAX_INPUT_BYTES:
+        raise ValueError("frame PNG exceeds the bounded input size")
+    content = path.read_bytes()
+    if len(content) != size or len(content) < len(PNG_SIGNATURE) or content[:8] != PNG_SIGNATURE:
+        raise ValueError("frame is not a complete PNG")
+
+    offset = len(PNG_SIGNATURE)
+    width = height = None
+    compressed = bytearray()
+    saw_idat = False
+    saw_iend = False
+    while offset < len(content):
+        if len(content) - offset < 12:
+            raise ValueError("frame PNG has a truncated chunk")
+        length = struct.unpack_from(">I", content, offset)[0]
+        end = offset + 12 + length
+        if end > len(content):
+            raise ValueError("frame PNG has a truncated payload")
+        kind = content[offset + 4 : offset + 8]
+        payload_start = offset + 8
+        payload = content[payload_start : payload_start + length]
+        checksum = struct.unpack_from(">I", content, payload_start + length)[0]
+        if zlib.crc32(kind + payload) & 0xFFFFFFFF != checksum:
+            raise ValueError("frame PNG has an invalid chunk checksum")
+        if kind == b"IHDR":
+            if offset != len(PNG_SIGNATURE) or width is not None or length != 13:
+                raise ValueError("frame PNG has an invalid image header")
+            width, height, depth, color_type, compression, filtering, interlace = struct.unpack(
+                ">IIBBBBB", payload
+            )
+            if (
+                width == 0
+                or height == 0
+                or width > MAX_FRAME_DIMENSION
+                or height > MAX_FRAME_DIMENSION
+                or width * height > MAX_FRAME_PIXELS
+                or (depth, color_type, compression, filtering, interlace) != (8, 6, 0, 0, 0)
+            ):
+                raise ValueError("frame PNG must be a bounded non-interlaced RGBA image")
+        elif kind == b"IDAT":
+            if width is None:
+                raise ValueError("frame PNG data appears before its image header")
+            saw_idat = True
+            compressed.extend(payload)
+        elif kind == b"IEND":
+            if length != 0 or not saw_idat:
+                raise ValueError("frame PNG is missing image data")
+            saw_iend = True
+            offset = end
+            break
+        offset = end
+
+    if width is None or height is None or not saw_iend or offset != len(content):
+        raise ValueError("frame PNG is missing its terminal chunk")
+    row_bytes = width * 4
+    raw_size = height * (row_bytes + 1)
+    decoder = zlib.decompressobj()
+    raw = decoder.decompress(bytes(compressed), raw_size + 1)
+    if len(raw) > raw_size or decoder.unconsumed_tail or not decoder.eof:
+        raise ValueError("frame PNG decompression exceeds the bounded image size")
+    if decoder.unused_data:
+        raise ValueError("frame PNG contains trailing compressed data")
+    raw += decoder.flush(raw_size + 1 - len(raw))
+    if len(raw) != raw_size:
+        raise ValueError("frame PNG scanlines do not match the image dimensions")
+
+    pixels = bytearray(width * height * 4)
+    previous = bytearray(row_bytes)
+    raw_offset = 0
+    output_offset = 0
+    for _row in range(height):
+        filter_type = raw[raw_offset]
+        scanline = raw[raw_offset + 1 : raw_offset + 1 + row_bytes]
+        reconstructed = bytearray(row_bytes)
+        if filter_type == 0:
+            reconstructed[:] = scanline
+        elif filter_type == 1:
+            for index, value in enumerate(scanline):
+                left = reconstructed[index - 4] if index >= 4 else 0
+                reconstructed[index] = (value + left) & 0xFF
+        elif filter_type == 2:
+            for index, value in enumerate(scanline):
+                reconstructed[index] = (value + previous[index]) & 0xFF
+        elif filter_type == 3:
+            for index, value in enumerate(scanline):
+                left = reconstructed[index - 4] if index >= 4 else 0
+                reconstructed[index] = (value + ((left + previous[index]) // 2)) & 0xFF
+        elif filter_type == 4:
+            for index, value in enumerate(scanline):
+                left = reconstructed[index - 4] if index >= 4 else 0
+                above = previous[index]
+                upper_left = previous[index - 4] if index >= 4 else 0
+                reconstructed[index] = (value + _paeth(left, above, upper_left)) & 0xFF
+        else:
+            raise ValueError("frame PNG uses an unsupported scanline filter")
+        pixels[output_offset : output_offset + row_bytes] = reconstructed
+        previous = reconstructed
+        raw_offset += row_bytes + 1
+        output_offset += row_bytes
+    return _Frame(width, height, bytes(pixels), hashlib.sha256(content).hexdigest())
+
+
 def _checkerboard(width: int, height: int) -> bytes:
     red = bytes((229, 62, 62, 255)) * (width // 2)
     blue = bytes((49, 130, 206, 255)) * (width - width // 2)
     return b"".join((red + blue) if row % 2 == 0 else (blue + red) for row in range(height))
 
 
-def _capture(metis: Any, title: str, width: int, height: int, output: pathlib.Path) -> dict[str, Any]:
+def _capture(
+    metis: Any,
+    title: str,
+    width: int,
+    height: int,
+    output: pathlib.Path,
+    frame: _Frame | None = None,
+) -> dict[str, Any]:
     host = metis.NativeApplication(title, width, height, "visible")
     generation = host.generation
     executor = ThreadPoolExecutor(max_workers=1)
     future: Future[bytes] | None = None
     try:
-        host.present(generation, _checkerboard(width, height))
+        presented = _checkerboard(width, height) if frame is None else frame.rgba
+        host.present(generation, presented)
         events = host.wait_events(generation, 0)
         bounds = _window_for_process(os.getpid())
         future = executor.submit(_capture_window, bounds)
@@ -440,7 +596,7 @@ def _capture(metis: Any, title: str, width: int, height: int, output: pathlib.Pa
             raise RuntimeError("native capture did not complete within the pump bound")
         pixels = future.result()
         digest = _write_capture(output, bounds, pixels)
-        return {
+        result = {
             "title": title,
             "generation": generation,
             "window": {"width": bounds.width, "height": bounds.height},
@@ -448,6 +604,21 @@ def _capture(metis: Any, title: str, width: int, height: int, output: pathlib.Pa
             "image": output.as_posix(),
             "sha256": digest,
         }
+        if frame is None:
+            result["input"] = {
+                "format": "rgba",
+                "width": width,
+                "height": height,
+                "source": "checkerboard",
+            }
+        else:
+            result["input"] = {
+                "format": "png-rgba",
+                "width": frame.width,
+                "height": frame.height,
+                "sha256": frame.sha256,
+            }
+        return result
     finally:
         if future is not None and not future.done():
             future.cancel()
@@ -502,18 +673,30 @@ def main() -> None:
     if sys.platform != "win32":
         raise SystemExit("python_native_capture.py requires a Windows desktop")
     arguments = _parser().parse_args()
-    if arguments.width <= 0 or arguments.height <= 0:
+    if (arguments.width is None) != (arguments.height is None):
+        raise SystemExit("--width and --height must be supplied together")
+    if arguments.width is not None and (arguments.width <= 0 or arguments.height <= 0):
         raise SystemExit("width and height must be positive")
     if arguments.command is None and (
         arguments.command_arguments or arguments.cwd is not None
     ):
         raise SystemExit("--argument and --cwd require --command")
+    if arguments.frame is not None and arguments.command is not None:
+        raise SystemExit("--frame cannot be combined with --command")
+    frame = None if arguments.frame is None else _read_png(arguments.frame)
+    if frame is None:
+        width = DEFAULT_WIDTH if arguments.width is None else arguments.width
+        height = DEFAULT_HEIGHT if arguments.height is None else arguments.height
+    else:
+        width, height = frame.width, frame.height
+        if arguments.width is not None and (arguments.width, arguments.height) != (width, height):
+            raise SystemExit("--width and --height must match the supplied frame")
     output = arguments.output.resolve()
     if arguments.site is not None:
         if not arguments.site.is_dir():
             raise SystemExit(f"Python wheel site does not exist: {arguments.site}")
         metis = _load_site(arguments.site.resolve())
-        result = _capture(metis, arguments.title, arguments.width, arguments.height, output)
+        result = _capture(metis, arguments.title, width, height, output, frame)
         print(json.dumps(result, sort_keys=True))
         return
 
@@ -546,10 +729,12 @@ def main() -> None:
             "--title",
             arguments.title,
             "--width",
-            str(arguments.width),
+            str(width),
             "--height",
-            str(arguments.height),
+            str(height),
         ]
+        if arguments.frame is not None:
+            command.extend(("--frame", str(arguments.frame.resolve(strict=True))))
         completed = subprocess.run(command, check=False, text=True, capture_output=True)
         if completed.returncode != 0:
             if completed.stdout:

@@ -192,6 +192,42 @@ are recorded in [`python-native-captures.json`](images/python-native-captures.js
 
 ![Visible NativeApplication checkerboard capture](images/python-native-window.bmp)
 
+### Present an actual RITK application frame
+
+The same capture tool can present an existing application-content PNG through
+the Python host. This is the handoff used for real viewer evidence: RITK opens
+and decodes the study, renders the bounded framebuffer and writes the PNG;
+Métis validates the already-decoded RGBA frame and presents those exact pixels
+through `NativeApplication`. The Python boundary does not read DICOM bytes or
+interpret clinical metadata.
+
+Use the reviewed public CT frame from the RITK repository, or replace the path
+with a private local capture that must remain outside version control:
+
+```powershell
+$frame = Resolve-Path ..\ritk\docs\manual\images\dicom-metis-real-ct-mip.png
+maturin build --release --locked --manifest-path crates/metis-python/Cargo.toml --out output/python-native
+python scripts/python_native_capture.py `
+  --wheel output/python-native/metis_rs-0.1.0-cp39-abi3-win_amd64.whl `
+  --frame $frame `
+  --title "RITK public CT through Metis Python host" `
+  --output docs/manual/images/python-native-real-ct-mip.png
+```
+
+`--frame` accepts only a bounded, non-interlaced 8-bit RGBA PNG and derives
+the host dimensions from its header. All PNG scanline filters are decoded and
+the source digest is printed with the capture result, so the provenance binds
+the Python-hosted image to the exact RITK output. The inspected capture below
+is application output from the saved public 409-file CT study, including its
+axial, coronal, sagittal and MIP panels; it is not an illustration.
+
+![RITK public CT frame presented through the Metis Python native host](images/python-native-real-ct-mip.png)
+
+The source is the public CC BY 4.0 porcine-head phantom documented in the
+[RITK DICOM workflow](https://github.com/ryancinsight/ritk/blob/main/docs/manual/dicom-workflow.md).
+Private patient captures may use the same command locally, but their pixels,
+paths and identifiers stay on the local machine.
+
 ## Release path
 
 `.github/workflows/python-release.yml` accepts a GitHub Release tag of the form
