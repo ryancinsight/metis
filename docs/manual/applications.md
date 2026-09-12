@@ -221,7 +221,8 @@ remain in RITK; Métis owns the format-neutral host and framebuffer boundary.
 
 The same 409-file public CT was also run through the current eframe application
 with the bounded lifecycle sampler. The run exited 0 three times and produced
-the real 1600×1000 viewer capture above (the current local capture digest is
+the [real 1600×1000 viewer capture](https://github.com/ryancinsight/ritk/blob/main/docs/manual/images/dicom-eframe-real-ct.png?raw=true)
+(the current local capture digest is
 `f4b30c71bd57f54227f5eeec524cd72e93f56f68e834fed909b907f9ecace048`). Its
 mean process-tree peak private bytes were 2,494,962,346.7 ± 5,291,688.9 bytes
 and its mean lifecycle duration was 8,752.3 ± 2,197.2 ms; the complete
