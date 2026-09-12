@@ -77,6 +77,7 @@ class FakeDriver:
         self.pending = False
         self.released = False
         self.canvas_actions = []
+        self.event_trace = {}
         self.values = {"weight-kg": "72.5", "target-dose": "0.5"}
 
     def create_session(self, browser_name: str) -> None:
@@ -114,6 +115,20 @@ class FakeDriver:
             self.pending = False
 
     def execute(self, script: str, arguments=()):
+        if "__metisCanvasTraceState" in script and "const ids = arguments[0]" in script:
+            self.event_trace = {canvas_id: [] for canvas_id in arguments[0]}
+            return {"ok": True, "listener_count": len(arguments[0]) * 4}
+        if "__metisCanvasTraceState" in script and "state.events[id]" in script:
+            canvas_id = arguments[0]
+            events = self.event_trace.get(canvas_id)
+            if events is None:
+                return None
+            self.event_trace[canvas_id] = []
+            return {"events": events, "overflow": False}
+        if "delete window.__metisCanvasTraceState" in script:
+            listener_count = sum(1 for _ in self.event_trace for _ in range(4))
+            self.event_trace = {}
+            return {"ok": True, "listener_count": listener_count}
         if "canvas.tagName.toLowerCase()" in script:
             canvas_id = arguments[0]
             attribute_names = arguments[1]
@@ -163,9 +178,51 @@ class FakeDriver:
 
     def pointer_drag(self, element_id, start, end) -> None:
         self.canvas_actions.append(("pointer-drag", element_id, start, end))
+        self.event_trace.setdefault(element_id, []).extend(
+            [
+                {
+                    "type": "pointerdown",
+                    "is_trusted": True,
+                    "target_id": element_id,
+                    "client_x": 24,
+                    "client_y": 24,
+                    "delta_x": None,
+                    "delta_y": None,
+                },
+                {
+                    "type": "pointermove",
+                    "is_trusted": True,
+                    "target_id": element_id,
+                    "client_x": 64,
+                    "client_y": 48,
+                    "delta_x": None,
+                    "delta_y": None,
+                },
+                {
+                    "type": "pointerup",
+                    "is_trusted": True,
+                    "target_id": element_id,
+                    "client_x": 64,
+                    "client_y": 48,
+                    "delta_x": None,
+                    "delta_y": None,
+                },
+            ]
+        )
 
     def wheel(self, element_id, position, delta) -> None:
         self.canvas_actions.append(("wheel", element_id, position, delta))
+        self.event_trace.setdefault(element_id, []).append(
+            {
+                "type": "wheel",
+                "is_trusted": True,
+                "target_id": element_id,
+                "client_x": 64,
+                "client_y": 48,
+                "delta_x": 0,
+                "delta_y": 120,
+            }
+        )
 
     def release_actions(self) -> None:
         self.released = True
@@ -216,6 +273,14 @@ class InvalidAttributeDriver(FakeDriver):
         if "canvas.tagName.toLowerCase()" in script:
             value["attributes"] = self.attributes
         return value
+
+
+class UntrustedCanvasDriver(FakeDriver):
+    """Driver mutant that reports a synthetic, untrusted pointer event."""
+
+    def pointer_drag(self, element_id, start, end) -> None:
+        super().pointer_drag(element_id, start, end)
+        self.event_trace[element_id][0]["is_trusted"] = False
 
 
 class RetainingDriver(FakeDriver):
@@ -294,9 +359,23 @@ class BrowserRuntimeTests(unittest.TestCase):
             [action["action"] for action in trace.actions],
             ["trusted-pointer-drag", "trusted-wheel"] * 3,
         )
+        for pointer_action, wheel_action in zip(trace.actions[::2], trace.actions[1::2]):
+            self.assertTrue(pointer_action["observed_events"])
+            self.assertTrue(all(event["is_trusted"] for event in pointer_action["observed_events"]))
+            self.assertEqual(
+                {event["type"] for event in pointer_action["observed_events"]},
+                {"pointerdown", "pointermove", "pointerup"},
+            )
+            self.assertEqual(
+                {event["type"] for event in wheel_action["observed_events"]},
+                {"wheel"},
+            )
+            self.assertTrue(all(event["is_trusted"] for event in wheel_action["observed_events"]))
         self.assertEqual(len(trace.snapshots), 6)
         self.assertEqual(len(trace.screenshots), 8)
         self.assertTrue(all(item["scope"] == "element" for item in trace.screenshots[1:-1]))
+        self.assertEqual(trace.cleanup["diagnostic_listener_count"], 12)
+        self.assertTrue(trace.cleanup["diagnostic_listeners_released"])
 
     def test_canvas_trace_captures_only_requested_opaque_attributes(self):
         output = pathlib.Path(__file__).resolve().parents[2] / "output" / "browser" / "runtime-test"
@@ -322,6 +401,22 @@ class BrowserRuntimeTests(unittest.TestCase):
                 snapshot["canvas"]["attributes"],
                 {"data-consumer-state": "opaque-value", "data-consumer-missing": None},
             )
+
+    def test_canvas_trace_rejects_untrusted_events(self):
+        output = pathlib.Path(__file__).resolve().parents[2] / "output" / "browser" / "runtime-test"
+        output.mkdir(parents=True, exist_ok=True)
+        with tempfile.TemporaryDirectory(dir=output) as directory:
+            with self.assertRaisesRegex(BrowserRuntimeError, "was not trusted"):
+                run_canvas_scenario(
+                    UntrustedCanvasDriver(),
+                    BrowserEngine.CHROMIUM,
+                    "http://127.0.0.1:8080/ritk.html",
+                    "0" * 40,
+                    pathlib.Path(directory),
+                    5_000,
+                    ["ritk-snap-axial"],
+                    "1" * 40,
+                )
 
     def test_canvas_identifier_validation_is_bounded_and_unique(self):
         self.assertEqual(validate_canvas_ids(["axial", "coronal"]), ("axial", "coronal"))

@@ -6,7 +6,7 @@ import math
 import pathlib
 import re
 import struct
-from typing import Optional, Sequence, Tuple
+from typing import Any, Mapping, Optional, Sequence, Tuple
 
 from browser_protocol import ROOT, WebDriverClient, BrowserRuntimeError, _safe_path
 from browser_trace import BrowserEngine, Trace, screenshot
@@ -24,6 +24,8 @@ MAX_CANVAS_CSS_SIZE = 16_384.0
 MAX_CANVAS_POSITION = 16_384.0
 MAX_CANVAS_ATTRIBUTES = 16
 MAX_CANVAS_ATTRIBUTE_VALUE_BYTES = 1024
+MAX_CANVAS_EVENT_RECORDS = 32
+CANVAS_EVENT_TYPES = ("pointerdown", "pointermove", "pointerup", "wheel")
 
 CANVAS_SNAPSHOT_SCRIPT = """
 const id = arguments[0];
@@ -56,6 +58,66 @@ if (typeof window.requestAnimationFrame !== 'function') {
 } else {
   settle();
 }
+"""
+
+CANVAS_EVENT_INSTALL_SCRIPT = """
+const ids = arguments[0];
+const eventTypes = arguments[1];
+const maxEvents = arguments[2];
+if (window.__metisCanvasTraceState) return {ok: false, error: "canvas event trace is already installed"};
+const events = Object.fromEntries(ids.map((id) => [id, []]));
+const overflow = Object.fromEntries(ids.map((id) => [id, false]));
+const registrations = [];
+const canvases = ids.map((id) => document.getElementById(id));
+if (canvases.some((canvas) => !canvas || canvas.tagName.toLowerCase() !== "canvas")) {
+  const missing = ids[canvases.findIndex((canvas) => !canvas || canvas.tagName.toLowerCase() !== "canvas")];
+  return {ok: false, error: `canvas ${missing} was not found`};
+}
+for (const id of ids) {
+  const canvas = document.getElementById(id);
+  for (const type of eventTypes) {
+    const listener = (event) => {
+      const records = events[id];
+      if (records.length >= maxEvents) {
+        overflow[id] = true;
+        return;
+      }
+      records.push({
+        type: event.type,
+        is_trusted: event.isTrusted === true,
+        target_id: event.target && typeof event.target.id === "string" ? event.target.id : null,
+        client_x: Number.isFinite(event.clientX) ? event.clientX : null,
+        client_y: Number.isFinite(event.clientY) ? event.clientY : null,
+        delta_x: Number.isFinite(event.deltaX) ? event.deltaX : null,
+        delta_y: Number.isFinite(event.deltaY) ? event.deltaY : null,
+      });
+    };
+    canvas.addEventListener(type, listener, {capture: true, passive: true});
+    registrations.push({canvas, type, listener});
+  }
+}
+window.__metisCanvasTraceState = {events, overflow, registrations};
+return {ok: true, listener_count: registrations.length};
+"""
+
+CANVAS_EVENT_READ_SCRIPT = """
+const state = window.__metisCanvasTraceState;
+const id = arguments[0];
+if (!state || !Object.prototype.hasOwnProperty.call(state.events, id)) return null;
+const events = state.events[id];
+state.events[id] = [];
+return {events, overflow: state.overflow[id] === true};
+"""
+
+CANVAS_EVENT_CLEANUP_SCRIPT = """
+const state = window.__metisCanvasTraceState;
+if (!state) return {ok: true, listener_count: 0};
+for (const registration of state.registrations) {
+  registration.canvas.removeEventListener(registration.type, registration.listener, true);
+}
+const listenerCount = state.registrations.length;
+delete window.__metisCanvasTraceState;
+return {ok: true, listener_count: listenerCount};
 """
 
 
@@ -184,6 +246,73 @@ def settle_canvas_input(client: WebDriverClient) -> None:
         raise BrowserRuntimeError("browser did not expose requestAnimationFrame for canvas settling")
 
 
+def _install_event_trace(client: WebDriverClient, canvas_ids: Sequence[str]) -> None:
+    """Install one bounded, capture-phase observer for browser trust evidence."""
+    result = client.execute(
+        CANVAS_EVENT_INSTALL_SCRIPT,
+        [list(canvas_ids), list(CANVAS_EVENT_TYPES), MAX_CANVAS_EVENT_RECORDS],
+    )
+    if not isinstance(result, dict) or result.get("ok") is not True:
+        detail = result.get("error") if isinstance(result, dict) else result
+        raise BrowserRuntimeError(f"browser event trace could not be installed: {detail!r}")
+    expected_listener_count = len(canvas_ids) * len(CANVAS_EVENT_TYPES)
+    if result.get("listener_count") != expected_listener_count:
+        raise BrowserRuntimeError("browser event trace installed an unexpected listener count")
+
+
+def _read_event_evidence(
+    client: WebDriverClient,
+    canvas_id: str,
+    expected_types: Sequence[str],
+) -> list[dict[str, Any]]:
+    """Read and validate one consumed batch of trusted browser events."""
+    result = client.execute(CANVAS_EVENT_READ_SCRIPT, [canvas_id])
+    if not isinstance(result, dict) or not isinstance(result.get("events"), list):
+        raise BrowserRuntimeError(f"browser event trace for {canvas_id!r} is malformed")
+    if result.get("overflow") is not False:
+        raise BrowserRuntimeError(f"browser event trace for {canvas_id!r} exceeded its bound")
+    events = result["events"]
+    if not events:
+        raise BrowserRuntimeError(f"browser emitted no events for {canvas_id!r}")
+    expected = set(expected_types)
+    for event in events:
+        if not isinstance(event, dict):
+            raise BrowserRuntimeError(f"browser event trace for {canvas_id!r} contains a non-object")
+        _validate_event_record(event, canvas_id, expected)
+    if not any(event["type"] in expected for event in events):
+        raise BrowserRuntimeError(f"browser event trace for {canvas_id!r} omitted the requested event")
+    return events
+
+
+def _validate_event_record(event: Mapping[str, Any], canvas_id: str, expected_types: set[str]) -> None:
+    """Require a bounded event record to report trusted delivery to its canvas."""
+    event_type = event.get("type")
+    if event_type not in CANVAS_EVENT_TYPES:
+        raise BrowserRuntimeError(f"browser event trace for {canvas_id!r} has an unsupported type")
+    if event_type not in expected_types:
+        raise BrowserRuntimeError(f"browser event trace for {canvas_id!r} mixed input types")
+    if event.get("is_trusted") is not True:
+        raise BrowserRuntimeError(f"browser event {event_type!r} for {canvas_id!r} was not trusted")
+    if event.get("target_id") != canvas_id:
+        raise BrowserRuntimeError(f"browser event {event_type!r} targeted the wrong canvas")
+    for name in ("client_x", "client_y", "delta_x", "delta_y"):
+        value = event.get(name)
+        if value is not None and (
+            not isinstance(value, (int, float)) or not math.isfinite(float(value))
+        ):
+            raise BrowserRuntimeError(f"browser event {event_type!r} has an invalid {name}")
+
+
+def _cleanup_event_trace(client: WebDriverClient) -> int:
+    """Remove the diagnostic listeners and require every registration to be released."""
+    result = client.execute(CANVAS_EVENT_CLEANUP_SCRIPT)
+    if not isinstance(result, dict) or result.get("ok") is not True:
+        raise BrowserRuntimeError("browser event trace cleanup failed")
+    if not isinstance(result.get("listener_count"), int) or result["listener_count"] <= 0:
+        raise BrowserRuntimeError("browser event trace cleanup released no listeners")
+    return result["listener_count"]
+
+
 def capture_canvas_trace(
     client: WebDriverClient,
     trace: Trace,
@@ -196,7 +325,11 @@ def capture_canvas_trace(
     canvas_attributes = validate_canvas_attributes(canvas_attributes)
     elements = {canvas_id: client.find(f"#{canvas_id}") for canvas_id in canvas_ids}
     actions_released = False
+    event_trace_installed = False
+    diagnostic_listener_count = 0
     try:
+        _install_event_trace(client, canvas_ids)
+        event_trace_installed = True
         screenshot(client, trace, screenshot_directory, "window-initial")
         for canvas_id in canvas_ids:
             element = elements[canvas_id]
@@ -209,6 +342,9 @@ def capture_canvas_trace(
                     "canvas": canvas_id,
                     "start": list(CANVAS_DRAG_START),
                     "end": list(CANVAS_DRAG_END),
+                    "observed_events": _read_event_evidence(
+                        client, canvas_id, ("pointerdown", "pointermove", "pointerup")
+                    ),
                 }
             )
             client.wheel(element, CANVAS_WHEEL_POSITION, CANVAS_WHEEL_DELTA)
@@ -218,6 +354,7 @@ def capture_canvas_trace(
                     "canvas": canvas_id,
                     "position": list(CANVAS_WHEEL_POSITION),
                     "delta": list(CANVAS_WHEEL_DELTA),
+                    "observed_events": _read_event_evidence(client, canvas_id, ("wheel",)),
                 }
             )
             settle_canvas_input(client)
@@ -225,6 +362,8 @@ def capture_canvas_trace(
             _element_screenshot(client, trace, screenshot_directory, f"{canvas_id}-after-input", element)
         client.release_actions()
         actions_released = True
+        diagnostic_listener_count = _cleanup_event_trace(client)
+        event_trace_installed = False
         screenshot(client, trace, screenshot_directory, "window-final")
         trace.cleanup = {
             "session_closed": False,
@@ -232,8 +371,12 @@ def capture_canvas_trace(
             "canvas_count": len(canvas_ids),
             "canvas_attribute_names": list(canvas_attributes),
             "provider_listener_count": "unavailable from WebDriver",
+            "diagnostic_listener_count": diagnostic_listener_count,
+            "diagnostic_listeners_released": True,
         }
     finally:
+        if event_trace_installed:
+            _cleanup_event_trace(client)
         if not actions_released:
             client.release_actions()
 
