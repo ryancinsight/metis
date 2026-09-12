@@ -107,7 +107,7 @@ clipping, verifies source-over alpha over white, and rejects invalid crops,
 dimensions and byte lengths with stable error codes. `Canvas.to_rgba()` is an
 explicit cold-boundary copy; the wheel exposes no Python renderer, native
 window, filesystem path or DICOM decoder. The image fixture and visual
-semantics are shared with the inspected [software raster image evidence](#software-raster-image-evidence--2026-09-09).
+semantics are shared with the inspected [software raster and vector presentation evidence](#software-raster-and-vector-presentation-evidence--2026-09-12).
 
 ## Typed browser action verification — 2026-09-09
 
