@@ -378,8 +378,7 @@ an owner. “Unsupported” cannot replace delivery of a required mobile/native 
 
 <a id="METIS-MIGRATION-001"></a>
 ## METIS-MIGRATION-001 — egui and Tauri application migration [arch] [minor]
-- Status: in-progress; priority: P1; owner: Metis framework + application owners; integrator: root; last-update: 2026-09-10; risk: lost application behavior.
-- lease: root `docs/manual/applications.md` and this item; 2026-09-12T02:00:00-04:00
+- Status: in-progress; priority: P1; owner: Metis framework + application owners; integrator: root; last-update: 2026-09-12; risk: lost application behavior.
 - Dependencies: METIS-COMMANDS-001, METIS-FILES-001, METIS-INPUT-001, METIS-ASSETS-001, METIS-GRAPHICS-001, METIS-DESKTOP-001, METIS-BROWSER-001, METIS-INTEGRATION-001, METIS-SERVICES-001.
 - Named driver: [ritk-snap](../ritk/backlog.md#RITK-SNAP-METIS-001), retaining egui/eframe at RITK while exposing `--metis-native` through merged [PR 269](https://github.com/ryancinsight/ritk/pull/269) (`c1b8130bb`), following [PR 267](https://github.com/ryancinsight/ritk/pull/267) (`2f2058062`). No Tauri dependency is present in its manifest or workspace lock. RITK owns decoder, volume geometry and medical display correctness; Metis supplies the replacement shell.
 - Baseline: RITK `8152f483` ([PR 237](https://github.com/ryancinsight/ritk/pull/237)) adds physical display/hit rectangles to selected-study loading, restore/rejection and the original native capture; [manual](docs/manual/applications.md#dicom-viewer-migration-baseline). The merged RITK native MPR increment now proves one bounded Métis framebuffer containing all three spacing-aware planes and panel-specific routing while keeping DICOM semantics in RITK.
@@ -391,6 +390,8 @@ an owner. “Unsupported” cannot replace delivery of a required mobile/native 
 - Documentation increment (2026-09-11): the application manual now also links the RITK-reviewed MRI-DIR T2 capture from 94 real DICOM files through the same native Métis framebuffer. The provenance record carries the source, executable and image digests; the public porcine phantom is not private patient data, and private studies remain local.
 - Documentation increment (2026-09-11): the application manual now links the RITK-reviewed Chromium browser capture for the same 94-file MRI-DIR T2 study. Métis accepted the bounded file batch while RITK decoded and rendered three non-black canvases; the manual links all three PNGs and the hash-bound provenance record. Physical and cross-engine browser input, WebGPU and full-window capture remain open.
 - Documentation increment (2026-09-11): the application manual now also links the RITK-reviewed Chromium browser capture for the complete 409-file MRI-DIR CT series. The three runtime canvases and hash-bound provenance record are public application output through the format-neutral Métis browser path; RITK owns DICOM parsing, geometry, and clinical display, while physical drag-and-drop and cross-engine driver evidence remain open.
+
+- Documentation increment (2026-09-12): the application manual now gives a copyable local command for opening a saved clinical study with RITK's explicit `SeriesInstanceUID` selector and capturing the decoded axial, coronal and sagittal pixels through Métis. Private studies and identifiers remain local; public MRI-DIR captures remain the reproducible repository evidence.
 
 <a id="METIS-RITK-HOST-001"></a>
 ## METIS-RITK-HOST-001 — Format-neutral native frame host [arch] [minor]
