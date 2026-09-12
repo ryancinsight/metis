@@ -283,6 +283,14 @@ class UntrustedCanvasDriver(FakeDriver):
         self.event_trace[element_id][0]["is_trusted"] = False
 
 
+class IncompleteCanvasDriver(FakeDriver):
+    """Driver mutant that drops pointer phases from the trusted action."""
+
+    def pointer_drag(self, element_id, start, end) -> None:
+        super().pointer_drag(element_id, start, end)
+        self.event_trace[element_id] = self.event_trace[element_id][:1]
+
+
 class RetainingDriver(FakeDriver):
     """Driver mutant that leaves controls mounted after the stop command."""
 
@@ -409,6 +417,22 @@ class BrowserRuntimeTests(unittest.TestCase):
             with self.assertRaisesRegex(BrowserRuntimeError, "was not trusted"):
                 run_canvas_scenario(
                     UntrustedCanvasDriver(),
+                    BrowserEngine.CHROMIUM,
+                    "http://127.0.0.1:8080/ritk.html",
+                    "0" * 40,
+                    pathlib.Path(directory),
+                    5_000,
+                    ["ritk-snap-axial"],
+                    "1" * 40,
+                )
+
+    def test_canvas_trace_rejects_incomplete_pointer_events(self):
+        output = pathlib.Path(__file__).resolve().parents[2] / "output" / "browser" / "runtime-test"
+        output.mkdir(parents=True, exist_ok=True)
+        with tempfile.TemporaryDirectory(dir=output) as directory:
+            with self.assertRaisesRegex(BrowserRuntimeError, "omitted"):
+                run_canvas_scenario(
+                    IncompleteCanvasDriver(),
                     BrowserEngine.CHROMIUM,
                     "http://127.0.0.1:8080/ritk.html",
                     "0" * 40,

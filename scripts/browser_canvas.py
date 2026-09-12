@@ -279,8 +279,12 @@ def _read_event_evidence(
         if not isinstance(event, dict):
             raise BrowserRuntimeError(f"browser event trace for {canvas_id!r} contains a non-object")
         _validate_event_record(event, canvas_id, expected)
-    if not any(event["type"] in expected for event in events):
-        raise BrowserRuntimeError(f"browser event trace for {canvas_id!r} omitted the requested event")
+    observed_types = {event["type"] for event in events}
+    missing_types = expected - observed_types
+    if missing_types:
+        raise BrowserRuntimeError(
+            f"browser event trace for {canvas_id!r} omitted {sorted(missing_types)!r}"
+        )
     return events
 
 
