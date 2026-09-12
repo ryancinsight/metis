@@ -122,6 +122,36 @@ rendered pixels:
 
 ![Format-neutral Metis native host frame](images/native-host-frame.svg)
 
+### Capture a complete native application window
+
+The same capture utility can launch any visible Windows application that uses
+the Métis surface and save the complete HWND, including its title bar and
+client content. The utility waits for the process to become input-idle, finds
+the first visible top-level window owned by that process, captures it with
+`PrintWindow(PW_RENDERFULLCONTENT)`, then posts `WM_CLOSE` and waits for an
+orderly exit. The process arguments are passed as separate values; no shell
+string is evaluated.
+
+```powershell
+$target = (cargo metadata --format-version 1 --no-deps |
+  ConvertFrom-Json).target_directory
+python scripts/python_native_capture.py `
+  --command (Join-Path $target "debug\metis-app.exe") `
+  --argument=--metis-native-window `
+  --argument=60 `
+  --argument=2 `
+  --argument=0.2 `
+  --output output\native-host-window.bmp
+```
+
+This is host evidence, so the image includes operating-system chrome and can
+vary with the Windows theme, scale and font rasterizer. The deterministic
+frame and event trace remain the contract-level checks above. The utility is
+format-neutral: applications such as RITK supply their own decoded image and
+viewer state before handing pixels to Métis; DICOM parsing and medical display
+semantics do not enter this repository. Resolving `target_directory` keeps the
+command valid with Atlas's shared build cache and with a standalone checkout.
+
 The older OS-window captures below demonstrate the visible form and WebView2
 shell. RITK's migrated Windows viewer session now supplies a validated frame
 through the format-neutral boundary; the integration is tracked in
