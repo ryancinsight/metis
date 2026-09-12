@@ -397,6 +397,7 @@ an owner. “Unsupported” cannot replace delivery of a required mobile/native 
 - Completed increment (2026-09-12): the native capture manual resolves Cargo's reported `target_directory` before launching `metis-app`, so the Atlas shared build cache and standalone workspaces use the same copyable command.
 - Documentation increment (2026-09-12, RITK [PR #318](https://github.com/ryancinsight/ritk/pull/318)): the application gallery links the reviewed fitting-volume eframe capture with `3D MIP · GPU` and its RITK provenance. GPU projection, DICOM parsing and clinical display remain RITK-owned; Métis remains the format-neutral host boundary.
 - Documentation increment (2026-09-12, RITK [PR #319](https://github.com/ryancinsight/ritk/pull/319)): the gallery links the reviewed application-content capture with RITK plane, slice, dimension and window/level labels over the real public CT pixels. The local saved-study command now includes `--capture-application`; patient data and identifiers remain local, while complete operating-system window capture remains open.
+- Documentation increment (2026-09-12): the manual front page now points directly to the real CT/MRI gallery and its copyable saved-study command, so the public evidence is discoverable without confusing it with the synthetic form snapshots.
 
 <a id="METIS-RITK-HOST-001"></a>
 ## METIS-RITK-HOST-001 — Format-neutral native frame host [arch] [minor]
@@ -468,7 +469,8 @@ an owner. “Unsupported” cannot replace delivery of a required mobile/native 
 - Acceptance: [V12](docs/VERIFICATION.md#V12) protocol, pinned revisions/assets/traces and controlled host; stored baselines/confidence and resource bounds; resolve production regressions without changing the instrument to move results.
 - Demonstration: measured tables/plots in the manual with machine/target/uncertainty and semantic/visual equivalence; no speed/security ranking without its evidence.
 - Completed increment (2026-09-12): `scripts/resource.py` measures one real command and its visible process tree with bounded Windows and `/proc` samplers, redacted command fingerprinting, timeout termination and initial/final/peak/growth summaries. Repeated runs add sample spread and an explicitly approximate 95% half-width. Seven focused tests and the full Metis gate pass. Three local saved Patient_01 DICOM runs exited 0 and produced the same real capture; the report remains local because its input is private.
-- Residuals: matched egui/GPUI/Tauri fixtures, WASM committed/used memory, allocation and frame-latency traces, repeated lifecycle growth and controlled-host uncertainty remain open.
+- Completed increment (2026-09-12): a current three-run eframe baseline uses the same 409-file public CT and the same bounded sampler; its provenance is [dicom-eframe-real-ct-resource.json](docs/manual/images/dicom-eframe-real-ct-resource.json). The eframe run exits 0 and captures all three orthogonal planes plus CPU 3-D MIP.
+- Residuals: a semantically matched eframe/Metis fixture (the eframe run includes CPU 3-D MIP), GPUI/Tauri fixtures, WASM committed/used memory, allocation and frame-latency traces, repeated lifecycle growth and controlled-host uncertainty remain open.
 
 <a id="METIS-QUALITY-001"></a>
 ## METIS-QUALITY-001 — Verification infrastructure [patch]

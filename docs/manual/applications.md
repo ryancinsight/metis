@@ -219,6 +219,20 @@ the [RITK GPU capture provenance](https://github.com/ryancinsight/ritk/blob/main
 This is public MRI-DIR phantom data. The GPU projection and DICOM decisions
 remain in RITK; Métis owns the format-neutral host and framebuffer boundary.
 
+The same 409-file public CT was also run through the current eframe application
+with the bounded lifecycle sampler. The run exited 0 three times and produced
+the [real 1600×1000 viewer capture](https://github.com/ryancinsight/ritk/blob/main/docs/manual/images/dicom-eframe-real-ct.png?raw=true)
+(the current local capture digest is
+`f4b30c71bd57f54227f5eeec524cd72e93f56f68e834fed909b907f9ecace048`). Its
+mean process-tree peak private bytes were 2,494,962,346.7 ± 5,291,688.9 bytes
+and its mean lifecycle duration was 8,752.3 ± 2,197.2 ms; the complete
+[resource provenance record](images/dicom-eframe-real-ct-resource.json) stores
+the revisions, executable digest, input bounds and sample statistics. This
+eframe baseline also renders a CPU 3-D MIP viewport, while the current Métis
+capture renders the three orthogonal planes, so the measurements are lifecycle
+evidence and do not establish a framework memory or latency ranking. A
+semantically matched eframe/Metis workload remains open in V12.
+
 The same saved public CT series was opened through the RITK browser adapter and
 presented by the live Metis HTML5 canvas path. This is a runtime pixel capture,
 not an illustration: RITK read all 409 Part 10 files (216,156,416 bytes),
