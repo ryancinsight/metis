@@ -329,15 +329,17 @@ an owner. “Unsupported” cannot replace delivery of a required mobile/native 
 - Completed increment: local project artwork now includes a scriptless fixed-viewport SVG, a PNG alternate and a seven-resolution PNG-in-ICO asset; `metis.json` declares each format, the CLI validates SVG and ICO bytes before staging, and portable/MSI payloads retain the resources.
 - Completed increment: `RasterImage` validates bounded row-major RGBA storage and `ImagePlacement` validates crops, clips off-screen destinations and composites nearest-neighbor pixels; the `image` example emits the inspected software-renderer artifact.
 - Evidence: [ADR 0016](docs/adr/0016-theme-and-branding.md), [browser manual](docs/manual/browser.md), [distribution manual](docs/manual/distribution.md), focused `metis-cli` package tests and browser asset tests; runtime asset capture is recorded in [VERIFICATION](docs/VERIFICATION.md#browser-svg-asset-evidence).
-- Evidence: `metis-ui-lang` image validation/compositing tests, `cargo run --locked --example image`, and [software image evidence](docs/VERIFICATION.md#software-raster-image-evidence--2026-09-09) cover pixel, alpha and clipping semantics.
+- Evidence: `metis-ui-lang` image validation/compositing tests, `cargo run --locked --example image`, and [software image evidence](docs/VERIFICATION.md#software-raster-and-vector-presentation-evidence--2026-09-12) cover pixel, alpha and clipping semantics.
 - Residuals: browser/native image decode and orientation, font loading, media controls/error teardown, GPU vectors, and runtime shell rendering on a Windows install remain open under V06; the SVG admission and ICO packaging contracts are closed.
 
 <a id="METIS-GRAPHICS-001"></a>
 ## METIS-GRAPHICS-001 — Custom graphics conformance [arch] [minor]
-- Status: todo; priority: P2; owner: Metis custom renderer over Iris; dependencies: METIS-VISUAL-001, METIS-LAYOUT-001; risk: rendering/lifetime correctness
+- Status: in-progress; priority: P2; owner: Metis custom renderer over Iris; integrator: root; branch: feat/metis-graphics-001-line-primitive; dependencies: METIS-VISUAL-001, METIS-LAYOUT-001; risk: rendering/lifetime correctness
 - Scope: admitted vector/image/transform/clip operations and accelerated display path where required by the custom-UI demonstrator; retain one rendering contract and verify Atlas GPU ownership before additions.
 - Acceptance: geometry/color/alpha and device-loss/recreate tests; differential software/device output under justified raster bounds; measured profile justifies acceleration and accounts for memory cost.
 - Demonstration: [V06](docs/VERIFICATION.md#V06); this path never gates the DOM/browser migration and cannot stand in for HTML5 compatibility.
+- Completed increment (2026-09-12): `draw_line`, `DisplayCommand::DrawLine` and `DisplayList::append_line` add clipped one-pixel source-over segments. Extreme endpoint, alpha and display-list tests pass; the image example and inspected SVG exercise the command in painter order. [ADR 0028](docs/adr/0028-bounded-vector-stroke.md).
+- Residuals: stroke width/caps/joins, transforms, device-loss/recreate handling, GPU acceleration, browser vector parity and a measured profile remain open.
 
 <a id="METIS-DATA-001"></a>
 ## METIS-DATA-001 — Tables, lists and live data views [minor]

@@ -29,6 +29,11 @@ and invalid dimensions. Application-built DOMs should observe the parser
 limits; direct DOM construction does not validate them until layout, and
 recursive DOM utility operations assume bounded trees.
 
+The display list also admits one-pixel line segments through
+`DisplayList::append_line`. Lines use the metis-platform clipping and
+source-over rules, so format-neutral overlays can share the same painter order
+as fills, text and images without introducing a second renderer.
+
 The software framebuffer implements Iris `RenderBackend<DisplayList>`. Rendering
 returns a slice borrowed from the existing pixel storage, preserving the same
 clipped rasterization path without allocating another frame.

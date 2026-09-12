@@ -107,7 +107,7 @@ clipping, verifies source-over alpha over white, and rejects invalid crops,
 dimensions and byte lengths with stable error codes. `Canvas.to_rgba()` is an
 explicit cold-boundary copy; the wheel exposes no Python renderer, native
 window, filesystem path or DICOM decoder. The image fixture and visual
-semantics are shared with the inspected [software raster image evidence](#software-raster-image-evidence--2026-09-09).
+semantics are shared with the inspected [software raster and vector presentation evidence](#software-raster-and-vector-presentation-evidence--2026-09-12).
 
 ## Typed browser action verification — 2026-09-09
 
@@ -1008,7 +1008,7 @@ install probe reads the real `.lnk` through `WScript.Shell` and requires its
 `IconLocation` to end in the cached `MetisIcon,0` reference; the 2026-09-08
 run produced `...\\MetisIcon,0` and then removed the exact test ProductCode.
 
-## Software raster image evidence — 2026-09-09
+## Software raster and vector presentation evidence — 2026-09-12
 
 `metis-ui-lang` now exposes a bounded `RasterImage` and `ImagePlacement` display
 command. Construction rejects empty, oversized and mismatched row-major RGBA
@@ -1016,6 +1016,12 @@ storage; placement rejects empty or out-of-bounds source crops and nonpositive
 destinations. Rendering clips the destination before iterating, maps pixels with
 nearest-neighbor sampling and composites source-over alpha into the existing
 framebuffer without allocating in the draw loop.
+
+The same display list now admits one-pixel line segments. Widened integer
+clipping runs before Bresenham traversal, so extreme off-screen endpoints stay
+bounded and every visible pixel follows the existing source-over rule. The
+image example draws two visible line commands around the raster placement; the
+regenerated SVG below is the inspected output of that combined path.
 
 The focused `metis-ui-lang` suite passes 20/20 tests, including exact asymmetric
 scaling, off-screen clipping, painter order and alpha-over-background checks. The

@@ -11,7 +11,7 @@ use crate::style::{Color, Display, FlexDirection, Size};
 use metis_core::error::Result;
 use metis_platform::framebuffer::Framebuffer;
 pub use metis_platform::framebuffer::Rect;
-use metis_platform::rasterizer::{draw_rect_outline, draw_text, fill_rect};
+use metis_platform::rasterizer::{draw_line, draw_rect_outline, draw_text, fill_rect};
 
 /// Primitive command in painter order.
 #[derive(Debug, Clone, PartialEq)]
@@ -31,6 +31,15 @@ pub enum DisplayCommand {
         /// Border width.
         width: i32,
         /// Straight RGBA color.
+        color: Color,
+    },
+    /// One-pixel line segment clipped to the framebuffer.
+    DrawLine {
+        /// Inclusive start coordinate.
+        start: (i32, i32),
+        /// Inclusive end coordinate.
+        end: (i32, i32),
+        /// Straight RGBA stroke color.
         color: Color,
     },
     /// Single horizontal bitmap text run.
@@ -69,6 +78,9 @@ impl DisplayList {
                 DisplayCommand::DrawBorder { rect, width, color } => {
                     draw_rect_outline(fb, *rect, *width, *color);
                 }
+                DisplayCommand::DrawLine { start, end, color } => {
+                    draw_line(fb, *start, *end, *color);
+                }
                 DisplayCommand::DrawText {
                     text,
                     x,
@@ -88,6 +100,19 @@ impl DisplayList {
     /// display command storage cannot grow.
     pub fn append_image(&mut self, placement: ImagePlacement) -> Result<()> {
         self.push(DisplayCommand::DrawImage { placement })
+    }
+
+    /// Appends a clipped one-pixel line command in painter order.
+    ///
+    /// Endpoints may be outside the target surface; the renderer clips them
+    /// before traversing the segment.
+    ///
+    /// # Errors
+    ///
+    /// Returns [`metis_core::error::ErrorCode::LayoutOverflow`] when the
+    /// display command storage cannot grow.
+    pub fn append_line(&mut self, start: (i32, i32), end: (i32, i32), color: Color) -> Result<()> {
+        self.push(DisplayCommand::DrawLine { start, end, color })
     }
 
     fn push(&mut self, command: DisplayCommand) -> Result<()> {
@@ -421,5 +446,20 @@ mod tests {
             .expect("infallible clipped drawing");
         assert_eq!(frame, &[0xff10_2030; 4]);
         assert_eq!(frame.as_ptr(), storage);
+    }
+
+    #[test]
+    fn display_line_command_renders_through_the_same_framebuffer() {
+        let mut display = DisplayList::default();
+        display
+            .append_line((-8, -8), (8, 8), Color::RED)
+            .expect("line command");
+        let mut framebuffer = Framebuffer::new(3, 3).expect("surface");
+        display.render_to(&mut framebuffer);
+        assert_eq!(display.commands.len(), 1);
+        assert_eq!(framebuffer.get_pixel(0, 0), Color::RED);
+        assert_eq!(framebuffer.get_pixel(1, 1), Color::RED);
+        assert_eq!(framebuffer.get_pixel(2, 2), Color::RED);
+        assert_eq!(framebuffer.get_pixel(2, 0), Color::TRANSPARENT);
     }
 }
