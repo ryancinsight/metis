@@ -196,6 +196,20 @@ committed to either repository.
 
 ![Actual MRI-DIR CT study rendered through the Métis native surface](https://github.com/ryancinsight/ritk/blob/main/docs/manual/images/dicom-metis-real-ct.png?raw=true)
 
+The RITK eframe integration also exercises the asynchronous GPU projection
+with a fitting volume from the same public series. RITK's GPU path waits for
+the matching wgpu readback and invalidates stale frames when display
+parameters change; the existing CPU path remains responsible for volumes that
+exceed device limits. The reviewed application capture includes the three
+orthogonal planes and a `3D MIP · GPU` label:
+
+![Actual MRI-DIR CT study with GPU MIP in the eframe application](https://github.com/ryancinsight/ritk/blob/main/docs/manual/images/dicom-eframe-real-gpu-ct.png?raw=true)
+
+The source-file list, repeat-run digest and graphics-backend selection are in
+the [RITK GPU capture provenance](https://github.com/ryancinsight/ritk/blob/main/docs/manual/images/dicom-eframe-real-gpu-ct.json).
+This is public MRI-DIR phantom data. The GPU projection and DICOM decisions
+remain in RITK; Métis owns the format-neutral host and framebuffer boundary.
+
 The same saved public CT series was opened through the RITK browser adapter and
 presented by the live Metis HTML5 canvas path. This is a runtime pixel capture,
 not an illustration: RITK read all 409 Part 10 files (216,156,416 bytes),
