@@ -468,7 +468,8 @@ an owner. “Unsupported” cannot replace delivery of a required mobile/native 
 - Acceptance: [V12](docs/VERIFICATION.md#V12) protocol, pinned revisions/assets/traces and controlled host; stored baselines/confidence and resource bounds; resolve production regressions without changing the instrument to move results.
 - Demonstration: measured tables/plots in the manual with machine/target/uncertainty and semantic/visual equivalence; no speed/security ranking without its evidence.
 - Completed increment (2026-09-12): `scripts/resource.py` measures one real command and its visible process tree with bounded Windows and `/proc` samplers, redacted command fingerprinting, timeout termination and initial/final/peak/growth summaries. Repeated runs add sample spread and an explicitly approximate 95% half-width. Seven focused tests and the full Metis gate pass. Three local saved Patient_01 DICOM runs exited 0 and produced the same real capture; the report remains local because its input is private.
-- Residuals: matched egui/GPUI/Tauri fixtures, WASM committed/used memory, allocation and frame-latency traces, repeated lifecycle growth and controlled-host uncertainty remain open.
+- Completed increment (2026-09-12): a current three-run eframe baseline uses the same 409-file public CT and the same bounded sampler; its provenance is [dicom-eframe-real-ct-resource.json](docs/manual/images/dicom-eframe-real-ct-resource.json). The eframe run exits 0 and captures all three orthogonal planes plus CPU 3-D MIP.
+- Residuals: a semantically matched eframe/Metis fixture (the eframe run includes CPU 3-D MIP), GPUI/Tauri fixtures, WASM committed/used memory, allocation and frame-latency traces, repeated lifecycle growth and controlled-host uncertainty remain open.
 
 <a id="METIS-QUALITY-001"></a>
 ## METIS-QUALITY-001 — Verification infrastructure [patch]

@@ -1,0 +1,79 @@
+{
+  "schema": 1,
+  "status": "passed",
+  "runtime": {
+    "host": "Windows native eframe application",
+    "machine": "AMD64 Windows 11",
+    "capture_tool": "Metis scripts/resource.py",
+    "phase": "lifecycle",
+    "sample_interval_ms": 100,
+    "timeout_seconds": 100,
+    "repeat_runs": 3,
+    "ritk_revision": "b2772322f44fd4297007711d9cb460efdf002f0d",
+    "metis_revision": "2d0dad065c7bf6f4bff74eaf214da2cbd303fc3e",
+    "executable_sha256": "ded329b5b27ce243904688aae653852e22fb22db4cb4da574265b853df9e57c",
+    "executable_bytes": 47911936,
+    "command_sha256": "ea814aa37ae383dc3a2f6f57a8b6dc7720d894e756adb60a79de3de3690fe451"
+  },
+  "dataset": {
+    "path": "test_data/3_head_ct_mridir/DICOM",
+    "series_instance_uid": "1.3.6.1.4.1.14519.5.2.1.1706.4996.115936088547498980797393821518",
+    "files_available": 409,
+    "files_submitted": 409,
+    "bytes_read": 216156416,
+    "license": "CC BY 4.0",
+    "description": "public MRI-DIR porcine-head CT phantom; not private patient data"
+  },
+  "output": {
+    "image": "public-ct-eframe-current.png (local resource run output)",
+    "width": 1600,
+    "height": 1000,
+    "sha256": "f4b30c71bd57f54227f5eeec524cd72e93f56f68e834fed909b907f9ecace048",
+    "bytes": 489775,
+    "visual_scope": "complete eframe application content; operating-system chrome excluded",
+    "planes": ["axial", "coronal", "sagittal", "3d_mip"],
+    "mip_mode": "CPU"
+  },
+  "resource": {
+    "metric": "process-tree peak private bytes",
+    "peak_private_bytes": {
+      "mean": 2494962346.6666665,
+      "sample_stddev": 4676262.281652446,
+      "approximate_95_half_width": 5291688.922742133,
+      "count": 3
+    },
+    "peak_working_set_bytes": {
+      "mean": 1246571178.6666667,
+      "sample_stddev": 84966409.50467758,
+      "approximate_95_half_width": 96148543.6232191,
+      "count": 3
+    },
+    "duration_ms": {
+      "mean": 8752.333333333334,
+      "sample_stddev": 1941.6468096266462,
+      "approximate_95_half_width": 2197.1802040898797,
+      "count": 3
+    },
+    "startup_observation_ms": {
+      "mean": 555,
+      "sample_stddev": 956.0920457780203,
+      "approximate_95_half_width": 1081.92,
+      "count": 3
+    },
+    "peak_handles": {
+      "mean": 514,
+      "sample_stddev": 0,
+      "approximate_95_half_width": 0,
+      "count": 3
+    }
+  },
+  "bounds": {
+    "orderly_exit_codes": [0, 0, 0],
+    "repeat_capture_sha256_match": false,
+    "capture_note": "The resource run captured the live application for lifecycle evidence; visual repeat identity was not part of this run."
+  },
+  "comparison": {
+    "metis_provenance": "https://github.com/ryancinsight/ritk/blob/main/docs/manual/images/dicom-metis-real-ct-resource.json",
+    "interpretation": "The eframe run uses the same 409-file public CT input, but also renders the CPU 3D MIP viewport. It is a lifecycle baseline, not a semantically matched framework ranking."
+  }
+}
