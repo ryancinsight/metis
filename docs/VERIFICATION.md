@@ -1582,6 +1582,19 @@ content-only and excludes operating-system chrome. It demonstrates the native
 RITK-to-Métis frame path and does not close browser-driver, GPU, accessibility,
 IME or cross-platform host requirements.
 
+The same public 409-file CT also has a complete visible-window capture for the
+explicit `orthogonal-with-mip` layout. The 1296 × 839 image includes the
+Windows frame and four real panels (axial, coronal, sagittal, and axial MIP).
+Two independent launches produced the same digest; the [RITK provenance
+record](../../ritk/docs/manual/images/dicom-metis-real-ct-mip-window.json)
+binds the input file count and bytes, source revisions, executable digest,
+panel counts, dimensions, and orderly close. This strengthens the native
+window and framebuffer evidence while leaving physical browser input,
+cross-engine drivers, GPU presentation, accessibility, IME, and other host
+requirements as separate checks.
+
+![Complete native Métis window for the saved public CT with axial MIP](../../ritk/docs/manual/images/dicom-metis-real-ct-mip-window.png)
+
 The saved MRI-DIR T2 browser workflow is also recorded as a real-data visual
 check. The packaged RITK WASM viewer mounted Métis in the Codex in-app Chromium
 host, accepted 94 DICOM files (49,807,236 bytes), and reported non-black axial
