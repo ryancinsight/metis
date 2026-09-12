@@ -1402,6 +1402,8 @@ visible window contains a 1280 × 800 client area with four non-black panels
 to the output digest
 `678fc0741b505a2be2692c5f8a653fb56021a5207650b129b3f6c58114b6e605` in
 [`python-native-captures.json`](manual/images/python-native-captures.json).
+The source and client crop match exactly at window offset `(8, 31)` with zero
+pixel differences.
 The reviewed image is [`python-native-real-ct-mip.png`](manual/images/python-native-real-ct-mip.png).
 The source is the public 409-file porcine-head phantom; private patient
 captures use the same local command and remain outside version control.

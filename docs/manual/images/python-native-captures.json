@@ -29,6 +29,8 @@
       "captured_at": "2026-09-12T17:26:08-04:00",
       "outer_size": [1296, 839],
       "client_size": [1280, 800],
+      "client_origin": [8, 31],
+      "client_matches_source": true,
       "source_revision": "de7b8d8edcc9c0079d211dc43c2da009226ea43e",
       "source_image": "https://github.com/ryancinsight/ritk/blob/de7b8d8edcc9c0079d211dc43c2da009226ea43e/docs/manual/images/dicom-metis-real-ct-mip.png",
       "source_sha256": "989a1f66b43a39ec753180cdd882b08e11adfc2ab4009c416a694c1fd12efe42",
