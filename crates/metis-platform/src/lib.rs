@@ -14,5 +14,5 @@ pub mod native;
 pub use event::PlatformEvent;
 pub use font::{FONT_HEIGHT, FONT_WIDTH, draw_glyph};
 pub use framebuffer::{Color, Framebuffer, Rect};
-pub use rasterizer::{draw_rect_outline, draw_text, fill_rect};
+pub use rasterizer::{draw_line, draw_rect_outline, draw_text, fill_rect};
 pub use surface::PlatformSurface;

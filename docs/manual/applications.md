@@ -346,13 +346,15 @@ desktop host scenarios remain in the [visual scenario contract](../VERIFICATION.
 The software display list now accepts validated raster placements for local
 decoded image data. `RasterImage` rejects empty, oversized and mismatched pixel
 storage; `ImagePlacement` validates an in-bounds source crop, clips an off-screen
-destination and uses nearest-neighbor sampling with source-over alpha. Format
-decoding, orientation metadata and DICOM transfer syntax selection stay with the
-owning Atlas provider, so this surface can receive RITK pixels without moving
-medical parsing into Metis.
+destination and uses nearest-neighbor sampling with source-over alpha. The same
+list admits clipped one-pixel line segments through `append_line`, using the
+same painter order and alpha compositor. Format decoding, orientation metadata
+and DICOM transfer syntax selection stay with the owning Atlas provider, so this
+surface can receive RITK pixels without moving medical parsing into Metis.
 
 The deterministic [image example](../../examples/image.rs) renders a 3×2 color
-fixture into a 240×180 framebuffer. Its generated artifact is inspected here:
+fixture into a 240×180 framebuffer and draws two line commands around it. Its
+generated artifact is inspected here:
 
 ![Software raster image placement](images/image-placement.svg)
 

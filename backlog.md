@@ -334,10 +334,12 @@ an owner. “Unsupported” cannot replace delivery of a required mobile/native 
 
 <a id="METIS-GRAPHICS-001"></a>
 ## METIS-GRAPHICS-001 — Custom graphics conformance [arch] [minor]
-- Status: in-progress; priority: P2; owner: Metis custom renderer over Iris; integrator: root; branch: feat/metis-graphics-001-line-primitive; dependencies: METIS-VISUAL-001, METIS-LAYOUT-001; risk: rendering/lifetime correctness; lease: root crates/metis-platform/src/rasterizer.rs crates/metis-ui-lang/src/layout.rs examples/image.rs docs/adr/0028-bounded-vector-stroke.md docs/manual/applications.md docs/VERIFICATION.md
+- Status: in-progress; priority: P2; owner: Metis custom renderer over Iris; integrator: root; branch: feat/metis-graphics-001-line-primitive; dependencies: METIS-VISUAL-001, METIS-LAYOUT-001; risk: rendering/lifetime correctness
 - Scope: admitted vector/image/transform/clip operations and accelerated display path where required by the custom-UI demonstrator; retain one rendering contract and verify Atlas GPU ownership before additions.
 - Acceptance: geometry/color/alpha and device-loss/recreate tests; differential software/device output under justified raster bounds; measured profile justifies acceleration and accounts for memory cost.
 - Demonstration: [V06](docs/VERIFICATION.md#V06); this path never gates the DOM/browser migration and cannot stand in for HTML5 compatibility.
+- Completed increment (2026-09-12): `draw_line`, `DisplayCommand::DrawLine` and `DisplayList::append_line` add clipped one-pixel source-over segments. Extreme endpoint, alpha and display-list tests pass; the image example and inspected SVG exercise the command in painter order. [ADR 0028](docs/adr/0028-bounded-vector-stroke.md).
+- Residuals: stroke width/caps/joins, transforms, device-loss/recreate handling, GPU acceleration, browser vector parity and a measured profile remain open.
 
 <a id="METIS-DATA-001"></a>
 ## METIS-DATA-001 — Tables, lists and live data views [minor]

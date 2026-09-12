@@ -1,7 +1,8 @@
 # metis-platform
 
-Bounded software framebuffers, clipped rectangle and bitmap text drawing, an
-application-supplied event queue, and ANSI terminal previews. On Windows, the
+Bounded software framebuffers, clipped rectangle, one-pixel line and bitmap
+text drawing, an application-supplied event queue, and ANSI terminal previews.
+On Windows, the
 `native` module adapts Moirai's thread-owned Win32 window provider to the
 framebuffer without bringing unsafe operating-system code into this crate.
 The virtual `PlatformSurface` remains application-supplied and does not create
@@ -15,6 +16,22 @@ metis_platform::fill_rect(
     metis_platform::Color::BLUE,
 );
 assert_eq!(pixels.get_pixel(2, 2), metis_platform::Color::BLUE);
+# Ok::<(), metis_core::error::MetisError>(())
+```
+
+Line segments use the same clipped framebuffer and source-over contract. The
+off-screen endpoints are clipped before traversal, so the work is bounded by
+the visible surface rather than by the distance outside it.
+
+```rust
+let mut pixels = metis_platform::Framebuffer::new(8, 8)?;
+metis_platform::draw_line(
+    &mut pixels,
+    (-4, -4),
+    (12, 12),
+    metis_platform::Color::RED,
+);
+assert_eq!(pixels.get_pixel(4, 4), metis_platform::Color::RED);
 # Ok::<(), metis_core::error::MetisError>(())
 ```
 

@@ -33,6 +33,8 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         }],
     };
     display.append_image(placement)?;
+    display.append_line((24, 24), (216, 24), Color::LIGHT_GRAY)?;
+    display.append_line((24, 156), (216, 156), Color::LIGHT_GRAY)?;
     let mut framebuffer = Framebuffer::new(240, 180)?;
     display.render_to(&mut framebuffer);
 
