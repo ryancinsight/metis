@@ -917,6 +917,25 @@ the three canvases become non-black. The browser input accepts `.dcm` and
 `application/dicom`; selecting an empty or over-budget batch produces a typed
 rejection without handing bytes to the decoder.
 
+### Use the saved-study chooser
+
+The chooser path was exercised on 2026-09-12 with the packaged RITK viewer and
+the public MRI-DIR CT study. Selecting all 409 `.dcm` files from
+`test_data/3_head_ct_mridir/DICOM/` produced `accepted 409 file(s)` and
+`Byte access: read 216156416 bytes from 409 file(s)`. RITK then reported ready
+frames on the axial, coronal and sagittal canvases. Their intrinsic frames were
+512 × 512, 512 × 409 and 512 × 409 pixels, respectively, and the live viewport
+showed non-black CT anatomy in every plane. The first three filenames in the
+bounded status preview were `00000001.dcm` (528502 bytes), `00000002.dcm`
+(528502 bytes) and `00000003.dcm` (528496 bytes).
+
+This run used an automation file chooser to select real files from disk; it did
+not synthesize a `DataTransfer` or embed image data. The public series is the
+same source used by the [reviewed gallery capture](images/browser-gallery.png)
+and the [RITK orthogonal PNG baseline](https://github.com/ryancinsight/ritk/tree/main/docs/manual/images).
+The chooser evidence is a browser Chromium observation. Physical file-manager
+drag input and Firefox/WebKit runs remain separate acceptance gates.
+
 Build RITK's locked WASM library and package it with the pinned wasm-bindgen CLI
 as described in the RITK browser workflow linked above. From Metis, include that
 fresh package when building the gallery:
