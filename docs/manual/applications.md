@@ -259,6 +259,13 @@ This command is the local verification path for saved-study images. The
 public MRI-DIR captures above remain the reproducible repository evidence;
 private studies remain local evidence only.
 
+To pair the capture with resource evidence, run the same command through
+[`scripts/resource.py`](../../scripts/resource.py) as described in the
+[testing manual](testing.md#measure-a-real-application-lifecycle). The report
+measures the actual RITK process tree through completion and records the
+initial, final and peak working set, private bytes and handle count without
+copying the private command arguments into the artifact.
+
 The same saved MRI-DIR T2 study was then opened through the packaged RITK
 WASM browser path in the Codex in-app Chromium host. Métis accepted the 94 real
 DICOM files as one bounded batch (49,807,236 bytes); RITK decoded them and

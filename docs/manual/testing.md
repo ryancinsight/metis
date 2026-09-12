@@ -212,6 +212,46 @@ accessibility technology, installed IME, native accessibility and OS permission
 journeys remain open; native input and visible form capture are covered by the
 Windows evidence in [native.md](native.md#captured-windows-workflows).
 
+## Measure a real application lifecycle
+
+`scripts/resource.py` samples the process launched by the caller and all visible
+descendants. On Windows it reads the working set, committed private bytes and
+handle count through the operating-system process APIs; on systems without
+those counters the report keeps the affected fields explicitly unavailable.
+The runner records startup observation, duration, initial/final/peak values and
+growth at a fixed interval. It sends child output to the system sink and hashes
+the exact command, so a local study path or identifier is not copied into the
+report.
+
+Use it with the saved-study workflow in [applications.md](applications.md):
+
+```powershell
+$study = 'C:\path\to\saved-study'
+$series = Read-Host 'SeriesInstanceUID shown by the RITK series browser'
+$capture = Join-Path $env:TEMP 'ritk-metis-resource-capture.png'
+$report = Join-Path $env:TEMP 'ritk-metis-resource.json'
+python D:\atlas\repos\metis\scripts\resource.py `
+  --output $report `
+  --label 'RITK saved study through Metis' `
+  --phase lifecycle `
+  --sample-ms 100 `
+  --timeout-seconds 120 `
+  -- `
+  D:\atlas\target\debug\ritk-snap.exe $study `
+  --series-instance-uid $series `
+  --metis-native `
+  --capture $capture
+Get-Content $report
+```
+
+The command measures the real RITK decoder and Métis presentation process until
+the capture completes; it does not substitute a synthetic image or a mock
+process. Keep the report and capture local when the study is private. For a
+comparison, run the same command shape, source asset, window and host protocol
+for each fixture and compare reports only after recording the machine, target,
+engine and revision. One report is lifecycle evidence; it does not establish a
+memory or latency ranking against Tauri, GPUI or egui.
+
 ## What a demonstration proves
 
 A useful application demonstration pairs visible output with expected behavior:
