@@ -69,7 +69,7 @@
   },
   "bounds": {
     "orderly_exit_codes": [0, 0, 0],
-    "repeat_capture_sha256_match": false,
+    "visual_repeat_hashes": "not collected",
     "capture_note": "The resource run captured the live application for lifecycle evidence; visual repeat identity was not part of this run."
   },
   "comparison": {
