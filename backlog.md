@@ -398,6 +398,7 @@ an owner. “Unsupported” cannot replace delivery of a required mobile/native 
 - Documentation increment (2026-09-12, RITK [PR #318](https://github.com/ryancinsight/ritk/pull/318)): the application gallery links the reviewed fitting-volume eframe capture with `3D MIP · GPU` and its RITK provenance. GPU projection, DICOM parsing and clinical display remain RITK-owned; Métis remains the format-neutral host boundary.
 - Documentation increment (2026-09-12, RITK [PR #319](https://github.com/ryancinsight/ritk/pull/319)): the gallery links the reviewed application-content capture with RITK plane, slice, dimension and window/level labels over the real public CT pixels. The local saved-study command now includes `--capture-application`; patient data and identifiers remain local, while complete operating-system window capture remains open.
 - Documentation increment (2026-09-12): the manual front page now points directly to the real CT/MRI gallery and its copyable saved-study command, so the public evidence is discoverable without confusing it with the synthetic form snapshots.
+- Documentation increment (2026-09-12, RITK [PR #321](https://github.com/ryancinsight/ritk/pull/321)): the application gallery now links the current native four-panel CPU MIP capture and hash-bound provenance for the public 409-file CT study. RITK computes DICOM presentation; Métis remains the format-neutral host and framebuffer.
 
 <a id="METIS-RITK-HOST-001"></a>
 ## METIS-RITK-HOST-001 — Format-neutral native frame host [arch] [minor]

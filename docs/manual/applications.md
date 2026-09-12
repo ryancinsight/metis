@@ -205,6 +205,19 @@ DICOM and clinical display responsibilities.
 
 ![Actual MRI-DIR CT study with the RITK application overlay through Métis](https://github.com/ryancinsight/ritk/blob/main/docs/manual/images/dicom-metis-real-ct-application.png?raw=true)
 
+The current native host also presents an explicit CPU maximum-intensity
+projection (MIP) quadrant for the same saved public CT series. RITK decodes
+the 409-file study and computes the projection before handing four
+format-neutral panels to Métis; the `--metis-native-layout orthogonal-with-mip`
+option selects this layout. The reviewed capture is [the real native MIP
+application output](https://github.com/ryancinsight/ritk/blob/main/docs/manual/images/dicom-metis-real-ct-mip.png?raw=true),
+and its file bounds, repeat digest and panel pixel counts are in the [MIP
+provenance record](https://github.com/ryancinsight/ritk/blob/main/docs/manual/images/dicom-metis-real-ct-mip.json).
+This is public MRI-DIR phantom data, not a generated illustration or private
+patient study.
+
+![Actual MRI-DIR CT study with the RITK native MIP panel through Métis](https://github.com/ryancinsight/ritk/blob/main/docs/manual/images/dicom-metis-real-ct-mip.png?raw=true)
+
 The RITK eframe integration also exercises the asynchronous GPU projection
 with a fitting volume from the same public series. RITK's GPU path waits for
 the matching wgpu readback and invalidates stale frames when display
