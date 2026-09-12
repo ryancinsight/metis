@@ -258,9 +258,12 @@ run the same command shape, source asset, window and host protocol for each
 fixture and compare reports only after recording the machine, target, engine
 and revision. A current public CT eframe baseline is recorded in
 [the eframe resource provenance](images/dicom-eframe-real-ct-resource.json);
-it uses the same 409-file input but includes a CPU 3-D MIP viewport, so it is
-not a semantically matched Métis comparison. One report is lifecycle evidence;
-it does not establish a memory or latency ranking against Tauri, GPUI or egui.
+the native Métis MIP run is recorded in
+[the matched resource provenance](images/dicom-metis-real-ct-mip-resource.json).
+Both use the same 409-file input and four-panel CPU-MIP semantics, while their
+surface dimensions and process boundaries differ. These reports are lifecycle
+evidence; they do not establish a memory or latency ranking against Tauri,
+GPUI or egui.
 
 ## What a demonstration proves
 

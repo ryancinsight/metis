@@ -227,11 +227,12 @@ the [real 1600×1000 viewer capture](https://github.com/ryancinsight/ritk/blob/m
 mean process-tree peak private bytes were 2,494,962,346.7 ± 5,291,688.9 bytes
 and its mean lifecycle duration was 8,752.3 ± 2,197.2 ms; the complete
 [resource provenance record](images/dicom-eframe-real-ct-resource.json) stores
-the revisions, executable digest, input bounds and sample statistics. This
-eframe baseline also renders a CPU 3-D MIP viewport, while the current Métis
-capture renders the three orthogonal planes, so the measurements are lifecycle
-evidence and do not establish a framework memory or latency ranking. A
-semantically matched eframe/Metis workload remains open in V12.
+the revisions, executable digest, input bounds and sample statistics. The
+eframe baseline and the current native Métis MIP capture now use the same
+public series and four-panel CPU-MIP semantics. Their surface dimensions and
+process boundaries differ, so the measurements remain lifecycle evidence and
+do not establish a framework memory or latency ranking. The matched native
+run is recorded in [its resource provenance](images/dicom-metis-real-ct-mip-resource.json).
 
 The same saved public CT series was opened through the RITK browser adapter and
 presented by the live Metis HTML5 canvas path. This is a runtime pixel capture,
