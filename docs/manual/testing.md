@@ -228,11 +228,13 @@ Use it with the saved-study workflow in [applications.md](applications.md):
 ```powershell
 $study = 'C:\path\to\saved-study'
 $series = Read-Host 'SeriesInstanceUID shown by the RITK series browser'
+$ritkRevision = (git -C D:\atlas\repos\ritk rev-parse HEAD).Trim()
 $capture = Join-Path $env:TEMP 'ritk-metis-resource-capture.png'
 $report = Join-Path $env:TEMP 'ritk-metis-resource.json'
 python D:\atlas\repos\metis\scripts\resource.py `
   --output $report `
   --label 'RITK saved study through Metis' `
+  --revision $ritkRevision `
   --phase lifecycle `
   --sample-ms 100 `
   --timeout-seconds 120 `

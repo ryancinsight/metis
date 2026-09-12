@@ -10,6 +10,7 @@ from __future__ import annotations
 import argparse
 import ctypes
 import hashlib
+import math
 import json
 import os
 import pathlib
@@ -384,13 +385,17 @@ def main(arguments: Sequence[str] | None = None) -> int:
         raise SystemExit("--repeat must be between 1 and 20")
     if args.repeat * args.timeout_seconds > MAX_TIMEOUT_SECONDS:
         raise SystemExit("repeat count multiplied by timeout must not exceed 300 seconds")
+    samples_per_run = max(1, MAX_SAMPLES // args.repeat)
+    required_samples = math.ceil(args.timeout_seconds * 1000 / args.sample_ms) + 1
+    if required_samples > samples_per_run:
+        raise SystemExit("sampling budget is too small for the selected timeout and repeat count")
     executable = shutil.which(command[0]) or command[0]
     report_path = _validate_output(args.output)
     try:
         measurements = []
         for _ in range(args.repeat):
             measurement = run(command, args.sample_ms, args.timeout_seconds,
-                              max_samples=max(1, MAX_SAMPLES // args.repeat))
+                              max_samples=samples_per_run)
             measurements.append(measurement)
             if measurement["status"] != "passed":
                 break
