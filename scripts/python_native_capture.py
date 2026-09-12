@@ -74,7 +74,7 @@ class _WindowBounds:
 
 def _parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(
-        description="Capture a visible NativeApplication frame as a Windows BMP."
+        description="Capture a visible NativeApplication frame as a Windows BMP or PNG."
     )
     source = parser.add_mutually_exclusive_group(required=True)
     source.add_argument("--wheel", type=pathlib.Path)
@@ -498,12 +498,16 @@ def _capture_command(
 
 
 def main() -> None:
-    """Build no code; capture one visible frame from a supplied wheel."""
+    """Capture one visible frame from a supplied wheel or native command."""
     if sys.platform != "win32":
         raise SystemExit("python_native_capture.py requires a Windows desktop")
     arguments = _parser().parse_args()
     if arguments.width <= 0 or arguments.height <= 0:
         raise SystemExit("width and height must be positive")
+    if arguments.command is None and (
+        arguments.command_arguments or arguments.cwd is not None
+    ):
+        raise SystemExit("--argument and --cwd require --command")
     output = arguments.output.resolve()
     if arguments.site is not None:
         if not arguments.site.is_dir():

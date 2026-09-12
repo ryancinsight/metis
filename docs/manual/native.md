@@ -133,8 +133,10 @@ orderly exit. The process arguments are passed as separate values; no shell
 string is evaluated.
 
 ```powershell
+$target = (cargo metadata --format-version 1 --no-deps |
+  ConvertFrom-Json).target_directory
 python scripts/python_native_capture.py `
-  --command target\debug\metis-app.exe `
+  --command (Join-Path $target "debug\metis-app.exe") `
   --argument=--metis-native-window `
   --argument=60 `
   --argument=2 `
@@ -147,7 +149,8 @@ vary with the Windows theme, scale and font rasterizer. The deterministic
 frame and event trace remain the contract-level checks above. The utility is
 format-neutral: applications such as RITK supply their own decoded image and
 viewer state before handing pixels to Métis; DICOM parsing and medical display
-semantics do not enter this repository.
+semantics do not enter this repository. Resolving `target_directory` keeps the
+command valid with Atlas's shared build cache and with a standalone checkout.
 
 The older OS-window captures below demonstrate the visible form and WebView2
 shell. RITK's migrated Windows viewer session now supplies a validated frame
