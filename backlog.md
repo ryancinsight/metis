@@ -392,6 +392,7 @@ an owner. “Unsupported” cannot replace delivery of a required mobile/native 
 - Documentation increment (2026-09-11): the application manual now also links the RITK-reviewed Chromium browser capture for the complete 409-file MRI-DIR CT series. The three runtime canvases and hash-bound provenance record are public application output through the format-neutral Métis browser path; RITK owns DICOM parsing, geometry, and clinical display, while physical drag-and-drop and cross-engine driver evidence remain open.
 
 - Documentation increment (2026-09-12): the application manual now gives a copyable local command for opening a saved clinical study with RITK's explicit `SeriesInstanceUID` selector and capturing the decoded axial, coronal and sagittal pixels through Métis. Private studies and identifiers remain local; public MRI-DIR captures remain the reproducible repository evidence.
+- Documentation increment (2026-09-12, RITK [PR #318](https://github.com/ryancinsight/ritk/pull/318)): the application gallery links the reviewed fitting-volume eframe capture with `3D MIP · GPU` and its RITK provenance. GPU projection, DICOM parsing and clinical display remain RITK-owned; Métis remains the format-neutral host boundary.
 
 <a id="METIS-RITK-HOST-001"></a>
 ## METIS-RITK-HOST-001 — Format-neutral native frame host [arch] [minor]
