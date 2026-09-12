@@ -42,6 +42,13 @@ The raw `metis_start` and `metis_stop` exports are the WASM ABI boundary. Their
 unsafe attributes are isolated and documented; the host state, DOM operations
 and callbacks remain safe Rust.
 
+Revision 2026-09-12: the mounted file-transfer controls include a user-activated
+HTML5 file input alongside drag/drop. Its `change` listener delegates through
+Moirai's bounded `WebEvent::selected_files` reader, and Metis consumes that
+source-neutral batch with the existing byte and count limits. Browser paths and
+native authority remain outside the Metis and RITK contracts; RITK continues to
+classify and decode DICOM bytes.
+
 Revision 2026-09-07: the host also exports `metis_stop`. It drops the mounted
 listener guards before replacing the root, and `metis_start` clears any prior
 application before attempting a remount so failed replacement cannot retain

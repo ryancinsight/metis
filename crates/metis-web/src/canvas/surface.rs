@@ -109,6 +109,10 @@ impl CanvasSurface {
     /// queue overflow or browser metadata/capture failure clears the pending
     /// batch and returns a typed error so the consumer can cancel its gesture
     /// and decide whether to remount the surface.
+    ///
+    /// # Errors
+    /// Returns [`CanvasEventError`] when browser metadata is invalid, pointer
+    /// capture fails, or the bounded event queue overflowed.
     pub fn take_events(&self) -> Result<Box<[CanvasEvent]>, CanvasEventError> {
         self.input.as_ref().map_or_else(
             || Ok(Vec::new().into_boxed_slice()),
@@ -147,14 +151,13 @@ impl CanvasInput {
                     release_all(&listener_element, &listener_active);
                     return;
                 };
-                if phase == CanvasPointerPhase::Down {
-                    if let Err(error) =
+                if phase == CanvasPointerPhase::Down
+                    && let Err(error) =
                         capture(&listener_element, &listener_active, metadata.pointer_id())
-                    {
-                        listener_queue.borrow_mut().fail(error);
-                        release_all(&listener_element, &listener_active);
-                        return;
-                    }
+                {
+                    listener_queue.borrow_mut().fail(error);
+                    release_all(&listener_element, &listener_active);
+                    return;
                 }
                 let canvas_event = CanvasEvent::Pointer(pointer_event(phase, metadata));
                 let accepted = listener_queue.borrow_mut().push(canvas_event);
@@ -212,7 +215,6 @@ fn pointer_event(phase: CanvasPointerPhase, metadata: PointerMetadata) -> Canvas
             PointerType::Mouse => CanvasPointerType::Mouse,
             PointerType::Pen => CanvasPointerType::Pen,
             PointerType::Touch => CanvasPointerType::Touch,
-            PointerType::Other => CanvasPointerType::Other,
             _ => CanvasPointerType::Other,
         },
         x: metadata.offset_x(),
@@ -233,7 +235,6 @@ fn wheel_event(metadata: WheelMetadata) -> CanvasWheelEvent {
             WheelDeltaMode::Pixel => CanvasWheelUnit::Pixel,
             WheelDeltaMode::Line => CanvasWheelUnit::Line,
             WheelDeltaMode::Page => CanvasWheelUnit::Page,
-            WheelDeltaMode::Other => CanvasWheelUnit::Other,
             _ => CanvasWheelUnit::Other,
         },
         x: metadata.offset_x(),
@@ -244,10 +245,10 @@ fn wheel_event(metadata: WheelMetadata) -> CanvasWheelEvent {
 
 fn modifiers(value: moirai_pal::wasm::PointerModifiers) -> CanvasModifiers {
     CanvasModifiers::from_bits(
-        u8::from(value.ctrl()) * CanvasModifiers::CTRL
-            | u8::from(value.shift()) * CanvasModifiers::SHIFT
-            | u8::from(value.alt()) * CanvasModifiers::ALT
-            | u8::from(value.meta()) * CanvasModifiers::META,
+        (u8::from(value.ctrl()) * CanvasModifiers::CTRL)
+            | (u8::from(value.shift()) * CanvasModifiers::SHIFT)
+            | (u8::from(value.alt()) * CanvasModifiers::ALT)
+            | (u8::from(value.meta()) * CanvasModifiers::META),
     )
 }
 
