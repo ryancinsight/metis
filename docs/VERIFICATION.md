@@ -1304,16 +1304,16 @@ Metis revision plus an optional consumer revision, and releases all WebDriver
 input sources before session teardown. The scenario is reusable by RITK without
 placing DICOM, series, slice or viewer state in Metis.
 
-The protocol-shaped suite covers the canvas scenario, element screenshot
-endpoint, bounded identifier validation, cross-repository consumer-revision
-field and trusted-event evidence. The file-backed gallery runner can emit the
+The Python script suite passes 98 tests, including the canvas scenario, element
+screenshot endpoint, bounded identifier validation, cross-repository
+consumer-revision field and trusted-event evidence. The file-backed gallery runner can emit the
 same schema-1 canvas trace after the real study is loaded, reusing the canonical
 pointer/wheel capture instead of a second browser session. RITK validates the
 opaque consumer attributes, axis order, dimensions, screenshots and cleanup;
 Metis continues to interpret none of the DICOM or viewer meaning. Firefox/WebKit,
 physical input, WebGPU and provider-private resource counts remain open.
 
-The paired Edge run at Metis `78221299df10222017cd1077b2288c28ff5abada` and
+The paired Edge run at Metis `1321bd434500744e4d80fb906d10d9aa74590003` and
 RITK `0bad9eb2c77b91e57fff3e9dc472a42201e061aa` accepted the public 409-file
 study, then moved the axial slice 204→203 and coronal/sagittal slices 256→255
 through trusted wheel actions. The RITK validator passed the six semantic

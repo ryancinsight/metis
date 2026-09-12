@@ -992,7 +992,7 @@ attribute, malformed action, incomplete screenshot set or unreleased input
 source fails the consumer validator.
 
 The paired Edge run at Metis revision
-`78221299df10222017cd1077b2288c28ff5abada` produced six semantic snapshots:
+`1321bd434500744e4d80fb906d10d9aa74590003` produced six semantic snapshots:
 the 409-slice axial view moved from slice 204 to 203, and the coronal and
 sagittal views moved from slice 256 to 255 after the trusted wheel actions.
 All three remained presented at their expected dimensions. The paired capture

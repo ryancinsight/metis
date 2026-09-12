@@ -226,13 +226,13 @@
     "browserName": "MicrosoftEdge",
     "browserVersion": "153.0.4234.19",
     "fedcm:accounts": true,
-    "goog:processID": 60004,
+    "goog:processID": 3788,
     "ms:edgeOptions": {
-      "debuggerAddress": "localhost:59832"
+      "debuggerAddress": "localhost:52329"
     },
     "msedge": {
       "msedgedriverVersion": "153.0.4234.19 (877eb25981392e298707bfbf8873b24fdf4b6fb1)",
-      "userDataDir": "C:\\Users\\RYANCL~1\\AppData\\Local\\Temp\\scoped_dir56848_2027503042"
+      "userDataDir": "C:\\Users\\RYANCL~1\\AppData\\Local\\Temp\\scoped_dir56848_1758675280"
     },
     "networkConnectionEnabled": false,
     "pageLoadStrategy": "normal",
@@ -272,7 +272,7 @@
   },
   "consumer_revision": "0bad9eb2c77b91e57fff3e9dc472a42201e061aa",
   "engine": "chromium",
-  "revision": "78221299df10222017cd1077b2288c28ff5abada",
+  "revision": "1321bd434500744e4d80fb906d10d9aa74590003",
   "schema": 1,
   "screenshots": [
     {
@@ -480,5 +480,5 @@
     "native-process-launch",
     "os-permission-grant"
   ],
-  "url": "http://127.0.0.1:59829/gallery.html"
+  "url": "http://127.0.0.1:52327/gallery.html"
 }
