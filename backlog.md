@@ -464,7 +464,6 @@ an owner. “Unsupported” cannot replace delivery of a required mobile/native 
 - Demonstration: measured tables/plots in the manual with machine/target/uncertainty and semantic/visual equivalence; no speed/security ranking without its evidence.
 - Completed increment (2026-09-12): `scripts/resource.py` measures one real command and its visible process tree with bounded Windows and `/proc` samplers, redacted command fingerprinting, timeout termination and initial/final/peak/growth summaries. Repeated runs add sample spread and an explicitly approximate 95% half-width. Six focused tests and the full Metis gate pass. Three local saved Patient_01 DICOM runs exited 0 and produced the same real capture; the report remains local because its input is private.
 - Residuals: matched egui/GPUI/Tauri fixtures, WASM committed/used memory, allocation and frame-latency traces, repeated lifecycle growth and controlled-host uncertainty remain open.
-- lease: root scripts/resource.py, scripts/tests/test_resource.py 2026-09-12T00:00:00-04:00
 
 <a id="METIS-QUALITY-001"></a>
 ## METIS-QUALITY-001 — Verification infrastructure [patch]
