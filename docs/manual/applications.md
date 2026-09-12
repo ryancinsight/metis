@@ -182,8 +182,8 @@ deterministic content capture is
 [`dicom-metis-native.png`](https://github.com/ryancinsight/ritk/blob/main/docs/manual/images/dicom-metis-native.png)
 at 1280×800; it is a framebuffer oracle rather than an operating-system window
 golden. Full migration acceptance still requires browser runtime capture,
-multiframe/color presentation, matched memory measurements, full app-window
-overlays and packaging evidence.
+multiframe/color presentation, matched memory measurements, complete
+operating-system application-window capture and packaging evidence.
 
 The native handoff has also been exercised with the acquired MRI-DIR CT series,
 not only the generated Part 10 study. RITK's user manual records the command,
@@ -195,6 +195,15 @@ clinical display policy. Private clinical studies remain local and are never
 committed to either repository.
 
 ![Actual MRI-DIR CT study rendered through the Métis native surface](https://github.com/ryancinsight/ritk/blob/main/docs/manual/images/dicom-metis-real-ct.png?raw=true)
+
+RITK also provides an explicit application-content capture for visual review.
+The `--capture-application` option draws bounded plane, slice, frame-dimension
+and window/level labels into the same Métis framebuffer after the real CT
+planes are composed. The reviewed image is [the application-content capture](https://github.com/ryancinsight/ritk/blob/main/docs/manual/images/dicom-metis-real-ct-application.png?raw=true), with its [provenance record](https://github.com/ryancinsight/ritk/blob/main/docs/manual/images/dicom-metis-real-ct-application.json).
+Operating-system decorations remain outside the capture; RITK retains the
+DICOM and clinical display responsibilities.
+
+![Actual MRI-DIR CT study with the RITK application overlay through Métis](https://github.com/ryancinsight/ritk/blob/main/docs/manual/images/dicom-metis-real-ct-application.png?raw=true)
 
 The RITK eframe integration also exercises the asynchronous GPU projection
 with a fitting volume from the same public series. RITK's GPU path waits for
@@ -258,16 +267,18 @@ $series = Read-Host 'SeriesInstanceUID shown by the RITK series browser'
 target\debug\ritk-snap.exe $study `
   --series-instance-uid $series `
   --metis-native `
+  --capture-application `
   --capture "$env:TEMP\ritk-metis-local-study.png"
 ```
 
 The window decodes the selected files in RITK and presents the axial,
-coronal and sagittal frames on the Métis surface. The capture contains the
-actual decoded pixels; it is not a generated illustration. A mixed directory
-must include the exact series UID, and an unknown or ambiguous selection fails
-closed before pixel decode. Keep the study, UID and capture on the local
-machine; do not add patient identifiers or clinical pixels to this public
-repository.
+coronal and sagittal frames on the Métis surface. The optional application
+capture adds the bounded RITK plane, slice, dimensions and window/level labels
+to those actual decoded pixels; it is not a generated illustration. A mixed
+directory must include the exact series UID, and an unknown or ambiguous
+selection fails closed before pixel decode. Keep the study, UID and capture on
+the local machine; do not add patient identifiers or clinical pixels to this
+public repository.
 
 This command is the local verification path for saved-study images. The
 public MRI-DIR captures above remain the reproducible repository evidence;
