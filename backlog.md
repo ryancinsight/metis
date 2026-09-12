@@ -332,6 +332,7 @@ an owner. “Unsupported” cannot replace delivery of a required mobile/native 
 <a id="METIS-GRAPHICS-001"></a>
 ## METIS-GRAPHICS-001 — Custom graphics conformance [arch] [minor]
 - Status: in-progress; priority: P2; owner: Metis custom renderer over Iris; integrator: root; last-update: 2026-09-12; dependencies: METIS-VISUAL-001, METIS-LAYOUT-001; risk: rendering/lifetime correctness; delivery: Metis PR #97, merge `81d7dff`
+- Lease: root `crates/metis-ui-lang/src/image.rs`, `examples/image.rs`, `docs/adr/0029-image-orientation.md`, `docs/manual/applications.md`, `docs/VERIFICATION.md`; 2026-09-12T22:20:00-04:00
 - Scope: admitted vector/image/transform/clip operations and accelerated display path where required by the custom-UI demonstrator; retain one rendering contract and verify Atlas GPU ownership before additions.
 - Acceptance: geometry/color/alpha and device-loss/recreate tests; differential software/device output under justified raster bounds; measured profile justifies acceleration and accounts for memory cost.
 - Demonstration: [V06](docs/VERIFICATION.md#V06); this path never gates the DOM/browser migration and cannot stand in for HTML5 compatibility.
