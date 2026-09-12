@@ -131,7 +131,7 @@ an owner. “Unsupported” cannot replace delivery of a required mobile/native 
 <a id="METIS-PROVIDER-001"></a>
 ## METIS-PROVIDER-001 — Atlas provider adoption [arch] [patch]
 - Status: done; priority: P0; delivery: `0a2d8e4`; provider audit passed 2026-09-07.
-- Outcome: Clean Moirai `be87d009cd0e877beef719b47bdcbadc45659069` (`main`) and Iris `764ed2b4b1696363abc3950f0d930d244126e4bf` (`main`) match every standalone lock source; 178/178 consumer tests pass with strict diagnostics, no parallel GUI/runtime dependency exists, and the 155-package provider transitive graph is recorded. Runtime crates use Atlas direct dependencies; the distribution CLI's Serde exception is documented in ADR 0005. Browser/native host gaps remain separate.
+- Outcome: Initial adoption at Moirai `be87d009cd0e877beef719b47bdcbadc45659069` and Iris `764ed2b4b1696363abc3950f0d930d244126e4bf` passed 178/178 consumer tests with strict diagnostics and recorded the 155-package provider graph; later consumer lock advances are recorded as follow-up increments. Runtime crates use Atlas direct dependencies; the distribution CLI's Serde exception is documented in ADR 0005. Browser/native host gaps remain separate.
 
 <a id="METIS-CRYPTO-001"></a>
 ## METIS-CRYPTO-001 — Shared authentication primitives [arch] [patch]
@@ -402,6 +402,7 @@ an owner. “Unsupported” cannot replace delivery of a required mobile/native 
 - Documentation increment (2026-09-12, RITK [PR #322](https://github.com/ryancinsight/ritk/pull/322), merge `2453a138d`): the application gallery now links the complete visible Windows capture for that native four-panel MIP run. Two launches produced a byte-identical image with all four real panels; RITK owns DICOM decoding and MIP policy, while Métis owns the HWND and framebuffer seam.
 - Documentation increment (2026-09-12): the application gallery now leads with the RITK-backed real-DICOM captures; synthetic form snapshots remain a separate protocol demonstration below. The reordering keeps one canonical capture section and makes input-sensitive pixels the first visible evidence.
 - Documentation increment (2026-09-12): the README now points directly to the real MRI-DIR CT/MIP gallery and saved-study command while stating that private studies remain local.
+- Build increment (2026-09-12): `Cargo.lock` now pins the Metis consumer to merged Iris `a5df753f7a553b8f94b613e2a65a0910a81a7c81`; the exact full gate passes, and the visual baseline refresh changes only its lock-bound fixture digest while all seven SVG captures remain byte-identical with zero semantic or pixel differences.
 
 <a id="METIS-RITK-HOST-001"></a>
 ## METIS-RITK-HOST-001 — Format-neutral native frame host [arch] [minor]

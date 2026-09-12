@@ -568,7 +568,7 @@ dependencies = [
 [[package]]
 name = "iris-viz"
 version = "0.1.0"
-source = "git+https://github.com/ryancinsight/iris#764ed2b4b1696363abc3950f0d930d244126e4bf"
+source = "git+https://github.com/ryancinsight/iris#a5df753f7a553b8f94b613e2a65a0910a81a7c81"
 
 [[package]]
 name = "itoa"
