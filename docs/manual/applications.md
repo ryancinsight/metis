@@ -230,6 +230,35 @@ Both captures are public MRI-DIR porcine-phantom data, not generated
 illustrations or private patient studies. A private clinical path is accepted
 for a local run only and is never committed to this repository.
 
+### Open a saved local clinical study
+
+Use the same command with a saved study directory when you need to inspect a
+real local patient image. Build `ritk-snap` from the RITK checkout, select the
+acquisition's `SeriesInstanceUID` from the RITK series browser, and pass both
+values to the RITK-owned launcher:
+
+```powershell
+cargo build --locked -p ritk-snap
+$study = 'C:\path\to\saved-study'
+$series = Read-Host 'SeriesInstanceUID shown by the RITK series browser'
+target\debug\ritk-snap.exe $study `
+  --series-instance-uid $series `
+  --metis-native `
+  --capture "$env:TEMP\ritk-metis-local-study.png"
+```
+
+The window decodes the selected files in RITK and presents the axial,
+coronal and sagittal frames on the Métis surface. The capture contains the
+actual decoded pixels; it is not a generated illustration. A mixed directory
+must include the exact series UID, and an unknown or ambiguous selection fails
+closed before pixel decode. Keep the study, UID and capture on the local
+machine; do not add patient identifiers or clinical pixels to this public
+repository.
+
+This command is the local verification path for saved-study images. The
+public MRI-DIR captures above remain the reproducible repository evidence;
+private studies remain local evidence only.
+
 The same saved MRI-DIR T2 study was then opened through the packaged RITK
 WASM browser path in the Codex in-app Chromium host. Métis accepted the 94 real
 DICOM files as one bounded batch (49,807,236 bytes); RITK decoded them and
