@@ -1,5 +1,6 @@
 """Check the resource instrument's schema and bounded sampling contract."""
 import json
+import os
 import pathlib
 import runpy
 import sys
@@ -48,6 +49,19 @@ class ResourceSummaryTests(unittest.TestCase):
         self.assertEqual(len(digest), 64)
         self.assertNotIn("patient-study", digest)
         self.assertNotEqual(digest, fingerprint([*command, "changed"]))
+
+    def test_report_rejects_hardlinked_destination(self):
+        resource = self.resource
+        with tempfile.TemporaryDirectory(prefix="metis-resource-link-") as directory:
+            original = pathlib.Path(directory) / "original.json"
+            alias = pathlib.Path(directory) / "alias.json"
+            original.write_text("{}", encoding="utf-8")
+            try:
+                os.link(original, alias)
+            except OSError as error:
+                self.skipTest(f"hard links unavailable: {error}")
+            with self.assertRaisesRegex(ValueError, "unsafe resource report path"):
+                resource["_validate_output"](alias)
 
 
 class ResourceProcessTests(unittest.TestCase):

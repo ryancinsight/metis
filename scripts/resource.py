@@ -17,6 +17,7 @@ import pathlib
 import platform
 import shutil
 import signal
+import stat
 import subprocess
 import sys
 import time
@@ -51,11 +52,22 @@ def command_fingerprint(command: Sequence[str]) -> str:
 
 def _validate_output(path: pathlib.Path) -> pathlib.Path:
     """Reject redirected or multiply-linked report paths."""
+    path = pathlib.Path(path)
+    for candidate in (path, *path.parents):
+        try:
+            attributes = candidate.lstat()
+        except FileNotFoundError:
+            continue
+        redirected = candidate.is_symlink() or bool(
+            getattr(attributes, "st_file_attributes", 0) & stat.FILE_ATTRIBUTE_REPARSE_POINT
+        )
+        if redirected:
+            raise ValueError(f"unsafe resource report path: {path}")
     path = path.resolve()
-    if path.exists() and (path.is_symlink() or path.stat().st_nlink != 1):
+    if path.exists() and path.stat().st_nlink != 1:
         raise ValueError(f"unsafe resource report path: {path}")
     path.parent.mkdir(parents=True, exist_ok=True)
-    if path.exists() and (path.is_symlink() or path.stat().st_nlink != 1):
+    if path.exists() and path.stat().st_nlink != 1:
         raise ValueError(f"unsafe resource report path: {path}")
     return path
 
