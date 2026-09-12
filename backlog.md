@@ -458,10 +458,12 @@ an owner. “Unsupported” cannot replace delivery of a required mobile/native 
 
 <a id="METIS-PERF-001"></a>
 ## METIS-PERF-001 — Comparative resource and latency evidence [patch]
-- Status: todo; priority: P1; owner: Metis measurement; dependencies: METIS-BROWSER-001, METIS-DESKTOP-001, METIS-INPUT-001; risk: invalid comparative claims
+- Status: in-progress; priority: P1; owner: Metis measurement; integrator: root; last-update: 2026-09-12; dependencies: METIS-BROWSER-001, METIS-DESKTOP-001, METIS-INPUT-001; risk: invalid comparative claims
 - Scope: instrument the first live app, then compare matched egui/GPUI/Tauri fixtures; total process memory, WASM memory, allocations, idle/active/peak/growth, startup/input/frame latency and bundle/build size separately.
 - Acceptance: [V12](docs/VERIFICATION.md#V12) protocol, pinned revisions/assets/traces and controlled host; stored baselines/confidence and resource bounds; resolve production regressions without changing the instrument to move results.
 - Demonstration: measured tables/plots in the manual with machine/target/uncertainty and semantic/visual equivalence; no speed/security ranking without its evidence.
+- Completed increment (2026-09-12): `scripts/resource.py` measures one real command and its visible process tree with bounded Windows and `/proc` samplers, redacted command fingerprinting, timeout termination and initial/final/peak/growth summaries. Repeated runs add sample spread and an explicitly approximate 95% half-width. Seven focused tests and the full Metis gate pass. Three local saved Patient_01 DICOM runs exited 0 and produced the same real capture; the report remains local because its input is private.
+- Residuals: matched egui/GPUI/Tauri fixtures, WASM committed/used memory, allocation and frame-latency traces, repeated lifecycle growth and controlled-host uncertainty remain open.
 
 <a id="METIS-QUALITY-001"></a>
 ## METIS-QUALITY-001 — Verification infrastructure [patch]
