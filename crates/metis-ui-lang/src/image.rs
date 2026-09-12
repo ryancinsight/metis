@@ -4,6 +4,13 @@ use metis_core::error::{ErrorCode, MetisError, Result};
 use metis_platform::framebuffer::{Color, Framebuffer, MAX_PIXELS, Rect};
 use std::sync::Arc;
 
+mod transform;
+pub use transform::ImageTransform;
+use transform::{
+    FlipHorizontalMapper, FlipVerticalMapper, IdentityMapper, ImageMapper, RotateClockwiseMapper,
+    RotateCounterClockwiseMapper,
+};
+
 /// An immutable raster image with bounded dimensions and storage.
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct RasterImage {
@@ -148,6 +155,7 @@ pub struct ImagePlacement {
     source: Rect,
     destination: Rect,
     sampling: ImageSampling,
+    transform: ImageTransform,
 }
 
 impl ImagePlacement {
@@ -192,7 +200,15 @@ impl ImagePlacement {
             source,
             destination,
             sampling,
+            transform: ImageTransform::Identity,
         })
+    }
+
+    /// Applies a discrete source orientation to this placement.
+    #[must_use]
+    pub const fn with_transform(mut self, transform: ImageTransform) -> Self {
+        self.transform = transform;
+        self
     }
 
     /// Returns the shared immutable source image.
@@ -219,6 +235,12 @@ impl ImagePlacement {
         self.sampling
     }
 
+    /// Returns the discrete source orientation.
+    #[must_use]
+    pub const fn transform(&self) -> ImageTransform {
+        self.transform
+    }
+
     /// Renders the validated placement into a framebuffer.
     ///
     /// The destination is clipped to the framebuffer, and source-over alpha
@@ -229,9 +251,26 @@ impl ImagePlacement {
     /// Panics only if an invariant established by [`Self::new`] or the
     /// framebuffer's validated dimensions is broken internally.
     pub fn render_to(&self, framebuffer: &mut Framebuffer) {
-        match self.sampling {
-            ImageSampling::Nearest => {}
+        match (self.sampling, self.transform) {
+            (ImageSampling::Nearest, ImageTransform::Identity) => {
+                self.render_with::<IdentityMapper>(framebuffer);
+            }
+            (ImageSampling::Nearest, ImageTransform::FlipHorizontal) => {
+                self.render_with::<FlipHorizontalMapper>(framebuffer);
+            }
+            (ImageSampling::Nearest, ImageTransform::FlipVertical) => {
+                self.render_with::<FlipVerticalMapper>(framebuffer);
+            }
+            (ImageSampling::Nearest, ImageTransform::RotateClockwise) => {
+                self.render_with::<RotateClockwiseMapper>(framebuffer);
+            }
+            (ImageSampling::Nearest, ImageTransform::RotateCounterClockwise) => {
+                self.render_with::<RotateCounterClockwiseMapper>(framebuffer);
+            }
         }
+    }
+
+    fn render_with<M: ImageMapper>(&self, framebuffer: &mut Framebuffer) {
         let destination_left = i64::from(self.destination.x);
         let destination_top = i64::from(self.destination.y);
         let destination_right = destination_left + i64::from(self.destination.width);
@@ -253,15 +292,22 @@ impl ImagePlacement {
         let image_width = u64::from(self.image.width());
         for y in clip_top..clip_bottom {
             let relative_y = y - destination_top;
-            let selected_y = source_y + relative_y * source_height / destination_height;
-            let row_offset = u64::try_from(selected_y)
-                .expect("invariant: validated image source coordinate is nonnegative")
-                * image_width;
             for x in clip_left..clip_right {
                 let relative_x = x - destination_left;
-                let selected_x = source_x + relative_x * source_width / destination_width;
+                let (local_x, local_y) = M::map(
+                    relative_x,
+                    relative_y,
+                    source_width,
+                    source_height,
+                    destination_width,
+                    destination_height,
+                );
+                let selected_x = source_x + local_x;
+                let selected_y = source_y + local_y;
                 let source_index = usize::try_from(
-                    row_offset
+                    u64::try_from(selected_y)
+                        .expect("invariant: validated image source coordinate is nonnegative")
+                        * image_width
                         + u64::try_from(selected_x)
                             .expect("invariant: validated image source coordinate is nonnegative"),
                 )
@@ -286,111 +332,4 @@ fn image_error(message: impl Into<String>) -> MetisError {
 }
 
 #[cfg(test)]
-mod tests {
-    use super::*;
-    use crate::layout::{DisplayCommand, DisplayList};
-
-    fn image_2x1() -> RasterImage {
-        RasterImage::new(2, 1, vec![Color::RED, Color::BLUE]).expect("image")
-    }
-
-    #[test]
-    fn image_validation_rejects_empty_oversized_and_mismatched_storage() {
-        for (width, height) in [(0, 1), (1, 0), (4097, 4096), (u32::MAX, 1)] {
-            let error = RasterImage::new(width, height, Vec::<Color>::new())
-                .expect_err("invalid image dimensions");
-            assert_eq!(error.code, ErrorCode::SurfaceAllocationError);
-        }
-        let error = RasterImage::new(2, 1, vec![Color::RED]).expect_err("mismatched pixels");
-        assert_eq!(error.code, ErrorCode::RenderFailure);
-        assert!(error.message.contains("2x1"));
-    }
-
-    #[test]
-    fn rgba_bytes_preserve_row_major_channels_and_reject_length_mismatch() {
-        let image =
-            RasterImage::from_rgba_bytes(2, 1, [1, 2, 3, 4, 5, 6, 7, 8]).expect("rgba bytes");
-        assert_eq!(
-            image.pixels(),
-            &[Color::rgba(1, 2, 3, 4), Color::rgba(5, 6, 7, 8)]
-        );
-
-        let error = RasterImage::from_rgba_bytes(2, 1, [0; 4]).expect_err("short rgba bytes");
-        assert_eq!(error.code, ErrorCode::RenderFailure);
-        assert!(error.message.contains("byte count"));
-    }
-
-    #[test]
-    fn placement_validation_rejects_invalid_source_and_destination() {
-        let image = image_2x1();
-        for source in [
-            Rect::new(-1, 0, 1, 1),
-            Rect::new(0, 0, 0, 1),
-            Rect::new(1, 0, 2, 1),
-            Rect::new(0, 1, 1, 1),
-        ] {
-            let error = ImagePlacement::new(
-                image.clone(),
-                source,
-                Rect::new(0, 0, 1, 1),
-                ImageSampling::Nearest,
-            )
-            .expect_err("invalid image source");
-            assert_eq!(error.code, ErrorCode::RenderFailure);
-        }
-        for destination in [Rect::new(0, 0, 0, 1), Rect::new(0, 0, 1, -1)] {
-            let error = ImagePlacement::new(
-                image.clone(),
-                Rect::new(0, 0, 2, 1),
-                destination,
-                ImageSampling::Nearest,
-            )
-            .expect_err("invalid image destination");
-            assert_eq!(error.code, ErrorCode::RenderFailure);
-        }
-    }
-
-    #[test]
-    fn nearest_scaling_clips_and_preserves_painter_order() {
-        let image = image_2x1();
-        let placement = ImagePlacement::new(
-            image,
-            Rect::new(0, 0, 2, 1),
-            Rect::new(-1, 0, 4, 2),
-            ImageSampling::Nearest,
-        )
-        .expect("placement");
-        let mut list = DisplayList {
-            commands: vec![DisplayCommand::FillRect {
-                rect: Rect::new(0, 0, 3, 2),
-                color: Color::WHITE,
-            }],
-        };
-        list.append_image(placement).expect("append image");
-        let mut framebuffer = Framebuffer::new(3, 2).expect("surface");
-        list.render_to(&mut framebuffer);
-        for y in 0..2 {
-            assert_eq!(framebuffer.get_pixel(0, y), Color::RED);
-            assert_eq!(framebuffer.get_pixel(1, y), Color::BLUE);
-            assert_eq!(framebuffer.get_pixel(2, y), Color::BLUE);
-        }
-    }
-
-    #[test]
-    fn image_alpha_composites_over_existing_surface() {
-        let image = RasterImage::new(1, 1, vec![Color::rgba(0, 0, 0, 128)]).expect("image");
-        let placement = ImagePlacement::new(
-            image,
-            Rect::new(0, 0, 1, 1),
-            Rect::new(0, 0, 1, 1),
-            ImageSampling::Nearest,
-        )
-        .expect("placement");
-        let mut list = DisplayList::default();
-        list.append_image(placement).expect("append image");
-        let mut framebuffer = Framebuffer::new(1, 1).expect("surface");
-        framebuffer.clear(Color::WHITE);
-        list.render_to(&mut framebuffer);
-        assert_eq!(framebuffer.get_pixel(0, 0), Color::rgba(127, 127, 127, 255));
-    }
-}
+mod tests;

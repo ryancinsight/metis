@@ -351,17 +351,22 @@ list admits clipped one-pixel line segments through `append_line`, using the
 same painter order and alpha compositor. Format decoding, orientation metadata
 and DICOM transfer syntax selection stay with the owning Atlas provider, so this
 surface can receive RITK pixels without moving medical parsing into Metis.
+`ImageTransform` adds identity, axis flips and quarter-turns at the pixel-grid
+presentation boundary; it maps the shared source directly and does not create a
+rotated copy. Clinical orientation and geometry still belong to RITK.
 
 The deterministic [image example](../../examples/image.rs) renders a 3×2 color
-fixture into a 240×180 framebuffer and draws two line commands around it. Its
-generated artifact is inspected here:
+fixture twice in a 240×180 framebuffer: once unchanged and once with a clockwise
+quarter-turn from the same source. Four clipped line commands frame both views.
+Its generated artifact is inspected here:
 
 ![Software raster image placement](images/image-placement.svg)
 
 Run it with `cargo run --locked --example image`; the BMP and SVG captures are
-written under `output/`. This is software-renderer evidence for V06 and does not
-establish browser decoding, orientation, fonts, media controls or native shell
-presentation.
+written under `output/`. This is software-renderer evidence for V06 and covers
+the format-neutral pixel-grid transform seam; it does not establish browser or
+native format decoding, clinical orientation policy, fonts, media controls or
+native shell presentation.
 
 ## Browser service workflow
 

@@ -327,17 +327,17 @@ an owner. “Unsupported” cannot replace delivery of a required mobile/native 
 - Completed increment: `RasterImage` validates bounded row-major RGBA storage and `ImagePlacement` validates crops, clips off-screen destinations and composites nearest-neighbor pixels; the `image` example emits the inspected software-renderer artifact.
 - Evidence: [ADR 0016](docs/adr/0016-theme-and-branding.md), [browser manual](docs/manual/browser.md), [distribution manual](docs/manual/distribution.md), focused `metis-cli` package tests and browser asset tests; runtime asset capture is recorded in [VERIFICATION](docs/VERIFICATION.md#browser-svg-asset-evidence).
 - Evidence: `metis-ui-lang` image validation/compositing tests, `cargo run --locked --example image`, and [software image evidence](docs/VERIFICATION.md#software-raster-and-vector-presentation-evidence--2026-09-12) cover pixel, alpha and clipping semantics.
-- Residuals: browser/native image decode and orientation, font loading, media controls/error teardown, GPU vectors, and runtime shell rendering on a Windows install remain open under V06; the SVG admission and ICO packaging contracts are closed.
+- Residuals: browser/native image decode and clinical orientation metadata, font loading, media controls/error teardown, GPU vectors, and runtime shell rendering on a Windows install remain open under V06; the SVG admission, ICO packaging and format-neutral pixel-grid orientation contracts are closed.
 
 <a id="METIS-GRAPHICS-001"></a>
 ## METIS-GRAPHICS-001 — Custom graphics conformance [arch] [minor]
 - Status: in-progress; priority: P2; owner: Metis custom renderer over Iris; integrator: root; last-update: 2026-09-12; dependencies: METIS-VISUAL-001, METIS-LAYOUT-001; risk: rendering/lifetime correctness; delivery: Metis PR #97, merge `81d7dff`
-- Lease: root `crates/metis-ui-lang/src/image.rs`, `examples/image.rs`, `docs/adr/0029-image-orientation.md`, `docs/manual/applications.md`, `docs/VERIFICATION.md`; 2026-09-12T22:20:00-04:00
 - Scope: admitted vector/image/transform/clip operations and accelerated display path where required by the custom-UI demonstrator; retain one rendering contract and verify Atlas GPU ownership before additions.
 - Acceptance: geometry/color/alpha and device-loss/recreate tests; differential software/device output under justified raster bounds; measured profile justifies acceleration and accounts for memory cost.
 - Demonstration: [V06](docs/VERIFICATION.md#V06); this path never gates the DOM/browser migration and cannot stand in for HTML5 compatibility.
 - Completed increment (2026-09-12): `draw_line`, `DisplayCommand::DrawLine` and `DisplayList::append_line` add clipped one-pixel source-over segments. Extreme endpoint, alpha and display-list tests pass; the image example and inspected SVG exercise the command in painter order. [ADR 0028](docs/adr/0028-bounded-vector-stroke.md).
-- Residuals: stroke width/caps/joins, transforms, device-loss/recreate handling, GPU acceleration, browser vector parity and a measured profile remain open.
+- Completed increment (2026-09-12): `ImageTransform` adds identity, horizontal/vertical flips and quarter-turn mappings to `ImagePlacement` without copying the shared source. The generic 2×3 orientation suite passes 23/23, and the image example inspects identity plus clockwise presentation from one source. [ADR 0029](docs/adr/0029-image-orientation.md); [software presentation evidence](docs/VERIFICATION.md#software-raster-and-vector-presentation-evidence--2026-09-12).
+- Residuals: stroke width/caps/joins, arbitrary affine transforms, device-loss/recreate handling, GPU acceleration, browser vector parity and a measured profile remain open.
 
 <a id="METIS-DATA-001"></a>
 ## METIS-DATA-001 — Tables, lists and live data views [minor]

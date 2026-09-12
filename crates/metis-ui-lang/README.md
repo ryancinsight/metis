@@ -43,12 +43,17 @@ and [`ImagePlacement`](https://docs.rs/metis-ui-lang/latest/metis_ui_lang/struct
 Images validate dimensions and row-major pixel storage at construction;
 `RasterImage::from_rgba_bytes` converts a bounded RGBA byte boundary once.
 Placements validate the source crop, clip the destination to the framebuffer
-and composite with source-over alpha. Decoding formats and orientation metadata
-remain an upstream asset-provider concern.
+and composite with source-over alpha. A placement can apply an identity,
+horizontal or vertical flip, or a quarter-turn through [`ImageTransform`](https://docs.rs/metis-ui-lang/latest/metis_ui_lang/enum.ImageTransform.html);
+the mapper reads the shared source without allocating a rotated copy. Decoding
+formats and clinical orientation metadata remain an upstream asset-provider
+concern.
 
 ```rust
 use metis_platform::{Color, Framebuffer, Rect};
-use metis_ui_lang::{DisplayList, ImagePlacement, ImageSampling, RasterImage};
+use metis_ui_lang::{
+    DisplayList, ImagePlacement, ImageSampling, ImageTransform, RasterImage,
+};
 
 let image = RasterImage::new(1, 1, vec![Color::RED])?;
 let placement = ImagePlacement::new(
@@ -59,6 +64,13 @@ let placement = ImagePlacement::new(
 )?;
 let mut display = DisplayList::default();
 display.append_image(placement)?;
+let rotated = ImagePlacement::new(
+    RasterImage::new(1, 1, vec![Color::RED])?,
+    Rect::new(0, 0, 1, 1),
+    Rect::new(0, 0, 2, 2),
+    ImageSampling::Nearest,
+)?.with_transform(ImageTransform::RotateClockwise);
+display.append_image(rotated)?;
 let mut framebuffer = Framebuffer::new(2, 2)?;
 display.render_to(&mut framebuffer);
 assert_eq!(framebuffer.get_pixel(1, 1), Color::RED);

@@ -37,3 +37,4 @@
 | [0026](0026-python-native-host.md) | Python native host facade | Accepted |
 | [0027](0027-bounded-canvas-input.md) | Bounded format-neutral canvas input | Accepted |
 | [0028](0028-bounded-vector-stroke.md) | Bounded vector stroke | Accepted |
+| [0029](0029-image-orientation.md) | Pixel-grid image orientation | Accepted |
