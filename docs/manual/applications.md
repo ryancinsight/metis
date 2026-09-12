@@ -29,120 +29,6 @@ the SVG, PNG and ICO under `assets/` as well. The CLI applies the bounded SVG
 contract before copying the vector resource, rejecting XML expansion, external
 references, unknown attributes, malformed geometry and oversized viewports.
 
-## Initial form
-
-![Initial form](images/form.svg)
-
-The defaults are 72.50 kg, 4.00 mg/mL and 0.500 mcg/kg/min. No result exists yet.
-
-## Successful request
-
-![Backend result](images/form-success.svg)
-
-The example establishes a session and submits patient `demo`, weight 60 kg,
-concentration 2 mg/mL and dose 0.2 mcg/kg/min. The backend returns 0.72 mg/hour
-and 0.36 mL/hour at audit sequence 2. The MAC is present but not verified by the
-frontend. These synthetic values demonstrate the protocol, not treatment guidance.
-
-## Windows host snapshots
-
-The production form also runs in the Windows native framebuffer and packaged
-WebView2 hosts. These snapshots are captured from the supervised executable,
-not reconstructed images; the initial and submitted states share the same
-input-sensitive backend result.
-
-![Native framebuffer host](images/native-form.png)
-
-![Packaged WebView2 host after submission](images/webview-form-success.png)
-
-The complete native/WebView2 initial and submitted pairs, trusted input actions,
-window sizes and SHA-256 records are in the [Windows host workflow](native.md#captured-windows-workflows)
-and its [capture manifest](images/native-captures.json).
-
-## Edit invalidates the result
-
-![Edited form awaiting submission](images/form-edited.svg)
-
-Changing weight to 80 kg immediately clears the old rate and MAC. No request has
-been sent for these edited inputs; the form displays idle.
-
-## Rejection and correction
-
-![Backend rejects zero weight](images/form-rejected.svg)
-
-The next request uses zero weight. The backend rejects it with code `0x3001` at
-audit sequence 3. No prior result remains on screen. Full diagnostics are available
-in the typed `FormState::Rejected` value.
-
-![Corrected inputs produce a result](images/form-corrected.svg)
-
-Restoring weight to 60 kg succeeds on the same session at audit sequence 4.
-
-## Disconnection and reconnection
-
-![Closed connection clears the result](images/form-disconnected.svg)
-
-The example joins the finite worker, which closes the real peer endpoint. A
-subsequent submission reports `0x4002`, clears the result and shows a closed
-session. Synchronization uses worker completion, not a timed sleep.
-
-![New session produces the changed result](images/form-recovered.svg)
-
-A new app and backend session submit weight 80 kg and return 0.96 mg/hour and
-0.48 mL/hour. Reconnection never silently retries an uncertain transaction.
-
-## Reproduce and review
-
-```text
-python scripts/verify.py
-```
-
-The Rust example writes fixed `output/form*.bmp`, `output/form*.svg` and
-`output/form*.csv` files. SVG paths encode the actual raster; they do not rebuild
-layout as SVG text. The CSV records actual inputs, actions, state, displayed
-labels and text geometry alongside independently expected outcomes.
-
-The gate removes previous required captures before execution. It validates all
-seven new captures, checks BMP/SVG pixel agreement and compares both images and
-semantic records with the [reviewed baseline](images/captures.json). Source,
-lockfile and rendering-fixture hashes bind the observations to this run.
-For an intentional visual change:
-
-```text
-python scripts/verify.py --update-snapshots
-python scripts/verify.py
-```
-
-Inspect the generated images and semantic records before accepting the baseline.
-`output/visual/latest/report.json` records each comparison; adjacent expected,
-actual and difference images make failures inspectable. See
-[Inspect application output](testing.md) for report interpretation and retention.
-Source and lock digests normalize repository text to LF, matching the committed
-`.gitattributes` contract across Windows and Unix checkouts.
-`output/verification.json` records the complete gate, including failures before
-capture. Additional browser responsive pending/cancellation and remaining
-desktop host scenarios remain in the [visual scenario contract](../VERIFICATION.md#visual-contract).
-
-## Raster image presentation
-
-The software display list now accepts validated raster placements for local
-decoded image data. `RasterImage` rejects empty, oversized and mismatched pixel
-storage; `ImagePlacement` validates an in-bounds source crop, clips an off-screen
-destination and uses nearest-neighbor sampling with source-over alpha. Format
-decoding, orientation metadata and DICOM transfer syntax selection stay with the
-owning Atlas provider, so this surface can receive RITK pixels without moving
-medical parsing into Metis.
-
-The deterministic [image example](../../examples/image.rs) renders a 3×2 color
-fixture into a 240×180 framebuffer. Its generated artifact is inspected here:
-
-![Software raster image placement](images/image-placement.svg)
-
-Run it with `cargo run --locked --example image`; the BMP and SVG captures are
-written under `output/`. This is software-renderer evidence for V06 and does not
-establish browser decoding, orientation, fonts, media controls or native shell
-presentation.
-
 ## DICOM viewer migration baseline
 
 RITK's [synthetic DICOM workflow](https://github.com/ryancinsight/ritk/blob/main/docs/manual/dicom-workflow.md)
@@ -359,6 +245,121 @@ It runs the real scanner and loader, checks exact pixels and physical geometry,
 and compares axial, coronal and sagittal captures with reviewed goldens. The
 Metis browser capture proves only bounded input handoff and does not claim
 DICOM decoding.
+
+
+## Initial form
+
+![Initial form](images/form.svg)
+
+The defaults are 72.50 kg, 4.00 mg/mL and 0.500 mcg/kg/min. No result exists yet.
+
+## Successful request
+
+![Backend result](images/form-success.svg)
+
+The example establishes a session and submits patient `demo`, weight 60 kg,
+concentration 2 mg/mL and dose 0.2 mcg/kg/min. The backend returns 0.72 mg/hour
+and 0.36 mL/hour at audit sequence 2. The MAC is present but not verified by the
+frontend. These synthetic values demonstrate the protocol, not treatment guidance.
+
+## Windows host snapshots
+
+The production form also runs in the Windows native framebuffer and packaged
+WebView2 hosts. These snapshots are captured from the supervised executable,
+not reconstructed images; the initial and submitted states share the same
+input-sensitive backend result.
+
+![Native framebuffer host](images/native-form.png)
+
+![Packaged WebView2 host after submission](images/webview-form-success.png)
+
+The complete native/WebView2 initial and submitted pairs, trusted input actions,
+window sizes and SHA-256 records are in the [Windows host workflow](native.md#captured-windows-workflows)
+and its [capture manifest](images/native-captures.json).
+
+## Edit invalidates the result
+
+![Edited form awaiting submission](images/form-edited.svg)
+
+Changing weight to 80 kg immediately clears the old rate and MAC. No request has
+been sent for these edited inputs; the form displays idle.
+
+## Rejection and correction
+
+![Backend rejects zero weight](images/form-rejected.svg)
+
+The next request uses zero weight. The backend rejects it with code `0x3001` at
+audit sequence 3. No prior result remains on screen. Full diagnostics are available
+in the typed `FormState::Rejected` value.
+
+![Corrected inputs produce a result](images/form-corrected.svg)
+
+Restoring weight to 60 kg succeeds on the same session at audit sequence 4.
+
+## Disconnection and reconnection
+
+![Closed connection clears the result](images/form-disconnected.svg)
+
+The example joins the finite worker, which closes the real peer endpoint. A
+subsequent submission reports `0x4002`, clears the result and shows a closed
+session. Synchronization uses worker completion, not a timed sleep.
+
+![New session produces the changed result](images/form-recovered.svg)
+
+A new app and backend session submit weight 80 kg and return 0.96 mg/hour and
+0.48 mL/hour. Reconnection never silently retries an uncertain transaction.
+
+## Reproduce and review
+
+```text
+python scripts/verify.py
+```
+
+The Rust example writes fixed `output/form*.bmp`, `output/form*.svg` and
+`output/form*.csv` files. SVG paths encode the actual raster; they do not rebuild
+layout as SVG text. The CSV records actual inputs, actions, state, displayed
+labels and text geometry alongside independently expected outcomes.
+
+The gate removes previous required captures before execution. It validates all
+seven new captures, checks BMP/SVG pixel agreement and compares both images and
+semantic records with the [reviewed baseline](images/captures.json). Source,
+lockfile and rendering-fixture hashes bind the observations to this run.
+For an intentional visual change:
+
+```text
+python scripts/verify.py --update-snapshots
+python scripts/verify.py
+```
+
+Inspect the generated images and semantic records before accepting the baseline.
+`output/visual/latest/report.json` records each comparison; adjacent expected,
+actual and difference images make failures inspectable. See
+[Inspect application output](testing.md) for report interpretation and retention.
+Source and lock digests normalize repository text to LF, matching the committed
+`.gitattributes` contract across Windows and Unix checkouts.
+`output/verification.json` records the complete gate, including failures before
+capture. Additional browser responsive pending/cancellation and remaining
+desktop host scenarios remain in the [visual scenario contract](../VERIFICATION.md#visual-contract).
+
+## Raster image presentation
+
+The software display list now accepts validated raster placements for local
+decoded image data. `RasterImage` rejects empty, oversized and mismatched pixel
+storage; `ImagePlacement` validates an in-bounds source crop, clips an off-screen
+destination and uses nearest-neighbor sampling with source-over alpha. Format
+decoding, orientation metadata and DICOM transfer syntax selection stay with the
+owning Atlas provider, so this surface can receive RITK pixels without moving
+medical parsing into Metis.
+
+The deterministic [image example](../../examples/image.rs) renders a 3×2 color
+fixture into a 240×180 framebuffer. Its generated artifact is inspected here:
+
+![Software raster image placement](images/image-placement.svg)
+
+Run it with `cargo run --locked --example image`; the BMP and SVG captures are
+written under `output/`. This is software-renderer evidence for V06 and does not
+establish browser decoding, orientation, fonts, media controls or native shell
+presentation.
 
 ## Browser service workflow
 
