@@ -73,6 +73,19 @@ owns their interpretation and assertions. This supplies RITK's browser
 workflow with semantic evidence while keeping DICOM and viewer meaning out of
 Metis.
 
+Revision 2026-09-11: the canvas scenario installs a bounded capture-phase
+observer for pointer and wheel events. Each action records the observed event
+type, target canvas and browser `isTrusted` value, rejecting missing, mixed,
+untrusted or mis-targeted records. The observer is removed before the final
+window capture, so the trace proves the runner's own diagnostic listeners are
+released while leaving provider-private listener counts outside the WebDriver
+contract.
+
+Revision 2026-09-11: the file-backed gallery captures the paired canvas trace
+before its bounded overflow rejection probes. When the paired actions move a
+slice, rejection invariance compares each rejected batch with that post-input
+pixel baseline, keeping the committed window capture on the accepted study.
+
 The runner declares `native-file-dialog`, `native-process-launch` and
 `os-permission-grant` unsupported for this browser surface. Native authority,
 filesystem handles and DICOM parsing remain outside Metis: RITK owns the DICOM

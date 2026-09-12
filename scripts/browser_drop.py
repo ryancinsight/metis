@@ -211,12 +211,6 @@ def run(args: argparse.Namespace) -> dict:
                 _element_screenshot(client, trace, output, canvas_id, client.find("#" + canvas_id))
             viewport = client.execute("window.scrollTo(0,0); return {width:innerWidth,height:innerHeight,device_scale:devicePixelRatio};")
             screenshot(client, trace, output, "gallery")
-            if args.input == "chromium":
-                check_rejections(client, trace, point)
-                for canvas_id in ids:
-                    actual = client.execute_async(CANVAS_PIXELS, [canvas_id])
-                    if actual["rgba_sha256"] != oracle[canvas_id]["rgba_sha256"]:
-                        raise BrowserRuntimeError("a rejected file batch changed the consumer frame")
             if canvas_trace_path is not None:
                 canvas_trace = Trace(
                     BrowserEngine.CHROMIUM,
@@ -233,6 +227,18 @@ def run(args: argparse.Namespace) -> dict:
                     ids,
                     canvas_attributes,
                 )
+            if args.input == "chromium":
+                expected_rgba = {canvas_id: oracle[canvas_id]["rgba_sha256"] for canvas_id in ids}
+                if canvas_trace is not None:
+                    expected_rgba = {
+                        canvas_id: client.execute_async(CANVAS_PIXELS, [canvas_id])["rgba_sha256"]
+                        for canvas_id in ids
+                    }
+                check_rejections(client, trace, point)
+                for canvas_id in ids:
+                    actual = client.execute_async(CANVAS_PIXELS, [canvas_id])
+                    if actual["rgba_sha256"] != expected_rgba[canvas_id]:
+                        raise BrowserRuntimeError("a rejected file batch changed the consumer frame")
             document = trace.document()
             document["files"] = len(files)
             document["bytes"] = total

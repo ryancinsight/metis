@@ -7,6 +7,44 @@
         64,
         48
       ],
+      "observed_events": [
+        {
+          "client_x": 264,
+          "client_y": 653,
+          "delta_x": null,
+          "delta_y": null,
+          "is_trusted": true,
+          "target_id": "ritk-snap-axial",
+          "type": "pointermove"
+        },
+        {
+          "client_x": 264,
+          "client_y": 653,
+          "delta_x": null,
+          "delta_y": null,
+          "is_trusted": true,
+          "target_id": "ritk-snap-axial",
+          "type": "pointerdown"
+        },
+        {
+          "client_x": 304,
+          "client_y": 677,
+          "delta_x": null,
+          "delta_y": null,
+          "is_trusted": true,
+          "target_id": "ritk-snap-axial",
+          "type": "pointermove"
+        },
+        {
+          "client_x": 304,
+          "client_y": 677,
+          "delta_x": null,
+          "delta_y": null,
+          "is_trusted": true,
+          "target_id": "ritk-snap-axial",
+          "type": "pointerup"
+        }
+      ],
       "start": [
         24,
         24
@@ -19,6 +57,17 @@
         0,
         120
       ],
+      "observed_events": [
+        {
+          "client_x": 304,
+          "client_y": 677,
+          "delta_x": 0,
+          "delta_y": 120,
+          "is_trusted": true,
+          "target_id": "ritk-snap-axial",
+          "type": "wheel"
+        }
+      ],
       "position": [
         64,
         48
@@ -30,6 +79,44 @@
       "end": [
         64,
         48
+      ],
+      "observed_events": [
+        {
+          "client_x": 733,
+          "client_y": 608,
+          "delta_x": null,
+          "delta_y": null,
+          "is_trusted": true,
+          "target_id": "ritk-snap-coronal",
+          "type": "pointermove"
+        },
+        {
+          "client_x": 733,
+          "client_y": 608,
+          "delta_x": null,
+          "delta_y": null,
+          "is_trusted": true,
+          "target_id": "ritk-snap-coronal",
+          "type": "pointerdown"
+        },
+        {
+          "client_x": 773,
+          "client_y": 632,
+          "delta_x": null,
+          "delta_y": null,
+          "is_trusted": true,
+          "target_id": "ritk-snap-coronal",
+          "type": "pointermove"
+        },
+        {
+          "client_x": 773,
+          "client_y": 632,
+          "delta_x": null,
+          "delta_y": null,
+          "is_trusted": true,
+          "target_id": "ritk-snap-coronal",
+          "type": "pointerup"
+        }
       ],
       "start": [
         24,
@@ -43,6 +130,17 @@
         0,
         120
       ],
+      "observed_events": [
+        {
+          "client_x": 773,
+          "client_y": 632,
+          "delta_x": 0,
+          "delta_y": 120,
+          "is_trusted": true,
+          "target_id": "ritk-snap-coronal",
+          "type": "wheel"
+        }
+      ],
       "position": [
         64,
         48
@@ -55,6 +153,44 @@
         64,
         48
       ],
+      "observed_events": [
+        {
+          "client_x": 1202,
+          "client_y": 608,
+          "delta_x": null,
+          "delta_y": null,
+          "is_trusted": true,
+          "target_id": "ritk-snap-sagittal",
+          "type": "pointermove"
+        },
+        {
+          "client_x": 1202,
+          "client_y": 608,
+          "delta_x": null,
+          "delta_y": null,
+          "is_trusted": true,
+          "target_id": "ritk-snap-sagittal",
+          "type": "pointerdown"
+        },
+        {
+          "client_x": 1242,
+          "client_y": 632,
+          "delta_x": null,
+          "delta_y": null,
+          "is_trusted": true,
+          "target_id": "ritk-snap-sagittal",
+          "type": "pointermove"
+        },
+        {
+          "client_x": 1242,
+          "client_y": 632,
+          "delta_x": null,
+          "delta_y": null,
+          "is_trusted": true,
+          "target_id": "ritk-snap-sagittal",
+          "type": "pointerup"
+        }
+      ],
       "start": [
         24,
         24
@@ -66,6 +202,17 @@
       "delta": [
         0,
         120
+      ],
+      "observed_events": [
+        {
+          "client_x": 1242,
+          "client_y": 632,
+          "delta_x": 0,
+          "delta_y": 120,
+          "is_trusted": true,
+          "target_id": "ritk-snap-sagittal",
+          "type": "wheel"
+        }
       ],
       "position": [
         64,
@@ -79,13 +226,13 @@
     "browserName": "MicrosoftEdge",
     "browserVersion": "153.0.4234.19",
     "fedcm:accounts": true,
-    "goog:processID": 4000,
+    "goog:processID": 3788,
     "ms:edgeOptions": {
-      "debuggerAddress": "localhost:63428"
+      "debuggerAddress": "localhost:52329"
     },
     "msedge": {
       "msedgedriverVersion": "153.0.4234.19 (877eb25981392e298707bfbf8873b24fdf4b6fb1)",
-      "userDataDir": "C:\\Users\\RYANCL~1\\AppData\\Local\\Temp\\scoped_dir42172_1142857925"
+      "userDataDir": "C:\\Users\\RYANCL~1\\AppData\\Local\\Temp\\scoped_dir56848_1758675280"
     },
     "networkConnectionEnabled": false,
     "pageLoadStrategy": "normal",
@@ -118,29 +265,31 @@
       "data-ritk-frame-height"
     ],
     "canvas_count": 3,
+    "diagnostic_listener_count": 12,
+    "diagnostic_listeners_released": true,
     "provider_listener_count": "unavailable from WebDriver",
     "session_closed": true
   },
   "consumer_revision": "0bad9eb2c77b91e57fff3e9dc472a42201e061aa",
   "engine": "chromium",
-  "revision": "1fd44680d1a15a12efda2e2cf0f2ed560da92db6",
+  "revision": "1321bd434500744e4d80fb906d10d9aa74590003",
   "schema": 1,
   "screenshots": [
     {
-      "bytes": 363979,
+      "bytes": 364379,
       "height": 1203,
       "label": "window-initial",
       "path": "output/browser/runtime/screenshots/chromium/canvas/window-initial.png",
-      "sha256": "d7e5472e3652c2d6bd5b9a24a95e3f6525564153844bb3fa5feaff2e22fe0230",
+      "sha256": "2e3074d89764d7650f1207b478dd6935fb15da92073e7f819b2b326a54a24662",
       "width": 1773
     },
     {
-      "bytes": 109496,
+      "bytes": 109476,
       "height": 561,
       "label": "ritk-snap-axial-initial",
       "path": "output/browser/runtime/screenshots/chromium/canvas/ritk-snap-axial-initial.png",
       "scope": "element",
-      "sha256": "7009fa63a828a5620f8a0d213b235109d03235e43fe2054c1d850dcdb3fb546a",
+      "sha256": "2a5a7103f6f4b7eb0eebb57827d6d3a6da3372590b8a3bb7a7dbc44aa65c59c5",
       "width": 561
     },
     {
@@ -149,51 +298,51 @@
       "label": "ritk-snap-axial-after-input",
       "path": "output/browser/runtime/screenshots/chromium/canvas/ritk-snap-axial-after-input.png",
       "scope": "element",
-      "sha256": "6de77b861af912add415d6e2b4af74c93399aad1a4c380cf1bd4d72d0f8288d7",
+      "sha256": "39043f4cad86dac94c2d3372f127aec19c15aa46cc14889f7b83963880fddb14",
       "width": 561
     },
     {
-      "bytes": 108600,
+      "bytes": 108601,
       "height": 449,
       "label": "ritk-snap-coronal-initial",
       "path": "output/browser/runtime/screenshots/chromium/canvas/ritk-snap-coronal-initial.png",
       "scope": "element",
-      "sha256": "70b0b22c002416334f7889268db26d95154e038caaa5d2adfe130826fbb4d5b1",
+      "sha256": "5b45a694130b8c765be26061d76c321ddaebab4d37bdb6efa2d07d025e15427c",
       "width": 561
     },
     {
-      "bytes": 106015,
+      "bytes": 106017,
       "height": 449,
       "label": "ritk-snap-coronal-after-input",
       "path": "output/browser/runtime/screenshots/chromium/canvas/ritk-snap-coronal-after-input.png",
       "scope": "element",
-      "sha256": "b5028aa3bbd8f10b229b1535583d1a86bb6e10881cc54ecdeaefeaf6200bf1e2",
+      "sha256": "123734bc2bed0e742cfbce26f9538221e3974a5bb8c1a6383afeced82fc8c57b",
       "width": 561
     },
     {
-      "bytes": 113599,
+      "bytes": 113586,
       "height": 449,
       "label": "ritk-snap-sagittal-initial",
       "path": "output/browser/runtime/screenshots/chromium/canvas/ritk-snap-sagittal-initial.png",
       "scope": "element",
-      "sha256": "d0605ad955fbd4bb757551a416f24010e6ea0b9b544326c19ff4df6ee6802140",
+      "sha256": "716f6a26e5091031c3683b27a7542371df3cd9b86826488f383c624d856f6c0d",
       "width": 561
     },
     {
-      "bytes": 108417,
+      "bytes": 108420,
       "height": 449,
       "label": "ritk-snap-sagittal-after-input",
       "path": "output/browser/runtime/screenshots/chromium/canvas/ritk-snap-sagittal-after-input.png",
       "scope": "element",
-      "sha256": "c2e2436239436cf0e8682ccd722198531b444518fc3acb1b8f567c91cf1679eb",
+      "sha256": "492ec84cedf7cf90cf28e6017880caa0c5d80f34229fcbbea204a89a1ea80113",
       "width": 561
     },
     {
-      "bytes": 337142,
+      "bytes": 337512,
       "height": 1203,
       "label": "window-final",
       "path": "output/browser/runtime/screenshots/chromium/canvas/window-final.png",
-      "sha256": "0c9e529d41a764a1cd566f486a52fdf3af0f7cde39dcf9335a6e489d8e4b8c3a",
+      "sha256": "b7cd6e638d4f666e96bebc6a09f98a35441ccd1dd7b55cb8cdeeb56ec53f27b3",
       "width": 1773
     }
   ],
@@ -331,5 +480,5 @@
     "native-process-launch",
     "os-permission-grant"
   ],
-  "url": "http://127.0.0.1:63426/gallery.html"
+  "url": "http://127.0.0.1:52327/gallery.html"
 }

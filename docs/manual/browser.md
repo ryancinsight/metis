@@ -172,6 +172,15 @@ the clinical visual oracle. A
 missing driver endpoint is an unfulfilled evidence requirement, not a passing
 or skipped engine result.
 
+Each canvas trace also installs a bounded capture-phase observer for the four
+input event kinds used by the scenario. The pointer and wheel action records
+include the observed event type, `isTrusted` value and target canvas; every
+observed event must be trusted and targeted to the requested canvas. The
+observer consumes at most 32 records per canvas and is removed before the final
+window capture. This proves the browser transport delivered trusted events and
+that the runner released its own diagnostic listeners; provider-private
+listener registries remain outside WebDriver's contract.
+
 For the authorized service path, keep the static server and service running,
 then pass the host-provided session tuple in the URL. The runner validates the
 `ws`/`wss` endpoint, decimal process identifier and 32-hex-digit principal
@@ -983,14 +992,15 @@ attribute, malformed action, incomplete screenshot set or unreleased input
 source fails the consumer validator.
 
 The paired Edge run at Metis revision
-`1fd44680d1a15a12efda2e2cf0f2ed560da92db6` produced six semantic snapshots:
+`1321bd434500744e4d80fb906d10d9aa74590003` produced six semantic snapshots:
 the 409-slice axial view moved from slice 204 to 203, and the coronal and
 sagittal views moved from slice 256 to 255 after the trusted wheel actions.
-All three remained presented at their expected dimensions. The revision-bound
-trace is [`browser-gallery-canvas.json`](images/browser-gallery-canvas.json);
-its eight screenshots are the paired initial/after-input window and canvas
-captures. This is the same public CT study as the file-drop trace, not a
-synthetic image.
+All three remained presented at their expected dimensions. The paired capture
+runs before the bounded overflow probes, and the rejection checks compare
+against the post-input pixel baseline. The revision-bound trace is
+[`browser-gallery-canvas.json`](images/browser-gallery-canvas.json); its eight
+screenshots are the paired initial/after-input window and canvas captures. This
+is the same public CT study as the file-drop trace, not a synthetic image.
 
 The final browser window below shows the three live orthogonal views after the
 input actions. The element captures preserve the individual canvases for visual
