@@ -401,6 +401,7 @@ an owner. “Unsupported” cannot replace delivery of a required mobile/native 
 - Documentation increment (2026-09-12, RITK [PR #321](https://github.com/ryancinsight/ritk/pull/321)): the application gallery now links the current native four-panel CPU MIP capture and hash-bound provenance for the public 409-file CT study. RITK computes DICOM presentation; Métis remains the format-neutral host and framebuffer.
 - Documentation increment (2026-09-12, RITK [PR #322](https://github.com/ryancinsight/ritk/pull/322), merge `2453a138d`): the application gallery now links the complete visible Windows capture for that native four-panel MIP run. Two launches produced a byte-identical image with all four real panels; RITK owns DICOM decoding and MIP policy, while Métis owns the HWND and framebuffer seam.
 - Documentation increment (2026-09-12): the application gallery now leads with the RITK-backed real-DICOM captures; synthetic form snapshots remain a separate protocol demonstration below. The reordering keeps one canonical capture section and makes input-sensitive pixels the first visible evidence.
+- Documentation increment (2026-09-12): the README now points directly to the real MRI-DIR CT/MIP gallery and saved-study command while stating that private studies remain local.
 
 <a id="METIS-RITK-HOST-001"></a>
 ## METIS-RITK-HOST-001 — Format-neutral native frame host [arch] [minor]

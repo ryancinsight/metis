@@ -53,6 +53,10 @@ validated image and metadata result; the owning workflow and visual evidence
 live in the [RITK manual](https://github.com/ryancinsight/ritk/blob/main/docs/manual/dicom-workflow.md).
 The `METIS-DICOM-*` backlog entries record removal and boundary checks for that
 ownership decision; they do not add DICOM implementation to Metis.
+The RITK manual now leads with the reviewed real MRI-DIR CT window capture,
+including axial, coronal, sagittal and axial-MIP panels through the Métis host;
+it also documents the copyable local command for opening a saved clinical study.
+Private studies remain local and are never copied into Metis.
 The infusion arithmetic is a synthetic engineering example; its configurable
 limits are not treatment guidance.
 
