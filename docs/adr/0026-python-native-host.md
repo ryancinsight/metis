@@ -64,3 +64,17 @@ before detachment; event dictionaries are constructed after reattachment. The
 host thread and bounded command waits therefore do not retain the interpreter
 lock, while the public Python signatures and the `Send + Sync`/`gil_used =
 false` contract remain unchanged.
+
+## Revision 2026-09-12
+
+The Windows capture utility now accepts a bounded RGBA PNG produced by an
+application such as RITK. It validates the PNG header, checksums, dimensions,
+decompression length and scanline filters before presenting the decoded bytes;
+the source file digest is included in the capture result. This extends visual
+evidence without moving DICOM parsing or viewer state into the binding.
+
+The real-frame demonstration uses the public RITK CT/MIP PNG as the input frame
+and captures it through the same visible `NativeApplication` path. The Python
+tool's decoder tests cover every supported PNG filter and checksum rejection;
+the manual image and its source digest are evidence of the handoff, not a DICOM
+implementation in Métis.

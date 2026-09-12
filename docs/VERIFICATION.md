@@ -1392,6 +1392,22 @@ This closes only the single-window Python binding capture. Two-window focus,
 native IME, resize/DPI journeys, permission denial and non-Windows providers
 remain open under V05.
 
+The same host path now presents a real RITK application frame. The capture tool
+reads the public RITK CT/MIP PNG as bounded 8-bit RGBA input, validates its
+checksums, dimensions and scanline filters, and presents the decoded pixels
+through `NativeApplication`; it performs no DICOM parsing. The 1296 × 839
+visible window contains a 1280 × 800 client area with four non-black panels
+(axial, coronal, sagittal and axial MIP), and the source digest
+`989a1f66b43a39ec753180cdd882b08e11adfc2ab4009c416a694c1fd12efe42` is bound
+to the output digest
+`678fc0741b505a2be2692c5f8a653fb56021a5207650b129b3f6c58114b6e605` in
+[`python-native-captures.json`](manual/images/python-native-captures.json).
+The reviewed image is [`python-native-real-ct-mip.png`](manual/images/python-native-real-ct-mip.png).
+The source is the public 409-file porcine-head phantom; private patient
+captures use the same local command and remain outside version control.
+Moirai's provider-side `WM_PRINT`/`WM_PRINTCLIENT` rendering is required for
+the visible capture and is tracked by [Moirai PR #329](https://github.com/ryancinsight/Moirai/pull/329).
+
 <a id="V06"></a>
 ### V06 — Asset and graphics gallery
 
