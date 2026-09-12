@@ -871,6 +871,14 @@ in-app Chromium host. It does not claim physical file-manager drag input,
 Firefox/WebKit behavior, provider-private listener/allocation counts, TLS,
 accessibility technology support or native desktop packaging.
 
+The same chooser path was rerun with the saved 94-file MRI-DIR T2 study from
+`test_data/2_head_mri_t2/DICOM`. It accepted 94 files and read 49,807,236
+bytes. RITK reported `ready`/`presented` for the axial frame at 512 × 512
+(slice 47 of 94) and for the coronal and sagittal frames at 512 × 94 (slice
+256 of 512); the live viewport showed non-black MRI anatomy. This second run
+uses the same source-neutral handoff and keeps modality-specific interpretation
+in RITK.
+
 Focused verification for the code revision passed:
 
 ```text

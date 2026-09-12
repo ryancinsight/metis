@@ -936,6 +936,14 @@ and the [RITK orthogonal PNG baseline](https://github.com/ryancinsight/ritk/tree
 The chooser evidence is a browser Chromium observation. Physical file-manager
 drag input and Firefox/WebKit runs remain separate acceptance gates.
 
+The same chooser also opened the saved MRI-DIR T2 study in
+`test_data/2_head_mri_t2/DICOM/`: 94 real files, 49,807,236 bytes, and
+non-black axial, coronal and sagittal views. RITK reported intrinsic frames of
+512 × 512, 512 × 94 and 512 × 94 pixels, with the axial slice at 47/94 and the
+orthogonal slices at 256/512. This confirms that the chooser path carries a
+second saved modality through the same bounded transfer; modality semantics
+remain in RITK.
+
 Build RITK's locked WASM library and package it with the pinned wasm-bindgen CLI
 as described in the RITK browser workflow linked above. From Metis, include that
 fresh package when building the gallery:
