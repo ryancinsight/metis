@@ -15,6 +15,7 @@ import sys
 import tempfile
 import time
 import zipfile
+import zlib
 from concurrent.futures import Future, ThreadPoolExecutor
 from dataclasses import dataclass
 from typing import Any
@@ -372,6 +373,49 @@ def _write_bmp(path: pathlib.Path, bounds: _WindowBounds, pixels: bytes) -> str:
     return hashlib.sha256(path.read_bytes()).hexdigest()
 
 
+def _write_png(path: pathlib.Path, bounds: _WindowBounds, pixels: bytes) -> str:
+    """Write the captured top-down BGRA rows as an RGBA PNG."""
+    expected = bounds.width * bounds.height * 4
+    if len(pixels) != expected:
+        raise ValueError("captured pixel storage does not match the window bounds")
+    rows = bytearray()
+    row_bytes = bounds.width * 4
+    for offset in range(0, len(pixels), row_bytes):
+        source = pixels[offset : offset + row_bytes]
+        rows.append(0)
+        for blue, green, red, _alpha in zip(
+            source[0::4], source[1::4], source[2::4], source[3::4], strict=True
+        ):
+            rows.extend((red, green, blue, 255))
+    signature = b"\x89PNG\r\n\x1a\n"
+    header = struct.pack(">IIBBBBB", bounds.width, bounds.height, 8, 6, 0, 0, 0)
+
+    def chunk(kind: bytes, data: bytes) -> bytes:
+        return (
+            struct.pack(">I", len(data))
+            + kind
+            + data
+            + struct.pack(">I", zlib.crc32(kind + data) & 0xFFFFFFFF)
+        )
+
+    content = signature + chunk(b"IHDR", header)
+    content += chunk(b"IDAT", zlib.compress(bytes(rows)))
+    content += chunk(b"IEND", b"")
+    path.parent.mkdir(parents=True, exist_ok=True)
+    path.write_bytes(content)
+    return hashlib.sha256(content).hexdigest()
+
+
+def _write_capture(path: pathlib.Path, bounds: _WindowBounds, pixels: bytes) -> str:
+    """Write a capture in the format selected by its file extension."""
+    suffix = path.suffix.lower()
+    if suffix == ".bmp":
+        return _write_bmp(path, bounds, pixels)
+    if suffix == ".png":
+        return _write_png(path, bounds, pixels)
+    raise ValueError("capture output must use the .bmp or .png extension")
+
+
 def _checkerboard(width: int, height: int) -> bytes:
     red = bytes((229, 62, 62, 255)) * (width // 2)
     blue = bytes((49, 130, 206, 255)) * (width - width // 2)
@@ -395,7 +439,7 @@ def _capture(metis: Any, title: str, width: int, height: int, output: pathlib.Pa
         if future is None or not future.done():
             raise RuntimeError("native capture did not complete within the pump bound")
         pixels = future.result()
-        digest = _write_bmp(output, bounds, pixels)
+        digest = _write_capture(output, bounds, pixels)
         return {
             "title": title,
             "generation": generation,
@@ -436,7 +480,7 @@ def _capture_command(
     try:
         bounds = _wait_for_process_window(process)
         pixels = _capture_window(bounds)
-        digest = _write_bmp(output, bounds, pixels)
+        digest = _write_capture(output, bounds, pixels)
         _close_window(bounds.handle)
         return_code = process.wait(timeout=PROCESS_EXIT_TIMEOUT_SECONDS)
         if return_code != 0:
