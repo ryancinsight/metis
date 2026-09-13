@@ -1398,7 +1398,7 @@ Metis revision plus an optional consumer revision, and releases all WebDriver
 input sources before session teardown. The scenario is reusable by RITK without
 placing DICOM, series, slice or viewer state in Metis.
 
-The Python script suite passes 98 tests, including the canvas scenario, element
+The Python script suite passes 114 tests, including the canvas scenario, element
 screenshot endpoint, bounded identifier validation, cross-repository
 consumer-revision field and trusted-event evidence. The file-backed gallery runner can emit the
 same schema-1 canvas trace after the real study is loaded, reusing the canonical
@@ -1406,6 +1406,24 @@ pointer/wheel capture instead of a second browser session. RITK validates the
 opaque consumer attributes, axis order, dimensions, screenshots and cleanup;
 Metis continues to interpret none of the DICOM or viewer meaning. Firefox/WebKit,
 physical input, WebGPU and provider-private resource counts remain open.
+
+<a id="browser-frame-timing-evidence--2026-09-13"></a>
+## Browser frame timing evidence — 2026-09-13
+
+The format-neutral canvas trace now records `metrics.frame_intervals` for each
+named canvas before and after its trusted pointer and wheel actions. Each
+measurement samples eight browser `requestAnimationFrame` callbacks and stores
+the seven positive intervals plus their mean, population standard deviation,
+minimum and maximum in milliseconds. The runner rejects unavailable frame
+timing, malformed timestamps, non-monotonic intervals and observations beyond
+the bounded callback and interval limits; it never substitutes a default.
+
+The dependency-free Python suite passes 114/114, including a value-semantic
+frame record and a non-monotonic timestamp failure. These checks establish the
+trace contract only. A real engine run must regenerate the paired gallery
+trace before its values can be used for V12 comparison; the committed Edge
+gallery capture remains the visual and pixel oracle, and its existing
+cross-engine, compositor, GPU and native-window residuals are unchanged.
 
 The paired Edge run at Metis `1321bd434500744e4d80fb906d10d9aa74590003` and
 RITK `0bad9eb2c77b91e57fff3e9dc472a42201e061aa` accepted the public 409-file

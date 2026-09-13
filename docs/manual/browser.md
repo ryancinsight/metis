@@ -1061,3 +1061,23 @@ and sagittal [initial](images/browser-gallery-canvas-ritk-snap-sagittal-initial.
 and [after input](images/browser-gallery-canvas-ritk-snap-sagittal-after-input.png).
 
 ![Live Edge window after the trusted canvas actions](images/browser-gallery-canvas-window-final.png)
+
+### Read browser frame timing
+
+The same canvas trace records a bounded `requestAnimationFrame` interval sample
+for each named canvas before and after its pointer and wheel actions. The
+measurements are under `metrics.frame_intervals` in the schema-1 JSON trace;
+each entry contains seven intervals from eight callbacks plus the mean,
+population standard deviation, minimum and maximum in milliseconds. This is a
+browser frame-boundary measurement for the loaded application. It does not
+measure operating-system compositor latency, GPU submission or native-window
+latency, so those values stay separate in the V12 comparison protocol.
+
+The runner rejects missing animation-frame support, non-finite or non-positive
+intervals, samples outside the 32-callback bound and a frame interval above
+the 120-second observation bound. A failed sample fails the trace instead of
+being replaced with a default. The native Python suite covers both the
+value-semantic record and a non-monotonic timestamp failure. Run the paired
+gallery command above and inspect `metrics.frame_intervals` before comparing
+fixtures; keep the engine, driver, viewport, application revision and input
+trace pinned.

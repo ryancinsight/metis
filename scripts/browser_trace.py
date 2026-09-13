@@ -3,7 +3,9 @@ from __future__ import annotations
 
 import enum
 import hashlib
+import math
 import pathlib
+import statistics
 import struct
 from dataclasses import dataclass, field
 from typing import Any, Dict, List, Mapping, Optional, Tuple
@@ -21,6 +23,49 @@ UNSUPPORTED_NATIVE_OPERATIONS = (
     "native-process-launch",
     "os-permission-grant",
 )
+
+# Frame timing is a bounded observation of the browser's animation-frame
+# boundary. It is intentionally separate from compositor latency and does not
+# claim to measure the host window or GPU driver.
+FRAME_SAMPLE_COUNT = 8
+MAX_FRAME_SAMPLE_COUNT = 32
+MAX_FRAME_INTERVAL_MILLISECONDS = 120_000.0
+
+
+FRAME_TIMING_SCRIPT = """
+const done = arguments[arguments.length - 1];
+const count = arguments[0];
+const timeout = arguments[1];
+const maxCount = arguments[2];
+if (!Number.isInteger(count) || count < 2 || count > maxCount) {
+  done({ok: false, error: "invalid frame sample count"});
+  return;
+}
+if (typeof window.requestAnimationFrame !== "function" ||
+    !window.performance || typeof window.performance.now !== "function") {
+  done({ok: false, error: "browser frame timing is unavailable"});
+  return;
+}
+let settled = false;
+const timestamps = [];
+const finish = (value) => {
+  if (settled) return;
+  settled = true;
+  window.clearTimeout(timer);
+  done(value);
+};
+const sample = (timestamp) => {
+  if (settled) return;
+  timestamps.push(Number.isFinite(timestamp) ? timestamp : window.performance.now());
+  if (timestamps.length === count) {
+    finish({ok: true, timestamps});
+    return;
+  }
+  window.requestAnimationFrame(sample);
+};
+const timer = window.setTimeout(() => finish({ok: false, error: "frame timing deadline exceeded"}), timeout);
+window.requestAnimationFrame(sample);
+"""
 
 
 class BrowserEngine(str, enum.Enum):
@@ -58,6 +103,7 @@ class Trace:
     actions: List[Dict[str, Any]] = field(default_factory=list)
     snapshots: List[Dict[str, Any]] = field(default_factory=list)
     screenshots: List[Dict[str, Any]] = field(default_factory=list)
+    metrics: Dict[str, Any] = field(default_factory=dict)
     unsupported_operations: Tuple[str, ...] = UNSUPPORTED_NATIVE_OPERATIONS
     cleanup: Dict[str, Any] = field(default_factory=dict)
 
@@ -74,6 +120,7 @@ class Trace:
             "actions": self.actions,
             "snapshots": self.snapshots,
             "screenshots": self.screenshots,
+            "metrics": self.metrics,
             "unsupported_native_operations": list(self.unsupported_operations),
             "cleanup": self.cleanup,
         }
@@ -100,3 +147,64 @@ def screenshot(client: WebDriverClient, trace: Trace, directory: pathlib.Path, l
             "bytes": len(content),
         }
     )
+
+
+def frame_timing(
+    client: WebDriverClient,
+    trace: Trace,
+    label: str,
+    *,
+    sample_count: int = FRAME_SAMPLE_COUNT,
+    timeout_ms: int = 4_000,
+) -> Dict[str, Any]:
+    """Record bounded animation-frame intervals for one browser state.
+
+    The returned values describe the interval between browser animation-frame
+    callbacks. They are a browser-boundary metric; a caller must not treat
+    them as operating-system compositor or GPU latency.
+    """
+    if not isinstance(label, str) or not label or len(label.encode("utf-8")) > 256:
+        raise BrowserRuntimeError("frame timing label is empty or exceeds its bound")
+    if not isinstance(sample_count, int) or not 2 <= sample_count <= MAX_FRAME_SAMPLE_COUNT:
+        raise BrowserRuntimeError(
+            f"frame sample count must be between 2 and {MAX_FRAME_SAMPLE_COUNT}"
+        )
+    if not isinstance(timeout_ms, int) or not 1 <= timeout_ms <= 120_000:
+        raise BrowserRuntimeError("frame timing timeout is outside the configured bound")
+    value = client.execute_async(
+        FRAME_TIMING_SCRIPT, [sample_count, timeout_ms, MAX_FRAME_SAMPLE_COUNT]
+    )
+    if not isinstance(value, dict) or value.get("ok") is not True:
+        detail = value.get("error") if isinstance(value, dict) else value
+        raise BrowserRuntimeError(f"frame timing {label!r} failed: {detail!r}")
+    timestamps = value.get("timestamps")
+    if (
+        not isinstance(timestamps, list)
+        or len(timestamps) != sample_count
+        or any(
+            type(timestamp) not in (int, float)
+            or not math.isfinite(float(timestamp))
+            or float(timestamp) < 0.0
+            for timestamp in timestamps
+        )
+    ):
+        raise BrowserRuntimeError(f"frame timing {label!r} returned invalid timestamps")
+    intervals = [float(later) - float(earlier) for earlier, later in zip(timestamps, timestamps[1:])]
+    if any(
+        not math.isfinite(interval)
+        or interval <= 0.0
+        or interval > MAX_FRAME_INTERVAL_MILLISECONDS
+        for interval in intervals
+    ):
+        raise BrowserRuntimeError(f"frame timing {label!r} returned invalid intervals")
+    measurement = {
+        "label": label,
+        "sample_count": len(intervals),
+        "intervals_ms": intervals,
+        "mean_ms": statistics.fmean(intervals),
+        "stddev_ms": statistics.pstdev(intervals),
+        "min_ms": min(intervals),
+        "max_ms": max(intervals),
+    }
+    trace.metrics.setdefault("frame_intervals", []).append(measurement)
+    return measurement
