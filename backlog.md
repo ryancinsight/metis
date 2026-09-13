@@ -209,7 +209,7 @@ an owner. “Unsupported” cannot replace delivery of a required mobile/native 
 
 <a id="METIS-MANUAL-REAL-DICOM-001"></a>
 ## METIS-MANUAL-REAL-DICOM-001 — Lead with real DICOM evidence [patch]
-- Status: in-progress; priority: P1; owner: Metis documentation; integrator: root; branch: `docs/real-dicom-gallery-001`; regions: `README.md`, `docs/manual/README.md`, `docs/manual/applications.md`, `backlog.md`; dependencies: RITK-SNAP-METIS-001; risk: misleading visual evidence
+- Status: done; priority: P1; delivery: `c70f899`; owner: Metis documentation; integrator: root; dependencies: RITK-SNAP-METIS-001; risk: misleading visual evidence
 - Scope: make the public manual's first gallery entry a real RITK-backed DICOM application capture and expose the saved-study command; synthetic form and fixture images remain protocol evidence.
 - Acceptance: front-page manual displays a revision-bound real CT capture, links component-state and provenance records, names private-data limits, and all local manual links pass the locked gate.
 - Demonstration: actual public MRI-DIR CT window plus the copyable local clinical-study command; no DICOM parser or patient data enters Metis.
