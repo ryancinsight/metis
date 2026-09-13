@@ -508,11 +508,12 @@ an owner. “Unsupported” cannot replace delivery of a required mobile/native 
 
 <a id="METIS-CONFORMANCE-001"></a>
 ## METIS-CONFORMANCE-001 — Final capability and target closure [patch]
-- Status: todo; priority: P3; owner: Metis integration; risk: incomplete framework claim
+- Status: in-progress; priority: P3; owner: Metis integration; integrator: root; last-update: 2026-09-13; branch: `refactor/conformance-structure-2026-09-13`; regions: `crates/metis-backend/src`, `crates/metis-core/src/protocol`, `crates/metis-python/src/native`, `crates/metis-ui-lang/src/layout.rs`, `crates/metis-web/src`, `tests/safety_interlock_tests.rs`; risk: structural conformance debt
 - Dependencies: METIS-QUALITY-001, METIS-VERIFY-001, METIS-PROVIDER-001, METIS-STATE-001, METIS-VISUAL-001, METIS-BROWSER-001, METIS-ASYNC-001, METIS-AUTHORITY-001, METIS-COMMANDS-001, METIS-DESKTOP-001, METIS-MACOS-001, METIS-LINUX-001, METIS-TEXT-001, METIS-A11Y-001, METIS-LAYOUT-001, METIS-ASSETS-001, METIS-GRAPHICS-001, METIS-DATA-001, METIS-FILES-001, METIS-INTEGRATION-001, METIS-SERVICES-001, METIS-AUDIT-001, METIS-CRYPTO-001, METIS-MEMORY-001, METIS-MIGRATION-001, METIS-DISTRIBUTION-001, METIS-MOBILE-001, METIS-PERF-001, METIS-MANUAL-001
 - Scope: reconcile every ADR 0003 matrix row and required target pair against exact-revision evidence, including late package/mobile/service work and current upstream inventory changes.
 - Acceptance: [V01](docs/VERIFICATION.md#V01)–[V12](docs/VERIFICATION.md#V12) run on their required real targets, with semantic/visual/security/resource results and manual demos; required unsupported pairs stay open and block closure. No mocked IPC, compile-only host claim or skipped denial/lifecycle suite.
 - Demonstration: same-revision gallery, migration guide, measured comparative report and host troubleshooting; final security claims require matched Tauri denial probes under the declared threat model.
+- Completed increment (2026-09-13): structural modules and native binding manifests were split into canonical leaf homes; the live conformance scan reports 0 oversized files and 0 manifest implementation lines, while native check, WASM check, clippy (`-D warnings`), and nextest pass (314/314, 1 skipped). The source-bound visual baseline was refreshed after the refactor and the complete verifier passes all stages (169 resolved packages); the target-fork count is the shared Atlas build cache and remains host state.
 
 <a id="METIS-VERIFY-002"></a>
 ## METIS-VERIFY-002 — Verification report storage [patch]

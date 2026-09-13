@@ -17,3 +17,4 @@
 - [x] [Result explorer](backlog.md#METIS-DATA-001): bounded host-independent history, sorting/filtering/selection, disclosure and browser paging delivered in `e34830f`; [V07 evidence](docs/VERIFICATION.md#result-explorer-evidence--2026-09-08).
 - [PyO3 binding](backlog.md#METIS-PYTHON-001): delivered in `00f3681`; abi3 wheel tests, typed package, tokenless PyPI caller and manual are covered by the full gate.
 - [x] [METIS-PYTHON-003](backlog.md#METIS-PYTHON-003): detached RGBA and native-host boundaries pass the extracted-wheel, check, Clippy and formatting gates; free-threaded wheel evidence remains [METIS-PYTHON-004](backlog.md#METIS-PYTHON-004).
+- [Conformance structure](backlog.md#METIS-CONFORMANCE-001): split oversized Rust modules and keep native binding manifests declarative; verify the Atlas ratchet before advancing the Metis gitlink.

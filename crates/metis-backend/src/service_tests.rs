@@ -1,13 +1,16 @@
-use super::*;
+use super::{BackendService, SafetyEnvelope};
 use crate::UiFragmentPlugin;
+use crate::plugins::PluginExecutor;
 use metis_core::capability::CapabilityScope;
 use metis_core::crc32;
+use metis_core::error::{ErrorCode, MetisError, Result};
 use metis_core::protocol::{
-    CapabilityCatalogPayload, FragmentAction, FragmentPatchSet, FrameHeader,
-    HandshakeRequestPayload, HandshakeResponsePayload, MessageType, PROTOCOL_VERSION,
+    CapabilityCatalogPayload, ErrorResponsePayload, FragmentAction, FragmentPatchSet, FrameHeader,
+    HandshakeRequestPayload, HandshakeResponsePayload, MessageType, PROTOCOL_VERSION, Plugin,
     PluginDescriptor, PluginInvocationPayload, PluginInvocationResponsePayload, PluginOperation,
     TargetCapability, TargetCapabilityPayload, TargetPlatform,
 };
+use metis_ipc::IpcHandler;
 
 const KEY: [u8; 32] = [7; 32];
 const PRINCIPAL: [u8; 16] = [3; 16];
