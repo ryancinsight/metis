@@ -311,10 +311,24 @@ then displays `Rate 0.36 mL/hour; drug 0.72 mg/hour; audit 2`:
 
 ![Metis WebView2 page after submission](images/webview-form-success.png)
 
+### Native form after a real resize
+
+The same production `metis-app.exe` was captured before and after the host
+received a real Win32 client resize from 800×600 to 1024×720. The initial and
+resized frames both retain the active supervised session and form controls;
+the second frame is larger because `FrontendApp::resize` rebuilt its
+framebuffer and layout. The host observed 96 DPI at both sizes and the
+capture utility recorded changed pixels and exact SHA-256 digests in
+[`native-resize.json`](images/native-resize.json).
+
+![Metis native form before resize](images/native-resize-initial.png)
+
+![Metis native form after resize](images/native-resize-after.png)
+
 The capture session closed the supervised parent and child processes after each
 workflow. These images establish the visible initial and successful journeys;
 they do not establish native accessibility technology, an installed CJK IME,
-OS permission denial, physical resize/DPI journeys, or macOS/Linux hosts.
+OS permission denial, a physical display-scale change, or macOS/Linux hosts.
 
 ## Connect a host
 
@@ -357,10 +371,11 @@ The visible `metis-app` composition and its private-IPC workflow are now
 implemented. The provider tests exercise two independent hidden HWNDs and close
 and reopen one only after close, reusing its validated configuration; reopening
 a live surface is rejected. The host trace and framebuffer image above verify
-the format-neutral frame/event seam, while the four OS-window captures establish
-the visible native and WebView2 initial/submit journeys. A native keyboard/IME
-journey is still required for V05 input acceptance. Physical resize/DPI and
-close/reopen captures, OS permission denial, native accessibility, an installed
+the format-neutral frame/event seam, the four original OS-window captures
+establish the visible native and WebView2 initial/submit journeys, and the
+resize pair proves a real client-size transition with a rebuilt frame. A native
+keyboard/IME journey is still required for V05 input acceptance. Physical
+display-scale changes, OS permission denial, native accessibility, an installed
 CJK or other IME journey, macOS/Linux providers, two-window captures and the
 viewer host remain V05 and migration work. Do not treat a successful Windows
 build or a hidden-window test as cross-platform, assistive-technology or

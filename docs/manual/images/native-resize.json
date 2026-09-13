@@ -1,0 +1,48 @@
+{
+  "schema": 1,
+  "source_revision": "cf3b20c5cd11b28bc5ab442d3f1ff881269f7024",
+  "runtime": {
+    "target": "x86_64-pc-windows-msvc",
+    "window_dpi_before": 96,
+    "window_dpi_after": 96,
+    "timezone": "America/New_York"
+  },
+  "command": "metis-app --metis-native-window 60 2 0.2",
+  "resize": {
+    "requested_client_size": [1024, 720],
+    "client_size_applied": true,
+    "pixels_changed": true,
+    "dpi_changed": false
+  },
+  "captures": [
+    {
+      "id": "native_resize_initial",
+      "image": "native-resize-initial.png",
+      "outer_size": [816, 639],
+      "client_size": [800, 600],
+      "dpi": 96,
+      "process_returncode": 0,
+      "sha256": "a021194e4ef9406ee6789a9ea2eea00d25223e06d8d6f13e65975e9004acb442",
+      "observed": [
+        "METIS FORM DEMONSTRATION",
+        "SESSION ACTIVE",
+        "RATE: WAITING FOR BACKEND CALCULATION..."
+      ]
+    },
+    {
+      "id": "native_resize_after",
+      "image": "native-resize-after.png",
+      "outer_size": [1040, 759],
+      "client_size": [1024, 720],
+      "dpi": 96,
+      "process_returncode": 0,
+      "sha256": "5482723bee761639f579836d53fc926586aca3494b600956253ac790e0184743",
+      "observed": [
+        "METIS FORM DEMONSTRATION",
+        "SESSION ACTIVE",
+        "RATE: WAITING FOR BACKEND CALCULATION..."
+      ]
+    }
+  ],
+  "capture_tool": "scripts/python_native_capture.py --resize"
+}

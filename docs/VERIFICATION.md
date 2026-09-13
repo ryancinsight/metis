@@ -261,6 +261,25 @@ closed after each workflow. This evidence does not establish physical
 resize/DPI, native accessibility, installed-IME, OS permission denial,
 two-window visual or macOS/Linux behavior.
 
+### Windows native resize capture — 2026-09-13
+
+The format-neutral capture utility now accepts a bounded client-size resize for
+an external Metis executable. At revision
+`cf3b20c5cd11b28bc5ab442d3f1ff881269f7024`, the real `metis-app.exe` form was
+captured at 800×600 and after a Win32 resize to 1024×720. Both captures report
+the active supervised session and waiting backend state; the resized frame has
+different pixels and the process exits with status 0. The effective window DPI
+was 96 before and after, which observes the current scale without pretending to
+change the operating-system display setting.
+
+The exact outer/client dimensions, image hashes and command are recorded in
+[`native-resize.json`](manual/images/native-resize.json). The reviewed images
+are [`native-resize-initial.png`](manual/images/native-resize-initial.png) and
+[`native-resize-after.png`](manual/images/native-resize-after.png). This closes
+the visible resize evidence for the Windows software framebuffer; physical
+display-scale changes, accessibility technology, installed IME and permission
+denial remain separate host journeys.
+
 ## Parser and diagnostic safeguards — 2026-09-08
 
 The `METIS-QUALITY-001` increment is implemented in commit
