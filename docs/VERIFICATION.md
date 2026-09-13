@@ -1535,7 +1535,7 @@ generation after each remount. The compact records are stored under
 `cleanup.final_generation` summarize the run. Later remounts can also collect
 optional `performance.memory` observations labelled `remounted-cycle-N`.
 
-The dependency-free browser runtime module passes 26/26, including the
+The dependency-free browser runtime module passes 27/27, including the
 three-cycle value-semantic record, the cycle bound and the canvas rejection
 path. This is executable instrument evidence from the protocol-shaped driver;
 no new live multi-cycle Edge trace is claimed by this increment. A configured
