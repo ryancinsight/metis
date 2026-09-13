@@ -1500,6 +1500,40 @@ opaque consumer attributes, axis order, dimensions, screenshots and cleanup;
 Metis continues to interpret none of the DICOM or viewer meaning. Firefox/WebKit,
 physical input, WebGPU and provider-private resource counts remain open.
 
+<a id="browser-canvas-offset-evidence--2026-09-13"></a>
+## Browser canvas input-offset evidence — 2026-09-13
+
+The first adaptive-input replay exposed a format-neutral runner defect: the
+fixed wheel point `(64, 48)` was outside the 82.4 CSS-pixel coronal and
+sagittal canvases, so Edge emitted no wheel event for those elements. The
+runner now derives element-local points from each validated CSS width and
+height, clamps them to `floor(css_size / 2) - 1`, and records the effective
+offsets in the trace. This preserves trusted WebDriver events without adding
+viewer or DICOM knowledge to Metis. The focused helper test covers both the
+short 448.8 × 82.4 CSS surface and a 1 × 1 boundary; the full dependency-free
+Python suite passes 132/132.
+
+The exact live replay used the public 94-file MRI-DIR T2 study with Metis
+`abd6578caffb92ad4ab9011507cdd89fc0c2c7e2`, RITK
+`60044428572461ff94cc0396a1960e9cdc78304a`, and Moirai
+`fd3ec288dd0f1e98912f1d439d4ff9129ca7e25a`. Microsoft Edge 154.0.4258.12
+with msedgedriver 153.0.4234.19 accepted 94 files and read 49,807,236 bytes.
+The trace contains six trusted actions and six semantic snapshots: axial slice
+47→46 of 94 with wheel offset `(64, 48)`, and coronal/sagittal slice 256→255
+of 512 with wheel offset `(64, 40)`. All pointer and wheel events were
+trusted and targeted to their named canvas. The RITK validator passed the
+three consumer attribute sets, six actions and eight screenshots; 12
+diagnostic listeners and all input sources were released, and the session
+closed. The final gallery is the actual decoded MRI study shown in the
+[RITK capture](../../ritk/docs/manual/images/dicom-metis-real-browser-mri-edge-gallery.png)
+with its [provenance](../../ritk/docs/manual/images/dicom-metis-real-browser-mri-edge.json).
+
+The trace and screenshots are run output under `output/browser` and are
+reproducible with the command in the [browser manual](manual/browser.md#replay-a-saved-mri-study-with-adaptive-canvas-input).
+The result covers one Chromium-family engine and file-backed WebDriver input;
+physical file-manager input, Firefox/WebKit, WebGPU, compositor/native latency
+and provider-private resource counts remain outside this evidence.
+
 <a id="browser-frame-timing-evidence--2026-09-13"></a>
 ## Browser frame timing evidence — 2026-09-13
 
