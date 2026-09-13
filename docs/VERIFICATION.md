@@ -524,6 +524,24 @@ guards, clears the mounted DOM, and remounts fresh form state through the same
 module. It is the disconnected lifecycle baseline; the authenticated bridge
 trace below covers the service path.
 
+<a id="browser-owned-lifecycle-evidence-2026-09-13"></a>
+## Browser-owned lifecycle evidence — 2026-09-13
+
+Metis revision `b963144aaa4e734b2b39ce3fa437ab20381689d8` publishes its
+Rust-owned listener lifecycle on the mounted `#metis-app` root through
+`data-metis-listener-count` and `data-metis-generation`. The visible status
+line carries the same values so a host inspection and a user-facing capture
+cannot disagree. **Stop host** clears the controls, reports zero listener
+handles and advances the generation; **Start host** remounts the form with a
+positive listener count and a strictly newer generation.
+
+The dependency-free browser protocol runner now asserts those values in its
+semantic snapshots and cleanup record. Its focused Python suite passed 20/20,
+and the neutral full gate passed against this revision. The count covers only
+Metis-owned listener guards returned by the Rust mount; provider-private browser
+listeners remain outside the W3C surface and require configured provider
+instrumentation before they can be claimed as evidence.
+
 ## Host authority and asset evidence — 2026-09-07
 
 The `metis-core` host contract now parses canonical ASCII network origins,

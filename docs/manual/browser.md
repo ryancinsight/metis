@@ -109,6 +109,10 @@ python scripts/browser_runtime.py --engine webkit --serve-dir output/browser --b
 Each command fails if its endpoint is missing, the page does not mount the
 Rust-owned form, either of the two input changes is not reflected in the DOM,
 or the stop/remount generation retains application controls or an old result.
+The semantic snapshot also records the visible lifecycle status, the
+`data-metis-listener-count` and `data-metis-generation` root attributes, and
+requires stop to report zero Rust-owned listener handles before remount reports
+a positive count on a newer generation.
 Waits run inside the browser with a `MutationObserver` or one bounded timer;
 the host does not sleep or poll. The trace includes the negotiated browser
 capabilities, exact actions and observed values, semantic snapshots, screenshot
@@ -765,6 +769,14 @@ before they can restore state or render into the new DOM.
 If a host rejects the handshake, the browser preserves the peer's exact
 16-bit error code in the session-failed state; local transport failures remain
 typed connection failures.
+
+The lifecycle status line is visible in the page while these transitions run.
+For example, after stopping it reads `Lifecycle: stopped; Rust-owned listeners
+released (0 listener handles; generation N)`. A fresh start replaces it with a
+mount message that reports the positive listener-handle count and generation
+`N + 1` (or a later generation when another transition occurred). The runtime
+trace records both counts and generations in its cleanup object; the count is
+Metis-owned evidence and does not include provider-private event registrations.
 
 Local host events use `metis_ipc::EventHub<E, CAPACITY>`. Each subscription has
 its own bounded queue; `publish` returns `ERR_QUEUE_FULL` instead of blocking,
