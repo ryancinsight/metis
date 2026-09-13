@@ -49,8 +49,9 @@ Path coordinates and colors are application inputs. The point count is bounded
 at the display-list boundary, coordinate differences are widened to `f64` only
 after conversion from `i32`, and the scan is clipped before pixel testing.
 There is no file, network, process or authority access. The implementation is
-a deterministic software renderer; GPU acceleration, arbitrary affine paths,
-browser vector parity, and device-loss recovery remain separate backlog work.
+a deterministic software renderer; GPU acceleration, arbitrary affine vector
+paths, browser vector parity, and device-loss recovery remain separate backlog
+work.
 
 ## Verification
 
@@ -58,6 +59,6 @@ browser vector parity, and device-loss recovery remain separate backlog work.
 overlap-safe translucent blending and clipped rendering. `metis-ui-lang` tests
 cover command style retention, painter execution and the 4,096-point bound.
 The `image` example renders round/round and square/bevel frames around the
-identity and quarter-turn image placements; its inspected SVG is the visual
-component demonstration. Strict Clippy, formatting and focused nextest runs
-are required before delivery.
+identity and quarter-turn image placements, with a normalized affine shear
+below them; its inspected SVG is the visual component demonstration. Strict
+Clippy, formatting and focused nextest runs are required before delivery.

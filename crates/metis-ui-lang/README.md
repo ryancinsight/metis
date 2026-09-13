@@ -64,10 +64,12 @@ Images validate dimensions and row-major pixel storage at construction;
 `RasterImage::from_rgba_bytes` converts a bounded RGBA byte boundary once.
 Placements validate the source crop, clip the destination to the framebuffer
 and composite with source-over alpha. A placement can apply an identity,
-horizontal or vertical flip, or a quarter-turn through [`ImageTransform`](https://docs.rs/metis-ui-lang/latest/metis_ui_lang/enum.ImageTransform.html);
-the mapper reads the shared source without allocating a rotated copy. Decoding
-formats and clinical orientation metadata remain an upstream asset-provider
-concern.
+horizontal or vertical flip, a quarter-turn, or a validated arbitrary affine
+mapping through [`ImageTransform`](https://docs.rs/metis-ui-lang/latest/metis_ui_lang/enum.ImageTransform.html).
+`AffineTransform` expresses a finite, invertible source-to-destination mapping
+in normalized crop coordinates; nearest-neighbor sampling reads the shared
+source without allocating a transformed copy. Decoding formats and clinical
+orientation metadata remain an upstream asset-provider concern.
 
 ```rust
 use metis_platform::{Color, Framebuffer, Rect};
@@ -91,6 +93,16 @@ let rotated = ImagePlacement::new(
     ImageSampling::Nearest,
 )?.with_transform(ImageTransform::RotateClockwise);
 display.append_image(rotated)?;
+let affine = ImagePlacement::new(
+    RasterImage::new(1, 1, vec![Color::RED])?,
+    Rect::new(0, 0, 1, 1),
+    Rect::new(0, 0, 2, 2),
+    ImageSampling::Nearest,
+)?
+.with_transform(ImageTransform::Affine(
+    metis_ui_lang::AffineTransform::identity(),
+));
+display.append_image(affine)?;
 let mut framebuffer = Framebuffer::new(2, 2)?;
 display.render_to(&mut framebuffer);
 assert_eq!(framebuffer.get_pixel(1, 1), Color::RED);

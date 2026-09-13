@@ -42,9 +42,9 @@ Métis.
 Keeping orientation in each consumer duplicates pixel indexing and makes
 browser, native and software output diverge. Copying and rotating the source
 before every placement adds memory traffic and defeats shared-frame ownership.
-An arbitrary floating-point affine transform would add interpolation,
-rounding and unbounded tessellation policy before the current viewer contract
-requires it; it remains a separate graphics increment with its own oracle.
+A filtered or tessellated affine transform would add interpolation, rounding
+and geometry policy beyond the nearest-neighbor image placement contract; those
+operations remain separate graphics increments with their own oracles.
 
 ## Threat model and limits
 
@@ -52,17 +52,18 @@ Image dimensions, crops and destinations are validated before mapping. Every
 coordinate product stays within widened `i64` bounds derived from positive
 `i32` extents, and clipping bounds the visited pixels by the framebuffer area.
 The source storage is immutable and never interpreted as a path, file or
-format payload. The operation does not establish arbitrary affine transforms,
-GPU acceleration, browser vector parity or device-loss recovery. Width-aware
+format payload. The operation does not establish filtered affine sampling,
+arbitrary affine vector paths, GPU acceleration, browser vector parity or
+device-loss recovery. Width-aware
 stroke geometry is defined by [ADR 0030](0030-bounded-polyline-strokes.md).
 
 ## Verification
 
 The generic orientation suite renders one asymmetric 2×3 source through all
 five transforms and asserts the exact row-major pixel order, including both
-axis-swapping rotations. The image example renders an identity placement and a
-clockwise placement from the same source, asserts representative pixels in
-both views, and regenerates the inspected SVG/BMP artifact. Focused
+axis-swapping rotations. The image example renders identity, clockwise and
+normalized affine placements from the same source, asserts representative
+pixels in each view, and regenerates the inspected SVG/BMP artifact. Focused
 `metis-ui-lang` nextest, strict formatting and the full Metis gate provide the
 remaining verification; the manual links the visual artifact and keeps real
 DICOM evidence in the RITK-owned workflow.

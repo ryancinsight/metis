@@ -27,9 +27,10 @@ continues to return a borrow of the framebuffer's storage.
 
 This increment admits one-pixel segments. Width-aware paths with explicit caps
 and joins are defined separately in [ADR 0030](0030-bounded-polyline-strokes.md)
-so this Bresenham contract remains exact. Affine transforms and device
-acceleration remain separate operations with their own geometry and performance
-evidence. RITK may use these seams for format-neutral overlay presentation;
+so this Bresenham contract remains exact. Filtered affine sampling, arbitrary
+affine vector paths and device acceleration remain separate operations with
+their own geometry and performance evidence. RITK may use these seams for
+format-neutral overlay presentation;
 DICOM scanning, geometry and clinical meaning remain in RITK.
 
 ## Alternatives
