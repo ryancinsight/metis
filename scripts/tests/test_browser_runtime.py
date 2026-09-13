@@ -355,6 +355,16 @@ class RetainingDriver(FakeDriver):
         return snapshot
 
 
+class EmptyRemountDriver(FakeDriver):
+    """Driver mutant that restores listeners without mounting controls."""
+
+    def snapshot(self):
+        snapshot = super().snapshot()
+        if not self.stopped:
+            snapshot["mounted_controls"] = 0
+        return snapshot
+
+
 class BrowserRuntimeTests(unittest.TestCase):
     """The same trace keeps its value semantics across all engine names."""
 
@@ -742,6 +752,25 @@ class BrowserRuntimeTests(unittest.TestCase):
             driver = RetainingDriver()
             with self.assertRaisesRegex(BrowserRuntimeError, "stopped DOM"):
                 run_scenario(driver, BrowserEngine.FIREFOX, "http://127.0.0.1:8080/", "disconnected", "0" * 40, pathlib.Path(directory), 5_000, False, 4_000)
+        self.assertTrue(driver.closed)
+
+    def test_remount_failure_is_observed(self):
+        output = pathlib.Path(__file__).resolve().parents[2] / "output" / "browser" / "runtime-test"
+        output.mkdir(parents=True, exist_ok=True)
+        with tempfile.TemporaryDirectory(dir=output) as directory:
+            driver = EmptyRemountDriver()
+            with self.assertRaisesRegex(BrowserRuntimeError, "did not restore mounted controls"):
+                run_scenario(
+                    driver,
+                    BrowserEngine.CHROMIUM,
+                    "http://127.0.0.1:8080/?endpoint=ws%3A%2F%2F127.0.0.1%3A8765%2Fsocket&process=42&principal=66666666666666666666666666666666",
+                    "authorized",
+                    "0" * 40,
+                    pathlib.Path(directory),
+                    5_000,
+                    False,
+                    4_000,
+                )
         self.assertTrue(driver.closed)
 
     def test_disconnected_trace_rejects_privileged_submit(self):

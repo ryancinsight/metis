@@ -337,6 +337,9 @@ def _assert_remount_has_no_result(snapshot: Mapping[str, Any]) -> None:
         or lifecycle["listener_count"] <= 0
     ):
         raise BrowserRuntimeError("remounted browser generation did not restore Rust-owned listeners")
+    mounted_controls = snapshot.get("mounted_controls")
+    if type(mounted_controls) is not int or mounted_controls <= 0:
+        raise BrowserRuntimeError("remounted browser generation did not restore mounted controls")
     elements = snapshot.get("elements")
     result = elements.get("result-state") if isinstance(elements, dict) else None
     if not isinstance(result, dict) or result.get("text") == "Backend result received":
