@@ -38,3 +38,4 @@
 | [0027](0027-bounded-canvas-input.md) | Bounded format-neutral canvas input | Accepted |
 | [0028](0028-bounded-vector-stroke.md) | Bounded vector stroke | Accepted |
 | [0029](0029-image-orientation.md) | Pixel-grid image orientation | Accepted |
+| [0030](0030-bounded-polyline-strokes.md) | Bounded polyline strokes | Accepted |

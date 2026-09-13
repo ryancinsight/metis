@@ -1,12 +1,15 @@
-//! Clipped rectangle and bitmap text drawing, bounded by framebuffer area.
+//! Clipped rectangle, line and bitmap text drawing, bounded by framebuffer area.
 
 use crate::font::{FONT_WIDTH, draw_glyph};
 use crate::framebuffer::{Color, Framebuffer, Rect};
+mod stroke;
 
 const LEFT: u8 = 1;
 const RIGHT: u8 = 2;
 const TOP: u8 = 4;
 const BOTTOM: u8 = 8;
+
+pub use stroke::{LineCap, LineJoin, MAX_STROKE_POINTS, StrokeWidth, draw_polyline};
 
 pub(crate) fn fill_bounds(
     fb: &mut Framebuffer,

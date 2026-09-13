@@ -53,8 +53,8 @@ coordinate product stays within widened `i64` bounds derived from positive
 `i32` extents, and clipping bounds the visited pixels by the framebuffer area.
 The source storage is immutable and never interpreted as a path, file or
 format payload. The operation does not establish arbitrary affine transforms,
-stroke width/caps/joins, GPU acceleration, browser vector parity or device-loss
-recovery.
+GPU acceleration, browser vector parity or device-loss recovery. Width-aware
+stroke geometry is defined by [ADR 0030](0030-bounded-polyline-strokes.md).
 
 ## Verification
 

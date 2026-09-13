@@ -29,10 +29,30 @@ and invalid dimensions. Application-built DOMs should observe the parser
 limits; direct DOM construction does not validate them until layout, and
 recursive DOM utility operations assume bounded trees.
 
-The display list also admits one-pixel line segments through
-`DisplayList::append_line`. Lines use the metis-platform clipping and
-source-over rules, so format-neutral overlays can share the same painter order
-as fills, text and images without introducing a second renderer.
+The display list admits one-pixel line segments through
+`DisplayList::append_line` and width-aware paths through
+`DisplayList::append_polyline`. Both use metis-platform clipping and
+source-over rules, so format-neutral overlays can share one painter order as
+fills, text and images. `StrokeWidth` rejects zero, and each path is bounded to
+4,096 vertices; caps and joins are explicit rather than hidden style defaults.
+
+```rust
+use metis_platform::{Color, Framebuffer};
+use metis_ui_lang::{DisplayList, LineCap, LineJoin, StrokeWidth};
+
+let mut display = DisplayList::default();
+display.append_polyline(
+    &[(2, 2), (12, 2), (12, 10)],
+    StrokeWidth::new(2)?,
+    LineCap::Square,
+    LineJoin::Round,
+    Color::BLUE,
+)?;
+let mut framebuffer = Framebuffer::new(16, 12)?;
+display.render_to(&mut framebuffer);
+assert_eq!(framebuffer.get_pixel(2, 2), Color::BLUE);
+# Ok::<(), metis_core::error::MetisError>(())
+```
 
 The software framebuffer implements Iris `RenderBackend<DisplayList>`. Rendering
 returns a slice borrowed from the existing pixel storage, preserving the same

@@ -11,7 +11,10 @@ use crate::style::{Color, Display, FlexDirection, Size};
 use metis_core::error::Result;
 use metis_platform::framebuffer::Framebuffer;
 pub use metis_platform::framebuffer::Rect;
-use metis_platform::rasterizer::{draw_line, draw_rect_outline, draw_text, fill_rect};
+pub use metis_platform::rasterizer::{LineCap, LineJoin, StrokeWidth};
+use metis_platform::rasterizer::{
+    MAX_STROKE_POINTS, draw_line, draw_polyline, draw_rect_outline, draw_text, fill_rect,
+};
 
 /// Primitive command in painter order.
 #[derive(Debug, Clone, PartialEq)]
@@ -39,6 +42,19 @@ pub enum DisplayCommand {
         start: (i32, i32),
         /// Inclusive end coordinate.
         end: (i32, i32),
+        /// Straight RGBA stroke color.
+        color: Color,
+    },
+    /// Bounded multi-segment stroke with explicit width, caps and joins.
+    DrawPolyline {
+        /// Integer-coordinate path vertices in painter order.
+        points: Vec<(i32, i32)>,
+        /// Positive device-space stroke width.
+        width: StrokeWidth,
+        /// Endpoint treatment.
+        cap: LineCap,
+        /// Interior vertex treatment.
+        join: LineJoin,
         /// Straight RGBA stroke color.
         color: Color,
     },
@@ -81,6 +97,13 @@ impl DisplayList {
                 DisplayCommand::DrawLine { start, end, color } => {
                     draw_line(fb, *start, *end, *color);
                 }
+                DisplayCommand::DrawPolyline {
+                    points,
+                    width,
+                    cap,
+                    join,
+                    color,
+                } => draw_polyline(fb, points, *width, *cap, *join, *color),
                 DisplayCommand::DrawText {
                     text,
                     x,
@@ -113,6 +136,42 @@ impl DisplayList {
     /// display command storage cannot grow.
     pub fn append_line(&mut self, start: (i32, i32), end: (i32, i32), color: Color) -> Result<()> {
         self.push(DisplayCommand::DrawLine { start, end, color })
+    }
+
+    /// Appends a bounded polyline stroke in painter order.
+    ///
+    /// At most [`MAX_STROKE_POINTS`] vertices are retained. The points are
+    /// copied once into the display list so callers may release their input
+    /// after this method returns.
+    ///
+    /// # Errors
+    ///
+    /// Returns [`metis_core::error::ErrorCode::LayoutOverflow`] for an empty
+    /// or oversized path or a failed bounded allocation. Construct the
+    /// [`StrokeWidth`] before calling this method to reject zero.
+    pub fn append_polyline(
+        &mut self,
+        points: &[(i32, i32)],
+        width: StrokeWidth,
+        cap: LineCap,
+        join: LineJoin,
+        color: Color,
+    ) -> Result<()> {
+        if points.is_empty() || points.len() > MAX_STROKE_POINTS {
+            return Err(limit_error("Polyline point limit exceeded"));
+        }
+        let mut owned = Vec::new();
+        owned
+            .try_reserve_exact(points.len())
+            .map_err(|_| limit_error("Polyline point allocation failed"))?;
+        owned.extend_from_slice(points);
+        self.push(DisplayCommand::DrawPolyline {
+            points: owned,
+            width,
+            cap,
+            join,
+            color,
+        })
     }
 
     fn push(&mut self, command: DisplayCommand) -> Result<()> {
@@ -461,5 +520,51 @@ mod tests {
         assert_eq!(framebuffer.get_pixel(1, 1), Color::RED);
         assert_eq!(framebuffer.get_pixel(2, 2), Color::RED);
         assert_eq!(framebuffer.get_pixel(2, 0), Color::TRANSPARENT);
+    }
+
+    #[test]
+    fn display_polyline_command_preserves_style_and_bounds_points() {
+        let width = StrokeWidth::new(2).expect("positive stroke width");
+        let points = [(1, 1), (3, 1), (3, 3)];
+        let mut display = DisplayList::default();
+        display
+            .append_polyline(&points, width, LineCap::Round, LineJoin::Miter, Color::BLUE)
+            .expect("polyline command");
+        let mut framebuffer = Framebuffer::new(5, 5).expect("surface");
+        display.render_to(&mut framebuffer);
+        assert_eq!(display.commands.len(), 1);
+        assert_eq!(framebuffer.get_pixel(1, 1), Color::BLUE);
+        assert!(matches!(
+            &display.commands[0],
+            DisplayCommand::DrawPolyline {
+                points: stored,
+                width: stored_width,
+                cap: LineCap::Round,
+                join: LineJoin::Miter,
+                color: Color::BLUE,
+            } if stored == &points && *stored_width == width
+        ));
+    }
+
+    #[test]
+    fn empty_or_oversized_polylines_are_rejected_before_storage() {
+        let width = StrokeWidth::new(1).expect("positive stroke width");
+        let mut display = DisplayList::default();
+        assert_eq!(
+            display
+                .append_polyline(&[], width, LineCap::Butt, LineJoin::Bevel, Color::RED)
+                .expect_err("empty path")
+                .code,
+            ErrorCode::LayoutOverflow
+        );
+        let points = vec![(0, 0); MAX_STROKE_POINTS + 1];
+        assert_eq!(
+            display
+                .append_polyline(&points, width, LineCap::Butt, LineJoin::Bevel, Color::RED)
+                .expect_err("point limit")
+                .code,
+            ErrorCode::LayoutOverflow
+        );
+        assert!(display.commands.is_empty());
     }
 }
