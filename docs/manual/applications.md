@@ -251,6 +251,19 @@ decoding (404,160,512 bytes). The [RITK memory provenance record](https://github
 contains the repeated observation and limits; it does not claim allocator-used,
 browser-heap, native-process, compositor or GPU memory.
 
+The saved MRI study was also replayed through the configured Edge WebDriver
+gallery. Edge 154.0.4258.12 sent trusted file-backed drop events; the bounded
+Métis host accepted all 94 files and 49,807,236 bytes, and the RITK consumer's
+axial, coronal and sagittal RGBA hashes matched its independent pixel oracle.
+The runner rejected count, per-file byte and batch byte overflow inputs before
+reading and closed the session cleanly. The [RITK Edge gallery capture](https://github.com/ryancinsight/ritk/blob/main/docs/manual/images/dicom-metis-real-browser-mri-edge-gallery.png?raw=true)
+shows the live page and actual decoded anatomy; the [revision-bound provenance](https://github.com/ryancinsight/ritk/blob/main/docs/manual/images/dicom-metis-real-browser-mri-edge.json)
+records the transfer, images, hashes and limits. This is a Chromium-family,
+file-backed WebDriver run; it does not claim physical file-manager input,
+Firefox/WebKit, WebGPU or native dialog/process coverage. RITK owns the DICOM
+decoder and clinical presentation; Metis owns the generic browser host and
+bounded handoff.
+
 
 ## Initial form
 
