@@ -79,6 +79,8 @@ class FakeDriver:
         self.canvas_actions = []
         self.event_trace = {}
         self.values = {"weight-kg": "72.5", "target-dose": "0.5"}
+        self.generation = 1
+        self.listener_count = 10
 
     def create_session(self, browser_name: str) -> None:
         self.session_id = "session"
@@ -109,10 +111,14 @@ class FakeDriver:
             self.stopped = True
             self.pending = False
             self.success = False
+            self.generation += 1
+            self.listener_count = 0
         elif element_id == "metis-start":
             self.stopped = False
             self.success = False
             self.pending = False
+            self.generation += 1
+            self.listener_count = 10
 
     def execute(self, script: str, arguments=()):
         if "__metisCanvasTraceState" in script and "const ids = arguments[0]" in script:
@@ -229,12 +235,18 @@ class FakeDriver:
 
     def snapshot(self):
         if self.stopped:
-            return {"app_text": "Metis browser host stopped.", "mounted_controls": 0, "elements": {}}
+            return {
+                "app_text": "Metis browser host stopped.",
+                "mounted_controls": 0,
+                "lifecycle": {"listener_count": 0, "generation": self.generation},
+                "elements": {},
+            }
         state = "Backend result received" if self.success else "Request in progress" if self.pending else "Browser controls are active."
         metrics = "Volume rate: 0.900000 mL/hr" if self.success else ""
         return {
             "app_text": "Authorized clinical form boundary",
             "mounted_controls": 12,
+            "lifecycle": {"listener_count": self.listener_count, "generation": self.generation},
             "elements": {
                 "metis-status": {"text": "Authorized backend session ready", "value": None, "disabled": False},
                 "metis-form": {"text": "", "value": None, "disabled": False, "busy": "true" if self.pending else "false"},
@@ -334,6 +346,9 @@ class BrowserRuntimeTests(unittest.TestCase):
         self.assertEqual(trace.actions[-1], {"action": "stop-remount", "stale_result": False})
         self.assertEqual(trace.cleanup["stopped_mounted_controls"], 0)
         self.assertEqual(trace.cleanup["remounted_mounted_controls"], 12)
+        self.assertEqual(trace.cleanup["stopped_listener_count"], 0)
+        self.assertEqual(trace.cleanup["remounted_listener_count"], 10)
+        self.assertEqual(trace.cleanup["remounted_generation"], trace.cleanup["stopped_generation"] + 1)
         self.assertEqual(trace.cleanup["pending_requests"], 0)
         self.assertEqual(trace.cleanup["pending_request_observation"], "remounted metis-form aria-busy=false")
         self.assertEqual(len(trace.screenshots), 6)

@@ -88,6 +88,10 @@ const root = document.getElementById('metis-app');
 return {
   app_text: root ? (root.textContent || '').trim() : '',
   mounted_controls: root ? root.querySelectorAll('input,select,textarea,button').length : 0,
+  lifecycle: {
+    listener_count: root ? Number(root.getAttribute('data-metis-listener-count')) : 0,
+    generation: root ? Number(root.getAttribute('data-metis-generation')) : 0,
+  },
   document_theme: document.body.getAttribute('data-metis-theme'),
   elements: Object.fromEntries(ids.map((id) => [id, value(id)])),
 };
@@ -134,6 +138,15 @@ def _snapshot(client: WebDriverClient, trace: Trace, label: str) -> Dict[str, An
     value = client.execute(SNAPSHOT_SCRIPT, [ids])
     if not isinstance(value, dict):
         raise BrowserRuntimeError(f"semantic snapshot {label!r} is not an object")
+    lifecycle = value.get("lifecycle")
+    if (
+        not isinstance(lifecycle, dict)
+        or type(lifecycle.get("listener_count")) is not int
+        or lifecycle["listener_count"] < 0
+        or type(lifecycle.get("generation")) is not int
+        or lifecycle["generation"] < 1
+    ):
+        raise BrowserRuntimeError(f"semantic snapshot {label!r} has invalid lifecycle state")
     result = {"label": label, **value}
     trace.snapshots.append(result)
     return result
@@ -237,14 +250,19 @@ def run_scenario(
 
         if stopped_snapshot is None or remounted_snapshot is None:
             raise BrowserRuntimeError("browser lifecycle trace did not collect both teardown snapshots")
+        _assert_lifecycle_transition(stopped_snapshot, remounted_snapshot)
         trace.cleanup = {
             "session_closed": False,
             "stopped_message": True,
             "stopped_mounted_controls": stopped_snapshot["mounted_controls"],
             "remounted_mounted_controls": remounted_snapshot["mounted_controls"],
+            "stopped_listener_count": stopped_snapshot["lifecycle"]["listener_count"],
+            "remounted_listener_count": remounted_snapshot["lifecycle"]["listener_count"],
+            "stopped_generation": stopped_snapshot["lifecycle"]["generation"],
+            "remounted_generation": remounted_snapshot["lifecycle"]["generation"],
             "pending_requests": 0,
             "pending_request_observation": "remounted metis-form aria-busy=false",
-            "listeners_or_tasks": "no stale completion after generation teardown; provider count unavailable",
+            "listeners_or_tasks": "Metis-owned listener handles released at stop; provider-private resources remain outside WebDriver",
         }
         return trace
     finally:
@@ -255,12 +273,25 @@ def run_scenario(
 
 def _assert_stopped(snapshot: Mapping[str, Any]) -> None:
     """Require the stopped root to contain no mounted application controls."""
-    if snapshot.get("mounted_controls") != 0 or snapshot.get("app_text") != "Metis browser host stopped.":
+    lifecycle = snapshot.get("lifecycle")
+    if (
+        snapshot.get("mounted_controls") != 0
+        or snapshot.get("app_text") != "Metis browser host stopped."
+        or not isinstance(lifecycle, dict)
+        or lifecycle.get("listener_count") != 0
+    ):
         raise BrowserRuntimeError(f"stopped DOM retained application state: {snapshot}")
 
 
 def _assert_remount_has_no_result(snapshot: Mapping[str, Any]) -> None:
     """Reject a response delivered to a new lifecycle generation."""
+    lifecycle = snapshot.get("lifecycle")
+    if (
+        not isinstance(lifecycle, dict)
+        or not isinstance(lifecycle.get("listener_count"), int)
+        or lifecycle["listener_count"] <= 0
+    ):
+        raise BrowserRuntimeError("remounted browser generation did not restore Rust-owned listeners")
     elements = snapshot.get("elements")
     result = elements.get("result-state") if isinstance(elements, dict) else None
     if not isinstance(result, dict) or result.get("text") == "Backend result received":
@@ -273,6 +304,20 @@ def _assert_no_pending_request(snapshot: Mapping[str, Any]) -> None:
     form = elements.get("metis-form") if isinstance(elements, dict) else None
     if not isinstance(form, dict) or form.get("busy") != "false":
         raise BrowserRuntimeError("remounted browser generation did not report aria-busy=false")
+
+
+def _assert_lifecycle_transition(stopped: Mapping[str, Any], remounted: Mapping[str, Any]) -> None:
+    """Require stop to release listeners and remount to advance its generation."""
+    stopped_lifecycle = stopped.get("lifecycle")
+    remounted_lifecycle = remounted.get("lifecycle")
+    if not isinstance(stopped_lifecycle, dict) or not isinstance(remounted_lifecycle, dict):
+        raise BrowserRuntimeError("browser lifecycle snapshots omitted lifecycle state")
+    stopped_generation = stopped_lifecycle.get("generation")
+    remounted_generation = remounted_lifecycle.get("generation")
+    if not isinstance(stopped_generation, int) or not isinstance(remounted_generation, int):
+        raise BrowserRuntimeError("browser lifecycle generations were not integers")
+    if remounted_generation <= stopped_generation:
+        raise BrowserRuntimeError("browser remount did not advance its lifecycle generation")
 
 
 def _revision() -> str:

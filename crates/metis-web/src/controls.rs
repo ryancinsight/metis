@@ -19,6 +19,7 @@ pub(crate) const BROWSER_MARKUP: &str = r#"
   <p id="metis-capabilities">Host capabilities: unavailable</p>
   <p id="metis-plugins">Registered frontend extensions: unavailable</p>
   <p id="metis-events" role="status">Remote events: none</p>
+  <p id="metis-lifecycle" role="status" data-listener-count="0" data-generation="0">Lifecycle: mounting</p>
   <button id="open-session-dialog" type="button" aria-haspopup="dialog" aria-controls="session-dialog">Session details</button>
 </header>
 <dialog id="session-dialog" aria-labelledby="session-dialog-heading">

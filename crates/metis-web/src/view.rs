@@ -18,6 +18,30 @@ pub(super) fn render(document: &WebDocument, state: &BrowserState) -> io::Result
     render_result(document, state, &message)
 }
 
+/// Records the Rust-owned browser listener count and lifecycle generation.
+///
+/// The values are bounded DOM attributes so a browser conformance runner can
+/// verify teardown and remount without relying on provider-private inspection
+/// APIs. The count covers the listener guards retained by this application;
+/// provider internals remain outside this contract.
+pub(super) fn render_lifecycle(
+    document: &WebDocument,
+    listener_count: usize,
+    generation: u64,
+    message: &str,
+) -> io::Result<()> {
+    let root = element(document, "metis-app")?;
+    root.set_attribute("data-metis-listener-count", &listener_count.to_string())?;
+    root.set_attribute("data-metis-generation", &generation.to_string())?;
+    let lifecycle = element(document, "metis-lifecycle")?;
+    let lifecycle_message =
+        format!("{message} ({listener_count} listener handles; generation {generation})");
+    lifecycle.set_text(&lifecycle_message);
+    lifecycle.set_attribute("data-listener-count", &listener_count.to_string())?;
+    lifecycle.set_attribute("data-generation", &generation.to_string())?;
+    Ok(())
+}
+
 fn render_theme_and_inputs(document: &WebDocument, state: &BrowserState) -> io::Result<()> {
     let inputs = &state.inputs;
     document
