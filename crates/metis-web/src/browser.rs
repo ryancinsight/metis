@@ -145,6 +145,12 @@ impl BrowserApplication {
             fragment_task,
             generation,
         };
+        view::render_lifecycle(
+            document,
+            application.listeners.len(),
+            generation.value(),
+            "Lifecycle: mounted; Rust-owned listeners active",
+        )?;
         if let Some(config) = bridge_config {
             application.connect(document, config);
         }
@@ -573,6 +579,14 @@ pub extern "C" fn metis_start() {
         Ok(application) => APPLICATION.with_borrow_mut(|slot| *slot = Some(application)),
         Err(error) => {
             if let Ok(document) = WebDocument::current() {
+                if let Err(lifecycle_error) = view::render_lifecycle(
+                    &document,
+                    0,
+                    generation.value(),
+                    "Lifecycle: mount failed; no Rust-owned listeners",
+                ) {
+                    view::set_mount_error(&document, &lifecycle_error);
+                }
                 view::set_mount_error(&document, &error);
             }
         }
@@ -590,17 +604,34 @@ pub extern "C" fn metis_start() {
 )]
 #[unsafe(no_mangle)]
 pub extern "C" fn metis_stop() {
-    if let Err(error) = next_generation() {
-        APPLICATION.with_borrow_mut(|slot| *slot = None);
-        if let Ok(document) = WebDocument::current() {
-            view::set_mount_error(&document, &error);
+    let generation = match next_generation() {
+        Ok(generation) => generation,
+        Err(error) => {
+            APPLICATION.with_borrow_mut(|slot| *slot = None);
+            if let Ok(document) = WebDocument::current() {
+                view::set_mount_error(&document, &error);
+            }
+            return;
         }
-        return;
-    }
+    };
     APPLICATION.with_borrow_mut(|slot| *slot = None);
     if let Ok(document) = WebDocument::current()
         && let Ok(root) = view::element(&document, "metis-app")
     {
-        root.set_inner_html("<p>Metis browser host stopped.</p>");
+        if let Err(error) = root.set_attribute("data-metis-listener-count", "0") {
+            view::set_mount_error(&document, &error);
+            return;
+        }
+        if let Err(error) =
+            root.set_attribute("data-metis-generation", &generation.value().to_string())
+        {
+            view::set_mount_error(&document, &error);
+            return;
+        }
+        root.set_inner_html(&format!(
+            "<p id=\"metis-lifecycle\" role=\"status\" data-listener-count=\"0\" data-generation=\"{}\">Lifecycle: stopped; Rust-owned listeners released (0 listener handles; generation {})</p><p>Metis browser host stopped.</p>",
+            generation.value(),
+            generation.value(),
+        ));
     }
 }
