@@ -302,6 +302,11 @@ The complete native/WebView2 initial and submitted pairs, trusted input actions,
 window sizes and SHA-256 records are in the [Windows host workflow](native.md#captured-windows-workflows)
 and its [capture manifest](images/native-captures.json).
 
+The native host also has a reviewed before/after resize pair from the same
+executable: [initial](images/native-resize-initial.png),
+[resized](images/native-resize-after.png), and the
+[resize manifest](images/native-resize.json).
+
 ## Edit invalidates the result
 
 ![Edited form awaiting submission](images/form-edited.svg)

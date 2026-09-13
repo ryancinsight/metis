@@ -271,6 +271,46 @@ class NativeCaptureTests(unittest.TestCase):
         )
         self.assertEqual(parsed.cwd, pathlib.Path("work dir"))
 
+    def test_resize_arguments_are_explicit_and_client_sized(self) -> None:
+        parsed = capture._parser().parse_args(
+            [
+                "--command",
+                "metis-app.exe",
+                "--resize",
+                "1024",
+                "720",
+                "--resize-output",
+                "resized.png",
+                "--output",
+                "initial.png",
+            ]
+        )
+        self.assertEqual(parsed.resize, [1024, 720])
+        self.assertEqual(parsed.resize_output, pathlib.Path("resized.png"))
+
+    def test_resize_requires_command_and_distinct_output(self) -> None:
+        with self.assertRaisesRegex(ValueError, "requires --command"):
+            capture._validate_resize_options(None, (1024, 720), pathlib.Path("resized.png"))
+        with self.assertRaisesRegex(ValueError, "requires --resize"):
+            capture._validate_resize_options(
+                pathlib.Path("metis-app.exe"), None, pathlib.Path("resized.png")
+            )
+        with self.assertRaisesRegex(ValueError, "must differ"):
+            capture._validate_resize_options(
+                pathlib.Path("metis-app.exe"),
+                (1024, 720),
+                pathlib.Path("initial.png"),
+                pathlib.Path("initial.png"),
+            )
+
+    def test_resize_dimensions_are_bounded(self) -> None:
+        with self.assertRaisesRegex(ValueError, "bounded capture limit"):
+            capture._validate_resize_options(
+                pathlib.Path("metis-app.exe"),
+                (capture.MAX_FRAME_DIMENSION + 1, 720),
+                pathlib.Path("resized.png"),
+            )
+
     def test_command_only_options_are_rejected_for_wheel_capture(self) -> None:
         with mock.patch.object(
             capture.sys,
