@@ -83,10 +83,6 @@ enum BridgeStatus {
 }
 
 struct BrowserApplication {
-    #[expect(
-        dead_code,
-        reason = "listener handles are retained solely for Drop teardown"
-    )]
     listeners: Vec<WebEventListener>,
     state: Rc<RefCell<BrowserState>>,
     app: Rc<RefCell<Option<AsyncFrontendApp<BrowserWebSocketTransport>>>>,
@@ -232,6 +228,7 @@ impl Drop for BrowserApplication {
         let _ = self.task.borrow_mut().take();
         let _ = self.drop_task.borrow_mut().take();
         let _ = self.fragment_task.borrow_mut().take();
+        self.listeners.clear();
     }
 }
 
