@@ -320,9 +320,9 @@ jobs:
                       else:
                           document = json.load(response)
                           value = document.get("value") if isinstance(document, dict) else None
-                          if isinstance(value, dict):
+                          if isinstance(value, dict) and value.get("ready") is not False:
                               raise SystemExit(0)
-                          last_error = "status response omitted value"
+                          last_error = "driver status is not ready"
               except (OSError, urllib.error.URLError, json.JSONDecodeError) as error:
                   last_error = str(error)
               time.sleep(0.1)
