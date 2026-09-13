@@ -39,3 +39,4 @@
 | [0028](0028-bounded-vector-stroke.md) | Bounded vector stroke | Accepted |
 | [0029](0029-image-orientation.md) | Pixel-grid image orientation | Accepted |
 | [0030](0030-bounded-polyline-strokes.md) | Bounded polyline strokes | Accepted |
+| [0031](0031-arbitrary-affine-image-placement.md) | Arbitrary affine image placement | Accepted |

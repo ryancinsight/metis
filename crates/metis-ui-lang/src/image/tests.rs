@@ -152,6 +152,106 @@ fn orientation_transforms_preserve_grid_order_without_copying_source() {
 }
 
 #[test]
+fn affine_transform_validates_and_preserves_grid_order() {
+    let yellow = Color::rgb(255, 200, 0);
+    let image = RasterImage::new(2, 2, vec![Color::RED, Color::GREEN, Color::BLUE, yellow])
+        .expect("affine fixture");
+    let affine = AffineTransform::new(1.0, 0.0, 0.0, 1.0, 0.0, 0.0).expect("identity affine");
+    assert_eq!(affine, AffineTransform::identity());
+    let placement = ImagePlacement::new(
+        image.clone(),
+        Rect::new(0, 0, 2, 2),
+        Rect::new(0, 0, 2, 2),
+        ImageSampling::Nearest,
+    )
+    .expect("placement")
+    .with_transform(ImageTransform::Affine(affine));
+    let mut framebuffer = Framebuffer::new(2, 2).expect("surface");
+    placement.render_to(&mut framebuffer);
+    assert_eq!(
+        [
+            framebuffer.get_pixel(0, 0),
+            framebuffer.get_pixel(1, 0),
+            framebuffer.get_pixel(0, 1),
+            framebuffer.get_pixel(1, 1),
+        ],
+        [Color::RED, Color::GREEN, Color::BLUE, yellow]
+    );
+
+    let horizontal_flip =
+        AffineTransform::new(-1.0, 0.0, 0.0, 1.0, 1.0, 0.0).expect("horizontal flip affine");
+    let placement = ImagePlacement::new(
+        image,
+        Rect::new(0, 0, 2, 2),
+        Rect::new(0, 0, 2, 2),
+        ImageSampling::Nearest,
+    )
+    .expect("placement")
+    .with_transform(ImageTransform::Affine(horizontal_flip));
+    let mut framebuffer = Framebuffer::new(2, 2).expect("surface");
+    placement.render_to(&mut framebuffer);
+    assert_eq!(
+        [
+            framebuffer.get_pixel(0, 0),
+            framebuffer.get_pixel(1, 0),
+            framebuffer.get_pixel(0, 1),
+            framebuffer.get_pixel(1, 1),
+        ],
+        [Color::GREEN, Color::RED, yellow, Color::BLUE]
+    );
+}
+
+#[test]
+fn affine_transform_rejects_nonfinite_and_singular_matrices() {
+    for coefficients in [
+        [f64::NAN, 0.0, 0.0, 1.0, 0.0, 0.0],
+        [f64::INFINITY, 0.0, 0.0, 1.0, 0.0, 0.0],
+        [1.0, 0.0, 0.0, 0.0, 0.0, 0.0],
+    ] {
+        let error = AffineTransform::new(
+            coefficients[0],
+            coefficients[1],
+            coefficients[2],
+            coefficients[3],
+            coefficients[4],
+            coefficients[5],
+        )
+        .expect_err("invalid affine matrix");
+        assert_eq!(error.code, ErrorCode::RenderFailure);
+    }
+}
+
+#[test]
+fn affine_transform_scales_into_a_clipped_destination() {
+    let image = image_2x1();
+    let transform = AffineTransform::new(0.5, 0.0, 0.0, 1.0, 0.25, 0.0).expect("scale affine");
+    let placement = ImagePlacement::new(
+        image,
+        Rect::new(0, 0, 2, 1),
+        Rect::new(0, 0, 4, 1),
+        ImageSampling::Nearest,
+    )
+    .expect("placement")
+    .with_transform(ImageTransform::Affine(transform));
+    let mut framebuffer = Framebuffer::new(4, 1).expect("surface");
+    placement.render_to(&mut framebuffer);
+    assert_eq!(
+        [
+            framebuffer.get_pixel(0, 0),
+            framebuffer.get_pixel(1, 0),
+            framebuffer.get_pixel(2, 0),
+            framebuffer.get_pixel(3, 0),
+        ],
+        [
+            Color::TRANSPARENT,
+            Color::RED,
+            Color::BLUE,
+            Color::TRANSPARENT
+        ]
+    );
+}
+
+#[test]
 fn image_alpha_composites_over_existing_surface() {
     let image = RasterImage::new(1, 1, vec![Color::rgba(0, 0, 0, 128)]).expect("image");
     let placement = ImagePlacement::new(

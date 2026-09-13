@@ -9,7 +9,7 @@ pub mod parser;
 pub mod style;
 
 pub use dom::{DomDocument, DomElement, DomNode};
-pub use image::{ImagePlacement, ImageSampling, ImageTransform, RasterImage};
+pub use image::{AffineTransform, ImagePlacement, ImageSampling, ImageTransform, RasterImage};
 pub use layout::{
     DisplayCommand, DisplayList, LineCap, LineJoin, Rect, StrokeWidth, compute_layout,
 };

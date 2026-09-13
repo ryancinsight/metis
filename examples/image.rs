@@ -2,8 +2,8 @@
 
 use metis_platform::{Color, Framebuffer, Rect};
 use metis_ui_lang::{
-    DisplayCommand, DisplayList, ImagePlacement, ImageSampling, ImageTransform, LineCap, LineJoin,
-    RasterImage, StrokeWidth,
+    AffineTransform, DisplayCommand, DisplayList, ImagePlacement, ImageSampling, ImageTransform,
+    LineCap, LineJoin, RasterImage, StrokeWidth,
 };
 #[path = "support/framebuffer.rs"]
 mod framebuffer_artifacts;
@@ -30,12 +30,21 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         ImageSampling::Nearest,
     )?;
     let rotated = ImagePlacement::new(
-        image,
+        image.clone(),
         Rect::new(0, 0, 3, 2),
         Rect::new(156, 30, 72, 108),
         ImageSampling::Nearest,
     )?
     .with_transform(ImageTransform::RotateClockwise);
+    let affine = ImagePlacement::new(
+        image,
+        Rect::new(0, 0, 3, 2),
+        Rect::new(24, 148, 72, 24),
+        ImageSampling::Nearest,
+    )?
+    .with_transform(ImageTransform::Affine(AffineTransform::new(
+        1.0, 0.0, 0.25, 1.0, 0.0, 0.0,
+    )?));
     let mut display = DisplayList {
         commands: vec![DisplayCommand::FillRect {
             rect: Rect::new(0, 0, 240, 180),
@@ -44,6 +53,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     };
     display.append_image(placement)?;
     display.append_image(rotated)?;
+    display.append_image(affine)?;
     let stroke = StrokeWidth::new(3)?;
     display.append_polyline(
         &[(20, 20), (148, 20), (148, 144), (20, 144), (20, 20)],
@@ -69,6 +79,19 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     let mut framebuffer = Framebuffer::new(240, 180)?;
     display.render_to(&mut framebuffer);
 
+    assert_example_pixels(&framebuffer, background);
+    std::fs::write(
+        "output/image-placement.bmp",
+        framebuffer_artifacts::bmp_bytes(&framebuffer)?,
+    )?;
+    std::fs::write(
+        "output/image-placement.svg",
+        framebuffer_artifacts::svg_text(&framebuffer)?,
+    )?;
+    Ok(())
+}
+
+fn assert_example_pixels(framebuffer: &Framebuffer, background: Color) {
     for (x, y, expected) in [
         (24, 48, Color::RED),
         (64, 48, Color::GREEN),
@@ -82,17 +105,14 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         (210, 84, Color::GREEN),
         (174, 120, Color::rgb(200, 0, 220)),
         (210, 120, Color::BLUE),
+        (36, 152, Color::RED),
+        (60, 152, Color::GREEN),
+        (84, 152, Color::BLUE),
+        (36, 164, Color::rgb(255, 200, 0)),
+        (60, 164, Color::rgb(0, 200, 220)),
+        (84, 164, Color::rgb(200, 0, 220)),
     ] {
         assert_eq!(framebuffer.get_pixel(x, y), expected);
     }
     assert_eq!(framebuffer.get_pixel(0, 0), background);
-    std::fs::write(
-        "output/image-placement.bmp",
-        framebuffer_artifacts::bmp_bytes(&framebuffer)?,
-    )?;
-    std::fs::write(
-        "output/image-placement.svg",
-        framebuffer_artifacts::svg_text(&framebuffer)?,
-    )?;
-    Ok(())
 }

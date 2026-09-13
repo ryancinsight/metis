@@ -5,7 +5,7 @@ use metis_platform::framebuffer::{Color, Framebuffer, MAX_PIXELS, Rect};
 use std::sync::Arc;
 
 mod transform;
-pub use transform::ImageTransform;
+pub use transform::{AffineTransform, ImageTransform};
 use transform::{
     FlipHorizontalMapper, FlipVerticalMapper, IdentityMapper, ImageMapper, RotateClockwiseMapper,
     RotateCounterClockwiseMapper,
@@ -267,6 +267,56 @@ impl ImagePlacement {
             (ImageSampling::Nearest, ImageTransform::RotateCounterClockwise) => {
                 self.render_with::<RotateCounterClockwiseMapper>(framebuffer);
             }
+            (ImageSampling::Nearest, ImageTransform::Affine(transform)) => {
+                self.render_affine(framebuffer, transform);
+            }
+        }
+    }
+
+    fn render_affine(&self, framebuffer: &mut Framebuffer, transform: AffineTransform) {
+        let destination_left = i64::from(self.destination.x);
+        let destination_top = i64::from(self.destination.y);
+        let destination_right = destination_left + i64::from(self.destination.width);
+        let destination_bottom = destination_top + i64::from(self.destination.height);
+        let clip_left = destination_left.clamp(0, i64::from(framebuffer.width()));
+        let clip_top = destination_top.clamp(0, i64::from(framebuffer.height()));
+        let clip_right = destination_right.clamp(0, i64::from(framebuffer.width()));
+        let clip_bottom = destination_bottom.clamp(0, i64::from(framebuffer.height()));
+        if clip_left >= clip_right || clip_top >= clip_bottom {
+            return;
+        }
+
+        let inverse = transform.inverse();
+        let destination_width = f64::from(self.destination.width);
+        let destination_height = f64::from(self.destination.height);
+        let image_width = u64::from(self.image.width());
+        for y in clip_top..clip_bottom {
+            let local_y = (f64::from(i32::try_from(y).expect("invariant: framebuffer y fits i32"))
+                - f64::from(self.destination.y)
+                + 0.5)
+                / destination_height;
+            for x in clip_left..clip_right {
+                let local_x =
+                    (f64::from(i32::try_from(x).expect("invariant: framebuffer x fits i32"))
+                        - f64::from(self.destination.x)
+                        + 0.5)
+                        / destination_width;
+                let (source_x, source_y) = inverse.map(local_x, local_y);
+                let Some(source_x) = normalized_source_index(source_x, self.source.width) else {
+                    continue;
+                };
+                let Some(source_y) = normalized_source_index(source_y, self.source.height) else {
+                    continue;
+                };
+                let selected_x = i64::from(self.source.x) + source_x;
+                let selected_y = i64::from(self.source.y) + source_y;
+                let color = self.pixel_at(selected_x, selected_y, image_width);
+                framebuffer.blend_pixel(
+                    i32::try_from(x).expect("invariant: clipped framebuffer x fits i32"),
+                    i32::try_from(y).expect("invariant: clipped framebuffer y fits i32"),
+                    color,
+                );
+            }
         }
     }
 
@@ -304,19 +354,7 @@ impl ImagePlacement {
                 );
                 let selected_x = source_x + local_x;
                 let selected_y = source_y + local_y;
-                let source_index = usize::try_from(
-                    u64::try_from(selected_y)
-                        .expect("invariant: validated image source coordinate is nonnegative")
-                        * image_width
-                        + u64::try_from(selected_x)
-                            .expect("invariant: validated image source coordinate is nonnegative"),
-                )
-                .expect("invariant: validated image storage fits addressable memory");
-                let color = *self
-                    .image
-                    .pixels()
-                    .get(source_index)
-                    .expect("invariant: validated crop maps inside image storage");
+                let color = self.pixel_at(selected_x, selected_y, image_width);
                 framebuffer.blend_pixel(
                     i32::try_from(x).expect("invariant: clipped framebuffer x fits i32"),
                     i32::try_from(y).expect("invariant: clipped framebuffer y fits i32"),
@@ -325,6 +363,38 @@ impl ImagePlacement {
             }
         }
     }
+
+    fn pixel_at(&self, selected_x: i64, selected_y: i64, image_width: u64) -> Color {
+        let source_index = usize::try_from(
+            u64::try_from(selected_y)
+                .expect("invariant: validated image source coordinate is nonnegative")
+                * image_width
+                + u64::try_from(selected_x)
+                    .expect("invariant: validated image source coordinate is nonnegative"),
+        )
+        .expect("invariant: validated image storage fits addressable memory");
+        *self
+            .image
+            .pixels()
+            .get(source_index)
+            .expect("invariant: validated crop maps inside image storage")
+    }
+}
+
+fn normalized_source_index(value: f64, extent: i32) -> Option<i64> {
+    if !value.is_finite() || !(0.0..1.0).contains(&value) {
+        return None;
+    }
+    let scaled = value * f64::from(extent);
+    if !scaled.is_finite() || scaled < 0.0 || scaled >= f64::from(extent) {
+        return None;
+    }
+    #[expect(
+        clippy::cast_possible_truncation,
+        reason = "the normalized range proves the floored index is nonnegative and below the i32 extent"
+    )]
+    let index = scaled.floor() as i64;
+    Some(index)
 }
 
 fn image_error(message: impl Into<String>) -> MetisError {
