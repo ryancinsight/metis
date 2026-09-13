@@ -29,7 +29,7 @@
       "label": "initial",
       "source": "performance.memory",
       "total_js_heap_bytes": 2415149,
-      "used_js_heap_bytes": 1096125
+      "used_js_heap_bytes": 1096117
     },
     {
       "available": true,
@@ -37,7 +37,7 @@
       "label": "after-weight-kg",
       "source": "performance.memory",
       "total_js_heap_bytes": 5039759,
-      "used_js_heap_bytes": 1730631
+      "used_js_heap_bytes": 1752679
     },
     {
       "available": true,
@@ -45,7 +45,7 @@
       "label": "after-target-dose",
       "source": "performance.memory",
       "total_js_heap_bytes": 5566812,
-      "used_js_heap_bytes": 2302500
+      "used_js_heap_bytes": 2286708
     },
     {
       "available": true,
@@ -53,7 +53,7 @@
       "label": "remounted",
       "source": "performance.memory",
       "total_js_heap_bytes": 6094319,
-      "used_js_heap_bytes": 3520903
+      "used_js_heap_bytes": 3487959
     }
   ],
   "browser_name": "MicrosoftEdge",
@@ -78,7 +78,7 @@
     "the disconnected scenario intentionally has no authorized backend bridge",
     "the runner does not interpret DICOM or clinical semantics"
   ],
-  "metis_revision": "95799eebabae933bb0059898cf48fe529263921b",
+  "metis_revision": "23260cf82b12f0e8a00830a22baae26e9a6df525",
   "observations": [
     {
       "dose_text": "0.500 mcg/kg/min",
