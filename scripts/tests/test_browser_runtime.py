@@ -13,6 +13,7 @@ from unittest import mock
 sys.path.insert(0, str(pathlib.Path(__file__).resolve().parents[1]))
 import browser_protocol
 from browser_runtime import (
+    MAX_LIFECYCLE_CYCLES,
     StaticServer,
     _write_trace,
     _validate_bridge_url,
@@ -354,6 +355,16 @@ class RetainingDriver(FakeDriver):
         return snapshot
 
 
+class EmptyRemountDriver(FakeDriver):
+    """Driver mutant that restores listeners without mounting controls."""
+
+    def snapshot(self):
+        snapshot = super().snapshot()
+        if not self.stopped:
+            snapshot["mounted_controls"] = 0
+        return snapshot
+
+
 class BrowserRuntimeTests(unittest.TestCase):
     """The same trace keeps its value semantics across all engine names."""
 
@@ -399,6 +410,69 @@ class BrowserRuntimeTests(unittest.TestCase):
         document = Trace(BrowserEngine.FIREFOX, "http://127.0.0.1/", "disconnected", "0" * 40, {}).document()
         self.assertEqual(document["schema"], 1)
         self.assertEqual(document["unsupported_native_operations"], ["native-file-dialog", "native-process-launch", "os-permission-grant"])
+
+    def test_repeated_lifecycle_trace_records_each_bounded_cycle(self):
+        output = pathlib.Path(__file__).resolve().parents[2] / "output" / "browser" / "runtime-test"
+        output.mkdir(parents=True, exist_ok=True)
+        with tempfile.TemporaryDirectory(dir=output) as directory:
+            driver = FakeDriver()
+            trace = run_scenario(
+                driver,
+                BrowserEngine.CHROMIUM,
+                "http://127.0.0.1:8080/?endpoint=ws%3A%2F%2F127.0.0.1%3A8765%2Fsocket&process=42&principal=66666666666666666666666666666666",
+                "authorized",
+                "0" * 40,
+                pathlib.Path(directory),
+                5_000,
+                False,
+                4_000,
+                browser_heap=True,
+                lifecycle_cycles=3,
+            )
+        records = trace.metrics["lifecycle_cycles"]
+        self.assertEqual([record["cycle"] for record in records], [1, 2, 3])
+        self.assertEqual(trace.cleanup["lifecycle_cycles"], 3)
+        self.assertEqual(trace.cleanup["final_generation"], records[-1]["remounted"]["generation"])
+        for record in records:
+            self.assertEqual(record["stopped"]["mounted_controls"], 0)
+            self.assertEqual(record["stopped"]["listener_count"], 0)
+            self.assertGreater(record["remounted"]["mounted_controls"], 0)
+            self.assertGreater(record["remounted"]["listener_count"], 0)
+            self.assertEqual(
+                record["remounted"]["generation"],
+                record["stopped"]["generation"] + 1,
+            )
+        heap_labels = [sample["label"] for sample in trace.metrics["browser_heap"]]
+        self.assertEqual(
+            heap_labels,
+            [
+                "initial",
+                "after-weight-kg",
+                "after-target-dose",
+                "success",
+                "remounted",
+                "remounted-cycle-2",
+                "remounted-cycle-3",
+            ],
+        )
+        self.assertEqual(len(trace.screenshots), 6)
+
+    def test_lifecycle_cycle_bound_is_enforced(self):
+        for value in (0, MAX_LIFECYCLE_CYCLES + 1, True):
+            with self.subTest(value=value):
+                with self.assertRaisesRegex(BrowserRuntimeError, "lifecycle-cycles must be between"):
+                    run_scenario(
+                        FakeDriver(),
+                        BrowserEngine.CHROMIUM,
+                        "http://127.0.0.1:8080/",
+                        "disconnected",
+                        "0" * 40,
+                        pathlib.Path("."),
+                        5_000,
+                        False,
+                        4_000,
+                        lifecycle_cycles=value,
+                    )
 
     def test_canvas_trace_records_trusted_actions_and_element_captures(self):
         output = pathlib.Path(__file__).resolve().parents[2] / "output" / "browser" / "runtime-test"
@@ -598,6 +672,31 @@ class BrowserRuntimeTests(unittest.TestCase):
         self.assertEqual(document["status"], "failed")
         self.assertIn("requires --scenario canvas", document["error"])
 
+    def test_cli_rejects_lifecycle_cycles_on_canvas_scenario(self):
+        output = pathlib.Path(__file__).resolve().parents[2] / "output" / "browser" / "runtime-test"
+        output.mkdir(parents=True, exist_ok=True)
+        with tempfile.TemporaryDirectory(dir=output) as directory:
+            trace_path = pathlib.Path(directory) / "invalid-lifecycle-cli.json"
+            with mock.patch.object(
+                sys,
+                "argv",
+                [
+                    "browser_runtime.py",
+                    "--engine",
+                    "chromium",
+                    "--scenario",
+                    "canvas",
+                    "--lifecycle-cycles",
+                    "2",
+                    "--output",
+                    str(trace_path),
+                ],
+            ):
+                self.assertEqual(main(), 1)
+            document = json.loads(trace_path.read_text(encoding="utf-8"))
+        self.assertEqual(document["status"], "failed")
+        self.assertIn("requires --scenario workbench", document["error"])
+
     def test_cancel_trace_requires_pending_and_discards_delayed_result(self):
         output = pathlib.Path(__file__).resolve().parents[2] / "output" / "browser" / "runtime-test"
         output.mkdir(parents=True, exist_ok=True)
@@ -613,6 +712,7 @@ class BrowserRuntimeTests(unittest.TestCase):
                 5_000,
                 True,
                 4_000,
+                lifecycle_cycles=2,
             )
         self.assertTrue(driver.closed)
         self.assertIn({"action": "submit", "state": "pending"}, trace.actions)
@@ -620,6 +720,7 @@ class BrowserRuntimeTests(unittest.TestCase):
         self.assertFalse(any(action.get("state") == "success" for action in trace.actions))
         self.assertFalse(driver.pending)
         self.assertFalse(driver.success)
+        self.assertEqual(trace.cleanup["lifecycle_cycles"], 2)
 
     def test_canvas_trace_rejects_invalid_frame_timing(self):
         output = pathlib.Path(__file__).resolve().parents[2] / "output" / "browser" / "runtime-test"
@@ -653,6 +754,25 @@ class BrowserRuntimeTests(unittest.TestCase):
             driver = RetainingDriver()
             with self.assertRaisesRegex(BrowserRuntimeError, "stopped DOM"):
                 run_scenario(driver, BrowserEngine.FIREFOX, "http://127.0.0.1:8080/", "disconnected", "0" * 40, pathlib.Path(directory), 5_000, False, 4_000)
+        self.assertTrue(driver.closed)
+
+    def test_remount_failure_is_observed(self):
+        output = pathlib.Path(__file__).resolve().parents[2] / "output" / "browser" / "runtime-test"
+        output.mkdir(parents=True, exist_ok=True)
+        with tempfile.TemporaryDirectory(dir=output) as directory:
+            driver = EmptyRemountDriver()
+            with self.assertRaisesRegex(BrowserRuntimeError, "did not restore mounted controls"):
+                run_scenario(
+                    driver,
+                    BrowserEngine.CHROMIUM,
+                    "http://127.0.0.1:8080/?endpoint=ws%3A%2F%2F127.0.0.1%3A8765%2Fsocket&process=42&principal=66666666666666666666666666666666",
+                    "authorized",
+                    "0" * 40,
+                    pathlib.Path(directory),
+                    5_000,
+                    False,
+                    4_000,
+                )
         self.assertTrue(driver.closed)
 
     def test_disconnected_trace_rejects_privileged_submit(self):

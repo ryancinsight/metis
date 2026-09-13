@@ -1120,3 +1120,23 @@ the JavaScript heap only; they do not measure WebAssembly linear memory,
 native process memory, allocations, compositor or GPU latency. Keep them
 separate in the V12 comparison and do not use them for a universal engine
 ranking.
+
+### Repeat the workbench lifecycle
+
+The workbench runner can repeat its stop/remount sequence with a bounded
+`--lifecycle-cycles` value from 1 through 8:
+
+```text
+python scripts/browser_runtime.py --engine chromium --browser-name MicrosoftEdge --driver-url http://127.0.0.1:9517 --serve-dir output/browser --bridge disconnected --browser-heap-sample --lifecycle-cycles 4
+```
+
+Every cycle stops the Rust-owned form, requires zero mounted controls and zero
+listener handles, then remounts a new generation with positive controls and
+listeners. The trace stores one compact record per cycle under
+`metrics.lifecycle_cycles`; each record includes the stopped and remounted
+generation, listener count and mounted-control count. Optional heap samples
+for later remounts use labels such as `remounted-cycle-2`. Repeated cycles do
+not create repeated screenshots, so the trace remains within its 512 KiB
+artifact bound. This is lifecycle and JavaScript-heap evidence only; it does
+not measure native allocations, WebAssembly used memory, compositor or GPU
+latency.

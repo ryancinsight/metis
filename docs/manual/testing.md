@@ -282,6 +282,17 @@ observation otherwise. It validates `used_js_heap_bytes <=
 total_js_heap_bytes <= js_heap_limit_bytes` and does not stand in for WASM
 linear memory, native process memory or an allocation profiler.
 
+For lifecycle-growth observations, add `--lifecycle-cycles N` to the workbench
+runner, where `N` is bounded to 1 through 8. The trace records the semantic
+state for every stop/remount cycle under `metrics.lifecycle_cycles` and reports
+the total in `cleanup.lifecycle_cycles`. Each stopped state must have no
+mounted controls or Rust-owned listener handles; each remounted state must have
+a newer generation and positive listener count. The instrument records the
+component contract and keeps later remount heap samples separate from native,
+WASM, compositor and GPU measurements. A configured WebDriver endpoint is
+required for live evidence; the dependency-free suite covers the bounded
+records and failure paths.
+
 ## What a demonstration proves
 
 A useful application demonstration pairs visible output with expected behavior:
