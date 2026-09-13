@@ -361,6 +361,10 @@ class BrowserRuntimeTests(unittest.TestCase):
         self.assertEqual(BrowserEngine.parse("CHROMIUM"), BrowserEngine.CHROMIUM)
         self.assertEqual(BrowserEngine.FIREFOX.webdriver_name, "firefox")
         self.assertEqual(BrowserEngine.WEBKIT.webdriver_name, "safari")
+        self.assertEqual(BrowserEngine.CHROMIUM.resolve_webdriver_name(), "chrome")
+        self.assertEqual(BrowserEngine.CHROMIUM.resolve_webdriver_name("MicrosoftEdge"), "MicrosoftEdge")
+        with self.assertRaisesRegex(BrowserRuntimeError, "incompatible with firefox"):
+            BrowserEngine.FIREFOX.resolve_webdriver_name("MicrosoftEdge")
         with self.assertRaises(BrowserRuntimeError):
             BrowserEngine.parse("blink")
 
@@ -381,6 +385,7 @@ class BrowserRuntimeTests(unittest.TestCase):
                 4_000,
             )
         self.assertTrue(driver.closed)
+        self.assertEqual(driver.capabilities["browserName"], "chrome")
         self.assertEqual([action["field"] for action in trace.actions if action["action"] == "input-change"], ["weight-kg", "target-dose"])
         self.assertEqual(trace.actions[-1], {"action": "stop-remount", "stale_result": False})
         self.assertEqual(trace.cleanup["stopped_mounted_controls"], 0)
@@ -410,8 +415,10 @@ class BrowserRuntimeTests(unittest.TestCase):
                 ["ritk-snap-axial", "ritk-snap-coronal", "ritk-snap-sagittal"],
                 "1" * 40,
                 browser_heap=True,
+                browser_name="MicrosoftEdge",
             )
         self.assertTrue(driver.closed)
+        self.assertEqual(driver.capabilities["browserName"], "MicrosoftEdge")
         self.assertTrue(driver.released)
         self.assertEqual(trace.bridge, "canvas")
         self.assertEqual(trace.consumer_revision, "1" * 40)

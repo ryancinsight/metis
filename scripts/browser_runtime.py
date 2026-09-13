@@ -177,6 +177,7 @@ def run_scenario(
     cancel: bool,
     cancel_grace_ms: int,
     browser_heap: bool = False,
+    browser_name: Optional[str] = None,
 ) -> Trace:
     """Execute the same input, bridge and teardown trace for every engine."""
     if bridge not in BRIDGE_MODES:
@@ -185,7 +186,7 @@ def run_scenario(
     stopped_snapshot: Optional[Dict[str, Any]] = None
     remounted_snapshot: Optional[Dict[str, Any]] = None
     try:
-        client.create_session(engine.webdriver_name)
+        client.create_session(engine.resolve_webdriver_name(browser_name))
         client.set_timeouts(timeout_ms)
         trace = Trace(engine, url, bridge, revision, client.capabilities)
         client.navigate(url)
@@ -362,6 +363,7 @@ def _write_trace(path: pathlib.Path, document: Mapping[str, Any]) -> None:
 def _arguments() -> argparse.Namespace:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--engine", required=True, choices=[engine.value for engine in BrowserEngine])
+    parser.add_argument("--browser-name", help="W3C browserName override within the selected engine family")
     parser.add_argument("--scenario", choices=("workbench", "canvas"), default="workbench")
     parser.add_argument("--driver-url", help="W3C WebDriver endpoint; defaults to METIS_WEBDRIVER_<ENGINE>_URL")
     parser.add_argument("--url", help="already-running browser workbench URL")
@@ -410,6 +412,7 @@ def main() -> int:
         if arguments.timeout_seconds <= 0 or arguments.timeout_seconds > 120:
             raise BrowserRuntimeError("timeout-seconds must be greater than zero and at most 120")
         timeout_ms = int(arguments.timeout_seconds * 1000)
+        browser_name = engine.resolve_webdriver_name(arguments.browser_name)
         if not 1 <= arguments.cancel_grace_ms <= MAX_WAIT_MILLISECONDS:
             raise BrowserRuntimeError(f"cancel-grace-ms must be between 1 and {MAX_WAIT_MILLISECONDS}")
         if arguments.cancel and arguments.bridge != "authorized":
@@ -464,9 +467,10 @@ def main() -> int:
                         consumer_revision,
                         canvas_attributes,
                         browser_heap=arguments.browser_heap_sample,
+                        browser_name=browser_name,
                     )
                 else:
-                    trace = run_scenario(client, engine, url, arguments.bridge, revision, output.parent / "screenshots" / engine.value, timeout_ms, arguments.cancel, arguments.cancel_grace_ms, arguments.browser_heap_sample)
+                    trace = run_scenario(client, engine, url, arguments.bridge, revision, output.parent / "screenshots" / engine.value, timeout_ms, arguments.cancel, arguments.cancel_grace_ms, arguments.browser_heap_sample, browser_name)
         else:
             url = arguments.url
             if url is None:
@@ -485,9 +489,10 @@ def main() -> int:
                     consumer_revision,
                     canvas_attributes,
                     browser_heap=arguments.browser_heap_sample,
+                    browser_name=browser_name,
                 )
             else:
-                trace = run_scenario(client, engine, url, arguments.bridge, revision, output.parent / "screenshots" / engine.value, timeout_ms, arguments.cancel, arguments.cancel_grace_ms, arguments.browser_heap_sample)
+                trace = run_scenario(client, engine, url, arguments.bridge, revision, output.parent / "screenshots" / engine.value, timeout_ms, arguments.cancel, arguments.cancel_grace_ms, arguments.browser_heap_sample, browser_name)
         _write_trace(output, trace.document())
         print(json.dumps(trace.document(), sort_keys=True))
         return 0

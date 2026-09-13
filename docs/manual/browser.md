@@ -98,6 +98,18 @@ $env:METIS_WEBDRIVER_FIREFOX_URL = "http://127.0.0.1:4444"
 $env:METIS_WEBDRIVER_WEBKIT_URL = "http://127.0.0.1:4444"
 ```
 
+Chromium-family drivers may select a different W3C browser name. This is
+needed for Microsoft Edge, whose driver rejects the default `chrome` name;
+the engine remains `chromium` because the browser uses the Chromium protocol:
+
+```text
+python scripts/browser_runtime.py --engine chromium --browser-name MicrosoftEdge --driver-url http://127.0.0.1:9517 --serve-dir output/browser --bridge disconnected
+```
+
+The override is validated against the selected engine. `firefox` accepts only
+`firefox`, `webkit` accepts only `safari`, and Chromium accepts `chrome` or
+`MicrosoftEdge`.
+
 Run the disconnected format-neutral workflow against the generated assets:
 
 ```text
@@ -175,6 +187,13 @@ responsible for the DICOM byte drop, viewer reducer, axis/slice assertions and
 the clinical visual oracle. A
 missing driver endpoint is an unfulfilled evidence requirement, not a passing
 or skipped engine result.
+
+For an Edge canvas run, keep `--engine chromium` and add the same browser-name
+override:
+
+```text
+python scripts/browser_runtime.py --scenario canvas --engine chromium --browser-name MicrosoftEdge --driver-url http://127.0.0.1:9517 --url http://127.0.0.1:8080/ritk.html --consumer-revision <RITK-40-HEX> --canvas-id ritk-snap-axial --canvas-id ritk-snap-coronal --canvas-id ritk-snap-sagittal
+```
 
 Each canvas trace also installs a bounded capture-phase observer for the four
 input event kinds used by the scenario. The pointer and wheel action records

@@ -86,6 +86,12 @@ before its bounded overflow rejection probes. When the paired actions move a
 slice, rejection invariance compares each rejected batch with that post-input
 pixel baseline, keeping the committed window capture on the accepted study.
 
+Revision 2026-09-13: the Chromium engine accepts the explicit W3C
+`MicrosoftEdge` browser name as well as `chrome`. Workbench and canvas paths
+share the same engine-family validation, so Edge uses the existing Chromium
+scenario without a duplicated runner or a second engine identity. Firefox and
+WebKit retain their single admitted browser names.
+
 The runner declares `native-file-dialog`, `native-process-launch` and
 `os-permission-grant` unsupported for this browser surface. Native authority,
 filesystem handles and DICOM parsing remain outside Metis: RITK owns the DICOM
