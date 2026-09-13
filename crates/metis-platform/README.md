@@ -63,6 +63,13 @@ source-over composition includes destination opacity. The font covers digits,
 case-insensitive Latin letters, and selected punctuation; unsupported glyphs
 produce a replacement box. It is not a Unicode shaping engine.
 
+`DisplayScale` is the validated native device-pixel ratio used by the layout
+and rasterizer seams. It stores thousandths so 120 DPI and 144 DPI map to
+`1.250x` and `1.500x` without floating-point coordinate drift. Use
+`draw_text_scaled` for a direct text command; `metis-ui-lang::LayoutViewport`
+uses the same scale for geometry, text and hit testing. A host reports its
+current value through a `WindowEvent::DpiChanged` adapter.
+
 The Windows adapter is a native pixel, event and `WebView2` boundary, not a
 permission broker. Use `metis_platform::native::NativeSurface` with a validated
 `metis_platform::native::WindowConfig` for a real framebuffer HWND, or use

@@ -5,7 +5,7 @@ use metis_core::error::ErrorCode;
 #[test]
 fn parent_background_precedes_child_and_gap_is_between_children() {
     let doc = parse_markup("<a style='background:#f00;gap:3px'><b style='height:2px;background:#00f'/><c style='height:2px;background:#0f0'/></a>").expect("markup");
-    let list = compute_layout(&doc, 4, 7).expect("layout");
+    let list = compute_layout(&doc, LayoutViewport::new(4, 7)).expect("layout");
     let mut fb = Framebuffer::new(4, 7).expect("surface");
     list.render_to(&mut fb);
     assert_eq!(fb.get_pixel(0, 0), Color::rgb(0, 0, 255));
@@ -24,7 +24,7 @@ fn parent_background_precedes_child_and_gap_is_between_children() {
 fn extreme_styles_return_errors_without_wrapping() {
     let doc = parse_markup("<a style='padding:2147483647px'>x</a>").expect("markup");
     assert_eq!(
-        compute_layout(&doc, 8, 16)
+        compute_layout(&doc, LayoutViewport::new(8, 16))
             .expect_err("coordinate overflow")
             .code,
         ErrorCode::LayoutOverflow
@@ -33,7 +33,9 @@ fn extreme_styles_return_errors_without_wrapping() {
     element.computed_style.width = Size::Percent(f32::NAN);
     let doc = DomDocument::new(element);
     assert_eq!(
-        compute_layout(&doc, 8, 16).expect_err("invalid size").code,
+        compute_layout(&doc, LayoutViewport::new(8, 16))
+            .expect_err("invalid size")
+            .code,
         ErrorCode::LayoutOverflow
     );
 }
@@ -43,7 +45,7 @@ fn programmatic_unsupported_style_is_rejected_before_painting() {
     let mut root = DomElement::new("root");
     root.computed_style.border_radius = 2;
     root.computed_style.background_color = Some(Color::RED);
-    let error = compute_layout(&DomDocument::new(root), 4, 4)
+    let error = compute_layout(&DomDocument::new(root), LayoutViewport::new(4, 4))
         .expect_err("unsupported style must not be silently ignored");
     assert_eq!(error.code, ErrorCode::InvalidCssStyle);
     assert!(error.message.contains("border-radius"));
@@ -55,7 +57,7 @@ fn hidden_programmatic_trees_still_obey_resource_limits() {
     root.computed_style.display = Display::None;
     root.children = vec![DomNode::Text(String::new()); MAX_NODES];
     assert_eq!(
-        compute_layout(&DomDocument::new(root), 1, 1)
+        compute_layout(&DomDocument::new(root), LayoutViewport::new(1, 1))
             .expect_err("node bound")
             .code,
         ErrorCode::LayoutOverflow
@@ -68,7 +70,7 @@ fn hidden_programmatic_trees_still_obey_resource_limits() {
     }
     root.computed_style.display = Display::None;
     assert_eq!(
-        compute_layout(&DomDocument::new(root), 1, 1)
+        compute_layout(&DomDocument::new(root), LayoutViewport::new(1, 1))
             .expect_err("depth bound")
             .code,
         ErrorCode::LayoutOverflow
@@ -79,7 +81,7 @@ fn hidden_programmatic_trees_still_obey_resource_limits() {
 fn iris_backend_borrows_the_rendered_frame() {
     use iris::render::RenderBackend;
     let document = parse_markup("<root style='background:#102030;height:2px'/>").expect("markup");
-    let display = compute_layout(&document, 2, 2).expect("layout");
+    let display = compute_layout(&document, LayoutViewport::new(2, 2)).expect("layout");
     let mut framebuffer = Framebuffer::new(2, 2).expect("surface");
     let storage = framebuffer.pixels().as_ptr();
     let frame = framebuffer
@@ -87,6 +89,70 @@ fn iris_backend_borrows_the_rendered_frame() {
         .expect("infallible clipped drawing");
     assert_eq!(frame, &[0xff10_2030; 4]);
     assert_eq!(frame.as_ptr(), storage);
+}
+
+#[test]
+fn fractional_display_scale_maps_geometry_and_text_to_device_pixels() {
+    let document = parse_markup(
+        "<root style='background:#102030;padding:20px'><box style='width:10px;height:10px;background:#ff0000'><text style='color:#ffffff'>A</text></box></root>",
+    )
+    .expect("markup");
+    let scale = metis_platform::DisplayScale::from_milli(1_250).expect("125 percent");
+    let list = compute_layout(&document, LayoutViewport::with_scale(100, 100, scale))
+        .expect("scaled layout");
+    let child = list
+        .commands
+        .iter()
+        .find_map(|command| match command {
+            DisplayCommand::FillRect { rect, color } if *color == Color::rgb(255, 0, 0) => {
+                Some(*rect)
+            }
+            _ => None,
+        })
+        .expect("scaled child fill");
+    assert_eq!(child, Rect::new(25, 25, 13, 13));
+    let text_scale = list
+        .commands
+        .iter()
+        .find_map(|command| match command {
+            DisplayCommand::DrawText {
+                display_scale,
+                scale,
+                ..
+            } => Some((*display_scale, *scale)),
+            _ => None,
+        })
+        .expect("scaled text");
+    assert_eq!(text_scale, (scale, 1));
+
+    let mut framebuffer = Framebuffer::new(100, 100).expect("surface");
+    list.render_to(&mut framebuffer);
+    assert_eq!(framebuffer.get_pixel(25, 25), Color::rgb(255, 0, 0));
+    assert!((25..38).any(|x| { (25..38).any(|y| framebuffer.get_pixel(x, y) == Color::WHITE) }));
+    assert_eq!(framebuffer.get_pixel(24, 24), Color::rgb(16, 32, 48));
+}
+
+#[test]
+fn percentage_dimensions_use_the_physical_viewport_once() {
+    let document = parse_markup(
+        "<root style='background:#102030'><box style='width:50%;height:10px;background:#ff0000'/></root>",
+    )
+    .expect("markup");
+    let scale = metis_platform::DisplayScale::from_milli(1_500).expect("150 percent");
+    let list = compute_layout(&document, LayoutViewport::with_scale(100, 80, scale))
+        .expect("scaled percentage layout");
+    let child = list
+        .commands
+        .iter()
+        .find_map(|command| match command {
+            DisplayCommand::FillRect { rect, color } if *color == Color::rgb(255, 0, 0) => {
+                Some(*rect)
+            }
+            _ => None,
+        })
+        .expect("percentage child fill");
+    assert_eq!(child.width, 50);
+    assert_eq!(child.height, 15);
 }
 
 #[test]

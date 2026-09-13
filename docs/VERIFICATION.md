@@ -1577,7 +1577,9 @@ controls. They are coverage points, not performance claims. Custom presentation
 has explicit supported properties and returns `ERR_INVALID_CSS_STYLE` for
 unknown or malformed declarations; browser semantics are not inferred from
 similarly named custom enums. Add platform-specific fractional scale cases where
-the declared host contract admits them.
+the declared host contract admits them. The Metis software renderer now covers
+the Windows fractional cases in the component suite; physical host transitions
+remain V05 evidence.
 
 <a id="V05"></a>
 ### V05 — Desktop lifecycle and isolation
@@ -1627,6 +1629,25 @@ The source is the public 409-file porcine-head phantom; private patient
 captures use the same local command and remain outside version control.
 Moirai's provider-side `WM_PRINT`/`WM_PRINTCLIENT` rendering is required for
 the visible capture and is tracked by [Moirai PR #329](https://github.com/ryancinsight/Moirai/pull/329).
+
+### Fractional native display-scale mapping — 2026-09-13
+
+The native adapter now converts each `WindowEvent::DpiChanged` value through
+`DisplayScale::from_dpi`, stores it in `FrontendApp`, and repaints the same
+framebuffer and layout used for hit testing. The fixed-point mapping resolves
+96, 120 and 144 DPI to `1.000x`, `1.250x` and `1.500x`. Explicit pixel spacing,
+automatic extents and bitmap text use the scale once; percentage dimensions use
+the physical viewport once.
+
+The focused Metis nextest run passes 93/93 tests (one test skipped) across
+`metis-platform`, `metis-ui-lang`, `metis-frontend` and `metis-app`, including
+typed zero-DPI rejection, fractional geometry/text assertions, repaint-state
+retention, deterministic extreme-scale clipping, and the existing native
+resize, close/reopen, IPC and process-isolation coverage. Warning-denied
+Clippy and formatting pass for the same packages. This is deterministic
+software/component evidence; the visible window capture records 96 DPI, so a
+monitor move that changes the operating-system scale remains an open physical
+V05 journey.
 
 <a id="V06"></a>
 ### V06 — Asset and graphics gallery

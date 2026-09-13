@@ -36,6 +36,24 @@ consumed by the host; preedit text stays transient and committed UTF-8 text uses
 the same bounded patient-field transition as ordinary text input. WebView2
 composition remains a separate host role.
 
+## Apply native display scale
+
+Moirai reports the window's integer DPI through `WindowEvent::DpiChanged`.
+The native adapter converts it with `metis_platform::DisplayScale::from_dpi`
+and asks `FrontendApp` to repaint. The conversion is fixed-point and uses 96
+DPI as the authored CSS baseline: 96 DPI maps to `1.000x`, 120 DPI to
+`1.250x`, and 144 DPI to `1.500x`.
+
+`LayoutViewport` carries the physical client dimensions and this scale into
+`compute_layout`. Explicit pixel sizes, spacing, borders, automatic child
+extents, bitmap text and the submit hit rectangle use the same mapping.
+Percent sizes resolve once against the physical viewport, so a percentage is
+not scaled twice. A failed repaint restores the last valid scale and frame.
+The fixed-point contract is exercised by the layout and rasterizer tests; the
+visible captures in this manual were recorded at the host's observed 96 DPI.
+Changing the operating-system monitor scale is still a physical-host test and
+is reported separately from this deterministic component evidence.
+
 ## Share the native frame/event loop
 
 Applications with a software framebuffer can use the reusable host contract
@@ -317,7 +335,7 @@ The same production `metis-app.exe` was captured before and after the host
 received a real Win32 client resize from 800×600 to 1024×720. The initial and
 resized frames both retain the active supervised session and form controls;
 the second frame is larger because `FrontendApp::resize` rebuilt its
-framebuffer and layout. The host observed 96 DPI at both sizes and the
+framebuffer and layout. The host observed 96 DPI at both sizes, and the
 capture utility recorded changed pixels and exact SHA-256 digests in
 [`native-resize.json`](images/native-resize.json).
 
@@ -329,6 +347,10 @@ The capture session closed the supervised parent and child processes after each
 workflow. These images establish the visible initial and successful journeys;
 they do not establish native accessibility technology, an installed CJK IME,
 OS permission denial, a physical display-scale change, or macOS/Linux hosts.
+For a real application frame with saved DICOM pixels, follow the
+[RITK DICOM workflow](https://github.com/ryancinsight/ritk/blob/main/docs/manual/dicom-workflow.md);
+RITK owns opening and decoding those files and Métis owns this format-neutral
+window and framebuffer seam.
 
 ## Connect a host
 
@@ -374,9 +396,10 @@ a live surface is rejected. The host trace and framebuffer image above verify
 the format-neutral frame/event seam, the four original OS-window captures
 establish the visible native and WebView2 initial/submit journeys, and the
 resize pair proves a real client-size transition with a rebuilt frame. A native
-keyboard/IME journey is still required for V05 input acceptance. Physical
-display-scale changes, OS permission denial, native accessibility, an installed
-CJK or other IME journey, macOS/Linux providers, two-window captures and the
-viewer host remain V05 and migration work. Do not treat a successful Windows
-build or a hidden-window test as cross-platform, assistive-technology or
-permission evidence.
+keyboard/IME journey is still required for V05 input acceptance. The software
+mapping for fractional display scales is covered by deterministic component
+tests, while a physical monitor transition, OS permission denial, native
+accessibility, an installed CJK or other IME journey, macOS/Linux providers,
+two-window captures and the viewer host remain V05 and migration work. Do not
+treat a successful Windows build or a hidden-window test as cross-platform,
+assistive-technology or permission evidence.

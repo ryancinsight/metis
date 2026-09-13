@@ -7,8 +7,8 @@ use metis_platform::native::{
     CompositionPhase, MouseButton, NativeApplication, NativeFlow, WindowConfig, WindowEvent,
     run_native_application,
 };
-use metis_platform::{Color, Framebuffer, Rect};
-use metis_ui_lang::{DisplayCommand, compute_layout};
+use metis_platform::{Color, DisplayScale, Framebuffer, Rect};
+use metis_ui_lang::{DisplayCommand, LayoutViewport, compute_layout};
 use std::io::{stdin, stdout};
 use std::time::Duration;
 
@@ -97,7 +97,10 @@ impl<T: IpcTransport> NativeApplication for NativeForm<T> {
                     repaint = true;
                 }
                 WindowEvent::DpiChanged { dpi } => {
-                    eprintln!("native_dpi={dpi}");
+                    let display_scale = DisplayScale::from_dpi(*dpi)?;
+                    self.app.set_display_scale(display_scale)?;
+                    eprintln!("native_dpi={dpi} display_scale={display_scale}");
+                    repaint = true;
                 }
                 WindowEvent::PointerUp {
                     x,
@@ -230,7 +233,10 @@ fn replace_patient_id<T: IpcTransport>(
 fn submit_rect<T: IpcTransport>(app: &FrontendApp<T>) -> Result<Rect> {
     let width = i32::try_from(app.framebuffer().width()).map_err(|_| layout_error())?;
     let height = i32::try_from(app.framebuffer().height()).map_err(|_| layout_error())?;
-    let display = compute_layout(app.document(), width, height)?;
+    let display = compute_layout(
+        app.document(),
+        LayoutViewport::with_scale(width, height, app.display_scale()),
+    )?;
     let (label_x, label_y) = display
         .commands
         .iter()
@@ -280,11 +286,13 @@ fn layout_error() -> MetisError {
 #[cfg(test)]
 mod tests {
     use super::{
-        MAX_PATIENT_ID_BYTES, append_patient_character, append_patient_text, input_limit_error,
-        submit_rect,
+        MAX_PATIENT_ID_BYTES, NativeForm, append_patient_character, append_patient_text,
+        input_limit_error, submit_rect,
     };
     use metis_frontend::FrontendApp;
     use metis_ipc::MemoryTransport;
+    use metis_platform::DisplayScale;
+    use metis_platform::native::{NativeApplication, NativeFlow, WindowEvent};
 
     #[test]
     fn patient_text_rejects_controls_and_bounded_overflow() {
@@ -322,5 +330,29 @@ mod tests {
         assert!(button.contains(button.x, button.y));
         assert!(!button.contains(button.x - 1, button.y));
         assert!(!button.contains(button.x, button.y - 1));
+    }
+
+    #[test]
+    fn dpi_event_repaints_and_scales_the_submit_hit_region() {
+        let (transport, _peer) = MemoryTransport::pair();
+        let app = FrontendApp::new(transport, 800, 600).expect("form");
+        let initial = submit_rect(&app).expect("initial submit surface");
+        let mut form = NativeForm {
+            app,
+            pid: 1,
+            patient_id: "patient".to_owned(),
+            focused: true,
+        };
+        let flow = form
+            .handle_events(&[WindowEvent::DpiChanged { dpi: 144 }])
+            .expect("DPI event");
+        assert!(matches!(flow, NativeFlow::Continue { repaint: true }));
+        assert_eq!(
+            form.app.display_scale(),
+            DisplayScale::from_dpi(144).expect("144 DPI")
+        );
+        let scaled = submit_rect(&form.app).expect("scaled submit surface");
+        assert!(scaled.height > initial.height);
+        assert!(scaled.x > initial.x);
     }
 }

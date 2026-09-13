@@ -56,11 +56,11 @@ def semantics_fixture(name):
     labels = {key: key for key in ("status-badge", "label-patient", "label-weight", "label-conc",
                                    "label-dose", "output-rate", "output-status", "output-signature")}
     return {"meta": {"schema": "1", "scenario": name, "target": "software", "width": "800",
-                     "height": "600", "scale": "1", "font": "metis-platform-bitmap"},
+                     "height": "600", "scale": "1.000x", "font": "metis-platform-bitmap"},
             "input": {"patient_id": 'patient, "quoted"', "weight_kg": "60", "concentration_mg_ml": "2", "target_dose_mcg_kg_min": "0.2"},
             "observed": observation.copy(), "expected": observation.copy(), "label": labels,
             "text": {str(i): text for i, text in enumerate(labels.values())},
-            "geometry": {str(i): f"0 {i * 16} 1" for i in range(len(labels))},
+            "geometry": {str(i): f"0 {i * 16} 1.000x" for i in range(len(labels))},
             "action": {"0": 'set patient, "quoted"\nsubmit'}}
 
 
@@ -130,7 +130,7 @@ class CodecTests(unittest.TestCase):
         self.assertEqual(visual.read_semantics(encoded, "form"), values)
         with self.assertRaises(visual.VisualError):
             visual.read_semantics(encoded + b"observed,state,idle\r\n", "form")
-        for category, key, replacement in (("geometry", "0", "799 0 1"), ("meta", "width", "801"),
+        for category, key, replacement in (("geometry", "0", "799 0 1.000x"), ("meta", "width", "801"),
                                             ("input", "weight_kg", "NaN"), ("label", "output-rate", None)):
             changed = semantics_fixture("form")
             if replacement is None:
@@ -222,7 +222,7 @@ class EvidenceTests(unittest.TestCase):
         values["observed"]["error_code"] = "16386"
         (self.output / "form-rejected.csv").write_bytes(encode_semantics(values))
         values = semantics_fixture("form-corrected")
-        values["geometry"]["0"] = "799 0 1"
+        values["geometry"]["0"] = "799 0 1.000x"
         (self.output / "form-corrected.csv").write_bytes(encode_semantics(values))
         (self.output / "form-disconnected.svg").write_bytes(b"x" * (visual.MAX_BYTES + 1))
         values = semantics_fixture("form-recovered")

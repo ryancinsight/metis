@@ -143,7 +143,8 @@ pub struct ComputedStyle {
     pub background_color: Option<Color>,
     /// Straight RGBA text color.
     pub text_color: Color,
-    /// Requested font size; bitmap scale is max(1, size / 14).
+    /// Requested authored font size; bitmap scale is max(1, size / 14) before
+    /// the host display scale is applied during layout and rasterization.
     pub font_size: u32,
     /// Weight; bold is unsupported by the software renderer.
     pub font_weight: FontWeight,

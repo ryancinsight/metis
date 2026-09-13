@@ -2,6 +2,7 @@
 //!
 //! Provides pure-Rust ASCII glyph rendering with zero external font files or dependencies.
 
+use crate::DisplayScale;
 use crate::framebuffer::{Color, Framebuffer};
 
 /// 8x16 font baseline constants.
@@ -231,4 +232,35 @@ pub fn draw_glyph(fb: &mut Framebuffer, x: i32, y: i32, c: char, color: Color, s
             }
         }
     }
+}
+
+/// Draws a glyph using a validated fractional device scale.
+pub(crate) fn draw_glyph_scaled(
+    fb: &mut Framebuffer,
+    x: i32,
+    y: i32,
+    c: char,
+    color: Color,
+    scale: u32,
+    display_scale: DisplayScale,
+) {
+    let effective_milli = u64::from(scale.max(1)) * u64::from(display_scale.milli());
+    for (row, byte) in (0_u32..16).zip(get_glyph_bitmap(c)) {
+        for col in 0_u32..8 {
+            if byte & (0x80 >> col) != 0 {
+                let left = i64::from(x).saturating_add(scaled_offset(col, effective_milli));
+                let top = i64::from(y).saturating_add(scaled_offset(row, effective_milli));
+                let right = i64::from(x).saturating_add(scaled_offset(col + 1, effective_milli));
+                let bottom = i64::from(y).saturating_add(scaled_offset(row + 1, effective_milli));
+                crate::rasterizer::fill_bounds(fb, left, top, right, bottom, color);
+            }
+        }
+    }
+}
+
+fn scaled_offset(index: u32, effective_milli: u64) -> i64 {
+    let numerator = u128::from(index) * u128::from(effective_milli);
+    let rounded = (numerator + 500) / 1_000;
+    i64::try_from(rounded.min(u128::from(u64::MAX / 2)))
+        .expect("invariant: clipped glyph offset fits i64")
 }
