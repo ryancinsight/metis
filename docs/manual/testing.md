@@ -275,6 +275,13 @@ GPU and native-window latency require their own host instrument. Keep the
 browser engine, driver, viewport, study, revisions and action trace fixed
 before comparing measurements.
 
+Add `--browser-heap-sample` to the same runner command to append
+`metrics.browser_heap`. The optional observation uses the browser's
+`performance.memory` counters when exposed and records an explicit unavailable
+observation otherwise. It validates `used_js_heap_bytes <=
+total_js_heap_bytes <= js_heap_limit_bytes` and does not stand in for WASM
+linear memory, native process memory or an allocation profiler.
+
 ## What a demonstration proves
 
 A useful application demonstration pairs visible output with expected behavior:

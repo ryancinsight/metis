@@ -30,6 +30,8 @@ UNSUPPORTED_NATIVE_OPERATIONS = (
 FRAME_SAMPLE_COUNT = 8
 MAX_FRAME_SAMPLE_COUNT = 32
 MAX_FRAME_INTERVAL_MILLISECONDS = 120_000.0
+MAX_BROWSER_HEAP_BYTES = 1 << 40
+MAX_BROWSER_HEAP_LABEL_BYTES = 256
 
 
 FRAME_TIMING_SCRIPT = """
@@ -65,6 +67,21 @@ const sample = (timestamp) => {
 };
 const timer = window.setTimeout(() => finish({ok: false, error: "frame timing deadline exceeded"}), timeout);
 window.requestAnimationFrame(sample);
+"""
+
+
+BROWSER_HEAP_SCRIPT = """
+const memory = window.performance && window.performance.memory;
+if (!memory || typeof memory !== "object") {
+  return {available: false, reason: "performance.memory unavailable"};
+}
+return {
+  available: true,
+  source: "performance.memory",
+  used_js_heap_bytes: memory.usedJSHeapSize,
+  total_js_heap_bytes: memory.totalJSHeapSize,
+  js_heap_limit_bytes: memory.jsHeapSizeLimit,
+};
 """
 
 
@@ -207,4 +224,69 @@ def frame_timing(
         "max_ms": max(intervals),
     }
     trace.metrics.setdefault("frame_intervals", []).append(measurement)
+    return measurement
+
+
+def browser_heap_sample(
+    client: WebDriverClient,
+    trace: Trace,
+    label: str,
+) -> Dict[str, Any]:
+    """Record one optional browser JavaScript-heap observation.
+
+    ``performance.memory`` is a Chromium-specific diagnostic surface.  An
+    unavailable surface is recorded as an explicit observation instead of
+    being treated as zero.  The result describes JavaScript heap counters only;
+    it is not a WASM, native-process, compositor, GPU, or allocation-profile
+    measurement.
+    """
+    if (
+        not isinstance(label, str)
+        or not label
+        or len(label.encode("utf-8")) > MAX_BROWSER_HEAP_LABEL_BYTES
+    ):
+        raise BrowserRuntimeError("browser heap label is empty or exceeds its bound")
+    value = client.execute(BROWSER_HEAP_SCRIPT)
+    if not isinstance(value, dict):
+        raise BrowserRuntimeError(f"browser heap sample {label!r} returned a non-object")
+    if value.get("available") is False:
+        reason = value.get("reason")
+        if (
+            not isinstance(reason, str)
+            or not reason
+            or len(reason.encode("utf-8")) > MAX_BROWSER_HEAP_LABEL_BYTES
+        ):
+            raise BrowserRuntimeError(f"browser heap sample {label!r} returned an invalid reason")
+        measurement = {"label": label, "available": False, "reason": reason}
+        trace.metrics.setdefault("browser_heap", []).append(measurement)
+        return measurement
+    if value.get("available") is not True or value.get("source") != "performance.memory":
+        raise BrowserRuntimeError(f"browser heap sample {label!r} returned an invalid source")
+
+    def memory_bytes(name: str) -> int:
+        raw = value.get(name)
+        if (
+            type(raw) not in (int, float)
+            or not math.isfinite(float(raw))
+            or float(raw) < 0.0
+            or float(raw) > MAX_BROWSER_HEAP_BYTES
+            or not float(raw).is_integer()
+        ):
+            raise BrowserRuntimeError(f"browser heap sample {label!r} returned invalid {name}")
+        return int(raw)
+
+    used = memory_bytes("used_js_heap_bytes")
+    total = memory_bytes("total_js_heap_bytes")
+    limit = memory_bytes("js_heap_limit_bytes")
+    if limit == 0 or used > total or total > limit:
+        raise BrowserRuntimeError(f"browser heap sample {label!r} violated heap ordering")
+    measurement = {
+        "label": label,
+        "available": True,
+        "source": "performance.memory",
+        "used_js_heap_bytes": used,
+        "total_js_heap_bytes": total,
+        "js_heap_limit_bytes": limit,
+    }
+    trace.metrics.setdefault("browser_heap", []).append(measurement)
     return measurement

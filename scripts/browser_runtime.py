@@ -28,7 +28,13 @@ from browser_protocol import (
     _bounded_text,
     _safe_path,
 )
-from browser_trace import BrowserEngine, Trace, UNSUPPORTED_NATIVE_OPERATIONS, screenshot
+from browser_trace import (
+    BrowserEngine,
+    Trace,
+    UNSUPPORTED_NATIVE_OPERATIONS,
+    browser_heap_sample,
+    screenshot,
+)
 
 
 BRIDGE_MODES = ("disconnected", "authorized")
@@ -170,6 +176,7 @@ def run_scenario(
     timeout_ms: int,
     cancel: bool,
     cancel_grace_ms: int,
+    browser_heap: bool = False,
 ) -> Trace:
     """Execute the same input, bridge and teardown trace for every engine."""
     if bridge not in BRIDGE_MODES:
@@ -184,6 +191,8 @@ def run_scenario(
         client.navigate(url)
         _wait_for_selector(client, "#metis-form", timeout_ms=timeout_ms)
         initial = _snapshot(client, trace, "initial")
+        if browser_heap:
+            browser_heap_sample(client, trace, "initial")
         screenshot(client, trace, screenshot_directory, "initial")
         if bridge == "authorized":
             _wait_for_text(client, "metis-status", "Authorized backend session ready", include=True, timeout_ms=timeout_ms)
@@ -200,6 +209,8 @@ def run_scenario(
             _wait_for_text(client, "result-weight" if element_id == "weight-kg" else "result-dose", expected, include=False, timeout_ms=timeout_ms)
             trace.actions.append({"action": "input-change", "field": element_id, "value": value, "observed": expected})
             _snapshot(client, trace, f"after-{element_id}")
+            if browser_heap:
+                browser_heap_sample(client, trace, f"after-{element_id}")
             screenshot(client, trace, screenshot_directory, f"after-{element_id}")
 
         if bridge == "authorized":
@@ -217,6 +228,8 @@ def run_scenario(
                 _wait_for_selector(client, "#metis-form", timeout_ms=timeout_ms)
                 _wait_quiet(client, cancel_grace_ms)
                 remounted_snapshot = _snapshot(client, trace, "remounted-after-cancel")
+                if browser_heap:
+                    browser_heap_sample(client, trace, "remounted-after-cancel")
                 _assert_remount_has_no_result(remounted_snapshot)
                 _assert_no_pending_request(remounted_snapshot)
                 trace.actions.append({"action": "cancel-stop-remount", "stale_result": False})
@@ -227,6 +240,8 @@ def run_scenario(
                     raise BrowserRuntimeError(f"authorized result differs: {metrics!r}")
                 trace.actions.append({"action": "submit", "state": "success", "metrics": metrics})
                 _snapshot(client, trace, "success")
+                if browser_heap:
+                    browser_heap_sample(client, trace, "success")
                 screenshot(client, trace, screenshot_directory, "success")
         else:
             submit_state = initial["elements"]["submit-calculation"]
@@ -243,6 +258,8 @@ def run_scenario(
             client.click(client.find("#metis-start"))
             _wait_for_selector(client, "#metis-form", timeout_ms=timeout_ms)
             remounted_snapshot = _snapshot(client, trace, "remounted")
+            if browser_heap:
+                browser_heap_sample(client, trace, "remounted")
             _assert_remount_has_no_result(remounted_snapshot)
             _assert_no_pending_request(remounted_snapshot)
             screenshot(client, trace, screenshot_directory, "remounted")
@@ -355,6 +372,7 @@ def _arguments() -> argparse.Namespace:
     parser.add_argument("--bridge", choices=BRIDGE_MODES, default="disconnected")
     parser.add_argument("--cancel", action="store_true", help="submit a delayed authorized request, stop, remount and check stale-response disposal")
     parser.add_argument("--cancel-grace-ms", type=int, default=4_000)
+    parser.add_argument("--browser-heap-sample", action="store_true", help="record bounded performance.memory JavaScript-heap observations when exposed")
     parser.add_argument("--timeout-seconds", type=float, default=30.0)
     parser.add_argument("--output", type=pathlib.Path, help="trace path; defaults to output/browser/runtime/<engine>-<scenario>.json")
     return parser.parse_args()
@@ -445,9 +463,10 @@ def main() -> int:
                         canvas_ids,
                         consumer_revision,
                         canvas_attributes,
+                        browser_heap=arguments.browser_heap_sample,
                     )
                 else:
-                    trace = run_scenario(client, engine, url, arguments.bridge, revision, output.parent / "screenshots" / engine.value, timeout_ms, arguments.cancel, arguments.cancel_grace_ms)
+                    trace = run_scenario(client, engine, url, arguments.bridge, revision, output.parent / "screenshots" / engine.value, timeout_ms, arguments.cancel, arguments.cancel_grace_ms, arguments.browser_heap_sample)
         else:
             url = arguments.url
             if url is None:
@@ -465,9 +484,10 @@ def main() -> int:
                     canvas_ids,
                     consumer_revision,
                     canvas_attributes,
+                    browser_heap=arguments.browser_heap_sample,
                 )
             else:
-                trace = run_scenario(client, engine, url, arguments.bridge, revision, output.parent / "screenshots" / engine.value, timeout_ms, arguments.cancel, arguments.cancel_grace_ms)
+                trace = run_scenario(client, engine, url, arguments.bridge, revision, output.parent / "screenshots" / engine.value, timeout_ms, arguments.cancel, arguments.cancel_grace_ms, arguments.browser_heap_sample)
         _write_trace(output, trace.document())
         print(json.dumps(trace.document(), sort_keys=True))
         return 0
