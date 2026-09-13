@@ -265,6 +265,16 @@ surface dimensions and process boundaries differ. These reports are lifecycle
 evidence; they do not establish a memory or latency ranking against Tauri,
 GPUI or egui.
 
+For the browser side of the same comparison, the paired canvas trace records
+`metrics.frame_intervals` around the real RITK canvases. Each bounded sample is
+the interval between eight `requestAnimationFrame` callbacks before and after
+the trusted pointer/wheel actions. The trace reports the mean, population
+spread, minimum and maximum in milliseconds and fails on malformed or missing
+samples. These values describe the browser frame boundary only; compositor,
+GPU and native-window latency require their own host instrument. Keep the
+browser engine, driver, viewport, study, revisions and action trace fixed
+before comparing measurements.
+
 ## What a demonstration proves
 
 A useful application demonstration pairs visible output with expected behavior:

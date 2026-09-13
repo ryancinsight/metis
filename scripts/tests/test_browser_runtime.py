@@ -158,6 +158,9 @@ class FakeDriver:
         return None
 
     def execute_async(self, script: str, arguments=()):
+        if "requestAnimationFrame" in script:
+            sample_count = arguments[0]
+            return {"ok": True, "timestamps": [float(index * 16) for index in range(sample_count)]}
         if "MutationObserver" not in script:
             return {"ok": True}
         selector, expected, include, _timeout = arguments
@@ -303,6 +306,16 @@ class IncompleteCanvasDriver(FakeDriver):
         self.event_trace[element_id] = self.event_trace[element_id][:1]
 
 
+class InvalidFrameTimingDriver(FakeDriver):
+    """Driver mutant that reports a non-monotonic animation-frame sample."""
+
+    def execute_async(self, script: str, arguments=()):
+        if "requestAnimationFrame" in script:
+            sample_count = arguments[0]
+            return {"ok": True, "timestamps": [float(index) for index in range(sample_count - 1, -1, -1)]}
+        return super().execute_async(script, arguments)
+
+
 class RetainingDriver(FakeDriver):
     """Driver mutant that leaves controls mounted after the stop command."""
 
@@ -399,6 +412,10 @@ class BrowserRuntimeTests(unittest.TestCase):
         self.assertTrue(all(item["scope"] == "element" for item in trace.screenshots[1:-1]))
         self.assertEqual(trace.cleanup["diagnostic_listener_count"], 12)
         self.assertTrue(trace.cleanup["diagnostic_listeners_released"])
+        frame_intervals = trace.metrics["frame_intervals"]
+        self.assertEqual(len(frame_intervals), 6)
+        self.assertTrue(all(item["sample_count"] == 7 for item in frame_intervals))
+        self.assertTrue(all(item["mean_ms"] == 16.0 for item in frame_intervals))
 
     def test_canvas_trace_captures_only_requested_opaque_attributes(self):
         output = pathlib.Path(__file__).resolve().parents[2] / "output" / "browser" / "runtime-test"
@@ -551,6 +568,22 @@ class BrowserRuntimeTests(unittest.TestCase):
         self.assertFalse(any(action.get("state") == "success" for action in trace.actions))
         self.assertFalse(driver.pending)
         self.assertFalse(driver.success)
+
+    def test_canvas_trace_rejects_invalid_frame_timing(self):
+        output = pathlib.Path(__file__).resolve().parents[2] / "output" / "browser" / "runtime-test"
+        output.mkdir(parents=True, exist_ok=True)
+        with tempfile.TemporaryDirectory(dir=output) as directory:
+            with self.assertRaisesRegex(BrowserRuntimeError, "invalid intervals"):
+                run_canvas_scenario(
+                    InvalidFrameTimingDriver(),
+                    BrowserEngine.CHROMIUM,
+                    "http://127.0.0.1:8080/ritk.html",
+                    "0" * 40,
+                    pathlib.Path(directory),
+                    5_000,
+                    ["ritk-snap-axial"],
+                    "1" * 40,
+                )
 
     def test_input_mutation_failure_is_observed(self):
         output = pathlib.Path(__file__).resolve().parents[2] / "output" / "browser" / "runtime-test"

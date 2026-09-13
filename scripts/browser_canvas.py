@@ -9,7 +9,7 @@ import struct
 from typing import Any, Mapping, Optional, Sequence, Tuple
 
 from browser_protocol import ROOT, WebDriverClient, BrowserRuntimeError, _safe_path
-from browser_trace import BrowserEngine, Trace, screenshot
+from browser_trace import BrowserEngine, Trace, frame_timing, screenshot
 
 
 CANVAS_ID_PATTERN = re.compile(r"[A-Za-z][A-Za-z0-9_-]{0,127}")
@@ -323,6 +323,7 @@ def capture_canvas_trace(
     screenshot_directory: pathlib.Path,
     canvas_ids: Sequence[str],
     canvas_attributes: Sequence[str] = (),
+    frame_timeout_ms: int = 4_000,
 ) -> None:
     """Capture one trusted canvas interaction on an open browser session."""
     canvas_ids = validate_canvas_ids(canvas_ids)
@@ -338,6 +339,7 @@ def capture_canvas_trace(
         for canvas_id in canvas_ids:
             element = elements[canvas_id]
             _canvas_snapshot(client, trace, canvas_id, f"{canvas_id}-initial", canvas_attributes)
+            frame_timing(client, trace, f"{canvas_id}-initial", timeout_ms=frame_timeout_ms)
             _element_screenshot(client, trace, screenshot_directory, f"{canvas_id}-initial", element)
             client.pointer_drag(element, CANVAS_DRAG_START, CANVAS_DRAG_END)
             trace.actions.append(
@@ -363,6 +365,7 @@ def capture_canvas_trace(
             )
             settle_canvas_input(client)
             _canvas_snapshot(client, trace, canvas_id, f"{canvas_id}-after-input", canvas_attributes)
+            frame_timing(client, trace, f"{canvas_id}-after-input", timeout_ms=frame_timeout_ms)
             _element_screenshot(client, trace, screenshot_directory, f"{canvas_id}-after-input", element)
         client.release_actions()
         actions_released = True
@@ -405,7 +408,14 @@ def run_canvas_scenario(
         client.set_timeouts(timeout_ms)
         trace = Trace(engine, url, "canvas", revision, client.capabilities, consumer_revision)
         client.navigate(url)
-        capture_canvas_trace(client, trace, screenshot_directory, canvas_ids, canvas_attributes)
+        capture_canvas_trace(
+            client,
+            trace,
+            screenshot_directory,
+            canvas_ids,
+            canvas_attributes,
+            frame_timeout_ms=timeout_ms,
+        )
         return trace
     finally:
         client.close()
