@@ -225,6 +225,24 @@ selection fails closed before pixel decode. Keep the study, UID and capture on
 the local machine; do not add patient identifiers or clinical pixels to this
 public repository.
 
+Some exported studies store one image per `SeriesInstanceUID`. RITK keeps the
+folder ambiguous in that case instead of guessing. To inspect one such saved
+image, pass the DICOM file itself:
+
+```powershell
+$image = 'C:\path\to\saved-study\image.dcm'
+target\debug\ritk-snap.exe $image `
+  --metis-native `
+  --capture-application `
+  --capture "$env:TEMP\ritk-metis-local-image.png"
+```
+
+This direct-file path renders the real stored pixels through the same Métis
+surface. A singleton image has no neighbouring slices, so its axial plane is
+populated while the orthogonal planes remain empty; that is expected input
+semantics rather than a fabricated placeholder. Supply a selected series when
+you need a complete multi-slice MPR.
+
 This command is the local verification path for saved-study images. The
 public MRI-DIR captures above remain the reproducible repository evidence;
 private studies remain local evidence only.
