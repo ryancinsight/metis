@@ -59,23 +59,29 @@ function decodeHandshake(buffer) {
   return new Uint8Array(buffer.slice(2));
 }
 
-function encodeAction(generation, input) {
+function encodeAction(generation, input, target = "metis-events") {
   const action = textEncoder.encode("status.describe");
-  const target = textEncoder.encode("metis-events");
+  const targetBytes = textEncoder.encode(target);
   const value = textEncoder.encode(input);
-  if (generation === 0 || value.byteLength > 4096) {
+  if (generation === 0) {
+    throw new Error("Fragment generation is zero");
+  }
+  if (targetBytes.byteLength === 0 || targetBytes.byteLength > 64) {
+    throw new Error("Fragment target exceeds its bound");
+  }
+  if (value.byteLength > 4096) {
     throw new Error("Fragment input exceeds its bound");
   }
-  const buffer = new ArrayBuffer(16 + action.byteLength + target.byteLength + value.byteLength);
+  const buffer = new ArrayBuffer(16 + action.byteLength + targetBytes.byteLength + value.byteLength);
   const view = new DataView(buffer);
   view.setBigUint64(0, BigInt(generation));
   view.setUint16(8, action.byteLength);
-  view.setUint16(10, target.byteLength);
+  view.setUint16(10, targetBytes.byteLength);
   view.setUint32(12, value.byteLength);
   const body = new Uint8Array(buffer, 16);
   body.set(action, 0);
-  body.set(target, action.byteLength);
-  body.set(value, action.byteLength + target.byteLength);
+  body.set(targetBytes, action.byteLength);
+  body.set(value, action.byteLength + targetBytes.byteLength);
   return buffer;
 }
 
@@ -299,9 +305,13 @@ async function openSession(lease) {
 }
 
 async function dispatchFragment(input, lease, generation = lease.generation) {
+  return dispatchFragmentToTarget(input, lease, "metis-events", generation);
+}
+
+async function dispatchFragmentToTarget(input, lease, target, generation = lease.generation) {
   const token = await openSession(lease);
   requireCurrentLease(lease);
-  const action = encodeAction(generation, input);
+  const action = encodeAction(generation, input, target);
   const result = await requestBinary(
     fragmentEndpoint,
     encodeInvocation(token, action),
@@ -335,6 +345,21 @@ async function runNegativeProbes(lease) {
     throw new Error(`unauthorized probe returned ${unauthorized.status}`);
   }
   const before = events.textContent;
+  const invalidTarget = await dispatchFragmentToTarget(
+    fragmentInput.value,
+    lease,
+    "metis-forbidden",
+  );
+  requireCurrentLease(lease);
+  let targetRejected = false;
+  try {
+    applyPatchSet(invalidTarget);
+  } catch (error) {
+    targetRejected = error instanceof Error && error.message === "fragment target is not allowlisted";
+  }
+  if (!targetRejected || events.textContent !== before) {
+    throw new Error("unallowlisted fragment target was applied");
+  }
   const stale = await dispatchFragment(fragmentInput.value, lease, lease.generation + 1);
   requireCurrentLease(lease);
   let staleRejected = false;
@@ -347,7 +372,7 @@ async function runNegativeProbes(lease) {
     throw new Error("stale fragment was applied");
   }
   requireCurrentLease(lease);
-  negative.textContent = "malformed 400 · unauthorized 401 · stale unchanged";
+  negative.textContent = "malformed 400 · unauthorized 401 · target rejected · stale unchanged";
 }
 
 async function renderFragment(lease) {

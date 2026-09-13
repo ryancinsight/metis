@@ -477,6 +477,37 @@ comparison and the first-party boundary. RITK remains responsible for DICOM
 scanning, decoding, series selection, geometry and viewer state; this fragment
 contract carries presentation messages only.
 
+### Capture the authenticated fragment boundary
+
+The dependency-free WebDriver runner has a dedicated `fragment` scenario for
+the HTTP page. It waits for the real health response, authenticated handshake
+and typed patch, then checks malformed (`400`), unauthorized (`401`),
+unallowlisted-target and stale-generation probes before resetting the page and
+running the patch again on the new generation. The runner captures the three
+stable page states and closes the driver session cleanly. It requires a fixed
+same-origin page because the HTTP service binds its exact `Origin` policy:
+
+```powershell
+python scripts/browser_runtime.py `
+  --scenario fragment `
+  --engine chromium `
+  --driver-url http://127.0.0.1:9515 `
+  --url http://127.0.0.1:8080/http-health.html `
+  --browser-heap-sample `
+  --timeout-seconds 30 `
+  --output output/browser/runtime/chromium-fragment.json
+```
+
+Start the static server on port `8080` and the `--metis-http-service` role on
+port `8766` with the same origin before running the command. The trace's
+`authenticated-success`, `reset-stale-generation` and `remounted-success`
+screenshots are component evidence; they do not claim DICOM decoding. RITK's
+consumer-owned gallery remains the source for actual CT/MRI pixels. The
+demonstration service retains one session per principal until its bounded
+process exits; start a fresh service for a new page load. A `409`
+`ERR_PRIVILEGE_ESCALATION_ATTEMPT` after reusing the same principal is the
+intentional duplicate-session rejection.
+
 To demonstrate the boundary, serve the workbench, change **Weight (kg)** and
 **Result scale**, and capture the form before and after each action at the same
 viewport. The semantic tree must retain the same controls while the result text,

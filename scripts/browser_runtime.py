@@ -417,7 +417,7 @@ def _arguments() -> argparse.Namespace:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--engine", required=True, choices=[engine.value for engine in BrowserEngine])
     parser.add_argument("--browser-name", help="W3C browserName override within the selected engine family")
-    parser.add_argument("--scenario", choices=("workbench", "canvas"), default="workbench")
+    parser.add_argument("--scenario", choices=("workbench", "canvas", "fragment"), default="workbench")
     parser.add_argument("--driver-url", help="W3C WebDriver endpoint; defaults to METIS_WEBDRIVER_<ENGINE>_URL")
     parser.add_argument("--url", help="already-running browser workbench URL")
     parser.add_argument("--serve-dir", type=pathlib.Path, help="serve one generated output/browser directory on loopback")
@@ -476,8 +476,24 @@ def main() -> int:
         if arguments.cancel and arguments.bridge != "authorized":
             raise BrowserRuntimeError("--cancel requires --bridge authorized")
         run_canvas_scenario = None
+        run_fragment_scenario = None
         consumer_revision = None
-        if arguments.scenario == "canvas":
+        if arguments.scenario == "fragment":
+            from browser_fragment import run_fragment_scenario
+
+            if arguments.bridge != "disconnected":
+                raise BrowserRuntimeError("fragment scenarios use the HTTP boundary, not the workbench bridge")
+            if arguments.cancel:
+                raise BrowserRuntimeError("--cancel is only valid for the workbench scenario")
+            if arguments.lifecycle_cycles != 1:
+                raise BrowserRuntimeError("--lifecycle-cycles requires --scenario workbench")
+            if arguments.canvas_id:
+                raise BrowserRuntimeError("--canvas-id requires --scenario canvas")
+            if arguments.consumer_revision is not None:
+                raise BrowserRuntimeError("--consumer-revision requires --scenario canvas")
+            if arguments.canvas_attribute:
+                raise BrowserRuntimeError("--canvas-attribute requires --scenario canvas")
+        elif arguments.scenario == "canvas":
             from browser_canvas import (
                 run_canvas_scenario,
                 validate_canvas_attributes,
@@ -509,6 +525,8 @@ def main() -> int:
             raise BrowserRuntimeError("one of --url or --serve-dir is required")
         if arguments.bridge == "authorized" and arguments.serve_dir:
             raise BrowserRuntimeError("authorized runs require --url with host session configuration")
+        if arguments.scenario == "fragment" and arguments.serve_dir:
+            raise BrowserRuntimeError("fragment scenarios require --url for the HTTP service origin")
         revision = _revision()
         server = StaticServer(arguments.serve_dir) if arguments.serve_dir else None
         if server is not None:
@@ -529,6 +547,8 @@ def main() -> int:
                         browser_heap=arguments.browser_heap_sample,
                         browser_name=browser_name,
                     )
+                elif arguments.scenario == "fragment":
+                    raise BrowserRuntimeError("fragment scenarios require --url for the HTTP service origin")
                 else:
                     trace = run_scenario(client, engine, url, arguments.bridge, revision, output.parent / "screenshots" / engine.value, timeout_ms, arguments.cancel, arguments.cancel_grace_ms, arguments.browser_heap_sample, browser_name, arguments.lifecycle_cycles)
         else:
@@ -548,6 +568,17 @@ def main() -> int:
                     canvas_ids,
                     consumer_revision,
                     canvas_attributes,
+                    browser_heap=arguments.browser_heap_sample,
+                    browser_name=browser_name,
+                )
+            elif arguments.scenario == "fragment":
+                trace = run_fragment_scenario(
+                    client,
+                    engine,
+                    url,
+                    revision,
+                    output.parent / "screenshots" / engine.value / "fragment",
+                    timeout_ms,
                     browser_heap=arguments.browser_heap_sample,
                     browser_name=browser_name,
                 )

@@ -144,12 +144,14 @@ class BrowserAssetContractTests(unittest.TestCase):
         self.assertIn('body !== "metis-http-ready\\n"', script)
         for fragment in (
             "function encodeHandshake()",
+            'function encodeAction(generation, input, target = "metis-events")',
             "function encodeInvocation(token, action)",
             "const maxHttpBodyBytes = 16 * 1024",
             "async function readBoundedBody(result)",
             "result.body.getReader()",
             'Content-Type": "application/metis"',
             "function applyPatchSet(patchSet)",
+            "async function dispatchFragmentToTarget(input, lease, target",
             "name.length <= 64",
             "/^[a-z0-9:_-]+$/.test(name)",
             "function isCurrentLease(lease)",
@@ -157,6 +159,8 @@ class BrowserAssetContractTests(unittest.TestCase):
             "requireCurrentLease(lease)",
             "signal: lease.controller.signal",
             "stale fragment generation",
+            "target is not allowlisted",
+            "target rejected",
             "malformed probe returned",
             "unauthorized probe returned",
             'events.textContent = "—";',

@@ -697,6 +697,33 @@ class BrowserRuntimeTests(unittest.TestCase):
         self.assertEqual(document["status"], "failed")
         self.assertIn("requires --scenario workbench", document["error"])
 
+    def test_cli_requires_a_fixed_url_for_fragment_scenario(self):
+        output = pathlib.Path(__file__).resolve().parents[2] / "output" / "browser" / "runtime-test"
+        output.mkdir(parents=True, exist_ok=True)
+        with tempfile.TemporaryDirectory(dir=output) as directory:
+            trace_path = pathlib.Path(directory) / "invalid-fragment-cli.json"
+            with mock.patch.object(
+                sys,
+                "argv",
+                [
+                    "browser_runtime.py",
+                    "--engine",
+                    "chromium",
+                    "--scenario",
+                    "fragment",
+                    "--driver-url",
+                    "http://127.0.0.1:9515",
+                    "--serve-dir",
+                    "output/browser",
+                    "--output",
+                    str(trace_path),
+                ],
+            ):
+                self.assertEqual(main(), 1)
+            document = json.loads(trace_path.read_text(encoding="utf-8"))
+        self.assertEqual(document["status"], "failed")
+        self.assertIn("require --url", document["error"])
+
     def test_cancel_trace_requires_pending_and_discards_delayed_result(self):
         output = pathlib.Path(__file__).resolve().parents[2] / "output" / "browser" / "runtime-test"
         output.mkdir(parents=True, exist_ok=True)
