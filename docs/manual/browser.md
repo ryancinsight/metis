@@ -783,6 +783,26 @@ configured browser endpoint is still required to produce live scale-2
 screenshots; physical monitor transitions and platform fractional-scale cases
 remain V04/V05 host evidence.
 
+### Hosted device-scale capture
+
+The manually dispatched [Metis verification run](https://github.com/ryancinsight/metis/actions/runs/34770298938)
+captured the same workbench at device scale `2` in Chromium 152.0.7977.82 and
+Firefox 155.0. The traces report effective `devicePixelRatio` `2`, CSS
+viewports of `620×237` and `576×276`, four stop/remount cycles, zero stopped
+listener handles, 31 remounted listener handles, zero pending requests and a
+closed WebDriver session. Safari 26.6.2 is the scale-`1` control in the same
+matrix. The [revision-bound provenance record](images/metis-browser-device-scale.json)
+contains the artifact links, screenshot hashes and sanitized lifecycle results.
+
+![Metis workbench at Chromium device scale 2](images/metis-browser-scale2-chromium-initial.png)
+
+![Metis workbench remounted at Firefox device scale 2](images/metis-browser-scale2-firefox-remounted.png)
+
+These are hosted browser-window captures of the format-neutral Metis workbench;
+they verify scale negotiation and lifecycle behavior. DICOM decoding and
+patient-image presentation remain RITK-owned and are shown in the [RITK
+application gallery](applications.md#real-dicom-application-evidence).
+
 ## Exercise the accessibility presentation
 
 The workbench keeps the normal keyboard path in document order. From the
