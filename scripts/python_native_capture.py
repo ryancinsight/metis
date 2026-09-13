@@ -340,7 +340,7 @@ def _resize_window(handle: int, client_width: int, client_height: int) -> _Windo
         flags,
     ):
         raise ctypes.WinError()
-    redraw_flags = 0x0001 | 0x0100 | 0x0020  # RDW_INVALIDATE | RDW_UPDATENOW | RDW_ALLCHILDREN
+    redraw_flags = 0x0001 | 0x0100 | 0x0080  # RDW_INVALIDATE | RDW_UPDATENOW | RDW_ALLCHILDREN
     if not user32.RedrawWindow(handle, None, None, redraw_flags):
         raise ctypes.WinError()
     observation = _window_observation(handle)
