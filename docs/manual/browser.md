@@ -182,7 +182,8 @@ and [Apple's WebDriver setup](https://developer.apple.com/documentation/safari-d
 Safari automation is enabled explicitly with `sudo -n /usr/bin/safaridriver --enable`;
 the hosted runner supplies passwordless elevation for this system setting, so no
 registry or signing credential is involved. Each matrix job waits up to twenty
-seconds for the driver's `/status` response before creating a session.
+seconds for the driver's `/status` response before creating a session, and
+each WebDriver request has a sixty-second bound for the slower Firefox launch.
 
 Dispatch the workflow from a checked-out repository with the GitHub CLI:
 

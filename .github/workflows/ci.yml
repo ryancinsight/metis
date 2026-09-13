@@ -342,7 +342,7 @@ jobs:
             --bridge disconnected \
             --browser-heap-sample \
             --lifecycle-cycles 4 \
-            --timeout-seconds 30 \
+            --timeout-seconds 60 \
             --output "output/browser/runtime/$ENGINE-workbench.json"
       - name: Upload browser runtime evidence
         if: always()

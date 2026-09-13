@@ -1560,7 +1560,8 @@ workbench trace, records the negotiated capabilities and lifecycle assertions,
 and uploads its trace and PNG screenshots. Driver startup uses a finite
 twenty-second `/status` readiness bound; Safari enablement is runner-local
 `sudo -n` configuration and carries no registry or signing credential. The
-browser jobs have explicit ten-minute bounds and do not run on pull requests;
+browser jobs use a sixty-second WebDriver request bound for the slower Firefox
+launch, have explicit ten-minute job bounds and do not run on pull requests;
 the Windows gate remains the pull-request verification path.
 
 The matrix is infrastructure evidence until a hosted run completes. The local
