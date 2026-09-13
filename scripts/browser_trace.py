@@ -97,6 +97,23 @@ class BrowserEngine(str, enum.Enum):
         """Return the W3C ``browserName`` capability for this engine."""
         return {self.CHROMIUM: "chrome", self.FIREFOX: "firefox", self.WEBKIT: "safari"}[self]
 
+    def resolve_webdriver_name(self, override: Optional[str] = None) -> str:
+        """Resolve and validate an optional browser name within this engine family."""
+        names = {
+            self.CHROMIUM: ("chrome", "MicrosoftEdge"),
+            self.FIREFOX: ("firefox",),
+            self.WEBKIT: ("safari",),
+        }[self]
+        name = self.webdriver_name if override is None else override
+        if not isinstance(name, str) or not name:
+            raise BrowserRuntimeError("WebDriver browser name is empty")
+        if name not in names:
+            admitted = ", ".join(names)
+            raise BrowserRuntimeError(
+                f"browser name {name!r} is incompatible with {self.value}; choose {admitted}"
+            )
+        return name
+
     @classmethod
     def parse(cls, value: str) -> "BrowserEngine":
         """Parse a matrix name and reject an untracked engine."""

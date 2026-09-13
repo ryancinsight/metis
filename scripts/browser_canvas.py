@@ -404,13 +404,14 @@ def run_canvas_scenario(
     consumer_revision: Optional[str] = None,
     canvas_attributes: Sequence[str] = (),
     browser_heap: bool = False,
+    browser_name: Optional[str] = None,
 ) -> Trace:
     """Exercise trusted pointer and wheel input for format-neutral canvases."""
     canvas_ids = validate_canvas_ids(canvas_ids)
     canvas_attributes = validate_canvas_attributes(canvas_attributes)
     trace: Optional[Trace] = None
     try:
-        client.create_session(engine.webdriver_name)
+        client.create_session(engine.resolve_webdriver_name(browser_name))
         client.set_timeouts(timeout_ms)
         trace = Trace(engine, url, "canvas", revision, client.capabilities, consumer_revision)
         client.navigate(url)
