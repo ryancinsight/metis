@@ -537,10 +537,18 @@ positive listener count and a strictly newer generation.
 
 The dependency-free browser protocol runner now asserts those values in its
 semantic snapshots and cleanup record. Its focused Python suite passed 20/20,
-and the neutral full gate passed against this revision. The count covers only
-Metis-owned listener guards returned by the Rust mount; provider-private browser
+and the neutral full gate passed after this lifecycle change. The count covers
+only Metis-owned listener guards returned by the Rust mount; provider-private browser
 listeners remain outside the W3C surface and require configured provider
 instrumentation before they can be claimed as evidence.
+
+The generated page was also loaded in the Codex in-app browser at
+`http://127.0.0.1:8092/index.html`. Its accessibility tree reported 31 listener
+handles at generation 2. **Stop host** reported zero handles at generation 3,
+and **Start host** remounted the complete workbench with 31 handles at
+generation 4. The stopped-state screenshot showed the visible zero-handle
+message; the remounted tree restored the form, pointer, file-drop, text and
+result-explorer controls.
 
 ## Host authority and asset evidence — 2026-09-07
 
