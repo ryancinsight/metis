@@ -1564,11 +1564,23 @@ browser jobs use a sixty-second WebDriver request bound for the slower Firefox
 launch, have explicit ten-minute job bounds and do not run on pull requests;
 the Windows gate remains the pull-request verification path.
 
-The matrix is infrastructure evidence until a hosted run completes. The local
-Edge trace above remains the only live cross-engine-family observation at this
-revision; Firefox/WebKit, physical file-manager input, provider-private
-resource counts, accessibility/IME, GPU and native-window measurements remain
-open until their corresponding artifacts are reviewed.
+Hosted dispatch `34759186816` at Metis revision
+`67689e5001f65d22ac388397442eb99df9bfe0ef` passed the Chromium job
+`103728939766`, the Firefox job `103728939877` and the WebKit job
+`103728939761`. The [Chromium artifact](https://github.com/ryancinsight/metis/actions/runs/34759186816/artifacts/10318696257),
+[Firefox artifact](https://github.com/ryancinsight/metis/actions/runs/34759186816/artifacts/10318098189)
+and [WebKit artifact](https://github.com/ryancinsight/metis/actions/runs/34759186816/artifacts/10317374757)
+each contain a passed schema-1 trace and five PNG captures. Chromium negotiated
+Chrome 152.0.7977.82 at 1050×637; Firefox negotiated 155.0 at 1152×635; and
+Safari negotiated 26.6.2 at 1024×674. All three traces recorded the two input
+changes, four stop/remount cycles, stopped listener count zero, remounted
+listener count 31, zero pending requests and a clean session close. Firefox and
+WebKit reported JavaScript heap unavailability explicitly; Chromium recorded
+its bounded `performance.memory` observations. This closes the configured
+cross-engine workbench runtime evidence. Physical file-manager input,
+provider-private resource counts, accessibility/IME, GPU, native-window and
+post-drop allocation measurements remain open; RITK owns the cross-engine
+DICOM viewer trace and image semantics.
 
 <a id="V03"></a>
 ### V03 — Text and accessibility specimen

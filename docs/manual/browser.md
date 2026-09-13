@@ -199,6 +199,22 @@ for the three configured engines; a local Edge or Chromium capture remains a
 separate single-engine observation. The jobs are schedule/manual only so a
 pull request's Windows gate remains within its normal verification budget.
 
+Hosted dispatch `34759186816` at Metis revision
+`67689e5001f65d22ac388397442eb99df9bfe0ef` passed all three runtime jobs. The
+[Chromium artifact](https://github.com/ryancinsight/metis/actions/runs/34759186816/artifacts/10318696257)
+used Chrome 152.0.7977.82 and emitted five 1050×637 PNGs; the
+[Firefox artifact](https://github.com/ryancinsight/metis/actions/runs/34759186816/artifacts/10318098189)
+used Firefox 155.0 and emitted five 1152×635 PNGs; the
+[Safari/WebKit artifact](https://github.com/ryancinsight/metis/actions/runs/34759186816/artifacts/10317374757)
+used Safari 26.6.2 and emitted five 1024×674 PNGs. Every trace records the
+two input changes, four stop/remount cycles, zero stopped listeners, 31
+remounted listeners, zero pending requests and `session_closed: true`. Firefox
+and WebKit correctly report JavaScript heap observations as unavailable rather
+than fabricating values; Chromium records its bounded `performance.memory`
+observations. The [workflow run](https://github.com/ryancinsight/metis/actions/runs/34759186816)
+also retains the single [asset artifact](https://github.com/ryancinsight/metis/actions/runs/34759186816/artifacts/10318272226)
+consumed by all three jobs.
+
 ### Run a consumer-owned canvas trace
 
 The same runner has a canvas scenario for an application that owns one or more
