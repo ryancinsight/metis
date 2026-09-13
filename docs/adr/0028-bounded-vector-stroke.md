@@ -25,11 +25,12 @@ source-over compositor, and no intermediate pixel storage is allocated. The
 display-list `append_line` method preserves painter order and the Iris backend
 continues to return a borrow of the framebuffer's storage.
 
-This increment admits one-pixel segments. Stroke width, joins, caps, affine
-transforms and device acceleration remain separate operations with their own
-geometry and performance evidence. RITK may use this seam for format-neutral
-overlay presentation; DICOM scanning, geometry and clinical meaning remain in
-RITK.
+This increment admits one-pixel segments. Width-aware paths with explicit caps
+and joins are defined separately in [ADR 0030](0030-bounded-polyline-strokes.md)
+so this Bresenham contract remains exact. Affine transforms and device
+acceleration remain separate operations with their own geometry and performance
+evidence. RITK may use these seams for format-neutral overlay presentation;
+DICOM scanning, geometry and clinical meaning remain in RITK.
 
 ## Alternatives
 
@@ -50,9 +51,11 @@ egui, GPUI or Tauri.
 
 ## Verification
 
-`metis-platform` tests cover diagonal pixels, translucent source-over blending
-and `i32`-extreme endpoints. `metis-ui-lang` tests exercise the public display
-command through the same framebuffer. The image example now composes two
-visible line commands with a raster image and regenerates the inspected
-`docs/manual/images/image-placement.svg` artifact. Focused strict Clippy,
-format and nextest runs pass 45 tests (one platform-specific test skipped).
+At the delivery revision, `metis-platform` tests covered diagonal pixels,
+translucent source-over blending and `i32`-extreme endpoints, while
+`metis-ui-lang` exercised the public display command through the same
+framebuffer. The current image example additionally demonstrates the bounded
+polyline contract; the inspected artifact is regenerated from that example.
+Focused strict Clippy, format and nextest runs now cover the segment and
+polyline suites; the Windows-only native test remains skipped on unsupported
+hosts.

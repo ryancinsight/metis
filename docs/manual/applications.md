@@ -377,8 +377,9 @@ The software display list now accepts validated raster placements for local
 decoded image data. `RasterImage` rejects empty, oversized and mismatched pixel
 storage; `ImagePlacement` validates an in-bounds source crop, clips an off-screen
 destination and uses nearest-neighbor sampling with source-over alpha. The same
-list admits clipped one-pixel line segments through `append_line`, using the
-same painter order and alpha compositor. Format decoding, orientation metadata
+list admits clipped one-pixel line segments through `append_line` and bounded
+width-aware paths through `append_polyline`, using the same painter order and
+alpha compositor. Format decoding, orientation metadata
 and DICOM transfer syntax selection stay with the owning Atlas provider, so this
 surface can receive RITK pixels without moving medical parsing into Metis.
 `ImageTransform` adds identity, axis flips and quarter-turns at the pixel-grid
@@ -387,16 +388,19 @@ rotated copy. Clinical orientation and geometry still belong to RITK.
 
 The deterministic [image example](../../examples/image.rs) renders a 3×2 color
 fixture twice in a 240×180 framebuffer: once unchanged and once with a clockwise
-quarter-turn from the same source. Four clipped line commands frame both views.
-Its generated artifact is inspected here:
+quarter-turn from the same source. The display list frames the views with
+three-pixel round-cap/round-join and square-cap/bevel-join polylines. The
+software renderer classifies each visible pixel once, which keeps translucent
+overlays from darkening at segment intersections. Its generated artifact is
+inspected here:
 
 ![Software raster image placement](images/image-placement.svg)
 
 Run it with `cargo run --locked --example image`; the BMP and SVG captures are
 written under `output/`. This is software-renderer evidence for V06 and covers
-the format-neutral pixel-grid transform seam; it does not establish browser or
-native format decoding, clinical orientation policy, fonts, media controls or
-native shell presentation.
+the format-neutral pixel-grid transform and bounded stroke seams; it does not
+establish browser or native format decoding, clinical orientation policy, fonts,
+media controls or native shell presentation.
 
 ## Browser service workflow
 

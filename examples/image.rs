@@ -2,7 +2,8 @@
 
 use metis_platform::{Color, Framebuffer, Rect};
 use metis_ui_lang::{
-    DisplayCommand, DisplayList, ImagePlacement, ImageSampling, ImageTransform, RasterImage,
+    DisplayCommand, DisplayList, ImagePlacement, ImageSampling, ImageTransform, LineCap, LineJoin,
+    RasterImage, StrokeWidth,
 };
 #[path = "support/framebuffer.rs"]
 mod framebuffer_artifacts;
@@ -43,10 +44,28 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     };
     display.append_image(placement)?;
     display.append_image(rotated)?;
-    display.append_line((20, 20), (148, 20), Color::LIGHT_GRAY)?;
-    display.append_line((152, 20), (232, 20), Color::LIGHT_GRAY)?;
-    display.append_line((20, 144), (148, 144), Color::LIGHT_GRAY)?;
-    display.append_line((152, 144), (232, 144), Color::LIGHT_GRAY)?;
+    let stroke = StrokeWidth::new(3)?;
+    display.append_polyline(
+        &[(20, 20), (148, 20), (148, 144), (20, 144), (20, 20)],
+        stroke,
+        LineCap::Round,
+        LineJoin::Round,
+        Color::LIGHT_GRAY,
+    )?;
+    display.append_polyline(
+        &[(152, 20), (232, 20), (232, 144), (152, 144), (152, 20)],
+        stroke,
+        LineCap::Square,
+        LineJoin::Bevel,
+        Color::LIGHT_GRAY,
+    )?;
+    display.append_polyline(
+        &[(96, 165), (108, 150), (120, 165)],
+        stroke,
+        LineCap::Butt,
+        LineJoin::Miter,
+        Color::GRAY,
+    )?;
     let mut framebuffer = Framebuffer::new(240, 180)?;
     display.render_to(&mut framebuffer);
 

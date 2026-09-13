@@ -1,7 +1,8 @@
 # metis-platform
 
-Bounded software framebuffers, clipped rectangle, one-pixel line and bitmap
-text drawing, an application-supplied event queue, and ANSI terminal previews.
+Bounded software framebuffers, clipped rectangles, one-pixel lines, bounded
+polyline strokes and bitmap text drawing, an application-supplied event queue,
+and ANSI terminal previews.
 On Windows, the
 `native` module adapts Moirai's thread-owned Win32 window provider to the
 framebuffer without bringing unsafe operating-system code into this crate.
@@ -22,6 +23,27 @@ assert_eq!(pixels.get_pixel(2, 2), metis_platform::Color::BLUE);
 Line segments use the same clipped framebuffer and source-over contract. The
 off-screen endpoints are clipped before traversal, so the work is bounded by
 the visible surface rather than by the distance outside it.
+
+Polyline strokes add a validated pixel width, endpoint cap and vertex join while
+keeping one painter-order and source-over contract. Each visible pixel is
+classified once, so overlapping translucent segments do not compound opacity.
+The command retains at most 4,096 vertices and scans only the framebuffer
+intersection of the path and its bounded miter envelope.
+
+```rust
+let mut pixels = metis_platform::Framebuffer::new(32, 16)?;
+let width = metis_platform::StrokeWidth::new(3)?;
+metis_platform::draw_polyline(
+    &mut pixels,
+    &[(4, 4), (12, 4), (12, 12)],
+    width,
+    metis_platform::LineCap::Round,
+    metis_platform::LineJoin::Bevel,
+    metis_platform::Color::BLUE,
+);
+assert_eq!(pixels.get_pixel(4, 4), metis_platform::Color::BLUE);
+# Ok::<(), metis_core::error::MetisError>(())
+```
 
 ```rust
 let mut pixels = metis_platform::Framebuffer::new(8, 8)?;
