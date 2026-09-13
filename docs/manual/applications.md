@@ -245,6 +245,11 @@ It runs the real scanner and loader, checks exact pixels and physical geometry,
 and compares axial, coronal and sagittal captures with reviewed goldens. The
 Metis browser capture proves only bounded input handoff and does not claim
 DICOM decoding.
+The same run records committed WebAssembly linear-memory capacity at
+initialization (1,769,472 bytes), after mount (1,835,008 bytes), and after
+decoding (404,160,512 bytes). The [RITK memory provenance record](https://github.com/ryancinsight/ritk/blob/main/docs/manual/images/dicom-metis-real-browser-mri-memory.json)
+contains the repeated observation and limits; it does not claim allocator-used,
+browser-heap, native-process, compositor or GPU memory.
 
 
 ## Initial form

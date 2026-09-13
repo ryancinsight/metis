@@ -472,7 +472,7 @@ an owner. “Unsupported” cannot replace delivery of a required mobile/native 
 
 <a id="METIS-PERF-001"></a>
 ## METIS-PERF-001 — Comparative resource and latency evidence [patch]
-- Status: in-progress; priority: P1; owner: Metis measurement; integrator: root; last-update: 2026-09-13; dependencies: METIS-BROWSER-001, METIS-DESKTOP-001, METIS-INPUT-001; risk: invalid comparative claims
+- Status: in-progress; priority: P1; owner: Metis measurement; integrator: root; last-update: 2026-09-13; branch: `docs/perf-wasm-memory-001`; regions: `backlog.md`, `docs/VERIFICATION.md`, `docs/manual/applications.md`; dependencies: METIS-BROWSER-001, METIS-DESKTOP-001, METIS-INPUT-001; risk: invalid comparative claims
 - Scope: instrument the first live app, then compare matched egui/GPUI/Tauri fixtures; total process memory, WASM memory, allocations, idle/active/peak/growth, startup/input/frame latency and bundle/build size separately.
 - Acceptance: [V12](docs/VERIFICATION.md#V12) protocol, pinned revisions/assets/traces and controlled host; stored baselines/confidence and resource bounds; resolve production regressions without changing the instrument to move results.
 - Demonstration: measured tables/plots in the manual with machine/target/uncertainty and semantic/visual equivalence; no speed/security ranking without its evidence.
@@ -482,7 +482,8 @@ an owner. “Unsupported” cannot replace delivery of a required mobile/native 
 - Completed increment (2026-09-13): the format-neutral browser canvas trace records eight `requestAnimationFrame` callbacks per named canvas before and after trusted pointer/wheel input under `metrics.frame_intervals`, with mean, population spread, minimum and maximum interval values. The bounded runner rejects unavailable, malformed or non-monotonic samples; 114/114 dependency-free Python tests pass. The measurement is explicitly a browser frame-boundary metric and does not claim compositor, GPU or native-window latency.
 - Delivery increment (2026-09-13): the browser frame-boundary metric landed through Metis PR #105 at merge `5946336`; the feature branch was collected after the hosted Windows gate passed.
 - Delivery increment (2026-09-13): the optional browser JavaScript-heap sample landed through Metis PR #107 at merge `62b19df`. `--browser-heap-sample` records validated Chromium `performance.memory` observations or explicit unavailability; 116/116 Python checks and the hosted Windows gate passed. The manual and verification record keep JavaScript-heap values separate from WASM, native, compositor, GPU and allocation measurements.
-- Residuals: the eframe and native Métis runs now match the public input and panel semantics, but surface dimensions and process boundaries remain different; GPUI/Tauri fixtures, WASM committed/used memory, allocation, input-to-frame/compositor/native latency, repeated lifecycle growth and controlled-host uncertainty remain open.
+- Delivery increment (2026-09-13): the RITK saved-study browser run records repeated committed WebAssembly linear-memory capacity at initialization, mount and decode in [`dicom-metis-real-browser-mri-memory.json`](../ritk/docs/manual/images/dicom-metis-real-browser-mri-memory.json); the Metis manual and V12 verification link the evidence while keeping DICOM ownership in RITK.
+- Residuals: the eframe and native Métis runs now match the public input and panel semantics, but surface dimensions and process boundaries remain different; GPUI/Tauri fixtures, WASM used-memory/allocation, input-to-frame/compositor/native latency, repeated lifecycle growth and controlled-host uncertainty remain open.
 
 <a id="METIS-QUALITY-001"></a>
 ## METIS-QUALITY-001 — Verification infrastructure [patch]
