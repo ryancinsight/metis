@@ -79,7 +79,7 @@ an owner. “Unsupported” cannot replace delivery of a required mobile/native 
 
 <a id="METIS-FRAGMENT-001"></a>
 ## METIS-FRAGMENT-001 — Authenticated typed browser actions [arch] [minor]
-- Status: review; priority: P1; owner: Metis protocol/browser; integrator: root; last-update: 2026-09-10; dependencies: METIS-BROWSER-001, METIS-COMMANDS-001, METIS-AUTHORITY-001; risk: remote markup and stale lifecycle
+- Status: in-progress; priority: P1; owner: Metis protocol/browser; integrator: root; last-update: 2026-09-13; branch: `feat/fragment-webdriver-001`; regions: `scripts/browser_fragment.py`, `scripts/browser_runtime.py`, `scripts/tests/test_browser_fragment.py`, `scripts/tests/test_browser_runtime.py`, `docs/manual/browser.md`, `docs/VERIFICATION.md`, `backlog.md`; dependencies: METIS-BROWSER-001, METIS-COMMANDS-001, METIS-AUTHORITY-001; risk: remote markup and stale lifecycle
 - Scope: event→request→target→swap interaction inspired by htmx, with versioned authenticated actions and bounded typed patches; arbitrary markup, scripts, unrestricted selectors and navigation stay outside the contract.
 - Acceptance: capability-bound action requests, allowlisted targets, bounded patch count/bytes and atomic application; invalid capability/target/patch/size and stale generation return typed errors without changing prior state; mount/unmount releases listeners and tasks exactly once.
 - Demonstration: browser trace and inspected snapshots cover action success, rejected target/patch, stop/remount during an in-flight request and zero retained mounted controls.
