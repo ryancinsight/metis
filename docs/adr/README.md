@@ -40,3 +40,4 @@
 | [0029](0029-image-orientation.md) | Pixel-grid image orientation | Accepted |
 | [0030](0030-bounded-polyline-strokes.md) | Bounded polyline strokes | Accepted |
 | [0031](0031-arbitrary-affine-image-placement.md) | Arbitrary affine image placement | Accepted |
+| [0032](0032-display-scale.md) | Fixed-point native display scale | Accepted |

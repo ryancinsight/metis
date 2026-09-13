@@ -5,7 +5,10 @@ This is a declarative presentation subset, not an HTML/CSS browser engine.
 
 ```rust
 let document = metis_ui_lang::parse_markup("<label>42</label>")?;
-let display = metis_ui_lang::compute_layout(&document, 320, 240)?;
+let display = metis_ui_lang::compute_layout(
+    &document,
+    metis_ui_lang::LayoutViewport::new(320, 240),
+)?;
 assert_eq!(display.commands.len(), 1);
 # Ok::<(), metis_core::error::MetisError>(())
 ```
@@ -28,6 +31,13 @@ style and a trailing semicolon are valid. Layout rejects coordinate overflow
 and invalid dimensions. Application-built DOMs should observe the parser
 limits; direct DOM construction does not validate them until layout, and
 recursive DOM utility operations assume bounded trees.
+
+`LayoutViewport` carries the physical framebuffer dimensions and a validated
+`metis_platform::DisplayScale`. Explicit pixel dimensions, spacing, automatic
+extents and bitmap text are mapped with that scale; percentages resolve once
+against the physical viewport. Native hosts can repaint after a DPI event and
+reuse the resulting display list for hit testing without a second coordinate
+conversion.
 
 The display list admits one-pixel line segments through
 `DisplayList::append_line` and width-aware paths through
@@ -112,7 +122,10 @@ assert_eq!(framebuffer.get_pixel(1, 1), Color::RED);
 ```rust
 use iris::render::RenderBackend;
 let document = metis_ui_lang::parse_markup("<root style='height:8px;background:#123456'/>")?;
-let display = metis_ui_lang::compute_layout(&document, 8, 8)?;
+let display = metis_ui_lang::compute_layout(
+    &document,
+    metis_ui_lang::LayoutViewport::new(8, 8),
+)?;
 let mut framebuffer = metis_platform::Framebuffer::new(8, 8)?;
 let pixels = framebuffer.render(&display).expect("clipped rendering is infallible");
 assert_eq!(pixels[0], 0xff12_3456);

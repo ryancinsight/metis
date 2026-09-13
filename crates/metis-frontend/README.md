@@ -75,7 +75,10 @@ asynchronous input. See [state ownership and API migration](../../docs/adr/0004-
 ```rust
 use metis_frontend::CLINICAL_SCREEN_XML;
 let document = metis_ui_lang::parse_markup(CLINICAL_SCREEN_XML)?;
-let display = metis_ui_lang::compute_layout(&document, 800, 600)?;
+let display = metis_ui_lang::compute_layout(
+    &document,
+    metis_ui_lang::LayoutViewport::new(800, 600),
+)?;
 // Submit the resulting display list to an Iris rendering backend.
 # Ok::<(), metis_core::MetisError>(())
 ```

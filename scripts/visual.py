@@ -229,8 +229,9 @@ def read_semantics(content, name):
                  and len(key) <= 128 and len(value) <= 4096, "Duplicate or unsupported semantic field")
         values[category][key] = value
     _require(values["meta"] == {"schema": "1", "scenario": name, "target": "software",
-             "width": "800", "height": "600", "scale": "1", "font": "metis-platform-bitmap"},
+             "width": "800", "height": "600", "scale": "1.000x", "font": "metis-platform-bitmap"},
              "Capture target or schema differs")
+    _scale_milli(values["meta"]["scale"])
     _require(set(values["input"]) == {"patient_id", "weight_kg", "concentration_mg_ml", "target_dose_mcg_kg_min"},
              "Capture inputs are incomplete")
     for field in ("weight_kg", "concentration_mg_ml", "target_dose_mcg_kg_min"):
@@ -244,10 +245,13 @@ def read_semantics(content, name):
         _require(set(values[category]) == {str(index) for index in range(len(values[category]))},
                  f"{category} indices are not contiguous")
     for key, geometry in values["geometry"].items():
-        _require(re.fullmatch(r"\d{1,6} \d{1,6} \d{1,3}", geometry) is not None, "Malformed text geometry")
-        x, y, scale = map(int, geometry.split())
-        _require(scale > 0 and x + len(values["text"][key]) * 8 * scale <= 800
-                 and y + 16 * scale <= 600, "Captured text is clipped")
+        match = re.fullmatch(r"(\d{1,6}) (\d{1,6}) ((?:0|[1-9][0-9]*)\.[0-9]{3}x)", geometry)
+        _require(match is not None, "Malformed text geometry")
+        x, y = int(match.group(1)), int(match.group(2))
+        scale_milli = _scale_milli(match.group(3))
+        width = max(1, (len(values["text"][key]) * 8 * scale_milli + 500) // 1_000)
+        height = max(1, (16 * scale_milli + 500) // 1_000)
+        _require(x + width <= 800 and y + height <= 600, "Captured text is clipped")
     return values
 
 
@@ -258,6 +262,20 @@ def _number(value):
         raise VisualError(f"Malformed number: {value}") from error
     _require(math.isfinite(number), "Nonfinite semantic number")
     return number
+
+
+_DISPLAY_SCALE = re.compile(r"(?:0|[1-9][0-9]*)\.[0-9]{3}x\Z")
+
+
+def _scale_milli(value):
+    """Parse the fixed-point display scale emitted by the Rust capture."""
+    _require(isinstance(value, str) and _DISPLAY_SCALE.fullmatch(value) is not None,
+             "Malformed display scale")
+    whole, fraction = value[:-1].split(".")
+    _require(len(whole) <= 10, "Display scale exceeds the capture range")
+    milli = int(whole) * 1_000 + int(fraction)
+    _require(0 < milli <= 0xFFFF_FFFF, "Display scale exceeds the capture range")
+    return milli
 
 
 def _oracle(values):

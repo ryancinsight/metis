@@ -3,7 +3,7 @@ use iris::render::RenderBackend;
 use metis_frontend::{FormState, FrontendApp};
 use metis_ipc::transport::MemoryTransport;
 use metis_platform::{Color, FONT_HEIGHT, FONT_WIDTH, Framebuffer};
-use metis_ui_lang::{DisplayCommand, DomDocument, compute_layout};
+use metis_ui_lang::{DisplayCommand, DomDocument, LayoutViewport, compute_layout};
 use std::io::Write;
 
 #[derive(Clone, Copy)]
@@ -25,10 +25,14 @@ pub(super) fn capture(
     actions: &[String],
 ) -> Result<(), Box<dyn std::error::Error>> {
     let framebuffer = app.framebuffer();
+    let display_scale = app.display_scale();
     let display = compute_layout(
         app.document(),
-        i32::try_from(framebuffer.width())?,
-        i32::try_from(framebuffer.height())?,
+        LayoutViewport::with_scale(
+            i32::try_from(framebuffer.width())?,
+            i32::try_from(framebuffer.height())?,
+            display_scale,
+        ),
     )?;
     let mut records = std::io::BufWriter::new(std::fs::File::create(format!("output/{name}.csv"))?);
     row(&mut records, "category", "key", "value")?;
@@ -36,11 +40,11 @@ pub(super) fn capture(
         ("schema", "1"),
         ("scenario", name),
         ("target", "software"),
-        ("scale", "1"),
         ("font", "metis-platform-bitmap"),
     ] {
         row(&mut records, "meta", key, value)?;
     }
+    row(&mut records, "meta", "scale", &display_scale.to_string())?;
     row(
         &mut records,
         "meta",
@@ -107,12 +111,19 @@ fn capture_details(
     let mut index = 0;
     for command in commands {
         if let DisplayCommand::DrawText {
-            text, x, y, scale, ..
+            text,
+            x,
+            y,
+            scale: base_scale,
+            display_scale,
+            ..
         } = command
         {
-            let width =
-                i64::try_from(text.chars().count())? * i64::from(FONT_WIDTH) * i64::from(*scale);
-            let height = i64::from(FONT_HEIGHT) * i64::from(*scale);
+            let effective_scale = display_scale.multiply(*base_scale)?;
+            let glyph_count = i32::try_from(text.chars().count())?;
+            let glyph_extent = i32::try_from(i64::from(glyph_count) * i64::from(FONT_WIDTH))?;
+            let width = i64::from(effective_scale.scale_extent(glyph_extent)?);
+            let height = i64::from(effective_scale.scale_extent(i32::try_from(FONT_HEIGHT)?)?);
             assert!(
                 *x >= 0 && i64::from(*x) + width <= i64::from(app.framebuffer().width()),
                 "horizontal clipping: {text}"
@@ -125,7 +136,7 @@ fn capture_details(
                 &mut records,
                 "geometry",
                 &index.to_string(),
-                &format!("{x} {y} {scale}"),
+                &format!("{x} {y} {effective_scale}"),
             )?;
             row(&mut records, "text", &index.to_string(), text)?;
             index += 1;
@@ -198,7 +209,7 @@ pub(super) fn comparator_probes(initial: &DomDocument) -> Result<(), Box<dyn std
             }
             _ => unreachable!("invariant: the probe set is declared above"),
         }
-        let display = compute_layout(&document, 800, 600)?;
+        let display = compute_layout(&document, LayoutViewport::new(800, 600))?;
         let mut framebuffer = Framebuffer::new(800, 600)?;
         framebuffer.clear(Color::rgb(240, 244, 248));
         // Deliberately altered renderer fixtures never represent application outcomes.

@@ -9,7 +9,7 @@ use metis_ipc::{
     transport::{IpcTransport, MemoryTransport},
 };
 use metis_platform::framebuffer::{Color, Framebuffer};
-use metis_ui_lang::layout::compute_layout;
+use metis_ui_lang::layout::{LayoutViewport, compute_layout};
 use moirai_core::TaskSpawner;
 use moirai_executor::ExecutorBuilder;
 
@@ -52,7 +52,7 @@ fn label(app: &FrontendApp<MemoryTransport>, id: &str) -> String {
 fn assert_current_pixels(app: &FrontendApp<MemoryTransport>) {
     let mut expected = Framebuffer::new(800, 600).expect("reference surface");
     expected.clear(Color::rgb(240, 244, 248));
-    compute_layout(app.document(), 800, 600)
+    compute_layout(app.document(), LayoutViewport::new(800, 600))
         .expect("current document layout")
         .render_to(&mut expected);
     // This checks state-to-frame synchronization, not rasterizer correctness.

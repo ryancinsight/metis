@@ -40,7 +40,7 @@ use crate::{FormState, FrontendApp};
 use iris::render::RenderBackend;
 use metis_core::{ErrorCode, MetisError, Result};
 use metis_ipc::{IpcTransport, client::HandshakeError};
-use metis_ui_lang::{Color, compute_layout};
+use metis_ui_lang::{Color, LayoutViewport, compute_layout};
 
 impl<T: IpcTransport> FrontendApp<T> {
     /// Projects the owned state and renders the complete form.
@@ -114,7 +114,10 @@ impl<T: IpcTransport> FrontendApp<T> {
         self.text("output-signature", signature)?;
         let width = i32::try_from(self.framebuffer.width()).map_err(|_| layout_error())?;
         let height = i32::try_from(self.framebuffer.height()).map_err(|_| layout_error())?;
-        let display = compute_layout(&self.doc, width, height)?;
+        let display = compute_layout(
+            &self.doc,
+            LayoutViewport::with_scale(width, height, self.display_scale),
+        )?;
         self.framebuffer.clear(Color::rgb(240, 244, 248));
         self.framebuffer
             .render(&display)
@@ -249,28 +252,42 @@ fn input_number(value: f64, minimum_decimals: usize) -> String {
 mod presentation_tests {
     use super::CLINICAL_SCREEN_XML;
     use metis_platform::{Color, FONT_HEIGHT, FONT_WIDTH, Framebuffer};
-    use metis_ui_lang::{DisplayCommand, compute_layout, parse_markup};
+    use metis_ui_lang::{DisplayCommand, LayoutViewport, compute_layout, parse_markup};
 
     #[test]
     fn authored_form_text_and_status_fit_the_viewport() {
         let document = parse_markup(CLINICAL_SCREEN_XML).expect("authored markup");
-        let display = compute_layout(&document, 800, 600).expect("authored layout");
+        let display =
+            compute_layout(&document, LayoutViewport::new(800, 600)).expect("authored layout");
         let mut text_runs = Vec::new();
         for command in &display.commands {
             if let DisplayCommand::DrawText {
-                text, x, y, scale, ..
+                text,
+                x,
+                y,
+                scale: base_scale,
+                display_scale,
+                ..
             } = command
             {
-                let width = i64::try_from(text.chars().count()).expect("bounded text")
-                    * i64::from(FONT_WIDTH)
-                    * i64::from(*scale);
-                let height = i64::from(FONT_HEIGHT) * i64::from(*scale);
+                let effective_scale = display_scale
+                    .multiply(*base_scale)
+                    .expect("authored text scale remains representable");
+                let width = effective_scale
+                    .scale_extent(
+                        i32::try_from(text.chars().count()).expect("bounded text")
+                            * i32::try_from(FONT_WIDTH).expect("font width fits coordinates"),
+                    )
+                    .expect("authored text width remains representable");
+                let height = effective_scale
+                    .scale_extent(i32::try_from(FONT_HEIGHT).expect("font height fits coordinates"))
+                    .expect("authored text height remains representable");
                 assert!(
-                    *x >= 0 && i64::from(*x) + width <= 800,
+                    *x >= 0 && i64::from(*x) + i64::from(width) <= 800,
                     "horizontal clipping: {text}"
                 );
                 assert!(
-                    *y >= 0 && i64::from(*y) + height <= 600,
+                    *y >= 0 && i64::from(*y) + i64::from(height) <= 600,
                     "vertical clipping: {text}"
                 );
                 text_runs.push((text.as_str(), *x, *y));

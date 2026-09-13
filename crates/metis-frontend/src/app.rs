@@ -7,7 +7,7 @@ use metis_core::protocol::{
 };
 use metis_ipc::client::{HandshakeError, IpcClient};
 use metis_ipc::transport::IpcTransport;
-use metis_platform::Framebuffer;
+use metis_platform::{DisplayScale, Framebuffer};
 use metis_ui_lang::{DomDocument, parse_markup};
 
 /// Outcome for the current inputs. Only success carries a result.
@@ -74,6 +74,7 @@ pub struct FrontendApp<T> {
     pub(crate) inputs: FormInputs,
     pub(crate) composition: Option<String>,
     pub(crate) state: FormState,
+    pub(crate) display_scale: DisplayScale,
 }
 
 impl<T: IpcTransport> FrontendApp<T> {
@@ -88,6 +89,7 @@ impl<T: IpcTransport> FrontendApp<T> {
             inputs: FormInputs::new("PT-9042-ALPHA", 72.5, 4.0, 0.5),
             composition: None,
             state: FormState::Idle,
+            display_scale: DisplayScale::ONE,
         };
         app.render()?;
         Ok(app)
@@ -118,6 +120,12 @@ impl<T: IpcTransport> FrontendApp<T> {
     #[must_use]
     pub const fn framebuffer(&self) -> &Framebuffer {
         &self.framebuffer
+    }
+
+    /// Device-pixel scale used for the current presentation.
+    #[must_use]
+    pub const fn display_scale(&self) -> DisplayScale {
+        self.display_scale
     }
 
     /// Acquires a capability and clears any earlier calculation.
@@ -209,6 +217,25 @@ impl<T: IpcTransport> FrontendApp<T> {
         let previous = std::mem::replace(&mut self.framebuffer, replacement);
         if let Err(error) = self.render() {
             self.framebuffer = previous;
+            return Err(error);
+        }
+        Ok(())
+    }
+
+    /// Applies a native display scale and repaints the existing surface.
+    ///
+    /// The scale is a validated fixed-point capability supplied by the host.
+    /// The previous scale remains active when layout or painting rejects the
+    /// replacement presentation.
+    ///
+    /// # Errors
+    /// Returns a bounded layout or rendering error and preserves the previous
+    /// scale and framebuffer.
+    pub fn set_display_scale(&mut self, display_scale: DisplayScale) -> Result<()> {
+        let previous = self.display_scale;
+        self.display_scale = display_scale;
+        if let Err(error) = self.render() {
+            self.display_scale = previous;
             return Err(error);
         }
         Ok(())
@@ -314,6 +341,8 @@ mod tests {
     use super::{FrontendApp, MAX_COMPOSITION_BYTES};
     use metis_core::ErrorCode;
     use metis_ipc::MemoryTransport;
+    use metis_platform::DisplayScale;
+    use metis_ui_lang::DisplayCommand;
 
     #[test]
     fn resize_replaces_surface_and_preserves_it_on_invalid_dimensions() {
@@ -353,5 +382,27 @@ mod tests {
         app.set_inputs("PT-2", 70.0, 4.0, 0.5)
             .expect("committed input edit");
         assert_eq!(app.composition(), None);
+    }
+
+    #[test]
+    fn display_scale_repaints_text_and_preserves_the_new_capability() {
+        let (transport, _peer) = MemoryTransport::pair();
+        let mut app = FrontendApp::new(transport, 800, 600).expect("initial form");
+        let scale = DisplayScale::from_milli(1_500).expect("150 percent");
+        app.set_display_scale(scale).expect("scaled form");
+        assert_eq!(app.display_scale(), scale);
+        let command = app.document().clone();
+        let display = metis_ui_lang::compute_layout(
+            &command,
+            metis_ui_lang::LayoutViewport::with_scale(800, 600, scale),
+        )
+        .expect("scaled layout");
+        assert!(display.commands.iter().any(|command| matches!(
+            command,
+            DisplayCommand::DrawText {
+                display_scale,
+                ..
+            } if *display_scale == scale
+        )));
     }
 }

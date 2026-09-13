@@ -1,6 +1,7 @@
 //! Clipped rectangle, line and bitmap text drawing, bounded by framebuffer area.
 
-use crate::font::{FONT_WIDTH, draw_glyph};
+use crate::DisplayScale;
+use crate::font::{FONT_WIDTH, draw_glyph_scaled};
 use crate::framebuffer::{Color, Framebuffer, Rect};
 mod stroke;
 
@@ -190,7 +191,26 @@ fn interpolate(first_a: i64, first_b: i64, second_a: i64, second_b: i64, target:
 ///
 /// Scale zero means one. Unsupported characters use the font replacement glyph.
 pub fn draw_text(fb: &mut Framebuffer, x: i32, y: i32, text: &str, color: Color, scale: u32) {
-    let advance = i64::from(FONT_WIDTH) * i64::from(scale.max(1));
+    draw_text_scaled(fb, x, y, text, color, scale, DisplayScale::ONE);
+}
+
+/// Renders one horizontal text run at a fractional device scale.
+///
+/// The integer `scale` remains the authored bitmap multiplier. The validated
+/// display scale maps authored pixels to physical pixels with deterministic
+/// fixed-point rounding, so native DPI changes repaint geometry and text from
+/// the same display list.
+pub fn draw_text_scaled(
+    fb: &mut Framebuffer,
+    x: i32,
+    y: i32,
+    text: &str,
+    color: Color,
+    scale: u32,
+    display_scale: DisplayScale,
+) {
+    let effective_milli = u64::from(scale.max(1)) * u64::from(display_scale.milli());
+    let advance = scaled_extent(u64::from(FONT_WIDTH), effective_milli);
     let mut cursor = i64::from(x);
     for c in text.chars().filter(|c| *c != '\n') {
         if cursor >= i64::from(fb.width()) {
@@ -199,16 +219,23 @@ pub fn draw_text(fb: &mut Framebuffer, x: i32, y: i32, text: &str, color: Color,
         let Ok(origin) = i32::try_from(cursor) else {
             break;
         };
-        if cursor + advance > 0 {
-            draw_glyph(fb, origin, y, c, color, scale);
+        if cursor.saturating_add(advance) > 0 {
+            draw_glyph_scaled(fb, origin, y, c, color, scale, display_scale);
         }
-        cursor += advance;
+        cursor = cursor.saturating_add(advance);
     }
+}
+
+fn scaled_extent(value: u64, effective_milli: u64) -> i64 {
+    let rounded = (u128::from(value) * u128::from(effective_milli) + 500) / 1_000;
+    i64::try_from(rounded.min(u128::from(u64::MAX / 2)))
+        .expect("invariant: clipped text extent fits i64")
 }
 
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::font::draw_glyph;
 
     #[test]
     fn extreme_geometry_clips_without_overflow() {
@@ -239,6 +266,45 @@ mod tests {
         assert_eq!(fb.get_pixel(0, 0), Color::TRANSPARENT);
         assert_eq!(fb.get_pixel(10, 2), Color::TRANSPARENT);
         assert_eq!(fb.get_pixel(18, 2), Color::RED);
+    }
+
+    #[test]
+    fn fractional_text_scale_changes_pixel_extent_deterministically() {
+        let mut one = Framebuffer::new(32, 20).expect("one-scale surface");
+        draw_text_scaled(&mut one, 0, 0, "A", Color::RED, 1, DisplayScale::ONE);
+        let mut fractional = Framebuffer::new(32, 20).expect("fractional surface");
+        draw_text_scaled(
+            &mut fractional,
+            0,
+            0,
+            "A",
+            Color::RED,
+            1,
+            DisplayScale::from_milli(1_500).expect("150 percent"),
+        );
+        let one_pixels = one.pixels().iter().filter(|pixel| **pixel != 0).count();
+        let scaled_pixels = fractional
+            .pixels()
+            .iter()
+            .filter(|pixel| **pixel != 0)
+            .count();
+        assert!(scaled_pixels > one_pixels);
+        assert_eq!(one.get_pixel(2, 2), Color::RED);
+    }
+
+    #[test]
+    fn extreme_fractional_text_scale_clips_without_panicking() {
+        let mut framebuffer = Framebuffer::new(8, 8).expect("surface");
+        draw_text_scaled(
+            &mut framebuffer,
+            0,
+            0,
+            "A",
+            Color::RED,
+            u32::MAX,
+            DisplayScale::from_milli(u32::MAX).expect("validated scale"),
+        );
+        assert!(framebuffer.pixels().iter().all(|pixel| *pixel == 0));
     }
 
     #[test]
