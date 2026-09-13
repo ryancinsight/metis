@@ -246,7 +246,7 @@ class FakeDriver:
     def snapshot(self):
         if self.stopped:
             return {
-                "app_text": "Metis browser host stopped.",
+                "app_text": f"Lifecycle: stopped; Rust-owned listeners released (0 listener handles; generation {self.generation})Metis browser host stopped.",
                 "mounted_controls": 0,
                 "lifecycle": {"listener_count": 0, "generation": self.generation},
                 "elements": {},

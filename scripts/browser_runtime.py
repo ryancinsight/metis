@@ -292,9 +292,11 @@ def run_scenario(
 def _assert_stopped(snapshot: Mapping[str, Any]) -> None:
     """Require the stopped root to contain no mounted application controls."""
     lifecycle = snapshot.get("lifecycle")
+    app_text = snapshot.get("app_text")
     if (
         snapshot.get("mounted_controls") != 0
-        or snapshot.get("app_text") != "Metis browser host stopped."
+        or not isinstance(app_text, str)
+        or not app_text.endswith("Metis browser host stopped.")
         or not isinstance(lifecycle, dict)
         or lifecycle.get("listener_count") != 0
     ):
