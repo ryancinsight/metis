@@ -1,0 +1,156 @@
+{
+  "bridge": "disconnected",
+  "engines": [
+    {
+      "artifact": {
+        "id": 10322261343,
+        "name": "metis-browser-runtime-chromium-34770298938",
+        "url": "https://github.com/ryancinsight/metis/actions/runs/34770298938/artifacts/10322261343"
+      },
+      "browser_name": "chrome",
+      "browser_version": "152.0.7977.82",
+      "cleanup": {
+        "lifecycle_cycles": 4,
+        "pending_requests": 0,
+        "remounted_listener_count": 31,
+        "remounted_mounted_controls": 27,
+        "session_closed": true,
+        "stopped_listener_count": 0,
+        "stopped_mounted_controls": 0
+      },
+      "css_viewport": {
+        "height": 237,
+        "width": 620
+      },
+      "device_pixel_ratio": 2.0,
+      "driver_version": "152.0.7977.82",
+      "effective_scale": "2",
+      "engine": "chromium",
+      "requested_scale": "2",
+      "runner": "ubuntu-24.04",
+      "screenshots": [
+        {
+          "bytes": 45124,
+          "file": "metis-browser-scale2-chromium-initial.png",
+          "height": 474,
+          "label": "initial",
+          "sha256": "6081aad4c5db305a9f79e3f34e82fd5be274b0cee336f5428d8c1a60a2185bf4",
+          "width": 1240
+        },
+        {
+          "bytes": 45124,
+          "file": "metis-browser-scale2-chromium-remounted.png",
+          "height": 474,
+          "label": "remounted",
+          "sha256": "6081aad4c5db305a9f79e3f34e82fd5be274b0cee336f5428d8c1a60a2185bf4",
+          "width": 1240
+        }
+      ]
+    },
+    {
+      "artifact": {
+        "id": 10321378164,
+        "name": "metis-browser-runtime-firefox-34770298938",
+        "url": "https://github.com/ryancinsight/metis/actions/runs/34770298938/artifacts/10321378164"
+      },
+      "browser_name": "firefox",
+      "browser_version": "155.0",
+      "cleanup": {
+        "lifecycle_cycles": 4,
+        "pending_requests": 0,
+        "remounted_listener_count": 31,
+        "remounted_mounted_controls": 27,
+        "session_closed": true,
+        "stopped_listener_count": 0,
+        "stopped_mounted_controls": 0
+      },
+      "css_viewport": {
+        "height": 276,
+        "width": 576
+      },
+      "device_pixel_ratio": 2.0,
+      "driver_version": "0.37.1",
+      "effective_scale": "2",
+      "engine": "firefox",
+      "requested_scale": "2",
+      "runner": "ubuntu-24.04",
+      "screenshots": [
+        {
+          "bytes": 60564,
+          "file": "metis-browser-scale2-firefox-initial.png",
+          "height": 552,
+          "label": "initial",
+          "sha256": "01df90158f164f6f15ebbe4b2156dbd2556eddbdc8971c2fd54b5456955b16e3",
+          "width": 1152
+        },
+        {
+          "bytes": 60564,
+          "file": "metis-browser-scale2-firefox-remounted.png",
+          "height": 552,
+          "label": "remounted",
+          "sha256": "01df90158f164f6f15ebbe4b2156dbd2556eddbdc8971c2fd54b5456955b16e3",
+          "width": 1152
+        }
+      ]
+    },
+    {
+      "artifact": {
+        "id": 10322330556,
+        "name": "metis-browser-runtime-webkit-34770298938",
+        "url": "https://github.com/ryancinsight/metis/actions/runs/34770298938/artifacts/10322330556"
+      },
+      "browser_name": "safari",
+      "browser_version": "26.6.2",
+      "cleanup": {
+        "lifecycle_cycles": 4,
+        "pending_requests": 0,
+        "remounted_listener_count": 31,
+        "remounted_mounted_controls": 27,
+        "session_closed": true,
+        "stopped_listener_count": 0,
+        "stopped_mounted_controls": 0
+      },
+      "css_viewport": {
+        "height": 674,
+        "width": 1024
+      },
+      "device_pixel_ratio": 1.0,
+      "driver_version": null,
+      "effective_scale": "1",
+      "engine": "webkit",
+      "requested_scale": "1",
+      "runner": "macos-latest",
+      "screenshots": [
+        {
+          "bytes": 87922,
+          "file": "metis-browser-scale1-webkit-initial.png",
+          "height": 674,
+          "label": "initial",
+          "sha256": "c5bc379504cf4679eeab519cae16dd2c195370bcb10f654ecd1ba6dc4a565251",
+          "width": 1024
+        }
+      ]
+    }
+  ],
+  "limits": {
+    "DICOM_and_viewer_semantics": "owned by RITK",
+    "provider_private_resources": "outside the WebDriver contract",
+    "requested_device_scale": "0.5..4",
+    "screenshot_source": "hosted WebDriver browser window"
+  },
+  "metis_revision": "f9cc81f0bf2e5b2868fa913832b470d42f8e5342",
+  "observed_on": "2026-09-13",
+  "scenario": "workbench",
+  "schema": 1,
+  "status": "passed",
+  "unsupported_native_operations": [
+    "native-file-dialog",
+    "native-process-launch",
+    "os-permission-grant"
+  ],
+  "workflow": {
+    "name": "Metis verification",
+    "run_id": 34770298938,
+    "url": "https://github.com/ryancinsight/metis/actions/runs/34770298938"
+  }
+}

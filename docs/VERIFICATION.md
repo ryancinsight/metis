@@ -1057,6 +1057,21 @@ payloads, effective-scale matching, malformed probe responses and the explicit
 WebKit rejection. This proves the host contract and fail-closed behavior; it
 does not substitute for an engine screenshot.
 
+## Hosted browser device-scale evidence — 2026-09-13
+
+Manual dispatch `34770298938` ran the current Metis revision
+`f9cc81f0bf2e5b2868fa913832b470d42f8e5342` through the configured browser
+matrix. Chromium 152.0.7977.82 and Firefox 155.0 both accepted requested scale
+`2` and reported effective `devicePixelRatio` `2`; their CSS viewports were
+`620×237` and `576×276`, with 1240×474 and 1152×552 screenshot pixels. Safari
+26.6.2 accepted the scale-`1` control. All three browser jobs passed the two
+input changes, four stop/remount cycles, zero stopped listener handles, 31
+remounted listener handles, zero pending requests and session closure. The
+sanitized [provenance record](manual/images/metis-browser-device-scale.json)
+binds the artifact IDs and SHA-256 values for the inspected PNGs. This is
+browser-host evidence for Metis layout and lifecycle behavior; RITK remains the
+owner of DICOM decoding and clinical image semantics.
+
 ## Software style diagnostic evidence — 2026-09-09
 
 `metis-ui-lang` now rejects `justify-content`, `align-items`, `min-width`,
