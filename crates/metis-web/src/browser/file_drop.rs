@@ -9,8 +9,8 @@ use crate::file_drop_policy::{
 };
 use crate::{FileDropBatch, FileDropPayload};
 use moirai_pal::wasm::{
-    DropFiles, DroppedFileAccess, LocalTaskHandle, WebDocument, WebElement, WebEventListener,
-    spawn_local_with_handle,
+    BrowserFiles, DropFiles, DroppedFileAccess, LocalTaskHandle, WebDocument, WebElement, WebEvent,
+    WebEventListener, spawn_local_with_handle,
 };
 use std::cell::{Cell, RefCell};
 use std::io;
@@ -27,6 +27,17 @@ struct DropReadContext {
     sequence: Rc<Cell<u64>>,
 }
 
+#[derive(Clone, Copy)]
+struct DropInputContext<'a> {
+    document: &'a WebDocument,
+    state: &'a Rc<RefCell<BrowserState>>,
+    zone: &'a WebElement,
+    status: &'a WebElement,
+    generation: Generation,
+    drop_task: &'a Rc<RefCell<Option<LocalTaskHandle>>>,
+    drop_sequence: &'a Rc<Cell<u64>>,
+}
+
 pub(super) fn listeners(
     document: &WebDocument,
     state: &Rc<RefCell<BrowserState>>,
@@ -35,8 +46,9 @@ pub(super) fn listeners(
     drop_sequence: &Rc<Cell<u64>>,
 ) -> io::Result<Vec<WebEventListener>> {
     let zone = view::element(document, "drop-zone")?;
+    let file_input = view::element(document, "file-input")?;
     let status = view::element(document, "drop-byte-status")?;
-    let mut listeners = Vec::with_capacity(4);
+    let mut listeners = Vec::with_capacity(5);
 
     let listener_document = document.clone();
     let listener_state = Rc::clone(state);
@@ -48,6 +60,7 @@ pub(super) fn listeners(
             &listener_state,
             &listener_zone,
             DropState::hovering(),
+            FileInputSource::Drop,
         );
     })?);
 
@@ -62,6 +75,7 @@ pub(super) fn listeners(
                 &listener_state,
                 &listener_zone,
                 DropState::hovering(),
+                FileInputSource::Drop,
             );
         }
     })?);
@@ -76,39 +90,66 @@ pub(super) fn listeners(
             &listener_state,
             &listener_zone,
             DropState::default(),
+            FileInputSource::Drop,
         );
     })?);
 
     let listener_document = document.clone();
     let listener_state = Rc::clone(state);
+    let listener_zone = zone.clone();
     let listener_status = status.clone();
     let listener_drop_task = Rc::clone(drop_task);
     let listener_drop_sequence = Rc::clone(drop_sequence);
     listeners.push(zone.add_event_listener("drop", move |event| {
         event.prevent_default();
         handle_drop(
-            &listener_document,
-            &listener_state,
-            &listener_status,
+            DropInputContext {
+                document: &listener_document,
+                state: &listener_state,
+                zone: &listener_zone,
+                status: &listener_status,
+                generation,
+                drop_task: &listener_drop_task,
+                drop_sequence: &listener_drop_sequence,
+            },
             &event,
-            generation,
-            &listener_drop_task,
-            &listener_drop_sequence,
+        );
+    })?);
+
+    let listener_document = document.clone();
+    let listener_state = Rc::clone(state);
+    let listener_zone = zone.clone();
+    let listener_status = status.clone();
+    let listener_drop_task = Rc::clone(drop_task);
+    let listener_drop_sequence = Rc::clone(drop_sequence);
+    listeners.push(file_input.add_event_listener("change", move |event| {
+        handle_selection(
+            DropInputContext {
+                document: &listener_document,
+                state: &listener_state,
+                zone: &listener_zone,
+                status: &listener_status,
+                generation,
+                drop_task: &listener_drop_task,
+                drop_sequence: &listener_drop_sequence,
+            },
+            &event,
         );
     })?);
 
     Ok(listeners)
 }
 
-fn handle_drop(
-    document: &WebDocument,
-    state: &Rc<RefCell<BrowserState>>,
-    status: &WebElement,
-    event: &moirai_pal::wasm::WebEvent,
-    generation: Generation,
-    drop_task: &Rc<RefCell<Option<LocalTaskHandle>>>,
-    drop_sequence: &Rc<Cell<u64>>,
-) {
+fn handle_drop(context: DropInputContext<'_>, event: &WebEvent) {
+    let DropInputContext {
+        document,
+        state,
+        zone,
+        status,
+        generation,
+        drop_task,
+        drop_sequence,
+    } = context;
     let files = match event.drop_files() {
         Ok(Some(files)) => files,
         Ok(None) => {
@@ -118,6 +159,7 @@ fn handle_drop(
                 status,
                 FileDropError::ProviderMetadata,
                 None,
+                FileInputSource::Drop,
             );
             return;
         }
@@ -128,10 +170,90 @@ fn handle_drop(
                 status,
                 FileDropError::ProviderMetadata,
                 Some(error.to_string()),
+                FileInputSource::Drop,
             );
             return;
         }
     };
+    handle_files(
+        DropInputContext {
+            document,
+            state,
+            zone,
+            status,
+            generation,
+            drop_task,
+            drop_sequence,
+        },
+        files,
+        FileInputSource::Drop,
+    );
+}
+
+fn handle_selection(context: DropInputContext<'_>, event: &WebEvent) {
+    let DropInputContext {
+        document,
+        state,
+        zone,
+        status,
+        generation,
+        drop_task,
+        drop_sequence,
+    } = context;
+    let files = match event.selected_files() {
+        Ok(Some(files)) => files,
+        Ok(None) => {
+            update_rejection(
+                document,
+                state,
+                status,
+                FileDropError::ProviderMetadata,
+                None,
+                FileInputSource::Selection,
+            );
+            return;
+        }
+        Err(error) => {
+            update_rejection(
+                document,
+                state,
+                status,
+                FileDropError::ProviderMetadata,
+                Some(error.to_string()),
+                FileInputSource::Selection,
+            );
+            return;
+        }
+    };
+    handle_files(
+        DropInputContext {
+            document,
+            state,
+            zone,
+            status,
+            generation,
+            drop_task,
+            drop_sequence,
+        },
+        files,
+        FileInputSource::Selection,
+    );
+}
+
+fn handle_files<B: BrowserFileBatch + 'static>(
+    context: DropInputContext<'_>,
+    files: B,
+    source: FileInputSource,
+) {
+    let DropInputContext {
+        document,
+        state,
+        zone,
+        status,
+        generation,
+        drop_task,
+        drop_sequence,
+    } = context;
     let entries = files.files().iter().map(|file| {
         FileDropEntry::new(
             file.name().to_owned(),
@@ -144,7 +266,7 @@ fn handle_drop(
         .and_then(DropState::accept);
     match accepted {
         Ok(next_state) => {
-            update_state(document, state, status, next_state);
+            update_state(document, state, zone, next_state, source);
             state.borrow_mut().drop_batch = None;
             let Some(sequence) = next_sequence(drop_sequence) else {
                 update_read_state(document, state, status, DropReadState::Failed);
@@ -165,11 +287,40 @@ fn handle_drop(
                 sequence,
             );
         }
-        Err(error) => update_rejection(document, state, status, error, None),
+        Err(error) => update_rejection(document, state, status, error, None, source),
     }
 }
 
-fn read_drop_batch(context: DropReadContext, mut files: DropFiles, sequence: u64) {
+trait BrowserFileBatch {
+    fn files(&self) -> &[DroppedFileAccess];
+    fn files_mut(&mut self) -> &mut [DroppedFileAccess];
+}
+
+impl BrowserFileBatch for DropFiles {
+    fn files(&self) -> &[DroppedFileAccess] {
+        self.files()
+    }
+
+    fn files_mut(&mut self) -> &mut [DroppedFileAccess] {
+        self.files_mut()
+    }
+}
+
+impl BrowserFileBatch for BrowserFiles {
+    fn files(&self) -> &[DroppedFileAccess] {
+        self.files()
+    }
+
+    fn files_mut(&mut self) -> &mut [DroppedFileAccess] {
+        self.files_mut()
+    }
+}
+
+fn read_drop_batch<B: BrowserFileBatch + 'static>(
+    context: DropReadContext,
+    mut files: B,
+    sequence: u64,
+) {
     let DropReadContext {
         document,
         state,
@@ -207,7 +358,7 @@ fn read_drop_batch(context: DropReadContext, mut files: DropFiles, sequence: u64
     *task_slot.borrow_mut() = Some(task);
 }
 
-async fn read_batch(files: &mut DropFiles) -> io::Result<FileDropBatch> {
+async fn read_batch<B: BrowserFileBatch>(files: &mut B) -> io::Result<FileDropBatch> {
     let mut payloads = Vec::with_capacity(files.files().len());
     let mut total_bytes = 0_u64;
     for file in files.files_mut() {
@@ -279,10 +430,11 @@ fn update_state(
     state: &Rc<RefCell<BrowserState>>,
     zone: &WebElement,
     next_state: DropState,
+    source: FileInputSource,
 ) {
     state.borrow_mut().drop_state = next_state;
     if let Err(error) = view::render(document, &state.borrow()) {
-        view::set_status_error(document, zone, "File drop", &error.to_string());
+        view::set_status_error(document, zone, source.label(), &error.to_string());
     }
 }
 
@@ -304,6 +456,7 @@ fn update_rejection(
     status: &WebElement,
     error: FileDropError,
     provider_message: Option<String>,
+    source: FileInputSource,
 ) {
     let mut current = state.borrow_mut();
     current.drop_state = DropState::Rejected(error);
@@ -311,10 +464,25 @@ fn update_rejection(
     current.drop_batch = None;
     drop(current);
     if let Err(render_error) = view::render(document, &state.borrow()) {
-        view::set_status_error(document, status, "File drop", &render_error.to_string());
+        view::set_status_error(document, status, source.label(), &render_error.to_string());
         return;
     }
     if let Some(message) = provider_message {
-        view::set_status_error(document, status, "File drop", &message);
+        view::set_status_error(document, status, source.label(), &message);
+    }
+}
+
+#[derive(Clone, Copy)]
+enum FileInputSource {
+    Drop,
+    Selection,
+}
+
+impl FileInputSource {
+    const fn label(self) -> &'static str {
+        match self {
+            Self::Drop => "File drop",
+            Self::Selection => "File selection",
+        }
     }
 }

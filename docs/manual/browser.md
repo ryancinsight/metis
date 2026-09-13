@@ -901,11 +901,48 @@ behavior, TLS, accessibility technology support or OS permission isolation.
 ## Drop a study into the gallery
 
 The [gallery shell](../../examples/browser/gallery.html) exposes the mounted
-Metis file drop area beside three RITK canvases. Select the study's DICOM files
-in your file manager and drag them onto that area; do not drop the enclosing
-folder or its license/readme files. The page does not fetch a study or synthesize
-drop events. RITK owns classification, decoding, geometry and viewer state;
-Metis retains its 512-file, 64 MiB/file and 256 MiB/batch limits.
+Metis file drop area beside three RITK canvases. Activate **Choose study files**
+and select the study's DICOM files in the browser file chooser, or drag those
+files from the file manager onto the area; do not select or drop the enclosing
+folder or its license/readme files. The chooser is a user-activated HTML5
+`change` event. Moirai captures its bounded browser `File` handles and Metis
+reads the same source-neutral batch used by drag/drop; no browser path or native
+filesystem authority crosses the host boundary. The page does not fetch a study
+or synthesize drop events. RITK owns classification, decoding, geometry and
+viewer state; Metis retains its 512-file, 64 MiB/file and 256 MiB/batch limits.
+
+For a saved study, choose all files from one series and wait for **Byte access**
+to report the accepted count and bytes. RITK then reports the decoded study and
+the three canvases become non-black. The browser input accepts `.dcm` and
+`application/dicom`; selecting an empty or over-budget batch produces a typed
+rejection without handing bytes to the decoder.
+
+### Use the saved-study chooser
+
+The chooser path was exercised on 2026-09-12 with the packaged RITK viewer and
+the public MRI-DIR CT study. Selecting all 409 `.dcm` files from
+`test_data/3_head_ct_mridir/DICOM/` produced `accepted 409 file(s)` and
+`Byte access: read 216156416 bytes from 409 file(s)`. RITK then reported ready
+frames on the axial, coronal and sagittal canvases. Their intrinsic frames were
+512 × 512, 512 × 409 and 512 × 409 pixels, respectively, and the live viewport
+showed non-black CT anatomy in every plane. The first three filenames in the
+bounded status preview were `00000001.dcm` (528502 bytes), `00000002.dcm`
+(528502 bytes) and `00000003.dcm` (528496 bytes).
+
+This run used an automation file chooser to select real files from disk; it did
+not synthesize a `DataTransfer` or embed image data. The public series is the
+same source used by the [reviewed gallery capture](images/browser-gallery.png)
+and the [RITK orthogonal PNG baseline](https://github.com/ryancinsight/ritk/tree/main/docs/manual/images).
+The chooser evidence is a browser Chromium observation. Physical file-manager
+drag input and Firefox/WebKit runs remain separate acceptance gates.
+
+The same chooser also opened the saved MRI-DIR T2 study in
+`test_data/2_head_mri_t2/DICOM/`: 94 real files, 49,807,236 bytes, and
+non-black axial, coronal and sagittal views. RITK reported intrinsic frames of
+512 × 512, 512 × 94 and 512 × 94 pixels, with the axial slice at 47/94 and the
+orthogonal slices at 256/512. This confirms that the chooser path carries a
+second saved modality through the same bounded transfer; modality semantics
+remain in RITK.
 
 Build RITK's locked WASM library and package it with the pinned wasm-bindgen CLI
 as described in the RITK browser workflow linked above. From Metis, include that
