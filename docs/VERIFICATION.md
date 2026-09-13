@@ -905,6 +905,37 @@ bytes. RITK reported `ready`/`presented` for the axial frame at 512 × 512
 uses the same source-neutral handoff and keeps modality-specific interpretation
 in RITK.
 
+<a id="browser-mri-edge-evidence--2026-09-13"></a>
+## Browser MRI Edge evidence — 2026-09-13
+
+The saved public MRI-DIR T2 study was then replayed through the configured
+`browser_drop.py` runner against Microsoft Edge 154.0.4258.12. The W3C session
+delivered trusted file-backed `dragenter`, `dragover` and `drop` events; RITK
+accepted all 94 files, read 49,807,236 bytes and presented the three
+non-black canvases. The axial, coronal and sagittal RGBA hashes match the
+consumer oracle, and the count, per-file byte and batch byte overflow probes
+were rejected before reading. The driver session closed cleanly.
+
+The [RITK Edge gallery capture](https://github.com/ryancinsight/ritk/blob/main/docs/manual/images/dicom-metis-real-browser-mri-edge-gallery.png?raw=true)
+is the live browser viewport after the drop; the [RITK provenance record](https://github.com/ryancinsight/ritk/blob/main/docs/manual/images/dicom-metis-real-browser-mri-edge.json)
+binds the images, canvas values, source revisions, transfer manifest, asset
+hashes and cleanup result. This is consumer-owned DICOM evidence: Metis
+interprets only the bounded file handoff and browser lifecycle, while RITK
+owns scanning, decoding, geometry and clinical presentation.
+
+The same live page's [component-state record](https://github.com/ryancinsight/ritk/blob/main/docs/manual/images/dicom-metis-real-browser-mri-components.json)
+observes a mounted Métis root with 31 Rust-owned listener handles at generation
+3, Dark theme selection, released pointer capture after a wheel gesture, idle
+text composition and no authorized backend bridge. The component observations
+are separate from the canvas pixel oracle and contain no patient identifiers or
+DICOM metadata.
+
+The run closes the configured Edge/Chromium file-backed workflow for this
+study. Physical file-manager drag input, Firefox/WebKit, WebGPU, native file
+dialogs and native process launch remain separate acceptance gates; the
+application screenshot is a browser viewport and its RGBA oracle covers canvas
+pixels only.
+
 Focused verification for the code revision passed:
 
 ```text
