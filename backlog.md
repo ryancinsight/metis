@@ -207,6 +207,13 @@ an owner. “Unsupported” cannot replace delivery of a required mobile/native 
 - Decision: [ADR 0001](docs/adr/0001-process-contract.md); user manual replaces the domain-book requirement by explicit user direction.
 - Outcome: Public source/manual and rendered captures are present; Atlas registers `repos/metis` at the verified public `main` revision. Every later item owns its demonstration section, not a deferred documentation phase.
 
+<a id="METIS-MANUAL-REAL-DICOM-001"></a>
+## METIS-MANUAL-REAL-DICOM-001 — Lead with real DICOM evidence [patch]
+- Status: done; priority: P1; delivery: `c70f899`; owner: Metis documentation; integrator: root; dependencies: RITK-SNAP-METIS-001; risk: misleading visual evidence
+- Scope: make the public manual's first gallery entry a real RITK-backed DICOM application capture and expose the saved-study command; synthetic form and fixture images remain protocol evidence.
+- Acceptance: front-page manual displays a revision-bound real CT capture, links component-state and provenance records, names private-data limits, and all local manual links pass the locked gate.
+- Demonstration: actual public MRI-DIR CT window plus the copyable local clinical-study command; no DICOM parser or patient data enters Metis.
+
 <a id="METIS-STATE-001"></a>
 ## METIS-STATE-001 — Correct form state transitions [arch] [major]
 - Status: done; merged [PR 3](https://github.com/ryancinsight/metis/pull/3) at `9c38d2f`; [ADR 0004](docs/adr/0004-form-state.md).
@@ -390,7 +397,7 @@ an owner. “Unsupported” cannot replace delivery of a required mobile/native 
 - Status: in-progress; priority: P1; owner: Metis framework + application owners; integrator: root; last-update: 2026-09-12; risk: lost application behavior.
 - Dependencies: METIS-COMMANDS-001, METIS-FILES-001, METIS-INPUT-001, METIS-ASSETS-001, METIS-GRAPHICS-001, METIS-DESKTOP-001, METIS-BROWSER-001, METIS-INTEGRATION-001, METIS-SERVICES-001.
 - Named driver: [ritk-snap](../ritk/backlog.md#RITK-SNAP-METIS-001), retaining egui/eframe at RITK while exposing `--metis-native` through merged [PR 269](https://github.com/ryancinsight/ritk/pull/269) (`c1b8130bb`), following [PR 267](https://github.com/ryancinsight/ritk/pull/267) (`2f2058062`). No Tauri dependency is present in its manifest or workspace lock. RITK owns decoder, volume geometry and medical display correctness; Metis supplies the replacement shell.
-- Baseline: RITK `8152f483` ([PR 237](https://github.com/ryancinsight/ritk/pull/237)) adds physical display/hit rectangles to selected-study loading, restore/rejection and the original native capture; [manual](docs/manual/applications.md#dicom-viewer-migration-baseline). The merged RITK native MPR increment now proves one bounded Métis framebuffer containing all three spacing-aware planes and panel-specific routing while keeping DICOM semantics in RITK.
+- Baseline: RITK `8152f483` ([PR 237](https://github.com/ryancinsight/ritk/pull/237)) adds physical display/hit rectangles to selected-study loading, restore/rejection and the original native capture; [manual](docs/manual/applications.md#deterministic-synthetic-dicom-baseline). The merged RITK native MPR increment now proves one bounded Métis framebuffer containing all three spacing-aware planes and panel-specific routing while keeping DICOM semantics in RITK.
 - Progress: the Windows `ritk-snap PATH --metis-native` workflow opens the synthetic study, renders axial/coronal/sagittal panels, routes wheel navigation by panel, captures a deterministic content golden and rejects a missing study. Browser input integration, multiframe/color host capture, matched memory measurements, packaging remain open acceptance work; the current complete operating-system application-window capture is recorded in the RITK user manual.
 - Scope: inventory the actual viewer and a distinct pinned Tauri fixture; native Metis implementations replace required UI/state/input/render/file/lifecycle surfaces. First viewer journey opens a local DICOM study, selects its series and displays all three orthogonal views; full cutover retains the whole admitted viewer inventory.
 - Acceptance: [V09](docs/VERIFICATION.md#V09) plus RITK opening/frames/color/grayscale prerequisites; required symbols/config/plugins and viewer actions are mapped/tested. Existing bugs cannot serve as parity oracles. No retained egui/eframe/Tauri runtime or forwarding shim in the completed migrated viewer.

@@ -29,11 +29,18 @@ not features available through the build commands below.
 Metis stays format-neutral: it does not parse DICOM or retain medical viewer
 state. RITK owns DICOM discovery, decoding, geometry and clinical presentation;
 Metis carries only the bounded host, event and framebuffer handoff.
-The [application gallery](applications.md#dicom-viewer-migration-baseline) shows
-actual public CT and MRI studies rendered through the native Métis surface,
+The [application gallery](applications.md#real-dicom-application-evidence) leads
+with actual public CT and MRI studies rendered through the native Métis surface,
 browser canvas and eframe application. It also gives a copyable local command
 for opening a saved clinical study; private pixels and identifiers remain on
 the local machine.
+
+![Actual saved CT study rendered through the Métis host](https://github.com/ryancinsight/ritk/blob/main/docs/manual/images/dicom-metis-installer-ct.png?raw=true)
+
+The gallery pairs the image with RITK provenance and a browser component-state
+record. Those records identify the files read, non-black canvas pixels, mounted
+listener generation, theme, pointer release and clean teardown. Synthetic form
+captures remain below as protocol examples.
 The browser manual also includes an `http-health.html` probe for the bounded
 Moirai loopback service; it demonstrates CORS and readiness only, not DICOM.
 
