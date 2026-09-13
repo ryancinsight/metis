@@ -15,7 +15,7 @@ import sys
 import tempfile
 
 from browser_protocol import (
-    ROOT, BrowserRuntimeError, StaticServer, WebDriverClient, _safe_path,
+    ROOT, BrowserRuntimeError, StaticServer, WebDriverClient, _safe_path, parse_device_scale,
 )
 from browser_canvas import (
     capture_canvas_trace,
@@ -23,7 +23,7 @@ from browser_canvas import (
     _element_screenshot,
 )
 from browser_runtime import _wait_for_text, _wait_for_selector, _write_trace
-from browser_trace import BrowserEngine, Trace, screenshot
+from browser_trace import BrowserEngine, Trace, record_device_scale, screenshot
 
 
 # Independent test oracle for the existing host admission contract.
@@ -142,6 +142,11 @@ def check_rejections(client: WebDriverClient, trace: Trace, point: dict) -> None
 
 
 def run(args: argparse.Namespace) -> dict:
+    device_scale_milli = (
+        parse_device_scale(args.device_scale)
+        if getattr(args, "device_scale", None) is not None
+        else None
+    )
     files, total = study_files(args.files, args.pattern)
     expected_files = []
     for path in files:
@@ -165,12 +170,13 @@ def run(args: argparse.Namespace) -> dict:
     try:
         with StaticServer(ROOT / "output" / "browser") as origin:
             trace.url = origin + "gallery.html"
-            client.create_session(args.browser_name)
+            client.create_session(args.browser_name, device_scale_milli)
             trace.capabilities = {key: client.capabilities.get(key) for key in ("browserName", "browserVersion", "platformName")}
             client.set_timeouts(120_000)
             client._request("POST", client._session_path("window/rect"), {"width": 1440, "height": 1100})
             client.navigate(trace.url)
             _wait_for_text(client, "gallery-status", "Ready.", timeout_ms=30_000, include=True)
+            record_device_scale(client, trace, device_scale_milli)
             point = client.execute(OBSERVE_DROP)
             if not point["visible"]:
                 raise BrowserRuntimeError("file drop zone is not visible inside the viewport")
@@ -220,6 +226,7 @@ def run(args: argparse.Namespace) -> dict:
                     client.capabilities,
                     args.consumer_revision,
                 )
+                record_device_scale(client, canvas_trace, device_scale_milli)
                 capture_canvas_trace(
                     client,
                     canvas_trace,
@@ -287,6 +294,7 @@ def main() -> None:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--driver-url", required=True)
     parser.add_argument("--browser-name", choices=("chrome", "MicrosoftEdge"), default="chrome")
+    parser.add_argument("--device-scale", help="requested browser device scale between 0.5 and 4, in decimal form")
     parser.add_argument("--files", type=pathlib.Path, required=True)
     parser.add_argument("--pattern", default="*", help="Immediate filename glob; no directory traversal")
     parser.add_argument("--oracle", type=pathlib.Path, required=True,

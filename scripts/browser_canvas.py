@@ -9,7 +9,7 @@ import struct
 from typing import Any, Mapping, Optional, Sequence, Tuple
 
 from browser_protocol import ROOT, WebDriverClient, BrowserRuntimeError, _safe_path
-from browser_trace import BrowserEngine, Trace, browser_heap_sample, frame_timing, screenshot
+from browser_trace import BrowserEngine, Trace, browser_heap_sample, frame_timing, record_device_scale, screenshot
 
 
 CANVAS_ID_PATTERN = re.compile(r"[A-Za-z][A-Za-z0-9_-]{0,127}")
@@ -405,16 +405,18 @@ def run_canvas_scenario(
     canvas_attributes: Sequence[str] = (),
     browser_heap: bool = False,
     browser_name: Optional[str] = None,
+    device_scale_milli: Optional[int] = None,
 ) -> Trace:
     """Exercise trusted pointer and wheel input for format-neutral canvases."""
     canvas_ids = validate_canvas_ids(canvas_ids)
     canvas_attributes = validate_canvas_attributes(canvas_attributes)
     trace: Optional[Trace] = None
     try:
-        client.create_session(engine.resolve_webdriver_name(browser_name))
+        client.create_session(engine.resolve_webdriver_name(browser_name), device_scale_milli)
         client.set_timeouts(timeout_ms)
         trace = Trace(engine, url, "canvas", revision, client.capabilities, consumer_revision)
         client.navigate(url)
+        record_device_scale(client, trace, device_scale_milli)
         capture_canvas_trace(
             client,
             trace,

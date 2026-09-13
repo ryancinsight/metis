@@ -242,12 +242,15 @@ jobs:
           - engine: chromium
             runner: ubuntu-24.04
             driver_url: http://127.0.0.1:9515
+            device_scale: '2'
           - engine: firefox
             runner: ubuntu-24.04
             driver_url: http://127.0.0.1:4444
+            device_scale: '2'
           - engine: webkit
             runner: macos-latest
             driver_url: http://127.0.0.1:4444
+            device_scale: '1'
     permissions:
       contents: read
     env:
@@ -333,6 +336,7 @@ jobs:
         env:
           DRIVER_URL: ${{ matrix.driver_url }}
           ENGINE: ${{ matrix.engine }}
+          DEVICE_SCALE: ${{ matrix.device_scale }}
         run: |
           set -euo pipefail
           python scripts/browser_runtime.py \
@@ -340,6 +344,7 @@ jobs:
             --driver-url "$DRIVER_URL" \
             --serve-dir output/browser \
             --bridge disconnected \
+            --device-scale "$DEVICE_SCALE" \
             --browser-heap-sample \
             --lifecycle-cycles 4 \
             --timeout-seconds 60 \

@@ -7,14 +7,19 @@ import math
 import pathlib
 import statistics
 import struct
+from decimal import Decimal, InvalidOperation, ROUND_HALF_UP
 from dataclasses import dataclass, field
 from typing import Any, Dict, List, Mapping, Optional, Tuple
 
 from browser_protocol import (
+    MAX_DEVICE_SCALE_MILLI,
+    MIN_DEVICE_SCALE_MILLI,
     ROOT,
     BrowserRuntimeError,
     WebDriverClient,
     _safe_path,
+    format_device_scale,
+    validate_device_scale_milli,
 )
 
 
@@ -32,6 +37,17 @@ MAX_FRAME_SAMPLE_COUNT = 32
 MAX_FRAME_INTERVAL_MILLISECONDS = 120_000.0
 MAX_BROWSER_HEAP_BYTES = 1 << 40
 MAX_BROWSER_HEAP_LABEL_BYTES = 256
+MAX_EFFECTIVE_DEVICE_SCALE_MILLI = 4 * MAX_DEVICE_SCALE_MILLI
+MAX_VIEWPORT_DIMENSION = 65_536
+
+
+DEVICE_SCALE_SCRIPT = """
+return {
+  device_pixel_ratio: window.devicePixelRatio,
+  inner_width: window.innerWidth,
+  inner_height: window.innerHeight,
+};
+"""
 
 
 FRAME_TIMING_SCRIPT = """
@@ -181,6 +197,61 @@ def screenshot(client: WebDriverClient, trace: Trace, directory: pathlib.Path, l
             "bytes": len(content),
         }
     )
+
+
+def _format_observed_scale(milli: int) -> str:
+    """Render a validated positive observed scale without the request bound."""
+    return format(Decimal(milli) / 1000, "f").rstrip("0").rstrip(".")
+
+
+def record_device_scale(
+    client: WebDriverClient,
+    trace: Trace,
+    requested_milli: Optional[int] = None,
+) -> Dict[str, Any]:
+    """Record the browser's effective device scale and CSS viewport."""
+    if requested_milli is not None:
+        validate_device_scale_milli(requested_milli)
+    value = client.execute(DEVICE_SCALE_SCRIPT)
+    if not isinstance(value, dict):
+        raise BrowserRuntimeError("device-scale probe returned a non-object")
+    ratio = value.get("device_pixel_ratio")
+    if type(ratio) not in (int, float):
+        raise BrowserRuntimeError("device-scale probe returned an invalid devicePixelRatio")
+    try:
+        ratio_decimal = Decimal(str(ratio))
+        milli_decimal = ratio_decimal * 1000
+        effective_milli = int(milli_decimal.to_integral_value(rounding=ROUND_HALF_UP))
+    except (InvalidOperation, ValueError, OverflowError) as error:
+        raise BrowserRuntimeError("device-scale probe returned an invalid devicePixelRatio") from error
+    if not ratio_decimal.is_finite():
+        raise BrowserRuntimeError("device-scale probe returned an invalid devicePixelRatio")
+    if not MIN_DEVICE_SCALE_MILLI <= effective_milli <= MAX_EFFECTIVE_DEVICE_SCALE_MILLI:
+        raise BrowserRuntimeError("device-scale probe returned a scale outside the configured bound")
+    width = value.get("inner_width")
+    height = value.get("inner_height")
+    if (
+        type(width) is not int
+        or not 1 <= width <= MAX_VIEWPORT_DIMENSION
+        or type(height) is not int
+        or not 1 <= height <= MAX_VIEWPORT_DIMENSION
+    ):
+        raise BrowserRuntimeError("device-scale probe returned an invalid CSS viewport")
+    if requested_milli is not None and abs(effective_milli - requested_milli) > 1:
+        raise BrowserRuntimeError(
+            "browser effective device scale differs from requested scale "
+            f"({_format_observed_scale(effective_milli)} vs {format_device_scale(requested_milli)})"
+        )
+    measurement = {
+        "requested": format_device_scale(requested_milli) if requested_milli is not None else None,
+        "requested_milli": requested_milli,
+        "effective": _format_observed_scale(effective_milli),
+        "effective_milli": effective_milli,
+        "device_pixel_ratio": float(ratio),
+        "css_viewport": {"width": width, "height": height},
+    }
+    trace.metrics["device_scale"] = measurement
+    return measurement
 
 
 def frame_timing(

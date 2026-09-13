@@ -47,7 +47,8 @@ class FragmentDriver:
         self.negative_probes = True
         self.closed = False
 
-    def create_session(self, browser_name: str) -> None:
+    def create_session(self, browser_name: str, device_scale_milli=None) -> None:
+        self.device_scale_milli = device_scale_milli or 1000
         self.capabilities = {"browserName": browser_name, "browserVersion": "test"}
 
     def set_timeouts(self, milliseconds: int) -> None:
@@ -68,6 +69,12 @@ class FragmentDriver:
             self.ready = True
 
     def execute(self, script: str, arguments=()):
+        if "devicePixelRatio" in script:
+            return {
+                "device_pixel_ratio": self.device_scale_milli / 1000,
+                "inner_width": 1280,
+                "inner_height": 720,
+            }
         if "performance.memory" in script:
             return {
                 "available": True,
