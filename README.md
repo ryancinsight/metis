@@ -56,7 +56,14 @@ ownership decision; they do not add DICOM implementation to Metis.
 The RITK manual now leads with the reviewed real MRI-DIR CT window capture,
 including axial, coronal, sagittal and axial-MIP panels through the Métis host;
 it also documents the copyable local command for opening a saved clinical study.
-Private studies remain local and are never copied into Metis.
+Private studies remain local and are never copied into Metis. The same capture
+is the first image in the [application gallery](docs/manual/applications.md#real-dicom-application-evidence):
+
+![Actual saved CT study rendered through the Métis host](https://github.com/ryancinsight/ritk/blob/main/docs/manual/images/dicom-metis-installer-ct.png?raw=true)
+
+The gallery links the revision-bound provenance and browser component-state
+records so the image is reviewed together with file handoff, canvas, listener,
+theme, pointer and teardown observations.
 The infusion arithmetic is a synthetic engineering example; its configurable
 limits are not treatment guidance.
 

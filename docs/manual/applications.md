@@ -9,6 +9,26 @@ execute in a browser; the separate [browser workbench](browser.md) exercises the
 HTML5/CSS host.
 The separate [process demonstration](getting-started.md) tests actual child processes.
 
+## Real DICOM application evidence
+
+The gallery starts with a real saved-study run so the first image is application
+output rather than generated artwork. RITK opened the public MRI-DIR head CT
+series, decoded 410 DICOM files and supplied axial, coronal and sagittal planes
+to the format-neutral Métis framebuffer. The packaged Windows executable exited
+0 and the portable and per-user MSI captures matched byte-for-byte.
+
+![Actual saved CT study rendered through the packaged Métis host](https://github.com/ryancinsight/ritk/blob/main/docs/manual/images/dicom-metis-installer-ct.png?raw=true)
+
+The [package provenance record](https://github.com/ryancinsight/ritk/blob/main/docs/manual/images/dicom-metis-installer.json)
+binds the source manifest, executable and MSI digests, capture dimensions,
+non-black panel pixels and install/uninstall results. The companion
+[browser component-state record](https://github.com/ryancinsight/ritk/blob/main/docs/manual/images/dicom-metis-real-browser-mri-components.json)
+records a mounted generation, Rust-owned listener handles, accepted file bytes,
+theme, released pointer capture, idle text composition and clean teardown. The
+[saved local clinical-study command](applications.md#open-a-saved-local-clinical-study) uses
+the same RITK-owned launcher for private DICOM; its pixels and identifiers stay
+on the local machine.
+
 ## Starter theme and mark
 
 The browser workbench ships a local starter vector mark for the application
@@ -29,7 +49,7 @@ the SVG, PNG and ICO under `assets/` as well. The CLI applies the bounded SVG
 contract before copying the vector resource, rejecting XML expansion, external
 references, unknown attributes, malformed geometry and oversized viewports.
 
-## DICOM viewer migration baseline
+## Deterministic synthetic DICOM baseline
 
 RITK's [synthetic DICOM workflow](https://github.com/ryancinsight/ritk/blob/main/docs/manual/dicom-workflow.md)
 includes a capture of the running egui/eframe viewer alongside exact
