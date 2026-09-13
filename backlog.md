@@ -307,7 +307,7 @@ an owner. “Unsupported” cannot replace delivery of a required mobile/native 
 
 <a id="METIS-LAYOUT-001"></a>
 ## METIS-LAYOUT-001 — Responsive layout and style semantics [minor]
-- Status: in-progress; priority: P1; owner: Metis presentation; integrator: root; last-update: 2026-09-08; branch: `feat/process-foundation`; dependencies: METIS-STATE-001; risk: silent style mismatch
+- Status: in-progress; priority: P1; owner: Metis presentation; integrator: root; last-update: 2026-09-13; branch: `feat/browser-device-scale-001`; regions: `scripts/browser_protocol.py`, `scripts/browser_runtime.py`, `scripts/browser_canvas.py`, `scripts/browser_fragment.py`, `scripts/browser_trace.py`, `scripts/tests`, `docs/manual/browser.md`, `docs/VERIFICATION.md`, `docs/adr/0021-browser-conformance-runner.md`; dependencies: METIS-STATE-001; risk: silent scale mismatch
 - Scope: reject or implement currently ineffective custom styles; DOM route uses actual CSS flex/grid, overflow/scrolling, nesting/clipping, min/max sizes, theme and scale. No custom browser-engine rewrite.
 - Acceptance: admitted geometry is independently asserted at narrow/wide viewports and display scales; clipping/hit targets match; unsupported custom properties produce diagnostics, not silent success.
 - Demonstration: [V04](docs/VERIFICATION.md#V04); browser captures follow BROWSER, custom subset tests can land before it.
