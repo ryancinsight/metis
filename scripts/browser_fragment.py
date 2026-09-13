@@ -7,7 +7,7 @@ from typing import Any, Dict, Mapping, Optional
 
 from browser_protocol import BrowserRuntimeError, WebDriverClient
 from browser_runtime import _wait_for_text
-from browser_trace import BrowserEngine, Trace, browser_heap_sample, screenshot
+from browser_trace import BrowserEngine, Trace, browser_heap_sample, record_device_scale, screenshot
 
 
 FRAGMENT_BRIDGE = "http-fragment"
@@ -107,14 +107,16 @@ def run_fragment_scenario(
     timeout_ms: int,
     browser_heap: bool = False,
     browser_name: Optional[str] = None,
+    device_scale_milli: Optional[int] = None,
 ) -> Trace:
     """Exercise authenticated success, rejection, stale state and remount."""
     trace: Optional[Trace] = None
     try:
-        client.create_session(engine.resolve_webdriver_name(browser_name))
+        client.create_session(engine.resolve_webdriver_name(browser_name), device_scale_milli)
         client.set_timeouts(timeout_ms)
         trace = Trace(engine, url, FRAGMENT_BRIDGE, revision, client.capabilities)
         client.navigate(url)
+        record_device_scale(client, trace, device_scale_milli)
         _wait_for_text(client, "metis-status", FRAGMENT_SUCCESS, include=True, timeout_ms=timeout_ms)
         _wait_for_text(client, "metis-negative", FRAGMENT_NEGATIVE, include=False, timeout_ms=timeout_ms)
         ready = _snapshot(client, trace, "authenticated-success")

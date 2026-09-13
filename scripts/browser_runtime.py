@@ -27,12 +27,14 @@ from browser_protocol import (
     WebDriverClient,
     _bounded_text,
     _safe_path,
+    parse_device_scale,
 )
 from browser_trace import (
     BrowserEngine,
     Trace,
     UNSUPPORTED_NATIVE_OPERATIONS,
     browser_heap_sample,
+    record_device_scale,
     screenshot,
 )
 
@@ -180,6 +182,7 @@ def run_scenario(
     browser_heap: bool = False,
     browser_name: Optional[str] = None,
     lifecycle_cycles: int = 1,
+    device_scale_milli: Optional[int] = None,
 ) -> Trace:
     """Execute the same input, bridge and bounded teardown trace for every engine."""
     if bridge not in BRIDGE_MODES:
@@ -192,11 +195,12 @@ def run_scenario(
     stopped_snapshot: Optional[Dict[str, Any]] = None
     remounted_snapshot: Optional[Dict[str, Any]] = None
     try:
-        client.create_session(engine.resolve_webdriver_name(browser_name))
+        client.create_session(engine.resolve_webdriver_name(browser_name), device_scale_milli)
         client.set_timeouts(timeout_ms)
         trace = Trace(engine, url, bridge, revision, client.capabilities)
         client.navigate(url)
         _wait_for_selector(client, "#metis-form", timeout_ms=timeout_ms)
+        record_device_scale(client, trace, device_scale_milli)
         initial = _snapshot(client, trace, "initial")
         if browser_heap:
             browser_heap_sample(client, trace, "initial")
@@ -417,6 +421,7 @@ def _arguments() -> argparse.Namespace:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--engine", required=True, choices=[engine.value for engine in BrowserEngine])
     parser.add_argument("--browser-name", help="W3C browserName override within the selected engine family")
+    parser.add_argument("--device-scale", help="requested browser device scale between 0.5 and 4, in decimal form")
     parser.add_argument("--scenario", choices=("workbench", "canvas", "fragment"), default="workbench")
     parser.add_argument("--driver-url", help="W3C WebDriver endpoint; defaults to METIS_WEBDRIVER_<ENGINE>_URL")
     parser.add_argument("--url", help="already-running browser workbench URL")
@@ -467,6 +472,11 @@ def main() -> int:
             raise BrowserRuntimeError("timeout-seconds must be greater than zero and at most 120")
         timeout_ms = int(arguments.timeout_seconds * 1000)
         browser_name = engine.resolve_webdriver_name(arguments.browser_name)
+        device_scale_milli = (
+            parse_device_scale(arguments.device_scale)
+            if arguments.device_scale is not None
+            else None
+        )
         if not 1 <= arguments.cancel_grace_ms <= MAX_WAIT_MILLISECONDS:
             raise BrowserRuntimeError(f"cancel-grace-ms must be between 1 and {MAX_WAIT_MILLISECONDS}")
         if type(arguments.lifecycle_cycles) is not int or not 1 <= arguments.lifecycle_cycles <= MAX_LIFECYCLE_CYCLES:
@@ -546,11 +556,12 @@ def main() -> int:
                         canvas_attributes,
                         browser_heap=arguments.browser_heap_sample,
                         browser_name=browser_name,
+                        device_scale_milli=device_scale_milli,
                     )
                 elif arguments.scenario == "fragment":
                     raise BrowserRuntimeError("fragment scenarios require --url for the HTTP service origin")
                 else:
-                    trace = run_scenario(client, engine, url, arguments.bridge, revision, output.parent / "screenshots" / engine.value, timeout_ms, arguments.cancel, arguments.cancel_grace_ms, arguments.browser_heap_sample, browser_name, arguments.lifecycle_cycles)
+                    trace = run_scenario(client, engine, url, arguments.bridge, revision, output.parent / "screenshots" / engine.value, timeout_ms, arguments.cancel, arguments.cancel_grace_ms, arguments.browser_heap_sample, browser_name, arguments.lifecycle_cycles, device_scale_milli)
         else:
             url = arguments.url
             if url is None:
@@ -570,6 +581,7 @@ def main() -> int:
                     canvas_attributes,
                     browser_heap=arguments.browser_heap_sample,
                     browser_name=browser_name,
+                    device_scale_milli=device_scale_milli,
                 )
             elif arguments.scenario == "fragment":
                 trace = run_fragment_scenario(
@@ -581,9 +593,10 @@ def main() -> int:
                     timeout_ms,
                     browser_heap=arguments.browser_heap_sample,
                     browser_name=browser_name,
+                    device_scale_milli=device_scale_milli,
                 )
             else:
-                trace = run_scenario(client, engine, url, arguments.bridge, revision, output.parent / "screenshots" / engine.value, timeout_ms, arguments.cancel, arguments.cancel_grace_ms, arguments.browser_heap_sample, browser_name, arguments.lifecycle_cycles)
+                trace = run_scenario(client, engine, url, arguments.bridge, revision, output.parent / "screenshots" / engine.value, timeout_ms, arguments.cancel, arguments.cancel_grace_ms, arguments.browser_heap_sample, browser_name, arguments.lifecycle_cycles, device_scale_milli)
         _write_trace(output, trace.document())
         print(json.dumps(trace.document(), sort_keys=True))
         return 0

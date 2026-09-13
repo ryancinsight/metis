@@ -27,8 +27,16 @@ from browser_canvas import (
     validate_canvas_ids,
     validate_consumer_revision,
 )
-from browser_protocol import BrowserRuntimeError, MAX_SCREENSHOT_BYTES, MAX_SCREENSHOT_RESPONSE_BYTES, MAX_TRACE_BYTES, WebDriverClient
-from browser_trace import BrowserEngine, Trace, browser_heap_sample
+from browser_protocol import (
+    BrowserRuntimeError,
+    MAX_SCREENSHOT_BYTES,
+    MAX_SCREENSHOT_RESPONSE_BYTES,
+    MAX_TRACE_BYTES,
+    WebDriverClient,
+    format_device_scale,
+    parse_device_scale,
+)
+from browser_trace import BrowserEngine, Trace, browser_heap_sample, record_device_scale
 
 
 def _png() -> bytes:
@@ -82,14 +90,16 @@ class FakeDriver:
         self.values = {"weight-kg": "72.5", "target-dose": "0.5"}
         self.generation = 1
         self.listener_count = 10
+        self.device_scale_milli = 1000
         self.heap = {
             "used_js_heap_bytes": 1_048_576,
             "total_js_heap_bytes": 2_097_152,
             "js_heap_limit_bytes": 4_194_304,
         }
 
-    def create_session(self, browser_name: str) -> None:
+    def create_session(self, browser_name: str, device_scale_milli=None) -> None:
         self.session_id = "session"
+        self.device_scale_milli = device_scale_milli or 1000
         self.capabilities = {"browserName": browser_name, "browserVersion": "test"}
 
     def set_timeouts(self, milliseconds: int) -> None:
@@ -127,6 +137,12 @@ class FakeDriver:
             self.listener_count = 10
 
     def execute(self, script: str, arguments=()):
+        if "devicePixelRatio" in script:
+            return {
+                "device_pixel_ratio": self.device_scale_milli / 1000,
+                "inner_width": 1280,
+                "inner_height": 720,
+            }
         if "performance.memory" in script and "usedJSHeapSize" in script:
             return {"available": True, "source": "performance.memory", **self.heap}
         if "__metisCanvasTraceState" in script and "const ids = arguments[0]" in script:
@@ -379,6 +395,72 @@ class BrowserRuntimeTests(unittest.TestCase):
         with self.assertRaises(BrowserRuntimeError):
             BrowserEngine.parse("blink")
 
+    def test_device_scale_parser_uses_bounded_fixed_point(self):
+        self.assertEqual(parse_device_scale("2"), 2_000)
+        self.assertEqual(parse_device_scale("1.25"), 1_250)
+        self.assertEqual(format_device_scale(1_250), "1.25")
+        for value in ("0.499", "4.001", "1.2345", "NaN", "1e0", ""):
+            with self.subTest(value=value):
+                with self.assertRaisesRegex(BrowserRuntimeError, "device scale"):
+                    parse_device_scale(value)
+
+    def test_driver_emits_engine_specific_device_scale_capabilities(self):
+        for browser_name, option_name in (
+            ("chrome", "goog:chromeOptions"),
+            ("MicrosoftEdge", "ms:edgeOptions"),
+        ):
+            requests = []
+            client = WebDriverClient("http://127.0.0.1:9515", 1)
+
+            def request(method, path, payload=None):
+                requests.append((method, path, payload))
+                return {"sessionId": "session", "capabilities": {}}
+
+            client._request = request
+            client.create_session(browser_name, 2_000)
+            capabilities = requests[0][2]["capabilities"]["alwaysMatch"]
+            self.assertEqual(capabilities[option_name]["args"], ["--force-device-scale-factor=2"])
+
+        requests = []
+        client = WebDriverClient("http://127.0.0.1:9515", 1)
+        client._request = lambda method, path, payload=None: requests.append(payload) or {
+            "sessionId": "session",
+            "capabilities": {},
+        }
+        client.create_session("firefox", 1_250)
+        self.assertEqual(
+            requests[0]["capabilities"]["alwaysMatch"]["moz:firefoxOptions"],
+            {"prefs": {"layout.css.devPixelsPerPx": "1.25"}},
+        )
+        with self.assertRaisesRegex(BrowserRuntimeError, "WebKit.*override"):
+            client.create_session("safari", 2_000)
+
+    def test_device_scale_probe_records_effective_value_and_viewport(self):
+        trace = Trace(BrowserEngine.CHROMIUM, "http://127.0.0.1/", "canvas", "0" * 40, {})
+        driver = FakeDriver()
+        driver.create_session("chrome", 2_000)
+        measurement = record_device_scale(driver, trace, 2_000)
+        self.assertEqual(measurement["requested"], "2")
+        self.assertEqual(measurement["effective_milli"], 2_000)
+        self.assertEqual(measurement["css_viewport"], {"width": 1280, "height": 720})
+
+    def test_device_scale_probe_rejects_requested_mismatch(self):
+        driver = FakeDriver()
+        driver.device_scale_milli = 1_000
+        trace = Trace(BrowserEngine.CHROMIUM, "http://127.0.0.1/", "canvas", "0" * 40, {})
+        with self.assertRaisesRegex(BrowserRuntimeError, "differs from requested"):
+            record_device_scale(driver, trace, 2_000)
+
+    def test_device_scale_probe_rejects_malformed_browser_values(self):
+        trace = Trace(BrowserEngine.CHROMIUM, "http://127.0.0.1/", "canvas", "0" * 40, {})
+        driver = FakeDriver()
+        driver.execute = lambda script, arguments=(): {"device_pixel_ratio": "2", "inner_width": 1280, "inner_height": 720}
+        with self.assertRaisesRegex(BrowserRuntimeError, "invalid devicePixelRatio"):
+            record_device_scale(driver, trace)
+        driver.execute = lambda script, arguments=(): {"device_pixel_ratio": 2.0, "inner_width": 0, "inner_height": 720}
+        with self.assertRaisesRegex(BrowserRuntimeError, "invalid CSS viewport"):
+            record_device_scale(driver, trace)
+
     def test_authorized_trace_records_two_changes_and_cleanup(self):
         output = pathlib.Path(__file__).resolve().parents[2] / "output" / "browser" / "runtime-test"
         output.mkdir(parents=True, exist_ok=True)
@@ -394,6 +476,7 @@ class BrowserRuntimeTests(unittest.TestCase):
                 5_000,
                 False,
                 4_000,
+                device_scale_milli=2_000,
             )
         self.assertTrue(driver.closed)
         self.assertEqual(driver.capabilities["browserName"], "chrome")
@@ -406,6 +489,7 @@ class BrowserRuntimeTests(unittest.TestCase):
         self.assertEqual(trace.cleanup["remounted_generation"], trace.cleanup["stopped_generation"] + 1)
         self.assertEqual(trace.cleanup["pending_requests"], 0)
         self.assertEqual(trace.cleanup["pending_request_observation"], "remounted metis-form aria-busy=false")
+        self.assertEqual(trace.metrics["device_scale"]["effective"], "2")
         self.assertEqual(len(trace.screenshots), 6)
         document = Trace(BrowserEngine.FIREFOX, "http://127.0.0.1/", "disconnected", "0" * 40, {}).document()
         self.assertEqual(document["schema"], 1)

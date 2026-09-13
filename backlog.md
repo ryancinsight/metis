@@ -307,7 +307,7 @@ an owner. “Unsupported” cannot replace delivery of a required mobile/native 
 
 <a id="METIS-LAYOUT-001"></a>
 ## METIS-LAYOUT-001 — Responsive layout and style semantics [minor]
-- Status: in-progress; priority: P1; owner: Metis presentation; integrator: root; last-update: 2026-09-08; branch: `feat/process-foundation`; dependencies: METIS-STATE-001; risk: silent style mismatch
+- Status: in-progress; priority: P1; owner: Metis presentation; integrator: root; last-update: 2026-09-13; branch: `feat/browser-device-scale-001`; regions: `scripts/browser_protocol.py`, `scripts/browser_runtime.py`, `scripts/browser_canvas.py`, `scripts/browser_fragment.py`, `scripts/browser_drop.py`, `scripts/browser_trace.py`, `scripts/tests`, `docs/manual/browser.md`, `docs/VERIFICATION.md`, `docs/adr/0021-browser-conformance-runner.md`; dependencies: METIS-STATE-001; risk: silent scale mismatch
 - Scope: reject or implement currently ineffective custom styles; DOM route uses actual CSS flex/grid, overflow/scrolling, nesting/clipping, min/max sizes, theme and scale. No custom browser-engine rewrite.
 - Acceptance: admitted geometry is independently asserted at narrow/wide viewports and display scales; clipping/hit targets match; unsupported custom properties produce diagnostics, not silent success.
 - Demonstration: [V04](docs/VERIFICATION.md#V04); browser captures follow BROWSER, custom subset tests can land before it.
@@ -318,7 +318,8 @@ an owner. “Unsupported” cannot replace delivery of a required mobile/native 
 - Completed increment: software-renderer styles without layout or paint semantics (`justify-content`, `align-items`, `min-width`, `min-height`, `border-radius` and `font-weight`) now return `ERR_INVALID_CSS_STYLE`; programmatic DOMs receive the same validation during layout.
 - Evidence: [ADR 0013](docs/adr/0013-strict-style-contract.md), style/layout tests, the migrated presentation fixture and the full Metis gate.
 - Current increment (2026-09-13): `LayoutViewport` now carries the physical viewport and validated `DisplayScale`; explicit geometry and text map at 125% and 150% while percentages resolve once against physical pixels. The native adapter applies the same value to repaint and hit testing. See [ADR 0032](docs/adr/0032-display-scale.md).
-- Residuals: physical monitor transitions, browser zoom/device scale `2`, and non-Windows host scale evidence remain open under V04/V05.
+- Completed increment (2026-09-13): the W3C browser and file-drop runners accept bounded `--device-scale` values, emit engine-specific Chromium/Edge/Firefox capabilities, reject unsupported WebKit overrides, and record the effective browser ratio plus CSS viewport. Protocol tests cover parsing, payloads, matching and malformed probes; RITK remains the DICOM/image owner.
+- Residuals: live scale-2 engine screenshots, physical monitor transitions, browser zoom semantics and non-Windows host scale evidence remain open under V04/V05.
 
 <a id="METIS-MACOS-001"></a>
 ## METIS-MACOS-001 — macOS restricted desktop [arch] [minor]

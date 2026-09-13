@@ -1043,9 +1043,19 @@ resolves to two `436px` columns. All three have no horizontal overflow and every
 required card or target ends inside the viewport. The full Metis gate passes on
 the delivered revision.
 
-The viewport capability does not expose a device-scale override. Scale `2`,
-and platform fractional-scale cases remain open under V04; these captures do not
-claim those paths.
+The browser runner now accepts a bounded `--device-scale` value from `0.5` to
+`4` and records the requested scale, effective `devicePixelRatio`, and CSS
+viewport in every workbench, canvas, fragment, and file-drop trace. Chromium
+and Edge use their native launch options; Firefox uses
+`layout.css.devPixelsPerPx`; WebKit rejects non-1 overrides. A configured
+engine endpoint is still required for live scale-2 screenshots. Physical
+monitor transitions and platform fractional-scale cases remain V04/V05 host
+evidence.
+
+The protocol suite covers fixed-point parsing, engine-specific capability
+payloads, effective-scale matching, malformed probe responses and the explicit
+WebKit rejection. This proves the host contract and fail-closed behavior; it
+does not substitute for an engine screenshot.
 
 ## Software style diagnostic evidence — 2026-09-09
 
@@ -1426,8 +1436,8 @@ native operations. Browser-side `MutationObserver` and timer callbacks provide
 the waits; no host sleep or polling loop is part of the runner. Output and
 screenshots are confined to `output`.
 
-The browser and asset suites pass 22/22 tests; the full deterministic Python
-suite passes 88/88 tests, and `python -m py_compile` passes for the runner and
+The browser and asset suites pass 51/51 tests; the full deterministic Python
+suite passes 131/131 tests, and `python -m py_compile` passes for the runner and
 its tests. The protocol-shaped driver tests verify
 the exact displayed values (`80.00 kg`, `0.750 mcg/kg/min` and
 `Volume rate: 0.900000 mL/hr`), disconnected privileged-submit rejection,
@@ -1449,6 +1459,12 @@ remain owned by their Moirai, native-host and RITK items; the Metis runner
 contains no DICOM parsing or viewer semantics. See the [RITK browser capture
 record](../../ritk/docs/manual/dicom-workflow.md#three-orthogonal-canvases-from-the-complete-bounded-real-series).
 
+The scheduled `browser-runtime` matrix now passes `--device-scale 2` to the
+Chromium and Firefox jobs and `--device-scale 1` to Safari. Their traces carry
+the negotiated ratio and CSS viewport, so scale-2 screenshots are collected
+where the driver supports the capability; Safari remains an explicit scale-1
+control.
+
 <a id="browser-canvas-consumer-trace-evidence--2026-09-11"></a>
 ## Browser canvas consumer trace evidence — 2026-09-11
 
@@ -1460,7 +1476,7 @@ Metis revision plus an optional consumer revision, and releases all WebDriver
 input sources before session teardown. The scenario is reusable by RITK without
 placing DICOM, series, slice or viewer state in Metis.
 
-The Python script suite passes 114 tests, including the canvas scenario, element
+The Python script suite passes 131 tests, including the canvas scenario, element
 screenshot endpoint, bounded identifier validation, cross-repository
 consumer-revision field and trusted-event evidence. The file-backed gallery runner can emit the
 same schema-1 canvas trace after the real study is loaded, reusing the canonical

@@ -12,6 +12,7 @@ import threading
 import urllib.error
 import urllib.parse
 import urllib.request
+from decimal import Decimal, InvalidOperation
 from functools import partial
 from typing import Any, Dict, Mapping, Optional, Sequence
 
@@ -28,10 +29,46 @@ MAX_URL_BYTES = 8 * 1024
 MAX_ACTION_SOURCES = 8
 MAX_SOURCE_ACTIONS = 64
 ELEMENT_KEY = "element-6066-11e4-a52e-4f735466cecf"
+MIN_DEVICE_SCALE_MILLI = 500
+MAX_DEVICE_SCALE_MILLI = 4000
+DEVICE_SCALE_PATTERN = re.compile(r"(?:[0-9]+(?:\.[0-9]{1,3})?|\.[0-9]{1,3})")
 
 
 class BrowserRuntimeError(RuntimeError):
     """A browser protocol, assertion or artifact contract failed."""
+
+
+def validate_device_scale_milli(value: Any) -> int:
+    """Validate one fixed-point browser scale expressed in thousandths."""
+    if type(value) is not int or not MIN_DEVICE_SCALE_MILLI <= value <= MAX_DEVICE_SCALE_MILLI:
+        raise BrowserRuntimeError(
+            f"device scale must be between {MIN_DEVICE_SCALE_MILLI / 1000:g} and "
+            f"{MAX_DEVICE_SCALE_MILLI / 1000:g}"
+        )
+    return value
+
+
+def parse_device_scale(value: Any) -> int:
+    """Parse a bounded decimal device scale into thousandths."""
+    if not isinstance(value, str):
+        raise BrowserRuntimeError("device scale must be decimal text")
+    text = value.strip()
+    if not DEVICE_SCALE_PATTERN.fullmatch(text):
+        raise BrowserRuntimeError("device scale must use a decimal value with at most three fractional digits")
+    try:
+        decimal = Decimal(text)
+    except InvalidOperation as error:
+        raise BrowserRuntimeError("device scale is not a decimal value") from error
+    milli = decimal * 1000
+    if not milli.is_finite() or milli != milli.to_integral_value():
+        raise BrowserRuntimeError("device scale must resolve to thousandths")
+    return validate_device_scale_milli(int(milli))
+
+
+def format_device_scale(milli: int) -> str:
+    """Render one validated fixed-point scale for browser capabilities."""
+    milli = validate_device_scale_milli(milli)
+    return format(Decimal(milli) / 1000, "f").rstrip("0").rstrip(".")
 
 
 def _bounded_text(value: Any, label: str, limit: int = MAX_TRACE_BYTES) -> str:
@@ -140,14 +177,28 @@ class WebDriverClient:
             raise BrowserRuntimeError(f"WebDriver {method} {path}: {value['error']}: {_bounded_text(message, 'driver error')}")
         return value
 
-    def create_session(self, browser_name: str) -> None:
-        """Create one session with a matrix-pinned browser name."""
+    def create_session(self, browser_name: str, device_scale_milli: Optional[int] = None) -> None:
+        """Create one session with a matrix-pinned browser name and scale."""
         if not isinstance(browser_name, str) or not browser_name:
             raise BrowserRuntimeError("WebDriver browser name is empty")
+        capabilities: Dict[str, Any] = {"browserName": browser_name}
+        if device_scale_milli is not None:
+            scale = format_device_scale(device_scale_milli)
+            if browser_name in ("chrome", "MicrosoftEdge"):
+                option_name = "goog:chromeOptions" if browser_name == "chrome" else "ms:edgeOptions"
+                capabilities[option_name] = {"args": [f"--force-device-scale-factor={scale}"]}
+            elif browser_name == "firefox":
+                capabilities["moz:firefoxOptions"] = {
+                    "prefs": {"layout.css.devPixelsPerPx": scale}
+                }
+            elif browser_name == "safari" and device_scale_milli != 1000:
+                raise BrowserRuntimeError(
+                    "WebKit does not expose a WebDriver device-scale override; use scale 1"
+                )
         value = self._request(
             "POST",
             "/session",
-            {"capabilities": {"alwaysMatch": {"browserName": browser_name}}},
+            {"capabilities": {"alwaysMatch": capabilities}},
         )
         if not isinstance(value, dict):
             raise BrowserRuntimeError("WebDriver session response is not an object")

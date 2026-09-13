@@ -152,6 +152,21 @@ capabilities, exact actions and observed values, semantic snapshots, screenshot
 hashes/dimensions, the three explicitly unsupported native operations and
 cleanup evidence. Review the screenshots and the semantic states together.
 
+Use `--device-scale` to request a bounded high-DPI browser session. The value
+is fixed-point decimal text between `0.5` and `4`; the trace records both the
+requested value and the browser's effective `devicePixelRatio` and CSS viewport:
+
+```text
+python scripts/browser_runtime.py --engine chromium --browser-name MicrosoftEdge --driver-url http://127.0.0.1:9517 --serve-dir output/browser --bridge disconnected --device-scale 2
+```
+
+Chromium and Edge receive their native scale-factor launch option, while
+Firefox receives `layout.css.devPixelsPerPx`. WebKit has no WebDriver scale
+override and rejects values other than `1`, so an unsupported high-DPI claim
+cannot pass silently. The same option is available on the canvas, fragment and
+file-backed gallery runners; RITK still owns DICOM decoding and all image
+assertions.
+
 The protocol client also provides the format-neutral physical-input seam used
 by application-owned canvas scenarios. A consumer resolves its canvas element
 through WebDriver and sends trusted pointer and wheel actions without placing
@@ -176,7 +191,9 @@ the action trace can claim Chromium, Firefox or WebKit evidence.
 The same trace runs in the scheduled or manually dispatched `Metis verification`
 workflow. The `browser-assets` job builds the locked Rust/WASM page once, then
 the `browser-runtime` matrix runs it with the preinstalled Chromium and Firefox
-drivers on Ubuntu and Safari's WebDriver on macOS. The hosted images provide the
+drivers on Ubuntu and Safari's WebDriver on macOS. Chromium and Firefox run the
+workbench at device scale `2`; Safari runs the explicitly supported scale `1`.
+The hosted images provide the
 browser/driver pair; see the [Ubuntu runner image inventory](https://github.com/actions/runner-images/blob/main/images/ubuntu/Ubuntu2404-Readme.md)
 and [Apple's WebDriver setup](https://developer.apple.com/documentation/safari-developer-tools/macos-enabling-webdriver).
 Safari automation is enabled explicitly with `sudo -n /usr/bin/safaridriver --enable`;
@@ -760,9 +777,11 @@ single-column layout, the two-column fixture and the bounded wide layout:
 
 The measured pages have no horizontal overflow; every card and required
 interactive target ends inside the viewport, and the option rows and slider
-measure `44px` high at all three widths. The viewport capability does not
-expose a device-scale override, so scale `2`, custom-style diagnostics and
-platform fractional-scale cases remain open under V04.
+measure `44px` high at all three widths. The runner now exposes a bounded
+device-scale override and records the effective ratio in each trace. A
+configured browser endpoint is still required to produce live scale-2
+screenshots; physical monitor transitions and platform fractional-scale cases
+remain V04/V05 host evidence.
 
 ## Exercise the accessibility presentation
 
@@ -1113,6 +1132,7 @@ Reproduce with a matching local Chromium WebDriver already listening on port
 $revision = git -C D:/atlas/repos/ritk rev-parse HEAD
 python scripts/browser_drop.py --driver-url http://127.0.0.1:9515 `
   --browser-name MicrosoftEdge --input chromium `
+  --device-scale 2 `
   --files D:/atlas/repos/ritk/test_data/3_head_ct_mridir/DICOM --pattern '*.dcm' `
   --oracle docs/manual/images/browser-gallery-oracle.json --consumer-revision $revision
 ```
@@ -1136,6 +1156,7 @@ release:
 ```powershell
 python scripts/browser_drop.py --driver-url http://127.0.0.1:9515 `
   --browser-name MicrosoftEdge --input chromium `
+  --device-scale 2 `
   --files D:/atlas/repos/ritk/test_data/3_head_ct_mridir/DICOM --pattern '*.dcm' `
   --oracle docs/manual/images/browser-gallery-oracle.json `
   --consumer-revision $revision `

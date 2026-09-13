@@ -92,6 +92,16 @@ share the same engine-family validation, so Edge uses the existing Chromium
 scenario without a duplicated runner or a second engine identity. Firefox and
 WebKit retain their single admitted browser names.
 
+Revision 2026-09-13: the runner accepts an optional fixed-point device scale
+between `0.5` and `4`. Chromium and Edge receive their native force-scale
+launch arguments, Firefox receives `layout.css.devPixelsPerPx`, and WebKit
+rejects non-1 requests because its WebDriver surface has no scale capability.
+After navigation every scenario probes `devicePixelRatio`, `innerWidth` and
+`innerHeight`; a requested scale must match the observed ratio within one
+fixed-point unit, and the trace records both values. The same contract applies
+to the file-backed gallery and its paired consumer-canvas trace, while RITK
+continues to own DICOM and image semantics.
+
 The runner declares `native-file-dialog`, `native-process-launch` and
 `os-permission-grant` unsupported for this browser surface. Native authority,
 filesystem handles and DICOM parsing remain outside Metis: RITK owns the DICOM
@@ -125,6 +135,8 @@ public request state only after the remounted form reports `aria-busy=false`;
 it cannot inspect a provider's private listener registry or operating-system
 handles. Such evidence belongs to the Moirai/native host tests and to a driver
 with the relevant instrumentation.
+The scale probe observes the browser's CSS viewport and pixel ratio only; it
+does not claim a physical monitor transition or native compositor behavior.
 Actual engine evidence exists only when a configured W3C endpoint is run; a
 missing endpoint is a failed invocation, never a skipped matrix cell.
 
@@ -135,7 +147,9 @@ workbench and canvas scenarios across engine names, input-sensitive result
 assertions, bounded W3C pointer/wheel payloads, element and full-window
 screenshot validation, opaque consumer-attribute capture and bounds,
 disconnected privilege rejection, teardown state and explicit unsupported
-operations. `python -m py_compile` checks the runner and tests.
+operations. Device-scale parsing, engine-specific capabilities, effective
+ratio matching and the WebKit rejection are covered by the same protocol
+suite. `python -m py_compile` checks the runner and tests.
 Each configured engine is run with the commands in the browser manual, and its
 schema-1 trace plus PNGs are reviewed before the browser item can close. The
 current Windows environment has no configured Chromium, Firefox or WebKit
