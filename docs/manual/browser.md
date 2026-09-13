@@ -110,6 +110,10 @@ The override is validated against the selected engine. `firefox` accepts only
 `firefox`, `webkit` accepts only `safari`, and Chromium accepts `chrome` or
 `MicrosoftEdge`.
 
+The inspected Edge workbench capture is preserved in the [sanitized trace](images/metis-browser-edge-workbench.json). It records the two input mutations, the disabled privileged action, stop/remount state and JavaScript heap observations without retaining driver process paths. The remounted view is the final state after the old controls were released:
+
+![Metis workbench remounted in Microsoft Edge](images/metis-browser-edge-workbench-remounted.png)
+
 Run the disconnected format-neutral workflow against the generated assets:
 
 ```text

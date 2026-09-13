@@ -1480,10 +1480,24 @@ one-terabyte observation bound. The measurement is explicitly JavaScript heap
 evidence and does not claim WebAssembly, native-process, allocation-profiler,
 compositor or GPU coverage.
 
-The dependency-free Python suite passes 116/116 after adding value-semantic
-available/unavailable and ordering-rejection cases. No configured WebDriver
-endpoint is available in this environment, so a live engine sample is not
-claimed; the cross-engine and WASM-memory residuals remain open under V12.
+The dependency-free Python suite passes 23/23 for the browser runtime module,
+including the engine-family override and lifecycle-status assertions. A live
+Edge run through `MicrosoftEdge` 154.0.4258.12 and msedgedriver 153.0.4234.19
+at Metis revision `95799eebabae933bb0059898cf48fe529263921b` passed the
+disconnected workbench scenario. It changed weight `72.5`→`80` and dose
+`0.5`→`0.75`, observed `80.00 kg` and `0.750 mcg/kg/min`, kept the privileged
+submit disabled without an authorized bridge, then stopped at generation 3
+with zero mounted controls and zero Rust-owned listeners before remounting at
+generation 4 with 27 controls and 31 listeners. The session closed cleanly.
+
+Edge exposed bounded JavaScript heap observations: used bytes were
+1,096,125 (initial), 1,730,631 (after weight), 2,302,500 (after dose) and
+3,520,903 (after remount), with totals 2,415,149, 5,039,759, 5,566,812 and
+6,094,319 respectively; the heap limit was 4,395,630,592 bytes. These are
+single-run `performance.memory` observations, not an allocation or memory
+efficiency claim. The [sanitized trace and inspected screenshots](manual/browser.md#run-the-cross-engine-conformance-trace)
+bind the values and hashes. WASM, native-process, compositor, GPU,
+Firefox/WebKit and physical-input residuals remain open under V12.
 
 <a id="V03"></a>
 ### V03 — Text and accessibility specimen
