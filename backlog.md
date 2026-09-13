@@ -44,6 +44,7 @@ an owner. “Unsupported” cannot replace delivery of a required mobile/native 
 <a id="METIS-BROWSER-001"></a>
 ## METIS-BROWSER-001 — Browser form and command lifecycle [arch] [minor]
 - Status: in-progress; priority: P1; owner: Metis frontend/host; integrator: root; last-update: 2026-09-13; branch: `feat/browser-lifecycle-evidence-001`; regions: `crates/metis-web/src/browser.rs`, `crates/metis-web/src/controls.rs`, `crates/metis-web/src/view.rs`, `scripts/browser_runtime.py`, `scripts/tests/test_browser_runtime.py`, `docs/manual/browser.md`, `docs/VERIFICATION.md`; dependencies: METIS-STATE-001, METIS-ASYNC-001, METIS-AUTHORITY-001; risk: browser/native trust boundary
+- Documentation evidence branch: `docs/browser-mri-edge-001`; regions: `backlog.md`, `docs/manual/applications.md`, `docs/VERIFICATION.md`; integrator: root.
 - Scope: actual HTML5/CSS DOM form, Rust/WASM state, asset loading and bounded asynchronous requests; portable UI never imports native authority.
 - Acceptance: Chromium/Firefox/WebKit runtime jobs load WASM and respond to two input changes; authorized service/desktop bridge verifies results; explicit unsupported native-only operations; zero pending requests/listeners after cancel/close.
 - Demonstration: [V02](docs/VERIFICATION.md#V02), actual browser captures and copyable build/run commands in the manual. A browser-only local control demo can land before the privileged bridge.
