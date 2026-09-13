@@ -264,6 +264,13 @@ Firefox/WebKit, WebGPU or native dialog/process coverage. RITK owns the DICOM
 decoder and clinical presentation; Metis owns the generic browser host and
 bounded handoff.
 
+The companion [component-state record](https://github.com/ryancinsight/ritk/blob/main/docs/manual/images/dicom-metis-real-browser-mri-components.json)
+captures the same mounted page after the study is ready: 31 Rust-owned listener
+handles at generation 3, the Dark theme, released pointer capture after a wheel
+gesture, idle text composition and the explicit absence of an authorized
+backend bridge. These observations demonstrate host/component behavior while
+keeping DICOM interpretation in RITK.
+
 
 ## Initial form
 

@@ -923,6 +923,13 @@ hashes and cleanup result. This is consumer-owned DICOM evidence: Metis
 interprets only the bounded file handoff and browser lifecycle, while RITK
 owns scanning, decoding, geometry and clinical presentation.
 
+The same live page's [component-state record](https://github.com/ryancinsight/ritk/blob/main/docs/manual/images/dicom-metis-real-browser-mri-components.json)
+observes a mounted Métis root with 31 Rust-owned listener handles at generation
+3, Dark theme selection, released pointer capture after a wheel gesture, idle
+text composition and no authorized backend bridge. The component observations
+are separate from the canvas pixel oracle and contain no patient identifiers or
+DICOM metadata.
+
 The run closes the configured Edge/Chromium file-backed workflow for this
 study. Physical file-manager drag input, Firefox/WebKit, WebGPU, native file
 dialogs and native process launch remain separate acceptance gates; the
