@@ -44,7 +44,7 @@
       "label": "initial",
       "source": "performance.memory",
       "total_js_heap_bytes": 2415149,
-      "used_js_heap_bytes": 1096621
+      "used_js_heap_bytes": 1124297
     },
     {
       "available": true,
@@ -52,7 +52,7 @@
       "label": "after-weight-kg",
       "source": "performance.memory",
       "total_js_heap_bytes": 5039759,
-      "used_js_heap_bytes": 1789427
+      "used_js_heap_bytes": 1816759
     },
     {
       "available": true,
@@ -60,7 +60,7 @@
       "label": "after-target-dose",
       "source": "performance.memory",
       "total_js_heap_bytes": 5566812,
-      "used_js_heap_bytes": 2351572
+      "used_js_heap_bytes": 2361244
     },
     {
       "available": true,
@@ -68,31 +68,31 @@
       "label": "remounted",
       "source": "performance.memory",
       "total_js_heap_bytes": 6356463,
-      "used_js_heap_bytes": 3574107
+      "used_js_heap_bytes": 3584991
     },
     {
       "available": true,
       "js_heap_limit_bytes": 4395630592,
       "label": "remounted-cycle-2",
       "source": "performance.memory",
-      "total_js_heap_bytes": 6621682,
-      "used_js_heap_bytes": 3412850
+      "total_js_heap_bytes": 6883826,
+      "used_js_heap_bytes": 3365666
     },
     {
       "available": true,
       "js_heap_limit_bytes": 4395630592,
       "label": "remounted-cycle-3",
       "source": "performance.memory",
-      "total_js_heap_bytes": 8197620,
-      "used_js_heap_bytes": 3204772
+      "total_js_heap_bytes": 7935476,
+      "used_js_heap_bytes": 3265784
     },
     {
       "available": true,
       "js_heap_limit_bytes": 4395630592,
       "label": "remounted-cycle-4",
       "source": "performance.memory",
-      "total_js_heap_bytes": 8200698,
-      "used_js_heap_bytes": 4227802
+      "total_js_heap_bytes": 7938554,
+      "used_js_heap_bytes": 4253418
     }
   ],
   "browser_name": "MicrosoftEdge",
@@ -174,7 +174,7 @@
     "provider-private listener and resource counts remain outside the WebDriver contract",
     "the runner does not interpret DICOM or clinical semantics; those are owned by RITK"
   ],
-  "metis_revision": "790550a2a0f34bdd23ad1b4afdf6a6552baa9e55",
+  "metis_revision": "012ed7175268c283cb4b8cbd617f1a138d955532",
   "observations": [
     {
       "dose_value": "0.5",

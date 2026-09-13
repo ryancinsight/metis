@@ -1610,7 +1610,7 @@ optional `performance.memory` observations labelled `remounted-cycle-N`.
 The dependency-free browser runtime module passes 27/27, including the
 three-cycle value-semantic record, the cycle bound and the canvas rejection
 path. A live Edge 154.0.4258.12 run with msedgedriver 153.0.4234.19 at Metis
-revision `790550a2a0f34bdd23ad1b4afdf6a6552baa9e55` completed four cycles.
+revision `012ed7175268c283cb4b8cbd617f1a138d955532` completed four cycles.
 Stopped generations 3, 5, 7 and 9 each reported zero mounted controls and zero
 Rust-owned listener handles; remounted generations 4, 6, 8 and 10 each
 reported 27 mounted controls and 31 listener handles. The run changed weight
