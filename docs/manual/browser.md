@@ -180,11 +180,17 @@ client.wheel(canvas_element_id, (64, 48), (0, 120))
 client.release_actions()
 ```
 
-The client bounds element-local coordinates, wheel deltas, action-source count,
-per-source action count and serialized request size. RITK owns the DICOM
-workflow and interprets these format-neutral events; Métis records transport
-and screenshot evidence only. A configured engine endpoint is required before
-the action trace can claim Chromium, Firefox or WebKit evidence.
+The canvas trace snapshots each element's CSS dimensions before dispatch and
+derives the element-local offsets from those dimensions. The WebDriver element
+origin is the canvas center, so the runner clamps each requested point to
+`floor(css_size / 2) - 1` on each axis. This keeps pointer and wheel events
+inside short letterboxed canvases as well as full-sized surfaces; the trace
+records the effective offsets. The client also bounds wheel deltas,
+action-source count, per-source action count and serialized request size. RITK
+owns the DICOM workflow and interprets these format-neutral events; Métis
+records transport and screenshot evidence only. A configured engine endpoint is
+required before the action trace can claim Chromium, Firefox or WebKit
+evidence.
 
 ### Run the hosted cross-engine matrix
 
@@ -1217,6 +1223,66 @@ and sagittal [initial](images/browser-gallery-canvas-ritk-snap-sagittal-initial.
 and [after input](images/browser-gallery-canvas-ritk-snap-sagittal-after-input.png).
 
 ![Live Edge window after the trusted canvas actions](images/browser-gallery-canvas-window-final.png)
+
+### Replay a saved MRI study with adaptive canvas input
+
+The file-backed gallery runner was replayed against the public 94-file
+MRI-DIR T2 study on 2026-09-13. At Metis revision
+`abd6578caffb92ad4ab9011507cdd89fc0c2c7e2`, RITK revision
+`60044428572461ff94cc0396a1960e9cdc78304a` and Moirai revision
+`fd3ec288dd0f1e98912f1d439d4ff9129ca7e25a`, Microsoft Edge
+154.0.4258.12 (msedgedriver 153.0.4234.19) accepted all 94 saved files and
+read 49,807,236 bytes. RITK presented non-black axial, coronal and sagittal
+planes at 512 × 512, 512 × 94 and 512 × 94 pixels. The browser viewport and
+the three element captures are the actual decoded study; the canonical public
+[gallery image](https://github.com/ryancinsight/ritk/blob/main/docs/manual/images/dicom-metis-real-browser-mri-edge-gallery.png?raw=true)
+and [provenance record](https://github.com/ryancinsight/ritk/blob/main/docs/manual/images/dicom-metis-real-browser-mri-edge.json)
+remain owned by RITK.
+
+The adaptive trace dispatched one trusted pointer drag and wheel action to each
+canvas. Axial moved from slice 47 to 46 of 94 with offsets `(24, 24)` and
+`(64, 48)`; coronal and sagittal moved from slice 256 to 255 of 512 with
+offsets `(24, 24)` and `(64, 40)`. The `y = 40` value is derived from the
+82.4 CSS-pixel height of those short canvases, avoiding the previous out of
+bounds `y = 48` point. The RITK validator accepted all six semantic snapshots,
+six actions and eight screenshots. Twelve diagnostic listeners were released,
+all input sources were released and the WebDriver session closed.
+
+Reproduce the run from the Metis checkout with a configured Edge driver:
+
+```powershell
+$consumerRevision = (git -C D:/atlas/repos/ritk rev-parse HEAD)
+python scripts/browser_drop.py --driver-url http://127.0.0.1:9516 `
+  --browser-name MicrosoftEdge --input chromium `
+  --files D:/atlas/repos/ritk/test_data/2_head_mri_t2/DICOM --pattern '*.dcm' `
+  --oracle output/browser/mri-oracle.json `
+  --consumer-revision $consumerRevision `
+  --canvas-trace output/browser/drop-mri-edge-canvas-final/canvas-trace.json `
+  --canvas-attribute data-ritk-load-state `
+  --canvas-attribute data-ritk-frame-state `
+  --canvas-attribute data-ritk-axis `
+  --canvas-attribute data-ritk-slice-index `
+  --canvas-attribute data-ritk-slice-count `
+  --canvas-attribute data-ritk-frame-width `
+  --canvas-attribute data-ritk-frame-height `
+  --output output/browser/drop-mri-edge-canvas-final
+```
+
+Validate the resulting trace from the RITK checkout:
+
+```powershell
+ritk-snap.exe --validate-browser-trace `
+  D:/atlas/repos/metis/output/browser/drop-mri-edge-canvas-final/canvas-trace.json `
+  --canvas-id ritk-snap-axial --canvas-id ritk-snap-coronal `
+  --canvas-id ritk-snap-sagittal
+```
+
+This evidence establishes the saved-study handoff, decoded pixels, trusted
+canvas input and bounded teardown in one Chromium-family engine. Physical
+file-manager input, Firefox/WebKit, WebGPU and provider-private resource
+counts remain separate acceptance gates. Private clinical studies use the
+local saved-study command in the [application gallery](applications.md) and
+are never copied into Metis evidence.
 
 ### Read browser frame timing
 

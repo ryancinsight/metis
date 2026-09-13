@@ -22,6 +22,7 @@ from browser_runtime import (
 )
 from browser_canvas import (
     MAX_CANVAS_ATTRIBUTES,
+    _canvas_action_offsets,
     run_canvas_scenario,
     validate_canvas_attributes,
     validate_canvas_ids,
@@ -612,6 +613,13 @@ class BrowserRuntimeTests(unittest.TestCase):
         self.assertEqual(len(heap), 6)
         self.assertTrue(all(item["available"] for item in heap))
         self.assertTrue(all(item["used_js_heap_bytes"] <= item["total_js_heap_bytes"] <= item["js_heap_limit_bytes"] for item in heap))
+
+    def test_canvas_action_offsets_stay_inside_short_surfaces(self):
+        offsets = _canvas_action_offsets({"css_width": 448.8, "css_height": 82.4})
+        self.assertEqual(offsets, ((24, 24), (64, 40), (64, 40)))
+
+        tiny = _canvas_action_offsets({"css_width": 1.0, "css_height": 1.0})
+        self.assertEqual(tiny, ((0, 0), (0, 0), (0, 0)))
 
     def test_browser_heap_sample_records_unavailable_surface(self):
         trace = Trace(BrowserEngine.FIREFOX, "http://127.0.0.1/", "canvas", "0" * 40, {})
