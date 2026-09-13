@@ -207,6 +207,13 @@ an owner. “Unsupported” cannot replace delivery of a required mobile/native 
 - Decision: [ADR 0001](docs/adr/0001-process-contract.md); user manual replaces the domain-book requirement by explicit user direction.
 - Outcome: Public source/manual and rendered captures are present; Atlas registers `repos/metis` at the verified public `main` revision. Every later item owns its demonstration section, not a deferred documentation phase.
 
+<a id="METIS-MANUAL-REAL-DICOM-001"></a>
+## METIS-MANUAL-REAL-DICOM-001 — Lead with real DICOM evidence [patch]
+- Status: in-progress; priority: P1; owner: Metis documentation; integrator: root; branch: `docs/real-dicom-gallery-001`; regions: `README.md`, `docs/manual/README.md`, `docs/manual/applications.md`, `backlog.md`; dependencies: RITK-SNAP-METIS-001; risk: misleading visual evidence
+- Scope: make the public manual's first gallery entry a real RITK-backed DICOM application capture and expose the saved-study command; synthetic form and fixture images remain protocol evidence.
+- Acceptance: front-page manual displays a revision-bound real CT capture, links component-state and provenance records, names private-data limits, and all local manual links pass the locked gate.
+- Demonstration: actual public MRI-DIR CT window plus the copyable local clinical-study command; no DICOM parser or patient data enters Metis.
+
 <a id="METIS-STATE-001"></a>
 ## METIS-STATE-001 — Correct form state transitions [arch] [major]
 - Status: done; merged [PR 3](https://github.com/ryancinsight/metis/pull/3) at `9c38d2f`; [ADR 0004](docs/adr/0004-form-state.md).
