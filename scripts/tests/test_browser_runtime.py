@@ -712,6 +712,7 @@ class BrowserRuntimeTests(unittest.TestCase):
                 5_000,
                 True,
                 4_000,
+                lifecycle_cycles=2,
             )
         self.assertTrue(driver.closed)
         self.assertIn({"action": "submit", "state": "pending"}, trace.actions)
@@ -719,6 +720,7 @@ class BrowserRuntimeTests(unittest.TestCase):
         self.assertFalse(any(action.get("state") == "success" for action in trace.actions))
         self.assertFalse(driver.pending)
         self.assertFalse(driver.success)
+        self.assertEqual(trace.cleanup["lifecycle_cycles"], 2)
 
     def test_canvas_trace_rejects_invalid_frame_timing(self):
         output = pathlib.Path(__file__).resolve().parents[2] / "output" / "browser" / "runtime-test"
