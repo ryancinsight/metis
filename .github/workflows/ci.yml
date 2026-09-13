@@ -241,13 +241,13 @@ jobs:
         include:
           - engine: chromium
             runner: ubuntu-24.04
-            driver-url: http://127.0.0.1:9515
+            driver_url: http://127.0.0.1:9515
           - engine: firefox
             runner: ubuntu-24.04
-            driver-url: http://127.0.0.1:4444
+            driver_url: http://127.0.0.1:4444
           - engine: webkit
             runner: macos-latest
-            driver-url: http://127.0.0.1:4444
+            driver_url: http://127.0.0.1:4444
     permissions:
       contents: read
     env:
@@ -299,7 +299,7 @@ jobs:
       - name: Run browser lifecycle trace
         shell: bash
         env:
-          DRIVER_URL: ${{ matrix.driver-url }}
+          DRIVER_URL: ${{ matrix.driver_url }}
           ENGINE: ${{ matrix.engine }}
         run: |
           set -euo pipefail
