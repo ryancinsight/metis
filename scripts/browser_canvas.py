@@ -180,7 +180,7 @@ def _canvas_snapshot(
     canvas_id: str,
     label: str,
     attribute_names: Sequence[str],
-) -> None:
+) -> Mapping[str, Any]:
     """Record one canvas's dimensions, placement and consumer-selected attributes."""
     value = client.execute(CANVAS_SNAPSHOT_SCRIPT, [canvas_id, list(attribute_names)])
     if not isinstance(value, dict) or value.get("id") != canvas_id:
@@ -216,6 +216,22 @@ def _canvas_snapshot(
         ):
             raise BrowserRuntimeError(f"canvas {canvas_id!r} attribute {name!r} exceeds its value bound")
     trace.snapshots.append({"label": label, "canvas": value})
+    return value
+
+
+def _canvas_action_offsets(canvas: Mapping[str, Any]) -> tuple[tuple[int, int], tuple[int, int], tuple[int, int]]:
+    """Clamp trusted input offsets to the visible bounds of one canvas."""
+    css_width = float(canvas["css_width"])
+    css_height = float(canvas["css_height"])
+
+    def clamp(requested: int, size: float) -> int:
+        extent = max(0, math.floor(size / 2.0) - 1)
+        return max(-extent, min(extent, requested))
+
+    def point(requested: tuple[int, int]) -> tuple[int, int]:
+        return clamp(requested[0], css_width), clamp(requested[1], css_height)
+
+    return point(CANVAS_DRAG_START), point(CANVAS_DRAG_END), point(CANVAS_WHEEL_POSITION)
 
 
 def _element_screenshot(client: WebDriverClient, trace: Trace, directory: pathlib.Path, label: str, element_id: str) -> None:
@@ -339,29 +355,30 @@ def capture_canvas_trace(
         screenshot(client, trace, screenshot_directory, "window-initial")
         for canvas_id in canvas_ids:
             element = elements[canvas_id]
-            _canvas_snapshot(client, trace, canvas_id, f"{canvas_id}-initial", canvas_attributes)
+            initial_canvas = _canvas_snapshot(client, trace, canvas_id, f"{canvas_id}-initial", canvas_attributes)
+            drag_start, drag_end, wheel_position = _canvas_action_offsets(initial_canvas)
             if browser_heap:
                 browser_heap_sample(client, trace, f"{canvas_id}-initial")
             frame_timing(client, trace, f"{canvas_id}-initial", timeout_ms=frame_timeout_ms)
             _element_screenshot(client, trace, screenshot_directory, f"{canvas_id}-initial", element)
-            client.pointer_drag(element, CANVAS_DRAG_START, CANVAS_DRAG_END)
+            client.pointer_drag(element, drag_start, drag_end)
             trace.actions.append(
                 {
                     "action": "trusted-pointer-drag",
                     "canvas": canvas_id,
-                    "start": list(CANVAS_DRAG_START),
-                    "end": list(CANVAS_DRAG_END),
+                    "start": list(drag_start),
+                    "end": list(drag_end),
                     "observed_events": _read_event_evidence(
                         client, canvas_id, ("pointerdown", "pointermove", "pointerup")
                     ),
                 }
             )
-            client.wheel(element, CANVAS_WHEEL_POSITION, CANVAS_WHEEL_DELTA)
+            client.wheel(element, wheel_position, CANVAS_WHEEL_DELTA)
             trace.actions.append(
                 {
                     "action": "trusted-wheel",
                     "canvas": canvas_id,
-                    "position": list(CANVAS_WHEEL_POSITION),
+                    "position": list(wheel_position),
                     "delta": list(CANVAS_WHEEL_DELTA),
                     "observed_events": _read_event_evidence(client, canvas_id, ("wheel",)),
                 }
