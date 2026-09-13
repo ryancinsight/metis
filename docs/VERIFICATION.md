@@ -1765,6 +1765,15 @@ browser adapter now covers bounded pointer and wheel routing, including
 orthogonal-axis dispatch and pointer-cancel cleanup; that code path remains
 format-neutral in Métis and does not move DICOM authority into the GUI repo.
 
+The same real MRI browser run records the generated `wasm-bindgen`
+`WebAssembly.Memory.buffer.byteLength` at three lifecycle points: 1,769,472
+bytes at initialization, 1,835,008 bytes after mounting the canvases, and
+404,160,512 bytes after RITK decoded the 94-file public study. The repeated
+capacity observations are in the [RITK memory provenance record](../../ritk/docs/manual/images/dicom-metis-real-browser-mri-memory.json).
+They establish a committed linear-memory baseline only; allocator-used bytes,
+JavaScript heap, native-process, compositor and GPU memory still require
+separate matched profilers.
+
 Revision 2026-09-11 (format-neutral host comments): commit `8ea5935` changes
 only ownership comments in the host boundary. The visual fixture provenance was
 regenerated for that source revision; capture hashes, semantic records and all
