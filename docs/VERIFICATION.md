@@ -1523,6 +1523,26 @@ efficiency claim. The [sanitized trace and inspected screenshots](manual/browser
 bind the values and hashes. WASM, native-process, compositor, GPU,
 Firefox/WebKit and physical-input residuals remain open under V12.
 
+<a id="browser-lifecycle-growth-instrument-2026-09-13"></a>
+## Browser lifecycle-growth instrument — 2026-09-13
+
+The W3C workbench runner now accepts `--lifecycle-cycles` with a bound of one
+through eight. It repeats the real stop/remount controls after the existing
+input and bridge trace, requiring zero mounted controls and zero Rust-owned
+listener handles while stopped and a positive listener count on a newer
+generation after each remount. The compact records are stored under
+`metrics.lifecycle_cycles`; `cleanup.lifecycle_cycles` and
+`cleanup.final_generation` summarize the run. Later remounts can also collect
+optional `performance.memory` observations labelled `remounted-cycle-N`.
+
+The dependency-free browser runtime module passes 26/26, including the
+three-cycle value-semantic record, the cycle bound and the canvas rejection
+path. This is executable instrument evidence from the protocol-shaped driver;
+no new live multi-cycle Edge trace is claimed by this increment. A configured
+WebDriver run remains required to bind repeated growth to a real engine and
+host, and native, WebAssembly-used-memory, allocation, compositor and GPU
+measurements remain separate V12 work.
+
 <a id="V03"></a>
 ### V03 — Text and accessibility specimen
 

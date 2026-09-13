@@ -38,6 +38,7 @@ from browser_trace import (
 
 
 BRIDGE_MODES = ("disconnected", "authorized")
+MAX_LIFECYCLE_CYCLES = 8
 
 
 WAIT_FOR_SCRIPT = """
@@ -178,10 +179,15 @@ def run_scenario(
     cancel_grace_ms: int,
     browser_heap: bool = False,
     browser_name: Optional[str] = None,
+    lifecycle_cycles: int = 1,
 ) -> Trace:
-    """Execute the same input, bridge and teardown trace for every engine."""
+    """Execute the same input, bridge and bounded teardown trace for every engine."""
     if bridge not in BRIDGE_MODES:
         raise BrowserRuntimeError(f"unsupported bridge mode {bridge!r}; choose {', '.join(BRIDGE_MODES)}")
+    if type(lifecycle_cycles) is not int or not 1 <= lifecycle_cycles <= MAX_LIFECYCLE_CYCLES:
+        raise BrowserRuntimeError(
+            f"lifecycle-cycles must be between 1 and {MAX_LIFECYCLE_CYCLES}"
+        )
     trace: Optional[Trace] = None
     stopped_snapshot: Optional[Dict[str, Any]] = None
     remounted_snapshot: Optional[Dict[str, Any]] = None
@@ -269,8 +275,26 @@ def run_scenario(
         if stopped_snapshot is None or remounted_snapshot is None:
             raise BrowserRuntimeError("browser lifecycle trace did not collect both teardown snapshots")
         _assert_lifecycle_transition(stopped_snapshot, remounted_snapshot)
+        lifecycle_records = [_lifecycle_record(1, stopped_snapshot, remounted_snapshot)]
+        for cycle in range(2, lifecycle_cycles + 1):
+            client.click(client.find("#metis-stop"))
+            _wait_for_text(client, "metis-app", "Metis browser host stopped.", include=True, timeout_ms=timeout_ms)
+            cycle_stopped = _snapshot(client, trace, f"stopped-cycle-{cycle}")
+            _assert_stopped(cycle_stopped)
+            client.click(client.find("#metis-start"))
+            _wait_for_selector(client, "#metis-form", timeout_ms=timeout_ms)
+            cycle_remounted = _snapshot(client, trace, f"remounted-cycle-{cycle}")
+            if browser_heap:
+                browser_heap_sample(client, trace, f"remounted-cycle-{cycle}")
+            _assert_remount_has_no_result(cycle_remounted)
+            _assert_no_pending_request(cycle_remounted)
+            _assert_lifecycle_transition(cycle_stopped, cycle_remounted)
+            lifecycle_records.append(_lifecycle_record(cycle, cycle_stopped, cycle_remounted))
+            trace.actions.append({"action": "stop-remount", "cycle": cycle, "stale_result": False})
+        trace.metrics["lifecycle_cycles"] = lifecycle_records
         trace.cleanup = {
             "session_closed": False,
+            "lifecycle_cycles": len(lifecycle_records),
             "stopped_message": True,
             "stopped_mounted_controls": stopped_snapshot["mounted_controls"],
             "remounted_mounted_controls": remounted_snapshot["mounted_controls"],
@@ -278,6 +302,7 @@ def run_scenario(
             "remounted_listener_count": remounted_snapshot["lifecycle"]["listener_count"],
             "stopped_generation": stopped_snapshot["lifecycle"]["generation"],
             "remounted_generation": remounted_snapshot["lifecycle"]["generation"],
+            "final_generation": lifecycle_records[-1]["remounted"]["generation"],
             "pending_requests": 0,
             "pending_request_observation": "remounted metis-form aria-busy=false",
             "listeners_or_tasks": "Metis-owned listener handles released at stop; provider-private resources remain outside WebDriver",
@@ -340,6 +365,29 @@ def _assert_lifecycle_transition(stopped: Mapping[str, Any], remounted: Mapping[
         raise BrowserRuntimeError("browser remount did not advance its lifecycle generation")
 
 
+def _lifecycle_record(
+    cycle: int,
+    stopped: Mapping[str, Any],
+    remounted: Mapping[str, Any],
+) -> Dict[str, Any]:
+    """Return the bounded semantic evidence for one stop/remount cycle."""
+    stopped_lifecycle = stopped["lifecycle"]
+    remounted_lifecycle = remounted["lifecycle"]
+    return {
+        "cycle": cycle,
+        "stopped": {
+            "generation": stopped_lifecycle["generation"],
+            "listener_count": stopped_lifecycle["listener_count"],
+            "mounted_controls": stopped["mounted_controls"],
+        },
+        "remounted": {
+            "generation": remounted_lifecycle["generation"],
+            "listener_count": remounted_lifecycle["listener_count"],
+            "mounted_controls": remounted["mounted_controls"],
+        },
+    }
+
+
 def _revision() -> str:
     """Read the exact source revision bound to the trace."""
     try:
@@ -377,6 +425,7 @@ def _arguments() -> argparse.Namespace:
     parser.add_argument("--cancel", action="store_true", help="submit a delayed authorized request, stop, remount and check stale-response disposal")
     parser.add_argument("--cancel-grace-ms", type=int, default=4_000)
     parser.add_argument("--browser-heap-sample", action="store_true", help="record bounded performance.memory JavaScript-heap observations when exposed")
+    parser.add_argument("--lifecycle-cycles", type=int, default=1, help=f"repeat the workbench stop/remount lifecycle between 1 and {MAX_LIFECYCLE_CYCLES} times")
     parser.add_argument("--timeout-seconds", type=float, default=30.0)
     parser.add_argument("--output", type=pathlib.Path, help="trace path; defaults to output/browser/runtime/<engine>-<scenario>.json")
     return parser.parse_args()
@@ -417,6 +466,10 @@ def main() -> int:
         browser_name = engine.resolve_webdriver_name(arguments.browser_name)
         if not 1 <= arguments.cancel_grace_ms <= MAX_WAIT_MILLISECONDS:
             raise BrowserRuntimeError(f"cancel-grace-ms must be between 1 and {MAX_WAIT_MILLISECONDS}")
+        if type(arguments.lifecycle_cycles) is not int or not 1 <= arguments.lifecycle_cycles <= MAX_LIFECYCLE_CYCLES:
+            raise BrowserRuntimeError(
+                f"lifecycle-cycles must be between 1 and {MAX_LIFECYCLE_CYCLES}"
+            )
         if arguments.cancel and arguments.bridge != "authorized":
             raise BrowserRuntimeError("--cancel requires --bridge authorized")
         run_canvas_scenario = None
@@ -433,6 +486,8 @@ def main() -> int:
                 raise BrowserRuntimeError("canvas scenarios do not use the workbench bridge")
             if arguments.cancel:
                 raise BrowserRuntimeError("--cancel is only valid for the workbench scenario")
+            if arguments.lifecycle_cycles != 1:
+                raise BrowserRuntimeError("--lifecycle-cycles requires --scenario workbench")
             canvas_ids = validate_canvas_ids(arguments.canvas_id)
             canvas_attributes = validate_canvas_attributes(arguments.canvas_attribute)
             consumer_revision = validate_consumer_revision(arguments.consumer_revision)
@@ -472,7 +527,7 @@ def main() -> int:
                         browser_name=browser_name,
                     )
                 else:
-                    trace = run_scenario(client, engine, url, arguments.bridge, revision, output.parent / "screenshots" / engine.value, timeout_ms, arguments.cancel, arguments.cancel_grace_ms, arguments.browser_heap_sample, browser_name)
+                    trace = run_scenario(client, engine, url, arguments.bridge, revision, output.parent / "screenshots" / engine.value, timeout_ms, arguments.cancel, arguments.cancel_grace_ms, arguments.browser_heap_sample, browser_name, arguments.lifecycle_cycles)
         else:
             url = arguments.url
             if url is None:
@@ -494,7 +549,7 @@ def main() -> int:
                     browser_name=browser_name,
                 )
             else:
-                trace = run_scenario(client, engine, url, arguments.bridge, revision, output.parent / "screenshots" / engine.value, timeout_ms, arguments.cancel, arguments.cancel_grace_ms, arguments.browser_heap_sample, browser_name)
+                trace = run_scenario(client, engine, url, arguments.bridge, revision, output.parent / "screenshots" / engine.value, timeout_ms, arguments.cancel, arguments.cancel_grace_ms, arguments.browser_heap_sample, browser_name, arguments.lifecycle_cycles)
         _write_trace(output, trace.document())
         print(json.dumps(trace.document(), sort_keys=True))
         return 0
