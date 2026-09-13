@@ -171,6 +171,30 @@ workflow and interprets these format-neutral events; Métis records transport
 and screenshot evidence only. A configured engine endpoint is required before
 the action trace can claim Chromium, Firefox or WebKit evidence.
 
+### Run the hosted cross-engine matrix
+
+The same trace runs in the scheduled or manually dispatched `Metis verification`
+workflow. The `browser-assets` job builds the locked Rust/WASM page once, then
+the `browser-runtime` matrix runs it with the preinstalled Chromium and Firefox
+drivers on Ubuntu and Safari's WebDriver on macOS. The hosted images provide the
+browser/driver pair; see the [Ubuntu runner image inventory](https://github.com/actions/runner-images/blob/main/images/ubuntu/Ubuntu2404-Readme.md)
+and [Apple's WebDriver setup](https://developer.apple.com/documentation/safari-developer-tools/macos-enabling-webdriver).
+Safari automation is enabled explicitly with `/usr/bin/safaridriver --enable`.
+
+Dispatch the workflow from a checked-out repository with the GitHub CLI:
+
+```text
+gh workflow run ci.yml --ref main
+gh run list --workflow ci.yml --limit 1 --json databaseId,status,conclusion,headSha
+```
+
+The run produces one `metis-browser-runtime-<engine>-<run-id>` artifact for
+each engine. Each artifact contains the schema-1 lifecycle trace and the PNGs
+captured from the running browser window. A successful matrix is the evidence
+for the three configured engines; a local Edge or Chromium capture remains a
+separate single-engine observation. The jobs are schedule/manual only so a
+pull request's Windows gate remains within its normal verification budget.
+
 ### Run a consumer-owned canvas trace
 
 The same runner has a canvas scenario for an application that owns one or more

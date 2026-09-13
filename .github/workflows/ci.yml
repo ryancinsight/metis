@@ -187,3 +187,138 @@ jobs:
           path: fuzz/artifacts/
           if-no-files-found: ignore
           retention-days: 7
+
+  browser-assets:
+    name: Build browser runtime assets
+    if: github.event_name == 'schedule' || github.event_name == 'workflow_dispatch'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    env:
+      CARGO_INCREMENTAL: '0'
+      CARGO_TERM_COLOR: always
+    steps:
+      - name: Checkout source
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - name: Setup Python
+        uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
+        with:
+          python-version: '3.13'
+      - name: Setup Rust
+        uses: dtolnay/rust-toolchain@4cda84d5c5c54efe2404f9d843567869ab1699d4 # stable
+        with:
+          toolchain: 1.97.0
+          targets: wasm32-unknown-unknown
+      - name: Prime locked Cargo sources
+        shell: bash
+        run: rustup run 1.97.0 cargo fetch --locked --manifest-path Cargo.toml
+      - name: Install wasm-bindgen
+        uses: taiki-e/install-action@a6b2e2dcd845ddd7f509ce4f3ed3d922b80cc5d9 # v2.84.0
+        with:
+          tool: wasm-bindgen@0.2.128
+          checksum: true
+      - name: Build browser assets
+        shell: bash
+        run: python scripts/browser.py build
+      - name: Upload browser assets
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        with:
+          name: metis-browser-assets-${{ github.run_id }}
+          path: output/browser
+          if-no-files-found: error
+          retention-days: 7
+
+  browser-runtime:
+    name: Browser runtime (${{ matrix.engine }})
+    if: github.event_name == 'schedule' || github.event_name == 'workflow_dispatch'
+    needs: browser-assets
+    runs-on: ${{ matrix.runner }}
+    timeout-minutes: 10
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - engine: chromium
+            runner: ubuntu-24.04
+            driver-url: http://127.0.0.1:9515
+          - engine: firefox
+            runner: ubuntu-24.04
+            driver-url: http://127.0.0.1:4444
+          - engine: webkit
+            runner: macos-latest
+            driver-url: http://127.0.0.1:4444
+    permissions:
+      contents: read
+    env:
+      CARGO_TERM_COLOR: always
+    steps:
+      - name: Checkout source
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - name: Setup Python
+        uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
+        with:
+          python-version: '3.13'
+      - name: Download browser assets
+        uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
+        with:
+          name: metis-browser-assets-${{ github.run_id }}
+          path: output/browser
+      - name: Start virtual display
+        if: matrix.engine != 'webkit'
+        shell: bash
+        run: |
+          set -euo pipefail
+          command -v Xvfb
+          Xvfb :99 -screen 0 1280x800x24 -nolisten tcp > "$RUNNER_TEMP/xvfb.log" 2>&1 &
+          echo 'DISPLAY=:99' >> "$GITHUB_ENV"
+      - name: Start Chromium WebDriver
+        if: matrix.engine == 'chromium'
+        shell: bash
+        run: |
+          set -euo pipefail
+          "$CHROMEWEBDRIVER/chromedriver" --port=9515 > "$RUNNER_TEMP/chromedriver.log" 2>&1 &
+      - name: Start Firefox WebDriver
+        if: matrix.engine == 'firefox'
+        shell: bash
+        run: |
+          set -euo pipefail
+          "$GECKOWEBDRIVER/geckodriver" --port=4444 --host 127.0.0.1 > "$RUNNER_TEMP/geckodriver.log" 2>&1 &
+      - name: Enable Safari WebDriver
+        if: matrix.engine == 'webkit'
+        shell: bash
+        run: /usr/bin/safaridriver --enable
+      - name: Start Safari WebDriver
+        if: matrix.engine == 'webkit'
+        shell: bash
+        run: |
+          set -euo pipefail
+          /usr/bin/safaridriver -p 4444 > "$RUNNER_TEMP/safaridriver.log" 2>&1 &
+      - name: Run browser lifecycle trace
+        shell: bash
+        env:
+          DRIVER_URL: ${{ matrix.driver-url }}
+          ENGINE: ${{ matrix.engine }}
+        run: |
+          set -euo pipefail
+          python scripts/browser_runtime.py \
+            --engine "$ENGINE" \
+            --driver-url "$DRIVER_URL" \
+            --serve-dir output/browser \
+            --bridge disconnected \
+            --browser-heap-sample \
+            --lifecycle-cycles 4 \
+            --timeout-seconds 30 \
+            --output "output/browser/runtime/$ENGINE-workbench.json"
+      - name: Upload browser runtime evidence
+        if: always()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        with:
+          name: metis-browser-runtime-${{ matrix.engine }}-${{ github.run_id }}
+          path: |
+            output/browser/runtime/**
+            ${{ runner.temp }}/*.log
+          if-no-files-found: ignore
+          retention-days: 7
