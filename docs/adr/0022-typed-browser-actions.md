@@ -96,5 +96,7 @@ preflights all patches before DOM mutation and generation checks run before
 application.
 
 The browser manual documents the action/target/swap workflow and the
-authenticated demonstration. The locked WASM library build passes; a
-configured WebDriver trace is still required for cross-engine visual evidence.
+authenticated demonstration. The HTTP page and its WebDriver scenario cover
+success, malformed and unauthorized responses, unallowlisted targets, stale
+generations and reset/remount state. The locked WASM library build passes; a
+configured endpoint is still required to produce live cross-engine screenshots.

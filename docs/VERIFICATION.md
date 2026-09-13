@@ -123,15 +123,22 @@ literal text values; the WASM path preflights every target before mutation and
 rejects stale generations.
 
 The native focused suites pass 29/29 (`metis-core`), 32/32
-(`metis-frontend` and `metis-backend`) and 34/34 (`metis-web`). The browser
-manual documents the Session details demonstration and the stop/remount
-generation case. A configured WebDriver endpoint is not available in this
-environment, so no new cross-engine screenshot is claimed. The exact full gate
-for this revision reached the visual stage, refreshed the reviewed baseline and
-matched all capture pixels and semantics; the WASM library build also passed.
-This action contract carries generic presentation data only. DICOM scanning, decoding,
-series selection, geometry and viewer state remain RITK-owned and are verified
-by the [RITK DICOM workflow](../../ritk/docs/manual/dicom-workflow.md).
+(`metis-frontend` and `metis-backend`) and 34/34 (`metis-web`). The HTTP page
+now probes an unallowlisted target in addition to malformed, unauthorized and
+stale-generation inputs; the target patch is rejected before any DOM setter.
+`scripts/browser_fragment.py` provides the configured WebDriver scenario for
+these success/rejection/reset states and records three bounded screenshots.
+A configured W3C WebDriver endpoint is not available in this environment, so
+this increment claims the runner and its protocol-shaped tests, not a new
+cross-engine capture. A live Codex in-app browser session did reach the local
+service and showed `200 metis-http-ready`, the authenticated `session` patch,
+all four negative-probe results and generation reset/remount behavior; that is
+single-browser observation evidence, not the WebDriver matrix. The exact full
+gate for this revision reached the visual stage, refreshed the reviewed
+baseline and matched all capture pixels and semantics; the WASM library build
+also passed. This action contract carries generic presentation data only.
+DICOM scanning, decoding, series selection, geometry and viewer state remain
+RITK-owned and are verified by the [RITK DICOM workflow](../../ritk/docs/manual/dicom-workflow.md).
 
 ## Windows native provider and host evidence — 2026-09-08
 
