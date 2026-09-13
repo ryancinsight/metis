@@ -404,6 +404,7 @@ an owner. “Unsupported” cannot replace delivery of a required mobile/native 
 - Documentation increment (2026-09-12): the application gallery now leads with the RITK-backed real-DICOM captures; synthetic form snapshots remain a separate protocol demonstration below. The reordering keeps one canonical capture section and makes input-sensitive pixels the first visible evidence.
 - Documentation increment (2026-09-12): the README now points directly to the real MRI-DIR CT/MIP gallery and saved-study command while stating that private studies remain local.
 - Build increment (2026-09-12): `Cargo.lock` now pins the Metis consumer to merged Iris `a5df753f7a553b8f94b613e2a65a0910a81a7c81`; the exact full gate passes, and the visual baseline refresh changes only its lock-bound fixture digest while all seven SVG captures remain byte-identical with zero semantic or pixel differences.
+- Verification increment (2026-09-13): the browser chooser source changes produced a new fixture digest without changing the seven SVG captures; `python scripts/verify.py --update-snapshots` passes the full locked gate on `e974a21`, including native host, browser assets, release, distribution and visual checks. The baseline now records fixture `5ff6191331c9374f102a106d0494070fdeb9e7a79181b368c857e37da61a30a0`; private DICOM ownership remains in RITK.
 
 <a id="METIS-RITK-HOST-001"></a>
 ## METIS-RITK-HOST-001 — Format-neutral native frame host [arch] [minor]
