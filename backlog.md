@@ -382,7 +382,6 @@ an owner. “Unsupported” cannot replace delivery of a required mobile/native 
 <a id="METIS-MIGRATION-001"></a>
 ## METIS-MIGRATION-001 — egui and Tauri application migration [arch] [minor]
 - Status: in-progress; priority: P1; owner: Metis framework + application owners; integrator: root; last-update: 2026-09-12; risk: lost application behavior.
-- Documentation crosslink branch: `docs/browser-mri-edge-001`; regions: `backlog.md`; integrator: root.
 - Dependencies: METIS-COMMANDS-001, METIS-FILES-001, METIS-INPUT-001, METIS-ASSETS-001, METIS-GRAPHICS-001, METIS-DESKTOP-001, METIS-BROWSER-001, METIS-INTEGRATION-001, METIS-SERVICES-001.
 - Named driver: [ritk-snap](../ritk/backlog.md#RITK-SNAP-METIS-001), retaining egui/eframe at RITK while exposing `--metis-native` through merged [PR 269](https://github.com/ryancinsight/ritk/pull/269) (`c1b8130bb`), following [PR 267](https://github.com/ryancinsight/ritk/pull/267) (`2f2058062`). No Tauri dependency is present in its manifest or workspace lock. RITK owns decoder, volume geometry and medical display correctness; Metis supplies the replacement shell.
 - Baseline: RITK `8152f483` ([PR 237](https://github.com/ryancinsight/ritk/pull/237)) adds physical display/hit rectangles to selected-study loading, restore/rejection and the original native capture; [manual](docs/manual/applications.md#dicom-viewer-migration-baseline). The merged RITK native MPR increment now proves one bounded Métis framebuffer containing all three spacing-aware planes and panel-specific routing while keeping DICOM semantics in RITK.
@@ -408,6 +407,7 @@ an owner. “Unsupported” cannot replace delivery of a required mobile/native 
 - Documentation increment (2026-09-12): the README now points directly to the real MRI-DIR CT/MIP gallery and saved-study command while stating that private studies remain local.
 - Build increment (2026-09-12): `Cargo.lock` now pins the Metis consumer to merged Iris `a5df753f7a553b8f94b613e2a65a0910a81a7c81`; the exact full gate passes, and the visual baseline refresh changes only its lock-bound fixture digest while all seven SVG captures remain byte-identical with zero semantic or pixel differences.
 - Verification increment (2026-09-13): the browser chooser source changes produced a new fixture digest without changing the seven SVG captures; `python scripts/verify.py --update-snapshots` passes the full locked gate on `e974a21`, including native host, browser assets, release, distribution and visual checks. The baseline now records fixture `5ff6191331c9374f102a106d0494070fdeb9e7a79181b368c857e37da61a30a0`; private DICOM ownership remains in RITK.
+- Documentation increment (2026-09-13, RITK PR #336): the migration manual now links the real Microsoft Edge gallery for the saved public MRI-DIR T2 study. The bounded file-backed run accepted 94 files, matched all three RITK RGBA oracles and rejected overflow inputs before reading; the capture proves the generic Métis browser handoff while RITK retains DICOM decoding and clinical presentation.
 
 <a id="METIS-RITK-HOST-001"></a>
 ## METIS-RITK-HOST-001 — Format-neutral native frame host [arch] [minor]
