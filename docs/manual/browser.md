@@ -171,6 +171,50 @@ workflow and interprets these format-neutral events; Métis records transport
 and screenshot evidence only. A configured engine endpoint is required before
 the action trace can claim Chromium, Firefox or WebKit evidence.
 
+### Run the hosted cross-engine matrix
+
+The same trace runs in the scheduled or manually dispatched `Metis verification`
+workflow. The `browser-assets` job builds the locked Rust/WASM page once, then
+the `browser-runtime` matrix runs it with the preinstalled Chromium and Firefox
+drivers on Ubuntu and Safari's WebDriver on macOS. The hosted images provide the
+browser/driver pair; see the [Ubuntu runner image inventory](https://github.com/actions/runner-images/blob/main/images/ubuntu/Ubuntu2404-Readme.md)
+and [Apple's WebDriver setup](https://developer.apple.com/documentation/safari-developer-tools/macos-enabling-webdriver).
+Safari automation is enabled explicitly with `sudo -n /usr/bin/safaridriver --enable`;
+the hosted runner supplies passwordless elevation for this system setting, so no
+registry or signing credential is involved. Each matrix job waits up to twenty
+seconds for the driver's `/status` response before creating a session, and
+each WebDriver request has a sixty-second bound for the slower Firefox launch.
+
+Dispatch the workflow from a checked-out repository with the GitHub CLI:
+
+```text
+gh workflow run ci.yml --ref main
+gh run list --workflow ci.yml --limit 1 --json databaseId,status,conclusion,headSha
+```
+
+The run produces one `metis-browser-runtime-<engine>-<run-id>` artifact for
+each engine. Each artifact contains the schema-1 lifecycle trace and the PNGs
+captured from the running browser window. A successful matrix is the evidence
+for the three configured engines; a local Edge or Chromium capture remains a
+separate single-engine observation. The jobs are schedule/manual only so a
+pull request's Windows gate remains within its normal verification budget.
+
+Hosted dispatch `34759186816` at Metis revision
+`67689e5001f65d22ac388397442eb99df9bfe0ef` passed all three runtime jobs. The
+[Chromium artifact](https://github.com/ryancinsight/metis/actions/runs/34759186816/artifacts/10318696257)
+used Chrome 152.0.7977.82 and emitted five 1050×637 PNGs; the
+[Firefox artifact](https://github.com/ryancinsight/metis/actions/runs/34759186816/artifacts/10318098189)
+used Firefox 155.0 and emitted five 1152×635 PNGs; the
+[Safari/WebKit artifact](https://github.com/ryancinsight/metis/actions/runs/34759186816/artifacts/10317374757)
+used Safari 26.6.2 and emitted five 1024×674 PNGs. Every trace records the
+two input changes, four stop/remount cycles, zero stopped listeners, 31
+remounted listeners, zero pending requests and `session_closed: true`. Firefox
+and WebKit correctly report JavaScript heap observations as unavailable rather
+than fabricating values; Chromium records its bounded `performance.memory`
+observations. The [workflow run](https://github.com/ryancinsight/metis/actions/runs/34759186816)
+also retains the single [asset artifact](https://github.com/ryancinsight/metis/actions/runs/34759186816/artifacts/10318272226)
+consumed by all three jobs.
+
 ### Run a consumer-owned canvas trace
 
 The same runner has a canvas scenario for an application that owns one or more
