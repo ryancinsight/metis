@@ -289,13 +289,45 @@ jobs:
       - name: Enable Safari WebDriver
         if: matrix.engine == 'webkit'
         shell: bash
-        run: /usr/bin/safaridriver --enable
+        run: sudo -n /usr/bin/safaridriver --enable
       - name: Start Safari WebDriver
         if: matrix.engine == 'webkit'
         shell: bash
         run: |
           set -euo pipefail
           /usr/bin/safaridriver -p 4444 > "$RUNNER_TEMP/safaridriver.log" 2>&1 &
+      - name: Wait for WebDriver
+        shell: bash
+        env:
+          DRIVER_URL: ${{ matrix.driver_url }}
+        run: |
+          set -euo pipefail
+          python - "$DRIVER_URL" <<'PY'
+          import json
+          import sys
+          import time
+          import urllib.error
+          import urllib.request
+
+          endpoint = sys.argv[1].rstrip("/") + "/status"
+          deadline = time.monotonic() + 20.0
+          last_error = "no response"
+          while time.monotonic() < deadline:
+              try:
+                  with urllib.request.urlopen(endpoint, timeout=1.0) as response:
+                      if response.status != 200:
+                          last_error = f"HTTP {response.status}"
+                      else:
+                          document = json.load(response)
+                          value = document.get("value") if isinstance(document, dict) else None
+                          if isinstance(value, dict):
+                              raise SystemExit(0)
+                          last_error = "status response omitted value"
+              except (OSError, urllib.error.URLError, json.JSONDecodeError) as error:
+                  last_error = str(error)
+              time.sleep(0.1)
+          raise SystemExit(f"WebDriver did not become ready within 20 seconds: {last_error}")
+          PY
       - name: Run browser lifecycle trace
         shell: bash
         env:

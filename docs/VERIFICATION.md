@@ -1557,9 +1557,11 @@ single Ubuntu build creates the locked Rust/WASM asset bundle, and three
 runtime jobs consume that artifact: Chromium and Firefox on Ubuntu 24.04 and
 Safari WebDriver on macOS. Each job runs the four-cycle disconnected
 workbench trace, records the negotiated capabilities and lifecycle assertions,
-and uploads its trace and PNG screenshots. The browser jobs have explicit
-ten-minute bounds and do not run on pull requests; the Windows gate remains the
-pull-request verification path.
+and uploads its trace and PNG screenshots. Driver startup uses a finite
+twenty-second `/status` readiness bound; Safari enablement is runner-local
+`sudo -n` configuration and carries no registry or signing credential. The
+browser jobs have explicit ten-minute bounds and do not run on pull requests;
+the Windows gate remains the pull-request verification path.
 
 The matrix is infrastructure evidence until a hosted run completes. The local
 Edge trace above remains the only live cross-engine-family observation at this

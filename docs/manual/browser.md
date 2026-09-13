@@ -179,7 +179,10 @@ the `browser-runtime` matrix runs it with the preinstalled Chromium and Firefox
 drivers on Ubuntu and Safari's WebDriver on macOS. The hosted images provide the
 browser/driver pair; see the [Ubuntu runner image inventory](https://github.com/actions/runner-images/blob/main/images/ubuntu/Ubuntu2404-Readme.md)
 and [Apple's WebDriver setup](https://developer.apple.com/documentation/safari-developer-tools/macos-enabling-webdriver).
-Safari automation is enabled explicitly with `/usr/bin/safaridriver --enable`.
+Safari automation is enabled explicitly with `sudo -n /usr/bin/safaridriver --enable`;
+the hosted runner supplies passwordless elevation for this system setting, so no
+registry or signing credential is involved. Each matrix job waits up to twenty
+seconds for the driver's `/status` response before creating a session.
 
 Dispatch the workflow from a checked-out repository with the GitHub CLI:
 
