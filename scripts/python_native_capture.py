@@ -74,11 +74,28 @@ class _ProcessEntry32W(ctypes.Structure):
     ]
 
 
+class _WindowRect(ctypes.Structure):
+    _fields_ = [
+        ("left", ctypes.c_long),
+        ("top", ctypes.c_long),
+        ("right", ctypes.c_long),
+        ("bottom", ctypes.c_long),
+    ]
+
+
 @dataclass(frozen=True)
 class _WindowBounds:
     handle: int
     width: int
     height: int
+
+
+@dataclass(frozen=True)
+class _WindowObservation:
+    bounds: _WindowBounds
+    client_width: int
+    client_height: int
+    dpi: int
 
 
 @dataclass(frozen=True)
@@ -124,7 +141,47 @@ def _parser() -> argparse.ArgumentParser:
     parser.add_argument("--title", default="Metis Python native capture")
     parser.add_argument("--width", type=int)
     parser.add_argument("--height", type=int)
+    parser.add_argument(
+        "--resize",
+        nargs=2,
+        type=int,
+        metavar=("WIDTH", "HEIGHT"),
+        help="resize a --command window to this client size before the second capture",
+    )
+    parser.add_argument(
+        "--resize-output",
+        type=pathlib.Path,
+        help="output path for the post-resize capture; requires --resize",
+    )
     return parser
+
+
+def _validate_dimensions(width: int, height: int, label: str) -> None:
+    if width <= 0 or height <= 0:
+        raise ValueError(f"{label} dimensions must be positive")
+    if width > MAX_FRAME_DIMENSION or height > MAX_FRAME_DIMENSION:
+        raise ValueError(f"{label} dimensions exceed the bounded capture limit")
+    if width * height > MAX_FRAME_PIXELS:
+        raise ValueError(f"{label} pixel count exceeds the bounded capture limit")
+
+
+def _validate_resize_options(
+    command: pathlib.Path | None,
+    resize: tuple[int, int] | None,
+    resize_output: pathlib.Path | None,
+    output: pathlib.Path | None = None,
+) -> None:
+    if resize is None:
+        if resize_output is not None:
+            raise ValueError("--resize-output requires --resize")
+        return
+    if command is None:
+        raise ValueError("--resize requires --command")
+    _validate_dimensions(*resize, "resize")
+    if resize_output is None:
+        raise ValueError("--resize requires --resize-output")
+    if output is not None and resize_output.resolve() == output.resolve():
+        raise ValueError("--resize-output must differ from --output")
 
 
 def _load_site(site: pathlib.Path) -> Any:
@@ -178,6 +235,122 @@ def _window_for_processes(process_ids: set[int]) -> _WindowBounds:
 def _window_for_process(process_id: int) -> _WindowBounds:
     """Find a visible window owned by one exact process."""
     return _window_for_processes({process_id})
+
+
+def _window_observation(handle: int) -> _WindowObservation:
+    """Read outer/client geometry and the effective per-window DPI."""
+    if sys.platform != "win32":
+        raise RuntimeError("visible native capture requires Windows")
+
+    user32 = ctypes.windll.user32
+    user32.GetWindowRect.argtypes = [
+        ctypes.c_void_p,
+        ctypes.POINTER(_WindowRect),
+    ]
+    user32.GetWindowRect.restype = ctypes.c_bool
+    user32.GetClientRect.argtypes = [
+        ctypes.c_void_p,
+        ctypes.POINTER(_WindowRect),
+    ]
+    user32.GetClientRect.restype = ctypes.c_bool
+    user32.GetDpiForWindow.argtypes = [ctypes.c_void_p]
+    user32.GetDpiForWindow.restype = ctypes.c_uint32
+
+    outer = _WindowRect()
+    if not user32.GetWindowRect(handle, ctypes.byref(outer)):
+        raise ctypes.WinError()
+    client = _WindowRect()
+    if not user32.GetClientRect(handle, ctypes.byref(client)):
+        raise ctypes.WinError()
+    dpi = int(user32.GetDpiForWindow(handle))
+    if dpi == 0:
+        raise ctypes.WinError()
+    outer_width = outer.right - outer.left
+    outer_height = outer.bottom - outer.top
+    client_width = client.right - client.left
+    client_height = client.bottom - client.top
+    if outer_width <= 0 or outer_height <= 0 or client_width <= 0 or client_height <= 0:
+        raise RuntimeError("native window reported non-positive geometry")
+    return _WindowObservation(
+        bounds=_WindowBounds(int(handle), outer_width, outer_height),
+        client_width=client_width,
+        client_height=client_height,
+        dpi=dpi,
+    )
+
+
+def _resize_window(handle: int, client_width: int, client_height: int) -> _WindowObservation:
+    """Resize one visible HWND to a validated client size and read it back."""
+    if sys.platform != "win32":
+        raise RuntimeError("visible native capture requires Windows")
+    _validate_dimensions(client_width, client_height, "resize")
+
+    user32 = ctypes.windll.user32
+    user32.GetWindowLongPtrW.argtypes = [ctypes.c_void_p, ctypes.c_int]
+    user32.GetWindowLongPtrW.restype = ctypes.c_ssize_t
+    user32.GetMenu.argtypes = [ctypes.c_void_p]
+    user32.GetMenu.restype = ctypes.c_void_p
+    user32.AdjustWindowRectEx.argtypes = [
+        ctypes.POINTER(_WindowRect),
+        ctypes.c_uint32,
+        ctypes.c_bool,
+        ctypes.c_uint32,
+    ]
+    user32.AdjustWindowRectEx.restype = ctypes.c_bool
+    user32.SetWindowPos.argtypes = [
+        ctypes.c_void_p,
+        ctypes.c_void_p,
+        ctypes.c_int,
+        ctypes.c_int,
+        ctypes.c_int,
+        ctypes.c_int,
+        ctypes.c_uint32,
+    ]
+    user32.SetWindowPos.restype = ctypes.c_bool
+    user32.RedrawWindow.argtypes = [
+        ctypes.c_void_p,
+        ctypes.c_void_p,
+        ctypes.c_void_p,
+        ctypes.c_uint32,
+    ]
+    user32.RedrawWindow.restype = ctypes.c_bool
+
+    style = int(user32.GetWindowLongPtrW(handle, -16)) & 0xFFFFFFFF
+    extended_style = int(user32.GetWindowLongPtrW(handle, -20)) & 0xFFFFFFFF
+    adjusted = _WindowRect(0, 0, client_width, client_height)
+    if not user32.AdjustWindowRectEx(
+        ctypes.byref(adjusted),
+        style,
+        bool(user32.GetMenu(handle)),
+        extended_style,
+    ):
+        raise ctypes.WinError()
+    outer_width = adjusted.right - adjusted.left
+    outer_height = adjusted.bottom - adjusted.top
+    if outer_width <= 0 or outer_height <= 0:
+        raise RuntimeError("window style produced non-positive resize geometry")
+    flags = 0x0002 | 0x0004 | 0x0010  # SWP_NOMOVE | SWP_NOZORDER | SWP_NOACTIVATE
+    if not user32.SetWindowPos(
+        handle,
+        None,
+        0,
+        0,
+        outer_width,
+        outer_height,
+        flags,
+    ):
+        raise ctypes.WinError()
+    redraw_flags = 0x0001 | 0x0100 | 0x0020  # RDW_INVALIDATE | RDW_UPDATENOW | RDW_ALLCHILDREN
+    if not user32.RedrawWindow(handle, None, None, redraw_flags):
+        raise ctypes.WinError()
+    observation = _window_observation(handle)
+    if (observation.client_width, observation.client_height) != (client_width, client_height):
+        raise RuntimeError(
+            "native window did not apply the requested client size: "
+            f"requested {client_width}x{client_height}, "
+            f"observed {observation.client_width}x{observation.client_height}"
+        )
+    return observation
 
 
 def _process_tree(root_process_id: int) -> set[int]:
@@ -631,10 +804,13 @@ def _capture_command(
     command_arguments: list[str],
     cwd: pathlib.Path | None,
     output: pathlib.Path,
+    resize: tuple[int, int] | None = None,
+    resize_output: pathlib.Path | None = None,
 ) -> dict[str, Any]:
-    """Launch one visible process, capture its full window and close it."""
+    """Launch one visible process, capture its window, optionally resize it, and close it."""
     if sys.platform != "win32":
         raise RuntimeError("visible native capture requires Windows")
+    _validate_resize_options(command, resize, resize_output, output)
     executable = command.resolve(strict=True)
     if cwd is not None:
         cwd = cwd.resolve(strict=True)
@@ -650,18 +826,77 @@ def _capture_command(
     bounds: _WindowBounds | None = None
     try:
         bounds = _wait_for_process_window(process)
-        pixels = _capture_window(bounds)
-        digest = _write_capture(output, bounds, pixels)
+        initial = _window_observation(bounds.handle)
+        initial_pixels = _capture_window(initial.bounds)
+        initial_digest = _write_capture(output, initial.bounds, initial_pixels)
+        result: dict[str, Any]
+        if resize is None:
+            result = {
+                "process_returncode": None,
+                "window": {
+                    "width": initial.bounds.width,
+                    "height": initial.bounds.height,
+                },
+                "client": {
+                    "width": initial.client_width,
+                    "height": initial.client_height,
+                },
+                "dpi": initial.dpi,
+                "image": output.as_posix(),
+                "sha256": initial_digest,
+            }
+        else:
+            if resize_output is None:
+                raise ValueError("--resize requires --resize-output")
+            resized = _resize_window(bounds.handle, *resize)
+            resized_pixels = _capture_window(resized.bounds)
+            resized_digest = _write_capture(resize_output, resized.bounds, resized_pixels)
+            result = {
+                "initial": {
+                    "window": {
+                        "width": initial.bounds.width,
+                        "height": initial.bounds.height,
+                    },
+                    "client": {
+                        "width": initial.client_width,
+                        "height": initial.client_height,
+                    },
+                    "dpi": initial.dpi,
+                    "image": output.as_posix(),
+                    "sha256": initial_digest,
+                },
+                "resized": {
+                    "window": {
+                        "width": resized.bounds.width,
+                        "height": resized.bounds.height,
+                    },
+                    "client": {
+                        "width": resized.client_width,
+                        "height": resized.client_height,
+                    },
+                    "dpi": resized.dpi,
+                    "image": resize_output.as_posix(),
+                    "sha256": resized_digest,
+                },
+                "resize": {
+                    "requested_client": {
+                        "width": resize[0],
+                        "height": resize[1],
+                    },
+                    "client_size_applied": (
+                        resized.client_width == resize[0]
+                        and resized.client_height == resize[1]
+                    ),
+                    "pixels_changed": initial_pixels != resized_pixels,
+                    "dpi_changed": initial.dpi != resized.dpi,
+                },
+            }
         _close_window(bounds.handle)
         return_code = process.wait(timeout=PROCESS_EXIT_TIMEOUT_SECONDS)
         if return_code != 0:
             raise RuntimeError(f"native process exited with status {return_code}")
-        return {
-            "process_returncode": return_code,
-            "window": {"width": bounds.width, "height": bounds.height},
-            "image": output.as_posix(),
-            "sha256": digest,
-        }
+        result["process_returncode"] = return_code
+        return result
     finally:
         if process.poll() is None:
             process.terminate()
@@ -683,6 +918,11 @@ def main() -> None:
         raise SystemExit("--argument and --cwd require --command")
     if arguments.frame is not None and arguments.command is not None:
         raise SystemExit("--frame cannot be combined with --command")
+    resize = None if arguments.resize is None else tuple(arguments.resize)
+    try:
+        _validate_resize_options(arguments.command, resize, arguments.resize_output, arguments.output)
+    except ValueError as error:
+        raise SystemExit(str(error)) from error
     frame = None if arguments.frame is None else _read_png(arguments.frame)
     if frame is None:
         width = DEFAULT_WIDTH if arguments.width is None else arguments.width
@@ -708,6 +948,8 @@ def main() -> None:
             arguments.command_arguments,
             arguments.cwd,
             output,
+            resize,
+            None if arguments.resize_output is None else arguments.resize_output.resolve(),
         )
         print(json.dumps(result, sort_keys=True))
         return

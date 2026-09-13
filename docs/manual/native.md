@@ -128,7 +128,7 @@ The same capture utility can launch any visible Windows application that uses
 the Métis surface and save the complete HWND, including its title bar and
 client content. The utility waits for the process to become input-idle, finds
 the first visible top-level window owned by that process, captures it with
-`PrintWindow(PW_RENDERFULLCONTENT)`, then posts `WM_CLOSE` and waits for an
+`PrintWindow`, then posts `WM_CLOSE` and waits for an
 orderly exit. The process arguments are passed as separate values; no shell
 string is evaluated.
 
@@ -143,6 +143,31 @@ python scripts/python_native_capture.py `
   --argument=0.2 `
   --output output\native-host-window.bmp
 ```
+
+Pass a second output and a validated client size to exercise the same
+application after a real `SetWindowPos` resize. The utility derives the outer
+window rectangle from its current Win32 style, reads the resulting client
+rectangle back, forces a synchronous repaint, and records the per-window DPI
+before and after the operation:
+
+```powershell
+python scripts/python_native_capture.py `
+  --command (Join-Path $target "debug\metis-app.exe") `
+  --argument=--metis-native-window `
+  --argument=60 `
+  --argument=2 `
+  --argument=0.2 `
+  --resize 1024 720 `
+  --output output\native-host-window-initial.png `
+  --resize-output output\native-host-window-resized.png
+```
+
+The JSON line printed by the command contains separate `initial` and
+`resized` records with outer and client dimensions, image digests, `dpi`, and
+`pixels_changed`. A resize capture proves the requested client geometry was
+applied and that the application produced a new frame. It observes the
+effective DPI; changing the operating-system display scale is a separate
+physical-host journey and is not simulated by this utility.
 
 This is host evidence, so the image includes operating-system chrome and can
 vary with the Windows theme, scale and font rasterizer. The deterministic
