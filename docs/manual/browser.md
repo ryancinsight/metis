@@ -1081,3 +1081,19 @@ value-semantic record and a non-monotonic timestamp failure. Run the paired
 gallery command above and inspect `metrics.frame_intervals` before comparing
 fixtures; keep the engine, driver, viewport, application revision and input
 trace pinned.
+
+### Read browser JavaScript-heap counters
+
+Pass `--browser-heap-sample` to the canvas or workbench runner when the host
+should record the browser's diagnostic JavaScript heap counters. Samples are
+stored under `metrics.browser_heap` with the label, used bytes, total bytes and
+heap limit. The runner validates finite nonnegative values, the ordering
+`used <= total <= limit`, and a one-terabyte observation bound.
+
+The source is Chromium's non-standard `performance.memory` surface. Firefox
+and WebKit may report an explicit `available: false` observation, which is
+evidence of an unavailable API rather than zero memory. These counters describe
+the JavaScript heap only; they do not measure WebAssembly linear memory,
+native process memory, allocations, compositor or GPU latency. Keep them
+separate in the V12 comparison and do not use them for a universal engine
+ranking.

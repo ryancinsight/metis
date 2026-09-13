@@ -27,7 +27,7 @@ from browser_canvas import (
     validate_consumer_revision,
 )
 from browser_protocol import BrowserRuntimeError, MAX_SCREENSHOT_BYTES, MAX_SCREENSHOT_RESPONSE_BYTES, MAX_TRACE_BYTES, WebDriverClient
-from browser_trace import BrowserEngine, Trace
+from browser_trace import BrowserEngine, Trace, browser_heap_sample
 
 
 def _png() -> bytes:
@@ -81,6 +81,11 @@ class FakeDriver:
         self.values = {"weight-kg": "72.5", "target-dose": "0.5"}
         self.generation = 1
         self.listener_count = 10
+        self.heap = {
+            "used_js_heap_bytes": 1_048_576,
+            "total_js_heap_bytes": 2_097_152,
+            "js_heap_limit_bytes": 4_194_304,
+        }
 
     def create_session(self, browser_name: str) -> None:
         self.session_id = "session"
@@ -121,6 +126,8 @@ class FakeDriver:
             self.listener_count = 10
 
     def execute(self, script: str, arguments=()):
+        if "performance.memory" in script and "usedJSHeapSize" in script:
+            return {"available": True, "source": "performance.memory", **self.heap}
         if "__metisCanvasTraceState" in script and "const ids = arguments[0]" in script:
             self.event_trace = {canvas_id: [] for canvas_id in arguments[0]}
             return {"ok": True, "listener_count": len(arguments[0]) * 4}
@@ -316,6 +323,25 @@ class InvalidFrameTimingDriver(FakeDriver):
         return super().execute_async(script, arguments)
 
 
+class UnavailableHeapDriver(FakeDriver):
+    """Driver mutant that reports an unsupported browser heap surface."""
+
+    def execute(self, script: str, arguments=()):
+        if "performance.memory" in script and "usedJSHeapSize" in script:
+            return {"available": False, "reason": "performance.memory unavailable"}
+        return super().execute(script, arguments)
+
+
+class InvalidHeapDriver(FakeDriver):
+    """Driver mutant that violates the browser heap ordering contract."""
+
+    def execute(self, script: str, arguments=()):
+        value = super().execute(script, arguments)
+        if "performance.memory" in script and "usedJSHeapSize" in script:
+            value["total_js_heap_bytes"] = value["used_js_heap_bytes"] - 1
+        return value
+
+
 class RetainingDriver(FakeDriver):
     """Driver mutant that leaves controls mounted after the stop command."""
 
@@ -383,6 +409,7 @@ class BrowserRuntimeTests(unittest.TestCase):
                 5_000,
                 ["ritk-snap-axial", "ritk-snap-coronal", "ritk-snap-sagittal"],
                 "1" * 40,
+                browser_heap=True,
             )
         self.assertTrue(driver.closed)
         self.assertTrue(driver.released)
@@ -416,6 +443,24 @@ class BrowserRuntimeTests(unittest.TestCase):
         self.assertEqual(len(frame_intervals), 6)
         self.assertTrue(all(item["sample_count"] == 7 for item in frame_intervals))
         self.assertTrue(all(item["mean_ms"] == 16.0 for item in frame_intervals))
+        heap = trace.metrics["browser_heap"]
+        self.assertEqual(len(heap), 6)
+        self.assertTrue(all(item["available"] for item in heap))
+        self.assertTrue(all(item["used_js_heap_bytes"] <= item["total_js_heap_bytes"] <= item["js_heap_limit_bytes"] for item in heap))
+
+    def test_browser_heap_sample_records_unavailable_surface(self):
+        trace = Trace(BrowserEngine.FIREFOX, "http://127.0.0.1/", "canvas", "0" * 40, {})
+        measurement = browser_heap_sample(UnavailableHeapDriver(), trace, "initial")
+        self.assertEqual(
+            measurement,
+            {"label": "initial", "available": False, "reason": "performance.memory unavailable"},
+        )
+        self.assertEqual(trace.metrics["browser_heap"], [measurement])
+
+    def test_browser_heap_sample_rejects_invalid_ordering(self):
+        trace = Trace(BrowserEngine.CHROMIUM, "http://127.0.0.1/", "canvas", "0" * 40, {})
+        with self.assertRaisesRegex(BrowserRuntimeError, "heap ordering"):
+            browser_heap_sample(InvalidHeapDriver(), trace, "initial")
 
     def test_canvas_trace_captures_only_requested_opaque_attributes(self):
         output = pathlib.Path(__file__).resolve().parents[2] / "output" / "browser" / "runtime-test"

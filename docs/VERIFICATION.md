@@ -1437,6 +1437,23 @@ baseline, so the committed final window shows the accepted study rather than a
 later rejection diagnostic. The revision-bound artifact is [the paired canvas
 trace](manual/images/browser-gallery-canvas.json).
 
+<a id="browser-heap-observation-evidence--2026-09-13"></a>
+## Browser heap observation evidence — 2026-09-13
+
+The browser trace now has an opt-in `--browser-heap-sample` observation. When
+the engine exposes Chromium's `performance.memory`, the trace records bounded
+used, total and limit counters under `metrics.browser_heap`; otherwise it
+records `available: false` with the browser-provided reason. Values are
+validated as finite integer byte counts with `used <= total <= limit` and a
+one-terabyte observation bound. The measurement is explicitly JavaScript heap
+evidence and does not claim WebAssembly, native-process, allocation-profiler,
+compositor or GPU coverage.
+
+The dependency-free Python suite passes 116/116 after adding value-semantic
+available/unavailable and ordering-rejection cases. No configured WebDriver
+endpoint is available in this environment, so a live engine sample is not
+claimed; the cross-engine and WASM-memory residuals remain open under V12.
+
 <a id="V03"></a>
 ### V03 — Text and accessibility specimen
 

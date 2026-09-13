@@ -9,7 +9,7 @@ import struct
 from typing import Any, Mapping, Optional, Sequence, Tuple
 
 from browser_protocol import ROOT, WebDriverClient, BrowserRuntimeError, _safe_path
-from browser_trace import BrowserEngine, Trace, frame_timing, screenshot
+from browser_trace import BrowserEngine, Trace, browser_heap_sample, frame_timing, screenshot
 
 
 CANVAS_ID_PATTERN = re.compile(r"[A-Za-z][A-Za-z0-9_-]{0,127}")
@@ -324,6 +324,7 @@ def capture_canvas_trace(
     canvas_ids: Sequence[str],
     canvas_attributes: Sequence[str] = (),
     frame_timeout_ms: int = 4_000,
+    browser_heap: bool = False,
 ) -> None:
     """Capture one trusted canvas interaction on an open browser session."""
     canvas_ids = validate_canvas_ids(canvas_ids)
@@ -339,6 +340,8 @@ def capture_canvas_trace(
         for canvas_id in canvas_ids:
             element = elements[canvas_id]
             _canvas_snapshot(client, trace, canvas_id, f"{canvas_id}-initial", canvas_attributes)
+            if browser_heap:
+                browser_heap_sample(client, trace, f"{canvas_id}-initial")
             frame_timing(client, trace, f"{canvas_id}-initial", timeout_ms=frame_timeout_ms)
             _element_screenshot(client, trace, screenshot_directory, f"{canvas_id}-initial", element)
             client.pointer_drag(element, CANVAS_DRAG_START, CANVAS_DRAG_END)
@@ -365,6 +368,8 @@ def capture_canvas_trace(
             )
             settle_canvas_input(client)
             _canvas_snapshot(client, trace, canvas_id, f"{canvas_id}-after-input", canvas_attributes)
+            if browser_heap:
+                browser_heap_sample(client, trace, f"{canvas_id}-after-input")
             frame_timing(client, trace, f"{canvas_id}-after-input", timeout_ms=frame_timeout_ms)
             _element_screenshot(client, trace, screenshot_directory, f"{canvas_id}-after-input", element)
         client.release_actions()
@@ -398,6 +403,7 @@ def run_canvas_scenario(
     canvas_ids: Sequence[str],
     consumer_revision: Optional[str] = None,
     canvas_attributes: Sequence[str] = (),
+    browser_heap: bool = False,
 ) -> Trace:
     """Exercise trusted pointer and wheel input for format-neutral canvases."""
     canvas_ids = validate_canvas_ids(canvas_ids)
@@ -415,6 +421,7 @@ def run_canvas_scenario(
             canvas_ids,
             canvas_attributes,
             frame_timeout_ms=timeout_ms,
+            browser_heap=browser_heap,
         )
         return trace
     finally:
