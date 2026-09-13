@@ -1,0 +1,341 @@
+{
+  "actions": [
+    {
+      "action": "input-change",
+      "field": "weight-kg",
+      "observed": "80.00 kg",
+      "value": "80"
+    },
+    {
+      "action": "input-change",
+      "field": "target-dose",
+      "observed": "0.750 mcg/kg/min",
+      "value": "0.75"
+    },
+    {
+      "action": "disconnected-submit",
+      "state": "disabled"
+    },
+    {
+      "action": "stop-remount",
+      "stale_result": false
+    },
+    {
+      "action": "stop-remount",
+      "cycle": 2,
+      "stale_result": false
+    },
+    {
+      "action": "stop-remount",
+      "cycle": 3,
+      "stale_result": false
+    },
+    {
+      "action": "stop-remount",
+      "cycle": 4,
+      "stale_result": false
+    }
+  ],
+  "bridge": "disconnected",
+  "browser_heap": [
+    {
+      "available": true,
+      "js_heap_limit_bytes": 4395630592,
+      "label": "initial",
+      "source": "performance.memory",
+      "total_js_heap_bytes": 2415149,
+      "used_js_heap_bytes": 1096621
+    },
+    {
+      "available": true,
+      "js_heap_limit_bytes": 4395630592,
+      "label": "after-weight-kg",
+      "source": "performance.memory",
+      "total_js_heap_bytes": 5039759,
+      "used_js_heap_bytes": 1789427
+    },
+    {
+      "available": true,
+      "js_heap_limit_bytes": 4395630592,
+      "label": "after-target-dose",
+      "source": "performance.memory",
+      "total_js_heap_bytes": 5566812,
+      "used_js_heap_bytes": 2351572
+    },
+    {
+      "available": true,
+      "js_heap_limit_bytes": 4395630592,
+      "label": "remounted",
+      "source": "performance.memory",
+      "total_js_heap_bytes": 6356463,
+      "used_js_heap_bytes": 3574107
+    },
+    {
+      "available": true,
+      "js_heap_limit_bytes": 4395630592,
+      "label": "remounted-cycle-2",
+      "source": "performance.memory",
+      "total_js_heap_bytes": 6621682,
+      "used_js_heap_bytes": 3412850
+    },
+    {
+      "available": true,
+      "js_heap_limit_bytes": 4395630592,
+      "label": "remounted-cycle-3",
+      "source": "performance.memory",
+      "total_js_heap_bytes": 8197620,
+      "used_js_heap_bytes": 3204772
+    },
+    {
+      "available": true,
+      "js_heap_limit_bytes": 4395630592,
+      "label": "remounted-cycle-4",
+      "source": "performance.memory",
+      "total_js_heap_bytes": 8200698,
+      "used_js_heap_bytes": 4227802
+    }
+  ],
+  "browser_name": "MicrosoftEdge",
+  "browser_version": "154.0.4258.12",
+  "cleanup": {
+    "final_generation": 10,
+    "lifecycle_cycles": 4,
+    "listeners_or_tasks": "Metis-owned listener handles released at stop; provider-private resources remain outside WebDriver",
+    "pending_request_observation": "remounted metis-form aria-busy=false",
+    "pending_requests": 0,
+    "remounted_generation": 4,
+    "remounted_listener_count": 31,
+    "remounted_mounted_controls": 27,
+    "session_closed": true,
+    "stopped_generation": 3,
+    "stopped_listener_count": 0,
+    "stopped_message": true,
+    "stopped_mounted_controls": 0
+  },
+  "driver_version": "153.0.4234.19 (877eb25981392e298707bfbf8873b24fdf4b6fb1)",
+  "engine": "chromium",
+  "lifecycle_cycles": [
+    {
+      "cycle": 1,
+      "remounted": {
+        "generation": 4,
+        "listener_count": 31,
+        "mounted_controls": 27
+      },
+      "stopped": {
+        "generation": 3,
+        "listener_count": 0,
+        "mounted_controls": 0
+      }
+    },
+    {
+      "cycle": 2,
+      "remounted": {
+        "generation": 6,
+        "listener_count": 31,
+        "mounted_controls": 27
+      },
+      "stopped": {
+        "generation": 5,
+        "listener_count": 0,
+        "mounted_controls": 0
+      }
+    },
+    {
+      "cycle": 3,
+      "remounted": {
+        "generation": 8,
+        "listener_count": 31,
+        "mounted_controls": 27
+      },
+      "stopped": {
+        "generation": 7,
+        "listener_count": 0,
+        "mounted_controls": 0
+      }
+    },
+    {
+      "cycle": 4,
+      "remounted": {
+        "generation": 10,
+        "listener_count": 31,
+        "mounted_controls": 27
+      },
+      "stopped": {
+        "generation": 9,
+        "listener_count": 0,
+        "mounted_controls": 0
+      }
+    }
+  ],
+  "limits": [
+    "performance.memory is JavaScript heap evidence only; it excludes WebAssembly, native-process, compositor and GPU allocations",
+    "the disconnected scenario intentionally has no authorized backend bridge",
+    "provider-private listener and resource counts remain outside the WebDriver contract",
+    "the runner does not interpret DICOM or clinical semantics; those are owned by RITK"
+  ],
+  "metis_revision": "790550a2a0f34bdd23ad1b4afdf6a6552baa9e55",
+  "observations": [
+    {
+      "dose_value": "0.5",
+      "label": "initial",
+      "lifecycle": {
+        "generation": 2,
+        "listener_count": 31
+      },
+      "mounted_controls": 27,
+      "submit_disabled": true,
+      "weight_value": "72.5"
+    },
+    {
+      "dose_value": "0.5",
+      "label": "after-weight-kg",
+      "lifecycle": {
+        "generation": 2,
+        "listener_count": 31
+      },
+      "mounted_controls": 27,
+      "submit_disabled": true,
+      "weight_value": "80"
+    },
+    {
+      "dose_value": "0.75",
+      "label": "after-target-dose",
+      "lifecycle": {
+        "generation": 2,
+        "listener_count": 31
+      },
+      "mounted_controls": 27,
+      "submit_disabled": true,
+      "weight_value": "80"
+    },
+    {
+      "label": "stopped",
+      "lifecycle": {
+        "generation": 3,
+        "listener_count": 0
+      },
+      "mounted_controls": 0
+    },
+    {
+      "dose_value": "0.5",
+      "label": "remounted",
+      "lifecycle": {
+        "generation": 4,
+        "listener_count": 31
+      },
+      "mounted_controls": 27,
+      "submit_disabled": true,
+      "weight_value": "72.5"
+    },
+    {
+      "label": "stopped-cycle-2",
+      "lifecycle": {
+        "generation": 5,
+        "listener_count": 0
+      },
+      "mounted_controls": 0
+    },
+    {
+      "dose_value": "0.5",
+      "label": "remounted-cycle-2",
+      "lifecycle": {
+        "generation": 6,
+        "listener_count": 31
+      },
+      "mounted_controls": 27,
+      "submit_disabled": true,
+      "weight_value": "72.5"
+    },
+    {
+      "label": "stopped-cycle-3",
+      "lifecycle": {
+        "generation": 7,
+        "listener_count": 0
+      },
+      "mounted_controls": 0
+    },
+    {
+      "dose_value": "0.5",
+      "label": "remounted-cycle-3",
+      "lifecycle": {
+        "generation": 8,
+        "listener_count": 31
+      },
+      "mounted_controls": 27,
+      "submit_disabled": true,
+      "weight_value": "72.5"
+    },
+    {
+      "label": "stopped-cycle-4",
+      "lifecycle": {
+        "generation": 9,
+        "listener_count": 0
+      },
+      "mounted_controls": 0
+    },
+    {
+      "dose_value": "0.5",
+      "label": "remounted-cycle-4",
+      "lifecycle": {
+        "generation": 10,
+        "listener_count": 31
+      },
+      "mounted_controls": 27,
+      "submit_disabled": true,
+      "weight_value": "72.5"
+    }
+  ],
+  "observed_on": "2026-09-13",
+  "platform_name": "windows",
+  "scenario": "workbench",
+  "schema": 1,
+  "screenshots": [
+    {
+      "bytes": 36333,
+      "file": "metis-browser-edge-lifecycle-initial.png",
+      "height": 1343,
+      "label": "initial",
+      "sha256": "458bbe89f061b614b40c80ed406e5d73ca03437273d5a28c2ec90ddf6c40ed4b",
+      "width": 1875
+    },
+    {
+      "bytes": 37365,
+      "file": "metis-browser-edge-lifecycle-after-weight.png",
+      "height": 1343,
+      "label": "after-weight-kg",
+      "sha256": "928a0b1cc42e3521b4249e01538c94ff672451bbfd710375d55862c64d845b97",
+      "width": 1875
+    },
+    {
+      "bytes": 37420,
+      "file": "metis-browser-edge-lifecycle-after-dose.png",
+      "height": 1343,
+      "label": "after-target-dose",
+      "sha256": "39ef201528c34ac21c248dd7c2d3422784b8c1b89bfb0e4e703d77be45ba66cc",
+      "width": 1875
+    },
+    {
+      "bytes": 13288,
+      "file": "metis-browser-edge-lifecycle-stopped.png",
+      "height": 1343,
+      "label": "stopped",
+      "sha256": "2322398069de83db2d1803135e5a9374101f023eb954222a6d40010f18f136a3",
+      "width": 1875
+    },
+    {
+      "bytes": 36338,
+      "file": "metis-browser-edge-lifecycle-remounted.png",
+      "height": 1343,
+      "label": "remounted",
+      "sha256": "bfb7fc7243014e843a400b7a4f34e3cb13de49cd881afa522f490f152fc34871",
+      "width": 1875
+    }
+  ],
+  "status": "passed",
+  "unsupported_native_operations": [
+    "native-file-dialog",
+    "native-process-launch",
+    "os-permission-grant"
+  ]
+}

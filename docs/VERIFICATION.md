@@ -1537,10 +1537,16 @@ optional `performance.memory` observations labelled `remounted-cycle-N`.
 
 The dependency-free browser runtime module passes 27/27, including the
 three-cycle value-semantic record, the cycle bound and the canvas rejection
-path. This is executable instrument evidence from the protocol-shaped driver;
-no new live multi-cycle Edge trace is claimed by this increment. A configured
-WebDriver run remains required to bind repeated growth to a real engine and
-host, and native, WebAssembly-used-memory, allocation, compositor and GPU
+path. A live Edge 154.0.4258.12 run with msedgedriver 153.0.4234.19 at Metis
+revision `790550a2a0f34bdd23ad1b4afdf6a6552baa9e55` completed four cycles.
+Stopped generations 3, 5, 7 and 9 each reported zero mounted controls and zero
+Rust-owned listener handles; remounted generations 4, 6, 8 and 10 each
+reported 27 mounted controls and 31 listener handles. The run changed weight
+`72.5` to `80`, changed dose `0.5` to `0.75`, kept the disconnected privileged
+submit disabled, observed zero pending requests and closed the WebDriver
+session. The [sanitized trace and inspected PNGs](manual/browser.md#repeat-the-workbench-lifecycle)
+bind these values and hashes. This is lifecycle and JavaScript-heap evidence
+only; native, WebAssembly-used-memory, allocation, compositor and GPU
 measurements remain separate V12 work.
 
 <a id="V03"></a>
