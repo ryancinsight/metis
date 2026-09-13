@@ -1,7 +1,7 @@
 //! Clipped rectangle, line and bitmap text drawing, bounded by framebuffer area.
 
 use crate::DisplayScale;
-use crate::font::{FONT_WIDTH, draw_glyph, draw_glyph_scaled};
+use crate::font::{FONT_WIDTH, draw_glyph_scaled};
 use crate::framebuffer::{Color, Framebuffer, Rect};
 mod stroke;
 
@@ -191,20 +191,7 @@ fn interpolate(first_a: i64, first_b: i64, second_a: i64, second_b: i64, target:
 ///
 /// Scale zero means one. Unsupported characters use the font replacement glyph.
 pub fn draw_text(fb: &mut Framebuffer, x: i32, y: i32, text: &str, color: Color, scale: u32) {
-    let advance = i64::from(FONT_WIDTH) * i64::from(scale.max(1));
-    let mut cursor = i64::from(x);
-    for c in text.chars().filter(|c| *c != '\n') {
-        if cursor >= i64::from(fb.width()) {
-            break;
-        }
-        let Ok(origin) = i32::try_from(cursor) else {
-            break;
-        };
-        if cursor + advance > 0 {
-            draw_glyph(fb, origin, y, c, color, scale);
-        }
-        cursor += advance;
-    }
+    draw_text_scaled(fb, x, y, text, color, scale, DisplayScale::ONE);
 }
 
 /// Renders one horizontal text run at a fractional device scale.
@@ -248,6 +235,7 @@ fn scaled_extent(value: u64, effective_milli: u64) -> i64 {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::font::draw_glyph;
 
     #[test]
     fn extreme_geometry_clips_without_overflow() {

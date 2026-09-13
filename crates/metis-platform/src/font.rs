@@ -222,16 +222,7 @@ pub fn get_glyph_bitmap(c: char) -> [u8; 16] {
 ///
 /// Scale zero means one. Work is bounded by the visible surface even for `u32::MAX` scale.
 pub fn draw_glyph(fb: &mut Framebuffer, x: i32, y: i32, c: char, color: Color, scale: u32) {
-    let scale = i64::from(scale.max(1));
-    for (row, byte) in (0_i32..16).zip(get_glyph_bitmap(c)) {
-        for col in 0..8 {
-            if byte & (0x80 >> col) != 0 {
-                let left = i64::from(x) + i64::from(col) * scale;
-                let top = i64::from(y) + i64::from(row) * scale;
-                crate::rasterizer::fill_bounds(fb, left, top, left + scale, top + scale, color);
-            }
-        }
-    }
+    draw_glyph_scaled(fb, x, y, c, color, scale, DisplayScale::ONE);
 }
 
 /// Draws a glyph using a validated fractional device scale.
