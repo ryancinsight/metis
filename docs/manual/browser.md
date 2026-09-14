@@ -1156,8 +1156,10 @@ This run used an automation file chooser to select real files from disk; it did
 not synthesize a `DataTransfer` or embed image data. The public series is the
 same source used by the [reviewed gallery capture](images/browser-gallery.png)
 and the [RITK orthogonal PNG baseline](https://github.com/ryancinsight/ritk/tree/main/docs/manual/images).
-The chooser evidence is a browser Chromium observation. Physical file-manager
-drag input and Firefox/WebKit runs remain separate acceptance gates.
+The committed chooser evidence is a Chromium observation. The same automated
+chooser contract is now available for Firefox and WebKit; each engine still
+requires its own configured WebDriver run before its live DICOM pixels are
+claimed. Physical file-manager drag input remains a separate host claim.
 
 The same chooser also opened the saved MRI-DIR T2 study in
 `test_data/2_head_mri_t2/DICOM/`: 94 real files, 49,807,236 bytes, and
@@ -1199,6 +1201,29 @@ RGBA oracle, rejected all three overflow cases, captured the complete window
 and each canvas, and closed the session with `session_closed: true`.
 This closes the configured Chromium/Edge gallery run; it does not claim
 physical file-manager input or Firefox/WebKit behavior.
+
+The automated runner also supports the browser's standard file chooser. This is
+the cross-engine path: WebDriver sends newline-separated absolute paths to the
+real `#file-input`, and the browser emits the trusted `change` event that the
+Rust-owned listener consumes. It does not use Chromium CDP and it does not
+place file bytes in the protocol request. Select `--engine chromium`,
+`--engine firefox` or `--engine webkit`; the default browser names are Chrome,
+Firefox and Safari, with `MicrosoftEdge` admitted as the Chromium override.
+
+```powershell
+python scripts/browser_drop.py --driver-url http://127.0.0.1:9515 `
+  --engine firefox --input chooser `
+  --files D:/atlas/repos/ritk/test_data/2_head_mri_t2/DICOM --pattern '*.dcm' `
+  --oracle output/browser/mri-oracle.json --consumer-revision $revision
+```
+
+Use `--engine webkit --input chooser` with a Safari WebDriver endpoint, or
+`--engine chromium --browser-name MicrosoftEdge --input chooser` with Edge.
+The trace records the selected engine, `change` event, per-file content hashes,
+the exact RITK RGBA canvas oracles, three sparse-file admission rejections and
+closed-session state. `--input chromium` remains the explicit Chromium CDP drag
+probe; `--input manual` observes a physical file-manager drop and cannot make a
+portable cross-engine automation claim.
 
 ![Browser gallery after the bounded file drop](images/browser-gallery.png)
 

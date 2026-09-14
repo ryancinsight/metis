@@ -962,6 +962,25 @@ dialogs and native process launch remain separate acceptance gates; the
 application screenshot is a browser viewport and its RGBA oracle covers canvas
 pixels only.
 
+<a id="browser-file-chooser-matrix-contract--2026-09-14"></a>
+## Browser file chooser matrix contract — 2026-09-14
+
+`scripts/browser_drop.py` now resolves the closed browser matrix through the
+shared `BrowserEngine` contract and accepts a standard W3C file-input chooser
+for Chromium, Firefox and WebKit. The chooser sends absolute local paths to the
+driver; the browser performs the file read and emits a trusted `change` event.
+The host runner records the engine, event source, per-file hashes, exact RITK
+RGBA values, three sparse-file admission rejections and session teardown. The
+existing Chromium CDP drag path remains explicit as `--input chromium`, and
+manual file-manager input remains observation-only.
+
+The dependency-free Python suite passes 140/140 tests, including the exact W3C
+payload and path/count/value bounds and engine-name resolution. This is
+transport and assertion evidence; it is
+not a live Firefox or WebKit DICOM capture. Those captures require their
+configured WebDriver endpoints and must be added with the saved RITK study,
+canvas oracle, and inspected PNGs before those engine claims close.
+
 Focused verification for the code revision passed:
 
 ```text

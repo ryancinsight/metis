@@ -30,6 +30,9 @@ from browser_canvas import (
 )
 from browser_protocol import (
     BrowserRuntimeError,
+    MAX_FILE_INPUT_PATHS,
+    MAX_FILE_INPUT_VALUE_BYTES,
+    MAX_FILE_PATH_BYTES,
     MAX_SCREENSHOT_BYTES,
     MAX_SCREENSHOT_RESPONSE_BYTES,
     MAX_TRACE_BYTES,
@@ -980,6 +983,36 @@ class BrowserRuntimeTests(unittest.TestCase):
         client._request = record
         client.click("opaque/id")
         self.assertEqual(requests[0][1], "/session/session/element/opaque%2Fid/click")
+
+    def test_driver_selects_absolute_file_paths_through_w3c_input(self):
+        client = WebDriverClient("http://127.0.0.1:9515", 1)
+        client.session_id = "session"
+        requests = []
+
+        def record(method, path, payload=None):
+            requests.append((method, path, payload))
+            return None
+
+        client._request = record
+        paths = [pathlib.Path("C:/studies/one.dcm"), pathlib.Path("C:/studies/two.dcm")]
+        client.send_file_paths("opaque/id", paths)
+        self.assertEqual(requests[0][0:2], ("POST", "/session/session/element/opaque%2Fid/value"))
+        expected = "\n".join(str(path) for path in paths)
+        self.assertEqual(requests[0][2], {"text": expected, "value": list(expected)})
+
+    def test_driver_rejects_unbounded_file_input_values(self):
+        client = WebDriverClient("http://127.0.0.1:9515", 1)
+        client.session_id = "session"
+        client._request = lambda method, path, payload=None: None
+        with self.assertRaisesRegex(BrowserRuntimeError, "absolute"):
+            client.send_file_paths("input", [pathlib.Path("relative.dcm")])
+        with self.assertRaisesRegex(BrowserRuntimeError, "path"):
+            client.send_file_paths("input", [pathlib.Path("C:/" + "x" * MAX_FILE_PATH_BYTES + ".dcm")])
+        with self.assertRaisesRegex(BrowserRuntimeError, "path count"):
+            client.send_file_paths("input", [pathlib.Path("C:/x.dcm")] * (MAX_FILE_INPUT_PATHS + 1))
+        long_path = pathlib.Path("C:/" + "x" * (MAX_FILE_INPUT_VALUE_BYTES // 2) + ".dcm")
+        with self.assertRaisesRegex(BrowserRuntimeError, "path"):
+            client.send_file_paths("input", [long_path, long_path])
 
     def test_driver_dispatches_bounded_pointer_and_wheel_actions(self):
         client = WebDriverClient("http://127.0.0.1:9515", 1)
