@@ -82,6 +82,31 @@ The delayed-reset capture was run against Metis revision
 advanced from generation `1` to `2` on **Reset mount**, and remained at the
 empty reset state after the four-second response window.
 
+### Current live fragment capture — 2026-09-14
+
+The current Metis revision `ed3806811f23271310cb04078dff55aba5c90944` was
+opened in the Codex in-app Chromium host at
+`http://127.0.0.1:8080/http-health.html` while a real loopback
+`metis-app.exe --metis-http-service` process served the boundary on port
+`8766`. The [machine-readable provenance record](images/metis-http-fragment-live.json)
+binds the source revision, executable digest, service origin and viewport
+artifacts. It records three user-visible states from the same live page:
+
+1. [Success](images/metis-http-fragment-live-success.jpg) reports the `200`
+   health response, `200` handshake, one accepted fragment patch, all four
+   negative probes and lifecycle generation `1`.
+2. [Reset](images/metis-http-fragment-live-reset.jpg) reports generation `2`
+   with empty response, fragment and negative fields after **Reset mount**;
+   the prior generation is marked stale.
+3. [Recovery](images/metis-http-fragment-live-recovered.jpg) reports a new
+   accepted fragment patch on generation `2` after remount.
+
+These are viewport captures of the actual HTML5/CSS presentation boundary,
+not generated artwork. The probe contains no DICOM bytes or patient
+identifiers; DICOM loading, decoding and viewer state remain in RITK. This is
+one live Chromium observation and does not close cross-engine WebDriver,
+provider-private allocation, TLS or operating-system permission evidence.
+
 ## Run the cross-engine conformance trace
 
 The repository includes a dependency-free W3C WebDriver runner. It uses the
