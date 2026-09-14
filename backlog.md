@@ -431,6 +431,9 @@ an owner. “Unsupported” cannot replace delivery of a required mobile/native 
 - Documentation increment (2026-09-13): the saved-study instructions now cover exported folders whose files each carry a separate `SeriesInstanceUID`; the RITK-owned launcher can open one selected DICOM file directly through `--metis-native`, while singleton input leaves orthogonal planes empty until a complete series is selected. The local capture proved actual file-backed pixels without adding patient data to Metis.
 - Documentation increment (2026-09-13): the manual front page now embeds the reviewed real MRI-DIR T2 browser capture beside the CT capture and links its provenance. The image remains RITK-owned public evidence; private patient pixels stay local.
 
+- Verification increment (2026-09-14, RITK PR #356 merge `ac34c573c02b8abe6f10685bba0e3f6944680c05`; board trace PR #357 merge `cc3270eaab28ceacea9242cec0a8854cc7afdcbc`): RITK moved reusable `RenderBufferPool` scratch from host-neutral `SnapApp` into `EguiRenderState`; the invalidation test preserves scratch capacity while clearing texture resources.
+- Actual saved-study smoke (2026-09-14): RITK opened the saved `test_data/2_skull_ct/DICOM` series through `--metis-native` with its explicit `SeriesInstanceUID` and produced a real 1280 × 800 three-plane CT frame (SHA-256 `f9d715f04eb1a536fa7aa06ebef90d2829e11d13a10df866db5c8550cdf8c190`). Wrapping that frame in the Metis native host produced a 1296 × 839 Windows capture (SHA-256 `1f2fabae6576cba059feff8e1985a1bb2b22ed7e4293376ebef503e0a882ad4`). These are DICOM-derived pixels; Metis remains format-neutral and no patient pixels were committed.
+
 <a id="METIS-RITK-HOST-001"></a>
 ## METIS-RITK-HOST-001 — Format-neutral native frame host [arch] [minor]
 - Status: done; priority: P1; owner: Metis platform + RITK viewer; integrator: root; delivery: `ecc00a52514ecca4dba439f2626f91a8a17cb07d`; decision: [ADR 0024](docs/adr/0024-native-application-host.md).
