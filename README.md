@@ -133,8 +133,11 @@ process, browser/API, bounded WebSocket service, cancellable-task surfaces,
 semantic control seams, pointer metadata, wheel metadata, bounded browser file
 access and the thread-affine Windows WebView2 provider. The provider and Metis
 adapter pass the installed WebView2 navigation/bridge smoke on runtime
-`152.0.4191.66`; visible capture, permission and accessibility evidence remain
-tracked in [the desktop item](backlog.md#METIS-DESKTOP-001).
+`152.0.4191.66`. The committed [native capture manifest](docs/manual/images/native-captures.json)
+records the visible Windows native and WebView2 initial/submit journeys; the
+[desktop item](backlog.md#METIS-DESKTOP-001) tracks remaining host-specific
+evidence for physical display-scale transitions, native accessibility, installed
+IME, OS-enforced permissions and non-Windows hosts.
 
 ## Design and evidence
 
