@@ -683,6 +683,12 @@ class BrowserRuntimeTests(unittest.TestCase):
             )
             self.assertTrue(all(event["is_trusted"] for event in action["observed_events"]))
             self.assertTrue(all(event["key"] == CANVAS_KEY for event in action["observed_events"]))
+        self.assertEqual(len(trace.snapshots), 9)
+        for canvas_id in ("ritk-snap-axial", "ritk-snap-coronal", "ritk-snap-sagittal"):
+            self.assertEqual(
+                [snapshot["label"] for snapshot in trace.snapshots if snapshot["canvas"]["id"] == canvas_id],
+                [f"{canvas_id}-initial", f"{canvas_id}-after-keyboard", f"{canvas_id}-after-input"],
+            )
 
     def test_canvas_action_offsets_stay_inside_short_surfaces(self):
         offsets = _canvas_action_offsets({"css_width": 448.8, "css_height": 82.4})

@@ -1300,7 +1300,9 @@ The runner focuses each named canvas, sends one trusted W3C `ArrowDown`
 keydown/keyup pair, and records the target, `key`, `code`, repeat flag and four
 modifier flags in the bounded event trace. This remains a format-neutral
 transport check; RITK assigns shortcut meaning and validates the records with
-`--require-keyboard`.
+`--require-keyboard`. Keyboard mode also records one `after-keyboard` semantic
+canvas snapshot before the pointer and wheel actions, allowing RITK to compare
+wheel progression with the state immediately before that wheel.
 
 ```powershell
 python scripts/browser_drop.py --driver-url http://127.0.0.1:9515 `
