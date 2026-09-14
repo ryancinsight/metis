@@ -2125,14 +2125,17 @@ interpret pixels or claim clinical correctness, which remain RITK-owned
 oracles.
 
 The current three-run public MRI-DIR T2 workflow uses this option with RITK
-revision `7e5cbfe4ae554c2431879fa5b4f36b66735cbefc` and Metis revision
-`74788b5508f3c9e29e80b464702f9c648922004f`. All runs exited 0, produced the
+revision `44487bacc6b33d4c6a241f68960e9dd5e140fbc5`, Metis revision
+`587f6c6a9e6abf7415c7800255f75d1ef727ff79` and Moirai revision
+`a7fa2ba69f25070581f7245f059089705d8fc699`. All runs exited 0, produced the
 same 1280 × 800 capture (`259dd79103482756c4e688621bebafc841cc40f1df10ff2bbd7f9d04b7b4d401`,
-411,589 non-black pixels), and recorded the
-process-tree means and uncertainty in the [MRI resource provenance
-record](manual/images/dicom-metis-real-mri-resource.json). This is a real
-application baseline; it does not close the matched Tauri, GPUI or egui
-fixture requirement.
+411,589 non-black pixels), and recorded the process-tree means with explicit
+95% half-widths in the [MRI resource provenance record](manual/images/dicom-metis-real-mri-resource.json).
+The measured peak private-byte mean is 828,962,133 bytes (half-width
+331,863), peak working-set mean is 394,939,051 bytes (half-width 20,709,538),
+and the repeated capture digest is identical. This is a real application
+baseline; it does not close the matched Tauri, GPUI or egui fixture
+requirement or establish a universal memory ranking.
 
 Input traces and workload sizes are fixed before comparison, chosen to exercise
 the relevant working-set regimes under the committed budget. Profile production
