@@ -1225,22 +1225,26 @@ closed-session state. `--input chromium` remains the explicit Chromium CDP drag
 probe; `--input manual` observes a physical file-manager drop and cannot make a
 portable cross-engine automation claim.
 
-The hosted chooser matrix ran as [RITK workflow 34858003647](https://github.com/ryancinsight/ritk/actions/runs/34858003647)
-against Metis `e3d1cdbcaf4065030f61a2f2a75765a729c5e203`, RITK
-`6fabf703c8770adb239aba9bbdf4e067050a73b4` and Moirai
-`3746941f810d696ced5bd7de6f1eb391e2857207`. Chromium and Firefox each
-accepted the real 94-file MRI-DIR T2 study (49,807,236 bytes), matched every
-file hash and all three RITK RGBA canvas oracles, rejected the bounded overflow
-probes and closed with `session_closed: true`. The actual Chromium and Firefox
-galleries plus the per-engine provenance are owned by
-[RITK's manual evidence](https://github.com/ryancinsight/ritk/tree/main/docs/manual/images).
+The hosted chooser matrix ran as [RITK workflow 34895454734](https://github.com/ryancinsight/ritk/actions/runs/34895454734)
+against Metis `02d4047c5567834667ab9beb796ea27f6257f0ad`, RITK
+`92f4dc5798d5b9cedc66201ff14eacb8c4e13c78` and Moirai
+`c110452ec8a8057a98deab330f9047b1c7efd522`. Chromium 152 and Firefox 155
+each accepted the real 94-file MRI-DIR T2 study (49,807,236 bytes), matched
+every file hash and all three RITK RGBA canvas oracles, rejected the bounded
+overflow probes, dispatched trusted pointer, wheel and focused `ArrowDown`
+keyboard actions, and closed with `session_closed: true`. Each keyboard trace
+contains a trusted keydown/keyup pair with `repeat: false` on all three
+canvases; the `after-keyboard` indices are 48, 257 and 257 before the wheel
+step. The actual Chromium and Firefox galleries plus the per-engine provenance
+are owned by [RITK's manual evidence](https://github.com/ryancinsight/ritk/tree/main/docs/manual/images).
 
 Safari 26.6.2 accepted the same 94 paths and closed its session, but its first
-bounded `Blob.arrayBuffer()` read was rejected by the browser host
-(`Byte access: host rejected the selected file`). It therefore has no DICOM
-pixel claim yet. The WebKit file-backed read, physical file-manager input,
-native dialogs/processes, WebGPU and provider-private resource observations
-remain separate acceptance gates.
+bounded browser read was rejected by the host (`Byte access: host rejected the
+selected file`). It therefore has no DICOM or keyboard claim. The RITK
+provenance record links the exact traces, galleries and hosted artifacts. The
+WebKit file-backed read, physical file-manager input, native dialogs/processes,
+WebGPU and provider-private resource observations remain separate acceptance
+gates.
 
 ![Browser gallery after the bounded file drop](images/browser-gallery.png)
 
@@ -1323,9 +1327,11 @@ python scripts/browser_drop.py --driver-url http://127.0.0.1:9515 `
 ```
 
 The local command exercises real file-backed input from the saved public
-MRI-DIR study. Hosted keyboard validation is a separate RITK workflow result;
-the existing cross-engine chooser evidence and its Safari bounded-read
-residual remain unchanged.
+MRI-DIR study. Hosted run [34895454734](https://github.com/ryancinsight/ritk/actions/runs/34895454734)
+validates this keyboard contract on Chromium 152 and Firefox 155. Safari's
+bounded read failed before its canvases were presented, so no Safari keyboard
+claim is made; the exact hosted traces and actual galleries are recorded in
+[RITK's manual evidence](https://github.com/ryancinsight/ritk/tree/main/docs/manual/images).
 
 The paired Edge run at Metis revision
 `1321bd434500744e4d80fb906d10d9aa74590003` produced six semantic snapshots:
