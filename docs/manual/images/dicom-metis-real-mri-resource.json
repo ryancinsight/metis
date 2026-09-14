@@ -1,46 +1,75 @@
 {
-  "bounds": {
-    "orderly_exit_codes": [
-      0,
-      0,
-      0
-    ],
-    "repeat_capture_sha256": "259dd79103482756c4e688621bebafc841cc40f1df10ff2bbd7f9d04b7b4d401",
-    "repeat_capture_sha256_match": true,
-    "run_status": [
-      "passed",
-      "passed",
-      "passed"
-    ]
-  },
-  "comparison": {
-    "interpretation": "This record binds a real public MRI-DIR DICOM presentation to the sampled RITK/M\u00e9tis process tree. It is a fixture baseline; matched Tauri, GPUI and egui runs with the same input, host, surface, trace and capture contract are required before a framework ranking. WASM, compositor, GPU and allocation-used measurements remain separate evidence."
+  "schema": 1,
+  "status": "passed",
+  "runtime": {
+    "host": "Windows native Metis surface",
+    "machine": "AMD64 Windows 11",
+    "capture_tool": "Metis scripts/resource.py",
+    "phase": "lifecycle",
+    "sample_interval_ms": 100,
+    "timeout_seconds": 90.0,
+    "repeat_runs": 3,
+    "ritk_revision": "44487bacc6b33d4c6a241f68960e9dd5e140fbc5",
+    "metis_revision": "587f6c6a9e6abf7415c7800255f75d1ef727ff79",
+    "moirai_revision": "a7fa2ba69f25070581f7245f059089705d8fc699",
+    "command_sha256": "b5dd6ad9428ea8679d3b0466717955047dbcf7e558be30d5fbed7dabe99e8d45"
   },
   "dataset": {
-    "bytes_read": 49807236,
-    "description": "public MRI-DIR porcine-head T2 MRI phantom; not private patient data",
+    "path": "repos/ritk/test_data/2_head_mri_t2/DICOM",
     "files_submitted": 94,
+    "bytes_read": 49807236,
     "license": "CC BY 4.0",
-    "path": "repos/ritk/test_data/2_head_mri_t2/DICOM"
+    "description": "public MRI-DIR porcine-head T2 MRI phantom; not private patient data"
   },
   "output": {
-    "bytes": 418280,
-    "capture_mode": "--metis-native --capture-application --capture",
-    "executable_bytes": 53540352,
-    "executable_sha256": "2dcb93e1504001c0f12e1fb935f0f647b07fe740a2c94253014c80d6a9a20e7a",
-    "height": 800,
     "image": "https://github.com/ryancinsight/ritk/blob/main/docs/manual/images/dicom-metis-real-mri.png?raw=true",
+    "width": 1280,
+    "height": 800,
+    "bytes": 418280.0,
+    "sha256": "259dd79103482756c4e688621bebafc841cc40f1df10ff2bbd7f9d04b7b4d401",
     "non_black_pixels": 411589,
+    "executable_sha256": "4032125b29b77c207a586e1957259f6216034c0f464dc4862cfffc6230bcd73b",
+    "executable_bytes": 53540352,
+    "visual_scope": "Metis framebuffer application content; operating-system chrome excluded",
+    "capture_mode": "--metis-native --capture-application --capture",
     "planes": [
       "axial",
       "coronal",
       "sagittal"
-    ],
-    "sha256": "259dd79103482756c4e688621bebafc841cc40f1df10ff2bbd7f9d04b7b4d401",
-    "visual_scope": "Metis framebuffer application content; operating-system chrome excluded",
-    "width": 1280
+    ]
   },
   "resource": {
+    "metric": "process-tree aggregate peak private bytes",
+    "peak_private_bytes": {
+      "approximate_95_half_width": 331862.98336739023,
+      "count": 3,
+      "mean": 828962133.3333334,
+      "sample_stddev": 293267.11650189036
+    },
+    "peak_working_set_bytes": {
+      "approximate_95_half_width": 20709537.93704563,
+      "count": 3,
+      "mean": 394939050.6666667,
+      "sample_stddev": 18301006.075631727
+    },
+    "peak_handles": {
+      "approximate_95_half_width": 1.96,
+      "count": 3,
+      "mean": 524.0,
+      "sample_stddev": 1.7320508075688772
+    },
+    "duration_ms": {
+      "approximate_95_half_width": 2011.3217629984297,
+      "count": 3,
+      "mean": 7070.666666666667,
+      "sample_stddev": 1777.4038183072898
+    },
+    "startup_observation_ms": {
+      "approximate_95_half_width": 1.728557523228866,
+      "count": 3,
+      "mean": 3.3333333333333335,
+      "sample_stddev": 1.5275252316519468
+    },
     "capture_digest": {
       "bytes": {
         "approximate_95_half_width": 0.0,
@@ -51,51 +80,23 @@
       "count": 3,
       "repeat_sha256_match": true,
       "sha256": "259dd79103482756c4e688621bebafc841cc40f1df10ff2bbd7f9d04b7b4d401"
-    },
-    "duration_ms": {
-      "approximate_95_half_width": 1582.2167359892399,
-      "count": 3,
-      "mean": 2626.6666666666665,
-      "sample_stddev": 1398.2039669995695
-    },
-    "process_tree_peak_handles": {
-      "approximate_95_half_width": 0.0,
-      "count": 3,
-      "mean": 414.0,
-      "sample_stddev": 0.0
-    },
-    "process_tree_peak_private_bytes": {
-      "approximate_95_half_width": 941868.1350142605,
-      "count": 3,
-      "mean": 816244053.3333334,
-      "sample_stddev": 832328.2978953277
-    },
-    "process_tree_peak_working_set_bytes": {
-      "approximate_95_half_width": 13936979.020763233,
-      "count": 3,
-      "mean": 372989952.0,
-      "sample_stddev": 12316099.881624214
-    },
-    "startup_observation_ms": {
-      "approximate_95_half_width": 1288.700124207852,
-      "count": 3,
-      "mean": 660.0,
-      "sample_stddev": 1138.8235157389402
     }
   },
-  "runtime": {
-    "capture_tool": "Metis scripts/resource.py",
-    "command_sha256": "22568e50909d9c9ee7c0b81811b12c0392eb7c5bf7401b10c2d04acf321065e9",
-    "host": "Windows native Metis surface",
-    "machine": "AMD64 Windows 11",
-    "metis_revision": "74788b5508f3c9e29e80b464702f9c648922004f",
-    "moirai_revision": "fd3ec288dd0f1e98912f1d439d4ff9129ca7e25a",
-    "phase": "lifecycle",
-    "repeat_runs": 3,
-    "ritk_revision": "7e5cbfe4ae554c2431879fa5b4f36b66735cbefc",
-    "sample_interval_ms": 100,
-    "timeout_seconds": 60.0
+  "bounds": {
+    "orderly_exit_codes": [
+      0,
+      0,
+      0
+    ],
+    "run_status": [
+      "passed",
+      "passed",
+      "passed"
+    ],
+    "repeat_capture_sha256_match": true,
+    "repeat_capture_sha256": "259dd79103482756c4e688621bebafc841cc40f1df10ff2bbd7f9d04b7b4d401"
   },
-  "schema": 1,
-  "status": "passed"
-}\n
+  "comparison": {
+    "interpretation": "This record binds a real public MRI-DIR DICOM presentation to the sampled RITK/Metis process tree. It is a fixture baseline; matched Tauri, GPUI and egui runs with the same input, host, surface, trace and capture contract are required before a framework ranking. WASM, compositor, GPU and allocator-used measurements remain separate evidence."
+  }
+}

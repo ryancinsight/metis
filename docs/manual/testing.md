@@ -273,9 +273,12 @@ the native Métis MIP run is recorded in
 Both use the same 409-file input and four-panel CPU-MIP semantics, while their
 surface dimensions and process boundaries differ. These reports are lifecycle
 evidence; they do not establish a memory or latency ranking against Tauri,
-GPUI or egui. The current three-run saved MRI baseline, including its repeated
-capture digest, is recorded in
-[the MRI resource provenance](images/dicom-metis-real-mri-resource.json).
+GPUI or egui. The three-run saved public MRI baseline was refreshed on
+2026-09-14 against the current RITK/Métis/Moirai revisions; its repeated
+capture digest and process-tree uncertainty are recorded in [the MRI resource
+provenance](images/dicom-metis-real-mri-resource.json). The report records
+the real 94-file study and the 1280 × 800 three-plane capture; it does not
+include private study paths or pixels.
 
 For the browser side of the same comparison, the paired canvas trace records
 `metrics.frame_intervals` around the real RITK canvases. Each bounded sample is
