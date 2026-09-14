@@ -255,7 +255,7 @@ an owner. “Unsupported” cannot replace delivery of a required mobile/native 
 
 <a id="METIS-INPUT-001"></a>
 ## METIS-INPUT-001 — Interactive controls and shared UI state [minor]
-- Status: in-progress; priority: P1; owner: Metis UI/host; integrator: root; last-update: 2026-09-07; branch: `feat/process-foundation`; dependencies: METIS-BROWSER-001; risk: input/state mismatch; ADR: 0014 (claimed)
+- Status: in-progress; priority: P1; owner: Metis UI/host; integrator: root; last-update: 2026-09-14; branch: `feat/metis-browser-keyboard`; regions: `crates/metis-web/src/canvas/events.rs`, `crates/metis-web/src/canvas/surface.rs`, `crates/metis-web/src/canvas/mod.rs`, `crates/metis-web/src/lib.rs`, `crates/metis-web/README.md`, `backlog.md`; dependencies: METIS-BROWSER-001; risk: input/state mismatch; ADR: 0014 (claimed)
 - Scope: buttons, checks, radios, sliders, editable fields, select/menu/dialog controls; focus, pointer capture, drag/drop, wheel/touch/modifiers, shortcuts, reusable state/actions and subscription teardown.
 - Acceptance: keyboard and pointer/touch journeys update identical model values; disabled controls reject action; focus survives rerender and subscriptions detach on close; real hit targets agree with rendered geometry.
 - Demonstration: [V02](docs/VERIFICATION.md#V02), settings workbench; repeat on each native host as it becomes supported.
