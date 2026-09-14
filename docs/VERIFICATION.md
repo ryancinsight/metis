@@ -1870,6 +1870,20 @@ visual increment only; configured cross-engine WebDriver, provider-private
 allocation/listener counts, TLS and operating-system permission evidence
 remain open.
 
+The configured WebDriver follow-up now passes for Chromium-family Microsoft
+Edge. At Metis revision `77b1c278d610562b04d138aea2d37b828ff097a5`, Edge
+`154.0.4258.12` with WebDriver `153.0.4234.19` ran the fragment scenario at
+device scale `1.25`, recorded a 1500 × 1074 CSS viewport, captured three
+1875 × 1343 PNGs, and closed the session with `request_state: idle` and
+`session_closed: true`. The [sanitized provenance record](manual/images/metis-http-fragment-webdriver-edge.json)
+contains the semantic actions and hashes. The [success](manual/images/metis-http-fragment-webdriver-edge-success.png),
+[reset](manual/images/metis-http-fragment-webdriver-edge-reset.png) and
+[recovered](manual/images/metis-http-fragment-webdriver-edge-recovered.png)
+captures show the same accepted patch, rejection probes, generation `2`
+reset and remount state. This closes one configured Chromium-family driver
+path only; Firefox/WebKit, provider-private allocation/listener counts, TLS
+and operating-system permission evidence remain open.
+
 The current review revision adds explicit native assertions for a missing
 session, an inadmissible method, the eight-session capacity boundary, the
 configured response-byte limit and the bounded HTTP delay. The focused
