@@ -128,11 +128,12 @@ have transitive dependencies; the gate records the actual graph instead of descr
 dependency-free. The Atlas development overlay resolves first-party code to local
 trees. Standalone builds use the corresponding pushed provider revisions recorded
 in Cargo.lock. Metis now consumes Moirai through git-plus-version requirements;
-the lock records audited main revision `a58344b00ccc4a062c71659a463dd188d67bf1f4`
-after WebView2 provider PR #299 merged. That revision includes the merged
+the lock records audited main revision `3746941f810d696ced5bd7de6f1eb391e2857207`
+after the browser-file provider fix merged. That revision includes the merged
 process, browser/API, bounded WebSocket service, cancellable-task surfaces,
 semantic control seams, pointer metadata, wheel metadata, bounded browser file
-access and the thread-affine Windows WebView2 provider. The provider and Metis
+access through `Blob.arrayBuffer()` and the thread-affine Windows WebView2
+provider. The provider and Metis
 adapter pass the installed WebView2 navigation/bridge smoke on runtime
 `152.0.4191.66`. The committed [native capture manifest](docs/manual/images/native-captures.json)
 records the visible Windows native and WebView2 initial/submit journeys; the
