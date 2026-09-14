@@ -1852,6 +1852,24 @@ the reset status and no prior fragment result. This is direct stale-completion
 evidence for one browser engine; it does not claim cross-engine or provider
 allocation proof.
 
+The current live capture at Metis revision
+`ed3806811f23271310cb04078dff55aba5c90944` reran the boundary in the Codex
+in-app Chromium host at `http://127.0.0.1:8080/http-health.html` against the
+loopback `metis-app.exe` service on port `8766`. The [provenance record](manual/images/metis-http-fragment-live.json)
+records the executable digest, service command, 1704 × 944 JPEG hashes and
+the exact observed states. The [success capture](manual/images/metis-http-fragment-live-success.jpg)
+shows health `200`, handshake `200`, fragment `200 (1 patch)`, accepted
+`session`, malformed `400`, unauthorized `401`, target rejection, unchanged
+stale state and generation `1`. [Reset](manual/images/metis-http-fragment-live-reset.jpg)
+advances to generation `2` and leaves response, fragment and negative fields
+empty; [recovery](manual/images/metis-http-fragment-live-recovered.jpg)
+accepts a new fragment patch on that generation. These are live viewport
+artifacts from the real page, not generated images, and the probe carries no
+DICOM bytes or patient identifiers. This closes the current in-app Chromium
+visual increment only; configured cross-engine WebDriver, provider-private
+allocation/listener counts, TLS and operating-system permission evidence
+remain open.
+
 The current review revision adds explicit native assertions for a missing
 session, an inadmissible method, the eight-session capacity boundary, the
 configured response-byte limit and the bounded HTTP delay. The focused

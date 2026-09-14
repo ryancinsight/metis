@@ -1,0 +1,100 @@
+{
+  "actions": [
+    {
+      "action": "health-and-authenticated-fragment",
+      "patches": 1,
+      "status": 200
+    },
+    {
+      "action": "reset-mount",
+      "generation": 2,
+      "prior_state": "unchanged",
+      "stale_response": "discarded"
+    },
+    {
+      "action": "remounted-authenticated-fragment",
+      "generation": 2,
+      "patches": 1,
+      "status": 200
+    }
+  ],
+  "artifacts": [
+    {
+      "bytes": 63126,
+      "height": 944,
+      "label": "success",
+      "path": "docs/manual/images/metis-http-fragment-live-success.jpg",
+      "sha256": "4e9a14b36eac208e49d5da4b696b07923244be56c9f83875aa63e491c7ea878c",
+      "width": 1704,
+      "format": "jpeg"
+    },
+    {
+      "bytes": 51929,
+      "height": 944,
+      "label": "reset",
+      "path": "docs/manual/images/metis-http-fragment-live-reset.jpg",
+      "sha256": "5cf843bed093a5584d339988dfccff9f9dd553262d84971485c252fcfd48e3ee",
+      "width": 1704,
+      "format": "jpeg"
+    },
+    {
+      "bytes": 58714,
+      "height": 944,
+      "label": "recovered",
+      "path": "docs/manual/images/metis-http-fragment-live-recovered.jpg",
+      "sha256": "31e34402b356619a7b45d381682710190d7f74146eb0181d7871ec48d519c74a",
+      "width": 1704,
+      "format": "jpeg"
+    }
+  ],
+  "browser": {
+    "engine_scope": "one live Chromium observation; not cross-engine WebDriver evidence",
+    "host": "Codex in-app Chromium",
+    "url": "http://127.0.0.1:8080/http-health.html"
+  },
+  "limits": [
+    "The page is a presentation-boundary probe and contains no DICOM bytes or patient identifiers.",
+    "The screenshot is browser viewport output from the live service; it does not claim OS permission enforcement, TLS, or cross-engine coverage."
+  ],
+  "metis_revision": "ed3806811f23271310cb04078dff55aba5c90944",
+  "observed_on": "2026-09-14",
+  "schema": 1,
+  "service": {
+    "binary_path": "D:/atlas/target/debug/metis-app.exe",
+    "binary_sha256": "f6083305214ab6c8b8cd110674108b6510fd63e9a9d2e08af1c350f3921d9486",
+    "command": [
+      "metis-app.exe",
+      "--metis-http-service",
+      "http://127.0.0.1:8080",
+      "8766",
+      "<ephemeral-principal>"
+    ],
+    "endpoint": "http://127.0.0.1:8766",
+    "origin": "http://127.0.0.1:8080",
+    "response_delay_ms": 0
+  },
+  "states": {
+    "recovered": {
+      "fragment": "Fragment action status.describe accepted: session",
+      "lifecycle": "generation 2",
+      "negative": "—",
+      "response": "200 metis-http-ready · handshake 200 · fragment 200 (1 patch)",
+      "status": "Authenticated fragment boundary ready"
+    },
+    "reset": {
+      "fragment": "—",
+      "lifecycle": "generation 2",
+      "negative": "—",
+      "response": "—",
+      "status": "Mount reset; the previous fragment generation is stale"
+    },
+    "success": {
+      "fragment": "Fragment action status.describe accepted: session",
+      "lifecycle": "generation 1",
+      "negative": "malformed 400 · unauthorized 401 · target rejected · stale unchanged",
+      "response": "200 metis-http-ready · handshake 200 · fragment 200 (1 patch)",
+      "status": "Authenticated fragment boundary ready"
+    }
+  },
+  "status": "passed"
+}
