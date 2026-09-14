@@ -373,10 +373,11 @@ an owner. “Unsupported” cannot replace delivery of a required mobile/native 
 
 <a id="METIS-FILES-001"></a>
 ## METIS-FILES-001 — Scoped files and persistent state [minor]
-- Status: todo; priority: P2; owner: Metis broker + owning Atlas storage provider; dependencies: METIS-DESKTOP-001; risk: user data/TOCTOU
+- Status: in-progress; priority: P2; owner: Metis broker + owning Atlas storage provider; integrator: root; branch: `feat/native-file-dialog-adapter`; last-update: 2026-09-14; dependencies: METIS-DESKTOP-001; risk: user data/TOCTOU
 - Scope: file dialogs, reads/writes/watch, settings/store/database contract and versioned recovery with explicit scope; no raw frontend access to unrestricted paths.
 - Acceptance: allowed-handle operations succeed; traversal/symlink/TOCTOU and denied scope fail; atomic writes, crash/disk-full recovery and watcher teardown preserve user data.
 - Demonstration: [V08](docs/VERIFICATION.md#V08), document open/save/restart/denial on each supported target; browsers expose selected-file semantics or explicit restrictions.
+- Increment (2026-09-14): `metis-platform::native::pick` re-exports Moirai's bounded Windows common-dialog selection seam. Metis returns only a user-selected path; browser file handles and application format policy remain separate. Moirai ADR 0058 owns COM/task-memory lifetime and cancellation semantics.
 
 <a id="METIS-INTEGRATION-001"></a>
 ## METIS-INTEGRATION-001 — Desktop integration services [minor]
