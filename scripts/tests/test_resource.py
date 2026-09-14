@@ -50,6 +50,15 @@ class ResourceSummaryTests(unittest.TestCase):
         self.assertNotIn("patient-study", digest)
         self.assertNotEqual(digest, fingerprint([*command, "changed"]))
 
+    def test_capture_digest_records_bytes_without_path(self):
+        with tempfile.TemporaryDirectory(prefix="metis-resource-capture-") as directory:
+            capture = pathlib.Path(directory) / "patient-image.png"
+            capture.write_bytes(b"real capture bytes")
+            result = self.resource["capture_digest"](capture)
+            self.assertEqual(result["bytes"], len(b"real capture bytes"))
+            self.assertEqual(len(result["sha256"]), 64)
+            self.assertNotIn(str(capture), json.dumps(result))
+
     def test_report_rejects_hardlinked_destination(self):
         resource = self.resource
         with tempfile.TemporaryDirectory(prefix="metis-resource-link-") as directory:
@@ -62,6 +71,19 @@ class ResourceSummaryTests(unittest.TestCase):
                 self.skipTest(f"hard links unavailable: {error}")
             with self.assertRaisesRegex(ValueError, "unsafe resource report path"):
                 resource["_validate_output"](alias)
+
+    def test_capture_digest_rejects_redirected_artifact(self):
+        resource = self.resource
+        with tempfile.TemporaryDirectory(prefix="metis-resource-capture-link-") as directory:
+            original = pathlib.Path(directory) / "original.png"
+            alias = pathlib.Path(directory) / "alias.png"
+            original.write_bytes(b"capture")
+            try:
+                os.link(original, alias)
+            except OSError as error:
+                self.skipTest(f"hard links unavailable: {error}")
+            with self.assertRaisesRegex(ValueError, "single regular file"):
+                resource["capture_digest"](alias)
 
 
 class ResourceProcessTests(unittest.TestCase):
@@ -117,3 +139,38 @@ class ResourceProcessTests(unittest.TestCase):
             self.assertEqual(report["aggregate"]["run_count"], 3)
             self.assertEqual(report["aggregate"]["scalars"]["duration_ms"]["count"], 3)
             self.assertGreaterEqual(report["aggregate"]["scalars"]["duration_ms"]["mean"], 0)
+
+    def test_capture_artifact_is_required_when_requested(self):
+        resource = runpy.run_path(str(SCRIPTS / "resource.py"))
+        with tempfile.TemporaryDirectory(prefix="metis-resource-missing-capture-") as directory:
+            output = pathlib.Path(directory) / "report.json"
+            capture = pathlib.Path(directory) / "missing.png"
+            result = resource["main"]([
+                "--output", str(output), "--label", "missing capture", "--sample-ms", "20",
+                "--timeout-seconds", "5", "--capture", str(capture), "--", sys.executable, "-c",
+                "pass",
+            ])
+            self.assertEqual(result, 1)
+            report = json.loads(output.read_text(encoding="utf-8"))
+            self.assertEqual(report["status"], "failed")
+            self.assertEqual(report["measurements"][0]["capture"]["error_type"], "FileNotFoundError")
+
+    def test_repeat_capture_digest_matches_real_artifact(self):
+        resource = runpy.run_path(str(SCRIPTS / "resource.py"))
+        with tempfile.TemporaryDirectory(prefix="metis-resource-capture-repeat-") as directory:
+            output = pathlib.Path(directory) / "report.json"
+            capture = pathlib.Path(directory) / "capture.bin"
+            script = (
+                "from pathlib import Path; "
+                f"Path({str(capture)!r}).write_bytes(b'real image artifact')"
+            )
+            result = resource["main"]([
+                "--output", str(output), "--label", "repeated capture", "--sample-ms", "20",
+                "--timeout-seconds", "5", "--repeat", "3", "--capture", str(capture), "--",
+                sys.executable, "-c", script,
+            ])
+            self.assertEqual(result, 0)
+            report = json.loads(output.read_text(encoding="utf-8"))
+            self.assertEqual(report["aggregate"]["capture"]["count"], 3)
+            self.assertTrue(report["aggregate"]["capture"]["repeat_sha256_match"])
+            self.assertEqual(len(report["aggregate"]["capture"]["sha256"]), 64)

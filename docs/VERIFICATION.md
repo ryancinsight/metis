@@ -2083,6 +2083,25 @@ series. A single lifecycle report is evidence for that fixture only; matched
 Tauri, GPUI and egui runs with the same asset, host and trace are required
 before a comparative claim.
 
+The same runner accepts `--capture <path>` for an application-produced image
+or other inspectable artifact. It requires that regular file after every run,
+records only its byte count and SHA-256, and reports whether repeated digests
+match. Missing, redirected, or multiply linked capture files fail the run, so a
+successful process exit cannot stand in for a real visual artifact. The
+capture digest is an integrity binding for the resource sample; it does not
+interpret pixels or claim clinical correctness, which remain RITK-owned
+oracles.
+
+The current three-run public MRI-DIR T2 workflow uses this option with RITK
+revision `7e5cbfe4ae554c2431879fa5b4f36b66735cbefc` and Metis revision
+`74788b5508f3c9e29e80b464702f9c648922004f`. All runs exited 0, produced the
+same 1280 × 800 capture (`259dd79103482756c4e688621bebafc841cc40f1df10ff2bbd7f9d04b7b4d401`,
+411,589 non-black pixels), and recorded the
+process-tree means and uncertainty in the [MRI resource provenance
+record](manual/images/dicom-metis-real-mri-resource.json). This is a real
+application baseline; it does not close the matched Tauri, GPUI or egui
+fixture requirement.
+
 Input traces and workload sizes are fixed before comparison, chosen to exercise
 the relevant working-set regimes under the committed budget. Profile production
 paths before optimizing; preserve the instrument across comparisons. Inject

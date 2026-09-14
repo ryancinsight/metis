@@ -221,7 +221,13 @@ those counters the report keeps the affected fields explicitly unavailable.
 The runner records startup observation, duration, initial/final/peak values and
 growth at a fixed interval. It sends child output to the system sink and hashes
 the exact command, so a local study path or identifier is not copied into the
-report.
+report. Pass `--capture <path>` when the application writes an image or other
+inspectable artifact. The runner hashes that regular file after every repeated
+run and records only its byte count and SHA-256; it never copies the path or
+artifact bytes into the report. A requested capture that is missing, redirected,
+or multiply linked makes the run fail, so an exit code alone cannot present a
+stale or absent image as evidence. Repeated runs report whether all observed
+capture digests match.
 
 Use it with the saved-study workflow in [applications.md](applications.md):
 
@@ -239,17 +245,21 @@ python D:\atlas\repos\metis\scripts\resource.py `
   --sample-ms 100 `
   --timeout-seconds 120 `
   --repeat 3 `
+  --capture $capture `
   -- `
   D:\atlas\target\debug\ritk-snap.exe $study `
   --series-instance-uid $series `
   --metis-native `
+  --capture-application `
   --capture $capture
 Get-Content $report
 ```
 
 The command measures the real RITK decoder and Métis presentation process until
 the capture completes; it does not substitute a synthetic image or a mock
-process. `--repeat` runs the same fixture sequentially and adds the measured
+process. `--capture` binds each resource observation to the file emitted by the
+application, while keeping private study paths and pixels out of the report.
+`--repeat` runs the same fixture sequentially and adds the measured
 mean, sample standard deviation and explicitly approximate 95% half-width to
 the `aggregate` object; the per-run records remain available for inspection.
 The product of repeat count and per-run timeout is bounded at 300 seconds.
@@ -263,7 +273,9 @@ the native Métis MIP run is recorded in
 Both use the same 409-file input and four-panel CPU-MIP semantics, while their
 surface dimensions and process boundaries differ. These reports are lifecycle
 evidence; they do not establish a memory or latency ranking against Tauri,
-GPUI or egui.
+GPUI or egui. The current three-run saved MRI baseline, including its repeated
+capture digest, is recorded in
+[the MRI resource provenance](images/dicom-metis-real-mri-resource.json).
 
 For the browser side of the same comparison, the paired canvas trace records
 `metrics.frame_intervals` around the real RITK canvases. Each bounded sample is
