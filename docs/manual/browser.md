@@ -1295,6 +1295,36 @@ values; RITK owns their meaning and the DICOM/viewer assertions. A missing
 attribute, malformed action, incomplete screenshot set or unreleased input
 source fails the consumer validator.
 
+Add `--keyboard-trace` when the paired run also needs keyboard-focus evidence.
+The runner focuses each named canvas, sends one trusted W3C `ArrowDown`
+keydown/keyup pair, and records the target, `key`, `code`, repeat flag and four
+modifier flags in the bounded event trace. This remains a format-neutral
+transport check; RITK assigns shortcut meaning and validates the records with
+`--require-keyboard`.
+
+```powershell
+python scripts/browser_drop.py --driver-url http://127.0.0.1:9515 `
+  --browser-name MicrosoftEdge --input chromium `
+  --device-scale 2 `
+  --files D:/atlas/repos/ritk/test_data/2_head_mri_t2/DICOM --pattern '*.dcm' `
+  --oracle output/browser/mri-oracle.json `
+  --consumer-revision $revision `
+  --canvas-trace output/browser/runtime/chromium-keyboard-canvas.json `
+  --keyboard-trace `
+  --canvas-attribute data-ritk-load-state `
+  --canvas-attribute data-ritk-frame-state `
+  --canvas-attribute data-ritk-axis `
+  --canvas-attribute data-ritk-slice-index `
+  --canvas-attribute data-ritk-slice-count `
+  --canvas-attribute data-ritk-frame-width `
+  --canvas-attribute data-ritk-frame-height
+```
+
+The local command exercises real file-backed input from the saved public
+MRI-DIR study. Hosted keyboard validation is a separate RITK workflow result;
+the existing cross-engine chooser evidence and its Safari bounded-read
+residual remain unchanged.
+
 The paired Edge run at Metis revision
 `1321bd434500744e4d80fb906d10d9aa74590003` produced six semantic snapshots:
 the 409-slice axial view moved from slice 204 to 203, and the coronal and
