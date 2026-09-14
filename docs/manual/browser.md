@@ -107,6 +107,32 @@ identifiers; DICOM loading, decoding and viewer state remain in RITK. This is
 one live Chromium observation and does not close cross-engine WebDriver,
 provider-private allocation, TLS or operating-system permission evidence.
 
+### Live Edge WebDriver fragment capture — 2026-09-14
+
+The dependency-free runner also completed the same scenario through the
+bundled Microsoft Edge WebDriver `153.0.4234.19` and Edge `154.0.4258.12`.
+At Metis revision `77b1c278d610562b04d138aea2d37b828ff097a5`, the run used a
+1500 × 1074 CSS viewport at device scale `1.25`, captured three 1875 × 1343
+PNG states, and closed the WebDriver session with no pending request. The
+[provenance record](images/metis-http-fragment-webdriver-edge.json) contains
+the exact hashes and semantic trace:
+
+```text
+python scripts/browser_runtime.py --engine chromium --browser-name MicrosoftEdge \
+  --driver-url http://127.0.0.1:9517 --scenario fragment \
+  --url http://127.0.0.1:8080/http-health.html \
+  --output output/browser/runtime/chromium-fragment.json
+```
+
+The [success](images/metis-http-fragment-webdriver-edge-success.png),
+[reset](images/metis-http-fragment-webdriver-edge-reset.png) and
+[recovered](images/metis-http-fragment-webdriver-edge-recovered.png) captures
+show health and handshake `200`, one accepted patch, malformed `400`,
+unauthorized `401`, target rejection, unchanged stale state, reset generation
+`2`, remounted generation `2` and clean teardown. This is one Chromium-family
+WebDriver observation on Windows; Firefox, WebKit, TLS, operating-system
+permissions and provider-private resource counts remain separate evidence.
+
 ## Run the cross-engine conformance trace
 
 The repository includes a dependency-free W3C WebDriver runner. It uses the

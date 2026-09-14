@@ -1,0 +1,85 @@
+{
+  "schema": 1,
+  "status": "passed",
+  "observed_on": "2026-09-14",
+  "metis_revision": "77b1c278d610562b04d138aea2d37b828ff097a5",
+  "browser": {
+    "engine": "chromium",
+    "browser_name": "MicrosoftEdge",
+    "browser_version": "154.0.4258.12",
+    "webdriver_version": "153.0.4234.19 (877eb25981392e298707bfbf8873b24fdf4b6fb1)",
+    "device_scale": "1.25",
+    "device_pixel_ratio": 1.25,
+    "css_viewport": {
+      "height": 1074,
+      "width": 1500
+    }
+  },
+  "url": "http://127.0.0.1:8080/http-health.html",
+  "actions": [
+    {
+      "action": "health",
+      "status": 200
+    },
+    {
+      "action": "authenticated-fragment",
+      "patches": 1,
+      "status": 200
+    },
+    {
+      "action": "negative-probes",
+      "malformed": 400,
+      "stale": "unchanged",
+      "target": "rejected",
+      "unauthorized": 401
+    },
+    {
+      "action": "reset",
+      "generation": 2,
+      "stale_state": "cleared"
+    },
+    {
+      "action": "remounted-fragment",
+      "generation": 2,
+      "status": 200
+    }
+  ],
+  "cleanup": {
+    "mounted_page": "http-health.html",
+    "negative_probes": "malformed 400; unauthorized 401; target rejected; stale unchanged",
+    "request_state": "idle",
+    "session_closed": true,
+    "stale_generation": "unchanged"
+  },
+  "screenshots": [
+    {
+      "label": "authenticated-success",
+      "path": "docs/manual/images/metis-http-fragment-webdriver-edge-success.png",
+      "bytes": 27161,
+      "width": 1875,
+      "height": 1343,
+      "sha256": "69deaaa0b26ffaea600e0bef7a18f67e0b447821020e2c40b1f43a4d9a94a3ee"
+    },
+    {
+      "label": "reset-stale-generation",
+      "path": "docs/manual/images/metis-http-fragment-webdriver-edge-reset.png",
+      "bytes": 24575,
+      "width": 1875,
+      "height": 1343,
+      "sha256": "27c126da93b395e7e44d28ccf83eb31d21d690526299b1616271f09203b2d1c3"
+    },
+    {
+      "label": "remounted-success",
+      "path": "docs/manual/images/metis-http-fragment-webdriver-edge-recovered.png",
+      "bytes": 26218,
+      "width": 1875,
+      "height": 1343,
+      "sha256": "0013f7cc8af2806665ed4677cf6b2e600b45952a31284ce177e2aa05f2194ffc"
+    }
+  ],
+  "limits": [
+    "One live Microsoft Edge WebDriver observation on Windows; the trace does not claim Firefox, WebKit, TLS or OS permission coverage.",
+    "The page is a format-neutral presentation-boundary probe with no DICOM bytes or patient identifiers.",
+    "Provider-private resource and allocation counts remain outside the W3C contract."
+  ]
+}
