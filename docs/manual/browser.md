@@ -1156,10 +1156,9 @@ This run used an automation file chooser to select real files from disk; it did
 not synthesize a `DataTransfer` or embed image data. The public series is the
 same source used by the [reviewed gallery capture](images/browser-gallery.png)
 and the [RITK orthogonal PNG baseline](https://github.com/ryancinsight/ritk/tree/main/docs/manual/images).
-The committed chooser evidence is a Chromium observation. The same automated
-chooser contract is now available for Firefox and WebKit; each engine still
-requires its own configured WebDriver run before its live DICOM pixels are
-claimed. Physical file-manager drag input remains a separate host claim.
+The chooser contract is format-neutral in Metis; RITK owns the DICOM pixels and
+viewer semantics. Physical file-manager drag input remains a separate host
+claim.
 
 The same chooser also opened the saved MRI-DIR T2 study in
 `test_data/2_head_mri_t2/DICOM/`: 94 real files, 49,807,236 bytes, and
@@ -1199,8 +1198,9 @@ The committed trace was rerun on 2026-09-11 with the current Metis mainline
 W3C session, delivered trusted file-backed drag events, matched every file and
 RGBA oracle, rejected all three overflow cases, captured the complete window
 and each canvas, and closed the session with `session_closed: true`.
-This closes the configured Chromium/Edge gallery run; it does not claim
-physical file-manager input or Firefox/WebKit behavior.
+This closes the configured Chromium/Edge CDP drag gallery run; it does not
+claim physical file-manager input. The standard chooser matrix is recorded
+below as a separate transport path.
 
 The automated runner also supports the browser's standard file chooser. This is
 the cross-engine path: WebDriver sends newline-separated absolute paths to the
@@ -1225,6 +1225,23 @@ closed-session state. `--input chromium` remains the explicit Chromium CDP drag
 probe; `--input manual` observes a physical file-manager drop and cannot make a
 portable cross-engine automation claim.
 
+The hosted chooser matrix ran as [RITK workflow 34858003647](https://github.com/ryancinsight/ritk/actions/runs/34858003647)
+against Metis `e3d1cdbcaf4065030f61a2f2a75765a729c5e203`, RITK
+`6fabf703c8770adb239aba9bbdf4e067050a73b4` and Moirai
+`3746941f810d696ced5bd7de6f1eb391e2857207`. Chromium and Firefox each
+accepted the real 94-file MRI-DIR T2 study (49,807,236 bytes), matched every
+file hash and all three RITK RGBA canvas oracles, rejected the bounded overflow
+probes and closed with `session_closed: true`. The actual Chromium and Firefox
+galleries plus the per-engine provenance are owned by
+[RITK's manual evidence](https://github.com/ryancinsight/ritk/tree/main/docs/manual/images).
+
+Safari 26.6.2 accepted the same 94 paths and closed its session, but its first
+bounded `Blob.arrayBuffer()` read was rejected by the browser host
+(`Byte access: host rejected the selected file`). It therefore has no DICOM
+pixel claim yet. The WebKit file-backed read, physical file-manager input,
+native dialogs/processes, WebGPU and provider-private resource observations
+remain separate acceptance gates.
+
 ![Browser gallery after the bounded file drop](images/browser-gallery.png)
 
 Reproduce with a matching local Chromium WebDriver already listening on port
@@ -1245,8 +1262,8 @@ rendered pixels; it never injects the input in manual mode. Each run replaces
 `output/browser/drop/trace.json` and fixed capture names, closes its driver
 session and stops its local server. Browser waits terminate within 60 seconds.
 Browser chrome is excluded. The trace is automated file-backed browser input
-evidence; physical mouse/file-manager input and Firefox/WebKit remain separate
-claims.
+evidence; physical mouse/file-manager input remains a separate claim. The
+hosted chooser result above is the authoritative cross-engine status.
 
 To capture the canvas interaction on the same loaded study, add a paired
 format-neutral trace and the consumer's opaque attribute names. The file-drop

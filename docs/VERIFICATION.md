@@ -975,11 +975,21 @@ existing Chromium CDP drag path remains explicit as `--input chromium`, and
 manual file-manager input remains observation-only.
 
 The dependency-free Python suite passes 140/140 tests, including the exact W3C
-payload and path/count/value bounds and engine-name resolution. This is
-transport and assertion evidence; it is
-not a live Firefox or WebKit DICOM capture. Those captures require their
-configured WebDriver endpoints and must be added with the saved RITK study,
-canvas oracle, and inspected PNGs before those engine claims close.
+payload and path/count/value bounds and engine-name resolution. Hosted workflow
+`34858003647` then exercised the saved 94-file MRI-DIR T2 study against the
+cross-engine chooser. Chromium and Firefox accepted 49,807,236 bytes, matched
+all file hashes and the three RITK RGBA canvas oracles, rejected the count,
+per-file and batch overflow probes, and closed their sessions cleanly. The
+actual galleries and per-engine provenance are recorded in
+[RITK's evidence directory](https://github.com/ryancinsight/ritk/tree/main/docs/manual/images).
+
+Safari 26.6.2 accepted all 94 chooser paths and closed its session, but the
+first bounded `Blob.arrayBuffer()` read failed with `Byte access: host rejected
+the selected file`. Safari therefore has no DICOM pixel claim in this run; the
+WebKit file-backed read remains open. This is a host/provider boundary failure,
+not evidence that the chooser or RITK decoding succeeded on Safari. Physical
+file-manager input, native dialogs/processes, WebGPU and provider-private
+resource observations remain separate acceptance gates.
 
 Focused verification for the code revision passed:
 
