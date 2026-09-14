@@ -2156,6 +2156,21 @@ and the repeated capture digest is identical. This is a real application
 baseline; it does not close the matched Tauri, GPUI or egui fixture
 requirement or establish a universal memory ranking.
 
+The merged Windows default-shell CT run provides a second current fixture. At
+RITK revision `0ed6e245e2341e6a7888441f54e7e515fc12653b`, Metis revision
+`edcd8cb4a228d1b158f01edd596463d24964c4ab` and Moirai revision
+`8e57c70322a5c9ff4bdf4f987f555114a3fe8ccb`, three runs selected 409 public
+MRI-DIR files, rendered the same 1280 × 800 three-plane capture, rejected the
+invalid-study probe and repeated SHA-256
+`8082cea87348126ce5a07cacb602bf71081747881481d2062bb1f2c7314113d3`.
+Peak private bytes averaged 2,336,068,949 bytes (95% half-width 365,004),
+peak working set averaged 1,323,666,091 bytes (95% half-width 172,541,816),
+and lifecycle duration averaged 4,436 ms (95% half-width 14 ms). The
+[RITK provenance record](https://github.com/ryancinsight/ritk/blob/main/docs/manual/images/dicom-metis-default-shell-ct.json)
+binds these measurements to the real PNG and records that the input is public
+phantom data, not private patient data. This remains fixture evidence; it does
+not establish a framework ranking or clinical conformance.
+
 Input traces and workload sizes are fixed before comparison, chosen to exercise
 the relevant working-set regimes under the committed budget. Profile production
 paths before optimizing; preserve the instrument across comparisons. Inject
