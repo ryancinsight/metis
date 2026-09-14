@@ -2,12 +2,13 @@
 
 use super::events::CanvasEventQueue;
 use super::{
-    CanvasEvent, CanvasEventError, CanvasFrame, CanvasModifiers, CanvasPointerEvent,
-    CanvasPointerPhase, CanvasPointerType, CanvasWheelEvent, CanvasWheelUnit,
+    CanvasEvent, CanvasEventError, CanvasFrame, CanvasKeyboardEvent, CanvasKeyboardPhase,
+    CanvasModifiers, CanvasPointerEvent, CanvasPointerPhase, CanvasPointerType, CanvasWheelEvent,
+    CanvasWheelUnit,
 };
 use moirai_pal::wasm::{
-    CanvasSize, PointerMetadata, PointerType, RgbaFrame, WebCanvas, WebDocument, WebElement,
-    WebEventListener, WheelDeltaMode, WheelMetadata,
+    CanvasSize, KeyboardMetadata, PointerMetadata, PointerType, RgbaFrame, WebCanvas, WebDocument,
+    WebElement, WebEventListener, WheelDeltaMode, WheelMetadata,
 };
 use std::cell::{Cell, RefCell};
 use std::io;
@@ -44,7 +45,7 @@ impl CanvasSurface {
         })
     }
 
-    /// Resolves a canvas and retains bounded pointer and wheel listeners.
+    /// Resolves a canvas and retains bounded pointer, wheel and keyboard listeners.
     ///
     /// The listeners are removed when this surface is dropped. Events remain
     /// format-neutral; the consuming application decides how coordinates,
@@ -58,7 +59,7 @@ impl CanvasSurface {
         Self::from_document_with_input(&document, id)
     }
 
-    /// Resolves a canvas and retains bounded pointer and wheel listeners.
+    /// Resolves a canvas and retains bounded pointer, wheel and keyboard listeners.
     ///
     /// # Errors
     /// Returns a typed I/O error when the canvas cannot be resolved or the
@@ -132,7 +133,7 @@ impl CanvasInput {
     fn attach(element: WebElement) -> io::Result<Self> {
         let queue = Rc::new(RefCell::new(CanvasEventQueue::new()));
         let active = Rc::new(Cell::new([None; MAX_ACTIVE_POINTERS]));
-        let mut listeners = Vec::with_capacity(5);
+        let mut listeners = Vec::with_capacity(7);
         for (name, phase) in [
             ("pointerdown", CanvasPointerPhase::Down),
             ("pointermove", CanvasPointerPhase::Move),
@@ -167,6 +168,34 @@ impl CanvasInput {
                 if matches!(phase, CanvasPointerPhase::Up | CanvasPointerPhase::Cancel) {
                     release_one(&listener_element, &listener_active, metadata.pointer_id());
                 }
+            })?);
+        }
+        for (name, phase) in [
+            ("keydown", CanvasKeyboardPhase::Down),
+            ("keyup", CanvasKeyboardPhase::Up),
+        ] {
+            let listener_queue = Rc::clone(&queue);
+            listeners.push(element.add_event_listener(name, move |event| {
+                event.prevent_default();
+                let metadata = match event.keyboard_metadata() {
+                    Ok(Some(metadata)) => metadata,
+                    Ok(None) | Err(_) => {
+                        listener_queue
+                            .borrow_mut()
+                            .fail(CanvasEventError::InvalidMetadata);
+                        return;
+                    }
+                };
+                let keyboard_event = match keyboard_event(phase, metadata) {
+                    Ok(event) => event,
+                    Err(error) => {
+                        listener_queue.borrow_mut().fail(error);
+                        return;
+                    }
+                };
+                listener_queue
+                    .borrow_mut()
+                    .push(CanvasEvent::Keyboard(keyboard_event));
             })?);
         }
         let listener_element = element.clone();
@@ -241,6 +270,19 @@ fn wheel_event(metadata: WheelMetadata) -> CanvasWheelEvent {
         y: metadata.offset_y(),
         modifiers: modifiers(metadata.modifiers()),
     }
+}
+
+fn keyboard_event(
+    phase: CanvasKeyboardPhase,
+    metadata: KeyboardMetadata,
+) -> Result<CanvasKeyboardEvent, CanvasEventError> {
+    CanvasKeyboardEvent::try_new(
+        phase,
+        metadata.key().to_owned(),
+        metadata.code().to_owned(),
+        metadata.is_repeat(),
+        modifiers(metadata.modifiers()),
+    )
 }
 
 fn modifiers(value: moirai_pal::wasm::PointerModifiers) -> CanvasModifiers {
