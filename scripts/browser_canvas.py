@@ -434,6 +434,14 @@ def capture_canvas_trace(
                         ),
                     }
                 )
+                settle_canvas_input(client)
+                _canvas_snapshot(
+                    client,
+                    trace,
+                    canvas_id,
+                    f"{canvas_id}-after-keyboard",
+                    canvas_attributes,
+                )
             client.pointer_drag(element, drag_start, drag_end)
             trace.actions.append(
                 {
