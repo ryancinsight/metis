@@ -2083,6 +2083,15 @@ series. A single lifecycle report is evidence for that fixture only; matched
 Tauri, GPUI and egui runs with the same asset, host and trace are required
 before a comparative claim.
 
+The same runner accepts `--capture <path>` for an application-produced image
+or other inspectable artifact. It requires that regular file after every run,
+records only its byte count and SHA-256, and reports whether repeated digests
+match. Missing, redirected, or multiply linked capture files fail the run, so a
+successful process exit cannot stand in for a real visual artifact. The
+capture digest is an integrity binding for the resource sample; it does not
+interpret pixels or claim clinical correctness, which remain RITK-owned
+oracles.
+
 Input traces and workload sizes are fixed before comparison, chosen to exercise
 the relevant working-set regimes under the committed budget. Profile production
 paths before optimizing; preserve the instrument across comparisons. Inject

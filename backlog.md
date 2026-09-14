@@ -496,7 +496,7 @@ an owner. “Unsupported” cannot replace delivery of a required mobile/native 
 
 <a id="METIS-PERF-001"></a>
 ## METIS-PERF-001 — Comparative resource and latency evidence [patch]
-- Status: in-progress; priority: P1; owner: Metis measurement; integrator: root; last-update: 2026-09-13; branch: `codex/perf-browser-lifecycle-001`; regions: `scripts/browser_runtime.py`, `scripts/tests/test_browser_runtime.py`, `docs/manual/browser.md`, `docs/manual/testing.md`, `docs/VERIFICATION.md`, `backlog.md`; dependencies: METIS-BROWSER-001, METIS-DESKTOP-001, METIS-INPUT-001; risk: invalid comparative claims
+- Status: in-progress; priority: P1; owner: Metis measurement; integrator: root; last-update: 2026-09-13; branch: `feat/resource-capture-evidence`; regions: `scripts/resource.py`, `scripts/tests/test_resource.py`, `docs/manual/testing.md`, `docs/VERIFICATION.md`, `backlog.md`; dependencies: METIS-BROWSER-001, METIS-DESKTOP-001, METIS-INPUT-001; risk: invalid comparative claims
 - Scope: instrument the first live app, then compare matched egui/GPUI/Tauri fixtures; total process memory, WASM memory, allocations, idle/active/peak/growth, startup/input/frame latency and bundle/build size separately.
 - Acceptance: [V12](docs/VERIFICATION.md#V12) protocol, pinned revisions/assets/traces and controlled host; stored baselines/confidence and resource bounds; resolve production regressions without changing the instrument to move results.
 - Demonstration: measured tables/plots in the manual with machine/target/uncertainty and semantic/visual equivalence; no speed/security ranking without its evidence.
@@ -509,6 +509,7 @@ an owner. “Unsupported” cannot replace delivery of a required mobile/native 
 - Delivery increment (2026-09-13): the RITK saved-study browser run records repeated committed WebAssembly linear-memory capacity at initialization, mount and decode in [`dicom-metis-real-browser-mri-memory.json`](../ritk/docs/manual/images/dicom-metis-real-browser-mri-memory.json); the Metis manual and V12 verification link the evidence while keeping DICOM ownership in RITK.
 - Delivery increment (2026-09-13): the workbench runner now records bounded repeated stop/remount cycles under `metrics.lifecycle_cycles`, with value-semantic listener, generation and mounted-control assertions; the dependency-free browser module passes 27/27. A live multi-cycle engine trace is still required before growth is used as comparative evidence.
 - Residuals: the eframe and native Métis runs now match the public input and panel semantics, but surface dimensions and process boundaries remain different; GPUI/Tauri fixtures, WASM used-memory/allocation, input-to-frame/compositor/native latency, repeated lifecycle growth and controlled-host uncertainty remain open.
+- Lease: root — `scripts/resource.py`, `scripts/tests/test_resource.py`, `docs/manual/testing.md`, `docs/VERIFICATION.md`, this item — 2026-09-13T00:00:00-04:00
 
 <a id="METIS-QUALITY-001"></a>
 ## METIS-QUALITY-001 — Verification infrastructure [patch]

@@ -50,6 +50,21 @@ def command_fingerprint(command: Sequence[str]) -> str:
     return hashlib.sha256(encoded).hexdigest()
 
 
+def capture_digest(path: pathlib.Path) -> Mapping[str, int | str]:
+    """Hash one regular capture artifact without publishing its path or pixels."""
+    path = pathlib.Path(path)
+    attributes = path.lstat()
+    if path.is_symlink() or bool(
+        getattr(attributes, "st_file_attributes", 0) & stat.FILE_ATTRIBUTE_REPARSE_POINT
+    ):
+        raise ValueError("capture artifact is redirected")
+    if not path.is_file() or attributes.st_nlink != 1:
+        raise ValueError("capture artifact is not a single regular file")
+    with path.open("rb") as artifact:
+        digest = hashlib.file_digest(artifact, "sha256").hexdigest()
+    return {"bytes": attributes.st_size, "sha256": digest}
+
+
 def _validate_output(path: pathlib.Path) -> pathlib.Path:
     """Reject redirected or multiply-linked report paths."""
     path = pathlib.Path(path)
@@ -305,7 +320,24 @@ def aggregate_measurements(measurements: Iterable[Mapping[str, object]]) -> Mapp
                 and isinstance(measurement["summary"].get(field), Mapping)
                 and isinstance(measurement["summary"][field].get(phase), (int, float))
             )
-    return {"run_count": len(runs), "scalars": scalars, "summary": summary}
+    result: dict[str, object] = {"run_count": len(runs), "scalars": scalars, "summary": summary}
+    captures = [
+        measurement["capture"]
+        for measurement in runs
+        if isinstance(measurement.get("capture"), Mapping)
+        and isinstance(measurement["capture"].get("sha256"), str)
+    ]
+    if captures:
+        digests = [capture["sha256"] for capture in captures]
+        result["capture"] = {
+            "count": len(captures),
+            "sha256": digests[0] if len(set(digests)) == 1 else None,
+            "repeat_sha256_match": len(captures) == len(runs) and len(set(digests)) == 1,
+            "bytes": _statistics(
+                capture["bytes"] for capture in captures if isinstance(capture.get("bytes"), int)
+            ),
+        }
+    return result
 
 
 def _terminate(process: subprocess.Popen[bytes]) -> None:
@@ -324,7 +356,7 @@ def _terminate(process: subprocess.Popen[bytes]) -> None:
 
 
 def run(command: Sequence[str], interval_ms: int, timeout_seconds: float,
-        max_samples: int = MAX_SAMPLES) -> Mapping[str, object]:
+        max_samples: int = MAX_SAMPLES, capture: pathlib.Path | None = None) -> Mapping[str, object]:
     """Run and sample a command until exit or the explicit timeout."""
     started = time.perf_counter_ns()
     process = subprocess.Popen(command, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
@@ -354,8 +386,9 @@ def run(command: Sequence[str], interval_ms: int, timeout_seconds: float,
         _terminate(process)
     process.wait()
     finished = time.perf_counter_ns()
+    status = "timeout" if timed_out else ("passed" if process.returncode == 0 else "failed")
     result = {
-        "status": "timeout" if timed_out else ("passed" if process.returncode == 0 else "failed"),
+        "status": status,
         "exit_code": process.returncode,
         "duration_ms": (finished - started) // 1_000_000,
         "startup_observation_ms": first_observation_ms,
@@ -363,6 +396,15 @@ def run(command: Sequence[str], interval_ms: int, timeout_seconds: float,
         "summary": summarize(samples),
         "samples": [sample.__dict__ for sample in samples],
     }
+    if capture is not None:
+        try:
+            result["capture"] = capture_digest(capture)
+        except (OSError, ValueError) as error:
+            # Keep the report useful for private studies: only the exception
+            # class is retained, never the supplied path or application bytes.
+            result["capture"] = {"error_type": type(error).__name__}
+            if result["status"] == "passed":
+                result["status"] = "failed"
     if timed_out:
         result["timeout_seconds"] = timeout_seconds
     return result
@@ -377,6 +419,8 @@ def _parser() -> argparse.ArgumentParser:
     parser.add_argument("--sample-ms", type=int, default=100, help="Sampling interval, 10-1000 ms")
     parser.add_argument("--timeout-seconds", type=float, default=60, help="Finite lifecycle timeout, 0.1-300 s")
     parser.add_argument("--repeat", type=int, default=1, help="Sequential runs for a fixture, 1-20")
+    parser.add_argument("--capture", type=pathlib.Path,
+                        help="Capture artifact to hash after each run without copying its path or pixels")
     parser.add_argument("command", nargs=argparse.REMAINDER, help="Command after --")
     return parser
 
@@ -407,7 +451,7 @@ def main(arguments: Sequence[str] | None = None) -> int:
         measurements = []
         for _ in range(args.repeat):
             measurement = run(command, args.sample_ms, args.timeout_seconds,
-                              max_samples=samples_per_run)
+                              max_samples=samples_per_run, capture=args.capture)
             measurements.append(measurement)
             if measurement["status"] != "passed":
                 break
