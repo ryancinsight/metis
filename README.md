@@ -43,10 +43,11 @@ markup subset is
 not the intended limit of web support. Windows now exposes a bounded WebView2
 consumer through `metis_platform::native::WebViewSurface`; the `metis-app`
 demonstration composes that host through `--metis-webview`. The provider and
-adapter installed-runtime navigation/bridge smoke passes, while a committed
-visible application capture remains open. Metis does not yet provide Tauri
-feature parity, a system WebView host on all targets, an OS privilege sandbox,
-durable audit storage or regulatory certification.
+adapter installed-runtime navigation/bridge smoke passes, and the committed
+visible native/WebView2 application captures are recorded in the [native capture
+manifest](docs/manual/images/native-captures.json). Metis does not yet provide
+Tauri feature parity, a system WebView host on all targets, an OS privilege
+sandbox, durable audit storage or regulatory certification.
 Metis does not parse DICOM or define medical volume semantics. Presentation
 hosts hand bounded file-drop bytes to RITK's public scanner and receive its
 validated image and metadata result; the owning workflow and visual evidence
@@ -133,8 +134,11 @@ process, browser/API, bounded WebSocket service, cancellable-task surfaces,
 semantic control seams, pointer metadata, wheel metadata, bounded browser file
 access and the thread-affine Windows WebView2 provider. The provider and Metis
 adapter pass the installed WebView2 navigation/bridge smoke on runtime
-`152.0.4191.66`; visible capture, permission and accessibility evidence remain
-tracked in [the desktop item](backlog.md#METIS-DESKTOP-001).
+`152.0.4191.66`. The committed [native capture manifest](docs/manual/images/native-captures.json)
+records the visible Windows native and WebView2 initial/submit journeys; the
+[desktop item](backlog.md#METIS-DESKTOP-001) tracks remaining host-specific
+evidence for physical display-scale transitions, native accessibility, installed
+IME, OS-enforced permissions and non-Windows hosts.
 
 ## Design and evidence
 
