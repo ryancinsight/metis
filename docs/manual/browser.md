@@ -115,7 +115,7 @@ The inspected Edge workbench capture is preserved in the [sanitized trace](image
 ![Metis workbench remounted in Microsoft Edge](images/metis-browser-edge-workbench-remounted.png)
 
 The same workbench now has a live four-cycle Edge capture at Metis revision
-`790550a2a0f34bdd23ad1b4afdf6a6552baa9e55`. Each cycle stopped the Rust/WASM
+`012ed7175268c283cb4b8cbd617f1a138d955532`. Each cycle stopped the Rust/WASM
 mount, released all 27 controls and 31 Rust-owned listener handles, then
 remounted a fresh generation with the same positive counts. The disconnected
 bridge stayed disabled, the session ended with zero pending requests, and the
@@ -1337,7 +1337,7 @@ generation, listener count and mounted-control count. Optional heap samples
 for later remounts use labels such as `remounted-cycle-2`. Repeated cycles do
 not create repeated screenshots, so the trace remains within its 512 KiB
 artifact bound. A live Edge 154.0.4258.12 run with msedgedriver
-153.0.4234.19 at Metis revision `790550a2a0f34bdd23ad1b4afdf6a6552baa9e55`
+153.0.4234.19 at Metis revision `012ed7175268c283cb4b8cbd617f1a138d955532`
 completed all four cycles. Stopped generations 3, 5, 7 and 9 each reported
 zero controls and zero listener handles; remounted generations 4, 6, 8 and 10
 each reported 27 controls and 31 listener handles. The [revision-bound trace](images/metis-browser-edge-lifecycle.json)
