@@ -28,6 +28,12 @@ MAX_URL_BYTES = 8 * 1024
 # turn the driver into an unbounded action queue.
 MAX_ACTION_SOURCES = 8
 MAX_SOURCE_ACTIONS = 64
+# WebDriver file inputs receive newline-separated absolute paths.  The count
+# and byte limits keep the upload command bounded while still allowing the
+# host admission contract to exercise its 512-file rejection boundary.
+MAX_FILE_INPUT_PATHS = 2048
+MAX_FILE_PATH_BYTES = 4096
+MAX_FILE_INPUT_VALUE_BYTES = 1 << 20
 ELEMENT_KEY = "element-6066-11e4-a52e-4f735466cecf"
 MIN_DEVICE_SCALE_MILLI = 500
 MAX_DEVICE_SCALE_MILLI = 4000
@@ -263,6 +269,38 @@ class WebDriverClient:
             raise BrowserRuntimeError("input value exceeds the browser trace bound")
         encoded = self._element_component(element_id)
         self._request("POST", self._session_path(f"element/{encoded}/value"), {"text": value, "value": list(value)})
+
+    def send_file_paths(self, element_id: str, paths: Sequence[pathlib.Path]) -> None:
+        """Select existing local files through the standard W3C file input command.
+
+        The browser receives absolute paths and performs the file read.  This
+        keeps the chooser path available to Firefox and WebKit without placing
+        file bytes in the WebDriver JSON request or manufacturing page-owned
+        ``File`` objects.
+        """
+        if isinstance(paths, (str, bytes)) or not isinstance(paths, Sequence):
+            raise BrowserRuntimeError("file input paths must be a sequence")
+        if not 1 <= len(paths) <= MAX_FILE_INPUT_PATHS:
+            raise BrowserRuntimeError(
+                f"file input path count must be between 1 and {MAX_FILE_INPUT_PATHS}"
+            )
+        values = []
+        for path in paths:
+            if not isinstance(path, pathlib.Path) or not path.is_absolute():
+                raise BrowserRuntimeError("file input paths must be absolute pathlib.Path values")
+            value = str(path)
+            if "\x00" in value or "\n" in value or "\r" in value:
+                raise BrowserRuntimeError("file input paths contain a prohibited control character")
+            _bounded_text(value, "file input path", MAX_FILE_PATH_BYTES)
+            values.append(value)
+        joined = "\n".join(values)
+        _bounded_text(joined, "file input selection", MAX_FILE_INPUT_VALUE_BYTES)
+        encoded = self._element_component(element_id)
+        self._request(
+            "POST",
+            self._session_path(f"element/{encoded}/value"),
+            {"text": joined, "value": list(joined)},
+        )
 
     def perform_actions(self, actions: Sequence[Mapping[str, Any]]) -> None:
         """Dispatch a bounded W3C action sequence through the browser input source."""

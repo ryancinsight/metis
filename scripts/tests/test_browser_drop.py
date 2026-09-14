@@ -7,12 +7,28 @@ import tempfile
 import unittest
 
 sys.path.insert(0, str(pathlib.Path(__file__).resolve().parents[1]))
-from browser_drop import study_files, MAX_FILE_BYTES, MAX_BATCH_BYTES, MAX_FILES
+from browser_drop import (
+    MAX_FILE_BYTES,
+    MAX_BATCH_BYTES,
+    MAX_FILES,
+    OBSERVE_TRANSFER,
+    resolve_browser_target,
+    study_files,
+)
 from browser_protocol import BrowserRuntimeError
+from browser_trace import BrowserEngine
 from browser import SOURCE, validate_index_policy
 
 
 class FileDropTests(unittest.TestCase):
+    def test_browser_target_resolution_covers_the_matrix(self):
+        self.assertEqual(resolve_browser_target(None, "chrome"), (BrowserEngine.CHROMIUM, "chrome"))
+        self.assertEqual(resolve_browser_target("chromium", "MicrosoftEdge"), (BrowserEngine.CHROMIUM, "MicrosoftEdge"))
+        self.assertEqual(resolve_browser_target("firefox", None), (BrowserEngine.FIREFOX, "firefox"))
+        self.assertEqual(resolve_browser_target("webkit", "safari"), (BrowserEngine.WEBKIT, "safari"))
+        with self.assertRaisesRegex(BrowserRuntimeError, "incompatible"):
+            resolve_browser_target("firefox", "chrome")
+
     def test_file_selection_preserves_exact_bytes_and_ignores_other_names(self):
         with tempfile.TemporaryDirectory() as directory:
             root = pathlib.Path(directory)
@@ -75,6 +91,12 @@ class FileDropTests(unittest.TestCase):
         self.assertNotIn("dispatchEvent", script)
         self.assertNotIn("fetch(", script)
         self.assertIn("#metis-app > :not(.metis-drop)", style)
+
+    def test_transfer_observer_covers_drop_and_standard_chooser(self):
+        self.assertIn("input.addEventListener('change'", OBSERVE_TRANSFER)
+        self.assertIn("event.dataTransfer", OBSERVE_TRANSFER)
+        self.assertIn("window.metisInputFiles", OBSERVE_TRANSFER)
+        self.assertNotIn("dispatchEvent", OBSERVE_TRANSFER)
 
 
 if __name__ == "__main__":
