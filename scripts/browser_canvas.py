@@ -25,7 +25,10 @@ MAX_CANVAS_POSITION = 16_384.0
 MAX_CANVAS_ATTRIBUTES = 16
 MAX_CANVAS_ATTRIBUTE_VALUE_BYTES = 1024
 MAX_CANVAS_EVENT_RECORDS = 32
+MAX_CANVAS_KEY_METADATA_BYTES = 64
 CANVAS_EVENT_TYPES = ("pointerdown", "pointermove", "pointerup", "wheel")
+CANVAS_KEY_EVENT_TYPES = ("keydown", "keyup")
+CANVAS_KEY = "ArrowDown"
 
 CANVAS_SNAPSHOT_SCRIPT = """
 const id = arguments[0];
@@ -42,6 +45,19 @@ return {
   left: rect.left,
   top: rect.top,
   attributes: Object.fromEntries(attributeNames.map((name) => [name, canvas.getAttribute(name)])),
+};
+"""
+
+CANVAS_FOCUS_SCRIPT = """
+const id = arguments[0];
+const canvas = document.getElementById(id);
+if (!canvas || canvas.tagName.toLowerCase() !== 'canvas') return {ok: false, active_id: null};
+canvas.focus();
+return {
+  ok: document.activeElement === canvas,
+  active_id: document.activeElement && typeof document.activeElement.id === 'string'
+    ? document.activeElement.id
+    : null,
 };
 """
 
@@ -90,6 +106,13 @@ for (const id of ids) {
         client_y: Number.isFinite(event.clientY) ? event.clientY : null,
         delta_x: Number.isFinite(event.deltaX) ? event.deltaX : null,
         delta_y: Number.isFinite(event.deltaY) ? event.deltaY : null,
+        key: typeof event.key === "string" ? event.key : null,
+        code: typeof event.code === "string" ? event.code : null,
+        repeat: event.repeat === true,
+        alt_key: event.altKey === true,
+        ctrl_key: event.ctrlKey === true,
+        meta_key: event.metaKey === true,
+        shift_key: event.shiftKey === true,
       });
     };
     canvas.addEventListener(type, listener, {capture: true, passive: true});
@@ -262,16 +285,33 @@ def settle_canvas_input(client: WebDriverClient) -> None:
         raise BrowserRuntimeError("browser did not expose requestAnimationFrame for canvas settling")
 
 
-def _install_event_trace(client: WebDriverClient, canvas_ids: Sequence[str]) -> None:
+def _focus_canvas(client: WebDriverClient, canvas_id: str) -> Mapping[str, Any]:
+    """Focus one canvas and require the browser to report it as active."""
+    result = client.execute(CANVAS_FOCUS_SCRIPT, [canvas_id])
+    if (
+        not isinstance(result, dict)
+        or result.get("ok") is not True
+        or result.get("active_id") != canvas_id
+    ):
+        raise BrowserRuntimeError(f"canvas {canvas_id!r} did not accept keyboard focus")
+    return result
+
+
+def _install_event_trace(
+    client: WebDriverClient,
+    canvas_ids: Sequence[str],
+    keyboard_trace: bool,
+) -> None:
     """Install one bounded, capture-phase observer for browser trust evidence."""
+    event_types = CANVAS_EVENT_TYPES + (CANVAS_KEY_EVENT_TYPES if keyboard_trace else ())
     result = client.execute(
         CANVAS_EVENT_INSTALL_SCRIPT,
-        [list(canvas_ids), list(CANVAS_EVENT_TYPES), MAX_CANVAS_EVENT_RECORDS],
+        [list(canvas_ids), list(event_types), MAX_CANVAS_EVENT_RECORDS],
     )
     if not isinstance(result, dict) or result.get("ok") is not True:
         detail = result.get("error") if isinstance(result, dict) else result
         raise BrowserRuntimeError(f"browser event trace could not be installed: {detail!r}")
-    expected_listener_count = len(canvas_ids) * len(CANVAS_EVENT_TYPES)
+    expected_listener_count = len(canvas_ids) * len(event_types)
     if result.get("listener_count") != expected_listener_count:
         raise BrowserRuntimeError("browser event trace installed an unexpected listener count")
 
@@ -307,7 +347,7 @@ def _read_event_evidence(
 def _validate_event_record(event: Mapping[str, Any], canvas_id: str, expected_types: set[str]) -> None:
     """Require a bounded event record to report trusted delivery to its canvas."""
     event_type = event.get("type")
-    if event_type not in CANVAS_EVENT_TYPES:
+    if event_type not in CANVAS_EVENT_TYPES + CANVAS_KEY_EVENT_TYPES:
         raise BrowserRuntimeError(f"browser event trace for {canvas_id!r} has an unsupported type")
     if event_type not in expected_types:
         raise BrowserRuntimeError(f"browser event trace for {canvas_id!r} mixed input types")
@@ -321,6 +361,20 @@ def _validate_event_record(event: Mapping[str, Any], canvas_id: str, expected_ty
             not isinstance(value, (int, float)) or not math.isfinite(float(value))
         ):
             raise BrowserRuntimeError(f"browser event {event_type!r} has an invalid {name}")
+    if event_type in CANVAS_KEY_EVENT_TYPES:
+        for name in ("key", "code"):
+            value = event.get(name)
+            if (
+                not isinstance(value, str)
+                or not value
+                or len(value.encode("utf-8")) > MAX_CANVAS_KEY_METADATA_BYTES
+            ):
+                raise BrowserRuntimeError(f"browser event {event_type!r} has invalid {name} metadata")
+        if type(event.get("repeat")) is not bool:
+            raise BrowserRuntimeError(f"browser event {event_type!r} has invalid repeat metadata")
+        for name in ("alt_key", "ctrl_key", "meta_key", "shift_key"):
+            if type(event.get(name)) is not bool:
+                raise BrowserRuntimeError(f"browser event {event_type!r} has invalid modifier metadata")
 
 
 def _cleanup_event_trace(client: WebDriverClient) -> int:
@@ -341,8 +395,11 @@ def capture_canvas_trace(
     canvas_attributes: Sequence[str] = (),
     frame_timeout_ms: int = 4_000,
     browser_heap: bool = False,
+    keyboard_trace: bool = False,
 ) -> None:
-    """Capture one trusted canvas interaction on an open browser session."""
+    """Capture trusted pointer and wheel input, with optional keyboard evidence."""
+    if type(keyboard_trace) is not bool:
+        raise BrowserRuntimeError("keyboard trace flag must be a boolean")
     canvas_ids = validate_canvas_ids(canvas_ids)
     canvas_attributes = validate_canvas_attributes(canvas_attributes)
     elements = {canvas_id: client.find(f"#{canvas_id}") for canvas_id in canvas_ids}
@@ -350,7 +407,7 @@ def capture_canvas_trace(
     event_trace_installed = False
     diagnostic_listener_count = 0
     try:
-        _install_event_trace(client, canvas_ids)
+        _install_event_trace(client, canvas_ids, keyboard_trace)
         event_trace_installed = True
         screenshot(client, trace, screenshot_directory, "window-initial")
         for canvas_id in canvas_ids:
@@ -361,6 +418,22 @@ def capture_canvas_trace(
                 browser_heap_sample(client, trace, f"{canvas_id}-initial")
             frame_timing(client, trace, f"{canvas_id}-initial", timeout_ms=frame_timeout_ms)
             _element_screenshot(client, trace, screenshot_directory, f"{canvas_id}-initial", element)
+            if keyboard_trace:
+                focus = _focus_canvas(client, canvas_id)
+                client.key_press(CANVAS_KEY)
+                trace.actions.append(
+                    {
+                        "action": "trusted-keyboard",
+                        "canvas": canvas_id,
+                        "key": CANVAS_KEY,
+                        "code": CANVAS_KEY,
+                        "repeat": False,
+                        "focus": dict(focus),
+                        "observed_events": _read_event_evidence(
+                            client, canvas_id, CANVAS_KEY_EVENT_TYPES
+                        ),
+                    }
+                )
             client.pointer_drag(element, drag_start, drag_end)
             trace.actions.append(
                 {
@@ -421,10 +494,11 @@ def run_canvas_scenario(
     consumer_revision: Optional[str] = None,
     canvas_attributes: Sequence[str] = (),
     browser_heap: bool = False,
+    keyboard_trace: bool = False,
     browser_name: Optional[str] = None,
     device_scale_milli: Optional[int] = None,
 ) -> Trace:
-    """Exercise trusted pointer and wheel input for format-neutral canvases."""
+    """Exercise trusted canvas input for format-neutral canvases."""
     canvas_ids = validate_canvas_ids(canvas_ids)
     canvas_attributes = validate_canvas_attributes(canvas_attributes)
     trace: Optional[Trace] = None
@@ -442,6 +516,7 @@ def run_canvas_scenario(
             canvas_attributes,
             frame_timeout_ms=timeout_ms,
             browser_heap=browser_heap,
+            keyboard_trace=keyboard_trace,
         )
         return trace
     finally:

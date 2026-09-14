@@ -28,6 +28,30 @@ MAX_URL_BYTES = 8 * 1024
 # turn the driver into an unbounded action queue.
 MAX_ACTION_SOURCES = 8
 MAX_SOURCE_ACTIONS = 64
+MAX_KEY_NAME_BYTES = 64
+# W3C Actions represent named keys with private-use code points.  Keep the
+# semantic names at the runner boundary so traces remain readable while the
+# transport emits the protocol values the browser requires.
+W3C_SPECIAL_KEY_VALUES = {
+    "Backspace": "\ue003",
+    "Tab": "\ue004",
+    "Enter": "\ue007",
+    "Shift": "\ue008",
+    "Control": "\ue009",
+    "Alt": "\ue00a",
+    "Escape": "\ue00c",
+    "Space": "\ue00d",
+    "PageUp": "\ue00e",
+    "PageDown": "\ue00f",
+    "End": "\ue010",
+    "Home": "\ue011",
+    "ArrowLeft": "\ue012",
+    "ArrowUp": "\ue013",
+    "ArrowRight": "\ue014",
+    "ArrowDown": "\ue015",
+    "Insert": "\ue016",
+    "Delete": "\ue017",
+}
 # WebDriver file inputs receive newline-separated absolute paths.  The count
 # and byte limits keep the upload command bounded while still allowing the
 # host admission contract to exercise its 512-file rejection boundary.
@@ -269,6 +293,36 @@ class WebDriverClient:
             raise BrowserRuntimeError("input value exceeds the browser trace bound")
         encoded = self._element_component(element_id)
         self._request("POST", self._session_path(f"element/{encoded}/value"), {"text": value, "value": list(value)})
+
+    def key_press(self, key: str, *, source_id: str = "metis-keyboard") -> None:
+        """Dispatch one bounded W3C key-down/key-up pair.
+
+        Named keys use the W3C private-use values; a single printable Unicode
+        scalar is passed through unchanged.  The caller observes the browser's
+        resulting ``KeyboardEvent`` records rather than treating dispatch as
+        evidence by itself.
+        """
+        if not isinstance(key, str) or not key:
+            raise BrowserRuntimeError("keyboard key must be non-empty text")
+        if len(key.encode("utf-8")) > MAX_KEY_NAME_BYTES:
+            raise BrowserRuntimeError("keyboard key exceeds the trace bound")
+        value = W3C_SPECIAL_KEY_VALUES.get(key)
+        if value is None:
+            if len(key) != 1 or not key.isprintable():
+                raise BrowserRuntimeError("keyboard key must be a named key or one printable scalar")
+            value = key
+        self.perform_actions(
+            [
+                {
+                    "type": "key",
+                    "id": source_id,
+                    "actions": [
+                        {"type": "keyDown", "value": value},
+                        {"type": "keyUp", "value": value},
+                    ],
+                }
+            ]
+        )
 
     def send_file_paths(self, element_id: str, paths: Sequence[pathlib.Path]) -> None:
         """Select existing local files through the standard W3C file input command.

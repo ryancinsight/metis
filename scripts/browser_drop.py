@@ -205,9 +205,12 @@ def run(args: argparse.Namespace) -> dict:
     oracle = json.loads(args.oracle.read_text(encoding="utf-8"))
     ids = validate_canvas_ids(list(oracle))
     canvas_attributes = validate_canvas_attributes(args.canvas_attribute)
+    keyboard_trace = bool(getattr(args, "keyboard_trace", False))
     canvas_trace_path = None
     if args.canvas_trace is not None:
         canvas_trace_path = _safe_path(args.canvas_trace.resolve(), directory=ROOT / "output")
+    if keyboard_trace and canvas_trace_path is None:
+        raise BrowserRuntimeError("keyboard trace requires --canvas-trace")
     output = _safe_path(args.output.resolve(), directory=ROOT / "output")
     output.mkdir(parents=True, exist_ok=True)
     revision = subprocess.check_output(["git", "rev-parse", "HEAD"], cwd=ROOT, text=True, timeout=30).strip()
@@ -284,6 +287,7 @@ def run(args: argparse.Namespace) -> dict:
                     canvas_trace_path.parent / "screenshots" / engine.value / "canvas",
                     ids,
                     canvas_attributes,
+                    keyboard_trace=keyboard_trace,
                 )
             if args.input in ("chromium", "chooser"):
                 expected_rgba = {canvas_id: oracle[canvas_id]["rgba_sha256"] for canvas_id in ids}
@@ -357,6 +361,8 @@ def main() -> None:
     parser.add_argument("--consumer-revision", required=True)
     parser.add_argument("--canvas-trace", type=pathlib.Path,
                         help="write a paired trusted canvas trace after the file drop")
+    parser.add_argument("--keyboard-trace", action="store_true",
+                        help="include focused ArrowDown keydown/keyup evidence in the paired canvas trace")
     parser.add_argument("--canvas-attribute", action="append", default=[],
                         help="consumer-selected data-* attribute for the paired canvas trace")
     parser.add_argument("--input", choices=("manual", "chooser", "chromium"), default="manual",

@@ -428,6 +428,7 @@ def _arguments() -> argparse.Namespace:
     parser.add_argument("--serve-dir", type=pathlib.Path, help="serve one generated output/browser directory on loopback")
     parser.add_argument("--canvas-id", action="append", default=[], help="canvas DOM id for the format-neutral trusted-input scenario; repeat per canvas")
     parser.add_argument("--canvas-attribute", action="append", default=[], help="consumer-selected data-* attribute to capture on each canvas; repeat per attribute")
+    parser.add_argument("--keyboard-trace", action="store_true", help="include focused ArrowDown keydown/keyup evidence in the canvas scenario")
     parser.add_argument("--consumer-revision", help="40-hex revision of the application consuming the format-neutral canvas seam")
     parser.add_argument("--bridge", choices=BRIDGE_MODES, default="disconnected")
     parser.add_argument("--cancel", action="store_true", help="submit a delayed authorized request, stop, remount and check stale-response disposal")
@@ -503,6 +504,8 @@ def main() -> int:
                 raise BrowserRuntimeError("--consumer-revision requires --scenario canvas")
             if arguments.canvas_attribute:
                 raise BrowserRuntimeError("--canvas-attribute requires --scenario canvas")
+            if arguments.keyboard_trace:
+                raise BrowserRuntimeError("--keyboard-trace requires --scenario canvas")
         elif arguments.scenario == "canvas":
             from browser_canvas import (
                 run_canvas_scenario,
@@ -520,6 +523,8 @@ def main() -> int:
             canvas_ids = validate_canvas_ids(arguments.canvas_id)
             canvas_attributes = validate_canvas_attributes(arguments.canvas_attribute)
             consumer_revision = validate_consumer_revision(arguments.consumer_revision)
+        elif arguments.keyboard_trace:
+            raise BrowserRuntimeError("--keyboard-trace requires --scenario canvas")
         elif arguments.canvas_id:
             raise BrowserRuntimeError("--canvas-id requires --scenario canvas")
         elif arguments.consumer_revision is not None:
@@ -555,6 +560,7 @@ def main() -> int:
                         consumer_revision,
                         canvas_attributes,
                         browser_heap=arguments.browser_heap_sample,
+                        keyboard_trace=arguments.keyboard_trace,
                         browser_name=browser_name,
                         device_scale_milli=device_scale_milli,
                     )
@@ -580,6 +586,7 @@ def main() -> int:
                     consumer_revision,
                     canvas_attributes,
                     browser_heap=arguments.browser_heap_sample,
+                    keyboard_trace=arguments.keyboard_trace,
                     browser_name=browser_name,
                     device_scale_milli=device_scale_milli,
                 )

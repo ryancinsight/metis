@@ -21,6 +21,7 @@ from browser_runtime import (
     run_scenario,
 )
 from browser_canvas import (
+    CANVAS_KEY,
     MAX_CANVAS_ATTRIBUTES,
     _canvas_action_offsets,
     run_canvas_scenario,
@@ -91,6 +92,8 @@ class FakeDriver:
         self.released = False
         self.canvas_actions = []
         self.event_trace = {}
+        self.event_types = ("pointerdown", "pointermove", "pointerup", "wheel")
+        self.focused_canvas = None
         self.values = {"weight-kg": "72.5", "target-dose": "0.5"}
         self.generation = 1
         self.listener_count = 10
@@ -151,7 +154,8 @@ class FakeDriver:
             return {"available": True, "source": "performance.memory", **self.heap}
         if "__metisCanvasTraceState" in script and "const ids = arguments[0]" in script:
             self.event_trace = {canvas_id: [] for canvas_id in arguments[0]}
-            return {"ok": True, "listener_count": len(arguments[0]) * 4}
+            self.event_types = tuple(arguments[1])
+            return {"ok": True, "listener_count": len(arguments[0]) * len(self.event_types)}
         if "__metisCanvasTraceState" in script and "state.events[id]" in script:
             canvas_id = arguments[0]
             events = self.event_trace.get(canvas_id)
@@ -160,9 +164,12 @@ class FakeDriver:
             self.event_trace[canvas_id] = []
             return {"events": events, "overflow": False}
         if "delete window.__metisCanvasTraceState" in script:
-            listener_count = sum(1 for _ in self.event_trace for _ in range(4))
+            listener_count = sum(1 for _ in self.event_trace for _ in self.event_types)
             self.event_trace = {}
             return {"ok": True, "listener_count": listener_count}
+        if "document.activeElement" in script and "canvas.focus()" in script:
+            self.focused_canvas = arguments[0]
+            return {"ok": True, "active_id": self.focused_canvas}
         if "canvas.tagName.toLowerCase()" in script:
             canvas_id = arguments[0]
             attribute_names = arguments[1]
@@ -260,6 +267,31 @@ class FakeDriver:
                 "delta_y": 120,
             }
         )
+
+    def key_press(self, key: str) -> None:
+        self.canvas_actions.append(("key-press", key))
+        canvas_id = self.focused_canvas
+        if canvas_id is None:
+            return
+        for event_type in ("keydown", "keyup"):
+            self.event_trace.setdefault(canvas_id, []).append(
+                {
+                    "type": event_type,
+                    "is_trusted": True,
+                    "target_id": canvas_id,
+                    "client_x": None,
+                    "client_y": None,
+                    "delta_x": None,
+                    "delta_y": None,
+                    "key": key,
+                    "code": key,
+                    "repeat": False,
+                    "alt_key": False,
+                    "ctrl_key": False,
+                    "meta_key": False,
+                    "shift_key": False,
+                }
+            )
 
     def release_actions(self) -> None:
         self.released = True
@@ -617,6 +649,41 @@ class BrowserRuntimeTests(unittest.TestCase):
         self.assertTrue(all(item["available"] for item in heap))
         self.assertTrue(all(item["used_js_heap_bytes"] <= item["total_js_heap_bytes"] <= item["js_heap_limit_bytes"] for item in heap))
 
+    def test_canvas_trace_records_focused_trusted_keyboard_actions(self):
+        output = pathlib.Path(__file__).resolve().parents[2] / "output" / "browser" / "runtime-test"
+        output.mkdir(parents=True, exist_ok=True)
+        with tempfile.TemporaryDirectory(dir=output) as directory:
+            driver = FakeDriver()
+            trace = run_canvas_scenario(
+                driver,
+                BrowserEngine.CHROMIUM,
+                "http://127.0.0.1:8080/ritk.html",
+                "0" * 40,
+                pathlib.Path(directory),
+                5_000,
+                ["ritk-snap-axial", "ritk-snap-coronal", "ritk-snap-sagittal"],
+                "1" * 40,
+                keyboard_trace=True,
+            )
+        self.assertTrue(driver.released)
+        self.assertEqual(driver.event_types, ("pointerdown", "pointermove", "pointerup", "wheel", "keydown", "keyup"))
+        self.assertEqual(trace.cleanup["diagnostic_listener_count"], 18)
+        self.assertEqual(
+            [action["action"] for action in trace.actions],
+            ["trusted-keyboard", "trusted-pointer-drag", "trusted-wheel"] * 3,
+        )
+        for action in trace.actions[::3]:
+            self.assertEqual(action["key"], CANVAS_KEY)
+            self.assertEqual(action["code"], CANVAS_KEY)
+            self.assertFalse(action["repeat"])
+            self.assertEqual(action["focus"], {"ok": True, "active_id": action["canvas"]})
+            self.assertEqual(
+                {event["type"] for event in action["observed_events"]},
+                {"keydown", "keyup"},
+            )
+            self.assertTrue(all(event["is_trusted"] for event in action["observed_events"]))
+            self.assertTrue(all(event["key"] == CANVAS_KEY for event in action["observed_events"]))
+
     def test_canvas_action_offsets_stay_inside_short_surfaces(self):
         offsets = _canvas_action_offsets({"css_width": 448.8, "css_height": 82.4})
         self.assertEqual(offsets, ((24, 24), (64, 40), (64, 40)))
@@ -758,6 +825,34 @@ class BrowserRuntimeTests(unittest.TestCase):
                     "workbench",
                     "--canvas-attribute",
                     "data-consumer-state",
+                    "--output",
+                    str(trace_path),
+                ],
+            ):
+                self.assertEqual(main(), 1)
+            document = json.loads(trace_path.read_text(encoding="utf-8"))
+        self.assertEqual(document["status"], "failed")
+        self.assertIn("requires --scenario canvas", document["error"])
+
+    def test_cli_rejects_keyboard_trace_on_fragment_scenario(self):
+        output = pathlib.Path(__file__).resolve().parents[2] / "output" / "browser" / "runtime-test"
+        output.mkdir(parents=True, exist_ok=True)
+        with tempfile.TemporaryDirectory(dir=output) as directory:
+            trace_path = pathlib.Path(directory) / "invalid-keyboard-cli.json"
+            with mock.patch.object(
+                sys,
+                "argv",
+                [
+                    "browser_runtime.py",
+                    "--engine",
+                    "chromium",
+                    "--scenario",
+                    "fragment",
+                    "--keyboard-trace",
+                    "--driver-url",
+                    "http://127.0.0.1:9515",
+                    "--url",
+                    "http://127.0.0.1:8080/fragment.html",
                     "--output",
                     str(trace_path),
                 ],
@@ -1035,6 +1130,40 @@ class BrowserRuntimeTests(unittest.TestCase):
         self.assertEqual(pointer["actions"][2]["x"], 16)
         self.assertEqual(requests[1][2]["actions"][0]["actions"][0]["deltaY"], 120)
         self.assertEqual(requests[2][0:2], ("DELETE", "/session/session/actions"))
+
+    def test_driver_dispatches_named_keyboard_actions(self):
+        client = WebDriverClient("http://127.0.0.1:9515", 1)
+        client.session_id = "session"
+        requests = []
+
+        def record(method, path, payload=None):
+            requests.append((method, path, payload))
+            return None
+
+        client._request = record
+        client.key_press("ArrowDown")
+        self.assertEqual(requests[0][0:2], ("POST", "/session/session/actions"))
+        keyboard = requests[0][2]["actions"][0]
+        self.assertEqual(keyboard["type"], "key")
+        self.assertEqual(
+            [action["type"] for action in keyboard["actions"]],
+            ["keyDown", "keyUp"],
+        )
+        self.assertEqual(
+            [action["value"] for action in keyboard["actions"]],
+            ["\ue015", "\ue015"],
+        )
+
+    def test_driver_rejects_unbounded_keyboard_values(self):
+        client = WebDriverClient("http://127.0.0.1:9515", 1)
+        client.session_id = "session"
+        client._request = lambda method, path, payload=None: None
+        with self.assertRaisesRegex(BrowserRuntimeError, "non-empty"):
+            client.key_press("")
+        with self.assertRaisesRegex(BrowserRuntimeError, "named key or one printable"):
+            client.key_press("ArrowDownAgain")
+        with self.assertRaisesRegex(BrowserRuntimeError, "trace bound"):
+            client.key_press("x" * 65)
 
     def test_driver_rejects_unbounded_or_malformed_actions(self):
         client = WebDriverClient("http://127.0.0.1:9515", 1)
