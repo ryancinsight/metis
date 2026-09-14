@@ -37,6 +37,13 @@ the local machine.
 
 ![Actual saved CT study rendered through the Métis host](https://github.com/ryancinsight/ritk/blob/main/docs/manual/images/dicom-metis-installer-ct.png?raw=true)
 
+The current Windows default-shell verification is bound to the exact run in
+RITK's [default-shell CT provenance record](https://github.com/ryancinsight/ritk/blob/main/docs/manual/images/dicom-metis-default-shell-ct.json).
+That run selected 409 saved DICOM files, rendered the axial, coronal and
+sagittal planes, rejected an invalid study, and repeated the same 1280 × 800
+PNG across three lifecycle runs. This is the RITK-owned DICOM workflow using
+the Metis host; Metis does not parse DICOM or retain patient state.
+
 The same gallery includes a real 94-file MRI-DIR T2 study rendered through the
 Métis browser canvas. RITK decodes the saved files and supplies the three
 orthogonal frames; the browser capture records the accepted file count, exact

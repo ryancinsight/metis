@@ -29,6 +29,12 @@ theme, released pointer capture, idle text composition and clean teardown. The
 the same RITK-owned launcher for private DICOM; its pixels and identifiers stay
 on the local machine.
 
+The merged Windows default-shell rerun is tracked separately in RITK's
+[revision-bound provenance record](https://github.com/ryancinsight/ritk/blob/main/docs/manual/images/dicom-metis-default-shell-ct.json).
+It binds the current three-plane capture and repeated process-tree samples to
+the exact RITK, Metis and Moirai revisions; the public image above is the
+reviewed PNG emitted by that run.
+
 ## Starter theme and mark
 
 The browser workbench ships a local starter vector mark for the application
