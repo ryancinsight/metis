@@ -177,16 +177,13 @@ impl CanvasInput {
             let listener_queue = Rc::clone(&queue);
             listeners.push(element.add_event_listener(name, move |event| {
                 event.prevent_default();
-                let metadata = match event.keyboard_metadata() {
-                    Ok(Some(metadata)) => metadata,
-                    Ok(None) | Err(_) => {
-                        listener_queue
-                            .borrow_mut()
-                            .fail(CanvasEventError::InvalidMetadata);
-                        return;
-                    }
+                let Ok(Some(metadata)) = event.keyboard_metadata() else {
+                    listener_queue
+                        .borrow_mut()
+                        .fail(CanvasEventError::InvalidMetadata);
+                    return;
                 };
-                let keyboard_event = match keyboard_event(phase, metadata) {
+                let keyboard_event = match keyboard_event(phase, &metadata) {
                     Ok(event) => event,
                     Err(error) => {
                         listener_queue.borrow_mut().fail(error);
@@ -274,7 +271,7 @@ fn wheel_event(metadata: WheelMetadata) -> CanvasWheelEvent {
 
 fn keyboard_event(
     phase: CanvasKeyboardPhase,
-    metadata: KeyboardMetadata,
+    metadata: &KeyboardMetadata,
 ) -> Result<CanvasKeyboardEvent, CanvasEventError> {
     CanvasKeyboardEvent::try_new(
         phase,
