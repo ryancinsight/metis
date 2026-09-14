@@ -7,8 +7,9 @@ mod frame;
 mod surface;
 
 pub use events::{
-    CANVAS_EVENT_CAPACITY, CanvasEvent, CanvasEventError, CanvasModifiers, CanvasPointerEvent,
-    CanvasPointerPhase, CanvasPointerType, CanvasWheelEvent, CanvasWheelUnit,
+    CANVAS_EVENT_CAPACITY, CanvasEvent, CanvasEventError, CanvasKeyboardEvent, CanvasKeyboardPhase,
+    CanvasModifiers, CanvasPointerEvent, CanvasPointerPhase, CanvasPointerType, CanvasWheelEvent,
+    CanvasWheelUnit,
 };
 pub use frame::CanvasFrame;
 

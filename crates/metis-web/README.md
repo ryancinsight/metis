@@ -14,13 +14,14 @@ the dimensions and exact byte length, then uploads the frame without retaining
 the source allocation or interpreting its format. RITK uses this seam for
 viewer pixels; DICOM parsing, geometry and display policy stay in RITK.
 
-`CanvasSurface::from_current_document_with_input` retains Moirai pointer and
-wheel listeners and exposes a bounded `CanvasEvent` batch. Pointer capture,
-target-local CSS-pixel coordinates, modifier state, wheel units and listener
-teardown remain host concerns; the events contain no file, medical or viewer
-state. A consumer such as RITK translates the format-neutral batch into its
-own presentation reducer and cancels an active gesture when the queue reports
-overflow or a provider failure.
+`CanvasSurface::from_current_document_with_input` retains Moirai pointer,
+wheel and keyboard listeners and exposes a bounded `CanvasEvent` batch.
+Pointer capture, target-local CSS-pixel coordinates, modifier state, wheel
+units, key/code names, repeat state and listener teardown remain host concerns;
+the events contain no file, medical or viewer state. A consumer such as RITK
+translates the format-neutral batch into its own presentation reducer and
+cancels an active gesture when the queue reports overflow or a provider
+failure.
 
 The host reports a typed disconnected outcome when no authorized backend bridge
 is configured. When the page host supplies an endpoint, process identifier and
@@ -47,6 +48,10 @@ The same surface listens for browser wheel events through Moirai's
 `WheelMetadata` snapshot and renders pixel/line/page deltas, viewport position
 and modifier state without importing `web-sys`. The listener prevents the
 browser default action after the provider has validated the event kind.
+Keyboard listeners use Moirai's bounded `KeyboardMetadata` snapshot and retain
+the browser key, physical code, repeat flag and modifier state. They prevent
+the default action after provider validation, leaving shortcut meaning to the
+consumer's presentation reducer.
 The Rust-owned gesture policy consumes those records as a bounded viewport:
 one captured pointer drags a CSS-pixel pan, two captured pointers pan by their
 centroid and zoom by their finite distance ratio, ordinary wheel input pans,

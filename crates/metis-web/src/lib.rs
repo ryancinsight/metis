@@ -8,8 +8,9 @@ pub mod theme;
 mod canvas;
 
 pub use canvas::{
-    CANVAS_EVENT_CAPACITY, CanvasEvent, CanvasEventError, CanvasFrame, CanvasModifiers,
-    CanvasPointerEvent, CanvasPointerPhase, CanvasPointerType, CanvasWheelEvent, CanvasWheelUnit,
+    CANVAS_EVENT_CAPACITY, CanvasEvent, CanvasEventError, CanvasFrame, CanvasKeyboardEvent,
+    CanvasKeyboardPhase, CanvasModifiers, CanvasPointerEvent, CanvasPointerPhase,
+    CanvasPointerType, CanvasWheelEvent, CanvasWheelUnit,
 };
 
 #[cfg(target_arch = "wasm32")]

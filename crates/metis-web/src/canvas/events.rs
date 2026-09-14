@@ -12,6 +12,9 @@ use std::fmt;
 /// application loop to grow browser memory indefinitely.
 pub const CANVAS_EVENT_CAPACITY: usize = 256;
 
+#[cfg(any(target_arch = "wasm32", test))]
+const MAX_KEY_NAME_BYTES: usize = 64;
+
 /// Pointer device classification carried by a canvas event.
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
 #[non_exhaustive]
@@ -37,6 +40,15 @@ pub enum CanvasPointerPhase {
     Up,
     /// The browser cancelled an active pointer.
     Cancel,
+}
+
+/// Keyboard lifecycle phase carried by a canvas event.
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+pub enum CanvasKeyboardPhase {
+    /// A key became active.
+    Down,
+    /// A key was released.
+    Up,
 }
 
 /// Modifier-key state captured with a canvas event.
@@ -225,13 +237,77 @@ impl CanvasWheelEvent {
     }
 }
 
+/// One keyboard event routed to a canvas.
+#[derive(Clone, Debug, Eq, PartialEq)]
+pub struct CanvasKeyboardEvent {
+    phase: CanvasKeyboardPhase,
+    key: Box<str>,
+    code: Box<str>,
+    repeated: bool,
+    modifiers: CanvasModifiers,
+}
+
+impl CanvasKeyboardEvent {
+    #[cfg(any(target_arch = "wasm32", test))]
+    pub(crate) fn try_new(
+        phase: CanvasKeyboardPhase,
+        key: String,
+        code: String,
+        repeated: bool,
+        modifiers: CanvasModifiers,
+    ) -> Result<Self, CanvasEventError> {
+        if key.len() > MAX_KEY_NAME_BYTES || code.len() > MAX_KEY_NAME_BYTES {
+            return Err(CanvasEventError::InvalidMetadata);
+        }
+        Ok(Self {
+            phase,
+            key: key.into_boxed_str(),
+            code: code.into_boxed_str(),
+            repeated,
+            modifiers,
+        })
+    }
+
+    /// Returns the keyboard lifecycle phase.
+    #[must_use]
+    pub const fn phase(&self) -> CanvasKeyboardPhase {
+        self.phase
+    }
+
+    /// Returns the bounded browser key value.
+    #[must_use]
+    pub fn key(&self) -> &str {
+        &self.key
+    }
+
+    /// Returns the bounded physical key code.
+    #[must_use]
+    pub fn code(&self) -> &str {
+        &self.code
+    }
+
+    /// Returns whether the browser marked this keydown as an auto-repeat.
+    #[must_use]
+    pub const fn is_repeated(&self) -> bool {
+        self.repeated
+    }
+
+    /// Returns the modifier-key snapshot.
+    #[must_use]
+    pub const fn modifiers(&self) -> CanvasModifiers {
+        self.modifiers
+    }
+}
+
 /// One format-neutral event captured from a canvas.
-#[derive(Clone, Copy, Debug, PartialEq)]
+#[derive(Clone, Debug, PartialEq)]
 pub enum CanvasEvent {
     /// A pointer lifecycle event.
     Pointer(CanvasPointerEvent),
     /// A wheel event.
     Wheel(CanvasWheelEvent),
+    /// A keyboard lifecycle event.
+    Keyboard(CanvasKeyboardEvent),
 }
 
 /// Failure reported by a bounded canvas event handoff.
@@ -309,7 +385,10 @@ impl CanvasEventQueue {
 
 #[cfg(test)]
 mod tests {
-    use super::{CANVAS_EVENT_CAPACITY, CanvasEvent, CanvasEventError, CanvasEventQueue};
+    use super::{
+        CANVAS_EVENT_CAPACITY, CanvasEvent, CanvasEventError, CanvasEventQueue,
+        CanvasKeyboardEvent, MAX_KEY_NAME_BYTES,
+    };
 
     #[test]
     fn queue_preserves_order_and_capacity() {
@@ -372,6 +451,47 @@ mod tests {
                 .take()
                 .expect("queue recovers after failure")
                 .is_empty()
+        );
+    }
+
+    #[test]
+    fn queue_preserves_keyboard_metadata_and_phase() {
+        let mut queue = CanvasEventQueue::new();
+        assert!(
+            queue.push(CanvasEvent::Keyboard(
+                super::CanvasKeyboardEvent::try_new(
+                    super::CanvasKeyboardPhase::Down,
+                    "+".to_owned(),
+                    "Equal".to_owned(),
+                    true,
+                    super::CanvasModifiers::default(),
+                )
+                .expect("bounded keyboard metadata is valid"),
+            ))
+        );
+        let events = queue.take().expect("keyboard event is valid");
+        assert_eq!(events.len(), 1);
+        let CanvasEvent::Keyboard(event) = &events[0] else {
+            panic!("queue returned a non-keyboard event");
+        };
+        assert_eq!(event.phase(), super::CanvasKeyboardPhase::Down);
+        assert_eq!(event.key(), "+");
+        assert_eq!(event.code(), "Equal");
+        assert!(event.is_repeated());
+    }
+
+    #[test]
+    fn keyboard_metadata_rejects_oversized_names() {
+        let key = "x".repeat(MAX_KEY_NAME_BYTES + 1);
+        assert_eq!(
+            CanvasKeyboardEvent::try_new(
+                super::CanvasKeyboardPhase::Down,
+                key,
+                "KeyX".to_owned(),
+                false,
+                super::CanvasModifiers::default(),
+            ),
+            Err(CanvasEventError::InvalidMetadata)
         );
     }
 }
