@@ -196,7 +196,10 @@ The run's file count, byte count, executable digest and image digest are in
 [the RITK provenance record](https://github.com/ryancinsight/ritk/blob/main/docs/manual/images/dicom-metis-real-mri.json).
 Both captures are public MRI-DIR porcine-phantom data, not generated
 illustrations or private patient studies. A private clinical path is accepted
-for a local run only and is never committed to this repository.
+for a local run only and is never committed to this repository. The same
+three-run native workflow was sampled with Metis's resource runner; its
+process-tree statistics and repeated capture digest are recorded in the
+[MRI resource provenance](images/dicom-metis-real-mri-resource.json).
 
 ### Open a saved local clinical study
 
