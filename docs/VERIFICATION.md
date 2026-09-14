@@ -976,16 +976,20 @@ manual file-manager input remains observation-only.
 
 The dependency-free Python suite passes 140/140 tests, including the exact W3C
 payload and path/count/value bounds and engine-name resolution. Hosted workflow
-`34858003647` then exercised the saved 94-file MRI-DIR T2 study against the
-cross-engine chooser. Chromium and Firefox accepted 49,807,236 bytes, matched
-all file hashes and the three RITK RGBA canvas oracles, rejected the count,
-per-file and batch overflow probes, and closed their sessions cleanly. The
-actual galleries and per-engine provenance are recorded in
-[RITK's evidence directory](https://github.com/ryancinsight/ritk/tree/main/docs/manual/images).
+[34895454734](https://github.com/ryancinsight/ritk/actions/runs/34895454734)
+exercised the saved 94-file MRI-DIR T2 study against the cross-engine chooser
+with Metis `02d4047c5567834667ab9beb796ea27f6257f0ad`, RITK
+`92f4dc5798d5b9cedc66201ff14eacb8c4e13c78` and Moirai
+`c110452ec8a8057a98deab330f9047b1c7efd522`. Chromium 152 and Firefox 155
+accepted 49,807,236 bytes, matched all file hashes and the three RITK RGBA
+canvas oracles, rejected the count, per-file and batch overflow probes,
+validated focused trusted `ArrowDown` keydown/keyup traces on all three
+canvases, and closed their sessions cleanly. The actual galleries and
+per-engine provenance are recorded in [RITK's evidence directory](https://github.com/ryancinsight/ritk/tree/main/docs/manual/images).
 
 Safari 26.6.2 accepted all 94 chooser paths and closed its session, but the
-first bounded `Blob.arrayBuffer()` read failed with `Byte access: host rejected
-the selected file`. Safari therefore has no DICOM pixel claim in this run; the
+first bounded browser read failed with `Byte access: host rejected the selected
+file`. Safari therefore has no DICOM pixel or keyboard claim in this run; the
 WebKit file-backed read remains open. This is a host/provider boundary failure,
 not evidence that the chooser or RITK decoding succeeded on Safari. Physical
 file-manager input, native dialogs/processes, WebGPU and provider-private
