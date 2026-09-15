@@ -174,6 +174,29 @@ process boundaries differ, so the measurements remain lifecycle evidence and
 do not establish a framework memory or latency ranking. The matched native
 run is recorded in [its resource provenance](images/dicom-metis-real-ct-mip-resource.json).
 
+### V12 fixture comparison
+
+The current measurements make the comparison boundary explicit. Each row is a
+real application lifecycle over public MRI-DIR data; the uncertainty is the
+runner's explicitly approximate 95% half-width across three runs.
+
+| Fixture | Input and presentation | Surface | Peak private bytes | Lifecycle |
+| --- | --- | ---: | ---: | ---: |
+| Métis native MIP | 409 files; four-panel CPU MIP | 1280 × 800 | 2,338,119,680 ± 366,961 | 15,346 ± 3,394 ms |
+| eframe | 409 files; four-panel CPU MIP | 1600 × 1000 | 2,494,962,347 ± 5,291,689 | 8,752 ± 2,197 ms |
+| Métis native MRI | 94 files; axial/coronal/sagittal | 1280 × 800 | 828,962,133 ± 331,863 | 7,071 ± 2,011 ms |
+
+The [Métis MIP provenance](images/dicom-metis-real-ct-mip-resource.json),
+[eframe provenance](images/dicom-eframe-real-ct-resource.json) and [MRI
+provenance](images/dicom-metis-real-mri-resource.json) bind each row to its
+source revisions, executable, input bounds, capture digest and sampling
+protocol. The eframe and Métis MIP rows share the input and panel semantics,
+but their surface sizes and process boundaries differ. No GPUI or Tauri
+fixture has been run, and WASM used memory, allocator counts, compositor
+latency and security probes are separate measurements. These rows therefore
+document the fixtures and their limits; they do not establish a framework
+ranking.
+
 The complete visible window for the native four-panel MIP run is also captured
 from the running Windows HWND. The [RITK-owned window image](https://github.com/ryancinsight/ritk/blob/main/docs/manual/images/dicom-metis-real-ct-mip-window.png?raw=true)
 shows the saved public CT in axial, coronal, sagittal, and axial-MIP panels

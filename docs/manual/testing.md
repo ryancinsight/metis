@@ -280,6 +280,10 @@ provenance](images/dicom-metis-real-mri-resource.json). The report records
 the real 94-file study and the 1280 × 800 three-plane capture; it does not
 include private study paths or pixels.
 
+The [application gallery's V12 table](applications.md#v12-fixture-comparison)
+keeps those three measured fixtures together with their uncertainty and the
+unmatched GPUI/Tauri residual.
+
 For the browser side of the same comparison, the paired canvas trace records
 `metrics.frame_intervals` around the real RITK canvases. Each bounded sample is
 the interval between eight `requestAnimationFrame` callbacks before and after
