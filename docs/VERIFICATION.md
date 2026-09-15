@@ -2100,9 +2100,12 @@ the demonstration payload while preserving distinct backend/frontend PIDs.
 MSI into a private directory, checks registration/shortcut and installed bytes,
 runs both input cases and uninstalls while retaining a user-created sentinel.
 The workflow retains one guarded `output/distribution/latest` directory and a
-machine-readable report. Build commands have a 300-second bound; application and
-installer commands have a 60-second bound; the complete workflow has a 720-second
-bound. Native database tests use the ordinary nextest 30/60-second budgets.
+machine-readable report. The distribution demo harness's build command has a
+300-second bound; the `metis package` Cargo child uses a separate 900-second
+cold-workspace bound, exercised by the RITK consumer workflow. Application and
+installer commands have a 60-second bound; the complete demo workflow has a
+720-second bound. Native database tests use the ordinary nextest 30/60-second
+budgets.
 These checks cover the Windows x64 MSI increment, not the remaining lifecycle
 requirements below. Native system calls are covered by host tests, not Miri.
 

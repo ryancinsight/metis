@@ -34,7 +34,18 @@ extends the package Cargo build deadline to 900 seconds. Hosted run
 reached the former 300-second limit while compiling the cold locked RITK graph,
 before an executable artifact existed. The longer finite bound fits the
 workflow's 30-minute job budget while preserving process-tree termination and
-stale-artifact rejection.
+stale-artifact rejection. The local standalone gate at commit
+`103e3e659da26af5036abae50c854c2c08401189` and Metis hosted Windows gate
+[34987447904](https://github.com/ryancinsight/metis/actions/runs/34987447904)
+passed the updated implementation.
+
+Revision 2026-09-15 (consumer verification): RITK hosted run
+[34990164849](https://github.com/ryancinsight/ritk/actions/runs/34990164849)
+completed the locked Windows package build at Metis
+`c4276f2586f1ae9a1e3c0fa1dcb1507be4555f24`. Package creation, inventory/hash
+checks and executable `--help` passed within the 30-minute job budget. The
+workflow artifact is package evidence; DICOM execution and MSI lifecycle remain
+consumer-owned acceptance checks.
 
 ## Decision
 
