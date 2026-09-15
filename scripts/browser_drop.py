@@ -366,7 +366,7 @@ def run(args: argparse.Namespace) -> dict:
             (output / "trace.json").write_text(json.dumps(document, indent=2) + "\n", encoding="utf-8")
             if canvas_trace is not None and canvas_trace_path is not None:
                 canvas_trace.cleanup["session_closed"] = closed
-                _write_trace(canvas_trace_path, canvas_trace.document())
+                _write_trace(canvas_trace_path, canvas_trace.document(document["status"]))
     return document
 
 

@@ -24,6 +24,7 @@ from browser_canvas import (
     KeyboardTraceKind,
     MAX_CANVAS_ATTRIBUTES,
     _canvas_action_offsets,
+    capture_canvas_trace,
     run_canvas_scenario,
     validate_canvas_attributes,
     validate_canvas_ids,
@@ -94,6 +95,9 @@ class FakeDriver:
         self.event_trace = {}
         self.event_types = ("pointerdown", "pointermove", "pointerup", "wheel")
         self.focused_canvas = None
+        self.focus_calls = []
+        self.held_keys = {}
+        self.protocol_requests = []
         self.values = {"weight-kg": "72.5", "target-dose": "0.5"}
         self.generation = 1
         self.listener_count = 10
@@ -143,6 +147,37 @@ class FakeDriver:
             self.generation += 1
             self.listener_count = 10
 
+    def _session_path(self, suffix: str) -> str:
+        return f"/session/{self.session_id}/{suffix}"
+
+    def _request(self, method, path, payload=None):
+        self.protocol_requests.append((method, path, payload))
+        if payload is None or payload.get("cmd") != "Input.dispatchKeyEvent":
+            return None
+        canvas_id = self.focused_canvas
+        if canvas_id is None:
+            return None
+        params = payload["params"]
+        self.event_trace.setdefault(canvas_id, []).append(
+            {
+                "type": params["type"].lower(),
+                "is_trusted": True,
+                "target_id": canvas_id,
+                "client_x": None,
+                "client_y": None,
+                "delta_x": None,
+                "delta_y": None,
+                "key": params["key"],
+                "code": params["code"],
+                "repeat": params["autoRepeat"],
+                "alt_key": False,
+                "ctrl_key": False,
+                "meta_key": False,
+                "shift_key": False,
+            }
+        )
+        return None
+
     def execute(self, script: str, arguments=()):
         if "devicePixelRatio" in script:
             return {
@@ -169,6 +204,7 @@ class FakeDriver:
             return {"ok": True, "listener_count": listener_count}
         if "document.activeElement" in script and "canvas.focus()" in script:
             self.focused_canvas = arguments[0]
+            self.focus_calls.append(self.focused_canvas)
             return {"ok": True, "active_id": self.focused_canvas}
         if "canvas.tagName.toLowerCase()" in script:
             canvas_id = arguments[0]
@@ -293,6 +329,42 @@ class FakeDriver:
                 }
             )
 
+    def perform_actions(self, actions) -> None:
+        self.canvas_actions.append(("perform-actions", actions))
+        canvas_id = self.focused_canvas
+        if canvas_id is None:
+            return
+        for source in actions:
+            held = self.held_keys.setdefault(source["id"], set())
+            for action in source["actions"]:
+                key = action["value"]
+                if action["type"] == "keyDown":
+                    repeat = key in held
+                    held.add(key)
+                    event_type = "keydown"
+                else:
+                    repeat = False
+                    held.discard(key)
+                    event_type = "keyup"
+                self.event_trace.setdefault(canvas_id, []).append(
+                    {
+                        "type": event_type,
+                        "is_trusted": True,
+                        "target_id": canvas_id,
+                        "client_x": None,
+                        "client_y": None,
+                        "delta_x": None,
+                        "delta_y": None,
+                        "key": key,
+                        "code": {"=": "Equal", "-": "Minus"}[key],
+                        "repeat": repeat,
+                        "alt_key": False,
+                        "ctrl_key": False,
+                        "meta_key": False,
+                        "shift_key": False,
+                    }
+                )
+
     def release_actions(self) -> None:
         self.released = True
 
@@ -364,6 +436,53 @@ class IncompleteCanvasDriver(FakeDriver):
     def pointer_drag(self, element_id, start, end) -> None:
         super().pointer_drag(element_id, start, end)
         self.event_trace[element_id] = self.event_trace[element_id][:1]
+
+
+class NonRepeatingKeyboardDriver(FakeDriver):
+    """Driver mutant that omits W3C held-key repeat metadata."""
+
+    def perform_actions(self, actions) -> None:
+        super().perform_actions(actions)
+        for event in self.event_trace.get(self.focused_canvas, []):
+            if event["type"] == "keydown":
+                event["repeat"] = False
+
+
+class IncorrectInitialDevtoolsRepeatDriver(FakeDriver):
+    """Driver mutant that reports repeat on the first DevTools keydown."""
+
+    def _request(self, method, path, payload=None):
+        result = super()._request(method, path, payload)
+        if (
+            payload is not None
+            and payload.get("cmd") == "Input.dispatchKeyEvent"
+            and payload["params"]["type"] == "keyDown"
+            and payload["params"]["autoRepeat"] is False
+        ):
+            self.event_trace[self.focused_canvas][-1]["repeat"] = True
+        return result
+
+
+class FailingDevtoolsCleanupDriver(IncorrectInitialDevtoolsRepeatDriver):
+    """Driver mutant that rejects cleanup after invalid repeat evidence."""
+
+    def _request(self, method, path, payload=None):
+        if (
+            payload is not None
+            and payload.get("cmd") == "Input.dispatchKeyEvent"
+            and payload["params"]["type"] == "keyUp"
+        ):
+            raise BrowserRuntimeError("injected DevTools cleanup failure")
+        return super()._request(method, path, payload)
+
+
+class FailingListenerCleanupDriver(IncorrectInitialDevtoolsRepeatDriver):
+    """Driver mutant that rejects listener cleanup after a trace failure."""
+
+    def execute(self, script: str, arguments=()):
+        if "delete window.__metisCanvasTraceState" in script:
+            raise BrowserRuntimeError("injected listener cleanup failure")
+        return super().execute(script, arguments)
 
 
 class InvalidFrameTimingDriver(FakeDriver):
@@ -676,6 +795,7 @@ class BrowserRuntimeTests(unittest.TestCase):
             self.assertEqual(action["key"], KeyboardTraceKind.NAVIGATION.key)
             self.assertEqual(action["code"], KeyboardTraceKind.NAVIGATION.code)
             self.assertFalse(action["repeat"])
+            self.assertEqual(action["transport"], "webdriver-actions")
             self.assertEqual(action["focus"], {"ok": True, "active_id": action["canvas"]})
             self.assertEqual(
                 {event["type"] for event in action["observed_events"]},
@@ -712,14 +832,260 @@ class BrowserRuntimeTests(unittest.TestCase):
                 "1" * 40,
                 keyboard_trace=KeyboardTraceKind.CINE_RATE,
             )
-        keyboard = trace.actions[0]
-        self.assertEqual(keyboard["key"], KeyboardTraceKind.CINE_RATE.key)
-        self.assertEqual(keyboard["code"], KeyboardTraceKind.CINE_RATE.code)
+        keyboard_actions = trace.actions[:4]
         self.assertEqual(
-            [(event["key"], event["code"]) for event in keyboard["observed_events"]],
-            [("=", "Equal"), ("=", "Equal")],
+            [
+                (action["key"], action["code"], action["repeat"])
+                for action in keyboard_actions
+            ],
+            [
+                ("=", "Equal", False),
+                ("=", "Equal", True),
+                ("-", "Minus", False),
+                ("-", "Minus", True),
+            ],
+        )
+        self.assertEqual(
+            [
+                [(event["type"], event["repeat"]) for event in action["observed_events"]]
+                for action in keyboard_actions
+            ],
+            [
+                [("keydown", False)],
+                [("keydown", True), ("keyup", False)],
+                [("keydown", False)],
+                [("keydown", True), ("keyup", False)],
+            ],
+        )
+        self.assertTrue(
+            all(
+                event["key"] == action["key"] and event["code"] == action["code"]
+                for action in keyboard_actions
+                for event in action["observed_events"]
+            )
+        )
+        self.assertEqual(
+            [action["transport"] for action in keyboard_actions],
+            ["chromium-devtools"] * 4,
+        )
+        self.assertEqual(
+            [request[1] for request in driver.protocol_requests],
+            ["/session/session/goog/cdp/execute"] * 6,
+        )
+        self.assertEqual(
+            [request[2]["params"] for request in driver.protocol_requests],
+            [
+                {"type": "keyDown", "key": "=", "code": "Equal", "windowsVirtualKeyCode": 187, "autoRepeat": False},
+                {"type": "keyDown", "key": "=", "code": "Equal", "windowsVirtualKeyCode": 187, "autoRepeat": True},
+                {"type": "keyUp", "key": "=", "code": "Equal", "windowsVirtualKeyCode": 187, "autoRepeat": False},
+                {"type": "keyDown", "key": "-", "code": "Minus", "windowsVirtualKeyCode": 189, "autoRepeat": False},
+                {"type": "keyDown", "key": "-", "code": "Minus", "windowsVirtualKeyCode": 189, "autoRepeat": True},
+                {"type": "keyUp", "key": "-", "code": "Minus", "windowsVirtualKeyCode": 189, "autoRepeat": False},
+            ],
+        )
+        self.assertTrue(
+            all(request[2]["cmd"] == "Input.dispatchKeyEvent" for request in driver.protocol_requests)
+        )
+        self.assertEqual(driver.focus_calls, ["ritk-snap-axial"] * 4)
+        self.assertEqual(
+            [snapshot["label"] for snapshot in trace.snapshots],
+            [
+                "ritk-snap-axial-initial",
+                "ritk-snap-axial-after-keyboard",
+                "ritk-snap-axial-after-repeat",
+                "ritk-snap-axial-after-decrease",
+                "ritk-snap-axial-after-decrease-repeat",
+                "ritk-snap-axial-after-input",
+            ],
+        )
+        self.assertEqual(
+            [screenshot["label"] for screenshot in trace.screenshots],
+            [
+                "window-initial",
+                "ritk-snap-axial-initial",
+                "ritk-snap-axial-after-keyboard",
+                "ritk-snap-axial-after-repeat",
+                "ritk-snap-axial-after-decrease",
+                "ritk-snap-axial-after-decrease-repeat",
+                "ritk-snap-axial-after-input",
+                "window-final",
+            ],
+        )
+        self.assertEqual(
+            [action["action"] for action in trace.actions],
+            ["trusted-keyboard"] * 4 + ["trusted-pointer-drag", "trusted-wheel"],
+        )
+        self.assertTrue(
+            all(
+                action["focus"] == {"ok": True, "active_id": action["canvas"]}
+                for action in keyboard_actions
+            )
         )
         self.assertEqual(trace.cleanup["canvas_attribute_names"], [])
+
+    def test_canvas_trace_uses_edge_devtools_endpoint_for_cine_rate(self):
+        output = pathlib.Path(__file__).resolve().parents[2] / "output" / "browser" / "runtime-test"
+        output.mkdir(parents=True, exist_ok=True)
+        with tempfile.TemporaryDirectory(dir=output) as directory:
+            driver = FakeDriver()
+            trace = run_canvas_scenario(
+                driver,
+                BrowserEngine.CHROMIUM,
+                "http://127.0.0.1:8080/ritk.html",
+                "0" * 40,
+                pathlib.Path(directory),
+                5_000,
+                ["ritk-snap-axial"],
+                "1" * 40,
+                keyboard_trace=KeyboardTraceKind.CINE_RATE,
+                browser_name="MicrosoftEdge",
+            )
+        self.assertEqual(
+            [request[1] for request in driver.protocol_requests],
+            ["/session/session/ms/cdp/execute"] * 6,
+        )
+        self.assertEqual(
+            [action["transport"] for action in trace.actions[:4]],
+            ["chromium-devtools"] * 4,
+        )
+
+    def test_canvas_trace_retains_webdriver_cine_rate_transport_for_firefox(self):
+        output = pathlib.Path(__file__).resolve().parents[2] / "output" / "browser" / "runtime-test"
+        output.mkdir(parents=True, exist_ok=True)
+        with tempfile.TemporaryDirectory(dir=output) as directory:
+            driver = FakeDriver()
+            trace = run_canvas_scenario(
+                driver,
+                BrowserEngine.FIREFOX,
+                "http://127.0.0.1:8080/ritk.html",
+                "0" * 40,
+                pathlib.Path(directory),
+                5_000,
+                ["ritk-snap-axial"],
+                "1" * 40,
+                keyboard_trace=KeyboardTraceKind.CINE_RATE,
+            )
+        action_requests = [entry for entry in driver.canvas_actions if entry[0] == "perform-actions"]
+        self.assertEqual(driver.protocol_requests, [])
+        self.assertEqual([entry[1][0]["id"] for entry in action_requests], ["metis-keyboard"] * 4)
+        self.assertEqual(
+            [[item["type"] for item in entry[1][0]["actions"]] for entry in action_requests],
+            [["keyDown"], ["keyDown", "keyUp"], ["keyDown"], ["keyDown", "keyUp"]],
+        )
+        self.assertEqual(
+            [action["transport"] for action in trace.actions[:4]],
+            ["webdriver-actions"] * 4,
+        )
+
+    def test_canvas_trace_rejects_missing_webdriver_repeat_evidence(self):
+        output = pathlib.Path(__file__).resolve().parents[2] / "output" / "browser" / "runtime-test"
+        output.mkdir(parents=True, exist_ok=True)
+        with tempfile.TemporaryDirectory(dir=output) as directory:
+            with self.assertRaisesRegex(BrowserRuntimeError, "browser keyboard events reported"):
+                run_canvas_scenario(
+                    NonRepeatingKeyboardDriver(),
+                    BrowserEngine.FIREFOX,
+                    "http://127.0.0.1:8080/ritk.html",
+                    "0" * 40,
+                    pathlib.Path(directory),
+                    5_000,
+                    ["ritk-snap-axial"],
+                    "1" * 40,
+                    keyboard_trace=KeyboardTraceKind.CINE_RATE,
+                )
+
+    def test_canvas_trace_retains_invalid_repeat_and_releases_held_devtools_key(self):
+        output = pathlib.Path(__file__).resolve().parents[2] / "output" / "browser" / "runtime-test"
+        output.mkdir(parents=True, exist_ok=True)
+        with tempfile.TemporaryDirectory(dir=output) as directory:
+            driver = IncorrectInitialDevtoolsRepeatDriver()
+            driver.create_session("chrome")
+            trace = Trace(
+                BrowserEngine.CHROMIUM,
+                "http://127.0.0.1:8080/ritk.html",
+                "canvas",
+                "0" * 40,
+                driver.capabilities,
+                "1" * 40,
+            )
+            with self.assertRaisesRegex(BrowserRuntimeError, "browser keyboard events reported"):
+                capture_canvas_trace(
+                    driver,
+                    trace,
+                    pathlib.Path(directory),
+                    ["ritk-snap-axial"],
+                    keyboard_trace=KeyboardTraceKind.CINE_RATE,
+                )
+        self.assertEqual(len(trace.actions), 1)
+        self.assertEqual(trace.actions[0]["transport"], "chromium-devtools")
+        self.assertEqual(trace.actions[0]["observed_events"][0]["repeat"], True)
+        self.assertEqual(
+            [request[2]["params"]["type"] for request in driver.protocol_requests],
+            ["keyDown", "keyUp"],
+        )
+        self.assertEqual(driver.protocol_requests[-1][2]["params"]["autoRepeat"], False)
+        self.assertTrue(driver.released)
+
+    def test_canvas_trace_preserves_primary_error_when_devtools_cleanup_fails(self):
+        output = pathlib.Path(__file__).resolve().parents[2] / "output" / "browser" / "runtime-test"
+        output.mkdir(parents=True, exist_ok=True)
+        with tempfile.TemporaryDirectory(dir=output) as directory:
+            driver = FailingDevtoolsCleanupDriver()
+            driver.create_session("chrome")
+            trace = Trace(
+                BrowserEngine.CHROMIUM,
+                "http://127.0.0.1:8080/ritk.html",
+                "canvas",
+                "0" * 40,
+                driver.capabilities,
+                "1" * 40,
+            )
+            with self.assertRaisesRegex(
+                BrowserRuntimeError,
+                "browser keyboard events reported",
+            ) as captured:
+                capture_canvas_trace(
+                    driver,
+                    trace,
+                    pathlib.Path(directory),
+                    ["ritk-snap-axial"],
+                    keyboard_trace=KeyboardTraceKind.CINE_RATE,
+                )
+        self.assertIn(
+            "CDP key release also failed: injected DevTools cleanup failure",
+            captured.exception.__notes__,
+        )
+
+    def test_canvas_trace_releases_actions_when_listener_cleanup_fails(self):
+        output = pathlib.Path(__file__).resolve().parents[2] / "output" / "browser" / "runtime-test"
+        output.mkdir(parents=True, exist_ok=True)
+        with tempfile.TemporaryDirectory(dir=output) as directory:
+            driver = FailingListenerCleanupDriver()
+            driver.create_session("chrome")
+            trace = Trace(
+                BrowserEngine.CHROMIUM,
+                "http://127.0.0.1:8080/ritk.html",
+                "canvas",
+                "0" * 40,
+                driver.capabilities,
+                "1" * 40,
+            )
+            with self.assertRaisesRegex(
+                BrowserRuntimeError,
+                "browser keyboard events reported",
+            ) as captured:
+                capture_canvas_trace(
+                    driver,
+                    trace,
+                    pathlib.Path(directory),
+                    ["ritk-snap-axial"],
+                    keyboard_trace=KeyboardTraceKind.CINE_RATE,
+                )
+        self.assertTrue(driver.released)
+        self.assertIn(
+            "canvas event listener cleanup also failed: injected listener cleanup failure",
+            captured.exception.__notes__,
+        )
 
     def test_canvas_action_offsets_stay_inside_short_surfaces(self):
         offsets = _canvas_action_offsets({"css_width": 448.8, "css_height": 82.4})
