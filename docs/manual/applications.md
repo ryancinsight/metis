@@ -13,8 +13,9 @@ The separate [process demonstration](getting-started.md) tests actual child proc
 
 The gallery starts with a real saved-study run so the first image is application
 output rather than generated artwork. RITK opened the public MRI-DIR head CT
-series, decoded 410 DICOM files and supplied axial, coronal and sagittal planes
-to the format-neutral Métis framebuffer. The packaged Windows executable exited
+series, decoded the 409 DICOM image instances in the 410-entry study directory,
+and supplied axial, coronal and sagittal planes to the format-neutral Métis
+framebuffer. The packaged Windows executable exited
 0 and the portable and per-user MSI captures matched byte-for-byte.
 
 ![Actual saved CT study rendered through the packaged Métis host](https://github.com/ryancinsight/ritk/blob/main/docs/manual/images/dicom-metis-installer-ct.png?raw=true)
