@@ -78,3 +78,11 @@ and captures it through the same visible `NativeApplication` path. The Python
 tool's decoder tests cover every supported PNG filter and checksum rejection;
 the manual image and its source digest are evidence of the handoff, not a DICOM
 implementation in Métis.
+
+## Revision 2026-09-15
+
+Moirai keydown and keyup events now carry the provider's tracked modifier
+snapshot. The Python event dictionaries preserve `ctrl`, `shift`, `alt` and
+`meta` alongside the virtual key and repeat value, so Python consumers can
+apply shortcut policy without sampling process-global keyboard state. The
+native provider and RITK remain the owners of host and viewer behavior.
