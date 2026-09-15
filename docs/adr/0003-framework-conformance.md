@@ -260,6 +260,16 @@ bounded read probe before presentation, so the WebKit/SafariDriver grant stays
 an external residual owned by the browser provider boundary. These runs add
 real consumer evidence without moving DICOM behavior into Metis.
 
+Revision 2026-09-15 (V12 lifecycle fixtures): the three-run eframe and native
+Métis records now bind the public 409-file CT MIP semantics, and the native
+Métis record also binds the public 94-file MRI study, to capture digests,
+executable revisions, process-tree samples and explicitly approximate 95%
+half-widths. The application manual presents the rows together and keeps their
+surface and process-boundary differences visible. No matched GPUI or Tauri
+fixture, WASM used-memory or allocation count, compositor/input latency or
+security probe has run; the records document fixture evidence and do not rank
+frameworks.
+
 ## Decision and scope
 
 Use Tauri as the application-framework migration reference, egui/GPUI/Iced as
@@ -339,7 +349,7 @@ Each row names its closing items; acceptance belongs in the
 | Packaging, signing and updates | eframe template covers app/web build [E7] | Tauri-like distribution contract not established | Platform bundling and signing [T6]; updater plugin [T5] | Application manifest, one application executable serving two process roles (ADR 0006), portable bundle and Windows per-user MSI are the current distribution surface (ADR 0005). RITK's locked package workflow verifies inventory, executable/MSI hashes and `--help`; local replay and install/uninstall evidence show the packaged executable opening the real CT study. Signing, [other platform formats](../../backlog.md#METIS-DISTRIBUTION-003) and [update recovery](../../backlog.md#METIS-DISTRIBUTION-004) remain gaps. [DISTRIBUTION](../../backlog.md#METIS-DISTRIBUTION-001), [RELEASE](../../backlog.md#METIS-RELEASE-001). |
 | Mobile/touch lifecycle | Target-specific integrations; parity not inferred | Complete mobile product support not established | Android/iOS target and plugin support [T1] [T5] | No mobile host/probes. [MOBILE](../../backlog.md#METIS-MOBILE-001). |
 | Semantic and visual tests | egui_kittest interaction/AccessKit/snapshots [E3] | TestAppContext and platform-dependent rendering [G1] | WebDriver routes differ by integration/platform [T7] | Seven software captures plus a local browser semantic/screenshot trace; RITK's hosted chooser run adds real Chromium and Firefox three-canvas galleries with exact pixels, file hashes, bounded rejections, cine/repeat actions and teardown. Safari read authorization remains open. [VISUAL](../../backlog.md#METIS-VISUAL-001), [QUALITY](../../backlog.md#METIS-QUALITY-001). |
-| Memory, latency and growth | Rendering model alone proves no advantage | GPU model alone proves no advantage | Small bundle does not prove low process memory | No matched baseline or resource telemetry. [PERF](../../backlog.md#METIS-PERF-001), [MEMORY](../../backlog.md#METIS-MEMORY-001). |
+| Memory, latency and growth | Rendering model alone proves no advantage | GPU model alone proves no advantage | Small bundle does not prove low process memory | Three-run eframe and native Métis lifecycle records now bind public CT/MRI captures and process-tree uncertainty; surface and process boundaries differ, and no matched GPUI/Tauri, WASM used-memory/allocation, compositor/input latency, repeated-growth or security evidence exists. [PERF](../../backlog.md#METIS-PERF-001), [MEMORY](../../backlog.md#METIS-MEMORY-001). |
 | Assurance, provenance and recovery | Application responsibility | Application responsibility | Capabilities, audits and distribution controls [T4] [T6] | MAC vectors/bounded IPC exist; durable audit, supply-chain and operational evidence incomplete. [CRYPTO](../../backlog.md#METIS-CRYPTO-001), [AUDIT](../../backlog.md#METIS-AUDIT-001), [QUALITY](../../backlog.md#METIS-QUALITY-001). |
 | Runnable user documentation | Demos and eframe template [E1] [E7] | Source examples [G1] [G4] | Guides and test examples [T7] | The manual now links real RITK package CT, native-picker MRI and hosted Chromium/Firefox MRI captures alongside the software form states and browser workbench. Installed host input, permission, Safari/WebKit and cross-platform evidence remains open. [MANUAL](../../backlog.md#METIS-MANUAL-001), [VISUAL](../../backlog.md#METIS-VISUAL-001); every new item carries a manual demonstration. |
 
