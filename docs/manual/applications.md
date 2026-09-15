@@ -29,6 +29,12 @@ theme, released pointer capture, idle text composition and clean teardown. The
 the same RITK-owned launcher for private DICOM; its pixels and identifiers stay
 on the local machine.
 
+On Windows, the same RITK launcher can omit the positional path and use the
+bounded Moirai folder picker through Métis. The selected folder is scanned and
+decoded by RITK, while cancellation and an unreadable study leave the existing
+frame unchanged. The [RITK DICOM manual](https://github.com/ryancinsight/ritk/blob/main/docs/manual/dicom-workflow.md)
+contains the actual picker image, capture provenance and study-reopen workflow.
+
 The merged Windows default-shell rerun is tracked separately in RITK's
 [revision-bound provenance record](https://github.com/ryancinsight/ritk/blob/main/docs/manual/images/dicom-metis-default-shell-ct.json).
 It binds the current three-plane capture and repeated process-tree samples to
