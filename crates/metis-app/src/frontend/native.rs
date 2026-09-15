@@ -116,6 +116,7 @@ impl<T: IpcTransport> NativeApplication for NativeForm<T> {
                 WindowEvent::KeyDown {
                     virtual_key: RETURN_KEY,
                     repeated: false,
+                    ..
                 } => {
                     submit(&mut self.app, self.pid)?;
                     repaint = true;
