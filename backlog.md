@@ -54,7 +54,8 @@ an owner. “Unsupported” cannot replace delivery of a required mobile/native 
 
 <a id="METIS-BROWSER-001"></a>
 ## METIS-BROWSER-001 — Browser form and command lifecycle [arch] [minor]
-- Status: in-progress; priority: P1; owner: Metis frontend/host; integrator: root; last-update: 2026-09-15; branch: `docs/browser-cross-engine-evidence`; regions: docs/manual/browser.md, docs/VERIFICATION.md, backlog.md; dependencies: METIS-STATE-001, METIS-ASYNC-001, METIS-AUTHORITY-001; risk: browser/native trust boundary
+- Status: in-progress; priority: P1; owner: Metis frontend/host; integrator: root; last-update: 2026-09-15; branch: `main`; regions: docs/manual/browser.md, docs/VERIFICATION.md, backlog.md; dependencies: METIS-STATE-001, METIS-ASYNC-001, METIS-AUTHORITY-001; risk: browser/native trust boundary
+- Delivery reconciliation (2026-09-15): Metis PR [#163](https://github.com/ryancinsight/metis/pull/163), merge `c6f6e69aa9d00b451592e8a2c834ffc8035127d4`, records the hosted chooser evidence and current browser residuals. The former documentation branch is collected; the item remains open for its stated WebKit, physical-input and provider-private resource gaps.
 - Scope: actual HTML5/CSS DOM form, Rust/WASM state, asset loading and bounded asynchronous requests; portable UI never imports native authority.
 - Acceptance: Chromium/Firefox/WebKit runtime jobs load WASM and respond to two input changes; authorized service/desktop bridge verifies results; explicit unsupported native-only operations; zero pending requests/listeners after cancel/close.
 - Demonstration: [V02](docs/VERIFICATION.md#V02), actual browser captures and copyable build/run commands in the manual. A browser-only local control demo can land before the privileged bridge.
@@ -137,7 +138,8 @@ an owner. “Unsupported” cannot replace delivery of a required mobile/native 
 
 <a id="METIS-DESKTOP-001"></a>
 ## METIS-DESKTOP-001 — Native restricted desktop [arch] [major]
-- Status: in-progress; priority: P1; owner: Metis Windows host + Moirai; integrator: root; last-update: 2026-09-15; branch: `build/metis-webview2-feature`; regions: `crates/metis-platform/Cargo.toml`, `Cargo.lock`, `README.md`, `docs/manual/native.md`, `docs/VERIFICATION.md`, `docs/adr/0015-native-window-provider.md`, `backlog.md`; ADR: [0032](docs/adr/0032-display-scale.md); dependencies: METIS-AUTHORITY-001, METIS-COMMANDS-001; risk: trust boundary
+- Status: in-progress; priority: P1; owner: Metis Windows host + Moirai; integrator: root; last-update: 2026-09-15; branch: `main`; regions: `crates/metis-platform/Cargo.toml`, `Cargo.lock`, `README.md`, `docs/manual/native.md`, `docs/VERIFICATION.md`, `docs/adr/0015-native-window-provider.md`, `backlog.md`; ADR: [0032](docs/adr/0032-display-scale.md); dependencies: METIS-AUTHORITY-001, METIS-COMMANDS-001; risk: trust boundary
+- Delivery reconciliation (2026-09-15): Metis PR [#164](https://github.com/ryancinsight/metis/pull/164), merge `28a7c69da5991d5cd7cbf4bcdce40f826ed77e53`, merged the Windows WebView2 provider feature and its refreshed visual provenance. The former feature branch is collected; permission, installed-IME, physical display-scale and non-Windows host gaps remain open.
 - Scope: Windows native window/system WebView, real events, multi-window lifecycle and OS-restricted renderer; macOS/Linux have separate items below.
 - Acceptance: actual visible form, pointer/keyboard/resize/DPI/close/reopen; file/network/process denial probes; IPC remains functional under restrictions and all child processes drain.
 - Demonstration: [V05](docs/VERIFICATION.md#V05), actual Windows window captures, keyboard journey and permission-denied results in the manual.
@@ -400,7 +402,8 @@ an owner. “Unsupported” cannot replace delivery of a required mobile/native 
 
 <a id="METIS-FILES-001"></a>
 ## METIS-FILES-001 — Scoped files and persistent state [minor]
-- Status: in-progress; priority: P2; owner: Metis broker + owning Atlas storage provider; integrator: root; branch: `docs/native-file-consumer-evidence`; last-update: 2026-09-15; dependencies: METIS-DESKTOP-001; risk: user data/TOCTOU
+- Status: in-progress; priority: P2; owner: Metis broker + owning Atlas storage provider; integrator: root; branch: `main`; last-update: 2026-09-15; dependencies: METIS-DESKTOP-001; risk: user data/TOCTOU
+- Delivery reconciliation (2026-09-15): Metis PR [#161](https://github.com/ryancinsight/metis/pull/161), merge `9134a2699842f89ba9daab0374de71f412fc07dc`, merged the RITK native folder-picker consumer evidence. The former documentation branch is collected; persistent stores, permission policy and non-Windows providers remain open.
 - Scope: file dialogs, reads/writes/watch, settings/store/database contract and versioned recovery with explicit scope; no raw frontend access to unrestricted paths.
 - Acceptance: allowed-handle operations succeed; traversal/symlink/TOCTOU and denied scope fail; atomic writes, crash/disk-full recovery and watcher teardown preserve user data.
 - Demonstration: [V08](docs/VERIFICATION.md#V08), document open/save/restart/denial on each supported target; browsers expose selected-file semantics or explicit restrictions.
@@ -550,7 +553,7 @@ an owner. “Unsupported” cannot replace delivery of a required mobile/native 
 
 <a id="METIS-PERF-001"></a>
 ## METIS-PERF-001 — Comparative resource and latency evidence [patch]
-- Status: in-progress; priority: P1; owner: Metis measurement; integrator: root; last-update: 2026-09-15; branch: `perf/metis-v12-comparison`; regions: `docs/manual/applications.md`, `docs/manual/testing.md`, `docs/VERIFICATION.md`, `docs/adr/0003-framework-conformance.md`, `gap_audit.md`, `backlog.md`; dependencies: METIS-BROWSER-001, METIS-DESKTOP-001, METIS-INPUT-001; risk: invalid comparative claims
+- Status: in-progress; priority: P1; owner: Metis measurement; integrator: root; last-update: 2026-09-15; branch: `main`; regions: `docs/manual/applications.md`, `docs/manual/testing.md`, `docs/VERIFICATION.md`, `docs/adr/0003-framework-conformance.md`, `gap_audit.md`, `backlog.md`; dependencies: METIS-BROWSER-001, METIS-DESKTOP-001, METIS-INPUT-001; risk: invalid comparative claims
 - Scope: instrument the first live app, then compare matched egui/GPUI/Tauri fixtures; total process memory, WASM memory, allocations, idle/active/peak/growth, startup/input/frame latency and bundle/build size separately.
 - Acceptance: [V12](docs/VERIFICATION.md#V12) protocol, pinned revisions/assets/traces and controlled host; stored baselines/confidence and resource bounds; resolve production regressions without changing the instrument to move results.
 - Demonstration: measured tables/plots in the manual with machine/target/uncertainty and semantic/visual equivalence; no speed/security ranking without its evidence.
@@ -566,6 +569,7 @@ an owner. “Unsupported” cannot replace delivery of a required mobile/native 
 - Current MRI resource increment (2026-09-14, RITK `44487bacc6b33d4c6a241f68960e9dd5e140fbc5`, Metis `587f6c6a9e6abf7415c7800255f75d1ef727ff79`, Moirai `a7fa2ba69f25070581f7245f059089705d8fc699`): three lifecycle runs through the native Métis executable exited 0, rendered the same 1280 × 800 three-plane image with 411,589 non-black pixels, and repeated the capture digest. Peak process-tree private bytes averaged 828,962,133 with a 331,863-byte approximate 95% half-width; peak working set averaged 394,939,051 with a 20,709,538-byte half-width. The provenance records these measurements without private paths or pixels.
 - Current default-shell CT evidence increment (2026-09-14, commit `45a4e3a05` in RITK): the current Metis manual and V12 verification now link the RITK-owned provenance record for three repeated Windows default-shell runs over the 409-file public CT series. The real 1280 × 800 three-plane PNG repeated byte-for-byte, the invalid-study probe failed closed, and the record carries process-tree uncertainty plus exact source revisions. This fixture evidence does not close matched GPUI/Tauri runs or establish a framework ranking.
 - Manual comparison increment (2026-09-15): the application gallery now presents one V12 table for the three-run public CT/MRI lifecycle fixtures, with input/presentation semantics, surface dimensions, peak private bytes, lifecycle uncertainty and provenance links. It states the unmatched GPUI/Tauri, WASM used-memory, allocation, compositor and security residuals; no framework ranking is claimed.
+- Delivery reconciliation (2026-09-15): Metis PR [#169](https://github.com/ryancinsight/metis/pull/169), merge `2d96d2deb1dd67c2edaa6f6178bbd744f83d0184`, delivered the V12 comparison table and bound its evidence in the verification documents. The former comparison branch is collected; matched GPUI/Tauri, WASM used-memory/allocation, input-to-frame/compositor/native latency, repeated lifecycle growth and controlled-host uncertainty remain open.
 - Residuals: the eframe and native Métis runs now match the public input and panel semantics, but surface dimensions and process boundaries remain different; GPUI/Tauri fixtures, WASM used-memory/allocation, input-to-frame/compositor/native latency, repeated lifecycle growth and controlled-host uncertainty remain open.
 
 <a id="METIS-QUALITY-001"></a>
@@ -583,12 +587,13 @@ an owner. “Unsupported” cannot replace delivery of a required mobile/native 
 
 <a id="METIS-CONFORMANCE-001"></a>
 ## METIS-CONFORMANCE-001 — Final capability and target closure [patch]
-- Status: in-progress; priority: P3; owner: Metis integration; integrator: root; last-update: 2026-09-15; branch: `docs/framework-conformance-evidence`; regions: `docs/adr/0003-framework-conformance.md`, `backlog.md`; risk: structural conformance debt
+- Status: in-progress; priority: P3; owner: Metis integration; integrator: root; last-update: 2026-09-15; branch: `docs/metis-state-reconciliation`; regions: `backlog.md`; risk: structural conformance debt
 - Dependencies: METIS-QUALITY-001, METIS-VERIFY-001, METIS-PROVIDER-001, METIS-STATE-001, METIS-VISUAL-001, METIS-BROWSER-001, METIS-ASYNC-001, METIS-AUTHORITY-001, METIS-COMMANDS-001, METIS-DESKTOP-001, METIS-MACOS-001, METIS-LINUX-001, METIS-TEXT-001, METIS-A11Y-001, METIS-LAYOUT-001, METIS-ASSETS-001, METIS-GRAPHICS-001, METIS-DATA-001, METIS-FILES-001, METIS-INTEGRATION-001, METIS-SERVICES-001, METIS-AUDIT-001, METIS-CRYPTO-001, METIS-MEMORY-001, METIS-MIGRATION-001, METIS-DISTRIBUTION-001, METIS-MOBILE-001, METIS-PERF-001, METIS-MANUAL-001
 - Scope: reconcile every ADR 0003 matrix row and required target pair against exact-revision evidence, including late package/mobile/service work and current upstream inventory changes.
 - Acceptance: [V01](docs/VERIFICATION.md#V01)–[V12](docs/VERIFICATION.md#V12) run on their required real targets, with semantic/visual/security/resource results and manual demos; required unsupported pairs stay open and block closure. No mocked IPC, compile-only host claim or skipped denial/lifecycle suite.
 - Demonstration: same-revision gallery, migration guide, measured comparative report and host troubleshooting; final security claims require matched Tauri denial probes under the declared threat model.
 - Completed increment (2026-09-13): structural modules and native binding manifests were split into canonical leaf homes; the live conformance scan reports 0 oversized files and 0 manifest implementation lines, while native check, WASM check, clippy (`-D warnings`), and nextest pass (314/314, 1 skipped). The source-bound visual baseline was refreshed after the refactor and the complete verifier passes all stages (169 resolved packages); the target-fork count is the shared Atlas build cache and remains host state.
+- Delivery reconciliation (2026-09-15): Metis PR [#168](https://github.com/ryancinsight/metis/pull/168), merge `9d2ffb1f2bf276866b90a9039c0513738a62a424`, records the current consumer conformance evidence in ADR 0003. The former documentation branch is collected; target-specific, security, lifecycle and matched-comparison residuals remain represented by their linked items.
 
 <a id="METIS-VERIFY-002"></a>
 ## METIS-VERIFY-002 — Verification report storage [patch]
