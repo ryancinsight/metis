@@ -962,12 +962,12 @@ dialogs and native process launch remain separate acceptance gates; the
 application screenshot is a browser viewport and its RGBA oracle covers canvas
 pixels only.
 
-<a id="browser-file-chooser-matrix-contract--2026-09-14"></a>
-## Browser file chooser matrix contract — 2026-09-14
+<a id="browser-file-chooser-matrix-contract--2026-09-15"></a>
+## Browser file chooser matrix contract — 2026-09-15
 
-`scripts/browser_drop.py` now resolves the closed browser matrix through the
-shared `BrowserEngine` contract and accepts a standard W3C file-input chooser
-for Chromium, Firefox and WebKit. The chooser sends absolute local paths to the
+`scripts/browser_drop.py` resolves the closed browser matrix through the shared
+`BrowserEngine` contract and accepts a standard W3C file-input chooser for
+Chromium, Firefox and WebKit. The chooser sends absolute local paths to the
 driver; the browser performs the file read and emits a trusted `change` event.
 The host runner records the engine, event source, per-file hashes, exact RITK
 RGBA values, three sparse-file admission rejections and session teardown. The
@@ -976,22 +976,28 @@ manual file-manager input remains observation-only.
 
 The dependency-free Python suite passes 140/140 tests, including the exact W3C
 payload and path/count/value bounds and engine-name resolution. Hosted workflow
-[34895454734](https://github.com/ryancinsight/ritk/actions/runs/34895454734)
+[34973438029](https://github.com/ryancinsight/ritk/actions/runs/34973438029)
 exercised the saved 94-file MRI-DIR T2 study against the cross-engine chooser
-with Metis `02d4047c5567834667ab9beb796ea27f6257f0ad`, RITK
-`92f4dc5798d5b9cedc66201ff14eacb8c4e13c78` and Moirai
-`c110452ec8a8057a98deab330f9047b1c7efd522`. Chromium 152 and Firefox 155
+with Metis `b374ca937ce6ddbcbce2fb55a0dd074a241ea956`, RITK
+`67ed6db952414d7b611e57a8100deead0eba7e88` and Moirai
+`2451a3155c44dcf76d5577e4eb8c08badde51a0a`. Chromium 152 and Firefox 155
 accepted 49,807,236 bytes, matched all file hashes and the three RITK RGBA
 canvas oracles, rejected the count, per-file and batch overflow probes,
-validated focused trusted `ArrowDown` keydown/keyup traces on all three
-canvases, and closed their sessions cleanly. The actual galleries and
-per-engine provenance are recorded in [RITK's evidence directory](https://github.com/ryancinsight/ritk/tree/main/docs/manual/images).
+validated trusted focused `=`/`-` cine-rate keydown/keyup traces with repeat
+handling and frame-generation checks, and closed their sessions cleanly. The
+actual galleries and per-engine provenance are recorded in [RITK's evidence
+directory](https://github.com/ryancinsight/ritk/tree/main/docs/manual/images).
 
 Safari 26.6.2 accepted all 94 chooser paths and closed its session, but the
-first bounded browser read failed with `Byte access: host rejected the selected
-file`. Safari therefore has no DICOM pixel or keyboard claim in this run; the
-WebKit file-backed read remains open. This is a host/provider boundary failure,
-not evidence that the chooser or RITK decoding succeeded on Safari. Physical
+first 529,864-byte `File.arrayBuffer()` read failed with
+`Byte access: host rejected the selected file`. The isolated controls in the
+same run report `NotReadableError` for the original file, bounded slice and
+`FileReader`, and `TypeError` for the blob-URL stream. Safari therefore has no
+DICOM pixel or keyboard claim; the WebKit file-backed read remains open. The
+host independently verified the selected file digest and captured WebKit
+WebContent `file-read-data`/`file-issue-extension` plus Networking
+`file-read-data` denials. This is a host/provider boundary failure, not
+evidence that the chooser or RITK decoding succeeded on Safari. Physical
 file-manager input, native dialogs/processes, WebGPU and provider-private
 resource observations remain separate acceptance gates.
 
