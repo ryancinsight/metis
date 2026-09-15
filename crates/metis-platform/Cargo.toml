@@ -12,7 +12,7 @@ description = "Bounded software framebuffer and Windows native event/presentatio
 metis-core = { workspace = true }
 
 [target.'cfg(windows)'.dependencies]
-moirai-pal = { workspace = true }
+moirai-pal = { workspace = true, features = ["webview2"] }
 
 [lints]
 workspace = true

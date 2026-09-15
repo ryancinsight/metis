@@ -137,7 +137,7 @@ an owner. “Unsupported” cannot replace delivery of a required mobile/native 
 
 <a id="METIS-DESKTOP-001"></a>
 ## METIS-DESKTOP-001 — Native restricted desktop [arch] [major]
-- Status: in-progress; priority: P1; owner: Metis Windows host + Moirai; integrator: root; last-update: 2026-09-15; branch: `build/metis-webview2-feature`; regions: `crates/metis-platform/Cargo.toml`, `Cargo.lock`, `backlog.md`; ADR: [0032](docs/adr/0032-display-scale.md); dependencies: METIS-AUTHORITY-001, METIS-COMMANDS-001; risk: trust boundary
+- Status: in-progress; priority: P1; owner: Metis Windows host + Moirai; integrator: root; last-update: 2026-09-15; branch: `build/metis-webview2-feature`; regions: `crates/metis-platform/Cargo.toml`, `Cargo.lock`, `README.md`, `docs/manual/native.md`, `docs/VERIFICATION.md`, `docs/adr/0015-native-window-provider.md`, `backlog.md`; ADR: [0032](docs/adr/0032-display-scale.md); dependencies: METIS-AUTHORITY-001, METIS-COMMANDS-001; risk: trust boundary
 - Scope: Windows native window/system WebView, real events, multi-window lifecycle and OS-restricted renderer; macOS/Linux have separate items below.
 - Acceptance: actual visible form, pointer/keyboard/resize/DPI/close/reopen; file/network/process denial probes; IPC remains functional under restrictions and all child processes drain.
 - Demonstration: [V05](docs/VERIFICATION.md#V05), actual Windows window captures, keyboard journey and permission-denied results in the manual.
