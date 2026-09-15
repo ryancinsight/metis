@@ -1012,6 +1012,16 @@ evidence that the chooser or RITK decoding succeeded on Safari. Physical
 file-manager input, native dialogs/processes, WebGPU and provider-private
 resource observations remain separate acceptance gates.
 
+The native Windows folder-selection consumer is also exercised in RITK PR
+[#392](https://github.com/ryancinsight/ritk/pull/392), merged at `3f46a08bf`.
+Moirai's bounded picker returns only the selected folder to the Métis host;
+RITK scans and decodes the saved MRI-DIR T2 study and presents the three actual
+planes in the existing window. The reviewed [picker capture](../../ritk/docs/manual/images/dicom-metis-picker-mri-window.png)
+and [MRI provenance](../../ritk/docs/manual/images/dicom-metis-real-mri.json)
+bind the image and executable to the public study. Cancel and unreadable-study
+paths preserve the previous frame or return a typed error; this evidence does
+not add DICOM logic to Metis.
+
 Focused verification for the code revision passed:
 
 ```text
