@@ -530,6 +530,10 @@ an owner. “Unsupported” cannot replace delivery of a required mobile/native 
 - Scope: signed package verification, authenticated update/rollback and format evolution; no silent MSI overwrite or downgrade. Production signing identity/publication needs separate authority.
 - Acceptance: corrupt/expired/signature-invalid updates reject, interruption recovers installed state and preserves user files; real local update/recovery workflow and manual. [ADR 0005](docs/adr/0005-application-distribution.md), [V10](docs/VERIFICATION.md#V10).
 
+<a id="METIS-DISTRIBUTION-005"></a>
+## METIS-DISTRIBUTION-005 — Cold package build deadline [patch]
+- Status: in-progress; priority: P1; owner: Metis tooling; integrator: root; regions: `crates/metis-cli/src/build.rs`, `docs/manual/distribution.md`, `docs/adr/0005-application-distribution.md`, `backlog.md`; branch: `fix/metis-package-cold-build-deadline`; dependency: METIS-DISTRIBUTION-001; risk: package build timeout or unbounded child.
+- Acceptance: a cold locked Windows x64 RITK package build completes within the finite workflow budget, while a stalled compiler remains terminated and stale artifacts are never selected; hosted package run and local focused gates record the exact deadline.
 <a id="METIS-MOBILE-001"></a>
 ## METIS-MOBILE-001 — Mobile host and capability matrix [arch] [minor]
 - Status: todo; priority: P3; owner: Metis mobile host; dependencies: METIS-COMMANDS-001, METIS-INPUT-001, METIS-AUTHORITY-001; risk: mobile lifecycle/permissions
