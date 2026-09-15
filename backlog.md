@@ -1,5 +1,13 @@
 # Metis delivery
 
+<a id="METIS-BROWSER-READ-001"></a>
+## METIS-BROWSER-READ-001 — Diagnose selected-file reads
+- Status: in-progress; priority: P0; integrator: webkit-read-root; last-update: 2026-09-15; branch: `fix/browser-file-read`.
+- Scope: preserve format-neutral provider read failures and reproduce real chooser reads; DICOM semantics remain in RITK.
+- Acceptance: exact failing operation identified, owning fix verified on saved MRI-DIR Chromium/Firefox/WebKit gallery and byte oracles.
+- Risk: [patch]; dependencies: merged Moirai bounded reader; baseline: RITK hosted run `34943272998`, Metis `fa7793be`, Moirai `3ccfb1b7`.
+- Lease: webkit-read-root `crates/metis-web/src/browser/file_drop.rs`, `crates/metis-web/src/browser/file_drop_policy.rs`, `scripts/browser_drop.py`, `scripts/tests/test_browser_drop.py`, browser read diagnostic script; 2026-09-15.
+
 Registration: [Atlas member item](../../backlog.md#atlas-member-registration-defects)
 is done. Public source and executable packaging are merged, and the Atlas stack
 records the verified Metis and RITK revisions through its gitlinks.
