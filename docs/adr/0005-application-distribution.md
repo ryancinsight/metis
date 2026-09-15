@@ -28,6 +28,14 @@ cannot drift from the CLI. The generated entry is format-neutral: DICOM parsing,
 decoding, geometry and viewer state remain RITK responsibilities, while Métis
 provides the shell and presentation handoff.
 
+Revision 2026-09-15: [METIS-DISTRIBUTION-005](../../backlog.md#METIS-DISTRIBUTION-005)
+extends the package Cargo build deadline to 900 seconds. Hosted run
+[34984471177](https://github.com/ryancinsight/ritk/actions/runs/34984471177)
+reached the former 300-second limit while compiling the cold locked RITK graph,
+before an executable artifact existed. The longer finite bound fits the
+workflow's 30-minute job budget while preserving process-tree termination and
+stale-artifact rejection.
+
 ## Decision
 
 One versioned application manifest declares identity, Cargo binary targets,
