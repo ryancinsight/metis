@@ -2,6 +2,9 @@
 
 - Status: Accepted
 - Date: 2026-09-14
+- Revision: 2026-09-15 — RITK's native study-reopen session now consumes the
+  adapter for an actual Windows folder selection. RITK scans and decodes the
+  selected study; cancellation and decode failure preserve the prior frame.
 - Item: [METIS-FILES-001](../backlog.md#METIS-FILES-001)
 - Upstream decision: [Moirai ADR 0058](../../moirai/docs/adr/0058-bounded-native-file-selection.md)
 
@@ -24,6 +27,11 @@ provider.
 ## Verification
 
 The adapter has no independent unsafe or parsing surface. Its compile contract
-is checked through the native Metis platform build and the Moirai PAL tests;
-the RITK consumer must exercise a real saved-study selection before this item
-closes.
+is checked through the native Metis platform build and the Moirai PAL tests.
+RITK PR [#392](https://github.com/ryancinsight/ritk/pull/392), merged at
+`3f46a08bf`, exercises `pick(DialogSelection::Folder)` from the native Métis
+session; the locked `ritk-snap` suite passes 833/833 with strict native and
+WASM checks. The actual MRI window and cancellation/decode behavior are
+recorded in the [RITK DICOM manual](https://github.com/ryancinsight/ritk/blob/main/docs/manual/dicom-workflow.md).
+Persistent stores, native permission policy and non-Windows providers remain
+open under [METIS-FILES-001](../backlog.md#METIS-FILES-001).

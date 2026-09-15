@@ -5,7 +5,7 @@
 - Status: blocked; priority: P0; integrator: webkit-read-root; last-update: 2026-09-15; branch: `fix/browser-file-read`.
 - Scope: preserve format-neutral provider read failures and reproduce real chooser reads; DICOM semantics remain in RITK.
 - Acceptance: exact failing operation identified, owning fix verified on saved MRI-DIR Chromium/Firefox/WebKit gallery and byte oracles.
-- Risk: [patch]; dependencies: merged Moirai bounded reader; baseline: RITK hosted run `34922946179`, Metis `fa7793be`, Moirai `3ccfb1b7`.
+- Risk: [patch]; dependencies: merged Moirai bounded reader; baseline: RITK hosted run `34922946179`, Metis `6951caa`, Moirai `8d032e3`.
 - Diagnosis increment: retain provider operation errors in the Rust byte status; capture bounded real-file read comparisons on chooser failure. Native nextest 40/40, native/WASM strict Clippy, doctest 1/1 and diagnostic tests 14/14 pass; independent review passes. Browser read fix and real gallery remain pending.
 - Evidence: [run 34948524329](https://github.com/ryancinsight/ritk/actions/runs/34948524329) proves WebKit sandbox read/extension denials after accepted selection; the host verifies the first file digest. Isolated one-file and full-batch inputs also fail. Chromium/Firefox pass the retained run `34944643823`.
 - Delivered: [PR 158](https://github.com/ryancinsight/metis/pull/158) preserves provider errors; [PR 159](https://github.com/ryancinsight/metis/pull/159) adds bounded isolated controls. Full Metis gate passes source hash `17c9721244580abf1c897a51d9591e7a2a7ca0666cd84cd6eb28f7c18dde6d8c`.
@@ -397,11 +397,19 @@ an owner. “Unsupported” cannot replace delivery of a required mobile/native 
 
 <a id="METIS-FILES-001"></a>
 ## METIS-FILES-001 — Scoped files and persistent state [minor]
-- Status: in-progress; priority: P2; owner: Metis broker + owning Atlas storage provider; integrator: root; branch: `feat/native-file-dialog-adapter`; last-update: 2026-09-14; dependencies: METIS-DESKTOP-001; risk: user data/TOCTOU
+- Status: in-progress; priority: P2; owner: Metis broker + owning Atlas storage provider; integrator: root; branch: `docs/native-file-consumer-evidence`; last-update: 2026-09-15; dependencies: METIS-DESKTOP-001; risk: user data/TOCTOU
 - Scope: file dialogs, reads/writes/watch, settings/store/database contract and versioned recovery with explicit scope; no raw frontend access to unrestricted paths.
 - Acceptance: allowed-handle operations succeed; traversal/symlink/TOCTOU and denied scope fail; atomic writes, crash/disk-full recovery and watcher teardown preserve user data.
 - Demonstration: [V08](docs/VERIFICATION.md#V08), document open/save/restart/denial on each supported target; browsers expose selected-file semantics or explicit restrictions.
 - Increment (2026-09-14): `metis-platform::native::pick` re-exports Moirai's bounded Windows common-dialog selection seam. Metis returns only a user-selected path; browser file handles and application format policy remain separate. Moirai ADR 0058 owns COM/task-memory lifetime and cancellation semantics.
+- Increment (2026-09-15): RITK PR [#392](https://github.com/ryancinsight/ritk/pull/392),
+  merge `3f46a08bf`, consumes `pick(DialogSelection::Folder)` from the native
+  Métis viewer session for `Ctrl+O` study reopen. The selected folder is
+  scanned and decoded by RITK; cancellation and unreadable-study errors leave
+  the prior framebuffer intact. The saved MRI picker window and provenance are
+  recorded in the [RITK DICOM manual](https://github.com/ryancinsight/ritk/blob/main/docs/manual/dicom-workflow.md).
+  This closes the Windows selection-consumer increment; persistent storage,
+  native permission policy and non-Windows providers remain in scope.
 
 <a id="METIS-INTEGRATION-001"></a>
 ## METIS-INTEGRATION-001 — Desktop integration services [minor]
