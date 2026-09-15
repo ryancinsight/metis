@@ -64,7 +64,7 @@ then presents its axial, coronal and sagittal planes through the Métis surface;
 the picker window capture includes the real operating-system dialog and is
 reviewed in the [RITK provenance record](https://github.com/ryancinsight/ritk/blob/main/docs/manual/images/dicom-metis-real-mri.json).
 
-![Actual MRI study after native folder selection through Métis](https://github.com/ryancinsight/ritk/blob/main/docs/manual/images/dicom-metis-picker-mri-window.png?raw=true)
+![Actual MRI study after native folder selection through Métis](https://github.com/ryancinsight/ritk/blob/main/docs/manual/images/dicom-metis-picker-mri-window.jpg?raw=true)
 
 The configured browser chooser run adds real three-canvas galleries for
 [Chromium 152](https://github.com/ryancinsight/ritk/blob/main/docs/manual/images/dicom-metis-real-browser-mri-cross-engine-chromium.png?raw=true)

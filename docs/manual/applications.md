@@ -13,8 +13,9 @@ The separate [process demonstration](getting-started.md) tests actual child proc
 
 The gallery starts with a real saved-study run so the first image is application
 output rather than generated artwork. RITK opened the public MRI-DIR head CT
-series, decoded 410 DICOM files and supplied axial, coronal and sagittal planes
-to the format-neutral Métis framebuffer. The packaged Windows executable exited
+series, decoded the 409 DICOM image instances in the 410-entry study directory,
+and supplied axial, coronal and sagittal planes to the format-neutral Métis
+framebuffer. The packaged Windows executable exited
 0 and the portable and per-user MSI captures matched byte-for-byte.
 
 ![Actual saved CT study rendered through the packaged Métis host](https://github.com/ryancinsight/ritk/blob/main/docs/manual/images/dicom-metis-installer-ct.png?raw=true)
@@ -35,7 +36,7 @@ decoded by RITK, while cancellation and an unreadable study leave the existing
 frame unchanged. The [RITK DICOM manual](https://github.com/ryancinsight/ritk/blob/main/docs/manual/dicom-workflow.md)
 contains the actual picker image, capture provenance and study-reopen workflow.
 
-![Actual MRI study after native folder selection through Métis](https://github.com/ryancinsight/ritk/blob/main/docs/manual/images/dicom-metis-picker-mri-window.png?raw=true)
+![Actual MRI study after native folder selection through Métis](https://github.com/ryancinsight/ritk/blob/main/docs/manual/images/dicom-metis-picker-mri-window.jpg?raw=true)
 
 The image is the RITK consumer capture from PR [#392](https://github.com/ryancinsight/ritk/pull/392),
 merged at `3f46a08bf`. It shows the three decoded MRI planes after the user
