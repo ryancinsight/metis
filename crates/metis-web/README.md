@@ -67,8 +67,10 @@ and reports names, media types and byte sizes in a semantic status region. The
 metadata bound is separate from the 256 MiB consumer byte batch limit. Each
 accepted entry is read asynchronously through its Moirai browser-owned handle
 into a [`FileDropBatch`]. One file is limited to 64 MiB and one batch to 256 MiB;
-a 64 KiB continuation buffer keeps each `FileReader` turn bounded even though
-Moirai permits a 1 MiB provider chunk. The handoff performs no format
+a reusable buffer is clamped between 64 KiB and Moirai's 1 MiB read bound.
+Files within that bound use one read; larger files continue through the same
+buffer. A failed read preserves the provider's operation diagnostic in the
+byte status, and no incomplete batch reaches the consumer. The handoff performs no format
 classification. A trusted application polls the WASM-only `take_file_drop`
 handoff, which transfers ownership and leaves one bounded slot for a later drop.
 No browser name becomes a filesystem path, and stopping or remounting drops

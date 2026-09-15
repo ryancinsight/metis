@@ -6,7 +6,7 @@
 - Scope: preserve format-neutral provider read failures and reproduce real chooser reads; DICOM semantics remain in RITK.
 - Acceptance: exact failing operation identified, owning fix verified on saved MRI-DIR Chromium/Firefox/WebKit gallery and byte oracles.
 - Risk: [patch]; dependencies: merged Moirai bounded reader; baseline: RITK hosted run `34943272998`, Metis `fa7793be`, Moirai `3ccfb1b7`.
-- Lease: webkit-read-root `crates/metis-web/src/browser/file_drop.rs`, `crates/metis-web/src/browser/file_drop_policy.rs`, `scripts/browser_drop.py`, `scripts/tests/test_browser_drop.py`, browser read diagnostic script; 2026-09-15.
+- Diagnosis increment: retain provider operation errors in the Rust byte status; capture bounded real-file read comparisons on chooser failure. Native nextest 40/40, native/WASM strict Clippy, doctest 1/1 and diagnostic tests 14/14 pass; independent review passes. Browser read fix and real gallery remain pending.
 
 Registration: [Atlas member item](../../backlog.md#atlas-member-registration-defects)
 is done. Public source and executable packaging are merged, and the Atlas stack
