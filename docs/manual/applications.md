@@ -35,6 +35,15 @@ decoded by RITK, while cancellation and an unreadable study leave the existing
 frame unchanged. The [RITK DICOM manual](https://github.com/ryancinsight/ritk/blob/main/docs/manual/dicom-workflow.md)
 contains the actual picker image, capture provenance and study-reopen workflow.
 
+![Actual MRI study after native folder selection through Métis](https://github.com/ryancinsight/ritk/blob/main/docs/manual/images/dicom-metis-picker-mri-window.png?raw=true)
+
+The image is the RITK consumer capture from PR [#392](https://github.com/ryancinsight/ritk/pull/392),
+merged at `3f46a08bf`. It shows the three decoded MRI planes after the user
+selected the `DICOM` folder in the native dialog. Metis contributes the bounded
+folder-selection result and window surface; RITK owns scanning, decoding and
+clinical presentation. The [RITK MRI provenance record](https://github.com/ryancinsight/ritk/blob/main/docs/manual/images/dicom-metis-real-mri.json)
+binds the executable, input study and framebuffer hashes.
+
 The merged Windows default-shell rerun is tracked separately in RITK's
 [revision-bound provenance record](https://github.com/ryancinsight/ritk/blob/main/docs/manual/images/dicom-metis-default-shell-ct.json).
 It binds the current three-plane capture and repeated process-tree samples to

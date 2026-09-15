@@ -57,6 +57,29 @@ The gallery pairs the image with RITK provenance and a browser component-state
 record. Those records identify the files read, non-black canvas pixels, mounted
 listener generation, theme, pointer release and clean teardown. Synthetic form
 captures remain below as protocol examples.
+
+The Windows pathless workflow also opens a saved study through the native
+folder picker. RITK scans and decodes the selected 94-file MRI-DIR T2 study,
+then presents its axial, coronal and sagittal planes through the Métis surface;
+the picker window capture includes the real operating-system dialog and is
+reviewed in the [RITK provenance record](https://github.com/ryancinsight/ritk/blob/main/docs/manual/images/dicom-metis-real-mri.json).
+
+![Actual MRI study after native folder selection through Métis](https://github.com/ryancinsight/ritk/blob/main/docs/manual/images/dicom-metis-picker-mri-window.png?raw=true)
+
+The configured browser chooser run adds real three-canvas galleries for
+[Chromium 152](https://github.com/ryancinsight/ritk/blob/main/docs/manual/images/dicom-metis-real-browser-mri-cross-engine-chromium.png?raw=true)
+and [Firefox 155](https://github.com/ryancinsight/ritk/blob/main/docs/manual/images/dicom-metis-real-browser-mri-cross-engine-firefox.png?raw=true).
+Both engines pass the file-hash, pixel, bounded-rejection, cine and teardown
+oracles. Safari 26.6.2 accepts the selection but rejects the first bounded
+read; the [cross-engine provenance](https://github.com/ryancinsight/ritk/blob/main/docs/manual/images/dicom-metis-real-browser-mri-cross-engine.json)
+keeps that external WebKit authorization residual explicit.
+
+![Chromium 152 real MRI canvas gallery](https://github.com/ryancinsight/ritk/blob/main/docs/manual/images/dicom-metis-real-browser-mri-cross-engine-chromium.png?raw=true)
+
+![Firefox 155 real MRI canvas gallery](https://github.com/ryancinsight/ritk/blob/main/docs/manual/images/dicom-metis-real-browser-mri-cross-engine-firefox.png?raw=true)
+
+All DICOM scanning, decoding, geometry and clinical presentation remain in
+RITK. Metis supplies the bounded file, window and framebuffer contracts.
 The browser manual also includes an `http-health.html` probe for the bounded
 Moirai loopback service; it demonstrates CORS and readiness only, not DICOM.
 
