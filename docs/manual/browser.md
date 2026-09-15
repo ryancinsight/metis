@@ -1140,6 +1140,12 @@ the three canvases become non-black. The browser input accepts `.dcm` and
 `application/dicom`; selecting an empty or over-budget batch produces a typed
 rejection without handing bytes to the decoder.
 
+Moirai reads each caller-sized browser `Blob` slice through a local object URL
+response stream. The gallery's strict content security policy permits `blob:`
+only in `connect-src` for this bounded local read; network origins remain
+explicit and `object-src` stays disabled. No whole-file `arrayBuffer()` is
+created by the Rust host.
+
 ### Use the saved-study chooser
 
 The chooser path was exercised on 2026-09-12 with the packaged RITK viewer and

@@ -288,7 +288,7 @@ fn policy_emits_strict_csp_without_inline_or_wildcard_sources() {
     let csp = policy.content_security_policy();
     assert!(csp.contains("default-src 'self'"));
     assert!(csp.contains("script-src 'self' 'wasm-unsafe-eval'"));
-    assert!(csp.contains("connect-src 'self'"));
+    assert!(csp.contains("connect-src 'self' blob:"));
     assert!(!csp.contains("unsafe-inline"));
     assert!(!csp.contains('*'));
 }

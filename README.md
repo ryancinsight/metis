@@ -132,8 +132,10 @@ the lock records audited main revision `27d9b06190e8e3db930ef9745187e0ea48cadfce
 after the bounded object-URL browser-file reader merged in Moirai PR #342. That
 revision includes the merged process, browser/API, bounded WebSocket service,
 cancellable-task surfaces, semantic control seams, pointer metadata, wheel
-metadata, bounded browser file access through the stream default reader and the
-thread-affine Windows WebView2 provider. The provider and Metis
+metadata, bounded browser file access through an object-URL response stream and
+the thread-affine Windows WebView2 provider. The browser CSP admits only the
+`blob:` source required for those local response streams; network endpoints stay
+explicit. The provider and Metis
 adapter pass the installed WebView2 navigation/bridge smoke on runtime
 `152.0.4191.66`. The committed [native capture manifest](docs/manual/images/native-captures.json)
 records the visible Windows native and WebView2 initial/submit journeys; the
