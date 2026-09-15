@@ -1159,6 +1159,16 @@ an isolated native input without the application's event observers. These
 controls preserve the failed result and original screenshot; they do not supply
 replacement bytes to the consumer.
 
+[Run 34948524329](https://github.com/ryancinsight/ritk/actions/runs/34948524329)
+records the access failure below these APIs: WebKit WebContent is denied
+`file-read-data` and `file-issue-extension` on the selected file, and WebKit
+Networking is denied `file-read-data`. The runner independently reads the
+529,864-byte file and verifies its expected SHA-256. SafariDriver accepts
+`Automation.setFilesToSelectForFileUpload` before the denials. The exact
+SafariDriver/WebKit authorization defect remains unresolved; Metis and Moirai
+cannot grant browser sandbox access. The generic host preserves the failure,
+and RITK receives no partial study.
+
 ### Use the saved-study chooser
 
 The chooser path was exercised on 2026-09-12 with the packaged RITK viewer and
