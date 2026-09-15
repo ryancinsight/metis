@@ -2231,6 +2231,11 @@ binds these measurements to the real PNG and records that the input is public
 phantom data, not private patient data. This remains fixture evidence; it does
 not establish a framework ranking or clinical conformance.
 
+The [application gallery's V12 fixture table](manual/applications.md#v12-fixture-comparison)
+combines this MRI record with the eframe and native Métis MIP records, keeping
+their surface and process-boundary differences and the unmatched GPUI/Tauri,
+WASM, allocation, latency and security measurements explicit.
+
 Input traces and workload sizes are fixed before comparison, chosen to exercise
 the relevant working-set regimes under the committed budget. Profile production
 paths before optimizing; preserve the instrument across comparisons. Inject
