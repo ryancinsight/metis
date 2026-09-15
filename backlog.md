@@ -413,10 +413,12 @@ an owner. “Unsupported” cannot replace delivery of a required mobile/native 
   recorded in the [RITK DICOM manual](https://github.com/ryancinsight/ritk/blob/main/docs/manual/dicom-workflow.md).
   This closes the Windows selection-consumer increment; persistent storage,
   native permission policy and non-Windows providers remain in scope.
-- Documentation increment (2026-09-15): the application gallery and V08 now
-  embed the reviewed RITK picker capture and link its revision-bound MRI
-  provenance. The image demonstrates the real three-plane study after native
-  folder selection while keeping DICOM scanning and presentation in RITK.
+- Documentation increment (2026-09-15): the user-manual landing page,
+  application gallery and V08 now embed the reviewed RITK picker capture and
+  link its revision-bound MRI provenance. The manual also links the hosted
+  Chromium and Firefox MRI galleries and records the Safari read residual. The
+  images demonstrate real three-plane studies after native and browser
+  selection while keeping DICOM scanning and presentation in RITK.
 
 <a id="METIS-INTEGRATION-001"></a>
 ## METIS-INTEGRATION-001 — Desktop integration services [minor]
