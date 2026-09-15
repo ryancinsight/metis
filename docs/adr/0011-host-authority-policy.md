@@ -41,9 +41,11 @@ lifecycles; they do not supply this broker contract.
   same-origin policy in `crates/metis-core/src/content_security_policy.txt`.
   `HostPolicy` includes that source and the browser build checks the HTML
   asset against it. The policy permits the generated WASM loader with
-  `'wasm-unsafe-eval'`; its `frame-ancestors` directive is effective only when
-  a native or service host sends the policy as a response header. The
-  bootstrap blocks cross-origin anchor navigation as defense in depth.
+  `'wasm-unsafe-eval'` and permits `blob:` in `connect-src` for Moirai's bounded
+  object-URL response stream; network endpoints remain explicit. Its
+  `frame-ancestors` directive is effective only when a native or service host
+  sends the policy as a response header. The bootstrap blocks cross-origin
+  anchor navigation as defense in depth.
   Downloaded WASM is never an authority source.
 
 This contract is shared by desktop and authenticated browser bridges. The
@@ -51,6 +53,13 @@ current `serve_browser_websocket` composition supplies the observed Origin to
 the policy before the HTTP 101 response and uses a trusted context for the
 session. Query fields and hidden page inputs select only the demonstration
 endpoint; they do not supply authority.
+
+Revision 2026-09-14: Moirai's bounded browser file reader now fetches each
+caller-sized `Blob` slice through a local object URL response stream. The
+browser asset policy therefore admits the `blob:` scheme only in `connect-src`;
+`object-src` remains `none`, and the HTTP/WebSocket origins stay explicit. The
+policy change is required for the reader contract and does not grant a page
+authority to reach a network endpoint.
 
 ## Alternatives
 
