@@ -414,7 +414,7 @@ an owner. “Unsupported” cannot replace delivery of a required mobile/native 
   This closes the Windows selection-consumer increment; persistent storage,
   native permission policy and non-Windows providers remain in scope.
 - Documentation increment (2026-09-15): the user-manual landing page,
-  application gallery and V08 now embed the reviewed RITK picker capture and
+  application gallery and V08/V09 now embed the reviewed RITK picker capture and
   link its revision-bound MRI provenance. The manual also links the hosted
   Chromium and Firefox MRI galleries and records the Safari read residual. The
   images demonstrate real three-plane studies after native and browser

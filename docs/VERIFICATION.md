@@ -2064,8 +2064,15 @@ SHA-256 digests and bounded-drop record are in the
 [RITK browser MRI provenance record](../../ritk/docs/manual/images/dicom-metis-real-browser-mri.json)
 and [manual section](../../ritk/docs/manual/dicom-workflow.md#inspect-the-saved-mri-study-in-the-browser).
 This is actual DICOM pixel output, not a generated image. It is a single
-Chromium host using a bounded programmatic `DataTransfer`; physical browser
-drag-and-drop, Firefox/WebKit, WebGPU and complete-window evidence remain open.
+Chromium host using a bounded programmatic `DataTransfer`. The hosted chooser
+matrix now repeats the same 94-file study on Chromium 152 and Firefox 155 with
+the exact three-canvas pixel, file-hash, bounded-rejection, cine-rate and
+teardown oracles; the [Chromium gallery](../../ritk/docs/manual/images/dicom-metis-real-browser-mri-cross-engine-chromium.png)
+and [Firefox gallery](../../ritk/docs/manual/images/dicom-metis-real-browser-mri-cross-engine-firefox.png)
+and [per-engine provenance](../../ritk/docs/manual/images/dicom-metis-real-browser-mri-cross-engine.json)
+bind those runs. Safari 26.6.2 accepted the selection but rejected the first
+bounded read, so its WebKit/SafariDriver authorization remains open. Physical
+browser drag-and-drop, WebGPU and complete-window evidence remain separate.
 RITK PR #284 additionally records a local browser smoke of the packaged
 `start_web_canvas` path: three synthetic Part 10 files were dispatched through
 a browser `DataTransfer`, the host reported three accepted 654-byte files and
@@ -2077,6 +2084,15 @@ cross-engine drivers, GPU presentation or full-window capture. RITK's merged
 browser adapter now covers bounded pointer and wheel routing, including
 orthogonal-axis dispatch and pointer-cancel cleanup; that code path remains
 format-neutral in Métis and does not move DICOM authority into the GUI repo.
+
+The same RITK viewer also exercises the pathless Windows folder-picker route.
+The selected 94-file MRI-DIR T2 directory is decoded into the three planes
+shown in the [reviewed picker capture](../../ritk/docs/manual/images/dicom-metis-picker-mri-window.png);
+the [MRI provenance](../../ritk/docs/manual/images/dicom-metis-real-mri.json)
+binds the executable, source revisions, input study and framebuffer. Cancel and
+unreadable-study paths preserve the prior frame or return a typed error. Metis
+returns only the bounded selected path and framebuffer; RITK retains all DICOM
+scanning, decoding, geometry and clinical-display decisions.
 
 The same real MRI browser run records the generated `wasm-bindgen`
 `WebAssembly.Memory.buffer.byteLength` at three lifecycle points: 1,769,472
