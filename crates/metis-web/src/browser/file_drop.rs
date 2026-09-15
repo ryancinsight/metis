@@ -269,7 +269,12 @@ fn handle_files<B: BrowserFileBatch + 'static>(
             update_state(document, state, zone, next_state, source);
             state.borrow_mut().drop_batch = None;
             let Some(sequence) = next_sequence(drop_sequence) else {
-                update_read_state(document, state, status, DropReadState::Failed);
+                update_read_state(
+                    document,
+                    state,
+                    status,
+                    DropReadState::Failed("file read sequence exhausted".to_owned()),
+                );
                 return;
             };
             let _ = drop_task.borrow_mut().take();
@@ -336,19 +341,21 @@ fn read_drop_batch<B: BrowserFileBatch + 'static>(
             // A newer sequence or mount owns the shared slot and its task.
             return;
         }
-        if let Ok(batch) = result {
-            let bytes_read = batch.total_bytes();
-            let files_read = batch.file_count();
+        {
             let mut state = state.borrow_mut();
-            state.drop_batch = Some(batch);
-            state.drop_read_state = DropReadState::Complete {
-                bytes_read,
-                files_read,
-            };
-        } else {
-            let mut state = state.borrow_mut();
-            state.drop_batch = None;
-            state.drop_read_state = DropReadState::Failed;
+            match result {
+                Ok(batch) => {
+                    state.drop_read_state = DropReadState::Complete {
+                        bytes_read: batch.total_bytes(),
+                        files_read: batch.file_count(),
+                    };
+                    state.drop_batch = Some(batch);
+                }
+                Err(error) => {
+                    state.drop_batch = None;
+                    state.drop_read_state = DropReadState::Failed(error.to_string());
+                }
+            }
         }
         if let Err(error) = view::render(&document, &state.borrow()) {
             view::set_status_error(&document, &status, "File bytes", &error.to_string());
@@ -461,7 +468,7 @@ fn update_rejection(
 ) {
     let mut current = state.borrow_mut();
     current.drop_state = DropState::Rejected(error);
-    current.drop_read_state = DropReadState::Failed;
+    current.drop_read_state = DropReadState::Failed(error.to_string());
     current.drop_batch = None;
     drop(current);
     if let Err(render_error) = view::render(document, &state.borrow()) {

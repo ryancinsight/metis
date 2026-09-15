@@ -24,6 +24,7 @@ from browser_canvas import (
     validate_canvas_ids, validate_canvas_attributes, validate_consumer_revision,
     _element_screenshot,
 )
+from browser_file_read import capture_file_read_diagnostic
 from browser_runtime import _wait_for_text, _wait_for_selector, _write_trace
 from browser_trace import BrowserEngine, Trace, record_device_scale, screenshot
 
@@ -39,6 +40,7 @@ const input = document.getElementById('file-input');
 if (!zone || !input) throw new Error('file transfer controls are not mounted');
 window.metisFileEvidence = [];
 window.metisInputFiles = null;
+window.metisSelectedFile = null;
 const observe = (type, event, list) => {
   const count = list.length;
   const files = count > 512 ? [] : Array.from(list);
@@ -47,11 +49,14 @@ const observe = (type, event, list) => {
   window.metisFileEvidence.push({type, trusted: event.isTrusted,
     files: count, bytes: count > 512 ? null : bytes});
   if (type !== 'drop' && type !== 'change') return;
+  if (window.metisSelectedFile === null && count > 0) {
+    window.metisSelectedFile = list.item ? list.item(0) : list[0];
+  }
   if (count > 512 || bytes > 256 * 1024 * 1024 || files.some(f => f.size > 64 * 1024 * 1024)) {
     window.metisInputFiles = Promise.resolve({rejected: 'file evidence exceeds host bounds'});
     return;
   }
-  window.metisInputFiles = (async () => {
+  const evidence = (async () => {
     const results = [];
     for (const file of files) {
       const hash = await crypto.subtle.digest('SHA-256', await file.arrayBuffer());
@@ -60,6 +65,10 @@ const observe = (type, event, list) => {
     }
     return results;
   })();
+  window.metisInputFiles = evidence.then(
+    value => value,
+    error => ({diagnostic: error && typeof error.name === 'string' ? error.name : 'Error'})
+  );
 };
 for (const type of ['dragenter', 'dragover', 'drop']) {
   zone.addEventListener(type, event => {
@@ -319,17 +328,27 @@ def run(args: argparse.Namespace) -> dict:
             }
             document["sources"] = {
                 name: hashlib.sha256((ROOT / "scripts" / name).read_bytes()).hexdigest()
-                for name in ("browser.py", "browser_drop.py", "browser_protocol.py")
+                for name in ("browser.py", "browser_drop.py", "browser_file_read.py", "browser_protocol.py")
             }
     except (BrowserRuntimeError, OSError, ValueError) as error:
-        document = trace.document("failed")
-        document["error"] = str(error)
+        capture_error = None
+        page_diagnostic = None
         if client.session_id is not None:
+            capture_file_read_diagnostic(client, trace)
             try:
                 screenshot(client, trace, output, "failure")
-                document["diagnostic"] = client.execute("return {text:document.body.innerText.slice(0,8192),events:window.metisFileEvidence};")
-            except BrowserRuntimeError as capture_error:
-                document["capture_error"] = str(capture_error)
+                page_diagnostic = client.execute(
+                    "return {text:document.body.innerText.slice(0,8192),"
+                    "events:window.metisFileEvidence};"
+                )
+            except BrowserRuntimeError as screenshot_error:
+                capture_error = str(screenshot_error)
+        document = trace.document("failed")
+        document["error"] = str(error)
+        if page_diagnostic is not None:
+            document["diagnostic"] = page_diagnostic
+        if capture_error is not None:
+            document["capture_error"] = capture_error
         raise
     finally:
         primary_error = sys.exc_info()[1]
@@ -347,7 +366,7 @@ def run(args: argparse.Namespace) -> dict:
             (output / "trace.json").write_text(json.dumps(document, indent=2) + "\n", encoding="utf-8")
             if canvas_trace is not None and canvas_trace_path is not None:
                 canvas_trace.cleanup["session_closed"] = closed
-                _write_trace(canvas_trace_path, canvas_trace.document())
+                _write_trace(canvas_trace_path, canvas_trace.document(document["status"]))
     return document
 
 

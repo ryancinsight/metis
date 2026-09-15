@@ -18,7 +18,7 @@ pub(crate) struct FileDropEntry {
     size_bytes: u64,
 }
 
-#[derive(Clone, Copy, Debug, Default, Eq, PartialEq)]
+#[derive(Clone, Debug, Default, Eq, PartialEq)]
 pub(crate) enum DropReadState {
     #[default]
     Idle,
@@ -27,20 +27,20 @@ pub(crate) enum DropReadState {
         bytes_read: usize,
         files_read: usize,
     },
-    Failed,
+    Failed(String),
 }
 
 impl DropReadState {
-    pub(crate) const fn state_name(self) -> &'static str {
+    pub(crate) const fn state_name(&self) -> &'static str {
         match self {
             Self::Idle => "idle",
             Self::Reading => "reading",
             Self::Complete { .. } => "complete",
-            Self::Failed => "failed",
+            Self::Failed(_) => "failed",
         }
     }
 
-    pub(crate) fn status_message(self) -> String {
+    pub(crate) fn status_message(&self) -> String {
         match self {
             Self::Idle => "Byte access: waiting for a selected file".to_owned(),
             Self::Reading => "Byte access: reading a bounded file batch".to_owned(),
@@ -48,7 +48,7 @@ impl DropReadState {
                 bytes_read,
                 files_read,
             } => format!("Byte access: read {bytes_read} bytes from {files_read} file(s)"),
-            Self::Failed => "Byte access: host rejected the selected file".to_owned(),
+            Self::Failed(reason) => format!("Byte access: {reason}"),
         }
     }
 }
@@ -377,7 +377,13 @@ mod tests {
             .status_message()
             .contains("read 132 bytes from 1 file(s)")
         );
-        assert_eq!(DropReadState::Failed.state_name(), "failed");
+        let failed =
+            DropReadState::Failed("browser rejected the bounded whole-file read".to_owned());
+        assert_eq!(failed.state_name(), "failed");
+        assert_eq!(
+            failed.status_message(),
+            "Byte access: browser rejected the bounded whole-file read",
+        );
     }
 
     #[test]

@@ -7,6 +7,7 @@ import math
 import pathlib
 import re
 import struct
+import sys
 from typing import Any, Mapping, Optional, Sequence, Tuple
 
 from browser_protocol import ROOT, WebDriverClient, BrowserRuntimeError, _safe_path
@@ -29,6 +30,9 @@ MAX_CANVAS_EVENT_RECORDS = 32
 MAX_CANVAS_KEY_METADATA_BYTES = 64
 CANVAS_EVENT_TYPES = ("pointerdown", "pointermove", "pointerup", "wheel")
 CANVAS_KEY_EVENT_TYPES = ("keydown", "keyup")
+CANVAS_KEYBOARD_SOURCE_ID = "metis-keyboard"
+CHROMIUM_BROWSER_NAMES = ("chrome", "MicrosoftEdge", "msedge")
+EDGE_BROWSER_NAMES = ("MicrosoftEdge", "msedge")
 
 
 class KeyboardTraceKind(str, enum.Enum):
@@ -55,6 +59,32 @@ class KeyboardTraceKind(str, enum.Enum):
         except ValueError as error:
             choices = ", ".join(item.value for item in cls)
             raise BrowserRuntimeError(f"keyboard trace kind must be one of: {choices}") from error
+
+
+class _KeyboardTransition(enum.Enum):
+    """One stateful W3C keyboard transition used by the cine-rate trace."""
+
+    INITIAL_DOWN = "initial-down"
+    REPEAT_AND_RELEASE = "repeat-and-release"
+
+    @property
+    def expected_repeat(self) -> bool:
+        """Return the repeat value expected on the transition's keydown event."""
+        return self is self.REPEAT_AND_RELEASE
+
+    def actions(self, key: str) -> list[dict[str, str]]:
+        """Build the W3C actions while leaving initial keys held across calls."""
+        actions = [{"type": "keyDown", "value": key}]
+        if self is self.REPEAT_AND_RELEASE:
+            actions.append({"type": "keyUp", "value": key})
+        return actions
+
+    @property
+    def event_types(self) -> tuple[str, ...]:
+        """Return the browser event types required from this transition."""
+        if self is self.REPEAT_AND_RELEASE:
+            return CANVAS_KEY_EVENT_TYPES
+        return ("keydown",)
 
 CANVAS_SNAPSHOT_SCRIPT = """
 const id = arguments[0];
@@ -350,6 +380,16 @@ def _read_event_evidence(
     expected_types: Sequence[str],
 ) -> list[dict[str, Any]]:
     """Read and validate one consumed batch of trusted browser events."""
+    events = _consume_event_evidence(client, canvas_id)
+    _validate_event_evidence(events, canvas_id, expected_types)
+    return events
+
+
+def _consume_event_evidence(
+    client: WebDriverClient,
+    canvas_id: str,
+) -> list[dict[str, Any]]:
+    """Consume one structurally bounded event batch before semantic checks."""
     result = client.execute(CANVAS_EVENT_READ_SCRIPT, [canvas_id])
     if not isinstance(result, dict) or not isinstance(result.get("events"), list):
         raise BrowserRuntimeError(f"browser event trace for {canvas_id!r} is malformed")
@@ -358,10 +398,23 @@ def _read_event_evidence(
     events = result["events"]
     if not events:
         raise BrowserRuntimeError(f"browser emitted no events for {canvas_id!r}")
-    expected = set(expected_types)
+    if len(events) > MAX_CANVAS_EVENT_RECORDS:
+        raise BrowserRuntimeError(f"browser event trace for {canvas_id!r} exceeded its bound")
     for event in events:
         if not isinstance(event, dict):
             raise BrowserRuntimeError(f"browser event trace for {canvas_id!r} contains a non-object")
+        _validate_event_record_shape(event, canvas_id)
+    return events
+
+
+def _validate_event_evidence(
+    events: Sequence[Mapping[str, Any]],
+    canvas_id: str,
+    expected_types: Sequence[str],
+) -> None:
+    """Require a bounded event batch to report the requested trusted delivery."""
+    expected = set(expected_types)
+    for event in events:
         _validate_event_record(event, canvas_id, expected)
     observed_types = {event["type"] for event in events}
     missing_types = expected - observed_types
@@ -369,20 +422,13 @@ def _read_event_evidence(
         raise BrowserRuntimeError(
             f"browser event trace for {canvas_id!r} omitted {sorted(missing_types)!r}"
         )
-    return events
 
 
-def _validate_event_record(event: Mapping[str, Any], canvas_id: str, expected_types: set[str]) -> None:
-    """Require a bounded event record to report trusted delivery to its canvas."""
+def _validate_event_record_shape(event: Mapping[str, Any], canvas_id: str) -> None:
+    """Validate event fields that bound storage independently of semantics."""
     event_type = event.get("type")
     if event_type not in CANVAS_EVENT_TYPES + CANVAS_KEY_EVENT_TYPES:
         raise BrowserRuntimeError(f"browser event trace for {canvas_id!r} has an unsupported type")
-    if event_type not in expected_types:
-        raise BrowserRuntimeError(f"browser event trace for {canvas_id!r} mixed input types")
-    if event.get("is_trusted") is not True:
-        raise BrowserRuntimeError(f"browser event {event_type!r} for {canvas_id!r} was not trusted")
-    if event.get("target_id") != canvas_id:
-        raise BrowserRuntimeError(f"browser event {event_type!r} targeted the wrong canvas")
     for name in ("client_x", "client_y", "delta_x", "delta_y"):
         value = event.get(name)
         if value is not None and (
@@ -403,6 +449,180 @@ def _validate_event_record(event: Mapping[str, Any], canvas_id: str, expected_ty
         for name in ("alt_key", "ctrl_key", "meta_key", "shift_key"):
             if type(event.get(name)) is not bool:
                 raise BrowserRuntimeError(f"browser event {event_type!r} has invalid modifier metadata")
+
+
+def _validate_event_record(event: Mapping[str, Any], canvas_id: str, expected_types: set[str]) -> None:
+    """Require an event record to report trusted delivery to its canvas."""
+    event_type = event.get("type")
+    if event_type not in expected_types:
+        raise BrowserRuntimeError(f"browser event trace for {canvas_id!r} mixed input types")
+    if event.get("is_trusted") is not True:
+        raise BrowserRuntimeError(f"browser event {event_type!r} for {canvas_id!r} was not trusted")
+    if event.get("target_id") != canvas_id:
+        raise BrowserRuntimeError(f"browser event {event_type!r} targeted the wrong canvas")
+
+
+def _validate_keyboard_evidence(
+    events: Sequence[Mapping[str, Any]],
+    key: str,
+    code: str,
+    transition: _KeyboardTransition,
+) -> None:
+    """Require exact key identity and repeat state for one keyboard transition."""
+    expected = [("keydown", transition.expected_repeat)]
+    if transition is _KeyboardTransition.REPEAT_AND_RELEASE:
+        expected.append(("keyup", False))
+    observed = []
+    for event in events:
+        if event.get("key") != key or event.get("code") != code:
+            raise BrowserRuntimeError("browser keyboard event reported unexpected key metadata")
+        observed.append((event["type"], event["repeat"]))
+    if observed != expected:
+        raise BrowserRuntimeError(
+            f"browser keyboard events reported {observed!r}; expected {expected!r}"
+        )
+
+
+def _capture_cine_rate_keyboard_trace(
+    client: WebDriverClient,
+    trace: Trace,
+    screenshot_directory: pathlib.Path,
+    canvas_id: str,
+    element: str,
+    canvas_attributes: Sequence[str],
+) -> None:
+    """Capture increase, decrease and held-key repeat evidence for cine rate."""
+    steps = (
+        ("=", "Equal", 187, _KeyboardTransition.INITIAL_DOWN, "after-keyboard"),
+        ("=", "Equal", 187, _KeyboardTransition.REPEAT_AND_RELEASE, "after-repeat"),
+        ("-", "Minus", 189, _KeyboardTransition.INITIAL_DOWN, "after-decrease"),
+        ("-", "Minus", 189, _KeyboardTransition.REPEAT_AND_RELEASE, "after-decrease-repeat"),
+    )
+    devtools_endpoint = _chromium_devtools_endpoint(client)
+    pending_devtools_key = None
+    try:
+        for key, code, virtual_key_code, transition, label_suffix in steps:
+            focus = _focus_canvas(client, canvas_id)
+            if devtools_endpoint is not None and transition is _KeyboardTransition.INITIAL_DOWN:
+                pending_devtools_key = (key, code, virtual_key_code)
+            transport = _dispatch_cine_rate_key(
+                client,
+                key,
+                code,
+                virtual_key_code,
+                transition,
+                devtools_endpoint,
+            )
+            if devtools_endpoint is not None and transition is _KeyboardTransition.REPEAT_AND_RELEASE:
+                pending_devtools_key = None
+            settle_canvas_input(client)
+            observed_events = _consume_event_evidence(client, canvas_id)
+            trace.actions.append(
+                {
+                    "action": "trusted-keyboard",
+                    "canvas": canvas_id,
+                    "key": key,
+                    "code": code,
+                    "repeat": transition.expected_repeat,
+                    "transport": transport,
+                    "focus": dict(focus),
+                    "observed_events": observed_events,
+                }
+            )
+            _validate_event_evidence(observed_events, canvas_id, transition.event_types)
+            _validate_keyboard_evidence(observed_events, key, code, transition)
+            label = f"{canvas_id}-{label_suffix}"
+            _canvas_snapshot(client, trace, canvas_id, label, canvas_attributes)
+            _element_screenshot(client, trace, screenshot_directory, label, element)
+    finally:
+        if devtools_endpoint is not None and pending_devtools_key is not None:
+            primary_error = sys.exc_info()[1]
+            key, code, virtual_key_code = pending_devtools_key
+            try:
+                _dispatch_devtools_key_event(
+                    client,
+                    devtools_endpoint,
+                    "keyUp",
+                    key,
+                    code,
+                    virtual_key_code,
+                    False,
+                )
+            except BrowserRuntimeError as cleanup_error:
+                if primary_error is None:
+                    raise
+                primary_error.add_note(f"CDP key release also failed: {cleanup_error}")
+
+
+def _dispatch_cine_rate_key(
+    client: WebDriverClient,
+    key: str,
+    code: str,
+    virtual_key_code: int,
+    transition: _KeyboardTransition,
+    devtools_endpoint: str | None,
+) -> str:
+    """Dispatch one cine-rate transition through the browser's explicit capability."""
+    if devtools_endpoint is None:
+        client.perform_actions(
+            [
+                {
+                    "type": "key",
+                    "id": CANVAS_KEYBOARD_SOURCE_ID,
+                    "actions": transition.actions(key),
+                }
+            ]
+        )
+        return "webdriver-actions"
+
+    events = [("keyDown", transition.expected_repeat)]
+    if transition is _KeyboardTransition.REPEAT_AND_RELEASE:
+        events.append(("keyUp", False))
+    for event_type, auto_repeat in events:
+        _dispatch_devtools_key_event(
+            client,
+            devtools_endpoint,
+            event_type,
+            key,
+            code,
+            virtual_key_code,
+            auto_repeat,
+        )
+    return "chromium-devtools"
+
+
+def _chromium_devtools_endpoint(client: WebDriverClient) -> str | None:
+    """Select the vendor WebDriver endpoint for a reported Chromium browser."""
+    browser_name = client.capabilities.get("browserName")
+    if browser_name not in CHROMIUM_BROWSER_NAMES:
+        return None
+    return "ms/cdp/execute" if browser_name in EDGE_BROWSER_NAMES else "goog/cdp/execute"
+
+
+def _dispatch_devtools_key_event(
+    client: WebDriverClient,
+    endpoint: str,
+    event_type: str,
+    key: str,
+    code: str,
+    virtual_key_code: int,
+    auto_repeat: bool,
+) -> None:
+    """Send one fully specified Chromium key event through WebDriver's CDP endpoint."""
+    client._request(
+        "POST",
+        client._session_path(endpoint),
+        {
+            "cmd": "Input.dispatchKeyEvent",
+            "params": {
+                "type": event_type,
+                "key": key,
+                "code": code,
+                "windowsVirtualKeyCode": virtual_key_code,
+                "autoRepeat": auto_repeat,
+            },
+        },
+    )
 
 
 def _cleanup_event_trace(client: WebDriverClient) -> int:
@@ -446,7 +666,16 @@ def capture_canvas_trace(
                 browser_heap_sample(client, trace, f"{canvas_id}-initial")
             frame_timing(client, trace, f"{canvas_id}-initial", timeout_ms=frame_timeout_ms)
             _element_screenshot(client, trace, screenshot_directory, f"{canvas_id}-initial", element)
-            if keyboard_trace is not None:
+            if keyboard_trace is KeyboardTraceKind.CINE_RATE:
+                _capture_cine_rate_keyboard_trace(
+                    client,
+                    trace,
+                    screenshot_directory,
+                    canvas_id,
+                    element,
+                    canvas_attributes,
+                )
+            elif keyboard_trace is not None:
                 focus = _focus_canvas(client, canvas_id)
                 client.key_press(keyboard_trace.key)
                 trace.actions.append(
@@ -456,6 +685,7 @@ def capture_canvas_trace(
                         "key": keyboard_trace.key,
                         "code": keyboard_trace.code,
                         "repeat": False,
+                        "transport": "webdriver-actions",
                         "focus": dict(focus),
                         "observed_events": _read_event_evidence(
                             client, canvas_id, CANVAS_KEY_EVENT_TYPES
@@ -513,10 +743,28 @@ def capture_canvas_trace(
             "diagnostic_listeners_released": True,
         }
     finally:
+        primary_error = sys.exc_info()[1]
+        cleanup_errors = []
         if event_trace_installed:
-            _cleanup_event_trace(client)
+            try:
+                _cleanup_event_trace(client)
+            except BrowserRuntimeError as cleanup_error:
+                cleanup_errors.append(("canvas event listener cleanup", cleanup_error))
         if not actions_released:
-            client.release_actions()
+            try:
+                client.release_actions()
+            except BrowserRuntimeError as cleanup_error:
+                cleanup_errors.append(("browser input release", cleanup_error))
+        if cleanup_errors:
+            if primary_error is not None:
+                for operation, cleanup_error in cleanup_errors:
+                    primary_error.add_note(f"{operation} also failed: {cleanup_error}")
+            else:
+                operation, cleanup_error = cleanup_errors[0]
+                for later_operation, later_error in cleanup_errors[1:]:
+                    cleanup_error.add_note(f"{later_operation} also failed: {later_error}")
+                cleanup_error.add_note(f"failed operation: {operation}")
+                raise cleanup_error
 
 
 def run_canvas_scenario(

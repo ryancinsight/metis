@@ -1317,11 +1317,20 @@ transport check; RITK assigns shortcut meaning and validates the records with
 canvas snapshot before the pointer and wheel actions, allowing RITK to compare
 wheel progression with the state immediately before that wheel.
 
-The optional profile `--keyboard-trace cine-rate` sends the printable `=` key
-(`code` `Equal`) through the same trusted W3C path. A consumer that exposes a
-rate semantic (RITK uses `data-ritk-cine-fps`) includes that attribute in the
-trace request and validates the resulting increase with its
-`--require-cine-rate` mode. The default profile remains `ArrowDown`, so existing
+The optional profile `--keyboard-trace cine-rate` records four trusted keyboard
+actions. Chromium sessions use the Chrome DevTools Protocol
+[`Input.dispatchKeyEvent`](https://chromedevtools.github.io/devtools-protocol/1-3/Input/#method-dispatchKeyEvent)
+command with explicit `autoRepeat`; other browser families retain W3C actions
+and surface a missing repeat event as a trace failure. The profile holds the
+printable `=` key (`code` `Equal`) across calls to record an initial keydown and
+a repeated keydown before release, then does the same for `-` (`code` `Minus`).
+Each action records its transport, focus, expected keydown repeat state and the
+actual trusted browser events. The trace adds semantic canvas snapshots and
+element screenshots named
+`after-keyboard`, `after-repeat`, `after-decrease` and
+`after-decrease-repeat`. A consumer that exposes a rate semantic (RITK uses
+`data-ritk-cine-fps`) includes that attribute in the trace request and owns the
+rate assertions. The default profile remains `ArrowDown`, so existing
 navigation traces retain their contract.
 
 ```powershell
