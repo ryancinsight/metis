@@ -40,6 +40,13 @@ the committed Windows workflow keeps the remaining time for MSI authoring and
 inventory verification. A deadline terminates the owned compiler tree and never
 selects a stale executable.
 
+The bound was exercised by the RITK consumer package workflow in hosted run
+[34990164849](https://github.com/ryancinsight/ritk/actions/runs/34990164849),
+which completed the locked Windows build, package creation, inventory/hash
+checks and executable `--help` within its 30-minute job budget. The distribution
+demo harness retains its separate 300-second command bound; this does not
+shorten the packager's cold Cargo deadline in the consumer workflow.
+
 ## Start a project and reload it
 
 Create a new application in a directory whose parent already exists:

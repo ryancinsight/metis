@@ -532,8 +532,9 @@ an owner. “Unsupported” cannot replace delivery of a required mobile/native 
 
 <a id="METIS-DISTRIBUTION-005"></a>
 ## METIS-DISTRIBUTION-005 — Cold package build deadline [patch]
-- Status: in-progress; priority: P1; owner: Metis tooling; integrator: root; regions: `crates/metis-cli/src/build.rs`, `docs/manual/distribution.md`, `docs/adr/0005-application-distribution.md`, `backlog.md`; branch: `fix/metis-package-cold-build-deadline`; dependency: METIS-DISTRIBUTION-001; risk: package build timeout or unbounded child.
+- Status: done; priority: P1; owner: Metis tooling; integrator: root; last-update: 2026-09-15; delivery: [Metis PR #165](https://github.com/ryancinsight/metis/pull/165), merge `c4276f2586f1ae9a1e3c0fa1dcb1507be4555f24`; dependency: METIS-DISTRIBUTION-001; risk: package build timeout or unbounded child.
 - Acceptance: a cold locked Windows x64 RITK package build completes within the finite workflow budget, while a stalled compiler remains terminated and stale artifacts are never selected; hosted package run and local focused gates record the exact deadline.
+- Verification: local standalone `python -S scripts/verify.py` passed all stages at `103e3e659da26af5036abae50c854c2c08401189`; Metis hosted Windows gate [34987447904](https://github.com/ryancinsight/metis/actions/runs/34987447904) passed; RITK hosted run [34990164849](https://github.com/ryancinsight/ritk/actions/runs/34990164849) completed the locked Windows package build, inventory/hash checks, and executable `--help`. The 900-second child deadline is exercised while the 30-minute workflow bound remains intact.
 <a id="METIS-MOBILE-001"></a>
 ## METIS-MOBILE-001 — Mobile host and capability matrix [arch] [minor]
 - Status: todo; priority: P3; owner: Metis mobile host; dependencies: METIS-COMMANDS-001, METIS-INPUT-001, METIS-AUTHORITY-001; risk: mobile lifecycle/permissions
