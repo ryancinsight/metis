@@ -1143,31 +1143,31 @@ rejection without handing bytes to the decoder.
 Moirai reads each caller-sized browser `Blob` slice through a local object URL
 response stream. For the first bounded read of a file no larger than 1 MiB, the
 provider uses the browser `File.arrayBuffer()` API directly without allocating
-beyond the provider bound. This does not establish Safari file readability:
-[run 34944643823](https://github.com/ryancinsight/ritk/actions/runs/34944643823)
-fails on that operation in Safari 26.6.2.
-Larger files and positioned continuation reads retain the sliced object-URL
-response stream. The gallery's strict content security policy permits `blob:`
-only in `connect-src` for that bounded local read; network origins remain
-explicit and `object-src` stays disabled.
+beyond the provider bound. The hosted replay
+[run 34973438029](https://github.com/ryancinsight/ritk/actions/runs/34973438029)
+exercises that path with the real 94-file MRI-DIR T2 study. Chromium and Firefox
+complete the bounded transfer; Safari 26.6.2 accepts the chooser paths but its
+first 529,864-byte `File.arrayBuffer()` read is rejected by the host. Larger
+files and positioned continuation reads retain the sliced object-URL response
+stream. The gallery's strict content security policy permits `blob:` only in
+`connect-src` for that bounded local read; network origins remain explicit and
+`object-src` stays disabled.
 
 The host retains the provider's read error in **Byte access** and never forwards
 an incomplete batch. On an automated chooser failure, the runner records bounded
-comparisons of the selected file's array-buffer, sliced array-buffer, FileReader
-and blob-URL stream reads. It then compares one-file and full-batch selection on
-an isolated native input without the application's event observers. These
-controls preserve the failed result and original screenshot; they do not supply
-replacement bytes to the consumer.
+comparisons of the selected file's original `File.arrayBuffer()`, bounded slice,
+`FileReader` and blob-URL stream reads. In run 34973438029 Safari reports
+`NotReadableError` for the first three APIs and `TypeError` for the stream; the
+host independently reads the 529,864-byte file and verifies its expected
+SHA-256. These controls preserve the failed result and original screenshot; they
+do not supply replacement bytes to the consumer.
 
-[Run 34948524329](https://github.com/ryancinsight/ritk/actions/runs/34948524329)
-records the access failure below these APIs: WebKit WebContent is denied
-`file-read-data` and `file-issue-extension` on the selected file, and WebKit
-Networking is denied `file-read-data`. The runner independently reads the
-529,864-byte file and verifies its expected SHA-256. SafariDriver accepts
-`Automation.setFilesToSelectForFileUpload` before the denials. The exact
-SafariDriver/WebKit authorization defect remains unresolved; Metis and Moirai
-cannot grant browser sandbox access. The generic host preserves the failure,
-and RITK receives no partial study.
+The same run records WebKit WebContent denials for `file-read-data` and
+`file-issue-extension`, plus a WebKit Networking `file-read-data` denial on the
+selected file. SafariDriver accepts `Automation.setFilesToSelectForFileUpload`
+before those denials. The exact SafariDriver/WebKit authorization defect
+remains unresolved; Metis and Moirai cannot grant browser sandbox access. The
+generic host preserves the failure, and RITK receives no partial study.
 
 ### Use the saved-study chooser
 
@@ -1254,18 +1254,18 @@ closed-session state. `--input chromium` remains the explicit Chromium CDP drag
 probe; `--input manual` observes a physical file-manager drop and cannot make a
 portable cross-engine automation claim.
 
-The hosted chooser matrix ran as [RITK workflow 34895454734](https://github.com/ryancinsight/ritk/actions/runs/34895454734)
-against Metis `02d4047c5567834667ab9beb796ea27f6257f0ad`, RITK
-`92f4dc5798d5b9cedc66201ff14eacb8c4e13c78` and Moirai
-`c110452ec8a8057a98deab330f9047b1c7efd522`. Chromium 152 and Firefox 155
+The hosted chooser matrix ran as [RITK workflow 34973438029](https://github.com/ryancinsight/ritk/actions/runs/34973438029)
+against Metis `b374ca937ce6ddbcbce2fb55a0dd074a241ea956`, RITK
+`67ed6db952414d7b611e57a8100deead0eba7e88` and Moirai
+`2451a3155c44dcf76d5577e4eb8c08badde51a0a`. Chromium 152 and Firefox 155
 each accepted the real 94-file MRI-DIR T2 study (49,807,236 bytes), matched
 every file hash and all three RITK RGBA canvas oracles, rejected the bounded
-overflow probes, dispatched trusted pointer, wheel and focused `ArrowDown`
-keyboard actions, and closed with `session_closed: true`. Each keyboard trace
-contains a trusted keydown/keyup pair with `repeat: false` on all three
-canvases; the `after-keyboard` indices are 48, 257 and 257 before the wheel
-step. The actual Chromium and Firefox galleries plus the per-engine provenance
-are owned by [RITK's manual evidence](https://github.com/ryancinsight/ritk/tree/main/docs/manual/images).
+count, per-file and batch overflow probes, dispatched trusted pointer and wheel
+actions, exercised focused `=`/`-` cine-rate keydown/keyup pairs with explicit
+repeat handling, and closed with `session_closed: true`. The RITK provenance
+records rate transitions `12 -> 13 -> 13 -> 12 -> 12` and frame-generation
+transitions for every canvas; the actual Chromium and Firefox galleries plus
+per-engine provenance are owned by [RITK's manual evidence](https://github.com/ryancinsight/ritk/tree/main/docs/manual/images).
 
 Safari 26.6.2 accepted the same 94 paths and closed its session, but its first
 bounded browser read was rejected by the host (`Byte access: host rejected the
@@ -1372,11 +1372,13 @@ python scripts/browser_drop.py --driver-url http://127.0.0.1:9515 `
 ```
 
 The local command exercises real file-backed input from the saved public
-MRI-DIR study. Hosted run [34895454734](https://github.com/ryancinsight/ritk/actions/runs/34895454734)
-validates this keyboard contract on Chromium 152 and Firefox 155. Safari's
-bounded read failed before its canvases were presented, so no Safari keyboard
-claim is made; the exact hosted traces and actual galleries are recorded in
-[RITK's manual evidence](https://github.com/ryancinsight/ritk/tree/main/docs/manual/images).
+MRI-DIR study. Hosted run [34973438029](https://github.com/ryancinsight/ritk/actions/runs/34973438029)
+validates the `cine-rate` keyboard profile on Chromium 152 and Firefox 155:
+trusted `=`/`-` events move each canvas through `12 -> 13 -> 13 -> 12 -> 12`
+frames per second, while repeated keydowns leave the rate unchanged. Safari's
+bounded read failed before its canvases were presented, so no Safari DICOM or
+keyboard claim is made; the exact hosted traces and actual galleries are
+recorded in [RITK's manual evidence](https://github.com/ryancinsight/ritk/tree/main/docs/manual/images).
 
 The paired Edge run at Metis revision
 `1321bd434500744e4d80fb906d10d9aa74590003` produced six semantic snapshots:
