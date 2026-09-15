@@ -55,6 +55,14 @@ owns finite waiting, initial presentation and terminal cleanup. The existing
 form host is migrated through this seam; no DICOM or viewer behavior moves into
 Metis.
 
+Revision 2026-09-15: Moirai PR #355 merged at `d95a2cd61b1f133a507d2735f5f72948a4ca5ec9`
+with the WebView2 COM binding behind the explicit `webview2` feature. Metis
+`metis-platform` enables that feature only on Windows, while the provider's
+default graph remains free of the optional binding. The standalone lock advances
+all eleven Moirai packages to the merged revision; the target feature tree and
+full locked Metis gate verify the selected graph. No registry or signing key is
+part of this provider adoption.
+
 ## Context
 
 The framework comparison in [ADR 0003](0003-framework-conformance.md) leaves a

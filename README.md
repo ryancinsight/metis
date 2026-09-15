@@ -127,13 +127,16 @@ recorded in [ADR 0005](docs/adr/0005-application-distribution.md). Atlas provide
 have transitive dependencies; the gate records the actual graph instead of describing it as
 dependency-free. The Atlas development overlay resolves first-party code to local
 trees. Standalone builds use the corresponding pushed provider revisions recorded
-in Cargo.lock. Metis now consumes Moirai through git-plus-version requirements;
-the lock records audited main revision `2451a3155c44dcf76d5577e4eb8c08badde51a0a`
-after the validated browser-file boundary merged in Moirai PR #353. That
-revision includes the merged process, browser/API, bounded WebSocket service,
+in Cargo.lock. Metis consumes Moirai through git-plus-version requirements;
+the lock records audited main revision `d95a2cd61b1f133a507d2735f5f72948a4ca5ec9`
+after Moirai PR #355 added the opt-in WebView2 feature graph. That revision
+includes the merged process, browser/API, bounded WebSocket service,
 cancellable-task surfaces, semantic control seams, pointer metadata, wheel
 metadata, bounded browser file access through a direct first-read plus object-URL continuation stream and
-the thread-affine Windows WebView2 provider. The browser CSP admits only the
+the thread-affine Windows WebView2 provider. `metis-platform` enables
+`moirai-pal`'s `webview2` feature only for its Windows target; the provider's
+default graph remains free of the optional COM binding for other targets. The
+browser CSP admits only the
 `blob:` source required for those local response streams; network endpoints stay
 explicit. The provider and Metis
 adapter pass the installed WebView2 navigation/bridge smoke on runtime

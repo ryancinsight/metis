@@ -223,6 +223,17 @@ ignored in the ordinary suite because the runtime and native host are not
 available on every target. This is lifecycle and bridge evidence; the visible
 form and bridge-result captures are recorded below.
 
+### WebView2 feature graph — 2026-09-15
+
+The Windows consumer opts into Moirai's `webview2` feature at the
+`metis-platform` target dependency. A standalone locked feature-tree check
+shows `moirai-pal feature "webview2"` and `webview2-com` for
+`x86_64-pc-windows-msvc`; non-Windows target resolution does not activate that
+consumer dependency. Moirai PR #355's default-graph check keeps the optional
+COM binding out of consumers that do not request the feature. This is dependency
+and target-selection evidence; the installed runtime smoke and visible captures
+remain the behavioral evidence below.
+
 The application now exposes `--metis-webview`, which uses the same executable
 and supervised private pipe as the software-rendered native role. Its child
 creates a bounded temporary HTML/CSS package, receives typed submit messages
