@@ -1141,10 +1141,13 @@ the three canvases become non-black. The browser input accepts `.dcm` and
 rejection without handing bytes to the decoder.
 
 Moirai reads each caller-sized browser `Blob` slice through a local object URL
+response stream. For the first bounded read of a file no larger than 1 MiB, the
+provider uses the browser `File.arrayBuffer()` API directly; this keeps the
+Safari file-backed path working without allocating beyond the provider bound.
+Larger files and positioned continuation reads retain the sliced object-URL
 response stream. The gallery's strict content security policy permits `blob:`
-only in `connect-src` for this bounded local read; network origins remain
-explicit and `object-src` stays disabled. No whole-file `arrayBuffer()` is
-created by the Rust host.
+only in `connect-src` for that bounded local read; network origins remain
+explicit and `object-src` stays disabled.
 
 ### Use the saved-study chooser
 

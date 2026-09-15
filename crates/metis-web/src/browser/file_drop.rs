@@ -9,8 +9,8 @@ use crate::file_drop_policy::{
 };
 use crate::{FileDropBatch, FileDropPayload};
 use moirai_pal::wasm::{
-    BrowserFiles, DropFiles, DroppedFileAccess, LocalTaskHandle, WebDocument, WebElement, WebEvent,
-    WebEventListener, spawn_local_with_handle,
+    BrowserFiles, DropFiles, DroppedFileAccess, LocalTaskHandle, MAX_READ_BYTES, WebDocument,
+    WebElement, WebEvent, WebEventListener, spawn_local_with_handle,
 };
 use std::cell::{Cell, RefCell};
 use std::io;
@@ -382,7 +382,8 @@ async fn read_file(file: &mut DroppedFileAccess, expected: usize) -> io::Result<
     bytes
         .try_reserve_exact(expected)
         .map_err(|_| io::Error::other("browser file payload allocation failed"))?;
-    let mut chunk = vec![0_u8; READ_CHUNK_BYTES].into_boxed_slice();
+    let chunk_capacity = expected.clamp(READ_CHUNK_BYTES, MAX_READ_BYTES);
+    let mut chunk = vec![0_u8; chunk_capacity].into_boxed_slice();
     while bytes.len() < expected {
         let request = (expected - bytes.len()).min(chunk.len());
         let count = file.read(&mut chunk[..request]).await?;
