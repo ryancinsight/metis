@@ -262,7 +262,7 @@ an owner. “Unsupported” cannot replace delivery of a required mobile/native 
 
 <a id="METIS-INPUT-001"></a>
 ## METIS-INPUT-001 — Interactive controls and shared UI state [minor]
-- Status: in-progress; priority: P1; owner: Metis UI/host; integrator: root; last-update: 2026-09-14; branch: none (last increment merged); regions: `scripts/browser_protocol.py`, `scripts/browser_canvas.py`, `scripts/browser_drop.py`, `scripts/browser_runtime.py`, `scripts/tests/test_browser_runtime.py`; dependencies: METIS-BROWSER-001; risk: input/state mismatch; ADR: 0014, 0027
+- Status: in-progress; priority: P1; owner: Metis UI/host; integrator: root; last-update: 2026-09-15; branch: `feat/metis-native-key-modifiers`; regions: `crates/metis-python/src/native/events.rs`, `crates/metis-python/tests`, `backlog.md`; dependencies: METIS-BROWSER-001, MOI-WINDOW-KEY-MODIFIERS-2026-09-15; risk: native shortcut modifier state loss; ADR: 0014, 0027
 - Scope: buttons, checks, radios, sliders, editable fields, select/menu/dialog controls; focus, pointer capture, drag/drop, wheel/touch/modifiers, shortcuts, reusable state/actions and subscription teardown.
 - Acceptance: keyboard and pointer/touch journeys update identical model values; disabled controls reject action; focus survives rerender and subscriptions detach on close; real hit targets agree with rendered geometry.
 - Demonstration: [V02](docs/VERIFICATION.md#V02), settings workbench; repeat on each native host as it becomes supported.
