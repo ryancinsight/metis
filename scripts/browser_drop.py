@@ -20,6 +20,7 @@ from browser_protocol import (
 )
 from browser_canvas import (
     capture_canvas_trace,
+    KeyboardTraceKind,
     validate_canvas_ids, validate_canvas_attributes, validate_consumer_revision,
     _element_screenshot,
 )
@@ -205,7 +206,11 @@ def run(args: argparse.Namespace) -> dict:
     oracle = json.loads(args.oracle.read_text(encoding="utf-8"))
     ids = validate_canvas_ids(list(oracle))
     canvas_attributes = validate_canvas_attributes(args.canvas_attribute)
-    keyboard_trace = bool(getattr(args, "keyboard_trace", False))
+    keyboard_trace = (
+        KeyboardTraceKind.parse(args.keyboard_trace)
+        if getattr(args, "keyboard_trace", None) is not None
+        else None
+    )
     canvas_trace_path = None
     if args.canvas_trace is not None:
         canvas_trace_path = _safe_path(args.canvas_trace.resolve(), directory=ROOT / "output")
@@ -361,8 +366,14 @@ def main() -> None:
     parser.add_argument("--consumer-revision", required=True)
     parser.add_argument("--canvas-trace", type=pathlib.Path,
                         help="write a paired trusted canvas trace after the file drop")
-    parser.add_argument("--keyboard-trace", action="store_true",
-                        help="include focused ArrowDown keydown/keyup evidence in the paired canvas trace")
+    parser.add_argument(
+        "--keyboard-trace",
+        nargs="?",
+        const="navigation",
+        choices=("navigation", "cine-rate"),
+        metavar="{navigation,cine-rate}",
+        help="include focused keyboard evidence; default profile is ArrowDown navigation",
+    )
     parser.add_argument("--canvas-attribute", action="append", default=[],
                         help="consumer-selected data-* attribute for the paired canvas trace")
     parser.add_argument("--input", choices=("manual", "chooser", "chromium"), default="manual",

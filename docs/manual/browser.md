@@ -1317,6 +1317,13 @@ transport check; RITK assigns shortcut meaning and validates the records with
 canvas snapshot before the pointer and wheel actions, allowing RITK to compare
 wheel progression with the state immediately before that wheel.
 
+The optional profile `--keyboard-trace cine-rate` sends the printable `=` key
+(`code` `Equal`) through the same trusted W3C path. A consumer that exposes a
+rate semantic (RITK uses `data-ritk-cine-fps`) includes that attribute in the
+trace request and validates the resulting increase with its
+`--require-cine-rate` mode. The default profile remains `ArrowDown`, so existing
+navigation traces retain their contract.
+
 ```powershell
 python scripts/browser_drop.py --driver-url http://127.0.0.1:9515 `
   --browser-name MicrosoftEdge --input chromium `
