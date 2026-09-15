@@ -5,8 +5,9 @@
 - Status: in-progress; priority: P0; integrator: webkit-read-root; last-update: 2026-09-15; branch: `fix/browser-file-read`.
 - Scope: preserve format-neutral provider read failures and reproduce real chooser reads; DICOM semantics remain in RITK.
 - Acceptance: exact failing operation identified, owning fix verified on saved MRI-DIR Chromium/Firefox/WebKit gallery and byte oracles.
-- Risk: [patch]; dependencies: merged Moirai bounded reader; baseline: RITK hosted run `34943272998`, Metis `fa7793be`, Moirai `3ccfb1b7`.
+- Risk: [patch]; dependencies: merged Moirai bounded reader; baseline: RITK hosted run `34922946179`, Metis `fa7793be`, Moirai `3ccfb1b7`.
 - Diagnosis increment: retain provider operation errors in the Rust byte status; capture bounded real-file read comparisons on chooser failure. Native nextest 40/40, native/WASM strict Clippy, doctest 1/1 and diagnostic tests 14/14 pass; independent review passes. Browser read fix and real gallery remain pending.
+- Reproduction: [run 34944643823](https://github.com/ryancinsight/ritk/actions/runs/34944643823), Metis `4ca4f33`, Moirai `8d032e38`: Chromium/Firefox pass; Safari 26.6.2 rejects the first whole-file read. Original/sliced arrayBuffer and FileReader return NotReadableError; blob stream returns TypeError. Isolated chooser controls distinguish application observers from browser-selected file access; no decoder or fallback change is justified by these results.
 
 Registration: [Atlas member item](../../backlog.md#atlas-member-registration-defects)
 is done. Public source and executable packaging are merged, and the Atlas stack

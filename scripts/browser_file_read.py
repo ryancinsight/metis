@@ -1,6 +1,9 @@
 """Capture bounded, format-neutral browser file-read failure evidence."""
 from __future__ import annotations
 
+import pathlib
+from collections.abc import Sequence
+
 from browser_protocol import BrowserRuntimeError, WebDriverClient
 from browser_trace import Trace
 
@@ -207,13 +210,132 @@ READ_FAILURE_DIAGNOSTIC = (
     ).replace("__READ_DIAGNOSTIC_TIMEOUT_MS__", str(READ_DIAGNOSTIC_TIMEOUT_MS))
 )
 
+INSTALL_SELECTION_DIAGNOSTIC = """
+if (window.metisFileSelectionDiagnostic) {
+  throw new Error('file selection diagnostic control is already mounted');
+}
+let sequence = window.metisFileSelectionDiagnosticSequence || 0;
+let id;
+do {
+  sequence += 1;
+  id = `metis-file-selection-diagnostic-${sequence}`;
+} while (document.getElementById(id));
+window.metisFileSelectionDiagnosticSequence = sequence;
+const input = document.createElement('input');
+input.id = id;
+input.type = 'file';
+input.multiple = true;
+const label = document.createElement('label');
+const state = {
+  id,
+  input,
+  label,
+  changes: 0,
+  hadSelectedFile: Object.prototype.hasOwnProperty.call(window, 'metisSelectedFile'),
+  priorSelectedFile: window.metisSelectedFile
+};
+window.metisFileSelectionDiagnostic = state;
+label.textContent = 'File read diagnostic: ';
+label.append(input);
+window.metisSelectedFile = null;
+input.addEventListener('change', () => {
+  state.changes += 1;
+  window.metisSelectedFile = input.files.length > 0 ? input.files.item(0) : null;
+});
+document.body.append(label);
+return {id};
+"""
 
-def capture_file_read_diagnostic(client: WebDriverClient, trace: Trace) -> None:
-    """Append bounded read-path evidence without exposing selected-file details."""
+OBSERVE_SELECTION_DIAGNOSTIC = """
+const state = window.metisFileSelectionDiagnostic;
+if (!state || !state.input.isConnected) {
+  throw new Error('file selection diagnostic control is not mounted');
+}
+return {files: state.input.files.length, changes: state.changes};
+"""
+
+RESET_SELECTION_DIAGNOSTIC = """
+const state = window.metisFileSelectionDiagnostic;
+if (!state || !state.input.isConnected) {
+  throw new Error('file selection diagnostic control is not mounted');
+}
+state.input.value = '';
+window.metisSelectedFile = null;
+return {files: state.input.files.length, changes: state.changes};
+"""
+
+CLEANUP_SELECTION_DIAGNOSTIC = """
+const state = window.metisFileSelectionDiagnostic;
+if (!state) return {removed: true, restored: true};
+state.label.remove();
+if (state.hadSelectedFile) {
+  window.metisSelectedFile = state.priorSelectedFile;
+} else {
+  delete window.metisSelectedFile;
+}
+delete window.metisFileSelectionDiagnostic;
+const restored = state.hadSelectedFile
+  ? window.metisSelectedFile === state.priorSelectedFile
+  : !Object.prototype.hasOwnProperty.call(window, 'metisSelectedFile');
+return {removed: !state.input.isConnected && !state.label.isConnected, restored};
+"""
+
+
+def _read_file_diagnostic(client: WebDriverClient) -> dict:
     try:
         diagnostic = client.execute_async(READ_FAILURE_DIAGNOSTIC)
     except BrowserRuntimeError:
-        diagnostic = {"status": "unavailable", "reason": "webdriver-error"}
+        return {"status": "unavailable", "reason": "webdriver-error"}
     if not isinstance(diagnostic, dict):
-        diagnostic = {"status": "unavailable", "reason": "invalid-result"}
-    trace.actions.append({"file_read_diagnostic": diagnostic})
+        return {"status": "unavailable", "reason": "invalid-result"}
+    return diagnostic
+
+
+def capture_file_read_diagnostic(client: WebDriverClient, trace: Trace) -> None:
+    """Append bounded read-path evidence without exposing selected-file details."""
+    trace.actions.append({"file_read_diagnostic": _read_file_diagnostic(client)})
+
+
+def capture_file_selection_diagnostic(
+    client: WebDriverClient,
+    trace: Trace,
+    files: Sequence[pathlib.Path],
+) -> None:
+    """Compare one-file and full-batch reads through an isolated real chooser."""
+    result = {"status": "captured", "selections": []}
+    setup_attempted = False
+    try:
+        if not files:
+            result = {"status": "unavailable", "reason": "empty-file-selection"}
+            return
+        setup_attempted = True
+        control = client.execute(INSTALL_SELECTION_DIAGNOSTIC)
+        if not isinstance(control, dict) or not isinstance(control.get("id"), str):
+            result = {"status": "unavailable", "reason": "invalid-control-result"}
+            return
+        element = client.find(f"#{control['id']}")
+        client.send_file_paths(element, [files[0]])
+        first = client.execute(OBSERVE_SELECTION_DIAGNOSTIC)
+        result["selections"].append(
+            {"requested_files": 1, "observation": first, "read": _read_file_diagnostic(client)}
+        )
+        client.execute(RESET_SELECTION_DIAGNOSTIC)
+        client.send_file_paths(element, files)
+        batch = client.execute(OBSERVE_SELECTION_DIAGNOSTIC)
+        result["selections"].append(
+            {
+                "requested_files": len(files),
+                "observation": batch,
+                "read": _read_file_diagnostic(client),
+            }
+        )
+    except BrowserRuntimeError:
+        result["status"] = "unavailable"
+        result["reason"] = "webdriver-error"
+    finally:
+        if setup_attempted:
+            try:
+                result["cleanup"] = client.execute(CLEANUP_SELECTION_DIAGNOSTIC)
+            except BrowserRuntimeError:
+                result["cleanup"] = {"removed": False, "reason": "webdriver-error"}
+        trace.actions.append({"file_selection_diagnostic": result})
