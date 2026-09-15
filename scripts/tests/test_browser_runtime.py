@@ -21,7 +21,7 @@ from browser_runtime import (
     run_scenario,
 )
 from browser_canvas import (
-    CANVAS_KEY,
+    KeyboardTraceKind,
     MAX_CANVAS_ATTRIBUTES,
     _canvas_action_offsets,
     run_canvas_scenario,
@@ -284,7 +284,7 @@ class FakeDriver:
                     "delta_x": None,
                     "delta_y": None,
                     "key": key,
-                    "code": key,
+                    "code": "Equal" if key == "=" else key,
                     "repeat": False,
                     "alt_key": False,
                     "ctrl_key": False,
@@ -663,7 +663,7 @@ class BrowserRuntimeTests(unittest.TestCase):
                 5_000,
                 ["ritk-snap-axial", "ritk-snap-coronal", "ritk-snap-sagittal"],
                 "1" * 40,
-                keyboard_trace=True,
+                keyboard_trace=KeyboardTraceKind.NAVIGATION,
             )
         self.assertTrue(driver.released)
         self.assertEqual(driver.event_types, ("pointerdown", "pointermove", "pointerup", "wheel", "keydown", "keyup"))
@@ -673,8 +673,8 @@ class BrowserRuntimeTests(unittest.TestCase):
             ["trusted-keyboard", "trusted-pointer-drag", "trusted-wheel"] * 3,
         )
         for action in trace.actions[::3]:
-            self.assertEqual(action["key"], CANVAS_KEY)
-            self.assertEqual(action["code"], CANVAS_KEY)
+            self.assertEqual(action["key"], KeyboardTraceKind.NAVIGATION.key)
+            self.assertEqual(action["code"], KeyboardTraceKind.NAVIGATION.code)
             self.assertFalse(action["repeat"])
             self.assertEqual(action["focus"], {"ok": True, "active_id": action["canvas"]})
             self.assertEqual(
@@ -682,13 +682,44 @@ class BrowserRuntimeTests(unittest.TestCase):
                 {"keydown", "keyup"},
             )
             self.assertTrue(all(event["is_trusted"] for event in action["observed_events"]))
-            self.assertTrue(all(event["key"] == CANVAS_KEY for event in action["observed_events"]))
+            self.assertTrue(
+                all(
+                    event["key"] == KeyboardTraceKind.NAVIGATION.key
+                    and event["code"] == KeyboardTraceKind.NAVIGATION.code
+                    for event in action["observed_events"]
+                )
+            )
         self.assertEqual(len(trace.snapshots), 9)
         for canvas_id in ("ritk-snap-axial", "ritk-snap-coronal", "ritk-snap-sagittal"):
             self.assertEqual(
                 [snapshot["label"] for snapshot in trace.snapshots if snapshot["canvas"]["id"] == canvas_id],
                 [f"{canvas_id}-initial", f"{canvas_id}-after-keyboard", f"{canvas_id}-after-input"],
             )
+
+    def test_canvas_trace_records_cine_rate_keyboard_profile(self):
+        output = pathlib.Path(__file__).resolve().parents[2] / "output" / "browser" / "runtime-test"
+        output.mkdir(parents=True, exist_ok=True)
+        with tempfile.TemporaryDirectory(dir=output) as directory:
+            driver = FakeDriver()
+            trace = run_canvas_scenario(
+                driver,
+                BrowserEngine.CHROMIUM,
+                "http://127.0.0.1:8080/ritk.html",
+                "0" * 40,
+                pathlib.Path(directory),
+                5_000,
+                ["ritk-snap-axial"],
+                "1" * 40,
+                keyboard_trace=KeyboardTraceKind.CINE_RATE,
+            )
+        keyboard = trace.actions[0]
+        self.assertEqual(keyboard["key"], KeyboardTraceKind.CINE_RATE.key)
+        self.assertEqual(keyboard["code"], KeyboardTraceKind.CINE_RATE.code)
+        self.assertEqual(
+            [(event["key"], event["code"]) for event in keyboard["observed_events"]],
+            [("=", "Equal"), ("=", "Equal")],
+        )
+        self.assertEqual(trace.cleanup["canvas_attribute_names"], [])
 
     def test_canvas_action_offsets_stay_inside_short_surfaces(self):
         offsets = _canvas_action_offsets({"css_width": 448.8, "css_height": 82.4})

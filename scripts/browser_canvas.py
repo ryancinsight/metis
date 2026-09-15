@@ -1,6 +1,7 @@
 """Run format-neutral trusted input and visual traces for HTML5 canvases."""
 from __future__ import annotations
 
+import enum
 import hashlib
 import math
 import pathlib
@@ -28,7 +29,32 @@ MAX_CANVAS_EVENT_RECORDS = 32
 MAX_CANVAS_KEY_METADATA_BYTES = 64
 CANVAS_EVENT_TYPES = ("pointerdown", "pointermove", "pointerup", "wheel")
 CANVAS_KEY_EVENT_TYPES = ("keydown", "keyup")
-CANVAS_KEY = "ArrowDown"
+
+
+class KeyboardTraceKind(str, enum.Enum):
+    """Keyboard action profiles supported by the generic canvas trace."""
+
+    NAVIGATION = "navigation"
+    CINE_RATE = "cine-rate"
+
+    @property
+    def key(self) -> str:
+        """Return the browser ``KeyboardEvent.key`` value for this profile."""
+        return {self.NAVIGATION: "ArrowDown", self.CINE_RATE: "="}[self]
+
+    @property
+    def code(self) -> str:
+        """Return the browser ``KeyboardEvent.code`` value for this profile."""
+        return {self.NAVIGATION: "ArrowDown", self.CINE_RATE: "Equal"}[self]
+
+    @classmethod
+    def parse(cls, value: str) -> "KeyboardTraceKind":
+        """Parse a command-line profile name."""
+        try:
+            return cls(value)
+        except ValueError as error:
+            choices = ", ".join(item.value for item in cls)
+            raise BrowserRuntimeError(f"keyboard trace kind must be one of: {choices}") from error
 
 CANVAS_SNAPSHOT_SCRIPT = """
 const id = arguments[0];
@@ -300,10 +326,12 @@ def _focus_canvas(client: WebDriverClient, canvas_id: str) -> Mapping[str, Any]:
 def _install_event_trace(
     client: WebDriverClient,
     canvas_ids: Sequence[str],
-    keyboard_trace: bool,
+    keyboard_trace: KeyboardTraceKind | None,
 ) -> None:
     """Install one bounded, capture-phase observer for browser trust evidence."""
-    event_types = CANVAS_EVENT_TYPES + (CANVAS_KEY_EVENT_TYPES if keyboard_trace else ())
+    event_types = CANVAS_EVENT_TYPES + (
+        CANVAS_KEY_EVENT_TYPES if keyboard_trace is not None else ()
+    )
     result = client.execute(
         CANVAS_EVENT_INSTALL_SCRIPT,
         [list(canvas_ids), list(event_types), MAX_CANVAS_EVENT_RECORDS],
@@ -395,11 +423,11 @@ def capture_canvas_trace(
     canvas_attributes: Sequence[str] = (),
     frame_timeout_ms: int = 4_000,
     browser_heap: bool = False,
-    keyboard_trace: bool = False,
+    keyboard_trace: KeyboardTraceKind | None = None,
 ) -> None:
     """Capture trusted pointer and wheel input, with optional keyboard evidence."""
-    if type(keyboard_trace) is not bool:
-        raise BrowserRuntimeError("keyboard trace flag must be a boolean")
+    if keyboard_trace is not None and not isinstance(keyboard_trace, KeyboardTraceKind):
+        raise BrowserRuntimeError("keyboard trace kind must be a KeyboardTraceKind or None")
     canvas_ids = validate_canvas_ids(canvas_ids)
     canvas_attributes = validate_canvas_attributes(canvas_attributes)
     elements = {canvas_id: client.find(f"#{canvas_id}") for canvas_id in canvas_ids}
@@ -418,15 +446,15 @@ def capture_canvas_trace(
                 browser_heap_sample(client, trace, f"{canvas_id}-initial")
             frame_timing(client, trace, f"{canvas_id}-initial", timeout_ms=frame_timeout_ms)
             _element_screenshot(client, trace, screenshot_directory, f"{canvas_id}-initial", element)
-            if keyboard_trace:
+            if keyboard_trace is not None:
                 focus = _focus_canvas(client, canvas_id)
-                client.key_press(CANVAS_KEY)
+                client.key_press(keyboard_trace.key)
                 trace.actions.append(
                     {
                         "action": "trusted-keyboard",
                         "canvas": canvas_id,
-                        "key": CANVAS_KEY,
-                        "code": CANVAS_KEY,
+                        "key": keyboard_trace.key,
+                        "code": keyboard_trace.code,
                         "repeat": False,
                         "focus": dict(focus),
                         "observed_events": _read_event_evidence(
@@ -502,7 +530,7 @@ def run_canvas_scenario(
     consumer_revision: Optional[str] = None,
     canvas_attributes: Sequence[str] = (),
     browser_heap: bool = False,
-    keyboard_trace: bool = False,
+    keyboard_trace: KeyboardTraceKind | None = None,
     browser_name: Optional[str] = None,
     device_scale_milli: Optional[int] = None,
 ) -> Trace:
