@@ -32,9 +32,11 @@ pub(super) enum Event {
     KeyDown {
         virtual_key: u32,
         repeated: bool,
+        modifiers: ModifierSnapshot,
     },
     KeyUp {
         virtual_key: u32,
+        modifiers: ModifierSnapshot,
     },
     TextInput {
         character: char,
@@ -154,11 +156,19 @@ pub(super) fn event(value: WindowEvent) -> Event {
         WindowEvent::KeyDown {
             virtual_key,
             repeated,
+            modifiers,
         } => Event::KeyDown {
             virtual_key,
             repeated,
+            modifiers: modifier_snapshot(modifiers),
         },
-        WindowEvent::KeyUp { virtual_key } => Event::KeyUp { virtual_key },
+        WindowEvent::KeyUp {
+            virtual_key,
+            modifiers,
+        } => Event::KeyUp {
+            virtual_key,
+            modifiers: modifier_snapshot(modifiers),
+        },
         WindowEvent::TextInput { character } => Event::TextInput { character },
         WindowEvent::TextComposition { phase: value, text } => Event::TextComposition {
             phase: phase_name(value),
@@ -220,14 +230,26 @@ pub(super) fn append_event<'py>(
         Event::KeyDown {
             virtual_key,
             repeated,
+            modifiers,
         } => {
             set!("kind", "key_down");
             set!("virtual_key", virtual_key);
             set!("repeated", repeated);
+            set!("ctrl", modifiers.ctrl());
+            set!("shift", modifiers.shift());
+            set!("alt", modifiers.alt());
+            set!("meta", modifiers.meta());
         }
-        Event::KeyUp { virtual_key } => {
+        Event::KeyUp {
+            virtual_key,
+            modifiers,
+        } => {
             set!("kind", "key_up");
             set!("virtual_key", virtual_key);
+            set!("ctrl", modifiers.ctrl());
+            set!("shift", modifiers.shift());
+            set!("alt", modifiers.alt());
+            set!("meta", modifiers.meta());
         }
         Event::TextInput { character } => {
             set!("kind", "text_input");
