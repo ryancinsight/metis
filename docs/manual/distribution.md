@@ -35,6 +35,10 @@ configuration and an explicit Windows x64 target. In Atlas, local provider overl
 lock; `python scripts/verify.py` uses the standalone resolution while retaining
 the shared build cache. Missing or ambiguous compiler artifacts are errors.
 Building runs the selected project's build scripts with your developer account.
+The package Cargo build has a finite 900-second deadline for cold workspaces;
+the committed Windows workflow keeps the remaining time for MSI authoring and
+inventory verification. A deadline terminates the owned compiler tree and never
+selects a stale executable.
 
 ## Start a project and reload it
 

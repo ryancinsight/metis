@@ -14,6 +14,11 @@ use std::{
     time::Duration,
 };
 
+// A cold RITK workspace can exceed five minutes on a hosted Windows runner;
+// fifteen minutes leaves the packaging workflow's remaining budget for MSI
+// authoring and inventory verification while keeping compiler ownership finite.
+const CARGO_BUILD_DEADLINE: Duration = Duration::from_mins(15);
+
 #[derive(Clone, Copy)]
 pub(crate) enum OutputKind {
     Portable,
@@ -195,7 +200,7 @@ fn compile(
             OsString::from(&binary.bin),
         ]);
     }
-    let messages = process::capture(&cargo, &args, Duration::from_mins(5))?;
+    let messages = process::capture(&cargo, &args, CARGO_BUILD_DEADLINE)?;
     artifacts(&messages, &selected)
 }
 
