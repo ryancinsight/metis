@@ -24,7 +24,7 @@ from browser_canvas import (
     validate_canvas_ids, validate_canvas_attributes, validate_consumer_revision,
     _element_screenshot,
 )
-from browser_file_read import capture_file_read_diagnostic
+from browser_file_read import capture_file_read_diagnostic, capture_file_selection_diagnostic
 from browser_runtime import _wait_for_text, _wait_for_selector, _write_trace
 from browser_trace import BrowserEngine, Trace, record_device_scale, screenshot
 
@@ -343,6 +343,8 @@ def run(args: argparse.Namespace) -> dict:
                 )
             except BrowserRuntimeError as screenshot_error:
                 capture_error = str(screenshot_error)
+            if args.input == "chooser":
+                capture_file_selection_diagnostic(client, trace, files)
         document = trace.document("failed")
         document["error"] = str(error)
         if page_diagnostic is not None:

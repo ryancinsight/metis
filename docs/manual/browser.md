@@ -1142,12 +1142,22 @@ rejection without handing bytes to the decoder.
 
 Moirai reads each caller-sized browser `Blob` slice through a local object URL
 response stream. For the first bounded read of a file no larger than 1 MiB, the
-provider uses the browser `File.arrayBuffer()` API directly; this keeps the
-Safari file-backed path working without allocating beyond the provider bound.
+provider uses the browser `File.arrayBuffer()` API directly without allocating
+beyond the provider bound. This does not establish Safari file readability:
+[run 34944643823](https://github.com/ryancinsight/ritk/actions/runs/34944643823)
+fails on that operation in Safari 26.6.2.
 Larger files and positioned continuation reads retain the sliced object-URL
 response stream. The gallery's strict content security policy permits `blob:`
 only in `connect-src` for that bounded local read; network origins remain
 explicit and `object-src` stays disabled.
+
+The host retains the provider's read error in **Byte access** and never forwards
+an incomplete batch. On an automated chooser failure, the runner records bounded
+comparisons of the selected file's array-buffer, sliced array-buffer, FileReader
+and blob-URL stream reads. It then compares one-file and full-batch selection on
+an isolated native input without the application's event observers. These
+controls preserve the failed result and original screenshot; they do not supply
+replacement bytes to the consumer.
 
 ### Use the saved-study chooser
 
