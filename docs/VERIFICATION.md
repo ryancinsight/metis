@@ -1016,7 +1016,7 @@ The native Windows folder-selection consumer is also exercised in RITK PR
 [#392](https://github.com/ryancinsight/ritk/pull/392), merged at `3f46a08bf`.
 Moirai's bounded picker returns only the selected folder to the Métis host;
 RITK scans and decodes the saved MRI-DIR T2 study and presents the three actual
-planes in the existing window. The reviewed [picker capture](../../ritk/docs/manual/images/dicom-metis-picker-mri-window.png)
+planes in the existing window. The reviewed [picker capture](../../ritk/docs/manual/images/dicom-metis-picker-mri-window.jpg)
 and [MRI provenance](../../ritk/docs/manual/images/dicom-metis-real-mri.json)
 bind the image and executable to the public study. Cancel and unreadable-study
 paths preserve the previous frame or return a typed error; this evidence does
@@ -2087,7 +2087,7 @@ format-neutral in Métis and does not move DICOM authority into the GUI repo.
 
 The same RITK viewer also exercises the pathless Windows folder-picker route.
 The selected 94-file MRI-DIR T2 directory is decoded into the three planes
-shown in the [reviewed picker capture](../../ritk/docs/manual/images/dicom-metis-picker-mri-window.png);
+shown in the [reviewed picker capture](../../ritk/docs/manual/images/dicom-metis-picker-mri-window.jpg);
 the [MRI provenance](../../ritk/docs/manual/images/dicom-metis-real-mri.json)
 binds the executable, source revisions, input study and framebuffer. Cancel and
 unreadable-study paths preserve the prior frame or return a typed error. Metis
