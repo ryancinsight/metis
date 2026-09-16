@@ -42,3 +42,4 @@
 | [0031](0031-arbitrary-affine-image-placement.md) | Arbitrary affine image placement | Accepted |
 | [0032](0032-display-scale.md) | Fixed-point native display scale | Accepted |
 | [0033](0033-native-file-selection-adapter.md) | Native file-selection adapter | Accepted |
+| [0034](0034-browser-event-trust.md) | Browser event trust in the canvas contract | Accepted |

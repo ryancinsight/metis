@@ -109,6 +109,7 @@ pub struct CanvasPointerEvent {
     pub(crate) buttons: u16,
     pub(crate) modifiers: CanvasModifiers,
     pub(crate) primary: bool,
+    pub(crate) trusted: bool,
 }
 
 impl CanvasPointerEvent {
@@ -165,6 +166,12 @@ impl CanvasPointerEvent {
     pub const fn is_primary(self) -> bool {
         self.primary
     }
+
+    /// Returns the browser trust snapshot captured with this event.
+    #[must_use]
+    pub const fn is_trusted(self) -> bool {
+        self.trusted
+    }
 }
 
 /// Unit used by a wheel event's deltas.
@@ -191,6 +198,7 @@ pub struct CanvasWheelEvent {
     pub(crate) x: i32,
     pub(crate) y: i32,
     pub(crate) modifiers: CanvasModifiers,
+    pub(crate) trusted: bool,
 }
 
 impl CanvasWheelEvent {
@@ -235,6 +243,12 @@ impl CanvasWheelEvent {
     pub const fn modifiers(self) -> CanvasModifiers {
         self.modifiers
     }
+
+    /// Returns the browser trust snapshot captured with this event.
+    #[must_use]
+    pub const fn is_trusted(self) -> bool {
+        self.trusted
+    }
 }
 
 /// One keyboard event routed to a canvas.
@@ -245,6 +259,7 @@ pub struct CanvasKeyboardEvent {
     code: Box<str>,
     repeated: bool,
     modifiers: CanvasModifiers,
+    trusted: bool,
 }
 
 impl CanvasKeyboardEvent {
@@ -255,6 +270,7 @@ impl CanvasKeyboardEvent {
         code: String,
         repeated: bool,
         modifiers: CanvasModifiers,
+        trusted: bool,
     ) -> Result<Self, CanvasEventError> {
         if key.len() > MAX_KEY_NAME_BYTES || code.len() > MAX_KEY_NAME_BYTES {
             return Err(CanvasEventError::InvalidMetadata);
@@ -265,6 +281,7 @@ impl CanvasKeyboardEvent {
             code: code.into_boxed_str(),
             repeated,
             modifiers,
+            trusted,
         })
     }
 
@@ -297,6 +314,12 @@ impl CanvasKeyboardEvent {
     pub const fn modifiers(&self) -> CanvasModifiers {
         self.modifiers
     }
+
+    /// Returns the browser trust snapshot captured with this event.
+    #[must_use]
+    pub const fn is_trusted(&self) -> bool {
+        self.trusted
+    }
 }
 
 /// One format-neutral event captured from a canvas.
@@ -308,6 +331,18 @@ pub enum CanvasEvent {
     Wheel(CanvasWheelEvent),
     /// A keyboard lifecycle event.
     Keyboard(CanvasKeyboardEvent),
+}
+
+impl CanvasEvent {
+    /// Returns the browser trust snapshot captured with this event.
+    #[must_use]
+    pub const fn is_trusted(&self) -> bool {
+        match self {
+            Self::Pointer(event) => event.is_trusted(),
+            Self::Wheel(event) => event.is_trusted(),
+            Self::Keyboard(event) => event.is_trusted(),
+        }
+    }
 }
 
 /// Failure reported by a bounded canvas event handoff.
@@ -402,6 +437,7 @@ mod tests {
                 x: 2,
                 y: 3,
                 modifiers: super::CanvasModifiers::default(),
+                trusted: true,
             })));
         }
         let events = queue.take().expect("queue capacity is valid");
@@ -421,6 +457,7 @@ mod tests {
                 x: 0,
                 y: 0,
                 modifiers: super::CanvasModifiers::default(),
+                trusted: true,
             }));
         }
         assert_eq!(queue.take(), Err(CanvasEventError::QueueOverflow));
@@ -443,6 +480,7 @@ mod tests {
             x: 0,
             y: 0,
             modifiers: super::CanvasModifiers::default(),
+            trusted: true,
         }));
         queue.fail(CanvasEventError::InvalidMetadata);
         assert_eq!(queue.take(), Err(CanvasEventError::InvalidMetadata));
@@ -465,6 +503,7 @@ mod tests {
                     "Equal".to_owned(),
                     true,
                     super::CanvasModifiers::default(),
+                    true,
                 )
                 .expect("bounded keyboard metadata is valid"),
             ))
@@ -490,8 +529,64 @@ mod tests {
                 "KeyX".to_owned(),
                 false,
                 super::CanvasModifiers::default(),
+                false,
             ),
             Err(CanvasEventError::InvalidMetadata)
         );
+    }
+
+    #[test]
+    fn canvas_events_preserve_trust_values() {
+        let pointer = super::CanvasPointerEvent {
+            phase: super::CanvasPointerPhase::Down,
+            pointer_id: 1,
+            pointer_type: super::CanvasPointerType::Mouse,
+            x: 2,
+            y: 3,
+            button: 0,
+            buttons: 1,
+            modifiers: super::CanvasModifiers::default(),
+            primary: true,
+            trusted: false,
+        };
+        assert!(!pointer.is_trusted());
+
+        let wheel = super::CanvasWheelEvent {
+            delta_x: 0.0,
+            delta_y: 1.0,
+            delta_z: 0.0,
+            unit: super::CanvasWheelUnit::Pixel,
+            x: 2,
+            y: 3,
+            modifiers: super::CanvasModifiers::default(),
+            trusted: true,
+        };
+        assert!(wheel.is_trusted());
+
+        let keyboard = super::CanvasKeyboardEvent::try_new(
+            super::CanvasKeyboardPhase::Down,
+            "+".to_owned(),
+            "Equal".to_owned(),
+            false,
+            super::CanvasModifiers::default(),
+            false,
+        )
+        .expect("bounded keyboard metadata is valid");
+        assert!(!keyboard.is_trusted());
+    }
+
+    #[test]
+    fn canvas_event_exposes_variant_trust() {
+        let event = CanvasEvent::Wheel(super::CanvasWheelEvent {
+            delta_x: 0.0,
+            delta_y: 0.0,
+            delta_z: 0.0,
+            unit: super::CanvasWheelUnit::Pixel,
+            x: 0,
+            y: 0,
+            modifiers: super::CanvasModifiers::default(),
+            trusted: false,
+        });
+        assert!(!event.is_trusted());
     }
 }
