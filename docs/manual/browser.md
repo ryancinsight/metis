@@ -327,6 +327,29 @@ the clinical visual oracle. A
 missing driver endpoint is an unfulfilled evidence requirement, not a passing
 or skipped engine result.
 
+### Opt into an explicit WebGPU canvas
+
+The browser host exposes the same frame and input contract over an explicit
+WebGPU surface. A consumer selects it asynchronously at its presentation
+boundary:
+
+```rust,no_run
+let surface = metis_web::CanvasSurface::from_current_document_gpu_with_input(
+    "viewer",
+)
+.await?;
+surface.present(&frame)?;
+```
+
+The constructor returns a typed unsupported or setup error when the browser
+cannot provide a WebGPU adapter, device or context. It never changes a GPU
+request into the raster provider, so a comparison can distinguish capability
+failure from a successful raster run. The borrowed RGBA8 frame validation,
+bounded pointer/wheel/keyboard queue and listener teardown are shared with the
+existing two-dimensional constructor. A real device, visual output, device-loss
+recovery and GPU/resource measurements require a consumer-owned browser run;
+the current RITK galleries remain the 2D visual baseline.
+
 For an Edge canvas run, keep `--engine chromium` and add the same browser-name
 override:
 

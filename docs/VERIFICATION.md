@@ -2297,12 +2297,14 @@ their surface and process-boundary differences and the unmatched GPUI/Tauri,
 WASM, allocation, latency and security measurements explicit.
 
 The browser presentation path now pins Moirai merge
-`c9a4431b2320adb8cd3e5a5f12d1632c18378950`. Its validated canvas presenter
+`21b66ba424ad8f50d8574d6e9714be696f807e82`. Its validated canvas presenter
 retains the current bitmap dimensions for same-size RGBA frames and performs
 the bounded resize only when an extent changes; the same provider revision
-contains the content-box mapping consumed by RITK. This is a production
-lifecycle guard; it does not replace the V12 used-memory, allocation, latency or
-compositor measurements, which remain unclaimed.
+contains the content-box mapping consumed by RITK and the explicit WebGPU
+canvas provider consumed by the new opt-in Metis constructors. This is a
+production lifecycle and capability surface; it does not replace the V12
+used-memory, allocation, latency, compositor or real-GPU visual measurements,
+which remain unclaimed.
 
 Input traces and workload sizes are fixed before comparison, chosen to exercise
 the relevant working-set regimes under the committed budget. Profile production

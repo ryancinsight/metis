@@ -330,8 +330,10 @@ These are live canvas exports from real DICOM decoding, not generated images.
 The [RITK provenance record](https://github.com/ryancinsight/ritk/blob/main/docs/manual/images/dicom-metis-real-browser-mri.json)
 binds the PNG hashes, source revisions and bounds. The capture excludes browser
 chrome and uses a bounded programmatic drop in one Chromium host; physical
-drag-and-drop, Firefox/WebKit, WebGPU and complete application-window capture
-remain separate acceptance work.
+drag-and-drop, Firefox/WebKit, real WebGPU output and complete
+application-window capture remain separate acceptance work. Metis now exposes
+an explicit WebGPU canvas constructor; the RITK consumer must opt in and bind
+the device-backed run to its own image oracle.
 The reproducible DICOM opening and visual workflow is maintained in the
 [RITK user manual](https://github.com/ryancinsight/ritk/blob/main/docs/manual/dicom-workflow.md).
 It runs the real scanner and loader, checks exact pixels and physical geometry,

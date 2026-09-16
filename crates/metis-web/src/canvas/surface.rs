@@ -8,7 +8,8 @@ use super::{
 };
 use moirai_pal::wasm::{
     CanvasSize, ContentBoxPoint, KeyboardMetadata, PointerMetadata, PointerType, RgbaFrame,
-    WebCanvas, WebDocument, WebElement, WebEventListener, WheelDeltaMode, WheelMetadata,
+    WebCanvas, WebDocument, WebElement, WebEventListener, WebGpuCanvas, WheelDeltaMode,
+    WheelMetadata,
 };
 use std::cell::{Cell, RefCell};
 use std::io;
@@ -18,8 +19,29 @@ const MAX_ACTIVE_POINTERS: usize = 4;
 
 /// A browser canvas surface owned by the Metis host.
 pub struct CanvasSurface {
-    canvas: WebCanvas,
+    canvas: CanvasRenderer,
     input: Option<CanvasInput>,
+}
+
+enum CanvasRenderer {
+    Raster(WebCanvas),
+    WebGpu(WebGpuCanvas),
+}
+
+impl CanvasRenderer {
+    fn id(&self) -> String {
+        match self {
+            Self::Raster(canvas) => canvas.id(),
+            Self::WebGpu(canvas) => canvas.id(),
+        }
+    }
+
+    fn present(&self, frame: RgbaFrame<'_>) -> io::Result<()> {
+        match self {
+            Self::Raster(canvas) => canvas.present(frame),
+            Self::WebGpu(canvas) => canvas.present(frame),
+        }
+    }
 }
 
 impl CanvasSurface {
@@ -49,7 +71,33 @@ impl CanvasSurface {
     /// or cannot provide a two-dimensional rendering context.
     pub fn from_document(document: &WebDocument, id: &str) -> io::Result<Self> {
         Ok(Self {
-            canvas: document.canvas_by_id(id)?,
+            canvas: CanvasRenderer::Raster(document.canvas_by_id(id)?),
+            input: None,
+        })
+    }
+
+    /// Resolves a canvas and asynchronously acquires its WebGPU device.
+    ///
+    /// WebGPU is selected explicitly. The constructor returns an unsupported
+    /// error when the browser cannot provide an adapter; it never falls back
+    /// to the two-dimensional provider.
+    ///
+    /// # Errors
+    /// Returns the provider's typed error when the canvas is absent, is not a
+    /// canvas, or WebGPU adapter/device setup fails.
+    pub async fn from_current_document_gpu(id: &str) -> io::Result<Self> {
+        let document = WebDocument::current()?;
+        Self::from_document_gpu(&document, id).await
+    }
+
+    /// Resolves a canvas from a document and asynchronously acquires WebGPU.
+    ///
+    /// # Errors
+    /// Returns the provider's typed error when the canvas is absent, is not a
+    /// canvas, or WebGPU adapter/device setup fails.
+    pub async fn from_document_gpu(document: &WebDocument, id: &str) -> io::Result<Self> {
+        Ok(Self {
+            canvas: CanvasRenderer::WebGpu(document.gpu_canvas_by_id(id).await?),
             input: None,
         })
     }
@@ -83,7 +131,43 @@ impl CanvasSurface {
         let canvas = WebCanvas::from_element(&element)?;
         let input = CanvasInput::attach(element)?;
         Ok(Self {
-            canvas,
+            canvas: CanvasRenderer::Raster(canvas),
+            input: Some(input),
+        })
+    }
+
+    /// Resolves a canvas, acquires WebGPU and retains bounded input listeners.
+    ///
+    /// WebGPU is selected explicitly. Pointer, wheel and keyboard events stay
+    /// format-neutral, and listener guards are removed when the surface drops.
+    ///
+    /// # Errors
+    /// Returns the provider's typed error when the canvas or WebGPU device
+    /// cannot be resolved, or when listener registration fails.
+    pub async fn from_current_document_gpu_with_input(id: &str) -> io::Result<Self> {
+        let document = WebDocument::current()?;
+        Self::from_document_gpu_with_input(&document, id).await
+    }
+
+    /// Resolves a canvas, acquires WebGPU and retains bounded input listeners.
+    ///
+    /// # Errors
+    /// Returns the provider's typed error when the canvas or WebGPU device
+    /// cannot be resolved, or when listener registration fails.
+    pub async fn from_document_gpu_with_input(
+        document: &WebDocument,
+        id: &str,
+    ) -> io::Result<Self> {
+        let element = document.get_element_by_id(id).ok_or_else(|| {
+            io::Error::new(
+                io::ErrorKind::NotFound,
+                "canvas element identifier is absent",
+            )
+        })?;
+        let canvas = WebGpuCanvas::from_element(&element).await?;
+        let input = CanvasInput::attach(element)?;
+        Ok(Self {
+            canvas: CanvasRenderer::WebGpu(canvas),
             input: Some(input),
         })
     }
@@ -143,109 +227,9 @@ impl CanvasInput {
         let queue = Rc::new(RefCell::new(CanvasEventQueue::new()));
         let active = Rc::new(Cell::new([None; MAX_ACTIVE_POINTERS]));
         let mut listeners = Vec::with_capacity(7);
-        for (name, phase) in [
-            ("pointerdown", CanvasPointerPhase::Down),
-            ("pointermove", CanvasPointerPhase::Move),
-            ("pointerup", CanvasPointerPhase::Up),
-            ("pointercancel", CanvasPointerPhase::Cancel),
-        ] {
-            let listener_element = element.clone();
-            let listener_queue = Rc::clone(&queue);
-            let listener_active = Rc::clone(&active);
-            listeners.push(element.add_event_listener(name, move |event| {
-                event.prevent_default();
-                let Some(metadata) = event.pointer_metadata() else {
-                    listener_queue
-                        .borrow_mut()
-                        .fail(CanvasEventError::InvalidMetadata);
-                    release_all(&listener_element, &listener_active);
-                    return;
-                };
-                if phase == CanvasPointerPhase::Down
-                    && let Err(error) =
-                        capture(&listener_element, &listener_active, metadata.pointer_id())
-                {
-                    listener_queue.borrow_mut().fail(error);
-                    release_all(&listener_element, &listener_active);
-                    return;
-                }
-                let point = match listener_element
-                    .content_box_point(metadata.client_x(), metadata.client_y())
-                {
-                    Ok(point) => point,
-                    Err(_) => {
-                        listener_queue
-                            .borrow_mut()
-                            .fail(CanvasEventError::LocalCoordinates);
-                        release_all(&listener_element, &listener_active);
-                        return;
-                    }
-                };
-                let canvas_event = CanvasEvent::Pointer(pointer_event(phase, metadata, point));
-                let accepted = listener_queue.borrow_mut().push(canvas_event);
-                if !accepted {
-                    release_all(&listener_element, &listener_active);
-                }
-                if matches!(phase, CanvasPointerPhase::Up | CanvasPointerPhase::Cancel) {
-                    release_one(&listener_element, &listener_active, metadata.pointer_id());
-                }
-            })?);
-        }
-        for (name, phase) in [
-            ("keydown", CanvasKeyboardPhase::Down),
-            ("keyup", CanvasKeyboardPhase::Up),
-        ] {
-            let listener_queue = Rc::clone(&queue);
-            listeners.push(element.add_event_listener(name, move |event| {
-                event.prevent_default();
-                let Ok(Some(metadata)) = event.keyboard_metadata() else {
-                    listener_queue
-                        .borrow_mut()
-                        .fail(CanvasEventError::InvalidMetadata);
-                    return;
-                };
-                let keyboard_event = match keyboard_event(phase, &metadata) {
-                    Ok(event) => event,
-                    Err(error) => {
-                        listener_queue.borrow_mut().fail(error);
-                        return;
-                    }
-                };
-                listener_queue
-                    .borrow_mut()
-                    .push(CanvasEvent::Keyboard(keyboard_event));
-            })?);
-        }
-        let listener_element = element.clone();
-        let listener_queue = Rc::clone(&queue);
-        let listener_active = Rc::clone(&active);
-        listeners.push(element.add_event_listener("wheel", move |event| {
-            event.prevent_default();
-            let Some(metadata) = event.wheel_metadata() else {
-                listener_queue
-                    .borrow_mut()
-                    .fail(CanvasEventError::InvalidMetadata);
-                return;
-            };
-            let point = match listener_element
-                .content_box_point(metadata.client_x(), metadata.client_y())
-            {
-                Ok(point) => point,
-                Err(_) => {
-                    listener_queue
-                        .borrow_mut()
-                        .fail(CanvasEventError::LocalCoordinates);
-                    release_all(&listener_element, &listener_active);
-                    return;
-                }
-            };
-            let accepted = listener_queue
-                .borrow_mut()
-                .push(CanvasEvent::Wheel(wheel_event(metadata, point)));
-            if !accepted {
-                release_all(&listener_element, &listener_active);
-            }
-        })?);
+        attach_pointer_listeners(&element, &queue, &active, &mut listeners)?;
+        attach_keyboard_listeners(&element, &queue, &mut listeners)?;
+        attach_wheel_listener(&element, &queue, &active, &mut listeners)?;
         Ok(Self {
             element,
             queue,
@@ -257,6 +241,129 @@ impl CanvasInput {
     fn take_events(&self) -> Result<Box<[CanvasEvent]>, CanvasEventError> {
         self.queue.borrow_mut().take()
     }
+}
+
+fn attach_pointer_listeners(
+    element: &WebElement,
+    queue: &Rc<RefCell<CanvasEventQueue>>,
+    active: &Rc<Cell<[Option<i32>; MAX_ACTIVE_POINTERS]>>,
+    listeners: &mut Vec<WebEventListener>,
+) -> io::Result<()> {
+    for (name, phase) in [
+        ("pointerdown", CanvasPointerPhase::Down),
+        ("pointermove", CanvasPointerPhase::Move),
+        ("pointerup", CanvasPointerPhase::Up),
+        ("pointercancel", CanvasPointerPhase::Cancel),
+    ] {
+        let listener_element = element.clone();
+        let listener_queue = Rc::clone(queue);
+        let listener_active = Rc::clone(active);
+        listeners.push(element.add_event_listener(name, move |event| {
+            event.prevent_default();
+            let Some(metadata) = event.pointer_metadata() else {
+                listener_queue
+                    .borrow_mut()
+                    .fail(CanvasEventError::InvalidMetadata);
+                release_all(&listener_element, &listener_active);
+                return;
+            };
+            if phase == CanvasPointerPhase::Down
+                && let Err(error) =
+                    capture(&listener_element, &listener_active, metadata.pointer_id())
+            {
+                listener_queue.borrow_mut().fail(error);
+                release_all(&listener_element, &listener_active);
+                return;
+            }
+            let Ok(point) =
+                listener_element.content_box_point(metadata.client_x(), metadata.client_y())
+            else {
+                listener_queue
+                    .borrow_mut()
+                    .fail(CanvasEventError::LocalCoordinates);
+                release_all(&listener_element, &listener_active);
+                return;
+            };
+            let canvas_event = CanvasEvent::Pointer(pointer_event(phase, metadata, point));
+            let accepted = listener_queue.borrow_mut().push(canvas_event);
+            if !accepted {
+                release_all(&listener_element, &listener_active);
+            }
+            if matches!(phase, CanvasPointerPhase::Up | CanvasPointerPhase::Cancel) {
+                release_one(&listener_element, &listener_active, metadata.pointer_id());
+            }
+        })?);
+    }
+    Ok(())
+}
+
+fn attach_keyboard_listeners(
+    element: &WebElement,
+    queue: &Rc<RefCell<CanvasEventQueue>>,
+    listeners: &mut Vec<WebEventListener>,
+) -> io::Result<()> {
+    for (name, phase) in [
+        ("keydown", CanvasKeyboardPhase::Down),
+        ("keyup", CanvasKeyboardPhase::Up),
+    ] {
+        let listener_queue = Rc::clone(queue);
+        listeners.push(element.add_event_listener(name, move |event| {
+            event.prevent_default();
+            let Ok(Some(metadata)) = event.keyboard_metadata() else {
+                listener_queue
+                    .borrow_mut()
+                    .fail(CanvasEventError::InvalidMetadata);
+                return;
+            };
+            let keyboard_event = match keyboard_event(phase, &metadata) {
+                Ok(event) => event,
+                Err(error) => {
+                    listener_queue.borrow_mut().fail(error);
+                    return;
+                }
+            };
+            listener_queue
+                .borrow_mut()
+                .push(CanvasEvent::Keyboard(keyboard_event));
+        })?);
+    }
+    Ok(())
+}
+
+fn attach_wheel_listener(
+    element: &WebElement,
+    queue: &Rc<RefCell<CanvasEventQueue>>,
+    active: &Rc<Cell<[Option<i32>; MAX_ACTIVE_POINTERS]>>,
+    listeners: &mut Vec<WebEventListener>,
+) -> io::Result<()> {
+    let listener_element = element.clone();
+    let listener_queue = Rc::clone(queue);
+    let listener_active = Rc::clone(active);
+    listeners.push(element.add_event_listener("wheel", move |event| {
+        event.prevent_default();
+        let Some(metadata) = event.wheel_metadata() else {
+            listener_queue
+                .borrow_mut()
+                .fail(CanvasEventError::InvalidMetadata);
+            return;
+        };
+        let Ok(point) =
+            listener_element.content_box_point(metadata.client_x(), metadata.client_y())
+        else {
+            listener_queue
+                .borrow_mut()
+                .fail(CanvasEventError::LocalCoordinates);
+            release_all(&listener_element, &listener_active);
+            return;
+        };
+        let accepted = listener_queue
+            .borrow_mut()
+            .push(CanvasEvent::Wheel(wheel_event(metadata, point)));
+        if !accepted {
+            release_all(&listener_element, &listener_active);
+        }
+    })?);
+    Ok(())
 }
 
 impl Drop for CanvasInput {
