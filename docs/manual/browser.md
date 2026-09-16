@@ -1149,25 +1149,29 @@ Moirai reads each caller-sized browser `Blob` slice through a local object URL
 response stream. For the first bounded read of a file no larger than 1 MiB, the
 provider uses the browser `File.arrayBuffer()` API directly without allocating
 beyond the provider bound. The hosted replay
-[run 34973438029](https://github.com/ryancinsight/ritk/actions/runs/34973438029)
-exercises that path with the real 94-file MRI-DIR T2 study. Chromium and Firefox
-complete the bounded transfer; Safari 26.6.2 accepts the chooser paths but its
-first 529,864-byte `File.arrayBuffer()` read is rejected by the host. Larger
-files and positioned continuation reads retain the sliced object-URL response
-stream. The gallery's strict content security policy permits `blob:` only in
-`connect-src` for that bounded local read; network origins remain explicit and
-`object-src` stays disabled.
+[run 35089121864](https://github.com/ryancinsight/ritk/actions/runs/35089121864)
+exercises that path with the real 94-file MRI-DIR T2 study. Chromium 152 and
+Firefox 155 complete the bounded transfer; the WebKit job is queued. A
+source-equivalent Safari 26.6.2 capture from
+[run 35086915947](https://github.com/ryancinsight/ritk/actions/runs/35086915947)
+records the first 529,864-byte `File.arrayBuffer()` read rejected by the host.
+Larger files and positioned continuation reads retain the sliced object-URL
+response stream. The gallery's strict content security policy permits `blob:`
+only in `connect-src` for that bounded local read; network origins remain
+explicit and `object-src` stays disabled.
 
 The host retains the provider's read error in **Byte access** and never forwards
 an incomplete batch. On an automated chooser failure, the runner records bounded
 comparisons of the selected file's original `File.arrayBuffer()`, bounded slice,
-`FileReader` and blob-URL stream reads. In run 34973438029 Safari reports
+`FileReader` and blob-URL stream reads. In source-equivalent run 35086915947
+Safari reports
 `NotReadableError` for the first three APIs and `TypeError` for the stream; the
 host independently reads the 529,864-byte file and verifies its expected
 SHA-256. These controls preserve the failed result and original screenshot; they
 do not supply replacement bytes to the consumer.
 
-The same run records WebKit WebContent denials for `file-read-data` and
+The source-equivalent Safari run records WebKit WebContent denials for
+`file-read-data` and
 `file-issue-extension`, plus a WebKit Networking `file-read-data` denial on the
 selected file. SafariDriver accepts `Automation.setFilesToSelectForFileUpload`
 before those denials. The exact SafariDriver/WebKit authorization defect
@@ -1201,6 +1205,10 @@ non-black axial, coronal and sagittal views. RITK reported intrinsic frames of
 orthogonal slices at 256/512. This confirms that the chooser path carries a
 second saved modality through the same bounded transfer; modality semantics
 remain in RITK.
+
+The current cross-engine captures show the real anatomy rendered through this
+format-neutral host: [Chromium gallery](https://github.com/ryancinsight/ritk/blob/main/docs/manual/images/dicom-metis-real-browser-mri-cross-engine-chromium.png)
+and [Firefox gallery](https://github.com/ryancinsight/ritk/blob/main/docs/manual/images/dicom-metis-real-browser-mri-cross-engine-firefox.png).
 
 Build RITK's locked WASM library and package it with the pinned wasm-bindgen CLI
 as described in the RITK browser workflow linked above. From Metis, include that
