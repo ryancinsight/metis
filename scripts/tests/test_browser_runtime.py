@@ -43,6 +43,7 @@ from browser_protocol import (
     format_device_scale,
     parse_device_scale,
 )
+from browser_static_server import publish_port
 from browser_trace import (
     BrowserEngine,
     Trace,
@@ -1713,6 +1714,14 @@ class BrowserRuntimeTests(unittest.TestCase):
                 StaticServer(outside)
             with self.assertRaises(BrowserRuntimeError):
                 _write_trace(outside / "trace.json", {"schema": 1})
+
+    def test_static_server_publishes_only_a_valid_loopback_port(self):
+        with tempfile.TemporaryDirectory() as directory:
+            path = pathlib.Path(directory) / "port"
+            publish_port(path, "http://127.0.0.1:4321/")
+            self.assertEqual(path.read_text(encoding="ascii"), "4321")
+            with self.assertRaisesRegex(BrowserRuntimeError, "invalid loopback port"):
+                publish_port(path, "http://127.0.0.1/")
 
 
 if __name__ == "__main__":
