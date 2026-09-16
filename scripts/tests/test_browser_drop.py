@@ -21,6 +21,7 @@ from browser_drop import (
     resolve_browser_target,
     study_files,
 )
+from browser_canvas_capture import CanvasCaptureMode, validate_context_name
 from browser_drop_lifecycle import (
     MAX_LIFECYCLE_CYCLES,
     _DeadlineClient,
@@ -279,6 +280,15 @@ class FileDropTests(unittest.TestCase):
                 parse_page_query(values)
         with self.assertRaisesRegex(BrowserRuntimeError, "at most 8"):
             parse_page_query([f"mode{index}=value" for index in range(9)])
+
+    def test_canvas_capture_modes_are_explicit(self):
+        self.assertIs(CanvasCaptureMode.parse("rgba"), CanvasCaptureMode.RGBA)
+        self.assertIs(CanvasCaptureMode.parse("screenshot"), CanvasCaptureMode.SCREENSHOT)
+        with self.assertRaisesRegex(BrowserRuntimeError, "canvas capture mode"):
+            CanvasCaptureMode.parse("webgpu")
+        self.assertEqual(validate_context_name("webgpu"), "webgpu")
+        with self.assertRaisesRegex(BrowserRuntimeError, "canvas context"):
+            validate_context_name("WebGPU")
 
     def test_file_selection_preserves_exact_bytes_and_ignores_other_names(self):
         with tempfile.TemporaryDirectory() as directory:

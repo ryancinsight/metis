@@ -1626,6 +1626,19 @@ its explicit `renderer=webgpu` gallery mode without a second transport runner
 or DICOM behavior in Métis. WebGPU capability and visual evidence remain
 consumer-owned and require a real browser artifact.
 
+<a id="browser-canvas-screenshot-evidence--2026-09-16"></a>
+## Browser canvas screenshot evidence — 2026-09-16
+
+The generic file-backed runner now has an explicit `--canvas-capture`
+selection. `rgba` retains the exact two-dimensional pixel oracle; `screenshot`
+requires a bounded lowercase `--canvas-context`, verifies that context on each
+consumer canvas, and records the real element PNG's digest and dimensions. The
+screenshot path is limited to one lifecycle and compares the element digest
+after each rejection probe, so a failed file batch cannot silently replace the
+rendered frame. The runner does not interpret the image or claim cross-provider
+equivalence. Consumer-owned RITK attributes and visual inspection supply that
+meaning.
+
 <a id="browser-frame-timing-evidence--2026-09-13"></a>
 ## Browser frame timing evidence — 2026-09-13
 

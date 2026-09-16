@@ -29,6 +29,12 @@ from browser_canvas import (
 from browser_file_read import capture_file_read_diagnostic, capture_file_selection_diagnostic
 from browser_runtime import _wait_for_text, _wait_for_selector, _write_trace
 from browser_trace import BrowserEngine, Trace, browser_memory_sample, record_device_scale, screenshot
+from browser_canvas_capture import (
+    CanvasCaptureMode,
+    capture_screenshot,
+    compare_screenshot_stability,
+    validate_context_name,
+)
 from browser_drop_lifecycle import (
     CLEANUP_TRANSFER,
     OBSERVE_TRANSFER,
@@ -224,6 +230,12 @@ def run(args: argparse.Namespace) -> dict:
     if args.input == "chromium" and engine is not BrowserEngine.CHROMIUM:
         raise BrowserRuntimeError("the chromium input source requires the Chromium engine")
     lifecycle_cycles = validate_lifecycle_request(args)
+    canvas_capture = CanvasCaptureMode.parse(getattr(args, "canvas_capture", "rgba"))
+    canvas_context = getattr(args, "canvas_context", None)
+    if canvas_capture is CanvasCaptureMode.SCREENSHOT:
+        canvas_context = validate_context_name(canvas_context)
+    if canvas_capture is CanvasCaptureMode.SCREENSHOT and lifecycle_cycles > 1:
+        raise BrowserRuntimeError("screenshot canvas capture requires one gallery lifecycle")
     if getattr(args, "slice_controls", False) and lifecycle_cycles != 1:
         raise BrowserRuntimeError("slice controls require a single gallery lifecycle")
     device_scale_milli = (
@@ -258,6 +270,7 @@ def run(args: argparse.Namespace) -> dict:
     canvas_trace: Trace | None = None
     lifecycle_canvas_traces: list[Trace] = []
     trace = Trace(engine, "", "disconnected", revision, {}, args.consumer_revision)
+    observations: dict[str, dict[str, object]] = {}
     document = {"status": "failed"}
     transfer_observer_installed = False
     try:
@@ -360,6 +373,7 @@ def run(args: argparse.Namespace) -> dict:
                     for name in (
                         "browser.py",
                         "browser_canvas.py",
+                        "browser_canvas_capture.py",
                         "browser_drop.py",
                         "browser_drop_lifecycle.py",
                         "browser_file_read.py",
@@ -405,12 +419,24 @@ def run(args: argparse.Namespace) -> dict:
                         raise BrowserRuntimeError("oracle attribute values must be alphanumeric")
                     selector = f'#{canvas_id}[{name}="{value}"]'
                     _wait_for_selector(client, selector, timeout_ms=60_000)
-                actual = client.execute_async(CANVAS_PIXELS, [canvas_id])
-                wanted = {key: expected[key] for key in ("width", "height", "non_black_pixels", "rgba_sha256")}
-                if actual != wanted:
-                    raise BrowserRuntimeError(f"canvas {canvas_id}: expected {wanted}, found {actual}")
-                trace.snapshots.append({"id": canvas_id, **actual})
-                _element_screenshot(client, trace, output, canvas_id, client.find("#" + canvas_id))
+                if canvas_capture is CanvasCaptureMode.RGBA:
+                    actual = client.execute_async(CANVAS_PIXELS, [canvas_id])
+                    wanted = {
+                        key: expected[key]
+                        for key in ("width", "height", "non_black_pixels", "rgba_sha256")
+                    }
+                    if actual != wanted:
+                        raise BrowserRuntimeError(
+                            f"canvas {canvas_id}: expected {wanted}, found {actual}"
+                        )
+                    trace.snapshots.append({"id": canvas_id, **actual})
+                    _element_screenshot(client, trace, output, canvas_id, client.find("#" + canvas_id))
+                else:
+                    actual = capture_screenshot(
+                        client, trace, output, canvas_id, expected, canvas_context
+                    )
+                    observations[canvas_id] = actual
+                    trace.snapshots.append({"id": canvas_id, **actual})
             viewport = client.execute("window.scrollTo(0,0); return {width:innerWidth,height:innerHeight,device_scale:devicePixelRatio};")
             if getattr(args, "browser_memory_sample", False):
                 browser_memory_sample(client, trace, "decoded")
@@ -448,17 +474,24 @@ def run(args: argparse.Namespace) -> dict:
                     },
                 )
             if args.input in ("chromium", "chooser"):
-                expected_rgba = {canvas_id: oracle[canvas_id]["rgba_sha256"] for canvas_id in ids}
-                if canvas_trace is not None:
-                    expected_rgba = {
-                        canvas_id: client.execute_async(CANVAS_PIXELS, [canvas_id])["rgba_sha256"]
-                        for canvas_id in ids
-                    }
                 check_rejections(client, trace, point, args.input)
-                for canvas_id in ids:
-                    actual = client.execute_async(CANVAS_PIXELS, [canvas_id])
-                    if actual["rgba_sha256"] != expected_rgba[canvas_id]:
-                        raise BrowserRuntimeError("a rejected file batch changed the consumer frame")
+                if canvas_capture is CanvasCaptureMode.RGBA:
+                    expected_rgba = {
+                        canvas_id: oracle[canvas_id]["rgba_sha256"] for canvas_id in ids
+                    }
+                    if canvas_trace is not None:
+                        expected_rgba = {
+                            canvas_id: client.execute_async(CANVAS_PIXELS, [canvas_id])["rgba_sha256"]
+                            for canvas_id in ids
+                        }
+                    for canvas_id in ids:
+                        actual = client.execute_async(CANVAS_PIXELS, [canvas_id])
+                        if actual["rgba_sha256"] != expected_rgba[canvas_id]:
+                            raise BrowserRuntimeError("a rejected file batch changed the consumer frame")
+                else:
+                    compare_screenshot_stability(
+                        client, trace, output, ids, observations, canvas_context
+                    )
             observer_cleanup = _cleanup_transfer(client)
             transfer_observer_installed = False
             trace.cleanup["transfer_observer"] = observer_cleanup
@@ -478,6 +511,7 @@ def run(args: argparse.Namespace) -> dict:
                 for name in (
                     "browser.py",
                     "browser_canvas.py",
+                    "browser_canvas_capture.py",
                     "browser_drop.py",
                     "browser_drop_lifecycle.py",
                     "browser_file_read.py",
@@ -568,6 +602,17 @@ def main() -> None:
     parser.add_argument("--oracle", type=pathlib.Path, required=True,
                         help="Consumer JSON mapping canvas IDs to exact dimensions, non-black pixel counts and attributes")
     parser.add_argument("--consumer-revision", required=True)
+    parser.add_argument(
+        "--canvas-capture",
+        choices=tuple(mode.value for mode in CanvasCaptureMode),
+        default=CanvasCaptureMode.RGBA.value,
+        help="canvas evidence mode: exact 2D RGBA pixels or an element PNG",
+    )
+    parser.add_argument(
+        "--canvas-context",
+        metavar="NAME",
+        help="consumer-selected HTML canvas context required by screenshot capture",
+    )
     parser.add_argument(
         "--page-query",
         action="append",
