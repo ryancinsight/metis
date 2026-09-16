@@ -581,6 +581,7 @@ an owner. “Unsupported” cannot replace delivery of a required mobile/native 
 <a id="METIS-PERF-001"></a>
 ## METIS-PERF-001 — Comparative resource and latency evidence [patch]
 - Status: in-progress; priority: P1; owner: Metis measurement; integrator: root; last-update: 2026-09-16; branch: `codex/metis-perf-memory-sample`; regions: `scripts/browser_trace.py`, `scripts/browser_runtime.py`, `scripts/browser_canvas.py`, `scripts/browser_fragment.py`, `scripts/tests`, `docs/manual/testing.md`, `docs/VERIFICATION.md`, `backlog.md`; dependencies: METIS-BROWSER-001, METIS-DESKTOP-001, METIS-INPUT-001, Moirai PR #360; risk: invalid comparative claims
+- lease: root `scripts/resource_compare.py`, `scripts/tests/test_resource_compare.py`, `docs/manual/testing.md`, `docs/VERIFICATION.md` (2026-09-16T09:05:00-04:00)
 - Scope: instrument the first live app, then compare matched egui/GPUI/Tauri fixtures; total process memory, WASM memory, allocations, idle/active/peak/growth, startup/input/frame latency and bundle/build size separately.
 - Acceptance: [V12](docs/VERIFICATION.md#V12) protocol, pinned revisions/assets/traces and controlled host; stored baselines/confidence and resource bounds; resolve production regressions without changing the instrument to move results.
 - Demonstration: measured tables/plots in the manual with machine/target/uncertainty and semantic/visual equivalence; no speed/security ranking without its evidence.
