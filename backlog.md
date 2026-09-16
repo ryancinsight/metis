@@ -337,7 +337,7 @@ an owner. “Unsupported” cannot replace delivery of a required mobile/native 
 
 <a id="METIS-TEXT-001"></a>
 ## METIS-TEXT-001 — Text, selection and IME [minor]
-- Status: in-progress; priority: P1; owner: Metis input/presentation; integrator: root; last-update: 2026-09-08; branch: `feat/process-foundation`; dependencies: METIS-INPUT-001; risk: text corruption
+- Status: in-progress; priority: P1; owner: Metis input/presentation; integrator: root; last-update: 2026-09-16; branch: `feat/metis-text-grapheme`; regions: `crates/metis-web/src/browser/text_policy.rs`, `crates/metis-web/src/browser/text_policy_tests.rs`, `docs/adr/0014-input-controls.md`, `docs/manual/browser.md`, `docs/VERIFICATION.md`, `backlog.md`; dependencies: METIS-INPUT-001; risk: text corruption
 - Scope: DOM text first; grapheme selection, composition/preedit/commit/cancel, clipboard/undo, wrapping, fallback fonts, bidi and text scaling. Custom renderer requires its own admitted text contract.
 - Acceptance: Unicode fixture strings/selection ranges and caret/line geometry match the contract; native IME exercised per OS, including CJK, combining marks, emoji and mixed-direction input.
 - Demonstration: [V03](docs/VERIFICATION.md#V03), editing specimen with actual composition and committed captures, locale/font details and keyboard instructions.
