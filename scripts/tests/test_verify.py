@@ -280,6 +280,24 @@ class WorkflowContractTests(unittest.TestCase):
         self.assertIn("-print_final_stats=1", self.source)
         self.assertIn("if: failure()", self.source)
 
+    def test_browser_runtime_runs_authenticated_fragment_matrix(self):
+        for fragment in (
+            "Setup Rust for HTTP boundary",
+            "Build HTTP fragment service",
+            "Run authenticated fragment trace",
+            "--scenario fragment",
+            "--url http://127.0.0.1:8080/http-health.html",
+            "target/debug/metis-app",
+            "--metis-http-service http://127.0.0.1:8080 8766",
+            "http://127.0.0.1:8766/health",
+            "output/browser/runtime/$ENGINE-fragment.json",
+            "matrix.engine == 'webkit'",
+        ):
+            with self.subTest(fragment=fragment):
+                self.assertIn(fragment, self.source)
+        self.assertIn("needs: browser-assets", self.source)
+        self.assertIn("name: metis-browser-runtime-${{ matrix.engine }}-${{ github.run_id }}", self.source)
+
 
 class ReleaseWorkflowContractTests(unittest.TestCase):
     """Keep registry publication tokenless and release-only."""
