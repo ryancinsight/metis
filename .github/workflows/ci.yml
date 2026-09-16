@@ -365,7 +365,24 @@ jobs:
           DEVICE_SCALE: ${{ matrix.device_scale }}
         run: |
           set -euo pipefail
-          python -m http.server 8080 --directory output/browser > "$RUNNER_TEMP/metis-http-static.log" 2>&1 &
+          static_port_file="$RUNNER_TEMP/metis-http-port"
+          rm -f "$static_port_file"
+          python - "$static_port_file" output/browser > "$RUNNER_TEMP/metis-http-static.log" 2>&1 <<'PY' &
+          import http.server
+          import pathlib
+          import sys
+
+          port_file = pathlib.Path(sys.argv[1])
+          directory = pathlib.Path(sys.argv[2]).resolve()
+
+          class Handler(http.server.SimpleHTTPRequestHandler):
+              def __init__(self, *args, **kwargs):
+                  super().__init__(*args, directory=str(directory), **kwargs)
+
+          with http.server.ThreadingHTTPServer(("127.0.0.1", 0), Handler) as server:
+              port_file.write_text(str(server.server_address[1]), encoding="ascii")
+              server.serve_forever()
+          PY
           static_pid=$!
           service_pid=''
           cleanup() {
@@ -379,10 +396,26 @@ jobs:
             exit "$status"
           }
           trap cleanup EXIT
+          for _ in {1..200}; do
+            if [[ -s "$static_port_file" ]]; then
+              break
+            fi
+            if ! kill -0 "$static_pid" 2>/dev/null; then
+              cat "$RUNNER_TEMP/metis-http-static.log"
+              exit 1
+            fi
+            sleep 0.1
+          done
+          if [[ ! -s "$static_port_file" ]]; then
+            echo 'HTTP static server did not publish a port within 20 seconds' >&2
+            exit 1
+          fi
+          static_port="$(cat "$static_port_file")"
+          origin="http://127.0.0.1:$static_port"
           target_binary="$(pwd)/target/debug/metis-app"
-          "$target_binary" --metis-http-service http://127.0.0.1:8080 8766 66666666666666666666666666666666 > "$RUNNER_TEMP/metis-http-service.log" 2>&1 &
+          "$target_binary" --metis-http-service "$origin" 8766 66666666666666666666666666666666 > "$RUNNER_TEMP/metis-http-service.log" 2>&1 &
           service_pid=$!
-          python - "$service_pid" <<'PY'
+          python - "$service_pid" "$origin" <<'PY'
           import os
           import sys
           import time
@@ -390,6 +423,7 @@ jobs:
           import urllib.request
 
           pid = int(sys.argv[1])
+          origin = sys.argv[2]
           endpoint = "http://127.0.0.1:8766/health"
           deadline = time.monotonic() + 20.0
           last_error = "no response"
@@ -399,7 +433,7 @@ jobs:
               except OSError as error:
                   raise SystemExit(f"HTTP fragment service exited before readiness: {error}") from error
               try:
-                  request = urllib.request.Request(endpoint, headers={"Origin": "http://127.0.0.1:8080"})
+                  request = urllib.request.Request(endpoint, headers={"Origin": origin})
                   with urllib.request.urlopen(request, timeout=1.0) as response:
                       body = response.read().decode("utf-8")
                       if response.status == 200 and body == "metis-http-ready\n":
@@ -414,7 +448,7 @@ jobs:
             --engine "$ENGINE" \
             --driver-url "$DRIVER_URL" \
             --scenario fragment \
-            --url http://127.0.0.1:8080/http-health.html \
+            --url "$origin/http-health.html" \
             --device-scale "$DEVICE_SCALE" \
             --browser-heap-sample \
             --timeout-seconds 60 \
