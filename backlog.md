@@ -537,6 +537,13 @@ an owner. “Unsupported” cannot replace delivery of a required mobile/native 
 - Status: done; commit: `25014a6`; PR: <https://github.com/ryancinsight/metis/pull/40>; clarification: <https://github.com/ryancinsight/metis/pull/70>; last-update: 2026-09-11.
 - Outcome: Active Metis artifacts now describe only generic bounded metadata/bytes; superseded captures are labeled, and RITK remains the DICOM owner. Full locked gate passes.
 
+<a id="METIS-DICOM-005"></a>
+## METIS-DICOM-005 — Move the DICOM browser consumer to RITK [arch] [patch]
+- Status: in-progress; priority: P1; owner: Metis/RITK integration; integrator: root; last-update: 2026-09-16; dependencies: METIS-DICOM-003; risk: consumer presentation ownership; ADR: 0035 (claimed)
+- Outcome: Metis packages an externally supplied consumer gallery; RITK owns the DICOM HTML, CSS, WASM page and its saved-study workflow.
+- Acceptance: Metis has no DICOM consumer page assets; the RITK gallery is copied explicitly during packaging, validates the host CSP, and the hosted saved-study workflow still opens real files and renders the three RITK canvases.
+- Branch: `codex/metis-dicom-gallery-owner`; verification: Metis standalone gate plus RITK browser workflow against the merged Metis revision.
+
 <a id="METIS-CANVAS-INPUT-001"></a>
 ## METIS-CANVAS-INPUT-001 — Bounded format-neutral canvas input [minor]
 - Status: done; delivery: [Metis PR #64](https://github.com/ryancinsight/metis/pull/64), merge `5373312`; last-update: 2026-09-11.

@@ -1123,19 +1123,21 @@ behavior, TLS, accessibility technology support or OS permission isolation.
 
 ## Drop a study into the gallery
 
-The [gallery shell](../../examples/browser/gallery.html) exposes the mounted
-Metis file drop area beside three RITK canvases. Metis supplies a generic
-**Choose files** control and a source-neutral bounded byte handoff. The RITK
-consumer configures the visible DICOM wording and `.dcm,application/dicom`
-filter after mounting, then selects the study's files in the browser chooser or
-drags those files from the file manager onto the area. Do not select or drop the
-enclosing folder or its license/readme files. The chooser is a user-activated
-HTML5 `change` event. Moirai captures its bounded browser `File` handles and
-Metis reads the same source-neutral batch used by drag/drop; no browser path or
-native filesystem authority crosses the host boundary. The page does not fetch
-a study or synthesize drop events. RITK owns classification, decoding, geometry
-and viewer state; Metis retains its 512-file, 64 MiB/file and 256 MiB/batch
-limits. The [RITK DICOM workflow](https://github.com/ryancinsight/ritk/blob/main/docs/manual/dicom-workflow.md)
+The [RITK consumer gallery](https://github.com/ryancinsight/ritk/tree/main/crates/ritk-snap/web/gallery)
+places the mounted Metis file drop area beside three RITK canvases. Metis
+supplies a generic **Choose files** control and a source-neutral bounded byte
+handoff; the RITK package and page are passed explicitly to
+`scripts/browser.py build` with `--consumer-package` and `--consumer-gallery`.
+The RITK consumer configures the visible DICOM wording and
+`.dcm,application/dicom` filter after mounting, then selects the study's files
+in the browser chooser or drags those files from the file manager onto the area.
+Do not select or drop the enclosing folder or its license/readme files. The
+chooser is a user-activated HTML5 `change` event. Moirai captures its bounded
+browser `File` handles and Metis reads the same source-neutral batch used by
+drag/drop; no browser path or native filesystem authority crosses the host
+boundary. The page does not fetch a study or synthesize drop events. RITK owns
+classification, decoding, geometry and viewer state; Metis retains its
+512-file, 64 MiB/file and 256 MiB/batch limits. The [RITK DICOM workflow](https://github.com/ryancinsight/ritk/blob/main/docs/manual/dicom-workflow.md)
 contains the saved-study command and actual image evidence.
 
 For a saved study, choose all files from one series and wait for **Byte access**
@@ -1205,7 +1207,9 @@ as described in the RITK browser workflow linked above. From Metis, include that
 fresh package when building the gallery:
 
 ```powershell
-python scripts/browser.py build --ritk-package D:/atlas/target/wasm-bindgen/ritk-snap
+python scripts/browser.py build `
+  --consumer-package D:/atlas/target/wasm-bindgen/ritk-snap `
+  --consumer-gallery D:/atlas/repos/ritk/crates/ritk-snap/web/gallery
 python -m http.server 8000 --bind 127.0.0.1 --directory output/browser
 ```
 
