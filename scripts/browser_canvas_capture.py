@@ -59,6 +59,7 @@ def capture_screenshot(
     canvas_id: str,
     expected: Mapping[str, Any],
     context_name: str,
+    screenshot_label: str | None = None,
 ) -> dict[str, Any]:
     """Capture one canvas through its element PNG and verify its context."""
     surface = client.execute(CANVAS_CONTEXT, [canvas_id, context_name])
@@ -75,7 +76,13 @@ def capture_screenshot(
             f"canvas {canvas_id}: expected intrinsic dimensions {wanted_surface}, "
             f"found {surface}"
         )
-    _element_screenshot(client, trace, directory, canvas_id, client.find("#" + canvas_id))
+    _element_screenshot(
+        client,
+        trace,
+        directory,
+        screenshot_label or canvas_id,
+        client.find("#" + canvas_id),
+    )
     screenshot = trace.screenshots[-1]
     return {
         **surface,
@@ -98,7 +105,13 @@ def compare_screenshot_stability(
     for canvas_id in canvas_ids:
         expected = observations[canvas_id]
         actual = capture_screenshot(
-            client, trace, directory, f"{canvas_id}-after-rejections", expected, context_name
+            client,
+            trace,
+            directory,
+            canvas_id,
+            expected,
+            context_name,
+            screenshot_label=f"{canvas_id}-after-rejections",
         )
         if actual["screenshot_sha256"] != expected["screenshot_sha256"]:
             raise BrowserRuntimeError(
