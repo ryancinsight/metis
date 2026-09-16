@@ -3,20 +3,9 @@
 <a id="METIS-INPUT-TRUST-001"></a>
 ## METIS-INPUT-TRUST-001 — Preserve browser event trust in canvas input [arch] [minor]
 
-- Status: in-progress; priority: P1; owner: Metis canvas host; integrator: root;
-  last-update: 2026-09-15; branch: `feat/metis-event-trust`; regions:
-  `crates/metis-web/src/canvas`, `Cargo.lock`, `docs/adr/0034-browser-event-trust.md`;
-  dependencies: Moirai browser-event trust seam; risk: synthetic browser input
-  changing viewer state.
-- Scope: carry Moirai's bounded `Event.isTrusted` snapshot through pointer,
-  wheel and keyboard canvas events; no DICOM parsing, viewer state, native
-  input policy or browser-file read changes.
-- Acceptance: each canvas event exposes its trust value; Metis preserves both
-  trusted and synthetic values in value-semantic tests; locked native/WASM
-  checks and strict Clippy pass; RITK can reject false values without importing
-  `web-sys`.
-- Decision: [ADR 0034](docs/adr/0034-browser-event-trust.md), upstream
-  [Moirai ADR 0060](../../moirai/docs/adr/0060-browser-event-trust.md).
+- Status: done; priority: P1; delivery: [PR #173](https://github.com/ryancinsight/metis/pull/173), merge `fb8b0a0`; last-update: 2026-09-16.
+- Outcome: `CanvasEventTrust` preserves trusted and synthetic pointer, wheel and keyboard provenance; [ADR 0034](docs/adr/0034-browser-event-trust.md) records the format-neutral contract and RITK consumer policy.
+- Verification: hosted run [35051337223](https://github.com/ryancinsight/metis/actions/runs/35051337223) passed the locked native/WASM, strict Clippy, Rustdoc, lockfile and workflow gates; RITK consumer rejection is [PR #407](https://github.com/ryancinsight/ritk/pull/407).
 
 <a id="METIS-BROWSER-READ-001"></a>
 ## METIS-BROWSER-READ-001 — Diagnose selected-file reads
