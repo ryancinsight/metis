@@ -2,8 +2,8 @@
 
 use std::fmt;
 
-// The bound admits the largest committed Atlas DICOM study while the byte
-// budget below remains the primary consumer memory limit.
+// The bound admits the largest committed browser fixture while the byte budget
+// below remains the primary consumer memory limit.
 const MAX_FILES: usize = 512;
 const MAX_FILE_NAME_BYTES: usize = 4_096;
 const MAX_MEDIA_TYPE_BYTES: usize = 256;
