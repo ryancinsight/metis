@@ -39,6 +39,13 @@ clinical labels and image oracles remain in RITK. The consumer may configure a
 format filter or label after `metis_start`; those values are not part of Metis's
 host surface.
 
+Revision 2026-09-16 (consumer capture seam): the generic browser runner exposes
+an explicit single-lifecycle callback for consumer-owned post-transfer evidence.
+The callback receives the live WebDriver client, bounded output root, opaque
+canvas oracle and validated canvas IDs; Metis stores only a bounded JSON mapping.
+The RITK slice-control harness and its DICOM assertions now live in RITK, so no
+consumer-specific runner or viewer identifier remains in the Metis scripts.
+
 ## Alternatives
 
 Keeping the DICOM page in Metis was rejected because it gives a framework-owned
@@ -59,7 +66,8 @@ consumer; Metis does not synthesize an image or downgrade the error.
 
 Metis tests assert that the default source tree has no consumer gallery and that
 the explicit packaging path copies only validated assets. The standalone Metis
-gate checks the generic workbench. RITK's locked browser workflow then builds
+gate checks the generic workbench and the callback lifecycle/boundary contract.
+RITK's locked browser workflow then builds
 its WASM package, supplies its gallery, selects the saved MRI-DIR study and
 checks the three decoded canvas oracles on each configured engine.
 

@@ -18,8 +18,10 @@ from browser_drop import (
     MAX_BATCH_BYTES,
     MAX_FILES,
     OBSERVE_TRANSFER,
+    build_parser,
     parse_page_query,
     resolve_browser_target,
+    run,
     study_files,
 )
 from browser_canvas_capture import (
@@ -27,7 +29,6 @@ from browser_canvas_capture import (
     compare_screenshot_stability,
     validate_context_name,
 )
-import browser_gallery
 from browser_drop_lifecycle import (
     MAX_LIFECYCLE_CYCLES,
     _DeadlineClient,
@@ -263,6 +264,23 @@ class FileDropTests(unittest.TestCase):
         with self.assertRaisesRegex(BrowserRuntimeError, "incompatible"):
             resolve_browser_target("firefox", "chrome")
 
+    def test_consumer_capture_is_single_lifecycle_only(self):
+        args = types.SimpleNamespace(
+            engine="chromium",
+            browser_name=None,
+            input="chooser",
+            lifecycle_cycles=4,
+            canvas_trace=pathlib.Path("output/browser/trace.json"),
+            keyboard_trace="cine-rate",
+            canvas_capture="rgba",
+        )
+        with self.assertRaisesRegex(BrowserRuntimeError, "single gallery lifecycle"):
+            run(args, consumer_capture=lambda *_: {})
+
+    def test_generic_parser_has_no_consumer_specific_slice_option(self):
+        parser = build_parser()
+        self.assertNotIn("--slice-controls", parser._option_string_actions)
+
     def test_page_query_is_encoded_as_one_bounded_consumer_suffix(self):
         self.assertEqual(
             parse_page_query(["renderer=webgpu", "profile=clinical-view"]),
@@ -311,7 +329,7 @@ class FileDropTests(unittest.TestCase):
         client = Client()
         trace = Trace(BrowserEngine.CHROMIUM, "", "", "0" * 40, {})
         observations = {
-            "ritk-snap-axial": {
+            "viewer-axial": {
                 "width": 512,
                 "height": 512,
                 "screenshot_sha256": "stable",
@@ -335,154 +353,13 @@ class FileDropTests(unittest.TestCase):
                 client,
                 trace,
                 pathlib.Path("output/browser/test"),
-                ("ritk-snap-axial",),
+                ("viewer-axial",),
                 observations,
                 "webgpu",
             )
 
-        self.assertEqual(client.selectors, ["#ritk-snap-axial"])
-        self.assertEqual(trace.screenshots[0]["label"], "ritk-snap-axial-after-rejections")
-
-    def test_slice_gallery_runner_restores_state_through_split_helpers(self):
-        counts = {axis: 32 for axis in browser_gallery.AXES}
-
-        class Client:
-            def __init__(self):
-                self.states = {
-                    axis: {
-                        "index": 17,
-                        "generation": 1,
-                        "rgba_sha256": f"{18:064x}",
-                        "slider_width": 100.0,
-                    }
-                    for axis in browser_gallery.AXES
-                }
-                self.pointer_drags = []
-                self.release_count = 0
-
-            def set_index(self, axis, index):
-                state = self.states[axis]
-                if state["index"] != index:
-                    state["index"] = index
-                    state["generation"] += 1
-                state["rgba_sha256"] = f"{index + 1:064x}"
-
-            def snapshot(self):
-                return {
-                    axis: dict(state)
-                    for axis, state in self.states.items()
-                }
-
-            def find(self, selector):
-                return selector
-
-            def click(self, element):
-                axis = element.removeprefix("#slice-")
-                self.set_index(axis, self.states[axis]["index"] + 1)
-
-            def pointer_drag(self, element, start, end, *, source_id):
-                del source_id
-                axis = element.removeprefix("#slice-")
-                self.pointer_drags.append((axis, start, end))
-                self.set_index(axis, 0)
-
-            def release_actions(self):
-                self.release_count += 1
-
-        client = Client()
-        settle_calls = []
-
-        def snapshot(target, expected_counts):
-            self.assertEqual(expected_counts, counts)
-            return target.snapshot()
-
-        def keyboard_action(target, expected_counts, actions, axis, key, label, before, expected_index):
-            self.assertEqual(expected_counts, counts)
-            target.set_index(axis, expected_index)
-            after = target.snapshot()
-            actions.append(
-                {
-                    "axis": axis,
-                    "action": label,
-                    "from_index": before[axis]["index"],
-                    "to_index": after[axis]["index"],
-                    "generation": after[axis]["generation"],
-                    "rgba_sha256": after[axis]["rgba_sha256"],
-                    "events": {"event_count": 2},
-                }
-            )
-            return after
-
-        def arrow_batch(target, expected_counts, actions, axis, before, presses):
-            self.assertEqual(expected_counts, counts)
-            target.set_index(axis, before[axis]["index"] + presses)
-            after = target.snapshot()
-            actions.append(
-                {
-                    "axis": axis,
-                    "action": "restore-arrow-right-batch",
-                    "presses": presses,
-                    "from_index": before[axis]["index"],
-                    "to_index": after[axis]["index"],
-                    "generation": after[axis]["generation"],
-                    "rgba_sha256": after[axis]["rgba_sha256"],
-                    "events": {"event_count": presses * 2},
-                }
-            )
-            return after
-
-        with (
-            mock.patch.object(browser_gallery, "_snapshot", side_effect=snapshot),
-            mock.patch.object(browser_gallery, "_probe_invalid_slice_api", return_value=[]),
-            mock.patch.object(browser_gallery, "_install_event_trace", return_value=24),
-            mock.patch.object(browser_gallery, "_cleanup_event_trace", return_value=24),
-            mock.patch.object(browser_gallery, "_consume_events", return_value={"event_count": 1}),
-            mock.patch.object(browser_gallery, "_validate_transition"),
-            mock.patch.object(browser_gallery, "_keyboard_action", side_effect=keyboard_action),
-            mock.patch.object(browser_gallery, "_arrow_batch", side_effect=arrow_batch),
-            mock.patch.object(browser_gallery, "_write_gallery_screenshots", return_value={"window": {}}),
-            mock.patch.object(
-                browser_gallery,
-                "settle_canvas_input",
-                side_effect=lambda _client: settle_calls.append(True),
-            ),
-        ):
-            with tempfile.TemporaryDirectory(
-                dir=browser_gallery.ROOT / "output", prefix="gallery-import-"
-            ) as directory:
-                evidence = browser_gallery.capture_slice_gallery(
-                    client,
-                    pathlib.Path(directory),
-                    expected_counts=counts,
-                )
-                evidence_path = pathlib.Path(directory) / "gallery-slices.json"
-                self.assertEqual(json.loads(evidence_path.read_text(encoding="utf-8")), evidence)
-
-        self.assertEqual(client.release_count, 1)
-        self.assertEqual(len(settle_calls), len(browser_gallery.AXES) * 2)
-        self.assertEqual(
-            client.pointer_drags,
-            [
-                (axis, (47, 0), (-47, 0))
-                for axis in browser_gallery.AXES
-            ],
-        )
-        self.assertEqual(len(evidence["actions"]), len(browser_gallery.AXES) * 7)
-        self.assertEqual(
-            [
-                action["presses"]
-                for action in evidence["actions"]
-                if action["action"] == "restore-arrow-right-batch"
-            ],
-            [16, 1] * len(browser_gallery.AXES),
-        )
-        for axis in browser_gallery.AXES:
-            self.assertEqual(evidence["initial"][axis]["index"], 17)
-            self.assertEqual(evidence["restored"][axis]["index"], 17)
-            self.assertEqual(
-                evidence["restored"][axis]["rgba_sha256"],
-                evidence["initial"][axis]["rgba_sha256"],
-            )
+        self.assertEqual(client.selectors, ["#viewer-axial"])
+        self.assertEqual(trace.screenshots[0]["label"], "viewer-axial-after-rejections")
 
     def test_file_selection_preserves_exact_bytes_and_ignores_other_names(self):
         with tempfile.TemporaryDirectory() as directory:
@@ -712,7 +589,7 @@ class FileDropTests(unittest.TestCase):
         class Client:
             @staticmethod
             def execute_async(_script, _arguments=()):
-                raise BrowserRuntimeError("C:\\private\\study\\DICOMDIR")
+                raise BrowserRuntimeError("C:\\private\\study\\manifest.bin")
 
         trace = types.SimpleNamespace(actions=[])
         capture_file_read_diagnostic(Client(), trace)
