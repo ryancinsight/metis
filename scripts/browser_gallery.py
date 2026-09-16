@@ -3,13 +3,16 @@
 from __future__ import annotations
 
 import json
+import math
 import pathlib
 import sys
 from typing import Any, Mapping
 
+from browser_canvas import settle_canvas_input
 from browser_gallery_actions import _arrow_batch, _keyboard_action
 from browser_gallery_artifacts import _write_gallery_screenshots
 from browser_gallery_trace import (
+    ARROW_BATCH_SIZE,
     AXES,
     _cleanup_event_trace,
     _consume_events,
@@ -28,12 +31,11 @@ def capture_slice_gallery(
     *,
     expected_counts: Mapping[str, int],
 ) -> dict[str, Any]:
-    """Exercise all gallery sliders and capture exact, trusted viewer evidence.
+    """Exercise all consumer gallery sliders and capture trusted evidence.
 
-    The caller must first load a real DICOM study and wait for all three RITK
-    canvases to report presented frames.  ``expected_counts`` is the caller's
-    independent volume-shape oracle, keyed by ``axial``, ``coronal`` and
-    ``sagittal``.
+    The caller must load its study or media and wait for its canvases to report
+    presented frames. ``expected_counts`` is the caller's independent
+    per-axis shape oracle, keyed by ``axial``, ``coronal`` and ``sagittal``.
     """
     if not isinstance(output_directory, pathlib.Path):
         raise BrowserRuntimeError("gallery output directory must be a pathlib.Path")
