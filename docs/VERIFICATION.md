@@ -1055,6 +1055,13 @@ The local stack overlay was active for the cross-repository package build, so
 the generated lockfile edits were restored after each offline command. The
 standalone locked workflow remains the CI and release gate.
 
+The full locked verifier for this increment passes all stages on Windows with
+171 resolved packages. The intentional `capture-failure` probe exits 1 with
+`PermissionDenied` and is accepted; no unexpected stage fails. The visual
+comparison passes all seven captures, three mutation probes and the image
+asset check with zero pixel or semantic differences. The source-bound fixture
+digest is `493526c2f95221e40d5c9014ed2f94f796700dee1f407448fdbd2ee725cb1d1a`.
+
 ## Browser text and composition evidence — 2026-09-08
 
 The text increment consumes Moirai's merged browser text contract at
