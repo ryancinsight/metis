@@ -642,10 +642,10 @@ mod tests {
         };
         assert!(!pointer.is_trusted());
         assert_eq!(pointer.trust(), super::CanvasEventTrust::Untrusted);
-        assert_eq!(pointer.x(), 2.25);
-        assert_eq!(pointer.y(), 3.75);
-        assert_eq!(pointer.content_width(), 320.5);
-        assert_eq!(pointer.content_height(), 180.25);
+        assert_eq!(pointer.x().to_bits(), 2.25f64.to_bits());
+        assert_eq!(pointer.y().to_bits(), 3.75f64.to_bits());
+        assert_eq!(pointer.content_width().to_bits(), 320.5f64.to_bits());
+        assert_eq!(pointer.content_height().to_bits(), 180.25f64.to_bits());
 
         let wheel = super::CanvasWheelEvent {
             delta_x: 0.0,
@@ -661,10 +661,10 @@ mod tests {
         };
         assert!(wheel.is_trusted());
         assert_eq!(wheel.trust(), super::CanvasEventTrust::Trusted);
-        assert_eq!(wheel.x(), 2.25);
-        assert_eq!(wheel.y(), 3.75);
-        assert_eq!(wheel.content_width(), 320.5);
-        assert_eq!(wheel.content_height(), 180.25);
+        assert_eq!(wheel.x().to_bits(), 2.25f64.to_bits());
+        assert_eq!(wheel.y().to_bits(), 3.75f64.to_bits());
+        assert_eq!(wheel.content_width().to_bits(), 320.5f64.to_bits());
+        assert_eq!(wheel.content_height().to_bits(), 180.25f64.to_bits());
 
         let keyboard = super::CanvasKeyboardEvent::try_new(
             super::CanvasKeyboardPhase::Down,
