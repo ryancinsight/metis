@@ -23,6 +23,10 @@ translates the format-neutral batch into its own presentation reducer and
 cancels an active gesture when the queue reports overflow or a provider
 failure.
 
+`CanvasSurface::listener_count` reports the actual retained input guard count
+for lifecycle diagnostics, or zero on a surface created without input. It
+does not measure browser-private listeners or memory.
+
 The host reports a typed disconnected outcome when no authorized backend bridge
 is configured. When the page host supplies an endpoint, process identifier and
 session principal, it connects `AsyncFrontendApp` to the Metis service over the

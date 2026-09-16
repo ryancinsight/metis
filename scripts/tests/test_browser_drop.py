@@ -12,12 +12,20 @@ import unittest
 
 sys.path.insert(0, str(pathlib.Path(__file__).resolve().parents[1]))
 from browser_drop import (
+    CLEANUP_TRANSFER,
     MAX_FILE_BYTES,
     MAX_BATCH_BYTES,
     MAX_FILES,
     OBSERVE_TRANSFER,
     resolve_browser_target,
     study_files,
+)
+from browser_drop_lifecycle import (
+    MAX_LIFECYCLE_CYCLES,
+    _DeadlineClient,
+    _stopped_cleanup,
+    assert_lifecycle_growth,
+    validate_lifecycle_request,
 )
 from browser_file_read import (
     CLEANUP_SELECTION_DIAGNOSTIC,
@@ -175,8 +183,71 @@ process.stdout.write(JSON.stringify({
 }));
 """
 
+NODE_TRANSFER_CLEANUP_HARNESS = r"""
+const observe = new Function(process.argv[1]);
+const cleanup = new Function(process.argv[2]);
+const listeners = new Map();
+const makeTarget = () => ({
+  files: [],
+  addEventListener(type, listener) {
+    const registrations = listeners.get(type) || [];
+    registrations.push(listener);
+    listeners.set(type, registrations);
+  },
+  removeEventListener(type, listener) {
+    listeners.set(type, (listeners.get(type) || []).filter(item => item !== listener));
+  },
+  getBoundingClientRect() {
+    return {x: 0, y: 0, width: 100, height: 100, bottom: 100};
+  }
+});
+const zone = makeTarget();
+const input = makeTarget();
+global.window = {};
+global.innerHeight = 200;
+global.document = {getElementById: id => id === 'drop-zone' ? zone : input};
+observe();
+observe();
+const result = cleanup();
+process.stdout.write(JSON.stringify({
+  result,
+  retained: Array.from(listeners.values()).reduce((count, items) => count + items.length, 0),
+  evidence: Object.prototype.hasOwnProperty.call(window, 'metisFileEvidence'),
+  files: Object.prototype.hasOwnProperty.call(window, 'metisInputFiles'),
+  selected: Object.prototype.hasOwnProperty.call(window, 'metisSelectedFile'),
+  guard: Object.prototype.hasOwnProperty.call(window, 'metisTransferObserver')
+}));
+"""
+
 
 class FileDropTests(unittest.TestCase):
+    @staticmethod
+    def _lifecycle_records(capacities=(65_536, 131_072, 131_072, 131_072)):
+        records = []
+        for cycle, capacity in enumerate(capacities, start=1):
+            phases = []
+            for phase in ("mounted", "transfer", "decoded", "cine"):
+                phases.append({
+                    "phase": phase,
+                    "gallery": {
+                        "wasm_bytes": capacity,
+                        "host_listeners": 7,
+                        "consumer_listeners": 5,
+                        "mounted": True,
+                    },
+                })
+            phases.append({
+                "phase": "stopped",
+                "gallery": {
+                    "wasm_bytes": capacity,
+                    "host_listeners": 0,
+                    "consumer_listeners": 0,
+                    "mounted": False,
+                },
+            })
+            records.append({"cycle": cycle, "status": "complete", "phases": phases})
+        return records
+
     def test_browser_target_resolution_covers_the_matrix(self):
         self.assertEqual(resolve_browser_target(None, "chrome"), (BrowserEngine.CHROMIUM, "chrome"))
         self.assertEqual(resolve_browser_target("chromium", "MicrosoftEdge"), (BrowserEngine.CHROMIUM, "MicrosoftEdge"))
@@ -256,6 +327,121 @@ class FileDropTests(unittest.TestCase):
         self.assertIn("const evidence = (async () =>", OBSERVE_TRANSFER)
         self.assertIn("error.name", OBSERVE_TRANSFER)
         self.assertNotIn("dispatchEvent", OBSERVE_TRANSFER)
+
+    @unittest.skipUnless(shutil.which("node"), "Node.js is required for browser-script cleanup")
+    def test_transfer_observer_reinstall_and_teardown_release_every_reference(self):
+        process = subprocess.run(
+            ["node", "-e", NODE_TRANSFER_CLEANUP_HARNESS, OBSERVE_TRANSFER, CLEANUP_TRANSFER],
+            check=True,
+            capture_output=True,
+            text=True,
+            timeout=10,
+        )
+        result = json.loads(process.stdout)
+        self.assertEqual(
+            result,
+            {
+                "result": {"listeners_removed": 4, "globals_cleared": True},
+                "retained": 0,
+                "evidence": False,
+                "files": False,
+                "selected": False,
+                "guard": False,
+            },
+        )
+
+    def test_repeated_lifecycle_request_is_bounded_and_requires_cine(self):
+        valid = types.SimpleNamespace(
+            lifecycle_cycles=4,
+            lifecycle_timeout_seconds=300,
+            input="chooser",
+            canvas_trace=pathlib.Path("canvas.json"),
+            keyboard_trace="cine-rate",
+        )
+        self.assertEqual(validate_lifecycle_request(valid), 4)
+        for value in (0, MAX_LIFECYCLE_CYCLES + 1, True):
+            valid.lifecycle_cycles = value
+            with self.subTest(value=value), self.assertRaisesRegex(
+                BrowserRuntimeError, "lifecycle-cycles must be between"
+            ):
+                validate_lifecycle_request(valid)
+        valid.lifecycle_cycles = 3
+        with self.assertRaisesRegex(BrowserRuntimeError, "at least 4 cycles"):
+            validate_lifecycle_request(valid)
+        valid.lifecycle_cycles = 4
+        valid.keyboard_trace = "navigation"
+        with self.assertRaisesRegex(BrowserRuntimeError, "cine-rate"):
+            validate_lifecycle_request(valid)
+        valid.keyboard_trace = "cine-rate"
+        valid.lifecycle_timeout_seconds = 301
+        with self.assertRaisesRegex(BrowserRuntimeError, "between 1 and 300"):
+            validate_lifecycle_request(valid)
+
+    def test_growth_gate_accepts_stable_guards_and_post_warmup_capacity(self):
+        assert_lifecycle_growth(self._lifecycle_records())
+
+    def test_growth_gate_rejects_wasm_growth_after_two_warmups(self):
+        with self.assertRaisesRegex(BrowserRuntimeError, "capacity grew after warmup"):
+            assert_lifecycle_growth(
+                self._lifecycle_records((65_536, 131_072, 131_072, 196_608))
+            )
+
+    def test_growth_gate_rejects_retained_stopped_listener_guard(self):
+        records = self._lifecycle_records()
+        records[-1]["phases"][-1]["gallery"]["consumer_listeners"] = 1
+        with self.assertRaisesRegex(BrowserRuntimeError, "retained listener guards"):
+            assert_lifecycle_growth(records)
+
+    def test_growth_gate_rejects_empty_missing_and_reordered_phases(self):
+        empty = self._lifecycle_records()
+        empty[0]["phases"] = []
+        with self.assertRaisesRegex(BrowserRuntimeError, "omitted or reordered"):
+            assert_lifecycle_growth(empty)
+        missing = self._lifecycle_records()
+        missing[0]["phases"].pop(1)
+        with self.assertRaisesRegex(BrowserRuntimeError, "omitted or reordered"):
+            assert_lifecycle_growth(missing)
+        reordered = self._lifecycle_records()
+        reordered[0]["phases"][1], reordered[0]["phases"][2] = (
+            reordered[0]["phases"][2],
+            reordered[0]["phases"][1],
+        )
+        with self.assertRaisesRegex(BrowserRuntimeError, "omitted or reordered"):
+            assert_lifecycle_growth(reordered)
+
+    def test_growth_gate_rejects_incomplete_cycle_and_invalid_wasm_page_capacity(self):
+        incomplete = self._lifecycle_records()
+        incomplete[-1]["status"] = "running"
+        with self.assertRaisesRegex(BrowserRuntimeError, "sequential and complete"):
+            assert_lifecycle_growth(incomplete)
+        invalid_capacity = self._lifecycle_records()
+        invalid_capacity[-1]["phases"][0]["gallery"]["wasm_bytes"] = 1
+        with self.assertRaisesRegex(BrowserRuntimeError, "invalid wasm_bytes"):
+            assert_lifecycle_growth(invalid_capacity)
+
+    def test_stopped_cleanup_requires_removed_controls_and_globals(self):
+        expected = {
+            "transfer_observer_cleared": True,
+            "file_evidence_cleared": True,
+            "input_files_cleared": True,
+            "selected_file_cleared": True,
+            "canvas_trace_cleared": True,
+            "file_input_removed": True,
+            "drop_zone_removed": True,
+        }
+        client = types.SimpleNamespace(execute=lambda _script: expected)
+        self.assertEqual(_stopped_cleanup(client), expected)
+        client = types.SimpleNamespace(execute=lambda _script: {**expected, "drop_zone_removed": False})
+        with self.assertRaisesRegex(BrowserRuntimeError, "retained browser resources"):
+            _stopped_cleanup(client)
+
+    def test_suite_deadline_rejects_commands_after_expiry(self):
+        client = types.SimpleNamespace(_timeout=120.0)
+        bounded = _DeadlineClient(client, 0.0)
+        with self.assertRaisesRegex(BrowserRuntimeError, "suite deadline exceeded"):
+            bounded.remaining_milliseconds()
+        bounded.restore()
+        self.assertEqual(client._timeout, 120.0)
 
     def test_failure_diagnostic_compares_four_bounded_real_file_reads(self):
         self.assertEqual(MAX_READ_DIAGNOSTIC_BYTES, 1_048_576)
@@ -482,13 +668,26 @@ class FileDropTests(unittest.TestCase):
 
     @staticmethod
     def _execute_diagnostic_fault(mode):
-        process = subprocess.run(
-            ["node", "-e", NODE_READ_DIAGNOSTIC_HARNESS, READ_FAILURE_DIAGNOSTIC, mode],
-            check=True,
-            capture_output=True,
-            text=True,
-            timeout=10,
+        # File-backed source keeps Windows process argument transport bounded.
+        file_harness = NODE_READ_DIAGNOSTIC_HARNESS.replace(
+            "const mode = process.argv[2];\nconst diagnostic = process.argv[1];",
+            "const mode = process.argv[3];\n"
+            "const diagnostic = require('node:fs').readFileSync(process.argv[2], 'utf8');",
+            1,
         )
+        with tempfile.TemporaryDirectory(prefix="metis-node-diagnostic-") as directory:
+            root = pathlib.Path(directory)
+            harness_path = root / "harness.js"
+            diagnostic_path = root / "diagnostic.js"
+            harness_path.write_text(file_harness, encoding="utf-8")
+            diagnostic_path.write_text(READ_FAILURE_DIAGNOSTIC, encoding="utf-8")
+            process = subprocess.run(
+                ["node", str(harness_path), str(diagnostic_path), mode],
+                check=True,
+                capture_output=True,
+                text=True,
+                timeout=10,
+            )
         return json.loads(process.stdout)
 
     @unittest.skipUnless(shutil.which("node"), "Node.js is required for browser-script fault injection")
