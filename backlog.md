@@ -346,7 +346,9 @@ an owner. “Unsupported” cannot replace delivery of a required mobile/native 
 - Completed increment: native `TextComposition` phases from Moirai `7ad8eeee` are consumed by `metis-app`; preedit text is bounded and transient, commit uses the ordinary bounded patient-field transition, and cancellation/focus loss clears it. The focused Metis suite covers the value transition.
 - Completed increment (2026-09-08): the browser text policy rejects UTF-16 offsets inside surrogate pairs before changing state, preserving scalar boundaries while retaining browser-native UTF-16 transport coordinates.
 - Evidence: the focused `metis-web` suite covers a rejected split-surrogate selection and unchanged state; the manual and verification record the browser visual trace and its grapheme/IME limits.
-- Residuals: grapheme-safe editing, bidi and line geometry, fallback-font metrics, clipboard/undo, an installed CJK or other native IME journey and assistive-technology acceptance remain open; CUA evidence is limited to HTML/WASM rendering and synthetic browser input.
+- Completed increment (2026-09-16): `TextState` now rejects UTF-16 selection offsets inside Unicode extended grapheme clusters using the `unicode-segmentation` UAX #29 implementation. Combining-mark and ZWJ split selections reject without mutating state; cluster-boundary selections remain valid.
+- Evidence: focused `metis-web` nextest runs 44/44, with strict native/WASM Clippy and checks passing; the full verifier is the delivery gate for this revision. Browser evidence remains limited to the semantic textarea and synthetic input surface.
+- Residuals: browser caret movement, bidi and line geometry, fallback-font metrics, clipboard/undo, an installed CJK or other native IME journey and assistive-technology acceptance remain open.
 
 <a id="METIS-A11Y-001"></a>
 ## METIS-A11Y-001 — Accessible application interaction [minor]

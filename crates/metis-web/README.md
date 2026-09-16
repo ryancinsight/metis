@@ -100,10 +100,11 @@ The textarea keeps Unicode values in Rust-owned state, preserves browser
 UTF-16 selection offsets and direction, and records `InputEvent` data,
 operation type and composition state. Composition start, update, commit and
 cancel transitions render separate status values. The policy bounds values and
-metadata, rejects offsets inside a UTF-16 surrogate pair before changing state,
-leaves grapheme segmentation, bidi layout, clipboard/undo and native IME
-production to the host contract, and exposes the selection and composition
-state through semantic status elements and data attributes.
+metadata, rejects offsets inside a UTF-16 surrogate pair or Unicode extended
+grapheme cluster before changing state, leaves browser caret movement, bidi
+layout, clipboard/undo, fallback-font metrics and native IME production to the
+host contract, and exposes the selection and composition state through
+semantic status elements and data attributes.
 
 Build the WASM artifact and generated browser glue with:
 

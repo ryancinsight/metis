@@ -80,6 +80,56 @@ fn selection_rejects_offsets_inside_a_surrogate_pair() {
 }
 
 #[test]
+fn selection_rejects_offsets_inside_extended_grapheme_clusters() {
+    let value = "e\u{301}👩‍💻🇺🇸".to_owned();
+    let mut state = TextState::new(value.clone()).expect("Unicode value is bounded");
+    let valid =
+        Selection::new(2, 7, SelectionDirection::Forward).expect("cluster boundaries are ordered");
+    state
+        .apply_selection(valid)
+        .expect("selection at extended grapheme boundaries is valid");
+    assert_eq!(state.selection(), valid);
+    let before = state.clone();
+    let combining_mark = u32::try_from("e".encode_utf16().count())
+        .expect("the combining-mark boundary fits the selection coordinate");
+    assert_eq!(
+        state
+            .apply_selection(
+                Selection::new(combining_mark, combining_mark, SelectionDirection::None)
+                    .expect("selection ordering is valid"),
+            )
+            .expect_err("a combining mark must remain in its grapheme cluster"),
+        TextError::SelectionSplitsGrapheme
+    );
+    assert_eq!(state, before);
+
+    let zwj_sequence = u32::try_from("e\u{301}👩".encode_utf16().count())
+        .expect("the ZWJ boundary fits the selection coordinate");
+    assert_eq!(
+        state
+            .apply_selection(
+                Selection::new(zwj_sequence, zwj_sequence, SelectionDirection::None)
+                    .expect("selection ordering is valid"),
+            )
+            .expect_err("a ZWJ sequence must remain in its grapheme cluster"),
+        TextError::SelectionSplitsGrapheme
+    );
+    assert_eq!(state, before);
+
+    assert_eq!(
+        state.apply_input(
+            value,
+            None,
+            "insertText".to_owned(),
+            CompositionState::Inactive,
+            Selection::new(4, 4, SelectionDirection::None).expect("selection ordering is valid"),
+        ),
+        Err(TextError::SelectionSplitsGrapheme)
+    );
+    assert_eq!(state, before);
+}
+
+#[test]
 fn composition_lifecycle_preserves_preedit_and_terminal_data() {
     let mut state = TextState::default();
     state

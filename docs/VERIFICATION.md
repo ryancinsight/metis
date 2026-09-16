@@ -1063,14 +1063,18 @@ event data, input-operation names and composition locales before copying them
 into owned values; selection snapshots retain UTF-16 code-unit offsets and a
 direction enum. `metis-web` keeps its own bounded `TextState`, validates
 selection ranges against the current value and rejects offsets inside a
-UTF-16 surrogate pair, and handles `input`, `select`,
+UTF-16 surrogate pair or Unicode extended grapheme cluster using the
+`unicode-segmentation` UAX #29 implementation, and handles `input`, `select`,
 `compositionstart`, `compositionupdate`, `compositionend` and
 `compositioncancel` through Rust-owned listener guards.
 
-The focused commands against the updated standalone lock are:
+The 2026-09-16 grapheme increment extends the Rust policy to reject split
+extended-grapheme selections without mutating `TextState`; cluster-boundary
+selections remain valid. The focused commands against the updated standalone
+lock are:
 
 ```text
-cargo nextest run --locked -p metis-web — 32/32 passed
+cargo nextest run --locked -p metis-web — 44/44 passed
 cargo clippy --locked -p metis-web --all-targets -- -D warnings — passed
 cargo check --locked -p metis-web --target wasm32-unknown-unknown — passed
 cargo clippy --locked -p metis-web --target wasm32-unknown-unknown -- -D warnings — passed
@@ -1079,7 +1083,7 @@ python scripts/browser.py build — passed
 ```
 
 The native policy suite covers an accented character and emoji UTF-16 span,
-scalar-boundary rejection, selection ordering and bounds,
+scalar and extended-grapheme boundary rejection, selection ordering and bounds,
 forward/backward/unknown direction labels,
 input metadata rejection without state mutation, and composition start/update,
 commit and cancellation. The generated page renders a labelled textarea,
@@ -1087,9 +1091,10 @@ separate text/composition/selection status regions, a bounded value preview and
 selection/composition data attributes. A CUA trace can inspect those semantic
 nodes and the focus ring; it cannot synthesize a trusted operating-system IME
 or expose the browser `isTrusted` flag. The trace therefore establishes the
-HTML/WASM rendering and listener surface only. Grapheme segmentation, bidi
-shaping, fallback-font metrics, clipboard/undo, assistive technology and native
-IME evidence remain open under `METIS-TEXT-001` and `METIS-A11Y-001`.
+HTML/WASM rendering and listener surface only. Browser caret movement, bidi
+shaping, line metrics, fallback-font metrics, clipboard/undo, assistive
+technology and native IME evidence remain open under `METIS-TEXT-001` and
+`METIS-A11Y-001`.
 
 The 2026-09-08 CUA trace opened
 `http://127.0.0.1:8095/?cache=text-clean-20260908` at 1280×720 CSS pixels and
@@ -1822,9 +1827,10 @@ screen readers and document results. Capture zoom/high-contrast/reduced-motion
 states; an accessibility-tree snapshot alone does not prove usability.
 
 Current browser evidence covers the Rust-owned textarea, bounded Unicode value,
-UTF-16 selection transport and composition lifecycle. It does not yet close
-grapheme segmentation, bidi/layout metrics, clipboard/undo, native IME or
-assistive-technology acceptance; those remain explicit residuals.
+UTF-16 selection transport, extended-grapheme boundary rejection and
+composition lifecycle. It does not yet close browser caret movement, bidi/line
+metrics, clipboard/undo, native IME or assistive-technology acceptance; those
+remain explicit residuals.
 
 <a id="V04"></a>
 ### V04 — Responsive layout and clipping

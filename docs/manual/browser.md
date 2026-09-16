@@ -919,10 +919,10 @@ evidence; CUA does not expose a trusted operating-system IME or `isTrusted`.
 
 The policy caps the value at 1 MiB, event metadata at 128 UTF-8 bytes and the
 locale at 64 bytes. UTF-16 offsets are transport coordinates; the Rust policy
-rejects an offset inside a surrogate pair before it changes state, while
-grapheme boundaries remain a host contract. This workflow therefore does not
-claim grapheme-safe caret movement, bidi shaping, fallback-font metrics,
-clipboard/undo behavior, assistive-technology behavior or native IME delivery.
+rejects an offset inside a surrogate pair or Unicode extended grapheme cluster
+before it changes state. This workflow does not claim browser caret movement,
+bidi shaping, line metrics, fallback-font metrics, clipboard/undo behavior,
+assistive-technology behavior or native IME delivery.
 CUA can show the real HTML textarea, statuses and focus ring, but it cannot
 provide a trusted OS IME event or expose `isTrusted`; record the browser engine
 and input method when collecting host evidence.

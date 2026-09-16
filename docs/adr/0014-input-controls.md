@@ -26,6 +26,12 @@ Revision 2026-09-11: Moirai PR #327 raises the shared browser file metadata
 bound to 512 entries so the committed 409-slice DICOM study fits in one bounded
 drop. The consumer-owned 256 MiB byte batch limit is unchanged.
 
+Revision 2026-09-16: `TextState` now validates UTF-16 selection offsets against
+Unicode extended grapheme cluster boundaries with the `unicode-segmentation`
+UAX #29 implementation. Browser caret movement, bidi layout, line metrics,
+clipboard/undo, fallback-font metrics and native IME production remain host
+contracts.
+
 ## Context
 
 Metis must reuse ordinary HTML5 controls while keeping application state and
@@ -95,10 +101,11 @@ The workbench also uses a semantic textarea for text and composition. Metis
 owns a bounded `TextState` that receives Moirai's UTF-16 selection snapshots,
 `InputEvent` metadata and `CompositionEvent` transitions. The state validates
 selection ranges against the current Unicode value, rejects offsets inside a
-UTF-16 surrogate pair, and renders text, composition and selection status
-without importing `web-sys`. Grapheme segmentation, bidi shaping,
-clipboard/undo, fallback-font metrics and native IME production remain host
-contracts.
+UTF-16 surrogate pair or a Unicode extended grapheme cluster using the
+`unicode-segmentation` UAX #29 implementation, and renders text, composition
+and selection status without importing `web-sys`. Browser caret movement,
+bidi shaping, line metrics, clipboard/undo, fallback-font metrics and native
+IME production remain host contracts.
 
 ## Alternatives
 
@@ -113,7 +120,7 @@ current browser contract.
 `ControlState` tests cover default values, checked, radio and select transitions,
 bounded scale parsing, invalid control input, numeric-field validation and
 preservation of a successful response while presentation controls change.
-`metis-web` passes native warning-denied Clippy, 21 native tests, and the WASM
+`metis-web` passes native warning-denied Clippy, 44 native tests, and the WASM
 compile and Clippy checks against Moirai
 `0862716265d657b8069d5a47fd1e77ae26ddd006`. The authenticated browser trace at
 1280×720 CSS pixels and device scale 1.25 selected the radio and checkbox with
@@ -150,11 +157,14 @@ increment adds bounded capture slots, duplicate/third-pointer rejection,
 centroid pan, distance-ratio zoom and zero-distance baseline handling; its
 native policy tests and WASM checks are recorded in the verification artifact.
 
-The text increment adds native policy tests for UTF-16 coordinates, scalar
-boundary and selection bounds, input metadata and composition transitions. The browser
-trace renders the labelled textarea, bounded value preview, semantic status
-regions and focus state; CUA cannot provide trusted OS IME input or expose the
-browser `isTrusted` flag.
+The text increment adds native policy tests for UTF-16 coordinates, scalar and
+extended-grapheme boundaries, selection bounds, input metadata and composition
+transitions. The extended-grapheme fixture covers a combining mark, a ZWJ
+sequence and regional indicators; split selections are rejected without state
+mutation, while cluster-boundary selections remain valid. The browser trace
+renders the labelled textarea, bounded value preview, semantic status regions
+and focus state; CUA cannot provide trusted OS IME input or expose the browser
+`isTrusted` flag.
 
 The file-drop increment consumes `DropFiles` from Moirai revision
 `5c8a9e8be32ad6beac14ed263c2f11c3663b87cb`. The native `metis-web` suite
@@ -166,7 +176,8 @@ DICOM decode.
 
 ## Residuals
 
-Grapheme/bidi layout, clipboard/undo, native IME, accessibility technology and
-native-window input remain under the linked backlog items. CUA cannot provide
+Browser caret/bidi layout, line metrics, clipboard/undo, native IME,
+accessibility technology and native-window input remain under the linked
+backlog items. CUA cannot provide
 trusted physical touch or expose the browser `isTrusted` flag, so this
 increment does not claim cross-engine or physical-input parity.
