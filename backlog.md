@@ -27,14 +27,14 @@
 
 <a id="METIS-BROWSER-READ-001"></a>
 ## METIS-BROWSER-READ-001 — Diagnose selected-file reads
-- Status: blocked; priority: P0; integrator: root (takeover of stale webkit-read-root claim); last-update: 2026-09-16; branch: `codex/metis-browser-read-evidence`.
+- Status: blocked; priority: P0; integrator: root; last-update: 2026-09-16.
 - Scope: preserve format-neutral provider read failures and reproduce real chooser reads; DICOM semantics remain in RITK.
 - Acceptance: exact failing operation identified, owning fix verified on saved MRI-DIR Chromium/Firefox/WebKit gallery and byte oracles.
 - Risk: [patch]; dependencies: merged Moirai bounded reader; baseline: RITK hosted run `34922946179`, Metis `6951caa`, Moirai `8d032e3`.
 - Diagnosis increment: retain provider operation errors in the Rust byte status; capture bounded real-file read comparisons on chooser failure. Native nextest 40/40, native/WASM strict Clippy, doctest 1/1 and diagnostic tests 14/14 pass; independent review passes. The format-neutral read diagnostics are delivered, and RITK owns the real DICOM gallery.
-- Evidence: hosted RITK [run 35089121864](https://github.com/ryancinsight/ritk/actions/runs/35089121864) builds RITK `3b7386c5f58b39e479e9a9ee99a10b575fd102f9` against Metis `0d1d5bc42b22547fe50f30fac94e475873a507a7` and Moirai `c9a4431b2320adb8cd3e5a5f12d1632c18378950`; Chromium/Firefox pass the real 94-file study, exact pixel oracles, rejections and cleanup. WebKit remains queued; source-equivalent Safari sandbox diagnostics are retained from [run 35086915947](https://github.com/ryancinsight/ritk/actions/runs/35086915947).
-- Delivered: [PR 158](https://github.com/ryancinsight/metis/pull/158) preserves provider errors; [PR 159](https://github.com/ryancinsight/metis/pull/159) adds bounded isolated controls; RITK consumer evidence is [PR #420](https://github.com/ryancinsight/ritk/pull/420). Full Metis gate passes source hash `17c9721244580abf1c897a51d9591e7a2a7ca0666cd84cd6eb28f7c18dde6d8c`.
-- Blocker: SafariDriver/WebKit selected-file authorization; the current WebKit job is queued and no Metis read API can grant the denied access. Re-open when the same real selected file is readable under a corrected browser/runner authorization path. DICOM remains in RITK.
+- Evidence: hosted RITK [run 35089121864](https://github.com/ryancinsight/ritk/actions/runs/35089121864) builds RITK `3b7386c5f58b39e479e9a9ee99a10b575fd102f9` against Metis `0d1d5bc42b22547fe50f30fac94e475873a507a7` and Moirai `c9a4431b2320adb8cd3e5a5f12d1632c18378950`; Chromium/Firefox pass the real 94-file study, exact pixel oracles, rejections and cleanup. WebKit accepts 94 files then fails the first bounded read; RITK records the completed failure and exact diagnostic hashes.
+- Delivered: [PR 158](https://github.com/ryancinsight/metis/pull/158) preserves provider errors; [PR 159](https://github.com/ryancinsight/metis/pull/159) adds bounded isolated controls; Metis PR [#182](https://github.com/ryancinsight/metis/pull/182) records the current provider evidence; RITK consumer evidence is [PR #422](https://github.com/ryancinsight/ritk/pull/422). Full Metis gate passes source hash `17c9721244580abf1c897a51d9591e7a2a7ca0666cd84cd6eb28f7c18dde6d8c`.
+- Blocker: SafariDriver/WebKit selected-file authorization; current run 35089121864 reproduces the denial after SafariDriver accepts the chooser request, and no Metis read API can grant the denied access. Re-open when the same real selected file is readable under a corrected browser/runner authorization path. DICOM remains in RITK.
 
 Registration: [Atlas member item](../../backlog.md#atlas-member-registration-defects)
 is done. Public source and executable packaging are merged, and the Atlas stack

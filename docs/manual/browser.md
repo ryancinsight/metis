@@ -1151,10 +1151,12 @@ provider uses the browser `File.arrayBuffer()` API directly without allocating
 beyond the provider bound. The hosted replay
 [run 35089121864](https://github.com/ryancinsight/ritk/actions/runs/35089121864)
 exercises that path with the real 94-file MRI-DIR T2 study. Chromium 152 and
-Firefox 155 complete the bounded transfer; the WebKit job is queued. A
-source-equivalent Safari 26.6.2 capture from
-[run 35086915947](https://github.com/ryancinsight/ritk/actions/runs/35086915947)
-records the first 529,864-byte `File.arrayBuffer()` read rejected by the host.
+Firefox 155 complete the bounded transfer. Safari 26.6.2 accepts the 94-file
+chooser request, then WebKit rejects the first 529,864-byte
+`File.arrayBuffer()` read. The current WebKit artifact is
+[10445741511](https://github.com/ryancinsight/ritk/actions/runs/35089121864/artifacts/10445741511);
+RITK's [cross-engine provenance](https://github.com/ryancinsight/ritk/blob/main/docs/manual/images/dicom-metis-real-browser-mri-cross-engine.json)
+binds the trace, sandbox logs and canonical failure capture.
 Larger files and positioned continuation reads retain the sliced object-URL
 response stream. The gallery's strict content security policy permits `blob:`
 only in `connect-src` for that bounded local read; network origins remain
@@ -1163,14 +1165,13 @@ explicit and `object-src` stays disabled.
 The host retains the provider's read error in **Byte access** and never forwards
 an incomplete batch. On an automated chooser failure, the runner records bounded
 comparisons of the selected file's original `File.arrayBuffer()`, bounded slice,
-`FileReader` and blob-URL stream reads. In source-equivalent run 35086915947
-Safari reports
+`FileReader` and blob-URL stream reads. In current run 35089121864 Safari reports
 `NotReadableError` for the first three APIs and `TypeError` for the stream; the
 host independently reads the 529,864-byte file and verifies its expected
 SHA-256. These controls preserve the failed result and original screenshot; they
 do not supply replacement bytes to the consumer.
 
-The source-equivalent Safari run records WebKit WebContent denials for
+The current Safari run records WebKit WebContent denials for
 `file-read-data` and
 `file-issue-extension`, plus a WebKit Networking `file-read-data` denial on the
 selected file. SafariDriver accepts `Automation.setFilesToSelectForFileUpload`
