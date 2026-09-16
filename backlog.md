@@ -1,3 +1,11 @@
+<a id="METIS-GALLERY-CYCLES-001"></a>
+## METIS-GALLERY-CYCLES-001 — Repeated saved-study browser lifecycle
+- Status: in-progress; priority: P1; integrator: root; last-update: 2026-09-16.
+- Scope: bounded same-instance MRI-DIR gallery cycles on Chromium and Firefox; DICOM semantics remain RITK-owned.
+- Acceptance: each cycle verifies file/pixel identities and cine actions; stopped listeners are zero; post-warmup capacity growth fails the regression gate; record available heap evidence and its limits.
+- Risk: [minor]; dependencies: current saved 94-file gallery and browser input contracts.
+- Verification: focused native/WASM and browser gates; measured V12 provenance and manual only.
+
 # Metis delivery
 
 <a id="METIS-INPUT-TRUST-001"></a>
