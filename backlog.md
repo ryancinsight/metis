@@ -12,11 +12,9 @@
 
 <a id="METIS-GALLERY-SLIDER-001"></a>
 ## METIS-GALLERY-SLIDER-001 — Browse anatomical slices
-- Status: review; priority: P1; integrator: cine-gallery-root; last-update: 2026-09-16.
-- Scope: gallery range controls and browser automation; RITK owns slice selection and rendering.
-- Acceptance: each axis reaches first and last slice through native range input, displays matching slice counters, repaints changed pixels, and stays synchronized with wheel navigation; saved-study screenshot inspected.
-- Dependency: RITK-BROWSER-SLIDER-001; risk: [minor].
-- Verification: 27 gallery and 51 runtime tests pass; real 94-file Edge capture passes 50 trusted slider actions, 18 invalid API probes, cine checks and exact frame restoration; screenshots in RITK's DICOM manual.
+- Status: done; priority: P1; last-update: 2026-09-16.
+- Delivery: Metis PR [#178](https://github.com/ryancinsight/metis/pull/178), merge `8ca04d505c3b2a48746c92d790048b0163964614`.
+- Outcome: 27 gallery and 51 runtime tests pass; the real 94-file MRI trace covers 50 trusted slider actions, 18 invalid probes, cine checks and exact frame restoration, with inspected screenshots in the [RITK DICOM manual](https://github.com/ryancinsight/ritk/blob/main/docs/manual/dicom-workflow.md).
 
 # Metis delivery
 
