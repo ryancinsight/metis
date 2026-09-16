@@ -100,6 +100,11 @@ bounded textarea policy with input, selection and composition lifecycle
 listeners; grapheme segmentation, bidi/layout metrics, clipboard/undo, trusted
 native IME, accessibility technology and native event production remain open.
 
+Revision 2026-09-16: `TextState` rejects UTF-16 selection offsets inside
+Unicode extended grapheme clusters using the pure-Rust UAX #29 segmenter. The
+browser host still owns caret movement, bidi/layout metrics, clipboard/undo,
+trusted native IME, accessibility technology and native event production.
+
 Revision 2026-09-08: Metis now retains two browser pointer identifiers and
 applies a bounded centroid/distance pinch policy. Duplicate and third-pointer
 presses are rejected, and the remaining physical-touch, cross-engine and
