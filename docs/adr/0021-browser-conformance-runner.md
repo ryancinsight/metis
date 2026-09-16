@@ -109,6 +109,19 @@ scanner, decoder, geometry and viewer workflow, while Moirai owns confined
 filesystem handles. This runner exercises only the format-neutral Metis
 presentation and service boundary.
 
+Revision 2026-09-16: the workbench trace adds an opt-in accessibility probe.
+The browser-side script observes media preferences, CSS and visual viewport
+scale, document extents, DOM focus order and bounded focusable-element
+geometry. It focuses visible enabled controls in DOM order, checks the
+sequence, then blurs the probe focus; Python rejects duplicate identities,
+horizontal overflow, empty/off-viewport rectangles and malformed media data.
+`--require-reduced-motion` and `--require-forced-colors` make host preference
+observations explicit acceptance conditions without attempting to emulate
+operating-system settings. The CLI orchestration now lives in the adjacent
+`browser_runtime_cli.py` module while `browser_runtime.py` remains the stable
+entry point and trace implementation. Screen-reader speech and native
+accessibility bridges remain host-specific evidence.
+
 ## Alternatives
 
 Using only the Codex in-app browser would preserve a useful visual trace but

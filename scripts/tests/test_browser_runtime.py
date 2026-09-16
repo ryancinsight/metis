@@ -14,12 +14,11 @@ sys.path.insert(0, str(pathlib.Path(__file__).resolve().parents[1]))
 import browser_protocol
 from browser_runtime import (
     MAX_LIFECYCLE_CYCLES,
-    StaticServer,
     _write_trace,
     _validate_bridge_url,
-    main,
     run_scenario,
 )
+from browser_runtime_cli import main
 from browser_canvas import (
     KeyboardTraceKind,
     MAX_CANVAS_ATTRIBUTES,
@@ -39,6 +38,7 @@ from browser_protocol import (
     MAX_SCREENSHOT_BYTES,
     MAX_SCREENSHOT_RESPONSE_BYTES,
     MAX_TRACE_BYTES,
+    StaticServer,
     WebDriverClient,
     format_device_scale,
     parse_device_scale,
@@ -188,6 +188,55 @@ class FakeDriver:
         return None
 
     def execute(self, script: str, arguments=()):
+        if "matchMedia" in script and "focus_order" in script:
+            return {
+                "ok": True,
+                "media": {
+                    "reduced_motion": False,
+                    "forced_colors": False,
+                    "contrast_more": False,
+                },
+                "viewport": {
+                    "width": 1280,
+                    "height": 720,
+                    "device_pixel_ratio": self.device_scale_milli / 1000,
+                },
+                "visual_viewport": {
+                    "scale": 1.0,
+                    "width": 1280.0,
+                    "height": 720.0,
+                },
+                "document": {
+                    "client_width": 1280,
+                    "scroll_width": 1280,
+                    "client_height": 720,
+                    "scroll_height": 720,
+                },
+                "active_before": None,
+                "active_after": None,
+                "focus_order": [
+                    {"id": "weight-kg", "role": "textbox", "name": "Weight (kg)"},
+                ],
+                "focus_sequence": ["weight-kg"],
+                "geometry": {
+                    "metis-app": {
+                        "left": 0.0,
+                        "top": 0.0,
+                        "width": 960.0,
+                        "height": 720.0,
+                        "right": 960.0,
+                        "bottom": 720.0,
+                    },
+                    "weight-kg": {
+                        "left": 16.0,
+                        "top": 16.0,
+                        "width": 320.0,
+                        "height": 44.0,
+                        "right": 336.0,
+                        "bottom": 60.0,
+                    },
+                },
+            }
         if "devicePixelRatio" in script:
             return {
                 "device_pixel_ratio": self.device_scale_milli / 1000,
@@ -767,6 +816,35 @@ class BrowserRuntimeTests(unittest.TestCase):
         self.assertEqual(memory_labels, heap_labels)
         self.assertTrue(all(sample["available"] for sample in trace.metrics["browser_memory"]))
         self.assertEqual(len(trace.screenshots), 6)
+
+    def test_accessibility_probe_records_focus_media_and_geometry(self):
+        output = pathlib.Path(__file__).resolve().parents[2] / "output" / "browser" / "runtime-test"
+        output.mkdir(parents=True, exist_ok=True)
+        with tempfile.TemporaryDirectory(dir=output) as directory:
+            driver = FakeDriver()
+            trace = run_scenario(
+                driver,
+                BrowserEngine.CHROMIUM,
+                "http://127.0.0.1:8080/?endpoint=ws%3A%2F%2F127.0.0.1%3A8765%2Fsocket&process=42&principal=66666666666666666666666666666666",
+                "authorized",
+                "0" * 40,
+                pathlib.Path(directory),
+                5_000,
+                False,
+                4_000,
+                accessibility_probe=True,
+            )
+        records = trace.metrics["accessibility"]
+        self.assertEqual(
+            [record["label"] for record in records],
+            ["initial", "after-weight-kg", "after-target-dose", "remounted"],
+        )
+        for record in records:
+            self.assertEqual(record["media"], {"reduced_motion": False, "forced_colors": False, "contrast_more": False})
+            self.assertEqual(record["viewport"], {"width": 1280, "height": 720, "device_pixel_ratio": 1.0})
+            self.assertEqual(record["focus_sequence"], ["weight-kg"])
+            self.assertEqual(record["geometry"]["weight-kg"]["width"], 320.0)
+            self.assertIsNone(record["active_after"])
 
     def test_lifecycle_cycle_bound_is_enforced(self):
         for value in (0, MAX_LIFECYCLE_CYCLES + 1, True):
@@ -1404,6 +1482,52 @@ class BrowserRuntimeTests(unittest.TestCase):
             document = json.loads(trace_path.read_text(encoding="utf-8"))
         self.assertEqual(document["status"], "failed")
         self.assertIn("requires --scenario workbench", document["error"])
+
+    def test_cli_rejects_accessibility_probe_on_canvas_scenario(self):
+        output = pathlib.Path(__file__).resolve().parents[2] / "output" / "browser" / "runtime-test"
+        output.mkdir(parents=True, exist_ok=True)
+        with tempfile.TemporaryDirectory(dir=output) as directory:
+            trace_path = pathlib.Path(directory) / "invalid-accessibility-cli.json"
+            with mock.patch.object(
+                sys,
+                "argv",
+                [
+                    "browser_runtime.py",
+                    "--engine",
+                    "chromium",
+                    "--scenario",
+                    "canvas",
+                    "--accessibility-probe",
+                    "--output",
+                    str(trace_path),
+                ],
+            ):
+                self.assertEqual(main(), 1)
+            document = json.loads(trace_path.read_text(encoding="utf-8"))
+        self.assertEqual(document["status"], "failed")
+        self.assertIn("--accessibility-probe requires --scenario workbench", document["error"])
+
+    def test_cli_rejects_media_requirement_without_accessibility_probe(self):
+        output = pathlib.Path(__file__).resolve().parents[2] / "output" / "browser" / "runtime-test"
+        output.mkdir(parents=True, exist_ok=True)
+        with tempfile.TemporaryDirectory(dir=output) as directory:
+            trace_path = pathlib.Path(directory) / "invalid-media-cli.json"
+            with mock.patch.object(
+                sys,
+                "argv",
+                [
+                    "browser_runtime.py",
+                    "--engine",
+                    "chromium",
+                    "--require-reduced-motion",
+                    "--output",
+                    str(trace_path),
+                ],
+            ):
+                self.assertEqual(main(), 1)
+            document = json.loads(trace_path.read_text(encoding="utf-8"))
+        self.assertEqual(document["status"], "failed")
+        self.assertIn("--require-reduced-motion requires --accessibility-probe", document["error"])
 
     def test_cli_requires_a_fixed_url_for_fragment_scenario(self):
         output = pathlib.Path(__file__).resolve().parents[2] / "output" / "browser" / "runtime-test"

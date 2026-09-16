@@ -350,7 +350,7 @@ an owner. “Unsupported” cannot replace delivery of a required mobile/native 
 
 <a id="METIS-A11Y-001"></a>
 ## METIS-A11Y-001 — Accessible application interaction [minor]
-- Status: in-progress; priority: P1; owner: Metis host/UI; integrator: root; last-update: 2026-09-16; branch: `docs/metis-a11y-runtime`; regions: `scripts/browser_runtime.py`, `scripts/browser_trace.py`, `scripts/tests/test_browser_runtime.py`, `docs/manual/browser.md`, `docs/VERIFICATION.md`, `backlog.md`; dependencies: METIS-INPUT-001; risk: inaccessible controls
+- Status: in-progress; priority: P1; owner: Metis host/UI; integrator: root; last-update: 2026-09-16; branch: `docs/metis-a11y-runtime`; regions: `.github/workflows/ci.yml`, `scripts/browser_accessibility.py`, `scripts/browser_runtime.py`, `scripts/tests/test_browser_accessibility.py`, `scripts/tests/test_browser_runtime.py`, `docs/manual/browser.md`, `docs/VERIFICATION.md`, `backlog.md`; dependencies: METIS-INPUT-001; risk: inaccessible controls
 - Scope: semantic DOM roles/names/states, focus/action mapping, announcements, reduced motion/high contrast/zoom; OS accessibility bridge for any custom UI path.
 - Acceptance: semantic tree identity/actions and keyboard-only completion pass; actual supported screen readers traverse and operate the application; document platform limits instead of claiming certification from tree presence.
 - Demonstration: [V03](docs/VERIFICATION.md#V03), readable focus/contrast/zoom captures plus semantic/action and assistive-technology evidence.
@@ -358,7 +358,9 @@ an owner. “Unsupported” cannot replace delivery of a required mobile/native 
 - Evidence: revision `6bbbd00` passes the full Metis gate and 51 Python tests; the CUA trace observes the document focus path and a visible focus outline on **Clinical note**.
 - Completed increment (2026-09-08): `feat(web): Announce busy application state` marks the form, primary/result status and explorer table with atomic polite announcements and Rust-owned `aria-busy` transitions during pending or loading work.
 - Evidence: [browser accessibility presentation evidence](docs/VERIFICATION.md#browser-accessibility-presentation-evidence--2026-09-08) records the static semantic contract and its one-engine runtime limits.
-- Residuals: supported screen-reader speech, forced-colors/reduced-motion runtime captures, zoom-scale geometry and native host accessibility bridge evidence remain open.
+- Completed increment (2026-09-16): the W3C workbench probe records observed media preferences, focus order, viewport/zoom geometry and document overflow with bounded value-semantic validation; the scheduled browser matrix includes the probe beside its PNG captures.
+- Evidence: `python -m unittest scripts.tests.test_browser_accessibility scripts.tests.test_browser_runtime` passes 60/60; screen-reader speech, host preference enablement and native bridge evidence remain outside the probe.
+- Residuals: supported screen-reader speech, host-specific forced-colors/reduced-motion acceptance and native host accessibility bridge evidence remain open.
 
 <a id="METIS-LAYOUT-001"></a>
 ## METIS-LAYOUT-001 — Responsive layout and style semantics [minor]

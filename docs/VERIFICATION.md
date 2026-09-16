@@ -1185,9 +1185,11 @@ surface.
 The available CUA browser can inspect the semantic tree and visible focus ring
 at 1280×720 CSS pixels and device scale 1.25. It cannot change the browser's
 reduced-motion or forced-colors media preferences, expose spoken screen-reader
-output, or provide an operating-system accessibility bridge. Runtime captures
-under those preferences, supported screen-reader traversal, zoom-scale
-geometry and native host accessibility remain open under `METIS-A11Y-001`.
+output, or provide an operating-system accessibility bridge. The W3C runner's
+`--accessibility-probe` records observed media flags, focus order, viewport
+scale and bounded element geometry when a configured driver is available;
+host-specific preference enablement, supported screen-reader traversal and
+native host accessibility remain open under `METIS-A11Y-001`.
 
 The fresh CUA trace started from **Start host**, advanced to **Stop host** and
 **Session details**, then traversed **Patient reference**, **Weight (kg)**,
@@ -1717,6 +1719,37 @@ allocator use, native process memory, compositor or GPU memory, and it does not
 close the V12 allocation or matched-framework gaps. The dependency-free
 runtime, canvas and gallery paths share the same validation function; live
 availability remains host-dependent.
+
+<a id="browser-accessibility-runtime-probe-2026-09-16"></a>
+## Browser accessibility runtime probe — 2026-09-16
+
+The workbench runner now accepts `--accessibility-probe`. It records the
+browser's `prefers-reduced-motion`, `forced-colors` and increased-contrast
+observations, CSS and visual viewport dimensions, device-pixel ratio, document
+scroll extents, DOM focus order and the bounding rectangle of each focusable
+control. The browser script focuses every visible enabled control in DOM order
+with `preventScroll`, compares the observed sequence to that order and blurs
+the final control. The validator rejects duplicate IDs, missing focus entries,
+empty or off-viewport rectangles and horizontal overflow. Labels and roles are
+bounded text; form values and DICOM/patient content are excluded from the
+record.
+
+The dependency-free focused suite
+`python -m unittest scripts.tests.test_browser_accessibility scripts.tests.test_browser_runtime`
+passed 60/60, including malformed media, overflow, focus-sequence, active-focus
+and baseline-order cases plus a full workbench trace with four accessibility
+records. `python -m py_compile` and the plan/diff checks passed. The scheduled
+Chromium, Firefox and WebKit lifecycle jobs now include the probe, so each
+configured engine uploads the accessibility records with its existing PNG
+captures.
+
+The probe observes the host configuration; it does not emulate operating-system
+media settings, produce spoken screen-reader output, exercise an installed IME
+or expose a native accessibility bridge. The optional
+`--require-reduced-motion` and `--require-forced-colors` switches make those
+two observed flags explicit host acceptance conditions. Screen-reader speech,
+native bridge behavior and preference-enabled captures remain open under
+`METIS-A11Y-001`.
 
 <a id="browser-lifecycle-growth-instrument-2026-09-13"></a>
 ## Browser lifecycle-growth instrument — 2026-09-13
