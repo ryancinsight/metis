@@ -9,6 +9,7 @@ import sys
 import tempfile
 import types
 import unittest
+from unittest import mock
 
 sys.path.insert(0, str(pathlib.Path(__file__).resolve().parents[1]))
 from browser_drop import (
@@ -20,6 +21,11 @@ from browser_drop import (
     parse_page_query,
     resolve_browser_target,
     study_files,
+)
+from browser_canvas_capture import (
+    CanvasCaptureMode,
+    compare_screenshot_stability,
+    validate_context_name,
 )
 from browser_drop_lifecycle import (
     MAX_LIFECYCLE_CYCLES,
@@ -40,7 +46,7 @@ from browser_file_read import (
     capture_file_selection_diagnostic,
 )
 from browser_protocol import BrowserRuntimeError
-from browser_trace import BrowserEngine
+from browser_trace import BrowserEngine, Trace
 
 
 NODE_READ_DIAGNOSTIC_HARNESS = r"""
@@ -279,6 +285,62 @@ class FileDropTests(unittest.TestCase):
                 parse_page_query(values)
         with self.assertRaisesRegex(BrowserRuntimeError, "at most 8"):
             parse_page_query([f"mode{index}=value" for index in range(9)])
+
+    def test_canvas_capture_modes_are_explicit(self):
+        self.assertIs(CanvasCaptureMode.parse("rgba"), CanvasCaptureMode.RGBA)
+        self.assertIs(CanvasCaptureMode.parse("screenshot"), CanvasCaptureMode.SCREENSHOT)
+        with self.assertRaisesRegex(BrowserRuntimeError, "canvas capture mode"):
+            CanvasCaptureMode.parse("webgpu")
+        self.assertEqual(validate_context_name("webgpu"), "webgpu")
+        with self.assertRaisesRegex(BrowserRuntimeError, "canvas context"):
+            validate_context_name("WebGPU")
+
+    def test_screenshot_stability_reuses_the_canvas_element(self):
+        class Client:
+            def __init__(self):
+                self.selectors = []
+
+            def execute(self, _script, arguments):
+                return {"width": 512, "height": 512, "context": arguments[1]}
+
+            def find(self, selector):
+                self.selectors.append(selector)
+                return selector
+
+        client = Client()
+        trace = Trace(BrowserEngine.CHROMIUM, "", "", "0" * 40, {})
+        observations = {
+            "ritk-snap-axial": {
+                "width": 512,
+                "height": 512,
+                "screenshot_sha256": "stable",
+            }
+        }
+
+        def record_screenshot(_client, target, _directory, label, _element):
+            target.screenshots.append({
+                "label": label,
+                "sha256": "stable",
+                "width": 1024,
+                "height": 1024,
+                "bytes": 128,
+            })
+
+        with mock.patch(
+            "browser_canvas_capture._element_screenshot",
+            side_effect=record_screenshot,
+        ):
+            compare_screenshot_stability(
+                client,
+                trace,
+                pathlib.Path("output/browser/test"),
+                ("ritk-snap-axial",),
+                observations,
+                "webgpu",
+            )
+
+        self.assertEqual(client.selectors, ["#ritk-snap-axial"])
+        self.assertEqual(trace.screenshots[0]["label"], "ritk-snap-axial-after-rejections")
 
     def test_file_selection_preserves_exact_bytes_and_ignores_other_names(self):
         with tempfile.TemporaryDirectory() as directory:

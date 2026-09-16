@@ -45,3 +45,4 @@
 | [0034](0034-browser-event-trust.md) | Browser event trust in the canvas contract | Accepted |
 | [0035](0035-dicom-consumer-ownership.md) | DICOM consumer ownership | Accepted |
 | [0036](0036-browser-webgpu-canvas.md) | Explicit browser WebGPU canvas surface | Accepted |
+| [0037](0037-browser-canvas-capture.md) | Context-aware browser canvas capture | Accepted |

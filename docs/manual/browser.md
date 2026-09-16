@@ -350,6 +350,26 @@ existing two-dimensional constructor. A real device, visual output, device-loss
 recovery and GPU/resource measurements require a consumer-owned browser run;
 the current RITK galleries remain the 2D visual baseline.
 
+The file-backed runner's default `--canvas-capture rgba` mode reads exact
+two-dimensional canvas pixels. A consumer using another canvas context selects
+the bounded element-PNG mode and names the context explicitly:
+
+```text
+python scripts/browser_drop.py --driver-url http://127.0.0.1:9515 \
+  --engine chromium --input chooser --canvas-capture screenshot \
+  --canvas-context webgpu --page-query renderer=webgpu \
+  --files <study-directory> --pattern '*.dcm' \
+  --oracle <consumer-oracle.json> --consumer-revision <CONSUMER-40-HEX>
+```
+
+Screenshot mode verifies the consumer's intrinsic canvas dimensions, confirms
+that the named context exists, writes the real element PNG, and records its
+digest and dimensions. It does not reinterpret the pixels or claim equivalence
+with an RGBA readback; the consumer owns the visual oracle and any comparison
+against its decoded frame. Repeated lifecycle mode remains available for the
+RGBA contract; screenshot mode is a single bounded lifecycle so an unchanged
+element digest can be checked after rejection probes.
+
 For an Edge canvas run, keep `--engine chromium` and add the same browser-name
 override:
 
