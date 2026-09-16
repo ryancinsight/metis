@@ -7,8 +7,8 @@ use super::{
     CanvasPointerType, CanvasWheelEvent, CanvasWheelUnit,
 };
 use moirai_pal::wasm::{
-    CanvasSize, KeyboardMetadata, PointerMetadata, PointerType, RgbaFrame, WebCanvas, WebDocument,
-    WebElement, WebEventListener, WheelDeltaMode, WheelMetadata,
+    CanvasSize, ContentBoxPoint, KeyboardMetadata, PointerMetadata, PointerType, RgbaFrame,
+    WebCanvas, WebDocument, WebElement, WebEventListener, WheelDeltaMode, WheelMetadata,
 };
 use std::cell::{Cell, RefCell};
 use std::io;
@@ -169,7 +169,19 @@ impl CanvasInput {
                     release_all(&listener_element, &listener_active);
                     return;
                 }
-                let canvas_event = CanvasEvent::Pointer(pointer_event(phase, metadata));
+                let point = match listener_element
+                    .content_box_point(metadata.client_x(), metadata.client_y())
+                {
+                    Ok(point) => point,
+                    Err(_) => {
+                        listener_queue
+                            .borrow_mut()
+                            .fail(CanvasEventError::LocalCoordinates);
+                        release_all(&listener_element, &listener_active);
+                        return;
+                    }
+                };
+                let canvas_event = CanvasEvent::Pointer(pointer_event(phase, metadata, point));
                 let accepted = listener_queue.borrow_mut().push(canvas_event);
                 if !accepted {
                     release_all(&listener_element, &listener_active);
@@ -215,9 +227,21 @@ impl CanvasInput {
                     .fail(CanvasEventError::InvalidMetadata);
                 return;
             };
+            let point = match listener_element
+                .content_box_point(metadata.client_x(), metadata.client_y())
+            {
+                Ok(point) => point,
+                Err(_) => {
+                    listener_queue
+                        .borrow_mut()
+                        .fail(CanvasEventError::LocalCoordinates);
+                    release_all(&listener_element, &listener_active);
+                    return;
+                }
+            };
             let accepted = listener_queue
                 .borrow_mut()
-                .push(CanvasEvent::Wheel(wheel_event(metadata)));
+                .push(CanvasEvent::Wheel(wheel_event(metadata, point)));
             if !accepted {
                 release_all(&listener_element, &listener_active);
             }
@@ -242,7 +266,11 @@ impl Drop for CanvasInput {
     }
 }
 
-fn pointer_event(phase: CanvasPointerPhase, metadata: PointerMetadata) -> CanvasPointerEvent {
+fn pointer_event(
+    phase: CanvasPointerPhase,
+    metadata: PointerMetadata,
+    point: ContentBoxPoint,
+) -> CanvasPointerEvent {
     CanvasPointerEvent {
         phase,
         pointer_id: metadata.pointer_id(),
@@ -252,8 +280,10 @@ fn pointer_event(phase: CanvasPointerPhase, metadata: PointerMetadata) -> Canvas
             PointerType::Touch => CanvasPointerType::Touch,
             _ => CanvasPointerType::Other,
         },
-        x: metadata.offset_x(),
-        y: metadata.offset_y(),
+        x: point.x(),
+        y: point.y(),
+        content_width: point.width(),
+        content_height: point.height(),
         button: metadata.button(),
         buttons: metadata.buttons(),
         modifiers: modifiers(metadata.modifiers()),
@@ -262,7 +292,7 @@ fn pointer_event(phase: CanvasPointerPhase, metadata: PointerMetadata) -> Canvas
     }
 }
 
-fn wheel_event(metadata: WheelMetadata) -> CanvasWheelEvent {
+fn wheel_event(metadata: WheelMetadata, point: ContentBoxPoint) -> CanvasWheelEvent {
     CanvasWheelEvent {
         delta_x: metadata.delta_x(),
         delta_y: metadata.delta_y(),
@@ -273,8 +303,10 @@ fn wheel_event(metadata: WheelMetadata) -> CanvasWheelEvent {
             WheelDeltaMode::Page => CanvasWheelUnit::Page,
             _ => CanvasWheelUnit::Other,
         },
-        x: metadata.offset_x(),
-        y: metadata.offset_y(),
+        x: point.x(),
+        y: point.y(),
+        content_width: point.width(),
+        content_height: point.height(),
         modifiers: modifiers(metadata.modifiers()),
         trust: CanvasEventTrust::from(metadata.is_trusted()),
     }

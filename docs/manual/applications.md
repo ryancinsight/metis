@@ -11,6 +11,13 @@ The separate [process demonstration](getting-started.md) tests actual child proc
 
 ## Real DICOM application evidence
 
+The browser DICOM gallery has a slice slider beneath each anatomical view.
+Drag a slider to browse that plane, or focus it and use the arrow keys;
+Home and End select its first and last slices. Each counter shows the current
+slice and the total available in that plane. Wheel navigation and cine playback
+update the same controls. RITK owns slice selection and reformatting; the gallery
+passes the selected axis and index to its Rust viewer.
+
 The gallery starts with a real saved-study run so the first image is application
 output rather than generated artwork. RITK opened the public MRI-DIR head CT
 series, decoded the 409 DICOM image instances in the 410-entry study directory,
@@ -169,11 +176,12 @@ mean process-tree peak private bytes were 2,494,962,346.7 ± 5,291,688.9 bytes
 and its mean lifecycle duration was 8,752.3 ± 2,197.2 ms; the complete
 [resource provenance record](images/dicom-eframe-real-ct-resource.json) stores
 the revisions, executable digest, input bounds and sample statistics. The
-eframe baseline and the current native Métis MIP capture now use the same
-public series and four-panel CPU-MIP semantics. Their surface dimensions and
-process boundaries differ, so the measurements remain lifecycle evidence and
-do not establish a framework memory or latency ranking. The matched native
-run is recorded in [its resource provenance](images/dicom-metis-real-ct-mip-resource.json).
+eframe baseline and the current native Métis MIP capture use the same public
+series, but their presentation contracts differ: eframe labels its fourth
+viewport `3d_mip`, while the Métis run uses RITK's `axial_mip` policy. Their
+surface dimensions and process boundaries also differ, so the measurements
+remain lifecycle evidence and do not establish a framework memory or latency
+ranking. The Métis run is recorded in [its resource provenance](images/dicom-metis-real-ct-mip-resource.json).
 
 ### V12 fixture comparison
 
@@ -183,20 +191,19 @@ runner's explicitly approximate 95% half-width across three runs.
 
 | Fixture | Input and presentation | Surface | Peak private bytes | Lifecycle |
 | --- | --- | ---: | ---: | ---: |
-| Métis native MIP | 409 files; four-panel CPU MIP | 1280 × 800 | 2,338,119,680 ± 366,961 | 15,346 ± 3,394 ms |
-| eframe | 409 files; four-panel CPU MIP | 1600 × 1000 | 2,494,962,347 ± 5,291,689 | 8,752 ± 2,197 ms |
+| Métis native MIP | 409 files; axial/coronal/sagittal/axial MIP | 1280 × 800 | 2,338,119,680 ± 366,961 | 15,346 ± 3,394 ms |
+| eframe | 409 files; axial/coronal/sagittal/3D MIP | 1600 × 1000 | 2,494,962,347 ± 5,291,689 | 8,752 ± 2,197 ms |
 | Métis native MRI | 94 files; axial/coronal/sagittal | 1280 × 800 | 828,962,133 ± 331,863 | 7,071 ± 2,011 ms |
 
 The [Métis MIP provenance](images/dicom-metis-real-ct-mip-resource.json),
 [eframe provenance](images/dicom-eframe-real-ct-resource.json) and [MRI
 provenance](images/dicom-metis-real-mri-resource.json) bind each row to its
 source revisions, executable, input bounds, capture digest and sampling
-protocol. The eframe and Métis MIP rows share the input and panel semantics,
-but their surface sizes and process boundaries differ. No GPUI or Tauri
-fixture has been run, and WASM used memory, allocator counts, compositor
-latency and security probes are separate measurements. These rows therefore
-document the fixtures and their limits; they do not establish a framework
-ranking.
+protocol. The eframe and Métis MIP rows share the input but expose different
+MIP semantics, surface sizes and process boundaries. No GPUI or Tauri fixture
+has been run, and WASM used memory, allocator counts, compositor latency and
+security probes are separate measurements. These rows therefore document the
+fixtures and their limits; they do not establish a framework ranking.
 
 The complete visible window for the native four-panel MIP run is also captured
 from the running Windows HWND. The [RITK-owned window image](https://github.com/ryancinsight/ritk/blob/main/docs/manual/images/dicom-metis-real-ct-mip-window.png?raw=true)

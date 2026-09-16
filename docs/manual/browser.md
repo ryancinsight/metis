@@ -1124,21 +1124,24 @@ behavior, TLS, accessibility technology support or OS permission isolation.
 ## Drop a study into the gallery
 
 The [gallery shell](../../examples/browser/gallery.html) exposes the mounted
-Metis file drop area beside three RITK canvases. Activate **Choose study files**
-and select the study's DICOM files in the browser file chooser, or drag those
-files from the file manager onto the area; do not select or drop the enclosing
-folder or its license/readme files. The chooser is a user-activated HTML5
-`change` event. Moirai captures its bounded browser `File` handles and Metis
-reads the same source-neutral batch used by drag/drop; no browser path or native
-filesystem authority crosses the host boundary. The page does not fetch a study
-or synthesize drop events. RITK owns classification, decoding, geometry and
-viewer state; Metis retains its 512-file, 64 MiB/file and 256 MiB/batch limits.
+Metis file drop area beside three RITK canvases. Metis supplies a generic
+**Choose files** control and a source-neutral bounded byte handoff. The RITK
+consumer configures the visible DICOM wording and `.dcm,application/dicom`
+filter after mounting, then selects the study's files in the browser chooser or
+drags those files from the file manager onto the area. Do not select or drop the
+enclosing folder or its license/readme files. The chooser is a user-activated
+HTML5 `change` event. Moirai captures its bounded browser `File` handles and
+Metis reads the same source-neutral batch used by drag/drop; no browser path or
+native filesystem authority crosses the host boundary. The page does not fetch
+a study or synthesize drop events. RITK owns classification, decoding, geometry
+and viewer state; Metis retains its 512-file, 64 MiB/file and 256 MiB/batch
+limits. The [RITK DICOM workflow](https://github.com/ryancinsight/ritk/blob/main/docs/manual/dicom-workflow.md)
+contains the saved-study command and actual image evidence.
 
 For a saved study, choose all files from one series and wait for **Byte access**
 to report the accepted count and bytes. RITK then reports the decoded study and
-the three canvases become non-black. The browser input accepts `.dcm` and
-`application/dicom`; selecting an empty or over-budget batch produces a typed
-rejection without handing bytes to the decoder.
+the three canvases become non-black. Selecting an empty or over-budget batch
+produces a typed rejection without handing bytes to the decoder.
 
 Moirai reads each caller-sized browser `Blob` slice through a local object URL
 response stream. For the first bounded read of a file no larger than 1 MiB, the
@@ -1462,6 +1465,32 @@ counts remain separate acceptance gates. Private clinical studies use the
 local saved-study command in the [application gallery](applications.md) and
 are never copied into Metis evidence.
 
+### Exercise the saved-study slice controls
+
+The gallery runner can verify the native HTML range controls that an RITK
+consumer places beneath each anatomical canvas. Add `--slice-controls` to the
+file-backed command together with `--headless` when desktop input must remain
+isolated:
+
+```powershell
+python scripts/browser_drop.py --driver-url http://127.0.0.1:9517 `
+  --browser-name MicrosoftEdge --headless --input chooser `
+  --files D:/atlas/repos/ritk/test_data/2_head_mri_t2/DICOM --pattern '*.dcm' `
+  --oracle output/browser/mri-oracle.json `
+  --consumer-revision <ritk-revision> `
+  --canvas-trace output/browser/cine/canvas-trace.json `
+  --keyboard-trace cine-rate --slice-controls `
+  --output output/browser/cine
+```
+
+The bounded trace drives trusted click, Home, End, arrow and pointer actions
+for axial, coronal and sagittal ranges. It rejects non-finite, fractional and
+out-of-range indices, requires generation-backed repaint for changed slices,
+preserves the other two planes, restores the initial RGBA frame and records
+the released diagnostic listeners. RITK owns the slice reducer, DICOM bytes,
+pixel oracle and clinical interpretation; its [DICOM manual](https://github.com/ryancinsight/ritk/blob/main/docs/manual/dicom-workflow.md)
+holds the actual MRI screenshots and provenance.
+
 ### Read browser frame timing
 
 The same canvas trace records a bounded `requestAnimationFrame` interval sample
@@ -1497,6 +1526,26 @@ the JavaScript heap only; they do not measure WebAssembly linear memory,
 native process memory, allocations, compositor or GPU latency. Keep them
 separate in the V12 comparison and do not use them for a universal engine
 ranking.
+
+### Read browser-estimated aggregate memory
+
+Pass `--browser-memory-sample` to the workbench, canvas or file-backed gallery
+runner when the host can provide the standard
+[`performance.measureUserAgentSpecificMemory()`](https://developer.mozilla.org/en-US/docs/Web/API/Performance/measureUserAgentSpecificMemory)
+surface. The trace stores samples under `metrics.browser_memory`, using the
+label, `estimated_bytes` and source when the call succeeds. The runner requires
+a secure, cross-origin-isolated document and applies a five-second observation
+deadline; unsupported, rejected and timed-out calls remain explicit records.
+
+The API estimates aggregate memory for the user agent and its value is
+implementation-dependent. It is therefore not a WASM allocator count, native
+process measurement or allocation profile, and it must not be compared across
+engines or browser versions. The option is an additional V12 observation; the
+RITK gallery still supplies the DICOM byte and pixel oracles.
+
+```text
+python scripts/browser_drop.py --driver-url http://127.0.0.1:9517 --engine chromium --browser-name MicrosoftEdge --files path\to\study --oracle output\browser\consumer\oracle.json --consumer-revision <ritk-revision> --canvas-trace output\browser\drop\canvas.json --input chooser --browser-memory-sample
+```
 
 ### Repeat the workbench lifecycle
 

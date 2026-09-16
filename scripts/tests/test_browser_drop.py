@@ -314,6 +314,8 @@ class FileDropTests(unittest.TestCase):
         self.assertIn('import("./consumer/ritk_snap.js")', script)
         self.assertIn("start_web_orthogonal_canvases(", script)
         self.assertIn("stop_web_canvas()", script)
+        self.assertIn('fileInput.accept = ".dcm,application/dicom"', script)
+        self.assertIn('fileLabel.textContent = "Choose study files"', script)
         self.assertNotIn("DataTransfer", script)
         self.assertNotIn("dispatchEvent", script)
         self.assertNotIn("fetch(", script)

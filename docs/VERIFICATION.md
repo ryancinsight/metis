@@ -973,6 +973,24 @@ dialogs and native process launch remain separate acceptance gates; the
 application screenshot is a browser viewport and its RGBA oracle covers canvas
 pixels only.
 
+<a id="browser-mri-slice-control-evidence--2026-09-16"></a>
+## Browser MRI slice-control evidence — 2026-09-16
+
+The Metis gallery runner then exercised the native range controls against the
+same saved 94-file MRI-DIR T2 study in Microsoft Edge. The trace completed 50
+trusted slider actions and 18 invalid API probes across axial, coronal and
+sagittal planes, observed generation-backed repaint and independent-plane
+state, and restored the initial RGBA frame. It released all 24 diagnostic
+listeners at teardown. The [RITK controls capture](https://github.com/ryancinsight/ritk/blob/main/docs/manual/images/dicom-metis-real-browser-mri-edge-controls.png?raw=true)
+shows the actual anatomy and counters; the [RITK DICOM workflow manual](https://github.com/ryancinsight/ritk/blob/main/docs/manual/dicom-workflow.md)
+records the study, pixel oracle and provenance.
+
+This is consumer-owned DICOM evidence. RITK owns file scanning, decoding,
+slice selection and clinical interpretation; Metis owns the HTML5 controls,
+trusted input mapping and lifecycle cleanup. The trace does not establish
+native file-dialog behavior, WebKit file reads, WebGPU rendering or allocator
+and process-memory bounds.
+
 <a id="browser-file-chooser-matrix-contract--2026-09-15"></a>
 ## Browser file chooser matrix contract — 2026-09-15
 
@@ -1655,6 +1673,24 @@ efficiency claim. The [sanitized trace and inspected screenshots](manual/browser
 bind the values and hashes. WASM, native-process, compositor, GPU,
 Firefox/WebKit and physical-input residuals remain open under V12.
 
+<a id="browser-memory-observation-evidence--2026-09-16"></a>
+## Browser aggregate-memory observation — 2026-09-16
+
+The browser runners now accept `--browser-memory-sample`. Each sample calls
+the standard [`performance.measureUserAgentSpecificMemory()`](https://developer.mozilla.org/en-US/docs/Web/API/Performance/measureUserAgentSpecificMemory)
+only from a secure, cross-origin-isolated document and waits no longer than
+five seconds. A successful result records the implementation-dependent
+`estimated_bytes` aggregate under `metrics.browser_memory`; an unsupported,
+rejected or timed-out call records its explicit reason. The runner rejects
+non-finite, negative, non-integer and over-budget byte values.
+
+This API estimates user-agent memory and its byte values are not comparable
+across engines or browser versions. The observation does not measure WASM
+allocator use, native process memory, compositor or GPU memory, and it does not
+close the V12 allocation or matched-framework gaps. The dependency-free
+runtime, canvas and gallery paths share the same validation function; live
+availability remains host-dependent.
+
 <a id="browser-lifecycle-growth-instrument-2026-09-13"></a>
 ## Browser lifecycle-growth instrument — 2026-09-13
 
@@ -2073,6 +2109,10 @@ and [per-engine provenance](../../ritk/docs/manual/images/dicom-metis-real-brows
 bind those runs. Safari 26.6.2 accepted the selection but rejected the first
 bounded read, so its WebKit/SafariDriver authorization remains open. Physical
 browser drag-and-drop, WebGPU and complete-window evidence remain separate.
+The mounted Metis host markup remains format-neutral: it exposes **Choose
+files** without an `accept` filter. The RITK gallery consumer applies the
+DICOM label and `.dcm,application/dicom` filter after mounting, so that hint
+does not enter the Metis host contract.
 RITK PR #284 additionally records a local browser smoke of the packaged
 `start_web_canvas` path: three synthetic Part 10 files were dispatched through
 a browser `DataTransfer`, the host reported three accepted 654-byte files and
@@ -2210,6 +2250,18 @@ successful process exit cannot stand in for a real visual artifact. The
 capture digest is an integrity binding for the resource sample; it does not
 interpret pixels or claim clinical correctness, which remain RITK-owned
 oracles.
+
+The companion `scripts/resource_compare.py` command validates two passed
+schema-1 provenance records before calculating deltas. Callers must name the
+dotted semantic fields to match (dataset identity, workload counts, and any
+producer-owned output contract); a missing or differing field fails before
+resource metrics are read. Every selected metric requires at least two samples,
+and the result reports right-minus-left means, combined approximate 95%
+half-widths, and SHA-256 digests of the source records. It never copies source
+paths or labels, normalizes panel names, or selects a framework winner. The
+current eframe and Métis records share the public series and lifecycle phase;
+their different surface and MIP contracts remain an explicitly unmatched
+baseline until producers provide an equal output key.
 
 The current three-run public MRI-DIR T2 workflow uses this option with RITK
 revision `44487bacc6b33d4c6a241f68960e9dd5e140fbc5`, Metis revision

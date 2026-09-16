@@ -188,6 +188,9 @@ class BrowserAssetContractTests(unittest.TestCase):
             'data-byte-state="idle"',
         ):
             self.assertIn(fragment, controls)
+        self.assertIn('<label for="file-input">Choose files</label>', controls)
+        self.assertIn('<input id="file-input" type="file" multiple ', controls)
+        self.assertNotIn("accept=\".dcm,application/dicom\"", controls)
         for selector in (
             '#drop-zone[data-drop-state="hovering"]',
             '#drop-zone[data-drop-state="accepted"]',

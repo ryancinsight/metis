@@ -207,7 +207,7 @@ class WebDriverClient:
             raise BrowserRuntimeError(f"WebDriver {method} {path}: {value['error']}: {_bounded_text(message, 'driver error')}")
         return value
 
-    def create_session(self, browser_name: str, device_scale_milli: Optional[int] = None) -> None:
+    def create_session(self, browser_name: str, device_scale_milli: Optional[int] = None, *, headless: bool = False) -> None:
         """Create one session with a matrix-pinned browser name and scale."""
         if not isinstance(browser_name, str) or not browser_name:
             raise BrowserRuntimeError("WebDriver browser name is empty")
@@ -225,6 +225,15 @@ class WebDriverClient:
                 raise BrowserRuntimeError(
                     "WebKit does not expose a WebDriver device-scale override; use scale 1"
                 )
+        if headless:
+            if browser_name not in ("chrome", "MicrosoftEdge", "firefox"):
+                raise BrowserRuntimeError("headless capture is unavailable for this browser")
+            option_name = {
+                "chrome": "goog:chromeOptions", "MicrosoftEdge": "ms:edgeOptions",
+                "firefox": "moz:firefoxOptions",
+            }[browser_name]
+            options = capabilities.setdefault(option_name, {})
+            options.setdefault("args", []).append("-headless" if browser_name == "firefox" else "--headless=new")
         value = self._request(
             "POST",
             "/session",

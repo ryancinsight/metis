@@ -10,6 +10,14 @@
 - Delivery: `8388358` fixed the Windows Node diagnostic transport; hosted run [35064171544](https://github.com/ryancinsight/metis/actions/runs/35064171544) passed and PR #176 merged at `04a2aef3bd9241a8096a9958ec126d568bb1d8e9`.
 - Outcome: the configured gate passes without changing budgets or adding a cache; the 10-second delayed stream-cancel diagnostic remains bounded and deterministic.
 
+<a id="METIS-GALLERY-SLIDER-001"></a>
+## METIS-GALLERY-SLIDER-001 — Browse anatomical slices
+- Status: review; priority: P1; integrator: cine-gallery-root; last-update: 2026-09-16.
+- Scope: gallery range controls and browser automation; RITK owns slice selection and rendering.
+- Acceptance: each axis reaches first and last slice through native range input, displays matching slice counters, repaints changed pixels, and stays synchronized with wheel navigation; saved-study screenshot inspected.
+- Dependency: RITK-BROWSER-SLIDER-001; risk: [minor].
+- Verification: 27 gallery and 51 runtime tests pass; real 94-file Edge capture passes 50 trusted slider actions, 18 invalid API probes, cine checks and exact frame restoration; screenshots in RITK's DICOM manual.
+
 # Metis delivery
 
 <a id="METIS-INPUT-TRUST-001"></a>
@@ -521,8 +529,8 @@ an owner. “Unsupported” cannot replace delivery of a required mobile/native 
 
 <a id="METIS-DICOM-003"></a>
 ## METIS-DICOM-003 — Remove format-specific browser presentation [patch]
-- Status: done; priority: P1; owner: Metis browser presentation; integrator: root; last-update: 2026-09-09; delivery: `c4bcd74`; dependencies: METIS-DICOM-002; risk: ownership drift
-- Outcome: browser labels, package README and fixtures describe generic bounded file handoff; format-specific parsing remains in RITK. Static contracts and the full locked gate pass on `c4bcd74`.
+- Status: done; priority: P1; owner: Metis browser presentation; integrator: root; last-update: 2026-09-16; delivery: `c4bcd74`, correction `fea859e`; dependencies: METIS-DICOM-002; risk: ownership drift
+- Outcome: `metis-web` now emits a generic file-picker label and no format filter; the RITK gallery applies its DICOM label/filter after mounting. Format-specific parsing and presentation remain in RITK.
 
 <a id="METIS-DICOM-004"></a>
 ## METIS-DICOM-004 — Remove stale DICOM claims from Metis docs [patch]
@@ -572,7 +580,7 @@ an owner. “Unsupported” cannot replace delivery of a required mobile/native 
 
 <a id="METIS-PERF-001"></a>
 ## METIS-PERF-001 — Comparative resource and latency evidence [patch]
-- Status: in-progress; priority: P1; owner: Metis measurement; integrator: root; last-update: 2026-09-16; branch: `build/metis-moirai-canvas-lock`; regions: `Cargo.lock`, `README.md`, `docs/manual/native.md`, `docs/manual/testing.md`, `docs/VERIFICATION.md`, `docs/adr/0003-framework-conformance.md`, `backlog.md`; dependencies: METIS-BROWSER-001, METIS-DESKTOP-001, METIS-INPUT-001, Moirai PR #360; risk: invalid comparative claims
+- Status: in-progress; priority: P1; owner: Metis measurement; integrator: root; last-update: 2026-09-16; branch: `codex/metis-perf-memory-sample`; regions: `scripts/browser_trace.py`, `scripts/browser_runtime.py`, `scripts/browser_canvas.py`, `scripts/browser_fragment.py`, `scripts/tests`, `docs/manual/testing.md`, `docs/VERIFICATION.md`, `backlog.md`; dependencies: METIS-BROWSER-001, METIS-DESKTOP-001, METIS-INPUT-001, Moirai PR #360; risk: invalid comparative claims
 - Scope: instrument the first live app, then compare matched egui/GPUI/Tauri fixtures; total process memory, WASM memory, allocations, idle/active/peak/growth, startup/input/frame latency and bundle/build size separately.
 - Acceptance: [V12](docs/VERIFICATION.md#V12) protocol, pinned revisions/assets/traces and controlled host; stored baselines/confidence and resource bounds; resolve production regressions without changing the instrument to move results.
 - Demonstration: measured tables/plots in the manual with machine/target/uncertainty and semantic/visual equivalence; no speed/security ranking without its evidence.
@@ -590,7 +598,10 @@ an owner. “Unsupported” cannot replace delivery of a required mobile/native 
 - Manual comparison increment (2026-09-15): the application gallery now presents one V12 table for the three-run public CT/MRI lifecycle fixtures, with input/presentation semantics, surface dimensions, peak private bytes, lifecycle uncertainty and provenance links. It states the unmatched GPUI/Tauri, WASM used-memory, allocation, compositor and security residuals; no framework ranking is claimed.
 - Delivery reconciliation (2026-09-15): Metis PR [#169](https://github.com/ryancinsight/metis/pull/169), merge `2d96d2deb1dd67c2edaa6f6178bbd744f83d0184`, delivered the V12 comparison table and bound its evidence in the verification documents. The former comparison branch is collected; matched GPUI/Tauri, WASM used-memory/allocation, input-to-frame/compositor/native latency, repeated lifecycle growth and controlled-host uncertainty remain open.
 - Provider lifecycle increment (2026-09-16, Moirai merge `5cf572f734a3a50cf57eafe67dd3723e7e303116`): the browser canvas presenter now retains the current validated bitmap extent across same-size RGBA frames and resizes only after an extent change. Metis pins all direct Moirai packages to that revision; the borrowed upload, bounds and format-neutral RITK handoff remain unchanged. This avoids redundant browser bitmap resets but supplies no memory or latency measurement; V12 resource, allocation and compositor residuals remain open.
-- Residuals: the eframe and native Métis runs now match the public input and panel semantics, but surface dimensions and process boundaries remain different; GPUI/Tauri fixtures, WASM used-memory/allocation, input-to-frame/compositor/native latency, repeated lifecycle growth and controlled-host uncertainty remain open.
+- Browser aggregate-memory increment (2026-09-16, this branch): the workbench, canvas and saved-study runners accept `--browser-memory-sample` and share a bounded `performance.measureUserAgentSpecificMemory()` validator. Secure, cross-origin-isolated hosts record finite aggregate estimates; unsupported, rejected and timed-out probes stay explicit. The metric is implementation-dependent and does not claim WASM allocator, native-process or cross-engine comparability. The manual and V12 verification record the probe and its limits.
+- Matched-report increment (2026-09-16, this branch): `scripts/resource_compare.py` validates passed schema-1 provenance records against caller-named semantic keys before calculating right-minus-left resource deltas. It requires repeated samples, combines the recorded approximate 95% half-widths, hashes source records without copying paths or labels, and emits no framework ranking. Value-semantic tests cover mismatches, malformed metrics, bounds and output hygiene; current eframe/Métis records remain an explicitly unmatched baseline until producers provide an equal output contract.
+- delivery: this branch commits `resource_compare.py`, its focused tests and synchronized V12/manual text; lease discharged.
+- Residuals: the eframe and native Métis runs share the public input and lifecycle phase, but their surface and MIP contracts and process boundaries differ; GPUI/Tauri fixtures, WASM used-memory/allocation, input-to-frame/compositor/native latency, repeated lifecycle growth and controlled-host uncertainty remain open.
 
 <a id="METIS-QUALITY-001"></a>
 ## METIS-QUALITY-001 — Verification infrastructure [patch]

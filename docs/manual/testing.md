@@ -161,6 +161,30 @@ HTML5/CSS host, Moirai transport and pre-response Origin check; it does not
 prove TLS, cross-engine behavior, post-drop allocation bounds, accessibility
 technology support or OS isolation.
 
+## Validate saved-study slice controls
+
+Exercise the range inputs that an RITK consumer places beneath the three
+anatomical canvases with the file-backed runner:
+
+```text
+python scripts/browser_drop.py --driver-url http://127.0.0.1:9517 \
+  --browser-name MicrosoftEdge --headless --input chooser \
+  --files D:/atlas/repos/ritk/test_data/2_head_mri_t2/DICOM --pattern '*.dcm' \
+  --oracle output/browser/mri-oracle.json \
+  --consumer-revision <ritk-revision> \
+  --canvas-trace output/browser/cine/canvas-trace.json \
+  --keyboard-trace cine-rate --slice-controls \
+  --output output/browser/cine
+```
+
+The bounded trace drives click, Home, End, arrow and pointer actions for the
+axial, coronal and sagittal ranges. It rejects non-finite, fractional and
+out-of-range indices, requires a generation-backed repaint, preserves the
+other planes, restores the initial RGBA frame and records released listeners.
+The RITK [DICOM workflow manual](https://github.com/ryancinsight/ritk/blob/main/docs/manual/dicom-workflow.md)
+contains the real MRI screenshots and pixel provenance; Metis supplies the
+host controls and input lifecycle only.
+
 ## Check authentication provider ownership
 
 Metis uses Moirai's standalone RustCrypto primitives for capability MACs, audit
@@ -278,11 +302,12 @@ fixture and compare reports only after recording the machine, target, engine
 and revision. A current public CT eframe baseline is recorded in
 [the eframe resource provenance](images/dicom-eframe-real-ct-resource.json);
 the native Métis MIP run is recorded in
-[the matched resource provenance](images/dicom-metis-real-ct-mip-resource.json).
-Both use the same 409-file input and four-panel CPU-MIP semantics, while their
-surface dimensions and process boundaries differ. These reports are lifecycle
-evidence; they do not establish a memory or latency ranking against Tauri,
-GPUI or egui. The three-run saved public MRI baseline was refreshed on
+[its resource provenance](images/dicom-metis-real-ct-mip-resource.json).
+Both use the same 409-file input, but eframe's fourth viewport is `3d_mip`
+while the Métis run uses RITK's `axial_mip` policy; their surface dimensions
+and process boundaries also differ. These reports are lifecycle evidence; they
+do not establish a memory or latency ranking against Tauri, GPUI or egui. The
+three-run saved public MRI baseline was refreshed on
 2026-09-14 against the current RITK/Métis/Moirai revisions; its repeated
 capture digest and process-tree uncertainty are recorded in [the MRI resource
 provenance](images/dicom-metis-real-mri-resource.json). The report records
@@ -292,6 +317,38 @@ include private study paths or pixels.
 The [application gallery's V12 table](applications.md#v12-fixture-comparison)
 keeps those three measured fixtures together with their uncertainty and the
 unmatched GPUI/Tauri residual.
+
+### Enforce matched lifecycle comparisons
+
+Use `scripts/resource_compare.py` when two real provenance records are ready
+for a comparison. The command requires explicit dotted JSON fields whose
+values must be identical in both records; it also requires at least two
+repeated samples for every selected resource metric. It hashes both input
+records into the result without copying their paths, and reports right-minus-
+left deltas with the combined approximate 95% half-width:
+
+```powershell
+python scripts/resource_compare.py `
+  --left docs/manual/images/dicom-metis-real-ct-mip-resource.json `
+  --right docs/manual/images/dicom-eframe-real-ct-resource.json `
+  --left-name 'Métis' `
+  --right-name 'eframe baseline' `
+  --match runtime.phase `
+  --match dataset.series_instance_uid `
+  --match dataset.files_submitted `
+  --match dataset.bytes_read `
+  --metric peak_private_bytes `
+  --metric peak_working_set_bytes `
+  --metric duration_ms `
+  --output output/resource-comparison.json
+```
+
+Add a producer-owned `output` semantic key (for example,
+`output.semantic_surfaces`) to both records and pass it with `--match` before
+interpreting presentation or clinical equivalence. A missing or differing key
+fails before any metric is calculated. The output is a measurement record,
+not a framework ranking; it does not normalize panel names, infer semantic
+equivalence, or replace RITK's image and DICOM oracles.
 
 For the browser side of the same comparison, the paired canvas trace records
 `metrics.frame_intervals` around the real RITK canvases. Each bounded sample is
@@ -309,6 +366,16 @@ Add `--browser-heap-sample` to the same runner command to append
 observation otherwise. It validates `used_js_heap_bytes <=
 total_js_heap_bytes <= js_heap_limit_bytes` and does not stand in for WASM
 linear memory, native process memory or an allocation profiler.
+
+Add `--browser-memory-sample` to append `metrics.browser_memory`. The runner
+uses [`performance.measureUserAgentSpecificMemory()`](https://developer.mozilla.org/en-US/docs/Web/API/Performance/measureUserAgentSpecificMemory)
+only when the document is secure and cross-origin isolated. It records one
+bounded `estimated_bytes` value or an explicit unavailable/rejected/timeout
+reason. The browser reports an implementation-dependent aggregate estimate;
+values are not comparable across engines or browser versions and do not count
+WASM allocations, native process memory, compositor work or GPU memory. Use
+the option with the file-backed gallery command as well as the generic canvas
+runner when the host exposes the API.
 
 For lifecycle-growth observations, add `--lifecycle-cycles N` to the workbench
 runner, where `N` is bounded to 1 through 8. The trace records the semantic

@@ -36,7 +36,8 @@ FRAME_SAMPLE_COUNT = 8
 MAX_FRAME_SAMPLE_COUNT = 32
 MAX_FRAME_INTERVAL_MILLISECONDS = 120_000.0
 MAX_BROWSER_HEAP_BYTES = 1 << 40
-MAX_BROWSER_HEAP_LABEL_BYTES = 256
+BROWSER_MEMORY_SAMPLE_TIMEOUT_MILLISECONDS = 5_000
+MAX_BROWSER_SAMPLE_LABEL_BYTES = 256
 MAX_EFFECTIVE_DEVICE_SCALE_MILLI = 4 * MAX_DEVICE_SCALE_MILLI
 MAX_VIEWPORT_DIMENSION = 65_536
 
@@ -98,6 +99,52 @@ return {
   total_js_heap_bytes: memory.totalJSHeapSize,
   js_heap_limit_bytes: memory.jsHeapSizeLimit,
 };
+"""
+
+
+BROWSER_MEMORY_SCRIPT = """
+const done = arguments[arguments.length - 1];
+const timeout = arguments[0];
+const performanceObject = window.performance;
+if (!window.isSecureContext) {
+  done({available: false, reason: "secure context required"});
+  return;
+}
+if (window.crossOriginIsolated !== true) {
+  done({available: false, reason: "cross-origin isolation required"});
+  return;
+}
+if (!performanceObject || typeof performanceObject.measureUserAgentSpecificMemory !== "function") {
+  done({available: false, reason: "measureUserAgentSpecificMemory unavailable"});
+  return;
+}
+let settled = false;
+const finish = (value) => {
+  if (settled) return;
+  settled = true;
+  window.clearTimeout(timer);
+  done(value);
+};
+const timer = window.setTimeout(
+  () => finish({available: false, reason: "memory measurement timed out"}),
+  timeout
+);
+Promise.resolve()
+  .then(() => performanceObject.measureUserAgentSpecificMemory())
+  .then((sample) => {
+    if (!sample || typeof sample !== "object") {
+      finish({available: false, reason: "memory measurement returned no sample"});
+      return;
+    }
+    finish({
+      available: true,
+      source: "performance.measureUserAgentSpecificMemory",
+      secure_context: true,
+      cross_origin_isolated: true,
+      estimated_bytes: sample.bytes,
+    });
+  })
+  .catch(() => finish({available: false, reason: "memory measurement rejected"}));
 """
 
 
@@ -331,7 +378,7 @@ def browser_heap_sample(
     if (
         not isinstance(label, str)
         or not label
-        or len(label.encode("utf-8")) > MAX_BROWSER_HEAP_LABEL_BYTES
+        or len(label.encode("utf-8")) > MAX_BROWSER_SAMPLE_LABEL_BYTES
     ):
         raise BrowserRuntimeError("browser heap label is empty or exceeds its bound")
     value = client.execute(BROWSER_HEAP_SCRIPT)
@@ -342,7 +389,7 @@ def browser_heap_sample(
         if (
             not isinstance(reason, str)
             or not reason
-            or len(reason.encode("utf-8")) > MAX_BROWSER_HEAP_LABEL_BYTES
+            or len(reason.encode("utf-8")) > MAX_BROWSER_SAMPLE_LABEL_BYTES
         ):
             raise BrowserRuntimeError(f"browser heap sample {label!r} returned an invalid reason")
         measurement = {"label": label, "available": False, "reason": reason}
@@ -377,4 +424,68 @@ def browser_heap_sample(
         "js_heap_limit_bytes": limit,
     }
     trace.metrics.setdefault("browser_heap", []).append(measurement)
+    return measurement
+
+
+def browser_memory_sample(
+    client: WebDriverClient,
+    trace: Trace,
+    label: str,
+) -> Dict[str, Any]:
+    """Record one optional browser-estimated aggregate memory observation.
+
+    ``measureUserAgentSpecificMemory`` requires a secure, cross-origin-isolated
+    document and is not implemented by every engine.  The returned byte value
+    is an implementation-dependent estimate for the user agent's aggregate
+    application memory; it is not a WASM allocator counter or a cross-engine
+    comparison.  Unsupported and rejected observations remain explicit.
+    """
+    if (
+        not isinstance(label, str)
+        or not label
+        or len(label.encode("utf-8")) > MAX_BROWSER_SAMPLE_LABEL_BYTES
+    ):
+        raise BrowserRuntimeError("browser memory label is empty or exceeds its bound")
+    value = client.execute_async(
+        BROWSER_MEMORY_SCRIPT,
+        [BROWSER_MEMORY_SAMPLE_TIMEOUT_MILLISECONDS],
+    )
+    if not isinstance(value, dict):
+        raise BrowserRuntimeError(f"browser memory sample {label!r} returned a non-object")
+    if value.get("available") is False:
+        reason = value.get("reason")
+        if (
+            not isinstance(reason, str)
+            or not reason
+            or len(reason.encode("utf-8")) > MAX_BROWSER_SAMPLE_LABEL_BYTES
+        ):
+            raise BrowserRuntimeError(f"browser memory sample {label!r} returned an invalid reason")
+        measurement = {"label": label, "available": False, "reason": reason}
+        trace.metrics.setdefault("browser_memory", []).append(measurement)
+        return measurement
+    if (
+        value.get("available") is not True
+        or value.get("source") != "performance.measureUserAgentSpecificMemory"
+        or value.get("secure_context") is not True
+        or value.get("cross_origin_isolated") is not True
+    ):
+        raise BrowserRuntimeError(f"browser memory sample {label!r} returned an invalid source")
+    raw = value.get("estimated_bytes")
+    if (
+        type(raw) not in (int, float)
+        or not math.isfinite(float(raw))
+        or float(raw) < 0.0
+        or float(raw) > MAX_BROWSER_HEAP_BYTES
+        or not float(raw).is_integer()
+    ):
+        raise BrowserRuntimeError(f"browser memory sample {label!r} returned invalid estimated_bytes")
+    measurement = {
+        "label": label,
+        "available": True,
+        "source": "performance.measureUserAgentSpecificMemory",
+        "secure_context": True,
+        "cross_origin_isolated": True,
+        "estimated_bytes": int(raw),
+    }
+    trace.metrics.setdefault("browser_memory", []).append(measurement)
     return measurement
