@@ -1523,3 +1523,26 @@ and the five inspected PNGs above are the visual and semantic evidence for
 this run. This remains lifecycle and JavaScript-heap evidence only; it does
 not measure native allocations, WebAssembly used memory, compositor or GPU
 latency.
+
+### Repeat the saved-study gallery lifecycle
+
+`scripts/browser_drop.py --lifecycle-cycles 4` extends the existing real-file
+cine trace command. Repeated mode requires `--canvas-trace`,
+`--keyboard-trace cine-rate`, and either chooser or Chromium file-backed input.
+It admits 4–8 same-page cycles with a maximum 300-second deadline, including
+reserved cleanup time. It records mount, transfer, decode, cine and stop
+samples; every cycle must satisfy the consumer's file/pixel oracle and emits
+its own `canvas-trace-cycle-N.json` for the consumer's semantic validator.
+
+The 2026-09-16 RITK MRI-DIR run completed four cycles each on Chromium chooser,
+Firefox chooser and Chromium CDP drop. All 12 cycles reported 31 host and 21
+consumer listener guards while mounted, zero after stop, and committed WASM
+capacity of 404,357,120 bytes from the first decode onward. Chromium heap
+counters varied with garbage collection; Firefox reported the API unavailable.
+The growth gate compares exact per-phase capacity after two warmup cycles and
+rejects missing phases, retained guards or diagnostic references. It does not
+infer allocator usage or long-duration heap stability.
+
+RITK owns the [measured provenance](https://github.com/ryancinsight/ritk/blob/main/docs/manual/images/dicom-metis-real-browser-mri-memory.json)
+and [reproduction details](https://github.com/ryancinsight/ritk/blob/main/docs/manual/dicom-workflow.md#repeat-the-saved-study-lifecycle-without-reloading).
+DICOM decoding, pixel oracles and cine semantics remain in RITK.

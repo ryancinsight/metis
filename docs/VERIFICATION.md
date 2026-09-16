@@ -2099,9 +2099,17 @@ The same real MRI browser run records the generated `wasm-bindgen`
 bytes at initialization, 1,835,008 bytes after mounting the canvases, and
 404,160,512 bytes after RITK decoded the 94-file public study. The repeated
 capacity observations are in the [RITK memory provenance record](../../ritk/docs/manual/images/dicom-metis-real-browser-mri-memory.json).
-They establish a committed linear-memory baseline only; allocator-used bytes,
-JavaScript heap, native-process, compositor and GPU memory still require
-separate matched profilers.
+Those reload observations establish a committed linear-memory baseline only.
+The same provenance now records the 2026-09-16 same-instance lifecycle run:
+four cycles each for Chromium chooser, Firefox chooser and Chromium CDP drop,
+all with 31 host / 21 consumer mounted guards, zero stopped guards and
+404,357,120-byte capacity from the first decode onward. Every cycle passes the
+file/pixel oracle and an independent RITK cine-trace validation. The bounded
+growth gate compares exact per-phase capacity after two warmup cycles and
+checks diagnostic-reference cleanup. Chromium heap samples are recorded
+without forced GC; Firefox reports unavailable. Allocator-used bytes, heap
+leak freedom, native-process, compositor, GPU and matched-framework comparisons
+remain unmeasured; four cycles do not establish long-duration behavior.
 
 Revision 2026-09-11 (format-neutral host comments): commit `8ea5935` changes
 only ownership comments in the host boundary. The visual fixture provenance was
