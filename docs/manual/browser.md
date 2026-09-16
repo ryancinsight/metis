@@ -1462,6 +1462,32 @@ counts remain separate acceptance gates. Private clinical studies use the
 local saved-study command in the [application gallery](applications.md) and
 are never copied into Metis evidence.
 
+### Exercise the saved-study slice controls
+
+The gallery runner can verify the native HTML range controls that an RITK
+consumer places beneath each anatomical canvas. Add `--slice-controls` to the
+file-backed command together with `--headless` when desktop input must remain
+isolated:
+
+```powershell
+python scripts/browser_drop.py --driver-url http://127.0.0.1:9517 `
+  --browser-name MicrosoftEdge --headless --input chooser `
+  --files D:/atlas/repos/ritk/test_data/2_head_mri_t2/DICOM --pattern '*.dcm' `
+  --oracle output/browser/mri-oracle.json `
+  --consumer-revision <ritk-revision> `
+  --canvas-trace output/browser/cine/canvas-trace.json `
+  --keyboard-trace cine-rate --slice-controls `
+  --output output/browser/cine
+```
+
+The bounded trace drives trusted click, Home, End, arrow and pointer actions
+for axial, coronal and sagittal ranges. It rejects non-finite, fractional and
+out-of-range indices, requires generation-backed repaint for changed slices,
+preserves the other two planes, restores the initial RGBA frame and records
+the released diagnostic listeners. RITK owns the slice reducer, DICOM bytes,
+pixel oracle and clinical interpretation; its [DICOM manual](https://github.com/ryancinsight/ritk/blob/main/docs/manual/dicom-workflow.md)
+holds the actual MRI screenshots and provenance.
+
 ### Read browser frame timing
 
 The same canvas trace records a bounded `requestAnimationFrame` interval sample

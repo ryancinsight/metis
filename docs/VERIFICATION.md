@@ -973,6 +973,24 @@ dialogs and native process launch remain separate acceptance gates; the
 application screenshot is a browser viewport and its RGBA oracle covers canvas
 pixels only.
 
+<a id="browser-mri-slice-control-evidence--2026-09-16"></a>
+## Browser MRI slice-control evidence — 2026-09-16
+
+The Metis gallery runner then exercised the native range controls against the
+same saved 94-file MRI-DIR T2 study in Microsoft Edge. The trace completed 50
+trusted slider actions and 18 invalid API probes across axial, coronal and
+sagittal planes, observed generation-backed repaint and independent-plane
+state, and restored the initial RGBA frame. It released all 24 diagnostic
+listeners at teardown. The [RITK controls capture](https://github.com/ryancinsight/ritk/blob/main/docs/manual/images/dicom-metis-real-browser-mri-edge-controls.png?raw=true)
+shows the actual anatomy and counters; the [RITK DICOM workflow manual](https://github.com/ryancinsight/ritk/blob/main/docs/manual/dicom-workflow.md)
+records the study, pixel oracle and provenance.
+
+This is consumer-owned DICOM evidence. RITK owns file scanning, decoding,
+slice selection and clinical interpretation; Metis owns the HTML5 controls,
+trusted input mapping and lifecycle cleanup. The trace does not establish
+native file-dialog behavior, WebKit file reads, WebGPU rendering or allocator
+and process-memory bounds.
+
 <a id="browser-file-chooser-matrix-contract--2026-09-15"></a>
 ## Browser file chooser matrix contract — 2026-09-15
 
