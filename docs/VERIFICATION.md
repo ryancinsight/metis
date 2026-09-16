@@ -2358,6 +2358,18 @@ and the repeated capture digest is identical. This is a real application
 baseline; it does not close the matched Tauri, GPUI or egui fixture
 requirement or establish a universal memory ranking.
 
+RITK's [same-instance browser provenance](https://github.com/ryancinsight/ritk/blob/main/docs/manual/images/dicom-metis-real-browser-mri-memory.json)
+at commit `1e039f106cab839505be0d1739a80461c55bb9a3` supplies the bounded
+repeated lifecycle observation. On 2026-09-16, Chromium chooser, Firefox
+chooser and Chromium CDP-drop paths each completed four cycles after two
+warmups without reloads under the 300-second bound. Each cycle passed the file,
+pixel and cine traces and cleanup; mounted guards were `31 host / 21 consumer`,
+stopped guards were `0 / 0`, and post-decode committed WASM capacity was
+`404,357,120` bytes on every path. This evidences bounded repeated lifecycle
+growth observation; long-duration leak behavior, allocator-used bytes,
+process/compositor/GPU costs and matched GPUI/Tauri/egui fixtures remain
+unmeasured.
+
 The merged Windows default-shell CT run provides a second current fixture. At
 RITK revision `0ed6e245e2341e6a7888441f54e7e515fc12653b`, Metis revision
 `edcd8cb4a228d1b158f01edd596463d24964c4ab` and Moirai revision
