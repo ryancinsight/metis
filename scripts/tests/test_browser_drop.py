@@ -40,7 +40,6 @@ from browser_file_read import (
 )
 from browser_protocol import BrowserRuntimeError
 from browser_trace import BrowserEngine
-from browser import SOURCE, validate_index_policy
 
 
 NODE_READ_DIAGNOSTIC_HARNESS = r"""
@@ -302,24 +301,6 @@ class FileDropTests(unittest.TestCase):
             (root / "extra").write_bytes(b"x")
             with self.assertRaisesRegex(BrowserRuntimeError, "bounds"):
                 study_files(root)
-
-    def test_gallery_uses_real_host_and_external_consumer(self):
-        validate_index_policy(SOURCE / "gallery.html")
-        html = (SOURCE / "gallery.html").read_text(encoding="utf-8")
-        script = (SOURCE / "gallery.js").read_text(encoding="utf-8")
-        style = (SOURCE / "gallery.css").read_text(encoding="utf-8")
-        self.assertIn('id="metis-app"', html)
-        self.assertIn('src="./gallery.js"', html)
-        self.assertEqual(html.count("<canvas "), 3)
-        self.assertIn('import("./consumer/ritk_snap.js")', script)
-        self.assertIn("start_web_orthogonal_canvases(", script)
-        self.assertIn("stop_web_canvas()", script)
-        self.assertIn('fileInput.accept = ".dcm,application/dicom"', script)
-        self.assertIn('fileLabel.textContent = "Choose study files"', script)
-        self.assertNotIn("DataTransfer", script)
-        self.assertNotIn("dispatchEvent", script)
-        self.assertNotIn("fetch(", script)
-        self.assertIn("#metis-app > :not(.metis-drop)", style)
 
     def test_transfer_observer_covers_drop_and_standard_chooser(self):
         self.assertIn("input.addEventListener('change'", OBSERVE_TRANSFER)

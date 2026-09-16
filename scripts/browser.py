@@ -14,6 +14,9 @@ OUTPUT = ROOT / "output" / "browser"
 SOURCE = ROOT / "examples" / "browser"
 CONTENT_SECURITY_POLICY = ROOT / "crates" / "metis-core" / "src" / "content_security_policy.txt"
 WASM_BINDGEN_VERSION = "0.2.128"
+# Keep externally supplied browser assets bounded before they enter the output.
+MAX_CONSUMER_MODULE_BYTES = 64 * 1024 * 1024
+MAX_CONSUMER_PAGE_BYTES = 512 * 1024
 
 
 def run(command: list[str]) -> None:
@@ -111,30 +114,59 @@ def build() -> None:
 def main() -> None:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("command", choices=("build",))
-    parser.add_argument("--ritk-package", type=pathlib.Path,
-                        help="Include a locally built wasm-bindgen RITK package for gallery.html")
+    parser.add_argument(
+        "--consumer-package",
+        type=pathlib.Path,
+        help="Include a bounded wasm-bindgen consumer package for the supplied gallery",
+    )
+    parser.add_argument(
+        "--consumer-gallery",
+        type=pathlib.Path,
+        help="Include a consumer gallery directory containing gallery.html, gallery.js and gallery.css",
+    )
     args = parser.parse_args()
     if args.command == "build":
         build()
-        if args.ritk_package is not None:
-            package_gallery(args.ritk_package)
+        if (args.consumer_package is None) != (args.consumer_gallery is None):
+            raise SystemExit("--consumer-package and --consumer-gallery must be supplied together")
+        if args.consumer_package is not None and args.consumer_gallery is not None:
+            package_consumer(args.consumer_package, args.consumer_gallery)
 
 
-def package_gallery(package: pathlib.Path) -> None:
-    """Copy the consumer's generated module; medical logic stays in RITK."""
-    names = ("ritk_snap.js", "ritk_snap_bg.wasm")
-    sources = [package / name for name in names]
-    for source in sources:
-        if not source.is_file() or source.is_symlink():
-            raise SystemExit(f"RITK package must contain a regular file: {source}")
-    with sources[1].open("rb") as module:
+def package_consumer(package: pathlib.Path, gallery: pathlib.Path) -> None:
+    """Copy one validated consumer package and its browser page."""
+    if not package.is_dir() or package.is_symlink():
+        raise SystemExit(f"consumer package must be a regular directory: {package}")
+    package_entries = sorted(package.iterdir())
+    modules = [path for path in package_entries if path.is_file()]
+    if len(package_entries) != 2 or len(modules) != 2 or {path.suffix for path in modules} != {".js", ".wasm"}:
+        raise SystemExit("consumer package must contain exactly one JavaScript and one WebAssembly module")
+    for source in modules:
+        if source.is_symlink() or source.stat().st_size > MAX_CONSUMER_MODULE_BYTES:
+            raise SystemExit(f"consumer package contains an invalid or oversized file: {source}")
+    wasm = next(source for source in modules if source.suffix == ".wasm")
+    with wasm.open("rb") as module:
         if module.read(8) != b"\0asm\x01\0\0\0":
-            raise SystemExit("RITK package contains an invalid WASM header")
-    validate_index_policy(SOURCE / "gallery.html")
+            raise SystemExit(f"consumer package contains an invalid WebAssembly header: {wasm}")
+
+    if not gallery.is_dir() or gallery.is_symlink():
+        raise SystemExit(f"consumer gallery must be a regular directory: {gallery}")
+    page_names = ("gallery.html", "gallery.js", "gallery.css")
+    gallery_entries = sorted(gallery.iterdir())
+    pages = [gallery / name for name in page_names]
+    if {path.name for path in gallery_entries} != set(page_names) or len(gallery_entries) != len(page_names):
+        raise SystemExit("consumer gallery must contain exactly gallery.html, gallery.js and gallery.css")
+    for source in pages:
+        if not source.is_file() or source.is_symlink() or source.stat().st_size > MAX_CONSUMER_PAGE_BYTES:
+            raise SystemExit(f"consumer gallery contains an invalid or oversized page: {source}")
+    validate_index_policy(pages[0])
+
     destination = OUTPUT / "consumer"
     destination.mkdir(parents=True, exist_ok=True)
-    for source in sources:
+    for source in modules:
         shutil.copy2(source, destination / source.name)
+    for source in pages:
+        shutil.copy2(source, OUTPUT / source.name)
 
 
 if __name__ == "__main__":

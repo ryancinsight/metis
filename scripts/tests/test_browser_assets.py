@@ -2,8 +2,10 @@
 from __future__ import annotations
 
 import hashlib
+import importlib.util
 import json
 import pathlib
+import tempfile
 import unittest
 
 
@@ -97,6 +99,47 @@ class BrowserAssetContractTests(unittest.TestCase):
         self.assertIn('OUTPUT / "assets" / "metis-mark.png"', browser_script)
         self.assertIn('OUTPUT / "assets" / "metis-mark.ico"', browser_script)
         self.assertIn('OUTPUT / "assets" / "metis-mark.svg"', browser_script)
+
+    def test_consumer_gallery_is_explicit_and_bounded(self):
+        spec = importlib.util.spec_from_file_location("metis_browser_packager", ROOT / "scripts" / "browser.py")
+        self.assertIsNotNone(spec)
+        self.assertIsNotNone(spec.loader)
+        browser = importlib.util.module_from_spec(spec)
+        spec.loader.exec_module(browser)
+        with tempfile.TemporaryDirectory() as directory:
+            root = pathlib.Path(directory)
+            package = root / "package"
+            package.mkdir()
+            (package / "consumer.js").write_text("export default {};\n", encoding="utf-8")
+            (package / "consumer_bg.wasm").write_bytes(b"\0asm\x01\0\0\0")
+            gallery = root / "gallery"
+            gallery.mkdir()
+            source_index = ROOT / "examples" / "browser" / "index.html"
+            (gallery / "gallery.html").write_bytes(source_index.read_bytes())
+            (gallery / "gallery.js").write_text("export {};\n", encoding="utf-8")
+            (gallery / "gallery.css").write_text("body {}\n", encoding="utf-8")
+            browser.OUTPUT = root / "output"
+            browser.package_consumer(package, gallery)
+            self.assertEqual(
+                sorted(path.name for path in (root / "output" / "consumer").iterdir()),
+                ["consumer.js", "consumer_bg.wasm"],
+            )
+            self.assertTrue((root / "output" / "gallery.html").is_file())
+            self.assertTrue((root / "output" / "gallery.js").is_file())
+            self.assertTrue((root / "output" / "gallery.css").is_file())
+            (package / "unexpected.txt").write_text("ignored", encoding="utf-8")
+            with self.assertRaisesRegex(SystemExit, "exactly one JavaScript"):
+                browser.package_consumer(package, gallery)
+            (package / "unexpected.txt").unlink()
+            (gallery / "unexpected.txt").write_text("ignored", encoding="utf-8")
+            with self.assertRaisesRegex(SystemExit, "exactly gallery.html"):
+                browser.package_consumer(package, gallery)
+
+    def test_default_source_has_no_consumer_gallery(self):
+        source = ROOT / "examples" / "browser"
+        self.assertFalse((source / "gallery.html").exists())
+        self.assertFalse((source / "gallery.js").exists())
+        self.assertFalse((source / "gallery.css").exists())
 
     def test_bootstrap_keeps_navigation_same_origin(self):
         bootstrap = (ROOT / "examples" / "browser" / "bootstrap.js").read_text(
