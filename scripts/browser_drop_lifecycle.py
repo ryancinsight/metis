@@ -12,7 +12,7 @@ from collections.abc import Callable
 from browser_canvas import KeyboardTraceKind, capture_canvas_trace, validate_canvas_attributes
 from browser_protocol import BrowserRuntimeError, WebDriverClient
 from browser_runtime import _wait_for_selector, _wait_for_text
-from browser_trace import Trace, browser_heap_sample
+from browser_trace import Trace, browser_heap_sample, browser_memory_sample
 
 
 MAX_LIFECYCLE_CYCLES = 8
@@ -241,11 +241,15 @@ def _lifecycle_phase(
     sample: object,
     *,
     mounted: bool,
+    browser_memory: bool = False,
 ) -> dict:
-    """Record one listener, WASM-capacity, and optional JavaScript-heap sample."""
+    """Record one listener, WASM-capacity, and optional browser memory samples."""
     gallery = _validate_gallery_sample(sample, mounted=mounted)
     heap = browser_heap_sample(client, trace, f"cycle-{cycle}-{phase}")
-    return {"phase": phase, "gallery": gallery, "browser_heap": heap}
+    result = {"phase": phase, "gallery": gallery, "browser_heap": heap}
+    if browser_memory:
+        result["browser_memory"] = browser_memory_sample(client, trace, f"cycle-{cycle}-{phase}")
+    return result
 
 
 def assert_lifecycle_growth(records: object) -> None:
@@ -350,6 +354,7 @@ def run_gallery_lifecycle(
     canvas_pixels_script: str,
     canvas_traces: list[Trace],
     suite_timeout_seconds: int = MAX_LIFECYCLE_SUITE_SECONDS,
+    browser_memory: bool = False,
 ) -> list[Trace]:
     """Run bounded same-page mount, transfer, decode, cine, and stop cycles."""
     if type(suite_timeout_seconds) is not int or not 1 <= suite_timeout_seconds <= MAX_LIFECYCLE_SUITE_SECONDS:
@@ -390,7 +395,15 @@ def run_gallery_lifecycle(
                     include=True,
                 )
                 phases.append(
-                    _lifecycle_phase(bounded, trace, cycle, "mounted", mounted, mounted=True)
+                    _lifecycle_phase(
+                        bounded,
+                        trace,
+                        cycle,
+                        "mounted",
+                        mounted,
+                        mounted=True,
+                        browser_memory=browser_memory,
+                    )
                 )
                 point = bounded.execute(observe_transfer_script)
                 observer_installed = True
@@ -444,6 +457,7 @@ def run_gallery_lifecycle(
                         "transfer",
                         bounded.execute(SAMPLE_GALLERY),
                         mounted=True,
+                        browser_memory=browser_memory,
                     )
                 )
                 for canvas_id in canvas_ids:
@@ -476,6 +490,7 @@ def run_gallery_lifecycle(
                         "decoded",
                         bounded.execute(SAMPLE_GALLERY),
                         mounted=True,
+                        browser_memory=browser_memory,
                     )
                 )
                 canvas_trace = canvas_trace_factory()
@@ -488,6 +503,7 @@ def run_gallery_lifecycle(
                     canvas_attributes,
                     frame_timeout_ms=min(4_000, bounded.remaining_milliseconds()),
                     keyboard_trace=KeyboardTraceKind.CINE_RATE,
+                    browser_memory=browser_memory,
                 )
                 phases.append(
                     _lifecycle_phase(
@@ -497,6 +513,7 @@ def run_gallery_lifecycle(
                         "cine",
                         bounded.execute(SAMPLE_GALLERY),
                         mounted=True,
+                        browser_memory=browser_memory,
                     )
                 )
                 cleanup = cleanup_transfer(bounded)
@@ -512,6 +529,7 @@ def run_gallery_lifecycle(
                         "stopped",
                         stopped_sample,
                         mounted=False,
+                        browser_memory=browser_memory,
                     )
                 )
                 record["observer_cleanup"] = cleanup

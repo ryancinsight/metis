@@ -7,7 +7,14 @@ from typing import Any, Dict, Mapping, Optional
 
 from browser_protocol import BrowserRuntimeError, WebDriverClient
 from browser_runtime import _wait_for_text
-from browser_trace import BrowserEngine, Trace, browser_heap_sample, record_device_scale, screenshot
+from browser_trace import (
+    BrowserEngine,
+    Trace,
+    browser_heap_sample,
+    browser_memory_sample,
+    record_device_scale,
+    screenshot,
+)
 
 
 FRAGMENT_BRIDGE = "http-fragment"
@@ -108,6 +115,7 @@ def run_fragment_scenario(
     browser_heap: bool = False,
     browser_name: Optional[str] = None,
     device_scale_milli: Optional[int] = None,
+    browser_memory: bool = False,
 ) -> Trace:
     """Exercise authenticated success, rejection, stale state and remount."""
     trace: Optional[Trace] = None
@@ -134,6 +142,8 @@ def run_fragment_scenario(
         )
         if browser_heap:
             browser_heap_sample(client, trace, "authenticated-success")
+        if browser_memory:
+            browser_memory_sample(client, trace, "authenticated-success")
         screenshot(client, trace, screenshot_directory, "authenticated-success")
 
         generation = ready["generation"]
@@ -155,6 +165,8 @@ def run_fragment_scenario(
         )
         if browser_heap:
             browser_heap_sample(client, trace, "remounted-success")
+        if browser_memory:
+            browser_memory_sample(client, trace, "remounted-success")
         screenshot(client, trace, screenshot_directory, "remounted-success")
         trace.actions.append({"action": "remounted-fragment", "status": 200, "generation": recovered["generation"]})
         trace.cleanup = {

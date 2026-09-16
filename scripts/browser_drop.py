@@ -26,7 +26,7 @@ from browser_canvas import (
 )
 from browser_file_read import capture_file_read_diagnostic, capture_file_selection_diagnostic
 from browser_runtime import _wait_for_text, _wait_for_selector, _write_trace
-from browser_trace import BrowserEngine, Trace, record_device_scale, screenshot
+from browser_trace import BrowserEngine, Trace, browser_memory_sample, record_device_scale, screenshot
 from browser_drop_lifecycle import (
     CLEANUP_TRANSFER,
     OBSERVE_TRANSFER,
@@ -214,6 +214,8 @@ def run(args: argparse.Namespace) -> dict:
             client.navigate(trace.url)
             _wait_for_text(client, "gallery-status", "Ready.", timeout_ms=30_000, include=True)
             record_device_scale(client, trace, device_scale_milli)
+            if getattr(args, "browser_memory_sample", False):
+                browser_memory_sample(client, trace, "mounted")
             if lifecycle_cycles > 1:
                 def new_canvas_trace() -> Trace:
                     cycle_trace = Trace(
@@ -256,6 +258,7 @@ def run(args: argparse.Namespace) -> dict:
                     CANVAS_PIXELS,
                     lifecycle_canvas_traces,
                     args.lifecycle_timeout_seconds,
+                    getattr(args, "browser_memory_sample", False),
                 )
                 trace.metrics["gallery_lifecycle_canvas_traces"] = [
                     (
@@ -344,6 +347,8 @@ def run(args: argparse.Namespace) -> dict:
                 trace.snapshots.append({"id": canvas_id, **actual})
                 _element_screenshot(client, trace, output, canvas_id, client.find("#" + canvas_id))
             viewport = client.execute("window.scrollTo(0,0); return {width:innerWidth,height:innerHeight,device_scale:devicePixelRatio};")
+            if getattr(args, "browser_memory_sample", False):
+                browser_memory_sample(client, trace, "decoded")
             screenshot(client, trace, output, "gallery")
             if canvas_trace_path is not None:
                 canvas_trace = Trace(
@@ -362,6 +367,7 @@ def run(args: argparse.Namespace) -> dict:
                     ids,
                     canvas_attributes,
                     keyboard_trace=keyboard_trace,
+                    browser_memory=getattr(args, "browser_memory_sample", False),
                 )
             if args.input in ("chromium", "chooser"):
                 expected_rgba = {canvas_id: oracle[canvas_id]["rgba_sha256"] for canvas_id in ids}
@@ -495,6 +501,8 @@ def main() -> None:
     )
     parser.add_argument("--canvas-attribute", action="append", default=[],
                         help="consumer-selected data-* attribute for the paired canvas trace")
+    parser.add_argument("--browser-memory-sample", action="store_true",
+                        help="record bounded measureUserAgentSpecificMemory observations when exposed")
     parser.add_argument("--input", choices=("manual", "chooser", "chromium"), default="manual",
                         help="manual OS drop, standard W3C chooser, or Chromium CDP drag")
     parser.add_argument(

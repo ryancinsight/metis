@@ -34,6 +34,7 @@ from browser_trace import (
     Trace,
     UNSUPPORTED_NATIVE_OPERATIONS,
     browser_heap_sample,
+    browser_memory_sample,
     record_device_scale,
     screenshot,
 )
@@ -183,6 +184,7 @@ def run_scenario(
     browser_name: Optional[str] = None,
     lifecycle_cycles: int = 1,
     device_scale_milli: Optional[int] = None,
+    browser_memory: bool = False,
 ) -> Trace:
     """Execute the same input, bridge and bounded teardown trace for every engine."""
     if bridge not in BRIDGE_MODES:
@@ -204,6 +206,8 @@ def run_scenario(
         initial = _snapshot(client, trace, "initial")
         if browser_heap:
             browser_heap_sample(client, trace, "initial")
+        if browser_memory:
+            browser_memory_sample(client, trace, "initial")
         screenshot(client, trace, screenshot_directory, "initial")
         if bridge == "authorized":
             _wait_for_text(client, "metis-status", "Authorized backend session ready", include=True, timeout_ms=timeout_ms)
@@ -222,6 +226,8 @@ def run_scenario(
             _snapshot(client, trace, f"after-{element_id}")
             if browser_heap:
                 browser_heap_sample(client, trace, f"after-{element_id}")
+            if browser_memory:
+                browser_memory_sample(client, trace, f"after-{element_id}")
             screenshot(client, trace, screenshot_directory, f"after-{element_id}")
 
         if bridge == "authorized":
@@ -241,6 +247,8 @@ def run_scenario(
                 remounted_snapshot = _snapshot(client, trace, "remounted-after-cancel")
                 if browser_heap:
                     browser_heap_sample(client, trace, "remounted-after-cancel")
+                if browser_memory:
+                    browser_memory_sample(client, trace, "remounted-after-cancel")
                 _assert_remount_has_no_result(remounted_snapshot)
                 _assert_no_pending_request(remounted_snapshot)
                 trace.actions.append({"action": "cancel-stop-remount", "stale_result": False})
@@ -253,6 +261,8 @@ def run_scenario(
                 _snapshot(client, trace, "success")
                 if browser_heap:
                     browser_heap_sample(client, trace, "success")
+                if browser_memory:
+                    browser_memory_sample(client, trace, "success")
                 screenshot(client, trace, screenshot_directory, "success")
         else:
             submit_state = initial["elements"]["submit-calculation"]
@@ -271,6 +281,8 @@ def run_scenario(
             remounted_snapshot = _snapshot(client, trace, "remounted")
             if browser_heap:
                 browser_heap_sample(client, trace, "remounted")
+            if browser_memory:
+                browser_memory_sample(client, trace, "remounted")
             _assert_remount_has_no_result(remounted_snapshot)
             _assert_no_pending_request(remounted_snapshot)
             screenshot(client, trace, screenshot_directory, "remounted")
@@ -290,6 +302,8 @@ def run_scenario(
             cycle_remounted = _snapshot(client, trace, f"remounted-cycle-{cycle}")
             if browser_heap:
                 browser_heap_sample(client, trace, f"remounted-cycle-{cycle}")
+            if browser_memory:
+                browser_memory_sample(client, trace, f"remounted-cycle-{cycle}")
             _assert_remount_has_no_result(cycle_remounted)
             _assert_no_pending_request(cycle_remounted)
             _assert_lifecycle_transition(cycle_stopped, cycle_remounted)
@@ -441,6 +455,7 @@ def _arguments() -> argparse.Namespace:
     parser.add_argument("--cancel", action="store_true", help="submit a delayed authorized request, stop, remount and check stale-response disposal")
     parser.add_argument("--cancel-grace-ms", type=int, default=4_000)
     parser.add_argument("--browser-heap-sample", action="store_true", help="record bounded performance.memory JavaScript-heap observations when exposed")
+    parser.add_argument("--browser-memory-sample", action="store_true", help="record bounded measureUserAgentSpecificMemory observations when exposed")
     parser.add_argument("--lifecycle-cycles", type=int, default=1, help=f"repeat the workbench stop/remount lifecycle between 1 and {MAX_LIFECYCLE_CYCLES} times")
     parser.add_argument("--timeout-seconds", type=float, default=30.0)
     parser.add_argument("--output", type=pathlib.Path, help="trace path; defaults to output/browser/runtime/<engine>-<scenario>.json")
@@ -574,6 +589,7 @@ def main() -> int:
                         consumer_revision,
                         canvas_attributes,
                         browser_heap=arguments.browser_heap_sample,
+                        browser_memory=arguments.browser_memory_sample,
                         keyboard_trace=keyboard_trace,
                         browser_name=browser_name,
                         device_scale_milli=device_scale_milli,
@@ -581,7 +597,7 @@ def main() -> int:
                 elif arguments.scenario == "fragment":
                     raise BrowserRuntimeError("fragment scenarios require --url for the HTTP service origin")
                 else:
-                    trace = run_scenario(client, engine, url, arguments.bridge, revision, output.parent / "screenshots" / engine.value, timeout_ms, arguments.cancel, arguments.cancel_grace_ms, arguments.browser_heap_sample, browser_name, arguments.lifecycle_cycles, device_scale_milli)
+                    trace = run_scenario(client, engine, url, arguments.bridge, revision, output.parent / "screenshots" / engine.value, timeout_ms, arguments.cancel, arguments.cancel_grace_ms, arguments.browser_heap_sample, browser_name, arguments.lifecycle_cycles, device_scale_milli, arguments.browser_memory_sample)
         else:
             url = arguments.url
             if url is None:
@@ -600,6 +616,7 @@ def main() -> int:
                     consumer_revision,
                     canvas_attributes,
                     browser_heap=arguments.browser_heap_sample,
+                    browser_memory=arguments.browser_memory_sample,
                     keyboard_trace=keyboard_trace,
                     browser_name=browser_name,
                     device_scale_milli=device_scale_milli,
@@ -613,11 +630,12 @@ def main() -> int:
                     output.parent / "screenshots" / engine.value / "fragment",
                     timeout_ms,
                     browser_heap=arguments.browser_heap_sample,
+                    browser_memory=arguments.browser_memory_sample,
                     browser_name=browser_name,
                     device_scale_milli=device_scale_milli,
                 )
             else:
-                trace = run_scenario(client, engine, url, arguments.bridge, revision, output.parent / "screenshots" / engine.value, timeout_ms, arguments.cancel, arguments.cancel_grace_ms, arguments.browser_heap_sample, browser_name, arguments.lifecycle_cycles, device_scale_milli)
+                trace = run_scenario(client, engine, url, arguments.bridge, revision, output.parent / "screenshots" / engine.value, timeout_ms, arguments.cancel, arguments.cancel_grace_ms, arguments.browser_heap_sample, browser_name, arguments.lifecycle_cycles, device_scale_milli, arguments.browser_memory_sample)
         _write_trace(output, trace.document())
         print(json.dumps(trace.document(), sort_keys=True))
         return 0

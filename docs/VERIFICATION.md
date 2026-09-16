@@ -1655,6 +1655,24 @@ efficiency claim. The [sanitized trace and inspected screenshots](manual/browser
 bind the values and hashes. WASM, native-process, compositor, GPU,
 Firefox/WebKit and physical-input residuals remain open under V12.
 
+<a id="browser-memory-observation-evidence--2026-09-16"></a>
+## Browser aggregate-memory observation — 2026-09-16
+
+The browser runners now accept `--browser-memory-sample`. Each sample calls
+the standard [`performance.measureUserAgentSpecificMemory()`](https://developer.mozilla.org/en-US/docs/Web/API/Performance/measureUserAgentSpecificMemory)
+only from a secure, cross-origin-isolated document and waits no longer than
+five seconds. A successful result records the implementation-dependent
+`estimated_bytes` aggregate under `metrics.browser_memory`; an unsupported,
+rejected or timed-out call records its explicit reason. The runner rejects
+non-finite, negative, non-integer and over-budget byte values.
+
+This API estimates user-agent memory and its byte values are not comparable
+across engines or browser versions. The observation does not measure WASM
+allocator use, native process memory, compositor or GPU memory, and it does not
+close the V12 allocation or matched-framework gaps. The dependency-free
+runtime, canvas and gallery paths share the same validation function; live
+availability remains host-dependent.
+
 <a id="browser-lifecycle-growth-instrument-2026-09-13"></a>
 ## Browser lifecycle-growth instrument — 2026-09-13
 

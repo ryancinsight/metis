@@ -42,7 +42,13 @@ from browser_protocol import (
     format_device_scale,
     parse_device_scale,
 )
-from browser_trace import BrowserEngine, Trace, browser_heap_sample, record_device_scale
+from browser_trace import (
+    BrowserEngine,
+    Trace,
+    browser_heap_sample,
+    browser_memory_sample,
+    record_device_scale,
+)
 
 
 def _png() -> bytes:
@@ -107,6 +113,7 @@ class FakeDriver:
             "total_js_heap_bytes": 2_097_152,
             "js_heap_limit_bytes": 4_194_304,
         }
+        self.memory_bytes = 8_388_608
 
     def create_session(self, browser_name: str, device_scale_milli=None) -> None:
         self.session_id = "session"
@@ -229,6 +236,14 @@ class FakeDriver:
         return None
 
     def execute_async(self, script: str, arguments=()):
+        if "measureUserAgentSpecificMemory" in script:
+            return {
+                "available": True,
+                "source": "performance.measureUserAgentSpecificMemory",
+                "secure_context": True,
+                "cross_origin_isolated": True,
+                "estimated_bytes": self.memory_bytes,
+            }
         if "requestAnimationFrame" in script:
             sample_count = arguments[0]
             return {"ok": True, "timestamps": [float(index * 16) for index in range(sample_count)]}
@@ -514,6 +529,43 @@ class InvalidHeapDriver(FakeDriver):
         return value
 
 
+class UnavailableMemoryDriver(FakeDriver):
+    """Driver mutant that reports an unsupported aggregate memory surface."""
+
+    def execute_async(self, script: str, arguments=()):
+        if "measureUserAgentSpecificMemory" in script:
+            return {"available": False, "reason": "cross-origin isolation required"}
+        return super().execute_async(script, arguments)
+
+
+class FailedMemoryDriver(FakeDriver):
+    """Driver mutant that reports a rejected or timed-out memory probe."""
+
+    def __init__(self, reason: str) -> None:
+        super().__init__()
+        self.reason = reason
+
+    def execute_async(self, script: str, arguments=()):
+        if "measureUserAgentSpecificMemory" in script:
+            return {"available": False, "reason": self.reason}
+        return super().execute_async(script, arguments)
+
+
+class InvalidMemoryDriver(FakeDriver):
+    """Driver mutant that violates the aggregate memory value contract."""
+
+    def execute_async(self, script: str, arguments=()):
+        if "measureUserAgentSpecificMemory" in script:
+            return {
+                "available": True,
+                "source": "performance.measureUserAgentSpecificMemory",
+                "secure_context": True,
+                "cross_origin_isolated": True,
+                "estimated_bytes": float("nan"),
+            }
+        return super().execute_async(script, arguments)
+
+
 class RetainingDriver(FakeDriver):
     """Driver mutant that leaves controls mounted after the stop command."""
 
@@ -666,6 +718,7 @@ class BrowserRuntimeTests(unittest.TestCase):
                 False,
                 4_000,
                 browser_heap=True,
+                browser_memory=True,
                 lifecycle_cycles=3,
             )
         records = trace.metrics["lifecycle_cycles"]
@@ -694,6 +747,9 @@ class BrowserRuntimeTests(unittest.TestCase):
                 "remounted-cycle-3",
             ],
         )
+        memory_labels = [sample["label"] for sample in trace.metrics["browser_memory"]]
+        self.assertEqual(memory_labels, heap_labels)
+        self.assertTrue(all(sample["available"] for sample in trace.metrics["browser_memory"]))
         self.assertEqual(len(trace.screenshots), 6)
 
     def test_lifecycle_cycle_bound_is_enforced(self):
@@ -728,6 +784,7 @@ class BrowserRuntimeTests(unittest.TestCase):
                 ["ritk-snap-axial", "ritk-snap-coronal", "ritk-snap-sagittal"],
                 "1" * 40,
                 browser_heap=True,
+                browser_memory=True,
                 browser_name="MicrosoftEdge",
             )
         self.assertTrue(driver.closed)
@@ -767,6 +824,10 @@ class BrowserRuntimeTests(unittest.TestCase):
         self.assertEqual(len(heap), 6)
         self.assertTrue(all(item["available"] for item in heap))
         self.assertTrue(all(item["used_js_heap_bytes"] <= item["total_js_heap_bytes"] <= item["js_heap_limit_bytes"] for item in heap))
+        memory = trace.metrics["browser_memory"]
+        self.assertEqual(len(memory), 6)
+        self.assertTrue(all(item["available"] for item in memory))
+        self.assertTrue(all(item["estimated_bytes"] == 8_388_608 for item in memory))
 
     def test_canvas_trace_records_focused_trusted_keyboard_actions(self):
         output = pathlib.Path(__file__).resolve().parents[2] / "output" / "browser" / "runtime-test"
@@ -1107,6 +1168,44 @@ class BrowserRuntimeTests(unittest.TestCase):
         trace = Trace(BrowserEngine.CHROMIUM, "http://127.0.0.1/", "canvas", "0" * 40, {})
         with self.assertRaisesRegex(BrowserRuntimeError, "heap ordering"):
             browser_heap_sample(InvalidHeapDriver(), trace, "initial")
+
+    def test_browser_memory_sample_records_bounded_estimate(self):
+        trace = Trace(BrowserEngine.CHROMIUM, "http://127.0.0.1/", "canvas", "0" * 40, {})
+        measurement = browser_memory_sample(FakeDriver(), trace, "initial")
+        self.assertEqual(
+            measurement,
+            {
+                "label": "initial",
+                "available": True,
+                "source": "performance.measureUserAgentSpecificMemory",
+                "secure_context": True,
+                "cross_origin_isolated": True,
+                "estimated_bytes": 8_388_608,
+            },
+        )
+        self.assertEqual(trace.metrics["browser_memory"], [measurement])
+
+    def test_browser_memory_sample_records_unavailable_surface(self):
+        trace = Trace(BrowserEngine.FIREFOX, "http://127.0.0.1/", "canvas", "0" * 40, {})
+        measurement = browser_memory_sample(UnavailableMemoryDriver(), trace, "initial")
+        self.assertEqual(
+            measurement,
+            {"label": "initial", "available": False, "reason": "cross-origin isolation required"},
+        )
+        self.assertEqual(trace.metrics["browser_memory"], [measurement])
+
+    def test_browser_memory_sample_records_failed_observations(self):
+        for reason in ("memory measurement rejected", "memory measurement timed out"):
+            with self.subTest(reason=reason):
+                trace = Trace(BrowserEngine.CHROMIUM, "http://127.0.0.1/", "canvas", "0" * 40, {})
+                measurement = browser_memory_sample(FailedMemoryDriver(reason), trace, "initial")
+                self.assertEqual(measurement, {"label": "initial", "available": False, "reason": reason})
+                self.assertEqual(trace.metrics["browser_memory"], [measurement])
+
+    def test_browser_memory_sample_rejects_invalid_value(self):
+        trace = Trace(BrowserEngine.CHROMIUM, "http://127.0.0.1/", "canvas", "0" * 40, {})
+        with self.assertRaisesRegex(BrowserRuntimeError, "invalid estimated_bytes"):
+            browser_memory_sample(InvalidMemoryDriver(), trace, "initial")
 
     def test_canvas_trace_captures_only_requested_opaque_attributes(self):
         output = pathlib.Path(__file__).resolve().parents[2] / "output" / "browser" / "runtime-test"

@@ -310,6 +310,16 @@ observation otherwise. It validates `used_js_heap_bytes <=
 total_js_heap_bytes <= js_heap_limit_bytes` and does not stand in for WASM
 linear memory, native process memory or an allocation profiler.
 
+Add `--browser-memory-sample` to append `metrics.browser_memory`. The runner
+uses [`performance.measureUserAgentSpecificMemory()`](https://developer.mozilla.org/en-US/docs/Web/API/Performance/measureUserAgentSpecificMemory)
+only when the document is secure and cross-origin isolated. It records one
+bounded `estimated_bytes` value or an explicit unavailable/rejected/timeout
+reason. The browser reports an implementation-dependent aggregate estimate;
+values are not comparable across engines or browser versions and do not count
+WASM allocations, native process memory, compositor work or GPU memory. Use
+the option with the file-backed gallery command as well as the generic canvas
+runner when the host exposes the API.
+
 For lifecycle-growth observations, add `--lifecycle-cycles N` to the workbench
 runner, where `N` is bounded to 1 through 8. The trace records the semantic
 state for every stop/remount cycle under `metrics.lifecycle_cycles` and reports

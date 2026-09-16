@@ -1498,6 +1498,26 @@ native process memory, allocations, compositor or GPU latency. Keep them
 separate in the V12 comparison and do not use them for a universal engine
 ranking.
 
+### Read browser-estimated aggregate memory
+
+Pass `--browser-memory-sample` to the workbench, canvas or file-backed gallery
+runner when the host can provide the standard
+[`performance.measureUserAgentSpecificMemory()`](https://developer.mozilla.org/en-US/docs/Web/API/Performance/measureUserAgentSpecificMemory)
+surface. The trace stores samples under `metrics.browser_memory`, using the
+label, `estimated_bytes` and source when the call succeeds. The runner requires
+a secure, cross-origin-isolated document and applies a five-second observation
+deadline; unsupported, rejected and timed-out calls remain explicit records.
+
+The API estimates aggregate memory for the user agent and its value is
+implementation-dependent. It is therefore not a WASM allocator count, native
+process measurement or allocation profile, and it must not be compared across
+engines or browser versions. The option is an additional V12 observation; the
+RITK gallery still supplies the DICOM byte and pixel oracles.
+
+```text
+python scripts/browser_drop.py --driver-url http://127.0.0.1:9517 --engine chromium --browser-name MicrosoftEdge --files path\to\study --oracle output\browser\consumer\oracle.json --consumer-revision <ritk-revision> --canvas-trace output\browser\drop\canvas.json --input chooser --browser-memory-sample
+```
+
 ### Repeat the workbench lifecycle
 
 The workbench runner can repeat its stop/remount sequence with a bounded

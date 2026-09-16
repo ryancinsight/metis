@@ -11,7 +11,15 @@ import sys
 from typing import Any, Mapping, Optional, Sequence, Tuple
 
 from browser_protocol import ROOT, WebDriverClient, BrowserRuntimeError, _safe_path
-from browser_trace import BrowserEngine, Trace, browser_heap_sample, frame_timing, record_device_scale, screenshot
+from browser_trace import (
+    BrowserEngine,
+    Trace,
+    browser_heap_sample,
+    browser_memory_sample,
+    frame_timing,
+    record_device_scale,
+    screenshot,
+)
 
 
 CANVAS_ID_PATTERN = re.compile(r"[A-Za-z][A-Za-z0-9_-]{0,127}")
@@ -644,6 +652,7 @@ def capture_canvas_trace(
     frame_timeout_ms: int = 4_000,
     browser_heap: bool = False,
     keyboard_trace: KeyboardTraceKind | None = None,
+    browser_memory: bool = False,
 ) -> None:
     """Capture trusted pointer and wheel input, with optional keyboard evidence."""
     if keyboard_trace is not None and not isinstance(keyboard_trace, KeyboardTraceKind):
@@ -664,6 +673,8 @@ def capture_canvas_trace(
             drag_start, drag_end, wheel_position = _canvas_action_offsets(initial_canvas)
             if browser_heap:
                 browser_heap_sample(client, trace, f"{canvas_id}-initial")
+            if browser_memory:
+                browser_memory_sample(client, trace, f"{canvas_id}-initial")
             frame_timing(client, trace, f"{canvas_id}-initial", timeout_ms=frame_timeout_ms)
             _element_screenshot(client, trace, screenshot_directory, f"{canvas_id}-initial", element)
             if keyboard_trace is KeyboardTraceKind.CINE_RATE:
@@ -726,6 +737,8 @@ def capture_canvas_trace(
             _canvas_snapshot(client, trace, canvas_id, f"{canvas_id}-after-input", canvas_attributes)
             if browser_heap:
                 browser_heap_sample(client, trace, f"{canvas_id}-after-input")
+            if browser_memory:
+                browser_memory_sample(client, trace, f"{canvas_id}-after-input")
             frame_timing(client, trace, f"{canvas_id}-after-input", timeout_ms=frame_timeout_ms)
             _element_screenshot(client, trace, screenshot_directory, f"{canvas_id}-after-input", element)
         client.release_actions()
@@ -781,6 +794,7 @@ def run_canvas_scenario(
     keyboard_trace: KeyboardTraceKind | None = None,
     browser_name: Optional[str] = None,
     device_scale_milli: Optional[int] = None,
+    browser_memory: bool = False,
 ) -> Trace:
     """Exercise trusted canvas input for format-neutral canvases."""
     canvas_ids = validate_canvas_ids(canvas_ids)
@@ -801,6 +815,7 @@ def run_canvas_scenario(
             frame_timeout_ms=timeout_ms,
             browser_heap=browser_heap,
             keyboard_trace=keyboard_trace,
+            browser_memory=browser_memory,
         )
         return trace
     finally:
