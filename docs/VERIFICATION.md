@@ -2012,8 +2012,55 @@ scenario in the Chromium, Firefox and WebKit matrix jobs. Each job builds the
 real `metis-app` HTTP service, serves the generated `http-health.html` page,
 waits for the service health response, and uploads the bounded
 `<engine>-fragment.json` trace plus its three PNG states. The workflow records
-driver or service failures directly; until a run supplies those artifacts,
-the cross-engine residual remains open.
+driver or service failures directly.
+
+<a id="browser-fragment-hosted-cross-engine-evidence--2026-09-16"></a>
+### Browser fragment hosted cross-engine evidence — 2026-09-16
+
+Manual workflow run [35143857171](https://github.com/ryancinsight/metis/actions/runs/35143857171)
+passed the Windows gate, parser fuzz campaign, lockfile, workflow, ADR,
+asset-build and Chromium, Firefox and WebKit jobs. The browser artifacts bind
+to Metis revision `d6e52068708b72becf2a4173d875a4b367789c6e`, which is included
+in merged main `07fe83175b7952177199340ad078fd0cfd90f012`.
+
+All three schema-1 traces report the same value-semantic sequence: health
+`200`; authenticated fragment `200` with one patch; malformed `400`,
+unauthorized `401`, target `rejected` and stale `unchanged`; reset with stale
+state cleared at generation `2`; remounted fragment `200` at generation `2`;
+and cleanup with `request_state: idle`, stale generation unchanged and
+`session_closed: true`. The traces and screenshots are stored in the
+[Chromium artifact 10465999174](https://github.com/ryancinsight/metis/actions/runs/35143857171/artifacts/10465999174),
+[Firefox artifact 10466158759](https://github.com/ryancinsight/metis/actions/runs/35143857171/artifacts/10466158759)
+and [WebKit artifact 10466530215](https://github.com/ryancinsight/metis/actions/runs/35143857171/artifacts/10466530215).
+
+| Engine | Browser / host | CSS viewport / DPR | Three PNG dimensions | Artifact zip SHA-256 |
+| --- | --- | --- | --- | --- |
+| Chromium | Chrome 152.0.7977.82 / Linux | 620 × 237 / 2 | 1240 × 474 | `d4371804a4484642a577ebaa82b38fb7bdc9c5c0ad8ff05ddbfcc687563a960d` |
+| Firefox | Firefox 155.0 / Linux | 576 × 276 / 2 | 1152 × 552 | `d601cc767cdba7e6d7353c15919565662d1af78a0cacfa33a1d181e253eb43cf` |
+| WebKit | Safari 26.6.2 / macOS | 800 × 600 / 1 | 800 × 600 | `19bb72f285dd92552c523fa2a3b7c46fbf7c099fc22c16e1b88164c3b9f083fe` |
+
+The PNG hashes are, in action order `authenticated-success`,
+`reset-stale-generation`, `remounted-success`:
+
+- Chromium: `c00d31345898f15e1ceb76b21d40e00c7ce51c9619afc313d0baa7d8c6560116`,
+  `2476aee9b21de4b6c47ce39f68123a10f44439734b5c5ae99278f2addc5d4ed1`,
+  `7c943f2c7a0ad051abe9b7d77e7e54aaeb666f683699b9e179c7f94862ef2b9d`.
+- Firefox: `ce4b757d263341b346b59e0dfb3ebcdf472fb7f03b6f4138565aabfe8956b25d`,
+  `286dae2bcb4a74b571be5ff3e3217022107346145198325eca3f7334562f546d`,
+  `43a70999c84805c579ea546761e0d38b072e47deb1a81147303ed1f44c2f3f18`.
+- WebKit: `c012d0ff34a0be7bd345fc9d332302062337d6048685327c84f6db7824adfe63`,
+  `220e4f63210e16d88a984403bb839d3665f6c5139f9f6d3d27cef955643ec5c2`,
+  `d5f334c1c8b7ac271cc1c5325433d7faf4781447134adfac98dd36245793b221`.
+
+Chromium exposed `performance.memory` for bounded heap observations;
+Firefox and WebKit reported it unavailable. This is cross-engine protocol and
+render evidence, not a provider-private allocation comparison. The page has
+no DICOM bytes or patient identifiers. RITK owns DICOM parsing, study
+selection, geometry, viewer state and actual clinical pixels; its [saved-study
+workflow](../../ritk/docs/manual/dicom-workflow.md#inspect-the-browser-canvas-visual-smoke)
+contains the corresponding MRI gallery. TLS, operating-system permissions,
+physical input, accessibility/IME behavior and provider-private listener or
+allocation counts remain separate evidence requirements.
 
 The current review revision adds explicit native assertions for a missing
 session, an inadmissible method, the eight-session capacity boundary, the
