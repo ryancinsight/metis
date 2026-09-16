@@ -2,6 +2,8 @@
 
 use std::fmt;
 
+use unicode_segmentation::UnicodeSegmentation;
+
 const MAX_TEXT_BYTES: usize = 1_048_576;
 const MAX_METADATA_BYTES: usize = 128;
 const MAX_LOCALE_BYTES: usize = 64;
@@ -104,6 +106,7 @@ pub(crate) enum TextError {
     SelectionReversed,
     SelectionOutOfBounds,
     SelectionSplitsScalar,
+    SelectionSplitsGrapheme,
 }
 
 impl fmt::Display for TextError {
@@ -115,6 +118,7 @@ impl fmt::Display for TextError {
             Self::SelectionReversed => "text selection start follows end",
             Self::SelectionOutOfBounds => "text selection exceeds the current value",
             Self::SelectionSplitsScalar => "text selection splits a UTF-16 surrogate pair",
+            Self::SelectionSplitsGrapheme => "text selection splits a grapheme cluster",
         };
         formatter.write_str(message)
     }
@@ -327,8 +331,39 @@ fn validate_selection(value: &str, selection: Selection) -> Result<(), TextError
         if !is_utf16_boundary(value, offset)? {
             return Err(TextError::SelectionSplitsScalar);
         }
+        if !is_grapheme_boundary(value, offset)? {
+            return Err(TextError::SelectionSplitsGrapheme);
+        }
     }
     Ok(())
+}
+
+fn is_grapheme_boundary(value: &str, offset: u32) -> Result<bool, TextError> {
+    if offset == 0 {
+        return Ok(true);
+    }
+    let mut previous_byte = 0_usize;
+    let mut units = 0_u32;
+    for (byte_index, _) in value.grapheme_indices(true).skip(1) {
+        let segment = value
+            .get(previous_byte..byte_index)
+            .ok_or(TextError::TextTooLong)?;
+        units = units
+            .checked_add(utf16_length(segment)?)
+            .ok_or(TextError::TextTooLong)?;
+        if units == offset {
+            return Ok(true);
+        }
+        if units > offset {
+            return Ok(false);
+        }
+        previous_byte = byte_index;
+    }
+    let segment = value.get(previous_byte..).ok_or(TextError::TextTooLong)?;
+    units = units
+        .checked_add(utf16_length(segment)?)
+        .ok_or(TextError::TextTooLong)?;
+    Ok(units == offset)
 }
 
 fn is_utf16_boundary(value: &str, offset: u32) -> Result<bool, TextError> {
