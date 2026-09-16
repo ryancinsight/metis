@@ -1,18 +1,14 @@
 <a id="METIS-GALLERY-CYCLES-001"></a>
 ## METIS-GALLERY-CYCLES-001 — Repeated saved-study browser lifecycle
-- Status: review; priority: P1; integrator: root; last-update: 2026-09-16; implementation: `9d14da1`.
-- Scope: bounded same-instance MRI-DIR gallery cycles on Chromium and Firefox; DICOM semantics remain RITK-owned.
-- Acceptance: each cycle verifies file/pixel identities and cine actions; stopped listeners are zero; post-warmup capacity growth fails the regression gate; record available heap evidence and its limits.
-- Risk: [minor]; dependencies: current saved 94-file gallery and browser input contracts.
-- Evidence: 12 measured same-instance cycles; all file/RGBA and cine oracles pass; 31/21 mounted guards, 0/0 stopped, 404,357,120-byte post-decode capacity. RITK memory provenance retains per-phase heap availability and limits.
-- Delivery: [PR #176](https://github.com/ryancinsight/metis/pull/176); focused gates pass. Full replay at `b0de134` passes 20 stages, then rustdoc exceeds its 300-second budget under shared-cache contention; not a green full run.
+- Status: done; priority: P1; integrator: root; last-update: 2026-09-16.
+- Delivery: [PR #176](https://github.com/ryancinsight/metis/pull/176), merge `04a2aef3bd9241a8096a9958ec126d568bb1d8e9`.
+- Outcome: 12 bounded same-instance saved MRI-DIR cycles pass file/RGBA/cine oracles, zero stopped listener guards, and stable post-warmup capacity; RITK owns DICOM semantics and records the resource limits.
 
 <a id="METIS-GALLERY-GATE-001"></a>
 ## METIS-GALLERY-GATE-001 — Complete gallery delivery gates
-- Status: in-progress; priority: P1; integrator: root; scope: verification infrastructure; risk: [patch]; last-update: 2026-09-16.
-- Outcome: collect the configured gate against the gallery revision without changing its resource budgets or creating a second build cache.
-- Blocker: hosted Windows run `35062698643` times out the delayed stream-cancel Node diagnostic after 10 seconds; local focused and full visual suites pass. Re-open when the harness transport is deterministic and the hosted gate completes.
-- Acceptance: full configured gate passes; preserve the independently passed 87 browser-script tests and 12 saved-study cycles. Optional WASM semver-checks 0.50.0 currently fails rustdoc target discovery under Rust 1.97.0 and supplies no compatibility evidence.
+- Status: done; priority: P1; integrator: root; last-update: 2026-09-16.
+- Delivery: `8388358` fixed the Windows Node diagnostic transport; hosted run [35064171544](https://github.com/ryancinsight/metis/actions/runs/35064171544) passed and PR #176 merged at `04a2aef3bd9241a8096a9958ec126d568bb1d8e9`.
+- Outcome: the configured gate passes without changing budgets or adding a cache; the 10-second delayed stream-cancel diagnostic remains bounded and deterministic.
 
 # Metis delivery
 
