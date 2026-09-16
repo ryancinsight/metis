@@ -27,6 +27,16 @@ failure.
 for lifecycle diagnostics, or zero on a surface created without input. It
 does not measure browser-private listeners or memory.
 
+GPU presentation is opt-in through the asynchronous
+`CanvasSurface::from_current_document_gpu` and
+`CanvasSurface::from_current_document_gpu_with_input` constructors (or their
+document-taking counterparts). They use Moirai's WebGPU canvas provider and
+return an explicit unsupported or setup error when the browser cannot provide
+an adapter or device; the host never changes a requested GPU surface into a
+raster surface. The borrowed frame and bounded input contracts are identical
+for both renderers, so consumers can compare them without moving format or
+viewer semantics into Metis.
+
 The host reports a typed disconnected outcome when no authorized backend bridge
 is configured. When the page host supplies an endpoint, process identifier and
 session principal, it connects `AsyncFrontendApp` to the Metis service over the

@@ -133,11 +133,14 @@ engine, host and revision.
 The browser canvas provider keeps its validated bitmap dimensions when a
 subsequent RGBA frame has the same extent and assigns new dimensions only when
 the extent changes. Metis pins the direct Moirai packages to merge
-`c9a4431b2320adb8cd3e5a5f12d1632c18378950` for this contract. The upload still
+`21b66ba424ad8f50d8574d6e9714be696f807e82` for this contract. The upload still
 borrows the frame for the call and remains bounded by the same pixel and byte
-limits. This is a lifecycle allocation guard; it is not a WASM-used-memory,
-browser-heap or process-memory measurement. Those values require the V12
-instrument and a controlled host.
+limits. `CanvasSurface` also exposes explicit asynchronous WebGPU constructors;
+missing adapter or device setup is returned as an unsupported/setup error and
+never selects the raster path implicitly. These contracts are lifecycle and
+capability evidence, not WASM-used-memory, browser-heap, process-memory or
+real-GPU visual measurements. Those values require the V12 instrument and a
+controlled host.
 
 ## Run the browser workbench
 

@@ -128,13 +128,18 @@ have transitive dependencies; the gate records the actual graph instead of descr
 dependency-free. The Atlas development overlay resolves first-party code to local
 trees. Standalone builds use the corresponding pushed provider revisions recorded
 in Cargo.lock. Metis consumes Moirai through git-plus-version requirements;
-the lock records current audited merge `c9a4431b2320adb8cd3e5a5f12d1632c18378950`,
+the lock records current audited merge `21b66ba424ad8f50d8574d6e9714be696f807e82`,
 which descends from Moirai PR #355's opt-in WebView2 feature graph and the
 stable browser canvas extent and content-box revisions. That revision
 includes the merged process, browser/API, bounded WebSocket service,
 cancellable-task surfaces, semantic control seams, pointer metadata, wheel
 metadata, bounded browser file access through a direct first-read plus object-URL continuation stream and
 the thread-affine Windows WebView2 provider and stable browser canvas extents.
+The browser host also exposes explicit asynchronous WebGPU canvas constructors
+through the same borrowed frame and bounded input contract. A missing adapter
+or device is reported as an unsupported/setup error; the host does not silently
+switch a requested GPU surface to raster presentation. Real GPU browser output
+and measurements remain consumer evidence owned by RITK.
 `metis-platform` enables
 `moirai-pal`'s `webview2` feature only for its Windows target; the provider's
 default graph remains free of the optional COM binding for other targets. The
