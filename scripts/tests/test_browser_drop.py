@@ -17,6 +17,7 @@ from browser_drop import (
     MAX_BATCH_BYTES,
     MAX_FILES,
     OBSERVE_TRANSFER,
+    parse_page_query,
     resolve_browser_target,
     study_files,
 )
@@ -254,6 +255,30 @@ class FileDropTests(unittest.TestCase):
         self.assertEqual(resolve_browser_target("webkit", "safari"), (BrowserEngine.WEBKIT, "safari"))
         with self.assertRaisesRegex(BrowserRuntimeError, "incompatible"):
             resolve_browser_target("firefox", "chrome")
+
+    def test_page_query_is_encoded_as_one_bounded_consumer_suffix(self):
+        self.assertEqual(
+            parse_page_query(["renderer=webgpu", "profile=clinical-view"]),
+            "?renderer=webgpu&profile=clinical-view",
+        )
+        self.assertEqual(parse_page_query(()), "")
+
+    def test_page_query_rejects_ambiguous_or_unsafe_parameters(self):
+        invalid = (
+            ("missing separator", "renderer"),
+            ("duplicate", "mode=raster", "mode=webgpu"),
+            ("empty value", "mode="),
+            ("unsafe key", "mode/name=raster"),
+            ("unsafe value", "mode=raster&debug=true"),
+            ("non-text", 7),
+        )
+        for label, *values in invalid:
+            with self.subTest(label=label), self.assertRaisesRegex(
+                BrowserRuntimeError, "page query"
+            ):
+                parse_page_query(values)
+        with self.assertRaisesRegex(BrowserRuntimeError, "at most 8"):
+            parse_page_query([f"mode{index}=value" for index in range(9)])
 
     def test_file_selection_preserves_exact_bytes_and_ignores_other_names(self):
         with tempfile.TemporaryDirectory() as directory:

@@ -1168,6 +1168,23 @@ to report the accepted count and bytes. RITK then reports the decoded study and
 the three canvases become non-black. Selecting an empty or over-budget batch
 produces a typed rejection without handing bytes to the decoder.
 
+Consumer pages can select an explicit, bounded mode without changing the
+format-neutral host. Pass one or more validated `KEY=VALUE` pairs to the
+generic runner; it appends them to the same-origin gallery URL and leaves their
+meaning to the consumer:
+
+```powershell
+python scripts/browser_drop.py --driver-url http://127.0.0.1:9517 `
+  --input chooser --page-query renderer=webgpu `
+  --files D:/atlas/repos/ritk/test_data/2_head_mri_t2/DICOM --pattern '*.dcm' `
+  --oracle output/browser/mri-oracle.json --consumer-revision <ritk-revision>
+```
+
+The runner accepts at most eight ASCII parameters with bounded keys and values,
+rejects duplicates and delimiters, and still validates the same-origin page
+before transfer. `renderer=webgpu` is therefore a RITK choice; Métis does not
+interpret it or add DICOM policy.
+
 Moirai reads each caller-sized browser `Blob` slice through a local object URL
 response stream. For the first bounded read of a file no larger than 1 MiB, the
 provider uses the browser `File.arrayBuffer()` API directly without allocating
