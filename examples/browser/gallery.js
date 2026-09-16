@@ -49,6 +49,15 @@ try {
     mounted = true;
     status.textContent = "Ready. Drop study files into the area below.";
   };
+  // The host exposes a format-neutral file picker. RITK supplies the DICOM
+  // filter and wording at this consumer boundary.
+  const fileInput = document.getElementById("file-input");
+  const fileLabel = document.querySelector('label[for="file-input"]');
+  if (!(fileInput instanceof HTMLInputElement) || !(fileLabel instanceof HTMLLabelElement)) {
+    throw new Error("Metis file picker controls are missing");
+  }
+  fileInput.accept = ".dcm,application/dicom";
+  fileLabel.textContent = "Choose study files";
   window.metisGallery = Object.freeze({
     mount, stop,
     sample: () => ({

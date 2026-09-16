@@ -1124,21 +1124,24 @@ behavior, TLS, accessibility technology support or OS permission isolation.
 ## Drop a study into the gallery
 
 The [gallery shell](../../examples/browser/gallery.html) exposes the mounted
-Metis file drop area beside three RITK canvases. Activate **Choose study files**
-and select the study's DICOM files in the browser file chooser, or drag those
-files from the file manager onto the area; do not select or drop the enclosing
-folder or its license/readme files. The chooser is a user-activated HTML5
-`change` event. Moirai captures its bounded browser `File` handles and Metis
-reads the same source-neutral batch used by drag/drop; no browser path or native
-filesystem authority crosses the host boundary. The page does not fetch a study
-or synthesize drop events. RITK owns classification, decoding, geometry and
-viewer state; Metis retains its 512-file, 64 MiB/file and 256 MiB/batch limits.
+Metis file drop area beside three RITK canvases. Metis supplies a generic
+**Choose files** control and a source-neutral bounded byte handoff. The RITK
+consumer configures the visible DICOM wording and `.dcm,application/dicom`
+filter after mounting, then selects the study's files in the browser chooser or
+drags those files from the file manager onto the area. Do not select or drop the
+enclosing folder or its license/readme files. The chooser is a user-activated
+HTML5 `change` event. Moirai captures its bounded browser `File` handles and
+Metis reads the same source-neutral batch used by drag/drop; no browser path or
+native filesystem authority crosses the host boundary. The page does not fetch
+a study or synthesize drop events. RITK owns classification, decoding, geometry
+and viewer state; Metis retains its 512-file, 64 MiB/file and 256 MiB/batch
+limits. The [RITK DICOM workflow](../../ritk/docs/manual/dicom-workflow.md)
+contains the saved-study command and actual image evidence.
 
 For a saved study, choose all files from one series and wait for **Byte access**
 to report the accepted count and bytes. RITK then reports the decoded study and
-the three canvases become non-black. The browser input accepts `.dcm` and
-`application/dicom`; selecting an empty or over-budget batch produces a typed
-rejection without handing bytes to the decoder.
+the three canvases become non-black. Selecting an empty or over-budget batch
+produces a typed rejection without handing bytes to the decoder.
 
 Moirai reads each caller-sized browser `Blob` slice through a local object URL
 response stream. For the first bounded read of a file no larger than 1 MiB, the

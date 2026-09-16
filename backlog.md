@@ -529,8 +529,8 @@ an owner. “Unsupported” cannot replace delivery of a required mobile/native 
 
 <a id="METIS-DICOM-003"></a>
 ## METIS-DICOM-003 — Remove format-specific browser presentation [patch]
-- Status: done; priority: P1; owner: Metis browser presentation; integrator: root; last-update: 2026-09-09; delivery: `c4bcd74`; dependencies: METIS-DICOM-002; risk: ownership drift
-- Outcome: browser labels, package README and fixtures describe generic bounded file handoff; format-specific parsing remains in RITK. Static contracts and the full locked gate pass on `c4bcd74`.
+- Status: done; priority: P1; owner: Metis browser presentation; integrator: root; last-update: 2026-09-16; delivery: `c4bcd74` plus the consumer-boundary correction; dependencies: METIS-DICOM-002; risk: ownership drift
+- Outcome: `metis-web` now emits a generic file-picker label and no format filter; the RITK gallery applies its DICOM label/filter after mounting. Format-specific parsing and presentation remain in RITK.
 
 <a id="METIS-DICOM-004"></a>
 ## METIS-DICOM-004 — Remove stale DICOM claims from Metis docs [patch]

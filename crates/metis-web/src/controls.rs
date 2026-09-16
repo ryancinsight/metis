@@ -86,8 +86,8 @@ pub(crate) const BROWSER_MARKUP: &str = r#"
   <div id="drop-zone" role="group" tabindex="0" aria-describedby="drop-status drop-byte-status" aria-label="File drop zone" data-drop-state="idle" data-drop-count="0" data-byte-state="idle">
     <p>Drop files here to inspect bounded metadata and hand the selected bytes to a trusted decoder.</p>
   </div>
-  <label for="file-input">Choose study files</label>
-  <input id="file-input" type="file" multiple accept=".dcm,application/dicom" aria-describedby="drop-status drop-byte-status">
+  <label for="file-input">Choose files</label>
+  <input id="file-input" type="file" multiple aria-describedby="drop-status drop-byte-status">
 </section>
 <section class="metis-text" aria-labelledby="text-heading">
   <h2 id="text-heading">Text and composition</h2>

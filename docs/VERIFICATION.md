@@ -2109,6 +2109,10 @@ and [per-engine provenance](../../ritk/docs/manual/images/dicom-metis-real-brows
 bind those runs. Safari 26.6.2 accepted the selection but rejected the first
 bounded read, so its WebKit/SafariDriver authorization remains open. Physical
 browser drag-and-drop, WebGPU and complete-window evidence remain separate.
+The mounted Metis host markup remains format-neutral: it exposes **Choose
+files** without an `accept` filter. The RITK gallery consumer applies the
+DICOM label and `.dcm,application/dicom` filter after mounting, so that hint
+does not enter the Metis host contract.
 RITK PR #284 additionally records a local browser smoke of the packaged
 `start_web_canvas` path: three synthetic Part 10 files were dispatched through
 a browser `DataTransfer`, the host reported three accepted 654-byte files and
