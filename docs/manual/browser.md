@@ -133,6 +133,14 @@ unauthorized `401`, target rejection, unchanged stale state, reset generation
 WebDriver observation on Windows; Firefox, WebKit, TLS, operating-system
 permissions and provider-private resource counts remain separate evidence.
 
+The scheduled or manually dispatched Metis verification workflow now runs the
+same authenticated fragment trace in its Chromium, Firefox and WebKit matrix
+jobs. Each job builds the real `metis-app` HTTP service, serves the generated
+`http-health.html` page, waits for `GET /health`, and writes
+`output/browser/runtime/<engine>-fragment.json` with the three inspected PNG
+states. Uploaded traces bind to the workflow revision; a missing driver,
+service start failure or browser capability remains an explicit failed job.
+
 ## Run the cross-engine conformance trace
 
 The repository includes a dependency-free W3C WebDriver runner. It uses the

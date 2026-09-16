@@ -255,6 +255,7 @@ jobs:
       contents: read
     env:
       CARGO_TERM_COLOR: always
+      CARGO_INCREMENTAL: '0'
     steps:
       - name: Checkout source
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
@@ -264,11 +265,18 @@ jobs:
         uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
         with:
           python-version: '3.13'
+      - name: Setup Rust for HTTP boundary
+        uses: dtolnay/rust-toolchain@4cda84d5c5c54efe2404f9d843567869ab1699d4 # stable
+        with:
+          toolchain: 1.97.0
       - name: Download browser assets
         uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
         with:
           name: metis-browser-assets-${{ github.run_id }}
           path: output/browser
+      - name: Build HTTP fragment service
+        shell: bash
+        run: cargo build --locked -p metis-app
       - name: Start virtual display
         if: matrix.engine != 'webkit'
         shell: bash
@@ -349,6 +357,68 @@ jobs:
             --lifecycle-cycles 4 \
             --timeout-seconds 60 \
             --output "output/browser/runtime/$ENGINE-workbench.json"
+      - name: Run authenticated fragment trace
+        shell: bash
+        env:
+          DRIVER_URL: ${{ matrix.driver_url }}
+          ENGINE: ${{ matrix.engine }}
+          DEVICE_SCALE: ${{ matrix.device_scale }}
+        run: |
+          set -euo pipefail
+          python -m http.server 8080 --directory output/browser > "$RUNNER_TEMP/metis-http-static.log" 2>&1 &
+          static_pid=$!
+          service_pid=''
+          cleanup() {
+            status=$?
+            if [[ -n "$service_pid" ]]; then
+              kill "$service_pid" 2>/dev/null || true
+              wait "$service_pid" 2>/dev/null || true
+            fi
+            kill "$static_pid" 2>/dev/null || true
+            wait "$static_pid" 2>/dev/null || true
+            exit "$status"
+          }
+          trap cleanup EXIT
+          target_binary="$(pwd)/target/debug/metis-app"
+          "$target_binary" --metis-http-service http://127.0.0.1:8080 8766 66666666666666666666666666666666 > "$RUNNER_TEMP/metis-http-service.log" 2>&1 &
+          service_pid=$!
+          python - "$service_pid" <<'PY'
+          import os
+          import sys
+          import time
+          import urllib.error
+          import urllib.request
+
+          pid = int(sys.argv[1])
+          endpoint = "http://127.0.0.1:8766/health"
+          deadline = time.monotonic() + 20.0
+          last_error = "no response"
+          while time.monotonic() < deadline:
+              try:
+                  os.kill(pid, 0)
+              except OSError as error:
+                  raise SystemExit(f"HTTP fragment service exited before readiness: {error}") from error
+              try:
+                  request = urllib.request.Request(endpoint, headers={"Origin": "http://127.0.0.1:8080"})
+                  with urllib.request.urlopen(request, timeout=1.0) as response:
+                      body = response.read().decode("utf-8")
+                      if response.status == 200 and body == "metis-http-ready\n":
+                          raise SystemExit(0)
+                      last_error = f"HTTP {response.status}: {body!r}"
+              except (OSError, urllib.error.URLError, UnicodeError) as error:
+                  last_error = str(error)
+              time.sleep(0.1)
+          raise SystemExit(f"HTTP fragment service did not become ready within 20 seconds: {last_error}")
+          PY
+          python scripts/browser_runtime.py \
+            --engine "$ENGINE" \
+            --driver-url "$DRIVER_URL" \
+            --scenario fragment \
+            --url http://127.0.0.1:8080/http-health.html \
+            --device-scale "$DEVICE_SCALE" \
+            --browser-heap-sample \
+            --timeout-seconds 60 \
+            --output "output/browser/runtime/$ENGINE-fragment.json"
       - name: Upload browser runtime evidence
         if: always()
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2

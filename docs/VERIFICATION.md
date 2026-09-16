@@ -2007,6 +2007,14 @@ reset and remount state. This closes one configured Chromium-family driver
 path only; Firefox/WebKit, provider-private allocation/listener counts, TLS
 and operating-system permission evidence remain open.
 
+The scheduled and manual Metis verification workflow now exercises this
+scenario in the Chromium, Firefox and WebKit matrix jobs. Each job builds the
+real `metis-app` HTTP service, serves the generated `http-health.html` page,
+waits for the service health response, and uploads the bounded
+`<engine>-fragment.json` trace plus its three PNG states. The workflow records
+driver or service failures directly; until a run supplies those artifacts,
+the cross-engine residual remains open.
+
 The current review revision adds explicit native assertions for a missing
 session, an inadmissible method, the eight-session capacity boundary, the
 configured response-byte limit and the bounded HTTP delay. The focused
