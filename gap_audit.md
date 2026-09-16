@@ -2,13 +2,13 @@
 
 Source baseline and full comparison: [ADR 0003](docs/adr/0003-framework-conformance.md).
 Scope: current Metis host, browser bridge, target discovery and the RITK consumer
-boundary, inspected 2026-09-16 at Metis `a94dee7`, RITK `6e822883c` and Moirai
-`c9a4431b2320adb8cd3e5a5f12d1632c18378950`. Implementation status belongs in
+boundary, inspected 2026-09-16 at Metis `8a61414`, RITK `9fdea516` and Moirai
+`21b66ba424ad8f50d8574d6e9714be696f807e82`. Implementation status belongs in
 [backlog.md](backlog.md); this register contains unresolved risks only.
 
 | Risk | Current evidence | Closure / recheck trigger |
 | --- | --- | --- |
-| Browser support inferred from compilation | `metis-web` builds and runs a live HTML5/CSS page through Moirai DOM handles. Hosted RITK run [35089121864](https://github.com/ryancinsight/ritk/actions/runs/35089121864) binds the real 94-file study to Chromium and Firefox pixel, file, rejection and cleanup oracles; Safari accepts the chooser and fails its first bounded read. | [BROWSER](backlog.md#METIS-BROWSER-001) and [BROWSER-READ](backlog.md#METIS-BROWSER-READ-001): corrected WebKit file authorization, physical input and provider-private resource evidence. |
+| Browser support inferred from compilation | `metis-web` builds and runs a live HTML5/CSS page through Moirai DOM handles. Its explicit asynchronous WebGPU constructors compile against Moirai merge `21b66ba424ad8f50d8574d6e9714be696f807e82` and return typed setup/unsupported errors, but no browser GPU device or visual run is claimed. Hosted RITK run [35089121864](https://github.com/ryancinsight/ritk/actions/runs/35089121864) binds the real 94-file study to Chromium and Firefox pixel, file, rejection and cleanup oracles; Safari accepts the chooser and fails its first bounded read. | [BROWSER](backlog.md#METIS-BROWSER-001), [BROWSER-READ](backlog.md#METIS-BROWSER-READ-001) and [GRAPHICS](backlog.md#METIS-GRAPHICS-001): real GPU capability/output, corrected WebKit file authorization, physical input and provider-private resource evidence. |
 | Browser lifecycle treated as complete upstream | Moirai owns DOM callbacks, listeners and cancellable tasks; Metis generation guards reject stale completions before remounted DOM mutation. Edge and Chromium lifecycle traces show clean stop/remount counts, while provider-private resource counts remain outside the Metis surface. | [ASYNC](backlog.md#METIS-ASYNC-001) and [PERF](backlog.md#METIS-PERF-001): cross-engine service traces and post-drop/repeated-growth measurements. |
 | Command capabilities mistaken for OS isolation | `HostPolicy` binds origin, window and session grants; the Windows process lifecycle and native window boundary are implemented. A positive bridge does not prove OS permission denial. | [AUTHORITY](backlog.md#METIS-AUTHORITY-001) and the per-OS desktop denial suites. |
 | Visual baselines preserve missing behavior | Software states and RITK-owned native/browser galleries have value-semantic and pixel oracles. Unsupported browser/OS events, assistive technology and GPU paths remain explicit rather than hidden by a baseline. | [VISUAL](backlog.md#METIS-VISUAL-001), [LAYOUT](backlog.md#METIS-LAYOUT-001) and the owning host items. |
