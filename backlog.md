@@ -5,6 +5,14 @@
 - Acceptance: each cycle verifies file/pixel identities and cine actions; stopped listeners are zero; post-warmup capacity growth fails the regression gate; record available heap evidence and its limits.
 - Risk: [minor]; dependencies: current saved 94-file gallery and browser input contracts.
 - Evidence: 12 measured same-instance cycles; all file/RGBA and cine oracles pass; 31/21 mounted guards, 0/0 stopped, 404,357,120-byte post-decode capacity. RITK memory provenance retains per-phase heap availability and limits.
+- Delivery: [PR #176](https://github.com/ryancinsight/metis/pull/176); focused gates pass. Full replay at `b0de134` passes 20 stages, then rustdoc exceeds its 300-second budget under shared-cache contention; not a green full run.
+
+<a id="METIS-GALLERY-GATE-001"></a>
+## METIS-GALLERY-GATE-001 — Complete gallery delivery gates
+- Status: blocked; priority: P1; scope: verification infrastructure; risk: [patch]; last-update: 2026-09-16.
+- Outcome: collect the configured gate against the gallery revision without changing its resource budgets or creating a second build cache.
+- Blocker: concurrent stack documentation builds occupy the shared target; the `b0de134` replay expires at rustdoc after 20 passed stages. Re-open when the competing build releases the cache or the stack gate coordinator supplies a build lease.
+- Acceptance: full configured gate passes; preserve the independently passed 87 browser-script tests and 12 saved-study cycles. Optional WASM semver-checks 0.50.0 currently fails rustdoc target discovery under Rust 1.97.0 and supplies no compatibility evidence.
 
 # Metis delivery
 
