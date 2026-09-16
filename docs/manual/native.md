@@ -213,8 +213,8 @@ does not grant page code filesystem, network or process authority. The
 WebView2 runtime must be installed on the Windows machine. The Windows
 `metis-platform` target explicitly enables Moirai's `webview2` feature; other
 Metis targets do not pull the optional COM binding. The standalone Cargo.lock
-pins Moirai main `d95a2cd61b1f133a507d2735f5f72948a4ca5ec9`, which contains the
-provider feature and its bounded host implementation.
+pins Moirai merge `5cf572f734a3a50cf57eafe67dd3723e7e303116`, which contains the
+provider feature, bounded host implementation and stable browser canvas extents.
 
 The application executable includes a complete supervised form path over this
 boundary:

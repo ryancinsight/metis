@@ -560,7 +560,7 @@ an owner. “Unsupported” cannot replace delivery of a required mobile/native 
 
 <a id="METIS-PERF-001"></a>
 ## METIS-PERF-001 — Comparative resource and latency evidence [patch]
-- Status: in-progress; priority: P1; owner: Metis measurement; integrator: root; last-update: 2026-09-16; branch: `build/metis-moirai-canvas-lock`; regions: `Cargo.lock`, `docs/manual/testing.md`, `docs/VERIFICATION.md`, `docs/adr/0003-framework-conformance.md`, `backlog.md`; dependencies: METIS-BROWSER-001, METIS-DESKTOP-001, METIS-INPUT-001, Moirai PR #360; risk: invalid comparative claims
+- Status: in-progress; priority: P1; owner: Metis measurement; integrator: root; last-update: 2026-09-16; branch: `build/metis-moirai-canvas-lock`; regions: `Cargo.lock`, `README.md`, `docs/manual/native.md`, `docs/manual/testing.md`, `docs/VERIFICATION.md`, `docs/adr/0003-framework-conformance.md`, `backlog.md`; dependencies: METIS-BROWSER-001, METIS-DESKTOP-001, METIS-INPUT-001, Moirai PR #360; risk: invalid comparative claims
 - Scope: instrument the first live app, then compare matched egui/GPUI/Tauri fixtures; total process memory, WASM memory, allocations, idle/active/peak/growth, startup/input/frame latency and bundle/build size separately.
 - Acceptance: [V12](docs/VERIFICATION.md#V12) protocol, pinned revisions/assets/traces and controlled host; stored baselines/confidence and resource bounds; resolve production regressions without changing the instrument to move results.
 - Demonstration: measured tables/plots in the manual with machine/target/uncertainty and semantic/visual equivalence; no speed/security ranking without its evidence.
