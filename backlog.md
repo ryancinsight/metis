@@ -539,10 +539,11 @@ an owner. “Unsupported” cannot replace delivery of a required mobile/native 
 
 <a id="METIS-DICOM-005"></a>
 ## METIS-DICOM-005 — Move the DICOM browser consumer to RITK [arch] [patch]
-- Status: in-progress; priority: P1; owner: Metis/RITK integration; integrator: root; last-update: 2026-09-16; dependencies: METIS-DICOM-003; risk: consumer presentation ownership; ADR: 0035 (claimed)
+- Status: in-progress; priority: P1; owner: Metis/RITK integration; integrator: root; last-update: 2026-09-16; branch: `codex/metis-dicom-gallery-delivery`; dependencies: METIS-DICOM-003; risk: consumer presentation ownership; ADR: [0035](docs/adr/0035-dicom-consumer-ownership.md).
 - Outcome: Metis packages an externally supplied consumer gallery; RITK owns the DICOM HTML, CSS, WASM page and its saved-study workflow.
+- Delivery: Metis [PR #179](https://github.com/ryancinsight/metis/pull/179) merged at `0d1d5bc`; RITK [PR #414](https://github.com/ryancinsight/ritk/pull/414) merged at `8cf7c67f`; pin update [PR #415](https://github.com/ryancinsight/ritk/pull/415) merged at `0bec1508e`; package correction [PR #416](https://github.com/ryancinsight/ritk/pull/416) merged at `6f3d9cc71`.
 - Acceptance: Metis has no DICOM consumer page assets; the RITK gallery is copied explicitly during packaging, validates the host CSP, and the hosted saved-study workflow still opens real files and renders the three RITK canvases.
-- Branch: `codex/metis-dicom-gallery-owner`; verification: Metis standalone gate plus RITK browser workflow against the merged Metis revision.
+- Verification: Metis full gate passes on `c902275c`; RITK locked native/WASM gates pass at `6f3d9cc71`; corrected hosted consumer-aware replay is run `35085323634`.
 
 <a id="METIS-CANVAS-INPUT-001"></a>
 ## METIS-CANVAS-INPUT-001 — Bounded format-neutral canvas input [minor]
