@@ -2,9 +2,9 @@
 
 use super::events::CanvasEventQueue;
 use super::{
-    CanvasEvent, CanvasEventError, CanvasFrame, CanvasKeyboardEvent, CanvasKeyboardPhase,
-    CanvasModifiers, CanvasPointerEvent, CanvasPointerPhase, CanvasPointerType, CanvasWheelEvent,
-    CanvasWheelUnit,
+    CanvasEvent, CanvasEventError, CanvasEventTrust, CanvasFrame, CanvasKeyboardEvent,
+    CanvasKeyboardPhase, CanvasModifiers, CanvasPointerEvent, CanvasPointerPhase,
+    CanvasPointerType, CanvasWheelEvent, CanvasWheelUnit,
 };
 use moirai_pal::wasm::{
     CanvasSize, KeyboardMetadata, PointerMetadata, PointerType, RgbaFrame, WebCanvas, WebDocument,
@@ -249,7 +249,7 @@ fn pointer_event(phase: CanvasPointerPhase, metadata: PointerMetadata) -> Canvas
         buttons: metadata.buttons(),
         modifiers: modifiers(metadata.modifiers()),
         primary: metadata.is_primary(),
-        trusted: metadata.is_trusted(),
+        trust: CanvasEventTrust::from(metadata.is_trusted()),
     }
 }
 
@@ -267,7 +267,7 @@ fn wheel_event(metadata: WheelMetadata) -> CanvasWheelEvent {
         x: metadata.offset_x(),
         y: metadata.offset_y(),
         modifiers: modifiers(metadata.modifiers()),
-        trusted: metadata.is_trusted(),
+        trust: CanvasEventTrust::from(metadata.is_trusted()),
     }
 }
 
@@ -281,7 +281,7 @@ fn keyboard_event(
         metadata.code().to_owned(),
         metadata.is_repeat(),
         modifiers(metadata.modifiers()),
-        metadata.is_trusted(),
+        CanvasEventTrust::from(metadata.is_trusted()),
     )
 }
 

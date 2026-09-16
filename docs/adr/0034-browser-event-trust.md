@@ -19,11 +19,12 @@ import `web-sys` or accept synthetic script events without a provenance value.
 ## Decision
 
 `CanvasPointerEvent`, `CanvasWheelEvent` and `CanvasKeyboardEvent` carry the
-Moirai trust snapshot and expose `is_trusted` accessors. `CanvasSurface` copies
-the value when it translates provider metadata. Metis does not reject the
-event: the contract is format-neutral and some applications may intentionally
-accept browser-generated events. An owning consumer such as RITK applies its
-own policy before mutating viewer state.
+Moirai trust snapshot as the typed [`CanvasEventTrust`](../../crates/metis-web/src/lib.rs)
+value and expose `is_trusted` accessors. `CanvasSurface` copies the value when
+it translates provider metadata. Metis does not reject the event: the contract
+is format-neutral and some applications may intentionally accept
+browser-generated events. An owning consumer such as RITK applies its own
+policy before mutating viewer state.
 
 The field is a value snapshot. It does not retain a DOM event, browser element
 or callback and does not change native input, file handling or DICOM behavior.
