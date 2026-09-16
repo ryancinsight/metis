@@ -27,59 +27,18 @@ from browser_canvas import (
 from browser_file_read import capture_file_read_diagnostic, capture_file_selection_diagnostic
 from browser_runtime import _wait_for_text, _wait_for_selector, _write_trace
 from browser_trace import BrowserEngine, Trace, record_device_scale, screenshot
+from browser_drop_lifecycle import (
+    CLEANUP_TRANSFER,
+    OBSERVE_TRANSFER,
+    run_gallery_lifecycle,
+    validate_lifecycle_request,
+)
 
 
 # Independent test oracle for the existing host admission contract.
 MAX_FILES = 512
 MAX_FILE_BYTES = 64 * 1024 * 1024
 MAX_BATCH_BYTES = 256 * 1024 * 1024
-
-OBSERVE_TRANSFER = """
-const zone = document.getElementById('drop-zone');
-const input = document.getElementById('file-input');
-if (!zone || !input) throw new Error('file transfer controls are not mounted');
-window.metisFileEvidence = [];
-window.metisInputFiles = null;
-window.metisSelectedFile = null;
-const observe = (type, event, list) => {
-  const count = list.length;
-  const files = count > 512 ? [] : Array.from(list);
-  const bytes = files.reduce((n, f) => n + f.size, 0);
-  if (window.metisFileEvidence.length === 16) window.metisFileEvidence.shift();
-  window.metisFileEvidence.push({type, trusted: event.isTrusted,
-    files: count, bytes: count > 512 ? null : bytes});
-  if (type !== 'drop' && type !== 'change') return;
-  if (window.metisSelectedFile === null && count > 0) {
-    window.metisSelectedFile = list.item ? list.item(0) : list[0];
-  }
-  if (count > 512 || bytes > 256 * 1024 * 1024 || files.some(f => f.size > 64 * 1024 * 1024)) {
-    window.metisInputFiles = Promise.resolve({rejected: 'file evidence exceeds host bounds'});
-    return;
-  }
-  const evidence = (async () => {
-    const results = [];
-    for (const file of files) {
-      const hash = await crypto.subtle.digest('SHA-256', await file.arrayBuffer());
-      results.push({name: file.name, bytes: file.size,
-        sha256: Array.from(new Uint8Array(hash), b => b.toString(16).padStart(2, '0')).join('')});
-    }
-    return results;
-  })();
-  window.metisInputFiles = evidence.then(
-    value => value,
-    error => ({diagnostic: error && typeof error.name === 'string' ? error.name : 'Error'})
-  );
-};
-for (const type of ['dragenter', 'dragover', 'drop']) {
-  zone.addEventListener(type, event => {
-    observe(type, event, event.dataTransfer ? event.dataTransfer.files : []);
-  }, {capture: true});
-}
-input.addEventListener('change', event => observe('change', event, input.files), {capture: true});
-const r = zone.getBoundingClientRect();
-return {x: r.x + r.width / 2, y: r.y + r.height / 2,
-        visible: r.width > 0 && r.height > 0 && r.bottom <= innerHeight};
-"""
 
 CANVAS_PIXELS = """
 const done = arguments[arguments.length - 1];
@@ -193,6 +152,16 @@ def check_rejections(
                                   "input": input_source, "observer": observed})
 
 
+def _cleanup_transfer(client: WebDriverClient) -> dict:
+    result = client.execute(CLEANUP_TRANSFER)
+    if result not in (
+        {"listeners_removed": 4, "globals_cleared": True},
+        {"listeners_removed": 0, "globals_cleared": True},
+    ):
+        raise BrowserRuntimeError(f"file transfer observer cleanup failed: {result!r}")
+    return result
+
+
 def run(args: argparse.Namespace) -> dict:
     engine, browser_name = resolve_browser_target(
         getattr(args, "engine", None),
@@ -200,6 +169,7 @@ def run(args: argparse.Namespace) -> dict:
     )
     if args.input == "chromium" and engine is not BrowserEngine.CHROMIUM:
         raise BrowserRuntimeError("the chromium input source requires the Chromium engine")
+    lifecycle_cycles = validate_lifecycle_request(args)
     device_scale_milli = (
         parse_device_scale(args.device_scale)
         if getattr(args, "device_scale", None) is not None
@@ -230,8 +200,10 @@ def run(args: argparse.Namespace) -> dict:
     revision = subprocess.check_output(["git", "rev-parse", "HEAD"], cwd=ROOT, text=True, timeout=30).strip()
     client = WebDriverClient(args.driver_url, 120)
     canvas_trace: Trace | None = None
+    lifecycle_canvas_traces: list[Trace] = []
     trace = Trace(engine, "", "disconnected", revision, {}, args.consumer_revision)
     document = {"status": "failed"}
+    transfer_observer_installed = False
     try:
         with StaticServer(ROOT / "output" / "browser") as origin:
             trace.url = origin + "gallery.html"
@@ -242,7 +214,95 @@ def run(args: argparse.Namespace) -> dict:
             client.navigate(trace.url)
             _wait_for_text(client, "gallery-status", "Ready.", timeout_ms=30_000, include=True)
             record_device_scale(client, trace, device_scale_milli)
+            if lifecycle_cycles > 1:
+                def new_canvas_trace() -> Trace:
+                    cycle_trace = Trace(
+                        engine,
+                        trace.url,
+                        "canvas",
+                        revision,
+                        client.capabilities,
+                        args.consumer_revision,
+                    )
+                    record_device_scale(client, cycle_trace, device_scale_milli)
+                    return cycle_trace
+
+                def transfer_files(
+                    cycle_client: WebDriverClient,
+                    cycle_files: list[pathlib.Path],
+                    point: dict,
+                ) -> None:
+                    if args.input == "chromium":
+                        dispatch_files(cycle_client, cycle_files, point)
+                    else:
+                        select_files(cycle_client, cycle_files)
+
+                run_gallery_lifecycle(
+                    client,
+                    trace,
+                    new_canvas_trace,
+                    files,
+                    total,
+                    expected_files,
+                    oracle,
+                    ids,
+                    canvas_attributes,
+                    args.input,
+                    lifecycle_cycles,
+                    canvas_trace_path.parent / "screenshots" / engine.value / "canvas",
+                    transfer_files,
+                    OBSERVE_TRANSFER,
+                    _cleanup_transfer,
+                    CANVAS_PIXELS,
+                    lifecycle_canvas_traces,
+                    args.lifecycle_timeout_seconds,
+                )
+                trace.metrics["gallery_lifecycle_canvas_traces"] = [
+                    (
+                        canvas_trace_path.parent
+                        / f"{canvas_trace_path.stem}-cycle-{cycle}{canvas_trace_path.suffix}"
+                    ).relative_to(ROOT).as_posix()
+                    for cycle in range(1, len(lifecycle_canvas_traces) + 1)
+                ]
+                viewport = client.execute(
+                    "window.scrollTo(0,0); return "
+                    "{width:innerWidth,height:innerHeight,device_scale:devicePixelRatio};"
+                )
+                document = trace.document()
+                document["input_source"] = args.input
+                document["files"] = len(files)
+                document["bytes"] = total
+                document["viewport"] = viewport
+                document["file_manifest_sha256"] = hashlib.sha256(
+                    json.dumps(expected_files, sort_keys=True).encode()
+                ).hexdigest()
+                document["oracle_sha256"] = hashlib.sha256(args.oracle.read_bytes()).hexdigest()
+                document["assets"] = {
+                    name: hashlib.sha256((ROOT / "output" / "browser" / name).read_bytes()).hexdigest()
+                    for name in (
+                        "gallery.html",
+                        "gallery.js",
+                        "gallery.css",
+                        "consumer/ritk_snap.js",
+                        "consumer/ritk_snap_bg.wasm",
+                    )
+                }
+                document["sources"] = {
+                    name: hashlib.sha256((ROOT / "scripts" / name).read_bytes()).hexdigest()
+                    for name in (
+                        "browser.py",
+                        "browser_canvas.py",
+                        "browser_drop.py",
+                        "browser_drop_lifecycle.py",
+                        "browser_file_read.py",
+                        "browser_protocol.py",
+                        "browser_runtime.py",
+                        "browser_trace.py",
+                    )
+                }
+                return document
             point = client.execute(OBSERVE_TRANSFER)
+            transfer_observer_installed = True
             if not point["visible"]:
                 raise BrowserRuntimeError("file drop zone is not visible inside the viewport")
             screenshot(client, trace, output, "before-drop")
@@ -315,6 +375,9 @@ def run(args: argparse.Namespace) -> dict:
                     actual = client.execute_async(CANVAS_PIXELS, [canvas_id])
                     if actual["rgba_sha256"] != expected_rgba[canvas_id]:
                         raise BrowserRuntimeError("a rejected file batch changed the consumer frame")
+            observer_cleanup = _cleanup_transfer(client)
+            transfer_observer_installed = False
+            trace.cleanup["transfer_observer"] = observer_cleanup
             document = trace.document()
             document["input_source"] = args.input
             document["files"] = len(files)
@@ -328,7 +391,16 @@ def run(args: argparse.Namespace) -> dict:
             }
             document["sources"] = {
                 name: hashlib.sha256((ROOT / "scripts" / name).read_bytes()).hexdigest()
-                for name in ("browser.py", "browser_drop.py", "browser_file_read.py", "browser_protocol.py")
+                for name in (
+                    "browser.py",
+                    "browser_canvas.py",
+                    "browser_drop.py",
+                    "browser_drop_lifecycle.py",
+                    "browser_file_read.py",
+                    "browser_protocol.py",
+                    "browser_runtime.py",
+                    "browser_trace.py",
+                )
             }
     except (BrowserRuntimeError, OSError, ValueError) as error:
         capture_error = None
@@ -355,13 +427,30 @@ def run(args: argparse.Namespace) -> dict:
     finally:
         primary_error = sys.exc_info()[1]
         closed = False
+        observer_cleanup_error = None
+        if transfer_observer_installed and client.session_id is not None:
+            try:
+                _cleanup_transfer(client)
+            except BrowserRuntimeError as cleanup_error:
+                if primary_error is not None:
+                    primary_error.add_note(
+                        f"file transfer observer cleanup also failed: {cleanup_error}"
+                    )
+                else:
+                    observer_cleanup_error = cleanup_error
+                    document["status"] = "failed"
+                    document.setdefault("cleanup", {})["transfer_observer_error"] = str(
+                        cleanup_error
+                    )
         try:
             client.close()
             closed = True
-            document["cleanup"] = {"session_closed": True}
+            document.setdefault("cleanup", {})["session_closed"] = True
         except BrowserRuntimeError as cleanup_error:
             document["status"] = "failed"
-            document["cleanup"] = {"session_closed": False, "error": str(cleanup_error)}
+            document.setdefault("cleanup", {}).update(
+                {"session_closed": False, "error": str(cleanup_error)}
+            )
             if primary_error is None:
                 raise
         finally:
@@ -369,6 +458,15 @@ def run(args: argparse.Namespace) -> dict:
             if canvas_trace is not None and canvas_trace_path is not None:
                 canvas_trace.cleanup["session_closed"] = closed
                 _write_trace(canvas_trace_path, canvas_trace.document(document["status"]))
+            if canvas_trace_path is not None:
+                for cycle, cycle_trace in enumerate(lifecycle_canvas_traces, start=1):
+                    cycle_trace.cleanup["session_closed"] = closed
+                    cycle_path = canvas_trace_path.parent / (
+                        f"{canvas_trace_path.stem}-cycle-{cycle}{canvas_trace_path.suffix}"
+                    )
+                    _write_trace(cycle_path, cycle_trace.document(document["status"]))
+        if observer_cleanup_error is not None:
+            raise observer_cleanup_error
     return document
 
 
@@ -399,6 +497,20 @@ def main() -> None:
                         help="consumer-selected data-* attribute for the paired canvas trace")
     parser.add_argument("--input", choices=("manual", "chooser", "chromium"), default="manual",
                         help="manual OS drop, standard W3C chooser, or Chromium CDP drag")
+    parser.add_argument(
+        "--lifecycle-cycles",
+        type=int,
+        default=1,
+        metavar="1..8",
+        help="bounded same-page gallery lifecycle cycles; repeated mode requires cine trace",
+    )
+    parser.add_argument(
+        "--lifecycle-timeout-seconds",
+        type=int,
+        default=300,
+        metavar="1..300",
+        help="monotonic bound for the complete repeated gallery lifecycle suite",
+    )
     parser.add_argument("--output", type=pathlib.Path, default=ROOT / "output" / "browser" / "drop")
     run(parser.parse_args())
 
