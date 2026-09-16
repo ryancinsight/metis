@@ -633,6 +633,46 @@ process exits; start a fresh service for a new page load. A `409`
 `ERR_PRIVILEGE_ESCALATION_ATTEMPT` after reusing the same principal is the
 intentional duplicate-session rejection.
 
+<a id="hosted-fragment-matrix-evidence--2026-09-16"></a>
+### Hosted fragment matrix evidence — 2026-09-16
+
+Manual dispatch [35143857171](https://github.com/ryancinsight/metis/actions/runs/35143857171)
+ran the real service and page against revision
+`d6e52068708b72becf2a4173d875a4b367789c6e`; that revision is included in the
+merged Metis fix `07fe83175b7952177199340ad078fd0cfd90f012`. Windows, the
+parser fuzz campaign, lockfile, workflow, ADR, asset-build and all three
+browser jobs passed. Every trace recorded health `200`, authenticated fragment
+`200 (1 patch)`, malformed `400`, unauthorized `401`, target rejection,
+unchanged stale state, reset to generation `2`, remounted fragment `200`, idle
+requests and `session_closed: true`.
+
+| Engine | Browser and host | CSS viewport / DPR | Capture artifact |
+| --- | --- | --- | --- |
+| Chromium | Chrome 152.0.7977.82 / Linux | 620 × 237 / 2 | [artifact 10465999174](https://github.com/ryancinsight/metis/actions/runs/35143857171/artifacts/10465999174), zip SHA-256 `d4371804a4484642a577ebaa82b38fb7bdc9c5c0ad8ff05ddbfcc687563a960d` |
+| Firefox | Firefox 155.0 / Linux | 576 × 276 / 2 | [artifact 10466158759](https://github.com/ryancinsight/metis/actions/runs/35143857171/artifacts/10466158759), zip SHA-256 `d601cc767cdba7e6d7353c15919565662d1af78a0cacfa33a1d181e253eb43cf` |
+| WebKit | Safari 26.6.2 / macOS | 800 × 600 / 1 | [artifact 10466530215](https://github.com/ryancinsight/metis/actions/runs/35143857171/artifacts/10466530215), zip SHA-256 `19bb72f285dd92552c523fa2a3b7c46fbf7c099fc22c16e1b88164c3b9f083fe` |
+
+Each artifact contains `authenticated-success`, `reset-stale-generation` and
+`remounted-success` PNGs. Chromium emitted 1240 × 474 images with SHA-256
+`c00d31345898f15e1ceb76b21d40e00c7ce51c9619afc313d0baa7d8c6560116`,
+`2476aee9b21de4b6c47ce39f68123a10f44439734b5c5ae99278f2addc5d4ed1` and
+`7c943f2c7a0ad051abe9b7d77e7e54aaeb666f683699b9e179c7f94862ef2b9d` in that
+order. Firefox emitted 1152 × 552 images with SHA-256
+`ce4b757d263341b346b59e0dfb3ebcdf472fb7f03b6f4138565aabfe8956b25d`,
+`286dae2bcb4a74b571be5ff3e3217022107346145198325eca3f7334562f546d` and
+`43a70999c84805c579ea546761e0d38b072e47deb1a81147303ed1f44c2f3f18`.
+WebKit emitted 800 × 600 images with SHA-256
+`c012d0ff34a0be7bd345fc9d332302062337d6048685327c84f6db7824adfe63`,
+`220e4f63210e16d88a984403bb839d3665f6c5139f9f6d3d27cef955643ec5c2` and
+`d5f334c1c8b7ac271cc1c5325433d7faf4781447134adfac98dd36245793b221`.
+`performance.memory` supplied bounded Chromium heap observations; Firefox and
+WebKit reported the API unavailable, so this run makes no cross-engine memory
+comparison. The page contains no DICOM bytes. RITK owns DICOM opening,
+decoding, geometry and clinical image meaning; its [real saved-study gallery](https://github.com/ryancinsight/ritk/blob/main/docs/manual/dicom-workflow.md#inspect-the-browser-canvas-visual-smoke)
+is the visual proof for patient images. Provider-private allocation/listener
+counts, TLS, operating-system permissions, physical input and accessibility or
+IME behavior remain separate host evidence.
+
 To demonstrate the boundary, serve the workbench, change **Weight (kg)** and
 **Result scale**, and capture the form before and after each action at the same
 viewport. The semantic tree must retain the same controls while the result text,
