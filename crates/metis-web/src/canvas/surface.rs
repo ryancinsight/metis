@@ -23,6 +23,15 @@ pub struct CanvasSurface {
 }
 
 impl CanvasSurface {
+    /// Returns the number of DOM listener guards owned by this surface.
+    ///
+    /// A surface created without input owns no listeners. This counts retained
+    /// guards, not browser-private memory or listeners installed by other code.
+    #[must_use]
+    pub fn listener_count(&self) -> usize {
+        self.input.as_ref().map_or(0, |input| input.listeners.len())
+    }
+
     /// Resolves a canvas from the current browser document by identifier.
     ///
     /// # Errors
