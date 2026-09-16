@@ -29,7 +29,7 @@
 
 <a id="METIS-BROWSER-READ-001"></a>
 ## METIS-BROWSER-READ-001 — Diagnose selected-file reads
-- Status: blocked; priority: P0; integrator: webkit-read-root; last-update: 2026-09-15; branch: `fix/browser-file-read`.
+- Status: blocked; priority: P0; integrator: root (takeover of stale webkit-read-root claim); last-update: 2026-09-16; branch: `codex/metis-browser-read-evidence`.
 - Scope: preserve format-neutral provider read failures and reproduce real chooser reads; DICOM semantics remain in RITK.
 - Acceptance: exact failing operation identified, owning fix verified on saved MRI-DIR Chromium/Firefox/WebKit gallery and byte oracles.
 - Risk: [patch]; dependencies: merged Moirai bounded reader; baseline: RITK hosted run `34922946179`, Metis `6951caa`, Moirai `8d032e3`.
