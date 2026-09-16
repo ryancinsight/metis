@@ -350,7 +350,7 @@ an owner. “Unsupported” cannot replace delivery of a required mobile/native 
 
 <a id="METIS-A11Y-001"></a>
 ## METIS-A11Y-001 — Accessible application interaction [minor]
-- Status: in-progress; priority: P1; owner: Metis host/UI; integrator: root; last-update: 2026-09-08; branch: `feat/process-foundation`; dependencies: METIS-INPUT-001; risk: inaccessible controls
+- Status: in-progress; priority: P1; owner: Metis host/UI; integrator: root; last-update: 2026-09-16; branch: `docs/metis-a11y-runtime`; regions: `scripts/browser_runtime.py`, `scripts/browser_trace.py`, `scripts/tests/test_browser_runtime.py`, `docs/manual/browser.md`, `docs/VERIFICATION.md`, `backlog.md`; dependencies: METIS-INPUT-001; risk: inaccessible controls
 - Scope: semantic DOM roles/names/states, focus/action mapping, announcements, reduced motion/high contrast/zoom; OS accessibility bridge for any custom UI path.
 - Acceptance: semantic tree identity/actions and keyboard-only completion pass; actual supported screen readers traverse and operate the application; document platform limits instead of claiming certification from tree presence.
 - Demonstration: [V03](docs/VERIFICATION.md#V03), readable focus/contrast/zoom captures plus semantic/action and assistive-technology evidence.
