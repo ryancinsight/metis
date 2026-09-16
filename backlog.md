@@ -9,9 +9,9 @@
 
 <a id="METIS-GALLERY-GATE-001"></a>
 ## METIS-GALLERY-GATE-001 — Complete gallery delivery gates
-- Status: blocked; priority: P1; scope: verification infrastructure; risk: [patch]; last-update: 2026-09-16.
+- Status: in-progress; priority: P1; integrator: root; scope: verification infrastructure; risk: [patch]; last-update: 2026-09-16.
 - Outcome: collect the configured gate against the gallery revision without changing its resource budgets or creating a second build cache.
-- Blocker: concurrent stack documentation builds occupy the shared target; the `b0de134` replay expires at rustdoc after 20 passed stages. Re-open when the competing build releases the cache or the stack gate coordinator supplies a build lease.
+- Blocker: hosted Windows run `35062698643` times out the delayed stream-cancel Node diagnostic after 10 seconds; local focused and full visual suites pass. Re-open when the harness transport is deterministic and the hosted gate completes.
 - Acceptance: full configured gate passes; preserve the independently passed 87 browser-script tests and 12 saved-study cycles. Optional WASM semver-checks 0.50.0 currently fails rustdoc target discovery under Rust 1.97.0 and supplies no compatibility evidence.
 
 # Metis delivery

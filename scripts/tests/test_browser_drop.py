@@ -668,13 +668,26 @@ class FileDropTests(unittest.TestCase):
 
     @staticmethod
     def _execute_diagnostic_fault(mode):
-        process = subprocess.run(
-            ["node", "-e", NODE_READ_DIAGNOSTIC_HARNESS, READ_FAILURE_DIAGNOSTIC, mode],
-            check=True,
-            capture_output=True,
-            text=True,
-            timeout=10,
+        # File-backed source keeps Windows process argument transport bounded.
+        file_harness = NODE_READ_DIAGNOSTIC_HARNESS.replace(
+            "const mode = process.argv[2];\nconst diagnostic = process.argv[1];",
+            "const mode = process.argv[3];\n"
+            "const diagnostic = require('node:fs').readFileSync(process.argv[2], 'utf8');",
+            1,
         )
+        with tempfile.TemporaryDirectory(prefix="metis-node-diagnostic-") as directory:
+            root = pathlib.Path(directory)
+            harness_path = root / "harness.js"
+            diagnostic_path = root / "diagnostic.js"
+            harness_path.write_text(file_harness, encoding="utf-8")
+            diagnostic_path.write_text(READ_FAILURE_DIAGNOSTIC, encoding="utf-8")
+            process = subprocess.run(
+                ["node", str(harness_path), str(diagnostic_path), mode],
+                check=True,
+                capture_output=True,
+                text=True,
+                timeout=10,
+            )
         return json.loads(process.stdout)
 
     @unittest.skipUnless(shutil.which("node"), "Node.js is required for browser-script fault injection")
