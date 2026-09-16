@@ -278,6 +278,15 @@ reduces redundant browser bitmap-reset work without claiming a measured WASM,
 browser-heap or process-memory improvement; those V12 measurements remain
 open.
 
+Revision 2026-09-16 (content-box consumer pin): Metis's standalone lock now
+resolves every direct Moirai package to merge
+`c9a4431b2320adb8cd3e5a5f12d1632c18378950`, which retains the extent guard and
+the bounded content-box mapping used by RITK's browser canvases. The hosted
+RITK chooser matrix binds this provider to the real 94-file study: Chromium and
+Firefox pass the exact pixel, file, rejection and teardown oracles, while
+Safari's selected-file read remains an external WebKit authorization failure.
+This revision does not move DICOM parsing or clinical presentation into Metis.
+
 Revision 2026-09-16 (browser aggregate-memory observation): the format-neutral
 workbench, canvas and saved-study runners accept an opt-in
 `--browser-memory-sample` probe. A secure, cross-origin-isolated browser may

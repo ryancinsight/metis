@@ -2297,10 +2297,11 @@ their surface and process-boundary differences and the unmatched GPUI/Tauri,
 WASM, allocation, latency and security measurements explicit.
 
 The browser presentation path now pins Moirai merge
-`5cf572f734a3a50cf57eafe67dd3723e7e303116`. Its validated canvas presenter
+`c9a4431b2320adb8cd3e5a5f12d1632c18378950`. Its validated canvas presenter
 retains the current bitmap dimensions for same-size RGBA frames and performs
-the bounded resize only when an extent changes. This is a production lifecycle
-guard; it does not replace the V12 used-memory, allocation, latency or
+the bounded resize only when an extent changes; the same provider revision
+contains the content-box mapping consumed by RITK. This is a production
+lifecycle guard; it does not replace the V12 used-memory, allocation, latency or
 compositor measurements, which remain unclaimed.
 
 Input traces and workload sizes are fixed before comparison, chosen to exercise
