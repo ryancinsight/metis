@@ -226,6 +226,37 @@ cannot pass silently. The same option is available on the canvas, fragment and
 file-backed gallery runners; RITK still owns DICOM decoding and all image
 assertions.
 
+### Probe runtime accessibility semantics
+
+Add `--accessibility-probe` to a workbench run to record the browser's observed
+media preferences, CSS and visual viewport, document extents, focus order and
+focusable-element geometry in `metrics.accessibility`. The probe focuses each
+enabled, visible control in DOM order with `preventScroll`, checks that the
+sequence matches the DOM order, then blurs the control before returning the
+trace. It rejects duplicate identities, empty or off-viewport rectangles and
+horizontal document overflow. The probe records labels and roles only; it does
+not copy form values or DICOM/patient content.
+
+Run it against the generated workbench with the same bounded device scale used
+by the cross-engine trace:
+
+```text
+python scripts/browser_runtime.py --engine chromium --browser-name MicrosoftEdge \
+  --driver-url http://127.0.0.1:9517 --serve-dir output/browser \
+  --bridge disconnected --device-scale 2 --accessibility-probe \
+  --lifecycle-cycles 4 --output output/browser/runtime/chromium-accessibility.json
+```
+
+The optional `--require-reduced-motion` and `--require-forced-colors` switches
+turn the corresponding `matchMedia` observation into an acceptance condition;
+they require `--accessibility-probe` and fail when the driver host has not
+enabled that preference. The default matrix records each engine's actual
+preference state without pretending to control operating-system settings.
+Review the accessibility records with the PNG captures: CSS geometry and a
+semantic focus path establish browser behavior, while spoken screen-reader
+output, installed IME behavior and the native host accessibility bridge still
+require host-specific acceptance evidence.
+
 The protocol client also provides the format-neutral physical-input seam used
 by application-owned canvas scenarios. A consumer resolves its canvas element
 through WebDriver and sends trusted pointer and wheel actions without placing
@@ -979,13 +1010,15 @@ inside the `960px` bound.
 
 The static browser asset contract checks the semantic names, live regions,
 atomic announcements and busy-state wiring,
-non-positive focus order and both media-query branches. For a host acceptance
-run, enable a supported screen reader, reduced-motion setting, forced-colors
-setting and browser zoom, then capture the accessibility tree, focus ring and
-spoken action for each state. Record the browser engine, operating system,
-scale factor and assistive-technology version. A semantic tree or CSS rule by
-itself does not establish screen-reader support or an operating-system
-accessibility bridge.
+non-positive focus order and both media-query branches. The W3C runner's
+`--accessibility-probe` records the observed media flags, focus sequence,
+viewport scale and bounded geometry alongside its PNG captures. For a host
+acceptance run, enable a supported screen reader, reduced-motion setting,
+forced-colors setting and browser zoom, then capture the accessibility tree,
+focus ring and spoken action for each state. Record the browser engine,
+operating system, scale factor and assistive-technology version. A semantic
+tree or CSS rule by itself does not establish screen-reader support or an
+operating-system accessibility bridge.
 
 The captured service journey at revision
 `d879779247c8cfc5870f62f99a5364cbbf2d3c58` used the Codex in-app
