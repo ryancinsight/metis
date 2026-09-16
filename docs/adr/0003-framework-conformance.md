@@ -270,6 +270,14 @@ fixture, WASM used-memory or allocation count, compositor/input latency or
 security probe has run; the records document fixture evidence and do not rank
 frameworks.
 
+Revision 2026-09-16 (stable browser canvas extents): Moirai merge `5cf572f7`
+keeps a validated canvas bitmap at its current width and height when repeated
+RGBA frames have the same extent; a changed extent still takes the bounded
+resize path. Metis pins all direct Moirai packages to that revision. This
+reduces redundant browser bitmap-reset work without claiming a measured WASM,
+browser-heap or process-memory improvement; those V12 measurements remain
+open.
+
 ## Decision and scope
 
 Use Tauri as the application-framework migration reference, egui/GPUI/Iced as

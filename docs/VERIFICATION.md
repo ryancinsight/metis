@@ -2236,6 +2236,13 @@ combines this MRI record with the eframe and native Métis MIP records, keeping
 their surface and process-boundary differences and the unmatched GPUI/Tauri,
 WASM, allocation, latency and security measurements explicit.
 
+The browser presentation path now pins Moirai merge
+`5cf572f734a3a50cf57eafe67dd3723e7e303116`. Its validated canvas presenter
+retains the current bitmap dimensions for same-size RGBA frames and performs
+the bounded resize only when an extent changes. This is a production lifecycle
+guard; it does not replace the V12 used-memory, allocation, latency or
+compositor measurements, which remain unclaimed.
+
 Input traces and workload sizes are fixed before comparison, chosen to exercise
 the relevant working-set regimes under the committed budget. Profile production
 paths before optimizing; preserve the instrument across comparisons. Inject

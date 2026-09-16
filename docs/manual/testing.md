@@ -130,6 +130,15 @@ for cross-engine execution, post-drop resource measurements and the remaining
 desktop lifecycle evidence; their gallery entries must identify the actual
 engine, host and revision.
 
+The browser canvas provider keeps its validated bitmap dimensions when a
+subsequent RGBA frame has the same extent and assigns new dimensions only when
+the extent changes. Metis pins the direct Moirai packages to merge
+`5cf572f734a3a50cf57eafe67dd3723e7e303116` for this contract. The upload still
+borrows the frame for the call and remains bounded by the same pixel and byte
+limits. This is a lifecycle allocation guard; it is not a WASM-used-memory,
+browser-heap or process-memory measurement. Those values require the V12
+instrument and a controlled host.
+
 ## Run the browser workbench
 
 Build and serve the actual generated WASM loader and HTML/CSS shell:
