@@ -192,6 +192,10 @@ def run_scenario(
         raise BrowserRuntimeError(
             f"lifecycle-cycles must be between 1 and {MAX_LIFECYCLE_CYCLES}"
         )
+    if require_reduced_motion and not accessibility_probe:
+        raise BrowserRuntimeError("--require-reduced-motion requires --accessibility-probe")
+    if require_forced_colors and not accessibility_probe:
+        raise BrowserRuntimeError("--require-forced-colors requires --accessibility-probe")
     trace: Optional[Trace] = None
     stopped_snapshot: Optional[Dict[str, Any]] = None
     remounted_snapshot: Optional[Dict[str, Any]] = None

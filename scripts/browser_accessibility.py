@@ -38,14 +38,21 @@ const is_visible = (element) => {
     style.visibility !== "hidden" &&
     !element.closest("[hidden], [inert], [aria-hidden=\"true\"], dialog:not([open])");
 };
-const focusable = Array.from(root.querySelectorAll(
+const focus_candidates = Array.from(root.querySelectorAll(
   "a[href],button,input,select,textarea,[tabindex]"
 )).filter((element) =>
   element.id &&
   element.getAttribute("tabindex") !== "-1" &&
   element.matches(":disabled") !== true &&
   is_visible(element)
-).slice(0, 64);
+));
+if (focus_candidates.length === 0) {
+  return {ok: false, error: "no visible enabled focusable controls"};
+}
+if (focus_candidates.length > 64) {
+  return {ok: false, error: "focusable control count exceeds 64"};
+}
+const focusable = focus_candidates;
 const accessible_name = (element) => {
   const aria = element.getAttribute("aria-label");
   if (aria) return aria.trim().slice(0, 256);
