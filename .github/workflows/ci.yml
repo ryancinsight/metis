@@ -367,22 +367,10 @@ jobs:
           set -euo pipefail
           static_port_file="$RUNNER_TEMP/metis-http-port"
           rm -f "$static_port_file"
-          python - "$static_port_file" output/browser > "$RUNNER_TEMP/metis-http-static.log" 2>&1 <<'PY' &
-          import http.server
-          import pathlib
-          import sys
-
-          port_file = pathlib.Path(sys.argv[1])
-          directory = pathlib.Path(sys.argv[2]).resolve()
-
-          class Handler(http.server.SimpleHTTPRequestHandler):
-              def __init__(self, *args, **kwargs):
-                  super().__init__(*args, directory=str(directory), **kwargs)
-
-          with http.server.ThreadingHTTPServer(("127.0.0.1", 0), Handler) as server:
-              port_file.write_text(str(server.server_address[1]), encoding="ascii")
-              server.serve_forever()
-          PY
+          python scripts/browser_static_server.py \
+            --directory output/browser \
+            --port-file "$static_port_file" \
+            > "$RUNNER_TEMP/metis-http-static.log" 2>&1 &
           static_pid=$!
           service_pid=''
           cleanup() {
