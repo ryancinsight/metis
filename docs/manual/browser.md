@@ -1135,7 +1135,7 @@ Metis reads the same source-neutral batch used by drag/drop; no browser path or
 native filesystem authority crosses the host boundary. The page does not fetch
 a study or synthesize drop events. RITK owns classification, decoding, geometry
 and viewer state; Metis retains its 512-file, 64 MiB/file and 256 MiB/batch
-limits. The [RITK DICOM workflow](../../ritk/docs/manual/dicom-workflow.md)
+limits. The [RITK DICOM workflow](https://github.com/ryancinsight/ritk/blob/main/docs/manual/dicom-workflow.md)
 contains the saved-study command and actual image evidence.
 
 For a saved study, choose all files from one series and wait for **Byte access**
