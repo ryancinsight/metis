@@ -4,7 +4,7 @@
 ## METIS-INPUT-TRUST-001 — Preserve browser event trust in canvas input [arch] [minor]
 
 - Status: in-progress; priority: P1; owner: Metis canvas host; integrator: root;
-  last-update: 2026-09-15; branch: `feat/metis-event-trust`; regions:
+  last-update: 2026-09-16; branch: `docs/metis-event-trust-state`; regions:
   `crates/metis-web/src/canvas`, `Cargo.lock`, `docs/adr/0034-browser-event-trust.md`;
   dependencies: Moirai browser-event trust seam; risk: synthetic browser input
   changing viewer state.
