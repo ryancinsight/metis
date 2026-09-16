@@ -205,6 +205,25 @@ has been run, and WASM used memory, allocator counts, compositor latency and
 security probes are separate measurements. These rows therefore document the
 fixtures and their limits; they do not establish a framework ranking.
 
+The live browser lifecycle was then repeated in one RITK/Métis instance. The
+[RITK provenance record](https://github.com/ryancinsight/ritk/blob/main/docs/manual/images/dicom-metis-real-browser-mri-memory.json)
+at commit `1e039f106cab839505be0d1739a80461c55bb9a3` records four cycles per
+path after two warmups, with no reloads and a 300-second bound. Chromium chooser,
+Firefox chooser and Chromium CDP drop each retained 31 host and 21 consumer
+listeners while mounted, released all listeners on stop, and held committed
+WASM capacity at 404,357,120 bytes after decode. Each cycle passed the file,
+pixel and cine traces. These are actual saved-study application captures; RITK
+owns DICOM scanning, decoding and presentation, while Métis supplies the
+format-neutral host.
+
+![Actual saved MRI study through the Métis Chromium browser path](https://github.com/ryancinsight/ritk/blob/main/docs/manual/images/dicom-metis-real-browser-mri-cross-engine-chromium.png?raw=true)
+
+![Actual saved MRI study through the Métis Firefox browser path](https://github.com/ryancinsight/ritk/blob/main/docs/manual/images/dicom-metis-real-browser-mri-cross-engine-firefox.png?raw=true)
+
+The lifecycle record bounds repeated observation; it does not establish a
+long-duration leak result, allocator-used or process/compositor/GPU measurement,
+or a framework ranking against GPUI, Tauri or egui.
+
 The complete visible window for the native four-panel MIP run is also captured
 from the running Windows HWND. The [RITK-owned window image](https://github.com/ryancinsight/ritk/blob/main/docs/manual/images/dicom-metis-real-ct-mip-window.png?raw=true)
 shows the saved public CT in axial, coronal, sagittal, and axial-MIP panels

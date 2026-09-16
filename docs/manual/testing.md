@@ -306,6 +306,25 @@ The [application gallery's V12 table](applications.md#v12-fixture-comparison)
 keeps those three measured fixtures together with their uncertainty and the
 unmatched GPUI/Tauri residual.
 
+### Browser lifecycle growth evidence
+
+RITK's [same-instance browser provenance](https://github.com/ryancinsight/ritk/blob/main/docs/manual/images/dicom-metis-real-browser-mri-memory.json)
+records the live saved-study workflow at commit
+`1e039f106cab839505be0d1739a80461c55bb9a3`. Observed on 2026-09-16, each
+path completed four cycles after two warmups without a page reload, under the
+300-second bounded protocol. Every cycle passed the file, pixel and cine trace
+oracles and released its listeners and mounted state.
+
+| Engine and input path | Cycles | Mounted guards | Stopped guards | Post-decode committed WASM capacity |
+| --- | ---: | ---: | ---: | ---: |
+| Chromium chooser, saved 94-file MRI study | 4 | 31 host / 21 consumer | 0 / 0 | 404,357,120 bytes |
+| Firefox chooser, saved 94-file MRI study | 4 | 31 host / 21 consumer | 0 / 0 | 404,357,120 bytes |
+| Chromium CDP drop, saved 94-file MRI study | 4 | 31 host / 21 consumer | 0 / 0 | 404,357,120 bytes |
+
+This closes bounded repeated lifecycle observation for the browser path. It
+does not measure long-duration leak behavior, allocator-used bytes,
+process/compositor/GPU cost, or matched GPUI/Tauri/egui comparisons.
+
 ### Enforce matched lifecycle comparisons
 
 Use `scripts/resource_compare.py` when two real provenance records are ready
