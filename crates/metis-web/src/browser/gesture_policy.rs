@@ -11,8 +11,8 @@ pub(crate) enum WheelUnit {
 #[derive(Clone, Copy, Debug, PartialEq)]
 struct ActivePointer {
     id: i32,
-    x: i32,
-    y: i32,
+    x: f64,
+    y: f64,
 }
 
 #[derive(Clone, Copy, Debug, PartialEq)]
@@ -55,7 +55,10 @@ impl Default for GestureViewport {
 }
 
 impl GestureViewport {
-    pub(crate) fn press(&mut self, id: i32, x: i32, y: i32) -> bool {
+    pub(crate) fn press(&mut self, id: i32, x: f64, y: f64) -> bool {
+        if !x.is_finite() || !y.is_finite() {
+            return false;
+        }
         if self.active.iter().flatten().any(|pointer| pointer.id == id) {
             return false;
         }
@@ -69,7 +72,10 @@ impl GestureViewport {
         true
     }
 
-    pub(crate) fn move_pointer(&mut self, id: i32, x: i32, y: i32) -> bool {
+    pub(crate) fn move_pointer(&mut self, id: i32, x: f64, y: f64) -> bool {
+        if !x.is_finite() || !y.is_finite() {
+            return false;
+        }
         let Some(active) = self
             .active
             .iter_mut()
@@ -84,8 +90,8 @@ impl GestureViewport {
         if self.active_pointer_count() == MAX_ACTIVE_POINTERS {
             self.update_pinch();
         } else {
-            self.pan_x = clamp_pan(self.pan_x + f64::from(x) - f64::from(previous_x));
-            self.pan_y = clamp_pan(self.pan_y + f64::from(y) - f64::from(previous_y));
+            self.pan_x = clamp_pan(self.pan_x + x - previous_x);
+            self.pan_y = clamp_pan(self.pan_y + y - previous_y);
         }
         true
     }
@@ -211,14 +217,14 @@ impl GestureViewport {
 
 fn center(first: ActivePointer, second: ActivePointer) -> (f64, f64) {
     (
-        f64::midpoint(f64::from(first.x), f64::from(second.x)),
-        f64::midpoint(f64::from(first.y), f64::from(second.y)),
+        f64::midpoint(first.x, second.x),
+        f64::midpoint(first.y, second.y),
     )
 }
 
 fn distance(first: ActivePointer, second: ActivePointer) -> f64 {
-    let delta_x = f64::from(first.x) - f64::from(second.x);
-    let delta_y = f64::from(first.y) - f64::from(second.y);
+    let delta_x = first.x - second.x;
+    let delta_y = first.y - second.y;
     delta_x.hypot(delta_y)
 }
 
@@ -242,14 +248,14 @@ mod tests {
     #[test]
     fn pointer_drag_updates_pan_and_rejects_a_third_pointer() {
         let mut viewport = GestureViewport::default();
-        assert!(viewport.press(1, 10, 20));
-        assert!(viewport.move_pointer(1, 30, 5));
-        assert_eq!(viewport.pan_x.to_bits(), 20.0f64.to_bits());
-        assert_eq!(viewport.pan_y.to_bits(), (-15.0f64).to_bits());
-        assert!(viewport.press(2, 10, 20));
+        assert!(viewport.press(1, 10.25, 20.75));
+        assert!(viewport.move_pointer(1, 30.75, 5.25));
+        assert_eq!(viewport.pan_x.to_bits(), 20.5f64.to_bits());
+        assert_eq!(viewport.pan_y.to_bits(), (-15.5f64).to_bits());
+        assert!(viewport.press(2, 10.0, 20.0));
         assert_eq!(viewport.active_pointer_count(), 2);
-        assert!(!viewport.press(3, 40, 40));
-        assert!(!viewport.move_pointer(3, 40, 40));
+        assert!(!viewport.press(3, 40.0, 40.0));
+        assert!(!viewport.move_pointer(3, 40.0, 40.0));
         assert!(viewport.release(2));
         assert!(viewport.release(1));
         assert!(!viewport.release(1));
@@ -258,14 +264,14 @@ mod tests {
     #[test]
     fn pinch_scales_from_its_baseline_and_pans_by_its_centroid() {
         let mut viewport = GestureViewport::default();
-        assert!(viewport.press(1, 0, 0));
-        assert!(viewport.press(2, 10, 0));
+        assert!(viewport.press(1, 0.0, 0.0));
+        assert!(viewport.press(2, 10.0, 0.0));
         assert!(viewport.is_pinching());
-        assert!(viewport.move_pointer(2, 20, 0));
+        assert!(viewport.move_pointer(2, 20.0, 0.0));
         assert_eq!(viewport.pan_x.to_bits(), 5.0f64.to_bits());
         assert_eq!(viewport.pan_y.to_bits(), 0.0f64.to_bits());
         assert_eq!(viewport.zoom.to_bits(), 2.0f64.to_bits());
-        assert!(viewport.move_pointer(1, -10, 0));
+        assert!(viewport.move_pointer(1, -10.0, 0.0));
         assert_eq!(viewport.pan_x.to_bits(), 0.0f64.to_bits());
         assert_eq!(viewport.zoom.to_bits(), 3.0f64.to_bits());
         assert!(viewport.release(2));
@@ -276,12 +282,12 @@ mod tests {
     #[test]
     fn zero_distance_pinch_waits_for_a_valid_baseline() {
         let mut viewport = GestureViewport::default();
-        assert!(viewport.press(1, 0, 0));
-        assert!(viewport.press(2, 0, 0));
+        assert!(viewport.press(1, 0.0, 0.0));
+        assert!(viewport.press(2, 0.0, 0.0));
         assert!(!viewport.is_pinching());
-        assert!(viewport.move_pointer(2, 5, 0));
+        assert!(viewport.move_pointer(2, 5.0, 0.0));
         assert!(viewport.is_pinching());
-        assert!(viewport.move_pointer(1, -5, 0));
+        assert!(viewport.move_pointer(1, -5.0, 0.0));
         assert_eq!(viewport.zoom.to_bits(), 2.0f64.to_bits());
     }
 
@@ -311,5 +317,16 @@ mod tests {
         let mut viewport = GestureViewport::default();
         assert!(!viewport.wheel(f64::NAN, 1.0, WheelUnit::Pixel, false));
         assert_eq!(viewport, GestureViewport::default());
+    }
+
+    #[test]
+    fn non_finite_pointer_input_is_rejected_without_mutating_state() {
+        let mut viewport = GestureViewport::default();
+        assert!(!viewport.press(1, f64::NAN, 1.0));
+        assert_eq!(viewport, GestureViewport::default());
+        assert!(viewport.press(1, 1.0, 2.0));
+        let pressed = viewport;
+        assert!(!viewport.move_pointer(1, f64::INFINITY, 3.0));
+        assert_eq!(viewport, pressed);
     }
 }
