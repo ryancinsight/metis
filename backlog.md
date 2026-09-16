@@ -1,5 +1,23 @@
 # Metis delivery
 
+<a id="METIS-INPUT-TRUST-001"></a>
+## METIS-INPUT-TRUST-001 — Preserve browser event trust in canvas input [arch] [minor]
+
+- Status: in-progress; priority: P1; owner: Metis canvas host; integrator: root;
+  last-update: 2026-09-15; branch: `feat/metis-event-trust`; regions:
+  `crates/metis-web/src/canvas`, `Cargo.lock`, `docs/adr/0034-browser-event-trust.md`;
+  dependencies: Moirai browser-event trust seam; risk: synthetic browser input
+  changing viewer state.
+- Scope: carry Moirai's bounded `Event.isTrusted` snapshot through pointer,
+  wheel and keyboard canvas events; no DICOM parsing, viewer state, native
+  input policy or browser-file read changes.
+- Acceptance: each canvas event exposes its trust value; Metis preserves both
+  trusted and synthetic values in value-semantic tests; locked native/WASM
+  checks and strict Clippy pass; RITK can reject false values without importing
+  `web-sys`.
+- Decision: [ADR 0034](docs/adr/0034-browser-event-trust.md), upstream
+  [Moirai ADR 0060](../../moirai/docs/adr/0060-browser-event-trust.md).
+
 <a id="METIS-BROWSER-READ-001"></a>
 ## METIS-BROWSER-READ-001 — Diagnose selected-file reads
 - Status: blocked; priority: P0; integrator: webkit-read-root; last-update: 2026-09-15; branch: `fix/browser-file-read`.
