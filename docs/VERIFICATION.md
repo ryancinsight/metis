@@ -2251,6 +2251,18 @@ capture digest is an integrity binding for the resource sample; it does not
 interpret pixels or claim clinical correctness, which remain RITK-owned
 oracles.
 
+The companion `scripts/resource_compare.py` command validates two passed
+schema-1 provenance records before calculating deltas. Callers must name the
+dotted semantic fields to match (dataset identity, workload counts, and any
+producer-owned output contract); a missing or differing field fails before
+resource metrics are read. Every selected metric requires at least two samples,
+and the result reports right-minus-left means, combined approximate 95%
+half-widths, and SHA-256 digests of the source records. It never copies source
+paths or labels, normalizes panel names, or selects a framework winner. The
+current eframe and Métis records share the public series and lifecycle phase;
+their different surface and MIP contracts remain an explicitly unmatched
+baseline until producers provide an equal output key.
+
 The current three-run public MRI-DIR T2 workflow uses this option with RITK
 revision `44487bacc6b33d4c6a241f68960e9dd5e140fbc5`, Metis revision
 `587f6c6a9e6abf7415c7800255f75d1ef727ff79` and Moirai revision

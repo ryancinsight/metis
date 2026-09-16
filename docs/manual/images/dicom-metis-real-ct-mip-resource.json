@@ -101,6 +101,6 @@
     "metis_native_peak_private_bytes_mean": 2338119680.0,
     "metis_native_peak_private_bytes_approximate_95_half_width": 366960.97908530675,
     "metis_native_surface": "1280 × 800",
-    "interpretation": "The public DICOM series and four-panel CPU-MIP semantics are matched. Surface dimensions, host lifecycle and executable boundaries differ, so this record is lifecycle evidence and does not establish a framework memory or latency ranking."
+    "interpretation": "The public DICOM series is matched, but the eframe fourth viewport and the Métis axial-MIP viewport have different presentation contracts. Surface dimensions, host lifecycle and executable boundaries also differ, so this record is lifecycle evidence and does not establish a framework memory or latency ranking."
   }
 }

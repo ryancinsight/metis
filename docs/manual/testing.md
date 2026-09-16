@@ -302,11 +302,12 @@ fixture and compare reports only after recording the machine, target, engine
 and revision. A current public CT eframe baseline is recorded in
 [the eframe resource provenance](images/dicom-eframe-real-ct-resource.json);
 the native Métis MIP run is recorded in
-[the matched resource provenance](images/dicom-metis-real-ct-mip-resource.json).
-Both use the same 409-file input and four-panel CPU-MIP semantics, while their
-surface dimensions and process boundaries differ. These reports are lifecycle
-evidence; they do not establish a memory or latency ranking against Tauri,
-GPUI or egui. The three-run saved public MRI baseline was refreshed on
+[its resource provenance](images/dicom-metis-real-ct-mip-resource.json).
+Both use the same 409-file input, but eframe's fourth viewport is `3d_mip`
+while the Métis run uses RITK's `axial_mip` policy; their surface dimensions
+and process boundaries also differ. These reports are lifecycle evidence; they
+do not establish a memory or latency ranking against Tauri, GPUI or egui. The
+three-run saved public MRI baseline was refreshed on
 2026-09-14 against the current RITK/Métis/Moirai revisions; its repeated
 capture digest and process-tree uncertainty are recorded in [the MRI resource
 provenance](images/dicom-metis-real-mri-resource.json). The report records
@@ -316,6 +317,38 @@ include private study paths or pixels.
 The [application gallery's V12 table](applications.md#v12-fixture-comparison)
 keeps those three measured fixtures together with their uncertainty and the
 unmatched GPUI/Tauri residual.
+
+### Enforce matched lifecycle comparisons
+
+Use `scripts/resource_compare.py` when two real provenance records are ready
+for a comparison. The command requires explicit dotted JSON fields whose
+values must be identical in both records; it also requires at least two
+repeated samples for every selected resource metric. It hashes both input
+records into the result without copying their paths, and reports right-minus-
+left deltas with the combined approximate 95% half-width:
+
+```powershell
+python scripts/resource_compare.py `
+  --left docs/manual/images/dicom-metis-real-ct-mip-resource.json `
+  --right docs/manual/images/dicom-eframe-real-ct-resource.json `
+  --left-name 'Métis' `
+  --right-name 'eframe baseline' `
+  --match runtime.phase `
+  --match dataset.series_instance_uid `
+  --match dataset.files_submitted `
+  --match dataset.bytes_read `
+  --metric peak_private_bytes `
+  --metric peak_working_set_bytes `
+  --metric duration_ms `
+  --output output/resource-comparison.json
+```
+
+Add a producer-owned `output` semantic key (for example,
+`output.semantic_surfaces`) to both records and pass it with `--match` before
+interpreting presentation or clinical equivalence. A missing or differing key
+fails before any metric is calculated. The output is a measurement record,
+not a framework ranking; it does not normalize panel names, infer semantic
+equivalence, or replace RITK's image and DICOM oracles.
 
 For the browser side of the same comparison, the paired canvas trace records
 `metrics.frame_intervals` around the real RITK canvases. Each bounded sample is
