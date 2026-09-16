@@ -6,7 +6,7 @@ Date: 2026-09-15
 
 Driver: [METIS-INPUT-TRUST-001](../backlog.md#METIS-INPUT-TRUST-001)
 
-Upstream decision: [Moirai ADR 0060](../../moirai/docs/adr/0060-browser-event-trust.md)
+Upstream decision: [Moirai ADR 0060](../../../moirai/docs/adr/0060-browser-event-trust.md)
 
 ## Context
 
