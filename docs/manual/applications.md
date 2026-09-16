@@ -11,6 +11,13 @@ The separate [process demonstration](getting-started.md) tests actual child proc
 
 ## Real DICOM application evidence
 
+The browser DICOM gallery has a slice slider beneath each anatomical view.
+Drag a slider to browse that plane, or focus it and use the arrow keys;
+Home and End select its first and last slices. Each counter shows the current
+slice and the total available in that plane. Wheel navigation and cine playback
+update the same controls. RITK owns slice selection and reformatting; the gallery
+passes the selected axis and index to its Rust viewer.
+
 The gallery starts with a real saved-study run so the first image is application
 output rather than generated artwork. RITK opened the public MRI-DIR head CT
 series, decoded the 409 DICOM image instances in the 410-entry study directory,

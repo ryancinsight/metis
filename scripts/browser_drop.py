@@ -170,6 +170,8 @@ def run(args: argparse.Namespace) -> dict:
     if args.input == "chromium" and engine is not BrowserEngine.CHROMIUM:
         raise BrowserRuntimeError("the chromium input source requires the Chromium engine")
     lifecycle_cycles = validate_lifecycle_request(args)
+    if getattr(args, "slice_controls", False) and lifecycle_cycles != 1:
+        raise BrowserRuntimeError("slice controls require a single gallery lifecycle")
     device_scale_milli = (
         parse_device_scale(args.device_scale)
         if getattr(args, "device_scale", None) is not None
@@ -207,10 +209,17 @@ def run(args: argparse.Namespace) -> dict:
     try:
         with StaticServer(ROOT / "output" / "browser") as origin:
             trace.url = origin + "gallery.html"
-            client.create_session(browser_name, device_scale_milli)
+            if getattr(args, "headless", False):
+                client.create_session(browser_name, device_scale_milli, headless=True)
+            else:
+                client.create_session(browser_name, device_scale_milli)
+            trace.metrics["headless"] = bool(getattr(args, "headless", False))
             trace.capabilities = {key: client.capabilities.get(key) for key in ("browserName", "browserVersion", "platformName")}
             client.set_timeouts(120_000)
-            client._request("POST", client._session_path("window/rect"), {"width": 1440, "height": 1100})
+            # The three range controls add a label and a native hit target below
+            # the images; include that row in the gallery viewport capture.
+            window_height = 1200 if getattr(args, "slice_controls", False) else 1100
+            client._request("POST", client._session_path("window/rect"), {"width": 1440, "height": window_height})
             client.navigate(trace.url)
             _wait_for_text(client, "gallery-status", "Ready.", timeout_ms=30_000, include=True)
             record_device_scale(client, trace, device_scale_milli)
@@ -369,6 +378,19 @@ def run(args: argparse.Namespace) -> dict:
                     keyboard_trace=keyboard_trace,
                     browser_memory=getattr(args, "browser_memory_sample", False),
                 )
+            if getattr(args, "slice_controls", False):
+                from browser_gallery import capture_slice_gallery
+
+                trace.metrics["slice_controls"] = capture_slice_gallery(
+                    client,
+                    output / "slices",
+                    expected_counts={
+                        canvas_id.removeprefix("ritk-snap-"): int(
+                            oracle[canvas_id]["attributes"]["data-ritk-slice-count"]
+                        )
+                        for canvas_id in ids
+                    },
+                )
             if args.input in ("chromium", "chooser"):
                 expected_rgba = {canvas_id: oracle[canvas_id]["rgba_sha256"] for canvas_id in ids}
                 if canvas_trace is not None:
@@ -403,6 +425,7 @@ def run(args: argparse.Namespace) -> dict:
                     "browser_drop.py",
                     "browser_drop_lifecycle.py",
                     "browser_file_read.py",
+                    "browser_gallery.py",
                     "browser_protocol.py",
                     "browser_runtime.py",
                     "browser_trace.py",
@@ -503,6 +526,10 @@ def main() -> None:
                         help="consumer-selected data-* attribute for the paired canvas trace")
     parser.add_argument("--browser-memory-sample", action="store_true",
                         help="record bounded measureUserAgentSpecificMemory observations when exposed")
+    parser.add_argument("--slice-controls", action="store_true",
+                        help="verify gallery range controls through trusted keyboard and pointer input")
+    parser.add_argument("--headless", action="store_true",
+                        help="isolate browser automation from desktop mouse and keyboard input")
     parser.add_argument("--input", choices=("manual", "chooser", "chromium"), default="manual",
                         help="manual OS drop, standard W3C chooser, or Chromium CDP drag")
     parser.add_argument(

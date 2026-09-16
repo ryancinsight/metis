@@ -10,6 +10,14 @@
 - Delivery: `8388358` fixed the Windows Node diagnostic transport; hosted run [35064171544](https://github.com/ryancinsight/metis/actions/runs/35064171544) passed and PR #176 merged at `04a2aef3bd9241a8096a9958ec126d568bb1d8e9`.
 - Outcome: the configured gate passes without changing budgets or adding a cache; the 10-second delayed stream-cancel diagnostic remains bounded and deterministic.
 
+<a id="METIS-GALLERY-SLIDER-001"></a>
+## METIS-GALLERY-SLIDER-001 — Browse anatomical slices
+- Status: review; priority: P1; integrator: cine-gallery-root; last-update: 2026-09-16.
+- Scope: gallery range controls and browser automation; RITK owns slice selection and rendering.
+- Acceptance: each axis reaches first and last slice through native range input, displays matching slice counters, repaints changed pixels, and stays synchronized with wheel navigation; saved-study screenshot inspected.
+- Dependency: RITK-BROWSER-SLIDER-001; risk: [minor].
+- Verification: 27 gallery and 51 runtime tests pass; real 94-file Edge capture passes 50 trusted slider actions, 18 invalid API probes, cine checks and exact frame restoration; screenshots in RITK's DICOM manual.
+
 # Metis delivery
 
 <a id="METIS-INPUT-TRUST-001"></a>
