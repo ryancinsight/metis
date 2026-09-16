@@ -1612,6 +1612,20 @@ The result covers one Chromium-family engine and file-backed WebDriver input;
 physical file-manager input, Firefox/WebKit, WebGPU, compositor/native latency
 and provider-private resource counts remain outside this evidence.
 
+<a id="browser-page-query-evidence--2026-09-16"></a>
+## Browser consumer page-query evidence — 2026-09-16
+
+The file-backed runner accepts a bounded repeated `--page-query KEY=VALUE`
+argument and appends the encoded parameters to the existing same-origin
+gallery URL. Keys and values are ASCII and delimiter-free, duplicate keys and
+more than eight parameters are rejected before a browser session starts. The
+runner treats the values as opaque consumer configuration; it does not infer a
+renderer, file format or viewer policy. The dependency-free Python suite
+covers the valid encoding and each rejection class. RITK can therefore request
+its explicit `renderer=webgpu` gallery mode without a second transport runner
+or DICOM behavior in Métis. WebGPU capability and visual evidence remain
+consumer-owned and require a real browser artifact.
+
 <a id="browser-frame-timing-evidence--2026-09-13"></a>
 ## Browser frame timing evidence — 2026-09-13
 

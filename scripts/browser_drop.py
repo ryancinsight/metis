@@ -11,9 +11,11 @@ import argparse
 import hashlib
 import json
 import pathlib
+import re
 import subprocess
 import sys
 import tempfile
+import urllib.parse
 
 from browser_protocol import (
     ROOT, BrowserRuntimeError, StaticServer, WebDriverClient, _safe_path, parse_device_scale,
@@ -39,6 +41,58 @@ from browser_drop_lifecycle import (
 MAX_FILES = 512
 MAX_FILE_BYTES = 64 * 1024 * 1024
 MAX_BATCH_BYTES = 256 * 1024 * 1024
+MAX_PAGE_QUERY_PARAMETERS = 8
+MAX_PAGE_QUERY_KEY_BYTES = 64
+MAX_PAGE_QUERY_VALUE_BYTES = 128
+MAX_PAGE_QUERY_BYTES = 1024
+PAGE_QUERY_KEY_PATTERN = re.compile(r"[A-Za-z][A-Za-z0-9._~-]{0,63}\Z")
+PAGE_QUERY_VALUE_PATTERN = re.compile(r"[A-Za-z0-9._~-]{1,128}\Z")
+
+
+def parse_page_query(values: list[str] | tuple[str, ...] = ()) -> str:
+    """Validate consumer-owned query parameters and encode one page suffix.
+
+    The generic runner may select a bounded consumer mode, such as an
+    explicitly opted-in renderer, without interpreting that mode. Keys and
+    values stay ASCII and delimiter-free so the runner cannot be redirected
+    to another path or origin through an argument.
+    """
+    if not isinstance(values, (list, tuple)):
+        raise BrowserRuntimeError("page query parameters must be a sequence")
+    if len(values) > MAX_PAGE_QUERY_PARAMETERS:
+        raise BrowserRuntimeError(
+            f"page query accepts at most {MAX_PAGE_QUERY_PARAMETERS} parameters"
+        )
+    pairs: list[tuple[str, str]] = []
+    seen: set[str] = set()
+    for raw in values:
+        if not isinstance(raw, str):
+            raise BrowserRuntimeError("page query parameter must be text")
+        if len(raw.encode("utf-8")) > MAX_PAGE_QUERY_BYTES:
+            raise BrowserRuntimeError("page query parameter exceeds the byte bound")
+        key, separator, value = raw.partition("=")
+        if not separator:
+            raise BrowserRuntimeError("page query parameter must use KEY=VALUE")
+        if (
+            len(key.encode("ascii", errors="ignore")) > MAX_PAGE_QUERY_KEY_BYTES
+            or not PAGE_QUERY_KEY_PATTERN.fullmatch(key)
+        ):
+            raise BrowserRuntimeError("page query key is outside the ASCII bound")
+        if (
+            len(value.encode("ascii", errors="ignore")) > MAX_PAGE_QUERY_VALUE_BYTES
+            or not PAGE_QUERY_VALUE_PATTERN.fullmatch(value)
+        ):
+            raise BrowserRuntimeError("page query value is outside the ASCII bound")
+        if key in seen:
+            raise BrowserRuntimeError(f"page query key {key!r} is repeated")
+        seen.add(key)
+        pairs.append((key, value))
+    if not pairs:
+        return ""
+    query = "?" + urllib.parse.urlencode(pairs)
+    if len(query.encode("ascii")) > MAX_PAGE_QUERY_BYTES:
+        raise BrowserRuntimeError("page query exceeds the byte bound")
+    return query
 
 CANVAS_PIXELS = """
 const done = arguments[arguments.length - 1];
@@ -208,7 +262,9 @@ def run(args: argparse.Namespace) -> dict:
     transfer_observer_installed = False
     try:
         with StaticServer(ROOT / "output" / "browser") as origin:
-            trace.url = origin + "gallery.html"
+            trace.url = origin + "gallery.html" + parse_page_query(
+                getattr(args, "page_query", ())
+            )
             if getattr(args, "headless", False):
                 client.create_session(browser_name, device_scale_milli, headless=True)
             else:
@@ -221,7 +277,7 @@ def run(args: argparse.Namespace) -> dict:
             window_height = 1200 if getattr(args, "slice_controls", False) else 1100
             client._request("POST", client._session_path("window/rect"), {"width": 1440, "height": window_height})
             client.navigate(trace.url)
-            _wait_for_text(client, "gallery-status", "Ready.", timeout_ms=30_000, include=True)
+            _wait_for_text(client, "gallery-status", "Ready", timeout_ms=30_000, include=True)
             record_device_scale(client, trace, device_scale_milli)
             if getattr(args, "browser_memory_sample", False):
                 browser_memory_sample(client, trace, "mounted")
@@ -512,6 +568,13 @@ def main() -> None:
     parser.add_argument("--oracle", type=pathlib.Path, required=True,
                         help="Consumer JSON mapping canvas IDs to exact dimensions, non-black pixel counts and attributes")
     parser.add_argument("--consumer-revision", required=True)
+    parser.add_argument(
+        "--page-query",
+        action="append",
+        default=[],
+        metavar="KEY=VALUE",
+        help="bounded consumer query parameter; may be repeated up to eight times",
+    )
     parser.add_argument("--canvas-trace", type=pathlib.Path,
                         help="write a paired trusted canvas trace after the file drop")
     parser.add_argument(
