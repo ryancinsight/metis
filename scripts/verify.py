@@ -26,6 +26,16 @@ BUILD_LINK_PACKAGES = {
     "pyo3-ffi": "PyO3 interpreter FFI build contract",
     "wasm-bindgen-shared": "wasm-bindgen browser ABI build contract",
 }
+REGISTRY_BOUNDARIES = {
+    ("metis-cli", "serde"),
+    ("metis-cli", "serde_json"),
+    ("metis-app", "serde"),
+    ("metis-app", "serde_json"),
+    ("metis-python", "pyo3"),
+    # No Atlas provider exposes Unicode extended grapheme segmentation; this
+    # pure-Rust dependency is the bounded browser text-policy boundary.
+    ("metis-web", "unicode-segmentation"),
+}
 
 
 def application_targets(metadata):
@@ -327,14 +337,9 @@ def run_gate():
                     # Serialization stays at declared text boundaries: the CLI
                     # manifest and the application protocol; clinical crates
                     # stay on the binary IPC contract.
-                    registry_boundary = (
-                        provider.startswith("registry+")
-                        and (
-                            (package["name"] == "metis-cli" and dependency["name"] in {"serde", "serde_json"})
-                            or (package["name"] == "metis-app" and dependency["name"] in {"serde", "serde_json"})
-                            or (package["name"] == "metis-python" and dependency["name"] == "pyo3")
-                        )
-                    )
+                    registry_boundary = provider.startswith("registry+") and (
+                        package["name"], dependency["name"]
+                    ) in REGISTRY_BOUNDARIES
                     if provider and not provider.startswith("git+https://github.com/ryancinsight/") and not registry_boundary:
                         raise SystemExit(f"Non-Atlas direct dependency: {dependency}")
         output_path("provider-dependencies.json").write_text(json.dumps(external, indent=2), encoding="utf-8")

@@ -63,6 +63,11 @@ class FormatNeutralWorkspaceTests(unittest.TestCase):
         with self.assertRaisesRegex(ValueError, "DICOM belongs in RITK"):
             self.verify["format_neutral_workspace"](metadata)
 
+    def test_registry_boundary_allows_only_the_owned_grapheme_policy_dependency(self):
+        boundaries = self.verify["REGISTRY_BOUNDARIES"]
+        self.assertIn(("metis-web", "unicode-segmentation"), boundaries)
+        self.assertNotIn(("metis-core", "unicode-segmentation"), boundaries)
+
 
 class BootstrapEvidenceTests(unittest.TestCase):
     """A failed new invocation must never retain an earlier green report."""

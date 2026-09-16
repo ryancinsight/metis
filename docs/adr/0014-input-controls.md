@@ -32,6 +32,10 @@ UAX #29 implementation. Browser caret movement, bidi layout, line metrics,
 clipboard/undo, fallback-font metrics and native IME production remain host
 contracts.
 
+The Atlas stack has no first-party UAX #29 segmenter. The browser host keeps
+this one pure-Rust registry dependency at its text-policy boundary rather than
+reimplementing the Unicode algorithm or moving text semantics into a consumer.
+
 ## Context
 
 Metis must reuse ordinary HTML5 controls while keeping application state and
