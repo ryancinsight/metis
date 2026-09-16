@@ -24,6 +24,7 @@ MAX_SCREENSHOT_RESPONSE_BYTES = ((MAX_SCREENSHOT_BYTES + 2) // 3) * 4 + 256
 MAX_TRACE_BYTES = 512 * 1024
 MAX_WAIT_MILLISECONDS = 120_000
 MAX_URL_BYTES = 8 * 1024
+MAX_WINDOW_DIMENSION = 4096
 # W3C input sources are deliberately bounded so a malformed scenario cannot
 # turn the driver into an unbounded action queue.
 MAX_ACTION_SOURCES = 8
@@ -267,6 +268,23 @@ class WebDriverClient:
         if not 1 <= milliseconds <= MAX_WAIT_MILLISECONDS:
             raise BrowserRuntimeError(f"script timeout must be between 1 and {MAX_WAIT_MILLISECONDS} milliseconds")
         self._request("POST", self._session_path("timeouts"), {"script": milliseconds})
+
+    def set_window_rect(self, width: int, height: int) -> None:
+        """Set a bounded browser window rectangle for deterministic captures."""
+        if (
+            type(width) is not int
+            or type(height) is not int
+            or not 1 <= width <= MAX_WINDOW_DIMENSION
+            or not 1 <= height <= MAX_WINDOW_DIMENSION
+        ):
+            raise BrowserRuntimeError(
+                f"window dimensions must be integers in [1, {MAX_WINDOW_DIMENSION}]"
+            )
+        self._request(
+            "POST",
+            self._session_path("window/rect"),
+            {"width": width, "height": height},
+        )
 
     def navigate(self, url: str) -> None:
         """Navigate to a bounded HTTP(S) workbench URL."""

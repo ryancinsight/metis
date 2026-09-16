@@ -16,6 +16,7 @@ import subprocess
 import sys
 import tempfile
 import urllib.parse
+from typing import Any, Callable, Mapping, Sequence
 
 from browser_protocol import (
     ROOT, BrowserRuntimeError, StaticServer, WebDriverClient, _safe_path, parse_device_scale,
@@ -41,6 +42,12 @@ from browser_drop_lifecycle import (
     run_gallery_lifecycle,
     validate_lifecycle_request,
 )
+
+
+ConsumerCapture = Callable[
+    [WebDriverClient, pathlib.Path, Mapping[str, Any], Sequence[str]],
+    Mapping[str, Any],
+]
 
 
 # Independent test oracle for the existing host admission contract.
@@ -222,7 +229,51 @@ def _cleanup_transfer(client: WebDriverClient) -> dict:
     return result
 
 
-def run(args: argparse.Namespace) -> dict:
+def _asset_digests() -> dict[str, str]:
+    """Record generated page and consumer-module files without naming a consumer."""
+    output = ROOT / "output" / "browser"
+    paths = [output / name for name in ("gallery.html", "gallery.js", "gallery.css")]
+    package = output / "consumer"
+    if package.is_dir():
+        paths.extend(path for path in sorted(package.iterdir()) if path.is_file())
+    return {
+        path.relative_to(output).as_posix(): hashlib.sha256(path.read_bytes()).hexdigest()
+        for path in paths
+        if path.is_file()
+    }
+
+
+def _source_digests() -> dict[str, str]:
+    """Record the generic host runner sources that produced a trace."""
+    names = (
+        "browser.py",
+        "browser_canvas.py",
+        "browser_canvas_capture.py",
+        "browser_drop.py",
+        "browser_drop_lifecycle.py",
+        "browser_file_read.py",
+        "browser_protocol.py",
+        "browser_runtime.py",
+        "browser_trace.py",
+    )
+    return {
+        name: hashlib.sha256((ROOT / "scripts" / name).read_bytes()).hexdigest()
+        for name in names
+    }
+
+
+def run(
+    args: argparse.Namespace,
+    *,
+    consumer_capture: ConsumerCapture | None = None,
+) -> dict:
+    """Run the format-neutral file and canvas contract.
+
+    A consumer may provide a post-transfer capture callback. The host passes
+    the live WebDriver client, bounded output root, opaque canvas oracle and
+    validated canvas IDs; it stores only the callback's bounded mapping in the
+    trace. Consumer interpretation stays outside this module.
+    """
     engine, browser_name = resolve_browser_target(
         getattr(args, "engine", None),
         getattr(args, "browser_name", None),
@@ -230,14 +281,14 @@ def run(args: argparse.Namespace) -> dict:
     if args.input == "chromium" and engine is not BrowserEngine.CHROMIUM:
         raise BrowserRuntimeError("the chromium input source requires the Chromium engine")
     lifecycle_cycles = validate_lifecycle_request(args)
+    if consumer_capture is not None and lifecycle_cycles != 1:
+        raise BrowserRuntimeError("consumer capture requires a single gallery lifecycle")
     canvas_capture = CanvasCaptureMode.parse(getattr(args, "canvas_capture", "rgba"))
     canvas_context = getattr(args, "canvas_context", None)
     if canvas_capture is CanvasCaptureMode.SCREENSHOT:
         canvas_context = validate_context_name(canvas_context)
     if canvas_capture is CanvasCaptureMode.SCREENSHOT and lifecycle_cycles > 1:
         raise BrowserRuntimeError("screenshot canvas capture requires one gallery lifecycle")
-    if getattr(args, "slice_controls", False) and lifecycle_cycles != 1:
-        raise BrowserRuntimeError("slice controls require a single gallery lifecycle")
     device_scale_milli = (
         parse_device_scale(args.device_scale)
         if getattr(args, "device_scale", None) is not None
@@ -285,10 +336,7 @@ def run(args: argparse.Namespace) -> dict:
             trace.metrics["headless"] = bool(getattr(args, "headless", False))
             trace.capabilities = {key: client.capabilities.get(key) for key in ("browserName", "browserVersion", "platformName")}
             client.set_timeouts(120_000)
-            # The three range controls add a label and a native hit target below
-            # the images; include that row in the gallery viewport capture.
-            window_height = 1200 if getattr(args, "slice_controls", False) else 1100
-            client._request("POST", client._session_path("window/rect"), {"width": 1440, "height": window_height})
+            client.set_window_rect(1440, 1100)
             client.navigate(trace.url)
             _wait_for_text(client, "gallery-status", "Ready", timeout_ms=30_000, include=True)
             record_device_scale(client, trace, device_scale_milli)
@@ -358,30 +406,8 @@ def run(args: argparse.Namespace) -> dict:
                     json.dumps(expected_files, sort_keys=True).encode()
                 ).hexdigest()
                 document["oracle_sha256"] = hashlib.sha256(args.oracle.read_bytes()).hexdigest()
-                document["assets"] = {
-                    name: hashlib.sha256((ROOT / "output" / "browser" / name).read_bytes()).hexdigest()
-                    for name in (
-                        "gallery.html",
-                        "gallery.js",
-                        "gallery.css",
-                        "consumer/ritk_snap.js",
-                        "consumer/ritk_snap_bg.wasm",
-                    )
-                }
-                document["sources"] = {
-                    name: hashlib.sha256((ROOT / "scripts" / name).read_bytes()).hexdigest()
-                    for name in (
-                        "browser.py",
-                        "browser_canvas.py",
-                        "browser_canvas_capture.py",
-                        "browser_drop.py",
-                        "browser_drop_lifecycle.py",
-                        "browser_file_read.py",
-                        "browser_protocol.py",
-                        "browser_runtime.py",
-                        "browser_trace.py",
-                    )
-                }
+                document["assets"] = _asset_digests()
+                document["sources"] = _source_digests()
                 return document
             point = client.execute(OBSERVE_TRANSFER)
             transfer_observer_installed = True
@@ -460,19 +486,19 @@ def run(args: argparse.Namespace) -> dict:
                     keyboard_trace=keyboard_trace,
                     browser_memory=getattr(args, "browser_memory_sample", False),
                 )
-            if getattr(args, "slice_controls", False):
-                from browser_gallery import capture_slice_gallery
-
-                trace.metrics["slice_controls"] = capture_slice_gallery(
-                    client,
-                    output / "slices",
-                    expected_counts={
-                        canvas_id.removeprefix("ritk-snap-"): int(
-                            oracle[canvas_id]["attributes"]["data-ritk-slice-count"]
-                        )
-                        for canvas_id in ids
-                    },
-                )
+            if consumer_capture is not None:
+                captured = consumer_capture(client, output, oracle, ids)
+                if not isinstance(captured, Mapping):
+                    raise BrowserRuntimeError("consumer capture must return a mapping")
+                try:
+                    encoded_capture = json.dumps(captured, sort_keys=True)
+                except (TypeError, ValueError) as error:
+                    raise BrowserRuntimeError(
+                        "consumer capture must contain JSON-serializable values"
+                    ) from error
+                if len(encoded_capture.encode("utf-8")) > 512 * 1024:
+                    raise BrowserRuntimeError("consumer capture exceeds the 512 KiB trace bound")
+                trace.metrics["consumer_capture"] = dict(captured)
             if args.input in ("chromium", "chooser"):
                 check_rejections(client, trace, point, args.input)
                 if canvas_capture is CanvasCaptureMode.RGBA:
@@ -502,25 +528,8 @@ def run(args: argparse.Namespace) -> dict:
             document["viewport"] = viewport
             document["file_manifest_sha256"] = hashlib.sha256(json.dumps(expected_files, sort_keys=True).encode()).hexdigest()
             document["oracle_sha256"] = hashlib.sha256(args.oracle.read_bytes()).hexdigest()
-            document["assets"] = {
-                name: hashlib.sha256((ROOT / "output" / "browser" / name).read_bytes()).hexdigest()
-                for name in ("gallery.html", "gallery.js", "gallery.css", "consumer/ritk_snap.js", "consumer/ritk_snap_bg.wasm")
-            }
-            document["sources"] = {
-                name: hashlib.sha256((ROOT / "scripts" / name).read_bytes()).hexdigest()
-                for name in (
-                    "browser.py",
-                    "browser_canvas.py",
-                    "browser_canvas_capture.py",
-                    "browser_drop.py",
-                    "browser_drop_lifecycle.py",
-                    "browser_file_read.py",
-                    "browser_gallery.py",
-                    "browser_protocol.py",
-                    "browser_runtime.py",
-                    "browser_trace.py",
-                )
-            }
+            document["assets"] = _asset_digests()
+            document["sources"] = _source_digests()
     except (BrowserRuntimeError, OSError, ValueError) as error:
         capture_error = None
         page_diagnostic = None
@@ -589,7 +598,8 @@ def run(args: argparse.Namespace) -> dict:
     return document
 
 
-def main() -> None:
+def build_parser() -> argparse.ArgumentParser:
+    """Build the generic host parser for the CLI and consumer wrappers."""
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--driver-url", required=True)
     parser.add_argument("--engine", choices=tuple(engine.value for engine in BrowserEngine),
@@ -634,8 +644,6 @@ def main() -> None:
                         help="consumer-selected data-* attribute for the paired canvas trace")
     parser.add_argument("--browser-memory-sample", action="store_true",
                         help="record bounded measureUserAgentSpecificMemory observations when exposed")
-    parser.add_argument("--slice-controls", action="store_true",
-                        help="verify gallery range controls through trusted keyboard and pointer input")
     parser.add_argument("--headless", action="store_true",
                         help="isolate browser automation from desktop mouse and keyboard input")
     parser.add_argument("--input", choices=("manual", "chooser", "chromium"), default="manual",
@@ -655,7 +663,11 @@ def main() -> None:
         help="monotonic bound for the complete repeated gallery lifecycle suite",
     )
     parser.add_argument("--output", type=pathlib.Path, default=ROOT / "output" / "browser" / "drop")
-    run(parser.parse_args())
+    return parser
+
+
+def main() -> None:
+    run(build_parser().parse_args())
 
 
 if __name__ == "__main__":

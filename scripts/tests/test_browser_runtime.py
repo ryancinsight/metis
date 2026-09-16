@@ -35,6 +35,7 @@ from browser_protocol import (
     MAX_FILE_INPUT_PATHS,
     MAX_FILE_INPUT_VALUE_BYTES,
     MAX_FILE_PATH_BYTES,
+    MAX_WINDOW_DIMENSION,
     MAX_SCREENSHOT_BYTES,
     MAX_SCREENSHOT_RESPONSE_BYTES,
     MAX_TRACE_BYTES,
@@ -611,6 +612,20 @@ class BrowserRuntimeTests(unittest.TestCase):
                 with self.assertRaisesRegex(BrowserRuntimeError, "device scale"):
                     parse_device_scale(value)
 
+    def test_window_rectangle_is_bounded_and_sent_once(self):
+        client = WebDriverClient("http://127.0.0.1:9515", 1)
+        client.session_id = "session"
+        with mock.patch.object(client, "_request", return_value=None) as request:
+            client.set_window_rect(1440, 1200)
+        request.assert_called_once_with(
+            "POST",
+            "/session/session/window/rect",
+            {"width": 1440, "height": 1200},
+        )
+        for width, height in ((0, 1), (1, 0), (MAX_WINDOW_DIMENSION + 1, 1), (1, MAX_WINDOW_DIMENSION + 1), (True, 1)):
+            with self.assertRaisesRegex(BrowserRuntimeError, "window dimensions"):
+                client.set_window_rect(width, height)
+
     def test_driver_emits_engine_specific_device_scale_capabilities(self):
         for browser_name, option_name in (
             ("chrome", "goog:chromeOptions"),
@@ -781,7 +796,7 @@ class BrowserRuntimeTests(unittest.TestCase):
                 "0" * 40,
                 pathlib.Path(directory),
                 5_000,
-                ["ritk-snap-axial", "ritk-snap-coronal", "ritk-snap-sagittal"],
+                ["viewer-axial", "viewer-coronal", "viewer-sagittal"],
                 "1" * 40,
                 browser_heap=True,
                 browser_memory=True,
@@ -841,7 +856,7 @@ class BrowserRuntimeTests(unittest.TestCase):
                 "0" * 40,
                 pathlib.Path(directory),
                 5_000,
-                ["ritk-snap-axial", "ritk-snap-coronal", "ritk-snap-sagittal"],
+                ["viewer-axial", "viewer-coronal", "viewer-sagittal"],
                 "1" * 40,
                 keyboard_trace=KeyboardTraceKind.NAVIGATION,
             )
@@ -871,7 +886,7 @@ class BrowserRuntimeTests(unittest.TestCase):
                 )
             )
         self.assertEqual(len(trace.snapshots), 9)
-        for canvas_id in ("ritk-snap-axial", "ritk-snap-coronal", "ritk-snap-sagittal"):
+        for canvas_id in ("viewer-axial", "viewer-coronal", "viewer-sagittal"):
             self.assertEqual(
                 [snapshot["label"] for snapshot in trace.snapshots if snapshot["canvas"]["id"] == canvas_id],
                 [f"{canvas_id}-initial", f"{canvas_id}-after-keyboard", f"{canvas_id}-after-input"],
@@ -889,7 +904,7 @@ class BrowserRuntimeTests(unittest.TestCase):
                 "0" * 40,
                 pathlib.Path(directory),
                 5_000,
-                ["ritk-snap-axial"],
+                ["viewer-axial"],
                 "1" * 40,
                 keyboard_trace=KeyboardTraceKind.CINE_RATE,
             )
@@ -947,28 +962,28 @@ class BrowserRuntimeTests(unittest.TestCase):
         self.assertTrue(
             all(request[2]["cmd"] == "Input.dispatchKeyEvent" for request in driver.protocol_requests)
         )
-        self.assertEqual(driver.focus_calls, ["ritk-snap-axial"] * 4)
+        self.assertEqual(driver.focus_calls, ["viewer-axial"] * 4)
         self.assertEqual(
             [snapshot["label"] for snapshot in trace.snapshots],
             [
-                "ritk-snap-axial-initial",
-                "ritk-snap-axial-after-keyboard",
-                "ritk-snap-axial-after-repeat",
-                "ritk-snap-axial-after-decrease",
-                "ritk-snap-axial-after-decrease-repeat",
-                "ritk-snap-axial-after-input",
+                "viewer-axial-initial",
+                "viewer-axial-after-keyboard",
+                "viewer-axial-after-repeat",
+                "viewer-axial-after-decrease",
+                "viewer-axial-after-decrease-repeat",
+                "viewer-axial-after-input",
             ],
         )
         self.assertEqual(
             [screenshot["label"] for screenshot in trace.screenshots],
             [
                 "window-initial",
-                "ritk-snap-axial-initial",
-                "ritk-snap-axial-after-keyboard",
-                "ritk-snap-axial-after-repeat",
-                "ritk-snap-axial-after-decrease",
-                "ritk-snap-axial-after-decrease-repeat",
-                "ritk-snap-axial-after-input",
+                "viewer-axial-initial",
+                "viewer-axial-after-keyboard",
+                "viewer-axial-after-repeat",
+                "viewer-axial-after-decrease",
+                "viewer-axial-after-decrease-repeat",
+                "viewer-axial-after-input",
                 "window-final",
             ],
         )
@@ -996,7 +1011,7 @@ class BrowserRuntimeTests(unittest.TestCase):
                 "0" * 40,
                 pathlib.Path(directory),
                 5_000,
-                ["ritk-snap-axial"],
+                ["viewer-axial"],
                 "1" * 40,
                 keyboard_trace=KeyboardTraceKind.CINE_RATE,
                 browser_name="MicrosoftEdge",
@@ -1022,7 +1037,7 @@ class BrowserRuntimeTests(unittest.TestCase):
                 "0" * 40,
                 pathlib.Path(directory),
                 5_000,
-                ["ritk-snap-axial"],
+                ["viewer-axial"],
                 "1" * 40,
                 keyboard_trace=KeyboardTraceKind.CINE_RATE,
             )
@@ -1050,7 +1065,7 @@ class BrowserRuntimeTests(unittest.TestCase):
                     "0" * 40,
                     pathlib.Path(directory),
                     5_000,
-                    ["ritk-snap-axial"],
+                    ["viewer-axial"],
                     "1" * 40,
                     keyboard_trace=KeyboardTraceKind.CINE_RATE,
                 )
@@ -1074,7 +1089,7 @@ class BrowserRuntimeTests(unittest.TestCase):
                     driver,
                     trace,
                     pathlib.Path(directory),
-                    ["ritk-snap-axial"],
+                    ["viewer-axial"],
                     keyboard_trace=KeyboardTraceKind.CINE_RATE,
                 )
         self.assertEqual(len(trace.actions), 1)
@@ -1109,7 +1124,7 @@ class BrowserRuntimeTests(unittest.TestCase):
                     driver,
                     trace,
                     pathlib.Path(directory),
-                    ["ritk-snap-axial"],
+                    ["viewer-axial"],
                     keyboard_trace=KeyboardTraceKind.CINE_RATE,
                 )
         self.assertIn(
@@ -1139,7 +1154,7 @@ class BrowserRuntimeTests(unittest.TestCase):
                     driver,
                     trace,
                     pathlib.Path(directory),
-                    ["ritk-snap-axial"],
+                    ["viewer-axial"],
                     keyboard_trace=KeyboardTraceKind.CINE_RATE,
                 )
         self.assertTrue(driver.released)
@@ -1218,7 +1233,7 @@ class BrowserRuntimeTests(unittest.TestCase):
                 "0" * 40,
                 pathlib.Path(directory),
                 5_000,
-                ["ritk-snap-axial"],
+                ["viewer-axial"],
                 canvas_attributes=("data-consumer-state", "data-consumer-missing"),
             )
         self.assertEqual(
@@ -1244,7 +1259,7 @@ class BrowserRuntimeTests(unittest.TestCase):
                     "0" * 40,
                     pathlib.Path(directory),
                     5_000,
-                    ["ritk-snap-axial"],
+                    ["viewer-axial"],
                     "1" * 40,
                 )
 
@@ -1260,7 +1275,7 @@ class BrowserRuntimeTests(unittest.TestCase):
                     "0" * 40,
                     pathlib.Path(directory),
                     5_000,
-                    ["ritk-snap-axial"],
+                    ["viewer-axial"],
                     "1" * 40,
                 )
 
@@ -1307,7 +1322,7 @@ class BrowserRuntimeTests(unittest.TestCase):
                             "0" * 40,
                             pathlib.Path(directory),
                             5_000,
-                            ["ritk-snap-axial"],
+                            ["viewer-axial"],
                             canvas_attributes=("data-requested",),
                         )
 
@@ -1453,7 +1468,7 @@ class BrowserRuntimeTests(unittest.TestCase):
                     "0" * 40,
                     pathlib.Path(directory),
                     5_000,
-                    ["ritk-snap-axial"],
+                    ["viewer-axial"],
                     "1" * 40,
                 )
 

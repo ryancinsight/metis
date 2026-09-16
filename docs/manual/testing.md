@@ -164,29 +164,14 @@ HTML5/CSS host, Moirai transport and pre-response Origin check; it does not
 prove TLS, cross-engine behavior, post-drop allocation bounds, accessibility
 technology support or OS isolation.
 
-## Validate saved-study slice controls
+## Validate a consumer gallery
 
-Exercise the range inputs that an RITK consumer places beneath the three
-anatomical canvases with the file-backed runner:
-
-```text
-python scripts/browser_drop.py --driver-url http://127.0.0.1:9517 \
-  --browser-name MicrosoftEdge --headless --input chooser \
-  --files D:/atlas/repos/ritk/test_data/2_head_mri_t2/DICOM --pattern '*.dcm' \
-  --oracle output/browser/mri-oracle.json \
-  --consumer-revision <ritk-revision> \
-  --canvas-trace output/browser/cine/canvas-trace.json \
-  --keyboard-trace cine-rate --slice-controls \
-  --output output/browser/cine
-```
-
-The bounded trace drives click, Home, End, arrow and pointer actions for the
-axial, coronal and sagittal ranges. It rejects non-finite, fractional and
-out-of-range indices, requires a generation-backed repaint, preserves the
-other planes, restores the initial RGBA frame and records released listeners.
-The RITK [DICOM workflow manual](https://github.com/ryancinsight/ritk/blob/main/docs/manual/dicom-workflow.md)
-contains the real MRI screenshots and pixel provenance; Metis supplies the
-host controls and input lifecycle only.
+Metis validates the format-neutral file handoff, canvas contract and browser
+input lifecycle. Consumer controls and their semantic assertions stay in the
+consumer repository. The RITK [DICOM workflow manual](https://github.com/ryancinsight/ritk/blob/main/docs/manual/dicom-workflow.md)
+contains the real MRI slice-control command, screenshots and pixel provenance;
+its `scripts/browser_gallery.py` invokes Metis's generic host with the
+consumer-owned control hook.
 
 ## Check authentication provider ownership
 
