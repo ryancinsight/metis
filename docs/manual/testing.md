@@ -394,6 +394,26 @@ it does not include compositor, GPU, operating-system or native-window
 latency, and it must not be used to rank Metis against Tauri, GPUI or egui
 without matched application semantics and host conditions.
 
+To measure page startup through a stable application-ready element and its first
+animation frame, run the dedicated navigation instrument:
+
+```powershell
+python scripts/browser_startup_latency.py `
+  --driver-url $env:METIS_WEBDRIVER_CHROMIUM_URL `
+  --engine chromium --browser-name MicrosoftEdge `
+  --url http://127.0.0.1:8080/ `
+  --ready-selector '#metis-form' --samples 3 --timeout-ms 4000 `
+  --output output/browser/startup-latency.json
+```
+
+Each bounded reload records Navigation Timing response, DOM-interactive,
+DOMContentLoaded and load milestones, the browser-clock time at which the
+selected element is observed, and the following `requestAnimationFrame` time.
+The summary reports mean, population spread, minimum and maximum for the
+readiness and first-frame series. This is page-boundary evidence; it excludes
+browser-process launch, operating-system, compositor, GPU and native-window
+costs and does not rank Metis against another framework.
+
 Add `--browser-heap-sample` to the same runner command to append
 `metrics.browser_heap`. The optional observation uses the browser's
 `performance.memory` counters when exposed and records an explicit unavailable

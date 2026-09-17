@@ -2671,6 +2671,17 @@ closed-session output. The trace is a browser boundary measurement only;
 compositor, GPU, operating-system, native-window and matched-framework
 latencies remain separate evidence requirements.
 
+The standalone `scripts/browser_startup_latency.py` instrument measures a real
+browser navigation through Navigation Timing response and DOM milestones, a
+caller-selected readiness element and the following `requestAnimationFrame`
+across bounded reload samples. Each schema-1 trace retains the navigation
+milestones, readiness and first-frame observations plus their mean, population
+spread, minimum and maximum. Focused contract tests reject malformed or
+non-monotonic timing, missing readiness, frame-before-readiness and budget
+violations. This evidence describes the page boundary only; browser-process
+launch, operating-system, compositor, GPU, native-window and matched-framework
+latencies remain separate requirements.
+
 Input traces and workload sizes are fixed before comparison, chosen to exercise
 the relevant working-set regimes under the committed budget. Profile production
 paths before optimizing; preserve the instrument across comparisons. Inject
