@@ -139,6 +139,7 @@ an owner. “Unsupported” cannot replace delivery of a required mobile/native 
 - Verification: 99 focused Python tests and configured local gate pass (171 packages; 330 debug and 330 release tests, one existing skip each). Semver check identifies the two intentional observer-argument additions; callers and docs migrate, with no release. DNS-independent real HTTP regression passes; the prior hosted startup cause remains unproven.
 
 - Reopened: hosted run `35169939056` passes all browser jobs but times out `idle_peer_hits_deadline_and_teardown_is_finite` at the committed sixty-second bound (329 native tests pass). Local debug/release runs passed; the hang requires diagnosis and forward correction, not retry or timeout expansion. Branch: `fix/metis-idle-peer-deadline`.
+- Diagnostic: `10f21f4` passes hosted run `35171137867`, but its release case takes 2.024 seconds and the two-second timer can repoll the request, concealing a missed wake. An external channel deadline replaces that timer; local debug/release cases take 0.167/0.371 seconds. The configured run passes native checks but fails visual provenance because its run marker changed; that run is not a full-gate pass.
 
 <a id="METIS-SEC-001"></a>
 ## METIS-SEC-001 — Backend authority [arch] [patch]
