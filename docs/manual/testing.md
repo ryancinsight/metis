@@ -374,6 +374,26 @@ GPU and native-window latency require their own host instrument. Keep the
 browser engine, driver, viewport, study, revisions and action trace fixed
 before comparing measurements.
 
+To measure browser input delivery on a stable control, run the dedicated
+format-neutral instrument against the live page:
+
+```powershell
+python scripts/browser_input_latency.py `
+  --driver-url $env:METIS_WEBDRIVER_CHROMIUM_URL `
+  --engine chromium --browser-name MicrosoftEdge `
+  --url http://127.0.0.1:8080/ `
+  --selector '#submit-calculation' --samples 5 --timeout-ms 4000 `
+  --output output/browser/input-latency.json
+```
+
+The command performs repeated WebDriver clicks, records each trusted click to
+the next `requestAnimationFrame` callback, and writes bounded mean, spread,
+minimum and maximum values. Choose a control that remains present and enabled
+for every sample. The result is a browser event-to-frame boundary measurement;
+it does not include compositor, GPU, operating-system or native-window
+latency, and it must not be used to rank Metis against Tauri, GPUI or egui
+without matched application semantics and host conditions.
+
 Add `--browser-heap-sample` to the same runner command to append
 `metrics.browser_heap`. The optional observation uses the browser's
 `performance.memory` counters when exposed and records an explicit unavailable
