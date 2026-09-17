@@ -13,7 +13,7 @@ import math
 import pathlib
 import statistics
 import subprocess
-from typing import Any, Mapping
+from typing import Any, Mapping, Optional
 
 from browser_protocol import (
     MAX_TRACE_BYTES,
@@ -277,6 +277,7 @@ def measure_startup_latency(
     *,
     samples: int = DEFAULT_SAMPLES,
     timeout_ms: int = 4_000,
+    requested_device_scale_milli: Optional[int] = None,
 ) -> Mapping[str, Any]:
     """Measure repeated navigation-to-ready and navigation-to-frame intervals."""
     selector = validate_selector(selector)
@@ -286,6 +287,8 @@ def measure_startup_latency(
     observations: list[dict[str, Any]] = []
     for index in range(samples):
         client.navigate(url)
+        if index == 0:
+            record_device_scale(client, trace, requested_device_scale_milli)
         navigation = _validate_navigation(client.execute(NAVIGATION_SCRIPT))
         ready = _wait_ready(client, selector, timeout_ms)
         frame_ms = _wait_frame(client, timeout_ms)
@@ -376,7 +379,6 @@ def run(args: argparse.Namespace) -> int:
         client.set_timeouts(timeout_ms)
         client.set_window_rect(args.width, args.height)
         trace = Trace(engine, args.url, "startup-latency", revision, client.capabilities)
-        record_device_scale(client, trace, device_scale_milli)
         measure_startup_latency(
             client,
             trace,
@@ -384,6 +386,7 @@ def run(args: argparse.Namespace) -> int:
             selector,
             samples=samples,
             timeout_ms=timeout_ms,
+            requested_device_scale_milli=device_scale_milli,
         )
         trace.cleanup = {
             "session_closed": False,
