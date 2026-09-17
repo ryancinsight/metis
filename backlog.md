@@ -317,6 +317,7 @@ an owner. “Unsupported” cannot replace delivery of a required mobile/native 
 - Evidence: focused `metis-web` nextest runs 49/49, native and WASM warning-denied Clippy/checks pass, and the browser asset contract test passes 13/13. A 2026-09-17 CUA smoke at `1280×720`/1.25 appended ` X`, observed native **Control+Z** restore `Résumé — 東京 / 影像` with `Text: input undo (historyUndo) applied; data none`, then observed **Control+Shift+Z** with `Text: input redo (historyRedo) applied; data none`; the screenshot shows the focused textarea, focus ring and restored value. Clipboard contents/permissions remain host-owned.
 - Completed increment (2026-09-17): the bounded classifier now covers the W3C quotation-paste, line/word deletion, drag-deletion and transpose insertion names; unmapped names remain `other`.
 - Evidence: focused policy tests cover the added standard names; the W3C [Input Events] vocabulary is linked from the crate README, ADRs and browser manual. Host clipboard/history authority and trusted-content residuals are unchanged.
+- Current increment (2026-09-17): the format-neutral browser runner will record bounded host text layout and grapheme-range geometry from the existing editing specimen; no DICOM or clipboard semantics enter the probe.
 - Residuals: bidi and line geometry, fallback-font metrics, trusted clipboard contents/permissions, an installed CJK or other native IME journey and assistive-technology acceptance remain open.
 
 <a id="METIS-A11Y-001"></a>
