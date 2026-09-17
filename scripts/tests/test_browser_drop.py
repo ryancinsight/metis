@@ -104,12 +104,19 @@ const streamReader = {
   read: () => mode === 'cleanup-race'
     ? new Promise(resolve => setTimeout(() => resolve({done: true}), 4900))
     : Promise.resolve({done: true}),
-  cancel: () => mode === 'delayed-cancel-error' || mode === 'cleanup-race'
-    ? new Promise((_resolve, reject) => setTimeout(
-        () => reject(new DOMException('', 'AbortError')),
-        mode === 'cleanup-race' ? 300 : 25
-      ))
-    : Promise.resolve(),
+  cancel: () => {
+    if (mode === 'delayed-cancel-error') {
+      return new Promise((_resolve, reject) => setImmediate(
+        () => reject(new DOMException('', 'AbortError'))
+      ));
+    }
+    if (mode === 'cleanup-race') {
+      return new Promise((_resolve, reject) => setTimeout(
+        () => reject(new DOMException('', 'AbortError')), 300
+      ));
+    }
+    return Promise.resolve();
+  },
   releaseLock: () => { releasedLocks += 1; }
 };
 global.File = SelectedFile;

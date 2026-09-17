@@ -408,19 +408,38 @@ fn idle_peer_hits_deadline_and_teardown_is_finite() {
         ))
         .expect("server bind");
     let address = server.local_addr().expect("server address");
+    let (failure_sender, failure_receiver) = std::sync::mpsc::sync_channel(2);
     let task = runtime
         .spawn_async(async move {
             let mut failures = Vec::new();
-            serve_browser_http(server, application(), 2, |error| failures.push(error.code)).await?;
+            serve_browser_http(server, application(), 2, |error| {
+                failure_sender.send(error.code).expect("failure observer");
+                failures.push(error.code);
+            })
+            .await?;
             Ok::<_, MetisError>(failures)
         })
         .expect("server task spawn");
     let client = runtime
         .block_on(TcpStream::connect(&address.to_string()))
         .expect("idle peer connect");
-    let response = runtime
-        .block_on(health_request(address))
+    let (response_sender, response_receiver) = std::sync::mpsc::sync_channel(1);
+    let health_task = std::thread::spawn(move || {
+        let response = moirai_executor::block_on(health_request(address));
+        response_sender.send(response).expect("health observer");
+    });
+    // A timer on the request future could conceal a lost readiness wake by
+    // polling an already-readable socket when the timer fires.
+    let response = response_receiver
+        .recv_timeout(Duration::from_secs(2))
+        .unwrap_or_else(|error| {
+            panic!(
+                "health request exceeded the ordinary HTTP deadline: {error}; observed peer failures: {:?}",
+                failure_receiver.try_iter().collect::<Vec<_>>()
+            )
+        })
         .expect("health after idle peer");
+    health_task.join().expect("health task join");
     assert_eq!(status(&response), 200);
     assert_eq!(response_body(&response), b"metis-http-ready\n");
     let result = task

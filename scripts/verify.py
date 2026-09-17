@@ -212,6 +212,8 @@ def manual_links():
 
 
 def run(name, args, *, cwd, environment, seconds=300, expected_exit=0, required_diagnostic=None):
+    from process_tree import ProcessTreeTimeout, run as run_process_tree
+
     EVIDENCE["stages"][name] = "running"
     EVIDENCE["commands"][name] = {"args": args, "cwd": str(cwd), "timeout_seconds": seconds,
                                 "expected_exit": expected_exit, "required_diagnostic": required_diagnostic}
@@ -219,11 +221,16 @@ def run(name, args, *, cwd, environment, seconds=300, expected_exit=0, required_
     log = output_path(name + ".log")
     log.write_text("Running: " + " ".join(args) + "\n", encoding="utf-8")
     try:
-        result = subprocess.run(args, cwd=cwd, text=True, encoding="utf-8", errors="replace", stdout=subprocess.PIPE,
-                                stderr=subprocess.PIPE, timeout=seconds, check=False, env=environment)
-    except subprocess.TimeoutExpired as error:
+        result = run_process_tree(args, cwd=cwd, env=environment, timeout=seconds)
+    except ProcessTreeTimeout as error:
         captured = b"".join(value.encode() if isinstance(value, str) else value or b"" for value in (error.stdout, error.stderr))
-        output_path(name + ".log").write_bytes(captured + f"\n{name}: exceeded {seconds}-second budget\n".encode())
+        cleanup = (
+            f"\n{name}: process-tree cleanup failed: {error.cleanup_error}\n".encode()
+            if error.cleanup_error else b""
+        )
+        output_path(name + ".log").write_bytes(
+            captured + cleanup + f"\n{name}: exceeded {seconds}-second budget\n".encode()
+        )
         raise SystemExit(f"{name}: exceeded {seconds}-second budget; see {log}") from error
     diagnostic = result.stdout + result.stderr
     output_path(name + ".log").write_text(diagnostic, encoding="utf-8")

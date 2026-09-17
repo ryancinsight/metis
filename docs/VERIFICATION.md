@@ -9,6 +9,18 @@ and ban checks and records the reviewed Cargo build-link inventory.
 Native tests use `.config/nextest.toml`: slow at 30 seconds, terminate at 60 seconds,
 zero retries. The demonstration executable has a 60-second outer budget.
 
+The verification and mutation runners use `scripts/process_tree.py` to own
+their launched descendants. Windows assigns a held launcher to a kill-on-close
+Job Object before releasing the command; POSIX keeps a supervisor alive until
+group termination. At the unchanged command deadline, the runner requests forced
+termination. Confirmation and reaping have at most ten additional seconds; a
+timed-out command remains a failure. Interrupted cleanup retains that deadline
+and cannot signal a process group after releasing its identity. File-backed
+output prevents an inherited pipe from blocking timeout reporting. Cleanup
+failures remain explicit.
+The focused subprocess tests run locally on Windows and in the Linux
+browser-assets job.
+
 ## Verification workflow definition — 2026-09-07
 
 `.github/workflows/ci.yml` is the one hosted verification pipeline. Its Windows
@@ -18,9 +30,9 @@ source hash through the gate, uploads `output/verification.json` and bounded
 stage logs on failure, and never updates visual baselines. Pinned Atlas reusable
 jobs check workflow syntax, the standalone Cargo lock, the strict ADR index and
 public-API changes on ready pull requests.
-The jobs run only for the actual `feat/process-foundation` default branch, pull
-requests that are ready for review, and merge-queue events; no unsupported
-full native-window or cross-platform host job is advertised.
+The Windows gate runs on `main`, ready pull requests, merge-queue events and
+manual dispatch. The browser-assets and cross-engine runtime jobs run on the
+schedule and manual dispatch, including the Linux subprocess-tree test.
 
 The workflow contract is covered by the Python gate tests, including full
 revision pinning, draft suppression, guard references and the Windows target.
