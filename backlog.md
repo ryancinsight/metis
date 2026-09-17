@@ -140,6 +140,7 @@ an owner. “Unsupported” cannot replace delivery of a required mobile/native 
 
 - Reopened: hosted run `35169939056` passes all browser jobs but times out `idle_peer_hits_deadline_and_teardown_is_finite` at the committed sixty-second bound (329 native tests pass). Local debug/release runs passed; the hang requires diagnosis and forward correction, not retry or timeout expansion. Branch: `fix/metis-idle-peer-deadline`.
 - Diagnostic: `10f21f4` passes hosted run `35171137867`, but its release case takes 2.024 seconds and the two-second timer can repoll the request, concealing a missed wake. An external channel deadline replaces that timer; local debug/release cases take 0.167/0.371 seconds. The configured run passes native checks but fails visual provenance because its run marker changed; that run is not a full-gate pass.
+- Provider: [Moirai PR #386](https://github.com/ryancinsight/Moirai/pull/386), merge `34533a07`, fixes reproduced Windows `POLLNVAL` waiter retention; 82 debug/release PAL tests and 223 semver checks pass. Metis resolves its eleven Moirai packages to that revision; both 330-test suites pass (idle recovery 0.423/0.402 seconds). All visual comparisons are unchanged; the baseline dependency fingerprint advances with the lock. Original hang causality and pre-`POLLNVAL` handle reuse remain unproven/unresolved respectively; [owning item](../moirai/docs/backlog.md#MOI-WINDOWS-REACTOR-CLEANUP-2026-09-16).
 
 <a id="METIS-SEC-001"></a>
 ## METIS-SEC-001 — Backend authority [arch] [patch]
