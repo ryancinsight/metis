@@ -1,6 +1,6 @@
 use super::{
-    APP_JS, INDEX_HTML, MAX_PATIENT_ID_BYTES, STYLES_CSS, WebViewAction, WebViewRequest, file_uri,
-    permission_denied_message,
+    APP_JS, INDEX_HTML, MAX_PATIENT_ID_BYTES, PERMISSION_PROBE_APP_JS, PERMISSION_PROBE_INDEX_HTML,
+    STYLES_CSS, WebViewAction, WebViewRequest, file_uri, permission_denied_message,
 };
 use metis_platform::native::WebViewPermission;
 
@@ -45,6 +45,14 @@ fn page_script_has_no_unscoped_authority_bridge() {
             "page script must not acquire unscoped authority: {forbidden}"
         );
     }
+}
+
+#[test]
+fn permission_probe_is_separate_from_the_calculation_page() {
+    assert!(!APP_JS.contains("navigator.geolocation"));
+    assert!(PERMISSION_PROBE_INDEX_HTML.contains("Metis permission probe"));
+    assert!(PERMISSION_PROBE_APP_JS.contains("navigator.geolocation"));
+    assert!(PERMISSION_PROBE_APP_JS.contains("message.status"));
 }
 
 #[test]

@@ -276,17 +276,34 @@ new runtime request into an untyped string. Metis re-exports the enum through
 its native platform boundary and maps the event to the typed page status
 `permission_denied` with `ErrorCode::PermissionDenied` (`0x200f`).
 
-The exact consumer checks are `cargo nextest run --locked -p metis-core -p
-metis-platform -p metis-app --all-targets` (84 passed, 2 ignored) and the
-warning-denied Clippy gate for those packages. The ignored installed-runtime
-adapter smoke `installed_runtime_denies_geolocation_permission` requests
-geolocation from a temporary packaged page and asserts
-`WebViewPermission::Geolocation` with `user_initiated = false`; the frontend
-unit test asserts the serialized page error, including code `8207` and the
-stable `geolocation` label. These checks establish synchronous provider denial
-and consumer translation. They do not establish a visible permission-probe
-capture, revocation of grants owned by another profile, or broader Windows
-file/network/process sandbox enforcement; those remain V05 host evidence.
+The exact consumer checks for the capture source are `cargo nextest run
+--locked -p metis-platform -p metis-app --all-targets` (55 passed, 2 ignored)
+and the warning-denied workspace Clippy gate. The ignored installed-runtime
+adapter smoke `installed_runtime_denies_geolocation_permission` was attempted
+against WebView2 `153.0.4234.32`, but its file-origin page did not emit a
+callback before the bounded wait; it is retained as a provider residual. The
+frontend unit test still asserts the serialized page error, including code
+`8207` and the stable `geolocation` label. These checks establish synchronous
+provider denial and consumer translation. They do not establish revocation of
+grants owned by another profile or broader Windows file/network/process
+sandbox enforcement; those remain V05 host evidence.
+
+### Windows WebView2 permission-probe capture
+
+The permission-probe capture role routes the packaged page through the same
+supervised private pipe and asks the WebView2 provider for its bounded
+`CapturePreview` PNG. This keeps the visual evidence tied to renderer pixels
+when GDI cannot see a hardware-composed or occluded child surface. Metis
+revision `285322892aca245faf3962d57838682dd6689d77` with Moirai revision
+`d324018efa3b67d2b92350a4e3c781d179019014` produced a 1024×768 PNG on
+`x86_64-pc-windows-msvc` with WebView2 `153.0.4234.32`; the file is 6,561
+bytes, SHA-256
+`a9df158ff6a167ed3c708e9621a44446cae93b3c0d87e646c818601606a33b8f`, and
+contains `permission_denied: WebView2 denied geolocation access request
+[0x200f]`. The command and full provenance are recorded in
+[`manual/images/native-captures.json`](manual/images/native-captures.json). The
+image proves the rendered page and message translation only. It does not prove
+revocation of another profile's grant or broader OS sandbox enforcement.
 
 ### Windows visible host captures — 2026-09-09
 
@@ -313,9 +330,9 @@ settings, registry tokens and the `github-cli` environment name are not passed.
 The focused regression test verifies that a runtime child has no `PATH` and that
 the allowlist does not contain `github-cli`. The capture parent and child were
 closed after each workflow. This evidence does not establish physical
-resize/DPI, native accessibility, installed-IME, a visible permission-probe
-state, broader OS permission enforcement, two-window visual behavior or
-macOS/Linux support.
+resize/DPI, native accessibility, installed-IME, broader OS permission
+enforcement, two-window visual behavior or macOS/Linux support; the separate
+permission-probe artifact above is the visible denial-state evidence.
 
 ### Windows native resize capture — 2026-09-13
 

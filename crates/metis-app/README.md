@@ -44,6 +44,18 @@ every `WebView2` permission request before profile or OS prompting and sends a
 typed `permission_denied` status back to the page. Close the window or press
 Escape to complete the bounded session.
 
+To inspect the rendered permission page without relying on desktop compositor
+capture, pass an absolute PNG path to the capture role:
+
+```powershell
+cargo run --locked -p metis-app -- --metis-webview-permission-probe-capture C:\captures\metis-permission-probe.png 60 2 0.2
+```
+
+The `WebView2` host writes the page-owned `CapturePreview` PNG once, then keeps
+the same bounded interactive session until the window closes or Escape is
+pressed. The role does not grant the requested capability or move permission
+policy into application code.
+
 The same executable can serve one authenticated browser session through the
 bounded loopback WebSocket role:
 

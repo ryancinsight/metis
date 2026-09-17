@@ -3,6 +3,7 @@ use crate::{
     entropy,
     invocation::{
         BrowserResponseDelay, FRONTEND_ROLE, NATIVE_FRONTEND_ROLE, WEBVIEW_FRONTEND_ROLE,
+        WEBVIEW_PERMISSION_PROBE_CAPTURE_FRONTEND_ROLE, WEBVIEW_PERMISSION_PROBE_FRONTEND_ROLE,
     },
 };
 use metis_backend::UiFragmentPlugin;
@@ -19,17 +20,17 @@ use metis_core::host::{HostContext, HostOrigin, HostPolicy, HostSessionId, Windo
 use metis_core::protocol::TargetCapability;
 use moirai_async::net::TcpListener;
 use moirai_http::{HttpServer, ServerConfig, WebSocketConfig};
-use std::time::Duration;
+use std::{path::PathBuf, time::Duration};
 
 pub(crate) fn run(inputs: [String; 3]) -> Result<(), Box<dyn std::error::Error>> {
-    run_with_mode(inputs, FrontendMode::Headless)
+    run_with_mode(inputs, &FrontendMode::Headless)
 }
 
 /// Runs the same supervised workflow with the Windows native frontend.
 pub(crate) fn run_native(inputs: [String; 3]) -> Result<(), Box<dyn std::error::Error>> {
     #[cfg(windows)]
     {
-        run_with_mode(inputs, FrontendMode::NativeWindow)
+        run_with_mode(inputs, &FrontendMode::NativeWindow)
     }
     #[cfg(not(windows))]
     {
@@ -42,7 +43,7 @@ pub(crate) fn run_native(inputs: [String; 3]) -> Result<(), Box<dyn std::error::
 pub(crate) fn run_webview(inputs: [String; 3]) -> Result<(), Box<dyn std::error::Error>> {
     #[cfg(windows)]
     {
-        run_with_mode(inputs, FrontendMode::WebView)
+        run_with_mode(inputs, &FrontendMode::WebView)
     }
     #[cfg(not(windows))]
     {
@@ -51,42 +52,95 @@ pub(crate) fn run_webview(inputs: [String; 3]) -> Result<(), Box<dyn std::error:
     }
 }
 
-#[derive(Clone, Copy)]
+/// Runs the supervised `WebView2` permission-denial demonstration.
+pub(crate) fn run_webview_permission_probe(
+    inputs: [String; 3],
+) -> Result<(), Box<dyn std::error::Error>> {
+    #[cfg(windows)]
+    {
+        run_with_mode(inputs, &FrontendMode::WebViewPermissionProbe)
+    }
+    #[cfg(not(windows))]
+    {
+        let _ = inputs;
+        Err("the WebView2 permission-probe role requires Windows".into())
+    }
+}
+
+/// Runs the permission probe and saves a WebView2-owned PNG preview.
+pub(crate) fn run_webview_permission_probe_capture(
+    output: PathBuf,
+    inputs: [String; 3],
+) -> Result<(), Box<dyn std::error::Error>> {
+    #[cfg(windows)]
+    {
+        run_with_mode(inputs, &FrontendMode::WebViewPermissionProbeCapture(output))
+    }
+    #[cfg(not(windows))]
+    {
+        let _ = (output, inputs);
+        Err("the WebView2 permission-probe capture role requires Windows".into())
+    }
+}
+
 enum FrontendMode {
     Headless,
     NativeWindow,
     WebView,
+    WebViewPermissionProbe,
+    WebViewPermissionProbeCapture(PathBuf),
 }
 
 fn run_with_mode(
     inputs: [String; 3],
-    mode: FrontendMode,
+    mode: &FrontendMode,
 ) -> Result<(), Box<dyn std::error::Error>> {
     // Binary reporter boundary erases errors; no hot-path dispatch.
     let executable = std::env::current_exe()?;
     let mut service = BackendService::new(entropy::session_key()?, SafetyEnvelope::default());
     service.add_target_capability(TargetCapability::PrivateProcessIpc)?;
-    let (frontend_role, native_capability, deadline) = match mode {
-        FrontendMode::Headless => (FRONTEND_ROLE, None, SESSION_DEADLINE),
+    let (frontend_role, native_capability, deadline, capture_output) = match mode {
+        FrontendMode::Headless => (FRONTEND_ROLE, None, SESSION_DEADLINE, None),
         FrontendMode::NativeWindow => (
             NATIVE_FRONTEND_ROLE,
             Some(TargetCapability::NativeWindow),
             INTERACTIVE_SESSION_DEADLINE,
+            None,
         ),
         FrontendMode::WebView => (
             WEBVIEW_FRONTEND_ROLE,
             Some(TargetCapability::NativeWindow),
             INTERACTIVE_SESSION_DEADLINE,
+            None,
+        ),
+        FrontendMode::WebViewPermissionProbe => (
+            WEBVIEW_PERMISSION_PROBE_FRONTEND_ROLE,
+            Some(TargetCapability::NativeWindow),
+            INTERACTIVE_SESSION_DEADLINE,
+            None,
+        ),
+        FrontendMode::WebViewPermissionProbeCapture(output) => (
+            WEBVIEW_PERMISSION_PROBE_CAPTURE_FRONTEND_ROLE,
+            Some(TargetCapability::NativeWindow),
+            INTERACTIVE_SESSION_DEADLINE,
+            Some(output),
         ),
     };
     if let Some(capability) = native_capability {
         service.add_target_capability(capability)?;
     }
     let [weight, concentration, dose] = inputs;
-    let arguments = [frontend_role.to_owned(), weight, concentration, dose];
+    let mut arguments = Vec::with_capacity(if capture_output.is_some() { 5 } else { 4 });
+    arguments.push(frontend_role.to_owned());
+    if let Some(output) = capture_output {
+        arguments.push(output.to_string_lossy().into_owned());
+    }
+    arguments.extend([weight, concentration, dose]);
     eprintln!("backend_pid={}", std::process::id());
     let environment = match mode {
-        FrontendMode::WebView => ProcessEnvironment::Runtime,
+        FrontendMode::WebView
+        | FrontendMode::WebViewPermissionProbe
+        | FrontendMode::WebViewPermissionProbeCapture(_) => ProcessEnvironment::Runtime,
         FrontendMode::Headless | FrontendMode::NativeWindow => ProcessEnvironment::Isolated,
     };
     run_session_with_deadline_and_environment(

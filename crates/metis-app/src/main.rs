@@ -28,6 +28,16 @@ fn run() -> Result<(), Box<dyn std::error::Error>> {
         Invocation::Frontend(inputs) => frontend::run(inputs),
         Invocation::NativeFrontend(inputs) => frontend::run_native(inputs),
         Invocation::WebViewFrontend(inputs) => frontend::run_webview(inputs),
+        Invocation::WebViewPermissionProbe(inputs) => backend::run_webview_permission_probe(inputs),
+        Invocation::WebViewPermissionProbeFrontend(inputs) => {
+            frontend::run_webview_permission_probe(inputs)
+        }
+        Invocation::WebViewPermissionProbeCapture { output, inputs } => {
+            backend::run_webview_permission_probe_capture(output, inputs)
+        }
+        Invocation::WebViewPermissionProbeCaptureFrontend { output, inputs } => {
+            frontend::run_webview_permission_probe_capture(&output, inputs)
+        }
         Invocation::BrowserService {
             origin,
             port,

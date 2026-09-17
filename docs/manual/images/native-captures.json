@@ -66,6 +66,28 @@
         "Rate 0.36 mL/hour; drug 0.72 mg/hour; audit 2"
       ],
       "sha256": "C6C3F41DA0ACD737BC13D857A7EF913AD379FFD933F2B5AF418B95033715B8C1"
+    },
+    {
+      "id": "webview_permission_probe",
+      "image": "native-permission-probe.png",
+      "source_revision": "285322892aca245faf3962d57838682dd6689d77",
+      "provider_revision": "d324018efa3b67d2b92350a4e3c781d179019014",
+      "captured_at": "2026-09-17T13:14:48-04:00",
+      "runtime": {
+        "target": "x86_64-pc-windows-msvc",
+        "webview2": "153.0.4234.32",
+        "timezone": "America/New_York"
+      },
+      "client_size": [1024, 768],
+      "launch": "metis-app --metis-webview-permission-probe-capture <absolute-output> 60 2 0.2",
+      "input": "WebView2 CapturePreview from packaged permission probe",
+      "observed": [
+        "Metis permission probe",
+        "Host bridge connected; requesting geolocation for a denial probe.",
+        "permission_denied: WebView2 denied geolocation access request [0x200f]"
+      ],
+      "sha256": "a9df158ff6a167ed3c708e9621a44446cae93b3c0d87e646c818601606a33b8f",
+      "bytes": 6561
     }
   ]
 }
