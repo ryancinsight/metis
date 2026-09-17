@@ -45,7 +45,7 @@ const focus_candidates = Array.from(root.querySelectorAll(
   element.getAttribute("tabindex") !== "-1" &&
   element.matches(":disabled") !== true &&
   is_visible(element)
-));
+);
 if (focus_candidates.length === 0) {
   return {ok: false, error: "no visible enabled focusable controls"};
 }
