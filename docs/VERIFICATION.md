@@ -2661,6 +2661,16 @@ production lifecycle and capability surface; it does not replace the V12
 used-memory, allocation, latency, compositor or real-GPU visual measurements,
 which remain unclaimed.
 
+The standalone `scripts/browser_input_latency.py` instrument now measures a
+real trusted click on a caller-selected stable control through the next
+`requestAnimationFrame` callback. It records every bounded sample, the
+mean/population spread/minimum/maximum and the exact browser revision in a
+schema-1 trace. Its focused contract tests cover trusted-event validation,
+timestamp consistency, selector/sample/time bounds, listener cleanup and
+closed-session output. The trace is a browser boundary measurement only;
+compositor, GPU, operating-system, native-window and matched-framework
+latencies remain separate evidence requirements.
+
 Input traces and workload sizes are fixed before comparison, chosen to exercise
 the relevant working-set regimes under the committed budget. Profile production
 paths before optimizing; preserve the instrument across comparisons. Inject
