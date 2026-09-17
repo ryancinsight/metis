@@ -15,92 +15,18 @@ use std::{
     time::Duration,
 };
 
+mod assets;
+
+use assets::{
+    APP_JS, INDEX_HTML, PERMISSION_PROBE_APP_JS, PERMISSION_PROBE_INDEX_HTML, STYLES_CSS,
+};
+
 const INITIAL_WIDTH: u32 = 1024;
 const INITIAL_HEIGHT: u32 = 768;
 const EVENT_WAIT: Duration = Duration::from_millis(250);
 const MAX_PATIENT_ID_BYTES: usize = 128;
 const MAX_PACKAGE_ATTEMPTS: u32 = 8;
 const ESCAPE_KEY: u32 = 0x1b;
-
-const INDEX_HTML: &str = r#"<!doctype html>
-<html lang="en">
-<head>
-  <meta charset="utf-8">
-  <meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'self'; style-src 'self'; img-src 'none'; font-src 'none'; media-src 'none'; connect-src 'none'; object-src 'none'; frame-src 'none'; child-src 'none'; worker-src 'none'; manifest-src 'none'; form-action 'none'; base-uri 'none'">
-  <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>Metis WebView2 form</title>
-  <link rel="stylesheet" href="./styles.css">
-</head>
-<body>
-  <main>
-    <h1>Metis clinical calculation</h1>
-    <p id="host-status" role="status" aria-live="polite">Waiting for the host bridge.</p>
-    <form id="calculation" novalidate>
-      <label>Patient reference <input id="patient-id" name="patient_id" value="demo" maxlength="128" autocomplete="off" required></label>
-      <label>Weight (kg) <input id="weight" name="weight_kg" type="number" min="0" step="any" value="60" required></label>
-      <label>Concentration (mg/mL) <input id="concentration" name="concentration_mg_ml" type="number" min="0" step="any" value="2" required></label>
-      <label>Target dose (mcg/kg/min) <input id="dose" name="target_dose_mcg_kg_min" type="number" min="0" step="any" value="0.2" required></label>
-      <button type="submit">Submit calculation</button>
-    </form>
-    <p id="result" role="status" aria-live="polite">No calculation submitted.</p>
-  </main>
-  <script src="./app.js" defer></script>
-</body>
-</html>
-"#;
-
-const STYLES_CSS: &str = r":root { color-scheme: dark; font-family: system-ui, sans-serif; background: #0f172a; color: #e2e8f0; }
-body { margin: 0; min-width: 320px; }
-main { box-sizing: border-box; width: min(100% - 2rem, 52rem); margin: 0 auto; padding: 2rem 0; }
-h1 { color: #67e8f9; }
-form { display: grid; gap: 1rem; padding: 1.25rem; border: 1px solid #334155; border-radius: 0.75rem; background: #1e293b; }
-label { display: grid; gap: 0.35rem; color: #bae6fd; }
-input { box-sizing: border-box; min-height: 2.75rem; border: 1px solid #64748b; border-radius: 0.4rem; background: #0f172a; color: #f8fafc; padding: 0.65rem; font: inherit; }
-button { min-height: 2.75rem; border: 0; border-radius: 0.4rem; background: #0891b2; color: #ecfeff; padding: 0.7rem 1rem; font: inherit; font-weight: 700; }
-button:disabled { background: #64748b; cursor: not-allowed; }
-input:focus-visible, button:focus-visible { outline: 3px solid #facc15; outline-offset: 2px; }
-#host-status, #result { min-height: 1.5rem; color: #bae6fd; }
-";
-
-const APP_JS: &str = r"const form = document.getElementById('calculation');
-const status = document.getElementById('host-status');
-const result = document.getElementById('result');
-const bridge = window.chrome && window.chrome.webview;
-
-function showError(message) {
-  result.textContent = message;
-  form.querySelector('button').disabled = false;
-}
-
-if (!bridge) {
-  showError('WebView2 bridge is unavailable.');
-  status.textContent = 'Host bridge unavailable';
-} else {
-  status.textContent = 'Host bridge connected; backend authority remains outside the page.';
-  bridge.addEventListener('message', (event) => {
-    const message = typeof event.data === 'string' ? JSON.parse(event.data) : event.data;
-    if (!message || !['result', 'error'].includes(message.type)) return;
-    if (message.type === 'result' && message.status === 'success') {
-      result.textContent = `Rate ${message.rate_ml_hr} mL/hour; drug ${message.drug_rate_mg_hr} mg/hour; audit ${message.audit_sequence_id}`;
-    } else {
-      showError(`${message.status}: ${message.message} [0x${message.error_code.toString(16).padStart(4, '0')}]`);
-    }
-    form.querySelector('button').disabled = false;
-  });
-  form.addEventListener('submit', (event) => {
-    event.preventDefault();
-    form.querySelector('button').disabled = true;
-    result.textContent = 'Submitting to the supervised backend…';
-    bridge.postMessage({
-      action: 'submit',
-      patient_id: document.getElementById('patient-id').value,
-      weight_kg: Number(document.getElementById('weight').value),
-      concentration_mg_ml: Number(document.getElementById('concentration').value),
-      target_dose_mcg_kg_min: Number(document.getElementById('dose').value),
-    });
-  });
-}
-";
 
 #[derive(Debug, Deserialize, PartialEq)]
 #[serde(deny_unknown_fields)]
@@ -139,18 +65,34 @@ struct Package {
     root: PathBuf,
 }
 
+#[derive(Clone, Copy)]
+enum Page {
+    Form,
+    PermissionProbe,
+}
+
+impl Page {
+    fn assets(self) -> (&'static str, &'static str) {
+        match self {
+            Self::Form => (INDEX_HTML, APP_JS),
+            Self::PermissionProbe => (PERMISSION_PROBE_INDEX_HTML, PERMISSION_PROBE_APP_JS),
+        }
+    }
+}
+
 impl Package {
-    fn create() -> io::Result<Self> {
+    fn create(page: Page) -> io::Result<Self> {
         let base = std::env::temp_dir();
         let process = std::process::id();
+        let (index, script) = page.assets();
         for attempt in 0..MAX_PACKAGE_ATTEMPTS {
             let root = base.join(format!("metis-webview-{process}-{attempt}"));
             match fs::create_dir(&root) {
                 Ok(()) => {
                     let result = (|| {
-                        fs::write(root.join("index.html"), INDEX_HTML)?;
+                        fs::write(root.join("index.html"), index)?;
                         fs::write(root.join("styles.css"), STYLES_CSS)?;
-                        fs::write(root.join("app.js"), APP_JS)?;
+                        fs::write(root.join("app.js"), script)?;
                         Ok(())
                     })();
                     return match result {
@@ -180,6 +122,27 @@ impl Package {
 
 /// Runs the visible `WebView2` form over the supervised private pipe.
 pub(crate) fn run(inputs: [String; 3]) -> Result<(), Box<dyn std::error::Error>> {
+    run_with_page(inputs, Page::Form, None)
+}
+
+/// Runs a visible `WebView2` page that requests a denied browser capability.
+pub(crate) fn run_permission_probe(inputs: [String; 3]) -> Result<(), Box<dyn std::error::Error>> {
+    run_with_page(inputs, Page::PermissionProbe, None)
+}
+
+/// Runs the permission probe and writes a WebView2-owned PNG preview.
+pub(crate) fn run_permission_probe_capture(
+    inputs: [String; 3],
+    output: &Path,
+) -> Result<(), Box<dyn std::error::Error>> {
+    run_with_page(inputs, Page::PermissionProbe, Some(output))
+}
+
+fn run_with_page(
+    inputs: [String; 3],
+    page: Page,
+    capture_output: Option<&Path>,
+) -> Result<(), Box<dyn std::error::Error>> {
     let [weight, concentration, dose] = inputs;
     let transport = StreamTransport::new(stdin(), stdout());
     let mut app = FrontendApp::new(transport, INITIAL_WIDTH, INITIAL_HEIGHT)?;
@@ -194,7 +157,7 @@ pub(crate) fn run(inputs: [String; 3]) -> Result<(), Box<dyn std::error::Error>>
         dose.parse()?,
     )?;
 
-    let package = Package::create()?;
+    let package = Package::create(page)?;
     let uri = match package.entry_uri() {
         Ok(uri) => uri,
         Err(error) => return Err(package_failure(package, error).into()),
@@ -217,14 +180,16 @@ pub(crate) fn run(inputs: [String; 3]) -> Result<(), Box<dyn std::error::Error>>
         Err(error) => return Err(package_failure(package, error).into()),
     };
     eprintln!("webview_frontend_pid={pid} window={INITIAL_WIDTH}x{INITIAL_HEIGHT}");
-    let result = run_event_loop(&mut app, &mut surface);
+    let result = run_event_loop(&mut app, &mut surface, capture_output);
     finish(result, &mut surface, package)
 }
 
 fn run_event_loop<T: IpcTransport>(
     app: &mut FrontendApp<T>,
     surface: &mut WebViewSurface,
+    capture_output: Option<&Path>,
 ) -> Result<()> {
+    let mut captured = false;
     loop {
         let events = surface.wait_events(EVENT_WAIT)?;
         for event in events {
@@ -286,6 +251,26 @@ fn run_event_loop<T: IpcTransport>(
                 }
                 WebViewHostEvent::Window(_) | WebViewHostEvent::WebView(_) => {}
             }
+        }
+        if !captured && let Some(output) = capture_output {
+            let bytes = surface.capture_preview_png().map_err(|error| {
+                MetisError::protocol(
+                    ErrorCode::TransportBroken,
+                    format!("WebView2 preview capture failed: {error}"),
+                )
+            })?;
+            fs::write(output, &bytes).map_err(|error| {
+                MetisError::protocol(
+                    ErrorCode::TransportBroken,
+                    format!("WebView2 preview output write failed: {error}"),
+                )
+            })?;
+            eprintln!(
+                "webview_preview_path={} webview_preview_bytes={}",
+                output.display(),
+                bytes.len()
+            );
+            captured = true;
         }
     }
 }

@@ -1,7 +1,10 @@
 //! One headless form submission over inherited pipes; stdout is wire bytes only.
 use metis_frontend::{FormState, FrontendApp};
 use metis_ipc::transport::StreamTransport;
-use std::io::{stdin, stdout};
+use std::{
+    io::{stdin, stdout},
+    path::Path,
+};
 
 #[cfg(windows)]
 mod native;
@@ -31,6 +34,37 @@ pub(crate) fn run_webview(inputs: [String; 3]) -> Result<(), Box<dyn std::error:
     {
         let _ = inputs;
         Err("the WebView2 frontend role requires Windows".into())
+    }
+}
+
+/// Runs the visible Windows `WebView2` permission-denial probe.
+pub(crate) fn run_webview_permission_probe(
+    inputs: [String; 3],
+) -> Result<(), Box<dyn std::error::Error>> {
+    #[cfg(windows)]
+    {
+        webview::run_permission_probe(inputs)
+    }
+    #[cfg(not(windows))]
+    {
+        let _ = inputs;
+        Err("the WebView2 permission-probe frontend requires Windows".into())
+    }
+}
+
+/// Runs the visible Windows `WebView2` permission probe and saves its page.
+pub(crate) fn run_webview_permission_probe_capture(
+    output: &Path,
+    inputs: [String; 3],
+) -> Result<(), Box<dyn std::error::Error>> {
+    #[cfg(windows)]
+    {
+        webview::run_permission_probe_capture(inputs, output)
+    }
+    #[cfg(not(windows))]
+    {
+        let _ = (output, inputs);
+        Err("the WebView2 permission-probe capture frontend requires Windows".into())
     }
 }
 

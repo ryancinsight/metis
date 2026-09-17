@@ -7,9 +7,9 @@ use moirai_pal::windows::{
 use std::{io, time::Duration};
 
 pub use moirai_pal::windows::webview::{
-    MAX_WEBVIEW_EVENTS, MAX_WEBVIEW_MESSAGE_BYTES, MAX_WEBVIEW_MESSAGE_UNITS,
-    MAX_WEBVIEW_URI_UNITS, MAX_WEBVIEW_WAIT_MILLISECONDS, WebViewConfig, WebViewEvent,
-    WebViewHostEvent, WebViewPermission,
+    MAX_WEBVIEW_CAPTURE_BYTES, MAX_WEBVIEW_EVENTS, MAX_WEBVIEW_MESSAGE_BYTES,
+    MAX_WEBVIEW_MESSAGE_UNITS, MAX_WEBVIEW_URI_UNITS, MAX_WEBVIEW_WAIT_MILLISECONDS, WebViewConfig,
+    WebViewEvent, WebViewHostEvent, WebViewPermission,
 };
 
 /// A Metis desktop `WebView2` surface with a Moirai-owned parent window.
@@ -99,6 +99,18 @@ impl WebViewSurface {
     /// native-window or `WebView2` error.
     pub fn wait_events(&mut self, timeout: Duration) -> io::Result<Vec<WebViewHostEvent>> {
         self.host.wait_events(timeout)
+    }
+
+    /// Captures the rendered page as a bounded PNG from `WebView2`.
+    ///
+    /// The provider reads `WebView2`'s preview stream directly, so capture does
+    /// not depend on the parent window being visible to the desktop compositor.
+    ///
+    /// # Errors
+    /// Returns a closed-host, finite-wait, bounded-size, stream or native
+    /// `WebView2` error.
+    pub fn capture_preview_png(&self) -> io::Result<Vec<u8>> {
+        self.host.capture_preview_png()
     }
 
     /// Closes callbacks, the `WebView2` controller and the parent HWND.

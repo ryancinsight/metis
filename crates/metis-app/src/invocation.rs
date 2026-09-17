@@ -1,17 +1,24 @@
 //! Closed process roles; argument selection never grants session authority.
 
-use std::time::Duration;
+use std::{path::PathBuf, time::Duration};
 
 pub(crate) const FRONTEND_ROLE: &str = "--metis-frontend";
 pub(crate) const NATIVE_WINDOW_ROLE: &str = "--metis-native-window";
 pub(crate) const NATIVE_FRONTEND_ROLE: &str = "--metis-native-frontend";
 pub(crate) const WEBVIEW_ROLE: &str = "--metis-webview";
 pub(crate) const WEBVIEW_FRONTEND_ROLE: &str = "--metis-webview-frontend";
+pub(crate) const WEBVIEW_PERMISSION_PROBE_ROLE: &str = "--metis-webview-permission-probe";
+pub(crate) const WEBVIEW_PERMISSION_PROBE_FRONTEND_ROLE: &str =
+    "--metis-webview-permission-probe-frontend";
+pub(crate) const WEBVIEW_PERMISSION_PROBE_CAPTURE_ROLE: &str =
+    "--metis-webview-permission-probe-capture";
+pub(crate) const WEBVIEW_PERMISSION_PROBE_CAPTURE_FRONTEND_ROLE: &str =
+    "--metis-webview-permission-probe-capture-frontend";
 pub(crate) const BROWSER_SERVICE_ROLE: &str = "--metis-browser-service";
 pub(crate) const HTTP_SERVICE_ROLE: &str = "--metis-http-service";
 pub(crate) const RESPONSE_DELAY_FLAG: &str = "--response-delay-ms";
 const MAX_RESPONSE_DELAY_MILLISECONDS: u64 = 30_000;
-pub(crate) const USAGE: &str = "usage: metis-app WEIGHT_KG CONCENTRATION_MG_ML DOSE_MCG_KG_MIN\n       metis-app --metis-native-window WEIGHT_KG CONCENTRATION_MG_ML DOSE_MCG_KG_MIN\n       metis-app --metis-webview WEIGHT_KG CONCENTRATION_MG_ML DOSE_MCG_KG_MIN\n       metis-app --metis-browser-service ORIGIN PORT PRINCIPAL_HEX [--response-delay-ms MILLISECONDS]\n       metis-app --metis-http-service ORIGIN PORT PRINCIPAL_HEX [--response-delay-ms MILLISECONDS]\n       metis-app --help";
+pub(crate) const USAGE: &str = "usage: metis-app WEIGHT_KG CONCENTRATION_MG_ML DOSE_MCG_KG_MIN\n       metis-app --metis-native-window WEIGHT_KG CONCENTRATION_MG_ML DOSE_MCG_KG_MIN\n       metis-app --metis-webview WEIGHT_KG CONCENTRATION_MG_ML DOSE_MCG_KG_MIN\n       metis-app --metis-webview-permission-probe WEIGHT_KG CONCENTRATION_MG_ML DOSE_MCG_KG_MIN\n       metis-app --metis-webview-permission-probe-capture OUTPUT_PNG WEIGHT_KG CONCENTRATION_MG_ML DOSE_MCG_KG_MIN\n       metis-app --metis-browser-service ORIGIN PORT PRINCIPAL_HEX [--response-delay-ms MILLISECONDS]\n       metis-app --metis-http-service ORIGIN PORT PRINCIPAL_HEX [--response-delay-ms MILLISECONDS]\n       metis-app --help";
 
 /// Bounded delay used by the browser stale-response conformance probe.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -40,6 +47,16 @@ pub(crate) enum Invocation {
     NativeFrontend([String; 3]),
     WebView([String; 3]),
     WebViewFrontend([String; 3]),
+    WebViewPermissionProbe([String; 3]),
+    WebViewPermissionProbeFrontend([String; 3]),
+    WebViewPermissionProbeCapture {
+        output: PathBuf,
+        inputs: [String; 3],
+    },
+    WebViewPermissionProbeCaptureFrontend {
+        output: PathBuf,
+        inputs: [String; 3],
+    },
     BrowserService {
         origin: String,
         port: u16,
@@ -84,73 +101,117 @@ impl Invocation {
             };
         }
         if first == BROWSER_SERVICE_ROLE || first == HTTP_SERVICE_ROLE {
-            let origin = arguments.next().ok_or(InvocationError)??;
-            let port = arguments
-                .next()
-                .ok_or(InvocationError)??
-                .parse::<u16>()
-                .ok()
-                .filter(|port| *port != 0)
-                .ok_or(InvocationError)?;
-            let principal = parse_principal(&arguments.next().ok_or(InvocationError)??)?;
-            let response_delay = match arguments.next() {
-                None => None,
-                Some(flag) => {
-                    if flag? != RESPONSE_DELAY_FLAG {
-                        return Err(InvocationError);
-                    }
-                    Some(BrowserResponseDelay::parse(
-                        &arguments.next().ok_or(InvocationError)??,
-                    )?)
-                }
-            };
-            if arguments.next().is_some() {
+            return parse_service(&first, &mut arguments);
+        }
+        parse_role(first, &mut arguments)
+    }
+}
+
+fn parse_service(
+    role: &str,
+    arguments: &mut impl Iterator<Item = Result<String, InvocationError>>,
+) -> Result<Invocation, InvocationError> {
+    let origin = arguments.next().ok_or(InvocationError)??;
+    let port = arguments
+        .next()
+        .ok_or(InvocationError)??
+        .parse::<u16>()
+        .ok()
+        .filter(|port| *port != 0)
+        .ok_or(InvocationError)?;
+    let principal = parse_principal(&arguments.next().ok_or(InvocationError)??)?;
+    let response_delay = match arguments.next() {
+        None => None,
+        Some(flag) => {
+            if flag? != RESPONSE_DELAY_FLAG {
                 return Err(InvocationError);
             }
-            return if first == BROWSER_SERVICE_ROLE {
-                Ok(Self::BrowserService {
-                    origin,
-                    port,
-                    principal,
-                    response_delay,
-                })
-            } else {
-                Ok(Self::HttpService {
-                    origin,
-                    port,
-                    principal,
-                    response_delay,
-                })
-            };
+            Some(BrowserResponseDelay::parse(
+                &arguments.next().ok_or(InvocationError)??,
+            )?)
         }
-        let role = match first.as_str() {
-            FRONTEND_ROLE => InputRole::Frontend,
-            NATIVE_WINDOW_ROLE => InputRole::NativeWindow,
-            NATIVE_FRONTEND_ROLE => InputRole::NativeFrontend,
-            WEBVIEW_ROLE => InputRole::WebView,
-            WEBVIEW_FRONTEND_ROLE => InputRole::WebViewFrontend,
-            _ => InputRole::Backend,
-        };
-        let weight = if role == InputRole::Backend {
-            first
-        } else {
-            arguments.next().ok_or(InvocationError)??
-        };
-        let concentration = arguments.next().ok_or(InvocationError)??;
-        let dose = arguments.next().ok_or(InvocationError)??;
-        let inputs = [weight, concentration, dose];
-        if arguments.next().is_some() || inputs.iter().any(|input| input.starts_with("--")) {
-            return Err(InvocationError);
-        }
-        Ok(match role {
-            InputRole::Backend => Self::Backend(inputs),
-            InputRole::Frontend => Self::Frontend(inputs),
-            InputRole::NativeWindow => Self::NativeWindow(inputs),
-            InputRole::NativeFrontend => Self::NativeFrontend(inputs),
-            InputRole::WebView => Self::WebView(inputs),
-            InputRole::WebViewFrontend => Self::WebViewFrontend(inputs),
+    };
+    if arguments.next().is_some() {
+        return Err(InvocationError);
+    }
+    if role == BROWSER_SERVICE_ROLE {
+        Ok(Invocation::BrowserService {
+            origin,
+            port,
+            principal,
+            response_delay,
+        })
+    } else {
+        Ok(Invocation::HttpService {
+            origin,
+            port,
+            principal,
+            response_delay,
         })
     }
+}
+
+fn parse_role(
+    first: String,
+    arguments: &mut impl Iterator<Item = Result<String, InvocationError>>,
+) -> Result<Invocation, InvocationError> {
+    let role = match first.as_str() {
+        FRONTEND_ROLE => InputRole::Frontend,
+        NATIVE_WINDOW_ROLE => InputRole::NativeWindow,
+        NATIVE_FRONTEND_ROLE => InputRole::NativeFrontend,
+        WEBVIEW_ROLE => InputRole::WebView,
+        WEBVIEW_FRONTEND_ROLE => InputRole::WebViewFrontend,
+        WEBVIEW_PERMISSION_PROBE_ROLE => InputRole::WebViewPermissionProbe,
+        WEBVIEW_PERMISSION_PROBE_FRONTEND_ROLE => InputRole::WebViewPermissionProbeFrontend,
+        WEBVIEW_PERMISSION_PROBE_CAPTURE_ROLE => InputRole::WebViewPermissionProbeCapture,
+        WEBVIEW_PERMISSION_PROBE_CAPTURE_FRONTEND_ROLE => {
+            InputRole::WebViewPermissionProbeCaptureFrontend
+        }
+        _ => InputRole::Backend,
+    };
+    let capture_output = if matches!(
+        role,
+        InputRole::WebViewPermissionProbeCapture | InputRole::WebViewPermissionProbeCaptureFrontend
+    ) {
+        Some(parse_capture_output(
+            &arguments.next().ok_or(InvocationError)??,
+        )?)
+    } else {
+        None
+    };
+    let weight = if role == InputRole::Backend {
+        first
+    } else {
+        arguments.next().ok_or(InvocationError)??
+    };
+    let concentration = arguments.next().ok_or(InvocationError)??;
+    let dose = arguments.next().ok_or(InvocationError)??;
+    let inputs = [weight, concentration, dose];
+    if arguments.next().is_some() || inputs.iter().any(|input| input.starts_with("--")) {
+        return Err(InvocationError);
+    }
+    Ok(match role {
+        InputRole::Backend => Invocation::Backend(inputs),
+        InputRole::Frontend => Invocation::Frontend(inputs),
+        InputRole::NativeWindow => Invocation::NativeWindow(inputs),
+        InputRole::NativeFrontend => Invocation::NativeFrontend(inputs),
+        InputRole::WebView => Invocation::WebView(inputs),
+        InputRole::WebViewFrontend => Invocation::WebViewFrontend(inputs),
+        InputRole::WebViewPermissionProbe => Invocation::WebViewPermissionProbe(inputs),
+        InputRole::WebViewPermissionProbeFrontend => {
+            Invocation::WebViewPermissionProbeFrontend(inputs)
+        }
+        InputRole::WebViewPermissionProbeCapture => Invocation::WebViewPermissionProbeCapture {
+            output: capture_output.expect("invariant: capture role has an output path"),
+            inputs,
+        },
+        InputRole::WebViewPermissionProbeCaptureFrontend => {
+            Invocation::WebViewPermissionProbeCaptureFrontend {
+                output: capture_output.expect("invariant: capture role has an output path"),
+                inputs,
+            }
+        }
+    })
 }
 
 #[derive(Clone, Copy, PartialEq, Eq)]
@@ -161,6 +222,26 @@ enum InputRole {
     NativeFrontend,
     WebView,
     WebViewFrontend,
+    WebViewPermissionProbe,
+    WebViewPermissionProbeFrontend,
+    WebViewPermissionProbeCapture,
+    WebViewPermissionProbeCaptureFrontend,
+}
+
+fn parse_capture_output(value: &str) -> Result<PathBuf, InvocationError> {
+    let path = PathBuf::from(value);
+    let units = value.encode_utf16().count();
+    if value.is_empty()
+        || units > 2 * 1024
+        || !path.is_absolute()
+        || path.extension().and_then(|extension| extension.to_str()) != Some("png")
+        || path
+            .components()
+            .any(|component| matches!(component, std::path::Component::ParentDir))
+    {
+        return Err(InvocationError);
+    }
+    Ok(path)
 }
 
 fn parse_principal(value: &str) -> Result<[u8; 16], InvocationError> {
@@ -194,7 +275,9 @@ mod tests {
     use super::{
         BROWSER_SERVICE_ROLE, BrowserResponseDelay, FRONTEND_ROLE, HTTP_SERVICE_ROLE, Invocation,
         InvocationError, NATIVE_FRONTEND_ROLE, NATIVE_WINDOW_ROLE, RESPONSE_DELAY_FLAG,
-        WEBVIEW_FRONTEND_ROLE, WEBVIEW_ROLE,
+        WEBVIEW_FRONTEND_ROLE, WEBVIEW_PERMISSION_PROBE_CAPTURE_FRONTEND_ROLE,
+        WEBVIEW_PERMISSION_PROBE_CAPTURE_ROLE, WEBVIEW_PERMISSION_PROBE_FRONTEND_ROLE,
+        WEBVIEW_PERMISSION_PROBE_ROLE, WEBVIEW_ROLE,
     };
     use std::time::Duration;
 
@@ -294,6 +377,61 @@ mod tests {
     }
 
     #[test]
+    fn permission_probe_roles_preserve_values() {
+        let inputs = ["60".to_owned(), "2".to_owned(), "0.2".to_owned()];
+        assert_eq!(
+            Invocation::parse(
+                [WEBVIEW_PERMISSION_PROBE_ROLE.to_owned()]
+                    .into_iter()
+                    .chain(inputs.clone())
+            ),
+            Ok(Invocation::WebViewPermissionProbe(inputs.clone()))
+        );
+        assert_eq!(
+            Invocation::parse(
+                [WEBVIEW_PERMISSION_PROBE_FRONTEND_ROLE.to_owned()]
+                    .into_iter()
+                    .chain(inputs.clone())
+            ),
+            Ok(Invocation::WebViewPermissionProbeFrontend(inputs))
+        );
+    }
+
+    #[test]
+    fn permission_probe_capture_roles_preserve_output_and_values() {
+        let inputs = ["60".to_owned(), "2".to_owned(), "0.2".to_owned()];
+        let output = r"C:\captures\permission-probe.png";
+        assert_eq!(
+            Invocation::parse(
+                [
+                    WEBVIEW_PERMISSION_PROBE_CAPTURE_ROLE.to_owned(),
+                    output.to_owned()
+                ]
+                .into_iter()
+                .chain(inputs.clone())
+            ),
+            Ok(Invocation::WebViewPermissionProbeCapture {
+                output: output.into(),
+                inputs: inputs.clone(),
+            })
+        );
+        assert_eq!(
+            Invocation::parse(
+                [
+                    WEBVIEW_PERMISSION_PROBE_CAPTURE_FRONTEND_ROLE.to_owned(),
+                    output.to_owned(),
+                ]
+                .into_iter()
+                .chain(inputs.clone())
+            ),
+            Ok(Invocation::WebViewPermissionProbeCaptureFrontend {
+                output: output.into(),
+                inputs,
+            })
+        );
+    }
+
+    #[test]
     fn http_service_accepts_bounded_response_delay() {
         assert_eq!(
             Invocation::parse([
@@ -322,10 +460,32 @@ mod tests {
             vec![NATIVE_FRONTEND_ROLE],
             vec![WEBVIEW_ROLE],
             vec![WEBVIEW_FRONTEND_ROLE],
+            vec![WEBVIEW_PERMISSION_PROBE_ROLE],
+            vec![WEBVIEW_PERMISSION_PROBE_FRONTEND_ROLE],
+            vec![WEBVIEW_PERMISSION_PROBE_CAPTURE_ROLE],
+            vec![WEBVIEW_PERMISSION_PROBE_CAPTURE_FRONTEND_ROLE],
             vec!["--unknown", "2", "0.2"],
             vec![FRONTEND_ROLE, FRONTEND_ROLE, "2", "0.2"],
             vec![NATIVE_WINDOW_ROLE, NATIVE_FRONTEND_ROLE, "2", "0.2"],
             vec![WEBVIEW_ROLE, WEBVIEW_FRONTEND_ROLE, "2", "0.2"],
+            vec![
+                WEBVIEW_PERMISSION_PROBE_ROLE,
+                WEBVIEW_PERMISSION_PROBE_FRONTEND_ROLE,
+                "2",
+                "0.2",
+            ],
+            vec![
+                WEBVIEW_PERMISSION_PROBE_CAPTURE_ROLE,
+                r"C:\captures\permission-probe.png",
+                "2",
+                "0.2",
+            ],
+            vec![
+                WEBVIEW_PERMISSION_PROBE_CAPTURE_FRONTEND_ROLE,
+                r"C:\captures\permission-probe.png",
+                "2",
+                "0.2",
+            ],
             vec!["60", "2"],
             vec!["60", "2", "0.2", "extra"],
             vec!["60", "--metis-frontend", "0.2"],
