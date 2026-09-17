@@ -12,10 +12,12 @@ zero retries. The demonstration executable has a 60-second outer budget.
 The verification and mutation runners use `scripts/process_tree.py` to own
 their launched descendants. Windows assigns a held launcher to a kill-on-close
 Job Object before releasing the command; POSIX keeps a supervisor alive until
-group termination. Stage deadlines remain unchanged, with at most ten seconds
-for cleanup. Interrupted cleanup retains that deadline and cannot signal a
-process group after releasing its identity. File-backed output prevents an
-inherited pipe from blocking timeout reporting. Cleanup failures remain explicit.
+group termination. At the unchanged command deadline, the runner requests forced
+termination. Confirmation and reaping have at most ten additional seconds; a
+timed-out command remains a failure. Interrupted cleanup retains that deadline
+and cannot signal a process group after releasing its identity. File-backed
+output prevents an inherited pipe from blocking timeout reporting. Cleanup
+failures remain explicit.
 The focused subprocess tests run locally on Windows and in the Linux
 browser-assets job.
 
