@@ -268,6 +268,9 @@ class BrowserAssetContractTests(unittest.TestCase):
             '"compositionend"',
             '"compositioncancel"',
             '"select"',
+            '"keyup"',
+            'keyboard_metadata',
+            'apply_navigation',
         ):
             self.assertIn(event_name, listeners)
         for selector in (

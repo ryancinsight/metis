@@ -1103,17 +1103,17 @@ python scripts/browser.py build — passed
 
 The native policy suite covers an accented character and emoji UTF-16 span,
 scalar and extended-grapheme boundary rejection, selection ordering and bounds,
-forward/backward/unknown direction labels,
-input metadata rejection without state mutation, and composition start/update,
-commit and cancellation. The generated page renders a labelled textarea,
-separate text/composition/selection status regions, a bounded value preview and
-selection/composition data attributes. A CUA trace can inspect those semantic
-nodes and the focus ring; it cannot synthesize a trusted operating-system IME
-or expose the browser `isTrusted` flag. The trace therefore establishes the
-HTML/WASM rendering and listener surface only. Browser caret movement, bidi
-shaping, line metrics, fallback-font metrics, clipboard/undo, assistive
-technology and native IME evidence remain open under `METIS-TEXT-001` and
-`METIS-A11Y-001`.
+forward/backward/unknown direction labels, input metadata rejection without
+state mutation, composition start/update/commit/cancellation and the closed
+navigation-key set. The generated page renders a labelled textarea, separate
+text/composition/selection status regions, a bounded value preview and
+selection/composition data attributes. The 2026-09-17 listener increment also
+records post-default navigation selections and validates them before rendering
+the navigation status. A CUA trace can inspect those semantic nodes and the
+focus ring; it cannot synthesize a trusted operating-system IME or expose the
+browser `isTrusted` flag. Bidi shaping, line metrics, fallback-font metrics,
+clipboard/undo, assistive technology and native IME evidence remain open under
+`METIS-TEXT-001` and `METIS-A11Y-001`.
 
 The 2026-09-08 CUA trace opened
 `http://127.0.0.1:8095/?cache=text-clean-20260908` at 1280×720 CSS pixels and
@@ -1124,6 +1124,41 @@ appended ` typedX`; the observed value became `Résumé — 東京 / 影像 type
 `selection-status` reported a `23`-unit forward caret. This validates ordinary
 browser input and Rust/WASM state updates; it does not claim native IME,
 trusted hardware input, or cross-engine behavior.
+
+## Browser text navigation evidence — 2026-09-17
+
+The navigation increment keeps the browser's default editing action and adds a
+Rust-owned `keyup` observation for `ArrowLeft`, `ArrowRight`, `ArrowUp`,
+`ArrowDown`, `Home`, `End`, `PageUp` and `PageDown`. The listener reads the
+post-default UTF-16 selection through Moirai, rejects scalar or extended-
+grapheme splits without mutating `TextState`, and renders the key, selection
+coordinates and `data-text-state="navigated"` marker.
+
+Focused checks against the standalone lock on the pinned toolchain passed:
+
+```text
+cargo nextest run --locked --offline -p metis-web --profile ci — 47/47 passed
+cargo clippy --locked --offline -p metis-web --all-targets -- -D warnings — passed
+cargo check --locked --offline -p metis-web --target wasm32-unknown-unknown — passed
+cargo clippy --locked --offline -p metis-web --target wasm32-unknown-unknown -- -D warnings — passed
+python -m unittest scripts.tests.test_browser_assets — 13/13 passed
+```
+
+The listener does not call `prevent_default`; navigation remains browser-native
+and the Rust state records the resulting selection. No bidi shaping, line
+geometry, clipboard/undo, native IME or assistive-technology claim follows
+from this policy or these focused checks.
+
+An interactive CUA smoke on 2026-09-17 opened the generated workbench at
+`http://127.0.0.1:8095/?cache=text-navigation-20260917` in a `1280×720` CSS
+viewport at device scale `1.25`. **Clinical note** accepted **End** followed by
+**ArrowLeft**; the seeded value remained `Résumé — 東京 / 影像`, the caret moved
+from offset `16` to `15`, the visible status became
+`Text: keyboard ArrowLeft moved selection`, and the focused textarea exposed
+`data-text-state="navigated"`. The screenshot showed the textarea, focus ring,
+status and selection line. This is local Chromium presentation evidence only;
+it does not establish bidi, line-metric, trusted IME or assistive-technology
+behavior.
 
 ## Browser responsive-layout evidence — 2026-09-08
 
@@ -1846,10 +1881,10 @@ screen readers and document results. Capture zoom/high-contrast/reduced-motion
 states; an accessibility-tree snapshot alone does not prove usability.
 
 Current browser evidence covers the Rust-owned textarea, bounded Unicode value,
-UTF-16 selection transport, extended-grapheme boundary rejection and
-composition lifecycle. It does not yet close browser caret movement, bidi/line
-metrics, clipboard/undo, native IME or assistive-technology acceptance; those
-remain explicit residuals.
+UTF-16 selection transport, extended-grapheme boundary rejection,
+post-default navigation selection snapshots and composition lifecycle. It does
+not yet close bidi/line metrics, clipboard/undo, native IME or
+assistive-technology acceptance; those remain explicit residuals.
 
 <a id="V04"></a>
 ### V04 — Responsive layout and clipping

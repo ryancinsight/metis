@@ -1,6 +1,51 @@
 use super::{
-    CompositionPhase, CompositionState, Selection, SelectionDirection, TextError, TextState,
+    CompositionPhase, CompositionState, NavigationKey, Selection, SelectionDirection, TextError,
+    TextState,
 };
+
+#[test]
+fn browser_navigation_keys_are_closed_and_format_neutral() {
+    assert_eq!(
+        NavigationKey::from_browser_key("ArrowLeft"),
+        Some(NavigationKey::ArrowLeft)
+    );
+    assert_eq!(
+        NavigationKey::from_browser_key("PageDown"),
+        Some(NavigationKey::PageDown)
+    );
+    assert_eq!(NavigationKey::from_browser_key("a"), None);
+}
+
+#[test]
+fn keyboard_navigation_records_the_browser_selection_after_default_action() {
+    let mut state = TextState::new("e\u{301}😀x".to_owned()).expect("Unicode value is bounded");
+    let selection =
+        Selection::new(2, 2, SelectionDirection::None).expect("cluster boundary is ordered");
+    state
+        .apply_navigation(NavigationKey::ArrowRight, selection)
+        .expect("browser selection remains on a grapheme boundary");
+    assert_eq!(state.selection(), selection);
+    assert_eq!(state.state_name(), "navigated");
+    assert_eq!(
+        state.text_status(),
+        "Text: keyboard ArrowRight moved selection"
+    );
+}
+
+#[test]
+fn keyboard_navigation_rejects_a_split_grapheme_without_mutation() {
+    let mut state = TextState::new("e\u{301}😀x".to_owned()).expect("Unicode value is bounded");
+    let before = state.clone();
+    let split =
+        Selection::new(1, 1, SelectionDirection::None).expect("selection ordering is valid");
+    assert_eq!(
+        state
+            .apply_navigation(NavigationKey::ArrowLeft, split)
+            .expect_err("navigation must preserve extended grapheme boundaries"),
+        TextError::SelectionSplitsGrapheme
+    );
+    assert_eq!(state, before);
+}
 
 #[test]
 fn unicode_values_preserve_utf16_selection_coordinates() {

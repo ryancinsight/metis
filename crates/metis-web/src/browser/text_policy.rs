@@ -96,6 +96,48 @@ enum TextEvent {
     Input,
     Composition(CompositionPhase),
     Selection,
+    Navigation(NavigationKey),
+}
+
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+pub(crate) enum NavigationKey {
+    ArrowLeft,
+    ArrowRight,
+    ArrowUp,
+    ArrowDown,
+    Home,
+    End,
+    PageUp,
+    PageDown,
+}
+
+impl NavigationKey {
+    pub(crate) fn from_browser_key(key: &str) -> Option<Self> {
+        match key {
+            "ArrowLeft" => Some(Self::ArrowLeft),
+            "ArrowRight" => Some(Self::ArrowRight),
+            "ArrowUp" => Some(Self::ArrowUp),
+            "ArrowDown" => Some(Self::ArrowDown),
+            "Home" => Some(Self::Home),
+            "End" => Some(Self::End),
+            "PageUp" => Some(Self::PageUp),
+            "PageDown" => Some(Self::PageDown),
+            _ => None,
+        }
+    }
+
+    const fn label(self) -> &'static str {
+        match self {
+            Self::ArrowLeft => "ArrowLeft",
+            Self::ArrowRight => "ArrowRight",
+            Self::ArrowUp => "ArrowUp",
+            Self::ArrowDown => "ArrowDown",
+            Self::Home => "Home",
+            Self::End => "End",
+            Self::PageUp => "PageUp",
+            Self::PageDown => "PageDown",
+        }
+    }
 }
 
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
@@ -191,6 +233,17 @@ impl TextState {
         Ok(())
     }
 
+    pub(crate) fn apply_navigation(
+        &mut self,
+        key: NavigationKey,
+        selection: Selection,
+    ) -> Result<(), TextError> {
+        validate_selection(&self.value, selection)?;
+        self.selection = selection;
+        self.last_event = TextEvent::Navigation(key);
+        Ok(())
+    }
+
     pub(crate) fn apply_composition(
         &mut self,
         phase: CompositionPhase,
@@ -247,6 +300,9 @@ impl TextState {
                 format!("Text: composition {}", phase.label())
             }
             TextEvent::Selection => "Text: selection updated".to_owned(),
+            TextEvent::Navigation(key) => {
+                format!("Text: keyboard {} moved selection", key.label())
+            }
         }
     }
 
@@ -293,6 +349,7 @@ impl TextState {
             (_, TextEvent::Ready) => "ready",
             (_, TextEvent::Input) => "editing",
             (_, TextEvent::Selection) => "selected",
+            (_, TextEvent::Navigation(_)) => "navigated",
             (_, TextEvent::Composition(_)) => "composition",
         }
     }

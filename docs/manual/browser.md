@@ -940,10 +940,26 @@ status reported `Text: input insertText applied; data X`, and the selection
 status reported a `23`-unit forward caret. This is ordinary browser input
 evidence; CUA does not expose a trusted operating-system IME or `isTrusted`.
 
+The 2026-09-17 CUA trace reopened the same page at
+`http://127.0.0.1:8095/?cache=text-navigation-20260917` in the same
+`1280×720` CSS-pixel viewport at device scale `1.25`. Pressing **End** and then
+**ArrowLeft** in **Clinical note** left the seeded value unchanged, moved the
+caret from UTF-16 offset `16` to `15`, rendered
+`Text: keyboard ArrowLeft moved selection`, and set
+`data-text-state="navigated"`. The screenshot showed the focused textarea,
+the visible navigation status and the updated selection line. This is a local
+Chromium observation of the HTML5/CSS surface; it does not claim bidi layout,
+line metrics or trusted IME behavior.
+
 The policy caps the value at 1 MiB, event metadata at 128 UTF-8 bytes and the
 locale at 64 bytes. UTF-16 offsets are transport coordinates; the Rust policy
 rejects an offset inside a surrogate pair or Unicode extended grapheme cluster
-before it changes state. This workflow does not claim browser caret movement,
+before it changes state. After the browser performs its default action, a
+`keyup` listener records `ArrowLeft`, `ArrowRight`, `ArrowUp`, `ArrowDown`,
+`Home`, `End`, `PageUp` and `PageDown` selection snapshots through the same
+policy. The text status reports the navigation key and the textarea exposes
+`data-text-state="navigated"` with the accepted UTF-16 selection. Other keys
+retain the browser's native editing behavior. This workflow does not claim
 bidi shaping, line metrics, fallback-font metrics, clipboard/undo behavior,
 assistive-technology behavior or native IME delivery.
 CUA can show the real HTML textarea, statuses and focus ring, but it cannot
