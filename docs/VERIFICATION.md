@@ -1160,6 +1160,51 @@ status and selection line. This is local Chromium presentation evidence only;
 it does not establish bidi, line-metric, trusted IME or assistive-technology
 behavior.
 
+## Browser text input-operation evidence — 2026-09-17
+
+The input listener now classifies the browser's bounded `InputEvent.inputType`
+after the host applies its default edit. The mapping follows the W3C [Input
+Events] vocabulary: quotation paste, line and word deletion, drag deletion and
+transpose insertion join the existing edit, delete and paste categories.
+`insertFromPaste`, `deleteByCut`, `historyUndo` and `historyRedo` render semantic
+paste, cut, undo and redo statuses while retaining the raw operation name;
+ordinary and composition input retain their existing status contract. The Rust
+policy validates the resulting value and UTF-16 selection before rendering, so
+no second clipboard or history implementation exists in Metis.
+
+[Input Events]: https://w3c.github.io/input-events/
+
+Focused checks against the standalone lock on the pinned toolchain passed:
+
+```text
+cargo nextest run --locked --offline -p metis-web --profile ci — 49/49 passed
+cargo clippy --locked --offline -p metis-web --all-targets -- -D warnings — passed
+cargo check --locked --offline -p metis-web --target wasm32-unknown-unknown — passed
+cargo clippy --locked --offline -p metis-web --target wasm32-unknown-unknown -- -D warnings — passed
+python -m unittest scripts.tests.test_browser_assets — 13/13 passed
+```
+
+The policy tests cover edit, delete, composition, unknown, paste, cut, undo
+and redo classifications. A value-sensitive sequence changes `before` to
+`after`, applies `historyUndo` and `historyRedo`, then applies paste and cut;
+each value, selection and status is asserted. Unknown operation names remain
+ordinary input rather than being rejected, preserving forward compatibility
+with browser additions.
+
+An interactive CUA smoke on 2026-09-17 opened the generated workbench at
+`http://127.0.0.1:8095/?cache=text-input-operations-20260917` in a `1280×720`
+CSS viewport at device scale `1.25`. **Clinical note** accepted a browser-native
+` X` edit, then **Control+Z** restored the seeded value
+`Résumé — 東京 / 影像`; the visible status became
+`Text: input undo (historyUndo) applied; data none`, the preview matched the
+restored value and the selection was a forward caret at UTF-16 offset `17`.
+The screenshot showed the focused textarea, focus ring, restored value and
+operation status. **Control+Shift+Z** then restored the edited value and exposed
+`Text: input redo (historyRedo) applied; data none`. This is local Chromium
+evidence of the host's native history events and Metis value validation; it
+does not claim trusted clipboard contents or permissions, cross-engine parity,
+bidi/line metrics, native IME or assistive-technology behavior.
+
 ## Browser responsive-layout evidence — 2026-09-08
 
 The browser stylesheet now constrains the page to `width: 100%` with a

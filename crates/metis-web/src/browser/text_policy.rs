@@ -2,6 +2,7 @@
 
 use std::fmt;
 
+use crate::input_operation::InputOperation;
 use unicode_segmentation::UnicodeSegmentation;
 
 const MAX_TEXT_BYTES: usize = 1_048_576;
@@ -93,7 +94,7 @@ impl CompositionPhase {
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
 enum TextEvent {
     Ready,
-    Input,
+    Input(InputOperation),
     Composition(CompositionPhase),
     Selection,
     Navigation(NavigationKey),
@@ -213,6 +214,7 @@ impl TextState {
         let value = bounded_text(value)?;
         let data = data.map(bounded_metadata).transpose()?;
         let input_type = bounded_metadata(input_type)?;
+        let operation = InputOperation::from_browser_input_type(&input_type);
         validate_selection(&value, selection)?;
         self.value = value;
         self.last_input_data = data;
@@ -222,7 +224,7 @@ impl TextState {
         if matches!(composition, CompositionState::Inactive) {
             self.preedit = None;
         }
-        self.last_event = TextEvent::Input;
+        self.last_event = TextEvent::Input(operation);
         Ok(())
     }
 
@@ -291,11 +293,20 @@ impl TextState {
     pub(crate) fn text_status(&self) -> String {
         match self.last_event {
             TextEvent::Ready => "Text: ready; Unicode specimen loaded".to_owned(),
-            TextEvent::Input => format!(
-                "Text: input {} applied; data {}",
-                self.input_type,
-                self.last_input_data.as_deref().map_or("none", |data| data)
-            ),
+            TextEvent::Input(operation) => {
+                let data = self.last_input_data.as_deref().map_or("none", |data| data);
+                match operation {
+                    InputOperation::Paste
+                    | InputOperation::Cut
+                    | InputOperation::Undo
+                    | InputOperation::Redo => format!(
+                        "Text: input {} ({}) applied; data {data}",
+                        operation.label(),
+                        self.input_type,
+                    ),
+                    _ => format!("Text: input {} applied; data {data}", self.input_type),
+                }
+            }
             TextEvent::Composition(phase) => {
                 format!("Text: composition {}", phase.label())
             }
@@ -347,7 +358,7 @@ impl TextState {
         match (self.composition, self.last_event) {
             (CompositionState::Active, _) => "composing",
             (_, TextEvent::Ready) => "ready",
-            (_, TextEvent::Input) => "editing",
+            (_, TextEvent::Input(_)) => "editing",
             (_, TextEvent::Selection) => "selected",
             (_, TextEvent::Navigation(_)) => "navigated",
             (_, TextEvent::Composition(_)) => "composition",

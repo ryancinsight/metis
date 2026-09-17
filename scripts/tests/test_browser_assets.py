@@ -270,6 +270,8 @@ class BrowserAssetContractTests(unittest.TestCase):
             '"select"',
             '"keyup"',
             'keyboard_metadata',
+            'input_type',
+            'apply_input',
             'apply_navigation',
         ):
             self.assertIn(event_name, listeners)

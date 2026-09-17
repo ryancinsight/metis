@@ -38,6 +38,19 @@ the same scalar and extended-grapheme validation. The listener does not cancel
 the browser default action, so native caret behavior remains the host's source
 of movement while Metis owns the accepted selection snapshot and status.
 
+Revision 2026-09-17: the text policy classifies bounded browser
+`InputEvent.inputType` values as edit, delete, paste, cut, undo, redo,
+composition or other. It retains the raw operation name and validates the
+post-default value and selection before reporting the semantic operation. The
+browser remains the authority for clipboard and history behavior; Metis does
+not invent a clipboard API or substitute a Rust-side history stack.
+
+The classifier follows the W3C [Input Events] vocabulary, including quotation
+paste, line and word deletion, drag deletion and transpose insertion. Names not
+in the bounded mapping remain `other`.
+
+[Input Events]: https://w3c.github.io/input-events/
+
 The Atlas stack has no first-party UAX #29 segmenter. The browser host keeps
 this one pure-Rust registry dependency at its text-policy boundary rather than
 reimplementing the Unicode algorithm or moving text semantics into a consumer.
@@ -113,12 +126,16 @@ owns a bounded `TextState` that receives Moirai's UTF-16 selection snapshots,
 selection ranges against the current Unicode value, rejects offsets inside a
 UTF-16 surrogate pair or a Unicode extended grapheme cluster using the
 `unicode-segmentation` UAX #29 implementation, and renders text, composition
-and selection status without importing `web-sys`. A `keyup` listener observes
-the post-default selection for `ArrowLeft`, `ArrowRight`, `ArrowUp`,
-`ArrowDown`, `Home`, `End`, `PageUp` and `PageDown`, applies the same validation
-and renders a navigation status. The browser keeps its default caret action;
-bidi shaping, line metrics, clipboard/undo, fallback-font metrics and native
-IME production remain host contracts.
+and selection status without importing `web-sys`. The policy classifies the
+browser's bounded `inputType` values and reports paste, cut, undo and redo
+operations while retaining the raw value for diagnostics. The browser applies
+each native clipboard or history operation before Metis validates the resulting
+value and selection. A `keyup` listener observes the post-default selection for
+`ArrowLeft`, `ArrowRight`, `ArrowUp`, `ArrowDown`, `Home`, `End`, `PageUp` and
+`PageDown`, applies the same validation and renders a navigation status. The
+browser keeps its default caret and clipboard/history actions; bidi shaping,
+line metrics, fallback-font metrics and native IME production remain host
+contracts.
 
 ## Alternatives
 
@@ -172,12 +189,13 @@ native policy tests and WASM checks are recorded in the verification artifact.
 
 The text increment adds native policy tests for UTF-16 coordinates, scalar and
 extended-grapheme boundaries, selection bounds, input metadata, composition
-transitions and the closed navigation-key set. The extended-grapheme fixture
-covers a combining mark, a ZWJ sequence and regional indicators; split
-selections are rejected without state mutation, while cluster-boundary
-selections remain valid. The browser listener records post-default navigation
-selections and renders the key and resulting selection; CUA cannot provide
-trusted OS IME input or expose the browser `isTrusted` flag.
+transitions, the closed navigation-key set and browser input-operation
+classification. The extended-grapheme fixture covers a combining mark, a ZWJ
+sequence and regional indicators; split selections are rejected without state
+mutation, while cluster-boundary selections remain valid. The browser listener
+records post-default navigation selections and input values, then renders the
+key or semantic operation. CUA cannot provide trusted OS IME input or expose
+the browser `isTrusted` flag.
 
 The file-drop increment consumes `DropFiles` from Moirai revision
 `5c8a9e8be32ad6beac14ed263c2f11c3663b87cb`. The native `metis-web` suite
@@ -189,7 +207,7 @@ DICOM decode.
 
 ## Residuals
 
-Browser bidi layout, line metrics, clipboard/undo, native IME,
+Browser bidi layout, line metrics, fallback-font metrics, native IME,
 accessibility technology and native-window input remain under the linked
 backlog items. CUA cannot provide
 trusted physical touch or expose the browser `isTrusted` flag, so this
