@@ -130,7 +130,7 @@ have transitive dependencies; the gate records the actual graph instead of descr
 dependency-free. The Atlas development overlay resolves first-party code to local
 trees. Standalone builds use the corresponding pushed provider revisions recorded
 in Cargo.lock. Metis consumes Moirai through git-plus-version requirements;
-the lock records Moirai capture revision `d324018efa3b67d2b92350a4e3c781d179019014`,
+the lock records merged Moirai revision `c7b49a7623aed533f377aec77f656a16d2b9d68b`,
 which descends from Moirai PR #355's opt-in WebView2 feature graph and the
 stable browser canvas extent and content-box revisions. That revision
 includes the merged process, browser/API, bounded WebSocket service,
