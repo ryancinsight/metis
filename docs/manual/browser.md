@@ -1075,6 +1075,14 @@ operating system, scale factor and assistive-technology version. A semantic
 tree or CSS rule by itself does not establish screen-reader support or an
 operating-system accessibility bridge.
 
+The same probe records a bounded semantic inventory for the workbench. It
+requires the application root, form, session dialog, submit action, file input,
+clinical-note textarea and result table to retain their expected DOM roles and
+stable IDs across input and stop/remount transitions. It records `aria-busy`,
+live-region, expanded, popup, disabled and dialog-open states without copying
+form values. This verifies the browser semantic contract; supported
+screen-reader speech and native accessibility bridges still require host runs.
+
 The captured service journey at revision
 `d879779247c8cfc5870f62f99a5364cbbf2d3c58` used the Codex in-app
 browser at 1280×720 CSS pixels and device scale 1.25. Pointer activation of

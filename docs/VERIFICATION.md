@@ -1881,11 +1881,19 @@ empty or off-viewport rectangles and horizontal overflow. Labels and roles are
 bounded text; form values and DICOM/patient content are excluded from the
 record.
 
+The probe also records a bounded semantic inventory. The application root,
+form, session dialog, submit action, file input, clinical-note textarea and
+result table must retain their expected DOM roles and stable IDs. `aria-busy`,
+live-region, expanded, popup, disabled and dialog-open states are preserved as
+bounded values while form contents remain excluded. Input and stop/remount
+records reject semantic identity drift.
+
 The dependency-free focused suite
 `python -m unittest scripts.tests.test_browser_accessibility scripts.tests.test_browser_runtime`
-passed 60/60, including malformed media, overflow, focus-sequence, active-focus
-and baseline-order cases plus a full workbench trace with four accessibility
-records. `python -m py_compile` and the plan/diff checks passed. The scheduled
+passed 63/63, including malformed media, overflow, focus-sequence, active-focus,
+baseline-order and semantic-identity cases plus a full workbench trace with
+four accessibility records. `python -m py_compile` and the plan/diff checks
+passed. The scheduled
 Chromium, Firefox and WebKit lifecycle jobs now include the probe, so each
 configured engine uploads the accessibility records with its existing PNG
 captures.

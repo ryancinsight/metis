@@ -8,6 +8,7 @@ from browser_protocol import BrowserRuntimeError, WebDriverClient, _bounded_text
 
 
 MAX_ACCESSIBILITY_ELEMENTS = 64
+MAX_SEMANTIC_ELEMENTS = 96
 MAX_ACCESSIBILITY_TEXT_BYTES = 256
 MAX_ACCESSIBILITY_DIMENSION = 65_536
 
@@ -96,6 +97,28 @@ const geometry = Object.fromEntries(geometry_elements.map((element) => {
     bottom: rect.bottom,
   }];
 }));
+const semantic_candidates = [root, ...Array.from(root.querySelectorAll(
+  "main,header,nav,form,fieldset,section,dialog,table,[role],[aria-live],[aria-busy],button,input,select,textarea"
+))].filter((element) =>
+  element.id && !element.closest("[hidden], [aria-hidden=\"true\"]")
+);
+if (semantic_candidates.length === 0 || semantic_candidates.length > 96) {
+  return {ok: false, error: "semantic element count is outside its bound"};
+}
+const semantic = semantic_candidates.map((element) => ({
+  id: element.id,
+  role: element.getAttribute("role") || element.tagName.toLowerCase(),
+  name: accessible_name(element),
+  states: {
+    disabled: element.matches(":disabled"),
+    aria_busy: element.getAttribute("aria-busy"),
+    aria_live: element.getAttribute("aria-live"),
+    aria_atomic: element.getAttribute("aria-atomic"),
+    aria_expanded: element.getAttribute("aria-expanded"),
+    aria_haspopup: element.getAttribute("aria-haspopup"),
+    open: element.tagName.toLowerCase() === "dialog" ? element.open === true : null,
+  },
+}));
 return {
   ok: true,
   media,
@@ -113,16 +136,23 @@ return {
   focus_order,
   focus_sequence,
   geometry,
+  semantics: semantic,
 };
 """
 
 
-def _bounded_string(value: Any, label: str, *, required: bool = True) -> Optional[str]:
+def _bounded_string(
+    value: Any,
+    label: str,
+    limit: int = MAX_ACCESSIBILITY_TEXT_BYTES,
+    *,
+    required: bool = True,
+) -> Optional[str]:
     if not isinstance(value, str):
         if required:
             raise BrowserRuntimeError(f"accessibility {label} is not text")
         return None
-    text = _bounded_text(value, f"accessibility {label}", MAX_ACCESSIBILITY_TEXT_BYTES)
+    text = _bounded_text(value, f"accessibility {label}", limit)
     if required and not text:
         raise BrowserRuntimeError(f"accessibility {label} is empty")
     return text
@@ -221,6 +251,48 @@ def _validate_snapshot(value: Any) -> Dict[str, Any]:
     active_after = _bounded_string(value.get("active_after"), "active-after", required=False)
     if active_after is not None:
         raise BrowserRuntimeError("accessibility probe left focus active")
+    semantics = value.get("semantics")
+    if not isinstance(semantics, list) or not 1 <= len(semantics) <= MAX_SEMANTIC_ELEMENTS:
+        raise BrowserRuntimeError("accessibility semantic element count is outside its bound")
+    semantic_records = []
+    semantic_ids = set()
+    for item in semantics:
+        if not isinstance(item, Mapping):
+            raise BrowserRuntimeError("accessibility semantic entry is not an object")
+        semantic_id = _bounded_string(item.get("id"), "semantic id")
+        if semantic_id in semantic_ids:
+            raise BrowserRuntimeError("accessibility semantic ids are duplicated")
+        semantic_ids.add(semantic_id)
+        states = item.get("states")
+        if not isinstance(states, Mapping):
+            raise BrowserRuntimeError(f"accessibility states for {semantic_id!r} are malformed")
+        parsed_states = {}
+        for name in ("disabled", "open"):
+            if type(states.get(name)) not in (bool, type(None)):
+                raise BrowserRuntimeError(f"accessibility state {semantic_id}.{name} is malformed")
+            parsed_states[name] = states.get(name)
+        for name in ("aria_busy", "aria_live", "aria_atomic", "aria_expanded", "aria_haspopup"):
+            parsed_states[name] = _bounded_string(states.get(name), f"{semantic_id}.{name}", MAX_ACCESSIBILITY_TEXT_BYTES, required=False)
+        semantic_records.append({
+            "id": semantic_id,
+            "role": _bounded_string(item.get("role"), "semantic role"),
+            "name": _bounded_string(item.get("name"), "semantic name"),
+            "states": parsed_states,
+        })
+    required_semantics = {
+        "metis-app": "main",
+        "metis-form": "form",
+        "session-dialog": "dialog",
+        "submit-calculation": "button",
+        "file-input": "input",
+        "text-specimen": "textarea",
+        "explorer-table": "table",
+    }
+    by_id = {item["id"]: item for item in semantic_records}
+    for semantic_id, role in required_semantics.items():
+        item = by_id.get(semantic_id)
+        if item is None or item["role"] != role:
+            raise BrowserRuntimeError(f"accessibility semantic contract is missing {semantic_id!r} as {role!r}")
     return {
         "media": dict(media),
         "viewport": {"width": width, "height": height, "device_pixel_ratio": ratio},
@@ -231,6 +303,7 @@ def _validate_snapshot(value: Any) -> Dict[str, Any]:
         "focus_order": focus_items,
         "focus_sequence": sequence,
         "geometry": rects,
+        "semantics": semantic_records,
     }
 
 
@@ -254,6 +327,8 @@ def capture_accessibility(
         raise BrowserRuntimeError("browser did not report forced-colors: active")
     if baseline is not None and snapshot["focus_order"] != baseline.get("focus_order"):
         raise BrowserRuntimeError("accessibility focus order changed after input")
+    if baseline is not None and [item["id"] for item in snapshot["semantics"]] != [item["id"] for item in baseline.get("semantics", [])]:
+        raise BrowserRuntimeError("accessibility semantic identity changed after input")
     record = {"label": label, **snapshot}
     trace.metrics.setdefault("accessibility", []).append(record)
     return snapshot
