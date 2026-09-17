@@ -24,6 +24,20 @@ the request protocol and application deadline; it does not create another runtim
 4. Calculation and failure outcomes enter a bounded backend audit ring. The
    frontend displays the response or an explicit error.
 
+Native deployments that must survive a restart open a
+`metis_backend::audit::FileAuditStore` and pass it to
+`BackendService::with_persistent_audit`. The store keeps two fixed-size,
+HMAC-SHA256-authenticated snapshots and restores the newest generation before
+the first request. A malformed, truncated, duplicated or wrong-key snapshot
+fails service construction; the backend never silently rolls back to older
+records. The host supplies an `AuditCheckpointKey` from its secret store. It is
+not the ephemeral IPC session key, and neither key is written to disk or CI.
+The snapshot contains only typed event identity, sequence, timestamp, principal
+bytes, error code and chain hashes; request payloads and patient identifiers do
+not enter it. The default constructor remains in-memory for browser/WASM and
+diagnostic sessions. See [ADR 0038](../../docs/adr/0038-durable-audit-recovery.md)
+for the format and trust limits.
+
 `HandshakeError` distinguishes local transport/decoding failures from remote
 rejections, including remote codes unknown to the client. Neither case grants an
 active token. The [wire contract](../INTERFACE.md) defines frames and payloads.
@@ -47,6 +61,7 @@ permission restriction.
 
 Windows job containment bounds descendant lifetimes. It does not deny filesystem,
 network or device access. The audit ring holds 1,024 records with a retained chain
-checkpoint; it is not durable across restart or independently anchored against a
-compromised backend. See [risk controls](../RISK_CONTROLS.md) before extending a
+checkpoint. Native `FileAuditStore` snapshots add keyed restart recovery but are
+not an independent remote or hardware anchor against a host that can read the
+checkpoint key. See [risk controls](../RISK_CONTROLS.md) before extending a
 trust boundary.

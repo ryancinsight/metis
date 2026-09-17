@@ -2195,6 +2195,15 @@ waits for the service health response, and uploads the bounded
 `<engine>-fragment.json` trace plus its three PNG states. The workflow records
 driver or service failures directly.
 
+The native audit recovery path is covered by `metis-backend` unit tests and the
+`audit_recovery` example. The example writes a real handshake record through
+`BackendService::with_persistent_audit`, drops the service, restores the record
+from the next process instance and probes a wrong checkpoint key. The probe
+returns `ChecksumMismatch`; the snapshot contains only typed sequence/event
+fields and chain hashes. Two fixed-size slots and a 1,024-record ring bound the
+on-disk and resident memory. A local keyed snapshot is recovery evidence, not
+proof of an independent remote or hardware trust anchor.
+
 <a id="browser-fragment-hosted-cross-engine-evidence--2026-09-16"></a>
 ### Browser fragment hosted cross-engine evidence — 2026-09-16
 

@@ -22,8 +22,10 @@ window; browser and desktop hosts must supply their observed context before
 they can expose privileged commands. A live acceptor uses
 `HostPolicy::observe_origin` and `BackendService::with_trusted_context`, so the
 handshake principal can route a session but cannot select its authority. The
-example policy is not clinical guidance. Audit storage does not survive restart. See
-[architecture](../../docs/ARCHITECTURE.md) and
+example policy is not clinical guidance. Native hosts can restore the bounded
+audit ledger with `FileAuditStore` and a host-held `AuditCheckpointKey`;
+invalid snapshots fail closed and the key never enters a record. See
+[architecture](../../docs/ARCHITECTURE.md), [durable audit ADR](../../docs/adr/0038-durable-audit-recovery.md) and
 [verification](../../docs/VERIFICATION.md). This package is unpublished.
 The native-only `BrowserHttpService` composes the first-party Moirai HTTP
 transport for a bounded loopback demonstration. It exposes only typed session,

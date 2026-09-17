@@ -142,9 +142,8 @@ an owner. “Unsupported” cannot replace delivery of a required mobile/native 
 
 <a id="METIS-AUDIT-001"></a>
 ## METIS-AUDIT-001 — Durable audit recovery [minor]
-- Status: in-progress; priority: P2; owner: Metis backend + owning Atlas storage provider; integrator: root; dependencies: METIS-CRYPTO-001; risk: persistence; last-update: 2026-09-17
+- Status: review; priority: P2; owner: Metis backend + owning Atlas storage provider; integrator: root; dependencies: METIS-CRYPTO-001; risk: persistence; last-update: 2026-09-17
 - Scope: versioned durable backend audit, bounded storage, restart recovery and trusted checkpoint; first verify the Atlas storage ownership/contract.
-- Lease: root — crates/metis-backend/src/audit.rs, crates/metis-backend/src/audit/ — 2026-09-17T17:00:00-04:00
 - Acceptance: crash/truncation/tamper/disk-full cases recover exactly or fail closed, with bounded retention and no patient/secret leakage.
 - Demonstration: [V08](docs/VERIFICATION.md#V08), audit/recovery inspector showing actual records, denied tampering and restart outcomes; raw secrets never enter captures.
 

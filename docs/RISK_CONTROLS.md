@@ -7,7 +7,7 @@
 | Invalid numeric policy disables limits | Private validating envelope fields | Nonfinite, nonpositive, boundary and exceeded-limit tests. |
 | Unbounded hostile markup/frames | Explicit byte/depth/node/surface/queue limits | Malformed corpus and limit regressions. |
 | False authenticity claim in display | UI states backend MAC is not frontend-verified | The frontend has no signing key and cannot verify a symmetric backend MAC. |
-| Audit ambiguity or secret logging | Fixed typed records and canonical hashing; no raw patient text in audit | In-memory integrity tests; durable recovery/trusted checkpoint outstanding. |
+| Audit ambiguity or secret logging | Fixed typed records, canonical hashing and native keyed snapshots; no raw patient text or checkpoint key in audit | Restart, wrong-key, tamper and bounded-retention tests; independent remote or hardware anchoring remains open. |
 | Frontend has host privileges | Separate executable contains no clinical backend dependency | OS permission sandbox and native denial probes outstanding. |
 | Web content obtains native authority | `HostPolicy` admits one canonical origin/window, binds capability HMAC associated data to that context and checks the external asset policy against one canonical CSP source | Core origin/injection/substitution tests and browser asset checks pass; the WASM loader requirement is explicit, while response-header framing, live service Origin validation, navigation at the service boundary, teardown and OS permission probes remain outstanding; see [ADR 0011](adr/0011-host-authority-policy.md). |
 | WASM or Rust mistaken for comparative security/memory evidence | Claims distinguish portable compilation from host enforcement and measurement | Matched Tauri process-memory measurements and comparative threat tests outstanding. |
@@ -16,5 +16,8 @@
 
 Cryptographic vectors establish agreement for tested inputs. They do not establish
 constant-time machine code, cryptographic-module validation or resistance to an
-attacker controlling the backend process. The hash chain alone cannot prevent
-an attacker rewriting the entire ledger without an external trusted checkpoint.
+attacker controlling the backend process. The in-memory hash chain alone cannot
+prevent an attacker rewriting the entire ledger. Native keyed snapshots detect
+edits without the checkpoint key and survive restart, but a host that can read
+that key can still rewrite both slots; an independent remote or hardware anchor
+remains a deployment requirement.

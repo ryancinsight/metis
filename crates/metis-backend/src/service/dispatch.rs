@@ -30,6 +30,14 @@ impl<C: Clock> BackendService<C> {
                 "REQ-METIS-AUDIT-001",
             )
         })?;
+        #[cfg(not(target_arch = "wasm32"))]
+        if let Some(store) = self.audit_store.as_mut() {
+            let mut candidate = self.ledger.clone();
+            candidate.record(timestamp, actor, event, outcome)?;
+            store.persist(&candidate)?;
+            self.ledger = candidate;
+            return Ok(());
+        }
         self.ledger.record(timestamp, actor, event, outcome)
     }
 

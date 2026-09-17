@@ -7,6 +7,8 @@
 //! is unrelated to registry or signing credentials.
 
 use crate::audit::AuditLedger;
+#[cfg(not(target_arch = "wasm32"))]
+use crate::audit::FileAuditStore;
 use crate::clinical::SafetyEnvelope;
 use crate::plugins::{PluginExecutor, PluginRouter};
 use metis_core::capability::CapabilityToken;
@@ -77,6 +79,8 @@ pub struct BackendService<C = SystemClock> {
     host_policy: HostPolicy,
     trusted_context: Option<HostContext>,
     ledger: AuditLedger,
+    #[cfg(not(target_arch = "wasm32"))]
+    audit_store: Option<FileAuditStore>,
     clock: C,
     session: Option<Session>,
     last_sequence: u64,
@@ -128,6 +132,8 @@ impl<C> BackendService<C> {
             host_policy,
             trusted_context: None,
             ledger: AuditLedger::new(),
+            #[cfg(not(target_arch = "wasm32"))]
+            audit_store: None,
             clock,
             session: None,
             last_sequence: 0,
@@ -164,6 +170,8 @@ impl<C> BackendService<C> {
             host_policy,
             trusted_context: Some(context),
             ledger: AuditLedger::new(),
+            #[cfg(not(target_arch = "wasm32"))]
+            audit_store: None,
             clock,
             session: None,
             last_sequence: 0,
@@ -173,6 +181,71 @@ impl<C> BackendService<C> {
             plugins: PluginRouter::new()?,
             target_capabilities: TargetCapabilityPayload::native_service(),
         })
+    }
+
+    /// Restores a service from authenticated native audit snapshots.
+    ///
+    /// The checkpoint key is supplied by the host and remains outside the
+    /// persisted records. A malformed or unauthenticated snapshot prevents
+    /// service construction.
+    ///
+    /// # Errors
+    /// Returns an audit recovery error when the store cannot be loaded.
+    #[cfg(not(target_arch = "wasm32"))]
+    pub fn with_persistent_audit(
+        master_key: [u8; 32],
+        envelope: SafetyEnvelope,
+        clock: C,
+        store: FileAuditStore,
+    ) -> Result<Self> {
+        Self::with_persistent_audit_and_policy(
+            master_key,
+            envelope,
+            clock,
+            HostPolicy::native(),
+            store,
+        )
+    }
+
+    /// Restores a service from authenticated snapshots under an exact policy.
+    ///
+    /// # Errors
+    /// Returns a host-policy or audit-recovery error.
+    #[cfg(not(target_arch = "wasm32"))]
+    pub fn with_persistent_audit_and_policy(
+        master_key: [u8; 32],
+        envelope: SafetyEnvelope,
+        clock: C,
+        host_policy: HostPolicy,
+        mut store: FileAuditStore,
+    ) -> Result<Self> {
+        let ledger = store.load()?;
+        let mut service = Self::with_clock_and_policy(master_key, envelope, clock, host_policy);
+        service.ledger = ledger;
+        service.audit_store = Some(store);
+        Ok(service)
+    }
+
+    /// Restores a service with a trusted context and authenticated snapshots.
+    ///
+    /// # Errors
+    /// Returns a host-policy or audit-recovery error.
+    #[cfg(not(target_arch = "wasm32"))]
+    pub fn with_trusted_context_and_persistent_audit(
+        master_key: [u8; 32],
+        envelope: SafetyEnvelope,
+        clock: C,
+        host_policy: HostPolicy,
+        context: HostContext,
+        mut store: FileAuditStore,
+    ) -> Result<Self> {
+        host_policy.check_context(&context)?;
+        let ledger = store.load()?;
+        let mut service = Self::with_clock_and_policy(master_key, envelope, clock, host_policy);
+        service.trusted_context = Some(context);
+        service.ledger = ledger;
+        service.audit_store = Some(store);
+        Ok(service)
     }
 
     /// Retained request outcomes, including rejected requests.
