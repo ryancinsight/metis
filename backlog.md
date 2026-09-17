@@ -370,7 +370,6 @@ an owner. “Unsupported” cannot replace delivery of a required mobile/native 
 <a id="METIS-ASSETS-001"></a>
 ## METIS-ASSETS-001 — Images, vectors and media assets [major]
 - Status: in-progress; priority: P1; owner: Metis asset/presentation + existing Atlas format providers; integrator: root; last-update: 2026-09-17; dependencies: METIS-BROWSER-001, METIS-AUTHORITY-001; risk: hostile content
-- lease: root `scripts/browser_assets.py`, `scripts/browser_runtime.py`, `scripts/browser_runtime_cli.py`, `scripts/tests`, `.github/workflows/ci.yml`, `docs/manual/browser.md`, `docs/manual/testing.md`, `docs/VERIFICATION.md` — 2026-09-17T22:00:00-04:00
 - ADR: [0019](docs/adr/0019-raster-display-command.md); the public `DisplayCommand` enum addition is a major release change and has no version bump until release authority opens a release increment.
 - Scope: bounded local asset loading, image/SVG presentation, font loading and browser audio/video controls; validate paths/origins, dimensions/decoding budgets and target permissions.
 - Acceptance: malformed/truncated/oversized/traversal assets fail; declared colors/alpha/aspect ratio/orientation match fixtures; media error and teardown states release resources.
@@ -379,8 +378,9 @@ an owner. “Unsupported” cannot replace delivery of a required mobile/native 
 - Completed increment: `RasterImage` validates bounded row-major RGBA storage and `ImagePlacement` validates crops, clips off-screen destinations and composites nearest-neighbor pixels; the `image` example emits the inspected software-renderer artifact.
 - Evidence: [ADR 0016](docs/adr/0016-theme-and-branding.md), [browser manual](docs/manual/browser.md), [distribution manual](docs/manual/distribution.md), focused `metis-cli` package tests and browser asset tests; runtime asset capture is recorded in [VERIFICATION](docs/VERIFICATION.md#browser-svg-asset-evidence).
 - Evidence: `metis-ui-lang` image validation/compositing tests, `cargo run --locked --example image`, and [software image evidence](docs/VERIFICATION.md#software-raster-and-vector-presentation-evidence--2026-09-13) cover pixel, alpha and clipping semantics.
-- Residuals: browser/native image decode and clinical orientation metadata, font loading, media controls/error teardown, GPU vectors, and runtime shell rendering on a Windows install remain open under V06; the SVG admission, ICO packaging and format-neutral pixel-grid orientation contracts are closed.
-- Current increment: the browser runtime will decode the shipped SVG and PNG mark through the native image decoder, record same-origin and intrinsic dimensions, and release detached probe elements before the trace continues; malformed, cross-origin and empty-result responses fail closed.
+- Completed increment (2026-09-17): commit `59ceb9959d96caf0b13a2f7441079beb1144cdd2` adds the browser `--asset-probe`, which decodes the local SVG and PNG marks with `HTMLImageElement.decode()`, records same-origin intrinsic dimensions, and removes the probe container before each lifecycle remount.
+- Evidence: the dependency-free suite ran 220 tests with one expected skip; `python -S scripts/verify.py` passed all stages at the same revision with 170 resolved packages and the deliberate `capture-failure` stage exiting 1. The scheduled browser matrix invokes the probe for Chromium, Firefox and WebKit.
+- Residuals: native image decode and clinical orientation metadata, font loading, media controls/error teardown, GPU vectors, and runtime shell rendering on a Windows install remain open under V06; the browser local-mark decode, SVG admission, ICO packaging and format-neutral pixel-grid orientation contracts are closed.
 
 <a id="METIS-GRAPHICS-001"></a>
 ## METIS-GRAPHICS-001 — Custom graphics conformance [arch] [minor]
