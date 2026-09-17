@@ -6,12 +6,13 @@ import hashlib
 import json
 import os
 import pathlib
-import signal
 import shutil
 import stat
 import subprocess
 import sys
 import tomllib
+
+from process_tree import ProcessTreeTimeout, run as run_process_tree
 
 
 ROOT = pathlib.Path(__file__).resolve().parents[1]
@@ -172,44 +173,26 @@ def summarize_outcomes(outcomes: pathlib.Path) -> dict[str, object]:
 
 def _run(command: list[str], environment: dict[str, str]) -> tuple[int, str]:
     """Run cargo-mutants under one finite suite budget and retain its log."""
-    creationflags = subprocess.CREATE_NEW_PROCESS_GROUP if os.name == "nt" else 0
-    process = subprocess.Popen(
-        command,
-        cwd=ROOT,
-        env=environment,
-        stdout=subprocess.PIPE,
-        stderr=subprocess.PIPE,
-        text=True,
-        encoding="utf-8",
-        errors="replace",
-        creationflags=creationflags,
-    )
     try:
-        stdout, stderr = process.communicate(timeout=SUITE_TIMEOUT_SECONDS)
-    except subprocess.TimeoutExpired as error:
-        if os.name == "nt":
-            subprocess.run(
-                ["taskkill", "/PID", str(process.pid), "/T", "/F"],
-                capture_output=True,
-                text=True,
-                encoding="utf-8",
-                errors="replace",
-                timeout=30,
-                check=False,
-            )
-        else:
-            os.killpg(process.pid, signal.SIGTERM)
-        stdout, stderr = process.communicate(timeout=30)
+        result = run_process_tree(
+            command,
+            cwd=ROOT,
+            env=environment,
+            timeout=SUITE_TIMEOUT_SECONDS,
+        )
+    except ProcessTreeTimeout as error:
         captured = "\n".join(
             value.decode(errors="replace") if isinstance(value, bytes) else value or ""
-            for value in (error.stdout or stdout, error.stderr or stderr)
+            for value in (error.stdout, error.stderr)
         )
+        if error.cleanup_error:
+            captured += f"\nmutation: process-tree cleanup failed: {error.cleanup_error}"
         log = captured + f"\nmutation: exceeded {SUITE_TIMEOUT_SECONDS}-second budget\n"
         (LATEST / "cargo-mutants.log").write_text(log, encoding="utf-8")
         raise SystemExit(f"cargo-mutants exceeded {SUITE_TIMEOUT_SECONDS}-second budget") from error
-    diagnostic = stdout + stderr
+    diagnostic = result.stdout + result.stderr
     (LATEST / "cargo-mutants.log").write_text(diagnostic, encoding="utf-8")
-    return process.returncode, diagnostic
+    return result.returncode, diagnostic
 
 
 def main() -> None:

@@ -22,7 +22,7 @@ on:
     - cron: '17 3 * * 1'
   workflow_dispatch:
   push:
-    branches: [feat/process-foundation]
+    branches: [main]
     paths:
       - 'Cargo.toml'
       - 'Cargo.lock'
@@ -221,6 +221,8 @@ jobs:
       - name: Build browser assets
         shell: bash
         run: python scripts/browser.py build
+      - name: Check subprocess-tree deadlines
+        run: python -m unittest scripts.tests.test_process_tree
       - name: Upload browser assets
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
         with:

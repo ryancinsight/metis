@@ -212,7 +212,7 @@ class WorkflowContractTests(unittest.TestCase):
             "schedule:",
             "workflow_dispatch:",
             "push:",
-            "branches: [feat/process-foundation]",
+            "branches: [main]",
             "permissions:\n  contents: read",
             "concurrency:",
             "cancel-in-progress:",
