@@ -236,6 +236,15 @@ class FakeDriver:
                         "bottom": 60.0,
                     },
                 },
+                "semantics": [
+                    {"id": "metis-app", "role": "main", "name": "metis-app", "states": {"disabled": False, "open": None, "aria_busy": None, "aria_live": "polite", "aria_atomic": None, "aria_expanded": None, "aria_haspopup": None}},
+                    {"id": "metis-form", "role": "form", "name": "metis-form", "states": {"disabled": False, "open": None, "aria_busy": "false", "aria_live": None, "aria_atomic": None, "aria_expanded": None, "aria_haspopup": None}},
+                    {"id": "session-dialog", "role": "dialog", "name": "Session details", "states": {"disabled": False, "open": False, "aria_busy": None, "aria_live": None, "aria_atomic": None, "aria_expanded": None, "aria_haspopup": None}},
+                    {"id": "submit-calculation", "role": "button", "name": "Submit", "states": {"disabled": False, "open": None, "aria_busy": None, "aria_live": None, "aria_atomic": None, "aria_expanded": None, "aria_haspopup": None}},
+                    {"id": "file-input", "role": "input", "name": "Files", "states": {"disabled": False, "open": None, "aria_busy": None, "aria_live": None, "aria_atomic": None, "aria_expanded": None, "aria_haspopup": None}},
+                    {"id": "text-specimen", "role": "textarea", "name": "Clinical note", "states": {"disabled": False, "open": None, "aria_busy": None, "aria_live": None, "aria_atomic": None, "aria_expanded": None, "aria_haspopup": None}},
+                    {"id": "explorer-table", "role": "table", "name": "Result explorer", "states": {"disabled": False, "open": None, "aria_busy": "false", "aria_live": None, "aria_atomic": None, "aria_expanded": None, "aria_haspopup": None}},
+                ],
             }
         if "devicePixelRatio" in script:
             return {
