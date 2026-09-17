@@ -65,7 +65,13 @@ def _snapshot(client: WebDriverClient, trace: Trace, label: str) -> Dict[str, An
     match = FRAGMENT_GENERATION.fullmatch(lifecycle)
     if match is None:
         raise BrowserRuntimeError(f"fragment snapshot {label!r} has invalid lifecycle {lifecycle!r}")
-    result = {"label": label, **value, "generation": int(match.group(1))}
+    busy = elements["metis-status"].get("busy")
+    if busy != "false" or elements["metis-fragment"].get("disabled") is not False:
+        raise BrowserRuntimeError(f"fragment snapshot {label!r} did not observe idle controls")
+    result = {
+        "label": label, **value, "generation": int(match.group(1)),
+        "request_state": {"false": "idle"}[busy],
+    }
     trace.snapshots.append(result)
     return result
 
@@ -150,7 +156,10 @@ def run_fragment_scenario(
         client.click(client.find("#metis-reset"))
         _wait_for_text(client, "metis-status", "Mount reset; the previous fragment generation is stale", include=True, timeout_ms=timeout_ms)
         reset = _snapshot(client, trace, "reset-stale-generation")
-        if reset["generation"] != generation + 1 or _text(reset, "metis-events") != "—":
+        if reset["generation"] != generation + 1 or any(
+            _text(reset, element_id) != "—"
+            for element_id in ("metis-events", "http-response", "metis-negative")
+        ):
             raise BrowserRuntimeError("fragment reset did not clear the stale generation")
         screenshot(client, trace, screenshot_directory, "reset-stale-generation")
         trace.actions.append({"action": "reset", "stale_state": "cleared", "generation": reset["generation"]})
@@ -171,7 +180,7 @@ def run_fragment_scenario(
         trace.actions.append({"action": "remounted-fragment", "status": 200, "generation": recovered["generation"]})
         trace.cleanup = {
             "session_closed": False,
-            "request_state": "idle",
+            "request_state": recovered["request_state"],
             "stale_generation": "unchanged",
             "negative_probes": "malformed 400; unauthorized 401; target rejected; stale unchanged",
             "mounted_page": "http-health.html",

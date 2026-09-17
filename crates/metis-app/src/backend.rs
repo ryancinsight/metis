@@ -182,6 +182,7 @@ pub(crate) fn run_http_service(
         application,
         MAX_HTTP_REQUESTS,
         response_delay.map(BrowserResponseDelay::duration),
+        |error| eprintln!("browser_http_connection_error={error}"),
     ))?;
     Ok(())
 }

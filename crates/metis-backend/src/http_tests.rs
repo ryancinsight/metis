@@ -368,8 +368,9 @@ fn malformed_and_oversized_requests_are_rejected_before_dispatch() {
     let address = server.local_addr().expect("server address");
     let task = runtime
         .spawn_async(async move {
-            let connection = server.accept().await?;
-            connection.read_request().await.map(|_| ())
+            let mut failures = Vec::new();
+            serve_browser_http(server, application(), 2, |error| failures.push(error.code)).await?;
+            Ok::<_, MetisError>(failures)
         })
         .expect("server task spawn");
     runtime
@@ -384,12 +385,17 @@ fn malformed_and_oversized_requests_are_rejected_before_dispatch() {
                 .await
         })
         .expect("oversized request write");
+    let response = runtime
+        .block_on(health_request(address))
+        .expect("health after oversized peer");
+    assert_eq!(status(&response), 200);
+    assert_eq!(response_body(&response), b"metis-http-ready\n");
     let result = task
         .join()
         .expect("oversized task join")
         .expect("oversized task result");
-    let error = result.expect_err("oversized body must be rejected");
-    assert_eq!(error.kind(), io::ErrorKind::InvalidData);
+    let failures = result.expect("oversized peer must not terminate listener");
+    assert_eq!(failures, vec![ErrorCode::MalformedPayload]);
 }
 
 #[test]
@@ -404,20 +410,26 @@ fn idle_peer_hits_deadline_and_teardown_is_finite() {
     let address = server.local_addr().expect("server address");
     let task = runtime
         .spawn_async(async move {
-            let connection = server.accept().await?;
-            connection.read_request().await.map(|_| ())
+            let mut failures = Vec::new();
+            serve_browser_http(server, application(), 2, |error| failures.push(error.code)).await?;
+            Ok::<_, MetisError>(failures)
         })
         .expect("server task spawn");
     let client = runtime
         .block_on(TcpStream::connect(&address.to_string()))
         .expect("idle peer connect");
+    let response = runtime
+        .block_on(health_request(address))
+        .expect("health after idle peer");
+    assert_eq!(status(&response), 200);
+    assert_eq!(response_body(&response), b"metis-http-ready\n");
     let result = task
         .join()
         .expect("deadline task join")
         .expect("deadline task result");
-    let error = result.expect_err("idle peer must hit deadline");
+    let failures = result.expect("idle peer must not terminate listener");
     drop(client);
-    assert_eq!(error.kind(), io::ErrorKind::TimedOut);
+    assert_eq!(failures, vec![ErrorCode::Timeout]);
 }
 
 #[test]
@@ -459,7 +471,9 @@ fn public_server_budget_closes_after_a_health_probe() {
         .expect("server bind");
     let address = server.local_addr().expect("server address");
     let task = runtime
-        .spawn_async(serve_browser_http(server, application(), 1))
+        .spawn_async(serve_browser_http(server, application(), 1, |error| {
+            panic!("unexpected peer failure: {error}");
+        }))
         .expect("server task spawn");
     let response = runtime
         .block_on(health_request(address))
@@ -484,6 +498,7 @@ fn response_delay_probe_rejects_unbounded_values() {
             application(),
             1,
             Some(MAX_HTTP_RESPONSE_DELAY + Duration::from_nanos(1)),
+            |error| panic!("unexpected peer failure: {error}"),
         ))
         .expect_err("response delay above the probe bound must fail");
     assert_eq!(error.code, ErrorCode::Timeout);

@@ -29,7 +29,12 @@ The native-only `BrowserHttpService` composes the first-party Moirai HTTP
 transport for a bounded loopback demonstration. It exposes only typed session,
 fragment and health routes, checks the exact browser origin before dispatch,
 retains at most eight sessions and closes after the application's finite
-request budget. The conformance-only
+connection-attempt budget, including rejected peers. Peer parse, timeout and
+disconnect failures close only that connection and reach the host's required
+typed error observer; listener and response-construction failures remain
+terminal. Both serving functions now take an `on_connection_error` closure as
+their final argument; callers must report these errors, as the demonstration
+does through its `browser_http_connection_error` diagnostic. The conformance-only
 `serve_browser_http_with_response_delay` entry applies a bounded asynchronous
 response delay so browser abort and reset behavior can be exercised against a
 real pending request. It does not parse files or own DICOM; a RITK consumer remains

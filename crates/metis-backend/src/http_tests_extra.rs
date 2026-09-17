@@ -1,6 +1,63 @@
 use super::*;
 
 #[test]
+fn rejected_peer_does_not_terminate_the_origin_bound_service() {
+    let cases: &[(&[u8], ErrorCode)] = &[
+        (b"", ErrorCode::FrameTruncated),
+        (
+            b"POST /v1/session HTTP/1.1\r\nHost: localhost\r\nContent-Length: 4\r\n\r\nno",
+            ErrorCode::FrameTruncated,
+        ),
+        (
+            b"GET /health HTTP/1.0\r\nHost: localhost\r\n\r\n",
+            ErrorCode::MalformedPayload,
+        ),
+    ];
+    for &(bytes, expected_error) in cases {
+        let runtime = moirai_executor::global();
+        let server = runtime
+            .block_on(HttpServer::bind("127.0.0.1:0", config()))
+            .expect("server bind");
+        let address = server.local_addr().expect("server address");
+        let task = runtime
+            .spawn_async(async move {
+                let mut failures = Vec::new();
+                serve_browser_http(server, application(), 3, |error| failures.push(error.code))
+                    .await?;
+                Ok::<_, MetisError>(failures)
+            })
+            .expect("server task spawn");
+        runtime
+            .block_on(async {
+                let mut peer = TcpStream::connect(&address.to_string()).await?;
+                peer.write_all(bytes).await
+            })
+            .expect("rejected peer write and disconnect");
+        let denied = runtime
+            .block_on(request_method(
+                address,
+                "GET",
+                &[],
+                "/health",
+                "http://untrusted.invalid",
+            ))
+            .expect("unauthorized response");
+        assert_eq!(status(&denied), 403);
+        let response = runtime
+            .block_on(health_request(address))
+            .expect("health response");
+        assert_eq!(status(&response), 200);
+        assert_eq!(response_body(&response), b"metis-http-ready\n");
+        let failures = task
+            .join()
+            .expect("server join")
+            .expect("server task")
+            .expect("finite server budget");
+        assert_eq!(failures, vec![expected_error]);
+    }
+}
+
+#[test]
 fn session_capacity_is_bounded_and_reports_queue_full() {
     let runtime = moirai_executor::global();
     let server = runtime
@@ -67,12 +124,9 @@ fn response_byte_bound_is_enforced_before_write() {
         .expect("server bind");
     let address = server.local_addr().expect("server address");
     let task = runtime
-        .spawn_async(async move {
-            let connection = server.accept().await?;
-            let (request, connection) = connection.read_request().await?;
-            let response = application().respond(&request)?;
-            connection.write_response(response).await
-        })
+        .spawn_async(serve_browser_http(server, application(), 1, |error| {
+            panic!("internal response failure must remain terminal: {error}");
+        }))
         .expect("server task spawn");
     let client_result = runtime.block_on(async move {
         let mut client = TcpStream::connect(&address.to_string()).await?;
@@ -96,5 +150,5 @@ fn response_byte_bound_is_enforced_before_write() {
         .expect("server task join")
         .expect("server task result")
         .expect_err("response over the configured bound must fail");
-    assert_eq!(error.kind(), io::ErrorKind::InvalidData);
+    assert_eq!(error.code, ErrorCode::MalformedPayload);
 }

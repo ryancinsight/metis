@@ -113,7 +113,8 @@ The dependency-free runner also completed the same scenario through the
 bundled Microsoft Edge WebDriver `153.0.4234.19` and Edge `154.0.4258.12`.
 At Metis revision `77b1c278d610562b04d138aea2d37b828ff097a5`, the run used a
 1500 × 1074 CSS viewport at device scale `1.25`, captured three 1875 × 1343
-PNG states, and closed the WebDriver session with no pending request. The
+PNG states, and closed the WebDriver session. Pending request state was not
+measured by that runner. The
 [provenance record](images/metis-http-fragment-webdriver-edge.json) contains
 the exact hashes and semantic trace:
 
@@ -129,7 +130,7 @@ The [success](images/metis-http-fragment-webdriver-edge-success.png),
 [recovered](images/metis-http-fragment-webdriver-edge-recovered.png) captures
 show health and handshake `200`, one accepted patch, malformed `400`,
 unauthorized `401`, target rejection, unchanged stale state, reset generation
-`2`, remounted generation `2` and clean teardown. This is one Chromium-family
+`2` and remounted generation `2`. This is one Chromium-family
 WebDriver observation on Windows; Firefox, WebKit, TLS, operating-system
 permissions and provider-private resource counts remain separate evidence.
 
@@ -140,6 +141,12 @@ jobs. Each job builds the real `metis-app` HTTP service, serves the generated
 `output/browser/runtime/<engine>-fragment.json` with the three inspected PNG
 states. Uploaded traces bind to the workflow revision; a missing driver,
 service start failure or browser capability remains an explicit failed job.
+The current runner requires `aria-busy="false"` on the HTTP status and an
+enabled fragment button at each captured state. The page updates this
+attribute with its request lease; reset aborts that lease before clearing it.
+The cleanup record derives its request state from the remounted observation.
+This measures the page's request lease, not provider-private resource counts
+or server-side cancellation completion.
 
 ## Run the cross-engine conformance trace
 
@@ -660,49 +667,65 @@ port `8766` with the same origin before running the command. The trace's
 screenshots are component evidence; they do not claim DICOM decoding. RITK's
 consumer-owned gallery remains the source for actual CT/MRI pixels. The
 demonstration service retains one session per principal until its bounded
-process exits; start a fresh service for a new page load. A `409`
+connection budget ends. A malformed or disconnected peer consumes a slot and
+is reported as `browser_http_connection_error`; it cannot terminate the
+listener for other peers. Origin and capability checks remain unchanged.
+Start a fresh service for a new page load. A `409`
 `ERR_PRIVILEGE_ESCALATION_ATTEMPT` after reusing the same principal is the
 intentional duplicate-session rejection.
+
+Each captured state must expose `aria-busy="false"` and an enabled fragment
+button. Reset must also clear the response, event and negative-probe fields;
+the trace derives its idle request state from these observations. These are
+page lease assertions, not counts of provider-private resources.
+
+Hosted runs use `scripts/browser_static_server.py` to bind numeric loopback
+without reverse DNS and atomically publish its selected port. If startup has
+not published after ten seconds, the static-server log receives a stack dump;
+the host still rejects startup at its existing twenty-second bound.
 
 <a id="hosted-fragment-matrix-evidence--2026-09-16"></a>
 ### Hosted fragment matrix evidence — 2026-09-16
 
-Manual dispatch [35143857171](https://github.com/ryancinsight/metis/actions/runs/35143857171)
-ran the real service and page against revision
-`d6e52068708b72becf2a4173d875a4b367789c6e`; that revision is included in the
-merged Metis fix `07fe83175b7952177199340ad078fd0cfd90f012`. Windows, the
-parser fuzz campaign, lockfile, workflow, ADR, asset-build and all three
-browser jobs passed. Every trace recorded health `200`, authenticated fragment
-`200 (1 patch)`, malformed `400`, unauthorized `401`, target rejection,
-unchanged stale state, reset to generation `2`, remounted fragment `200`, idle
-requests and `session_closed: true`.
+Manual dispatch [35169939056](https://github.com/ryancinsight/metis/actions/runs/35169939056)
+passes all three browser jobs against revision `dc6c9bdff98e3484a3aab24ffaf66aeef2691750`.
+Each trace asserts health `200`, authenticated fragment `200 (1 patch)`,
+malformed `400`, unauthorized `401`, target rejection, unchanged stale state,
+reset to generation `2` and remounted fragment `200`. All three snapshots
+observe `aria-busy="false"`, an enabled fragment button and idle request state.
+Reset clears the response, events and negative-probe fields. Driver session
+deletion completes and records `session_closed: true`.
 
-| Engine | Browser and host | CSS viewport / DPR | Capture artifact |
+| Engine | Capture artifact | JSON / three PNG bytes | Trace SHA-256 |
 | --- | --- | --- | --- |
-| Chromium | Chrome 152.0.7977.82 / Linux | 620 × 237 / 2 | [artifact 10465999174](https://github.com/ryancinsight/metis/actions/runs/35143857171/artifacts/10465999174), zip SHA-256 `d4371804a4484642a577ebaa82b38fb7bdc9c5c0ad8ff05ddbfcc687563a960d` |
-| Firefox | Firefox 155.0 / Linux | 576 × 276 / 2 | [artifact 10466158759](https://github.com/ryancinsight/metis/actions/runs/35143857171/artifacts/10466158759), zip SHA-256 `d601cc767cdba7e6d7353c15919565662d1af78a0cacfa33a1d181e253eb43cf` |
-| WebKit | Safari 26.6.2 / macOS | 800 × 600 / 1 | [artifact 10466530215](https://github.com/ryancinsight/metis/actions/runs/35143857171/artifacts/10466530215), zip SHA-256 `19bb72f285dd92552c523fa2a3b7c46fbf7c099fc22c16e1b88164c3b9f083fe` |
+| Webkit 26.6.2 | [artifact 10475714808](https://github.com/ryancinsight/metis/actions/runs/35169939056/artifacts/10475714808) | 9725 / 279539 | `69985832d62fde6a1ccb01b943ef216ba3612ca9e30b14058d69b1a85520764f` |
+| Chromium 152.0.7977.82 | [artifact 10475483526](https://github.com/ryancinsight/metis/actions/runs/35169939056/artifacts/10475483526) | 10315 / 114023 | `0cdd20f182357a96342273516657848585d08aefb9cc1af9899d74c9fb408618` |
+| Firefox 155.0 | [artifact 10476523083](https://github.com/ryancinsight/metis/actions/runs/35169939056/artifacts/10476523083) | 9947 / 163110 | `a581a487206973a7c56ca75aefbc1ccdb7b3916ed0d0a5b8b8bd7be348caaa72` |
 
-Each artifact contains `authenticated-success`, `reset-stale-generation` and
-`remounted-success` PNGs. Chromium emitted 1240 × 474 images with SHA-256
-`c00d31345898f15e1ceb76b21d40e00c7ce51c9619afc313d0baa7d8c6560116`,
-`2476aee9b21de4b6c47ce39f68123a10f44439734b5c5ae99278f2addc5d4ed1` and
-`7c943f2c7a0ad051abe9b7d77e7e54aaeb666f683699b9e179c7f94862ef2b9d` in that
-order. Firefox emitted 1152 × 552 images with SHA-256
-`ce4b757d263341b346b59e0dfb3ebcdf472fb7f03b6f4138565aabfe8956b25d`,
-`286dae2bcb4a74b571be5ff3e3217022107346145198325eca3f7334562f546d` and
-`43a70999c84805c579ea546761e0d38b072e47deb1a81147303ed1f44c2f3f18`.
-WebKit emitted 800 × 600 images with SHA-256
-`c012d0ff34a0be7bd345fc9d332302062337d6048685327c84f6db7824adfe63`,
-`220e4f63210e16d88a984403bb839d3665f6c5139f9f6d3d27cef955643ec5c2` and
-`d5f334c1c8b7ac271cc1c5325433d7faf4781447134adfac98dd36245793b221`.
-`performance.memory` supplied bounded Chromium heap observations; Firefox and
-WebKit reported the API unavailable, so this run makes no cross-engine memory
-comparison. The page contains no DICOM bytes. RITK owns DICOM opening,
-decoding, geometry and clinical image meaning; its [real saved-study gallery](https://github.com/ryancinsight/ritk/blob/main/docs/manual/dicom-workflow.md#inspect-the-browser-canvas-visual-smoke)
-is the visual proof for patient images. Provider-private allocation/listener
-counts, TLS, operating-system permissions, physical input and accessibility or
-IME behavior remain separate host evidence.
+All nine PNG hashes match their trace records. WebKit's three 800 × 600
+captures were inspected: authenticated response and rejection results,
+cleared reset state, then the remounted generation's response are visible.
+Chromium's 1240 × 474 and Firefox's 1152 × 552 captures match the previously
+inspected images byte-for-byte; these viewport-limited images do not show
+all response rows, which are asserted by their semantic traces. Each JSON
+is below the 512 KiB trace limit and each PNG below the 8 MiB screenshot limit.
+
+The failed preceding WebKit startup emitted no stack, so removing the
+verified reverse-DNS dependency is not proof that DNS caused that hosted
+stall. This replay establishes successful startup and fragment execution;
+future startup stalls receive the bounded diagnostic described above.
+The earlier Firefox service termination on a truncated peer is covered by
+real TCP regression tests that also assert subsequent Origin rejection and
+successful health responses. This replay does not claim to inject that fault.
+
+The HTTP page is the standalone JavaScript protocol consumer, not the
+`metis-web` WASM fragment listener. Page lease and driver-session assertions
+do not establish provider-private listener or allocation counts. Chromium
+reports bounded `performance.memory` observations; Firefox and WebKit report
+that API unavailable, so there is no cross-engine memory comparison. TLS,
+operating-system permissions, physical input, accessibility and IME behavior
+remain separate host evidence. The page contains no DICOM bytes; RITK owns
+DICOM opening, decoding, geometry and clinical image meaning.
 
 To demonstrate the boundary, serve the workbench, change **Weight (kg)** and
 **Result scale**, and capture the form before and after each action at the same

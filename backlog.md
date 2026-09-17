@@ -133,9 +133,10 @@ an owner. “Unsupported” cannot replace delivery of a required mobile/native 
 - Outcome: The single `metis-app` executable exposes a bounded `--response-delay-ms` service probe backed by Moirai's async timer. The live stop/remount trace leaves the remounted DOM at `Backend unavailable [ERR_TRANSPORT_BROKEN]` with no stale result or event after the deadline.
 
 <a id="METIS-FRAGMENT-001"></a>
-## METIS-FRAGMENT-001 — Authenticated typed browser actions [arch] [minor]
-- Status: done; priority: P1; owner: Metis protocol/browser; integrator: root; last-update: 2026-09-16; delivery: [PR #198](https://github.com/ryancinsight/metis/pull/198), merge `0c69d54`; decision: [ADR 0022](docs/adr/0022-typed-browser-actions.md).
-- Outcome: Capability-bound fragments enforce target, patch, generation and request-lifecycle bounds; hosted Chromium, Firefox and WebKit evidence in run [35143857171](https://github.com/ryancinsight/metis/actions/runs/35143857171) passes success, rejection, reset/remount and cleanup oracles with inspected artifacts in the [browser manual](docs/manual/browser.md#hosted-fragment-matrix-evidence--2026-09-16). DICOM remains RITK-owned.
+## METIS-FRAGMENT-001 — Authenticated typed browser actions [arch] [major]
+- Status: done; priority: P1; integrator: root; last-update: 2026-09-16; delivery: [PR #203](https://github.com/ryancinsight/metis/pull/203); decision: [ADR 0025](docs/adr/0025-axum-server-boundary.md).
+- Outcome: Origin-authorized HTTP survives bounded peer failures with typed reporting; all three engines pass observed idle/reset/remount assertions at `dc6c9bd` in [run 35169939056](https://github.com/ryancinsight/metis/actions/runs/35169939056). Inspected, hash-checked trace/PNG evidence and limits: [browser manual](docs/manual/browser.md#hosted-fragment-matrix-evidence--2026-09-16).
+- Verification: 99 focused Python tests and configured local gate pass (171 packages; 330 debug and 330 release tests, one existing skip each). Semver check identifies the two intentional observer-argument additions; callers and docs migrate, with no release. DNS-independent real HTTP regression passes; the prior hosted startup cause remains unproven.
 
 <a id="METIS-SEC-001"></a>
 ## METIS-SEC-001 — Backend authority [arch] [patch]
