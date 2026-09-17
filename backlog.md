@@ -134,7 +134,7 @@ an owner. “Unsupported” cannot replace delivery of a required mobile/native 
 
 <a id="METIS-FRAGMENT-001"></a>
 ## METIS-FRAGMENT-001 — Authenticated typed browser actions [arch] [major]
-- Status: in-progress; priority: P1; integrator: root; last-update: 2026-09-17; delivery: [PR #203](https://github.com/ryancinsight/metis/pull/203); follow-up: [PR #204](https://github.com/ryancinsight/metis/pull/204) (draft); branch: `fix/metis-idle-peer-deadline`; decision: [ADR 0025](docs/adr/0025-axum-server-boundary.md); takeover: root 2026-09-17.
+- Status: in-progress; priority: P1; integrator: root; last-update: 2026-09-17; branch: `docs/close-metis-fragment`; regions: `backlog.md`; decision: [ADR 0025](docs/adr/0025-axum-server-boundary.md); takeover: root 2026-09-17.
 - Scope: preserve the Origin-authorized real HTTP service; finish cross-engine fragment execution and the owning idle-peer recovery correction. No release or private resource-lifetime claim.
 - Acceptance: authenticated success, malformed/unauthorized rejection, idle state, reset and remount verify in bounded traces/PNGs for Chromium, Firefox and WebKit; the original external-deadline native regression and configured gates pass on the delivered provider revision.
 - Browser evidence: all three engines pass at `c1ee7db` in [run 35173142639](https://github.com/ryancinsight/metis/actions/runs/35173142639). All three JSON records and nine PNG hashes verify; WebKit's three images are inspected. Exact artifact hashes, observed semantics and coverage limits: [browser manual](docs/manual/browser.md#hosted-fragment-matrix-evidence--2026-09-16). The prior static-server startup cause remains unproven; the DNS-independent real HTTP regression passes.
@@ -144,6 +144,7 @@ an owner. “Unsupported” cannot replace delivery of a required mobile/native 
 - Prior measured failure: release run `78c768c9` at provider `a3a0ae14` fails idle recovery in 0.422 seconds with retained Winsock error `10038`; debug passes 330/330 and release passes 329/330, one skip each. Preserved in `output/fragment-driver-socket-error/`. The owning fix retains socket owners through polling and makes future cancellation replacement-safe; this structural correction does not prove the historical stall cause.
 - Gate containment: two shared-Cargo-lock waits exceed their unchanged 300-second stage bounds. The repaired runner reports the second timeout and removes every owned launcher/Cargo descendant; neither failed run is a native-test pass. Current visual dependency provenance awaits successful final verification; image/semantic changes are not authorized by a dependency fingerprint refresh.
 - Dependency: [owning Windows socket-lifetime work](../moirai/docs/backlog.md#MOI-WINDOWS-SOCKET-LIFETIME-2026-09-17); upstream normal merge and final consumer/native/browser results remain pending. Close only after the acceptance oracle passes on the final revision.
+- Lease: root `backlog.md` — 2026-09-17T10:35:00-04:00.
 
 <a id="METIS-SEC-001"></a>
 ## METIS-SEC-001 — Backend authority [arch] [patch]
