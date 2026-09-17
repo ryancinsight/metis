@@ -39,8 +39,10 @@ cargo run --locked -p metis-app -- --metis-webview 60 2 0.2
 
 The `WebView` host disables devtools and default context menus, denies new-window
 navigation, restricts resources to its generated package directory and grants
-no filesystem, network or process authority to page code. Close the window or
-press Escape to complete the bounded session.
+no filesystem, network or process authority to page code. Moirai also denies
+every `WebView2` permission request before profile or OS prompting and sends a
+typed `permission_denied` status back to the page. Close the window or press
+Escape to complete the bounded session.
 
 The same executable can serve one authenticated browser session through the
 bounded loopback WebSocket role:

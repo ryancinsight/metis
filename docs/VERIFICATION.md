@@ -181,10 +181,10 @@ watchdog; the headless role retains the ten-second budget.
 This establishes provider, lifecycle, bounded native IME event production and
 code-level host composition evidence. The committed Windows host captures are
 recorded below. An installed CJK/other IME keyboard journey, WebView2
-composition, OS permission denial, accessibility behavior, two-window captures,
-and macOS/Linux support remain open under [V05](#V05) and the linked backlog
-items; a hidden-window test and a passing build cannot replace real visual,
-assistive-technology or denial-probe evidence.
+composition, broader OS permission enforcement, accessibility behavior,
+two-window captures, and macOS/Linux support remain open under [V05](#V05) and
+the linked backlog items; a hidden-window test and a passing build cannot
+replace real visual, assistive-technology or denial-probe evidence.
 
 ### Format-neutral native application host — 2026-09-10
 
@@ -260,8 +260,33 @@ bounded `chrome.webview.postMessage` call. Static package tests enforce these
 restrictions, and the installed provider smoke supplies the runtime
 outside-package navigation denial. This establishes the application/provider
 boundary policy, not OS-level sandbox enforcement. The visible
-`--metis-webview` initial and submit journey is captured below; OS permission
-denial and assistive-technology evidence remain unverified.
+`--metis-webview` initial and submit journey is captured below; provider-side
+permission denial is verified by the contract section that follows, while
+broader OS enforcement and assistive-technology evidence remain unverified.
+
+### WebView2 permission denial contract — 2026-09-17
+
+Moirai merge `b94f3ed7a0faa436ebe993dbfec49726cef853fa` adds a provider-owned
+`PermissionRequested` callback. Every WebView2 permission kind is denied
+synchronously before profile or operating-system prompting, and the callback
+enqueues a bounded `WebViewEvent::PermissionDenied` carrying the URI,
+`WebViewPermission` value and `user_initiated` flag. Unknown numeric kinds stay
+observable as `WebViewPermission::Unknown`, so the consumer does not collapse a
+new runtime request into an untyped string. Metis re-exports the enum through
+its native platform boundary and maps the event to the typed page status
+`permission_denied` with `ErrorCode::PermissionDenied` (`0x200f`).
+
+The exact consumer checks are `cargo nextest run --locked -p metis-core -p
+metis-platform -p metis-app --all-targets` (84 passed, 2 ignored) and the
+warning-denied Clippy gate for those packages. The ignored installed-runtime
+adapter smoke `installed_runtime_denies_geolocation_permission` requests
+geolocation from a temporary packaged page and asserts
+`WebViewPermission::Geolocation` with `user_initiated = false`; the frontend
+unit test asserts the serialized page error, including code `8207` and the
+stable `geolocation` label. These checks establish synchronous provider denial
+and consumer translation. They do not establish a visible permission-probe
+capture, revocation of grants owned by another profile, or broader Windows
+file/network/process sandbox enforcement; those remain V05 host evidence.
 
 ### Windows visible host captures — 2026-09-09
 
@@ -288,8 +313,9 @@ settings, registry tokens and the `github-cli` environment name are not passed.
 The focused regression test verifies that a runtime child has no `PATH` and that
 the allowlist does not contain `github-cli`. The capture parent and child were
 closed after each workflow. This evidence does not establish physical
-resize/DPI, native accessibility, installed-IME, OS permission denial,
-two-window visual or macOS/Linux behavior.
+resize/DPI, native accessibility, installed-IME, a visible permission-probe
+state, broader OS permission enforcement, two-window visual behavior or
+macOS/Linux support.
 
 ### Windows native resize capture — 2026-09-13
 
@@ -1975,8 +2001,8 @@ closed generation `0`. The inspected 336×279 window contains the 320×240
 client frame and two bounded resize events; the exact image and SHA-256 digest
 are recorded in [`python-native-captures.json`](manual/images/python-native-captures.json).
 This closes only the single-window Python binding capture. Two-window focus,
-native IME, resize/DPI journeys, permission denial and non-Windows providers
-remain open under V05.
+native IME, resize/DPI journeys, broader OS permission enforcement and
+non-Windows providers remain open under V05.
 
 The same host path now presents a real RITK application frame. The capture tool
 reads the public RITK CT/MIP PNG as bounded 8-bit RGBA input, validates its
@@ -2529,7 +2555,7 @@ their surface and process-boundary differences and the unmatched GPUI/Tauri,
 WASM, allocation, latency and security measurements explicit.
 
 The browser presentation path now pins Moirai merge
-`21b66ba424ad8f50d8574d6e9714be696f807e82`. Its validated canvas presenter
+`b94f3ed7a0faa436ebe993dbfec49726cef853fa`. Its validated canvas presenter
 retains the current bitmap dimensions for same-size RGBA frames and performs
 the bounded resize only when an extent changes; the same provider revision
 contains the content-box mapping consumed by RITK and the explicit WebGPU

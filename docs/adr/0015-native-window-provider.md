@@ -63,6 +63,15 @@ all eleven Moirai packages to the merged revision; the target feature tree and
 full locked Metis gate verify the selected graph. No registry or signing key is
 part of this provider adoption.
 
+Revision 2026-09-17: Moirai PR #392 merged at
+`64d5cdc1465542748d2261663284c9c357850541` adds a provider-owned
+`PermissionRequested` callback. Every WebView2 permission kind is denied
+synchronously before profile or operating-system prompting, and Metis forwards
+the bounded `WebViewEvent::PermissionDenied` snapshot as a typed
+`permission_denied` page error. Moirai PR #394 then merged at
+`b94f3ed7a0faa436ebe993dbfec49726cef853fa`, adding stable display labels while
+preserving unknown numeric kinds. See the [Moirai decision](../../moirai/docs/adr/0062-webview2-permission-denial.md).
+
 ## Context
 
 The framework comparison in [ADR 0003](0003-framework-conformance.md) leaves a
@@ -112,17 +121,20 @@ supervised private pipe as the headless role.
 The same boundary exposes `WebViewSurface` for packaged HTML/CSS applications.
 It owns one Moirai `WebViewHost`, aligns its controller bounds and visibility
 with `WindowConfig`, forwards the combined window/WebView event batch and keeps
-navigation and JSON bridge policy in the provider. The adapter exposes no
-filesystem, network, process or authorization capability to page code. The
-`metis-app --metis-webview` role composes this surface with the existing
-supervised private-pipe frontend and backend, using a bounded temporary page
-package for the end-to-end form workflow.
+navigation, JSON bridge and permission-denial policy in the provider. The
+adapter exposes no filesystem, network, process or authorization capability to
+page code. The `metis-app --metis-webview` role composes this surface with the
+existing supervised private-pipe frontend and backend, using a bounded
+temporary page package for the end-to-end form workflow. A denied WebView2
+request is translated to a `permission_denied` page error carrying the stable
+Metis capability code; the page never receives an allow decision.
 
 This increment deliberately supplies a native software surface, provider-owned
-IME event production, the WebView2 consumer seam and the application bridge.
-OS file/network/process denial, accessibility providers, an installed IME
-journey, physical resize/DPI and consumer editing policy remain separate host
-increments with their own contracts and captures.
+IME event production, the WebView2 consumer seam, synchronous permission
+denial and the application bridge. OS file/network/process sandboxing,
+accessibility providers, an installed IME journey, physical resize/DPI and
+consumer editing policy remain separate host increments with their own
+contracts and captures.
 
 ## Alternatives
 
@@ -144,11 +156,13 @@ and performs no fallible application operation across the ABI boundary. The
 presenter treats pixels as data only and does not grant file, network, process or
 WebView authority.
 
-The provider and visible host are Windows-only in this increment. Cross-platform
-native windows, OS sandbox enforcement, native accessibility, an installed CJK
-or other IME journey, and actual two-window permission captures remain open
-under the linked backlog items. The committed capture covers only the initial
-and successful form states;
+The provider and visible host are Windows-only in this increment. The provider
+denies WebView2 permission requests synchronously, but does not prove a broader
+Windows sandbox or revoke grants owned by another profile. Cross-platform
+native windows, OS file/network/process enforcement, native accessibility, an
+installed CJK or other IME journey, and a visible permission-probe capture
+remain open under the linked backlog items. The committed capture covers only
+the initial and successful form states;
 a successful Windows build or off-screen frame does not close the remaining
 runtime requirements.
 
@@ -160,8 +174,11 @@ validation. A Windows host test creates a real hidden window, pumps its
 lifecycle and destroys it without retained callback state. The Metis adapter
 and frontend host tests present actual framebuffer storage, derive the submit
 hit region from the authored display list, exercise bounded text and preserve
-the old surface across an invalid resize. Warning-denied Clippy, native tests
-and the WASM library gate remain required. The capture manifest and four PNGs
-provide visual V05 evidence for the initial and successful native/WebView2 form
-journeys; installed-IME, accessibility, permission, physical resize/DPI and
-cross-platform host evidence remain required.
+the old surface across an invalid resize. The adapter's ignored
+installed-runtime contract requests geolocation and asserts the typed denial;
+the frontend test asserts the serialized `permission_denied` page error.
+Warning-denied Clippy, native tests and the WASM library gate remain required.
+The capture manifest and four PNGs provide visual V05 evidence for the initial
+and successful native/WebView2 form journeys; a visible permission-probe
+capture, installed-IME, accessibility, physical resize/DPI and cross-platform
+host evidence remain required.

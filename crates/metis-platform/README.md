@@ -71,15 +71,19 @@ uses the same scale for geometry, text and hit testing. A host reports its
 current value through a `WindowEvent::DpiChanged` adapter.
 
 The Windows adapter is a native pixel, event and `WebView2` boundary, not a
-permission broker. Use `metis_platform::native::NativeSurface` with a validated
+general application permission broker. Use
+`metis_platform::native::NativeSurface` with a validated
 `metis_platform::native::WindowConfig` for a real framebuffer HWND, or use
 `WebViewSurface` with a validated `WebViewConfig` for a packaged `file:///`
 entry. Both surfaces keep their callbacks and operating-system handles on the
 creating thread; `WebView` navigation and messages remain bounded and
-allowlisted. Multiple `NativeSurface` values can coexist on their creating
-thread; call `reopen` only after `close` to reuse a surface's validated
-configuration. Application editing policy, OS permission enforcement and
-accessibility remain host-level workflows.
+allowlisted. The `WebView2` provider denies every `PermissionRequested` callback
+synchronously and reports the typed `WebViewEvent::PermissionDenied` with its
+`WebViewPermission`; it never grants a page capability implicitly. Multiple
+`NativeSurface` values can coexist on their creating thread; call `reopen` only
+after `close` to reuse a surface's validated configuration. Native process and
+file policy, application editing policy and accessibility remain host-level
+workflows.
 
 Applications that use the native pixel surface can share the bounded host loop
 through `metis_platform::native::NativeApplication` and

@@ -59,6 +59,8 @@ pub enum ErrorCode {
     PluginNotFound = 0x200d,
     /// The requested operation is not declared by the plugin.
     PluginOperationNotFound = 0x200e,
+    /// A host denied an operating-system or `WebView` capability request.
+    PermissionDenied = 0x200f,
 
     // Clinical / Safety Interlock Errors (0x3000 - 0x3FFF)
     /// Weight is outside the demonstration input bounds.
@@ -137,6 +139,7 @@ impl ErrorCode {
             Self::PluginRegistryFull => "ERR_PLUGIN_REGISTRY_FULL",
             Self::PluginNotFound => "ERR_PLUGIN_NOT_FOUND",
             Self::PluginOperationNotFound => "ERR_PLUGIN_OPERATION_NOT_FOUND",
+            Self::PermissionDenied => "ERR_PERMISSION_DENIED",
             Self::InvalidPatientWeight => "ERR_INVALID_PATIENT_WEIGHT",
             Self::InvalidDrugConcentration => "ERR_INVALID_DRUG_CONCENTRATION",
             Self::InvalidTargetDose => "ERR_INVALID_TARGET_DOSE",

@@ -28,8 +28,10 @@ synchronous pipes and asynchronous WebSocket sessions, with strict identifiers
 and bounded retention; an accepted clinical calculation emits a typed
 `clinical.result` event after its correlated response. They also expose a
 versioned target descriptor naming the host platform and installed transport
-surfaces; the native window role advertises its installed HWND surface while
-OS permission surfaces remain absent.
+surfaces; the native window role advertises its installed HWND surface. On
+Windows, the WebView2 provider denies every page permission request before
+profile or operating-system prompting and reports the typed denial to the
+application; broader OS sandbox enforcement remains a separate host contract.
 The [browser manual](docs/manual/browser.md) also carries a dependency-free W3C
 WebDriver runner for the Chromium, Firefox and WebKit conformance matrix; a
 configured driver is required for runtime evidence.
@@ -119,7 +121,7 @@ capabilities are implemented upstream in Moirai. Iris supplies the
 that contract. The `metis-frontend` library
 dependency closure excludes `metis-backend`; the application entry composes both
 libraries. A shared executable image does not remove backend code from the child
-or establish OS permission restrictions. See [application entry design](docs/adr/0006-application-entry.md).
+or establish broader OS permission restrictions. See [application entry design](docs/adr/0006-application-entry.md).
 
 Runtime crates declare no direct third-party crates. The distribution CLI uses
 Serde and serde_json for validated manifests and Cargo artifact messages, as
@@ -128,13 +130,14 @@ have transitive dependencies; the gate records the actual graph instead of descr
 dependency-free. The Atlas development overlay resolves first-party code to local
 trees. Standalone builds use the corresponding pushed provider revisions recorded
 in Cargo.lock. Metis consumes Moirai through git-plus-version requirements;
-the lock records current audited merge `21b66ba424ad8f50d8574d6e9714be696f807e82`,
+the lock records current audited Moirai merge `b94f3ed7a0faa436ebe993dbfec49726cef853fa`,
 which descends from Moirai PR #355's opt-in WebView2 feature graph and the
 stable browser canvas extent and content-box revisions. That revision
 includes the merged process, browser/API, bounded WebSocket service,
 cancellable-task surfaces, semantic control seams, pointer metadata, wheel
 metadata, bounded browser file access through a direct first-read plus object-URL continuation stream and
-the thread-affine Windows WebView2 provider and stable browser canvas extents.
+the thread-affine Windows WebView2 provider, stable browser canvas extents and
+synchronous WebView2 permission-denial events.
 The browser host also exposes explicit asynchronous WebGPU canvas constructors
 through the same borrowed frame and bounded input contract. A missing adapter
 or device is reported as an unsupported/setup error; the host does not silently
@@ -151,7 +154,8 @@ adapter pass the installed WebView2 navigation/bridge smoke on runtime
 records the visible Windows native and WebView2 initial/submit journeys; the
 [desktop item](backlog.md#METIS-DESKTOP-001) tracks remaining host-specific
 evidence for physical display-scale transitions, native accessibility, installed
-IME, OS-enforced permissions and non-Windows hosts.
+IME, broader OS-enforced restrictions, visible permission-probe capture and
+non-Windows hosts.
 
 ## Design and evidence
 

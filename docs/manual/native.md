@@ -213,7 +213,7 @@ does not grant page code filesystem, network or process authority. The
 WebView2 runtime must be installed on the Windows machine. The Windows
 `metis-platform` target explicitly enables Moirai's `webview2` feature; other
 Metis targets do not pull the optional COM binding. The standalone Cargo.lock
-pins Moirai merge `21b66ba424ad8f50d8574d6e9714be696f807e82`, which contains the
+pins Moirai merge `b94f3ed7a0faa436ebe993dbfec49726cef853fa`, which contains the
 provider feature, bounded host implementation, stable browser canvas extents,
 the content-box mapping used by the RITK consumer and the explicit WebGPU
 canvas provider. WebGPU is a browser-only opt-in surface; native WebView2
@@ -236,8 +236,15 @@ frames, workers, manifests and forms are denied. The page script uses only the
 bounded `chrome.webview.postMessage` bridge; WebView2 host objects and process
 APIs are not registered. The provider separately rejects arbitrary navigation
 and new-window requests. These are package/provider restrictions, not a claim
-that the operating system sandbox has been proven. Escape or the close button
-ends the finite five-minute session.
+that the operating system sandbox has been proven. The Moirai provider also
+handles every WebView2 `PermissionRequested` callback, sets the state to deny
+before profile or operating-system prompting, and forwards a bounded
+`WebViewEvent::PermissionDenied` snapshot. `metis-app` renders that event as a
+`permission_denied` page error with `ErrorCode::PermissionDenied`; the default
+calculation page requests no capability, so the existing form capture remains
+unchanged. A consumer page that requests geolocation or another capability
+will show the denied label without receiving an allow decision. Escape or the
+close button ends the finite five-minute session.
 
 ### Verify the installed WebView2 adapter
 
@@ -251,8 +258,12 @@ cargo nextest run --locked -p metis-platform --all-targets --run-ignored all ins
 The smoke uses a hidden native host, loads a temporary packaged page, checks a
 successful navigation, rejects an external HTTPS navigation and observes the
 denied-navigation event, then closes the surface. It passed against WebView2
-runtime `152.0.4191.66`. A hidden smoke is not a visual or accessibility
-capture; the visible form workflow is recorded below.
+runtime `152.0.4191.66`. The companion
+`installed_runtime_denies_geolocation_permission` smoke requests geolocation
+and asserts `WebViewPermission::Geolocation` with `user_initiated = false`.
+Both tests are ignored unless the WebView2 runtime is installed. A hidden smoke
+is not a visual or accessibility capture; the visible form workflow is recorded
+below.
 
 ```rust
 use metis_platform::native::{
@@ -353,7 +364,10 @@ capture utility recorded changed pixels and exact SHA-256 digests in
 The capture session closed the supervised parent and child processes after each
 workflow. These images establish the visible initial and successful journeys;
 they do not establish native accessibility technology, an installed CJK IME,
-OS permission denial, a physical display-scale change, or macOS/Linux hosts.
+a visible permission-probe state, a physical display-scale change, or
+macOS/Linux hosts. The installed-runtime adapter smoke separately requests
+geolocation and observes `WebViewPermission::Geolocation` denied by Moirai; the
+application maps that event to the visible `permission_denied` page status.
 For a real application frame with saved DICOM pixels, follow the
 [RITK DICOM workflow](https://github.com/ryancinsight/ritk/blob/main/docs/manual/dicom-workflow.md);
 RITK owns opening and decoding those files and Métis owns this format-neutral
@@ -405,8 +419,10 @@ establish the visible native and WebView2 initial/submit journeys, and the
 resize pair proves a real client-size transition with a rebuilt frame. A native
 keyboard/IME journey is still required for V05 input acceptance. The software
 mapping for fractional display scales is covered by deterministic component
-tests, while a physical monitor transition, OS permission denial, native
+tests, while a physical monitor transition, broader OS permission enforcement, native
 accessibility, an installed CJK or other IME journey, macOS/Linux providers,
-two-window captures and the viewer host remain V05 and migration work. Do not
-treat a successful Windows build or a hidden-window test as cross-platform,
-assistive-technology or permission evidence.
+two-window captures and the viewer host remain V05 and migration work. The
+WebView2 provider denial is covered; broader Windows sandbox enforcement and a
+visible permission-probe capture remain open. Do not treat a successful Windows
+build or a hidden-window test as cross-platform, assistive-technology or broad
+OS-permission evidence.

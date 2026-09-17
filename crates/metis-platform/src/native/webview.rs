@@ -9,7 +9,7 @@ use std::{io, time::Duration};
 pub use moirai_pal::windows::webview::{
     MAX_WEBVIEW_EVENTS, MAX_WEBVIEW_MESSAGE_BYTES, MAX_WEBVIEW_MESSAGE_UNITS,
     MAX_WEBVIEW_URI_UNITS, MAX_WEBVIEW_WAIT_MILLISECONDS, WebViewConfig, WebViewEvent,
-    WebViewHostEvent,
+    WebViewHostEvent, WebViewPermission,
 };
 
 /// A Metis desktop `WebView2` surface with a Moirai-owned parent window.
@@ -131,21 +131,9 @@ mod tests {
     #[test]
     #[ignore = "requires an installed WebView2 runtime and a visible Windows host"]
     fn installed_runtime_loads_packaged_page_and_closes_surface() {
-        let root = std::env::temp_dir().join(format!("metis-webview-{}", std::process::id()));
-        std::fs::create_dir_all(&root).expect("temporary package directory");
-        let entry = root.join("index.html");
-        std::fs::write(
-            &entry,
-            r"<!doctype html><script>window.chrome.webview.postMessage({ready:true});</script>",
-        )
-        .expect("temporary packaged entry");
-        let path = entry
-            .canonicalize()
-            .expect("canonical package entry")
-            .to_string_lossy()
-            .replace('\\', "/");
-        let path = path.strip_prefix("//?/").unwrap_or(&path);
-        let uri = format!("file:///{path}");
+        let script =
+            r"<!doctype html><script>window.chrome.webview.postMessage({ready:true});</script>";
+        let (root, uri) = test_page(script);
         let window = WindowConfig::with_visibility(
             "Metis WebView2 adapter",
             640,
@@ -198,5 +186,65 @@ mod tests {
         surface.close().expect("WebView2 close");
         assert!(surface.is_closed());
         std::fs::remove_dir_all(root).expect("temporary package cleanup");
+    }
+
+    #[test]
+    #[ignore = "requires an installed WebView2 runtime and a visible Windows host"]
+    fn installed_runtime_denies_geolocation_permission() {
+        let script = r"<!doctype html><script>
+navigator.geolocation.getCurrentPosition(() => {}, () => {});
+</script>";
+        let (root, uri) = test_page(script);
+        let window = WindowConfig::with_visibility(
+            "Metis WebView2 permission adapter",
+            640,
+            480,
+            WindowVisibility::Hidden,
+        )
+        .expect("bounded window configuration");
+        let config = WebViewConfig::new(uri).expect("bounded WebView configuration");
+        let mut surface = WebViewSurface::new(&window, config).expect("installed WebView2 host");
+        let mut events = surface.poll_events().expect("initial WebView2 events");
+        if !events.iter().any(|event| {
+            matches!(
+                event,
+                WebViewHostEvent::WebView(WebViewEvent::PermissionDenied {
+                    permission: WebViewPermission::Geolocation,
+                    ..
+                })
+            )
+        }) {
+            events.extend(
+                surface
+                    .wait_events(Duration::from_secs(1))
+                    .expect("permission event"),
+            );
+        }
+        assert!(events.iter().any(|event| {
+            matches!(
+                event,
+                WebViewHostEvent::WebView(WebViewEvent::PermissionDenied {
+                    permission: WebViewPermission::Geolocation,
+                    user_initiated: false,
+                    ..
+                })
+            )
+        }));
+        surface.close().expect("WebView2 close");
+        std::fs::remove_dir_all(root).expect("temporary package cleanup");
+    }
+
+    fn test_page(script: &str) -> (std::path::PathBuf, String) {
+        let root = std::env::temp_dir().join(format!("metis-webview-{}", std::process::id()));
+        std::fs::create_dir_all(&root).expect("temporary package directory");
+        let entry = root.join("index.html");
+        std::fs::write(&entry, script).expect("temporary packaged entry");
+        let path = entry
+            .canonicalize()
+            .expect("canonical package entry")
+            .to_string_lossy()
+            .replace('\\', "/");
+        let path = path.strip_prefix("//?/").unwrap_or(&path);
+        (root, format!("file:///{path}"))
     }
 }
