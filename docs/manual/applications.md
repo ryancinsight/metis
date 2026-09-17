@@ -321,6 +321,20 @@ This command is the local verification path for saved-study images. The
 public MRI-DIR captures above remain the reproducible repository evidence;
 private studies remain local evidence only.
 
+The current browser workflow also records a trusted window/level selection on
+the same saved study. Hosted Chromium run
+[35269645902](https://github.com/ryancinsight/ritk/actions/runs/35269645902)
+accepted all 94 files, selected the RITK-owned `Brain T1` preset, and changed
+the three displayed plane images. The [provenance record](https://github.com/ryancinsight/ritk/blob/main/docs/manual/images/dicom-metis-real-browser-mri-window-level.json)
+binds the RITK and Métis revisions, six rejected invalid probes, frame
+generations, trusted input events and cleanup. The [viewport capture](https://github.com/ryancinsight/ritk/blob/main/docs/manual/images/dicom-metis-real-browser-mri-window-level.png?raw=true)
+and [control capture](https://github.com/ryancinsight/ritk/blob/main/docs/manual/images/dicom-metis-real-browser-mri-window-level-controls.png?raw=true)
+are actual RITK DICOM output through the format-neutral Métis browser surface.
+
+![Actual saved MRI study after the Brain T1 window/level selection](https://github.com/ryancinsight/ritk/blob/main/docs/manual/images/dicom-metis-real-browser-mri-window-level.png?raw=true)
+
+![Window/level control for the saved MRI study](https://github.com/ryancinsight/ritk/blob/main/docs/manual/images/dicom-metis-real-browser-mri-window-level-controls.png?raw=true)
+
 To pair the capture with resource evidence, run the same command through
 [`scripts/resource.py`](../../scripts/resource.py) as described in the
 [testing manual](testing.md#measure-a-real-application-lifecycle). The report

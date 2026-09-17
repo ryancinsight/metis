@@ -2376,6 +2376,20 @@ The mounted Metis host markup remains format-neutral: it exposes **Choose
 files** without an `accept` filter. The RITK gallery consumer applies the
 DICOM label and `.dcm,application/dicom` filter after mounting, so that hint
 does not enter the Metis host contract.
+RITK's current single-cycle Chromium raster job also exercises the
+format-neutral host with a trusted window/level action. Hosted run
+[35269645902](https://github.com/ryancinsight/ritk/actions/runs/35269645902)
+accepted the saved 94-file MRI-DIR study (49,807,236 bytes), selected `Brain
+T1` (centre `500`, width `800`), rejected six malformed preset indices, and
+advanced all three frame generations from `142` to `143` with changed RGBA
+digests. The trace records seven trusted select events and releases five
+diagnostic listeners plus active input sources. The [machine-readable
+provenance](../../ritk/docs/manual/images/dicom-metis-real-browser-mri-window-level.json),
+[viewport capture](../../ritk/docs/manual/images/dicom-metis-real-browser-mri-window-level.png)
+and [control capture](../../ritk/docs/manual/images/dicom-metis-real-browser-mri-window-level-controls.png)
+are the visual evidence. The Chromium-window job passed; the same run's
+WebKit file-read authorization and Chromium WebGPU adapter probes remain
+separate host-capability residuals.
 RITK PR #284 additionally records a local browser smoke of the packaged
 `start_web_canvas` path: three synthetic Part 10 files were dispatched through
 a browser `DataTransfer`, the host reported three accepted 654-byte files and
