@@ -45,6 +45,12 @@ post-default value and selection before reporting the semantic operation. The
 browser remains the authority for clipboard and history behavior; Metis does
 not invent a clipboard API or substitute a Rust-side history stack.
 
+The classifier follows the W3C [Input Events] vocabulary, including quotation
+paste, line and word deletion, drag deletion and transpose insertion. Names not
+in the bounded mapping remain `other`.
+
+[Input Events]: https://w3c.github.io/input-events/
+
 The Atlas stack has no first-party UAX #29 segmenter. The browser host keeps
 this one pure-Rust registry dependency at its text-policy boundary rather than
 reimplementing the Unicode algorithm or moving text semantics into a consumer.

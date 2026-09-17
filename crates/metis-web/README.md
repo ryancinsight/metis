@@ -102,7 +102,8 @@ operation type and composition state. Composition start, update, commit and
 cancel transitions render separate status values. The policy bounds values and
 metadata, rejects offsets inside a UTF-16 surrogate pair or Unicode extended
 grapheme cluster before changing state. Browser `InputEvent.inputType` values
-are classified as edit, delete, paste, cut, undo, redo, composition or other;
+from the W3C [Input Events] vocabulary are classified as edit, delete, paste,
+cut, undo, redo, composition or other;
 the raw bounded operation name remains available for diagnostics. The browser
 applies its native clipboard or history operation first, so the resulting value
 and selection are the ones Metis validates and renders. A `keyup` listener
@@ -113,6 +114,8 @@ status. The browser keeps its native caret, clipboard and history behavior;
 bidi layout, line metrics, fallback-font metrics and native IME production
 remain host contracts. Selection and composition state are exposed through
 semantic status elements and data attributes.
+
+[Input Events]: https://w3c.github.io/input-events/
 
 Build the WASM artifact and generated browser glue with:
 

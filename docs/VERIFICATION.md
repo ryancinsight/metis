@@ -1163,12 +1163,16 @@ behavior.
 ## Browser text input-operation evidence — 2026-09-17
 
 The input listener now classifies the browser's bounded `InputEvent.inputType`
-after the host applies its default edit. `insertFromPaste`, `deleteByCut`,
-`historyUndo` and `historyRedo` render semantic paste, cut, undo and redo
-statuses while retaining the raw operation name; ordinary and composition input
-retain their existing status contract. The Rust policy validates the resulting
-value and UTF-16 selection before rendering, so no second clipboard or history
-implementation exists in Metis.
+after the host applies its default edit. The mapping follows the W3C [Input
+Events] vocabulary: quotation paste, line and word deletion, drag deletion and
+transpose insertion join the existing edit, delete and paste categories.
+`insertFromPaste`, `deleteByCut`, `historyUndo` and `historyRedo` render semantic
+paste, cut, undo and redo statuses while retaining the raw operation name;
+ordinary and composition input retain their existing status contract. The Rust
+policy validates the resulting value and UTF-16 selection before rendering, so
+no second clipboard or history implementation exists in Metis.
+
+[Input Events]: https://w3c.github.io/input-events/
 
 Focused checks against the standalone lock on the pinned toolchain passed:
 

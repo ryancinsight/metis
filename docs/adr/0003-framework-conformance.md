@@ -118,6 +118,13 @@ value and selection produced by the host's default action before rendering the
 operation status. This records host clipboard/history behavior without adding a
 second clipboard or undo implementation to Metis.
 
+Revision 2026-09-17: the classifier covers the W3C [Input Events] edit,
+deletion, quotation-paste and transpose names that can reach a text control;
+unknown names remain `other` so the boundary does not guess at future browser
+operations.
+
+[Input Events]: https://w3c.github.io/input-events/
+
 Revision 2026-09-08: Metis now retains two browser pointer identifiers and
 applies a bounded centroid/distance pinch policy. Duplicate and third-pointer
 presses are rejected, and the remaining physical-touch, cross-engine and

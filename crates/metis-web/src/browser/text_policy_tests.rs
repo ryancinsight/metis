@@ -14,8 +14,32 @@ fn browser_input_types_classify_edit_clipboard_and_history_operations() {
         InputOperation::Delete
     );
     assert_eq!(
+        InputOperation::from_browser_input_type("deleteSoftLineForward"),
+        InputOperation::Delete
+    );
+    assert_eq!(
+        InputOperation::from_browser_input_type("deleteHardLineBackward"),
+        InputOperation::Delete
+    );
+    assert_eq!(
+        InputOperation::from_browser_input_type("deleteByDrag"),
+        InputOperation::Delete
+    );
+    assert_eq!(
         InputOperation::from_browser_input_type("insertFromPaste"),
         InputOperation::Paste
+    );
+    assert_eq!(
+        InputOperation::from_browser_input_type("insertFromPasteAsQuotation"),
+        InputOperation::Paste
+    );
+    assert_eq!(
+        InputOperation::from_browser_input_type("insertLineBreak"),
+        InputOperation::Edit
+    );
+    assert_eq!(
+        InputOperation::from_browser_input_type("insertTranspose"),
+        InputOperation::Edit
     );
     assert_eq!(
         InputOperation::from_browser_input_type("deleteByCut"),

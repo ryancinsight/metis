@@ -953,7 +953,9 @@ line metrics or trusted IME behavior.
 
 The same input listener keeps the browser's `InputEvent.inputType` as bounded
 metadata and classifies it as edit, delete, paste, cut, undo, redo, composition
-or other. The browser performs its native clipboard or history action before the
+or other. The mapping includes quotation paste, line or word deletion, drag
+deletion and transpose insertion from the W3C [Input Events] vocabulary. The
+browser performs its native clipboard or history action before the
 event reaches Metis; the resulting value and UTF-16 selection are validated by
 the Rust policy and the status line reports the semantic operation together
 with the raw operation name. For example, native undo reports
@@ -961,6 +963,8 @@ with the raw operation name. For example, native undo reports
 the existing `Text: input insertText applied; data ...` status. This is operation
 classification and value validation, not a replacement clipboard service or a
 Rust-side undo stack.
+
+[Input Events]: https://w3c.github.io/input-events/
 
 The policy caps the value at 1 MiB, event metadata at 128 UTF-8 bytes and the
 locale at 64 bytes. UTF-16 offsets are transport coordinates; the Rust policy

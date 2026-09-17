@@ -1,4 +1,8 @@
 //! Browser input operation classification for the text boundary.
+//!
+//! The operation names follow the W3C [Input Events] vocabulary.
+//!
+//! [Input Events]: https://w3c.github.io/input-events/
 
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
 pub(crate) enum InputOperation {
@@ -15,7 +19,7 @@ pub(crate) enum InputOperation {
 impl InputOperation {
     pub(crate) fn from_browser_input_type(input_type: &str) -> Self {
         match input_type {
-            "insertFromPaste" => Self::Paste,
+            "insertFromPaste" | "insertFromPasteAsQuotation" => Self::Paste,
             "deleteByCut" => Self::Cut,
             "historyUndo" => Self::Undo,
             "historyRedo" => Self::Redo,
@@ -26,10 +30,20 @@ impl InputOperation {
             | "deleteContentBackward"
             | "deleteContentForward"
             | "deleteWordBackward"
-            | "deleteWordForward" => Self::Delete,
-            "insertText" | "insertReplacementText" | "insertFromDrop" | "insertFromYank" => {
-                Self::Edit
-            }
+            | "deleteWordForward"
+            | "deleteSoftLineBackward"
+            | "deleteSoftLineForward"
+            | "deleteEntireSoftLine"
+            | "deleteHardLineBackward"
+            | "deleteHardLineForward"
+            | "deleteByDrag" => Self::Delete,
+            "insertText"
+            | "insertReplacementText"
+            | "insertFromDrop"
+            | "insertFromYank"
+            | "insertLineBreak"
+            | "insertParagraph"
+            | "insertTranspose" => Self::Edit,
             _ => Self::Other,
         }
     }
