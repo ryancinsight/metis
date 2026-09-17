@@ -181,7 +181,12 @@ mark; replace the SVG, PNG and ICO with project-owned artwork that meets the
 same bounded format contracts.
 
 The report at `output/distribution/latest/workflow.json` records exact inventory,
-commands, calculated values and install/uninstall outcomes. With `--install`,
+commands, calculated values and install/uninstall outcomes. Its
+`artifact_sizes.portable_payload` object records the verified payload file count,
+total bytes, application executable bytes and declared-resource bytes;
+`artifact_sizes.installer` records the MSI byte count when an installer was built.
+These are artifact-size measurements for this package and do not compare
+frameworks or imply a runtime memory result. With `--install`,
 the shortcut probe also records `IconLocation` and requires the Windows
 Installer cache reference to end in `MetisIcon,0`; this is the shell-visible
 proof that the MSI `Icon` row is used. The gate preserves only the latest

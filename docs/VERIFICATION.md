@@ -2606,6 +2606,13 @@ current eframe and Métis records share the public series and lifecycle phase;
 their different surface and MIP contracts remain an explicitly unmatched
 baseline until producers provide an equal output key.
 
+The distribution workflow also records `artifact_sizes` in its `workflow.json`:
+the portable payload file count and byte total are split into the single
+application executable and declared resources, and an installer byte total is
+recorded when an MSI is built. These values are verified against the staged
+files and are package-size evidence only; they do not measure process memory,
+runtime allocations or framework performance.
+
 The current three-run public MRI-DIR T2 workflow uses this option with RITK
 revision `44487bacc6b33d4c6a241f68960e9dd5e140fbc5`, Metis revision
 `587f6c6a9e6abf7415c7800255f75d1ef727ff79` and Moirai revision

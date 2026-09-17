@@ -125,6 +125,43 @@ class DistributionTests(unittest.TestCase):
                 with self.subTest(records=records), self.assertRaises(ValueError):
                     distribution.verify_payload(root, {"files": records})
 
+    def test_artifact_sizes_bind_actual_payload_and_installer(self):
+        with tempfile.TemporaryDirectory() as temporary:
+            package = pathlib.Path(temporary)
+            portable = package / "app" / "assets"
+            portable.mkdir(parents=True)
+            entry = package / "app" / "metis-app.exe"
+            resource = portable / "mark.svg"
+            installer = package / "org.atlas.metis.demo.msi"
+            entry.write_bytes(b"executable")
+            resource.write_bytes(b"resource")
+            installer.write_bytes(b"installer")
+            inventory = {
+                "entry": "metis-app.exe",
+                "files": [
+                    {"destination": "metis-app.exe", "bytes": entry.stat().st_size},
+                    {"destination": "assets/mark.svg", "bytes": resource.stat().st_size},
+                ],
+                "installer": {"file": installer.name},
+            }
+            self.assertEqual(
+                distribution.artifact_sizes(package, inventory),
+                {
+                    "portable_payload": {
+                        "file_count": 2,
+                        "bytes": 18,
+                        "executable_bytes": 10,
+                        "resource_bytes": 8,
+                    },
+                    "installer": {"file": installer.name, "bytes": 9},
+                },
+            )
+            inventory["installer"] = None
+            self.assertIsNone(distribution.artifact_sizes(package, inventory)["installer"])
+            entry.write_bytes(b"changed executable")
+            with self.assertRaisesRegex(ValueError, "does not match"):
+                distribution.artifact_sizes(package, inventory)
+
     def test_inventory_rejects_path_escape(self):
         with tempfile.TemporaryDirectory() as temporary:
             root = pathlib.Path(temporary)
