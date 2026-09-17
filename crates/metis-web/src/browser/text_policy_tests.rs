@@ -1,7 +1,116 @@
 use super::{
-    CompositionPhase, CompositionState, NavigationKey, Selection, SelectionDirection, TextError,
-    TextState,
+    CompositionPhase, CompositionState, InputOperation, NavigationKey, Selection,
+    SelectionDirection, TextError, TextState,
 };
+
+#[test]
+fn browser_input_types_classify_edit_clipboard_and_history_operations() {
+    assert_eq!(
+        InputOperation::from_browser_input_type("insertText"),
+        InputOperation::Edit
+    );
+    assert_eq!(
+        InputOperation::from_browser_input_type("deleteContentBackward"),
+        InputOperation::Delete
+    );
+    assert_eq!(
+        InputOperation::from_browser_input_type("insertFromPaste"),
+        InputOperation::Paste
+    );
+    assert_eq!(
+        InputOperation::from_browser_input_type("deleteByCut"),
+        InputOperation::Cut
+    );
+    assert_eq!(
+        InputOperation::from_browser_input_type("historyUndo"),
+        InputOperation::Undo
+    );
+    assert_eq!(
+        InputOperation::from_browser_input_type("historyRedo"),
+        InputOperation::Redo
+    );
+    assert_eq!(
+        InputOperation::from_browser_input_type("futureBrowserOperation"),
+        InputOperation::Other
+    );
+}
+
+#[test]
+fn clipboard_and_history_input_events_preserve_values_and_report_operations() {
+    let mut state = TextState::new("before".to_owned()).expect("text value is bounded");
+    let after_selection =
+        Selection::new(5, 5, SelectionDirection::None).expect("after caret is ordered");
+    state
+        .apply_input(
+            "after".to_owned(),
+            Some("after".to_owned()),
+            "insertText".to_owned(),
+            CompositionState::Inactive,
+            after_selection,
+        )
+        .expect("ordinary input is valid");
+    let before_selection =
+        Selection::new(6, 6, SelectionDirection::None).expect("before caret is ordered");
+    state
+        .apply_input(
+            "before".to_owned(),
+            None,
+            "historyUndo".to_owned(),
+            CompositionState::Inactive,
+            before_selection,
+        )
+        .expect("browser undo value is valid");
+    assert_eq!(state.value, "before");
+    assert_eq!(state.input_type(), "historyUndo");
+    assert_eq!(
+        state.text_status(),
+        "Text: input undo (historyUndo) applied; data none"
+    );
+    state
+        .apply_input(
+            "after".to_owned(),
+            None,
+            "historyRedo".to_owned(),
+            CompositionState::Inactive,
+            after_selection,
+        )
+        .expect("browser redo value is valid");
+    assert_eq!(state.value, "after");
+    assert_eq!(
+        state.text_status(),
+        "Text: input redo (historyRedo) applied; data none"
+    );
+    let pasted_selection =
+        Selection::new(11, 11, SelectionDirection::None).expect("pasted caret is ordered");
+    state
+        .apply_input(
+            "after pasted".to_owned(),
+            Some(" pasted".to_owned()),
+            "insertFromPaste".to_owned(),
+            CompositionState::Inactive,
+            pasted_selection,
+        )
+        .expect("browser paste value is valid");
+    assert_eq!(state.value, "after pasted");
+    assert_eq!(
+        state.text_status(),
+        "Text: input paste (insertFromPaste) applied; data  pasted"
+    );
+    state
+        .apply_input(
+            "after".to_owned(),
+            None,
+            "deleteByCut".to_owned(),
+            CompositionState::Inactive,
+            after_selection,
+        )
+        .expect("browser cut value is valid");
+    assert_eq!(state.value, "after");
+    assert_eq!(
+        state.text_status(),
+        "Text: input cut (deleteByCut) applied; data none"
+    );
+}
 
 #[test]
 fn browser_navigation_keys_are_closed_and_format_neutral() {
