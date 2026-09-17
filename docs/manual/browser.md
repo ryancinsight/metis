@@ -1406,6 +1406,16 @@ remain in RITK.
 The current cross-engine captures show the real anatomy rendered through this
 format-neutral host: [Chromium gallery](https://github.com/ryancinsight/ritk/blob/main/docs/manual/images/dicom-metis-real-browser-mri-cross-engine-chromium.png)
 and [Firefox gallery](https://github.com/ryancinsight/ritk/blob/main/docs/manual/images/dicom-metis-real-browser-mri-cross-engine-firefox.png).
+The current standalone-lock native replay uses RITK source
+`f907d8cce5a6ec84a23d73de245b9841538e9f1a`, landed in PR #464 merge
+`132251fa57046241e55cb9189126d6ae7fb98eb9`, with Metis
+`8e566af9a37dc0382e8e919c593d3838f5b08186` and Moirai
+`a2f21496d1d09b2abe6523e3c8cdbf751dcd560a`. It reads all 94 saved files
+(49,807,236 bytes), reproduces the revision-bound 1280 × 800 MRI frame, and
+rejects an invalid study; the [RITK replay provenance](https://github.com/ryancinsight/ritk/blob/main/docs/manual/images/dicom-metis-real-mri.json)
+contains the executable and image hashes. RITK scans and decodes DICOM and owns
+the clinical pixels; Metis supplies the format-neutral chooser, bounded handoff
+and canvas host.
 
 Build RITK's locked WASM library and package it with the pinned wasm-bindgen CLI
 as described in the RITK browser workflow linked above. From Metis, include that
