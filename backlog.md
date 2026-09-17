@@ -142,10 +142,9 @@ an owner. “Unsupported” cannot replace delivery of a required mobile/native 
 
 <a id="METIS-AUDIT-001"></a>
 ## METIS-AUDIT-001 — Durable audit recovery [minor]
-- Status: review; priority: P2; owner: Metis backend + owning Atlas storage provider; integrator: root; dependencies: METIS-CRYPTO-001; risk: persistence; last-update: 2026-09-17
-- Scope: versioned durable backend audit, bounded storage, restart recovery and trusted checkpoint; first verify the Atlas storage ownership/contract.
-- Acceptance: crash/truncation/tamper/disk-full cases recover exactly or fail closed, with bounded retention and no patient/secret leakage.
-- Demonstration: [V08](docs/VERIFICATION.md#V08), audit/recovery inspector showing actual records, denied tampering and restart outcomes; raw secrets never enter captures.
+- Status: done; priority: P2; delivery: [PR #217](https://github.com/ryancinsight/metis/pull/217), merge `87e4088`; hosted Windows gate [35277941817](https://github.com/ryancinsight/metis/actions/runs/35277941817); last-update: 2026-09-17.
+- Outcome: authenticated, bounded two-slot audit persistence now recovers real handshake records after restart and fails closed on wrong-key, tampered, truncated or invalid snapshots; [ADR 0038](docs/adr/0038-durable-audit-recovery.md) and [V08](docs/VERIFICATION.md#V08) carry the contract.
+- Verification: backend/core nextest, strict Clippy, formatting, plan checks and the `audit_recovery` example passed at `2cbb9e6`; no patient identifiers or session keys enter the store or captures.
 
 <a id="METIS-VERIFY-001"></a>
 ## METIS-VERIFY-001 — Verify and deliver foundation [patch]
