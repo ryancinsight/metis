@@ -134,7 +134,9 @@ an owner. “Unsupported” cannot replace delivery of a required mobile/native 
 
 <a id="METIS-FRAGMENT-001"></a>
 ## METIS-FRAGMENT-001 — Authenticated typed browser actions [arch] [minor]
-- Status: done; priority: P1; owner: Metis protocol/browser; integrator: root; last-update: 2026-09-16; delivery: [PR #198](https://github.com/ryancinsight/metis/pull/198), merge `0c69d54`; decision: [ADR 0022](docs/adr/0022-typed-browser-actions.md).
+- Status: in-progress; priority: P1; owner: Metis protocol/browser; integrator: root; last-update: 2026-09-16; branch: `fix/metis-fragment-request-evidence`; decision: [ADR 0022](docs/adr/0022-typed-browser-actions.md).
+- Acceptance: observe idle request state after authenticated success, reset and remount in all three engines; preserve the real Origin-authorized service; focused and configured gates pass.
+- Measured reopening: at `d90c685`, `browser_fragment.py` writes idle cleanup as a constant without asserting the captured control state. The 80 focused Python tests and configured `python -S scripts/verify.py` pass; prior delivery [PR #198](https://github.com/ryancinsight/metis/pull/198) remains valid for its HTTP and generation assertions, not pending-request cleanup.
 - Outcome: Capability-bound fragments enforce target, patch, generation and request-lifecycle bounds; hosted Chromium, Firefox and WebKit evidence in run [35143857171](https://github.com/ryancinsight/metis/actions/runs/35143857171) passes success, rejection, reset/remount and cleanup oracles with inspected artifacts in the [browser manual](docs/manual/browser.md#hosted-fragment-matrix-evidence--2026-09-16). DICOM remains RITK-owned.
 
 <a id="METIS-SEC-001"></a>
