@@ -985,6 +985,36 @@ The browser provider for this workflow is Moirai revision
 `0862716265d657b8069d5a47fd1e77ae26ddd006`; the consumer lock is updated to the
 same merged revision.
 
+## Measure browser text geometry
+
+The workbench can record the browser's actual line and grapheme layout for the
+**Clinical note** editing surface. Build the generated page, then run the
+format-neutral workbench trace with the option below (the WebDriver URL is the
+same one used by the other browser traces):
+
+```text
+python scripts/browser.py build
+python scripts/browser_runtime.py --engine chromium --serve-dir output/browser \
+  --text-geometry-probe --lifecycle-cycles 4 \
+  --output output/browser/runtime/chromium-text-geometry.json
+```
+
+The probe copies the textarea's computed font, direction, writing mode, padding
+and bounded width into a detached same-origin element. It measures a fixed
+Unicode specimen containing a combining mark, CJK characters, Hebrew, a joined
+emoji, a newline and a second line. `Intl.Segmenter` supplies the grapheme
+boundaries and `Range.getClientRects()` supplies the host line and cluster
+fragments. The JSON trace records the UTF-16 offsets, finite rectangles,
+line-top ordering, computed style and the live textarea's selection/scroll
+metrics. The element is removed before the command continues, so this probe
+does not mutate the application value or add a screenshot surface.
+
+An engine that lacks `Intl.Segmenter` records an explicit unavailable reason;
+the runner never substitutes scalar or pixel estimates. These measurements are
+browser layout evidence for the HTML5/CSS path. They do not establish native
+IME delivery, fallback-font selection, clipboard permissions, assistive
+technology behavior or pixel identity across engines.
+
 ## Responsive runtime capture
 
 The page uses a bounded responsive grid. At widths below `700px`, the form and

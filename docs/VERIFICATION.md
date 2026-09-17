@@ -1222,6 +1222,36 @@ status and selection line. This is local Chromium presentation evidence only;
 it does not establish bidi, line-metric, trusted IME or assistive-technology
 behavior.
 
+<a id="browser-text-geometry-evidence--2026-09-17"></a>
+## Browser text geometry evidence — 2026-09-17
+
+The format-neutral browser runner now accepts `--text-geometry-probe` for the
+workbench scenario. It creates a detached same-origin element using the
+**Clinical note** textarea's computed font, direction, writing mode, padding
+and bounded width, then measures a fixed mixed-script Unicode specimen with
+`Intl.Segmenter` grapheme boundaries and `Range.getClientRects()` line and
+cluster rectangles. The validator checks UTF-16 length, contiguous grapheme
+boundaries, finite rectangles, positive line heights, ordered line tops and
+the live textarea's bounded selection and scroll metrics. The element is
+removed before the trace continues; the application value and visual baseline
+are unchanged.
+
+The focused dependency-free checks are:
+
+```text
+python -m unittest scripts.tests.test_browser_text_geometry — 6/6 passed
+python -m unittest scripts.tests.test_browser_runtime.BrowserRuntimeTests.test_cli_rejects_text_geometry_probe_on_canvas_scenario — passed
+python -m py_compile scripts/browser_text_geometry.py scripts/browser_runtime.py scripts/browser_runtime_cli.py — passed
+```
+
+The scheduled Chromium, Firefox and WebKit workbench matrix invokes this probe
+alongside the existing lifecycle and accessibility checks. A missing
+`Intl.Segmenter` is retained as an explicit unavailable measurement. This is
+host layout evidence for the HTML5/CSS surface, not a claim about native IME,
+fallback-font choice, clipboard permissions, assistive technology or
+cross-engine pixel identity; those requirements remain open under
+`METIS-TEXT-001` and `METIS-A11Y-001`.
+
 ## Browser text input-operation evidence — 2026-09-17
 
 The input listener now classifies the browser's bounded `InputEvent.inputType`
