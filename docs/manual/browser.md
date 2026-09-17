@@ -667,7 +667,10 @@ port `8766` with the same origin before running the command. The trace's
 screenshots are component evidence; they do not claim DICOM decoding. RITK's
 consumer-owned gallery remains the source for actual CT/MRI pixels. The
 demonstration service retains one session per principal until its bounded
-process exits; start a fresh service for a new page load. A `409`
+connection budget ends. A malformed or disconnected peer consumes a slot and
+is reported as `browser_http_connection_error`; it cannot terminate the
+listener for other peers. Origin and capability checks remain unchanged.
+Start a fresh service for a new page load. A `409`
 `ERR_PRIVILEGE_ESCALATION_ATTEMPT` after reusing the same principal is the
 intentional duplicate-session rejection.
 

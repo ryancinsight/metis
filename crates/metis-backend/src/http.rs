@@ -24,7 +24,7 @@ use std::time::Duration;
 /// Maximum authenticated browser sessions retained by one HTTP host.
 pub const MAX_HTTP_SESSIONS: usize = 8;
 
-/// Maximum requests served before a demonstration host performs orderly teardown.
+/// Maximum connection attempts before a demonstration host performs orderly teardown.
 pub const MAX_HTTP_REQUESTS: usize = 64;
 
 /// Largest response delay admitted by the HTTP browser conformance probe.
@@ -298,14 +298,24 @@ impl BrowserHttpService {
 /// own process lifecycle and shutdown signal around the same application.
 ///
 /// # Errors
-/// Returns a typed transport or response-construction failure. A malformed,
-/// timed-out, or disconnected connection is terminal for this invocation.
+/// Reports malformed, timed-out or disconnected peers to `on_connection_error`
+/// and closes their connection. Every accepted connection consumes one budget
+/// slot, including rejected peers. Listener and internal response failures
+/// remain terminal and return a typed error.
 pub async fn serve_browser_http(
     server: HttpServer,
     application: BrowserHttpService,
     max_requests: usize,
+    on_connection_error: impl FnMut(MetisError),
 ) -> Result<()> {
-    serve_browser_http_with_response_delay(server, application, max_requests, None).await
+    serve_browser_http_with_response_delay(
+        server,
+        application,
+        max_requests,
+        None,
+        on_connection_error,
+    )
+    .await
 }
 
 /// Serves bounded HTTP requests with an optional asynchronous response delay.
@@ -313,6 +323,8 @@ pub async fn serve_browser_http(
 /// The delay is a conformance probe for browser cancellation and remount
 /// handling. It uses Moirai's timer, never blocks the executor, and is applied
 /// only before the response is written. A zero delay is equivalent to `None`.
+/// Peer failures are reported through `on_connection_error` and consume a
+/// connection slot, as in [`serve_browser_http`]; requests are never retried.
 ///
 /// # Errors
 /// Returns [`ErrorCode::Timeout`] when `response_delay` exceeds
@@ -323,6 +335,7 @@ pub async fn serve_browser_http_with_response_delay(
     mut application: BrowserHttpService,
     max_requests: usize,
     response_delay: Option<Duration>,
+    mut on_connection_error: impl FnMut(MetisError),
 ) -> Result<()> {
     if max_requests == 0 || max_requests > MAX_HTTP_REQUESTS {
         return Err(MetisError::transport(
@@ -348,22 +361,41 @@ pub async fn serve_browser_http_with_response_delay(
             .accept()
             .await
             .map_err(|error| http_io_error(&error))?;
-        let (request, connection) = connection
-            .read_request()
-            .await
-            .map_err(|error| http_io_error(&error))?;
+        let (request, connection) = match connection.read_request().await {
+            Ok(request) => request,
+            Err(error)
+                if peer_disconnected(&error) || error.kind() == io::ErrorKind::InvalidData =>
+            {
+                on_connection_error(http_io_error(&error));
+                continue;
+            }
+            Err(error) => return Err(http_io_error(&error)),
+        };
         let response = application.respond(&request).map_err(|_| {
             MetisError::transport(ErrorCode::IoError, "HTTP response construction failed")
         })?;
         if let Some(delay) = response_delay {
             moirai_async::timer::sleep(delay).await;
         }
-        connection
-            .write_response(response)
-            .await
-            .map_err(|error| http_io_error(&error))?;
+        if let Err(error) = connection.write_response(response).await {
+            if !peer_disconnected(&error) {
+                return Err(http_io_error(&error));
+            }
+            on_connection_error(http_io_error(&error));
+        }
     }
     Ok(())
+}
+
+fn peer_disconnected(error: &io::Error) -> bool {
+    matches!(
+        error.kind(),
+        io::ErrorKind::UnexpectedEof
+            | io::ErrorKind::BrokenPipe
+            | io::ErrorKind::ConnectionReset
+            | io::ErrorKind::ConnectionAborted
+            | io::ErrorKind::TimedOut
+    )
 }
 
 fn frame_header(message_type: MessageType, sequence: u64, payload: &[u8]) -> Result<FrameHeader> {
@@ -413,7 +445,9 @@ fn http_io_error(error: &io::Error) -> MetisError {
         io::ErrorKind::InvalidData | io::ErrorKind::InvalidInput => ErrorCode::MalformedPayload,
         io::ErrorKind::TimedOut | io::ErrorKind::WouldBlock => ErrorCode::Timeout,
         io::ErrorKind::UnexpectedEof => ErrorCode::FrameTruncated,
-        io::ErrorKind::BrokenPipe | io::ErrorKind::ConnectionReset => ErrorCode::ConnectionClosed,
+        io::ErrorKind::BrokenPipe
+        | io::ErrorKind::ConnectionReset
+        | io::ErrorKind::ConnectionAborted => ErrorCode::ConnectionClosed,
         _ => ErrorCode::TransportBroken,
     };
     MetisError::transport(code, "HTTP transport terminated")

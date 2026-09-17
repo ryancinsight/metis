@@ -16,6 +16,19 @@ boundary in Metis.
 
 ## Context
 
+Revision 2026-09-16: [METIS-FRAGMENT-001](../../backlog.md#METIS-FRAGMENT-001)
+replay [35167864608](https://github.com/ryancinsight/metis/actions/runs/35167864608)
+observed Firefox lose the service after `FrameTruncated`. A peer disconnect
+must not terminate the listening service. Accepted connections each consume
+one existing budget slot; malformed reads, peer timeouts and disconnects close
+that connection and invoke a required typed error observer. Listener failures
+and invalid response construction remain terminal. Retrying the same request
+or silently discarding errors is rejected. The observer is the final argument
+to both HTTP serving functions; in-repository callers migrate together. The
+loopback regression sends empty, truncated and malformed peers followed by
+Origin-denied and authorized health requests, asserting the exact error,
+403/200 responses and termination after three accepted connections.
+
 Axum's 0.8 documentation describes a typed server boundary built from
 `Router`, request extractors, shared `State`, middleware layers and
 `IntoResponse`. These surfaces are relevant to a Metis deployment that serves
