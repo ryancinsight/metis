@@ -130,7 +130,7 @@ have transitive dependencies; the gate records the actual graph instead of descr
 dependency-free. The Atlas development overlay resolves first-party code to local
 trees. Standalone builds use the corresponding pushed provider revisions recorded
 in Cargo.lock. Metis consumes Moirai through git-plus-version requirements;
-the lock records current audited Moirai merge `b94f3ed7a0faa436ebe993dbfec49726cef853fa`,
+the lock records Moirai capture revision `d324018efa3b67d2b92350a4e3c781d179019014`,
 which descends from Moirai PR #355's opt-in WebView2 feature graph and the
 stable browser canvas extent and content-box revisions. That revision
 includes the merged process, browser/API, bounded WebSocket service,
@@ -148,14 +148,16 @@ and measurements remain consumer evidence owned by RITK.
 default graph remains free of the optional COM binding for other targets. The
 browser CSP admits only the
 `blob:` source required for those local response streams; network endpoints stay
-explicit. The provider and Metis
-adapter pass the installed WebView2 navigation/bridge smoke on runtime
-`152.0.4191.66`. The committed [native capture manifest](docs/manual/images/native-captures.json)
-records the visible Windows native and WebView2 initial/submit journeys; the
+explicit. The provider and Metis adapter pass the installed WebView2
+navigation/bridge smoke on runtime `152.0.4191.66`. The committed [native
+capture manifest](docs/manual/images/native-captures.json) records the visible
+Windows native and WebView2 initial/submit journeys plus a 1024×768
+permission-denial capture from runtime `153.0.4234.32` using `CapturePreview`;
+the artifact is 6,561 bytes with SHA-256
+`a9df158ff6a167ed3c708e9621a44446cae93b3c0d87e646c818601606a33b8f`. The
 [desktop item](backlog.md#METIS-DESKTOP-001) tracks remaining host-specific
 evidence for physical display-scale transitions, native accessibility, installed
-IME, broader OS-enforced restrictions, visible permission-probe capture and
-non-Windows hosts.
+IME, broader OS-enforced restrictions and non-Windows hosts.
 
 ## Design and evidence
 

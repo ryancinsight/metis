@@ -72,6 +72,15 @@ the bounded `WebViewEvent::PermissionDenied` snapshot as a typed
 `b94f3ed7a0faa436ebe993dbfec49726cef853fa`, adding stable display labels while
 preserving unknown numeric kinds. See the [Moirai decision](../../moirai/docs/adr/0062-webview2-permission-denial.md).
 
+Revision 2026-09-17: Moirai revision
+`d324018efa3b67d2b92350a4e3c781d179019014` adds bounded WebView2
+`CapturePreview` PNG output. Metis exposes it through
+`WebViewSurface::capture_preview_png` and the supervised permission-probe role
+records renderer pixels without the GDI occlusion limitation. The reviewed
+1024×768 capture on WebView2 `153.0.4234.32` is in the native capture manifest;
+the provider-level file-origin geolocation smoke did not emit a callback on
+that runtime and remains a runtime residual.
+
 ## Context
 
 The framework comparison in [ADR 0003](0003-framework-conformance.md) leaves a
@@ -159,12 +168,11 @@ WebView authority.
 The provider and visible host are Windows-only in this increment. The provider
 denies WebView2 permission requests synchronously, but does not prove a broader
 Windows sandbox or revoke grants owned by another profile. Cross-platform
-native windows, OS file/network/process enforcement, native accessibility, an
-installed CJK or other IME journey, and a visible permission-probe capture
-remain open under the linked backlog items. The committed capture covers only
-the initial and successful form states;
-a successful Windows build or off-screen frame does not close the remaining
-runtime requirements.
+native windows, OS file/network/process enforcement, native accessibility and
+an installed CJK or other IME journey remain open under the linked backlog
+items. The committed captures include the initial, successful and visible
+permission-denied form states; a successful Windows build or off-screen frame
+does not close the remaining runtime requirements.
 
 ## Verification
 
@@ -178,7 +186,7 @@ the old surface across an invalid resize. The adapter's ignored
 installed-runtime contract requests geolocation and asserts the typed denial;
 the frontend test asserts the serialized `permission_denied` page error.
 Warning-denied Clippy, native tests and the WASM library gate remain required.
-The capture manifest and four PNGs provide visual V05 evidence for the initial
-and successful native/WebView2 form journeys; a visible permission-probe
-capture, installed-IME, accessibility, physical resize/DPI and cross-platform
-host evidence remain required.
+The capture manifest and five PNGs provide visual V05 evidence for the initial,
+successful and visible permission-denied native/WebView2 journeys; installed
+IME, accessibility, physical resize/DPI and cross-platform host evidence remain
+required.
