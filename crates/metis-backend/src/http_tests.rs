@@ -408,10 +408,15 @@ fn idle_peer_hits_deadline_and_teardown_is_finite() {
         ))
         .expect("server bind");
     let address = server.local_addr().expect("server address");
+    let (failure_sender, failure_receiver) = std::sync::mpsc::sync_channel(2);
     let task = runtime
         .spawn_async(async move {
             let mut failures = Vec::new();
-            serve_browser_http(server, application(), 2, |error| failures.push(error.code)).await?;
+            serve_browser_http(server, application(), 2, |error| {
+                failure_sender.send(error.code).expect("failure observer");
+                failures.push(error.code);
+            })
+            .await?;
             Ok::<_, MetisError>(failures)
         })
         .expect("server task spawn");
@@ -419,7 +424,16 @@ fn idle_peer_hits_deadline_and_teardown_is_finite() {
         .block_on(TcpStream::connect(&address.to_string()))
         .expect("idle peer connect");
     let response = runtime
-        .block_on(health_request(address))
+        .block_on(moirai_async::timer::timeout(
+            Duration::from_secs(2),
+            health_request(address),
+        ))
+        .unwrap_or_else(|error| {
+            panic!(
+                "health request exceeded the ordinary HTTP deadline: {error}; observed peer failures: {:?}",
+                failure_receiver.try_iter().collect::<Vec<_>>()
+            )
+        })
         .expect("health after idle peer");
     assert_eq!(status(&response), 200);
     assert_eq!(response_body(&response), b"metis-http-ready\n");
