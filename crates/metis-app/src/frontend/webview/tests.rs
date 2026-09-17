@@ -1,6 +1,8 @@
 use super::{
     APP_JS, INDEX_HTML, MAX_PATIENT_ID_BYTES, STYLES_CSS, WebViewAction, WebViewRequest, file_uri,
+    permission_denied_message,
 };
+use metis_platform::native::WebViewPermission;
 
 #[test]
 fn package_assets_are_script_scoped_and_bridge_bound() {
@@ -77,4 +79,14 @@ fn file_uri_removes_windows_extended_drive_prefix() {
 #[test]
 fn patient_limit_matches_the_page_contract() {
     assert_eq!(MAX_PATIENT_ID_BYTES, 128);
+}
+
+#[test]
+fn permission_denial_message_is_typed_for_the_page() {
+    let message = permission_denied_message(WebViewPermission::Geolocation);
+    let json = serde_json::to_string(&message).expect("permission error payload");
+    assert_eq!(
+        json,
+        r#"{"type":"error","status":"permission_denied","error_code":8207,"message":"WebView2 denied geolocation access request"}"#
+    );
 }

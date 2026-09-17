@@ -133,7 +133,7 @@ engine, host and revision.
 The browser canvas provider keeps its validated bitmap dimensions when a
 subsequent RGBA frame has the same extent and assigns new dimensions only when
 the extent changes. Metis pins the direct Moirai packages to merge
-`21b66ba424ad8f50d8574d6e9714be696f807e82` for this contract. The upload still
+`b94f3ed7a0faa436ebe993dbfec49726cef853fa` for this contract. The upload still
 borrows the frame for the call and remains bounded by the same pixel and byte
 limits. `CanvasSurface` also exposes explicit asynchronous WebGPU constructors;
 missing adapter or device setup is returned as an unsupported/setup error and

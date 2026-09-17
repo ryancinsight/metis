@@ -246,6 +246,11 @@ fn run_event_loop<T: IpcTransport>(
                 WebViewHostEvent::WebView(WebViewEvent::Message { json, .. }) => {
                     handle_message(app, surface, &json)?;
                 }
+                WebViewHostEvent::WebView(WebViewEvent::PermissionDenied {
+                    permission, ..
+                }) => {
+                    post_message(surface, &permission_denied_message(permission))?;
+                }
                 WebViewHostEvent::WebView(WebViewEvent::NavigationCompleted {
                     success: false,
                     ..
@@ -282,6 +287,14 @@ fn run_event_loop<T: IpcTransport>(
                 WebViewHostEvent::Window(_) | WebViewHostEvent::WebView(_) => {}
             }
         }
+    }
+}
+
+fn permission_denied_message(permission: metis_platform::native::WebViewPermission) -> PageMessage {
+    PageMessage::Error {
+        status: "permission_denied",
+        error_code: ErrorCode::PermissionDenied as u16,
+        message: format!("WebView2 denied {permission} access request"),
     }
 }
 
