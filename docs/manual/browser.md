@@ -687,8 +687,8 @@ the host still rejects startup at its existing twenty-second bound.
 <a id="hosted-fragment-matrix-evidence--2026-09-16"></a>
 ### Hosted fragment matrix evidence — 2026-09-16
 
-Manual dispatch [35169939056](https://github.com/ryancinsight/metis/actions/runs/35169939056)
-passes all three browser jobs against revision `dc6c9bdff98e3484a3aab24ffaf66aeef2691750`.
+Manual dispatch [35173142639](https://github.com/ryancinsight/metis/actions/runs/35173142639)
+passes all three browser jobs against revision `c1ee7dbc794adfdd6c00726ee3265c8a0a135eee`.
 Each trace asserts health `200`, authenticated fragment `200 (1 patch)`,
 malformed `400`, unauthorized `401`, target rejection, unchanged stale state,
 reset to generation `2` and remounted fragment `200`. All three snapshots
@@ -698,9 +698,9 @@ deletion completes and records `session_closed: true`.
 
 | Engine | Capture artifact | JSON / three PNG bytes | Trace SHA-256 |
 | --- | --- | --- | --- |
-| Webkit 26.6.2 | [artifact 10475714808](https://github.com/ryancinsight/metis/actions/runs/35169939056/artifacts/10475714808) | 9725 / 279539 | `69985832d62fde6a1ccb01b943ef216ba3612ca9e30b14058d69b1a85520764f` |
-| Chromium 152.0.7977.82 | [artifact 10475483526](https://github.com/ryancinsight/metis/actions/runs/35169939056/artifacts/10475483526) | 10315 / 114023 | `0cdd20f182357a96342273516657848585d08aefb9cc1af9899d74c9fb408618` |
-| Firefox 155.0 | [artifact 10476523083](https://github.com/ryancinsight/metis/actions/runs/35169939056/artifacts/10476523083) | 9947 / 163110 | `a581a487206973a7c56ca75aefbc1ccdb7b3916ed0d0a5b8b8bd7be348caaa72` |
+| Webkit 26.6.2 | [artifact 10477019679](https://github.com/ryancinsight/metis/actions/runs/35173142639/artifacts/10477019679) | 9725 / 279651 | `7899b466ebdf090d810ca2e309b2f00a874043a544a4b75f57d00a5120cc9934` |
+| Chromium 152.0.7977.82 | [artifact 10477820928](https://github.com/ryancinsight/metis/actions/runs/35173142639/artifacts/10477820928) | 10315 / 114023 | `a946a23fb6af93e218afa982fdf3c9ec6af81f50787647922c65a861c7f85fac` |
+| Firefox 155.0 | [artifact 10477212365](https://github.com/ryancinsight/metis/actions/runs/35173142639/artifacts/10477212365) | 9947 / 163110 | `f9de023c89e81507a1e4c01aae912b7678c357b7d3cf892331f8a8c962b80c4a` |
 
 All nine PNG hashes match their trace records. WebKit's three 800 × 600
 captures were inspected: authenticated response and rejection results,
