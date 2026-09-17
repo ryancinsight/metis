@@ -106,7 +106,7 @@ const streamReader = {
     : Promise.resolve({done: true}),
   cancel: () => {
     if (mode === 'delayed-cancel-error') {
-      return new Promise((_resolve, reject) => queueMicrotask(
+      return new Promise((_resolve, reject) => setImmediate(
         () => reject(new DOMException('', 'AbortError'))
       ));
     }
