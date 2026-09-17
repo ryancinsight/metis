@@ -32,6 +32,12 @@ UAX #29 implementation. Browser caret movement, bidi layout, line metrics,
 clipboard/undo, fallback-font metrics and native IME production remain host
 contracts.
 
+Revision 2026-09-17: the text listener records the browser's post-default
+selection on `keyup` for the bounded navigation-key set and routes it through
+the same scalar and extended-grapheme validation. The listener does not cancel
+the browser default action, so native caret behavior remains the host's source
+of movement while Metis owns the accepted selection snapshot and status.
+
 The Atlas stack has no first-party UAX #29 segmenter. The browser host keeps
 this one pure-Rust registry dependency at its text-policy boundary rather than
 reimplementing the Unicode algorithm or moving text semantics into a consumer.
@@ -107,7 +113,10 @@ owns a bounded `TextState` that receives Moirai's UTF-16 selection snapshots,
 selection ranges against the current Unicode value, rejects offsets inside a
 UTF-16 surrogate pair or a Unicode extended grapheme cluster using the
 `unicode-segmentation` UAX #29 implementation, and renders text, composition
-and selection status without importing `web-sys`. Browser caret movement,
+and selection status without importing `web-sys`. A `keyup` listener observes
+the post-default selection for `ArrowLeft`, `ArrowRight`, `ArrowUp`,
+`ArrowDown`, `Home`, `End`, `PageUp` and `PageDown`, applies the same validation
+and renders a navigation status. The browser keeps its default caret action;
 bidi shaping, line metrics, clipboard/undo, fallback-font metrics and native
 IME production remain host contracts.
 
@@ -162,13 +171,13 @@ centroid pan, distance-ratio zoom and zero-distance baseline handling; its
 native policy tests and WASM checks are recorded in the verification artifact.
 
 The text increment adds native policy tests for UTF-16 coordinates, scalar and
-extended-grapheme boundaries, selection bounds, input metadata and composition
-transitions. The extended-grapheme fixture covers a combining mark, a ZWJ
-sequence and regional indicators; split selections are rejected without state
-mutation, while cluster-boundary selections remain valid. The browser trace
-renders the labelled textarea, bounded value preview, semantic status regions
-and focus state; CUA cannot provide trusted OS IME input or expose the browser
-`isTrusted` flag.
+extended-grapheme boundaries, selection bounds, input metadata, composition
+transitions and the closed navigation-key set. The extended-grapheme fixture
+covers a combining mark, a ZWJ sequence and regional indicators; split
+selections are rejected without state mutation, while cluster-boundary
+selections remain valid. The browser listener records post-default navigation
+selections and renders the key and resulting selection; CUA cannot provide
+trusted OS IME input or expose the browser `isTrusted` flag.
 
 The file-drop increment consumes `DropFiles` from Moirai revision
 `5c8a9e8be32ad6beac14ed263c2f11c3663b87cb`. The native `metis-web` suite
@@ -180,7 +189,7 @@ DICOM decode.
 
 ## Residuals
 
-Browser caret/bidi layout, line metrics, clipboard/undo, native IME,
+Browser bidi layout, line metrics, clipboard/undo, native IME,
 accessibility technology and native-window input remain under the linked
 backlog items. CUA cannot provide
 trusted physical touch or expose the browser `isTrusted` flag, so this

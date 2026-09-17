@@ -2,7 +2,7 @@
 
 use super::{BrowserState, view};
 use crate::text_policy::{
-    CompositionPhase, CompositionState, Selection, SelectionDirection, TextError,
+    CompositionPhase, CompositionState, NavigationKey, Selection, SelectionDirection, TextError,
 };
 use moirai_pal::wasm::{TextSelectionDirection, WebDocument, WebElement, WebEventListener};
 use std::cell::RefCell;
@@ -15,10 +15,11 @@ pub(super) fn listeners(
 ) -> io::Result<Vec<WebEventListener>> {
     let control = view::element(document, "text-specimen")?;
     let status = view::element(document, "text-status")?;
-    let mut listeners = Vec::with_capacity(6);
+    let mut listeners = Vec::with_capacity(7);
     listeners.push(input_listener(document, state, &control, &status)?);
     listeners.extend(composition_listeners(document, state, &control, &status)?);
     listeners.push(selection_listener(document, state, &control, &status)?);
+    listeners.push(navigation_listener(document, state, &control, &status)?);
     Ok(listeners)
 }
 
@@ -168,6 +169,62 @@ fn selection_listener(
             .borrow_mut()
             .text_state
             .apply_selection(selection);
+        if let Err(error) = result {
+            report_error(&listener_document, &listener_status, &error.to_string());
+            return;
+        }
+        render(&listener_document, &listener_state, &listener_status);
+    })
+}
+
+fn navigation_listener(
+    document: &WebDocument,
+    state: &Rc<RefCell<BrowserState>>,
+    control: &WebElement,
+    status: &WebElement,
+) -> io::Result<WebEventListener> {
+    let listener_document = document.clone();
+    let listener_state = Rc::clone(state);
+    let listener_control = control.clone();
+    let listener_status = status.clone();
+    control.add_event_listener("keyup", move |event| {
+        let metadata = match event.keyboard_metadata() {
+            Ok(Some(metadata)) => metadata,
+            Ok(None) => return,
+            Err(error) => {
+                report_error(&listener_document, &listener_status, &error.to_string());
+                return;
+            }
+        };
+        let Some(key) = NavigationKey::from_browser_key(metadata.key()) else {
+            return;
+        };
+        let selection = match listener_control.text_selection() {
+            Ok(Some(selection)) => selection,
+            Ok(None) => {
+                report_error(
+                    &listener_document,
+                    &listener_status,
+                    "Keyboard event did not target a text control",
+                );
+                return;
+            }
+            Err(error) => {
+                report_error(&listener_document, &listener_status, &error.to_string());
+                return;
+            }
+        };
+        let selection = match selection_from_provider(selection) {
+            Ok(selection) => selection,
+            Err(error) => {
+                report_error(&listener_document, &listener_status, &error.to_string());
+                return;
+            }
+        };
+        let result = listener_state
+            .borrow_mut()
+            .text_state
+            .apply_navigation(key, selection);
         if let Err(error) = result {
             report_error(&listener_document, &listener_status, &error.to_string());
             return;

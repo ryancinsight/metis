@@ -101,10 +101,14 @@ UTF-16 selection offsets and direction, and records `InputEvent` data,
 operation type and composition state. Composition start, update, commit and
 cancel transitions render separate status values. The policy bounds values and
 metadata, rejects offsets inside a UTF-16 surrogate pair or Unicode extended
-grapheme cluster before changing state, leaves browser caret movement, bidi
-layout, clipboard/undo, fallback-font metrics and native IME production to the
-host contract, and exposes the selection and composition state through
-semantic status elements and data attributes.
+grapheme cluster before changing state. A `keyup` listener records the
+post-default browser selection for bounded navigation keys (`ArrowLeft`,
+`ArrowRight`, `ArrowUp`, `ArrowDown`, `Home`, `End`, `PageUp` and `PageDown`)
+and applies the same validation before rendering the navigation status. The
+browser keeps its native caret behavior; bidi layout, line metrics,
+clipboard/undo, fallback-font metrics and native IME production remain host
+contracts. Selection and composition state are exposed through semantic status
+elements and data attributes.
 
 Build the WASM artifact and generated browser glue with:
 
