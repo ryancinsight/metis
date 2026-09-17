@@ -322,7 +322,6 @@ an owner. “Unsupported” cannot replace delivery of a required mobile/native 
 <a id="METIS-A11Y-001"></a>
 ## METIS-A11Y-001 — Accessible application interaction [minor]
 - Status: in-progress; priority: P1; owner: Metis host/UI; integrator: root; last-update: 2026-09-17; dependencies: METIS-INPUT-001; risk: inaccessible controls
-- lease: root `scripts/browser_accessibility.py`, `scripts/tests/test_browser_accessibility.py`, `scripts/tests/test_browser_runtime.py`, `docs/manual/browser.md`, `docs/VERIFICATION.md` — 2026-09-17T22:20:00-04:00
 - Scope: semantic DOM roles/names/states, focus/action mapping, announcements, reduced motion/high contrast/zoom; OS accessibility bridge for any custom UI path.
 - Acceptance: semantic tree identity/actions and keyboard-only completion pass; actual supported screen readers traverse and operate the application; document platform limits instead of claiming certification from tree presence.
 - Demonstration: [V03](docs/VERIFICATION.md#V03), readable focus/contrast/zoom captures plus semantic/action and assistive-technology evidence.
@@ -333,8 +332,9 @@ an owner. “Unsupported” cannot replace delivery of a required mobile/native 
 - Completed increment (2026-09-16): the W3C workbench probe records observed media preferences, focus order, viewport/zoom geometry and document overflow with bounded value-semantic validation; the scheduled browser matrix includes the probe beside its PNG captures.
 - Evidence: `python -m unittest scripts.tests.test_browser_accessibility scripts.tests.test_browser_runtime` passes 60/60; screen-reader speech, host preference enablement and native bridge evidence remain outside the probe.
 - Delivery reconciliation (2026-09-17): Metis PR [#201](https://github.com/ryancinsight/metis/pull/201), merge `3a6496e079f7070d886ed7b92e695fa4fa93d06f`, delivered the bounded W3C accessibility runtime probe and its rejection tests. The item remains open for supported screen-reader speech, host preference enablement and native accessibility bridge evidence.
+- Completed increment (2026-09-17): commit `8642e0b` extends the W3C accessibility probe with bounded semantic roles, stable IDs and ARIA/dialog states, rejecting identity drift across input and stop/remount transitions without retaining form values.
+- Evidence: focused accessibility/runtime tests pass 63/63; the semantic contract requires the application root, form, session dialog, submit action, file input, clinical-note textarea and result table. Full screen-reader speech, host preference enablement and native bridge evidence remain open.
 - Residuals: supported screen-reader speech, host-specific forced-colors/reduced-motion acceptance and native host accessibility bridge evidence remain open.
-- Current increment: the W3C accessibility probe will record a bounded semantic inventory of required roles, stable IDs and ARIA/dialog states, and reject identity drift across input and stop/remount transitions without retaining form values.
 
 <a id="METIS-LAYOUT-001"></a>
 ## METIS-LAYOUT-001 — Responsive layout and style semantics [minor]
