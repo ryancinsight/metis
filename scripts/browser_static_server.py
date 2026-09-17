@@ -2,6 +2,7 @@
 from __future__ import annotations
 
 import argparse
+import faulthandler
 import os
 import pathlib
 import signal
@@ -42,9 +43,15 @@ def serve(directory: pathlib.Path, port_file: pathlib.Path) -> None:
 
     signal.signal(signal.SIGINT, stop)
     signal.signal(signal.SIGTERM, stop)
-    with StaticServer(directory) as origin:
-        publish_port(port_file, origin)
-        stopped.wait()
+    # Capture a startup stack halfway through the host's twenty-second bound.
+    faulthandler.dump_traceback_later(10)
+    try:
+        with StaticServer(directory) as origin:
+            publish_port(port_file, origin)
+            faulthandler.cancel_dump_traceback_later()
+            stopped.wait()
+    finally:
+        faulthandler.cancel_dump_traceback_later()
 
 
 def main() -> int:

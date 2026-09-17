@@ -7,6 +7,7 @@ import http.server
 import json
 import pathlib
 import re
+import socketserver
 import struct
 import threading
 import urllib.error
@@ -131,6 +132,15 @@ class _QuietHandler(http.server.SimpleHTTPRequestHandler):
         del format, args
 
 
+class _LoopbackHTTPServer(http.server.ThreadingHTTPServer):
+    """Bind numeric loopback without a reverse-DNS dependency."""
+
+    def server_bind(self) -> None:
+        socketserver.TCPServer.server_bind(self)
+        self.server_name = "localhost"
+        self.server_port = self.server_address[1]
+
+
 class StaticServer:
     """Serve one generated browser directory on a bounded loopback port."""
 
@@ -139,7 +149,7 @@ class StaticServer:
         if not directory.is_dir():
             raise BrowserRuntimeError(f"browser serve directory is not a directory: {directory}")
         handler = partial(_QuietHandler, directory=str(directory))
-        self._server = http.server.ThreadingHTTPServer(("127.0.0.1", 0), handler)
+        self._server = _LoopbackHTTPServer(("127.0.0.1", 0), handler)
         self._thread = threading.Thread(target=self._server.serve_forever, name="metis-browser-server", daemon=True)
 
     def __enter__(self) -> str:

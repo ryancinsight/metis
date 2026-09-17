@@ -1847,6 +1847,21 @@ class BrowserRuntimeTests(unittest.TestCase):
             with self.assertRaisesRegex(BrowserRuntimeError, "invalid loopback port"):
                 publish_port(path, "http://127.0.0.1/")
 
+    def test_static_server_serves_loopback_without_hostname_resolution(self):
+        root = pathlib.Path(__file__).resolve().parents[2] / "output" / "browser"
+        root.mkdir(parents=True, exist_ok=True)
+        with tempfile.TemporaryDirectory(dir=root) as directory:
+            path = pathlib.Path(directory)
+            (path / "probe.txt").write_bytes(b"loopback startup")
+            with mock.patch("socket.getfqdn", side_effect=AssertionError("startup performed DNS")):
+                with StaticServer(path) as origin:
+                    opener = browser_protocol.urllib.request.build_opener(
+                        browser_protocol.urllib.request.ProxyHandler({})
+                    )
+                    with opener.open(origin + "probe.txt", timeout=2) as response:
+                        self.assertEqual(response.status, 200)
+                        self.assertEqual(response.read(), b"loopback startup")
+
 
 if __name__ == "__main__":
     unittest.main()
