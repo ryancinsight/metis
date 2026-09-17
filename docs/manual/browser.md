@@ -113,7 +113,8 @@ The dependency-free runner also completed the same scenario through the
 bundled Microsoft Edge WebDriver `153.0.4234.19` and Edge `154.0.4258.12`.
 At Metis revision `77b1c278d610562b04d138aea2d37b828ff097a5`, the run used a
 1500 × 1074 CSS viewport at device scale `1.25`, captured three 1875 × 1343
-PNG states, and closed the WebDriver session with no pending request. The
+PNG states, and closed the WebDriver session. Pending request state was not
+measured by that runner. The
 [provenance record](images/metis-http-fragment-webdriver-edge.json) contains
 the exact hashes and semantic trace:
 
@@ -129,7 +130,7 @@ The [success](images/metis-http-fragment-webdriver-edge-success.png),
 [recovered](images/metis-http-fragment-webdriver-edge-recovered.png) captures
 show health and handshake `200`, one accepted patch, malformed `400`,
 unauthorized `401`, target rejection, unchanged stale state, reset generation
-`2`, remounted generation `2` and clean teardown. This is one Chromium-family
+`2` and remounted generation `2`. This is one Chromium-family
 WebDriver observation on Windows; Firefox, WebKit, TLS, operating-system
 permissions and provider-private resource counts remain separate evidence.
 
@@ -140,6 +141,12 @@ jobs. Each job builds the real `metis-app` HTTP service, serves the generated
 `output/browser/runtime/<engine>-fragment.json` with the three inspected PNG
 states. Uploaded traces bind to the workflow revision; a missing driver,
 service start failure or browser capability remains an explicit failed job.
+The current runner requires `aria-busy="false"` on the HTTP status and an
+enabled fragment button at each captured state. The page updates this
+attribute with its request lease; reset aborts that lease before clearing it.
+The cleanup record derives its request state from the remounted observation.
+This measures the page's request lease, not provider-private resource counts
+or server-side cancellation completion.
 
 ## Run the cross-engine conformance trace
 
@@ -674,8 +681,11 @@ merged Metis fix `07fe83175b7952177199340ad078fd0cfd90f012`. Windows, the
 parser fuzz campaign, lockfile, workflow, ADR, asset-build and all three
 browser jobs passed. Every trace recorded health `200`, authenticated fragment
 `200 (1 patch)`, malformed `400`, unauthorized `401`, target rejection,
-unchanged stale state, reset to generation `2`, remounted fragment `200`, idle
-requests and `session_closed: true`.
+unchanged stale state, reset to generation `2`, remounted fragment `200` and
+`session_closed: true` after WebDriver session deletion. That runner recorded
+idle requests without measuring them; those traces do not establish request
+cleanup. The HTTP page is the standalone JavaScript protocol consumer, not
+the `metis-web` WASM fragment listener.
 
 | Engine | Browser and host | CSS viewport / DPR | Capture artifact |
 | --- | --- | --- | --- |

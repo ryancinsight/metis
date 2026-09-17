@@ -281,6 +281,7 @@ function beginRequest() {
   requestController?.abort();
   const controller = new AbortController();
   requestController = controller;
+  status.setAttribute("aria-busy", "true");
   return { generation: mountGeneration, controller };
 }
 
@@ -398,6 +399,7 @@ async function runFragment() {
     if (isCurrentLease(lease)) {
       fragmentButton.disabled = !sessionToken;
       requestController = undefined;
+      status.setAttribute("aria-busy", "false");
     }
   }
 }
@@ -438,6 +440,7 @@ function probe() {
         healthButton.disabled = false;
         fragmentButton.disabled = !sessionToken;
         requestController = undefined;
+        status.setAttribute("aria-busy", "false");
       }
     });
 }
@@ -445,6 +448,7 @@ function probe() {
 function resetMount() {
   requestController?.abort();
   requestController = undefined;
+  status.setAttribute("aria-busy", "false");
   if (mountGeneration === Number.MAX_SAFE_INTEGER) {
     status.textContent = "Mount generation exhausted";
     return;

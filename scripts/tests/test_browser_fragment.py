@@ -46,6 +46,9 @@ class FragmentDriver:
         self.ready = True
         self.negative_probes = True
         self.closed = False
+        self.busy = "false"
+        self.fragment_disabled = False
+        self.reset_response = "—"
 
     def create_session(self, browser_name: str, device_scale_milli=None) -> None:
         self.device_scale_milli = device_scale_milli or 1000
@@ -93,14 +96,14 @@ class FragmentDriver:
         response = (
             "200 metis-http-ready · handshake 200 · fragment 200 (1 patch)"
             if self.ready
-            else "—"
+            else self.reset_response
         )
         return {
             "app_text": "Metis HTTP boundary",
             "elements": {
-                "metis-status": {"text": status, "value": None, "disabled": False, "busy": None},
+                "metis-status": {"text": status, "value": None, "disabled": False, "busy": self.busy},
                 "fragment-input": {"text": "", "value": "session", "disabled": False, "busy": None},
-                "metis-fragment": {"text": "Run authenticated fragment", "value": None, "disabled": not self.ready, "busy": None},
+                "metis-fragment": {"text": "Run authenticated fragment", "value": None, "disabled": self.fragment_disabled, "busy": None},
                 "metis-reset": {"text": "Reset mount", "value": None, "disabled": False, "busy": None},
                 "http-response": {"text": response, "value": None, "disabled": False, "busy": None},
                 "metis-events": {"text": events, "value": None, "disabled": False, "busy": None},
@@ -155,6 +158,30 @@ class BrowserFragmentTests(unittest.TestCase):
         self.assertEqual(len(trace.screenshots), 3)
         self.assertEqual(len(trace.metrics["browser_heap"]), 2)
         self.assertTrue(trace.cleanup["session_closed"])
+        self.assertEqual(trace.cleanup["request_state"], "idle")
+        self.assertEqual([item["request_state"] for item in trace.snapshots], ["idle"] * 3)
+
+    def test_fragment_trace_rejects_unobserved_idle_or_uncleared_reset(self):
+        root = pathlib.Path(__file__).resolve().parents[2] / "output" / "browser" / "runtime-test"
+        root.mkdir(parents=True, exist_ok=True)
+        cases = (
+            ("busy", "true", "idle controls"),
+            ("busy", None, "idle controls"),
+            ("busy", "unknown", "idle controls"),
+            ("fragment_disabled", True, "idle controls"),
+            ("reset_response", "stale response", "clear the stale generation"),
+        )
+        for attribute, value, diagnostic in cases:
+            with self.subTest(attribute=attribute, value=value), tempfile.TemporaryDirectory(dir=root) as directory:
+                driver = FragmentDriver()
+                setattr(driver, attribute, value)
+                with self.assertRaisesRegex(RuntimeError, diagnostic):
+                    run_fragment_scenario(
+                        driver, BrowserEngine.CHROMIUM,
+                        "http://127.0.0.1:8080/http-health.html", "0" * 40,
+                        pathlib.Path(directory), 5_000,
+                    )
+                self.assertTrue(driver.closed)
 
     def test_fragment_trace_rejects_missing_success_state(self):
         driver = FragmentDriver()
