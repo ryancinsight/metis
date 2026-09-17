@@ -1,19 +1,55 @@
 //! Bounded in-memory request ledger with canonical hash chaining.
 //!
-//! This ledger retains the last 1024 calls and a predecessor checkpoint. It is
-//! diagnostic memory, not durable storage or protection against an attacker who
-//! can rewrite both the records and the checkpoint. A deployment must persist
-//! authenticated checkpoints outside the process before claiming durable audit.
+//! This ledger retains the last 1024 calls and a predecessor checkpoint. The
+//! in-process ring is diagnostic memory; native deployments that need restart
+//! recovery attach [`FileAuditStore`], which authenticates bounded snapshots.
+//! The local store is not an independent trust anchor against a host that can
+//! rewrite both slots or read the checkpoint key.
 
 use metis_core::error::{ErrorCode, MetisError, Result};
+use metis_core::protocol::EventId;
 use metis_ipc::server::{FailureContext, RequestIdentity};
 use moirai_crypto::{constant_time_eq_32, sha256};
 use std::collections::VecDeque;
 
+#[cfg(not(target_arch = "wasm32"))]
+mod persistence;
+#[cfg(not(target_arch = "wasm32"))]
+pub use persistence::{AuditCheckpointKey, FileAuditStore, MAX_SNAPSHOT_BYTES};
+
 /// Maximum retained calls; fixed-size entries bound resident audit storage.
 pub const AUDIT_CAPACITY: usize = 1024;
 
-const AUDIT_HASH_CAPACITY: usize = 99;
+const AUDIT_HASH_CAPACITY: usize = 104;
+
+#[derive(Clone, Copy)]
+enum EventDescriptor {
+    Empty(u8),
+    Identity(u8, RequestIdentity),
+    Event(u8, EventId),
+}
+
+fn event_descriptor(event: AuditEvent) -> EventDescriptor {
+    match event {
+        AuditEvent::Processed(identity) => EventDescriptor::Identity(0, identity),
+        AuditEvent::Failure(FailureContext::Receive) => EventDescriptor::Empty(1),
+        AuditEvent::Failure(FailureContext::Request(identity)) => {
+            EventDescriptor::Identity(2, identity)
+        }
+        AuditEvent::Failure(FailureContext::Handler(identity)) => {
+            EventDescriptor::Identity(3, identity)
+        }
+        AuditEvent::Failure(FailureContext::Response(identity)) => {
+            EventDescriptor::Identity(4, identity)
+        }
+        AuditEvent::Failure(FailureContext::Event(event_id)) => EventDescriptor::Event(5, event_id),
+        AuditEvent::Failure(_) => EventDescriptor::Empty(255),
+    }
+}
+
+fn genesis_hash() -> [u8; 32] {
+    sha256(b"METIS-AUDIT-GENESIS-2")
+}
 
 /// Application processing and transport failures have distinct audit meanings.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -50,22 +86,22 @@ impl AuditRecord {
         bytes.extend_from_slice(&self.sequence_id.to_be_bytes());
         bytes.extend_from_slice(&self.timestamp_millis.to_be_bytes());
         bytes.extend_from_slice(&self.actor_id);
-        let (tag, identity, event_id) = match self.event {
-            AuditEvent::Processed(identity) => (0, Some(identity), None),
-            AuditEvent::Failure(FailureContext::Receive) => (1, None, None),
-            AuditEvent::Failure(FailureContext::Request(identity)) => (2, Some(identity), None),
-            AuditEvent::Failure(FailureContext::Handler(identity)) => (3, Some(identity), None),
-            AuditEvent::Failure(FailureContext::Response(identity)) => (4, Some(identity), None),
-            AuditEvent::Failure(FailureContext::Event(event_id)) => (5, None, Some(event_id)),
-            AuditEvent::Failure(_) => (255, None, None),
+        let descriptor = event_descriptor(self.event);
+        let tag = match descriptor {
+            EventDescriptor::Empty(tag)
+            | EventDescriptor::Identity(tag, _)
+            | EventDescriptor::Event(tag, _) => tag,
         };
         bytes.push(tag);
-        if let Some(identity) = identity {
-            bytes.extend_from_slice(&(identity.message_type as u16).to_be_bytes());
-            bytes.extend_from_slice(&identity.sequence.to_be_bytes());
-        }
-        if let Some(event_id) = event_id {
-            bytes.extend_from_slice(&event_id.get().to_be_bytes());
+        match descriptor {
+            EventDescriptor::Identity(_, identity) => {
+                bytes.extend_from_slice(&(identity.message_type as u16).to_be_bytes());
+                bytes.extend_from_slice(&identity.sequence.to_be_bytes());
+            }
+            EventDescriptor::Event(_, event_id) => {
+                bytes.extend_from_slice(&event_id.get().to_be_bytes());
+            }
+            EventDescriptor::Empty(_) => {}
         }
         bytes.push(u8::from(self.outcome.is_some()));
         bytes.extend_from_slice(&self.outcome.map_or(0, |code| code as u16).to_be_bytes());
@@ -94,7 +130,7 @@ impl AuditLedger {
     /// Starts an empty ledger under the versioned genesis digest.
     #[must_use]
     pub fn new() -> Self {
-        let genesis = sha256(b"METIS-AUDIT-GENESIS-2");
+        let genesis = genesis_hash();
         Self {
             records: VecDeque::with_capacity(AUDIT_CAPACITY),
             checkpoint: genesis,

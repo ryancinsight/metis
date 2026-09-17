@@ -112,6 +112,58 @@ pub enum ErrorCode {
 }
 
 impl ErrorCode {
+    /// Resolves a known wire or persistence discriminant.
+    #[must_use]
+    pub const fn from_wire(value: u16) -> Option<Self> {
+        match value {
+            0x1001 => Some(Self::MagicMismatch),
+            0x1002 => Some(Self::VersionMismatch),
+            0x1003 => Some(Self::ChecksumMismatch),
+            0x1004 => Some(Self::PayloadTooLarge),
+            0x1005 => Some(Self::FrameTruncated),
+            0x1006 => Some(Self::UnexpectedMessageType),
+            0x1007 => Some(Self::MalformedPayload),
+            0x1008 => Some(Self::SequenceMismatch),
+            0x1009 => Some(Self::ReplayDetected),
+            0x2001 => Some(Self::MissingCapability),
+            0x2002 => Some(Self::InvalidCapabilitySignature),
+            0x2003 => Some(Self::CapabilityExpired),
+            0x2004 => Some(Self::InsufficientScope),
+            0x2005 => Some(Self::PrivilegeEscalationAttempt),
+            0x2006 => Some(Self::InvalidPrincipal),
+            0x2007 => Some(Self::InvalidOrigin),
+            0x2008 => Some(Self::InvalidWindow),
+            0x2009 => Some(Self::NavigationDenied),
+            0x200a => Some(Self::InvalidPluginDescriptor),
+            0x200b => Some(Self::PluginAlreadyRegistered),
+            0x200c => Some(Self::PluginRegistryFull),
+            0x200d => Some(Self::PluginNotFound),
+            0x200e => Some(Self::PluginOperationNotFound),
+            0x200f => Some(Self::PermissionDenied),
+            0x3001 => Some(Self::InvalidPatientWeight),
+            0x3002 => Some(Self::InvalidDrugConcentration),
+            0x3003 => Some(Self::InvalidTargetDose),
+            0x3004 => Some(Self::RateExceedsSafetyEnvelope),
+            0x3005 => Some(Self::PediatricRateExceeded),
+            0x3006 => Some(Self::NumericInstability),
+            0x3007 => Some(Self::ClinicalInterlockBlocked),
+            0x4001 => Some(Self::TransportBroken),
+            0x4002 => Some(Self::ConnectionClosed),
+            0x4003 => Some(Self::Timeout),
+            0x4004 => Some(Self::IoError),
+            0x4005 => Some(Self::QueueFull),
+            0x5001 => Some(Self::MalformedMarkup),
+            0x5002 => Some(Self::UnclosedTag),
+            0x5003 => Some(Self::TagMismatch),
+            0x5004 => Some(Self::InvalidCssStyle),
+            0x5005 => Some(Self::LayoutOverflow),
+            0x6001 => Some(Self::RenderFailure),
+            0x6002 => Some(Self::SurfaceAllocationError),
+            0x6003 => Some(Self::UnsupportedPlatformEvent),
+            _ => None,
+        }
+    }
+
     /// Returns the symbolic string for the error code.
     #[must_use]
     pub const fn as_str(&self) -> &'static str {
@@ -291,5 +343,60 @@ mod tests {
         assert!(debug.contains("REQ-METIS-IPC-005"));
         assert!(!debug.contains("scan.bin"));
         assert!(format!("{error}").contains("scan.bin"));
+    }
+
+    #[test]
+    fn wire_codes_round_trip_and_reject_unknown_values() {
+        let codes = [
+            ErrorCode::MagicMismatch,
+            ErrorCode::VersionMismatch,
+            ErrorCode::ChecksumMismatch,
+            ErrorCode::PayloadTooLarge,
+            ErrorCode::FrameTruncated,
+            ErrorCode::UnexpectedMessageType,
+            ErrorCode::MalformedPayload,
+            ErrorCode::SequenceMismatch,
+            ErrorCode::ReplayDetected,
+            ErrorCode::MissingCapability,
+            ErrorCode::InvalidCapabilitySignature,
+            ErrorCode::CapabilityExpired,
+            ErrorCode::InsufficientScope,
+            ErrorCode::PrivilegeEscalationAttempt,
+            ErrorCode::InvalidPrincipal,
+            ErrorCode::InvalidOrigin,
+            ErrorCode::InvalidWindow,
+            ErrorCode::NavigationDenied,
+            ErrorCode::InvalidPluginDescriptor,
+            ErrorCode::PluginAlreadyRegistered,
+            ErrorCode::PluginRegistryFull,
+            ErrorCode::PluginNotFound,
+            ErrorCode::PluginOperationNotFound,
+            ErrorCode::PermissionDenied,
+            ErrorCode::InvalidPatientWeight,
+            ErrorCode::InvalidDrugConcentration,
+            ErrorCode::InvalidTargetDose,
+            ErrorCode::RateExceedsSafetyEnvelope,
+            ErrorCode::PediatricRateExceeded,
+            ErrorCode::NumericInstability,
+            ErrorCode::ClinicalInterlockBlocked,
+            ErrorCode::TransportBroken,
+            ErrorCode::ConnectionClosed,
+            ErrorCode::Timeout,
+            ErrorCode::IoError,
+            ErrorCode::QueueFull,
+            ErrorCode::MalformedMarkup,
+            ErrorCode::UnclosedTag,
+            ErrorCode::TagMismatch,
+            ErrorCode::InvalidCssStyle,
+            ErrorCode::LayoutOverflow,
+            ErrorCode::RenderFailure,
+            ErrorCode::SurfaceAllocationError,
+            ErrorCode::UnsupportedPlatformEvent,
+        ];
+        for code in codes {
+            assert_eq!(ErrorCode::from_wire(code as u16), Some(code));
+        }
+        assert_eq!(ErrorCode::from_wire(0), None);
+        assert_eq!(ErrorCode::from_wire(u16::MAX), None);
     }
 }

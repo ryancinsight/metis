@@ -90,5 +90,8 @@ Each handler result records a typed audit event. Failure contexts distinguish
 receive failure with no decoded header, request rejection with identity, handler
 failure, response delivery failure and unsolicited-event delivery failure with
 its event identifier. A processed request whose response fails has two distinct
-events. Audit records use canonical METIS-AUDIT-2 hashing and bounded in-memory
-retention; persistence and trusted checkpoints remain open.
+events. Audit records use canonical METIS-AUDIT-2 hashing and bounded retention.
+Native `FileAuditStore` snapshots use the same chain plus a host-held
+HMAC-SHA256 checkpoint key for restart recovery; the key and request payloads
+are never persisted. The local keyed store is not an independent remote or
+hardware trust anchor.
