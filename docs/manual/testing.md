@@ -391,6 +391,15 @@ WASM allocations, native process memory, compositor work or GPU memory. Use
 the option with the file-backed gallery command as well as the generic canvas
 runner when the host exposes the API.
 
+Add `--text-geometry-probe` to the workbench command to append
+`metrics.text_geometry`. The bounded probe uses the existing textarea's
+computed style and a detached mixed-script specimen; `Intl.Segmenter` and
+`Range.getClientRects()` provide grapheme boundaries and host line fragments.
+The validator rejects non-finite or unordered rectangles and records an
+explicit unavailable reason when the browser lacks the segmentation API. This
+is browser layout evidence; it does not replace native IME, font fallback,
+clipboard or assistive-technology tests.
+
 For lifecycle-growth observations, add `--lifecycle-cycles N` to the workbench
 runner, where `N` is bounded to 1 through 8. The trace records the semantic
 state for every stop/remount cycle under `metrics.lifecycle_cycles` and reports

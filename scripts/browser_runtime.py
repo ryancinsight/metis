@@ -26,6 +26,7 @@ from browser_protocol import (
 )
 from browser_accessibility import capture_accessibility
 from browser_assets import capture_assets
+from browser_text_geometry import capture_text_geometry
 from browser_trace import (
     BrowserEngine,
     Trace,
@@ -186,6 +187,7 @@ def run_scenario(
     require_reduced_motion: bool = False,
     require_forced_colors: bool = False,
     asset_probe: bool = False,
+    text_geometry_probe: bool = False,
 ) -> Trace:
     """Execute the same input, bridge and bounded teardown trace for every engine."""
     if bridge not in BRIDGE_MODES:
@@ -228,6 +230,8 @@ def run_scenario(
                 require_reduced_motion=require_reduced_motion,
                 require_forced_colors=require_forced_colors,
             )
+        if text_geometry_probe:
+            capture_text_geometry(client, trace, "initial")
 
         for element_id, value, expected in (
             ("weight-kg", "80", "80.00 kg"),
@@ -272,6 +276,8 @@ def run_scenario(
                     capture_accessibility(client, trace, "remounted-after-cancel")
                 if asset_probe:
                     capture_assets(client, trace, "remounted-after-cancel")
+                if text_geometry_probe:
+                    capture_text_geometry(client, trace, "remounted-after-cancel")
                 if browser_heap:
                     browser_heap_sample(client, trace, "remounted-after-cancel")
                 if browser_memory:
@@ -310,6 +316,8 @@ def run_scenario(
                 capture_accessibility(client, trace, "remounted")
             if asset_probe:
                 capture_assets(client, trace, "remounted")
+            if text_geometry_probe:
+                capture_text_geometry(client, trace, "remounted")
             if browser_heap:
                 browser_heap_sample(client, trace, "remounted")
             if browser_memory:
@@ -335,6 +343,8 @@ def run_scenario(
                 capture_accessibility(client, trace, f"remounted-cycle-{cycle}")
             if asset_probe:
                 capture_assets(client, trace, f"remounted-cycle-{cycle}")
+            if text_geometry_probe:
+                capture_text_geometry(client, trace, f"remounted-cycle-{cycle}")
             if browser_heap:
                 browser_heap_sample(client, trace, f"remounted-cycle-{cycle}")
             if browser_memory:

@@ -318,6 +318,7 @@ an owner. “Unsupported” cannot replace delivery of a required mobile/native 
 - Completed increment (2026-09-17): the bounded classifier now covers the W3C quotation-paste, line/word deletion, drag-deletion and transpose insertion names; unmapped names remain `other`.
 - Evidence: focused policy tests cover the added standard names; the W3C [Input Events] vocabulary is linked from the crate README, ADRs and browser manual. Host clipboard/history authority and trusted-content residuals are unchanged.
 - Current increment (2026-09-17): the format-neutral browser runner will record bounded host text layout and grapheme-range geometry from the existing editing specimen; no DICOM or clipboard semantics enter the probe.
+- Lease: root — `scripts/browser_text_geometry.py`, `scripts/browser_runtime.py`, `scripts/browser_runtime_cli.py`, `scripts/tests/test_browser_text_geometry.py`, `scripts/tests/test_browser_runtime.py`, `scripts/tests/test_verify.py`, `.github/workflows/ci.yml`, `docs/manual/browser.md`, `docs/VERIFICATION.md`.
 - Residuals: bidi and line geometry, fallback-font metrics, trusted clipboard contents/permissions, an installed CJK or other native IME journey and assistive-technology acceptance remain open.
 
 <a id="METIS-A11Y-001"></a>
