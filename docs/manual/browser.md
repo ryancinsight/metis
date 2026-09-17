@@ -951,6 +951,17 @@ the visible navigation status and the updated selection line. This is a local
 Chromium observation of the HTML5/CSS surface; it does not claim bidi layout,
 line metrics or trusted IME behavior.
 
+The same input listener keeps the browser's `InputEvent.inputType` as bounded
+metadata and classifies it as edit, delete, paste, cut, undo, redo, composition
+or other. The browser performs its native clipboard or history action before the
+event reaches Metis; the resulting value and UTF-16 selection are validated by
+the Rust policy and the status line reports the semantic operation together
+with the raw operation name. For example, native undo reports
+`Text: input undo (historyUndo) applied; data none`, while ordinary typing keeps
+the existing `Text: input insertText applied; data ...` status. This is operation
+classification and value validation, not a replacement clipboard service or a
+Rust-side undo stack.
+
 The policy caps the value at 1 MiB, event metadata at 128 UTF-8 bytes and the
 locale at 64 bytes. UTF-16 offsets are transport coordinates; the Rust policy
 rejects an offset inside a surrogate pair or Unicode extended grapheme cluster
@@ -960,8 +971,9 @@ before it changes state. After the browser performs its default action, a
 policy. The text status reports the navigation key and the textarea exposes
 `data-text-state="navigated"` with the accepted UTF-16 selection. Other keys
 retain the browser's native editing behavior. This workflow does not claim
-bidi shaping, line metrics, fallback-font metrics, clipboard/undo behavior,
-assistive-technology behavior or native IME delivery.
+bidi shaping, line metrics, fallback-font metrics, trusted clipboard contents or
+permissions, assistive-technology behavior or native IME delivery; the
+operation classifier only records the browser event and resulting value.
 CUA can show the real HTML textarea, statuses and focus ring, but it cannot
 provide a trusted OS IME event or expose `isTrusted`; record the browser engine
 and input method when collecting host evidence.

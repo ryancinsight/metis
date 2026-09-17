@@ -111,6 +111,13 @@ the Rust scalar and extended-grapheme policy. Native browser caret behavior is
 preserved; bidi/line metrics, clipboard/undo, trusted native IME and
 accessibility technology remain host evidence.
 
+Revision 2026-09-17: the text policy classifies the browser's bounded
+`InputEvent.inputType` values as edit, delete, paste, cut, undo, redo,
+composition or other. Metis retains the raw operation name and validates the
+value and selection produced by the host's default action before rendering the
+operation status. This records host clipboard/history behavior without adding a
+second clipboard or undo implementation to Metis.
+
 Revision 2026-09-08: Metis now retains two browser pointer identifiers and
 applies a bounded centroid/distance pinch policy. Duplicate and third-pointer
 presses are rejected, and the remaining physical-touch, cross-engine and
