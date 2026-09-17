@@ -340,7 +340,7 @@ an owner. “Unsupported” cannot replace delivery of a required mobile/native 
 
 <a id="METIS-TEXT-001"></a>
 ## METIS-TEXT-001 — Text, selection and IME [minor]
-- Status: in-progress; priority: P1; owner: Metis input/presentation; integrator: root; last-update: 2026-09-17; branch: `feat/metis-text-001-input-operations`; regions: `crates/metis-web/src/browser/text_policy.rs`, `crates/metis-web/src/browser/text_policy_tests.rs`, `crates/metis-web/src/browser/text.rs`, `crates/metis-web/src/view.rs`, `docs/adr/0003-framework-conformance.md`, `docs/adr/0014-input-controls.md`, `docs/manual/browser.md`, `docs/VERIFICATION.md`, `backlog.md`, `scripts/verify.py`, `scripts/tests/test_verify.py`; dependencies: METIS-INPUT-001; risk: text corruption
+- Status: in-progress; priority: P1; owner: Metis input/presentation; integrator: root; last-update: 2026-09-17; branch: `docs/metis-text-001-reconcile`; regions: `backlog.md`; dependencies: METIS-INPUT-001; risk: text corruption
 - Scope: DOM text first; grapheme selection, composition/preedit/commit/cancel, clipboard/undo, wrapping, fallback fonts, bidi and text scaling. Custom renderer requires its own admitted text contract.
 - Acceptance: Unicode fixture strings/selection ranges and caret/line geometry match the contract; native IME exercised per OS, including CJK, combining marks, emoji and mixed-direction input.
 - Demonstration: [V03](docs/VERIFICATION.md#V03), editing specimen with actual composition and committed captures, locale/font details and keyboard instructions.
@@ -357,7 +357,6 @@ an owner. “Unsupported” cannot replace delivery of a required mobile/native 
 - Evidence: focused `metis-web` nextest runs 49/49, native and WASM warning-denied Clippy/checks pass, and the browser asset contract test passes 13/13. A 2026-09-17 CUA smoke at `1280×720`/1.25 appended ` X`, observed native **Control+Z** restore `Résumé — 東京 / 影像` with `Text: input undo (historyUndo) applied; data none`, then observed **Control+Shift+Z** with `Text: input redo (historyRedo) applied; data none`; the screenshot shows the focused textarea, focus ring and restored value. Clipboard contents/permissions remain host-owned.
 - Completed increment (2026-09-17): the bounded classifier now covers the W3C quotation-paste, line/word deletion, drag-deletion and transpose insertion names; unmapped names remain `other`.
 - Evidence: focused policy tests cover the added standard names; the W3C [Input Events] vocabulary is linked from the crate README, ADRs and browser manual. Host clipboard/history authority and trusted-content residuals are unchanged.
-- lease: root `crates/metis-web/src/browser/input_operation.rs`, `crates/metis-web/src/browser/text_policy_tests.rs`, `docs/adr/0014-input-controls.md`, `docs/manual/browser.md`, `docs/VERIFICATION.md`, `backlog.md` 2026-09-17T08:10:00-04:00
 - Residuals: bidi and line geometry, fallback-font metrics, trusted clipboard contents/permissions, an installed CJK or other native IME journey and assistive-technology acceptance remain open.
 
 <a id="METIS-A11Y-001"></a>
