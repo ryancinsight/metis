@@ -1083,6 +1083,28 @@ live-region, expanded, popup, disabled and dialog-open states without copying
 form values. This verifies the browser semantic contract; supported
 screen-reader speech and native accessibility bridges still require host runs.
 
+### Decode the shipped image marks
+
+Build the browser output, then add `--asset-probe` to a workbench run. The
+probe loads the local SVG and PNG marks through `HTMLImageElement.decode()`,
+requires same-origin URLs and finite intrinsic dimensions, and removes its
+probe container before the lifecycle trace continues:
+
+```powershell
+python scripts/browser.py build
+python scripts/browser_runtime.py --engine chromium `
+  --driver-url $env:METIS_WEBDRIVER_CHROMIUM_URL `
+  --serve-dir output/browser --bridge disconnected --asset-probe `
+  --output output/browser/runtime/chromium-assets.json
+```
+
+The resulting `metrics.assets` records the source path, decoder, intrinsic
+width and height for both marks at each captured lifecycle remount. A decode
+error, cross-origin redirect, unsupported decoder or leaked probe element
+fails the run; no DICOM bytes or clinical image metadata enter this probe.
+Native image decoding, font loading, media controls and the RITK patient-image
+surface remain separate acceptance work under V06.
+
 The captured service journey at revision
 `d879779247c8cfc5870f62f99a5364cbbf2d3c58` used the Codex in-app
 browser at 1280×720 CSS pixels and device scale 1.25. Pointer activation of

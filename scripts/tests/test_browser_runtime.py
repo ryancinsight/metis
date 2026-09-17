@@ -1516,6 +1516,30 @@ class BrowserRuntimeTests(unittest.TestCase):
         self.assertEqual(document["status"], "failed")
         self.assertIn("--accessibility-probe requires --scenario workbench", document["error"])
 
+    def test_cli_rejects_asset_probe_on_canvas_scenario(self):
+        output = pathlib.Path(__file__).resolve().parents[2] / "output" / "browser" / "runtime-test"
+        output.mkdir(parents=True, exist_ok=True)
+        with tempfile.TemporaryDirectory(dir=output) as directory:
+            trace_path = pathlib.Path(directory) / "invalid-asset-cli.json"
+            with mock.patch.object(
+                sys,
+                "argv",
+                [
+                    "browser_runtime.py",
+                    "--engine",
+                    "chromium",
+                    "--scenario",
+                    "canvas",
+                    "--asset-probe",
+                    "--output",
+                    str(trace_path),
+                ],
+            ):
+                self.assertEqual(main(), 1)
+            document = json.loads(trace_path.read_text(encoding="utf-8"))
+        self.assertEqual(document["status"], "failed")
+        self.assertIn("--asset-probe requires --scenario workbench", document["error"])
+
     def test_cli_rejects_media_requirement_without_accessibility_probe(self):
         output = pathlib.Path(__file__).resolve().parents[2] / "output" / "browser" / "runtime-test"
         output.mkdir(parents=True, exist_ok=True)
