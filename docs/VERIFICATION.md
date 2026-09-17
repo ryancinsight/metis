@@ -600,6 +600,25 @@ and copied output. This proves the local asset admission and generated browser
 presentation for one engine; browser decode behavior in other engines, installed
 MSI rendering and font/media resource lifecycles remain open V06 evidence.
 
+<a id="browser-native-image-decode-evidence-2026-09-17"></a>
+## Browser native image decode evidence — 2026-09-17
+
+The workbench runner now accepts `--asset-probe`. It creates a hidden,
+same-origin probe container, decodes the shipped SVG and PNG marks with
+`HTMLImageElement.decode()`, records each source path and intrinsic dimensions,
+then removes the container before the lifecycle trace continues. A malformed
+path, cross-origin response, failed decode, invalid dimensions or remaining
+probe element fails the run. The probe is format-neutral: it does not read
+DICOM bytes or infer clinical orientation.
+
+The dependency-free probe suite covers valid dimensions, wrong sources,
+cross-origin/unavailable results, leaked elements, bounds and CLI scenario
+rejection. The scheduled Chromium/Firefox/WebKit workbench matrix invokes the
+probe beside its existing screenshots and accessibility records. This evidence
+closes the browser image-decoder slice for the local marks; native image decode,
+font and media lifecycles, GPU vectors and RITK's clinical image presentation
+remain separate V06 acceptance work.
+
 ## Browser lifecycle evidence — 2026-09-07
 
 After rebuilding the generated artifacts from the standalone lock at Moirai

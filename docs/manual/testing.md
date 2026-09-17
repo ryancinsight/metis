@@ -164,6 +164,13 @@ HTML5/CSS host, Moirai transport and pre-response Origin check; it does not
 prove TLS, cross-engine behavior, post-drop allocation bounds, accessibility
 technology support or OS isolation.
 
+Add `--asset-probe` to the workbench command to exercise the shipped image
+marks through each configured browser's native decoder. The trace records
+same-origin source paths, intrinsic dimensions and zero remaining probe
+elements in `metrics.assets`; decode errors and cross-origin responses fail
+closed. This checks the browser asset boundary only and does not decode DICOM
+or replace RITK's clinical image workflow.
+
 ## Validate a consumer gallery
 
 Metis validates the format-neutral file handoff, canvas contract and browser

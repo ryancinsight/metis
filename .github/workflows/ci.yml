@@ -357,6 +357,7 @@ jobs:
             --device-scale "$DEVICE_SCALE" \
             --browser-heap-sample \
             --accessibility-probe \
+            --asset-probe \
             --lifecycle-cycles 4 \
             --timeout-seconds 60 \
             --output "output/browser/runtime/$ENGINE-workbench.json"

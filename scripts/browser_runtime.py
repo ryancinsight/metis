@@ -25,6 +25,7 @@ from browser_protocol import (
     WebDriverClient,
 )
 from browser_accessibility import capture_accessibility
+from browser_assets import capture_assets
 from browser_trace import (
     BrowserEngine,
     Trace,
@@ -184,6 +185,7 @@ def run_scenario(
     accessibility_probe: bool = False,
     require_reduced_motion: bool = False,
     require_forced_colors: bool = False,
+    asset_probe: bool = False,
 ) -> Trace:
     """Execute the same input, bridge and bounded teardown trace for every engine."""
     if bridge not in BRIDGE_MODES:
@@ -212,6 +214,8 @@ def run_scenario(
         if browser_memory:
             browser_memory_sample(client, trace, "initial")
         screenshot(client, trace, screenshot_directory, "initial")
+        if asset_probe:
+            capture_assets(client, trace, "initial")
         if bridge == "authorized":
             _wait_for_text(client, "metis-status", "Authorized backend session ready", include=True, timeout_ms=timeout_ms)
             trace.actions.append({"action": "await-authorized-bridge", "result": "ready"})
@@ -266,6 +270,8 @@ def run_scenario(
                 remounted_snapshot = _snapshot(client, trace, "remounted-after-cancel")
                 if accessibility_probe:
                     capture_accessibility(client, trace, "remounted-after-cancel")
+                if asset_probe:
+                    capture_assets(client, trace, "remounted-after-cancel")
                 if browser_heap:
                     browser_heap_sample(client, trace, "remounted-after-cancel")
                 if browser_memory:
@@ -302,6 +308,8 @@ def run_scenario(
             remounted_snapshot = _snapshot(client, trace, "remounted")
             if accessibility_probe:
                 capture_accessibility(client, trace, "remounted")
+            if asset_probe:
+                capture_assets(client, trace, "remounted")
             if browser_heap:
                 browser_heap_sample(client, trace, "remounted")
             if browser_memory:
@@ -325,6 +333,8 @@ def run_scenario(
             cycle_remounted = _snapshot(client, trace, f"remounted-cycle-{cycle}")
             if accessibility_probe:
                 capture_accessibility(client, trace, f"remounted-cycle-{cycle}")
+            if asset_probe:
+                capture_assets(client, trace, f"remounted-cycle-{cycle}")
             if browser_heap:
                 browser_heap_sample(client, trace, f"remounted-cycle-{cycle}")
             if browser_memory:

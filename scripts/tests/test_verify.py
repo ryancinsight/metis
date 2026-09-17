@@ -305,6 +305,7 @@ class WorkflowContractTests(unittest.TestCase):
                 self.assertIn(fragment, self.source)
         self.assertIn("needs: browser-assets", self.source)
         self.assertIn("name: metis-browser-runtime-${{ matrix.engine }}-${{ github.run_id }}", self.source)
+        self.assertIn("--asset-probe", self.source)
 
 
 class ReleaseWorkflowContractTests(unittest.TestCase):
