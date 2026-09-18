@@ -5,7 +5,8 @@ Status: Accepted
 Date: 2026-09-05
 
 Drivers: [METIS-GAPS-001](../../backlog.md#METIS-GAPS-001),
-[METIS-VISUAL-001](../../backlog.md#METIS-VISUAL-001).
+[METIS-VISUAL-001](../../backlog.md#METIS-VISUAL-001),
+[METIS-SVELTE-001](../../backlog.md#METIS-SVELTE-001).
 
 Revision 2026-09-05: the software V01 runner now binds seven real backend states
 to recorded semantics, exact raster comparisons and source/fixture provenance.
@@ -357,14 +358,25 @@ binds real saved-study pixels and process samples. Its 1600 × 1000 host extent
 and process boundary remain different from Métis, so the record closes the
 semantic prerequisite without establishing a framework resource ranking.
 
+Revision 2026-09-18 (Svelte comparator): official Svelte 5 documentation is
+added as a source-pinned web-component comparator. Svelte's compiler and runes
+describe a JavaScript/CSS component model, while SvelteKit adds configurable
+SSR, CSR and prerendering deployment modes. Custom-element output is useful for
+DOM interoperability analysis, but none of these documents establishes Rust or
+WASM memory, authority, native-window or installer parity. Metis therefore
+keeps Rust-owned state, Moirai transport and HostPolicy as the authority path;
+Svelte and SvelteKit remain comparison subjects with no dependency or runtime
+added to the workspace.
+
 ## Decision and scope
 
 Use Tauri as the application-framework migration reference, egui/GPUI/Iced as
-interaction, text, rendering and test-tooling references, Axum as a server and
-router boundary reference, and htmx as a hypermedia boundary reference. Resolve
-all gaps in
+interaction, text, rendering and test-tooling references, Svelte/SvelteKit as
+compiled DOM and web-deployment references, Axum as a server and router
+boundary reference, and htmx as a hypermedia boundary reference. Resolve all
+gaps in
 the audited capability matrix below through the linked development items.
-This is a capability contract, not a promise to clone five incompatible APIs,
+This is a capability contract, not a promise to clone incompatible APIs,
 every third-party extension, or future upstream releases. New upstream surfaces
 reopen the inventory; none inherit a support claim without a test.
 
@@ -374,7 +386,8 @@ application behavior. Custom rendering has its own contract through Iris.
 Moirai owns execution/transport; Metis owns application state, host integration
 and permission policy. A GPU renderer is not a prerequisite for a DOM form.
 
-egui, GPUI, Iced, Tauri, Axum and htmx are comparison subjects, not newly
+egui, GPUI, Iced, Tauri, Svelte, SvelteKit, Axum and htmx are comparison
+subjects, not newly
 adopted dependencies. The conditional Axum boundary is specified in [ADR
 0025](0025-axum-server-boundary.md); the admitted loopback demonstration is
 not a public deployment or a DICOM service.
@@ -399,6 +412,7 @@ initial comparison limits.
 | GPUI / Zed | Official `main` sources read on the inspection date; observed head `5a9b9558db01a6b906cec2fb70a797affdc58cdd` | Source inventory, not a checked-out build or proof every API is in the published GPUI crate. |
 | Tauri | [tauri-v2.11.5 release][T0], 2026-07-01; v2 documentation read on inspection date | Documentation can describe newer integrations than a release; pin application/driver revisions when building comparison fixtures. |
 | Iced | [0.14.0 crate and API docs][I0], released 2025-12-07; official examples and release notes [I1] [I2] | Versioned docs describe Windows/macOS/Linux/Web, Elm-style state/messages/view/update, async tasks, native rendering and wgpu/tiny-skia paths. The former DOM runtime is archived [I3]; DOM reuse is not inferred from current Iced. |
+| Svelte / SvelteKit | Official Svelte 5 [overview][S0], [runes][S1] and [custom-elements][S2] docs, plus SvelteKit [introduction][S3] and [project types][S4], inspected 2026-09-18 | Current documentation describes compiler-generated JavaScript/CSS components, rune-based reactivity, custom-element output and configurable SSR/CSR/prerendering. It is a web-component/deployment reference, not evidence for Rust/WASM memory, native-window, permission or installer parity. |
 | Axum | [0.8.9 API documentation][A0], inspected 2026-09-10 | Server/router reference for typed routes, state, extraction, middleware and response conversion. Metis keeps Moirai as the transport owner and implements the admitted loopback boundary without an Axum dependency. |
 
 “Provided” below means documented or present in inspected source, not
@@ -460,6 +474,34 @@ after the corresponding Metis implementation and target evidence pass.
 | Packaging and updates | The versioned Iced docs describe application execution and rendering, not Tauri-style installers, signing or updater recovery | Keep packaging, install/uninstall preservation, signing and update recovery in Metis's distribution items. [DISTRIBUTION](../../backlog.md#METIS-DISTRIBUTION-001), [RELEASE](../../backlog.md#METIS-RELEASE-001). |
 | Semantic and visual tests | Iced 0.14 release notes identify headless mode and first-class E2E testing; exact test APIs require a pinned fixture before adoption [I2] | Metis keeps its own semantic/raster snapshots and must add browser/native capture providers. [VISUAL](../../backlog.md#METIS-VISUAL-001), [QUALITY](../../backlog.md#METIS-QUALITY-001). |
 | Memory and performance | A renderer/framework description does not establish memory reduction or latency parity | Measure Metis against matched workloads and process boundaries after live browser/native apps exist. [MEMORY](../../backlog.md#METIS-MEMORY-001), [PERF](../../backlog.md#METIS-PERF-001), [CONFORMANCE](../../backlog.md#METIS-CONFORMANCE-001). |
+
+## Svelte and SvelteKit comparison
+
+Svelte is a compiler-driven web-component framework. Its current reference
+surface is useful for testing whether a Rust-owned DOM host can preserve the
+same HTML/CSS integration points without importing a JavaScript application
+runtime. SvelteKit is evaluated separately as an application and deployment
+framework. Documentation describes capabilities; it does not substitute for a
+matched application trace, resource measurement or security test.
+
+| Capability | Svelte/SvelteKit reference | Metis consequence and closing work |
+| --- | --- | --- |
+| Component state and reactivity | Svelte 5 runes are compiler syntax; `$state` creates reactive state and `$derived`/`$effect` describe dependent work [S0] [S1] | Preserve Rust-owned state, commands and event envelopes. A reusable Metis component lifecycle and subscription contract remains a `STATE`/`COMMANDS` item; no JavaScript state runtime is admitted. [STATE](../../backlog.md#METIS-STATE-001), [COMMANDS](../../backlog.md#METIS-COMMANDS-001) |
+| HTML, CSS and component output | The Svelte compiler turns declarative HTML, CSS and JavaScript components into JavaScript; the overview describes the generated output as optimized JavaScript [S0] | The browser host continues to own HTML5/CSS while Rust owns behavior and the typed style contract. DOM/CSS migration diagnostics must remain explicit; compiled Svelte output is an external consumer contract, not a Metis dependency. [BROWSER](../../backlog.md#METIS-BROWSER-001), [LAYOUT](../../backlog.md#METIS-LAYOUT-001), [MIGRATION](../../backlog.md#METIS-MIGRATION-001) |
+| Custom elements and shadow DOM | Svelte can compile a component as a custom element with `<svelte:options>`, `$host`, properties and configurable shadow-root behavior [S2] | Interoperability is limited to precompiled, allowlisted custom elements at the DOM boundary. Metis must type-check element identity, properties and events before dispatch and must not accept arbitrary component scripts or turn a custom element into an authority boundary. [BROWSER](../../backlog.md#METIS-BROWSER-001), [AUTHORITY](../../backlog.md#METIS-AUTHORITY-001), [FRAGMENT](../../backlog.md#METIS-FRAGMENT-001) |
+| Rendering and deployment | SvelteKit documents configurable SSR, CSR, prerendering, SPA, separate-backend and offline project types [S3] [S4] | These modes guide deployment comparison only. Rust/WASM browser execution, native windows, Moirai transport and Métis installers remain the supported seams; no SSR, hydration or SvelteKit adapter claim is made. [WEB](../../backlog.md#METIS-WEB-001), [BROWSER](../../backlog.md#METIS-BROWSER-001), [DISTRIBUTION](../../backlog.md#METIS-DISTRIBUTION-001) |
+| Security and host authority | The Svelte/SvelteKit reference describes component compilation and deployment, not a Tauri-style capability broker or OS permission model [S2] [S3] | Keep `HostPolicy`, Origin/session binding, capability HMAC and OS permission probes as Metis-owned contracts. A Svelte component, custom element or SvelteKit adapter never grants file, network, process or installer authority. [AUTHORITY](../../backlog.md#METIS-AUTHORITY-001), [SERVICES](../../backlog.md#METIS-SERVICES-001) |
+| Evidence and performance | Official documentation gives no matched DICOM, native-window, allocator-used or compositor/input-latency measurement | Extend the existing visual and resource protocols only with an equal consumer fixture, surface, host boundary, input trace and workload. Until then, Svelte is a design comparator and no memory, latency or framework ranking is claimed. [VISUAL](../../backlog.md#METIS-VISUAL-001), [MEMORY](../../backlog.md#METIS-MEMORY-001), [PERF](../../backlog.md#METIS-PERF-001), [CONFORMANCE](../../backlog.md#METIS-CONFORMANCE-001) |
+
+The Svelte-derived implementation order is therefore: retain the Rust/Moirai
+state and authority seams; close the generic DOM component lifecycle and CSS
+migration diagnostics; specify typed custom-element interoperation only after
+those seams are tested; and measure any external Svelte consumer against the
+existing equal-fixture protocol. SvelteKit SSR, hydration, adapters and desktop
+wrappers remain explicit comparison or integration requirements rather than
+new framework dependencies. This keeps the Tauri replacement path compatible
+with ordinary HTML5/CSS applications without moving DICOM or application state
+into Metis.
 
 ## Axum server and router comparison
 
@@ -608,6 +650,11 @@ observations; future implementation fixtures must pin the actual dependencies.
 [H0]: https://htmx.org/docs/
 [H1]: https://htmx.org/attributes/hx-target/
 [H2]: https://htmx.org/attributes/hx-swap/
+[S0]: https://svelte.dev/docs/svelte/overview
+[S1]: https://svelte.dev/docs/svelte/what-are-runes
+[S2]: https://svelte.dev/docs/svelte/custom-elements
+[S3]: https://svelte.dev/docs/kit/introduction
+[S4]: https://svelte.dev/docs/kit/project-types
 [A0]: https://docs.rs/axum/0.8.9/axum/struct.Router.html
 [A1]: https://docs.rs/axum/0.8.9/axum/extract/struct.State.html
 [A2]: https://docs.rs/axum/0.8.9/axum/extract/index.html
