@@ -622,11 +622,11 @@ presentation remain separate V06 acceptance work.
 <a id="browser-media-error-teardown-evidence-2026-09-18"></a>
 ## Browser media error and teardown evidence — 2026-09-18
 
-At Metis revision `3a6f4a64132db42e084cc68602a1a5176b9b3d2e`, the Chromium
+At Metis revision `8f243443fbcd84dbc1c08461dfa2b036da96a069`, the Chromium
 workbench runner used `--media-probe --lifecycle-cycles 2` against Edge
 154.0.4258.12 at device scale 1.25. The trace passed and is stored at
 `output/browser/runtime/edge-media-20260918.json` with SHA-256
-`e290942a791870a9b679dcdb526fed3d9e5fa6fc1c467915cdd2e626deac82c6`. Three
+`8f2f7fc4f1e868f6378ae46a071a72c2c348e82f1042776fea0418859b6a3880`. Three
 `metrics.media` observations (initial, remounted and remounted-cycle-2) each
 contain one audio and one video record. Both invalid local `data:` fixtures
 raised `MediaError` code 4, returned `readyState=0` and
