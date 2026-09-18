@@ -308,7 +308,6 @@ an owner. “Unsupported” cannot replace delivery of a required mobile/native 
 <a id="METIS-TEXT-001"></a>
 ## METIS-TEXT-001 — Text, selection and IME [minor]
 - Status: in-progress; priority: P1; owner: Metis input/presentation; integrator: root; last-update: 2026-09-18; dependencies: METIS-INPUT-001; risk: text corruption
-- lease: root scripts/browser_text_geometry.py, scripts/tests/test_browser_text_geometry.py, docs/manual/browser.md, docs/VERIFICATION.md, backlog.md 2026-09-18T01:16:23-04:00
 - Scope: DOM text first; grapheme selection, composition/preedit/commit/cancel, clipboard/undo, wrapping, fallback fonts, bidi and text scaling. Custom renderer requires its own admitted text contract.
 - Acceptance: Unicode fixture strings/selection ranges and caret/line geometry match the contract; native IME exercised per OS, including CJK, combining marks, emoji and mixed-direction input.
 - Demonstration: [V03](docs/VERIFICATION.md#V03), editing specimen with actual composition and committed captures, locale/font details and keyboard instructions.
@@ -330,8 +329,10 @@ an owner. “Unsupported” cannot replace delivery of a required mobile/native 
 - Evidence: dependency-free browser checks pass 7/7 for the geometry module and 66/66 for the combined geometry/runtime focus; a local Microsoft Edge workbench trace at `6a708eeb311364d8b72a68322acfeccc5d3a9d7f` records five geometry samples with 27 visual clusters per sample in `output/browser/runtime/edge-text-bidi-20260918.json`. This is browser layout evidence only; cross-engine/native bidi and line geometry, fallback-font metrics, trusted clipboard contents/permissions, an installed CJK or other native IME journey and assistive-technology acceptance remain open.
 - Completed increment (2026-09-18): the detached probe records bounded `CanvasRenderingContext2D.measureText()` widths for fixed Latin, combining-mark, CJK, Hebrew and joined-emoji samples, plus the effective canvas font string and `FontFaceSet` status/check; invalid widths and sample order reject.
 - Evidence: focused geometry/runtime checks pass 69/69. A local Microsoft Edge trace at source revision `b98f5881b3a528100e032e17892120f246bdf10a` is `status: passed`; it records `16px system-ui, sans-serif`, `loaded`, `true` and widths `18/10/32/37/22` in `output/browser/runtime/edge-text-font-20260918.json` (SHA-256 `32b487ea0ebd4e000c5b35b4ef70f75e04bf478027ada1754458d25590cc1283`). This measures host font behavior without identifying fallback-face selection or claiming native/cross-engine parity.
-- Lease discharged: `scripts/browser_text_geometry.py`, `scripts/tests/test_browser_text_geometry.py`, `docs/manual/browser.md`, `docs/VERIFICATION.md` and `backlog.md`.
-- Residuals: fallback-font identity, cross-engine and native bidi/line/font geometry, trusted clipboard contents/permissions, an installed CJK or other native IME journey and assistive-technology acceptance remain open.
+- Completed increment (2026-09-18): commit `4126ccd` adds a detached CSS fallback-chain probe for `system-ui`, `sans-serif` and `monospace`, recording requested/computed family strings, finite widths/heights and `FontFaceSet` status/check values across remounts.
+- Evidence: focused geometry/runtime checks pass 73/73. The Edge 154.0.4258.12 trace at device scale 1.25 is bound to source revision `4126ccd5eb54d34c6bf044e31108085eaf46f4f1` and SHA-256 `384f91c2848f16c146fd7fa0ecc6b1e9e4626e2640922069e332551cb617acf0`; three observations report `loaded`/`true` for all three families and remove the detached probe.
+- Lease discharged: `scripts/browser_text_geometry.py`, `scripts/browser_text_font.py`, `scripts/tests/test_browser_text_geometry.py`, `docs/manual/browser.md`, `docs/VERIFICATION.md` and `backlog.md`.
+- Residuals: selected fallback-face identity, cross-engine and native bidi/line/font geometry, trusted clipboard contents/permissions, an installed CJK or other native IME journey and assistive-technology acceptance remain open.
 
 <a id="METIS-A11Y-001"></a>
 ## METIS-A11Y-001 — Accessible application interaction [minor]
