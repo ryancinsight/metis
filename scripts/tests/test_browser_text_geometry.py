@@ -167,6 +167,12 @@ class BrowserTextGeometryTests(unittest.TestCase):
         with self.assertRaisesRegex(BrowserRuntimeError, "visual order"):
             capture_text_geometry(StubClient(value), StubTrace(), "invalid-order")
 
+    def test_capture_rejects_visual_cluster_bounds(self):
+        value = _measurement()
+        value["visual_clusters"][0]["right"] = value["visual_clusters"][0]["left"] - 1.0
+        with self.assertRaisesRegex(BrowserRuntimeError, "visual cluster bounds"):
+            capture_text_geometry(StubClient(value), StubTrace(), "invalid-visual-bounds")
+
 
 if __name__ == "__main__":
     unittest.main()
