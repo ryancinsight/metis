@@ -343,6 +343,7 @@ an owner. “Unsupported” cannot replace delivery of a required mobile/native 
 - Evidence: `test_browser_text_stability` covers stable, changed, unavailable and bounded-observation cases; the existing browser trace command records `metrics.text_geometry_stability` after the second observation. The check closes lifecycle stability only; cross-engine/native layout, selected fallback-face identity and native IME remain open.
 - Lease discharged: `scripts/browser_text_geometry.py`, `scripts/browser_text_stability.py`, `scripts/browser_text_font.py`, `scripts/tests/test_browser_text_geometry.py`, `scripts/tests/test_browser_text_stability.py`, `docs/manual/browser.md`, `docs/VERIFICATION.md` and `backlog.md`.
 - Residuals: selected fallback-face identity, cross-engine and native bidi/line/font geometry, trusted clipboard contents/permissions, an installed CJK or other native IME journey and assistive-technology acceptance remain open.
+- lease: root scripts/browser_text_cross_engine.py, scripts/tests/test_browser_text_cross_engine.py, .github/workflows/ci.yml, docs/manual/browser.md, docs/VERIFICATION.md; 2026-09-18T09:00:14-04:00
 
 <a id="METIS-A11Y-001"></a>
 ## METIS-A11Y-001 — Accessible application interaction [minor]
