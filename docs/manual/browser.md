@@ -398,9 +398,20 @@ cannot provide a WebGPU adapter, device or context. It never changes a GPU
 request into the raster provider, so a comparison can distinguish capability
 failure from a successful raster run. The borrowed RGBA8 frame validation,
 bounded pointer/wheel/keyboard queue and listener teardown are shared with the
-existing two-dimensional constructor. A real device, visual output, device-loss
-recovery and GPU/resource measurements require a consumer-owned browser run;
-the current RITK galleries remain the 2D visual baseline.
+existing two-dimensional constructor. After a device or swap-chain loss, the
+consumer can explicitly reacquire the provider without rebuilding the canvas or
+its listeners:
+
+```rust,no_run
+surface.recreate().await?;
+surface.present(&frame)?;
+```
+
+Recovery keeps the previous provider handles when setup fails and never changes
+the requested GPU surface to raster presentation. A real adapter/device,
+recovered visual output after device loss and GPU/resource measurements require
+a consumer-owned browser run; the current RITK galleries remain the 2D visual
+baseline.
 
 The file-backed runner's default `--canvas-capture rgba` mode reads exact
 two-dimensional canvas pixels. A consumer using another canvas context selects

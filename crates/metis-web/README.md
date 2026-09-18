@@ -36,6 +36,11 @@ an adapter or device; the host never changes a requested GPU surface into a
 raster surface. The borrowed frame and bounded input contracts are identical
 for both renderers, so consumers can compare them without moving format or
 viewer semantics into Metis.
+`CanvasSurface::recreate` explicitly reacquires the provider after device or
+swap-chain loss while retaining the canvas and any input listener guards. It
+clears the configured extent after successful recovery so the next frame
+reconfigures the same surface; a failed acquisition leaves the previous
+provider state in place, and raster surfaces return an unsupported error.
 
 The host reports a typed disconnected outcome when no authorized backend bridge
 is configured. When the page host supplies an endpoint, process identifier and
