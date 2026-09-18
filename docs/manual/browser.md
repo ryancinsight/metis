@@ -761,11 +761,12 @@ from the same-origin `assets/` directory and uses it as the favicon and header
 image. A PNG alternate and the multi-resolution
 [native icon](../../examples/browser/assets/metis-mark.ico) remain in the same
 directory for browsers and packaged applications that need those formats.
-`python scripts/browser.py build` copies all four local assets and fails if a
+`python scripts/browser.py build` copies all five local assets and fails if a
 declared resource is missing. Replace the SVG, PNG, ICO and the `.metis-mark`
 rule with project-owned artwork for a branded application. The bundled WAV is
-the bounded playback fixture used by the browser trace. The browser host does
-not fetch an icon, font or media resource from a remote origin.
+the bounded playback fixture used by the browser trace, and the WOFF2 file is
+the bounded font-loading fixture. The browser host does not fetch an icon,
+font or media resource from a remote origin.
 
 The packaging boundary admits a strict SVG subset so an installer never stores
 an unbounded document language: one fixed positive viewport, optional
@@ -776,7 +777,7 @@ pixels are rejected before the resource enters a portable or MSI payload.
 
 To demonstrate the contract, build and serve the workbench, select each mode,
 and capture the header, view-options card and focus ring at the same viewport.
-The static asset suite checks all four selector values and variable branches;
+The static asset suite checks the declared selector values and variable branches;
 runtime captures must record the browser engine and operating-system
 presentation settings because CSS media preferences are host behavior.
 
@@ -1144,8 +1145,39 @@ The resulting `metrics.assets` records the source path, decoder, intrinsic
 width and height for both marks at each captured lifecycle remount. A decode
 error, cross-origin redirect, unsupported decoder or leaked probe element
 fails the run; no DICOM bytes or clinical image metadata enter this probe.
-Native image decoding, font loading, video/native media playback controls and the RITK
-patient-image surface remain separate acceptance work under V06.
+
+### Probe same-origin font loading and teardown
+
+Add `--font-load-probe` to exercise the local WOFF2 fixture through the browser
+`FontFace` and `FontFaceSet` APIs. The probe loads
+`examples/browser/assets/metis-probe.woff2` as `Metis Probe`, confirms the
+loaded face changes the measured width of `AB01`, checks the family with
+`FontFaceSet.check()`, deletes the face, and then tries the shipped SVG as an
+invalid font resource. Each lifecycle observation requires the registration
+count to return to its baseline and bounds every path, family, sample, reason
+and pixel measurement:
+
+```powershell
+python scripts/browser.py build
+python scripts/browser_runtime.py --engine chromium `
+  --browser-name MicrosoftEdge `
+  --driver-url http://127.0.0.1:9519 `
+  --serve-dir output/browser --bridge disconnected --font-load-probe `
+  --lifecycle-cycles 2 `
+  --output output/browser/runtime/edge-font-loading-20260918.json
+```
+
+At revision `c28b1b7f40eec3d76b8d89c2c31aa010dae092f7`, Edge
+154.0.4258.12 at device scale 1.25 passed three observations. The loaded
+face measured 308 px versus the 158 px sans-serif fallback, reported
+`status=loaded` and `check=true`, and returned the font-set count to zero after
+teardown. The invalid resource was rejected with a bounded network error and
+was not registered. The trace SHA-256 is
+`8e0a559475115aeb36a0b9ea32fff795b6a451fa20a4ed1a0d7b54c335e70948`.
+
+This is browser font-resource lifecycle evidence for one engine. Native font
+providers, selected fallback-face identity, cross-engine metrics and the RITK
+patient-image surface remain separate V06 work.
 
 ### Probe media error and teardown
 

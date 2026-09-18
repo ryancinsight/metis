@@ -598,7 +598,7 @@ trailing markup and an oversized viewport. The browser asset suite passed 9/9
 tests and checks the same-origin SVG favicon, PNG alternate, manifest resource
 and copied output. This proves the local asset admission and generated browser
 presentation for one engine; browser decode behavior in other engines, installed
-MSI rendering, video/native media lifecycles and font resource lifecycles remain open V06 evidence.
+MSI rendering and video/native media lifecycles remain open V06 evidence.
 
 <a id="browser-native-image-decode-evidence-2026-09-17"></a>
 ## Browser native image decode evidence — 2026-09-17
@@ -616,8 +616,34 @@ cross-origin/unavailable results, leaked elements, bounds and CLI scenario
 rejection. The scheduled Chromium/Firefox/WebKit workbench matrix invokes the
 probe beside its existing screenshots and accessibility records. This evidence
 closes the browser image-decoder slice for the local marks; native image decode,
-font loading, video/native media playback controls, GPU vectors and RITK's clinical image
-presentation remain separate V06 acceptance work.
+video/native media playback controls, GPU vectors and RITK's clinical image
+presentation remain separate V06 acceptance work. Browser font-resource loading
+is recorded in the following evidence section.
+
+<a id="browser-font-loading-evidence-2026-09-18"></a>
+## Browser font loading evidence — 2026-09-18
+
+At Metis revision `c28b1b7f40eec3d76b8d89c2c31aa010dae092f7`, the Chromium
+workbench runner used `--font-load-probe --lifecycle-cycles 2` against Edge
+154.0.4258.12 at device scale 1.25. The trace is stored at
+`output/browser/runtime/edge-font-loading-20260918.json` with SHA-256
+`8e0a559475115aeb36a0b9ea32fff795b6a451fa20a4ed1a0d7b54c335e70948`.
+
+The 612-byte project-owned `metis-probe.woff2` fixture is loaded as
+`Metis Probe` and measured against the `sans-serif` fallback using the sample
+`AB01`. Initial, remounted and second-remount observations all report
+`status=loaded`, `FontFaceSet.check=true`, a 158 px fallback width and a
+308 px loaded width. Each observation registers exactly one face, deletes it,
+returns the set size to zero and confirms the face is absent. Loading the
+shipped SVG as a font is rejected with a bounded network error and never
+registers a face. The focused font/assets/runtime suite passes 85/85 tests;
+the test contract also checks malformed identity, bounds, release counts,
+invalid resources and the CLI scenario boundary.
+
+This closes the browser font-resource loading and teardown slice for one
+engine. It does not identify which system fallback face the browser selected,
+establish native or cross-engine font metrics, or provide native font-provider
+and RITK clinical-image evidence.
 
 <a id="browser-media-error-teardown-evidence-2026-09-18"></a>
 ## Browser media error and teardown evidence — 2026-09-18
