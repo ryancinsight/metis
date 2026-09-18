@@ -306,6 +306,7 @@ class WorkflowContractTests(unittest.TestCase):
         self.assertIn("needs: browser-assets", self.source)
         self.assertIn("--text-geometry-probe", self.source)
         self.assertIn("name: metis-browser-runtime-${{ matrix.engine }}-${{ github.run_id }}", self.source)
+        self.assertIn("path: output/browser/runtime", self.source)
         self.assertIn("--asset-probe", self.source)
         for fragment in (
             "name: Cross-engine text geometry",
