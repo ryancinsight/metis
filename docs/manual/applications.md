@@ -385,6 +385,20 @@ are actual RITK DICOM output through the format-neutral Métis browser surface.
 
 ![Window/level control for the saved MRI study](https://github.com/ryancinsight/ritk/blob/main/docs/manual/images/dicom-metis-real-browser-mri-window-level-controls.png?raw=true)
 
+The same saved MRI-DIR study also exercises the RITK diagnostic palette through
+the Métis browser canvas. The Edge 154 trace performs 11 trusted tool actions,
+rejects seven invalid tool-index probes, changes the real three-plane frame
+generations and releases 21 consumer plus 32 host listeners on stop. The
+[revision-bound tool provenance](https://github.com/ryancinsight/ritk/blob/main/docs/manual/images/dicom-metis-real-browser-mri-tools.json),
+[real-study capture](https://github.com/ryancinsight/ritk/blob/main/docs/manual/images/dicom-metis-real-browser-mri-tools.png?raw=true)
+and [tool palette capture](https://github.com/ryancinsight/ritk/blob/main/docs/manual/images/dicom-metis-real-browser-mri-tools-controls.png?raw=true)
+are RITK-owned clinical output; Métis remains the format-neutral canvas and
+event host.
+
+![Actual MRI-DIR study with the RITK diagnostic palette through Métis](https://github.com/ryancinsight/ritk/blob/main/docs/manual/images/dicom-metis-real-browser-mri-tools.png?raw=true)
+
+![RITK diagnostic-tool palette for the saved MRI study](https://github.com/ryancinsight/ritk/blob/main/docs/manual/images/dicom-metis-real-browser-mri-tools-controls.png?raw=true)
+
 To pair the capture with resource evidence, run the same command through
 [`scripts/resource.py`](../../scripts/resource.py) as described in the
 [testing manual](testing.md#measure-a-real-application-lifecycle). The report
