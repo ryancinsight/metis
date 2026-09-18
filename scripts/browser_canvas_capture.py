@@ -6,7 +6,7 @@ import pathlib
 import re
 from typing import Any, Mapping
 
-from browser_canvas import _element_screenshot
+from browser_canvas import _element_screenshot, ensure_canvas_visible
 from browser_protocol import BrowserRuntimeError, WebDriverClient
 from browser_trace import Trace
 
@@ -76,6 +76,7 @@ def capture_screenshot(
             f"canvas {canvas_id}: expected intrinsic dimensions {wanted_surface}, "
             f"found {surface}"
         )
+    ensure_canvas_visible(client, canvas_id)
     _element_screenshot(
         client,
         trace,

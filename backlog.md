@@ -24,6 +24,14 @@
 - Delivery: Metis PR [#229](https://github.com/ryancinsight/metis/pull/229), merge `ae5f80c8e2fe8c023d13514ffa6c48c84d3dc556`.
 - Outcome: format-neutral rejection and frame probes now run before consumer teardown; focused tests 92/92 and the hosted Windows gate pass, with RITK's real 94-file MRI tool workflow retaining generic rejection and listener-cleanup evidence.
 
+<a id="METIS-BROWSER-CAPTURE-002"></a>
+## METIS-BROWSER-CAPTURE-002 — Capture complete canvas elements [patch]
+- Status: review; priority: P1; integrator: root; last-update: 2026-09-18; dependencies: METIS-BROWSER-CAPTURE-001.
+- Scope: keep format-neutral element PNG captures fully visible when a named canvas begins outside the browser viewport; RITK owns DICOM semantics.
+- Acceptance: the capture scrolls each canvas into view before its PNG, preserving the CSS-box/device-scale dimensions; a regression test covers the visibility step and the RITK hosted trace validates without clipping.
+- Risk: browser-driver viewport and element-screenshot semantics.
+- Verification: full `python scripts/verify.py` passes all positive stages (170 resolved packages; the expected capture-failure negative exits 1); dependency-free tests pass 296/296 with one intentional skip. Hosted RITK replay is the remaining acceptance check.
+
 <a id="METIS-INPUT-TRUST-001"></a>
 ## METIS-INPUT-TRUST-001 — Preserve browser event trust in canvas input [arch] [minor]
 
