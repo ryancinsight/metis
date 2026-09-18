@@ -1237,8 +1237,9 @@ finite visual cluster bounds with valid line assignments, a complete
 selection and scroll metrics. The element is removed before the trace
 continues; the application value and visual baseline are unchanged.
 
-The 2026-09-18 local Microsoft Edge run used the exact command below and
-returned `status: passed` with five geometry samples. Each sample contained
+The 2026-09-18 local Microsoft Edge run used the exact command below at source
+revision `6a708eeb311364d8b72a68322acfeccc5d3a9d7f` and returned
+`status: passed` with five geometry samples. Each sample contained
 27 visual clusters; the initial sample recorded the bidi order
 `0,2,3,4,5,6,7,11,10,9,8,12,13,18,19,20,21,22,23,24,25,26,27,28,29,30,31`.
 The generated JSON trace is `output/browser/runtime/edge-text-bidi-20260918.json`
