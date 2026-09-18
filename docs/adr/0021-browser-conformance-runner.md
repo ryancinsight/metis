@@ -122,6 +122,14 @@ operating-system settings. The CLI orchestration now lives in the adjacent
 entry point and trace implementation. Screen-reader speech and native
 accessibility bridges remain host-specific evidence.
 
+Revision 2026-09-18: the file-backed gallery completes its generic bounded
+rejection probes and rejection-invariance comparison before invoking a
+consumer capture callback. A callback may stop or remount the Metis host as
+part of its own teardown contract; running it first would remove the generic
+file picker and make the host oracle depend on consumer lifecycle details.
+The callback remains the owner of consumer controls and listener cleanup, and
+the ordering does not add format-specific behavior to Metis.
+
 ## Alternatives
 
 Using only the Codex in-app browser would preserve a useful visual trace but

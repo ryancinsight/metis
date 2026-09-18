@@ -18,6 +18,13 @@
 
 # Metis delivery
 
+<a id="METIS-BROWSER-CAPTURE-001"></a>
+## METIS-BROWSER-CAPTURE-001 — Preserve host probes around consumer teardown [patch]
+- Status: in-progress; priority: P1; owner: Metis browser host; integrator: root; last-update: 2026-09-18; dependencies: METIS-BROWSER-001; risk: consumer teardown hides generic file rejection probes; lease: root `scripts/browser_drop.py`, `scripts/tests/test_browser_drop.py`, `backlog.md`
+- Scope: run format-neutral bounded file rejection and frame-stability probes while the host file picker is mounted, before a consumer callback may release it; consumer teardown remains the callback's responsibility.
+- Acceptance: chooser and file-backed browser workflows retain the generic rejection oracle when consumer captures stop/remount the host; callback evidence and cleanup remain recorded; no DICOM behavior enters Metis.
+- Demonstration: RITK's real 94-file MRI tool workflow passes generic rejection probes and consumer listener teardown against one browser session.
+
 <a id="METIS-INPUT-TRUST-001"></a>
 ## METIS-INPUT-TRUST-001 — Preserve browser event trust in canvas input [arch] [minor]
 
