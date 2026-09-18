@@ -210,6 +210,23 @@ and Moirai revisions, the executable and PNG hashes, and the semantic keys
 prerequisite for V12; the 1600×1000 host extent still differs from the 1280×800
 Métis surface, so no memory or latency ranking is derived.
 
+The current standalone-lock replay (2026-09-18) is bound to RITK source
+`448202c0bbc8b5560cc5aad7e53dfedac10e04d5`, Metis
+`e634fe925d8edb18cea4399d43255fdaa2d444a5` and Moirai
+`a2f21496d1d09b2abe6523e3c8cdbf751dcd560a`. The 61-source lock digest is
+`42083be291a94d5e54f585780559357ee554f4725d571013a7e560aaa209f4a5`, and the
+executable digest is
+`7fdd80d5daa418776ae842f4dd1c005d546443c2f6d5b7dc5632ee802f5d12d8`. RITK
+opened the saved 94-file MRI-DIR study and produced the actual 1280 × 800
+three-plane frame below; it contains 411,589 non-black pixels and repeats the
+capture digest `259dd79103482756c4e688621bebafc841cc40f1df10ff2bbd7f9d04b7b4d401`.
+The [real MRI frame](https://github.com/ryancinsight/ritk/blob/main/docs/manual/images/dicom-metis-real-mri.png?raw=true)
+and [revision-bound provenance](https://github.com/ryancinsight/ritk/blob/main/docs/manual/images/dicom-metis-real-mri.json)
+are RITK-owned evidence; Metis supplies only the format-neutral host and does
+not parse DICOM data.
+
+![Actual MRI-DIR study from the current standalone-lock replay](https://github.com/ryancinsight/ritk/blob/main/docs/manual/images/dicom-metis-real-mri.png?raw=true)
+
 ### V12 fixture comparison
 
 The current measurements make the comparison boundary explicit. Each row is a

@@ -2748,6 +2748,21 @@ record reports mean peak private bytes of 427,410,773 (95% half-width
 The host extent and process boundary still differ from Métis, so this closes
 the semantic fixture prerequisite only; resource deltas remain unranked.
 
+The current standalone-lock replay (2026-09-18) is bound to RITK source
+`448202c0bbc8b5560cc5aad7e53dfedac10e04d5`, Metis
+`e634fe925d8edb18cea4399d43255fdaa2d444a5` and Moirai
+`a2f21496d1d09b2abe6523e3c8cdbf751dcd560a`. The 61-source lock digest is
+`42083be291a94d5e54f585780559357ee554f4725d571013a7e560aaa209f4a5`, and the
+executable digest is
+`7fdd80d5daa418776ae842f4dd1c005d546443c2f6d5b7dc5632ee802f5d12d8`. RITK
+opened the saved 94-file MRI-DIR study and produced the 1280 × 800 three-plane
+frame with 411,589 non-black pixels. The capture digest is
+`259dd79103482756c4e688621bebafc841cc40f1df10ff2bbd7f9d04b7b4d401`; the
+[actual image](https://github.com/ryancinsight/ritk/blob/main/docs/manual/images/dicom-metis-real-mri.png?raw=true)
+and [provenance record](https://github.com/ryancinsight/ritk/blob/main/docs/manual/images/dicom-metis-real-mri.json)
+are RITK-owned. This verifies the current Métis host integration without
+moving DICOM parsing or clinical presentation into Metis.
+
 RITK's [same-instance browser provenance](https://github.com/ryancinsight/ritk/blob/main/docs/manual/images/dicom-metis-real-browser-mri-memory.json)
 at commit `1e039f106cab839505be0d1739a80461c55bb9a3` supplies the bounded
 repeated lifecycle observation. On 2026-09-16, Chromium chooser, Firefox
