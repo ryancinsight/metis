@@ -102,6 +102,6 @@
     "repeat_capture_sha256": "259dd79103482756c4e688621bebafc841cc40f1df10ff2bbd7f9d04b7b4d401"
   },
   "comparison": {
-    "interpretation": "This record binds the real public MRI-DIR DICOM presentation to the current standalone-lock RITK/Metis process tree: RITK e635baf, Metis 0ca361c, Moirai a2f2149. It is a fixture baseline; matched Tauri, GPUI and egui runs with the same input, host, surface, trace and capture contract are required before a framework ranking. WASM, compositor, GPU and allocator-used measurements remain separate evidence."
+    "interpretation": "This record binds the real public MRI-DIR DICOM presentation to a recorded historical standalone-lock RITK/Metis process tree: RITK e635baf, Metis 0ca361c, Moirai a2f2149. It is a fixture baseline, not a claim about the latest source tree; matched Tauri, GPUI and egui runs with the same input, host, surface, trace and capture contract are required before a framework ranking. WASM, compositor, GPU and allocator-used measurements remain separate evidence."
   }
 }
