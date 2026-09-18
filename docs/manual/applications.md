@@ -199,19 +199,20 @@ Windows host produces the same 1280×800 physical extent as the Métis native
 surface. The `orthogonal-surface` presentation keeps only the axial, coronal
 and sagittal planes and reuses RITK's spacing-aware `ImagePlacement` path, so
 its semantic surface set matches the Métis MRI record while DICOM loading and
-geometry stay in RITK. The reviewed [1280×800 capture](https://github.com/ryancinsight/ritk/blob/main/docs/manual/images/dicom-eframe-orthogonal-surface.png?raw=true)
+geometry stay in RITK. The reviewed [1280×800 source capture](https://github.com/ryancinsight/ritk/blob/main/docs/manual/images/dicom-eframe-orthogonal-surface.png?raw=true)
 contains real MRI anatomy and no series browser or MIP:
 
-![Actual MRI-DIR T2 planes rendered in the matched eframe orthogonal surface](https://github.com/ryancinsight/ritk/blob/main/docs/manual/images/dicom-eframe-orthogonal-surface.png?raw=true)
+![Actual MRI-DIR T2 planes rendered in the matched eframe orthogonal surface (640×400 tracked figure from a 1280×800 source capture)](https://github.com/ryancinsight/ritk/blob/main/docs/manual/images/dicom-eframe-orthogonal-surface.png?raw=true)
 
 Three lifecycle runs exited 0 with the same digest. The [matched provenance
 record](https://github.com/ryancinsight/ritk/blob/main/docs/manual/images/dicom-eframe-orthogonal-surface-resource.json)
-binds RITK source `1f9053ba2dd8a6b77da83073261642019c66863a`, the locked Metis
-and Moirai revisions, the requested 1024×640 logical size, observed 1280×800
-physical size, executable and PNG hashes, and the semantic keys `axial`,
+binds RITK PR #487 merge `102909c8f67bca1128eba1438ec280ee2651656e`, the locked
+Metis and Moirai revisions, the requested 1024×640 logical size, observed
+1280×800 physical size, executable and PNG hashes, and the semantic keys `axial`,
 `coronal`, `sagittal`. The semantic and host-extent prerequisites for V12 now
-match; the eframe process boundary still differs from Métis, and GPUI/Tauri
-fixtures remain open, so no framework ranking is derived.
+match; the tracked manual figure is 640×400 while provenance retains the raw
+1280×800 source digest. The eframe process boundary still differs from Métis,
+and GPUI/Tauri fixtures remain open, so no framework ranking is derived.
 
 The current standalone-lock replay (2026-09-18) is bound to RITK source
 `448202c0bbc8b5560cc5aad7e53dfedac10e04d5`, Metis

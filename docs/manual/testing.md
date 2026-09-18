@@ -312,8 +312,10 @@ baseline and a shell-free [matched orthogonal eframe fixture](https://github.com
 for the same 94-file input. The matched fixture requests 1024×640 logical
 points and records the same 1280×800 physical host extent as Métis on the
 controlled 125% Windows display. It carries the same three semantic planes and
-spacing-aware placement; its process boundary remains different, so the record
-supports fixture equivalence but does not rank frameworks.
+spacing-aware placement. The tracked manual figure is 640×400 from the raw
+1280×800 source capture, whose dimensions and digest remain in provenance. Its
+process boundary remains different, so the record supports fixture equivalence
+but does not rank frameworks.
 
 The [application gallery's V12 table](applications.md#v12-fixture-comparison)
 keeps those four measured fixtures together with their uncertainty and the
