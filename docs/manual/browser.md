@@ -761,9 +761,10 @@ from the same-origin `assets/` directory and uses it as the favicon and header
 image. A PNG alternate and the multi-resolution
 [native icon](../../examples/browser/assets/metis-mark.ico) remain in the same
 directory for browsers and packaged applications that need those formats.
-`python scripts/browser.py build` copies all three local assets and fails if a
-declared mark is missing. Replace the SVG, PNG, ICO and the `.metis-mark` rule
-with project-owned artwork for a branded application. The browser host does
+`python scripts/browser.py build` copies all four local assets and fails if a
+declared resource is missing. Replace the SVG, PNG, ICO and the `.metis-mark`
+rule with project-owned artwork for a branded application. The bundled WAV is
+the bounded playback fixture used by the browser trace. The browser host does
 not fetch an icon, font or media resource from a remote origin.
 
 The packaging boundary admits a strict SVG subset so an installer never stores
@@ -1140,7 +1141,7 @@ The resulting `metrics.assets` records the source path, decoder, intrinsic
 width and height for both marks at each captured lifecycle remount. A decode
 error, cross-origin redirect, unsupported decoder or leaked probe element
 fails the run; no DICOM bytes or clinical image metadata enter this probe.
-Native image decoding, font loading, media playback controls and the RITK
+Native image decoding, font loading, video/native media playback controls and the RITK
 patient-image surface remain separate acceptance work under V06.
 
 ### Probe media error and teardown
@@ -1169,6 +1170,44 @@ An absent error event, a successful decode, a retained source, an attached
 element or a leaked probe container fails the run. This is the browser-side
 error and resource-release contract; native media providers and playback
 controls remain target-specific V06 work.
+
+### Probe audio playback controls
+
+Add `--media-playback-probe` to exercise a real same-origin audio resource and
+its play/pause lifecycle. The fixture is the 1,644-byte PCM file
+`examples/browser/assets/metis-tone.wav`, copied to `/assets/metis-tone.wav`
+by the browser build. The probe opens the existing **Session details** control
+through WebDriver before calling `play()` so the browser's user-gesture policy
+is part of the evidence:
+
+```powershell
+python scripts/browser.py build
+python scripts/browser_runtime.py --engine chromium `
+  --browser-name MicrosoftEdge `
+  --driver-url http://127.0.0.1:9517 `
+  --serve-dir output/browser --bridge disconnected --media-playback-probe `
+  --lifecycle-cycles 2 `
+  --output output/browser/runtime/edge-media-playback-20260918.json
+```
+
+Each `metrics.media_playback` observation requires the same-origin fixture,
+`loadedmetadata`, `canplay`, `playing` and `pause` events, a positive 0.2
+second duration, controls enabled, and the expected paused transitions. The
+probe then pauses the element, removes its source, calls `load()`, waits for
+`emptied`, removes the element and requires `readyState=0`,
+`networkState=0` or `3`, a null `src` attribute, a detached element and zero
+remaining probe nodes. Chromium retains `currentSrc` as a resolved URL in
+this empty state; the validator accepts it only when its path is exactly
+`/assets/metis-tone.wav`, so this evidence does not claim that the read-only
+URL reflection is cleared. The trace records three observations across the
+initial mount and two remounts. At revision
+`9aaf7c05adaf09f41f2c96b62271d7d5fc8b17b8`, Edge 154.0.4258.12 at device
+scale 1.25 produced trace SHA-256
+`d25c1e961a6855e4cdb42780a931752b9cd4658d5aa73ca9739158f3b963eb56`.
+
+This closes browser audio playback controls. Video playback, native media
+providers, cross-engine playback traces and the RITK clinical image surface
+remain target-specific V06 work.
 
 The captured service journey at revision
 `d879779247c8cfc5870f62f99a5364cbbf2d3c58` used the Codex in-app
