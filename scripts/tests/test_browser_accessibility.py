@@ -7,8 +7,8 @@ import unittest
 
 sys.path.insert(0, str(pathlib.Path(__file__).resolve().parents[1]))
 
-from browser_accessibility import capture_accessibility
-from browser_protocol import BrowserRuntimeError
+from browser_accessibility import capture_accessibility, capture_native_accessibility_tree
+from browser_protocol import BrowserRuntimeError, WebDriverClient
 
 
 def _snapshot() -> dict:
@@ -70,6 +70,43 @@ class StubClient:
         return self.value
 
 
+def _native_tree() -> dict:
+    """Return the bounded Chromium tree contract for the workbench."""
+    return {
+        "nodes": [
+            {"ignored": False, "role": {"value": "RootWebArea"}, "name": {"value": "Metis"}},
+            {"ignored": False, "role": {"value": "main"}, "name": {"value": "metis-app"}},
+            {"ignored": False, "role": {"value": "form"}, "name": {"value": "metis-form"}},
+            {"ignored": False, "role": {"value": "button"}, "name": {"value": "Submit"}},
+            {"ignored": False, "role": {"value": "button"}, "name": {"value": "Files"}},
+            {"ignored": False, "role": {"value": "textbox"}, "name": {"value": "Clinical note"}},
+            {"ignored": False, "role": {"value": "table"}, "name": {"value": "Result explorer"}},
+        ]
+    }
+
+
+class NativeStubClient(WebDriverClient):
+    """Expose the vendor CDP seam for native-tree validator tests."""
+
+    def __init__(self, value: dict, tree: dict) -> None:
+        self.value = value
+        self.capabilities = {"browserName": "chrome"}
+        self.session_id = "test"
+        self.tree = tree
+        self.requests = []
+
+    def execute(self, script: str):
+        del script
+        return self.value
+
+    def _session_path(self, suffix: str) -> str:
+        return f"/session/test/{suffix}"
+
+    def _request(self, method: str, path: str, payload: dict, *, response_limit: int):
+        self.requests.append((method, path, payload, response_limit))
+        return self.tree
+
+
 class Trace:
     """Carry the metric collection used by the production trace."""
 
@@ -85,7 +122,25 @@ class BrowserAccessibilityTests(unittest.TestCase):
         self.assertEqual(snapshot["viewport"]["device_pixel_ratio"], 1.25)
         self.assertTrue(snapshot["media"]["contrast_more"])
         self.assertEqual(trace.metrics["accessibility"][0]["label"], "initial")
+        self.assertEqual(trace.metrics["accessibility_native_tree"][0]["status"], "unavailable")
         self.assertEqual(snapshot["semantics"][1]["role"], "form")
+
+    def test_capture_records_chromium_native_accessibility_tree(self):
+        client = NativeStubClient(_snapshot(), _native_tree())
+        trace = Trace()
+        capture_accessibility(client, trace, "initial")
+        record = trace.metrics["accessibility_native_tree"][0]
+        self.assertEqual(record["status"], "available")
+        self.assertEqual(record["visible_node_count"], 7)
+        self.assertEqual(record["required_names"]["Clinical note"], True)
+        self.assertEqual(client.requests[0][1], "/session/test/goog/cdp/execute")
+        self.assertEqual(client.requests[0][2]["cmd"], "Accessibility.getFullAXTree")
+
+    def test_native_tree_rejects_missing_required_name(self):
+        tree = _native_tree()
+        tree["nodes"][-1]["name"]["value"] = "Other"
+        with self.assertRaisesRegex(BrowserRuntimeError, "Result explorer"):
+            capture_native_accessibility_tree(NativeStubClient(_snapshot(), tree))
 
     def test_capture_rejects_horizontal_overflow(self):
         value = _snapshot()

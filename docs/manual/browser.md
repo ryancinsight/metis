@@ -1126,6 +1126,17 @@ live-region, expanded, popup, disabled and dialog-open states without copying
 form values. This verifies the browser semantic contract; supported
 screen-reader speech and native accessibility bridges still require host runs.
 
+On Chromium and Microsoft Edge, the same `--accessibility-probe` also asks the
+vendor WebDriver endpoint for `Accessibility.getFullAXTree`. The runner bounds
+the returned tree, checks that the visible `main`, `form`, `button`, `textbox`
+and `table` roles and the **Submit**, **Files**, **Clinical note** and **Result
+explorer** names are present, and stores only role/count/name-presence data in
+`metrics.accessibility_native_tree`. Firefox and WebKit record an explicit
+`unavailable` result because they do not expose that Chromium protocol through
+the configured driver. The tree is evidence of the browser's accessibility
+projection; it does not claim spoken screen-reader output or an operating-system
+accessibility bridge.
+
 ### Decode the shipped image marks
 
 Build the browser output, then add `--asset-probe` to a workbench run. The

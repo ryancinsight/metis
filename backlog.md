@@ -75,7 +75,7 @@ an owner. “Unsupported” cannot replace delivery of a required mobile/native 
 
 <a id="METIS-SVELTE-001"></a>
 ## METIS-SVELTE-001 — Svelte comparator and migration plan [arch] [patch]
-- Status: review; priority: P1; owner: Metis documentation; integrator: root; last-update: 2026-09-18; dependencies: METIS-GAPS-001, METIS-GAPS-002.
+- Status: done; priority: P1; owner: Metis documentation; integrator: root; last-update: 2026-09-18; delivery: [PR #248](https://github.com/ryancinsight/metis/pull/248), merge `210a98b7ff1edda3218bdaa613a872c2f4edcfe6`; dependencies: METIS-GAPS-001, METIS-GAPS-002.
 - Outcome: ADR 0003 now carries a source-pinned Svelte/SvelteKit comparison, a dedicated gap table and an implementation order; the user manual and repository indexes link the decision.
 - Scope: compiler-driven DOM/CSS components, reactive state, custom elements, rendering modes, authority and evidence; no Svelte dependency, JavaScript runtime or DICOM ownership.
 - Acceptance: official Svelte sources are linked and dated; each gap has a Metis owner item or explicit non-goal; README/manual and ADR index links remain valid; plan and diff gates pass.
@@ -358,6 +358,7 @@ an owner. “Unsupported” cannot replace delivery of a required mobile/native 
 - Completed increment (2026-09-17): commit `8642e0b` extends the W3C accessibility probe with bounded semantic roles, stable IDs and ARIA/dialog states, rejecting identity drift across input and stop/remount transitions without retaining form values.
 - Evidence: focused accessibility/runtime tests pass 63/63; `python -S scripts/verify.py` passes all stages at commit `a3027d5` with 170 resolved packages and the deliberate `capture-failure` stage exiting 1. The semantic contract requires the application root, form, session dialog, submit action, file input, clinical-note textarea and result table. Full screen-reader speech, host preference enablement and native bridge evidence remain open.
 - Delivery reconciliation (2026-09-17): Metis PR [#222](https://github.com/ryancinsight/metis/pull/222), merge `32a69738ae491734cf2fbd8ed8b42366a9e9687f`, delivered the semantic-tree increment; the hosted Windows gate [35281165535](https://github.com/ryancinsight/metis/actions/runs/35281165535) passed. Screen-reader speech, host preference enablement and native accessibility bridge evidence remain open.
+- Completed increment (2026-09-18): `--accessibility-probe` now queries Chromium and Microsoft Edge's bounded `Accessibility.getFullAXTree` endpoint and records role/count/name-presence evidence in `metrics.accessibility_native_tree`; Firefox and WebKit emit an explicit protocol-unavailable record. Focused accessibility tests cover available, unavailable and malformed trees. This strengthens browser accessibility evidence without claiming spoken output or OS bridge support.
 - Residuals: supported screen-reader speech, host-specific forced-colors/reduced-motion acceptance and native host accessibility bridge evidence remain open.
 
 <a id="METIS-LAYOUT-001"></a>

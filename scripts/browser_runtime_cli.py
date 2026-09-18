@@ -64,7 +64,7 @@ def _arguments() -> argparse.Namespace:
     parser.add_argument("--cancel-grace-ms", type=int, default=4_000)
     parser.add_argument("--browser-heap-sample", action="store_true", help="record bounded performance.memory JavaScript-heap observations when exposed")
     parser.add_argument("--browser-memory-sample", action="store_true", help="record bounded measureUserAgentSpecificMemory observations when exposed")
-    parser.add_argument("--accessibility-probe", action="store_true", help="record bounded browser media, focus-order and zoom geometry evidence")
+    parser.add_argument("--accessibility-probe", action="store_true", help="record bounded browser media, focus-order, zoom and native accessibility-tree evidence")
     parser.add_argument("--asset-probe", action="store_true", help="decode the shipped same-origin SVG and PNG marks and record intrinsic dimensions")
     parser.add_argument("--media-probe", action="store_true", help="exercise bounded audio/video decode errors and source teardown")
     parser.add_argument("--media-playback-probe", action="store_true", help="exercise same-origin audio controls and source teardown")
