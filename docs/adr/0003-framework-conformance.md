@@ -349,6 +349,14 @@ The next performance increment is a producer-owned common surface contract
 before any GPUI or Tauri run is ranked, followed by separate WASM allocator,
 compositor/input latency and host-permission measurements.
 
+Revision 2026-09-18 (matched eframe orthogonal fixture): RITK PR #480 merged
+at `0fd885adc6124468aa745a2f548dd685b74f0774` adds a shell-free eframe
+presentation with the same axial, coronal and sagittal semantic surfaces as
+the Métis MRI record. The capture reuses RITK's physical-spacing placement and
+binds real saved-study pixels and process samples. Its 1600 × 1000 host extent
+and process boundary remain different from Métis, so the record closes the
+semantic prerequisite without establishing a framework resource ranking.
+
 ## Decision and scope
 
 Use Tauri as the application-framework migration reference, egui/GPUI/Iced as
