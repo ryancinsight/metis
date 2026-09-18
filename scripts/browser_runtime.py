@@ -25,9 +25,6 @@ from browser_protocol import (
     WebDriverClient,
 )
 from browser_accessibility import capture_accessibility
-from browser_assets import capture_assets
-from browser_media import capture_media, capture_media_playback
-from browser_text_geometry import capture_text_geometry
 from browser_trace import (
     BrowserEngine,
     Trace,
@@ -37,6 +34,7 @@ from browser_trace import (
     record_device_scale,
     screenshot,
 )
+from browser_runtime_probes import capture_runtime_features
 
 
 BRIDGE_MODES = ("disconnected", "authorized")
@@ -190,6 +188,7 @@ def run_scenario(
     asset_probe: bool = False,
     media_probe: bool = False,
     media_playback_probe: bool = False,
+    font_probe: bool = False,
     text_geometry_probe: bool = False,
 ) -> Trace:
     """Execute the same input, bridge and bounded teardown trace for every engine."""
@@ -210,6 +209,19 @@ def run_scenario(
         client.create_session(engine.resolve_webdriver_name(browser_name), device_scale_milli)
         client.set_timeouts(timeout_ms)
         trace = Trace(engine, url, bridge, revision, client.capabilities)
+
+        def capture_features(label: str) -> None:
+            capture_runtime_features(
+                client,
+                trace,
+                label,
+                asset_probe=asset_probe,
+                media_probe=media_probe,
+                media_playback_probe=media_playback_probe,
+                font_probe=font_probe,
+                text_geometry_probe=text_geometry_probe,
+            )
+
         client.navigate(url)
         _wait_for_selector(client, "#metis-form", timeout_ms=timeout_ms)
         record_device_scale(client, trace, device_scale_milli)
@@ -219,12 +231,7 @@ def run_scenario(
         if browser_memory:
             browser_memory_sample(client, trace, "initial")
         screenshot(client, trace, screenshot_directory, "initial")
-        if asset_probe:
-            capture_assets(client, trace, "initial")
-        if media_probe:
-            capture_media(client, trace, "initial")
-        if media_playback_probe:
-            capture_media_playback(client, trace, "initial")
+        capture_features("initial")
         if bridge == "authorized":
             _wait_for_text(client, "metis-status", "Authorized backend session ready", include=True, timeout_ms=timeout_ms)
             trace.actions.append({"action": "await-authorized-bridge", "result": "ready"})
@@ -237,9 +244,6 @@ def run_scenario(
                 require_reduced_motion=require_reduced_motion,
                 require_forced_colors=require_forced_colors,
             )
-        if text_geometry_probe:
-            capture_text_geometry(client, trace, "initial")
-
         for element_id, value, expected in (
             ("weight-kg", "80", "80.00 kg"),
             ("target-dose", "0.75", "0.750 mcg/kg/min"),
@@ -281,14 +285,7 @@ def run_scenario(
                 remounted_snapshot = _snapshot(client, trace, "remounted-after-cancel")
                 if accessibility_probe:
                     capture_accessibility(client, trace, "remounted-after-cancel")
-                if asset_probe:
-                    capture_assets(client, trace, "remounted-after-cancel")
-                if media_probe:
-                    capture_media(client, trace, "remounted-after-cancel")
-                if media_playback_probe:
-                    capture_media_playback(client, trace, "remounted-after-cancel")
-                if text_geometry_probe:
-                    capture_text_geometry(client, trace, "remounted-after-cancel")
+                capture_features("remounted-after-cancel")
                 if browser_heap:
                     browser_heap_sample(client, trace, "remounted-after-cancel")
                 if browser_memory:
@@ -325,14 +322,7 @@ def run_scenario(
             remounted_snapshot = _snapshot(client, trace, "remounted")
             if accessibility_probe:
                 capture_accessibility(client, trace, "remounted")
-            if asset_probe:
-                capture_assets(client, trace, "remounted")
-            if media_probe:
-                capture_media(client, trace, "remounted")
-            if media_playback_probe:
-                capture_media_playback(client, trace, "remounted")
-            if text_geometry_probe:
-                capture_text_geometry(client, trace, "remounted")
+            capture_features("remounted")
             if browser_heap:
                 browser_heap_sample(client, trace, "remounted")
             if browser_memory:
@@ -356,14 +346,7 @@ def run_scenario(
             cycle_remounted = _snapshot(client, trace, f"remounted-cycle-{cycle}")
             if accessibility_probe:
                 capture_accessibility(client, trace, f"remounted-cycle-{cycle}")
-            if asset_probe:
-                capture_assets(client, trace, f"remounted-cycle-{cycle}")
-            if media_probe:
-                capture_media(client, trace, f"remounted-cycle-{cycle}")
-            if media_playback_probe:
-                capture_media_playback(client, trace, f"remounted-cycle-{cycle}")
-            if text_geometry_probe:
-                capture_text_geometry(client, trace, f"remounted-cycle-{cycle}")
+            capture_features(f"remounted-cycle-{cycle}")
             if browser_heap:
                 browser_heap_sample(client, trace, f"remounted-cycle-{cycle}")
             if browser_memory:

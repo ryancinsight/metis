@@ -5,6 +5,7 @@ import hashlib
 import importlib.util
 import json
 import pathlib
+import struct
 import tempfile
 import unittest
 
@@ -77,6 +78,17 @@ class BrowserAssetContractTests(unittest.TestCase):
         self.assertEqual(data[8:12], b"WAVE")
         self.assertLessEqual(len(data), 16 * 1024)
 
+    def test_probe_font_is_a_bounded_project_owned_woff2(self):
+        font = ROOT / "examples" / "browser" / "assets" / "metis-probe.woff2"
+        data = font.read_bytes()
+        self.assertEqual(data[:4], b"wOF2")
+        self.assertLessEqual(len(data), 64 * 1024)
+        # The WOFF2 header is self-describing: flavour, total length, table count.
+        flavour, length, tables = struct.unpack(">IIH", data[4:14])
+        self.assertEqual(flavour, 0x00010000)
+        self.assertEqual(length, len(data))
+        self.assertGreaterEqual(tables, 9)
+
     def test_build_and_distribution_declare_the_starter_mark(self):
         manifest = json.loads((ROOT / "metis.json").read_text(encoding="utf-8"))
         self.assertEqual(manifest["icon"], "examples/browser/assets/metis-mark.ico")
@@ -105,6 +117,13 @@ class BrowserAssetContractTests(unittest.TestCase):
             {
                 "source": "examples/browser/assets/metis-tone.wav",
                 "destination": "assets/metis-tone.wav",
+            },
+            manifest["resources"],
+        )
+        self.assertIn(
+            {
+                "source": "examples/browser/assets/metis-probe.woff2",
+                "destination": "assets/metis-probe.woff2",
             },
             manifest["resources"],
         )
