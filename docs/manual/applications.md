@@ -183,6 +183,16 @@ surface dimensions and process boundaries also differ, so the measurements
 remain lifecycle evidence and do not establish a framework memory or latency
 ranking. The Métis run is recorded in [its resource provenance](images/dicom-metis-real-ct-mip-resource.json).
 
+The same public 94-file MRI-DIR T2 study was also opened through the real
+eframe compatibility shell. The reviewed [1600×1000 MRI capture](https://github.com/ryancinsight/ritk/blob/main/docs/manual/images/dicom-eframe-real-mri.png?raw=true)
+shows the series browser, three orthogonal planes and the `3D MIP · GPU`
+projection. Its [resource provenance](https://github.com/ryancinsight/ritk/blob/main/docs/manual/images/dicom-eframe-real-mri-resource.json)
+binds the executable and image digests to three equal lifecycle captures. This
+is a baseline for the same public input as the Métis MRI row, but the surfaces
+and process boundaries remain different.
+
+![Actual MRI-DIR T2 study rendered in the eframe compatibility shell](https://github.com/ryancinsight/ritk/blob/main/docs/manual/images/dicom-eframe-real-mri.png?raw=true)
+
 ### V12 fixture comparison
 
 The current measurements make the comparison boundary explicit. Each row is a
@@ -194,16 +204,19 @@ runner's explicitly approximate 95% half-width across three runs.
 | Métis native MIP | 409 files; axial/coronal/sagittal/axial MIP | 1280 × 800 | 2,338,119,680 ± 366,961 | 15,346 ± 3,394 ms |
 | eframe | 409 files; axial/coronal/sagittal/3D MIP | 1600 × 1000 | 2,494,962,347 ± 5,291,689 | 8,752 ± 2,197 ms |
 | Métis native MRI | 94 files; axial/coronal/sagittal | 1280 × 800 | 828,962,133 ± 331,863 | 7,071 ± 2,011 ms |
+| eframe MRI | 94 files; axial/coronal/sagittal/3D MIP | 1600 × 1000 | 1,038,607,701 ± 2,129,690 | 2,593 ± 477 ms |
 
 The [Métis MIP provenance](images/dicom-metis-real-ct-mip-resource.json),
-[eframe provenance](images/dicom-eframe-real-ct-resource.json) and [MRI
-provenance](images/dicom-metis-real-mri-resource.json) bind each row to its
-source revisions, executable, input bounds, capture digest and sampling
-protocol. The eframe and Métis MIP rows share the input but expose different
-MIP semantics, surface sizes and process boundaries. No GPUI or Tauri fixture
-has been run, and WASM used memory, allocator counts, compositor latency and
-security probes are separate measurements. These rows therefore document the
-fixtures and their limits; they do not establish a framework ranking.
+[eframe provenance](images/dicom-eframe-real-ct-resource.json), [Métis MRI
+provenance](images/dicom-metis-real-mri-resource.json) and [eframe MRI
+provenance](https://github.com/ryancinsight/ritk/blob/main/docs/manual/images/dicom-eframe-real-mri-resource.json)
+bind each row to its source revisions, executable, input bounds, capture digest
+and sampling protocol. The eframe and Métis rows expose different MIP
+semantics, surface sizes and process boundaries, including for the shared MRI
+input. No GPUI or Tauri fixture has been run, and WASM used memory, allocator
+counts, compositor latency and security probes are separate measurements.
+These rows therefore document the fixtures and their limits; they do not
+establish a framework ranking.
 
 The live browser lifecycle was then repeated in one RITK/Métis instance. The
 [RITK provenance record](https://github.com/ryancinsight/ritk/blob/main/docs/manual/images/dicom-metis-real-browser-mri-memory.json)

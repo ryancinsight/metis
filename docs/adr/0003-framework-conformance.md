@@ -338,6 +338,17 @@ matrix; provider-private allocation/listener counts, TLS, operating-system
 permissions, physical input and the RITK WebKit selected-file read remain
 separate evidence requirements.
 
+Revision 2026-09-18 (real eframe MRI fixture): RITK PR #477 merged at
+`6e067a592fd718afbefde1f62f14ceb42eca8c4f` adds a reviewed eframe/egui
+compatibility capture of the same public 94-file MRI-DIR T2 study used by the
+Métis MRI fixture. The three-run record reports a 1600 × 1000 surface with a
+series browser, three orthogonal planes and a GPU MIP; the current Métis row is
+1280 × 800 with three planes. The V12 table now carries both rows and their
+uncertainty, but the mismatch keeps them descriptive rather than comparative.
+The next performance increment is a producer-owned common surface contract
+before any GPUI or Tauri run is ranked, followed by separate WASM allocator,
+compositor/input latency and host-permission measurements.
+
 ## Decision and scope
 
 Use Tauri as the application-framework migration reference, egui/GPUI/Iced as

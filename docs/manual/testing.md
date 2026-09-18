@@ -307,7 +307,10 @@ three-run saved public MRI baseline was refreshed on
 capture digest and process-tree uncertainty are recorded in [the MRI resource
 provenance](images/dicom-metis-real-mri-resource.json). The report records
 the real 94-file study and the 1280 × 800 three-plane capture; it does not
-include private study paths or pixels.
+include private study paths or pixels. RITK also records a real eframe MRI
+baseline for the same 94-file input in [its image and resource provenance](https://github.com/ryancinsight/ritk/blob/main/docs/manual/images/dicom-eframe-real-mri-resource.json).
+That surface is 1600 × 1000 and includes a series browser and GPU MIP, so it
+must remain a separate fixture until a common output contract is available.
 
 The [application gallery's V12 table](applications.md#v12-fixture-comparison)
 keeps those three measured fixtures together with their uncertainty and the
@@ -357,12 +360,13 @@ python scripts/resource_compare.py `
   --output output/resource-comparison.json
 ```
 
-Add a producer-owned `output` semantic key (for example,
-`output.semantic_surfaces`) to both records and pass it with `--match` before
-interpreting presentation or clinical equivalence. A missing or differing key
-fails before any metric is calculated. The output is a measurement record,
-not a framework ranking; it does not normalize panel names, infer semantic
-equivalence, or replace RITK's image and DICOM oracles.
+The current eframe and Métis provenance records expose the producer-owned
+`output.semantic_surfaces` key. Pass it with `--match` before interpreting
+presentation or clinical equivalence. A missing or differing key fails before
+any metric is calculated; the current eframe/Métis pairs intentionally fail
+that match because their browser, MIP and surface contracts differ. The output
+is a measurement record, not a framework ranking; it does not normalize panel
+names, infer semantic equivalence, or replace RITK's image and DICOM oracles.
 
 For the browser side of the same comparison, the paired canvas trace records
 `metrics.frame_intervals` around the real RITK canvases. Each bounded sample is

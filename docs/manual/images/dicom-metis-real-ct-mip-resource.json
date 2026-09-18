@@ -33,6 +33,12 @@
     "executable_bytes": 53576704,
     "visual_scope": "Métis framebuffer application content; operating-system chrome excluded",
     "capture_mode": "--metis-native --metis-native-layout orthogonal-with-mip --capture-application",
+    "semantic_surfaces": [
+      "axial",
+      "coronal",
+      "sagittal",
+      "axial_mip"
+    ],
     "panels": [
       "axial",
       "coronal",
