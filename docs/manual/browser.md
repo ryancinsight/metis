@@ -1011,10 +1011,10 @@ line assignments, `visual_order` grapheme-start permutation, line-top
 ordering, computed style and the live textarea's selection/scroll metrics.
 When one grapheme range spans a line boundary, visual bounds and line
 assignment use the non-zero-width fragments, choosing the fragment with the
-greatest `top` coordinate (falling back to all fragments when they are
-zero-width). This keeps newline and boundary fragments in the line where the
-glyph is rendered instead of treating a zero-width boundary as a separate
-first-line glyph.
+greatest `top` coordinate and falling back to all fragments when they are
+zero-width). This keeps newline, bidi and boundary ranges in the line where
+the glyph is rendered across `Range.getClientRects()` implementations instead
+of treating a zero-width boundary as a separate first-line glyph.
 It also records bounded `CanvasRenderingContext2D.measureText()` widths for
 Latin, combining-mark, CJK, Hebrew and joined-emoji samples, together with the
 effective canvas font string and the `FontFaceSet` loading status/check. A
@@ -1061,6 +1061,14 @@ selected fallback face remain per-engine records; a numeric range is not turned
 into a false pixel-equality claim. Missing or unavailable engine geometry fails
 the comparison with its explicit reason, so the hosted matrix cannot silently
 report a partial cross-engine result.
+
+Hosted manual run [35368255350](https://github.com/ryancinsight/metis/actions/runs/35368255350)
+passed the Chromium, Firefox and WebKit workbench traces and the comparator.
+The published `metis-browser-text-cross-engine-35368255350` artifact records
+five observations per engine and the shared fixture, UTF-16 length, grapheme
+boundaries, visual order, line count, direction and writing mode. The runtime
+artifact upload roots each trace at `output/browser/runtime`; this avoids a
+workspace-prefix extraction path that would otherwise fail before comparison.
 
 ## Responsive runtime capture
 
