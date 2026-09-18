@@ -8,6 +8,8 @@ import pathlib
 import shutil
 import subprocess
 
+from cargo_overlay import isolated_cargo
+
 PHYSICAL_ROOT = pathlib.Path(__file__).resolve().parents[1]
 ROOT = pathlib.Path(os.environ.get("METIS_NEUTRAL_ROOT", PHYSICAL_ROOT))
 OUTPUT = ROOT / "output" / "browser"
@@ -21,6 +23,25 @@ MAX_CONSUMER_PAGE_BYTES = 512 * 1024
 
 def run(command: list[str]) -> None:
     subprocess.run(command, cwd=ROOT, check=True, timeout=300)
+
+
+def cargo(arguments: list[str], *, timeout: int = 300, **options) -> subprocess.CompletedProcess:
+    """Run Cargo against the committed lock, outside an inherited stack configuration.
+
+    The stack overlay patches first-party providers to local trees, which cannot
+    agree with the locked revisions, so an in-place `--locked` build fails before
+    it compiles. `isolated_cargo` supplies a directory outside that configuration
+    chain; the manifest is therefore passed explicitly.
+    """
+    with isolated_cargo(ROOT) as (directory, environment):
+        return subprocess.run(
+            ["cargo", *arguments, "--manifest-path", str(ROOT / "Cargo.toml")],
+            cwd=directory,
+            env=environment,
+            check=True,
+            timeout=timeout,
+            **options,
+        )
 
 
 def wasm_bindgen() -> str:
@@ -51,13 +72,11 @@ def wasm_bindgen() -> str:
 
 
 def wasm_artifact() -> pathlib.Path:
-    metadata = subprocess.run(
-        ["cargo", "metadata", "--no-deps", "--format-version", "1", "--locked"],
-        cwd=ROOT,
-        check=True,
+    metadata = cargo(
+        ["metadata", "--no-deps", "--format-version", "1", "--locked"],
+        timeout=30,
         capture_output=True,
         text=True,
-        timeout=30,
     )
     target_directory = pathlib.Path(json.loads(metadata.stdout)["target_directory"])
     return target_directory / "wasm32-unknown-unknown" / "release" / "metis_web.wasm"
@@ -82,7 +101,7 @@ def validate_index_policy(index: pathlib.Path) -> None:
 
 
 def build() -> None:
-    run(["cargo", "build", "--locked", "-p", "metis-web", "--target", "wasm32-unknown-unknown", "--release"])
+    cargo(["build", "--locked", "-p", "metis-web", "--target", "wasm32-unknown-unknown", "--release"])
     OUTPUT.mkdir(parents=True, exist_ok=True)
     run([wasm_bindgen(), str(wasm_artifact()), "--target", "web", "--out-dir", str(OUTPUT)])
     index = SOURCE / "index.html"

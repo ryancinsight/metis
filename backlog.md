@@ -97,6 +97,12 @@ an owner. “Unsupported” cannot replace delivery of a required mobile/native 
 - Outcome: Chromium, Firefox and WebKit load the real Rust/WASM HTML fragment workflow, verify authenticated success and rejection paths, reset stale generations, and close with zero pending requests/listeners; [V02](docs/VERIFICATION.md#V02) and the [browser manual](docs/manual/browser.md) carry the captures and commands. RITK owns DICOM parsing and viewer pixels.
 - Residuals: Saved-study WebKit file-read authorization, physical file-manager input, provider-private resources, TLS, accessibility/IME, post-drop allocation, native desktop and GPU evidence remain separate requirements.
 
+<a id="METIS-BROWSER-BUILD-001"></a>
+## METIS-BROWSER-BUILD-001 — Stack-safe browser WASM build [patch]
+- Status: in-progress; priority: P1; owner: Metis browser build; integrator: root; last-update: 2026-09-18; dependencies: METIS-BROWSER-001; risk: Atlas ancestor Cargo overlay changes locked resolution.
+- Scope: make `python scripts/browser.py build` lock-authoritative inside Atlas and from a neutral checkout while retaining the configured shared target cache; browser behavior and DICOM ownership are unchanged.
+- Acceptance: both contexts exit 0, generated WASM is present, `Cargo.lock` is unchanged, focused/full checks pass, and the browser manual documents the configuration boundary.
+
 <a id="METIS-BROWSER-002"></a>
 ## METIS-BROWSER-002 — Browser stale-response runtime probe [patch]
 - Status: done; priority: P1; owner: Metis browser host + verification; integrator: root; last-update: 2026-09-07; delivery: `a8cc67c`; dependencies: METIS-BROWSER-001, METIS-COMMANDS-001; risk: stale DOM mutation
