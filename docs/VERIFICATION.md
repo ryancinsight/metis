@@ -1258,12 +1258,26 @@ python -m unittest scripts.tests.test_browser_runtime.BrowserRuntimeTests.test_c
 python -m py_compile scripts/browser_text_geometry.py scripts/browser_runtime.py scripts/browser_runtime_cli.py — passed
 ```
 
+The 2026-09-18 font-metric increment extends the same detached probe with a
+bounded `CanvasRenderingContext2D.measureText()` record. A local Microsoft Edge
+trace at source revision `384dd647890b0b30f3761b6257cd0838bf2bb456` returned
+`status: passed` and five geometry samples. Each sample reported the effective
+font `16px system-ui, sans-serif`, `fonts_status: loaded` and
+`fonts_check: true`; the fixed sample widths were Latin `18`, combining mark
+`10`, CJK `32`, Hebrew `37` and joined emoji `22` CSS pixels. The trace is
+`output/browser/runtime/edge-text-font-20260918.json` (SHA-256
+`d1122e6d4ff6bddb972572a19450ab456e7691b839aa7586073dcdd889f36358`). The
+focused geometry/runtime suite passes 69/69 and rejects an oversized width and
+an out-of-order sample list. The measurement exposes the host's effective font
+string and loading check; it does not identify fallback-face selection or prove
+native, cross-engine or assistive-technology parity.
+
 The scheduled Chromium, Firefox and WebKit workbench matrix invokes this probe
 alongside the existing lifecycle and accessibility checks. A missing
 `Intl.Segmenter` is retained as an explicit unavailable measurement. This is
-host layout evidence for the HTML5/CSS surface, not a claim about native IME,
-fallback-font choice, clipboard permissions, assistive technology or
-cross-engine pixel identity; those requirements remain open under
+host layout and font-metric evidence for the HTML5/CSS surface, not a claim
+about native IME, fallback-font identity, clipboard permissions, assistive
+technology or cross-engine pixel identity; those requirements remain open under
 `METIS-TEXT-001` and `METIS-A11Y-001`.
 
 ## Browser text input-operation evidence — 2026-09-17

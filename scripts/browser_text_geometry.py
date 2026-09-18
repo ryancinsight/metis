@@ -12,6 +12,9 @@ MAX_TEXT_GEOMETRY_CLUSTERS = 256
 MAX_TEXT_GEOMETRY_FRAGMENTS = 8
 MAX_TEXT_GEOMETRY_STRING_BYTES = 512
 MAX_TEXT_GEOMETRY_STYLE_BYTES = 512
+MAX_FONT_METRIC_SAMPLES = 8
+MAX_FONT_METRIC_TEXT_BYTES = 64
+MAX_FONT_METRIC_PIXELS = 4_096.0
 
 
 TEXT_GEOMETRY_SCRIPT = r"""
@@ -108,6 +111,32 @@ try {
     const parsed = Number.parseFloat(value);
     return Number.isFinite(parsed) ? parsed : null;
   };
+  let fontMetrics = {available: false, reason: "2D canvas context unavailable"};
+  const metricCanvas = document.createElement("canvas");
+  const metricContext = metricCanvas.getContext("2d");
+  if (metricContext) {
+    metricContext.font = `${style.fontStyle} ${style.fontWeight} ${style.fontSize} ${style.fontFamily}`;
+    const samples = [
+      ["latin", "Aa"],
+      ["combining", "A\u030A"],
+      ["cjk", "影像"],
+      ["hebrew", "שלום"],
+      ["emoji", "👩‍🔬"],
+    ].map(([label, text]) => ({
+      label,
+      text,
+      width: metricContext.measureText(text).width,
+    }));
+    const fontSet = document.fonts;
+    fontMetrics = {
+      available: true,
+      source: "CanvasRenderingContext2D.measureText",
+      font: metricContext.font,
+      fonts_status: fontSet && typeof fontSet.status === "string" ? fontSet.status : "unavailable",
+      fonts_check: fontSet && typeof fontSet.check === "function" ? fontSet.check(metricContext.font, fixture) : null,
+      samples,
+    };
+  }
   return {
     available: true,
     source: "Range.getClientRects",
@@ -128,6 +157,7 @@ try {
       direction: style.direction,
       writing_mode: style.writingMode,
     },
+    font_metrics: fontMetrics,
     textarea: {
       value_length: textarea.value.length,
       selection_start: textarea.selectionStart,
@@ -172,6 +202,14 @@ def _bounded_style(value: Any, name: str) -> str:
     if not isinstance(value, str) or not value or len(value.encode("utf-8")) > MAX_TEXT_GEOMETRY_STYLE_BYTES:
         raise BrowserRuntimeError(f"text geometry {name} is invalid")
     return value
+
+
+def _font_metric(value: Any, name: str) -> float:
+    """Validate one finite, bounded Canvas text width."""
+    result = _number(value, name)
+    if result > MAX_FONT_METRIC_PIXELS:
+        raise BrowserRuntimeError(f"text geometry {name} exceeds its bound")
+    return result
 
 
 def _validate_measurement(value: Any) -> Dict[str, Any]:
@@ -297,6 +335,50 @@ def _validate_measurement(value: Any) -> Dict[str, Any]:
     for name in ("font_size_px", "line_height_px"):
         raw = style.get(name)
         normalized_style[name] = None if raw is None else _number(raw, name)
+    font_metrics = value.get("font_metrics")
+    if not isinstance(font_metrics, Mapping):
+        raise BrowserRuntimeError("text geometry font metrics are not an object")
+    if font_metrics.get("available") is False:
+        reason = font_metrics.get("reason")
+        if not isinstance(reason, str) or not reason:
+            raise BrowserRuntimeError("text geometry font metrics unavailable reason is invalid")
+        _bounded_text(reason, "text geometry font metrics unavailable reason", MAX_TEXT_GEOMETRY_STYLE_BYTES)
+        normalized_font_metrics: Dict[str, Any] = {"available": False, "reason": reason}
+    else:
+        if font_metrics.get("available") is not True or font_metrics.get("source") != "CanvasRenderingContext2D.measureText":
+            raise BrowserRuntimeError("text geometry font metrics source is invalid")
+        font = _bounded_style(font_metrics.get("font"), "font metrics font")
+        fonts_status = _bounded_style(font_metrics.get("fonts_status"), "font metrics status")
+        fonts_check = font_metrics.get("fonts_check")
+        if fonts_check is not None and type(fonts_check) is not bool:
+            raise BrowserRuntimeError("text geometry font metrics check is invalid")
+        samples = font_metrics.get("samples")
+        expected_samples = ("latin", "combining", "cjk", "hebrew", "emoji")
+        if not isinstance(samples, list) or not 1 <= len(samples) <= MAX_FONT_METRIC_SAMPLES:
+            raise BrowserRuntimeError("text geometry font metric samples are invalid")
+        normalized_samples = []
+        labels = []
+        for index, sample in enumerate(samples):
+            if not isinstance(sample, Mapping):
+                raise BrowserRuntimeError("text geometry font metric sample is not an object")
+            label = sample.get("label")
+            text = sample.get("text")
+            if not isinstance(label, str) or label not in expected_samples or label in labels:
+                raise BrowserRuntimeError("text geometry font metric labels are invalid")
+            if not isinstance(text, str) or not text or len(text.encode("utf-8")) > MAX_FONT_METRIC_TEXT_BYTES:
+                raise BrowserRuntimeError(f"text geometry font metric sample {index} text is invalid")
+            labels.append(label)
+            normalized_samples.append({"label": label, "text": text, "width": _font_metric(sample.get("width"), f"font metric {label} width")})
+        if tuple(labels) != expected_samples:
+            raise BrowserRuntimeError("text geometry font metric labels are incomplete or out of order")
+        normalized_font_metrics = {
+            "available": True,
+            "source": "CanvasRenderingContext2D.measureText",
+            "font": font,
+            "fonts_status": fonts_status,
+            "fonts_check": fonts_check,
+            "samples": normalized_samples,
+        }
     textarea = value.get("textarea")
     if not isinstance(textarea, Mapping):
         raise BrowserRuntimeError("text geometry textarea metrics are not an object")
@@ -333,6 +415,7 @@ def _validate_measurement(value: Any) -> Dict[str, Any]:
         "line_count": line_count,
         "element_rect": element_rect,
         "style": normalized_style,
+        "font_metrics": normalized_font_metrics,
         "textarea": {
             "selection_start": selection_start,
             "selection_end": selection_end,
