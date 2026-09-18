@@ -308,6 +308,7 @@ an owner. “Unsupported” cannot replace delivery of a required mobile/native 
 <a id="METIS-TEXT-001"></a>
 ## METIS-TEXT-001 — Text, selection and IME [minor]
 - Status: in-progress; priority: P1; owner: Metis input/presentation; integrator: root; last-update: 2026-09-18; dependencies: METIS-INPUT-001; risk: text corruption
+- lease: root scripts/browser_text_geometry.py, scripts/tests/test_browser_text_geometry.py, docs/manual/browser.md, docs/VERIFICATION.md, backlog.md 2026-09-18T01:16:23-04:00
 - Scope: DOM text first; grapheme selection, composition/preedit/commit/cancel, clipboard/undo, wrapping, fallback fonts, bidi and text scaling. Custom renderer requires its own admitted text contract.
 - Acceptance: Unicode fixture strings/selection ranges and caret/line geometry match the contract; native IME exercised per OS, including CJK, combining marks, emoji and mixed-direction input.
 - Demonstration: [V03](docs/VERIFICATION.md#V03), editing specimen with actual composition and committed captures, locale/font details and keyboard instructions.
