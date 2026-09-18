@@ -103,6 +103,23 @@ def _measurement() -> dict:
                 )
             ],
         },
+        "font_fallback": {
+            "available": True,
+            "source": "CSS font-family fallback",
+            "requested_families": ["system-ui", "sans-serif", "monospace"],
+            "computed_family": "system-ui, sans-serif, monospace",
+            "samples": [
+                {
+                    "family": family,
+                    "computed_family": family,
+                    "width": width,
+                    "height": 18.0,
+                    "fonts_status": "loaded",
+                    "fonts_check": True,
+                }
+                for family, width in (("system-ui", 240.0), ("sans-serif", 240.0), ("monospace", 280.0))
+            ],
+        },
         "textarea": {
             "value_length": 18,
             "selection_start": 0,
@@ -139,6 +156,8 @@ class BrowserTextGeometryTests(unittest.TestCase):
         self.assertIn("visual_order", TEXT_GEOMETRY_SCRIPT)
         self.assertIn("measureText", TEXT_GEOMETRY_SCRIPT)
         self.assertIn("font_metrics", TEXT_GEOMETRY_SCRIPT)
+        self.assertIn("font_fallback", TEXT_GEOMETRY_SCRIPT)
+        self.assertIn("CSS font-family fallback", TEXT_GEOMETRY_SCRIPT)
         self.assertIn("probe.remove()", TEXT_GEOMETRY_SCRIPT)
 
     def test_capture_records_finite_grapheme_and_line_geometry(self):
@@ -206,6 +225,18 @@ class BrowserTextGeometryTests(unittest.TestCase):
         )
         with self.assertRaisesRegex(BrowserRuntimeError, "font metric labels"):
             capture_text_geometry(StubClient(value), StubTrace(), "invalid-font-order")
+
+    def test_capture_rejects_font_fallback_order(self):
+        value = _measurement()
+        value["font_fallback"]["requested_families"] = ["sans-serif", "system-ui", "monospace"]
+        with self.assertRaisesRegex(BrowserRuntimeError, "font fallback families"):
+            capture_text_geometry(StubClient(value), StubTrace(), "invalid-fallback-order")
+
+    def test_capture_rejects_empty_font_fallback_bounds(self):
+        value = _measurement()
+        value["font_fallback"]["samples"][1]["height"] = 0.0
+        with self.assertRaisesRegex(BrowserRuntimeError, "font fallback 1 bounds"):
+            capture_text_geometry(StubClient(value), StubTrace(), "invalid-fallback-bounds")
 
 
 if __name__ == "__main__":
