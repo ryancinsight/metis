@@ -1231,15 +1231,29 @@ workbench scenario. It creates a detached same-origin element using the
 and bounded width, then measures a fixed mixed-script Unicode specimen with
 `Intl.Segmenter` grapheme boundaries and `Range.getClientRects()` line and
 cluster rectangles. The validator checks UTF-16 length, contiguous grapheme
-boundaries, finite rectangles, positive line heights, ordered line tops and
-the live textarea's bounded selection and scroll metrics. The element is
-removed before the trace continues; the application value and visual baseline
-are unchanged.
+boundaries, finite rectangles, positive line heights, ordered line tops,
+finite visual cluster bounds with valid line assignments, a complete
+`visual_order` grapheme-start permutation, and the live textarea's bounded
+selection and scroll metrics. The element is removed before the trace
+continues; the application value and visual baseline are unchanged.
+
+The 2026-09-18 local Microsoft Edge run used the exact command below at source
+revision `6a708eeb311364d8b72a68322acfeccc5d3a9d7f` and returned
+`status: passed` with five geometry samples. Each sample contained
+27 visual clusters; the initial sample recorded the bidi order
+`0,2,3,4,5,6,7,11,10,9,8,12,13,18,19,20,21,22,23,24,25,26,27,28,29,30,31`.
+The generated JSON trace is `output/browser/runtime/edge-text-bidi-20260918.json`
+and its first PNG is 1875 × 1903 pixels with SHA-256
+`9880b1381aa2eb9b457e6e6d3efdca450ec8a0cc4393def7fd9189b891602ae7`.
+
+```text
+python scripts/browser_runtime.py --engine chromium --browser-name MicrosoftEdge --driver-url http://127.0.0.1:9517 --serve-dir output/browser --text-geometry-probe --lifecycle-cycles 4 --output output/browser/runtime/edge-text-bidi-20260918.json
+```
 
 The focused dependency-free checks are:
 
 ```text
-python -m unittest scripts.tests.test_browser_text_geometry — 6/6 passed
+python -m unittest scripts.tests.test_browser_text_geometry — 7/7 passed
 python -m unittest scripts.tests.test_browser_runtime.BrowserRuntimeTests.test_cli_rejects_text_geometry_probe_on_canvas_scenario — passed
 python -m py_compile scripts/browser_text_geometry.py scripts/browser_runtime.py scripts/browser_runtime_cli.py — passed
 ```
