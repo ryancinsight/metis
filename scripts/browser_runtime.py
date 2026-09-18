@@ -35,6 +35,7 @@ from browser_trace import (
     screenshot,
 )
 from browser_runtime_probes import capture_runtime_features
+from browser_text_stability import validate_text_geometry_stability
 
 
 BRIDGE_MODES = ("disconnected", "authorized")
@@ -335,6 +336,10 @@ def run_scenario(
         if stopped_snapshot is None or remounted_snapshot is None:
             raise BrowserRuntimeError("browser lifecycle trace did not collect both teardown snapshots")
         _assert_lifecycle_transition(stopped_snapshot, remounted_snapshot)
+        if text_geometry_probe:
+            trace.metrics["text_geometry_stability"] = validate_text_geometry_stability(
+                trace.metrics.get("text_geometry")
+            )
         lifecycle_records = [_lifecycle_record(1, stopped_snapshot, remounted_snapshot)]
         for cycle in range(2, lifecycle_cycles + 1):
             client.click(client.find("#metis-stop"))

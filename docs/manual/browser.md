@@ -1021,6 +1021,12 @@ The validator requires the visual order to be a complete permutation of the
 grapheme starts and rejects duplicate entries or clusters assigned outside the
 measured line set. The element is removed before the command continues, so
 this probe does not mutate the application value or add a screenshot surface.
+When `--lifecycle-cycles` requests remounts, the runner also compares the
+observations' bounded text contract: fixture and UTF-16 grapheme boundaries,
+visual order, line count, direction, writing mode and the requested/computed
+font-chain identity must remain stable. Host rectangle and width values remain
+per-observation measurements because rasterization can vary; the stability
+check does not turn them into a cross-engine equality claim.
 
 An engine that lacks `Intl.Segmenter` records an explicit unavailable reason;
 the runner never substitutes scalar or pixel estimates. These measurements are
