@@ -2778,7 +2778,7 @@ recorded when an MSI is built. These values are verified against the staged
 files and are package-size evidence only; they do not measure process memory,
 runtime allocations or framework performance.
 
-The current three-run public MRI-DIR T2 workflow uses this option with RITK
+The recorded three-run public MRI-DIR T2 resource baseline uses this option with RITK
 revision `e635baf90f99cc0ae09df06c42424ba5c4c6faec`, Metis revision
 `0ca361cd0540c773822b78477530bc17d3863461` and Moirai revision
 `a2f21496d1d09b2abe6523e3c8cdbf751dcd560a`. All runs exited 0, produced the
@@ -2789,9 +2789,9 @@ The measured peak private-byte mean is 719,981,227 bytes (half-width
 3,928,545), peak working-set mean is 313,288,021 bytes (half-width 1,495,454),
 and mean lifecycle duration is 1,955 ms (half-width 956 ms). The mean startup
 observation is 189 ms (half-width 346 ms), peak handle count is 118, and the
-repeated capture digest is identical. This is a current real-application
-baseline; it does not close the matched Tauri, GPUI or egui fixture requirement
-or establish a universal memory ranking.
+repeated capture digest is identical. This is a historical real-application
+baseline bound to the recorded source revisions; it does not close the matched
+Tauri, GPUI or egui fixture requirement or establish a universal memory ranking.
 
 The shell-free eframe run now accepts `--viewport-size 1024x640` logical
 points. On the controlled 125% Windows host, three bounded runs over the same
@@ -2807,13 +2807,12 @@ the image; the tracked manual figure is 640×400 while provenance retains the
 raw 1280×800 source digest. The process boundary still differs from Métis;
 GPUI/Tauri fixtures and ranking remain open.
 
-The current standalone-lock replay (2026-09-18) is bound to RITK source
-`a818f6f2e8c6bfc75f6026a1ce8a49e0d97610fd`, delivered in PR #495 merge
-`1da91ebb54c00d50ad56246679750c698d727a1b`, Metis
-`dc938c0e359dac610867d5d09ddb659a1d221fef` and Moirai
-`7aa9d4e27fe8d12c0129accddccbf70bbc796e08`. The standalone lock digest is
-`50ababf8093f6ad2a2788012f8d6d0df9e1785a075600d7e3c0e5c63358387bc`, and the executable digest is
-`3eb1d7b7b181b9a1600d17e38be35fff7b5ba93b6c8492a17df2a3ea3a4db7bd` (26,361,344 bytes). RITK opened the saved 94-file MRI-DIR
+The recorded standalone-lock replay (2026-09-18) is bound to RITK source
+`8f8516065f6ab9405852d96885f54291d5e24a48`, Metis
+`5e892245ac52c6455bbb57244fa654e6eb3cc9c1` and Moirai
+`ae282117fd962f4b7c66d722aad9d3c2906320bb`. The standalone lock digest is
+`a602ec28d9fb3d2c73b6245067ec33e4648d66434de07087b0153c90aea12fbb`, and the executable digest is
+`05aa4f42b075fd3913d2c43a152148e2dc1f9a946729a278f7d2c0dbac068b88` (26,376,704 bytes). RITK opened the saved 94-file MRI-DIR
 study and produced the 1280 × 800 three-plane frame with 411,589 non-black
 pixels. The capture digest is
 `259dd79103482756c4e688621bebafc841cc40f1df10ff2bbd7f9d04b7b4d401`; the

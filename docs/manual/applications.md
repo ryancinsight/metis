@@ -214,14 +214,13 @@ match; the tracked manual figure is 640×400 while provenance retains the raw
 1280×800 source digest. The eframe process boundary still differs from Métis,
 and GPUI/Tauri fixtures remain open, so no framework ranking is derived.
 
-The current standalone-lock replay (2026-09-18) is bound to RITK source
-`e635baf90f99cc0ae09df06c42424ba5c4c6faec`, delivered in PR #493 merge
-`73b01be1a3fcb6bb755ffdd302cb412d218fcd44`, Metis
-`0e449856ade677860fd6866c3855ae2ba527e33a` and Moirai
-`a2f21496d1d09b2abe6523e3c8cdbf751dcd560a`. The standalone lock digest is
-`49381c64b5751b5c07bf571c66a31205ebf3ccdc780afe3b4b102c0792a5bc85`, and the
+The recorded standalone-lock replay (2026-09-18) is bound to RITK source
+`8f8516065f6ab9405852d96885f54291d5e24a48`, Metis
+`5e892245ac52c6455bbb57244fa654e6eb3cc9c1` and Moirai
+`ae282117fd962f4b7c66d722aad9d3c2906320bb`. The standalone lock digest is
+`a602ec28d9fb3d2c73b6245067ec33e4648d66434de07087b0153c90aea12fbb`, and the
 executable digest is
-`210a6a0e0f6efa59d76ad91de8a6d068d12b9e7796df17c00d3be270e829208c`. RITK
+`05aa4f42b075fd3913d2c43a152148e2dc1f9a946729a278f7d2c0dbac068b88`. RITK
 opened the saved 94-file MRI-DIR study and produced the actual 1280 × 800
 three-plane frame below; it contains 411,589 non-black pixels and repeats the
 capture digest `259dd79103482756c4e688621bebafc841cc40f1df10ff2bbd7f9d04b7b4d401`.
@@ -230,11 +229,11 @@ and [revision-bound provenance](https://github.com/ryancinsight/ritk/blob/main/d
 are RITK-owned evidence; Metis supplies only the format-neutral host and does
 not parse DICOM data.
 
-![Actual MRI-DIR study from the current standalone-lock replay](https://github.com/ryancinsight/ritk/blob/main/docs/manual/images/dicom-metis-real-mri.png?raw=true)
+![Actual MRI-DIR study from the recorded standalone-lock replay](https://github.com/ryancinsight/ritk/blob/main/docs/manual/images/dicom-metis-real-mri.png?raw=true)
 
 ### V12 fixture comparison
 
-The current measurements make the comparison boundary explicit. Each row is a
+The recorded measurements make the comparison boundary explicit. Each row is a
 real application lifecycle over public MRI-DIR data; the uncertainty is the
 runner's explicitly approximate 95% half-width across three runs.
 
