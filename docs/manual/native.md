@@ -195,6 +195,41 @@ viewer state before handing pixels to Métis; DICOM parsing and medical display
 semantics do not enter this repository. Resolving `target_directory` keeps the
 command valid with Atlas's shared build cache and with a standalone checkout.
 
+### Capture real Unicode input
+
+`python_native_input_capture.py` launches the production executable, captures
+its first visible frame, focuses that HWND and sends bounded UTF-16 code units
+through Win32 `SendInput` with `KEYEVENTF_UNICODE`. It then flushes the target
+window with a bounded `WM_NULL` call, captures the resulting frame and writes a
+manifest containing both image digests, geometry, effective DPI, the input
+digest and the observed keyboard-layout handle. The input is delivered by the
+operating-system queue; the runner does not post application text messages or
+modify the framebuffer.
+
+```powershell
+$target = (cargo metadata --format-version 1 --no-deps |
+  ConvertFrom-Json).target_directory
+python scripts/python_native_input_capture.py `
+  --command (Join-Path $target "debug\metis-app.exe") `
+  --argument=--metis-native-window `
+  --argument=60 `
+  --argument=2 `
+  --argument=0.2 `
+  --text "東京😀" `
+  --initial-output output\native-unicode-before.png `
+  --output output\native-unicode-after.png `
+  --manifest output\native-unicode.json
+```
+
+The capture is Unicode input evidence, not installed-IME evidence. The
+utility deliberately reports `ime.status = not_exercised`: `KEYEVENTF_UNICODE`
+delivers committed text and cannot establish a CJK preedit/convert/commit
+journey. A machine with an installed IME still requires the separate physical
+keyboard journey recorded under the desktop residuals. The manifest's
+`input.foreground_window_set` and `pixels_changed` values must both be true and
+both images are inspected; foreground activation denial is a failed capture,
+and a process exit alone is not a pass.
+
 The older OS-window captures below demonstrate the visible form and WebView2
 shell. RITK's migrated Windows viewer session now supplies a validated frame
 through the format-neutral boundary; the integration is tracked in
