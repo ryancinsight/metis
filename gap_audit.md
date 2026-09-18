@@ -2,10 +2,10 @@
 
 Source baseline and full comparison: [ADR 0003](docs/adr/0003-framework-conformance.md).
 Scope: current Metis host, browser bridge, target discovery and the RITK consumer
-boundary, inspected 2026-09-18 at Metis `eca24b9c8667b4ba4fefcfb57a05697ef6c844f2`,
-RITK `a210c7402027d0150711334cd2f1542f7e255315` and Moirai
-`22ebfab05b5ca0c3d91a1a367ebf44938838f92c`. The current RITK replay's
-standalone lock pins Metis `e634fe925d8edb18cea4399d43255fdaa2d444a5` and
+boundary, inspected 2026-09-18 at Metis `0e449856ade677860fd6866c3855ae2ba527e33a`,
+RITK `73b01be1a3fcb6bb755ffdd302cb412d218fcd44` and Moirai
+`a2f21496d1d09b2abe6523e3c8cdbf751dcd560a`. The current RITK replay's
+standalone lock pins Metis `0e449856ade677860fd6866c3855ae2ba527e33a` and
 Moirai `a2f21496d1d09b2abe6523e3c8cdbf751dcd560a`. Implementation status
 belongs in [backlog.md](backlog.md); this register contains unresolved risks
 only.

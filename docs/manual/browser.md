@@ -1631,18 +1631,18 @@ The current cross-engine captures show the real anatomy rendered through this
 format-neutral host: [Chromium gallery](https://github.com/ryancinsight/ritk/blob/main/docs/manual/images/dicom-metis-real-browser-mri-cross-engine-chromium.png)
 and [Firefox gallery](https://github.com/ryancinsight/ritk/blob/main/docs/manual/images/dicom-metis-real-browser-mri-cross-engine-firefox.png).
 The current standalone-lock native replay uses RITK source
-`64b9825c95ccede45477e67051062a30d03088c6`, delivered in PR #492 merge
-`5e2b74d0ac7550870c147c43225b36757b9b0663`, with Metis
-`8f33126f23b8dc327bea45c4fe513a6b60b73c99` and Moirai
+`e635baf90f99cc0ae09df06c42424ba5c4c6faec`, delivered in PR #493 merge
+`73b01be1a3fcb6bb755ffdd302cb412d218fcd44`, with Metis
+`0e449856ade677860fd6866c3855ae2ba527e33a` and Moirai
 `a2f21496d1d09b2abe6523e3c8cdbf751dcd560a`. The standalone Cargo.lock SHA-256
-is `9ba2cf9ec135af749cb4399a6b8a9e6f2a12700ca449b23ab4b41cb0ee080d61`. It reads
+is `49381c64b5751b5c07bf571c66a31205ebf3ccdc780afe3b4b102c0792a5bc85`. It reads
 all 94 saved files (49,807,236 bytes), reproduces the revision-bound 1280 × 800
 MRI frame with SHA-256
 `259dd79103482756c4e688621bebafc841cc40f1df10ff2bbd7f9d04b7b4d401` and
 411,589 non-black pixels, and rejects an invalid study; the [RITK replay provenance](https://github.com/ryancinsight/ritk/blob/main/docs/manual/images/dicom-metis-real-mri.json)
-contains the executable and image hashes. RITK scans and decodes DICOM and owns
-the clinical pixels; Metis supplies the format-neutral chooser, bounded handoff
-and canvas host.
+contains executable digest `210a6a0e0f6efa59d76ad91de8a6d068d12b9e7796df17c00d3be270e829208c`.
+RITK scans and decodes DICOM and owns the clinical pixels; Metis supplies the
+format-neutral chooser, bounded handoff and canvas host.
 
 Build RITK's locked WASM library and package it with the pinned wasm-bindgen CLI
 as described in the RITK browser workflow linked above. From Metis, include that
