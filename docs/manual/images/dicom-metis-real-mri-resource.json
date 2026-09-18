@@ -9,10 +9,10 @@
     "sample_interval_ms": 100,
     "timeout_seconds": 90.0,
     "repeat_runs": 3,
-    "ritk_revision": "44487bacc6b33d4c6a241f68960e9dd5e140fbc5",
-    "metis_revision": "587f6c6a9e6abf7415c7800255f75d1ef727ff79",
-    "moirai_revision": "a7fa2ba69f25070581f7245f059089705d8fc699",
-    "command_sha256": "b5dd6ad9428ea8679d3b0466717955047dbcf7e558be30d5fbed7dabe99e8d45"
+    "ritk_revision": "e635baf90f99cc0ae09df06c42424ba5c4c6faec",
+    "metis_revision": "0ca361cd0540c773822b78477530bc17d3863461",
+    "moirai_revision": "a2f21496d1d09b2abe6523e3c8cdbf751dcd560a",
+    "command_sha256": "4133bd95b160b14d0a8adf090a3434b43d80bf47f9ac37253d90fe53362d3ec1"
   },
   "dataset": {
     "path": "repos/ritk/test_data/2_head_mri_t2/DICOM",
@@ -28,8 +28,8 @@
     "bytes": 418280.0,
     "sha256": "259dd79103482756c4e688621bebafc841cc40f1df10ff2bbd7f9d04b7b4d401",
     "non_black_pixels": 411589,
-    "executable_sha256": "4032125b29b77c207a586e1957259f6216034c0f464dc4862cfffc6230bcd73b",
-    "executable_bytes": 53540352,
+    "executable_sha256": "210a6a0e0f6efa59d76ad91de8a6d068d12b9e7796df17c00d3be270e829208c",
+    "executable_bytes": 25973760,
     "visual_scope": "Metis framebuffer application content; operating-system chrome excluded",
     "capture_mode": "--metis-native --capture-application --capture",
     "semantic_surfaces": [
@@ -46,34 +46,34 @@
   "resource": {
     "metric": "process-tree aggregate peak private bytes",
     "peak_private_bytes": {
-      "approximate_95_half_width": 331862.98336739023,
+      "approximate_95_half_width": 3928544.7300292044,
       "count": 3,
-      "mean": 828962133.3333334,
-      "sample_stddev": 293267.11650189036
+      "mean": 719981226.6666666,
+      "sample_stddev": 3471652.5878660916
     },
     "peak_working_set_bytes": {
-      "approximate_95_half_width": 20709537.93704563,
+      "approximate_95_half_width": 1495454.1700515093,
       "count": 3,
-      "mean": 394939050.6666667,
-      "sample_stddev": 18301006.075631727
+      "mean": 313288021.3333333,
+      "sample_stddev": 1321531.9402652867
     },
     "peak_handles": {
-      "approximate_95_half_width": 1.96,
+      "approximate_95_half_width": 0.0,
       "count": 3,
-      "mean": 524.0,
-      "sample_stddev": 1.7320508075688772
+      "mean": 118.0,
+      "sample_stddev": 0.0
     },
     "duration_ms": {
-      "approximate_95_half_width": 2011.3217629984297,
+      "approximate_95_half_width": 956.2298352267503,
       "count": 3,
-      "mean": 7070.666666666667,
-      "sample_stddev": 1777.4038183072898
+      "mean": 1955.3333333333333,
+      "sample_stddev": 845.0197236356873
     },
     "startup_observation_ms": {
-      "approximate_95_half_width": 1.728557523228866,
+      "approximate_95_half_width": 346.26666666666677,
       "count": 3,
-      "mean": 3.3333333333333335,
-      "sample_stddev": 1.5275252316519468
+      "mean": 188.66666666666666,
+      "sample_stddev": 305.9956426705017
     },
     "capture_digest": {
       "bytes": {
@@ -102,6 +102,6 @@
     "repeat_capture_sha256": "259dd79103482756c4e688621bebafc841cc40f1df10ff2bbd7f9d04b7b4d401"
   },
   "comparison": {
-    "interpretation": "This record binds a real public MRI-DIR DICOM presentation to the sampled RITK/Metis process tree. It is a fixture baseline; matched Tauri, GPUI and egui runs with the same input, host, surface, trace and capture contract are required before a framework ranking. WASM, compositor, GPU and allocator-used measurements remain separate evidence."
+    "interpretation": "This record binds the real public MRI-DIR DICOM presentation to the current standalone-lock RITK/Metis process tree: RITK e635baf, Metis 0ca361c, Moirai a2f2149. It is a fixture baseline; matched Tauri, GPUI and egui runs with the same input, host, surface, trace and capture contract are required before a framework ranking. WASM, compositor, GPU and allocator-used measurements remain separate evidence."
   }
 }
