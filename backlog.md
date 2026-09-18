@@ -599,6 +599,7 @@ an owner. “Unsupported” cannot replace delivery of a required mobile/native 
 
 <a id="METIS-PERF-001"></a>
 ## METIS-PERF-001 — Comparative resource and latency evidence [patch]
+- lease: root `docs/manual/images/dicom-metis-real-mri-resource.json`, `docs/manual/applications.md`, `docs/VERIFICATION.md`, `backlog.md` until current standalone-lock resource replay and evidence commit.
 - Status: in-progress; priority: P1; owner: Metis measurement; integrator: root; last-update: 2026-09-18; dependencies: METIS-BROWSER-001, METIS-DESKTOP-001, METIS-INPUT-001, Moirai PR #360; risk: invalid comparative claims
 - Delivery increment (2026-09-18, RITK PR #477 merge `6e067a592fd718afbefde1f62f14ceb42eca8c4f`): the saved 94-file public MRI-DIR T2 study now has a real eframe compatibility capture and resource provenance. Three lifecycle runs exited 0 with equal 1600 × 1000 PNG digests; mean peak private bytes were 1,038,607,701 ± 2,129,690 and mean duration was 2,593 ± 477 ms. The eframe browser/GPU-MIP surface is explicitly unmatched to the 1280 × 800 Métis three-plane surface, so this adds baseline evidence without closing GPUI/Tauri or ranking residuals.
 - Historical delivery (2026-09-18, RITK PR #480 merge `0fd885adc6124468aa745a2f548dd685b74f0774`): the shell-free `orthogonal-surface` capture established the three semantic planes over the real 94-file MRI study at 1600 × 1000. Its provenance remains a reproducible historical baseline; the matched 1280 × 800 host fixture below is the comparison record.
