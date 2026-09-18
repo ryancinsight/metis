@@ -34,6 +34,10 @@
     {
       "source": "examples/browser/assets/metis-tone.wav",
       "destination": "assets/metis-tone.wav"
+    },
+    {
+      "source": "examples/browser/assets/metis-probe.woff2",
+      "destination": "assets/metis-probe.woff2"
     }
   ],
   "arguments": [
