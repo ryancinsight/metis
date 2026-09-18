@@ -26,11 +26,8 @@
 
 <a id="METIS-BROWSER-CAPTURE-002"></a>
 ## METIS-BROWSER-CAPTURE-002 — Capture complete canvas elements [patch]
-- Status: review; priority: P1; integrator: root; last-update: 2026-09-18; dependencies: METIS-BROWSER-CAPTURE-001.
-- Scope: keep format-neutral element PNG captures fully visible when a named canvas begins outside the browser viewport; RITK owns DICOM semantics.
-- Acceptance: the capture scrolls each canvas into view before its PNG, preserving the CSS-box/device-scale dimensions; a regression test covers the visibility step and the RITK hosted trace validates without clipping.
-- Risk: browser-driver viewport and element-screenshot semantics.
-- Verification: full `python scripts/verify.py` passes all positive stages (170 resolved packages; the expected capture-failure negative exits 1); dependency-free tests pass 296/296 with one intentional skip. Hosted RITK replay is the remaining acceptance check.
+- Status: done; delivery: Metis PR [#267](https://github.com/ryancinsight/metis/pull/267), merge `5e892245ac52c6455bbb57244fa654e6eb3cc9c1`; RITK hosted run [35395627386](https://github.com/ryancinsight/ritk/actions/runs/35395627386) confirms complete real-study captures; compacted 2026-09-18.
+- Outcome: format-neutral browser capture scrolls each named canvas into view before PNG capture, preserves CSS/device-scale dimensions, and passes the focused regression tests and hosted Chromium/Firefox three-plane MRI evidence; RITK owns DICOM semantics.
 
 <a id="METIS-INPUT-TRUST-001"></a>
 ## METIS-INPUT-TRUST-001 — Preserve browser event trust in canvas input [arch] [minor]
