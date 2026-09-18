@@ -2807,7 +2807,7 @@ the image; the tracked manual figure is 640×400 while provenance retains the
 raw 1280×800 source digest. The process boundary still differs from Métis;
 GPUI/Tauri fixtures and ranking remain open.
 
-The current standalone-lock replay (2026-09-18) is bound to RITK source
+The recorded standalone-lock replay (2026-09-18) is bound to RITK source
 `8f8516065f6ab9405852d96885f54291d5e24a48`, Metis
 `5e892245ac52c6455bbb57244fa654e6eb3cc9c1` and Moirai
 `ae282117fd962f4b7c66d722aad9d3c2906320bb`. The standalone lock digest is
