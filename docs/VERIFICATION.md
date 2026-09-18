@@ -598,7 +598,7 @@ trailing markup and an oversized viewport. The browser asset suite passed 9/9
 tests and checks the same-origin SVG favicon, PNG alternate, manifest resource
 and copied output. This proves the local asset admission and generated browser
 presentation for one engine; browser decode behavior in other engines, installed
-MSI rendering and font/media resource lifecycles remain open V06 evidence.
+MSI rendering, video/native media lifecycles and font resource lifecycles remain open V06 evidence.
 
 <a id="browser-native-image-decode-evidence-2026-09-17"></a>
 ## Browser native image decode evidence — 2026-09-17
@@ -616,7 +616,7 @@ cross-origin/unavailable results, leaked elements, bounds and CLI scenario
 rejection. The scheduled Chromium/Firefox/WebKit workbench matrix invokes the
 probe beside its existing screenshots and accessibility records. This evidence
 closes the browser image-decoder slice for the local marks; native image decode,
-font loading, media playback controls, GPU vectors and RITK's clinical image
+font loading, video/native media playback controls, GPU vectors and RITK's clinical image
 presentation remain separate V06 acceptance work.
 
 <a id="browser-media-error-teardown-evidence-2026-09-18"></a>
@@ -634,9 +634,35 @@ raised `MediaError` code 4, returned `readyState=0` and
 detached the element and left zero probe nodes. The dependency-free validator
 tests cover successful-decode rejection, unexpected fixtures, invalid error
 codes, retained sources, leaked nodes, labels, timeouts and the CLI scenario
-boundary. This closes browser media error and teardown evidence only; playback
-controls, native media providers, cross-engine traces and RITK clinical image
+boundary. This closes browser media error and teardown evidence only; audio
+playback controls are covered by the following Edge trace. Video controls,
+native media providers, cross-engine traces and RITK clinical image
 presentation remain open under V06.
+
+<a id="browser-media-playback-evidence-2026-09-18"></a>
+## Browser audio playback evidence — 2026-09-18
+
+At Metis revision `9aaf7c05adaf09f41f2c96b62271d7d5fc8b17b8`, the Chromium
+workbench runner used `--media-playback-probe --lifecycle-cycles 2` against
+Edge 154.0.4258.12 at device scale 1.25. The trace is stored at
+`output/browser/runtime/edge-media-playback-20260918.json` with SHA-256
+`d25c1e961a6855e4cdb42780a931752b9cd4658d5aa73ca9739158f3b963eb56`.
+Three `metrics.media_playback` observations (initial, remounted and
+remounted-cycle-2) use the real same-origin
+`examples/browser/assets/metis-tone.wav` fixture, whose committed SHA-256 is
+`a73f574d016780d179f1aa728eb9a794b747dfb093f1e55e9db10c4feb13f507`.
+Every observation records `loadedmetadata`, `canplay`, `playing` and `pause`,
+the paused-to-playing-to-paused transition, a 0.2 second duration and enabled
+controls. Teardown reaches `readyState=0` and `networkState=3`, removes the
+`src` attribute, detaches the element and leaves zero probe nodes.
+
+Chromium retains `currentSrc` as a resolved URL after this teardown. The
+validator accepts that reflection only when the element is otherwise empty and
+the URL path is exactly `/assets/metis-tone.wav`; it does not claim that
+`currentSrc` is cleared. The browser media tests pass 9/9 and the combined
+asset/runtime/distribution suite passes 98/98. This closes browser audio
+playback controls only; video controls, native media providers and
+cross-engine playback traces remain open under V06.
 
 ## Browser lifecycle evidence — 2026-09-07
 
