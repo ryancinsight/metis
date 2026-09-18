@@ -1351,18 +1351,23 @@ an out-of-order sample list. The measurement exposes the host's effective font
 string and loading check; it does not identify fallback-face selection or prove
 native, cross-engine or assistive-technology parity.
 
-The fallback-chain increment at source revision `4126ccd5eb54d34c6bf044e31108085eaf46f4f1`
-adds three detached samples for the requested `system-ui`, `sans-serif` and
-`monospace` families. The Edge 154.0.4258.12 trace at device scale 1.25 is
+The fallback-chain increment (landed as `44e9130`, PR
+[#238](https://github.com/ryancinsight/metis/pull/238)) adds three detached
+samples for the requested `system-ui`, `sans-serif` and `monospace` families.
+The Edge 154.0.4258.12 trace at device scale 1.25 is
 `output/browser/runtime/edge-text-fallback-20260918.json` with SHA-256
-`384f91c2848f16c146fd7fa0ecc6b1e9e4626e2640922069e332551cb617acf0` and
-contains three lifecycle observations. All samples report `fonts_status:
-loaded` and `fonts_check: true`; their widths/heights are `132.8/46.4`,
-`132.0/44.0` and `136.0/44.0` CSS pixels in requested order. The validator
-requires the exact chain, finite positive bounds and detached probe cleanup.
-This records fallback-chain admission and host metrics; browser APIs still do
-not identify the selected system fallback face or establish native/cross-engine
-font parity.
+`a4dab6a5e134ce0495115f9d600dfb9e05fc2fd54a0a6bc5e734f8dd091800d9`, bound to
+revision `92064d65542c9a686e2c5d7d306af0ddb704b915`, and contains three
+observations (`initial`, `remounted`, `remounted-cycle-2`). All samples report
+`fonts_status: loaded` and `fonts_check: true`; their widths/heights are
+`132.8/46.4`, `132.0/44.0` and `136.0/44.0` CSS pixels in requested order.
+Because the trace is git-ignored host state, the artifact cited here is a
+re-capture of the same command on this host: the original capture was taken
+inside the ephemeral `feat/text-fallback-fonts` worktree and did not survive
+that worktree's removal. The validator requires the exact chain, finite
+positive bounds and detached probe cleanup. This records fallback-chain
+admission and host metrics; browser APIs still do not identify the selected
+system fallback face or establish native/cross-engine font parity.
 
 The scheduled Chromium, Firefox and WebKit workbench matrix invokes this probe
 alongside the existing lifecycle and accessibility checks. A missing

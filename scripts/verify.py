@@ -211,6 +211,19 @@ def manual_links():
                 raise SystemExit(f"Missing or external manual target in {document}: {destination}")
 
 
+def citations():
+    """Refuse a gate whose cited revisions or evidence digests no longer resolve."""
+    from citations import evidence_findings, unreachable_revisions
+
+    unreachable = unreachable_revisions(ROOT)
+    mismatched, absent, verified = evidence_findings(ROOT)
+    for finding in (*unreachable, *mismatched):
+        print(f"citation: {finding}", file=sys.stderr)
+    if unreachable or mismatched:
+        raise SystemExit("Cited revisions or evidence digests no longer resolve")
+    print(f"citations: {verified} digest(s) verified; {len(absent)} artifact(s) absent on this host", flush=True)
+
+
 def run(name, args, *, cwd, environment, seconds=300, expected_exit=0, required_diagnostic=None):
     from process_tree import ProcessTreeTimeout, run as run_process_tree
 
@@ -465,6 +478,7 @@ def run_gate():
                            *(["--update"] if arguments.update_snapshots else [])], seconds=60, cwd=ROOT)
         EVIDENCE["visual"] = json.loads((OUTPUT / "visual" / "latest" / "report.json").read_text(encoding="utf-8"))
         manual_links()
+        citations()
         if source_state(metadata, configs) != source:
             raise SystemExit("Source inputs changed during verification; collect against a stable revision")
         EVIDENCE["status"] = "passed"
