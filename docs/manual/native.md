@@ -18,12 +18,14 @@ cargo run --locked -p metis-app -- --metis-native-window 60 2 0.2
 The `Metis native form` window renders the production software framebuffer.
 While the window is focused, typed Unicode characters extend the patient
 reference and Backspace removes its last scalar; every edit clears a prior
-calculation through `FrontendApp::set_inputs`. Press **Enter** or click the
-blue **[ SUBMIT CALCULATION TO BACKEND ]** surface to send the exact numeric
-inputs through the private pipe. The result and audit sequence are painted by
-the same frontend state machine as the headless workflow. Resize the window to
-exercise framebuffer replacement; DPI, focus and close events are consumed by
-the host. **Escape** or the window close control ends the child cleanly.
+calculation through `FrontendApp::set_inputs`. Press **Enter** or **Ctrl+Enter**
+or click the blue **[ SUBMIT CALCULATION TO BACKEND ]** surface to send the
+exact numeric inputs through the private pipe. Alt/Windows-modified Enter is
+left to the operating system instead of triggering the application shortcut.
+The result and audit sequence are painted by the same frontend state machine as
+the headless workflow. Resize the window to exercise framebuffer replacement;
+DPI, focus and close events are consumed by the host. **Escape** or the window
+close control ends the child cleanly.
 
 A host that owns the validated `WindowConfig` can call
 `NativeSurface::reopen` after `close` to create a fresh HWND with the same
