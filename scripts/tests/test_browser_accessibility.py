@@ -9,6 +9,7 @@ sys.path.insert(0, str(pathlib.Path(__file__).resolve().parents[1]))
 
 from browser_accessibility import (
     MAX_NATIVE_TREE_DEPTH,
+    MAX_NATIVE_VISIBLE_NODES,
     capture_accessibility,
     capture_native_accessibility_tree,
 )
@@ -146,6 +147,13 @@ class BrowserAccessibilityTests(unittest.TestCase):
         tree["nodes"][-1]["name"]["value"] = "Other"
         with self.assertRaisesRegex(BrowserRuntimeError, "Result explorer"):
             capture_native_accessibility_tree(NativeStubClient(_snapshot(), tree))
+
+    def test_native_tree_bounds_visible_nodes_not_ignored_descendants(self):
+        tree = _native_tree()
+        tree["nodes"] = [{"ignored": True}] * (MAX_NATIVE_VISIBLE_NODES + 1) + tree["nodes"]
+        record = capture_native_accessibility_tree(NativeStubClient(_snapshot(), tree))
+        self.assertEqual(record["visible_node_count"], 7)
+        self.assertGreater(record["node_count"], MAX_NATIVE_VISIBLE_NODES)
 
     def test_capture_rejects_horizontal_overflow(self):
         value = _snapshot()

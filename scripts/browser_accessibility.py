@@ -14,7 +14,10 @@ MAX_ACCESSIBILITY_DIMENSION = 65_536
 # The workbench's required roles and names occur within eight AX ancestors;
 # stopping there excludes deep text descendants while retaining that contract.
 MAX_NATIVE_TREE_DEPTH = 8
-MAX_NATIVE_TREE_NODES = 256
+# The transport bounds the complete response by bytes; only visible nodes count
+# toward the semantic workbench bound because Chromium includes ignored text
+# descendants in the full tree.
+MAX_NATIVE_VISIBLE_NODES = 256
 MAX_NATIVE_TREE_RESPONSE_BYTES = 256 * 1024
 CHROMIUM_BROWSER_NAMES = {"chrome", "chromium", "MicrosoftEdge", "msedge"}
 EDGE_BROWSER_NAMES = {"MicrosoftEdge", "msedge"}
@@ -341,8 +344,8 @@ def _validate_native_accessibility_tree(value: Any) -> Dict[str, Any]:
     if not isinstance(value, Mapping):
         raise BrowserRuntimeError("native accessibility response is not an object")
     nodes = value.get("nodes")
-    if not isinstance(nodes, list) or not 1 <= len(nodes) <= MAX_NATIVE_TREE_NODES:
-        raise BrowserRuntimeError("native accessibility node count is outside its bound")
+    if not isinstance(nodes, list) or not nodes:
+        raise BrowserRuntimeError("native accessibility node list is empty or malformed")
     roles = []
     names = set()
     visible_nodes = 0
@@ -370,8 +373,8 @@ def _validate_native_accessibility_tree(value: Any) -> Dict[str, Any]:
                 roles.append(role)
             if name in {"Submit", "Files", "Clinical note", "Result explorer"}:
                 names.add(name)
-    if visible_nodes == 0:
-        raise BrowserRuntimeError("native accessibility tree has no visible nodes")
+    if not 1 <= visible_nodes <= MAX_NATIVE_VISIBLE_NODES:
+        raise BrowserRuntimeError("native accessibility visible node count is outside its bound")
     observed_roles = list(dict.fromkeys(roles))
     normalized_roles = {role.casefold() for role in observed_roles}
     required_roles = {"main", "form", "button", "textbox", "table"}
