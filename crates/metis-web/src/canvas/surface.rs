@@ -42,6 +42,16 @@ impl CanvasRenderer {
             Self::WebGpu(canvas) => canvas.present(frame),
         }
     }
+
+    async fn recreate(&mut self) -> io::Result<()> {
+        match self {
+            Self::Raster(_) => Err(io::Error::new(
+                io::ErrorKind::Unsupported,
+                "WebGPU recovery requires an explicit WebGPU surface",
+            )),
+            Self::WebGpu(canvas) => canvas.recreate().await,
+        }
+    }
 }
 
 impl CanvasSurface {
@@ -176,6 +186,20 @@ impl CanvasSurface {
     #[must_use]
     pub fn id(&self) -> String {
         self.canvas.id()
+    }
+
+    /// Recreates the explicit WebGPU provider after device or swap-chain loss.
+    ///
+    /// The surface keeps its canvas element and any retained input listeners;
+    /// only the provider's browser GPU handles are replaced. Raster surfaces
+    /// return [`io::ErrorKind::Unsupported`] because recovery must not silently
+    /// change the requested presentation backend.
+    ///
+    /// # Errors
+    /// Returns the provider's setup error when a fresh adapter or device cannot
+    /// be acquired, or [`io::ErrorKind::Unsupported`] for a raster surface.
+    pub async fn recreate(&mut self) -> io::Result<()> {
+        self.canvas.recreate().await
     }
 
     /// Presents one borrowed RGBA8 frame without retaining its bytes.

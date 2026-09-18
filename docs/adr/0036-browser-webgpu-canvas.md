@@ -6,7 +6,15 @@ Date: 2026-09-16
 
 Driver: [METIS-GRAPHICS-001](../backlog.md#METIS-GRAPHICS-001)
 
-Upstream decision: [Moirai ADR 0061](../../moirai/docs/adr/0061-browser-webgpu-canvas.md)
+Upstream decision: [Moirai ADR 0061](../../moirai/docs/adr/0061-browser-webgpu-canvas.md); recovery extension: [Moirai ADR 0063](../../moirai/docs/adr/0063-browser-webgpu-recovery.md)
+
+Revision 2026-09-18: Moirai PR #400 merged at
+`7aa9d4e27fe8d12c0129accddccbf70bbc796e08` and adds `WebGpuCanvas::recreate`, which
+acquires replacement browser GPU handles before swapping them into the
+surface. `CanvasSurface::recreate` preserves the canvas and input listener
+guards, clears the configured extent after success, and returns the provider's
+typed setup error without falling back to raster presentation. Real device-loss
+and recovered-pixel evidence remain consumer-owned browser requirements.
 
 ## Context
 
