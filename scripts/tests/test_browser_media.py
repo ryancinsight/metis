@@ -7,7 +7,14 @@ import unittest
 
 sys.path.insert(0, str(pathlib.Path(__file__).resolve().parents[1]))
 
-from browser_media import MEDIA_EMPTY_NETWORK_STATES, MEDIA_PROBES, capture_media
+from browser_media import (
+    MEDIA_EMPTY_NETWORK_STATES,
+    MEDIA_PLAYBACK_PATHS,
+    MEDIA_PLAYBACK_REQUIRED_EVENTS,
+    MEDIA_PROBES,
+    capture_media,
+    capture_media_playback,
+)
 from browser_protocol import BrowserRuntimeError
 
 
@@ -39,6 +46,32 @@ def _result() -> dict:
     }
 
 
+def _playback_result() -> dict:
+    """Return a successful same-origin audio controls observation."""
+    return {
+        "ok": True,
+        "playback": {
+            "kind": "audio",
+            "path": MEDIA_PLAYBACK_PATHS[0],
+            "source": "/assets/metis-tone.wav",
+            "events": list(MEDIA_PLAYBACK_REQUIRED_EVENTS),
+            "before": {
+                "controls": True,
+                "paused": True,
+                "ready_state": 4,
+                "network_state": 2,
+                "duration_seconds": 0.2,
+                "source": "/assets/metis-tone.wav",
+            },
+            "playing": {"paused": False, "ready_state": 4},
+            "after_pause": {"paused": True, "ready_state": 4},
+            "teardown": {"ready_state": 0, "network_state": 0, "current_src": "", "src_attribute": None},
+            "attached_after_remove": False,
+        },
+        "remaining_probe_elements": 0,
+    }
+
+
 class StubClient:
     """Return a controlled browser observation for validator tests."""
 
@@ -50,6 +83,13 @@ class StubClient:
         del script
         self.arguments = arguments
         return self.value
+
+    def find(self, selector: str):
+        self.selector = selector
+        return selector
+
+    def click(self, element):
+        self.clicked = element
 
 
 class Trace:
@@ -100,6 +140,53 @@ class BrowserMediaTests(unittest.TestCase):
             capture_media(StubClient(_result()), Trace(), "")
         with self.assertRaisesRegex(BrowserRuntimeError, "timeout"):
             capture_media(StubClient(_result()), Trace(), "initial", timeout_ms=0)
+
+    def test_playback_records_controls_and_release(self):
+        trace = Trace()
+        client = StubClient(_playback_result())
+        measurement = capture_media_playback(client, trace, "initial")
+        self.assertEqual(measurement["events"], list(MEDIA_PLAYBACK_REQUIRED_EVENTS))
+        self.assertEqual(measurement["before"]["source"], "/assets/metis-tone.wav")
+        self.assertTrue(measurement["before"]["controls"])
+        self.assertFalse(measurement["playing"]["paused"])
+        self.assertTrue(measurement["after_pause"]["paused"])
+        self.assertEqual(trace.metrics["media_playback"][0], measurement)
+        self.assertEqual(client.arguments, [MEDIA_PLAYBACK_PATHS[0], 5_000])
+
+    def test_playback_rejects_wrong_events_or_source(self):
+        result = _playback_result()
+        result["playback"]["events"] = ["loadedmetadata"]
+        with self.assertRaisesRegex(BrowserRuntimeError, "event sequence"):
+            capture_media_playback(StubClient(result), Trace(), "initial")
+        result = _playback_result()
+        result["playback"]["source"] = "/other.wav"
+        with self.assertRaisesRegex(BrowserRuntimeError, "unexpected source"):
+            capture_media_playback(StubClient(result), Trace(), "initial")
+
+    def test_playback_rejects_nonpositive_duration_and_retained_source(self):
+        result = _playback_result()
+        result["playback"]["before"]["duration_seconds"] = 0
+        with self.assertRaisesRegex(BrowserRuntimeError, "duration"):
+            capture_media_playback(StubClient(result), Trace(), "initial")
+        result = _playback_result()
+        result["playback"]["teardown"]["src_attribute"] = "/assets/metis-tone.wav"
+        with self.assertRaisesRegex(BrowserRuntimeError, "retained its source"):
+            capture_media_playback(StubClient(result), Trace(), "initial")
+
+    def test_playback_accepts_empty_ready_state_source_reflection(self):
+        result = _playback_result()
+        result["playback"]["teardown"]["current_src"] = "http://127.0.0.1:12345/assets/metis-tone.wav"
+        measurement = capture_media_playback(StubClient(result), Trace(), "initial")
+        self.assertEqual(
+            measurement["teardown"]["current_src"],
+            "http://127.0.0.1:12345/assets/metis-tone.wav",
+        )
+
+    def test_playback_rejects_invalid_label_and_timeout(self):
+        with self.assertRaisesRegex(BrowserRuntimeError, "label is empty"):
+            capture_media_playback(StubClient(_playback_result()), Trace(), "")
+        with self.assertRaisesRegex(BrowserRuntimeError, "timeout"):
+            capture_media_playback(StubClient(_playback_result()), Trace(), "initial", timeout_ms=0)
 
 
 if __name__ == "__main__":

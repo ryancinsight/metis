@@ -30,6 +30,10 @@
     {
       "source": "examples/browser/assets/metis-mark.svg",
       "destination": "assets/metis-mark.svg"
+    },
+    {
+      "source": "examples/browser/assets/metis-tone.wav",
+      "destination": "assets/metis-tone.wav"
     }
   ],
   "arguments": [

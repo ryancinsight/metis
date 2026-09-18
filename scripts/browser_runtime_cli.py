@@ -67,6 +67,7 @@ def _arguments() -> argparse.Namespace:
     parser.add_argument("--accessibility-probe", action="store_true", help="record bounded browser media, focus-order and zoom geometry evidence")
     parser.add_argument("--asset-probe", action="store_true", help="decode the shipped same-origin SVG and PNG marks and record intrinsic dimensions")
     parser.add_argument("--media-probe", action="store_true", help="exercise bounded audio/video decode errors and source teardown")
+    parser.add_argument("--media-playback-probe", action="store_true", help="exercise same-origin audio controls and source teardown")
     parser.add_argument("--text-geometry-probe", action="store_true", help="record bounded Range/grapheme layout geometry from the text specimen")
     parser.add_argument("--require-reduced-motion", action="store_true", help="fail unless prefers-reduced-motion: reduce is active (requires --accessibility-probe)")
     parser.add_argument("--require-forced-colors", action="store_true", help="fail unless forced-colors: active is active (requires --accessibility-probe)")
@@ -111,6 +112,8 @@ def main() -> int:
             raise BrowserRuntimeError("--asset-probe requires --scenario workbench")
         if arguments.media_probe and arguments.scenario != "workbench":
             raise BrowserRuntimeError("--media-probe requires --scenario workbench")
+        if arguments.media_playback_probe and arguments.scenario != "workbench":
+            raise BrowserRuntimeError("--media-playback-probe requires --scenario workbench")
         if arguments.text_geometry_probe and arguments.scenario != "workbench":
             raise BrowserRuntimeError("--text-geometry-probe requires --scenario workbench")
         run_canvas_scenario = None
@@ -222,6 +225,7 @@ def main() -> int:
                         require_forced_colors=arguments.require_forced_colors,
                         asset_probe=arguments.asset_probe,
                         media_probe=arguments.media_probe,
+                        media_playback_probe=arguments.media_playback_probe,
                         text_geometry_probe=arguments.text_geometry_probe,
                     )
         else:
@@ -281,6 +285,7 @@ def main() -> int:
                     require_forced_colors=arguments.require_forced_colors,
                     asset_probe=arguments.asset_probe,
                     media_probe=arguments.media_probe,
+                    media_playback_probe=arguments.media_playback_probe,
                     text_geometry_probe=arguments.text_geometry_probe,
                 )
         _write_trace(output, trace.document())

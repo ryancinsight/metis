@@ -70,6 +70,13 @@ class BrowserAssetContractTests(unittest.TestCase):
         self.assertIn('srcset="./assets/metis-mark.svg"', controls)
         self.assertIn('src="./assets/metis-mark.png"', controls)
 
+    def test_playback_fixture_is_a_bounded_pcm_wave(self):
+        wave = ROOT / "examples" / "browser" / "assets" / "metis-tone.wav"
+        data = wave.read_bytes()
+        self.assertEqual(data[:4], b"RIFF")
+        self.assertEqual(data[8:12], b"WAVE")
+        self.assertLessEqual(len(data), 16 * 1024)
+
     def test_build_and_distribution_declare_the_starter_mark(self):
         manifest = json.loads((ROOT / "metis.json").read_text(encoding="utf-8"))
         self.assertEqual(manifest["icon"], "examples/browser/assets/metis-mark.ico")
@@ -91,6 +98,13 @@ class BrowserAssetContractTests(unittest.TestCase):
             {
                 "source": "examples/browser/assets/metis-mark.svg",
                 "destination": "assets/metis-mark.svg",
+            },
+            manifest["resources"],
+        )
+        self.assertIn(
+            {
+                "source": "examples/browser/assets/metis-tone.wav",
+                "destination": "assets/metis-tone.wav",
             },
             manifest["resources"],
         )
