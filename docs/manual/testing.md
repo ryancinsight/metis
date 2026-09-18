@@ -309,10 +309,11 @@ provenance](images/dicom-metis-real-mri-resource.json). The report records
 the real 94-file study and the 1280 × 800 three-plane capture; it does not
 include private study paths or pixels. RITK also records a complete eframe MRI
 baseline and a shell-free [matched orthogonal eframe fixture](https://github.com/ryancinsight/ritk/blob/main/docs/manual/images/dicom-eframe-orthogonal-surface-resource.json)
-for the same 94-file input. The matched fixture carries the same three
-semantic planes and spacing-aware placement as Métis, while its 1600 × 1000
-host extent and process boundary remain different; it is therefore a semantic
-prerequisite, not a framework ranking.
+for the same 94-file input. The matched fixture requests 1024×640 logical
+points and records the same 1280×800 physical host extent as Métis on the
+controlled 125% Windows display. It carries the same three semantic planes and
+spacing-aware placement; its process boundary remains different, so the record
+supports fixture equivalence but does not rank frameworks.
 
 The [application gallery's V12 table](applications.md#v12-fixture-comparison)
 keeps those four measured fixtures together with their uncertainty and the
