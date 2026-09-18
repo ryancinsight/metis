@@ -26,6 +26,7 @@ from browser_protocol import (
 )
 from browser_accessibility import capture_accessibility
 from browser_assets import capture_assets
+from browser_media import capture_media
 from browser_text_geometry import capture_text_geometry
 from browser_trace import (
     BrowserEngine,
@@ -187,6 +188,7 @@ def run_scenario(
     require_reduced_motion: bool = False,
     require_forced_colors: bool = False,
     asset_probe: bool = False,
+    media_probe: bool = False,
     text_geometry_probe: bool = False,
 ) -> Trace:
     """Execute the same input, bridge and bounded teardown trace for every engine."""
@@ -218,6 +220,8 @@ def run_scenario(
         screenshot(client, trace, screenshot_directory, "initial")
         if asset_probe:
             capture_assets(client, trace, "initial")
+        if media_probe:
+            capture_media(client, trace, "initial")
         if bridge == "authorized":
             _wait_for_text(client, "metis-status", "Authorized backend session ready", include=True, timeout_ms=timeout_ms)
             trace.actions.append({"action": "await-authorized-bridge", "result": "ready"})
@@ -276,6 +280,8 @@ def run_scenario(
                     capture_accessibility(client, trace, "remounted-after-cancel")
                 if asset_probe:
                     capture_assets(client, trace, "remounted-after-cancel")
+                if media_probe:
+                    capture_media(client, trace, "remounted-after-cancel")
                 if text_geometry_probe:
                     capture_text_geometry(client, trace, "remounted-after-cancel")
                 if browser_heap:
@@ -316,6 +322,8 @@ def run_scenario(
                 capture_accessibility(client, trace, "remounted")
             if asset_probe:
                 capture_assets(client, trace, "remounted")
+            if media_probe:
+                capture_media(client, trace, "remounted")
             if text_geometry_probe:
                 capture_text_geometry(client, trace, "remounted")
             if browser_heap:
@@ -343,6 +351,8 @@ def run_scenario(
                 capture_accessibility(client, trace, f"remounted-cycle-{cycle}")
             if asset_probe:
                 capture_assets(client, trace, f"remounted-cycle-{cycle}")
+            if media_probe:
+                capture_media(client, trace, f"remounted-cycle-{cycle}")
             if text_geometry_probe:
                 capture_text_geometry(client, trace, f"remounted-cycle-{cycle}")
             if browser_heap:
