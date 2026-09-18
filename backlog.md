@@ -73,6 +73,14 @@ an owner. “Unsupported” cannot replace delivery of a required mobile/native 
 - Status: done; priority: P1; owner: Metis documentation; delivery: [PR 34](https://github.com/ryancinsight/metis/pull/34), merge `056e252`; dependency: METIS-DICOM-002.
 - Outcome: Current framework and input records assign DICOM decisions to RITK after the format-neutral handoff; LF-normalized provenance passes the full gate at `a397b18`.
 
+<a id="METIS-SVELTE-001"></a>
+## METIS-SVELTE-001 — Svelte comparator and migration plan [arch] [patch]
+- Status: review; priority: P1; owner: Metis documentation; integrator: root; last-update: 2026-09-18; dependencies: METIS-GAPS-001, METIS-GAPS-002.
+- Outcome: ADR 0003 now carries a source-pinned Svelte/SvelteKit comparison, a dedicated gap table and an implementation order; the user manual and repository indexes link the decision.
+- Scope: compiler-driven DOM/CSS components, reactive state, custom elements, rendering modes, authority and evidence; no Svelte dependency, JavaScript runtime or DICOM ownership.
+- Acceptance: official Svelte sources are linked and dated; each gap has a Metis owner item or explicit non-goal; README/manual and ADR index links remain valid; plan and diff gates pass.
+- Risk: treating compiled UI or SvelteKit rendering modes as evidence of Rust/WASM memory, security or native parity.
+
 <a id="METIS-ICED-001"></a>
 ## METIS-ICED-001 — Iced comparator and backend decision [arch] [patch]
 - Status: done; priority: P1; delivery: `def5f85`; source and artifact audit passed 2026-09-07.
