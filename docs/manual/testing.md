@@ -23,7 +23,15 @@ python scripts/verify.py
 
 The gate builds the pinned code, exercises native debug/release tests and the
 process example, builds the portable WASM libraries including `metis-web`, and
-validates the backlog/checklist plan references. It compares the current seven
+validates the backlog/checklist plan references. It also resolves every revision
+the board and verification documents cite, and recomputes the SHA-256 of each
+evidence artifact those documents pin. A cited revision the verified revision
+cannot reach fails the gate, because a branch commit rewritten before landing is
+unresolvable to any reader; an artifact absent from the host is reported and does
+not fail, because the git-ignored `output/` tree exists only where a capture ran.
+Run that check alone with `python scripts/citations.py`, or add
+`--require-artifacts` on a host expected to hold a complete capture set. It
+compares the current seven
 form captures and their recorded inputs, actions, labels and geometry with the
 committed gallery baseline. A passing WASM build
 does not run a browser; use the browser workbench command below for that
