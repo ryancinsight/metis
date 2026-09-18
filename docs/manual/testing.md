@@ -360,12 +360,13 @@ python scripts/resource_compare.py `
   --output output/resource-comparison.json
 ```
 
-Add a producer-owned `output` semantic key (for example,
-`output.semantic_surfaces`) to both records and pass it with `--match` before
-interpreting presentation or clinical equivalence. A missing or differing key
-fails before any metric is calculated. The output is a measurement record,
-not a framework ranking; it does not normalize panel names, infer semantic
-equivalence, or replace RITK's image and DICOM oracles.
+The current eframe and Métis provenance records expose the producer-owned
+`output.semantic_surfaces` key. Pass it with `--match` before interpreting
+presentation or clinical equivalence. A missing or differing key fails before
+any metric is calculated; the current eframe/Métis pairs intentionally fail
+that match because their browser, MIP and surface contracts differ. The output
+is a measurement record, not a framework ranking; it does not normalize panel
+names, infer semantic equivalence, or replace RITK's image and DICOM oracles.
 
 For the browser side of the same comparison, the paired canvas trace records
 `metrics.frame_intervals` around the real RITK canvases. Each bounded sample is
