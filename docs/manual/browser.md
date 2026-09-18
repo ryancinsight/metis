@@ -408,9 +408,10 @@ surface.present(&frame)?;
 ```
 
 Recovery keeps the previous provider handles when setup fails and never changes
-the requested GPU surface to raster presentation. A real device, visual output,
-device-loss recovery and GPU/resource measurements require a consumer-owned
-browser run; the current RITK galleries remain the 2D visual baseline.
+the requested GPU surface to raster presentation. A real adapter/device,
+recovered visual output after device loss and GPU/resource measurements require
+a consumer-owned browser run; the current RITK galleries remain the 2D visual
+baseline.
 
 The file-backed runner's default `--canvas-capture rgba` mode reads exact
 two-dimensional canvas pixels. A consumer using another canvas context selects
