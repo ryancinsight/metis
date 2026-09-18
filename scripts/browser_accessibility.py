@@ -11,7 +11,9 @@ MAX_ACCESSIBILITY_ELEMENTS = 64
 MAX_SEMANTIC_ELEMENTS = 96
 MAX_ACCESSIBILITY_TEXT_BYTES = 256
 MAX_ACCESSIBILITY_DIMENSION = 65_536
-MAX_NATIVE_TREE_NODES = 256
+# The workbench's required roles and names occur within eight AX ancestors;
+# stopping there excludes deep text descendants while retaining that contract.
+MAX_NATIVE_TREE_DEPTH = 8
 MAX_NATIVE_TREE_RESPONSE_BYTES = 256 * 1024
 CHROMIUM_BROWSER_NAMES = {"chrome", "chromium", "MicrosoftEdge", "msedge"}
 EDGE_BROWSER_NAMES = {"MicrosoftEdge", "msedge"}
@@ -338,8 +340,8 @@ def _validate_native_accessibility_tree(value: Any) -> Dict[str, Any]:
     if not isinstance(value, Mapping):
         raise BrowserRuntimeError("native accessibility response is not an object")
     nodes = value.get("nodes")
-    if not isinstance(nodes, list) or not 1 <= len(nodes) <= MAX_NATIVE_TREE_NODES:
-        raise BrowserRuntimeError("native accessibility node count is outside its bound")
+    if not isinstance(nodes, list) or not nodes:
+        raise BrowserRuntimeError("native accessibility node list is empty or malformed")
     roles = []
     names = set()
     visible_nodes = 0
@@ -365,7 +367,7 @@ def _validate_native_accessibility_tree(value: Any) -> Dict[str, Any]:
             visible_nodes += 1
             if role is not None:
                 roles.append(role)
-            if name in {"Submit", "Files", "Clinical note", "Result explorer"}:
+            if name in {"Submit to authorized backend", "Choose files", "Clinical note", "Result explorer"}:
                 names.add(name)
     if visible_nodes == 0:
         raise BrowserRuntimeError("native accessibility tree has no visible nodes")
@@ -375,7 +377,7 @@ def _validate_native_accessibility_tree(value: Any) -> Dict[str, Any]:
     if not required_roles.issubset(normalized_roles):
         missing = sorted(required_roles - normalized_roles)
         raise BrowserRuntimeError(f"native accessibility tree is missing roles: {', '.join(missing)}")
-    required_names = ("Submit", "Files", "Clinical note", "Result explorer")
+    required_names = ("Submit to authorized backend", "Choose files", "Clinical note", "Result explorer")
     missing_names = [name for name in required_names if name not in names]
     if missing_names:
         raise BrowserRuntimeError(
@@ -400,7 +402,7 @@ def capture_native_accessibility_tree(client: WebDriverClient) -> Dict[str, Any]
         }
     request = {
         "cmd": "Accessibility.getFullAXTree",
-        "params": {"depth": 32},
+        "params": {"depth": MAX_NATIVE_TREE_DEPTH},
     }
     value = client._request(  # noqa: SLF001 - the WebDriver transport owns vendor CDP calls
         "POST",

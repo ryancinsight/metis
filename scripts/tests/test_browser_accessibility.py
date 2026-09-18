@@ -7,7 +7,11 @@ import unittest
 
 sys.path.insert(0, str(pathlib.Path(__file__).resolve().parents[1]))
 
-from browser_accessibility import capture_accessibility, capture_native_accessibility_tree
+from browser_accessibility import (
+    MAX_NATIVE_TREE_DEPTH,
+    capture_accessibility,
+    capture_native_accessibility_tree,
+)
 from browser_protocol import BrowserRuntimeError, WebDriverClient
 
 
@@ -77,8 +81,8 @@ def _native_tree() -> dict:
             {"ignored": False, "role": {"value": "RootWebArea"}, "name": {"value": "Metis"}},
             {"ignored": False, "role": {"value": "main"}, "name": {"value": "metis-app"}},
             {"ignored": False, "role": {"value": "form"}, "name": {"value": "metis-form"}},
-            {"ignored": False, "role": {"value": "button"}, "name": {"value": "Submit"}},
-            {"ignored": False, "role": {"value": "button"}, "name": {"value": "Files"}},
+            {"ignored": False, "role": {"value": "button"}, "name": {"value": "Submit to authorized backend"}},
+            {"ignored": False, "role": {"value": "button"}, "name": {"value": "Choose files"}},
             {"ignored": False, "role": {"value": "textbox"}, "name": {"value": "Clinical note"}},
             {"ignored": False, "role": {"value": "table"}, "name": {"value": "Result explorer"}},
         ]
@@ -135,12 +139,20 @@ class BrowserAccessibilityTests(unittest.TestCase):
         self.assertEqual(record["required_names"]["Clinical note"], True)
         self.assertEqual(client.requests[0][1], "/session/test/goog/cdp/execute")
         self.assertEqual(client.requests[0][2]["cmd"], "Accessibility.getFullAXTree")
+        self.assertEqual(client.requests[0][2]["params"], {"depth": MAX_NATIVE_TREE_DEPTH})
 
     def test_native_tree_rejects_missing_required_name(self):
         tree = _native_tree()
         tree["nodes"][-1]["name"]["value"] = "Other"
         with self.assertRaisesRegex(BrowserRuntimeError, "Result explorer"):
             capture_native_accessibility_tree(NativeStubClient(_snapshot(), tree))
+
+    def test_native_tree_accepts_ignored_descendants_with_bounded_response(self):
+        tree = _native_tree()
+        tree["nodes"] = [{"ignored": True}] * 257 + tree["nodes"]
+        record = capture_native_accessibility_tree(NativeStubClient(_snapshot(), tree))
+        self.assertEqual(record["visible_node_count"], 7)
+        self.assertGreater(record["node_count"], 256)
 
     def test_capture_rejects_horizontal_overflow(self):
         value = _snapshot()
