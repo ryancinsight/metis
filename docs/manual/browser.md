@@ -976,7 +976,7 @@ before it changes state. After the browser performs its default action, a
 policy. The text status reports the navigation key and the textarea exposes
 `data-text-state="navigated"` with the accepted UTF-16 selection. Other keys
 retain the browser's native editing behavior. This workflow does not claim
-bidi shaping, line metrics, fallback-font metrics, trusted clipboard contents or
+bidi shaping, line metrics, fallback-chain metrics, trusted clipboard contents or
 permissions, assistive-technology behavior or native IME delivery; the
 operation classifier only records the browser event and resulting value.
 CUA can show the real HTML textarea, statuses and focus ring, but it cannot
@@ -1010,9 +1010,12 @@ line assignments, `visual_order` grapheme-start permutation, line-top
 ordering, computed style and the live textarea's selection/scroll metrics.
 It also records bounded `CanvasRenderingContext2D.measureText()` widths for
 Latin, combining-mark, CJK, Hebrew and joined-emoji samples, together with the
-effective canvas font string and the `FontFaceSet` loading status/check. These
-measurements make the browser's current text-width behavior inspectable without
-claiming that the browser exposes the identity of every fallback face.
+effective canvas font string and the `FontFaceSet` loading status/check. A
+detached span set measures the explicit `system-ui`, `sans-serif`, and
+`monospace` fallback chain, recording requested and computed family strings,
+finite widths/heights and the same loading checks. These measurements make the
+browser's current text-width and fallback-chain behavior inspectable without
+claiming that the browser exposes the identity of every selected system face.
 The validator requires the visual order to be a complete permutation of the
 grapheme starts and rejects duplicate entries or clusters assigned outside the
 measured line set. The element is removed before the command continues, so
@@ -1021,7 +1024,7 @@ this probe does not mutate the application value or add a screenshot surface.
 An engine that lacks `Intl.Segmenter` records an explicit unavailable reason;
 the runner never substitutes scalar or pixel estimates. These measurements are
 browser layout and font-metric evidence for the HTML5/CSS path. They do not
-establish native IME delivery, fallback-font identity, clipboard permissions,
+establish native IME delivery, selected fallback-face identity, clipboard permissions,
 assistive-technology behavior or pixel identity across engines.
 
 ## Responsive runtime capture
