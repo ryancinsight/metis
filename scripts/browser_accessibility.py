@@ -11,6 +11,10 @@ MAX_ACCESSIBILITY_ELEMENTS = 64
 MAX_SEMANTIC_ELEMENTS = 96
 MAX_ACCESSIBILITY_TEXT_BYTES = 256
 MAX_ACCESSIBILITY_DIMENSION = 65_536
+MAX_NATIVE_TREE_NODES = 256
+MAX_NATIVE_TREE_RESPONSE_BYTES = 256 * 1024
+CHROMIUM_BROWSER_NAMES = {"chrome", "chromium", "MicrosoftEdge", "msedge"}
+EDGE_BROWSER_NAMES = {"MicrosoftEdge", "msedge"}
 
 
 ACCESSIBILITY_SCRIPT = r"""
@@ -307,6 +311,106 @@ def _validate_snapshot(value: Any) -> Dict[str, Any]:
     }
 
 
+def _native_accessibility_endpoint(client: WebDriverClient) -> Optional[str]:
+    """Return the vendor CDP endpoint when the driver exposes one."""
+    if not isinstance(client, WebDriverClient):
+        return None
+    capabilities = getattr(client, "capabilities", None)
+    if not isinstance(capabilities, Mapping):
+        return None
+    browser_name = capabilities.get("browserName")
+    if browser_name not in CHROMIUM_BROWSER_NAMES:
+        return None
+    return "ms/cdp/execute" if browser_name in EDGE_BROWSER_NAMES else "goog/cdp/execute"
+
+
+def _bounded_ax_value(value: Any, label: str) -> Optional[str]:
+    """Read one bounded Chromium accessibility-tree string."""
+    if value is None:
+        return None
+    if not isinstance(value, str):
+        raise BrowserRuntimeError(f"native accessibility {label} is not text")
+    return _bounded_text(value, f"native accessibility {label}", MAX_ACCESSIBILITY_TEXT_BYTES)
+
+
+def _validate_native_accessibility_tree(value: Any) -> Dict[str, Any]:
+    """Validate the bounded native accessibility tree returned by Chromium."""
+    if not isinstance(value, Mapping):
+        raise BrowserRuntimeError("native accessibility response is not an object")
+    nodes = value.get("nodes")
+    if not isinstance(nodes, list) or not 1 <= len(nodes) <= MAX_NATIVE_TREE_NODES:
+        raise BrowserRuntimeError("native accessibility node count is outside its bound")
+    roles = []
+    names = set()
+    visible_nodes = 0
+    for node in nodes:
+        if not isinstance(node, Mapping):
+            raise BrowserRuntimeError("native accessibility node is not an object")
+        ignored = node.get("ignored", False)
+        if type(ignored) is not bool:
+            raise BrowserRuntimeError("native accessibility ignored state is malformed")
+        role_value = node.get("role")
+        role = None
+        if role_value is not None:
+            if not isinstance(role_value, Mapping):
+                raise BrowserRuntimeError("native accessibility role is not an object")
+            role = _bounded_ax_value(role_value.get("value"), "role")
+        name_value = node.get("name")
+        name = None
+        if name_value is not None:
+            if not isinstance(name_value, Mapping):
+                raise BrowserRuntimeError("native accessibility name is not an object")
+            name = _bounded_ax_value(name_value.get("value"), "name")
+        if not ignored:
+            visible_nodes += 1
+            if role is not None:
+                roles.append(role)
+            if name in {"Submit", "Files", "Clinical note", "Result explorer"}:
+                names.add(name)
+    if visible_nodes == 0:
+        raise BrowserRuntimeError("native accessibility tree has no visible nodes")
+    observed_roles = list(dict.fromkeys(roles))
+    normalized_roles = {role.casefold() for role in observed_roles}
+    required_roles = {"main", "form", "button", "textbox", "table"}
+    if not required_roles.issubset(normalized_roles):
+        missing = sorted(required_roles - normalized_roles)
+        raise BrowserRuntimeError(f"native accessibility tree is missing roles: {', '.join(missing)}")
+    required_names = ("Submit", "Files", "Clinical note", "Result explorer")
+    missing_names = [name for name in required_names if name not in names]
+    if missing_names:
+        raise BrowserRuntimeError(
+            "native accessibility tree is missing names: " + ", ".join(missing_names)
+        )
+    return {
+        "status": "available",
+        "node_count": len(nodes),
+        "visible_node_count": visible_nodes,
+        "roles": observed_roles,
+        "required_names": {name: name in names for name in required_names},
+    }
+
+
+def capture_native_accessibility_tree(client: WebDriverClient) -> Dict[str, Any]:
+    """Capture Chromium's native accessibility tree or an explicit host gap."""
+    endpoint = _native_accessibility_endpoint(client)
+    if endpoint is None:
+        return {
+            "status": "unavailable",
+            "reason": "the configured browser does not expose the Chromium accessibility protocol",
+        }
+    request = {
+        "cmd": "Accessibility.getFullAXTree",
+        "params": {"depth": 32},
+    }
+    value = client._request(  # noqa: SLF001 - the WebDriver transport owns vendor CDP calls
+        "POST",
+        client._session_path(endpoint),  # noqa: SLF001 - paired with the bounded transport call
+        request,
+        response_limit=MAX_NATIVE_TREE_RESPONSE_BYTES,
+    )
+    return _validate_native_accessibility_tree(value)
+
+
 def capture_accessibility(
     client: WebDriverClient,
     trace: Any,
@@ -331,4 +435,8 @@ def capture_accessibility(
         raise BrowserRuntimeError("accessibility semantic identity changed after input")
     record = {"label": label, **snapshot}
     trace.metrics.setdefault("accessibility", []).append(record)
+    native_tree = capture_native_accessibility_tree(client)
+    trace.metrics.setdefault("accessibility_native_tree", []).append(
+        {"label": label, **native_tree}
+    )
     return snapshot
