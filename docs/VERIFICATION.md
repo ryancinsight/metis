@@ -2640,6 +2640,16 @@ and the repeated capture digest is identical. This is a real application
 baseline; it does not close the matched Tauri, GPUI or egui fixture
 requirement or establish a universal memory ranking.
 
+RITK PR #480 (merge `0fd885adc6124468aa745a2f548dd685b74f0774`) adds a
+shell-free eframe run over the same 94-file study. The `orthogonal-surface`
+presentation contains only axial, coronal and sagittal planes, reuses the
+spacing-aware RITK placement path, and matches the Métis semantic surface keys.
+Three bounded runs exit 0 with the same 1600 × 1000 PNG digest. Its provenance
+record reports mean peak private bytes of 427,410,773 (95% half-width
+26,382,414) and mean lifecycle duration of 2,991 ms (95% half-width 1,545 ms).
+The host extent and process boundary still differ from Métis, so this closes
+the semantic fixture prerequisite only; resource deltas remain unranked.
+
 RITK's [same-instance browser provenance](https://github.com/ryancinsight/ritk/blob/main/docs/manual/images/dicom-metis-real-browser-mri-memory.json)
 at commit `1e039f106cab839505be0d1739a80461c55bb9a3` supplies the bounded
 repeated lifecycle observation. On 2026-09-16, Chromium chooser, Firefox
@@ -2668,9 +2678,10 @@ phantom data, not private patient data. This remains fixture evidence; it does
 not establish a framework ranking or clinical conformance.
 
 The [application gallery's V12 fixture table](manual/applications.md#v12-fixture-comparison)
-combines this MRI record with the eframe and native Métis MIP records, keeping
-their surface and process-boundary differences and the unmatched GPUI/Tauri,
-WASM, allocation, latency and security measurements explicit.
+combines this MRI record with the complete and matched eframe records and the
+native Métis MIP record, keeping their surface and process-boundary differences
+and the unmatched GPUI/Tauri, WASM, allocation, latency and security
+measurements explicit.
 
 The browser presentation path now pins Moirai merge
 `b94f3ed7a0faa436ebe993dbfec49726cef853fa`. Its validated canvas presenter

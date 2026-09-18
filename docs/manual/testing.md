@@ -307,13 +307,15 @@ three-run saved public MRI baseline was refreshed on
 capture digest and process-tree uncertainty are recorded in [the MRI resource
 provenance](images/dicom-metis-real-mri-resource.json). The report records
 the real 94-file study and the 1280 × 800 three-plane capture; it does not
-include private study paths or pixels. RITK also records a real eframe MRI
-baseline for the same 94-file input in [its image and resource provenance](https://github.com/ryancinsight/ritk/blob/main/docs/manual/images/dicom-eframe-real-mri-resource.json).
-That surface is 1600 × 1000 and includes a series browser and GPU MIP, so it
-must remain a separate fixture until a common output contract is available.
+include private study paths or pixels. RITK also records a complete eframe MRI
+baseline and a shell-free [matched orthogonal eframe fixture](https://github.com/ryancinsight/ritk/blob/main/docs/manual/images/dicom-eframe-orthogonal-surface-resource.json)
+for the same 94-file input. The matched fixture carries the same three
+semantic planes and spacing-aware placement as Métis, while its 1600 × 1000
+host extent and process boundary remain different; it is therefore a semantic
+prerequisite, not a framework ranking.
 
 The [application gallery's V12 table](applications.md#v12-fixture-comparison)
-keeps those three measured fixtures together with their uncertainty and the
+keeps those four measured fixtures together with their uncertainty and the
 unmatched GPUI/Tauri residual.
 
 ### Browser lifecycle growth evidence
