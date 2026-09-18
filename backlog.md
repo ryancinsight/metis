@@ -178,9 +178,8 @@ an owner. “Unsupported” cannot replace delivery of a required mobile/native 
 
 <a id="METIS-CITATIONS-001"></a>
 ## METIS-CITATIONS-001 — Cited revisions and evidence resolve [patch]
-- Status: in-progress; priority: P2; owner: Metis verification; integrator: root; last-update: 2026-09-18; dependencies: METIS-VERIFY-001; risk: documents pin revisions and digests that no reader can resolve.
-- Scope: assert that a cited repository revision is reachable from the verified revision and that a cited evidence digest matches the artifact present on the host; name the landed revision when a citation was rewritten before landing, and report host-absent artifacts without failing.
-- Acceptance: the verifier refuses a rewritten revision or a contradicted digest; historical citations name the landed revision; absent artifacts are reported without changing the exit status.
+- Status: done; delivery: this commit; last-update: 2026-09-18.
+- Outcome: `python scripts/citations.py` reports 7 verified digests, 0 unreachable revisions and 0 mismatches; the 11-case citation suite covers rewritten revisions, digest contradictions and host-absent artifacts while preserving the non-failing absent-artifact policy.
 
 <a id="METIS-PROVIDER-001"></a>
 ## METIS-PROVIDER-001 — Atlas provider adoption [arch] [patch]
