@@ -640,4 +640,10 @@ application or for Metis. Metis now demonstrates a bounded loopback HTTP
 service over Moirai; [ADR 0025](../adr/0025-axum-server-boundary.md) defines
 that first-party boundary and its public-deployment limits. Future comparator
 captures require pinned, runnable fixtures and belong to their own verification
-items.
+items. Svelte 5 and SvelteKit are also source comparators: Svelte's compiler,
+runes and custom-element output inform the DOM/CSS migration boundary, while
+SvelteKit's SSR/CSR/prerendering modes inform deployment analysis. The current
+Metis build contains no Svelte dependency or JavaScript application runtime;
+the real RITK MRI captures in this manual remain the visual evidence for the
+Rust/WASM host. See [ADR 0003](../adr/0003-framework-conformance.md#svelte-and-sveltekit-comparison)
+for the gap table and implementation order.

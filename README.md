@@ -167,6 +167,6 @@ IME, broader OS-enforced restrictions and non-Windows hosts.
 - [Risk controls](docs/RISK_CONTROLS.md)
 - [Verification](docs/VERIFICATION.md)
 - [Current work](backlog.md)
-- [egui, GPUI, Iced, Tauri and Axum gap analysis](docs/adr/0003-framework-conformance.md)
+- [egui, GPUI, Iced, Tauri, Svelte/SvelteKit and Axum gap analysis](docs/adr/0003-framework-conformance.md)
 
 Licensed under [MIT](LICENSE-MIT) or [Apache-2.0](LICENSE-APACHE), at your option.
