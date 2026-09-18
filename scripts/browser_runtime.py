@@ -232,7 +232,6 @@ def run_scenario(
         if browser_memory:
             browser_memory_sample(client, trace, "initial")
         screenshot(client, trace, screenshot_directory, "initial")
-        capture_features("initial")
         if bridge == "authorized":
             _wait_for_text(client, "metis-status", "Authorized backend session ready", include=True, timeout_ms=timeout_ms)
             trace.actions.append({"action": "await-authorized-bridge", "result": "ready"})
@@ -245,6 +244,7 @@ def run_scenario(
                 require_reduced_motion=require_reduced_motion,
                 require_forced_colors=require_forced_colors,
             )
+        capture_features("initial")
         for element_id, value, expected in (
             ("weight-kg", "80", "80.00 kg"),
             ("target-dose", "0.75", "0.750 mcg/kg/min"),

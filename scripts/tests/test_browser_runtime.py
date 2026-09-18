@@ -855,6 +855,39 @@ class BrowserRuntimeTests(unittest.TestCase):
             self.assertEqual(record["geometry"]["weight-kg"]["width"], 320.0)
             self.assertIsNone(record["active_after"])
 
+    def test_accessibility_probe_precedes_detached_feature_probe(self):
+        """Keep Chromium's native tree capture ahead of temporary probe nodes."""
+        output = pathlib.Path(__file__).resolve().parents[2] / "output" / "browser" / "runtime-test"
+        output.mkdir(parents=True, exist_ok=True)
+        events = []
+
+        def record_accessibility(*args, **kwargs):
+            del args, kwargs
+            events.append("accessibility")
+            return {}
+
+        def record_features(*args, **kwargs):
+            del args, kwargs
+            events.append("features")
+
+        with mock.patch("browser_runtime.capture_accessibility", side_effect=record_accessibility):
+            with mock.patch("browser_runtime.capture_runtime_features", side_effect=record_features):
+                with tempfile.TemporaryDirectory(dir=output) as directory:
+                    run_scenario(
+                        FakeDriver(),
+                        BrowserEngine.CHROMIUM,
+                        "http://127.0.0.1:8080/?endpoint=ws%3A%2F%2F127.0.0.1%3A8765%2Fsocket&process=42&principal=66666666666666666666666666666666",
+                        "authorized",
+                        "0" * 40,
+                        pathlib.Path(directory),
+                        5_000,
+                        False,
+                        4_000,
+                        accessibility_probe=True,
+                    )
+
+        self.assertEqual(events[:2], ["accessibility", "features"])
+
     def test_lifecycle_cycle_bound_is_enforced(self):
         for value in (0, MAX_LIFECYCLE_CYCLES + 1, True):
             with self.subTest(value=value):
