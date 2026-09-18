@@ -1649,7 +1649,7 @@ orthogonal slices at 256/512. This confirms that the chooser path carries a
 second saved modality through the same bounded transfer; modality semantics
 remain in RITK.
 
-The current cross-engine captures show the real anatomy rendered through this
+The recorded cross-engine captures show the real anatomy rendered through this
 format-neutral host: [Chromium gallery](https://github.com/ryancinsight/ritk/blob/main/docs/manual/images/dicom-metis-real-browser-mri-cross-engine-chromium.png)
 and [Firefox gallery](https://github.com/ryancinsight/ritk/blob/main/docs/manual/images/dicom-metis-real-browser-mri-cross-engine-firefox.png).
 The recorded standalone-lock native replay uses RITK source
