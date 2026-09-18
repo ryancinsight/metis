@@ -456,3 +456,42 @@ jobs:
             ${{ runner.temp }}/*.log
           if-no-files-found: ignore
           retention-days: 7
+
+  browser-text-cross-engine:
+    name: Cross-engine text geometry
+    if: github.event_name == 'schedule' || github.event_name == 'workflow_dispatch'
+    needs: browser-runtime
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    permissions:
+      contents: read
+    steps:
+      - name: Checkout source
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - name: Setup Python
+        uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
+        with:
+          python-version: '3.13'
+      - name: Download browser runtime traces
+        uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
+        with:
+          pattern: metis-browser-runtime-*-${{ github.run_id }}
+          merge-multiple: true
+          path: output/browser/runtime
+      - name: Compare semantic text geometry
+        run: |
+          set -euo pipefail
+          python scripts/browser_text_cross_engine.py \
+            --trace chromium=output/browser/runtime/chromium-workbench.json \
+            --trace firefox=output/browser/runtime/firefox-workbench.json \
+            --trace webkit=output/browser/runtime/webkit-workbench.json \
+            --output output/browser/runtime/text-cross-engine.json
+      - name: Upload cross-engine text evidence
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        with:
+          name: metis-browser-text-cross-engine-${{ github.run_id }}
+          path: output/browser/runtime/text-cross-engine.json
+          if-no-files-found: error
+          retention-days: 7

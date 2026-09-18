@@ -1034,6 +1034,28 @@ browser layout and font-metric evidence for the HTML5/CSS path. They do not
 establish native IME delivery, selected fallback-face identity, clipboard permissions,
 assistive-technology behavior or pixel identity across engines.
 
+### Compare text semantics across engines
+
+The scheduled matrix also downloads the three workbench traces and runs the
+format-neutral comparator:
+
+```text
+python scripts/browser_text_cross_engine.py \
+  --trace chromium=output/browser/runtime/chromium-workbench.json \
+  --trace firefox=output/browser/runtime/firefox-workbench.json \
+  --trace webkit=output/browser/runtime/webkit-workbench.json \
+  --output output/browser/runtime/text-cross-engine.json
+```
+
+The comparator requires passed schema-1 traces from all three configured engines
+and at least two available text-geometry observations. It compares the fixture,
+UTF-16 length and grapheme boundaries, visual-order permutation, line count,
+direction and writing mode. Rectangle coordinates, measured widths and the
+selected fallback face remain per-engine records; a numeric range is not turned
+into a false pixel-equality claim. Missing or unavailable engine geometry fails
+the comparison with its explicit reason, so the hosted matrix cannot silently
+report a partial cross-engine result.
+
 ## Responsive runtime capture
 
 The page uses a bounded responsive grid. At widths below `700px`, the form and

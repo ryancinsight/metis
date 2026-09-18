@@ -1372,6 +1372,15 @@ about native IME, selected fallback-face identity, clipboard permissions, assist
 technology or cross-engine pixel identity; those requirements remain open under
 `METIS-TEXT-001` and `METIS-A11Y-001`.
 
+The matrix then downloads the three schema-1 traces and runs
+`scripts/browser_text_cross_engine.py`. The comparator requires all configured
+engines to provide passed text-geometry traces and compares the fixture,
+UTF-16 length and grapheme boundaries, visual-order permutation, line count,
+direction and writing mode. Host rectangles, numeric widths and selected
+fallback-face identity remain per-engine measurements. An unavailable engine or
+semantic mismatch fails the comparison with its explicit reason rather than
+being treated as parity.
+
 ## Browser text input-operation evidence — 2026-09-17
 
 The input listener now classifies the browser's bounded `InputEvent.inputType`
