@@ -141,6 +141,59 @@ def verify_payload(directory, inventory, *, extras=()):
     return sorted(expected)
 
 
+def artifact_sizes(package, inventory):
+    """Return byte totals for the verified portable payload and installer."""
+    records = inventory.get("files")
+    if not isinstance(records, list) or not records:
+        raise ValueError("Artifact size inventory has no payload files")
+    entry = inventory.get("entry")
+    if not isinstance(entry, str) or not entry:
+        raise ValueError("Artifact size inventory has no application entry")
+    seen = set()
+    total = 0
+    executable_bytes = None
+    portable = package / "app"
+    for record in records:
+        if not isinstance(record, dict):
+            raise ValueError("Artifact size inventory contains a non-object file record")
+        name = record.get("destination")
+        expected = record.get("bytes")
+        if not isinstance(name, str) or not name or name in seen:
+            raise ValueError("Artifact size inventory contains a duplicate or invalid destination")
+        if type(expected) is not int or expected < 0:
+            raise ValueError("Artifact size inventory contains an invalid byte count")
+        path = destination(portable, name)
+        if not path.is_file() or path.stat().st_size != expected:
+            raise ValueError(f"Artifact size does not match its inventory: {name}")
+        seen.add(name)
+        total += expected
+        if name == entry:
+            executable_bytes = expected
+    if executable_bytes is None:
+        raise ValueError("Artifact size inventory does not contain its application entry")
+    installer_record = inventory.get("installer")
+    installer = None
+    if installer_record is not None:
+        if not isinstance(installer_record, dict):
+            raise ValueError("Artifact size inventory contains an invalid installer record")
+        installer_name = installer_record.get("file")
+        if not isinstance(installer_name, str) or not installer_name:
+            raise ValueError("Artifact size inventory contains no installer file")
+        installer_path = destination(package, installer_name)
+        if not installer_path.is_file():
+            raise ValueError(f"Artifact size installer is missing: {installer_name}")
+        installer = {"file": installer_name, "bytes": installer_path.stat().st_size}
+    return {
+        "portable_payload": {
+            "file_count": len(records),
+            "bytes": total,
+            "executable_bytes": executable_bytes,
+            "resource_bytes": total - executable_bytes,
+        },
+        "installer": installer,
+    }
+
+
 def verify_application(directory, inventory):
     """The shipped demonstration uses one image for both isolated process roles."""
     application = inventory["application"]
@@ -343,6 +396,7 @@ def main():
         if digest(destination(package, installer["file"])) != installer["sha256"]:
             raise ValueError("Installer hash differs from its inventory")
         workflow.report["inventory"] = inventory
+        workflow.report["artifact_sizes"] = artifact_sizes(package, inventory)
         workflow.applications(package / "app", inventory, "portable")
         if args.install:
             workflow.install(package, inventory)
