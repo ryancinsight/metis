@@ -2757,15 +2757,18 @@ and the repeated capture digest is identical. This is a real application
 baseline; it does not close the matched Tauri, GPUI or egui fixture
 requirement or establish a universal memory ranking.
 
-RITK PR #480 (merge `0fd885adc6124468aa745a2f548dd685b74f0774`) adds a
-shell-free eframe run over the same 94-file study. The `orthogonal-surface`
-presentation contains only axial, coronal and sagittal planes, reuses the
-spacing-aware RITK placement path, and matches the Métis semantic surface keys.
-Three bounded runs exit 0 with the same 1600 × 1000 PNG digest. Its provenance
-record reports mean peak private bytes of 427,410,773 (95% half-width
-26,382,414) and mean lifecycle duration of 2,991 ms (95% half-width 1,545 ms).
-The host extent and process boundary still differ from Métis, so this closes
-the semantic fixture prerequisite only; resource deltas remain unranked.
+The shell-free eframe run now accepts `--viewport-size 1024x640` logical
+points. On the controlled 125% Windows host, three bounded runs over the same
+94-file study exit 0 with the same 1280×800 PNG digest
+`2e47199cca0851f5ca2e3ce7b613cf70b096c3528bfc1eb705f64ced75485ba9` and
+927,849 non-black pixels. The `orthogonal-surface` presentation contains only
+axial, coronal and sagittal planes, reuses the spacing-aware RITK placement
+path, and matches both the Métis semantic keys and physical host extent. Its
+provenance record reports mean peak private bytes of 432,313,685 (95% half-width
+24,884,220) and mean lifecycle duration of 2,070 ms (95% half-width 81 ms),
+with the requested logical size and observed display scale recorded alongside
+the image. The process boundary still differs from Métis; GPUI/Tauri fixtures
+and ranking remain open.
 
 The current standalone-lock replay (2026-09-18) is bound to RITK source
 `448202c0bbc8b5560cc5aad7e53dfedac10e04d5`, Metis

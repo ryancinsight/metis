@@ -193,22 +193,25 @@ and process boundaries remain different.
 
 ![Actual MRI-DIR T2 study rendered in the eframe compatibility shell](https://github.com/ryancinsight/ritk/blob/main/docs/manual/images/dicom-eframe-real-mri.png?raw=true)
 
-RITK PR #480 adds a shell-free eframe fixture for the same saved study. The
-`orthogonal-surface` presentation keeps only the axial, coronal and sagittal
-planes and reuses RITK's spacing-aware `ImagePlacement` path, so its semantic
-surface set matches the Métis MRI record while DICOM loading and geometry stay
-in RITK. The reviewed [1600×1000 capture](https://github.com/ryancinsight/ritk/blob/main/docs/manual/images/dicom-eframe-orthogonal-surface.png?raw=true)
+The shell-free eframe fixture now accepts a validated `--viewport-size`
+logical-point contract. With `--viewport-size 1024x640`, the controlled 125%
+Windows host produces the same 1280×800 physical extent as the Métis native
+surface. The `orthogonal-surface` presentation keeps only the axial, coronal
+and sagittal planes and reuses RITK's spacing-aware `ImagePlacement` path, so
+its semantic surface set matches the Métis MRI record while DICOM loading and
+geometry stay in RITK. The reviewed [1280×800 capture](https://github.com/ryancinsight/ritk/blob/main/docs/manual/images/dicom-eframe-orthogonal-surface.png?raw=true)
 contains real MRI anatomy and no series browser or MIP:
 
 ![Actual MRI-DIR T2 planes rendered in the matched eframe orthogonal surface](https://github.com/ryancinsight/ritk/blob/main/docs/manual/images/dicom-eframe-orthogonal-surface.png?raw=true)
 
 Three lifecycle runs exited 0 with the same digest. The [matched provenance
 record](https://github.com/ryancinsight/ritk/blob/main/docs/manual/images/dicom-eframe-orthogonal-surface-resource.json)
-binds RITK merge `0fd885adc6124468aa745a2f548dd685b74f0774`, the locked Metis
-and Moirai revisions, the executable and PNG hashes, and the semantic keys
-`axial`, `coronal`, `sagittal`. This closes the eframe semantic-surface
-prerequisite for V12; the 1600×1000 host extent still differs from the 1280×800
-Métis surface, so no memory or latency ranking is derived.
+binds RITK source `1f9053ba2dd8a6b77da83073261642019c66863a`, the locked Metis
+and Moirai revisions, the requested 1024×640 logical size, observed 1280×800
+physical size, executable and PNG hashes, and the semantic keys `axial`,
+`coronal`, `sagittal`. The semantic and host-extent prerequisites for V12 now
+match; the eframe process boundary still differs from Métis, and GPUI/Tauri
+fixtures remain open, so no framework ranking is derived.
 
 The current standalone-lock replay (2026-09-18) is bound to RITK source
 `448202c0bbc8b5560cc5aad7e53dfedac10e04d5`, Metis
@@ -239,7 +242,7 @@ runner's explicitly approximate 95% half-width across three runs.
 | eframe | 409 files; axial/coronal/sagittal/3D MIP | 1600 × 1000 | 2,494,962,347 ± 5,291,689 | 8,752 ± 2,197 ms |
 | Métis native MRI | 94 files; axial/coronal/sagittal | 1280 × 800 | 828,962,133 ± 331,863 | 7,071 ± 2,011 ms |
 | eframe MRI | 94 files; axial/coronal/sagittal/3D MIP | 1600 × 1000 | 1,038,607,701 ± 2,129,690 | 2,593 ± 477 ms |
-| eframe MRI orthogonal | 94 files; axial/coronal/sagittal | 1600 × 1000 | 427,410,773 ± 26,382,414 | 2,991 ± 1,545 ms |
+| eframe MRI orthogonal | 94 files; axial/coronal/sagittal | 1280 × 800 | 432,313,685 ± 24,884,220 | 2,070 ± 81 ms |
 
 The [Métis MIP provenance](images/dicom-metis-real-ct-mip-resource.json),
 [eframe provenance](images/dicom-eframe-real-ct-resource.json), [Métis MRI
@@ -248,8 +251,8 @@ provenance](https://github.com/ryancinsight/ritk/blob/main/docs/manual/images/di
 bind each row to its source revisions, executable, input bounds, capture digest
 and sampling protocol. The eframe and Métis rows expose different MIP
 semantics, surface sizes and process boundaries, including for the shared MRI
-input. The orthogonal eframe row matches the three semantic planes but still
-uses a different host extent and process boundary. No GPUI or Tauri fixture has
+input. The orthogonal eframe row matches the three semantic planes and host extent,
+while its process boundary differs. No GPUI or Tauri fixture has
 been run, and WASM used memory, allocator counts, compositor latency and
 security probes are separate measurements.
 These rows therefore document the fixtures and their limits; they do not
