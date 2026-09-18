@@ -93,14 +93,17 @@ try {
   }
   lineTops.sort((left, right) => left - right);
   const visualClusters = clusterRects.map((cluster) => {
-    const left = cluster.fragments.reduce((value, rect) => Math.min(value, rect.left), Number.POSITIVE_INFINITY);
-    const right = cluster.fragments.reduce((value, rect) => Math.max(value, rect.left + rect.width), Number.NEGATIVE_INFINITY);
-    const top = cluster.fragments.reduce((value, rect) => Math.min(value, rect.top), Number.POSITIVE_INFINITY);
-    const bottom = cluster.fragments.reduce((value, rect) => Math.max(value, rect.top + rect.height), Number.NEGATIVE_INFINITY);
+    const renderedFragments = cluster.fragments.filter((rect) => rect.width > 0);
+    const geometryFragments = renderedFragments.length > 0 ? renderedFragments : cluster.fragments;
+    const left = geometryFragments.reduce((value, rect) => Math.min(value, rect.left), Number.POSITIVE_INFINITY);
+    const right = geometryFragments.reduce((value, rect) => Math.max(value, rect.left + rect.width), Number.NEGATIVE_INFINITY);
+    const top = geometryFragments.reduce((value, rect) => Math.min(value, rect.top), Number.POSITIVE_INFINITY);
+    const bottom = geometryFragments.reduce((value, rect) => Math.max(value, rect.top + rect.height), Number.NEGATIVE_INFINITY);
+    const lineCoordinate = geometryFragments.reduce((value, rect) => Math.max(value, rect.top), Number.NEGATIVE_INFINITY);
     let lineIndex = 0;
     let lineDistance = Number.POSITIVE_INFINITY;
-    lineTops.forEach((lineTop, index) => {
-      const distance = Math.abs(lineTop - top);
+    lineTops.forEach((candidateTop, index) => {
+      const distance = Math.abs(candidateTop - lineCoordinate);
       if (distance < lineDistance) {
         lineDistance = distance;
         lineIndex = index;

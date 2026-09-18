@@ -1381,6 +1381,13 @@ fallback-face identity remain per-engine measurements. An unavailable engine or
 semantic mismatch fails the comparison with its explicit reason rather than
 being treated as parity.
 
+The geometry probe derives visual bounds and line assignment from the
+non-zero-width fragments, choosing the fragment with the greatest `top`
+coordinate. If every fragment is zero-width, it uses all fragments. This
+handles browser differences in how a `Range` reports a newline or a grapheme
+at a wrapped-line boundary while preserving the complete grapheme permutation
+and keeping rectangle measurements per-engine.
+
 ## Browser text input-operation evidence — 2026-09-17
 
 The input listener now classifies the browser's bounded `InputEvent.inputType`

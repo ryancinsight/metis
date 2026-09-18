@@ -1009,6 +1009,12 @@ boundaries and `Range.getClientRects()` supplies the host line and cluster
 fragments. The JSON trace records the UTF-16 offsets, finite cluster bounds,
 line assignments, `visual_order` grapheme-start permutation, line-top
 ordering, computed style and the live textarea's selection/scroll metrics.
+When one grapheme range spans a line boundary, visual bounds and line
+assignment use the non-zero-width fragments, choosing the fragment with the
+greatest `top` coordinate (falling back to all fragments when they are
+zero-width). This keeps newline and boundary fragments in the line where the
+glyph is rendered instead of treating a zero-width boundary as a separate
+first-line glyph.
 It also records bounded `CanvasRenderingContext2D.measureText()` widths for
 Latin, combining-mark, CJK, Hebrew and joined-emoji samples, together with the
 effective canvas font string and the `FontFaceSet` loading status/check. A
