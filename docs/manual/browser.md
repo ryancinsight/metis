@@ -1167,13 +1167,13 @@ python scripts/browser_runtime.py --engine chromium `
   --output output/browser/runtime/edge-font-loading-20260918.json
 ```
 
-At revision `c28b1b7f40eec3d76b8d89c2c31aa010dae092f7`, Edge
+At revision `c936585423d2c4a383f858303ccfcd154c3d0eb3`, Edge
 154.0.4258.12 at device scale 1.25 passed three observations. The loaded
 face measured 308 px versus the 158 px sans-serif fallback, reported
 `status=loaded` and `check=true`, and returned the font-set count to zero after
 teardown. The invalid resource was rejected with a bounded network error and
 was not registered. The trace SHA-256 is
-`8e0a559475115aeb36a0b9ea32fff795b6a451fa20a4ed1a0d7b54c335e70948`.
+`c97981885eedde369855eeb894c6a3bff9714c44facfad78414c536f4cd406a2`.
 
 This is browser font-resource lifecycle evidence for one engine. Native font
 providers, selected fallback-face identity, cross-engine metrics and the RITK

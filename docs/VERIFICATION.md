@@ -623,11 +623,11 @@ is recorded in the following evidence section.
 <a id="browser-font-loading-evidence-2026-09-18"></a>
 ## Browser font loading evidence — 2026-09-18
 
-At Metis revision `c28b1b7f40eec3d76b8d89c2c31aa010dae092f7`, the Chromium
+At Metis revision `c936585423d2c4a383f858303ccfcd154c3d0eb3`, the Chromium
 workbench runner used `--font-load-probe --lifecycle-cycles 2` against Edge
 154.0.4258.12 at device scale 1.25. The trace is stored at
 `output/browser/runtime/edge-font-loading-20260918.json` with SHA-256
-`8e0a559475115aeb36a0b9ea32fff795b6a451fa20a4ed1a0d7b54c335e70948`.
+`c97981885eedde369855eeb894c6a3bff9714c44facfad78414c536f4cd406a2`.
 
 The 612-byte project-owned `metis-probe.woff2` fixture is loaded as
 `Metis Probe` and measured against the `sans-serif` fallback using the sample
