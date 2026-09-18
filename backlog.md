@@ -99,9 +99,8 @@ an owner. “Unsupported” cannot replace delivery of a required mobile/native 
 
 <a id="METIS-BROWSER-BUILD-001"></a>
 ## METIS-BROWSER-BUILD-001 — Stack-safe browser WASM build [patch]
-- Status: in-progress; priority: P1; owner: Metis browser build; integrator: root; last-update: 2026-09-18; dependencies: METIS-BROWSER-001; risk: Atlas ancestor Cargo overlay changes locked resolution.
-- Scope: make `python scripts/browser.py build` lock-authoritative inside Atlas and from a neutral checkout while retaining the configured shared target cache; browser behavior and DICOM ownership are unchanged.
-- Acceptance: both contexts exit 0, generated WASM is present, `Cargo.lock` is unchanged, focused/full checks pass, and the browser manual documents the configuration boundary.
+- Status: done; priority: P1; owner: Metis browser build; integrator: root; last-update: 2026-09-18; delivery: [Metis PR #261](https://github.com/ryancinsight/metis/pull/261), merge `95d2ece56743abef25d3f899d7afe224a5527910`; dependencies: METIS-BROWSER-001.
+- Outcome: `python -S scripts/browser.py build` exits 0 inside Atlas and preserves `Cargo.lock` plus the shared target cache; the exact revision's full verifier passes all 26 stages (including the expected capture-failure negative), the dependency-free suite passes 289 tests with one intentional skip, and the browser manual records the boundary.
 
 <a id="METIS-BROWSER-002"></a>
 ## METIS-BROWSER-002 — Browser stale-response runtime probe [patch]
