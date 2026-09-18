@@ -37,6 +37,12 @@ python scripts/browser.py build
 python -m http.server 8080 --directory output/browser
 ```
 
+A checkout inside the Atlas stack inherits the development overlay, whose local
+`[patch]` tables cannot agree with the committed revisions, so the build script
+runs Cargo outside that configuration while still writing into the stack's
+shared target directory. The committed `Cargo.lock` therefore stays
+authoritative whether the command runs standalone or inside Atlas.
+
 Open `http://127.0.0.1:8080/` in a browser for the disconnected local-control
 workflow. A file URL is not accepted because module and WASM loading require an
 HTTP origin.
