@@ -1260,13 +1260,13 @@ python -m py_compile scripts/browser_text_geometry.py scripts/browser_runtime.py
 
 The 2026-09-18 font-metric increment extends the same detached probe with a
 bounded `CanvasRenderingContext2D.measureText()` record. A local Microsoft Edge
-trace at source revision `0222f60214305ea3d3a82aac0bb38c10f622cf1d` returned
+trace at source revision `b98f5881b3a528100e032e17892120f246bdf10a` returned
 `status: passed` and five geometry samples. Each sample reported the effective
 font `16px system-ui, sans-serif`, `fonts_status: loaded` and
 `fonts_check: true`; the fixed sample widths were Latin `18`, combining mark
 `10`, CJK `32`, Hebrew `37` and joined emoji `22` CSS pixels. The trace is
 `output/browser/runtime/edge-text-font-20260918.json` (SHA-256
-`8ac598eeb9c15b645197f866199f6aebcb0a44f4086fccbda2ac7105c6ecc6d6`). The
+`32b487ea0ebd4e000c5b35b4ef70f75e04bf478027ada1754458d25590cc1283`). The
 focused geometry/runtime suite passes 69/69 and rejects an oversized width and
 an out-of-order sample list. The measurement exposes the host's effective font
 string and loading check; it does not identify fallback-face selection or prove
