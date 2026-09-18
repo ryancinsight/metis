@@ -6,15 +6,19 @@ from typing import Any, Dict, Mapping
 
 from browser_protocol import BrowserRuntimeError, _bounded_text
 from browser_trace import Trace
+from browser_text_font import (
+    MAX_TEXT_STYLE_BYTES as MAX_TEXT_GEOMETRY_STYLE_BYTES,
+    bounded_font_metric as _font_metric,
+    bounded_style as _bounded_style,
+    normalize_font_fallback,
+)
 
 
 MAX_TEXT_GEOMETRY_CLUSTERS = 256
 MAX_TEXT_GEOMETRY_FRAGMENTS = 8
 MAX_TEXT_GEOMETRY_STRING_BYTES = 512
-MAX_TEXT_GEOMETRY_STYLE_BYTES = 512
 MAX_FONT_METRIC_SAMPLES = 8
 MAX_FONT_METRIC_TEXT_BYTES = 64
-MAX_FONT_METRIC_PIXELS = 4_096.0
 
 
 TEXT_GEOMETRY_SCRIPT = r"""
@@ -137,6 +141,50 @@ try {
       samples,
     };
   }
+  const fallbackFamilies = ["system-ui", "sans-serif", "monospace"];
+  const fallbackProbe = document.createElement("span");
+  fallbackProbe.setAttribute("aria-hidden", "true");
+  fallbackProbe.style.position = "fixed";
+  fallbackProbe.style.left = "-100000px";
+  fallbackProbe.style.top = "0";
+  fallbackProbe.style.visibility = "hidden";
+  fallbackProbe.style.whiteSpace = "pre";
+  fallbackProbe.style.fontSize = style.fontSize;
+  fallbackProbe.style.fontWeight = style.fontWeight;
+  fallbackProbe.style.fontStyle = style.fontStyle;
+  fallbackProbe.style.fontStretch = style.fontStretch;
+  fallbackProbe.style.fontFamily = fallbackFamilies.join(", ");
+  fallbackProbe.textContent = fixture;
+  document.body.appendChild(fallbackProbe);
+  let fontFallback;
+  try {
+    const fontSet = document.fonts;
+    const samples = fallbackFamilies.map((family) => {
+      const sample = document.createElement("span");
+      sample.style.display = "inline-block";
+      sample.style.fontFamily = family;
+      sample.textContent = fixture;
+      fallbackProbe.appendChild(sample);
+      const rect = sample.getBoundingClientRect();
+      return {
+        family,
+        computed_family: window.getComputedStyle(sample).fontFamily,
+        width: rect.width,
+        height: rect.height,
+        fonts_status: fontSet && typeof fontSet.status === "string" ? fontSet.status : "unavailable",
+        fonts_check: fontSet && typeof fontSet.check === "function" ? fontSet.check(`${style.fontSize} ${family}`, fixture) : null,
+      };
+    });
+    fontFallback = {
+      available: true,
+      source: "CSS font-family fallback",
+      requested_families: fallbackFamilies,
+      computed_family: window.getComputedStyle(fallbackProbe).fontFamily,
+      samples,
+    };
+  } finally {
+    fallbackProbe.remove();
+  }
   return {
     available: true,
     source: "Range.getClientRects",
@@ -158,6 +206,7 @@ try {
       writing_mode: style.writingMode,
     },
     font_metrics: fontMetrics,
+    font_fallback: fontFallback,
     textarea: {
       value_length: textarea.value.length,
       selection_start: textarea.selectionStart,
@@ -195,21 +244,6 @@ def _rect(value: Any, name: str) -> Dict[str, float]:
         "width": _number(value.get("width"), f"{name}.width"),
         "height": _number(value.get("height"), f"{name}.height"),
     }
-
-
-def _bounded_style(value: Any, name: str) -> str:
-    """Validate a computed style string without preserving unbounded text."""
-    if not isinstance(value, str) or not value or len(value.encode("utf-8")) > MAX_TEXT_GEOMETRY_STYLE_BYTES:
-        raise BrowserRuntimeError(f"text geometry {name} is invalid")
-    return value
-
-
-def _font_metric(value: Any, name: str) -> float:
-    """Validate one finite, bounded Canvas text width."""
-    result = _number(value, name)
-    if result > MAX_FONT_METRIC_PIXELS:
-        raise BrowserRuntimeError(f"text geometry {name} exceeds its bound")
-    return result
 
 
 def _validate_measurement(value: Any) -> Dict[str, Any]:
@@ -379,6 +413,7 @@ def _validate_measurement(value: Any) -> Dict[str, Any]:
             "fonts_check": fonts_check,
             "samples": normalized_samples,
         }
+    normalized_font_fallback = normalize_font_fallback(value.get("font_fallback"))
     textarea = value.get("textarea")
     if not isinstance(textarea, Mapping):
         raise BrowserRuntimeError("text geometry textarea metrics are not an object")
@@ -416,6 +451,7 @@ def _validate_measurement(value: Any) -> Dict[str, Any]:
         "element_rect": element_rect,
         "style": normalized_style,
         "font_metrics": normalized_font_metrics,
+        "font_fallback": normalized_font_fallback,
         "textarea": {
             "selection_start": selection_start,
             "selection_end": selection_end,
