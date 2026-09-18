@@ -262,6 +262,54 @@ def _source_digests() -> dict[str, str]:
     }
 
 
+def _capture_consumer_after_host_probes(
+    client: WebDriverClient,
+    trace: Trace,
+    point: dict,
+    input_source: str,
+    canvas_capture: CanvasCaptureMode,
+    canvas_trace: Trace | None,
+    canvas_ids: Sequence[str],
+    oracle: Mapping[str, Mapping[str, object]],
+    observations: Mapping[str, Mapping[str, object]],
+    canvas_context: str | None,
+    consumer_capture: ConsumerCapture | None,
+    output: pathlib.Path,
+) -> None:
+    """Run generic rejection probes before a consumer may tear down the host."""
+    if input_source in ("chromium", "chooser"):
+        check_rejections(client, trace, point, input_source)
+        if canvas_capture is CanvasCaptureMode.RGBA:
+            expected_rgba = {
+                canvas_id: oracle[canvas_id]["rgba_sha256"] for canvas_id in canvas_ids
+            }
+            if canvas_trace is not None:
+                expected_rgba = {
+                    canvas_id: client.execute_async(CANVAS_PIXELS, [canvas_id])["rgba_sha256"]
+                    for canvas_id in canvas_ids
+                }
+            for canvas_id in canvas_ids:
+                actual = client.execute_async(CANVAS_PIXELS, [canvas_id])
+                if actual["rgba_sha256"] != expected_rgba[canvas_id]:
+                    raise BrowserRuntimeError("a rejected file batch changed the consumer frame")
+        else:
+            compare_screenshot_stability(
+                client, trace, output, canvas_ids, observations, canvas_context
+            )
+    if consumer_capture is None:
+        return
+    captured = consumer_capture(client, output, oracle, canvas_ids)
+    if not isinstance(captured, Mapping):
+        raise BrowserRuntimeError("consumer capture must return a mapping")
+    try:
+        encoded_capture = json.dumps(captured, sort_keys=True)
+    except (TypeError, ValueError) as error:
+        raise BrowserRuntimeError("consumer capture must contain JSON-serializable values") from error
+    if len(encoded_capture.encode("utf-8")) > 512 * 1024:
+        raise BrowserRuntimeError("consumer capture exceeds the 512 KiB trace bound")
+    trace.metrics["consumer_capture"] = dict(captured)
+
+
 def run(
     args: argparse.Namespace,
     *,
@@ -486,38 +534,20 @@ def run(
                     keyboard_trace=keyboard_trace,
                     browser_memory=getattr(args, "browser_memory_sample", False),
                 )
-            if consumer_capture is not None:
-                captured = consumer_capture(client, output, oracle, ids)
-                if not isinstance(captured, Mapping):
-                    raise BrowserRuntimeError("consumer capture must return a mapping")
-                try:
-                    encoded_capture = json.dumps(captured, sort_keys=True)
-                except (TypeError, ValueError) as error:
-                    raise BrowserRuntimeError(
-                        "consumer capture must contain JSON-serializable values"
-                    ) from error
-                if len(encoded_capture.encode("utf-8")) > 512 * 1024:
-                    raise BrowserRuntimeError("consumer capture exceeds the 512 KiB trace bound")
-                trace.metrics["consumer_capture"] = dict(captured)
-            if args.input in ("chromium", "chooser"):
-                check_rejections(client, trace, point, args.input)
-                if canvas_capture is CanvasCaptureMode.RGBA:
-                    expected_rgba = {
-                        canvas_id: oracle[canvas_id]["rgba_sha256"] for canvas_id in ids
-                    }
-                    if canvas_trace is not None:
-                        expected_rgba = {
-                            canvas_id: client.execute_async(CANVAS_PIXELS, [canvas_id])["rgba_sha256"]
-                            for canvas_id in ids
-                        }
-                    for canvas_id in ids:
-                        actual = client.execute_async(CANVAS_PIXELS, [canvas_id])
-                        if actual["rgba_sha256"] != expected_rgba[canvas_id]:
-                            raise BrowserRuntimeError("a rejected file batch changed the consumer frame")
-                else:
-                    compare_screenshot_stability(
-                        client, trace, output, ids, observations, canvas_context
-                    )
+            _capture_consumer_after_host_probes(
+                client,
+                trace,
+                point,
+                args.input,
+                canvas_capture,
+                canvas_trace,
+                ids,
+                oracle,
+                observations,
+                canvas_context,
+                consumer_capture,
+                output,
+            )
             observer_cleanup = _cleanup_transfer(client)
             transfer_observer_installed = False
             trace.cleanup["transfer_observer"] = observer_cleanup

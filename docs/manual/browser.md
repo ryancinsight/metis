@@ -1751,7 +1751,11 @@ Consumer controls and their semantic assertions remain with the consumer. The
 RITK [DICOM workflow manual](https://github.com/ryancinsight/ritk/blob/main/docs/manual/dicom-workflow.md)
 contains the saved-study slice-control command, actual MRI screenshots and
 pixel provenance; RITK's `scripts/browser_gallery.py` invokes the generic
-Metis runner with its consumer-owned hook.
+Metis runner with its consumer-owned hook. The runner completes its generic
+bounded file-rejection probes and post-rejection frame-stability comparison
+before invoking that hook. This ordering keeps the host file picker available
+while a consumer is still free to stop or remount the host; the hook then owns
+consumer controls and teardown evidence.
 
 ### Read browser frame timing
 
