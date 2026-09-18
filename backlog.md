@@ -472,7 +472,7 @@ an owner. “Unsupported” cannot replace delivery of a required mobile/native 
 
 <a id="METIS-MIGRATION-001"></a>
 ## METIS-MIGRATION-001 — egui and Tauri application migration [arch] [minor]
-- Status: in-progress; priority: P1; owner: Metis framework + application owners; integrator: root; last-update: 2026-09-13; delivery: Metis PR #124 (merge `35ba45c`); risk: lost application behavior.
+- Status: in-progress; priority: P1; owner: Metis framework + application owners; integrator: root; last-update: 2026-09-18; delivery: Metis PR #124 (merge `35ba45c`); risk: lost application behavior.
 - Dependencies: METIS-COMMANDS-001, METIS-FILES-001, METIS-INPUT-001, METIS-ASSETS-001, METIS-GRAPHICS-001, METIS-DESKTOP-001, METIS-BROWSER-001, METIS-INTEGRATION-001, METIS-SERVICES-001.
 - Named driver: [ritk-snap](../ritk/backlog.md#RITK-SNAP-METIS-001), retaining egui/eframe at RITK while exposing `--metis-native` through merged [PR 269](https://github.com/ryancinsight/ritk/pull/269) (`c1b8130bb`), following [PR 267](https://github.com/ryancinsight/ritk/pull/267) (`2f2058062`). No Tauri dependency is present in its manifest or workspace lock. RITK owns decoder, volume geometry and medical display correctness; Metis supplies the replacement shell.
 - Baseline: RITK `8152f483` ([PR 237](https://github.com/ryancinsight/ritk/pull/237)) adds physical display/hit rectangles to selected-study loading, restore/rejection and the original native capture; [manual](docs/manual/applications.md#deterministic-synthetic-dicom-baseline). The merged RITK native MPR increment now proves one bounded Métis framebuffer containing all three spacing-aware planes and panel-specific routing while keeping DICOM semantics in RITK.
@@ -504,6 +504,7 @@ an owner. “Unsupported” cannot replace delivery of a required mobile/native 
 
 - Verification increment (2026-09-14, RITK PR #356 merge `ac34c573c02b8abe6f10685bba0e3f6944680c05`; board trace PR #357 merge `cc3270eaab28ceacea9242cec0a8854cc7afdcbc`): RITK moved reusable `RenderBufferPool` scratch from host-neutral `SnapApp` into `EguiRenderState`; the invalidation test preserves scratch capacity while clearing texture resources.
 - Actual saved-study smoke (2026-09-14): RITK opened the saved `test_data/2_skull_ct/DICOM` series through `--metis-native` with its explicit `SeriesInstanceUID` and produced a real 1280 × 800 three-plane CT frame (SHA-256 `f9d715f04eb1a536fa7aa06ebef90d2829e11d13a10df866db5c8550cdf8c190`). Wrapping that frame in the Metis native host produced a 1296 × 839 Windows capture (SHA-256 `1f2fabae6576cba059feff8e1985a1bb2b22ed7e4293376ebef503e0a882ad4`). These are DICOM-derived pixels; Metis remains format-neutral and no patient pixels were committed.
+- Current replay reconciliation (2026-09-18): RITK PR #486 merged the standalone-lock real-MRI replay against Metis `e634fe925d8edb18cea4399d43255fdaa2d444a5`; the exact source, executable and capture provenance is recorded under [METIS-PERF-001](#METIS-PERF-001). This closes the current lock/evidence prerequisite for the migration workflow; matched GPUI/Tauri fixtures, allocator/compositor measurements and controlled-host ranking remain open there.
 
 <a id="METIS-RITK-HOST-001"></a>
 ## METIS-RITK-HOST-001 — Format-neutral native frame host [arch] [minor]
