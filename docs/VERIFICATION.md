@@ -616,8 +616,27 @@ cross-origin/unavailable results, leaked elements, bounds and CLI scenario
 rejection. The scheduled Chromium/Firefox/WebKit workbench matrix invokes the
 probe beside its existing screenshots and accessibility records. This evidence
 closes the browser image-decoder slice for the local marks; native image decode,
-font and media lifecycles, GPU vectors and RITK's clinical image presentation
-remain separate V06 acceptance work.
+font loading, media playback controls, GPU vectors and RITK's clinical image
+presentation remain separate V06 acceptance work.
+
+<a id="browser-media-error-teardown-evidence-2026-09-18"></a>
+## Browser media error and teardown evidence — 2026-09-18
+
+At Metis revision `8f243443fbcd84dbc1c08461dfa2b036da96a069`, the Chromium
+workbench runner used `--media-probe --lifecycle-cycles 2` against Edge
+154.0.4258.12 at device scale 1.25. The trace passed and is stored at
+`output/browser/runtime/edge-media-20260918.json` with SHA-256
+`8f2f7fc4f1e868f6378ae46a071a72c2c348e82f1042776fea0418859b6a3880`. Three
+`metrics.media` observations (initial, remounted and remounted-cycle-2) each
+contain one audio and one video record. Both invalid local `data:` fixtures
+raised `MediaError` code 4, returned `readyState=0` and
+`NETWORK_NO_SOURCE` (`networkState=3`), cleared `src` and `currentSrc`,
+detached the element and left zero probe nodes. The dependency-free validator
+tests cover successful-decode rejection, unexpected fixtures, invalid error
+codes, retained sources, leaked nodes, labels, timeouts and the CLI scenario
+boundary. This closes browser media error and teardown evidence only; playback
+controls, native media providers, cross-engine traces and RITK clinical image
+presentation remain open under V06.
 
 ## Browser lifecycle evidence — 2026-09-07
 

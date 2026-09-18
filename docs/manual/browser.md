@@ -1140,8 +1140,35 @@ The resulting `metrics.assets` records the source path, decoder, intrinsic
 width and height for both marks at each captured lifecycle remount. A decode
 error, cross-origin redirect, unsupported decoder or leaked probe element
 fails the run; no DICOM bytes or clinical image metadata enter this probe.
-Native image decoding, font loading, media controls and the RITK patient-image
-surface remain separate acceptance work under V06.
+Native image decoding, font loading, media playback controls and the RITK
+patient-image surface remain separate acceptance work under V06.
+
+### Probe media error and teardown
+
+Add `--media-probe` to the same workbench run to exercise the browser's error
+path for one bounded audio fixture and one bounded video fixture. The fixtures
+are intentionally truncated `data:` URLs, so a successful decode is a failure
+of the probe. For each element the trace records the `MediaError` code and
+bounded message, removes the `src`, calls `load()` to release the resource,
+and requires `readyState=0`, `networkState=0` (`NETWORK_EMPTY`) or `3`
+(`NETWORK_NO_SOURCE`), an empty `currentSrc`, no `src` attribute, a detached
+element and zero remaining probe nodes. The probe does not claim media playback
+or clinical image decoding:
+
+```powershell
+python scripts/browser.py build
+python scripts/browser_runtime.py --engine chromium `
+  --driver-url $env:METIS_WEBDRIVER_CHROMIUM_URL `
+  --serve-dir output/browser --bridge disconnected --media-probe `
+  --lifecycle-cycles 2 `
+  --output output/browser/runtime/chromium-media.json
+```
+
+The trace's `metrics.media` entry is repeated after each lifecycle remount.
+An absent error event, a successful decode, a retained source, an attached
+element or a leaked probe container fails the run. This is the browser-side
+error and resource-release contract; native media providers and playback
+controls remain target-specific V06 work.
 
 The captured service journey at revision
 `d879779247c8cfc5870f62f99a5364cbbf2d3c58` used the Codex in-app
