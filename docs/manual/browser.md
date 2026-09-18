@@ -1011,10 +1011,10 @@ line assignments, `visual_order` grapheme-start permutation, line-top
 ordering, computed style and the live textarea's selection/scroll metrics.
 When one grapheme range spans a line boundary, visual bounds and line
 assignment use the non-zero-width fragments, choosing the fragment with the
-greatest `top` coordinate (falling back to all fragments when they are
-zero-width). This keeps newline and boundary fragments in the line where the
-glyph is rendered instead of treating a zero-width boundary as a separate
-first-line glyph.
+greatest `top` coordinate and falling back to all fragments when they are
+zero-width). This keeps newline, bidi and boundary ranges in the line where
+the glyph is rendered across `Range.getClientRects()` implementations instead
+of treating a zero-width boundary as a separate first-line glyph.
 It also records bounded `CanvasRenderingContext2D.measureText()` widths for
 Latin, combining-mark, CJK, Hebrew and joined-emoji samples, together with the
 effective canvas font string and the `FontFaceSet` loading status/check. A
@@ -1061,6 +1061,14 @@ selected fallback face remain per-engine records; a numeric range is not turned
 into a false pixel-equality claim. Missing or unavailable engine geometry fails
 the comparison with its explicit reason, so the hosted matrix cannot silently
 report a partial cross-engine result.
+
+Hosted manual run [35368255350](https://github.com/ryancinsight/metis/actions/runs/35368255350)
+passed the Chromium, Firefox and WebKit workbench traces and the comparator.
+The published `metis-browser-text-cross-engine-35368255350` artifact records
+five observations per engine and the shared fixture, UTF-16 length, grapheme
+boundaries, visual order, line count, direction and writing mode. The runtime
+artifact upload roots each trace at `output/browser/runtime`; this avoids a
+workspace-prefix extraction path that would otherwise fail before comparison.
 
 ## Responsive runtime capture
 
@@ -1623,12 +1631,15 @@ The current cross-engine captures show the real anatomy rendered through this
 format-neutral host: [Chromium gallery](https://github.com/ryancinsight/ritk/blob/main/docs/manual/images/dicom-metis-real-browser-mri-cross-engine-chromium.png)
 and [Firefox gallery](https://github.com/ryancinsight/ritk/blob/main/docs/manual/images/dicom-metis-real-browser-mri-cross-engine-firefox.png).
 The current standalone-lock native replay uses RITK source
-`f907d8cce5a6ec84a23d73de245b9841538e9f1a`, landed in PR #464 merge
-`132251fa57046241e55cb9189126d6ae7fb98eb9`, with Metis
-`8e566af9a37dc0382e8e919c593d3838f5b08186` and Moirai
-`a2f21496d1d09b2abe6523e3c8cdbf751dcd560a`. It reads all 94 saved files
-(49,807,236 bytes), reproduces the revision-bound 1280 × 800 MRI frame, and
-rejects an invalid study; the [RITK replay provenance](https://github.com/ryancinsight/ritk/blob/main/docs/manual/images/dicom-metis-real-mri.json)
+`64b9825c95ccede45477e67051062a30d03088c6`, delivered in PR #492 merge
+`5e2b74d0ac7550870c147c43225b36757b9b0663`, with Metis
+`8f33126f23b8dc327bea45c4fe513a6b60b73c99` and Moirai
+`a2f21496d1d09b2abe6523e3c8cdbf751dcd560a`. The standalone Cargo.lock SHA-256
+is `9ba2cf9ec135af749cb4399a6b8a9e6f2a12700ca449b23ab4b41cb0ee080d61`. It reads
+all 94 saved files (49,807,236 bytes), reproduces the revision-bound 1280 × 800
+MRI frame with SHA-256
+`259dd79103482756c4e688621bebafc841cc40f1df10ff2bbd7f9d04b7b4d401` and
+411,589 non-black pixels, and rejects an invalid study; the [RITK replay provenance](https://github.com/ryancinsight/ritk/blob/main/docs/manual/images/dicom-metis-real-mri.json)
 contains the executable and image hashes. RITK scans and decodes DICOM and owns
 the clinical pixels; Metis supplies the format-neutral chooser, bounded handoff
 and canvas host.

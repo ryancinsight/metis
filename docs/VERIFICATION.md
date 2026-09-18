@@ -1387,6 +1387,15 @@ coordinate. If every fragment is zero-width, it uses all fragments. This
 handles browser differences in how a `Range` reports a newline or a grapheme
 at a wrapped-line boundary while preserving the complete grapheme permutation
 and keeping rectangle measurements per-engine.
+Hosted manual run [35368255350](https://github.com/ryancinsight/metis/actions/runs/35368255350)
+passed Chromium, Firefox, WebKit and the cross-engine comparator from the
+geometry correction. Its `metis-browser-text-cross-engine-35368255350`
+artifact records five observations per engine and the shared semantic contract:
+the mixed-script fixture, UTF-16 length `32`, grapheme boundaries, visual order
+`0,2,3,4,5,6,7,11,10,9,8,12,13,18,19,20,21,22,23,24,25,26,27,28,29,30,31`,
+two lines, `ltr` direction and `horizontal-tb` writing mode. The runtime
+artifacts are rooted at the paths passed to the comparator, so this is a
+complete three-engine semantic result rather than a partial download.
 
 ## Browser text input-operation evidence — 2026-09-17
 
