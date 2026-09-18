@@ -51,6 +51,18 @@ def _rect(left: float, top: float, width: float = 8.0, height: float = 24.0) -> 
 
 
 def _measurement() -> dict:
+    visual_clusters = [
+        {
+            "start": start,
+            "end": end,
+            "line_index": 0 if index < 14 else 1,
+            "left": float(index * 8),
+            "right": float(index * 8 + 8),
+            "top": 16.0 if index < 14 else 40.0,
+            "bottom": 40.0 if index < 14 else 64.0,
+        }
+        for index, (start, end) in enumerate(zip(BOUNDARIES, BOUNDARIES[1:]))
+    ]
     return {
         "available": True,
         "source": "Range.getClientRects",
@@ -61,6 +73,8 @@ def _measurement() -> dict:
             {"start": start, "end": end, "fragments": [_rect(float(index * 8), 16.0 if index < 14 else 40.0)]}
             for index, (start, end) in enumerate(zip(BOUNDARIES, BOUNDARIES[1:]))
         ],
+        "visual_clusters": visual_clusters,
+        "visual_order": BOUNDARIES[:-1],
         "line_rects": [_rect(0.0, 16.0, 320.0), _rect(0.0, 40.0, 200.0)],
         "line_tops": [16.0, 40.0],
         "line_count": 2,
@@ -105,6 +119,7 @@ class BrowserTextGeometryTests(unittest.TestCase):
     def test_script_uses_segmented_ranges_and_removes_probe(self):
         self.assertIn("Intl.Segmenter", TEXT_GEOMETRY_SCRIPT)
         self.assertIn("Range", TEXT_GEOMETRY_SCRIPT)
+        self.assertIn("visual_order", TEXT_GEOMETRY_SCRIPT)
         self.assertIn("probe.remove()", TEXT_GEOMETRY_SCRIPT)
 
     def test_capture_records_finite_grapheme_and_line_geometry(self):
@@ -145,6 +160,12 @@ class BrowserTextGeometryTests(unittest.TestCase):
         value["textarea"]["selection_end"] = value["textarea"]["value_length"] + 1
         with self.assertRaisesRegex(BrowserRuntimeError, "textarea metrics"):
             capture_text_geometry(StubClient(value), StubTrace(), "invalid-selection")
+
+    def test_capture_rejects_visual_order_duplicates(self):
+        value = _measurement()
+        value["visual_order"][-1] = value["visual_order"][0]
+        with self.assertRaisesRegex(BrowserRuntimeError, "visual order"):
+            capture_text_geometry(StubClient(value), StubTrace(), "invalid-order")
 
 
 if __name__ == "__main__":

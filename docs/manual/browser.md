@@ -1004,10 +1004,13 @@ and bounded width into a detached same-origin element. It measures a fixed
 Unicode specimen containing a combining mark, CJK characters, Hebrew, a joined
 emoji, a newline and a second line. `Intl.Segmenter` supplies the grapheme
 boundaries and `Range.getClientRects()` supplies the host line and cluster
-fragments. The JSON trace records the UTF-16 offsets, finite rectangles,
-line-top ordering, computed style and the live textarea's selection/scroll
-metrics. The element is removed before the command continues, so this probe
-does not mutate the application value or add a screenshot surface.
+fragments. The JSON trace records the UTF-16 offsets, finite cluster bounds,
+line assignments, `visual_order` grapheme-start permutation, line-top
+ordering, computed style and the live textarea's selection/scroll metrics.
+The validator requires the visual order to be a complete permutation of the
+grapheme starts and rejects duplicate entries or clusters assigned outside the
+measured line set. The element is removed before the command continues, so
+this probe does not mutate the application value or add a screenshot surface.
 
 An engine that lacks `Intl.Segmenter` records an explicit unavailable reason;
 the runner never substitutes scalar or pixel estimates. These measurements are

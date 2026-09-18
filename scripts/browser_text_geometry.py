@@ -85,6 +85,25 @@ try {
     if (!lineTops.includes(top)) lineTops.push(top);
   }
   lineTops.sort((left, right) => left - right);
+  const visualClusters = clusterRects.map((cluster) => {
+    const left = cluster.fragments.reduce((value, rect) => Math.min(value, rect.left), Number.POSITIVE_INFINITY);
+    const right = cluster.fragments.reduce((value, rect) => Math.max(value, rect.left + rect.width), Number.NEGATIVE_INFINITY);
+    const top = cluster.fragments.reduce((value, rect) => Math.min(value, rect.top), Number.POSITIVE_INFINITY);
+    const bottom = cluster.fragments.reduce((value, rect) => Math.max(value, rect.top + rect.height), Number.NEGATIVE_INFINITY);
+    let lineIndex = 0;
+    let lineDistance = Number.POSITIVE_INFINITY;
+    lineTops.forEach((lineTop, index) => {
+      const distance = Math.abs(lineTop - top);
+      if (distance < lineDistance) {
+        lineDistance = distance;
+        lineIndex = index;
+      }
+    });
+    return {start: cluster.start, end: cluster.end, line_index: lineIndex, left, right, top, bottom};
+  });
+  const visualOrder = [...visualClusters]
+    .sort((left, right) => left.line_index - right.line_index || left.left - right.left || left.start - right.start)
+    .map((cluster) => cluster.start);
   const numericPx = (value) => {
     const parsed = Number.parseFloat(value);
     return Number.isFinite(parsed) ? parsed : null;
@@ -96,6 +115,8 @@ try {
     utf16_length: fixture.length,
     grapheme_boundaries: boundaries,
     cluster_rects: clusterRects,
+    visual_clusters: visualClusters,
+    visual_order: visualOrder,
     line_rects: lineRects,
     line_tops: lineTops,
     line_count: lineTops.length,
@@ -223,6 +244,45 @@ def _validate_measurement(value: Any) -> Dict[str, Any]:
     line_count = value.get("line_count")
     if type(line_count) is not int or line_count != len(line_tops) or line_count < 2:
         raise BrowserRuntimeError("text geometry line count is invalid")
+    visual_clusters = value.get("visual_clusters")
+    if not isinstance(visual_clusters, list) or len(visual_clusters) != len(boundaries) - 1:
+        raise BrowserRuntimeError("text geometry visual cluster count disagrees with boundaries")
+    normalized_visual_clusters = []
+    for index, cluster in enumerate(visual_clusters):
+        if (
+            not isinstance(cluster, Mapping)
+            or cluster.get("start") != boundaries[index]
+            or cluster.get("end") != boundaries[index + 1]
+            or type(cluster.get("line_index")) is not int
+            or not 0 <= cluster["line_index"] < line_count
+        ):
+            raise BrowserRuntimeError("text geometry visual cluster boundaries are invalid")
+        left = _number(cluster.get("left"), f"visual cluster {index}.left", minimum=None)
+        right = _number(cluster.get("right"), f"visual cluster {index}.right", minimum=None)
+        top = _number(cluster.get("top"), f"visual cluster {index}.top", minimum=None)
+        bottom = _number(cluster.get("bottom"), f"visual cluster {index}.bottom", minimum=None)
+        if right < left or bottom <= top:
+            raise BrowserRuntimeError("text geometry visual cluster bounds are invalid")
+        normalized_visual_clusters.append(
+            {
+                "start": boundaries[index],
+                "end": boundaries[index + 1],
+                "line_index": cluster["line_index"],
+                "left": left,
+                "right": right,
+                "top": top,
+                "bottom": bottom,
+            }
+        )
+    visual_order = value.get("visual_order")
+    expected_order = boundaries[:-1]
+    if (
+        not isinstance(visual_order, list)
+        or len(visual_order) != len(expected_order)
+        or any(type(offset) is not int for offset in visual_order)
+        or sorted(visual_order) != expected_order
+    ):
+        raise BrowserRuntimeError("text geometry visual order is not a cluster permutation")
     element_rect = _rect(value.get("element_rect"), "element")
     if element_rect["width"] <= 0.0 or element_rect["height"] <= 0.0:
         raise BrowserRuntimeError("text geometry element rectangle is empty")
@@ -266,6 +326,8 @@ def _validate_measurement(value: Any) -> Dict[str, Any]:
         "utf16_length": utf16_length,
         "grapheme_boundaries": boundaries,
         "cluster_rects": normalized_clusters,
+        "visual_clusters": normalized_visual_clusters,
+        "visual_order": visual_order,
         "line_rects": normalized_lines,
         "line_tops": [float(top) for top in line_tops],
         "line_count": line_count,

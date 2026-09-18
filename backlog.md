@@ -306,7 +306,7 @@ an owner. “Unsupported” cannot replace delivery of a required mobile/native 
 
 <a id="METIS-TEXT-001"></a>
 ## METIS-TEXT-001 — Text, selection and IME [minor]
-- Status: in-progress; priority: P1; owner: Metis input/presentation; integrator: root; last-update: 2026-09-18; lease: root `scripts/browser_text_geometry.py`, `scripts/tests/test_browser_text_geometry.py`, `docs/manual/testing.md`, `docs/VERIFICATION.md`; dependencies: METIS-INPUT-001; risk: text corruption
+- Status: in-progress; priority: P1; owner: Metis input/presentation; integrator: root; last-update: 2026-09-18; dependencies: METIS-INPUT-001; risk: text corruption
 - Scope: DOM text first; grapheme selection, composition/preedit/commit/cancel, clipboard/undo, wrapping, fallback fonts, bidi and text scaling. Custom renderer requires its own admitted text contract.
 - Acceptance: Unicode fixture strings/selection ranges and caret/line geometry match the contract; native IME exercised per OS, including CJK, combining marks, emoji and mixed-direction input.
 - Demonstration: [V03](docs/VERIFICATION.md#V03), editing specimen with actual composition and committed captures, locale/font details and keyboard instructions.
@@ -324,6 +324,9 @@ an owner. “Unsupported” cannot replace delivery of a required mobile/native 
 - Completed increment (2026-09-17): the bounded classifier now covers the W3C quotation-paste, line/word deletion, drag-deletion and transpose insertion names; unmapped names remain `other`.
 - Evidence: focused policy tests cover the added standard names; the W3C [Input Events] vocabulary is linked from the crate README, ADRs and browser manual. Host clipboard/history authority and trusted-content residuals are unchanged.
 - Delivery reconciliation (2026-09-17): Metis PR [#219](https://github.com/ryancinsight/metis/pull/219), merge `862398983720a1fc6c3638128db35a53b14b71b8`, delivered commit `e1144278363647d4fd4d1dae7a836c8aedb3755c`; the hosted Windows gate [35283917677](https://github.com/ryancinsight/metis/actions/runs/35283917677) and exact full verifier passed. The format-neutral browser trace records bounded host line and grapheme geometry from the editing specimen; it makes no DICOM or clipboard claim.
+- Completed increment (2026-09-18): the format-neutral text-geometry probe now records finite visual cluster bounds, line assignments and a complete `visual_order` grapheme-start permutation derived from host rectangles; duplicate or malformed permutations reject.
+- Evidence: dependency-free browser checks pass 7/7 for the geometry module and 66/66 for the combined geometry/runtime focus; a local Microsoft Edge workbench trace at `f836c9e` records five geometry samples with 27 visual clusters per sample in `output/browser/runtime/edge-text-bidi-20260918.json`. This is browser layout evidence only; cross-engine/native bidi and line geometry, fallback-font metrics, trusted clipboard contents/permissions, an installed CJK or other native IME journey and assistive-technology acceptance remain open.
+- Lease discharged: `scripts/browser_text_geometry.py`, `scripts/tests/test_browser_text_geometry.py`, `docs/manual/testing.md`, `docs/manual/browser.md` and `docs/VERIFICATION.md`.
 - Residuals: cross-engine and native bidi/line geometry, fallback-font metrics, trusted clipboard contents/permissions, an installed CJK or other native IME journey and assistive-technology acceptance remain open.
 
 <a id="METIS-A11Y-001"></a>
