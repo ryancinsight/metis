@@ -7,7 +7,11 @@ import unittest
 
 sys.path.insert(0, str(pathlib.Path(__file__).resolve().parents[1]))
 
-from browser_accessibility import capture_accessibility, capture_native_accessibility_tree
+from browser_accessibility import (
+    MAX_NATIVE_TREE_DEPTH,
+    capture_accessibility,
+    capture_native_accessibility_tree,
+)
 from browser_protocol import BrowserRuntimeError, WebDriverClient
 
 
@@ -135,6 +139,7 @@ class BrowserAccessibilityTests(unittest.TestCase):
         self.assertEqual(record["required_names"]["Clinical note"], True)
         self.assertEqual(client.requests[0][1], "/session/test/goog/cdp/execute")
         self.assertEqual(client.requests[0][2]["cmd"], "Accessibility.getFullAXTree")
+        self.assertEqual(client.requests[0][2]["params"], {"depth": MAX_NATIVE_TREE_DEPTH})
 
     def test_native_tree_rejects_missing_required_name(self):
         tree = _native_tree()

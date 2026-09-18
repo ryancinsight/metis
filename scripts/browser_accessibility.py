@@ -11,6 +11,9 @@ MAX_ACCESSIBILITY_ELEMENTS = 64
 MAX_SEMANTIC_ELEMENTS = 96
 MAX_ACCESSIBILITY_TEXT_BYTES = 256
 MAX_ACCESSIBILITY_DIMENSION = 65_536
+# The workbench's required roles and names occur within eight AX ancestors;
+# stopping there excludes deep text descendants while retaining that contract.
+MAX_NATIVE_TREE_DEPTH = 8
 MAX_NATIVE_TREE_NODES = 256
 MAX_NATIVE_TREE_RESPONSE_BYTES = 256 * 1024
 CHROMIUM_BROWSER_NAMES = {"chrome", "chromium", "MicrosoftEdge", "msedge"}
@@ -400,7 +403,7 @@ def capture_native_accessibility_tree(client: WebDriverClient) -> Dict[str, Any]
         }
     request = {
         "cmd": "Accessibility.getFullAXTree",
-        "params": {"depth": 32},
+        "params": {"depth": MAX_NATIVE_TREE_DEPTH},
     }
     value = client._request(  # noqa: SLF001 - the WebDriver transport owns vendor CDP calls
         "POST",

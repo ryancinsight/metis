@@ -1541,13 +1541,15 @@ screen-reader output or a native accessibility bridge.
 The `--accessibility-probe` now records a second metric,
 `metrics.accessibility_native_tree`, when the configured driver is Chromium or
 Microsoft Edge. It calls the vendor WebDriver CDP endpoint
-`Accessibility.getFullAXTree`, bounds the node response, and checks the visible
+`Accessibility.getFullAXTree` at depth eight, bounds the node response, and checks the visible
 role set (`main`, `form`, `button`, `textbox`, `table`) plus the required
 workbench names (**Submit**, **Files**, **Clinical note** and **Result
 explorer**). Firefox and WebKit carry an explicit `unavailable` record because
 their configured drivers do not expose that endpoint. This is browser
 accessibility-tree evidence; it does not establish spoken output, host
-preference enablement or an operating-system accessibility bridge.
+preference enablement or an operating-system accessibility bridge. The depth
+bound retains every required workbench role/name while excluding deep text
+descendants from the bounded native response.
 
 ## Browser theme and starter asset evidence — 2026-09-08
 
