@@ -307,6 +307,18 @@ class WorkflowContractTests(unittest.TestCase):
         self.assertIn("--text-geometry-probe", self.source)
         self.assertIn("name: metis-browser-runtime-${{ matrix.engine }}-${{ github.run_id }}", self.source)
         self.assertIn("--asset-probe", self.source)
+        for fragment in (
+            "name: Cross-engine text geometry",
+            "needs: browser-runtime",
+            "pattern: metis-browser-runtime-*-${{ github.run_id }}",
+            "scripts/browser_text_cross_engine.py",
+            "--trace chromium=output/browser/runtime/chromium-workbench.json",
+            "--trace firefox=output/browser/runtime/firefox-workbench.json",
+            "--trace webkit=output/browser/runtime/webkit-workbench.json",
+            "metis-browser-text-cross-engine-${{ github.run_id }}",
+        ):
+            with self.subTest(fragment=fragment):
+                self.assertIn(fragment, self.source)
 
 
 class ReleaseWorkflowContractTests(unittest.TestCase):
