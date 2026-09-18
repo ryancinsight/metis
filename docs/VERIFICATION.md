@@ -1541,8 +1541,8 @@ screen-reader output or a native accessibility bridge.
 The `--accessibility-probe` now records a second metric,
 `metrics.accessibility_native_tree`, when the configured driver is Chromium or
 Microsoft Edge. It calls the vendor WebDriver CDP endpoint
-`Accessibility.getFullAXTree` at depth eight, bounds the response by bytes and
-visible nodes, and checks the visible
+`Accessibility.getFullAXTree` at depth eight, bounds the response by bytes, and
+checks the visible
 role set (`main`, `form`, `button`, `textbox`, `table`) plus the required
 workbench names (**Submit**, **Files**, **Clinical note** and **Result
 explorer**). Firefox and WebKit carry an explicit `unavailable` record because
