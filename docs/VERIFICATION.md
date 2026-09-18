@@ -2801,12 +2801,13 @@ raw 1280×800 source digest. The process boundary still differs from Métis;
 GPUI/Tauri fixtures and ranking remain open.
 
 The current standalone-lock replay (2026-09-18) is bound to RITK source
-`448202c0bbc8b5560cc5aad7e53dfedac10e04d5`, Metis
-`e634fe925d8edb18cea4399d43255fdaa2d444a5` and Moirai
-`a2f21496d1d09b2abe6523e3c8cdbf751dcd560a`. The 61-source lock digest is
-`42083be291a94d5e54f585780559357ee554f4725d571013a7e560aaa209f4a5`, and the
+`e635baf90f99cc0ae09df06c42424ba5c4c6faec`, delivered in PR #493 merge
+`73b01be1a3fcb6bb755ffdd302cb412d218fcd44`, Metis
+`0e449856ade677860fd6866c3855ae2ba527e33a` and Moirai
+`a2f21496d1d09b2abe6523e3c8cdbf751dcd560a`. The standalone lock digest is
+`49381c64b5751b5c07bf571c66a31205ebf3ccdc780afe3b4b102c0792a5bc85`, and the
 executable digest is
-`7fdd80d5daa418776ae842f4dd1c005d546443c2f6d5b7dc5632ee802f5d12d8`. RITK
+`210a6a0e0f6efa59d76ad91de8a6d068d12b9e7796df17c00d3be270e829208c`. RITK
 opened the saved 94-file MRI-DIR study and produced the 1280 × 800 three-plane
 frame with 411,589 non-black pixels. The capture digest is
 `259dd79103482756c4e688621bebafc841cc40f1df10ff2bbd7f9d04b7b4d401`; the
