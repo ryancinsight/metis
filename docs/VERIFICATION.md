@@ -1317,6 +1317,13 @@ The generated JSON trace is `output/browser/runtime/edge-text-bidi-20260918.json
 and its first PNG is 1875 × 1903 pixels with SHA-256
 `9880b1381aa2eb9b457e6e6d3efdca450ec8a0cc4393def7fd9189b891602ae7`.
 
+The lifecycle runner now records `metrics.text_geometry_stability` after the
+second observation. It rejects a change in fixture, UTF-16 grapheme
+boundaries, visual order, line count, direction, writing mode or the requested
+and computed font-chain contract across stop/remount cycles. Numeric rectangles
+and widths remain host measurements for each observation; this invariant does
+not claim exact cross-engine or native equality.
+
 ```text
 python scripts/browser_runtime.py --engine chromium --browser-name MicrosoftEdge --driver-url http://127.0.0.1:9517 --serve-dir output/browser --text-geometry-probe --lifecycle-cycles 4 --output output/browser/runtime/edge-text-bidi-20260918.json
 ```
@@ -1325,8 +1332,9 @@ The focused dependency-free checks are:
 
 ```text
 python -m unittest scripts.tests.test_browser_text_geometry — 7/7 passed
+python -m unittest scripts.tests.test_browser_text_stability — 6/6 passed
 python -m unittest scripts.tests.test_browser_runtime.BrowserRuntimeTests.test_cli_rejects_text_geometry_probe_on_canvas_scenario — passed
-python -m py_compile scripts/browser_text_geometry.py scripts/browser_runtime.py scripts/browser_runtime_cli.py — passed
+python -m py_compile scripts/browser_text_geometry.py scripts/browser_text_stability.py scripts/browser_runtime.py scripts/browser_runtime_cli.py — passed
 ```
 
 The 2026-09-18 font-metric increment extends the same detached probe with a
