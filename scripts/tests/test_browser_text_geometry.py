@@ -86,6 +86,23 @@ def _measurement() -> dict:
             "direction": "ltr",
             "writing_mode": "horizontal-tb",
         },
+        "font_metrics": {
+            "available": True,
+            "source": "CanvasRenderingContext2D.measureText",
+            "font": "16px system-ui",
+            "fonts_status": "loaded",
+            "fonts_check": True,
+            "samples": [
+                {"label": label, "text": text, "width": width}
+                for label, text, width in (
+                    ("latin", "Aa", 16.0),
+                    ("combining", "A\u030A", 16.0),
+                    ("cjk", "影像", 32.0),
+                    ("hebrew", "שלום", 32.0),
+                    ("emoji", "👩‍🔬", 32.0),
+                )
+            ],
+        },
         "textarea": {
             "value_length": 18,
             "selection_start": 0,
@@ -120,6 +137,8 @@ class BrowserTextGeometryTests(unittest.TestCase):
         self.assertIn("Intl.Segmenter", TEXT_GEOMETRY_SCRIPT)
         self.assertIn("Range", TEXT_GEOMETRY_SCRIPT)
         self.assertIn("visual_order", TEXT_GEOMETRY_SCRIPT)
+        self.assertIn("measureText", TEXT_GEOMETRY_SCRIPT)
+        self.assertIn("font_metrics", TEXT_GEOMETRY_SCRIPT)
         self.assertIn("probe.remove()", TEXT_GEOMETRY_SCRIPT)
 
     def test_capture_records_finite_grapheme_and_line_geometry(self):
@@ -172,6 +191,21 @@ class BrowserTextGeometryTests(unittest.TestCase):
         value["visual_clusters"][0]["right"] = value["visual_clusters"][0]["left"] - 1.0
         with self.assertRaisesRegex(BrowserRuntimeError, "visual cluster bounds"):
             capture_text_geometry(StubClient(value), StubTrace(), "invalid-visual-bounds")
+
+    def test_capture_rejects_unbounded_font_metric(self):
+        value = _measurement()
+        value["font_metrics"]["samples"][0]["width"] = 4_097.0
+        with self.assertRaisesRegex(BrowserRuntimeError, "font metric latin width"):
+            capture_text_geometry(StubClient(value), StubTrace(), "invalid-font-metric")
+
+    def test_capture_rejects_font_metric_order(self):
+        value = _measurement()
+        value["font_metrics"]["samples"][0], value["font_metrics"]["samples"][1] = (
+            value["font_metrics"]["samples"][1],
+            value["font_metrics"]["samples"][0],
+        )
+        with self.assertRaisesRegex(BrowserRuntimeError, "font metric labels"):
+            capture_text_geometry(StubClient(value), StubTrace(), "invalid-font-order")
 
 
 if __name__ == "__main__":

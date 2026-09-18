@@ -1007,6 +1007,11 @@ boundaries and `Range.getClientRects()` supplies the host line and cluster
 fragments. The JSON trace records the UTF-16 offsets, finite cluster bounds,
 line assignments, `visual_order` grapheme-start permutation, line-top
 ordering, computed style and the live textarea's selection/scroll metrics.
+It also records bounded `CanvasRenderingContext2D.measureText()` widths for
+Latin, combining-mark, CJK, Hebrew and joined-emoji samples, together with the
+effective canvas font string and the `FontFaceSet` loading status/check. These
+measurements make the browser's current text-width behavior inspectable without
+claiming that the browser exposes the identity of every fallback face.
 The validator requires the visual order to be a complete permutation of the
 grapheme starts and rejects duplicate entries or clusters assigned outside the
 measured line set. The element is removed before the command continues, so
@@ -1014,9 +1019,9 @@ this probe does not mutate the application value or add a screenshot surface.
 
 An engine that lacks `Intl.Segmenter` records an explicit unavailable reason;
 the runner never substitutes scalar or pixel estimates. These measurements are
-browser layout evidence for the HTML5/CSS path. They do not establish native
-IME delivery, fallback-font selection, clipboard permissions, assistive
-technology behavior or pixel identity across engines.
+browser layout and font-metric evidence for the HTML5/CSS path. They do not
+establish native IME delivery, fallback-font identity, clipboard permissions,
+assistive-technology behavior or pixel identity across engines.
 
 ## Responsive runtime capture
 
