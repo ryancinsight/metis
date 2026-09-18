@@ -2767,8 +2767,9 @@ path, and matches both the Métis semantic keys and physical host extent. Its
 provenance record reports mean peak private bytes of 432,313,685 (95% half-width
 24,884,220) and mean lifecycle duration of 2,070 ms (95% half-width 81 ms),
 with the requested logical size and observed display scale recorded alongside
-the image. The process boundary still differs from Métis; GPUI/Tauri fixtures
-and ranking remain open.
+the image; the tracked manual figure is 640×400 while provenance retains the
+raw 1280×800 source digest. The process boundary still differs from Métis;
+GPUI/Tauri fixtures and ranking remain open.
 
 The current standalone-lock replay (2026-09-18) is bound to RITK source
 `448202c0bbc8b5560cc5aad7e53dfedac10e04d5`, Metis
