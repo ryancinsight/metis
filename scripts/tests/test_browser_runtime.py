@@ -24,6 +24,7 @@ from browser_canvas import (
     MAX_CANVAS_ATTRIBUTES,
     _canvas_action_offsets,
     capture_canvas_trace,
+    ensure_canvas_visible,
     run_canvas_scenario,
     validate_canvas_attributes,
     validate_canvas_ids,
@@ -273,6 +274,15 @@ class FakeDriver:
             self.focused_canvas = arguments[0]
             self.focus_calls.append(self.focused_canvas)
             return {"ok": True, "active_id": self.focused_canvas}
+        if "scrollIntoView" in script:
+            return {
+                "ok": True,
+                "error": None,
+                "left": 0,
+                "top": 0,
+                "right": 512,
+                "bottom": 512,
+            }
         if "canvas.tagName.toLowerCase()" in script:
             canvas_id = arguments[0]
             attribute_names = arguments[1]
@@ -1290,6 +1300,36 @@ class BrowserRuntimeTests(unittest.TestCase):
 
         tiny = _canvas_action_offsets({"css_width": 1.0, "css_height": 1.0})
         self.assertEqual(tiny, ((0, 0), (0, 0), (0, 0)))
+
+    def test_canvas_capture_scrolls_named_surface_into_view(self):
+        class Client:
+            def __init__(self):
+                self.calls = []
+
+            def execute(self, script, arguments):
+                self.calls.append((script, arguments))
+                return {
+                    "ok": True,
+                    "error": None,
+                    "left": 10,
+                    "top": 10,
+                    "right": 522,
+                    "bottom": 522,
+                }
+
+        client = Client()
+        ensure_canvas_visible(client, "viewer-axial")
+        self.assertEqual(len(client.calls), 1)
+        self.assertEqual(client.calls[0][1], ["viewer-axial"])
+        self.assertIn("scrollIntoView", client.calls[0][0])
+
+    def test_canvas_capture_rejects_surface_that_remains_clipped(self):
+        class Client:
+            def execute(self, _script, _arguments):
+                return {"ok": False, "error": "canvas remains outside the viewport"}
+
+        with self.assertRaisesRegex(BrowserRuntimeError, "not fully visible"):
+            ensure_canvas_visible(Client(), "viewer-axial")
 
     def test_browser_heap_sample_records_unavailable_surface(self):
         trace = Trace(BrowserEngine.FIREFOX, "http://127.0.0.1/", "canvas", "0" * 40, {})

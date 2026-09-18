@@ -125,6 +125,26 @@ return {
 };
 """
 
+CANVAS_SCROLL_INTO_VIEW_SCRIPT = """
+const id = arguments[0];
+const canvas = document.getElementById(id);
+if (!canvas || canvas.tagName.toLowerCase() !== 'canvas') {
+  return {ok: false, error: `canvas ${id} was not found`};
+}
+canvas.scrollIntoView({block: 'center', inline: 'center'});
+const rect = canvas.getBoundingClientRect();
+const visible = rect.left >= 0 && rect.top >= 0 &&
+  rect.right <= window.innerWidth && rect.bottom <= window.innerHeight;
+return {
+  ok: visible,
+  error: visible ? null : `canvas ${id} remains outside the viewport`,
+  left: rect.left,
+  top: rect.top,
+  right: rect.right,
+  bottom: rect.bottom,
+};
+"""
+
 CANVAS_FRAME_SETTLE_SCRIPT = """
 const done = arguments[arguments.length - 1];
 let remaining = arguments[0];
@@ -361,6 +381,14 @@ def _focus_canvas(client: WebDriverClient, canvas_id: str) -> Mapping[str, Any]:
     return result
 
 
+def ensure_canvas_visible(client: WebDriverClient, canvas_id: str) -> None:
+    """Scroll one canvas fully into view before a WebDriver element capture."""
+    result = client.execute(CANVAS_SCROLL_INTO_VIEW_SCRIPT, [canvas_id])
+    if not isinstance(result, dict) or result.get("ok") is not True:
+        detail = result.get("error") if isinstance(result, dict) else result
+        raise BrowserRuntimeError(f"canvas {canvas_id!r} is not fully visible: {detail!r}")
+
+
 def _install_event_trace(
     client: WebDriverClient,
     canvas_ids: Sequence[str],
@@ -541,6 +569,7 @@ def _capture_cine_rate_keyboard_trace(
             _validate_keyboard_evidence(observed_events, key, code, transition)
             label = f"{canvas_id}-{label_suffix}"
             _canvas_snapshot(client, trace, canvas_id, label, canvas_attributes)
+            ensure_canvas_visible(client, canvas_id)
             _element_screenshot(client, trace, screenshot_directory, label, element)
     finally:
         if devtools_endpoint is not None and pending_devtools_key is not None:
@@ -676,6 +705,7 @@ def capture_canvas_trace(
             if browser_memory:
                 browser_memory_sample(client, trace, f"{canvas_id}-initial")
             frame_timing(client, trace, f"{canvas_id}-initial", timeout_ms=frame_timeout_ms)
+            ensure_canvas_visible(client, canvas_id)
             _element_screenshot(client, trace, screenshot_directory, f"{canvas_id}-initial", element)
             if keyboard_trace is KeyboardTraceKind.CINE_RATE:
                 _capture_cine_rate_keyboard_trace(
@@ -740,6 +770,7 @@ def capture_canvas_trace(
             if browser_memory:
                 browser_memory_sample(client, trace, f"{canvas_id}-after-input")
             frame_timing(client, trace, f"{canvas_id}-after-input", timeout_ms=frame_timeout_ms)
+            ensure_canvas_visible(client, canvas_id)
             _element_screenshot(client, trace, screenshot_directory, f"{canvas_id}-after-input", element)
         client.release_actions()
         actions_released = True

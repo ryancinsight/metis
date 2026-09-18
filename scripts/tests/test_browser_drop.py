@@ -367,7 +367,16 @@ class FileDropTests(unittest.TestCase):
             def __init__(self):
                 self.selectors = []
 
-            def execute(self, _script, arguments):
+            def execute(self, script, arguments):
+                if "scrollIntoView" in script:
+                    return {
+                        "ok": True,
+                        "error": None,
+                        "left": 0,
+                        "top": 0,
+                        "right": 512,
+                        "bottom": 512,
+                    }
                 return {"width": 512, "height": 512, "context": arguments[1]}
 
             def find(self, selector):

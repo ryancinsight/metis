@@ -25,7 +25,7 @@ from browser_canvas import (
     capture_canvas_trace,
     KeyboardTraceKind,
     validate_canvas_ids, validate_canvas_attributes, validate_consumer_revision,
-    _element_screenshot,
+    _element_screenshot, ensure_canvas_visible,
 )
 from browser_file_read import capture_file_read_diagnostic, capture_file_selection_diagnostic
 from browser_runtime import _wait_for_text, _wait_for_selector, _write_trace
@@ -504,6 +504,7 @@ def run(
                             f"canvas {canvas_id}: expected {wanted}, found {actual}"
                         )
                     trace.snapshots.append({"id": canvas_id, **actual})
+                    ensure_canvas_visible(client, canvas_id)
                     _element_screenshot(client, trace, output, canvas_id, client.find("#" + canvas_id))
                 else:
                     actual = capture_screenshot(
