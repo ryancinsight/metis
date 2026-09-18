@@ -367,7 +367,7 @@ def _validate_native_accessibility_tree(value: Any) -> Dict[str, Any]:
             visible_nodes += 1
             if role is not None:
                 roles.append(role)
-            if name in {"Submit", "Files", "Clinical note", "Result explorer"}:
+            if name in {"Submit to authorized backend", "Choose files", "Clinical note", "Result explorer"}:
                 names.add(name)
     if visible_nodes == 0:
         raise BrowserRuntimeError("native accessibility tree has no visible nodes")
@@ -377,7 +377,7 @@ def _validate_native_accessibility_tree(value: Any) -> Dict[str, Any]:
     if not required_roles.issubset(normalized_roles):
         missing = sorted(required_roles - normalized_roles)
         raise BrowserRuntimeError(f"native accessibility tree is missing roles: {', '.join(missing)}")
-    required_names = ("Submit", "Files", "Clinical note", "Result explorer")
+    required_names = ("Submit to authorized backend", "Choose files", "Clinical note", "Result explorer")
     missing_names = [name for name in required_names if name not in names]
     if missing_names:
         raise BrowserRuntimeError(

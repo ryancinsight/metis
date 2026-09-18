@@ -81,8 +81,8 @@ def _native_tree() -> dict:
             {"ignored": False, "role": {"value": "RootWebArea"}, "name": {"value": "Metis"}},
             {"ignored": False, "role": {"value": "main"}, "name": {"value": "metis-app"}},
             {"ignored": False, "role": {"value": "form"}, "name": {"value": "metis-form"}},
-            {"ignored": False, "role": {"value": "button"}, "name": {"value": "Submit"}},
-            {"ignored": False, "role": {"value": "button"}, "name": {"value": "Files"}},
+            {"ignored": False, "role": {"value": "button"}, "name": {"value": "Submit to authorized backend"}},
+            {"ignored": False, "role": {"value": "button"}, "name": {"value": "Choose files"}},
             {"ignored": False, "role": {"value": "textbox"}, "name": {"value": "Clinical note"}},
             {"ignored": False, "role": {"value": "table"}, "name": {"value": "Result explorer"}},
         ]

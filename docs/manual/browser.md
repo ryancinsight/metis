@@ -1157,8 +1157,9 @@ screen-reader speech and native accessibility bridges still require host runs.
 On Chromium and Microsoft Edge, the same `--accessibility-probe` also asks the
 vendor WebDriver endpoint for `Accessibility.getFullAXTree` at depth eight. The
 runner bounds the response by bytes, checks that the visible `main`, `form`, `button`, `textbox`
-and `table` roles and the **Submit**, **Files**, **Clinical note** and **Result
-explorer** names are present, and stores only role/count/name-presence data in
+and `table` roles and the **Submit to authorized backend**, **Choose files**,
+**Clinical note** and **Result explorer** names are present, and stores only
+role/count/name-presence data in
 `metrics.accessibility_native_tree`. Firefox and WebKit record an explicit
 `unavailable` result because they do not expose that Chromium protocol through
 the configured driver. The tree is evidence of the browser's accessibility

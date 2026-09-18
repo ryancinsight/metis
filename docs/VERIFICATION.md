@@ -1544,8 +1544,8 @@ Microsoft Edge. It calls the vendor WebDriver CDP endpoint
 `Accessibility.getFullAXTree` at depth eight, bounds the response by bytes, and
 checks the visible
 role set (`main`, `form`, `button`, `textbox`, `table`) plus the required
-workbench names (**Submit**, **Files**, **Clinical note** and **Result
-explorer**). Firefox and WebKit carry an explicit `unavailable` record because
+workbench names (**Submit to authorized backend**, **Choose files**, **Clinical
+note** and **Result explorer**). Firefox and WebKit carry an explicit `unavailable` record because
 their configured drivers do not expose that endpoint. This is browser
 accessibility-tree evidence; it does not establish spoken output, host
 preference enablement or an operating-system accessibility bridge. The depth
