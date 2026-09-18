@@ -386,7 +386,6 @@ an owner. “Unsupported” cannot replace delivery of a required mobile/native 
 <a id="METIS-ASSETS-001"></a>
 ## METIS-ASSETS-001 — Images, vectors and media assets [major]
 - Status: in-progress; priority: P1; owner: Metis asset/presentation + existing Atlas format providers; integrator: root; last-update: 2026-09-18; dependencies: METIS-BROWSER-001, METIS-AUTHORITY-001; risk: hostile content
-- lease: root `metis.json`, `examples/browser/assets/metis-probe.woff2`, `scripts/browser_font.py`, `scripts/browser_runtime.py`, `scripts/browser_runtime_cli.py`, `scripts/tests/test_browser_font.py`, `scripts/tests/test_browser_assets.py`, `scripts/tests/test_browser_runtime.py` 2026-09-18T01:45:00-04:00
 - ADR: [0019](docs/adr/0019-raster-display-command.md); the public `DisplayCommand` enum addition is a major release change and has no version bump until release authority opens a release increment.
 - Scope: bounded local asset loading, image/SVG presentation, font loading and browser audio/video controls; validate paths/origins, dimensions/decoding budgets and target permissions.
 - Acceptance: malformed/truncated/oversized/traversal assets fail; declared colors/alpha/aspect ratio/orientation match fixtures; media error and teardown states release resources.
