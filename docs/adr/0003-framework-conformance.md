@@ -382,6 +382,34 @@ keeps Rust-owned state, Moirai transport and HostPolicy as the authority path;
 Svelte and SvelteKit remain comparison subjects with no dependency or runtime
 added to the workspace.
 
+Revision 2026-09-19 (current gap plan): the authoritative RITK consumer replay
+uses lock-change source `fdbbd7394cc3f7cac746f2bad64608edad8d015f`, merged in
+RITK as `e4eb95b5769e51066533c52ac32fc70306a9224e`, with Metis
+`d7cb62f5139d2e4e30a476d71b81e480c04e0226`, Moirai
+`b179b89fd2521034d2fc9c97663649811982e9fa` and standalone lock
+`2194947dad2fd91be235b6e7546b7ca506f62ba00f0a33ba30dcf628197f53c1`.
+The locked 94-file MRI replay remains byte-identical at 1280 × 800 and
+continues to prove the format-neutral Metis handoff plus RITK-owned decoding,
+geometry and clinical presentation. Historical replay hashes remain in their
+original evidence records and are not current comparison inputs.
+
+The next dependency-ordered closure is explicit. First, Moirai and Metis must
+carry typed capability scopes into real file, network, process and device
+providers, with denial tests at each host boundary; the current
+origin/window/session HMAC policy authenticates a caller but is not an OS
+sandbox. Second, native Windows IME, accessibility and physical display-scale
+journeys must produce visible host evidence, followed by the macOS and Linux
+providers. Third, the performance item must supply one equal consumer fixture
+before any GPUI or Tauri ranking: the same study, frame dimensions, controls,
+process boundary, input trace and lifecycle budget, with WASM used/allocation,
+compositor and growth measurements kept as separate metrics. Fourth, the
+browser WebGPU recovery path needs a real adapter/device-loss/recovered-pixel
+trace. Safari selected-file authorization and hosted free-threaded Python
+wheel evidence remain host or registry-environment blockers; they cannot be
+closed by changing format-neutral Metis APIs. This order keeps DICOM and voxel
+aspect ownership in RITK and prevents a comparator document from becoming a
+support claim.
+
 ## Decision and scope
 
 Use Tauri as the application-framework migration reference, egui/GPUI/Iced as
