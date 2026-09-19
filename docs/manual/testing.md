@@ -310,9 +310,9 @@ Both use the same 409-file input, but eframe's fourth viewport is `3d_mip`
 while the Métis run uses RITK's `axial_mip` policy; their surface dimensions
 and process boundaries also differ. These reports are lifecycle evidence; they
 do not establish a memory or latency ranking against Tauri, GPUI or egui. The
-three-run saved public MRI resource baseline is a recorded lifecycle
-measurement bound to the revisions stored in [the MRI resource provenance](images/dicom-metis-real-mri-resource.json);
-it is not a claim about the latest standalone-lock source. The report records
+current three-run saved public MRI resource baseline is a recorded lifecycle
+measurement bound to the revisions stored in [the MRI resource provenance](images/dicom-metis-real-mri-resource.json).
+The report records
 the real 94-file study and the 1280 × 800 three-plane capture; it does not
 include private study paths or pixels. RITK also records a complete eframe MRI
 baseline and a shell-free [matched orthogonal eframe fixture](https://github.com/ryancinsight/ritk/blob/main/docs/manual/images/dicom-eframe-orthogonal-surface-resource.json)
