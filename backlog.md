@@ -6,12 +6,12 @@
 
 <a id="METIS-PRESENTATION-GEOMETRY-001"></a>
 ## METIS-PRESENTATION-GEOMETRY-001 — Carry validated physical frame geometry [arch] [minor]
-- Status: in-progress; priority: P1; owner: Metis canvas contract; integrator: root; branch: `feat/metis-presentation-geometry`; last-update: 2026-09-19.
+- Status: review; priority: P1; owner: Metis canvas contract; integrator: root; branch: `feat/metis-presentation-geometry`; last-update: 2026-09-19.
 - Outcome: the format-neutral browser frame seam accepts validated display spacing alongside borrowed RGBA pixels, so a host cannot present malformed physical geometry while RITK retains DICOM and voxel semantics.
 - Scope: `metis-web` frame contract, surface validation, focused tests, ADR and README/API documentation; RITK consumer follow-up lands after this provider change.
 - Acceptance: valid anisotropic spacing reaches the borrowed canvas contract without copying; zero, non-finite and negative distances are rejected before provider upload; existing frame implementations remain pixel-compatible; strict native/WASM checks and focused tests pass.
-- Dependencies: RITK presentation migration and current Metis/Moirai lock; non-goals are DICOM parsing, physical spacing derivation and clinical metadata.
-- Lease: root `crates/metis-web/src/canvas/frame.rs`, `crates/metis-web/src/canvas/surface.rs`, `crates/metis-web/src/canvas/mod.rs`, `crates/metis-web/README.md`, `docs/adr/0040-presentation-frame-geometry.md`, `backlog.md` (2026-09-19T00:00:00Z).
+- Dependencies: METIS-MIGRATION-001, METIS-INPUT-001; non-goals are DICOM parsing, physical spacing derivation and clinical metadata.
+- Evidence: local `python scripts/verify.py` passed all 26 stages at the committed diff; dependency-free Python tests passed 317/317 with one intentional skip. The negative capture stage returned the expected `PermissionDenied` result.
 
 <a id="METIS-GALLERY-GATE-001"></a>
 ## METIS-GALLERY-GATE-001 — Complete gallery delivery gates
@@ -437,6 +437,7 @@ an owner. “Unsupported” cannot replace delivery of a required mobile/native 
 
 <a id="METIS-ASSETS-001"></a>
 ## METIS-ASSETS-001 — Images, vectors and media assets [major]
+- Lease: assets-root `crates/metis-ui-lang`, `Cargo.toml`, `Cargo.lock`, `examples/image.rs`, `examples/support/image.rs`, `scripts/verify.py`, ADR 0029 and native/manual V06 evidence (2026-09-19).
 - Status: in-progress; priority: P1; owner: Metis asset/presentation + existing Atlas format providers; integrator: root; last-update: 2026-09-18; dependencies: METIS-BROWSER-001, METIS-AUTHORITY-001; risk: hostile content
 - ADR: [0019](docs/adr/0019-raster-display-command.md); the public `DisplayCommand` enum addition is a major release change and has no version bump until release authority opens a release increment.
 - Scope: bounded local asset loading, image/SVG presentation, font loading and browser audio/video controls; validate paths/origins, dimensions/decoding budgets and target permissions.

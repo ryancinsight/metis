@@ -14,6 +14,11 @@ the dimensions and exact byte length, then uploads the frame without retaining
 the source allocation or interpreting its format. RITK uses this seam for
 viewer pixels; DICOM parsing, geometry and display policy stay in RITK.
 
+When a producer has physical display geometry, `CanvasFrame::display_spacing`
+may return a validated `DisplaySpacing`. The host checks its positive finite
+aspect against the frame dimensions before upload; it does not derive or
+interpret clinical geometry. Pixel-only frames use the default `None` value.
+
 `CanvasSurface::from_current_document_with_input` retains Moirai pointer,
 wheel and keyboard listeners and exposes a bounded `CanvasEvent` batch.
 Pointer capture, target-local CSS-pixel coordinates, modifier state, wheel
