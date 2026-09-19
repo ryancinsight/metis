@@ -391,11 +391,11 @@ Svelte and SvelteKit remain comparison subjects with no dependency or runtime
 added to the workspace.
 
 Revision 2026-09-19 (current gap plan): the authoritative RITK consumer replay
-uses lock-change source `fdbbd7394cc3f7cac746f2bad64608edad8d015f`, merged in
-RITK as `e4eb95b5769e51066533c52ac32fc70306a9224e`, with Metis
-`d7cb62f5139d2e4e30a476d71b81e480c04e0226`, Moirai
-`b179b89fd2521034d2fc9c97663649811982e9fa` and standalone lock
-`2194947dad2fd91be235b6e7546b7ca506f62ba00f0a33ba30dcf628197f53c1`.
+uses lock-change source `f1a556786e849696caa73d8c341adf309e87d163`, merged in
+RITK as `9881b9c4ac9fdccbc241c94fe1903f30d4f20e95`, with Metis
+`8d4ab58e8731c51547bbca3ec87100facb698322`, Moirai
+`f038622d24907884ce5f386da4e04d05bdb60d62` and standalone lock
+`2825653169ee324f9421122416da1e65a279e8657841c7fce9347386f6b58745`.
 The locked 94-file MRI replay remains byte-identical at 1280 × 800 and
 continues to prove the format-neutral Metis handoff plus RITK-owned decoding,
 geometry and clinical presentation. Historical replay hashes remain in their
