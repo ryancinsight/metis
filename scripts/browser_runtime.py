@@ -168,6 +168,66 @@ def _dispatch_change(client: WebDriverClient, element_id: str) -> None:
     )
 
 
+FOCUS_ELEMENT_SCRIPT = """
+const element = document.getElementById(arguments[0]);
+if (!element) return false;
+try { element.focus({preventScroll: true}); }
+catch (_) { element.focus(); }
+return document.activeElement === element;
+"""
+
+
+ACTIVE_ELEMENT_ID_SCRIPT = """
+const element = document.activeElement;
+return element && element.id ? element.id : null;
+"""
+
+
+def _keyboard_submit(
+    client: WebDriverClient,
+    trace: Trace,
+    accessibility_baseline: Optional[Mapping[str, Any]],
+) -> None:
+    """Traverse the observed DOM tab order and submit with Enter."""
+    if not isinstance(accessibility_baseline, Mapping):
+        raise BrowserRuntimeError("keyboard-submit requires an accessibility baseline")
+    focus_order = accessibility_baseline.get("focus_order")
+    if not isinstance(focus_order, list) or not focus_order:
+        raise BrowserRuntimeError("keyboard-submit has no observed focus order")
+    focus_ids = []
+    for item in focus_order:
+        if not isinstance(item, Mapping) or not isinstance(item.get("id"), str) or not item["id"]:
+            raise BrowserRuntimeError("keyboard-submit focus order contains an invalid id")
+        focus_ids.append(item["id"])
+    submit_id = "submit-calculation"
+    if submit_id not in focus_ids:
+        raise BrowserRuntimeError("keyboard-submit target is absent from the observed focus order")
+    semantics = accessibility_baseline.get("semantics")
+    if not isinstance(semantics, list):
+        raise BrowserRuntimeError("keyboard-submit has no observed semantic tree")
+    submit_semantics = next((item for item in semantics if isinstance(item, Mapping) and item.get("id") == submit_id), None)
+    if not isinstance(submit_semantics, Mapping):
+        raise BrowserRuntimeError("keyboard-submit target is absent from the observed semantic tree")
+    states = submit_semantics.get("states")
+    if not isinstance(states, Mapping) or states.get("disabled") is True:
+        raise BrowserRuntimeError("keyboard-submit target is disabled")
+    if client.execute(FOCUS_ELEMENT_SCRIPT, [focus_ids[0]]) is not True:
+        raise BrowserRuntimeError("keyboard-submit could not focus the first observed control")
+    focus_path = []
+    for _ in range(len(focus_ids) + 1):
+        active_id = client.execute(ACTIVE_ELEMENT_ID_SCRIPT)
+        if not isinstance(active_id, str) or active_id not in focus_ids:
+            raise BrowserRuntimeError(f"keyboard-submit observed an unknown active control: {active_id!r}")
+        focus_path.append(active_id)
+        if active_id == submit_id:
+            break
+        client.key_press("Tab")
+    if not focus_path or focus_path[-1] != submit_id:
+        raise BrowserRuntimeError("keyboard-submit did not reach the submit control through Tab")
+    client.key_press("Enter")
+    trace.actions.append({"action": "keyboard-submit", "key": "Enter", "focus_path": focus_path})
+
+
 def run_scenario(
     client: WebDriverClient,
     engine: BrowserEngine,
@@ -191,6 +251,7 @@ def run_scenario(
     media_playback_probe: bool = False,
     font_probe: bool = False,
     text_geometry_probe: bool = False,
+    keyboard_submit: bool = False,
 ) -> Trace:
     """Execute the same input, bridge and bounded teardown trace for every engine."""
     if bridge not in BRIDGE_MODES:
@@ -203,6 +264,12 @@ def run_scenario(
         raise BrowserRuntimeError("--require-reduced-motion requires --accessibility-probe")
     if require_forced_colors and not accessibility_probe:
         raise BrowserRuntimeError("--require-forced-colors requires --accessibility-probe")
+    if keyboard_submit and not accessibility_probe:
+        raise BrowserRuntimeError("--keyboard-submit requires --accessibility-probe")
+    if keyboard_submit and bridge != "authorized":
+        raise BrowserRuntimeError("--keyboard-submit requires --bridge authorized")
+    if keyboard_submit and cancel:
+        raise BrowserRuntimeError("--keyboard-submit cannot be combined with --cancel")
     trace: Optional[Trace] = None
     stopped_snapshot: Optional[Dict[str, Any]] = None
     remounted_snapshot: Optional[Dict[str, Any]] = None
@@ -270,8 +337,11 @@ def run_scenario(
             screenshot(client, trace, screenshot_directory, f"after-{element_id}")
 
         if bridge == "authorized":
-            submit = client.find("#submit-calculation")
-            client.click(submit)
+            if keyboard_submit:
+                _keyboard_submit(client, trace, accessibility_baseline)
+            else:
+                submit = client.find("#submit-calculation")
+                client.click(submit)
             if cancel:
                 _wait_for_text(client, "result-state", "Request in progress", include=True, timeout_ms=timeout_ms)
                 trace.actions.append({"action": "submit", "state": "pending"})
@@ -299,6 +369,13 @@ def run_scenario(
                 metrics = client.execute("return document.getElementById('result-metrics').textContent.trim();")
                 if metrics != "Volume rate: 0.900000 mL/hr":
                     raise BrowserRuntimeError(f"authorized result differs: {metrics!r}")
+                if keyboard_submit:
+                    capture_accessibility(
+                        client,
+                        trace,
+                        "after-keyboard-submit",
+                        baseline=accessibility_baseline,
+                    )
                 trace.actions.append({"action": "submit", "state": "success", "metrics": metrics})
                 _snapshot(client, trace, "success")
                 if browser_heap:

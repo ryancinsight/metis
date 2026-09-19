@@ -658,6 +658,62 @@ class EmptyRemountDriver(FakeDriver):
         return snapshot
 
 
+class KeyboardSubmitDriver(FakeDriver):
+    """Driver that models DOM focus traversal and an Enter activation."""
+
+    def __init__(self) -> None:
+        super().__init__()
+        self.active_element = None
+        self.keyboard_actions = []
+
+    def execute(self, script: str, arguments=()):
+        if "const element = document.getElementById(arguments[0]);" in script:
+            element_id = arguments[0]
+            if element_id not in {"weight-kg", "submit-calculation"}:
+                return False
+            self.active_element = element_id
+            return True
+        if "const element = document.activeElement;" in script:
+            return self.active_element
+        if "matchMedia" in script and "focus_order" in script:
+            snapshot = super().execute(script, arguments)
+            snapshot["focus_order"] = [
+                {"id": "weight-kg", "role": "textbox", "name": "Weight (kg)"},
+                {"id": "submit-calculation", "role": "button", "name": "Submit"},
+            ]
+            snapshot["focus_sequence"] = ["weight-kg", "submit-calculation"]
+            snapshot["geometry"]["submit-calculation"] = {
+                "left": 16.0,
+                "top": 72.0,
+                "width": 160.0,
+                "height": 44.0,
+                "right": 176.0,
+                "bottom": 116.0,
+            }
+            return snapshot
+        return super().execute(script, arguments)
+
+    def key_press(self, key: str) -> None:
+        self.keyboard_actions.append(key)
+        if key == "Tab" and self.active_element == "weight-kg":
+            self.active_element = "submit-calculation"
+        elif key == "Enter" and self.active_element == "submit-calculation":
+            self.pending = True
+            self.success = False
+
+
+class DisabledKeyboardSubmitDriver(KeyboardSubmitDriver):
+    """Driver mutant that exposes a disabled submit target in the AX snapshot."""
+
+    def execute(self, script: str, arguments=()):
+        snapshot = super().execute(script, arguments)
+        if "matchMedia" in script and "focus_order" in script and isinstance(snapshot, dict):
+            for semantic in snapshot["semantics"]:
+                if semantic["id"] == "submit-calculation":
+                    semantic["states"]["disabled"] = True
+        return snapshot
+
+
 class BrowserRuntimeTests(unittest.TestCase):
     """The same trace keeps its value semantics across all engine names."""
 
@@ -897,6 +953,78 @@ class BrowserRuntimeTests(unittest.TestCase):
                     )
 
         self.assertEqual(events[:2], ["accessibility", "features"])
+
+    def test_keyboard_submit_traverses_focus_order_and_completes(self):
+        output = pathlib.Path(__file__).resolve().parents[2] / "output" / "browser" / "runtime-test"
+        output.mkdir(parents=True, exist_ok=True)
+        with tempfile.TemporaryDirectory(dir=output) as directory:
+            driver = KeyboardSubmitDriver()
+            trace = run_scenario(
+                driver,
+                BrowserEngine.CHROMIUM,
+                "http://127.0.0.1:8080/?endpoint=ws%3A%2F%2F127.0.0.1%3A8765%2Fsocket&process=42&principal=66666666666666666666666666666666",
+                "authorized",
+                "0" * 40,
+                pathlib.Path(directory),
+                5_000,
+                False,
+                4_000,
+                accessibility_probe=True,
+                keyboard_submit=True,
+            )
+        keyboard_action = next(action for action in trace.actions if action["action"] == "keyboard-submit")
+        self.assertEqual(keyboard_action["key"], "Enter")
+        self.assertEqual(keyboard_action["focus_path"], ["weight-kg", "submit-calculation"])
+        self.assertEqual(driver.keyboard_actions, ["Tab", "Enter"])
+        self.assertEqual(
+            [record["label"] for record in trace.metrics["accessibility"]],
+            ["initial", "after-weight-kg", "after-target-dose", "after-keyboard-submit", "remounted"],
+        )
+        self.assertEqual(
+            next(action for action in trace.actions if action["action"] == "submit")["state"],
+            "success",
+        )
+
+    def test_keyboard_submit_requires_authorized_accessibility_trace(self):
+        common = (
+            FakeDriver(),
+            BrowserEngine.CHROMIUM,
+            "http://127.0.0.1:8080/",
+            "disconnected",
+            "0" * 40,
+            pathlib.Path("."),
+            5_000,
+            False,
+            4_000,
+        )
+        with self.assertRaisesRegex(BrowserRuntimeError, "requires --accessibility-probe"):
+            run_scenario(*common, keyboard_submit=True)
+        with self.assertRaisesRegex(BrowserRuntimeError, "requires --bridge authorized"):
+            run_scenario(*common, accessibility_probe=True, keyboard_submit=True)
+
+    def test_keyboard_submit_rejects_missing_or_disabled_targets(self):
+        output = pathlib.Path(__file__).resolve().parents[2] / "output" / "browser" / "runtime-test"
+        output.mkdir(parents=True, exist_ok=True)
+        cases = (
+            (FakeDriver(), "target is absent from the observed focus order"),
+            (DisabledKeyboardSubmitDriver(), "target is disabled"),
+        )
+        for driver, message in cases:
+            with self.subTest(message=message), tempfile.TemporaryDirectory(dir=output) as directory:
+                with self.assertRaisesRegex(BrowserRuntimeError, message):
+                    run_scenario(
+                        driver,
+                        BrowserEngine.CHROMIUM,
+                        "http://127.0.0.1:8080/?endpoint=ws%3A%2F%2F127.0.0.1%3A8765%2Fsocket&process=42&principal=66666666666666666666666666666666",
+                        "authorized",
+                        "0" * 40,
+                        pathlib.Path(directory),
+                        5_000,
+                        False,
+                        4_000,
+                        accessibility_probe=True,
+                        keyboard_submit=True,
+                    )
 
     def test_lifecycle_cycle_bound_is_enforced(self):
         for value in (0, MAX_LIFECYCLE_CYCLES + 1, True):
@@ -1730,6 +1858,30 @@ class BrowserRuntimeTests(unittest.TestCase):
             document = json.loads(trace_path.read_text(encoding="utf-8"))
         self.assertEqual(document["status"], "failed")
         self.assertIn("--require-reduced-motion requires --accessibility-probe", document["error"])
+
+    def test_cli_rejects_keyboard_submit_without_accessibility_probe(self):
+        output = pathlib.Path(__file__).resolve().parents[2] / "output" / "browser" / "runtime-test"
+        output.mkdir(parents=True, exist_ok=True)
+        with tempfile.TemporaryDirectory(dir=output) as directory:
+            trace_path = pathlib.Path(directory) / "invalid-keyboard-submit.json"
+            with mock.patch.object(
+                sys,
+                "argv",
+                [
+                    "browser_runtime.py",
+                    "--engine",
+                    "chromium",
+                    "--bridge",
+                    "authorized",
+                    "--keyboard-submit",
+                    "--output",
+                    str(trace_path),
+                ],
+            ):
+                self.assertEqual(main(), 1)
+            document = json.loads(trace_path.read_text(encoding="utf-8"))
+        self.assertEqual(document["status"], "failed")
+        self.assertIn("--keyboard-submit requires --accessibility-probe", document["error"])
 
     def test_cli_requires_a_fixed_url_for_fragment_scenario(self):
         output = pathlib.Path(__file__).resolve().parents[2] / "output" / "browser" / "runtime-test"

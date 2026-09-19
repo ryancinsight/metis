@@ -2200,6 +2200,14 @@ post-default navigation selection snapshots and composition lifecycle. It does
 not yet close bidi/line metrics, clipboard/undo, native IME or
 assistive-technology acceptance; those remain explicit residuals.
 
+The authorized workbench runner also accepts `--keyboard-submit` together with
+`--accessibility-probe`. It traverses the observed enabled DOM focus order with
+trusted `Tab` actions, activates the submit control with `Enter`, waits for the
+backend result and records the focus path and post-submit semantic snapshot.
+The dependency-free contract test covers the complete path and rejects missing
+or disabled targets. This closes browser keyboard completion for the trace; it
+does not establish screen-reader speech or a native accessibility bridge.
+
 <a id="V04"></a>
 ### V04 — Responsive layout and clipping
 

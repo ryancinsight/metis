@@ -260,6 +260,16 @@ python scripts/browser_runtime.py --engine chromium --browser-name MicrosoftEdge
   --lifecycle-cycles 4 --output output/browser/runtime/chromium-accessibility.json
 ```
 
+For the authorized workbench, add `--keyboard-submit` to exercise completion
+without a pointer. The flag requires `--accessibility-probe` and
+`--bridge authorized`; the runner focuses the first observed enabled control,
+sends bounded `Tab` actions until `submit-calculation`, sends `Enter`, waits
+for the real backend result, and records the focus path plus an
+`after-keyboard-submit` semantic snapshot. A missing, disabled or
+out-of-order submit target fails closed. This is browser DOM keyboard evidence;
+it does not claim spoken screen-reader output or an operating-system
+accessibility bridge.
+
 The optional `--require-reduced-motion` and `--require-forced-colors` switches
 turn the corresponding `matchMedia` observation into an acceptance condition;
 they require `--accessibility-probe` and fail when the driver host has not

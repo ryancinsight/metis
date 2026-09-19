@@ -65,6 +65,7 @@ def _arguments() -> argparse.Namespace:
     parser.add_argument("--browser-heap-sample", action="store_true", help="record bounded performance.memory JavaScript-heap observations when exposed")
     parser.add_argument("--browser-memory-sample", action="store_true", help="record bounded measureUserAgentSpecificMemory observations when exposed")
     parser.add_argument("--accessibility-probe", action="store_true", help="record bounded browser media, focus-order, zoom and native accessibility-tree evidence")
+    parser.add_argument("--keyboard-submit", action="store_true", help="traverse the observed workbench focus order and submit with Enter (requires --accessibility-probe and --bridge authorized)")
     parser.add_argument("--asset-probe", action="store_true", help="decode the shipped same-origin SVG and PNG marks and record intrinsic dimensions")
     parser.add_argument("--media-probe", action="store_true", help="exercise bounded audio/video decode errors and source teardown")
     parser.add_argument("--media-playback-probe", action="store_true", help="exercise same-origin audio controls and source teardown")
@@ -107,6 +108,14 @@ def main() -> int:
             raise BrowserRuntimeError("--require-reduced-motion requires --accessibility-probe")
         if arguments.require_forced_colors and not arguments.accessibility_probe:
             raise BrowserRuntimeError("--require-forced-colors requires --accessibility-probe")
+        if arguments.keyboard_submit and arguments.scenario != "workbench":
+            raise BrowserRuntimeError("--keyboard-submit requires --scenario workbench")
+        if arguments.keyboard_submit and not arguments.accessibility_probe:
+            raise BrowserRuntimeError("--keyboard-submit requires --accessibility-probe")
+        if arguments.keyboard_submit and arguments.bridge != "authorized":
+            raise BrowserRuntimeError("--keyboard-submit requires --bridge authorized")
+        if arguments.keyboard_submit and arguments.cancel:
+            raise BrowserRuntimeError("--keyboard-submit cannot be combined with --cancel")
         if arguments.accessibility_probe and arguments.scenario != "workbench":
             raise BrowserRuntimeError("--accessibility-probe requires --scenario workbench")
         if arguments.asset_probe and arguments.scenario != "workbench":
@@ -231,6 +240,7 @@ def main() -> int:
                         media_playback_probe=arguments.media_playback_probe,
                         font_probe=arguments.font_load_probe,
                         text_geometry_probe=arguments.text_geometry_probe,
+                        keyboard_submit=arguments.keyboard_submit,
                     )
         else:
             url = arguments.url
@@ -292,6 +302,7 @@ def main() -> int:
                     media_playback_probe=arguments.media_playback_probe,
                     font_probe=arguments.font_load_probe,
                     text_geometry_probe=arguments.text_geometry_probe,
+                    keyboard_submit=arguments.keyboard_submit,
                 )
         _write_trace(output, trace.document())
         print(json.dumps(trace.document(), sort_keys=True))
