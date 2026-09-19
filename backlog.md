@@ -4,6 +4,15 @@
 - Delivery: [PR #176](https://github.com/ryancinsight/metis/pull/176), merge `04a2aef3bd9241a8096a9958ec126d568bb1d8e9`.
 - Outcome: 12 bounded same-instance saved MRI-DIR cycles pass file/RGBA/cine oracles, zero stopped listener guards, and stable post-warmup capacity; RITK owns DICOM semantics and records the resource limits.
 
+<a id="METIS-PRESENTATION-GEOMETRY-001"></a>
+## METIS-PRESENTATION-GEOMETRY-001 — Carry validated physical frame geometry [arch] [minor]
+- Status: in-progress; priority: P1; owner: Metis canvas contract; integrator: root; branch: `feat/metis-presentation-geometry`; last-update: 2026-09-19.
+- Outcome: the format-neutral browser frame seam accepts validated display spacing alongside borrowed RGBA pixels, so a host cannot present malformed physical geometry while RITK retains DICOM and voxel semantics.
+- Scope: `metis-web` frame contract, surface validation, focused tests, ADR and README/API documentation; RITK consumer follow-up lands after this provider change.
+- Acceptance: valid anisotropic spacing reaches the borrowed canvas contract without copying; zero, non-finite and negative distances are rejected before provider upload; existing frame implementations remain pixel-compatible; strict native/WASM checks and focused tests pass.
+- Dependencies: RITK presentation migration and current Metis/Moirai lock; non-goals are DICOM parsing, physical spacing derivation and clinical metadata.
+- Lease: root `crates/metis-web/src/canvas/frame.rs`, `crates/metis-web/src/canvas/surface.rs`, `crates/metis-web/src/canvas/mod.rs`, `crates/metis-web/README.md`, `docs/adr/0040-presentation-frame-geometry.md`, `backlog.md` (2026-09-19T00:00:00Z).
+
 <a id="METIS-GALLERY-GATE-001"></a>
 ## METIS-GALLERY-GATE-001 — Complete gallery delivery gates
 - Status: done; priority: P1; integrator: root; last-update: 2026-09-16.
