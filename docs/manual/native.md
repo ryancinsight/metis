@@ -38,6 +38,14 @@ consumed by the host; preedit text stays transient and committed UTF-8 text uses
 the same bounded patient-field transition as ordinary text input. WebView2
 composition remains a separate host role.
 
+The application boundary regression sends the same bounded provider events
+through `NativeForm`: start/update changes only the transient preedit, focus
+loss cancels it without changing the patient field, and commit applies the
+UTF-8 text through the ordinary bounded transition. This is consumer contract
+evidence; it does not claim that an installed CJK or other system IME was
+exercised. The remaining physical journey is described in the [real Unicode
+input capture](#capture-real-unicode-input).
+
 ## Apply native display scale
 
 Moirai reports the window's integer DPI through `WindowEvent::DpiChanged`.

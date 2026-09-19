@@ -325,7 +325,9 @@ mod tests {
     use metis_frontend::FrontendApp;
     use metis_ipc::MemoryTransport;
     use metis_platform::DisplayScale;
-    use metis_platform::native::{ModifierState, NativeApplication, NativeFlow, WindowEvent};
+    use metis_platform::native::{
+        CompositionPhase, ModifierState, NativeApplication, NativeFlow, WindowEvent,
+    };
 
     #[test]
     fn patient_text_rejects_controls_and_bounded_overflow() {
@@ -353,6 +355,60 @@ mod tests {
         assert_eq!(value, "patient東京");
         assert_eq!(app.inputs().patient_id, "patient東京");
         assert_eq!(app.composition(), None);
+    }
+
+    #[test]
+    fn native_composition_events_keep_preedit_transient_and_cancel_on_focus_loss() {
+        let (transport, _peer) = MemoryTransport::pair();
+        let mut app = FrontendApp::new(transport, 800, 600).expect("form");
+        app.set_inputs("patient", 70.0, 4.0, 0.5)
+            .expect("initial patient value");
+        let mut form = NativeForm {
+            app,
+            pid: 1,
+            patient_id: "patient".to_owned(),
+            focused: true,
+        };
+
+        let flow = form
+            .handle_events(&[
+                WindowEvent::TextComposition {
+                    phase: CompositionPhase::Started,
+                    text: String::new(),
+                },
+                WindowEvent::TextComposition {
+                    phase: CompositionPhase::Updated,
+                    text: "東京".to_owned(),
+                },
+            ])
+            .expect("preedit events");
+        assert!(matches!(flow, NativeFlow::Continue { repaint: true }));
+        assert_eq!(form.app.composition(), Some("東京"));
+        assert_eq!(form.patient_id, "patient");
+        assert_eq!(form.app.inputs().patient_id, "patient");
+
+        let flow = form
+            .handle_events(&[WindowEvent::FocusLost])
+            .expect("focus loss");
+        assert!(matches!(flow, NativeFlow::Continue { repaint: true }));
+        assert_eq!(form.app.composition(), None);
+        assert!(!form.focused);
+
+        form.handle_events(&[
+            WindowEvent::FocusGained,
+            WindowEvent::TextComposition {
+                phase: CompositionPhase::Started,
+                text: String::new(),
+            },
+            WindowEvent::TextComposition {
+                phase: CompositionPhase::Committed,
+                text: "東京".to_owned(),
+            },
+        ])
+        .expect("committed composition");
+        assert_eq!(form.app.composition(), None);
+        assert_eq!(form.patient_id, "patient東京");
+        assert_eq!(form.app.inputs().patient_id, "patient東京");
     }
 
     #[test]
