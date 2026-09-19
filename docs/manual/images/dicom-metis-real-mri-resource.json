@@ -9,7 +9,7 @@
     "sample_interval_ms": 100,
     "timeout_seconds": 90.0,
     "repeat_runs": 3,
-    "ritk_revision": "5ba6251c9ee11eb1493a1dea912c20e34e7e12d8",
+    "ritk_revision": "836b4b3e63b299b40433ab5deef35b7fdddc9ed6",
     "metis_revision": "a6af382ebf009806c920c07ae4031a98ea4a678a",
     "moirai_revision": "b179b89fd2521034d2fc9c97663649811982e9fa",
     "command_sha256": "51d7d39fc8da3d5af9676e9cc2383168c60d24fe8d08e893202e1d1c67005652"
@@ -102,6 +102,6 @@
     "repeat_capture_sha256": "259dd79103482756c4e688621bebafc841cc40f1df10ff2bbd7f9d04b7b4d401"
   },
   "comparison": {
-    "interpretation": "This record binds the real public MRI-DIR DICOM presentation to the current standalone-lock RITK/Metis process tree: RITK 5ba6251, Metis a6af382, Moirai b179b89. It is a fixture baseline, not a framework ranking; matched Tauri, GPUI and egui runs with the same input, host, surface, trace and capture contract are still required. WASM, compositor, GPU, allocator-used and security measurements remain separate evidence."
+    "interpretation": "This record binds the real public MRI-DIR DICOM presentation to the current standalone-lock RITK/Metis process tree: RITK 836b4b3, Metis a6af382, Moirai b179b89. It is a fixture baseline, not a framework ranking; matched Tauri, GPUI and egui runs with the same input, host, surface, trace and capture contract are still required. WASM, compositor, GPU, allocator-used and security measurements remain separate evidence."
   }
 }

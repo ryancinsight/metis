@@ -2843,7 +2843,7 @@ files and are package-size evidence only; they do not measure process memory,
 runtime allocations or framework performance.
 
 The current three-run public MRI-DIR T2 resource baseline uses this option with RITK
-revision `5ba6251c9ee11eb1493a1dea912c20e34e7e12d8`, Metis revision
+revision `836b4b3e63b299b40433ab5deef35b7fdddc9ed6`, Metis revision
 `a6af382ebf009806c920c07ae4031a98ea4a678a` and Moirai revision
 `b179b89fd2521034d2fc9c97663649811982e9fa`. All runs exited 0, produced the
 same 1280 × 800 capture (`259dd79103482756c4e688621bebafc841cc40f1df10ff2bbd7f9d04b7b4d401`,
