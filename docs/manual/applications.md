@@ -214,13 +214,13 @@ match; the tracked manual figure is 640×400 while provenance retains the raw
 1280×800 source digest. The eframe process boundary still differs from Métis,
 and GPUI/Tauri fixtures remain open, so no framework ranking is derived.
 
-The current standalone-lock replay (2026-09-18) is bound to RITK source
-`c93a4f67ef0bedc3eed8ea405e3917a8c0a62c59`, Metis
-`860ffbf52d12a70c80dd2f150d2aff3a5630d57e` and Moirai
+The current standalone-lock replay (2026-09-19) is bound to RITK source
+`9ea19856c63dbe5b956c81560bad044a48705ee1`, Metis
+`b432446f5dbc39fb328220f45ba0d0341eb03263` and Moirai
 `5075d4c70ba4f840d4c5a47b67c5d564405badf5`. The standalone lock digest is
-`f4a448b5bb3e76c1f966908c7b59ebc90b1102f26d668b5be72e64c9b611bbd2`, and the
+`182203ea9a9d13dbd596753055b96777954d68173228cfe22475cf496d58ac32`, and the
 executable digest is
-`8a7ff0d40c119e19150f9ed9b643868eebff6d2865b6d3130e4a1014a3b7f995`. RITK
+`a848580e42105e8a6798bbfb1a8fb0574fc3bc7d0dd7e8df31e337f3006526c9`. RITK
 opened the saved 94-file MRI-DIR study (49,807,236 bytes) and produced the actual 1280 × 800
 three-plane frame below; it contains 411,589 non-black pixels and repeats the
 capture digest `259dd79103482756c4e688621bebafc841cc40f1df10ff2bbd7f9d04b7b4d401`.
