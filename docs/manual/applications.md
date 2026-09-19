@@ -206,22 +206,21 @@ contains real MRI anatomy and no series browser or MIP:
 
 Three lifecycle runs exited 0 with the same digest. The [matched provenance
 record](https://github.com/ryancinsight/ritk/blob/main/docs/manual/images/dicom-eframe-orthogonal-surface-resource.json)
-binds RITK main `3a76cbe4ac388267fd4016ec0fc21106ec569964`, the locked Metis
-`a6af382` and Moirai `b179b89` revisions, the requested 1024×640 logical size,
+binds RITK source `f1a556786e849696caa73d8c341adf309e87d163`, the locked Metis
+`8d4ab58` and Moirai `f038622` revisions, the requested 1024×640 logical size,
 observed 1280×800 physical size, executable and PNG hashes, and the semantic
 keys `axial`, `coronal`, `sagittal`. Its three-run sample records mean peak
-private bytes of 416,239,616 ± 29,801,008 and lifecycle duration of 2,976 ±
-1,949 ms; the first cold launch accounts for the wide uncertainty. The
+private bytes of 416,867,669 ± 30,202,762 and lifecycle duration of 2,123 ± 203 ms; the first cold launch accounts for the wide uncertainty. The
 semantic and host-extent prerequisites for V12 now match; the tracked manual
 figure is 640×400 while provenance retains the raw 1280×800 source digest. The
 eframe process boundary still differs from Métis, and GPUI/Tauri fixtures remain
 open, so no framework ranking is derived.
 
-The current standalone-lock replay (2026-09-19) uses RITK lock-change PR #512
-merge `836b4b3e63b299b40433ab5deef35b7fdddc9ed6`, Metis
-`a6af382ebf009806c920c07ae4031a98ea4a678a` and Moirai
-`b179b89fd2521034d2fc9c97663649811982e9fa`. The standalone lock digest is
-`2e7815d44374804038cc7236c2fda4cd6539e7f5be46393ba73dbe981422a1c1`, and the
+The current standalone-lock replay (2026-09-19) uses RITK lock PR #515
+merge `9881b9c4ac9fdccbc241c94fe1903f30d4f20e95`, source RITK `f1a556786e849696caa73d8c341adf309e87d163`, Metis
+`8d4ab58e8731c51547bbca3ec87100facb698322` and Moirai
+`f038622d24907884ce5f386da4e04d05bdb60d62`. The standalone lock digest is
+`2825653169ee324f9421122416da1e65a279e8657841c7fce9347386f6b58745`, and the
 executable digest is
 `1c1fa032cde5381d80a3d4baa25f6f35ff5d4cba48f08f925c600c34de4f14a3`. RITK
 opened the saved 94-file MRI-DIR study (49,807,236 bytes) and produced the actual 1280 × 800
@@ -244,9 +243,9 @@ runner's explicitly approximate 95% half-width across three runs.
 | --- | --- | ---: | ---: | ---: |
 | Métis native MIP | 409 files; axial/coronal/sagittal/axial MIP | 1280 × 800 | 2,338,119,680 ± 366,961 | 15,346 ± 3,394 ms |
 | eframe | 409 files; axial/coronal/sagittal/3D MIP | 1600 × 1000 | 2,494,962,347 ± 5,291,689 | 8,752 ± 2,197 ms |
-| Métis native MRI | 94 files; axial/coronal/sagittal | 1280 × 800 | 816,218,112 ± 798,240 | 2,189 ± 349 ms |
+| Métis native MRI | 94 files; axial/coronal/sagittal | 1280 × 800 | 815,602,347 ± 195,407 | 2,041 ± 24 ms |
 | eframe MRI | 94 files; axial/coronal/sagittal/3D MIP | 1600 × 1000 | 1,038,607,701 ± 2,129,690 | 2,593 ± 477 ms |
-| eframe MRI orthogonal | 94 files; axial/coronal/sagittal | 1280 × 800 | 416,239,616 ± 29,801,008 | 2,976 ± 1,949 ms |
+| eframe MRI orthogonal | 94 files; axial/coronal/sagittal | 1280 × 800 | 416,867,669 ± 30,202,762 | 2,123 ± 203 ms |
 
 The [Métis MIP provenance](images/dicom-metis-real-ct-mip-resource.json),
 [eframe provenance](images/dicom-eframe-real-ct-resource.json), [Métis MRI
