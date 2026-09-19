@@ -214,14 +214,14 @@ match; the tracked manual figure is 640×400 while provenance retains the raw
 1280×800 source digest. The eframe process boundary still differs from Métis,
 and GPUI/Tauri fixtures remain open, so no framework ranking is derived.
 
-The recorded standalone-lock replay (2026-09-18) is bound to RITK source
-`8f8516065f6ab9405852d96885f54291d5e24a48`, Metis
-`5e892245ac52c6455bbb57244fa654e6eb3cc9c1` and Moirai
-`ae282117fd962f4b7c66d722aad9d3c2906320bb`. The standalone lock digest is
-`a602ec28d9fb3d2c73b6245067ec33e4648d66434de07087b0153c90aea12fbb`, and the
+The current standalone-lock replay (2026-09-19) is bound to RITK source
+`c93a4f67ef0bedc3eed8ea405e3917a8c0a62c59`, Metis
+`860ffbf52d12a70c80dd2f150d2aff3a5630d57e` and Moirai
+`5075d4c70ba4f840d4c5a47b67c5d564405badf5`. The standalone lock digest is
+`f4a448b5bb3e76c1f966908c7b59ebc90b1102f26d668b5be72e64c9b611bbd2`, and the
 executable digest is
-`05aa4f42b075fd3913d2c43a152148e2dc1f9a946729a278f7d2c0dbac068b88`. RITK
-opened the saved 94-file MRI-DIR study and produced the actual 1280 × 800
+`8a7ff0d40c119e19150f9ed9b643868eebff6d2865b6d3130e4a1014a3b7f995`. RITK
+opened the saved 94-file MRI-DIR study (49,807,236 bytes) and produced the actual 1280 × 800
 three-plane frame below; it contains 411,589 non-black pixels and repeats the
 capture digest `259dd79103482756c4e688621bebafc841cc40f1df10ff2bbd7f9d04b7b4d401`.
 The [real MRI frame](https://github.com/ryancinsight/ritk/blob/main/docs/manual/images/dicom-metis-real-mri.png?raw=true)
@@ -229,7 +229,7 @@ and [revision-bound provenance](https://github.com/ryancinsight/ritk/blob/main/d
 are RITK-owned evidence; Metis supplies only the format-neutral host and does
 not parse DICOM data.
 
-![Actual MRI-DIR study from the recorded standalone-lock replay](https://github.com/ryancinsight/ritk/blob/main/docs/manual/images/dicom-metis-real-mri.png?raw=true)
+![Actual MRI-DIR study from the current standalone-lock replay](https://github.com/ryancinsight/ritk/blob/main/docs/manual/images/dicom-metis-real-mri.png?raw=true)
 
 ### V12 fixture comparison
 
