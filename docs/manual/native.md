@@ -253,11 +253,14 @@ requests are denied and page messages are bounded JSON values. The surface
 does not grant page code filesystem, network or process authority. The
 WebView2 runtime must be installed on the Windows machine. The Windows
 `metis-platform` target explicitly enables Moirai's `webview2` feature; other
-Metis targets do not pull the optional COM binding. The standalone Cargo.lock
-pins merged Moirai revision
-`c7b49a7623aed533f377aec77f656a16d2b9d68b`, which contains the provider feature,
+Metis targets do not pull the optional COM binding. The standalone Cargo.lock currently pins merged Moirai revision
+`7aa9d4e27fe8d12c0129accddccbf70bbc796e08`, whose history contains the
+WebView2 provider revision `c7b49a7623aed533f377aec77f656a16d2b9d68b` used to
+generate the historical capture. The current lock retains the provider feature,
 bounded host implementation, stable browser canvas extents, the content-box
-mapping used by the RITK consumer and the bounded `CapturePreview` PNG path.
+mapping used by the RITK consumer and the bounded `CapturePreview` PNG path;
+it also contains the later WebGPU provider recreation. The capture hash and
+runtime provenance remain tied to the revision that produced that artifact.
 WebGPU is a browser-only opt-in surface; native WebView2 packaging does not
 claim GPU presentation evidence.
 
