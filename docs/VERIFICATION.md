@@ -1492,10 +1492,10 @@ permissions or establish that the selected contents came from a trusted host.
 RITK remains the owner of DICOM parsing and presentation, so this evidence does
 not move patient-data handling into Metis.
 
-The exact full verifier at revision `8858acedf94ff55002522d1f2af7209f18d2e423`
+The exact full verifier at revision `55b7eaa66d2cef6db7270f3f87678f16eb6b6d5e`
 passed all 26 stages against lock SHA
 `075a0cf9295d2d12568374de23187028eea25c8a4cdfd40b655f663105bca5c9` and source
-SHA `a1b95e2ef97a1e5fbb4c28919bbfe12fe1a140f18d956258c8168b8450a0af28`.
+SHA `aff016d81f8957b564fed7352962037accf1c7bddb9517318f3969d29f7364e8`.
 The expected negative capture exited 1 with `PermissionDenied`; the seven
 visual captures had zero changed pixels and empty semantic diffs. Updating the
 dependency-bound fixture produced `captures.json` digest
