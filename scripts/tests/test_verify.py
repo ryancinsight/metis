@@ -475,6 +475,11 @@ class PythonBindingContractTests(unittest.TestCase):
             "abi3: true",
             "abi3-python: \"3.9\"",
             "python-test-path: crates/metis-python/tests",
+            "free-threaded: true",
+            "free-threaded-versions: '[\"3.14t\", \"3.15t\"]'",
+            "abi3t: true",
+            "abi3t-python: \"3.15t\"",
+            "abi3t-features: abi3t",
             "id-token: write",
             "ryancinsight/atlas/.github/workflows/python-wheels.yml@848e6649c52e8226a9abf7bc336f8cbf0e39ba08",
             "pypa/gh-action-pypi-publish@ba38be9e461d3875417946c167d0b5f3d385a247",
@@ -484,6 +489,14 @@ class PythonBindingContractTests(unittest.TestCase):
         for forbidden in ("secrets:", "PYPI_TOKEN", "TWINE_PASSWORD", "private_key", "signing-key", "GPG", "SSH_PRIVATE_KEY"):
             with self.subTest(forbidden=forbidden):
                 self.assertNotIn(forbidden, self.workflow)
+
+    def test_free_threaded_feature_selects_pyo3_abi3t(self):
+        for fragment in (
+            'abi3t = ["pyo3/macros", "pyo3/extension-module", "pyo3/abi3t-py315"]',
+            'abi3t-features: abi3t',
+        ):
+            with self.subTest(fragment=fragment):
+                self.assertIn(fragment, self.manifest if fragment.startswith("abi3t =") else self.workflow)
         references = re.findall(
             r"^\s*(?:-\s+)?uses:\s+([^@\s]+)@([^\s#]+)",
             self.workflow,
