@@ -8,10 +8,8 @@ const KEY: &[u8] = b"metis-scoped-process-test-key";
 
 fn capability(
     scope: CapabilityScope,
-) -> Result<
-    VerifiedHostCapability<{ CapabilityScope::RUN_PROCESS.0 }>,
-    metis_core::error::MetisError,
-> {
+) -> Result<VerifiedHostCapability<{ CapabilityScope::RUN_PROCESS.0 }>, metis_core::error::MetisError>
+{
     let policy = HostPolicy::new(
         HostOrigin::parse("http://127.0.0.1:8080").expect("test origin"),
         WindowId::new(1).expect("test window"),
