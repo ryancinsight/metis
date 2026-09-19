@@ -2481,6 +2481,29 @@ waits for the service health response, and uploads the bounded
 `<engine>-fragment.json` trace plus its three PNG states. The workflow records
 driver or service failures directly.
 
+The native process provider now supplies the first executable slice of the
+sidecar contract. `ScopedProcessProvider` accepts only a host-selected
+absolute regular executable, a bounded argument-value allowlist and an
+optional bounded environment; it requires `CapabilityScope::RUN_PROCESS`,
+clears the environment by default and passes arguments directly without a
+shell. A real test child proves value-bearing stdout, while a separate child
+writes a secret token to the private stderr pipe: Metis returns the byte count
+and never exposes the token in its output or debug representation. The same
+suite rejects an unsupported argument and an insufficient capability, rejects
+a relative executable and zero deadline, and terminates a blocked child under
+the finite cleanup bound. This is host-boundary security evidence; it does not
+claim an operating-system sandbox, descendant containment for
+`DirectChild`, network/TLS policy or DICOM behavior. The remaining network
+provider and broader sidecar lifecycle work stays on
+[METIS-SERVICES-001](../backlog.md#METIS-SERVICES-001).
+
+The implementation is Metis revision `e02ad62c781000506738c2d34d842985d128137b`;
+the locked full verifier for this increment passed all 26 named stages,
+including the expected `PermissionDenied` capture-failure oracle, and the
+focused platform run passed 42/42 tests with two intentional skips. The visual
+stage reported zero changed pixels and zero semantic differences across the
+seven existing captures after the lock-derived fixture digest was refreshed.
+
 The native audit recovery path is covered by `metis-backend` unit tests and the
 `audit_recovery` example. The example writes a real handshake record through
 `BackendService::with_persistent_audit`, drops the service, restores the record

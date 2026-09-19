@@ -401,11 +401,11 @@ continues to prove the format-neutral Metis handoff plus RITK-owned decoding,
 geometry and clinical presentation. Historical replay hashes remain in their
 original evidence records and are not current comparison inputs.
 
-The next dependency-ordered closure is explicit. First, Moirai and Metis must
-carry typed capability scopes into real file, network, process and device
-providers, with denial tests at each host boundary; the current
-origin/window/session HMAC policy authenticates a caller but is not an OS
-sandbox. Second, native Windows IME, accessibility and physical display-scale
+The next dependency-ordered closure is explicit. Moirai and Metis now carry
+typed capability scopes into real file and process providers with denial tests
+at each boundary; network and device providers, plus OS sandboxing, remain
+open. The current origin/window/session HMAC policy authenticates a caller but
+is not an OS sandbox. Second, native Windows IME, accessibility and physical display-scale
 journeys must produce visible host evidence, followed by the macOS and Linux
 providers. Third, the performance item must supply one equal consumer fixture
 before any GPUI or Tauri ranking: the same study, frame dimensions, controls,
@@ -417,6 +417,19 @@ wheel evidence remain host or registry-environment blockers; they cannot be
 closed by changing format-neutral Metis APIs. This order keeps DICOM and voxel
 aspect ownership in RITK and prevents a comparator document from becoming a
 support claim.
+
+Revision 2026-09-19 (scoped native process provider): Metis now exposes a
+format-neutral `ScopedProcessProvider` behind `CapabilityScope::RUN_PROCESS`.
+The host fixes an absolute executable, argument-value allowlist, containment
+policy and optional bounded environment; the provider clears the environment
+by default, passes arguments directly and never parses a shell string. Moirai
+merge `8a8daa60cca5484822c772bc6b574acaa8f133ad` adds the explicit stderr pipe
+used by this boundary. Metis drains that pipe privately, returns only its byte
+count, caps stdout and terminates on a finite deadline with typed cleanup
+errors. Real-child tests cover success, denial, missing scope, secret-output
+redaction and deadline cleanup. This closes the first process-provider slice;
+network providers, operating-system sandboxing and the remaining sidecar
+lifecycle are still open under `METIS-SERVICES-001`. DICOM remains RITK-owned.
 
 ## Decision and scope
 
@@ -495,7 +508,7 @@ Each row names its closing items; acceptance belongs in the
 | Large lists, tables and reactive updates | Extras tables [E6] | Elements support large list views [G1] | Frontend framework/browser concern | No virtualized controls or reusable subscriptions. [DATA](../../backlog.md#METIS-DATA-001), [STATE](../../backlog.md#METIS-STATE-001). |
 | Files, persistence and dialogs | Host/application concern | Platform services; browser restrictions [G5] | Official plugin surfaces [T5] | Browser drops now have bounded provider-owned handles and a named-byte batch handoff. Windows exposes a bounded native folder-selection adapter consumed by RITK's saved-study and Ctrl+O workflows; the real 94-file MRI selection, decode, cancellation and prior-frame preservation are recorded in the RITK provenance. Native `ScopedFileProvider` reads now require `CapabilityScope::READ_FILE`, remain below a trusted root and enforce a 64 MiB bound; RITK owns DICOM scanning/decoding. Persistent stores, broader native permission policy, non-Windows providers and audit persistence remain open. [FILES](../../backlog.md#METIS-FILES-001), [AUDIT](../../backlog.md#METIS-AUDIT-001), [INPUT](../../backlog.md#METIS-INPUT-001). |
 | Clipboard, menus, tray, shortcuts, deep links | Host/integration concern | Platform APIs; web limits differ [G5] | Core/plugin APIs [T5] | No desktop integration services. [INTEGRATION](../../backlog.md#METIS-INTEGRATION-001). |
-| Network, shell and sidecars | Application/host concern | Host APIs do not establish a capability broker | Scoped plugins and sidecar support [T5] | Process supervision is not a public permission-scoped shell/network API. [SERVICES](../../backlog.md#METIS-SERVICES-001). |
+| Network, shell and sidecars | Application/host concern | Host APIs do not establish a capability broker | Scoped plugins and sidecar support [T5] | `ScopedProcessProvider` is a capability-scoped, direct-argument host boundary with bounded stdout, private stderr draining and finite cleanup; it does not parse shell strings or expose browser-selected executables. Network providers, OS sandboxing and broader sidecar lifecycle remain open. [SERVICES](../../backlog.md#METIS-SERVICES-001). |
 | Configuration, API/plugin migration | Separate API and hosting model | Separate API and hosting model | Commands/plugins/configuration/tooling [T1] [T5] | Custom wire protocol only; no import/mapping diagnostics. [MIGRATION](../../backlog.md#METIS-MIGRATION-001). |
 | Packaging, signing and updates | eframe template covers app/web build [E7] | Tauri-like distribution contract not established | Platform bundling and signing [T6]; updater plugin [T5] | Application manifest, one application executable serving two process roles (ADR 0006), portable bundle and Windows per-user MSI are the current distribution surface (ADR 0005). RITK's locked package workflow verifies inventory, executable/MSI hashes and `--help`; local replay and install/uninstall evidence show the packaged executable opening the real CT study. Signing, [other platform formats](../../backlog.md#METIS-DISTRIBUTION-003) and [update recovery](../../backlog.md#METIS-DISTRIBUTION-004) remain gaps. [DISTRIBUTION](../../backlog.md#METIS-DISTRIBUTION-001), [RELEASE](../../backlog.md#METIS-RELEASE-001). |
 | Mobile/touch lifecycle | Target-specific integrations; parity not inferred | Complete mobile product support not established | Android/iOS target and plugin support [T1] [T5] | No mobile host/probes. [MOBILE](../../backlog.md#METIS-MOBILE-001). |

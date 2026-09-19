@@ -499,13 +499,15 @@ an owner. “Unsupported” cannot replace delivery of a required mobile/native 
 - Acceptance: typed commands/events agree across supported hosts, denial/error paths remain explicit, clipboard/user-content permissions obey host rules and listeners unregister on shutdown.
 - Demonstration: [V08](docs/VERIFICATION.md#V08), actual OS interactions and permission failures; capture menus/dialogs where visible and assert nonvisual events.
 - Completed increment (2026-09-19): browser clipboard read/write controls are implemented through Moirai's bounded secure-context provider; remaining desktop services stay open under this item.
+- Delivery reconciliation (2026-09-19): Metis PR #278 merged at `d7cb62f5139d2e4e30a476d71b81e480c04e0226`; the former `feat/metis-browser-clipboard-001` branch is collected and no longer represents active work. Menus, tray, notifications, global shortcuts, deep links, file associations, opener, single-instance and window-state services remain open.
 
 <a id="METIS-SERVICES-001"></a>
 ## METIS-SERVICES-001 — Scoped network, shell and sidecars [minor]
-- Status: todo; priority: P2; owner: Moirai mechanisms + Metis policy; dependencies: METIS-DESKTOP-001, METIS-COMMANDS-001; risk: privilege escalation
+- Status: review; priority: P2; owner: Moirai mechanisms + Metis policy; integrator: root; last-update: 2026-09-19; branch: feat/metis-scoped-process-001; delivery: `e02ad62`; dependencies: METIS-DESKTOP-001, METIS-COMMANDS-001; risk: privilege escalation
 - Scope: HTTP/WebSocket and subprocess APIs, sidecar lifecycle, endpoint/argument allowlists, bounded IO and credential redaction; local test services only by default.
 - Acceptance: unauthorized endpoints/commands/arguments fail; transient errors, deadlines, cancellation, crash and cleanup are exercised against real processes/local servers; no shell-string injection or secret output.
 - Demonstration: [V08](docs/VERIFICATION.md#V08), connection/process status and denial journey; browsers never receive arbitrary native shell access.
+- Process-provider increment (2026-09-19): Metis `e02ad62` adds `RUN_PROCESS`-witnessed direct execution with host-fixed executable and argument values, bounded stdout, private stderr draining, finite cleanup and real-child denial/redaction/deadline tests; Moirai PR #405 merge `8a8daa60` supplies the opt-in stderr pipe. Network providers, OS sandboxing, cancellation handles and broader sidecar lifecycle remain open.
 
 <a id="METIS-AXUM-001"></a>
 ## METIS-AXUM-001 — First-party bounded HTTP boundary [arch] [minor]

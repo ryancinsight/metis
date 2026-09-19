@@ -91,6 +91,16 @@ limited to `MAX_SCOPED_FILE_BYTES`; the browser file provider remains the
 format-neutral alternative. This provider does not parse DICOM or grant a
 frontend unrestricted filesystem access.
 
+Native sidecars use `ScopedProcessProvider` with a host-selected executable,
+an argument-value allowlist, an explicit direct-child or process-tree policy
+and a `RUN_PROCESS` capability witness. The provider starts the child with an
+empty environment and direct operating-system arguments; shell strings and
+browser-selected executable paths are not accepted. Moirai bounds the
+process lifecycle and owns the optional stderr pipe. Metis drains stderr and
+returns only its byte count, while stdout is capped at
+`MAX_SCOPED_PROCESS_OUTPUT_BYTES`. A deadline requests finite termination and
+reports cleanup failure instead of treating an unconfirmed exit as success.
+
 Applications that use the native pixel surface can share the bounded host loop
 through `metis_platform::native::NativeApplication` and
 `run_native_application`. The application owns its state and frame, applies

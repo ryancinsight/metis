@@ -451,6 +451,31 @@ rejection, and a host-policy token without `READ_FILE` scope. This is provider
 security evidence; it does not substitute for the real RITK MRI captures
 linked in the [DICOM workflow manual](https://github.com/ryancinsight/ritk/blob/main/docs/manual/dicom-workflow.md).
 
+### Scoped native process execution
+
+Native applications that need a host sidecar use
+`metis_platform::ScopedProcessProvider`. The host supplies one absolute regular
+executable, a finite value allowlist for every argument and, when required, a
+bounded explicit environment. A caller must present a
+`CapabilityScope::RUN_PROCESS` witness. The provider passes operating-system
+arguments directly, clears the environment by default and never accepts a
+shell command string or a browser-selected executable path.
+
+The provider caps stdout, drains the opt-in Moirai stderr pipe without
+returning its bytes, reports only the stderr byte count, and applies a finite
+deadline followed by bounded cleanup. Rejected arguments, missing capability,
+invalid paths, invalid deadlines and cleanup failures are typed errors. The
+real-child platform tests cover successful stdout, stderr redaction, argument
+denial, missing scope and deadline termination:
+
+```powershell
+cargo nextest run --locked -p metis-platform --lib
+```
+
+This boundary is format-neutral. RITK owns DICOM parsing, study selection and
+clinical presentation after its own provider receives bytes; a sidecar does
+not grant the browser arbitrary native shell access.
+
 ### Native form after a real resize
 
 The same production `metis-app.exe` was captured before and after the host
