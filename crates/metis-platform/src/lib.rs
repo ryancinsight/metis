@@ -9,6 +9,8 @@ pub mod framebuffer;
 pub mod rasterizer;
 #[cfg(not(target_arch = "wasm32"))]
 pub mod scoped_file;
+#[cfg(not(target_arch = "wasm32"))]
+pub mod scoped_process;
 pub mod surface;
 
 #[cfg(windows)]
@@ -24,4 +26,11 @@ pub use rasterizer::{
 };
 #[cfg(not(target_arch = "wasm32"))]
 pub use scoped_file::{MAX_SCOPED_FILE_BYTES, ScopedFileProvider};
+#[cfg(not(target_arch = "wasm32"))]
+pub use scoped_process::{
+    MAX_SCOPED_PROCESS_ARGUMENT_BYTES, MAX_SCOPED_PROCESS_ARGUMENTS,
+    MAX_SCOPED_PROCESS_ENVIRONMENT_BYTES, MAX_SCOPED_PROCESS_ENVIRONMENT_ENTRIES,
+    MAX_SCOPED_PROCESS_OUTPUT_BYTES, MAX_SCOPED_PROCESS_RUNTIME, ProcessContainment,
+    ScopedProcessError, ScopedProcessOutput, ScopedProcessProvider,
+};
 pub use surface::PlatformSurface;

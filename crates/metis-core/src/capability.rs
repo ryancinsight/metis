@@ -28,6 +28,8 @@ impl CapabilityScope {
     pub const SYSTEM_ADMIN: Self = Self(1 << 4);
     /// Permission to read files through a host-owned scoped provider.
     pub const READ_FILE: Self = Self(1 << 5);
+    /// Permission to launch one host-owned, argument-allowlisted process.
+    pub const RUN_PROCESS: Self = Self(1 << 6);
 
     /// Checks if this scope contains all flags of `other`.
     #[must_use]
