@@ -131,7 +131,7 @@ dependency-free. The Atlas development overlay resolves first-party code to loca
 trees. Standalone builds use the corresponding pushed provider revisions recorded
 in Cargo.lock. Metis consumes Moirai through git-plus-version requirements;
 the current standalone lock records merged Moirai revision
-`7aa9d4e27fe8d12c0129accddccbf70bbc796e08`, which descends from the
+`b179b89fd2521034d2fc9c97663649811982e9fa`, which descends from the
 WebView2 provider revision `c7b49a7623aed533f377aec77f656a16d2b9d68b`
 used to generate the historical capture. The current revision retains that
 provider graph and adds explicit WebGPU provider recreation. The locked

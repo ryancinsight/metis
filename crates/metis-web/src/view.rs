@@ -114,6 +114,7 @@ fn render_status(document: &WebDocument, state: &BrowserState, message: &str) ->
     set_text(document, "options-state", &state.controls.summary())?;
     render_drop(document, state)?;
     render_text(document, state)?;
+    render_clipboard(document, state)?;
     let submit_disabled =
         !matches!(state.bridge, BridgeStatus::Ready) || matches!(state.state, FormState::Pending);
     element(document, "submit-calculation")?.set_disabled(submit_disabled)?;
@@ -410,6 +411,13 @@ fn render_text(document: &WebDocument, state: &BrowserState) -> io::Result<()> {
         },
     )?;
     control.set_attribute("data-input-type", text.input_type())
+}
+
+fn render_clipboard(document: &WebDocument, state: &BrowserState) -> io::Result<()> {
+    let status = &state.clipboard_status;
+    set_text(document, "clipboard-status", &status.message())?;
+    element(document, "clipboard-status")?
+        .set_attribute("data-clipboard-state", status.state_name())
 }
 
 static WORKBENCH_EVENTS: [PluginOperation; 1] = [PluginOperation::new(

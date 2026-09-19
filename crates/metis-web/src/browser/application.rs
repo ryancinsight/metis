@@ -1,4 +1,4 @@
-use super::listeners::control_listeners;
+use super::listeners::{ListenerContext, control_listeners};
 use super::submission::submit;
 use super::{
     BridgeStatus, BrowserApplication, BrowserState,
@@ -27,17 +27,20 @@ impl BrowserApplication {
         let task = Rc::new(RefCell::new(None));
         let drop_task = Rc::new(RefCell::new(None));
         let fragment_task = Rc::new(RefCell::new(None));
+        let clipboard_task = Rc::new(RefCell::new(None));
         let drop_sequence = Rc::new(Cell::new(0));
 
-        let mut listeners = control_listeners(
+        let listener_context = ListenerContext {
             document,
-            &state,
-            &app,
+            state: &state,
+            app: &app,
             generation,
-            &drop_task,
-            &drop_sequence,
-            &fragment_task,
-        )?;
+            drop_task: &drop_task,
+            drop_sequence: &drop_sequence,
+            fragment_task: &fragment_task,
+            clipboard_task: &clipboard_task,
+        };
+        let mut listeners = control_listeners(&listener_context)?;
 
         let form = view::element(document, "metis-form")?;
         let listener_document = document.clone();
@@ -63,6 +66,7 @@ impl BrowserApplication {
             task,
             drop_task,
             fragment_task,
+            clipboard_task,
             generation,
         };
         view::render_lifecycle(
@@ -152,6 +156,7 @@ impl Drop for BrowserApplication {
         let _ = self.task.borrow_mut().take();
         let _ = self.drop_task.borrow_mut().take();
         let _ = self.fragment_task.borrow_mut().take();
+        let _ = self.clipboard_task.borrow_mut().take();
         self.listeners.clear();
     }
 }

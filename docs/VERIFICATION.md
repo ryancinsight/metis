@@ -1256,8 +1256,9 @@ records post-default navigation selections and validates them before rendering
 the navigation status. A CUA trace can inspect those semantic nodes and the
 focus ring; it cannot synthesize a trusted operating-system IME or expose the
 browser `isTrusted` flag. Bidi shaping, line metrics, fallback-font metrics,
-clipboard/undo, assistive technology and native IME evidence remain open under
-`METIS-TEXT-001` and `METIS-A11Y-001`.
+trusted clipboard contents/permissions, assistive technology and native IME
+evidence remain open under `METIS-TEXT-001` and `METIS-A11Y-001`; the explicit
+bounded browser controls are covered below.
 
 The 2026-09-08 CUA trace opened
 `http://127.0.0.1:8095/?cache=text-clean-20260908` at 1280×720 CSS pixels and
@@ -1290,8 +1291,8 @@ python -m unittest scripts.tests.test_browser_assets — 13/13 passed
 
 The listener does not call `prevent_default`; navigation remains browser-native
 and the Rust state records the resulting selection. No bidi shaping, line
-geometry, clipboard/undo, native IME or assistive-technology claim follows
-from this policy or these focused checks.
+geometry, trusted clipboard contents/permissions, native IME or
+assistive-technology claim follows from this policy or these focused checks.
 
 An interactive CUA smoke on 2026-09-17 opened the generated workbench at
 `http://127.0.0.1:8095/?cache=text-navigation-20260917` in a `1280×720` CSS
@@ -1422,8 +1423,9 @@ transpose insertion join the existing edit, delete and paste categories.
 `insertFromPaste`, `deleteByCut`, `historyUndo` and `historyRedo` render semantic
 paste, cut, undo and redo statuses while retaining the raw operation name;
 ordinary and composition input retain their existing status contract. The Rust
-policy validates the resulting value and UTF-16 selection before rendering, so
-no second clipboard or history implementation exists in Metis.
+policy validates the resulting value and UTF-16 selection before rendering;
+native keyboard history remains browser-owned, while the explicit bounded
+clipboard controls use the Moirai provider described below.
 
 [Input Events]: https://w3c.github.io/input-events/
 
@@ -1457,6 +1459,47 @@ operation status. **Control+Shift+Z** then restored the edited value and exposed
 evidence of the host's native history events and Metis value validation; it
 does not claim trusted clipboard contents or permissions, cross-engine parity,
 bidi/line metrics, native IME or assistive-technology behavior.
+
+## Browser clipboard controls evidence — 2026-09-19
+
+The workbench now exposes **Read browser clipboard** and **Copy note to
+clipboard** in the text card. The standalone lock pins Moirai at merged
+revision `b179b89fd2521034d2fc9c97663649811982e9fa`. Its secure-context
+provider creates the
+browser promise synchronously inside the trusted click callback, bounds text to
+1 MiB and returns an explicit unsupported, permission or activation error. The
+read path validates the returned value through `TextState`, updates the
+textarea and moves the UTF-16 caret to the accepted end; the write path reports
+the bounded UTF-8 byte count after the browser confirms the promise. Rust owns
+the status state and listener/task lifetime, and stale generations cannot update
+the remounted page.
+
+The focused Metis checks against the standalone lock passed:
+
+```text
+cargo nextest run --locked --offline -p metis-web --profile default — 50/50 passed
+cargo clippy --locked --offline -p metis-web --all-targets -- -D warnings — passed
+cargo check --locked --offline -p metis-web --target wasm32-unknown-unknown — passed
+cargo clippy --locked --offline -p metis-web --target wasm32-unknown-unknown --lib -- -D warnings — passed
+python -m unittest scripts.tests.test_browser_assets — 15/15 passed
+```
+
+The dependency-free Python suite passes 313/313 tests with one intentional
+skip. The asset contract checks the button and status IDs, the bounded provider
+calls, generation guards and task cleanup. A browser capture can show the real
+HTML controls and status transitions; it cannot grant trusted OS clipboard
+permissions or establish that the selected contents came from a trusted host.
+RITK remains the owner of DICOM parsing and presentation, so this evidence does
+not move patient-data handling into Metis.
+
+The exact full verifier at revision `55b7eaa66d2cef6db7270f3f87678f16eb6b6d5e`
+passed all 26 stages against lock SHA
+`075a0cf9295d2d12568374de23187028eea25c8a4cdfd40b655f663105bca5c9` and source
+SHA `aff016d81f8957b564fed7352962037accf1c7bddb9517318f3969d29f7364e8`.
+The expected negative capture exited 1 with `PermissionDenied`; the seven
+visual captures had zero changed pixels and empty semantic diffs. Updating the
+dependency-bound fixture produced `captures.json` digest
+`94706c8f2b8d18dca2e78416db9cbf890cf46420d3eb1c03c6ef48b799dd18e7`.
 
 ## Browser responsive-layout evidence — 2026-09-08
 
@@ -2204,8 +2247,10 @@ states; an accessibility-tree snapshot alone does not prove usability.
 Current browser evidence covers the Rust-owned textarea, bounded Unicode value,
 UTF-16 selection transport, extended-grapheme boundary rejection,
 post-default navigation selection snapshots and composition lifecycle. It does
-not yet close bidi/line metrics, clipboard/undo, native IME or
-assistive-technology acceptance; those remain explicit residuals.
+not yet close bidi/line metrics, trusted clipboard contents/permissions, native
+IME or assistive-technology acceptance; those remain explicit residuals. The
+bounded browser clipboard controls are a separate provider workflow and do not
+claim those host capabilities.
 
 The authorized workbench runner also accepts `--keyboard-submit` together with
 `--accessibility-probe`. It traverses the observed enabled DOM focus order with

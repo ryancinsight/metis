@@ -1,5 +1,6 @@
 use super::{
-    BrowserState, dialog, explorer, file_drop, fragment, gesture, pointer, text, view, wheel,
+    BrowserState, clipboard, dialog, explorer, file_drop, fragment, gesture, pointer, text, view,
+    wheel,
 };
 use crate::controls::{self, ControlField};
 use crate::epoch::Generation;
@@ -12,15 +13,30 @@ use std::{
     rc::Rc,
 };
 
+pub(super) struct ListenerContext<'a> {
+    pub(super) document: &'a WebDocument,
+    pub(super) state: &'a Rc<RefCell<BrowserState>>,
+    pub(super) app: &'a Rc<RefCell<Option<AsyncFrontendApp<BrowserWebSocketTransport>>>>,
+    pub(super) generation: Generation,
+    pub(super) drop_task: &'a Rc<RefCell<Option<LocalTaskHandle>>>,
+    pub(super) drop_sequence: &'a Rc<Cell<u64>>,
+    pub(super) fragment_task: &'a Rc<RefCell<Option<LocalTaskHandle>>>,
+    pub(super) clipboard_task: &'a Rc<RefCell<Option<LocalTaskHandle>>>,
+}
+
 pub(super) fn control_listeners(
-    document: &WebDocument,
-    state: &Rc<RefCell<BrowserState>>,
-    app: &Rc<RefCell<Option<AsyncFrontendApp<BrowserWebSocketTransport>>>>,
-    generation: Generation,
-    drop_task: &Rc<RefCell<Option<LocalTaskHandle>>>,
-    drop_sequence: &Rc<Cell<u64>>,
-    fragment_task: &Rc<RefCell<Option<LocalTaskHandle>>>,
+    context: &ListenerContext<'_>,
 ) -> io::Result<Vec<WebEventListener>> {
+    let ListenerContext {
+        document,
+        state,
+        app,
+        generation,
+        drop_task,
+        drop_sequence,
+        fragment_task,
+        clipboard_task,
+    } = context;
     let root = view::element(document, "metis-app")?;
     let mut listeners = Vec::new();
     listeners.push(input_listener(document, state, app, &root)?);
@@ -29,7 +45,7 @@ pub(super) fn control_listeners(
     listeners.extend(fragment::listeners(
         document,
         app,
-        generation,
+        *generation,
         fragment_task,
     )?);
     listeners.extend(pointer::listeners(document)?);
@@ -38,11 +54,17 @@ pub(super) fn control_listeners(
     listeners.extend(file_drop::listeners(
         document,
         state,
-        generation,
+        *generation,
         drop_task,
         drop_sequence,
     )?);
     listeners.extend(text::listeners(document, state)?);
+    listeners.extend(clipboard::listeners(
+        document,
+        state,
+        *generation,
+        clipboard_task,
+    )?);
     listeners.extend(explorer::listeners(document, state)?);
     Ok(listeners)
 }

@@ -94,6 +94,11 @@ pub(crate) const BROWSER_MARKUP: &str = r#"
   <p id="text-status" role="status" aria-live="polite">Text: ready; Unicode specimen loaded</p>
   <label for="text-specimen">Clinical note</label>
   <textarea id="text-specimen" name="clinical-note" rows="4" autocomplete="off" spellcheck="false" aria-describedby="text-status composition-status selection-status" data-text-state="ready">Résumé — 東京 / 影像</textarea>
+  <div class="metis-clipboard-controls" role="group" aria-label="Clipboard actions">
+    <button id="clipboard-read" type="button">Read browser clipboard</button>
+    <button id="clipboard-write" type="button">Copy note to clipboard</button>
+  </div>
+  <p id="clipboard-status" role="status" aria-live="polite" data-clipboard-state="ready">Clipboard: ready; choose an action</p>
   <p id="text-preview" role="status">Text value preview: Résumé — 東京 / 影像</p>
   <p id="composition-status" role="status" aria-live="polite">Composition: idle; last data none; locale unspecified</p>
   <p id="selection-status" role="status" data-selection-start="16" data-selection-end="16" data-selection-direction="none">Selection: caret 16 UTF-16 code units; direction none</p>

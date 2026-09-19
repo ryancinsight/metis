@@ -228,6 +228,21 @@ impl TextState {
         Ok(())
     }
 
+    pub(crate) fn apply_clipboard(&mut self, value: String) -> Result<(), TextError> {
+        let value = bounded_text(value)?;
+        let end = utf16_length(&value)?;
+        let selection = Selection::new(end, end, SelectionDirection::None)?;
+        self.value = value;
+        self.selection = selection;
+        self.composition = CompositionState::Inactive;
+        self.preedit = None;
+        self.last_composition = None;
+        self.last_input_data = None;
+        "insertFromPaste".clone_into(&mut self.input_type);
+        self.last_event = TextEvent::Input(InputOperation::Paste);
+        Ok(())
+    }
+
     pub(crate) fn apply_selection(&mut self, selection: Selection) -> Result<(), TextError> {
         validate_selection(&self.value, selection)?;
         self.selection = selection;
