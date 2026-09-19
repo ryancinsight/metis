@@ -206,22 +206,24 @@ contains real MRI anatomy and no series browser or MIP:
 
 Three lifecycle runs exited 0 with the same digest. The [matched provenance
 record](https://github.com/ryancinsight/ritk/blob/main/docs/manual/images/dicom-eframe-orthogonal-surface-resource.json)
-binds RITK PR #487 merge `102909c8f67bca1128eba1438ec280ee2651656e`, the locked
-Metis and Moirai revisions, the requested 1024×640 logical size, observed
-1280×800 physical size, executable and PNG hashes, and the semantic keys `axial`,
-`coronal`, `sagittal`. The semantic and host-extent prerequisites for V12 now
-match; the tracked manual figure is 640×400 while provenance retains the raw
-1280×800 source digest. The eframe process boundary still differs from Métis,
-and GPUI/Tauri fixtures remain open, so no framework ranking is derived.
+binds RITK main `3a76cbe4ac388267fd4016ec0fc21106ec569964`, the locked Metis
+`a6af382` and Moirai `b179b89` revisions, the requested 1024×640 logical size,
+observed 1280×800 physical size, executable and PNG hashes, and the semantic
+keys `axial`, `coronal`, `sagittal`. Its three-run sample records mean peak
+private bytes of 416,239,616 ± 29,801,008 and lifecycle duration of 2,976 ±
+1,949 ms; the first cold launch accounts for the wide uncertainty. The
+semantic and host-extent prerequisites for V12 now match; the tracked manual
+figure is 640×400 while provenance retains the raw 1280×800 source digest. The
+eframe process boundary still differs from Métis, and GPUI/Tauri fixtures remain
+open, so no framework ranking is derived.
 
-The current standalone-lock replay (2026-09-19) uses RITK lock-change source
-`fdbbd7394cc3f7cac746f2bad64608edad8d015f` merged as
-`e4eb95b5769e51066533c52ac32fc70306a9224e`, Metis
-`d7cb62f5139d2e4e30a476d71b81e480c04e0226` and Moirai
+The current standalone-lock replay (2026-09-19) uses RITK lock-change PR #512
+merge `836b4b3e63b299b40433ab5deef35b7fdddc9ed6`, Metis
+`a6af382ebf009806c920c07ae4031a98ea4a678a` and Moirai
 `b179b89fd2521034d2fc9c97663649811982e9fa`. The standalone lock digest is
-`2194947dad2fd91be235b6e7546b7ca506f62ba00f0a33ba30dcf628197f53c1`, and the
+`2e7815d44374804038cc7236c2fda4cd6539e7f5be46393ba73dbe981422a1c1`, and the
 executable digest is
-`c45fbf9223c8f1c5f21b4623219549a5ba3e7e58a6ecb16e34c9e8916b019cf2`. RITK
+`1c1fa032cde5381d80a3d4baa25f6f35ff5d4cba48f08f925c600c34de4f14a3`. RITK
 opened the saved 94-file MRI-DIR study (49,807,236 bytes) and produced the actual 1280 × 800
 three-plane frame below; it contains 411,589 non-black pixels and repeats the
 capture digest `259dd79103482756c4e688621bebafc841cc40f1df10ff2bbd7f9d04b7b4d401`.
@@ -244,7 +246,7 @@ runner's explicitly approximate 95% half-width across three runs.
 | eframe | 409 files; axial/coronal/sagittal/3D MIP | 1600 × 1000 | 2,494,962,347 ± 5,291,689 | 8,752 ± 2,197 ms |
 | Métis native MRI | 94 files; axial/coronal/sagittal | 1280 × 800 | 816,218,112 ± 798,240 | 2,189 ± 349 ms |
 | eframe MRI | 94 files; axial/coronal/sagittal/3D MIP | 1600 × 1000 | 1,038,607,701 ± 2,129,690 | 2,593 ± 477 ms |
-| eframe MRI orthogonal | 94 files; axial/coronal/sagittal | 1280 × 800 | 432,313,685 ± 24,884,220 | 2,070 ± 81 ms |
+| eframe MRI orthogonal | 94 files; axial/coronal/sagittal | 1280 × 800 | 416,239,616 ± 29,801,008 | 2,976 ± 1,949 ms |
 
 The [Métis MIP provenance](images/dicom-metis-real-ct-mip-resource.json),
 [eframe provenance](images/dicom-eframe-real-ct-resource.json), [Métis MRI
@@ -259,6 +261,14 @@ been run, and WASM used memory, allocator counts, compositor latency and
 security probes are separate measurements.
 These rows therefore document the fixtures and their limits; they do not
 establish a framework ranking.
+
+With the explicit semantic match keys (`runtime.phase`, file count, byte count,
+`output.semantic_surfaces` and `output.planes`), `scripts/resource_compare.py`
+reports eframe minus Métis deltas of −399,978,496 ± 29,811,697 private bytes,
+−12,997,973 ± 21,021,301 working-set bytes, and +787 ± 1,980 ms lifecycle
+duration. The private-byte delta is outside the combined interval; working-set
+and duration deltas remain within it. These are process-boundary measurements
+from one controlled Windows host, not a universal framework ranking.
 
 The live browser lifecycle was then repeated in one RITK/Métis instance. The
 [RITK provenance record](https://github.com/ryancinsight/ritk/blob/main/docs/manual/images/dicom-metis-real-browser-mri-memory.json)
