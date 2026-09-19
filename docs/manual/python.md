@@ -108,6 +108,11 @@ Atlas installs each artifact and runs the same value-semantic suite. The
 `abi3t` matrix currently excludes musllinux because its Python 3.15t image is
 unavailable.
 
+The `abi3t` source configuration has a standalone locked compile and strict
+Clippy check outside the Atlas overlay. That check proves the PyO3 feature
+selection is buildable; the release matrix remains the authority for installed
+free-threaded interpreters, wheel tags and value-semantic artifact tests.
+
 ## Host a native window
 
 `NativeApplication` is the wxPython-like host boundary for Python composition.

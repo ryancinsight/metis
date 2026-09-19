@@ -110,6 +110,13 @@ shared Atlas `cp314t`/`cp315t` and Python 3.15 `abi3t` matrix at revision
 `848e6649c52e8226a9abf7bc336f8cbf0e39ba08`; hosted artifact and value-test
 evidence remain pending under `METIS-PYTHON-004`.
 
+The free-threaded source configuration also passes a neutral standalone locked
+compile and strict Clippy check with `--no-default-features --features abi3t
+--all-targets`. The command runs outside the Atlas development overlay, so its
+`Cargo.lock` resolution matches the standalone release caller. This is source
+configuration evidence only; no free-threaded interpreter or hosted `cp3XXt`
+wheel was available on the verification host.
+
 ## Python presentation verification — 2026-09-09
 
 The presentation-surface increment adds Rust-owned `RasterImage`, `Rect` and
