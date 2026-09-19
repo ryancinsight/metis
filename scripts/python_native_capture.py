@@ -21,6 +21,12 @@ from dataclasses import dataclass
 from typing import Any
 
 from python_binding import extract_wheel, validate_wheel_surface
+from native_display import (
+    display_scale_milli,
+    enumerate_monitors,
+    flush_window_queue,
+    move_window_to_monitor,
+)
 
 
 MAX_PUMP_ROUNDS = 300
@@ -153,6 +159,22 @@ def _parser() -> argparse.ArgumentParser:
         type=pathlib.Path,
         help="output path for the post-resize capture; requires --resize",
     )
+    parser.add_argument(
+        "--move-monitor",
+        type=int,
+        metavar="INDEX",
+        help="move a --command window to the sorted physical monitor index",
+    )
+    parser.add_argument(
+        "--monitor-output",
+        type=pathlib.Path,
+        help="output path for the post-monitor-move capture; requires --move-monitor",
+    )
+    parser.add_argument(
+        "--require-dpi-change",
+        action="store_true",
+        help="fail unless moving the window changes its effective DPI",
+    )
     return parser
 
 
@@ -182,6 +204,29 @@ def _validate_resize_options(
         raise ValueError("--resize requires --resize-output")
     if output is not None and resize_output.resolve() == output.resolve():
         raise ValueError("--resize-output must differ from --output")
+
+
+def _validate_monitor_options(
+    command: pathlib.Path | None,
+    move_monitor: int | None,
+    monitor_output: pathlib.Path | None,
+    require_dpi_change: bool,
+    output: pathlib.Path | None = None,
+) -> None:
+    if move_monitor is None:
+        if monitor_output is not None:
+            raise ValueError("--monitor-output requires --move-monitor")
+        if require_dpi_change:
+            raise ValueError("--require-dpi-change requires --move-monitor")
+        return
+    if command is None:
+        raise ValueError("--move-monitor requires --command")
+    if move_monitor < 0:
+        raise ValueError("--move-monitor index must be non-negative")
+    if monitor_output is None:
+        raise ValueError("--move-monitor requires --monitor-output")
+    if output is not None and monitor_output.resolve() == output.resolve():
+        raise ValueError("--monitor-output must differ from --output")
 
 
 def _load_site(site: pathlib.Path) -> Any:
@@ -806,11 +851,19 @@ def _capture_command(
     output: pathlib.Path,
     resize: tuple[int, int] | None = None,
     resize_output: pathlib.Path | None = None,
+    move_monitor: int | None = None,
+    monitor_output: pathlib.Path | None = None,
+    require_dpi_change: bool = False,
 ) -> dict[str, Any]:
-    """Launch one visible process, capture its window, optionally resize it, and close it."""
+    """Launch one visible process, capture it, and close it after bounded probes."""
     if sys.platform != "win32":
         raise RuntimeError("visible native capture requires Windows")
     _validate_resize_options(command, resize, resize_output, output)
+    _validate_monitor_options(
+        command, move_monitor, monitor_output, require_dpi_change, output
+    )
+    if resize is not None and move_monitor is not None:
+        raise ValueError("--resize and --move-monitor are mutually exclusive")
     executable = command.resolve(strict=True)
     if cwd is not None:
         cwd = cwd.resolve(strict=True)
@@ -830,7 +883,7 @@ def _capture_command(
         initial_pixels = _capture_window(initial.bounds)
         initial_digest = _write_capture(output, initial.bounds, initial_pixels)
         result: dict[str, Any]
-        if resize is None:
+        if resize is None and move_monitor is None:
             result = {
                 "process_returncode": None,
                 "window": {
@@ -845,7 +898,7 @@ def _capture_command(
                 "image": output.as_posix(),
                 "sha256": initial_digest,
             }
-        else:
+        elif resize is not None:
             if resize_output is None:
                 raise ValueError("--resize requires --resize-output")
             resized = _resize_window(bounds.handle, *resize)
@@ -891,6 +944,75 @@ def _capture_command(
                     "dpi_changed": initial.dpi != resized.dpi,
                 },
             }
+        else:
+            if monitor_output is None:
+                raise ValueError("--move-monitor requires --monitor-output")
+            monitors = enumerate_monitors()
+            if move_monitor >= len(monitors):
+                raise ValueError(
+                    f"--move-monitor index {move_monitor} exceeds {len(monitors)} attached monitors"
+                )
+            monitor = monitors[move_monitor]
+            move_window_to_monitor(
+                bounds.handle,
+                monitor,
+                initial.bounds.width,
+                initial.bounds.height,
+            )
+            # WM_DPICHANGED is delivered on the window thread. Synchronize
+            # after the move before reading the host observation.
+            flush_window_queue(bounds.handle)
+            moved = _window_observation(bounds.handle)
+            moved_pixels = _capture_window(moved.bounds)
+            moved_digest = _write_capture(monitor_output, moved.bounds, moved_pixels)
+            dpi_changed = initial.dpi != moved.dpi
+            if require_dpi_change and not dpi_changed:
+                raise RuntimeError(
+                    "moving the window did not produce a physical display-scale transition"
+                )
+            result = {
+                "initial": {
+                    "window": {
+                        "width": initial.bounds.width,
+                        "height": initial.bounds.height,
+                    },
+                    "client": {
+                        "width": initial.client_width,
+                        "height": initial.client_height,
+                    },
+                    "dpi": initial.dpi,
+                    "display_scale_milli": display_scale_milli(initial.dpi),
+                    "image": output.as_posix(),
+                    "sha256": initial_digest,
+                },
+                "moved": {
+                    "window": {
+                        "width": moved.bounds.width,
+                        "height": moved.bounds.height,
+                    },
+                    "client": {
+                        "width": moved.client_width,
+                        "height": moved.client_height,
+                    },
+                    "dpi": moved.dpi,
+                    "display_scale_milli": display_scale_milli(moved.dpi),
+                    "image": monitor_output.as_posix(),
+                    "sha256": moved_digest,
+                },
+                "monitor_transition": {
+                    "monitor_index": move_monitor,
+                    "monitor_count": len(monitors),
+                    "monitor": {
+                        "left": monitor.left,
+                        "top": monitor.top,
+                        "right": monitor.right,
+                        "bottom": monitor.bottom,
+                    },
+                    "dpi_changed": dpi_changed,
+                    "pixels_changed": initial_pixels != moved_pixels,
+                    "observed": dpi_changed,
+                },
+            }
         _close_window(bounds.handle)
         return_code = process.wait(timeout=PROCESS_EXIT_TIMEOUT_SECONDS)
         if return_code != 0:
@@ -921,6 +1043,15 @@ def main() -> None:
     resize = None if arguments.resize is None else tuple(arguments.resize)
     try:
         _validate_resize_options(arguments.command, resize, arguments.resize_output, arguments.output)
+        _validate_monitor_options(
+            arguments.command,
+            arguments.move_monitor,
+            arguments.monitor_output,
+            arguments.require_dpi_change,
+            arguments.output,
+        )
+        if resize is not None and arguments.move_monitor is not None:
+            raise ValueError("--resize and --move-monitor are mutually exclusive")
     except ValueError as error:
         raise SystemExit(str(error)) from error
     frame = None if arguments.frame is None else _read_png(arguments.frame)
@@ -950,6 +1081,9 @@ def main() -> None:
             output,
             resize,
             None if arguments.resize_output is None else arguments.resize_output.resolve(),
+            arguments.move_monitor,
+            None if arguments.monitor_output is None else arguments.monitor_output.resolve(),
+            arguments.require_dpi_change,
         )
         print(json.dumps(result, sort_keys=True))
         return

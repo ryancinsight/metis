@@ -2,7 +2,7 @@
 
 Status: Accepted
 
-Date: 2026-09-13
+Date: 2026-09-19
 
 Driver: [METIS-DESKTOP-001](../../backlog.md#METIS-DESKTOP-001)
 
@@ -53,18 +53,26 @@ clips out-of-range fixed-point extents without panicking. The scale is a
 presentation capability, not a permission or authority grant.
 
 The Windows provider and its injected DPI event are covered by this increment.
-A physical monitor transition, native accessibility technology, installed IME,
-OS permission enforcement, and macOS/Linux display providers still require
-their host-specific V05 evidence. The contract remains independent of DICOM;
-RITK supplies decoded frames through the format-neutral native host.
+The native capture utility additionally offers a bounded physical-monitor
+probe: it enumerates real attached monitors, moves a real HWND, records both
+images and effective DPI values, and fails closed when a requested transition
+does not occur. A single-monitor or equal-scale desktop is an unavailable host
+condition, not a successful transition claim. Native accessibility technology,
+installed IME, OS permission enforcement, and macOS/Linux display providers
+still require their host-specific V05 evidence. The contract remains
+independent of DICOM; RITK supplies decoded frames through the format-neutral
+native host.
 
 ## Verification
 
 Display-scale tests cover 96/120/144 DPI conversion, zero rejection,
 fractional coordinate rounding, scaled geometry and text, percentage sizing
 against the physical viewport, repaint state retention, and deterministic
-extreme-scale clipping. Focused native nextest and warning-denied Clippy cover
-`metis-platform`, `metis-ui-lang`, `metis-frontend`, and `metis-app`; all
-existing layout, native lifecycle, IPC, and process-isolation tests remain in
-the same suite. The manual and V05 record the distinction between this
-software mapping evidence and a future physical monitor capture.
+extreme-scale clipping. The capture utility tests cover monitor-index and
+output validation, deterministic fixed-point scale reporting and explicit
+unavailable-transition handling. Focused native nextest and warning-denied
+Clippy cover `metis-platform`, `metis-ui-lang`, `metis-frontend`, and
+`metis-app`; all existing layout, native lifecycle, IPC, and process-isolation
+tests remain in the same suite. The manual and V05 distinguish deterministic
+software mapping from a physical monitor capture and require a reported DPI
+change for the latter claim.

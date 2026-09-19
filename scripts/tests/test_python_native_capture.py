@@ -13,6 +13,7 @@ from unittest import mock
 
 sys.path.insert(0, str(pathlib.Path(__file__).resolve().parents[1]))
 import python_native_capture as capture
+from native_display import MonitorBounds, display_scale_milli
 
 
 def decode_png(path: pathlib.Path) -> tuple[int, int, bytes]:
@@ -310,6 +311,57 @@ class NativeCaptureTests(unittest.TestCase):
                 (capture.MAX_FRAME_DIMENSION + 1, 720),
                 pathlib.Path("resized.png"),
             )
+
+    def test_monitor_probe_arguments_are_explicit_and_bounded(self) -> None:
+        parsed = capture._parser().parse_args(
+            [
+                "--command",
+                "metis-app.exe",
+                "--move-monitor",
+                "1",
+                "--monitor-output",
+                "moved.png",
+                "--require-dpi-change",
+                "--output",
+                "initial.png",
+            ]
+        )
+        self.assertEqual(parsed.move_monitor, 1)
+        self.assertEqual(parsed.monitor_output, pathlib.Path("moved.png"))
+        self.assertTrue(parsed.require_dpi_change)
+        capture._validate_monitor_options(
+            pathlib.Path("metis-app.exe"),
+            parsed.move_monitor,
+            parsed.monitor_output,
+            parsed.require_dpi_change,
+            pathlib.Path("initial.png"),
+        )
+
+    def test_monitor_probe_rejects_missing_command_and_duplicate_output(self) -> None:
+        with self.assertRaisesRegex(ValueError, "requires --command"):
+            capture._validate_monitor_options(
+                None, 0, pathlib.Path("moved.png"), False
+            )
+        with self.assertRaisesRegex(ValueError, "must differ"):
+            capture._validate_monitor_options(
+                pathlib.Path("metis-app.exe"),
+                0,
+                pathlib.Path("initial.png"),
+                False,
+                pathlib.Path("initial.png"),
+            )
+
+    def test_display_scale_mapping_matches_fixed_point_native_contract(self) -> None:
+        self.assertEqual(display_scale_milli(96), 1_000)
+        self.assertEqual(display_scale_milli(120), 1_250)
+        self.assertEqual(display_scale_milli(144), 1_500)
+        with self.assertRaisesRegex(ValueError, "positive"):
+            display_scale_milli(0)
+
+    def test_monitor_bounds_report_work_area_dimensions(self) -> None:
+        monitor = MonitorBounds(0, -1920, 0, 0, 1080, -1920, 0, 0, 1040)
+        self.assertEqual(monitor.work_width, 1920)
+        self.assertEqual(monitor.work_height, 1040)
 
     def test_command_only_options_are_rejected_for_wheel_capture(self) -> None:
         with mock.patch.object(
