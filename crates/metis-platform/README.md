@@ -83,7 +83,13 @@ synchronously and reports the typed `WebViewEvent::PermissionDenied` with its
 `NativeSurface` values can coexist on their creating thread; call `reopen` only
 after `close` to reuse a surface's validated configuration. Native process and
 file policy, application editing policy and accessibility remain host-level
-workflows.
+workflows. Native applications that receive a host-authorized
+`VerifiedHostCapability<{CapabilityScope::READ_FILE.0}>` can use
+`ScopedFileProvider` for bounded reads below one trusted directory. Each read
+uses Moirai's handle-anchored opener, rejects traversal and links, and is
+limited to `MAX_SCOPED_FILE_BYTES`; the browser file provider remains the
+format-neutral alternative. This provider does not parse DICOM or grant a
+frontend unrestricted filesystem access.
 
 Applications that use the native pixel surface can share the bounded host loop
 through `metis_platform::native::NativeApplication` and

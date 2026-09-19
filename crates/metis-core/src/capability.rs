@@ -26,6 +26,8 @@ impl CapabilityScope {
     pub const STREAM_TELEMETRY: Self = Self(1 << 3);
     /// Full administrator / supervisor capability.
     pub const SYSTEM_ADMIN: Self = Self(1 << 4);
+    /// Permission to read files through a host-owned scoped provider.
+    pub const READ_FILE: Self = Self(1 << 5);
 
     /// Checks if this scope contains all flags of `other`.
     #[must_use]

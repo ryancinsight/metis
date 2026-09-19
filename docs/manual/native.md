@@ -429,6 +429,28 @@ The image is the inspected visual artifact:
 The full command, observed text and digest are recorded in
 [`native-captures.json`](images/native-captures.json).
 
+### Scoped native file reads
+
+Native applications that need bytes from a host-selected directory use
+`metis_platform::ScopedFileProvider`. The host first authorizes a
+`CapabilityScope::READ_FILE` witness; the provider then opens a relative path
+through Moirai's directory-handle walk. Parent components, symlinks,
+directories and files larger than 64 MiB are rejected before bytes are
+returned. The provider has no DICOM knowledge and does not expose an
+unrestricted frontend path; RITK remains the owner of DICOM scanning and
+decoding.
+
+The denial and byte-value contract is executable in the platform test suite:
+
+```powershell
+cargo nextest run --locked -p metis-platform --lib
+```
+
+The `scoped_file` tests cover a successful nested read, traversal and size
+rejection, and a host-policy token without `READ_FILE` scope. This is provider
+security evidence; it does not substitute for the real RITK MRI captures
+linked in the [DICOM workflow manual](https://github.com/ryancinsight/ritk/blob/main/docs/manual/dicom-workflow.md).
+
 ### Native form after a real resize
 
 The same production `metis-app.exe` was captured before and after the host

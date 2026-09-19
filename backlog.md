@@ -484,6 +484,13 @@ an owner. “Unsupported” cannot replace delivery of a required mobile/native 
   Chromium and Firefox MRI galleries and records the Safari read residual. The
   images demonstrate real three-plane studies after native and browser
   selection while keeping DICOM scanning and presentation in RITK.
+- Current increment (2026-09-19): `CapabilityScope::READ_FILE` and the native
+  `metis-platform::ScopedFileProvider` provide a typed file-read witness over
+  Moirai's root-confined opener. Reads are capped at 64 MiB and reject parent
+  traversal, links, directories and oversized files; focused nextest covers
+  successful bytes and missing-scope denial. The manual records the provider
+  contract and keeps DICOM scanning/decoding in RITK. Persistent stores,
+  broader native permission policy and non-Windows providers remain open.
 
 <a id="METIS-INTEGRATION-001"></a>
 ## METIS-INTEGRATION-001 — Desktop integration services [minor]
