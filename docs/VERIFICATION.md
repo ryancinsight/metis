@@ -2832,8 +2832,10 @@ and the result reports right-minus-left means, combined approximate 95%
 half-widths, and SHA-256 digests of the source records. It never copies source
 paths or labels, normalizes panel names, or selects a framework winner. The
 current eframe and Métis records share the public series and lifecycle phase;
-their different surface and MIP contracts remain an explicitly unmatched
-baseline until producers provide an equal output key.
+ the complete eframe shell and Métis MIP rows retain different surface
+ contracts, while the shell-free orthogonal eframe record satisfies the
+ explicit MRI semantic match keys. Its process boundary remains different,
+ so the comparison reports measurements without selecting a framework winner.
 
 The distribution workflow also records `artifact_sizes` in its `workflow.json`:
 the portable payload file count and byte total are split into the single
@@ -2864,20 +2866,20 @@ points. On the controlled 125% Windows host, three bounded runs over the same
 927,849 non-black pixels. The `orthogonal-surface` presentation contains only
 axial, coronal and sagittal planes, reuses the spacing-aware RITK placement
 path, and matches both the Métis semantic keys and physical host extent. Its
-provenance record reports mean peak private bytes of 432,313,685 (95% half-width
-24,884,220) and mean lifecycle duration of 2,070 ms (95% half-width 81 ms),
-with the requested logical size and observed display scale recorded alongside
-the image; the tracked manual figure is 640×400 while provenance retains the
-raw 1280×800 source digest. The process boundary still differs from Métis;
-GPUI/Tauri fixtures and ranking remain open.
+provenance record reports mean peak private bytes of 416,239,616 (95%
+half-width 29,801,008) and mean lifecycle duration of 2,976 ms (95% half-width
+1,949 ms), with the requested logical size and observed display scale recorded
+alongside the image; the tracked manual figure is 640×400 while provenance
+retains the raw 1280×800 source digest. The first cold launch accounts for the
+wide uncertainty. The process boundary still differs from Métis; GPUI/Tauri
+fixtures and ranking remain open.
 
-The current standalone-lock replay (2026-09-19) is bound to RITK lock-change
-source `fdbbd7394cc3f7cac746f2bad64608edad8d015f`, merged as
-`e4eb95b5769e51066533c52ac32fc70306a9224e`, with Metis
-`d7cb62f5139d2e4e30a476d71b81e480c04e0226` and Moirai
+The current standalone-lock replay (2026-09-19) is bound to RITK PR #512
+merge `836b4b3e63b299b40433ab5deef35b7fdddc9ed6`, with Metis
+`a6af382ebf009806c920c07ae4031a98ea4a678a` and Moirai
 `b179b89fd2521034d2fc9c97663649811982e9fa`. The standalone lock digest is
-`2194947dad2fd91be235b6e7546b7ca506f62ba00f0a33ba30dcf628197f53c1`, and the executable digest is
-`c45fbf9223c8f1c5f21b4623219549a5ba3e7e58a6ecb16e34c9e8916b019cf2` (54,008,320 bytes). RITK opened the saved 94-file MRI-DIR
+`2e7815d44374804038cc7236c2fda4cd6539e7f5be46393ba73dbe981422a1c1`, and the executable digest is
+`1c1fa032cde5381d80a3d4baa25f6f35ff5d4cba48f08f925c600c34de4f14a3` (54,008,320 bytes). RITK opened the saved 94-file MRI-DIR
 study (49,807,236 bytes) and produced the 1280 × 800 three-plane frame with 411,589 non-black
 pixels; the invalid-study probe exited 1. The capture digest is
 `259dd79103482756c4e688621bebafc841cc40f1df10ff2bbd7f9d04b7b4d401`; the

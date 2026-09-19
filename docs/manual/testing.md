@@ -375,10 +375,16 @@ python scripts/resource_compare.py `
 The current eframe and Métis provenance records expose the producer-owned
 `output.semantic_surfaces` key. Pass it with `--match` before interpreting
 presentation or clinical equivalence. A missing or differing key fails before
-any metric is calculated; the current eframe/Métis pairs intentionally fail
-that match because their browser, MIP and surface contracts differ. The output
-is a measurement record, not a framework ranking; it does not normalize panel
-names, infer semantic equivalence, or replace RITK's image and DICOM oracles.
+any metric is calculated. The complete eframe shell and the Métis MIP rows still
+fail the semantic match because their browser, MIP and surface contracts differ;
+the shell-free orthogonal eframe record satisfies the explicit MRI match keys
+(`runtime.phase`, file count, byte count, `output.semantic_surfaces` and
+`output.planes`). Its current comparison reports −399,978,496 ± 29,811,697
+private bytes and +787 ± 1,980 ms lifecycle duration relative to Métis, with
+the private-byte delta outside the combined interval and lifecycle within it.
+The output is a measurement record, not a framework ranking; it does not
+normalize panel names, infer clinical equivalence, or replace RITK's image and
+DICOM oracles.
 
 For the browser side of the same comparison, the paired canvas trace records
 `metrics.frame_intervals` around the real RITK canvases. Each bounded sample is
