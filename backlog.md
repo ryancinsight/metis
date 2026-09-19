@@ -494,11 +494,12 @@ an owner. “Unsupported” cannot replace delivery of a required mobile/native 
 
 <a id="METIS-INTEGRATION-001"></a>
 ## METIS-INTEGRATION-001 — Desktop integration services [minor]
-- Status: in-progress; priority: P2; owner: Metis host/broker; integrator: root; last-update: 2026-09-19; branch: feat/metis-browser-clipboard-001; dependencies: METIS-DESKTOP-001; risk: OS interaction
+- Status: in-progress; priority: P2; owner: Metis host/broker; integrator: root; last-update: 2026-09-19; dependencies: METIS-DESKTOP-001; risk: OS interaction
 - Scope: menus/tray, clipboard, notifications, global shortcuts, deep links, file associations, opener, single-instance and window state; bind each exposed API to policy.
 - Acceptance: typed commands/events agree across supported hosts, denial/error paths remain explicit, clipboard/user-content permissions obey host rules and listeners unregister on shutdown.
 - Demonstration: [V08](docs/VERIFICATION.md#V08), actual OS interactions and permission failures; capture menus/dialogs where visible and assert nonvisual events.
 - Completed increment (2026-09-19): browser clipboard read/write controls are implemented through Moirai's bounded secure-context provider; remaining desktop services stay open under this item.
+- Delivery reconciliation (2026-09-19): Metis PR #278 merged at `d7cb62f5139d2e4e30a476d71b81e480c04e0226`; the former `feat/metis-browser-clipboard-001` branch is collected and no longer represents active work. Menus, tray, notifications, global shortcuts, deep links, file associations, opener, single-instance and window-state services remain open.
 
 <a id="METIS-SERVICES-001"></a>
 ## METIS-SERVICES-001 — Scoped network, shell and sidecars [minor]
