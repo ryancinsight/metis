@@ -2325,6 +2325,23 @@ captures use the same local command and remain outside version control.
 Moirai's provider-side `WM_PRINT`/`WM_PRINTCLIENT` rendering is required for
 the visible capture and is tracked by [Moirai PR #329](https://github.com/ryancinsight/Moirai/pull/329).
 
+The native capture tool also has a bounded physical-monitor probe. It
+enumerates attached Windows monitors, moves a real HWND to a selected work
+area, waits one finite owner-queue turn, and records the initial and moved
+images, effective DPI, fixed-point scale and pixel/scale-change flags. The
+optional `--require-dpi-change` guard fails closed when the host has only one
+monitor or both monitors use the same effective scale, so an unavailable
+transition is never counted as evidence. The deterministic DPI mapping and
+injected `WindowEvent::DpiChanged` tests remain the contract oracle; a physical
+transition is accepted only from a host run that reports `dpi_changed: true`
+and whose two images are inspected. This closes the capture seam while
+retaining the explicit residual for hosts without a heterogeneous monitor
+setup. The development Windows host used for this increment reported one
+`3072×1728` monitor at `96` DPI; the real initial/moved captures were identical
+(`a021194e4ef9406ee6789a9ea2eea00d25223e06d8d6f13e65975e9004acb442`) and
+correctly recorded `dpi_changed: false`, so no physical
+transition claim is made here.
+
 ### Fractional native display-scale mapping — 2026-09-13
 
 The native adapter now converts each `WindowEvent::DpiChanged` value through

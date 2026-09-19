@@ -197,6 +197,41 @@ applied and that the application produced a new frame. It observes the
 effective DPI; changing the operating-system display scale is a separate
 physical-host journey and is not simulated by this utility.
 
+To exercise that physical journey when the host exposes more than one monitor,
+move the same window to a monitor selected by deterministic desktop-coordinate
+order and capture it again:
+
+```powershell
+python scripts/python_native_capture.py `
+  --command (Join-Path $target "debug\metis-app.exe") `
+  --argument=--metis-native-window `
+  --argument=60 `
+  --argument=2 `
+  --argument=0.2 `
+  --move-monitor 1 `
+  --output output\native-host-dpi-initial.png `
+  --monitor-output output\native-host-dpi-moved.png
+```
+
+The monitor probe enumerates real attached monitors, centers the HWND in the
+selected work area, lets the owner process handle its bounded `WM_DPICHANGED`
+queue, then captures the resulting frame. Its JSON includes monitor bounds,
+initial and moved `dpi`, the corresponding fixed-point `display_scale_milli`,
+and `dpi_changed`/`pixels_changed` values. Add `--require-dpi-change` when a
+machine-specific acceptance run must fail closed unless the selected monitor
+has a different effective DPI. A single-monitor or equal-scale desktop is
+reported as `dpi_changed: false`; it is not presented as physical transition
+evidence. The two PNGs are still inspectable host captures, and no browser or
+DICOM data enters this probe.
+
+On the development Windows desktop used for this revision, the probe observed
+one `3072×1728` monitor at `96` DPI. Moving the window to monitor `0` produced
+identical initial/moved image digests and `dpi_changed: false`; the host
+therefore supplies a real single-monitor capture but no heterogeneous-scale
+transition claim. A machine with two monitors at different effective DPI can
+rerun the same command with `--require-dpi-change` to turn that residual into a
+fail-closed acceptance result.
+
 This is host evidence, so the image includes operating-system chrome and can
 vary with the Windows theme, scale and font rasterizer. The deterministic
 frame and event trace remain the contract-level checks above. The utility is
