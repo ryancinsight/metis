@@ -547,6 +547,11 @@ an owner. “Unsupported” cannot replace delivery of a required mobile/native 
 - Actual saved-study smoke (2026-09-14): RITK opened the saved `test_data/2_skull_ct/DICOM` series through `--metis-native` with its explicit `SeriesInstanceUID` and produced a real 1280 × 800 three-plane CT frame (SHA-256 `f9d715f04eb1a536fa7aa06ebef90d2829e11d13a10df866db5c8550cdf8c190`). Wrapping that frame in the Metis native host produced a 1296 × 839 Windows capture (SHA-256 `1f2fabae6576cba059feff8e1985a1bb2b22ed7e4293376ebef503e0a882ad4`). These are DICOM-derived pixels; Metis remains format-neutral and no patient pixels were committed.
 - Current replay reconciliation (2026-09-19): the standalone-lock real-MRI replay binds RITK lock-change source `fdbbd7394cc3f7cac746f2bad64608edad8d015f` merged as `e4eb95b5769e51066533c52ac32fc70306a9224e`, Metis `d7cb62f5139d2e4e30a476d71b81e480c04e0226`, Moirai `b179b89fd2521034d2fc9c97663649811982e9fa` and Cargo.lock SHA-256 `2194947dad2fd91be235b6e7546b7ca506f62ba00f0a33ba30dcf628197f53c1`; the 94-file, 49,807,236-byte study produced the byte-identical 1280 × 800 frame with 411,589 non-black pixels, executable SHA-256 `c45fbf9223c8f1c5f21b4623219549a5ba3e7e58a6ecb16e34c9e8916b019cf2`, and invalid-study exit 1. The exact provenance is recorded in [RITK's replay record](../ritk/docs/manual/images/dicom-metis-real-mri.json). This closes the current lock/evidence prerequisite; matched GPUI/Tauri fixtures, allocator/compositor measurements and controlled-host ranking remain open.
 - Demonstration increment (2026-09-18): the application gallery now links RITK's real MRI diagnostic-tool capture and provenance, including 11 trusted tool actions, seven rejected probes and listener teardown from 21 consumer/32 host listeners to zero. DICOM tool semantics remain RITK-owned; Métis supplies the bounded canvas and event host.
+- Current increment (2026-09-19): the native consumer regression drives bounded
+  `TextComposition` start/update/commit/cancel events through `NativeForm`,
+  proving transient preedit, committed patient-field text and cancellation on
+  focus loss at the application boundary. The manual distinguishes this
+  consumer contract from the still-open installed-IME journey.
 
 <a id="METIS-RITK-HOST-001"></a>
 ## METIS-RITK-HOST-001 — Format-neutral native frame host [arch] [minor]
