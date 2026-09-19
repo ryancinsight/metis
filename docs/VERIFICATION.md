@@ -2842,19 +2842,19 @@ recorded when an MSI is built. These values are verified against the staged
 files and are package-size evidence only; they do not measure process memory,
 runtime allocations or framework performance.
 
-The recorded three-run public MRI-DIR T2 resource baseline uses this option with RITK
-revision `e635baf90f99cc0ae09df06c42424ba5c4c6faec`, Metis revision
-`0ca361cd0540c773822b78477530bc17d3863461` and Moirai revision
-`a2f21496d1d09b2abe6523e3c8cdbf751dcd560a`. All runs exited 0, produced the
+The current three-run public MRI-DIR T2 resource baseline uses this option with RITK
+revision `836b4b3e63b299b40433ab5deef35b7fdddc9ed6`, Metis revision
+`a6af382ebf009806c920c07ae4031a98ea4a678a` and Moirai revision
+`b179b89fd2521034d2fc9c97663649811982e9fa`. All runs exited 0, produced the
 same 1280 × 800 capture (`259dd79103482756c4e688621bebafc841cc40f1df10ff2bbd7f9d04b7b4d401`,
 411,589 non-black pixels), and recorded the process-tree means with explicit
 95% half-widths in the [MRI resource provenance record](manual/images/dicom-metis-real-mri-resource.json).
-The measured peak private-byte mean is 719,981,227 bytes (half-width
-3,928,545), peak working-set mean is 313,288,021 bytes (half-width 1,495,454),
-and mean lifecycle duration is 1,955 ms (half-width 956 ms). The mean startup
-observation is 189 ms (half-width 346 ms), peak handle count is 118, and the
-repeated capture digest is identical. This is a historical real-application
-baseline bound to the recorded source revisions; it does not close the matched
+The measured peak private-byte mean is 816,218,112 bytes (half-width
+798,240), peak working-set mean is 372,658,176 bytes (half-width 20,183,778),
+and mean lifecycle duration is 2,189 ms (half-width 349 ms). The mean startup
+observation is 3 ms (half-width 1 ms), peak handle count is 414, and the
+repeated capture digest is identical. This is a current real-application
+fixture bound to the recorded source revisions; it does not close the matched
 Tauri, GPUI or egui fixture requirement or establish a universal memory ranking.
 
 The shell-free eframe run now accepts `--viewport-size 1024x640` logical

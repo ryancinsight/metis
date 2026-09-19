@@ -242,7 +242,7 @@ runner's explicitly approximate 95% half-width across three runs.
 | --- | --- | ---: | ---: | ---: |
 | Métis native MIP | 409 files; axial/coronal/sagittal/axial MIP | 1280 × 800 | 2,338,119,680 ± 366,961 | 15,346 ± 3,394 ms |
 | eframe | 409 files; axial/coronal/sagittal/3D MIP | 1600 × 1000 | 2,494,962,347 ± 5,291,689 | 8,752 ± 2,197 ms |
-| Métis native MRI | 94 files; axial/coronal/sagittal | 1280 × 800 | 719,981,227 ± 3,928,545 | 1,955 ± 956 ms |
+| Métis native MRI | 94 files; axial/coronal/sagittal | 1280 × 800 | 816,218,112 ± 798,240 | 2,189 ± 349 ms |
 | eframe MRI | 94 files; axial/coronal/sagittal/3D MIP | 1600 × 1000 | 1,038,607,701 ± 2,129,690 | 2,593 ± 477 ms |
 | eframe MRI orthogonal | 94 files; axial/coronal/sagittal | 1280 × 800 | 432,313,685 ± 24,884,220 | 2,070 ± 81 ms |
 
