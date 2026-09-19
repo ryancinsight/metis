@@ -2497,6 +2497,13 @@ claim an operating-system sandbox, descendant containment for
 provider and broader sidecar lifecycle work stays on
 [METIS-SERVICES-001](../backlog.md#METIS-SERVICES-001).
 
+The implementation is Metis revision `e02ad62c781000506738c2d34d842985d128137b`;
+the locked full verifier for this increment passed all 26 named stages,
+including the expected `PermissionDenied` capture-failure oracle, and the
+focused platform run passed 42/42 tests with two intentional skips. The visual
+stage reported zero changed pixels and zero semantic differences across the
+seven existing captures after the lock-derived fixture digest was refreshed.
+
 The native audit recovery path is covered by `metis-backend` unit tests and the
 `audit_recovery` example. The example writes a real handshake record through
 `BackendService::with_persistent_audit`, drops the service, restores the record

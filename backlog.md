@@ -502,10 +502,11 @@ an owner. “Unsupported” cannot replace delivery of a required mobile/native 
 
 <a id="METIS-SERVICES-001"></a>
 ## METIS-SERVICES-001 — Scoped network, shell and sidecars [minor]
-- Status: in-progress; priority: P2; owner: Moirai mechanisms + Metis policy; integrator: root; last-update: 2026-09-19; branch: feat/metis-scoped-process-001; lease: root crates/metis-core/src/capability.rs crates/metis-platform/src crates/metis-platform/README.md docs/adr/0039-scoped-process-provider.md; dependencies: METIS-DESKTOP-001, METIS-COMMANDS-001; risk: privilege escalation
+- Status: review; priority: P2; owner: Moirai mechanisms + Metis policy; integrator: root; last-update: 2026-09-19; branch: feat/metis-scoped-process-001; delivery: `e02ad62`; dependencies: METIS-DESKTOP-001, METIS-COMMANDS-001; risk: privilege escalation
 - Scope: HTTP/WebSocket and subprocess APIs, sidecar lifecycle, endpoint/argument allowlists, bounded IO and credential redaction; local test services only by default.
 - Acceptance: unauthorized endpoints/commands/arguments fail; transient errors, deadlines, cancellation, crash and cleanup are exercised against real processes/local servers; no shell-string injection or secret output.
 - Demonstration: [V08](docs/VERIFICATION.md#V08), connection/process status and denial journey; browsers never receive arbitrary native shell access.
+- Process-provider increment (2026-09-19): Metis `e02ad62` adds `RUN_PROCESS`-witnessed direct execution with host-fixed executable and argument values, bounded stdout, private stderr draining, finite cleanup and real-child denial/redaction/deadline tests; Moirai PR #405 merge `8a8daa60` supplies the opt-in stderr pipe. Network providers, OS sandboxing, cancellation handles and broader sidecar lifecycle remain open.
 
 <a id="METIS-AXUM-001"></a>
 ## METIS-AXUM-001 — First-party bounded HTTP boundary [arch] [minor]

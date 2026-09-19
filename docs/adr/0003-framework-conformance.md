@@ -401,11 +401,11 @@ continues to prove the format-neutral Metis handoff plus RITK-owned decoding,
 geometry and clinical presentation. Historical replay hashes remain in their
 original evidence records and are not current comparison inputs.
 
-The next dependency-ordered closure is explicit. First, Moirai and Metis must
-carry typed capability scopes into real file, network, process and device
-providers, with denial tests at each host boundary; the current
-origin/window/session HMAC policy authenticates a caller but is not an OS
-sandbox. Second, native Windows IME, accessibility and physical display-scale
+The next dependency-ordered closure is explicit. Moirai and Metis now carry
+typed capability scopes into real file and process providers with denial tests
+at each boundary; network and device providers, plus OS sandboxing, remain
+open. The current origin/window/session HMAC policy authenticates a caller but
+is not an OS sandbox. Second, native Windows IME, accessibility and physical display-scale
 journeys must produce visible host evidence, followed by the macOS and Linux
 providers. Third, the performance item must supply one equal consumer fixture
 before any GPUI or Tauri ranking: the same study, frame dimensions, controls,
