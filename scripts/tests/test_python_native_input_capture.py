@@ -6,6 +6,7 @@ import ctypes
 import pathlib
 import sys
 import unittest
+from unittest.mock import patch
 
 sys.path.insert(0, str(pathlib.Path(__file__).resolve().parents[1]))
 import python_native_input_capture as capture
@@ -44,6 +45,8 @@ class NativeInputCaptureTests(unittest.TestCase):
                 "value with spaces",
                 "--text",
                 "東京",
+                "--shortcut",
+                "control-enter",
                 "--initial-output",
                 "before.png",
                 "--output",
@@ -58,7 +61,26 @@ class NativeInputCaptureTests(unittest.TestCase):
         )
         self.assertEqual(parsed.initial_output, pathlib.Path("before.png"))
         self.assertEqual(parsed.output, pathlib.Path("after.png"))
+        self.assertEqual(parsed.shortcut, "control-enter")
         self.assertEqual(parsed.manifest, pathlib.Path("trace.json"))
+
+    def test_control_enter_shortcut_releases_modifier_after_enter(self) -> None:
+        events: list[tuple[int, bool]] = []
+        with patch.object(
+            capture,
+            "_send_virtual_key",
+            side_effect=lambda virtual_key, *, key_up: events.append((virtual_key, key_up)),
+        ):
+            capture._send_shortcut("control-enter")
+        self.assertEqual(
+            events,
+            [
+                (capture.VK_CONTROL, False),
+                (capture.VK_RETURN, False),
+                (capture.VK_RETURN, True),
+                (capture.VK_CONTROL, True),
+            ],
+        )
 
     def test_paths_reject_colliding_outputs_and_wrong_extensions(self) -> None:
         with self.assertRaisesRegex(ValueError, "distinct"):

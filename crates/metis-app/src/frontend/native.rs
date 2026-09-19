@@ -4,8 +4,8 @@ use metis_core::error::{ErrorCode, MetisError, Result};
 use metis_frontend::{FormState, FrontendApp};
 use metis_ipc::{IpcTransport, StreamTransport};
 use metis_platform::native::{
-    CompositionPhase, MouseButton, NativeApplication, NativeFlow, WindowConfig, WindowEvent,
-    run_native_application,
+    CompositionPhase, ModifierState, MouseButton, NativeApplication, NativeFlow, WindowConfig,
+    WindowEvent, run_native_application,
 };
 use metis_platform::{Color, DisplayScale, Framebuffer, Rect};
 use metis_ui_lang::{DisplayCommand, LayoutViewport, compute_layout};
@@ -116,8 +116,8 @@ impl<T: IpcTransport> NativeApplication for NativeForm<T> {
                 WindowEvent::KeyDown {
                     virtual_key: RETURN_KEY,
                     repeated: false,
-                    ..
-                } => {
+                    modifiers,
+                } if submit_shortcut(*modifiers).is_some() => {
                     submit(&mut self.app, self.pid)?;
                     repaint = true;
                 }
@@ -152,6 +152,38 @@ impl<T: IpcTransport> NativeApplication for NativeForm<T> {
             }
         }
         Ok(NativeFlow::Continue { repaint })
+    }
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+enum SubmitShortcut {
+    Plain,
+    Control,
+}
+
+fn submit_shortcut(modifiers: ModifierState) -> Option<SubmitShortcut> {
+    let class = if modifiers.shift() || modifiers.alt() || modifiers.meta() {
+        SubmitModifierClass::System
+    } else if modifiers.ctrl() {
+        SubmitModifierClass::Control
+    } else {
+        SubmitModifierClass::Plain
+    };
+    classify_submit_modifier_class(class)
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+enum SubmitModifierClass {
+    Plain,
+    Control,
+    System,
+}
+
+const fn classify_submit_modifier_class(class: SubmitModifierClass) -> Option<SubmitShortcut> {
+    match class {
+        SubmitModifierClass::Plain => Some(SubmitShortcut::Plain),
+        SubmitModifierClass::Control => Some(SubmitShortcut::Control),
+        SubmitModifierClass::System => None,
     }
 }
 
@@ -293,7 +325,7 @@ mod tests {
     use metis_frontend::FrontendApp;
     use metis_ipc::MemoryTransport;
     use metis_platform::DisplayScale;
-    use metis_platform::native::{NativeApplication, NativeFlow, WindowEvent};
+    use metis_platform::native::{ModifierState, NativeApplication, NativeFlow, WindowEvent};
 
     #[test]
     fn patient_text_rejects_controls_and_bounded_overflow() {
@@ -355,5 +387,25 @@ mod tests {
         let scaled = submit_rect(&form.app).expect("scaled submit surface");
         assert!(scaled.height > initial.height);
         assert!(scaled.x > initial.x);
+    }
+
+    #[test]
+    fn enter_submission_accepts_plain_and_control_shortcuts() {
+        assert_eq!(
+            super::classify_submit_modifier_class(super::SubmitModifierClass::Plain),
+            Some(super::SubmitShortcut::Plain)
+        );
+        assert_eq!(
+            super::classify_submit_modifier_class(super::SubmitModifierClass::Control),
+            Some(super::SubmitShortcut::Control)
+        );
+        assert_eq!(
+            super::classify_submit_modifier_class(super::SubmitModifierClass::System),
+            None
+        );
+        assert_eq!(
+            super::submit_shortcut(ModifierState::NONE),
+            Some(super::SubmitShortcut::Plain)
+        );
     }
 }
