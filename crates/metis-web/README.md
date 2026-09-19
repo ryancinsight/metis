@@ -110,12 +110,17 @@ grapheme cluster before changing state. Browser `InputEvent.inputType` values
 from the W3C [Input Events] vocabulary are classified as edit, delete, paste,
 cut, undo, redo, composition or other;
 the raw bounded operation name remains available for diagnostics. The browser
-applies its native clipboard or history operation first, so the resulting value
-and selection are the ones Metis validates and renders. A `keyup` listener
+applies its native keyboard clipboard or history operation first, so the
+resulting value and selection are the ones Metis validates and renders. The
+workbench also exposes **Read browser clipboard** and **Copy note to
+clipboard** controls backed by Moirai's secure-context provider. Reads are
+bounded to 1 MiB, replace the Rust-owned value only after validation and move
+the UTF-16 caret to the accepted end; permission, activation and unsupported
+context failures remain explicit status values. A `keyup` listener
 records the post-default browser selection for bounded navigation keys
 (`ArrowLeft`, `ArrowRight`, `ArrowUp`, `ArrowDown`, `Home`, `End`, `PageUp` and
 `PageDown`) and applies the same validation before rendering the navigation
-status. The browser keeps its native caret, clipboard and history behavior;
+status. The browser keeps its native caret and keyboard clipboard/history behavior;
 bidi layout, line metrics, fallback-font metrics and native IME production
 remain host contracts. Selection and composition state are exposed through
 semantic status elements and data attributes.

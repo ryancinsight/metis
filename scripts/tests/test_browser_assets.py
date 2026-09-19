@@ -292,6 +292,10 @@ class BrowserAssetContractTests(unittest.TestCase):
             'id="composition-status" role="status" aria-live="polite"',
             'id="selection-status" role="status"',
             'data-selection-direction="none"',
+            'id="clipboard-read" type="button"',
+            'id="clipboard-write" type="button"',
+            'id="clipboard-status" role="status" aria-live="polite"',
+            'data-clipboard-state="ready"',
         ):
             self.assertIn(fragment, controls)
         for event_name in (
@@ -308,6 +312,18 @@ class BrowserAssetContractTests(unittest.TestCase):
             'apply_navigation',
         ):
             self.assertIn(event_name, listeners)
+        clipboard = (ROOT / "crates" / "metis-web" / "src" / "browser" / "clipboard.rs").read_text(
+            encoding="utf-8"
+        )
+        for fragment in (
+            'document.clipboard()',
+            'provider.read_text()',
+            'provider.write_text(&value)',
+            'generation_is_current',
+            'spawn_local_with_handle',
+            'ClipboardStatus::Unavailable',
+        ):
+            self.assertIn(fragment, clipboard)
         for selector in (
             '.metis-text',
             '#text-specimen[data-text-state="composing"]',

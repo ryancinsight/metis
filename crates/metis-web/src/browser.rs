@@ -2,6 +2,8 @@
 
 #[path = "browser/application.rs"]
 mod application;
+#[path = "browser/clipboard.rs"]
+mod clipboard;
 #[path = "browser/config.rs"]
 mod config;
 #[path = "browser/dialog.rs"]
@@ -52,6 +54,7 @@ struct BrowserState {
     drop_read_state: crate::file_drop_policy::DropReadState,
     drop_batch: Option<FileDropBatch>,
     text_state: crate::text_policy::TextState,
+    clipboard_status: clipboard::ClipboardStatus,
     result_explorer: metis_frontend::ResultExplorer,
     controls: controls::ControlState,
 }
@@ -69,6 +72,7 @@ impl Default for BrowserState {
             drop_read_state: crate::file_drop_policy::DropReadState::default(),
             drop_batch: None,
             text_state: crate::text_policy::TextState::default(),
+            clipboard_status: clipboard::ClipboardStatus::default(),
             result_explorer: metis_frontend::ResultExplorer::new(),
             controls: controls::ControlState::default(),
         }
@@ -89,6 +93,7 @@ struct BrowserApplication {
     task: Rc<RefCell<Option<LocalTaskHandle>>>,
     drop_task: Rc<RefCell<Option<LocalTaskHandle>>>,
     fragment_task: Rc<RefCell<Option<LocalTaskHandle>>>,
+    clipboard_task: Rc<RefCell<Option<LocalTaskHandle>>>,
     generation: Generation,
 }
 

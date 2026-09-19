@@ -42,8 +42,17 @@ Revision 2026-09-17: the text policy classifies bounded browser
 `InputEvent.inputType` values as edit, delete, paste, cut, undo, redo,
 composition or other. It retains the raw operation name and validates the
 post-default value and selection before reporting the semantic operation. The
-browser remains the authority for clipboard and history behavior; Metis does
-not invent a clipboard API or substitute a Rust-side history stack.
+browser remains the authority for native keyboard clipboard and history
+behavior; Metis does not invent a Rust-side history stack.
+
+Revision 2026-09-19: explicit workbench clipboard controls use Moirai's
+secure-context browser provider. A click starts the browser promise inside the
+trusted event callback, the provider caps text at 1 MiB, and `TextState`
+validates a read before replacing the note and moving the UTF-16 caret to its
+bounded end. Permission, activation and unsupported-context failures render as
+explicit status values. This provider is a host integration surface; it does
+not claim trusted operating-system clipboard access or move DICOM semantics
+into Metis.
 
 The classifier follows the W3C [Input Events] vocabulary, including quotation
 paste, line and word deletion, drag deletion and transpose insertion. Names not
@@ -129,11 +138,13 @@ UTF-16 surrogate pair or a Unicode extended grapheme cluster using the
 and selection status without importing `web-sys`. The policy classifies the
 browser's bounded `inputType` values and reports paste, cut, undo and redo
 operations while retaining the raw value for diagnostics. The browser applies
-each native clipboard or history operation before Metis validates the resulting
-value and selection. A `keyup` listener observes the post-default selection for
+each native keyboard clipboard or history operation before Metis validates the
+resulting value and selection. Explicit **Read browser clipboard** and **Copy
+note to clipboard** controls use the bounded Moirai provider and render their
+own status. A `keyup` listener observes the post-default selection for
 `ArrowLeft`, `ArrowRight`, `ArrowUp`, `ArrowDown`, `Home`, `End`, `PageUp` and
 `PageDown`, applies the same validation and renders a navigation status. The
-browser keeps its default caret and clipboard/history actions; bidi shaping,
+browser keeps its default caret and keyboard clipboard/history actions; bidi shaping,
 line metrics, fallback-font metrics and native IME production remain host
 contracts.
 

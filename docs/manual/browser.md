@@ -989,14 +989,28 @@ The same input listener keeps the browser's `InputEvent.inputType` as bounded
 metadata and classifies it as edit, delete, paste, cut, undo, redo, composition
 or other. The mapping includes quotation paste, line or word deletion, drag
 deletion and transpose insertion from the W3C [Input Events] vocabulary. The
-browser performs its native clipboard or history action before the
+browser performs its native keyboard clipboard or history action before the
 event reaches Metis; the resulting value and UTF-16 selection are validated by
 the Rust policy and the status line reports the semantic operation together
 with the raw operation name. For example, native undo reports
 `Text: input undo (historyUndo) applied; data none`, while ordinary typing keeps
 the existing `Text: input insertText applied; data ...` status. This is operation
-classification and value validation, not a replacement clipboard service or a
-Rust-side undo stack.
+classification and value validation; it is separate from the explicit browser
+clipboard controls below.
+
+The text card also contains **Read browser clipboard** and **Copy note to
+clipboard**. A click starts Moirai's bounded browser promise inside the click
+callback, preserving the browser's transient user-activation rule. Read text is
+limited to 1 MiB, validated by `TextState`, written into the note and reported
+with the accepted UTF-8 byte count; writes report the bounded byte count after
+the browser confirms the promise. `clipboard-status` exposes `ready`,
+`unavailable`, `reading`, `writing`, `read`, `written` and `failed` states.
+Secure-context, permission and activation failures remain visible as failed
+states. This demonstrates the real HTML5/CSS control path, but it does not
+claim trusted OS clipboard contents, permission grants, assistive-technology
+behavior or native IME delivery. Browser keyboard clipboard/history behavior
+and the explicit provider are both host contracts; RITK remains the owner of
+DICOM parsing and presentation.
 
 [Input Events]: https://w3c.github.io/input-events/
 
@@ -1015,9 +1029,6 @@ operation classifier only records the browser event and resulting value.
 CUA can show the real HTML textarea, statuses and focus ring, but it cannot
 provide a trusted OS IME event or expose `isTrusted`; record the browser engine
 and input method when collecting host evidence.
-The browser provider for this workflow is Moirai revision
-`0862716265d657b8069d5a47fd1e77ae26ddd006`; the consumer lock is updated to the
-same merged revision.
 
 ## Measure browser text geometry
 

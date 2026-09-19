@@ -137,6 +137,31 @@ fn clipboard_and_history_input_events_preserve_values_and_report_operations() {
 }
 
 #[test]
+fn clipboard_read_replaces_text_and_moves_caret_to_bounded_end() {
+    let mut state = TextState::new("before".to_owned()).expect("text value is bounded");
+    state
+        .apply_clipboard("Résumé — 東京".to_owned())
+        .expect("clipboard value is bounded");
+    assert_eq!(state.value, "Résumé — 東京");
+    assert_eq!(
+        state.selection(),
+        Selection::new(11, 11, SelectionDirection::None).expect("caret is ordered")
+    );
+    assert_eq!(state.input_type(), "insertFromPaste");
+    assert_eq!(
+        state.text_status(),
+        "Text: input paste (insertFromPaste) applied; data none"
+    );
+
+    let previous = state.clone();
+    assert_eq!(
+        state.apply_clipboard("x".repeat(1_048_577)),
+        Err(TextError::TextTooLong)
+    );
+    assert_eq!(state, previous);
+}
+
+#[test]
 fn browser_navigation_keys_are_closed_and_format_neutral() {
     assert_eq!(
         NavigationKey::from_browser_key("ArrowLeft"),
