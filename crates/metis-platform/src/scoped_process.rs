@@ -7,7 +7,7 @@ use moirai_transport::process::{
     ProcessSupervisor,
 };
 use std::{
-    ffi::OsString,
+    ffi::{OsStr, OsString},
     fs::{self, File},
     io::{self, Read},
     path::{Path, PathBuf},
@@ -201,7 +201,7 @@ impl ScopedProcessProvider {
         let allowed_arguments = checked_arguments.into_boxed_slice();
         if allowed_arguments
             .iter()
-            .any(|argument| argument.to_string_lossy().len() > MAX_SCOPED_PROCESS_ARGUMENT_BYTES)
+            .any(|argument| encoded_len(argument) > MAX_SCOPED_PROCESS_ARGUMENT_BYTES)
         {
             return Err(ScopedProcessError::ArgumentsTooLarge);
         }
@@ -236,12 +236,12 @@ impl ScopedProcessProvider {
             }
             let key = key.into();
             let value = value.into();
-            if key.is_empty() || key.to_string_lossy().contains('=') {
+            if key.is_empty() || key.as_encoded_bytes().contains(&b'=') {
                 return Err(ScopedProcessError::InvalidEnvironment);
             }
             total_bytes = total_bytes
-                .checked_add(key.to_string_lossy().len())
-                .and_then(|bytes| bytes.checked_add(value.to_string_lossy().len()))
+                .checked_add(encoded_len(&key))
+                .and_then(|bytes| bytes.checked_add(encoded_len(&value)))
                 .ok_or(ScopedProcessError::InvalidEnvironment)?;
             if total_bytes > MAX_SCOPED_PROCESS_ENVIRONMENT_BYTES {
                 return Err(ScopedProcessError::InvalidEnvironment);
@@ -360,7 +360,7 @@ impl ScopedProcessProvider {
                 return Err(ScopedProcessError::ArgumentDenied);
             }
             total_bytes = total_bytes
-                .checked_add(argument.to_string_lossy().len())
+                .checked_add(encoded_len(&argument))
                 .ok_or(ScopedProcessError::ArgumentsTooLarge)?;
             if total_bytes > MAX_SCOPED_PROCESS_ARGUMENT_BYTES {
                 return Err(ScopedProcessError::ArgumentsTooLarge);
@@ -369,6 +369,10 @@ impl ScopedProcessProvider {
         }
         Ok(checked)
     }
+}
+
+fn encoded_len(value: &OsStr) -> usize {
+    value.as_encoded_bytes().len()
 }
 
 fn validate_deadline(deadline: Duration) -> Result<(), ScopedProcessError> {
