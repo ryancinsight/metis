@@ -17,6 +17,8 @@ import python_native_capture as capture
 
 MAX_TEXT_BYTES = 128
 SEND_INPUT_KEYBOARD = 1
+VK_CONTROL = 0x11
+VK_RETURN = 0x0D
 KEYEVENTF_KEYUP = 0x0002
 KEYEVENTF_UNICODE = 0x0004
 WM_NULL = 0x0000
@@ -67,6 +69,11 @@ def _parser() -> argparse.ArgumentParser:
         "--text",
         required=True,
         help="bounded Unicode text delivered through Win32 SendInput",
+    )
+    parser.add_argument(
+        "--shortcut",
+        choices=("enter", "control-enter"),
+        help="optional submit shortcut delivered after the Unicode text",
     )
     parser.add_argument("--initial-output", type=pathlib.Path, required=True)
     parser.add_argument("--output", type=pathlib.Path, required=True)
@@ -182,6 +189,43 @@ def _send_unicode_text(text_units: tuple[int, ...]) -> None:
         raise ctypes.WinError()
 
 
+def _send_virtual_key(virtual_key: int, *, key_up: bool) -> None:
+    user32 = ctypes.windll.user32
+    user32.SendInput.argtypes = [
+        ctypes.c_uint,
+        ctypes.POINTER(_Input),
+        ctypes.c_int,
+    ]
+    user32.SendInput.restype = ctypes.c_uint
+    record = _Input(kind=SEND_INPUT_KEYBOARD)
+    record.keyboard = _KeyboardInput(
+        virtual_key=virtual_key,
+        scan_code=0,
+        flags=KEYEVENTF_KEYUP if key_up else 0,
+        time=0,
+        extra_info=0,
+    )
+    sent = user32.SendInput(1, ctypes.byref(record), ctypes.sizeof(_Input))
+    if sent != 1:
+        raise ctypes.WinError()
+
+
+def _send_shortcut(shortcut: str) -> None:
+    if shortcut == "enter":
+        _send_virtual_key(VK_RETURN, key_up=False)
+        _send_virtual_key(VK_RETURN, key_up=True)
+        return
+    if shortcut == "control-enter":
+        _send_virtual_key(VK_CONTROL, key_up=False)
+        try:
+            _send_virtual_key(VK_RETURN, key_up=False)
+            _send_virtual_key(VK_RETURN, key_up=True)
+        finally:
+            _send_virtual_key(VK_CONTROL, key_up=True)
+        return
+    raise ValueError(f"unsupported native shortcut: {shortcut!r}")
+
+
 def _flush_window(handle: int) -> None:
     user32 = ctypes.windll.user32
     user32.SendMessageTimeoutW.argtypes = [
@@ -228,6 +272,7 @@ def _capture_input(
     command_arguments: list[str],
     cwd: pathlib.Path | None,
     text: str,
+    shortcut: str | None,
     initial_output: pathlib.Path,
     output: pathlib.Path,
     manifest: pathlib.Path,
@@ -260,6 +305,8 @@ def _capture_input(
             initial_output, initial.bounds, initial_pixels
         )
         _send_unicode_text(units)
+        if shortcut is not None:
+            _send_shortcut(shortcut)
         _flush_window(bounds.handle)
         after = capture._window_observation(bounds.handle)
         after_pixels = capture._capture_window(after.bounds)
@@ -277,6 +324,7 @@ def _capture_input(
                 "text_sha256": hashlib.sha256(encoded).hexdigest(),
                 "target_keyboard_layout": f"0x{layout:016x}",
                 "foreground_window_set": foreground_set,
+                "shortcut": shortcut,
             },
             "initial": _record(initial, initial_output, initial_digest),
             "after": _record(after, output, after_digest),
@@ -308,6 +356,7 @@ def main() -> None:
             arguments.command_arguments,
             arguments.cwd,
             arguments.text,
+            arguments.shortcut,
             arguments.initial_output.resolve(),
             arguments.output.resolve(),
             arguments.manifest.resolve(),

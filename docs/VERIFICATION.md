@@ -182,7 +182,9 @@ This establishes provider, lifecycle, bounded native IME event production and
 code-level host composition evidence. The committed Windows host captures are
 recorded below. The native form accepts Enter and Ctrl+Enter through the same
 modifier-aware submit transition while leaving Alt/Windows-modified Enter to
-the operating system. An installed CJK/other IME keyboard journey, WebView2
+the operating system. `scripts/python_native_input_capture.py --shortcut
+control-enter` exercises that transition through the Win32 input queue when a
+foreground desktop is available. An installed CJK/other IME keyboard journey, WebView2
 composition, broader OS permission enforcement, accessibility behavior,
 two-window captures, and macOS/Linux support remain open under [V05](#V05) and
 the linked backlog items; a hidden-window test and a passing build cannot

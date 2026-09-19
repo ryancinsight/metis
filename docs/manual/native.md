@@ -201,12 +201,14 @@ command valid with Atlas's shared build cache and with a standalone checkout.
 
 `python_native_input_capture.py` launches the production executable, captures
 its first visible frame, focuses that HWND and sends bounded UTF-16 code units
-through Win32 `SendInput` with `KEYEVENTF_UNICODE`. It then flushes the target
-window with a bounded `WM_NULL` call, captures the resulting frame and writes a
-manifest containing both image digests, geometry, effective DPI, the input
-digest and the observed keyboard-layout handle. The input is delivered by the
-operating-system queue; the runner does not post application text messages or
-modify the framebuffer.
+through Win32 `SendInput` with `KEYEVENTF_UNICODE`. The optional
+`--shortcut control-enter` argument then sends a real Control+Enter key
+sequence through the same queue, exercising the production submission policy.
+The runner flushes the target window with a bounded `WM_NULL` call, captures
+the resulting frame and writes a manifest containing both image digests,
+geometry, effective DPI, the input digest, shortcut name and observed
+keyboard-layout handle. The input is delivered by the operating-system queue;
+the runner does not post application text messages or modify the framebuffer.
 
 ```powershell
 $target = (cargo metadata --format-version 1 --no-deps |
@@ -218,19 +220,21 @@ python scripts/python_native_input_capture.py `
   --argument=2 `
   --argument=0.2 `
   --text "東京😀" `
+  --shortcut control-enter `
   --initial-output output\native-unicode-before.png `
   --output output\native-unicode-after.png `
   --manifest output\native-unicode.json
 ```
 
-The capture is Unicode input evidence, not installed-IME evidence. The
-utility deliberately reports `ime.status = not_exercised`: `KEYEVENTF_UNICODE`
-delivers committed text and cannot establish a CJK preedit/convert/commit
-journey. A machine with an installed IME still requires the separate physical
-keyboard journey recorded under the desktop residuals. The manifest's
-`input.foreground_window_set` and `pixels_changed` values must both be true and
-both images are inspected; foreground activation denial is a failed capture,
-and a process exit alone is not a pass.
+The capture is Unicode and shortcut evidence, not installed-IME evidence. The
+utility deliberately reports `ime.status = not_exercised`:
+`KEYEVENTF_UNICODE` delivers committed text and cannot establish a CJK
+preedit/convert/commit journey. A machine with an installed IME still requires
+the separate physical keyboard journey recorded under the desktop residuals.
+The manifest's `input.foreground_window_set` and `pixels_changed` values must
+both be true and both images are inspected; with `--shortcut control-enter`,
+the after image must also show the submitted result. Foreground activation
+denial is a failed capture, and a process exit alone is not a pass.
 
 The older OS-window captures below demonstrate the visible form and WebView2
 shell. RITK's migrated Windows viewer session now supplies a validated frame
