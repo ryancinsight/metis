@@ -540,7 +540,7 @@ an owner. “Unsupported” cannot replace delivery of a required mobile/native 
 - Dependencies: METIS-COMMANDS-001, METIS-FILES-001, METIS-INPUT-001, METIS-ASSETS-001, METIS-GRAPHICS-001, METIS-DESKTOP-001, METIS-BROWSER-001, METIS-INTEGRATION-001, METIS-SERVICES-001.
 - Named driver: [ritk-snap](../ritk/backlog.md#RITK-SNAP-METIS-001), retaining egui/eframe at RITK while exposing `--metis-native` through merged [PR 269](https://github.com/ryancinsight/ritk/pull/269) (`c1b8130bb`), following [PR 267](https://github.com/ryancinsight/ritk/pull/267) (`2f2058062`). No Tauri dependency is present in its manifest or workspace lock. RITK owns decoder, volume geometry and medical display correctness; Metis supplies the replacement shell.
 - Baseline: RITK `8152f483` ([PR 237](https://github.com/ryancinsight/ritk/pull/237)) adds physical display/hit rectangles to selected-study loading, restore/rejection and the original native capture; [manual](docs/manual/applications.md#deterministic-synthetic-dicom-baseline). The merged RITK native MPR increment now proves one bounded Métis framebuffer containing all three spacing-aware planes and panel-specific routing while keeping DICOM semantics in RITK.
-- Progress: the Windows `ritk-snap PATH --metis-native` workflow opens the synthetic study, renders axial/coronal/sagittal panels, routes wheel navigation by panel, captures a deterministic content golden and rejects a missing study. Browser input integration, multiframe/color host capture, matched memory measurements, packaging remain open acceptance work; the current complete operating-system application-window capture is recorded in the RITK user manual.
+- Progress: the Windows `ritk-snap PATH --metis-native` workflow opens the synthetic study, renders axial/coronal/sagittal panels, routes wheel navigation by panel, captures a deterministic content golden and rejects a missing study. Browser chooser, keyboard, cine and diagnostic-tool input are now evidenced by RITK PR #522; multiframe/color host capture, matched memory measurements and packaging remain open acceptance work. The current complete operating-system application-window capture is recorded in the RITK user manual.
 - Scope: inventory the actual viewer and a distinct pinned Tauri fixture; native Metis implementations replace required UI/state/input/render/file/lifecycle surfaces. First viewer journey opens a local DICOM study, selects its series and displays all three orthogonal views; full cutover retains the whole admitted viewer inventory.
 - Acceptance: [V09](docs/VERIFICATION.md#V09) plus RITK opening/frames/color/grayscale prerequisites; required symbols/config/plugins and viewer actions are mapped/tested. Existing bugs cannot serve as parity oracles. No retained egui/eframe/Tauri runtime or forwarding shim in the completed migrated viewer.
 - Demonstration: actual same-study before/after workflows, verified voxels/physical coordinates and real host captures in the user manual; record JavaScript retained versus Rust/WASM replacement and matched memory evidence.
@@ -575,6 +575,14 @@ an owner. “Unsupported” cannot replace delivery of a required mobile/native 
   proving transient preedit, committed patient-field text and cancellation on
   focus loss at the application boundary. The manual distinguishes this
   consumer contract from the still-open installed-IME journey.
+- Documentation increment (2026-09-20): RITK PR #522 (merge
+  `dc56909b07e53eb75ece43aafb65c704984f5811`) closes the current browser cine
+  presentation residual against lock-pinned Metis `165c4ec923e76ea7bc32b6b4fb99b4338166b3a3`.
+  Hosted run [35487777698](https://github.com/ryancinsight/ritk/actions/runs/35487777698)
+  passes Chromium-window, Chromium and Firefox saved-study workflows; the
+  real 94-file MRI replay proves Play/rate/pause generation transitions and a
+  shared tool-owned teardown. WebKit bounded reads and WebGPU adapter
+  availability remain explicit host residuals.
 
 <a id="METIS-RITK-HOST-001"></a>
 ## METIS-RITK-HOST-001 — Format-neutral native frame host [arch] [minor]
