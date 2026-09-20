@@ -624,6 +624,25 @@ revision, not local provider edits.
 Iris's current lending rendering seam is sufficient for the software path and
 does not block a DOM host.
 
+## Current plan revision — 2026-09-20
+
+The RITK viewport slice is now a delivered consumer boundary: zoom and pan are
+validated in RITK, pointer coordinates use the inverse transform, and the real
+94-file MRI replay keeps the same pixel and teardown oracles across Chromium and
+Firefox. The hosted record is [run 35512369724](https://github.com/ryancinsight/ritk/actions/runs/35512369724),
+with Safari selected-file reads and Chromium WebGPU adapter availability recorded
+as capability failures. This evidence is bound to the lock-pinned Metis revision
+`ab239d70bb561cbe665f852cc55ecbe4275be349`; it does not establish a current-main
+framework benchmark.
+
+The remaining implementation order is: finish native accessibility/IME and OS
+capability-denial evidence; establish one equal GPUI/Tauri fixture with the same
+study, three-plane surface, input trace and process boundary; exercise WebGPU on
+a host with an adapter and preserve the no-fallback failure path; then complete
+non-Windows packaging/update recovery before the final conformance audit. Each
+slice keeps DICOM decoding and clinical presentation in RITK and supplies a
+revision-bound manual capture.
+
 ## Dependency order and ownership
 
 The board owns the exact dependency graph and acceptance. Work proceeds through:

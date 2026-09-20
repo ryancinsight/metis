@@ -261,6 +261,35 @@ links the machine-readable trace and the full 2,880 × 2,114 capture. WebKit's
 bounded selected-file read and Chromium WebGPU adapter remain host-specific
 residuals; DICOM decoding and clinical pixels stay in RITK.
 
+### Real browser viewport controls
+
+The RITK browser consumer now keeps zoom and pan as validated viewer state. A
+zoom samples around the frame centre; the Pan tool shifts the same RITK-owned
+RGBA raster and fills exposed areas with opaque black. Pointer coordinates use
+the inverse of that transform, so selection follows the visible voxel rather
+than the untransformed canvas. The browser frame scratch storage is reused after
+warmup; this path does not add a JavaScript or CSS pixel copy.
+
+RITK PR [#535](https://github.com/ryancinsight/ritk/pull/535) delivered the
+viewport contract, PR [#536](https://github.com/ryancinsight/ritk/pull/536)
+corrected the image-edge coordinate mapping, and PR
+[#537](https://github.com/ryancinsight/ritk/pull/537) corrected the bounded
+workflow argument vector. The focused RITK replay reports 473/473 locked tests,
+strict native/WASM checks and Clippy, and the real 94-file MRI pixel oracle. The
+reviewed capture below is actual decoded MRI-DIR output with the slice controls;
+RITK owns the DICOM and viewport state while Métis owns the format-neutral canvas.
+
+![Actual MRI-DIR T2 study with browser slice controls through Métis](https://github.com/ryancinsight/ritk/blob/main/docs/manual/images/dicom-metis-real-browser-mri-edge-controls.png?raw=true)
+
+The hosted RITK run [35512369724](https://github.com/ryancinsight/ritk/actions/runs/35512369724)
+passes four-cycle Chromium and Firefox saved-study rasters, the Chromium
+application window and the 512 × 512 MIP projection. It also records the exact
+94-file manifest and clean teardown. Safari 26.6.2 accepts the chooser but
+rejects all bounded reads before presentation, and hosted Chromium reports no
+WebGPU adapter; neither result is converted into a raster fallback claim. The
+run is a locked evidence record for Metis `ab239d70bb561cbe665f852cc55ecbe4275be349`,
+not a claim that the current Metis main revision is unchanged.
+
 ### V12 fixture comparison
 
 The recorded measurements make the comparison boundary explicit. Each row is a
