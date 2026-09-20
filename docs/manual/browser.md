@@ -1680,20 +1680,21 @@ remain in RITK.
 The recorded cross-engine captures show the real anatomy rendered through this
 format-neutral host: [Chromium gallery](https://github.com/ryancinsight/ritk/blob/main/docs/manual/images/dicom-metis-real-browser-mri-cross-engine-chromium.png)
 and [Firefox gallery](https://github.com/ryancinsight/ritk/blob/main/docs/manual/images/dicom-metis-real-browser-mri-cross-engine-firefox.png).
-The current standalone-lock native replay uses RITK lock-change source
-`f1a556786e849696caa73d8c341adf309e87d163` merged as
-`9881b9c4ac9fdccbc241c94fe1903f30d4f20e95`, Metis
-`8d4ab58e8731c51547bbca3ec87100facb698322` and Moirai
-`f038622d24907884ce5f386da4e04d05bdb60d62`. The standalone Cargo.lock SHA-256
-is `2825653169ee324f9421122416da1e65a279e8657841c7fce9347386f6b58745`. It
+The current standalone-lock native replay uses the RITK geometry integration
+from [PR #518](https://github.com/ryancinsight/ritk/pull/518), merge
+`694904718d7ec922883ab2a6b572e9aa29edab99`, with all six Metis packages at
+`165c4ec923e76ea7bc32b6b4fb99b4338166b3a3` and Moirai at
+`2a54e010532f76c88027fec8a468620c92fe66b3`. The standalone Cargo.lock SHA-256
+is `4f4b96958a0545203775e21b3bd1152a864bd6b77847d2b638213d6b420b1084`. It
 reads all 94 saved files (49,807,236 bytes), reproduces the current
 revision-bound 1280 × 800 MRI frame with SHA-256
 `259dd79103482756c4e688621bebafc841cc40f1df10ff2bbd7f9d04b7b4d401` and
 411,589 non-black pixels, and rejects an invalid study. The locked replay's
 executable digest is
-`1c1fa032cde5381d80a3d4baa25f6f35ff5d4cba48f08f925c600c34de4f14a3`
-(54,008,320 bytes); the [RITK replay provenance](https://github.com/ryancinsight/ritk/blob/main/docs/manual/images/dicom-metis-real-mri.json)
-is authoritative for the complete workflow record.
+`b260611286c309a21a3132c0fbd20f855768f4cfe326e0cb99ab5820b1212b95`
+(54,011,904 bytes); the [RITK replay provenance](https://github.com/ryancinsight/ritk/blob/main/docs/manual/images/dicom-metis-real-mri.json)
+is authoritative for the complete workflow record, including the physical
+spacing carried into the native and browser presentation boundaries.
 RITK scans and decodes DICOM and owns the clinical pixels; Metis supplies the
 format-neutral chooser, bounded handoff and canvas host.
 
