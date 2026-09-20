@@ -592,6 +592,11 @@ an owner. “Unsupported” cannot replace delivery of a required mobile/native 
   includes the inspected [real MIP image](https://github.com/ryancinsight/ritk/blob/main/docs/manual/images/dicom-metis-real-browser-mri-projection.png);
   WebKit selected-file reads and Chromium WebGPU adapter availability remain
   explicit host residuals, and DICOM ownership remains in RITK.
+- Documentation increment (2026-09-20): the Metis application manual and V09
+  verification now link the same hosted RITK MIP capture, identifying its
+  512 × 512 non-black output and display-only listener contract. This is
+  format-neutral consumer evidence; DICOM decoding and projection policy stay
+  in RITK.
 
 <a id="METIS-RITK-HOST-001"></a>
 ## METIS-RITK-HOST-001 — Format-neutral native frame host [arch] [minor]
