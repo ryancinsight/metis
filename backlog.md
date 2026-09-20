@@ -88,6 +88,12 @@ an owner. “Unsupported” cannot replace delivery of a required mobile/native 
 - Status: done; priority: P1; owner: Metis documentation; delivery: [PR 34](https://github.com/ryancinsight/metis/pull/34), merge `056e252`; dependency: METIS-DICOM-002.
 - Outcome: Current framework and input records assign DICOM decisions to RITK after the format-neutral handoff; LF-normalized provenance passes the full gate at `a397b18`.
 
+<a id="METIS-DOCS-CLAIMS-001"></a>
+## METIS-DOCS-CLAIMS-001 — Reconcile public capability claims [patch]
+- Status: in-progress; priority: P1; owner: Metis documentation; integrator: root; dependencies: METIS-GAPS-002; risk: stale capability claims
+- Scope: README and Python manual statements about audit persistence, native windows, DICOM ownership and direct dependencies.
+- Acceptance: each claim matches the current public API and manifest graph; no stale denial remains; plan, link and diff checks pass.
+
 <a id="METIS-SVELTE-001"></a>
 ## METIS-SVELTE-001 — Svelte comparator and migration plan [arch] [patch]
 - Status: done; priority: P1; owner: Metis documentation; integrator: root; last-update: 2026-09-18; delivery: [PR #248](https://github.com/ryancinsight/metis/pull/248), merge `210a98b7ff1edda3218bdaa613a872c2f4edcfe6`; dependencies: METIS-GAPS-001, METIS-GAPS-002.

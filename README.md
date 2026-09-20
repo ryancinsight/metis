@@ -49,7 +49,8 @@ adapter installed-runtime navigation/bridge smoke passes, and the committed
 visible native/WebView2 application captures are recorded in the [native capture
 manifest](docs/manual/images/native-captures.json). Metis does not yet provide
 Tauri feature parity, a system WebView host on all targets, an OS privilege
-sandbox, durable audit storage or regulatory certification.
+sandbox or regulatory certification. The backend has a bounded authenticated
+`FileAuditStore`; its recovery contract is documented in [ADR 0038](docs/adr/0038-durable-audit-recovery.md).
 Metis does not parse DICOM or define medical volume semantics. Presentation
 hosts hand bounded file-drop bytes to RITK's public scanner and receive its
 validated image and metadata result; the owning workflow and visual evidence
@@ -104,7 +105,8 @@ Windows x64 it also authors a per-user MSI with a Start Menu shortcut and
 registered uninstall.
 See the [distribution manual](docs/manual/distribution.md) for the complete
 workflow, host prerequisites and current limits. The bundled example is a
-console application; packaging does not supply the missing desktop GUI host.
+console application; the native and WebView2 desktop hosts are explicit
+`metis-app` modes and are documented separately from the console package.
 Crates.io release validation and publication use the Atlas OIDC workflow in
 `.github/workflows/rust-release.yml`. The `metis-python` crate builds the
 `metis-rs` distribution for `import metis`; `.github/workflows/python-release.yml`
@@ -129,11 +131,12 @@ markup before painting; the tree is a host-neutral contract and does not claim
 native screen-reader or operating-system accessibility until a platform bridge
 is implemented and evidenced.
 
-Runtime crates declare no direct third-party crates. The distribution CLI uses
-Serde and serde_json for validated manifests and Cargo artifact messages, as
-recorded in [ADR 0005](docs/adr/0005-application-distribution.md). Atlas providers
-have transitive dependencies; the gate records the actual graph instead of describing it as
-dependency-free. The Atlas development overlay resolves first-party code to local
+Runtime crates keep direct third-party dependencies at bounded contract
+surfaces: the CLI and application use Serde for manifests and IPC, the image
+decoder uses `png` and `flate2`, the browser text policy uses
+`unicode-segmentation`, and the Python extension uses PyO3. Atlas providers
+have transitive dependencies; the gate records the actual graph instead of
+describing it as dependency-free. The Atlas development overlay resolves first-party code to local
 trees. Standalone builds use the corresponding pushed provider revisions recorded
 in Cargo.lock. Metis consumes Moirai through git-plus-version requirements;
 the current standalone lock records merged Moirai revision
