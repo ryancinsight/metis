@@ -247,10 +247,11 @@ in validation mode, uploads a retained `verification-wheels` artifact and
 skips both GitHub Release attachment and the PyPI publish job. It does not
 require a release tag or release authority, and it does not publish.
 
-This binding increment does not expose native window classes or DICOM objects.
-Those surfaces will follow their public Rust contracts and host or decoder
-evidence, so the Python API cannot silently diverge from the desktop and web
-paths.
+The binding exposes the Rust-owned `NativeApplication` window boundary on
+Windows and an explicit unsupported-host result elsewhere; it does not expose
+DICOM objects. DICOM decoding and clinical image semantics remain RITK
+responsibilities, so the Python API cannot silently diverge from the desktop
+and web paths.
 
 ## Own a bounded software application
 
