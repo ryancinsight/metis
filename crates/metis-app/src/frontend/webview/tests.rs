@@ -27,6 +27,24 @@ fn package_assets_are_script_scoped_and_bridge_bound() {
         );
     }
     assert!(STYLES_CSS.contains("#0f172a"));
+    assert!(INDEX_HTML.contains("data-metis-theme=\"system\""));
+    assert!(INDEX_HTML.contains("id=\"theme-mode\" name=\"theme-mode\""));
+    for theme in ["system", "light", "dark", "high-contrast"] {
+        assert!(
+            INDEX_HTML.contains(&format!("<option value=\"{theme}\"")),
+            "missing WebView2 theme option: {theme}"
+        );
+        assert!(
+            STYLES_CSS.contains(&format!("body[data-metis-theme=\"{theme}\"]")),
+            "missing WebView2 theme selector: {theme}"
+        );
+        assert!(
+            APP_JS.contains(&format!("['{theme}'")),
+            "missing theme value: {theme}"
+        );
+    }
+    assert!(APP_JS.contains("applyTheme"));
+    assert!(APP_JS.contains("if (!label) return;"));
     assert!(APP_JS.contains("chrome.webview"));
 }
 
