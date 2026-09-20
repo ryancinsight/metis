@@ -636,9 +636,11 @@ an owner. “Unsupported” cannot replace delivery of a required mobile/native 
 
 <a id="METIS-DISTRIBUTION-003"></a>
 ## METIS-DISTRIBUTION-003 — macOS and Linux installers [arch] [minor]
-- Status: todo; priority: P2; owner: Metis tooling; dependencies: METIS-DISTRIBUTION-001; risk: platform ownership and lifecycle
+- Status: in-progress; priority: P2; owner: Metis tooling; integrator: root; last-update: 2026-09-20; dependencies: METIS-DISTRIBUTION-001; risk: platform ownership and lifecycle
 - Scope: target-specific executable/bundle and installation formats using the same validated inventory; each target requires its native host for installation evidence.
 - Acceptance: build/install/run/uninstall on macOS and Linux preserves user files and application behavior; actual host evidence and platform manual instructions. [ADR 0005](docs/adr/0005-application-distribution.md), [V10](docs/VERIFICATION.md#V10).
+- Current increment: `metis build` now stages host-native portable executables on Windows, macOS and Linux; only the Windows x64 `package` path selects the explicit MSI target. Native macOS/Linux installer formats and host install evidence remain open.
+- Verification: `metis-cli` unit tests cover the target-selection contract and the locked package gate remains Windows-only; the manual and [ADR 0005](docs/adr/0005-application-distribution.md) describe the split.
 
 <a id="METIS-DISTRIBUTION-004"></a>
 ## METIS-DISTRIBUTION-004 — Signed update and recovery [arch] [minor]

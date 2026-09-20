@@ -47,6 +47,13 @@ checks and executable `--help` passed within the 30-minute job budget. The
 workflow artifact is package evidence; DICOM execution and MSI lifecycle remain
 consumer-owned acceptance checks.
 
+Revision 2026-09-20: [METIS-DISTRIBUTION-003](../../backlog.md#METIS-DISTRIBUTION-003)
+keeps portable staging host-native on Windows, macOS and Linux. The CLI selects
+the host Cargo artifact for `build`, while the Windows x64 target remains an
+explicit prerequisite for MSI authoring. This closes the cross-host executable
+path without claiming a macOS bundle or Linux installer; those formats still
+require their native packaging and install workflows.
+
 ## Decision
 
 One versioned application manifest declares identity, Cargo binary targets,

@@ -98,8 +98,10 @@ human-readable results go to standard error. `--help` writes usage to standard o
 The `metis` CLI builds declared Cargo binaries and bundles explicitly named
 resources from one [application manifest](metis.json). The demonstration ships
 one `metis-app` executable; optional sidecars remain explicit manifest targets.
-The `metis` build tool is not part of the application payload. On Windows x64 it also
-authors a per-user MSI with a Start Menu shortcut and registered uninstall.
+The `metis` build tool is not part of the application payload. `metis build`
+stages a host-native portable application on Windows, macOS or Linux. On
+Windows x64 it also authors a per-user MSI with a Start Menu shortcut and
+registered uninstall.
 See the [distribution manual](docs/manual/distribution.md) for the complete
 workflow, host prerequisites and current limits. The bundled example is a
 console application; packaging does not supply the missing desktop GUI host.

@@ -69,3 +69,18 @@ fn package_target_pair_cannot_be_swapped() {
         "declared binary does not belong to its selected workspace package"
     );
 }
+
+#[test]
+fn portable_build_target_is_host_native_except_for_windows_x64_msi() {
+    assert_eq!(
+        cargo_target("windows", "x86_64"),
+        Some("x86_64-pc-windows-msvc")
+    );
+    for host in [
+        ("linux", "x86_64"),
+        ("macos", "aarch64"),
+        ("windows", "aarch64"),
+    ] {
+        assert_eq!(cargo_target(host.0, host.1), None);
+    }
+}

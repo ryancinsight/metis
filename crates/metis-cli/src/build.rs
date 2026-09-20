@@ -48,8 +48,8 @@ struct InstallerRecord {
 }
 
 pub(crate) fn application(input: &Path, output: &Path, kind: OutputKind) -> Result<()> {
-    if !cfg!(all(windows, target_arch = "x86_64")) {
-        return Err("application distribution currently requires a Windows x64 host".into());
+    if matches!(kind, OutputKind::Installer) && !cfg!(all(windows, target_arch = "x86_64")) {
+        return Err("Windows MSI packaging requires an x86-64 Windows host".into());
     }
     let (application, root) = Application::read(input)?;
     let cargo_manifest = manifest::source(&root, &application.cargo_manifest)?;
@@ -183,7 +183,6 @@ fn compile(
     let mut args: Vec<OsString> = [
         "build",
         "--release",
-        "--target=x86_64-pc-windows-msvc",
         "--locked",
         "--message-format=json-render-diagnostics",
         "--manifest-path",
@@ -191,6 +190,9 @@ fn compile(
     .into_iter()
     .map(Into::into)
     .collect();
+    if let Some(target) = cargo_target(std::env::consts::OS, std::env::consts::ARCH) {
+        args.insert(2, format!("--target={target}").into());
+    }
     args.push(cargo_manifest.into_os_string());
     for binary in &application.binaries {
         args.extend([
@@ -202,6 +204,10 @@ fn compile(
     }
     let messages = process::capture(&cargo, &args, CARGO_BUILD_DEADLINE)?;
     artifacts(&messages, &selected)
+}
+
+fn cargo_target(os: &str, architecture: &str) -> Option<&'static str> {
+    (os == "windows" && architecture == "x86_64").then_some("x86_64-pc-windows-msvc")
 }
 
 fn targets(metadata: &[u8], application: &Application) -> Result<BTreeMap<String, String>> {

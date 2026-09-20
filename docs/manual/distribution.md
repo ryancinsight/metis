@@ -24,6 +24,12 @@ metis build metis.json output/portable
 metis package metis.json output/installer
 ```
 
+`metis build` is host-native and stages a portable application on Windows,
+macOS and Linux. The executable suffix and Cargo artifact path follow the host
+target. `metis package` adds the per-user MSI and therefore remains restricted
+to an x86-64 Windows host; macOS bundles/DMG and Linux package formats are
+tracked separately.
+
 Here `metis` denotes the built executable in the configured Cargo target directory;
 put that directory on PATH or use its absolute path. Create `output` first.
 Each destination must be new. A failed build leaves its partial directory for
@@ -31,7 +37,8 @@ inspection and does not erase existing output. A successful operation writes
 `inventory.json` last. Do not reuse an output directory as application input.
 
 The CLI invokes Cargo in release mode with `--locked`, using the caller's Cargo
-configuration and an explicit Windows x64 target. In Atlas, local provider overlays can differ from the standalone
+configuration. Portable builds use the host target; Windows x64 MSI builds
+select `x86_64-pc-windows-msvc` explicitly. In Atlas, local provider overlays can differ from the standalone
 lock; `python scripts/verify.py` uses the standalone resolution while retaining
 the shared build cache. Missing or ambiguous compiler artifacts are errors.
 Building runs the selected project's build scripts with your developer account.
@@ -110,6 +117,9 @@ Keep source files and output ancestors stable while the command runs.
 output/portable/app/metis-app.exe 60 2 0.2
 output/portable/app/metis-app.exe 80 2 0.2
 ```
+
+On macOS or Linux, the same host-native bundle uses
+`output/portable/app/metis-app` without the Windows executable suffix.
 
 The application starts another instance of its own executable for presentation
 and exchanges real IPC messages. These synthetic example inputs produce
