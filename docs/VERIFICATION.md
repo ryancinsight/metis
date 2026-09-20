@@ -2767,6 +2767,13 @@ browser drag-and-drop and WebGPU remain separate; the current complete-window
 cine capture is recorded by RITK run
 [35487777698](https://github.com/ryancinsight/ritk/actions/runs/35487777698)
 and its [current DICOM manual](https://github.com/ryancinsight/ritk/blob/main/docs/manual/dicom-workflow.md).
+The same hosted RITK workflow also selected a display-only maximum-intensity
+projection from the 94-file study. Run
+[35500085568](https://github.com/ryancinsight/ritk/actions/runs/35500085568)
+records a 512 × 512 projection with 110,028 non-black pixels and no projection
+input listeners; the [reviewed projection capture](../../ritk/docs/manual/images/dicom-metis-real-browser-mri-projection.png)
+is actual decoded output, while RITK owns the reduction and Métis remains the
+format-neutral canvas host.
 The mounted Metis host markup remains format-neutral: it exposes **Choose
 files** without an `accept` filter. The RITK gallery consumer applies the
 DICOM label and `.dcm,application/dicom` filter after mounting, so that hint

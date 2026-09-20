@@ -465,6 +465,19 @@ presented all three non-black canvases:
 
 ![Actual MRI-DIR T2 sagittal frame through the Métis browser canvas](https://github.com/ryancinsight/ritk/blob/main/docs/manual/images/dicom-metis-real-browser-mri-sagittal.png?raw=true)
 
+The same RITK consumer can add a display-only scalar projection canvas without
+changing the three interactive planes. The hosted Chromium replay selected a
+bounded maximum-intensity projection from the same 94-file study and produced
+a 512 × 512 frame with 110,028 non-black pixels. The projection has no input
+listeners; RITK owns the reduction and clinical presentation while Métis
+continues to provide the format-neutral canvas and lifecycle host.
+
+![Actual MRI-DIR MIP projection through the Métis browser canvas](https://github.com/ryancinsight/ritk/blob/main/docs/manual/images/dicom-metis-real-browser-mri-projection.png?raw=true)
+
+The [RITK projection capture](https://github.com/ryancinsight/ritk/blob/main/docs/manual/images/dicom-metis-real-browser-mri-projection.png)
+and [hosted run 35500085568](https://github.com/ryancinsight/ritk/actions/runs/35500085568)
+bind this output to the real study and the display-only listener contract.
+
 These are live canvas exports from real DICOM decoding, not generated images.
 The [RITK provenance record](https://github.com/ryancinsight/ritk/blob/main/docs/manual/images/dicom-metis-real-browser-mri.json)
 binds the PNG hashes, source revisions and bounds. The capture excludes browser
