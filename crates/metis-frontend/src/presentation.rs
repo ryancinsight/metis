@@ -112,6 +112,10 @@ impl<T: IpcTransport> FrontendApp<T> {
         self.text("output-rate", rate)?;
         self.text("output-status", status)?;
         self.text("output-signature", signature)?;
+        // Validate the custom renderer's host-neutral semantics before
+        // painting so a malformed identity or action cannot be presented as
+        // an accessible control.
+        self.semantic_tree()?;
         let width = i32::try_from(self.framebuffer.width()).map_err(|_| layout_error())?;
         let height = i32::try_from(self.framebuffer.height()).map_err(|_| layout_error())?;
         let display = compute_layout(

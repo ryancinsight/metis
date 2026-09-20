@@ -8,7 +8,7 @@ use metis_core::protocol::{
 use metis_ipc::client::{HandshakeError, IpcClient};
 use metis_ipc::transport::IpcTransport;
 use metis_platform::{DisplayScale, Framebuffer};
-use metis_ui_lang::{DomDocument, parse_markup};
+use metis_ui_lang::{DomDocument, SemanticTree, parse_markup};
 
 /// Outcome for the current inputs. Only success carries a result.
 /// Pending is painted before synchronous IPC; it does not imply an async host.
@@ -115,6 +115,21 @@ impl<T: IpcTransport> FrontendApp<T> {
     #[must_use]
     pub const fn document(&self) -> &DomDocument {
         &self.doc
+    }
+
+    /// Projects the current document into the host-neutral semantic tree.
+    ///
+    /// Native hosts can translate this value to an operating-system
+    /// accessibility provider. Browser hosts continue to use their DOM
+    /// accessibility tree; this method does not claim spoken or OS-level
+    /// accessibility support.
+    ///
+    /// # Errors
+    /// Returns a bounded UI error when the authored document has duplicate
+    /// identities, unresolved references, malformed states or unsupported
+    /// semantic values.
+    pub fn semantic_tree(&self) -> Result<SemanticTree> {
+        SemanticTree::from_document(&self.doc)
     }
     /// Actual rendered pixels for host presentation or capture.
     #[must_use]
@@ -404,5 +419,28 @@ mod tests {
                 ..
             } if *display_scale == scale
         )));
+    }
+
+    #[test]
+    fn authored_form_exposes_host_neutral_semantics() {
+        let (transport, _peer) = MemoryTransport::pair();
+        let app = FrontendApp::new(transport, 800, 600).expect("initial form");
+        let tree = app.semantic_tree().expect("semantic tree");
+        assert_eq!(tree.root.id.as_deref(), Some("main-screen"));
+        assert_eq!(tree.root.role, metis_ui_lang::SemanticRole::Application);
+        let button = tree
+            .root
+            .children
+            .iter()
+            .flat_map(|node| node.children.iter())
+            .flat_map(|node| node.children.iter())
+            .find(|node| node.id.as_deref() == Some("btn-calc"))
+            .expect("submit action");
+        assert_eq!(button.role, metis_ui_lang::SemanticRole::Button);
+        assert!(button.focusable);
+        assert_eq!(
+            button.actions,
+            vec![metis_ui_lang::SemanticAction::Activate]
+        );
     }
 }

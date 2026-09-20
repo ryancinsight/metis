@@ -2278,6 +2278,14 @@ The dependency-free contract test covers the complete path and rejects missing
 or disabled targets. This closes browser keyboard completion for the trace; it
 does not establish screen-reader speech or a native accessibility bridge.
 
+The custom software renderer now validates the same contract before every
+frontend paint through `FrontendApp::semantic_tree`. `metis-ui-lang` tests
+derive the authored form's application, text and button roles, label
+references, disabled/hidden state and typed actions, and reject duplicate IDs,
+unresolved references, malformed state values and oversized semantic text.
+This is host-neutral semantic evidence; UIA, NSAccessibility, AT-SPI, spoken
+output and host preference enablement remain V05/native residuals.
+
 <a id="V04"></a>
 ### V04 — Responsive layout and clipping
 

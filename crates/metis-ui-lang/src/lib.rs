@@ -8,6 +8,7 @@ pub mod dom;
 pub mod image;
 pub mod layout;
 pub mod parser;
+pub mod semantics;
 pub mod style;
 
 pub use dom::{DomDocument, DomElement, DomNode};
@@ -17,6 +18,10 @@ pub use layout::{
     compute_layout,
 };
 pub use parser::parse_markup;
+pub use semantics::{
+    MAX_SEMANTIC_ID_BYTES, MAX_SEMANTIC_TEXT_BYTES, SemanticAction, SemanticNode, SemanticRole,
+    SemanticTree,
+};
 pub use style::{
     AlignItems, Color, ComputedStyle, Display, EdgeValues, FlexDirection, FontWeight,
     JustifyContent, Size,

@@ -385,7 +385,7 @@ an owner. “Unsupported” cannot replace delivery of a required mobile/native 
 
 <a id="METIS-A11Y-001"></a>
 ## METIS-A11Y-001 — Accessible application interaction [minor]
-- Status: in-progress; priority: P1; owner: Metis host/UI; integrator: root; last-update: 2026-09-17; dependencies: METIS-INPUT-001; risk: inaccessible controls
+- Status: in-progress; priority: P1; owner: Metis host/UI; integrator: root; last-update: 2026-09-20; dependencies: METIS-INPUT-001; risk: inaccessible controls
 - Scope: semantic DOM roles/names/states, focus/action mapping, announcements, reduced motion/high contrast/zoom; OS accessibility bridge for any custom UI path.
 - Acceptance: semantic tree identity/actions and keyboard-only completion pass; actual supported screen readers traverse and operate the application; document platform limits instead of claiming certification from tree presence.
 - Demonstration: [V03](docs/VERIFICATION.md#V03), readable focus/contrast/zoom captures plus semantic/action and assistive-technology evidence.
@@ -403,6 +403,7 @@ an owner. “Unsupported” cannot replace delivery of a required mobile/native 
 - Completed increment (2026-09-18): the authorized browser workbench accepts `--keyboard-submit` with `--accessibility-probe`, traverses the observed enabled DOM focus order with trusted `Tab` actions, activates the submit control with `Enter`, waits for the backend result and records an `after-keyboard-submit` semantic snapshot. The dependency-free contract test covers the focus path and rejects missing or disabled targets.
 - Delivery reconciliation (2026-09-18): Metis PR [#272](https://github.com/ryancinsight/metis/pull/272), merge `860ffbf52d12a70c80dd2f150d2aff3a5630d57e`, delivers the keyboard-only completion path; focused browser runtime/accessibility tests pass 77/77, and hosted Windows run [35409604491](https://github.com/ryancinsight/metis/actions/runs/35409604491) passes the full locked gate. Spoken screen-reader output and native host accessibility bridges remain open.
 - Delivery reconciliation (2026-09-18): Metis PR [#256](https://github.com/ryancinsight/metis/pull/256), merge `695f418`, bounds Chromium/Edge native-tree depth, response bytes and required application labels. Hosted run [35365548822](https://github.com/ryancinsight/metis/actions/runs/35365548822) passes all three browser runtimes; the initial comparator failure was the runtime-artifact path defect corrected by PR [#258](https://github.com/ryancinsight/metis/pull/258). Spoken screen-reader output and native host accessibility bridges remain open.
+- Current increment (2026-09-20): `metis-ui-lang` derives a bounded host-neutral semantic tree with roles, names, references, states, focusability and typed actions; `FrontendApp::render` validates it before painting. Focused native tests cover the authored form and rejection cases. Native UIA/NSAccessibility/AT-SPI translation and spoken screen-reader evidence remain open.
 - Residuals: supported screen-reader speech, host-specific forced-colors/reduced-motion acceptance and native host accessibility bridge evidence remain open.
 
 <a id="METIS-LAYOUT-001"></a>
