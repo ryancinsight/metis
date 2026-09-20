@@ -206,6 +206,14 @@ execution. The Windows gate invokes `python scripts/verify.py --install`, so
 hosted acceptance covers the current-user installation, input-sensitive runs,
 uninstall cleanup and user-file preservation as well.
 
+The verifier may use a temporary `SUBST` drive to isolate Cargo from the Atlas
+development overlay. The Windows Installer service cannot see that per-user
+mapping, so the install probe passes the physical MSI source and physical test
+directory to `msiexec`; this keeps source resolution and transactional cleanup
+on paths visible to the service. The MSI stores its application location under
+the context-dependent per-user registry root and the maintenance probe reads
+that same location before repair or removal.
+
 ## Publish crates through CI
 
 `.github/workflows/rust-release.yml` is a thin caller of Atlas's pinned

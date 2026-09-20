@@ -63,6 +63,15 @@ makes hosted Windows lifecycle evidence part of the committed gate without
 changing the MSI's per-user authority boundary or claiming macOS/Linux
 installer support; the first green run binds the evidence to a revision.
 
+Revision 2026-09-20 (service-visible paths): neutral verification may expose
+the repository through a per-user `SUBST` drive so its Cargo resolution is
+independent of the Atlas overlay. Windows Installer runs in its service
+process and cannot inherit that mapping, so the verifier resolves the MSI
+source and its test `INSTALLDIR` to the physical repository path before
+launching `msiexec`. Registry rows use the MSI context-dependent root (`-1`)
+for the package's per-user context; the package-table test and the hosted
+lifecycle gate remain the acceptance oracles.
+
 ## Decision
 
 One versioned application manifest declares identity, Cargo binary targets,

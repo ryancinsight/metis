@@ -122,6 +122,15 @@ def destination(root, name):
     return unlinked(root.joinpath(*name.split("/")))
 
 
+def installer_path(path):
+    """Resolve a verifier path to one visible to the Windows Installer service."""
+    try:
+        relative = pathlib.Path(path).relative_to(ROOT)
+    except ValueError as error:
+        raise ValueError("Installer path is outside the configured root") from error
+    return unlinked(PHYSICAL_ROOT / relative)
+
+
 def verify_payload(directory, inventory, *, extras=()):
     records = inventory["files"]
     if not 1 <= len(records) <= 4096:
@@ -309,14 +318,20 @@ class Workflow:
             pass
         if shortcut.parent.exists():
             raise ValueError("Test identity Start Menu directory must be absent")
-        installed = unlinked(self.directory / "installed")
+        # Windows Installer's service process does not inherit a per-user
+        # SUBST mapping used by the neutral verifier.  Resolve both the MSI
+        # source and INSTALLDIR to real paths before giving them to msiexec;
+        # the service can then resolve its source and transactional Config.Msi
+        # folder during install and maintenance.
+        installed = installer_path(self.directory / "installed")
+        package_path = installer_path(destination(package, installer["file"]))
         if installed.exists():
             raise ValueError("Test installation directory must be absent")
         msiexec = pathlib.Path(os.environ["SystemRoot"]) / "System32" / "msiexec.exe"
         sentinel = installed / "user-created.txt"
         sentinel_bytes = b"User-created content must survive uninstall.\n"
         try:
-            self.run("install", [msiexec, "/i", destination(package, installer["file"]), "/qn", "/norestart",
+            self.run("install", [msiexec, "/i", package_path, "/qn", "/norestart",
                                 f"INSTALLDIR={installed}", "/L*v", self.directory / "install-msi.log"])
             if product_state(product) != 5:
                 raise ValueError("Windows Installer did not register the installed product")

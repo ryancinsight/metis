@@ -7,6 +7,7 @@ import pathlib
 import sys
 import tempfile
 import unittest
+from unittest import mock
 
 sys.path.insert(0, str(pathlib.Path(__file__).resolve().parents[1]))
 import distribution
@@ -169,6 +170,18 @@ class DistributionTests(unittest.TestCase):
                 with self.subTest(name=name), self.assertRaises(ValueError):
                     distribution.destination(root, name)
             self.assertEqual(distribution.destination(root, "assets/scan.bin"), root / "assets" / "scan.bin")
+
+    def test_installer_path_resolves_neutral_drive_for_service(self):
+        with tempfile.TemporaryDirectory() as temporary:
+            physical = pathlib.Path(temporary)
+            mapped_root = pathlib.Path("Z:/")
+            mapped_output = mapped_root / "output" / "distribution" / "latest"
+            with mock.patch.object(distribution, "ROOT", mapped_root), \
+                    mock.patch.object(distribution, "PHYSICAL_ROOT", physical):
+                self.assertEqual(
+                    distribution.installer_path(mapped_output / "installed"),
+                    physical / "output" / "distribution" / "latest" / "installed",
+                )
 
     def test_registry_records_actual_uninstall_directory_and_component_versions(self):
         with tempfile.TemporaryDirectory() as temporary:

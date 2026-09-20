@@ -11,6 +11,10 @@ use std::{
     path::{Path, PathBuf},
 };
 
+// MSI root -1 follows the package's per-user installation context, so a
+// future ALLUSERS policy change cannot silently redirect application state.
+const USER_REGISTRY_ROOT: i32 = -1;
+
 pub(crate) struct InstallerSpec<'a> {
     pub id: &'a str,
     pub name: &'a str,
@@ -32,6 +36,7 @@ pub(crate) fn inspect(path: &Path) -> Result<(String, Vec<String>), Box<dyn Erro
     let [product] = products.as_slice() else {
         return Err("MSI must contain exactly one ProductCode".into());
     };
+
     let files = database.strings("SELECT `FileName` FROM `File` ORDER BY `Sequence`")?;
     Ok((product.clone(), files))
 }
@@ -170,9 +175,9 @@ fn populate(
             &[Text("Application"), Text(&component)],
         )?;
         database.execute("INSERT INTO `File` (`File`,`Component_`,`FileName`,`FileSize`,`Version`,`Language`,`Attributes`,`Sequence`) VALUES (?,?,?,?,?,?,?,?)", &[Text(&file), Text(&component), Text(&format!("F{index}|{name}")), Number(i32::try_from(source.metadata()?.len())?), Null, Null, Number(16384), Number(i32::try_from(index + 1)?)])?;
-        database.execute("INSERT INTO `Registry` (`Registry`,`Root`,`Key`,`Name`,`Value`,`Component_`) VALUES (?,?,?,?,?,?)", &[Text(&registry), Number(1), Text(&registry_key), Text(&file), Text(spec.version), Text(&component)])?;
+        database.execute("INSERT INTO `Registry` (`Registry`,`Root`,`Key`,`Name`,`Value`,`Component_`) VALUES (?,?,?,?,?,?)", &[Text(&registry), Number(USER_REGISTRY_ROOT), Text(&registry_key), Text(&file), Text(spec.version), Text(&component)])?;
         if destination == spec.entry {
-            database.execute("INSERT INTO `Registry` (`Registry`,`Root`,`Key`,`Name`,`Value`,`Component_`) VALUES (?,?,?,?,?,?)", &[Text("InstallLocation"), Number(1), Text(&registry_key), Text("InstallLocation"), Text("[INSTALLDIR]"), Text(&component)])?;
+            database.execute("INSERT INTO `Registry` (`Registry`,`Root`,`Key`,`Name`,`Value`,`Component_`) VALUES (?,?,?,?,?,?)", &[Text("InstallLocation"), Number(USER_REGISTRY_ROOT), Text(&registry_key), Text("InstallLocation"), Text("[INSTALLDIR]"), Text(&component)])?;
             database.execute(
                 "INSERT INTO `CreateFolder` (`Directory_`,`Component_`) VALUES (?,?)",
                 &[Text("APPLICATIONMENU"), Text(&component)],
