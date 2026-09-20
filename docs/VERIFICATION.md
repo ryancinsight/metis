@@ -2753,7 +2753,10 @@ and [Firefox gallery](../../ritk/docs/manual/images/dicom-metis-real-browser-mri
 and [per-engine provenance](../../ritk/docs/manual/images/dicom-metis-real-browser-mri-cross-engine.json)
 bind those runs. Safari 26.6.2 accepted the selection but rejected the first
 bounded read, so its WebKit/SafariDriver authorization remains open. Physical
-browser drag-and-drop, WebGPU and complete-window evidence remain separate.
+browser drag-and-drop and WebGPU remain separate; the current complete-window
+cine capture is recorded by RITK run
+[35487777698](https://github.com/ryancinsight/ritk/actions/runs/35487777698)
+and its [current DICOM manual](https://github.com/ryancinsight/ritk/blob/main/docs/manual/dicom-workflow.md).
 The mounted Metis host markup remains format-neutral: it exposes **Choose
 files** without an `accept` filter. The RITK gallery consumer applies the
 DICOM label and `.dcm,application/dicom` filter after mounting, so that hint
