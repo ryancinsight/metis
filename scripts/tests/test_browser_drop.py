@@ -361,6 +361,7 @@ class FileDropTests(unittest.TestCase):
         self.assertEqual(validate_context_name("webgpu"), "webgpu")
         with self.assertRaisesRegex(BrowserRuntimeError, "canvas context"):
             validate_context_name("WebGPU")
+        self.assertEqual(validate_context_name("2d"), "2d")
 
     def test_screenshot_stability_reuses_the_canvas_element(self):
         class Client:
