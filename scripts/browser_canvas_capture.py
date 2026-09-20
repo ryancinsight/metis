@@ -11,7 +11,7 @@ from browser_protocol import BrowserRuntimeError, WebDriverClient
 from browser_trace import Trace
 
 
-CONTEXT_NAME_PATTERN = re.compile(r"[a-z][a-z0-9-]{0,31}\Z")
+CONTEXT_NAME_PATTERN = re.compile(r"[a-z0-9][a-z0-9-]{0,31}\Z")
 
 
 CANVAS_CONTEXT = """
