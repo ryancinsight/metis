@@ -25,3 +25,7 @@ crate-type = ["cdylib", "rlib"]
 
 [lints]
 workspace = true
+
+[[example]]
+name = "canvas_recovery"
+crate-type = ["cdylib"]
