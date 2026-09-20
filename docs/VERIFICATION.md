@@ -110,9 +110,15 @@ Atlas `cp314t`/`cp315t` and Python 3.15 `abi3t` matrix at revision
 `f747b8b4de9fb39dfdbe3d3731f0020bc04a947d`. `workflow_dispatch` selects Atlas
 validation mode: it builds, installs, runs the provider-owned value tests,
 validates the complete wheel set and uploads a retained verification artifact
-without a release tag, GitHub Release attachment or PyPI publication. Hosted
-artifact and value-test evidence remain pending under `METIS-PYTHON-004`. The
-first manual run [35504120205](https://github.com/ryancinsight/metis/actions/runs/35504120205)
+without a release tag, GitHub Release attachment or PyPI publication. The
+confirming [run 35507532874](https://github.com/ryancinsight/metis/actions/runs/35507532874)
+at Metis merge `4b194f5e1bd914f61390688104d50dbb81f38c05` completed all 18
+concrete wheel jobs and `Validate distributions`; the empty CPython matrix
+placeholder and `Publish release distributions to PyPI` were skipped by their
+conditions. The retained `verification-wheels` artifact contains 19 files (18
+wheels and one source distribution), is 6,842,856 bytes, and has digest
+`sha256:c85905c00574f2d052e2dd270486b91174f532d0373f352bf5982fa7062e3d33`.
+The first manual run [35504120205](https://github.com/ryancinsight/metis/actions/runs/35504120205)
 built the wheel matrix and its provider tests, then exposed an Atlas validator
 defect on the compressed macOS universal2 tag
 `macosx_10_12_x86_64.macosx_11_0_arm64.macosx_10_12_universal2`; it produced no
