@@ -471,6 +471,16 @@ then displays `Rate 0.36 mL/hour; drug 0.72 mg/hour; audit 2`:
 
 ![Metis WebView2 page after submission](images/webview-form-success.png)
 
+The packaged page also exposes the four theme modes used by the browser
+workbench: **System preference**, **Light**, **Dark** and **High contrast**.
+Changing the selector updates only the document's `data-metis-theme` attribute
+and local CSS variables. It does not send a bridge message or alter backend
+authority. The committed captures above are the system/dark baseline; a
+dedicated per-mode WebView2 capture remains an open host-evidence requirement.
+For a manual check, launch the command above, focus **Theme**, select each
+option, and inspect the page background, surface, text, focus ring and result
+status before submitting the calculation.
+
 ### WebView2 permission-probe capture
 
 The permission-probe role loads a separate packaged page that requests

@@ -26,6 +26,12 @@ lowercase strings. `System` follows `prefers-color-scheme`; the other values
 select an explicit document mode. Each render writes the mode's CSS value to
 `data-metis-theme` on both the document body and `#metis-app`.
 
+The packaged Windows WebView2 form uses the same four values in a local
+selector. Its page script applies the selected value to the document attribute
+and its stylesheet resolves the palette through local CSS variables. The
+selector is presentation-only: it never posts a bridge message and does not
+change host or backend authority.
+
 The external browser stylesheet owns semantic `--metis-*` variables for page,
 surface, text, accent, focus, status and backdrop colors. Attribute selectors
 provide the light, dark and high-contrast palettes, while reduced-motion and
@@ -75,7 +81,10 @@ The browser asset tests cover the semantic variables, all mode selectors,
 favicon and focus-order markup, while the build script requires the copied SVG,
 PNG and ICO. `metis-cli` tests exercise the bounded SVG grammar, generated ICO,
 malformed header and dimension rejection, and MSI `Icon`/`Shortcut` rows. The
-manual includes the mark and a reproducible mode-by-mode capture procedure.
+manual includes the mark and reproducible browser and WebView2 mode-selection
+procedures. The WebView2 asset contract tests every option and palette selector;
+its dedicated per-mode runtime capture remains open under the Windows host
+verification item.
 Runtime captures must record the browser engine, viewport, scale factor and
 host presentation settings before they can close the remaining V04/V06 gaps.
 
@@ -88,3 +97,11 @@ packaging path validate each format before persistence, and the Start Menu
 shortcut points to the embedded `MetisIcon` row. The acceptance evidence is the
 focused CLI suite, the browser asset tests and the full gate at the delivery
 revision.
+
+## Revision — 2026-09-20
+
+The packaged WebView2 form now exposes the same four local theme modes as the
+browser workbench. The selector changes only CSS variables and the document
+theme attribute; no page-to-host message is introduced. Static asset tests and
+the manual procedure cover the contract. A dedicated visible WebView2 capture
+for every mode is still required before the host-evidence residual closes.
