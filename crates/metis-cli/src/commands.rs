@@ -55,7 +55,7 @@ pub(crate) fn help() -> String {
         output.push('\n');
     }
     output.push_str(
-        "\nOptions:\n  -h, --help                       Show this help\n\nMANIFEST is a versioned metis.json file. OUTPUT must not exist.\nBuilds use Cargo --locked and compiler artifact messages. The first\nprocess/installer workflow requires Windows; no signing or publication is\nperformed. `dev --watch` reloads after source or resource changes and never\nruns an artifact from a failed build. See the distribution manual for\ninstallation and target limits.\n",
+        "\nOptions:\n  -h, --help                       Show this help\n\nMANIFEST is a versioned metis.json file. OUTPUT must not exist.\nPortable builds use the host Cargo target; Windows x64 is selected explicitly\nfor MSI packaging. Builds use Cargo --locked and compiler artifact messages.\nNo signing or publication is performed. `dev --watch` reloads after source or\nresource changes and never runs an artifact from a failed build. See the\ndistribution manual for installation and target limits.\n",
     );
     output
 }
