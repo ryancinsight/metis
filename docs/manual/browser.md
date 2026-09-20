@@ -1680,12 +1680,11 @@ remain in RITK.
 The recorded cross-engine captures show the real anatomy rendered through this
 format-neutral host: [Chromium gallery](https://github.com/ryancinsight/ritk/blob/main/docs/manual/images/dicom-metis-real-browser-mri-cross-engine-chromium.png)
 and [Firefox gallery](https://github.com/ryancinsight/ritk/blob/main/docs/manual/images/dicom-metis-real-browser-mri-cross-engine-firefox.png).
-The current standalone-lock native replay uses the RITK geometry integration
-from [PR #518](https://github.com/ryancinsight/ritk/pull/518), merge
-`694904718d7ec922883ab2a6b572e9aa29edab99`, with all six Metis packages at
-`165c4ec923e76ea7bc32b6b4fb99b4338166b3a3` and Moirai at
+The current standalone-lock native replay uses RITK's merged browser consumer
+at `f46d30091cac1ace12bb339d7421ac0c339ebf49`, with all six Metis packages at
+`ab239d70bb561cbe665f852cc55ecbe4275be349` and Moirai at
 `2a54e010532f76c88027fec8a468620c92fe66b3`. The standalone Cargo.lock SHA-256
-is `4f4b96958a0545203775e21b3bd1152a864bd6b77847d2b638213d6b420b1084`. It
+is `2e3bbb530a571ac46955848ea2fdfc6be60a66371945b981cc5a92d33ab02273`. It
 reads all 94 saved files (49,807,236 bytes), reproduces the current
 revision-bound 1280 × 800 MRI frame with SHA-256
 `259dd79103482756c4e688621bebafc841cc40f1df10ff2bbd7f9d04b7b4d401` and
@@ -1757,26 +1756,29 @@ closed-session state. `--input chromium` remains the explicit Chromium CDP drag
 probe; `--input manual` observes a physical file-manager drop and cannot make a
 portable cross-engine automation claim.
 
-The hosted chooser matrix ran as [RITK workflow 34973438029](https://github.com/ryancinsight/ritk/actions/runs/34973438029)
-against Metis `b374ca937ce6ddbcbce2fb55a0dd074a241ea956`, RITK
-`67ed6db952414d7b611e57a8100deead0eba7e88` and Moirai
-`2451a3155c44dcf76d5577e4eb8c08badde51a0a`. Chromium 152 and Firefox 155
+The current hosted chooser matrix is [RITK workflow 35500085568](https://github.com/ryancinsight/ritk/actions/runs/35500085568),
+rebuilt against RITK `f46d30091cac1ace12bb339d7421ac0c339ebf49`, Metis
+`ab239d70bb561cbe665f852cc55ecbe4275be349` and Moirai
+`2a54e010532f76c88027fec8a468620c92fe66b3`. Chromium 152 and Firefox 155
 each accepted the real 94-file MRI-DIR T2 study (49,807,236 bytes), matched
 every file hash and all three RITK RGBA canvas oracles, rejected the bounded
 count, per-file and batch overflow probes, dispatched trusted pointer and wheel
 actions, exercised focused `=`/`-` cine-rate keydown/keyup pairs with explicit
-repeat handling, and closed with `session_closed: true`. The RITK provenance
-records rate transitions `12 -> 13 -> 13 -> 12 -> 12` and frame-generation
-transitions for every canvas; the actual Chromium and Firefox galleries plus
-per-engine provenance are owned by [RITK's manual evidence](https://github.com/ryancinsight/ritk/tree/main/docs/manual/images).
+repeat handling, and closed with `session_closed: true`. The same run's
+Chromium projection artifact [10601916572](https://github.com/ryancinsight/ritk/actions/runs/35500085568/artifacts/10601916572)
+passes the real MIP surface: 512 × 512, 110,028 non-black pixels,
+`data-ritk-projection-statistic="MIP"`, 21 interactive listeners and a
+display-only projection canvas. The actual real-study MIP figure and complete
+per-engine provenance are owned by [RITK's manual evidence](https://github.com/ryancinsight/ritk/blob/main/docs/manual/dicom-workflow.md#add-a-display-only-scalar-projection-canvas).
 
-Safari 26.6.2 accepted the same 94 paths and closed its session, but its first
-bounded browser read was rejected by the host (`Byte access: host rejected the
-selected file`). It therefore has no DICOM or keyboard claim. The RITK
-provenance record links the exact traces, galleries and hosted artifacts. The
-WebKit file-backed read, physical file-manager input, native dialogs/processes,
-WebGPU and provider-private resource observations remain separate acceptance
-gates.
+Safari 26.6.2 in the same run accepted chooser paths but its selected-file
+browser read was rejected by the host before RITK could present a study. It
+therefore has no DICOM or keyboard claim. Chromium WebGPU likewise reported no
+browser adapter and made no raster fallback claim. The WebKit file-backed read,
+physical file-manager input, native dialogs/processes, WebGPU and
+provider-private resource observations remain separate acceptance gates.
+
+![Real saved MRI MIP projection through the format-neutral Métis host](https://github.com/ryancinsight/ritk/blob/main/docs/manual/images/dicom-metis-real-browser-mri-projection.png?raw=true)
 
 ![Browser gallery after the bounded file drop](images/browser-gallery.png)
 

@@ -583,6 +583,15 @@ an owner. “Unsupported” cannot replace delivery of a required mobile/native 
   real 94-file MRI replay proves Play/rate/pause generation transitions and a
   shared tool-owned teardown. WebKit bounded reads and WebGPU adapter
   availability remain explicit host residuals.
+- Documentation increment (2026-09-20): RITK PR #534 (merge
+  `f37ed5a9ac0c888dc8f42a4032548244381f300f`) binds the public manual and
+  provenance to hosted run [35500085568](https://github.com/ryancinsight/ritk/actions/runs/35500085568).
+  The real 94-file MRI study passes Chromium/Firefox chooser replay and the
+  Chromium raster MIP projection artifact: 512 × 512, 110,028 non-black pixels,
+  21 interactive listeners and a display-only projection canvas. The RITK manual
+  includes the inspected [real MIP image](https://github.com/ryancinsight/ritk/blob/main/docs/manual/images/dicom-metis-real-browser-mri-projection.png);
+  WebKit selected-file reads and Chromium WebGPU adapter availability remain
+  explicit host residuals, and DICOM ownership remains in RITK.
 
 <a id="METIS-RITK-HOST-001"></a>
 ## METIS-RITK-HOST-001 — Format-neutral native frame host [arch] [minor]
