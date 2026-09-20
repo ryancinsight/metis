@@ -46,6 +46,37 @@ evidence; it does not claim that an installed CJK or other system IME was
 exercised. The remaining physical journey is described in the [real Unicode
 input capture](#capture-real-unicode-input).
 
+## Inspect custom-renderer accessibility semantics
+
+The software renderer validates a host-neutral semantic projection before it
+paints a frame. `FrontendApp::semantic_tree` derives bounded roles, names,
+descriptions, values, states, focusability and typed actions from the same
+markup that produces the pixels:
+
+```rust,no_run
+# use metis_frontend::FrontendApp;
+# let (transport, _peer) = metis_ipc::MemoryTransport::pair();
+# let app = FrontendApp::new(transport, 800, 600)?;
+let tree = app.semantic_tree()?;
+let submit = tree
+    .root
+    .children
+    .iter()
+    .flat_map(|node| node.children.iter())
+    .flat_map(|node| node.children.iter())
+    .find(|node| node.id.as_deref() == Some("btn-calc"))
+    .ok_or_else(|| std::io::Error::other("submit action missing"))?;
+assert!(submit.focusable);
+assert_eq!(submit.actions, [metis_ui_lang::SemanticAction::Activate]);
+# Ok::<(), Box<dyn std::error::Error>>(())
+```
+
+Duplicate IDs, unresolved references, malformed state values and oversized
+semantic strings fail before presentation. The projection is not a native
+screen-reader bridge: UIA, NSAccessibility and AT-SPI translation, spoken
+output and host preference enablement remain platform-specific acceptance
+work under `METIS-A11Y-001`.
+
 ## Apply native display scale
 
 Moirai reports the window's integer DPI through `WindowEvent::DpiChanged`.

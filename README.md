@@ -124,6 +124,10 @@ that contract. The `metis-frontend` library
 dependency closure excludes `metis-backend`; the application entry composes both
 libraries. A shared executable image does not remove backend code from the child
 or establish broader OS permission restrictions. See [application entry design](docs/adr/0006-application-entry.md).
+Software-rendered hosts validate the bounded `SemanticTree` from the same
+markup before painting; the tree is a host-neutral contract and does not claim
+native screen-reader or operating-system accessibility until a platform bridge
+is implemented and evidenced.
 
 Runtime crates declare no direct third-party crates. The distribution CLI uses
 Serde and serde_json for validated manifests and Cargo artifact messages, as

@@ -19,6 +19,26 @@ trailing roots and malformed closing tags. Input is limited to one MiB,
 4,096 nodes, 64 nesting levels, and 64 attributes per element. Entity decoding,
 scripts, and browser error recovery are not implemented.
 
+The same document can be projected into a bounded [`SemanticTree`] before a
+host paints it. Roles are inferred from the admitted element vocabulary or an
+explicit `role`, names resolve through `aria-label`/`aria-labelledby` and text,
+and states/actions cover focus, disabled, hidden, value, selection and
+activation. Duplicate IDs, unresolved references, unknown roles, malformed
+state values and oversized semantic text fail with typed UI errors. The tree
+is a host-neutral contract: native UIA, `NSAccessibility` or AT-SPI bridges
+and browser accessibility remain host responsibilities, and tree presence
+alone does not establish spoken screen-reader support.
+
+```rust
+use metis_ui_lang::{SemanticAction, SemanticRole, SemanticTree, parse_markup};
+
+let document = parse_markup("<screen><button id='open'>Open study</button></screen>")?;
+let tree = SemanticTree::from_document(&document)?;
+assert_eq!(tree.root.children[0].role, SemanticRole::Button);
+assert_eq!(tree.root.children[0].actions, vec![SemanticAction::Activate]);
+# Ok::<(), metis_core::error::MetisError>(())
+```
+
 Layout supports sequential row/column flow, explicit and percentage dimensions,
 automatic width/content height, spacing, colors, square borders, and bitmap text.
 Alignment, minimum-size, font-weight, and radius declarations are outside the
