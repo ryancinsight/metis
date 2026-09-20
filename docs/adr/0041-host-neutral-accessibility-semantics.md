@@ -38,7 +38,9 @@ its platform provider; browser hosts continue to use the browser DOM tree.
 - Source IDs are unique and bounded; references fail closed when unresolved.
 - Unknown roles, malformed state values, invalid tabindex values and oversized
   semantic text return typed UI errors.
-- Hidden or disabled nodes expose no focus or action surface.
+- Hidden subtrees inherit effective visibility: a descendant cannot restore a
+  focus or action surface with `aria-hidden="false"`; hidden or disabled nodes
+  expose no focus or action surface.
 - The tree preserves source child order and all exposed strings are bounded.
 - `metis-ui-lang` tests cover role/name/reference/state/action derivation,
   rejection cases and hidden/disabled interaction; `metis-frontend` tests

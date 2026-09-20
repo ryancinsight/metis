@@ -72,7 +72,10 @@ assert_eq!(submit.actions, [metis_ui_lang::SemanticAction::Activate]);
 ```
 
 Duplicate IDs, unresolved references, malformed state values and oversized
-semantic strings fail before presentation. The projection is not a native
+semantic strings fail before presentation. Hidden state applies to the whole
+semantic subtree, so a descendant cannot restore focus or actions with
+`aria-hidden="false"`; visible siblings retain their normal actions. The
+projection is not a native
 screen-reader bridge: UIA, NSAccessibility and AT-SPI translation, spoken
 output and host preference enablement remain platform-specific acceptance
 work under `METIS-A11Y-001`.

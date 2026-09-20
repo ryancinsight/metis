@@ -32,7 +32,7 @@ impl SemanticTree {
         let mut source_nodes = 0;
         index_element(&document.root, 1, &mut source_nodes, &mut ids)?;
         let mut elements = 0;
-        let root = build_element(&document.root, 1, &ids, &mut elements)?;
+        let root = build_element(&document.root, 1, &ids, &mut elements, false)?;
         Ok(Self {
             root,
             element_count: elements,
@@ -75,6 +75,7 @@ fn build_element(
     depth: usize,
     ids: &HashMap<&str, &DomElement>,
     elements: &mut usize,
+    inherited_hidden: bool,
 ) -> Result<SemanticNode> {
     if depth > MAX_DEPTH {
         return Err(limit_error("Semantic tree depth limit exceeded"));
@@ -83,8 +84,13 @@ fn build_element(
         .checked_add(1)
         .ok_or_else(|| limit_error("Semantic element count overflow"))?;
     let role = role_for(element)?;
-    let hidden = element.attributes.contains_key("hidden")
+    let local_hidden = element.attributes.contains_key("hidden")
         || boolean_attribute(element, "aria-hidden")?.unwrap_or(false);
+    // Visibility is inherited through the semantic subtree. An explicit
+    // `aria-hidden="false"` on a descendant cannot reactivate a hidden
+    // ancestor, because exposing that control would make keyboard and host
+    // actions reach content the application declared unavailable.
+    let hidden = inherited_hidden || local_hidden;
     let disabled = element.attributes.contains_key("disabled")
         || boolean_attribute(element, "aria-disabled")?.unwrap_or(false);
     let name = accessible_name(element, ids, depth)?;
@@ -120,7 +126,7 @@ fn build_element(
         .map_err(|_| limit_error("Semantic child allocation failed"))?;
     for child in &element.children {
         if let DomNode::Element(child) = child {
-            children.push(build_element(child, depth + 1, ids, elements)?);
+            children.push(build_element(child, depth + 1, ids, elements, hidden)?);
         }
     }
     Ok(SemanticNode {
@@ -410,6 +416,28 @@ mod tests {
             assert!(!node.focusable);
             assert!(node.actions.is_empty());
         }
+    }
+
+    #[test]
+    fn hidden_ancestors_hide_descendant_actions_and_focusability() {
+        let document = parse_markup(
+            "<screen><group id='html-hidden' hidden='true'><button id='nested-html'>Hidden</button></group><group id='aria-hidden' aria-hidden='true'><button id='nested-aria' aria-hidden='false'>Hidden</button></group><button id='visible'>Visible</button></screen>",
+        )
+        .expect("document");
+        let tree = SemanticTree::from_document(&document).expect("semantic tree");
+
+        let html_group = &tree.root.children[0];
+        let aria_group = &tree.root.children[1];
+        let visible = &tree.root.children[2];
+        for child in [&html_group.children[0], &aria_group.children[0]] {
+            assert!(child.hidden);
+            assert!(!child.focusable);
+            assert!(child.actions.is_empty());
+        }
+        assert!(html_group.hidden);
+        assert!(aria_group.hidden);
+        assert!(visible.focusable);
+        assert_eq!(visible.actions, vec![SemanticAction::Activate]);
     }
 
     #[test]
