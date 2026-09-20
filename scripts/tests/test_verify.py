@@ -216,7 +216,7 @@ class WorkflowContractTests(unittest.TestCase):
             "permissions:\n  contents: read",
             "concurrency:",
             "cancel-in-progress:",
-            "python scripts/verify.py",
+            "python scripts/verify.py --install",
             "taiki-e/install-action@a6b2e2dcd845ddd7f509ce4f3ed3d922b80cc5d9",
             "cargo-nextest@0.9.143",
             "cargo-deny@0.20.2",

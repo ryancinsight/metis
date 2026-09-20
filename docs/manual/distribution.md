@@ -201,8 +201,10 @@ the shortcut probe also records `IconLocation` and requires the Windows
 Installer cache reference to end in `MetisIcon,0`; this is the shell-visible
 proof that the MSI `Icon` row is used. The gate preserves only the latest
 marked test run and refuses to replace a still-registered test installation.
-Normal verification exercises packaging and portable execution;
-`--install` opts into the current-user OS installation workflow.
+Local verification without `--install` exercises packaging and portable
+execution. The Windows gate invokes `python scripts/verify.py --install`, so
+hosted acceptance covers the current-user installation, input-sensitive runs,
+uninstall cleanup and user-file preservation as well.
 
 ## Publish crates through CI
 
