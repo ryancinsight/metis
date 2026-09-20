@@ -590,3 +590,47 @@ work. WebView2 provider denial and a visible permission-probe capture are
 covered; broader Windows sandbox enforcement remains open. Do not treat a
 successful Windows build or a hidden-window test as cross-platform,
 assistive-technology or broad OS-permission evidence.
+
+## Native image assets
+
+The Windows `native_image` example decodes the repository's asymmetric 2×3
+RGBA PNG and presents five discrete orientations through `NativeApplication`.
+The fixture is authored in this repository, carries no external content, and
+includes a half-transparent magenta sample. The final row reports the result
+of an actual truncated-image decode.
+
+![Native PNG alpha, aspect and orientation gallery](images/native-image.png)
+
+The [capture record](images/native-image.json) records the executable and
+source digests, geometry and exact comparison. At 96 DPI, all 217,600 client
+pixels match the Rust-asserted 800×272 framebuffer. The original and mirrored
+images occupy 104×156 pixels inside 140×156 bounds; quarter-turns occupy
+140×93 pixels. The remaining area is letterboxed. RGBA `(220,55,210,128)`
+over RGB `(30,41,59)` produces exactly RGB `(125,48,135)` under the shared
+integer source-over rule. This is one Windows host observation, not a
+color-managed display or heterogeneous-DPI claim.
+
+Build and run the demonstration from a standalone Metis checkout:
+
+```text
+cargo run --locked --example native_image
+cargo run --locked --example native_image -- --visible
+```
+
+The default is a bounded hidden-window smoke. Visible mode closes on a window
+close event or its 30-second deadline. The existing
+`scripts/python_native_capture.py --command` runner captures the built example
+with `--argument=--visible`; the configured gate runs its hidden mode under a
+60-second process budget. Atlas checkouts use the existing
+`scripts/cargo_overlay.py` standalone Cargo context and shared target directory.
+
+`RasterImage::load_png` requires a `READ_FILE` capability and a relative path
+below a `ScopedFileProvider` root. Admission rejects absolute paths, parent
+components, alternate streams and the provider's link/non-regular-file cases.
+`decode_png` bounds encoded input to 64 MiB, each edge to 16,384, pixels to
+16,777,216 and decoder workspace to 64 MiB. CRC, Adler checksum, complete
+compressed-stream consumption and exact scanline length are checked. The
+static subset supports grayscale, RGB, RGBA and complete palettes up to
+eight-bit samples, including Adam7. EXIF, animation, ICC profiles, physical
+spacing and other metadata fail closed. Orientation is explicit through
+`ImagePlacement::contain`; JPEG and clinical orientation remain separate work.

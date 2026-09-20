@@ -2371,6 +2371,19 @@ Capture both successful content and diagnostic states. Test custom GPU output
 against the software/analytical reference using the declared raster contract;
 device loss/recreation is a lifecycle test, not an opportunity for silent fallback.
 
+Native PNG evidence (2026-09-19): the [Windows asset gallery](manual/native.md#native-image-assets)
+shows all five discrete orientations, aspect-preserving letterboxes, exact
+straight-alpha compositing and a real truncated-image rejection. Its entire
+800×272 client crop matches the asserted framebuffer byte-for-byte at 96 DPI;
+the [capture record](manual/images/native-image.json) binds the source and
+executable digests. Decoder tests cover every fixture prefix and single-byte
+corruption, every compressed-stream prefix and split, invalid checksums,
+excess scanlines, trailing IDAT bytes, oversized dimensions/input, rejected
+metadata and scoped-path escape attempts. An independent Adam7 traversal
+reconstructs the same RGBA grid. This closes the admitted static PNG/native
+placement increment, not EXIF/JPEG, clinical orientation or the broader V06
+media/GPU acceptance.
+
 <a id="V07"></a>
 ### V07 — Result explorer
 

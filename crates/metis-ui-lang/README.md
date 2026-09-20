@@ -78,8 +78,21 @@ horizontal or vertical flip, a quarter-turn, or a validated arbitrary affine
 mapping through [`ImageTransform`](https://docs.rs/metis-ui-lang/latest/metis_ui_lang/enum.ImageTransform.html).
 `AffineTransform` expresses a finite, invertible source-to-destination mapping
 in normalized crop coordinates; nearest-neighbor sampling reads the shared
-source without allocating a transformed copy. Decoding formats and clinical
-orientation metadata remain an upstream asset-provider concern.
+source without allocating a transformed copy. `ImagePlacement::contain` swaps
+the effective extents for quarter-turns and centers an aspect-preserving fit,
+leaving letterboxing untouched. Its integer fit loses less than one pixel on
+the non-limiting axis; affine mappings use explicit placement instead.
+
+Native hosts can call `RasterImage::decode_png` or capability-checked
+`RasterImage::load_png`. Admission bounds encoded input to 64 MiB, each edge to
+16,384 and output to 16,777,216 pixels. PNG CRCs, complete zlib termination,
+Adler checksum and exact scanline length are required. The static PNG subset
+admits IHDR/PLTE/tRNS/IDAT/IEND, depths up to eight bits, and Adam7; indexed
+images require complete palettes. EXIF, animation, color profiles and physical
+spacing metadata are rejected rather than ignored. Samples retain their
+straight RGBA values; this is not a color-management API. Clinical image
+decoding and orientation metadata remain RITK-owned. The [native gallery](../../docs/manual/native.md#native-image-assets)
+shows the Windows presentation and rejection state.
 
 ```rust
 use metis_platform::{Color, Framebuffer, Rect};

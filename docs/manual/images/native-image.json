@@ -1,0 +1,43 @@
+{
+  "schema": 1,
+  "demonstration": "V06",
+  "date": "2026-09-19",
+  "source_sha256": {
+    "Cargo.toml": "9145e8770eb9c3b8baa498c66c708998aa06eb1f3ee48bd464f9219e6ef700f0",
+    "Cargo.lock": "1f9c555c0b8a9b1a30730be72539e86c25413cdd5631cea988d6d7b2e8d8a13e",
+    "crates/metis-ui-lang/Cargo.toml": "a4d202c8c3a257aa4a0a204d231e4b6046eac1825380af840160dd783a10d0f7",
+    "crates/metis-ui-lang/src/asset.rs": "bfcbcae0f7e494c8928e949ebb4585877a46b442bc0788c7cd200c3e58f0275b",
+    "crates/metis-ui-lang/src/asset/compression.rs": "4d824e52435ddeca76e28bb7ce30d3cf9ec50ad3b9b78561161f3961dde45f4e",
+    "crates/metis-ui-lang/src/asset/tests.rs": "048fcb59dbf987857aae3382b7ecce327f0b9c8620853aa50f753499305cb764",
+    "crates/metis-ui-lang/src/image.rs": "5d52e2a1f2f39c1afae4c11edf306d7214f6b18d325d3b6413d23e6689df852c",
+    "crates/metis-ui-lang/src/image/fit.rs": "be54b0f1887204c076d5fa269145376c9db90a4eaeccb67476631a393d4a368d",
+    "crates/metis-ui-lang/src/image/transform.rs": "dd2ec45e87f55489d6a4edd86fc2f2a7a0805862a8d6937693d5532bd040a280",
+    "crates/metis-platform/src/framebuffer.rs": "a23f660c4cb1b58f091185179b81c2b05aff6e9ecd441c2364c6a4107fc34705",
+    "examples/native_image.rs": "2f67efa0db9378ee0ac95bcfc73687629aa5bdd80eeb4b166ce5fed355278f0e",
+    "examples/assets/orientation.png": "545795a05db12aa90dda0f0663fe5e2808fc59647124b934f650777cb88abd3d"
+  },
+  "executable_sha256": "214224f61e24784ce55dda9009bf643fc4b4e7c54a9715b3442e6a9648774976",
+  "image": "native-image.png",
+  "image_sha256": "1d7f902d713d43f28af8c2de168dd7fae6db130aaaae635df155c003057526da",
+  "fixture_attribution": "Repository-authored asymmetric 2x3 RGBA PNG; no third-party content",
+  "window": {
+    "width": 816,
+    "height": 311
+  },
+  "client": {
+    "width": 800,
+    "height": 272,
+    "offset_x": 8,
+    "offset_y": 31
+  },
+  "dpi": 96,
+  "process_returncode": 0,
+  "expected_bmp_sha256": "68074540c99889c48c161f5f16377b1778afd19975711a5d71dc9ff51504da24",
+  "client_comparison": {
+    "pixels": 217600,
+    "different_pixels": 0,
+    "channels": "RGB; native window is opaque"
+  },
+  "inspection": "Five labeled discrete orientations, letterboxes, alpha blend and actual malformed rejection are visible",
+  "scope": "Admitted static PNG subset; no EXIF, JPEG, clinical orientation, color management or heterogeneous-DPI claim"
+}

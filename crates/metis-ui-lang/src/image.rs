@@ -4,6 +4,7 @@ use metis_core::error::{ErrorCode, MetisError, Result};
 use metis_platform::framebuffer::{Color, Framebuffer, MAX_PIXELS, Rect};
 use std::sync::Arc;
 
+mod fit;
 mod transform;
 pub use transform::{AffineTransform, ImageTransform};
 use transform::{

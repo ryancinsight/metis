@@ -2,6 +2,8 @@
 #![forbid(unsafe_code)]
 #![deny(missing_docs)]
 
+#[cfg(not(target_arch = "wasm32"))]
+pub mod asset;
 pub mod dom;
 pub mod image;
 pub mod layout;
