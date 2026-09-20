@@ -1778,7 +1778,7 @@ browser adapter and made no raster fallback claim. The WebKit file-backed read,
 physical file-manager input, native dialogs/processes, WebGPU and
 provider-private resource observations remain separate acceptance gates.
 
-![Real saved MRI MIP projection through the format-neutral Métis host](https://github.com/ryancinsight/ritk/blob/main/docs/manual/images/dicom-metis-real-browser-mri-projection.png)
+![Real saved MRI MIP projection through the format-neutral Métis host](https://github.com/ryancinsight/ritk/blob/main/docs/manual/images/dicom-metis-real-browser-mri-projection.png?raw=true)
 
 ![Browser gallery after the bounded file drop](images/browser-gallery.png)
 
