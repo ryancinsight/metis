@@ -74,3 +74,14 @@ interpreter lock. Native event dictionaries are built after reattachment. The
 Rust closures carry only owned Rust state and `MetisError` values, preserving
 the `Send + Sync` and `gil_used = false` contract while leaving DICOM ownership
 with RITK.
+
+## Revision 2026-09-20
+
+The Python release caller exposes `workflow_dispatch` as a validation-only
+entry point. It passes `verification=true` to Atlas's shared wheel workflow,
+which reuses the complete build, installation, free-threaded GIL assertion and
+provider-owned value-test matrix, derives one version across wheel and source
+distribution metadata, and uploads a retained verification artifact. The
+validation path skips GitHub Release attachment and the PyPI publish job; the
+published-release path retains tag validation and OIDC-only publication. No
+registry token, signing key or private key is introduced.

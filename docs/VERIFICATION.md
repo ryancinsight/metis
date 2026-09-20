@@ -105,10 +105,13 @@ and concurrent event mutation on one `Application`; the free-threaded probe
 runs on a free-threaded interpreter and asserts that importing the extension
 leaves the GIL disabled. On this host, the release wheel build and extracted
 suite pass with 19 tests and one expected skip under CPython 3.13.12, while no
-free-threaded interpreter is installed. The release caller now opts into the
-shared Atlas `cp314t`/`cp315t` and Python 3.15 `abi3t` matrix at revision
-`982a9e82d22911a0950e6f84c9b789a12878bcf5`; hosted artifact and value-test
-evidence remain pending under `METIS-PYTHON-004`.
+free-threaded interpreter is installed. The release caller opts into the shared
+Atlas `cp314t`/`cp315t` and Python 3.15 `abi3t` matrix at revision
+`3892973f83e5a27261d43ecf1509359264e8e7a8`. `workflow_dispatch` selects Atlas
+validation mode: it builds, installs, runs the provider-owned value tests,
+validates the complete wheel set and uploads a retained verification artifact
+without a release tag, GitHub Release attachment or PyPI publication. Hosted
+artifact and value-test evidence remain pending under `METIS-PYTHON-004`.
 
 The free-threaded source configuration also passes a neutral standalone locked
 compile and strict Clippy check with `--no-default-features --features abi3t
