@@ -312,9 +312,12 @@ and process boundaries also differ. These reports are lifecycle evidence; they
 do not establish a memory or latency ranking against Tauri, GPUI or egui. The
 current three-run saved public MRI resource baseline is a recorded lifecycle
 measurement bound to the revisions stored in [the MRI resource provenance](images/dicom-metis-real-mri-resource.json).
-The report records
-the real 94-file study and the 1280 × 800 three-plane capture; it does not
-include private study paths or pixels. RITK also records a complete eframe MRI
+The geometry-aware sample records peak private bytes of 816,635,904 ± 1,193,823,
+peak working set of 390,056,619 ± 22,024,617 and lifecycle duration of
+2,014 ± 25 ms across three runs; all exits were 0 and the application-content
+capture digest repeated. The report records the real 94-file study and the
+1280 × 800 three-plane capture; it does not include private study paths or
+pixels. RITK also records a complete eframe MRI
 baseline and a shell-free [matched orthogonal eframe fixture](https://github.com/ryancinsight/ritk/blob/main/docs/manual/images/dicom-eframe-orthogonal-surface-resource.json)
 for the same 94-file input. The matched fixture requests 1024×640 logical
 points and records the same 1280×800 physical host extent as Métis on the
