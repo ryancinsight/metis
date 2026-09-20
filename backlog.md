@@ -6,12 +6,13 @@
 
 <a id="METIS-PRESENTATION-GEOMETRY-001"></a>
 ## METIS-PRESENTATION-GEOMETRY-001 — Carry validated physical frame geometry [arch] [minor]
-- Status: review; priority: P1; owner: Metis canvas contract; integrator: root; branch: `feat/metis-presentation-geometry`; last-update: 2026-09-19.
+- Status: done; priority: P1; owner: Metis canvas contract; integrator: root; last-update: 2026-09-20.
 - Outcome: the format-neutral browser frame seam accepts validated display spacing alongside borrowed RGBA pixels, so a host cannot present malformed physical geometry while RITK retains DICOM and voxel semantics.
-- Scope: `metis-web` frame contract, surface validation, focused tests, ADR and README/API documentation; RITK consumer follow-up lands after this provider change.
+- Scope: `metis-web` frame contract, surface validation, focused tests, ADR and README/API documentation; RITK consumes the provider metadata at its presentation boundary.
 - Acceptance: valid anisotropic spacing reaches the borrowed canvas contract without copying; zero, non-finite and negative distances are rejected before provider upload; existing frame implementations remain pixel-compatible; strict native/WASM checks and focused tests pass.
 - Dependencies: METIS-MIGRATION-001, METIS-INPUT-001; non-goals are DICOM parsing, physical spacing derivation and clinical metadata.
-- Evidence: local `python scripts/verify.py` passed all 26 stages at the committed diff; dependency-free Python tests passed 317/317 with one intentional skip. The negative capture stage returned the expected `PermissionDenied` result.
+- Delivery: Metis PR [#289](https://github.com/ryancinsight/metis/pull/289), merge `165c4ec923e76ea7bc32b6b4fb99b4338166b3a3`; RITK consumer integration is PR [#518](https://github.com/ryancinsight/ritk/pull/518), merge `694904718d7ec922883ab2a6b572e9aa29edab99`.
+- Evidence: local `python scripts/verify.py` passed all 26 stages at the committed diff; dependency-free Python tests passed 317/317 with one intentional skip. The negative capture stage returned the expected `PermissionDenied` result. RITK's locked native geometry replay reports 454/454 tests, 49,807,236 bytes from 94 MRI files, and the byte-identical 1280×800 frame; clinical geometry remains RITK-owned.
 
 <a id="METIS-GALLERY-GATE-001"></a>
 ## METIS-GALLERY-GATE-001 — Complete gallery delivery gates
