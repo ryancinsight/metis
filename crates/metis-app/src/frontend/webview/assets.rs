@@ -98,6 +98,9 @@ function applyTheme(value) {
   themeState.textContent = `Theme: ${label}`;
 }
 
+const requestedTheme = new URLSearchParams(window.location.search).get('theme')
+  || document.body.dataset.metisTheme;
+if (themes.has(requestedTheme)) themeMode.value = requestedTheme;
 applyTheme(themeMode.value);
 themeMode.addEventListener('change', () => applyTheme(themeMode.value));
 

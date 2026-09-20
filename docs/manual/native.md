@@ -475,11 +475,33 @@ The packaged page also exposes the four theme modes used by the browser
 workbench: **System preference**, **Light**, **Dark** and **High contrast**.
 Changing the selector updates only the document's `data-metis-theme` attribute
 and local CSS variables. It does not send a bridge message or alter backend
-authority. The committed captures above are the system/dark baseline; a
-dedicated per-mode WebView2 capture remains an open host-evidence requirement.
-For a manual check, launch the command above, focus **Theme**, select each
-option, and inspect the page background, surface, text, focus ring and result
-status before submitting the calculation.
+authority. The packaged executable also has a bounded capture role, which
+selects the initial mode before the page is shown and writes the provider's
+`CapturePreview` PNG after the first event batch:
+
+```powershell
+cargo run --locked -p metis-app -- --metis-webview-theme-capture C:\captures\metis-webview-theme-light.png light 60 2 0.2
+```
+
+Repeat the command with `system`, `light`, `dark` and `high-contrast` (and a
+different absolute `.png` path for each mode). The four inspected captures
+below came from the packaged Windows executable; each contains the rendered
+form and its selected mode, rather than a stylesheet or DOM-only assertion:
+
+| Mode | Capture | PNG bytes | Dimensions | SHA-256 |
+| --- | --- | ---: | ---: | --- |
+| System preference | [webview-theme-system.png](images/webview-theme-system.png) | 12,991 | 1025×769 | `15c88ffd69531b815e71e28951b2b2bb09e274f2dd6c4c7bc6155b684499e6a6` |
+| Light | [webview-theme-light.png](images/webview-theme-light.png) | 12,529 | 1025×769 | `ec3caec1fd604ffc1272cfdffc958661e40ed90057636c487c601fc601ab8b7e` |
+| Dark | [webview-theme-dark.png](images/webview-theme-dark.png) | 12,492 | 1025×769 | `75730d4d78b9b8cf499a15afb8d228c1b2ef71ecac9a0e081789ee582d418694` |
+| High contrast | [webview-theme-high-contrast.png](images/webview-theme-high-contrast.png) | 12,802 | 1025×769 | `d1523c8f8bb5daff330ac90131e7b316ce6ce4c89d94ef043a923c4db827b160` |
+
+The system capture follows the host preference on the capture machine; the
+other three captures prove the explicit palettes. For a manual interaction
+check, launch the ordinary `--metis-webview` command above, focus **Theme**, select each option,
+and inspect the page background, surface, text, focus ring and result status
+before submitting the calculation. These images establish visible palette
+selection through the packaged provider. They do not establish screen-reader
+behavior, installed-IME behavior, or physical high-DPI transitions.
 
 ### WebView2 permission-probe capture
 

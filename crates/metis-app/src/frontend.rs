@@ -1,4 +1,5 @@
 //! One headless form submission over inherited pipes; stdout is wire bytes only.
+use crate::invocation::WebViewTheme;
 use metis_frontend::{FormState, FrontendApp};
 use metis_ipc::transport::StreamTransport;
 use std::{
@@ -65,6 +66,23 @@ pub(crate) fn run_webview_permission_probe_capture(
     {
         let _ = (output, inputs);
         Err("the WebView2 permission-probe capture frontend requires Windows".into())
+    }
+}
+
+/// Runs the visible `WebView2` form and captures one bounded presentation mode.
+pub(crate) fn run_webview_theme_capture(
+    output: &Path,
+    theme: WebViewTheme,
+    inputs: [String; 3],
+) -> Result<(), Box<dyn std::error::Error>> {
+    #[cfg(windows)]
+    {
+        webview::run_theme_capture(inputs, output, theme)
+    }
+    #[cfg(not(windows))]
+    {
+        let _ = (output, theme, inputs);
+        Err("the WebView2 theme capture frontend requires Windows".into())
     }
 }
 
