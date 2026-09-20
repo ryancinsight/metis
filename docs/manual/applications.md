@@ -216,16 +216,23 @@ figure is 640×400 while provenance retains the raw 1280×800 source digest. The
 eframe process boundary still differs from Métis, and GPUI/Tauri fixtures remain
 open, so no framework ranking is derived.
 
-The current standalone-lock replay (2026-09-19) uses RITK lock PR #515
-merge `9881b9c4ac9fdccbc241c94fe1903f30d4f20e95`, source RITK `f1a556786e849696caa73d8c341adf309e87d163`, Metis
-`8d4ab58e8731c51547bbca3ec87100facb698322` and Moirai
-`f038622d24907884ce5f386da4e04d05bdb60d62`. The standalone lock digest is
-`2825653169ee324f9421122416da1e65a279e8657841c7fce9347386f6b58745`, and the
+The current geometry-aware replay (2026-09-20) uses the standalone lock
+from RITK PR #518 merge `694904718d7ec922883ab2a6b572e9aa29edab99`. The
+executable was built from RITK source `b432ae69db2a0578d8f1eb176ae6fdb9233231a9`,
+with Metis `165c4ec923e76ea7bc32b6b4fb99b4338166b3` and Moirai
+`2a54e010532f76c88027fec8a468620c92fe66b3`; the standalone lock digest is
+`4f4b96958a0545203775e21b3bd1152a864bd6b77847d2b638213d6b420b1084`, and the
 executable digest is
-`1c1fa032cde5381d80a3d4baa25f6f35ff5d4cba48f08f925c600c34de4f14a3`. RITK
-opened the saved 94-file MRI-DIR study (49,807,236 bytes) and produced the actual 1280 × 800
-three-plane frame below; it contains 411,589 non-black pixels and repeats the
-capture digest `259dd79103482756c4e688621bebafc841cc40f1df10ff2bbd7f9d04b7b4d401`.
+`b260611286c309a21a3132c0fbd20f855768f4cfe326e0cb99ab5820b1212b95`.
+RITK opened the saved 94-file MRI-DIR study (49,807,236 bytes) and produced
+the actual 1280 × 800 three-plane frame below; it contains 411,589 non-black
+pixels and repeats the capture digest
+`259dd79103482756c4e688621bebafc841cc40f1df10ff2bbd7f9d04b7b4d401`.
+The matching three-run resource sample records peak private bytes of
+816,635,904 ± 1,193,823, peak working set of 390,056,619 ± 22,024,617 and
+lifecycle duration of 2,014 ± 25 ms; it uses the application-content capture
+contract and is a fixture measurement, not a framework ranking.
+
 The [real MRI frame](https://github.com/ryancinsight/ritk/blob/main/docs/manual/images/dicom-metis-real-mri.png?raw=true)
 and [revision-bound provenance](https://github.com/ryancinsight/ritk/blob/main/docs/manual/images/dicom-metis-real-mri.json)
 are RITK-owned evidence; Metis supplies only the format-neutral host and does
@@ -243,7 +250,7 @@ runner's explicitly approximate 95% half-width across three runs.
 | --- | --- | ---: | ---: | ---: |
 | Métis native MIP | 409 files; axial/coronal/sagittal/axial MIP | 1280 × 800 | 2,338,119,680 ± 366,961 | 15,346 ± 3,394 ms |
 | eframe | 409 files; axial/coronal/sagittal/3D MIP | 1600 × 1000 | 2,494,962,347 ± 5,291,689 | 8,752 ± 2,197 ms |
-| Métis native MRI | 94 files; axial/coronal/sagittal | 1280 × 800 | 815,602,347 ± 195,407 | 2,041 ± 24 ms |
+| Métis native MRI | 94 files; axial/coronal/sagittal | 1280 × 800 | 816,635,904 ± 1,193,823 | 2,014 ± 25 ms |
 | eframe MRI | 94 files; axial/coronal/sagittal/3D MIP | 1600 × 1000 | 1,038,607,701 ± 2,129,690 | 2,593 ± 477 ms |
 | eframe MRI orthogonal | 94 files; axial/coronal/sagittal | 1280 × 800 | 416,867,669 ± 30,202,762 | 2,123 ± 203 ms |
 
@@ -263,8 +270,8 @@ establish a framework ranking.
 
 With the explicit semantic match keys (`runtime.phase`, file count, byte count,
 `output.semantic_surfaces` and `output.planes`), `scripts/resource_compare.py`
-reports eframe minus Métis deltas of −399,978,496 ± 29,811,697 private bytes,
-−12,997,973 ± 21,021,301 working-set bytes, and +787 ± 1,980 ms lifecycle
+reports eframe minus Métis deltas of −399,768,235 ± 30,226,347 private bytes,
+−24,256,512 ± 30,991,694 working-set bytes, and +108 ± 204 ms lifecycle
 duration. The private-byte delta is outside the combined interval; working-set
 and duration deltas remain within it. These are process-boundary measurements
 from one controlled Windows host, not a universal framework ranking.

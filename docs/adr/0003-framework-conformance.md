@@ -390,12 +390,12 @@ keeps Rust-owned state, Moirai transport and HostPolicy as the authority path;
 Svelte and SvelteKit remain comparison subjects with no dependency or runtime
 added to the workspace.
 
-Revision 2026-09-19 (current gap plan): the authoritative RITK consumer replay
-uses lock-change source `f1a556786e849696caa73d8c341adf309e87d163`, merged in
-RITK as `9881b9c4ac9fdccbc241c94fe1903f30d4f20e95`, with Metis
-`8d4ab58e8731c51547bbca3ec87100facb698322`, Moirai
-`f038622d24907884ce5f386da4e04d05bdb60d62` and standalone lock
-`2825653169ee324f9421122416da1e65a279e8657841c7fce9347386f6b58745`.
+Revision 2026-09-20 (current gap plan): the authoritative RITK consumer replay
+uses geometry source build `b432ae69db2a0578d8f1eb176ae6fdb9233231a9`, delivered
+in RITK PR #518 merge `694904718d7ec922883ab2a6b572e9aa29edab99`, with Metis
+`165c4ec923e76ea7bc32b6b4fb99b4338166b3`, Moirai
+`2a54e010532f76c88027fec8a468620c92fe66b3` and standalone lock
+`4f4b96958a0545203775e21b3bd1152a864bd6b77847d2b638213d6b420b1084`.
 The locked 94-file MRI replay remains byte-identical at 1280 × 800 and
 continues to prove the format-neutral Metis handoff plus RITK-owned decoding,
 geometry and clinical presentation. Historical replay hashes remain in their

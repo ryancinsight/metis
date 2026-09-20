@@ -6,13 +6,14 @@
     "machine": "AMD64 Windows 11",
     "capture_tool": "Metis scripts/resource.py",
     "phase": "lifecycle",
-    "sample_interval_ms": 100,
+    "sample_interval_ms": 25,
     "timeout_seconds": 60.0,
     "repeat_runs": 3,
-    "ritk_revision": "f1a556786e849696caa73d8c341adf309e87d163",
-    "metis_revision": "8d4ab58e8731c51547bbca3ec87100facb698322",
-    "moirai_revision": "f038622d24907884ce5f386da4e04d05bdb60d62",
-    "command_sha256": "e5cbcb3461f610c82246208c8a768b67ce58a43df03286429c66b3fba983c6e7"
+    "ritk_revision": "b432ae69db2a0578d8f1eb176ae6fdb9233231a9",
+    "metis_revision": "165c4ec923e76ea7bc32b6b4fb99b4338166b3a3",
+    "moirai_revision": "2a54e010532f76c88027fec8a468620c92fe66b3",
+    "command_sha256": "0c4212a829303fb78bf224892dd8889fce2675a57aea744ea4004ef8d6559be2",
+    "ritk_delivery_revision": "694904718d7ec922883ab2a6b572e9aa29edab99"
   },
   "dataset": {
     "path": "repos/ritk/test_data/2_head_mri_t2/DICOM",
@@ -28,8 +29,8 @@
     "bytes": 418280.0,
     "sha256": "259dd79103482756c4e688621bebafc841cc40f1df10ff2bbd7f9d04b7b4d401",
     "non_black_pixels": 411589,
-    "executable_sha256": "1c1fa032cde5381d80a3d4baa25f6f35ff5d4cba48f08f925c600c34de4f14a3",
-    "executable_bytes": 54008320,
+    "executable_sha256": "b260611286c309a21a3132c0fbd20f855768f4cfe326e0cb99ab5820b1212b95",
+    "executable_bytes": 54011904,
     "visual_scope": "Metis framebuffer application content; operating-system chrome excluded",
     "capture_mode": "--metis-native --capture-application --capture",
     "semantic_surfaces": [
@@ -46,16 +47,16 @@
   "resource": {
     "metric": "process-tree aggregate peak private bytes",
     "peak_private_bytes": {
-      "approximate_95_half_width": 195406.8729938806,
+      "approximate_95_half_width": 1193822.7542523106,
       "count": 3,
-      "mean": 815602346.6666666,
-      "sample_stddev": 172680.93478242852
+      "mean": 816635904.0,
+      "sample_stddev": 1054980.4416310284
     },
     "peak_working_set_bytes": {
-      "approximate_95_half_width": 6584233.862630402,
+      "approximate_95_half_width": 22024617.36242419,
       "count": 3,
-      "mean": 385309354.6666667,
-      "sample_stddev": 5818483.458669049
+      "mean": 390056618.6666667,
+      "sample_stddev": 19463140.963766497
     },
     "peak_handles": {
       "approximate_95_half_width": 0.0,
@@ -64,16 +65,16 @@
       "sample_stddev": 0.0
     },
     "duration_ms": {
-      "approximate_95_half_width": 24.199805325204125,
+      "approximate_95_half_width": 25.23592501001521,
       "count": 3,
-      "mean": 2040.6666666666667,
-      "sample_stddev": 21.385353243127255
+      "mean": 2014.3333333333333,
+      "sample_stddev": 22.300971578236975
     },
     "startup_observation_ms": {
-      "approximate_95_half_width": 1.3066666666666666,
+      "approximate_95_half_width": 1.1316065276116665,
       "count": 3,
-      "mean": 3.3333333333333335,
-      "sample_stddev": 1.1547005383792515
+      "mean": 3.0,
+      "sample_stddev": 1.0
     },
     "capture_digest": {
       "bytes": {
@@ -102,6 +103,6 @@
     "repeat_capture_sha256": "259dd79103482756c4e688621bebafc841cc40f1df10ff2bbd7f9d04b7b4d401"
   },
   "comparison": {
-    "interpretation": "This record binds the real public MRI-DIR DICOM presentation to the standalone-lock RITK/Metis process tree: RITK f1a5567, Metis 8d4ab58, Moirai f038622. It is a fixture baseline, not a framework ranking; matched Tauri, GPUI and egui runs with the same input, host, surface, trace and capture contract are still required. WASM, compositor, GPU, allocator-used and security measurements remain separate evidence."
+    "interpretation": "This record binds the real public MRI-DIR DICOM presentation to the geometry-aware RITK source build b432ae69 (delivered by RITK PR #518 merge 694904718d), Metis 165c4ec and Moirai 2a54e01. The capture uses the application-content contract and repeats byte-for-byte. It is a fixture baseline, not a framework ranking; matched Tauri, GPUI and egui runs with the same input, host, surface, trace and capture contract are still required. WASM, compositor, GPU, allocator-used and security measurements remain separate evidence."
   }
 }
