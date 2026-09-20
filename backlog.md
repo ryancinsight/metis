@@ -645,6 +645,7 @@ an owner. “Unsupported” cannot replace delivery of a required mobile/native 
 ## METIS-DISTRIBUTION-001 — Executables and Windows MSI [arch] [minor]
 - Status: done; delivery: `feat(distribution): Build executables and MSI`; decision: [ADR 0005](docs/adr/0005-application-distribution.md).
 - Outcome: one manifest, exact Cargo inventory, portable bundle, per-user MSI and manual; 102 debug/release tests, 36 Python tests, visual gate and real install/run/uninstall preserving user files pass.
+- Verification increment: the hosted Windows gate now invokes `python scripts/verify.py --install`, binding the MSI install/run/uninstall oracle, shortcut and registry checks, and user-file preservation to CI; the next green run supplies the revision-bound hosted evidence.
 
 <a id="METIS-DISTRIBUTION-002"></a>
 ## METIS-DISTRIBUTION-002 — Developer application lifecycle [minor]

@@ -201,8 +201,18 @@ the shortcut probe also records `IconLocation` and requires the Windows
 Installer cache reference to end in `MetisIcon,0`; this is the shell-visible
 proof that the MSI `Icon` row is used. The gate preserves only the latest
 marked test run and refuses to replace a still-registered test installation.
-Normal verification exercises packaging and portable execution;
-`--install` opts into the current-user OS installation workflow.
+Local verification without `--install` exercises packaging and portable
+execution. The Windows gate invokes `python scripts/verify.py --install`, so
+hosted acceptance covers the current-user installation, input-sensitive runs,
+uninstall cleanup and user-file preservation as well.
+
+The verifier may use a temporary `SUBST` drive to isolate Cargo from the Atlas
+development overlay. The Windows Installer service cannot see that per-user
+mapping, so the install probe passes the physical MSI source and physical test
+directory to `msiexec`; this keeps source resolution and transactional cleanup
+on paths visible to the service. The MSI stores its application location under
+the context-dependent per-user registry root and the maintenance probe reads
+that same location before repair or removal.
 
 ## Publish crates through CI
 
