@@ -44,6 +44,8 @@ fn package_assets_are_script_scoped_and_bridge_bound() {
         );
     }
     assert!(APP_JS.contains("applyTheme"));
+    assert!(APP_JS.contains("URLSearchParams"));
+    assert!(APP_JS.contains("themes.has(requestedTheme)"));
     assert!(APP_JS.contains("if (!label) return;"));
     assert!(APP_JS.contains("chrome.webview"));
 }

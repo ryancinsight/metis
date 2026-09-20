@@ -83,10 +83,16 @@ PNG and ICO. `metis-cli` tests exercise the bounded SVG grammar, generated ICO,
 malformed header and dimension rejection, and MSI `Icon`/`Shortcut` rows. The
 manual includes the mark and reproducible browser and WebView2 mode-selection
 procedures. The WebView2 asset contract tests every option and palette selector;
-its dedicated per-mode runtime capture remains open under the Windows host
-verification item.
-Runtime captures must record the browser engine, viewport, scale factor and
-host presentation settings before they can close the remaining V04/V06 gaps.
+the packaged capture role writes and visually inspects one `CapturePreview` PNG
+for each mode. The committed captures are 1025×769: system
+(`15c88ffd69531b815e71e28951b2b2bb09e274f2dd6c4c7bc6155b684499e6a6`), light
+(`ec3caec1fd604ffc1272cfdffc958661e40ed90057636c487c601fc601ab8b7e`), dark
+(`75730d4d78b9b8cf499a15afb8d228c1b2ef71ecac9a0e081789ee582d418694`) and
+high-contrast
+(`d1523c8f8bb5daff330ac90131e7b316ce6ce4c89d94ef043a923c4db827b160`).
+The capture role proves visible palette selection in the packaged provider;
+screen-reader behavior, installed IME behavior, physical high-DPI transitions,
+and other host presentation settings remain separate Windows evidence items.
 
 ## Revision — 2026-09-08
 
@@ -103,5 +109,8 @@ revision.
 The packaged WebView2 form now exposes the same four local theme modes as the
 browser workbench. The selector changes only CSS variables and the document
 theme attribute; no page-to-host message is introduced. Static asset tests and
-the manual procedure cover the contract. A dedicated visible WebView2 capture
-for every mode is still required before the host-evidence residual closes.
+the manual procedure cover the contract. The bounded
+`--metis-webview-theme-capture` role now produces and commits inspected PNGs for
+all four modes through the packaged provider; their hashes and dimensions are
+recorded in the manual. This closes the visible palette-selection evidence
+while leaving accessibility, IME and physical display-scale evidence open.

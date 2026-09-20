@@ -4,6 +4,7 @@ use crate::{
     invocation::{
         BrowserResponseDelay, FRONTEND_ROLE, NATIVE_FRONTEND_ROLE, WEBVIEW_FRONTEND_ROLE,
         WEBVIEW_PERMISSION_PROBE_CAPTURE_FRONTEND_ROLE, WEBVIEW_PERMISSION_PROBE_FRONTEND_ROLE,
+        WEBVIEW_THEME_CAPTURE_FRONTEND_ROLE, WebViewTheme,
     },
 };
 use metis_backend::UiFragmentPlugin;
@@ -83,12 +84,33 @@ pub(crate) fn run_webview_permission_probe_capture(
     }
 }
 
+/// Captures one packaged `WebView2` form for a bounded presentation mode.
+pub(crate) fn run_webview_theme_capture(
+    output: PathBuf,
+    theme: WebViewTheme,
+    inputs: [String; 3],
+) -> Result<(), Box<dyn std::error::Error>> {
+    #[cfg(windows)]
+    {
+        run_with_mode(inputs, &FrontendMode::WebViewThemeCapture { output, theme })
+    }
+    #[cfg(not(windows))]
+    {
+        let _ = (output, theme, inputs);
+        Err("the WebView2 theme capture role requires Windows".into())
+    }
+}
+
 enum FrontendMode {
     Headless,
     NativeWindow,
     WebView,
     WebViewPermissionProbe,
     WebViewPermissionProbeCapture(PathBuf),
+    WebViewThemeCapture {
+        output: PathBuf,
+        theme: WebViewTheme,
+    },
 }
 
 fn run_with_mode(
@@ -123,24 +145,34 @@ fn run_with_mode(
             WEBVIEW_PERMISSION_PROBE_CAPTURE_FRONTEND_ROLE,
             Some(TargetCapability::NativeWindow),
             INTERACTIVE_SESSION_DEADLINE,
-            Some(output),
+            Some((output, None)),
+        ),
+        FrontendMode::WebViewThemeCapture { output, theme } => (
+            WEBVIEW_THEME_CAPTURE_FRONTEND_ROLE,
+            Some(TargetCapability::NativeWindow),
+            INTERACTIVE_SESSION_DEADLINE,
+            Some((output, Some(*theme))),
         ),
     };
     if let Some(capability) = native_capability {
         service.add_target_capability(capability)?;
     }
     let [weight, concentration, dose] = inputs;
-    let mut arguments = Vec::with_capacity(if capture_output.is_some() { 5 } else { 4 });
+    let mut arguments = Vec::with_capacity(if capture_output.is_some() { 6 } else { 4 });
     arguments.push(frontend_role.to_owned());
-    if let Some(output) = capture_output {
+    if let Some((output, theme)) = capture_output {
         arguments.push(output.to_string_lossy().into_owned());
+        if let Some(theme) = theme {
+            arguments.push(theme.query_value().to_owned());
+        }
     }
     arguments.extend([weight, concentration, dose]);
     eprintln!("backend_pid={}", std::process::id());
     let environment = match mode {
         FrontendMode::WebView
         | FrontendMode::WebViewPermissionProbe
-        | FrontendMode::WebViewPermissionProbeCapture(_) => ProcessEnvironment::Runtime,
+        | FrontendMode::WebViewPermissionProbeCapture(_)
+        | FrontendMode::WebViewThemeCapture { .. } => ProcessEnvironment::Runtime,
         FrontendMode::Headless | FrontendMode::NativeWindow => ProcessEnvironment::Isolated,
     };
     run_session_with_deadline_and_environment(
