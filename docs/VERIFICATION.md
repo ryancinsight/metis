@@ -107,11 +107,18 @@ leaves the GIL disabled. On this host, the release wheel build and extracted
 suite pass with 19 tests and one expected skip under CPython 3.13.12, while no
 free-threaded interpreter is installed. The release caller opts into the shared
 Atlas `cp314t`/`cp315t` and Python 3.15 `abi3t` matrix at revision
-`3892973f83e5a27261d43ecf1509359264e8e7a8`. `workflow_dispatch` selects Atlas
+`628dee69887e73948f74336806313511b2aa4df9`. `workflow_dispatch` selects Atlas
 validation mode: it builds, installs, runs the provider-owned value tests,
 validates the complete wheel set and uploads a retained verification artifact
 without a release tag, GitHub Release attachment or PyPI publication. Hosted
-artifact and value-test evidence remain pending under `METIS-PYTHON-004`.
+artifact and value-test evidence remain pending under `METIS-PYTHON-004`. The
+first manual run [35504120205](https://github.com/ryancinsight/metis/actions/runs/35504120205)
+built the wheel matrix and its provider tests, then exposed an Atlas validator
+defect on the compressed macOS universal2 tag
+`macosx_10_12_x86_64.macosx_11_0_arm64.macosx_10_12_universal2`; it produced no
+verification aggregate and had no publish job. Atlas fixed the parser in merge
+`628dee69887e73948f74336806313511b2aa4df9`; the caller now pins that revision
+for the confirming manual run.
 
 The free-threaded source configuration also passes a neutral standalone locked
 compile and strict Clippy check with `--no-default-features --features abi3t
