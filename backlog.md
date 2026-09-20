@@ -575,6 +575,14 @@ an owner. “Unsupported” cannot replace delivery of a required mobile/native 
   proving transient preedit, committed patient-field text and cancellation on
   focus loss at the application boundary. The manual distinguishes this
   consumer contract from the still-open installed-IME journey.
+- Documentation increment (2026-09-20): RITK PR #522 (merge
+  `dc56909b07e53eb75ece43aafb65c704984f5811`) closes the current browser cine
+  presentation residual against lock-pinned Metis `165c4ec923e76ea7bc32b6b4fb99b4338166b3a3`.
+  Hosted run [35487777698](https://github.com/ryancinsight/ritk/actions/runs/35487777698)
+  passes Chromium-window, Chromium and Firefox saved-study workflows; the
+  real 94-file MRI replay proves Play/rate/pause generation transitions and a
+  shared tool-owned teardown. WebKit bounded reads and WebGPU adapter
+  availability remain explicit host residuals.
 
 <a id="METIS-RITK-HOST-001"></a>
 ## METIS-RITK-HOST-001 — Format-neutral native frame host [arch] [minor]

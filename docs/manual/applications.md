@@ -249,6 +249,18 @@ not parse DICOM data.
 
 ![Actual MRI-DIR study from the current standalone-lock replay](https://github.com/ryancinsight/ritk/blob/main/docs/manual/images/dicom-metis-real-mri.png?raw=true)
 
+The paired browser cine replay in RITK PR [#522](https://github.com/ryancinsight/ritk/pull/522)
+(merge `dc56909b07e53eb75ece43aafb65c704984f5811`) uses the lock-pinned Metis
+runtime at `165c4ec923e76ea7bc32b6b4fb99b4338166b3a3`. Hosted run
+[`35487777698`](https://github.com/ryancinsight/ritk/actions/runs/35487777698)
+accepted the same 94 MRI-DIR files in Chromium-window, Chromium and Firefox;
+the Chromium-window artifact records sagittal slice 255 → 256 → 257 across
+Play and a 24 FPS rate change, then one tool-owned teardown with zero remaining
+host or consumer listeners. The [RITK DICOM manual](https://github.com/ryancinsight/ritk/blob/main/docs/manual/dicom-workflow.md)
+links the machine-readable trace and the full 2,880 × 2,114 capture. WebKit's
+bounded selected-file read and Chromium WebGPU adapter remain host-specific
+residuals; DICOM decoding and clinical pixels stay in RITK.
+
 ### V12 fixture comparison
 
 The recorded measurements make the comparison boundary explicit. Each row is a
