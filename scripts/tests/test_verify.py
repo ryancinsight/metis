@@ -468,6 +468,8 @@ class PythonBindingContractTests(unittest.TestCase):
     def test_release_caller_is_tokenless_and_uses_atlas_wheels(self):
         for fragment in (
             "release:\n    types: [published]",
+            "workflow_dispatch:",
+            "github.event_name == 'workflow_dispatch'",
             "metis-python-v",
             "distribution: metis-rs",
             "import-name: metis",
@@ -480,12 +482,17 @@ class PythonBindingContractTests(unittest.TestCase):
             "abi3t: true",
             "abi3t-python: \"3.15t\"",
             "abi3t-features: abi3t",
+            "verification: ${{ github.event_name == 'workflow_dispatch' }}",
             "id-token: write",
-            "ryancinsight/atlas/.github/workflows/python-wheels.yml@982a9e82d22911a0950e6f84c9b789a12878bcf5",
+            "ryancinsight/atlas/.github/workflows/python-wheels.yml@3892973f83e5a27261d43ecf1509359264e8e7a8",
             "pypa/gh-action-pypi-publish@ba38be9e461d3875417946c167d0b5f3d385a247",
         ):
             with self.subTest(fragment=fragment):
                 self.assertIn(fragment, self.workflow)
+        self.assertIn(
+            "if: github.event_name == 'release' && startsWith(github.event.release.tag_name, 'metis-python-v')",
+            self.workflow,
+        )
         for forbidden in ("secrets:", "PYPI_TOKEN", "TWINE_PASSWORD", "private_key", "signing-key", "GPG", "SSH_PRIVATE_KEY"):
             with self.subTest(forbidden=forbidden):
                 self.assertNotIn(forbidden, self.workflow)

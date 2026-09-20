@@ -242,7 +242,10 @@ systems, attaches the artifacts and emits a source distribution. The publish
 job requests only GitHub's OIDC identity and uses PyPI Trusted Publishing; no
 PyPI API token, SSH key or developer private key is stored in the repository.
 The `pypi` environment and the `metis-rs` trusted publisher are administrative
-release prerequisites. A local build or a workflow dispatch does not publish.
+release prerequisites. A manual `workflow_dispatch` runs the same Atlas matrix
+in validation mode, uploads a retained `verification-wheels` artifact and
+skips both GitHub Release attachment and the PyPI publish job. It does not
+require a release tag or release authority, and it does not publish.
 
 This binding increment does not expose native window classes or DICOM objects.
 Those surfaces will follow their public Rust contracts and host or decoder
