@@ -233,6 +233,15 @@ The matching three-run resource sample records peak private bytes of
 lifecycle duration of 2,014 ± 25 ms; it uses the application-content capture
 contract and is a fixture measurement, not a framework ranking.
 
+The current RITK presentation path keeps the browser's three frame slots and
+reuses their RGBA capacity across slice updates. RITK PR #520 (`9e222fca5`)
+delivered the storage reuse and PR #521 (`5aeb196a3`) scoped the native-only
+helpers exposed by the hosted Linux lint gate. The locked RITK checks report
+455/455 tests for the default library and 867/867 with `eframe-shell`; the
+current-tree WASM release build, `wasm-bindgen` packaging and Metis browser
+asset build also exit 0. This is allocation-shape and build evidence for the
+real MRI workflow, not a cross-framework memory ranking.
+
 The [real MRI frame](https://github.com/ryancinsight/ritk/blob/main/docs/manual/images/dicom-metis-real-mri.png?raw=true)
 and [revision-bound provenance](https://github.com/ryancinsight/ritk/blob/main/docs/manual/images/dicom-metis-real-mri.json)
 are RITK-owned evidence; Metis supplies only the format-neutral host and does
