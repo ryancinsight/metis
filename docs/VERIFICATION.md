@@ -2741,6 +2741,18 @@ content-only and excludes operating-system chrome. It demonstrates the native
 RITK-to-Métis frame path and does not close browser-driver, GPU, accessibility,
 IME or cross-platform host requirements.
 
+RITK's browser viewport increment now covers the same interaction boundary
+for the real MRI study. PR [#535](https://github.com/ryancinsight/ritk/pull/535)
+adds bounded zoom/pan state and inverse pointer mapping; PR
+[#536](https://github.com/ryancinsight/ritk/pull/536) corrects image-edge
+sampling. The focused locked replay reports 473/473 tests and the actual
+94-file, 49,807,236-byte MRI study remains byte-identical at 1280 × 800. The
+reviewed [browser controls capture](../../ritk/docs/manual/images/dicom-metis-real-browser-mri-edge-controls.png)
+contains non-black axial, coronal and sagittal anatomy with the slice controls.
+This closes the viewport-state consumer slice; it does not close WebKit
+selected-file authorization, WebGPU adapter availability, physical file-manager
+input, native IME/accessibility or matched GPUI/Tauri evidence.
+
 The same public 409-file CT also has a complete visible-window capture for the
 explicit `orthogonal-with-mip` layout. The 1296 × 839 image includes the
 Windows frame and four real panels (axial, coronal, sagittal, and axial MIP).

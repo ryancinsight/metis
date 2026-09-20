@@ -536,7 +536,7 @@ an owner. “Unsupported” cannot replace delivery of a required mobile/native 
 
 <a id="METIS-MIGRATION-001"></a>
 ## METIS-MIGRATION-001 — egui and Tauri application migration [arch] [minor]
-- Status: in-progress; priority: P1; owner: Metis framework + application owners; integrator: root; last-update: 2026-09-19; delivery: Metis PR #124 (merge `35ba45c`); risk: lost application behavior.
+- Status: in-progress; priority: P1; owner: Metis framework + application owners; integrator: root; last-update: 2026-09-20; delivery: Metis PR #124 (merge `35ba45c`); risk: lost application behavior.
 - Dependencies: METIS-COMMANDS-001, METIS-FILES-001, METIS-INPUT-001, METIS-ASSETS-001, METIS-GRAPHICS-001, METIS-DESKTOP-001, METIS-BROWSER-001, METIS-INTEGRATION-001, METIS-SERVICES-001.
 - Named driver: [ritk-snap](../ritk/backlog.md#RITK-SNAP-METIS-001), retaining egui/eframe at RITK while exposing `--metis-native` through merged [PR 269](https://github.com/ryancinsight/ritk/pull/269) (`c1b8130bb`), following [PR 267](https://github.com/ryancinsight/ritk/pull/267) (`2f2058062`). No Tauri dependency is present in its manifest or workspace lock. RITK owns decoder, volume geometry and medical display correctness; Metis supplies the replacement shell.
 - Baseline: RITK `8152f483` ([PR 237](https://github.com/ryancinsight/ritk/pull/237)) adds physical display/hit rectangles to selected-study loading, restore/rejection and the original native capture; [manual](docs/manual/applications.md#deterministic-synthetic-dicom-baseline). The merged RITK native MPR increment now proves one bounded Métis framebuffer containing all three spacing-aware planes and panel-specific routing while keeping DICOM semantics in RITK.
@@ -597,6 +597,7 @@ an owner. “Unsupported” cannot replace delivery of a required mobile/native 
   512 × 512 non-black output and display-only listener contract. This is
   format-neutral consumer evidence; DICOM decoding and projection policy stay
   in RITK.
+- Documentation increment (2026-09-20, RITK PR #538 merge `b91c0f8b866e4799b59cecfccca1c90531d62ab6`): the browser viewport slice now records the real MRI workflow after RITK PR #535 (`695d33c7e675604b1fb32dfaffe3e90d9b0d21e0`) added zoom/pan state and inverse pointer mapping, PR #536 (`055b2886cb448bdc3d4a673ababf00d0def70b7d`) corrected image-edge sampling, and PR #537 (`fa0ae3301ea2cc5e3733f7f1cb94fbaee2808f4c`) fixed the bounded workflow argument vector. Hosted run [35512369724](https://github.com/ryancinsight/ritk/actions/runs/35512369724) accepts the 94-file, 49,807,236-byte study and passes four-cycle Chromium and Firefox raster oracles plus the Chromium window and MIP captures. Its Safari read and Chromium WebGPU failures remain explicit host residuals; the run is bound to lock-pinned Metis `ab239d70bb561cbe665f852cc55ecbe4275be349` and is not a current-main revision claim.
 
 <a id="METIS-RITK-HOST-001"></a>
 ## METIS-RITK-HOST-001 — Format-neutral native frame host [arch] [minor]
