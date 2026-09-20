@@ -481,7 +481,7 @@ class PythonBindingContractTests(unittest.TestCase):
             "abi3t-python: \"3.15t\"",
             "abi3t-features: abi3t",
             "id-token: write",
-            "ryancinsight/atlas/.github/workflows/python-wheels.yml@848e6649c52e8226a9abf7bc336f8cbf0e39ba08",
+            "ryancinsight/atlas/.github/workflows/python-wheels.yml@982a9e82d22911a0950e6f84c9b789a12878bcf5",
             "pypa/gh-action-pypi-publish@ba38be9e461d3875417946c167d0b5f3d385a247",
         ):
             with self.subTest(fragment=fragment):

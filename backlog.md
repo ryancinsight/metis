@@ -240,10 +240,10 @@ an owner. “Unsupported” cannot replace delivery of a required mobile/native 
 
 <a id="METIS-PYTHON-004"></a>
 ## METIS-PYTHON-004 — Free-threaded Python wheel matrix [arch] [minor]
-- Status: review; priority: P1; owner: Metis delivery; integrator: root; dependencies: METIS-PYTHON-003, ATLAS-PUBLISH-001; risk: hosted CPython ABI coverage
+- Status: in-progress; priority: P1; owner: Metis delivery; integrator: root; branch: `build/metis-python-current-atlas`; last-update: 2026-09-20; dependencies: METIS-PYTHON-003, ATLAS-PUBLISH-001; risk: hosted CPython ABI coverage
 - Scope: extend Atlas's reusable Python wheel workflow with version-specific `cp3XXt` and Python 3.15 `abi3t` builds, installation tests and `sys._is_gil_enabled()` assertions; keep Metis's `abi3` caller and tokenless OIDC publication.
 - Acceptance: the shared workflow owns the matrix, Metis's release caller opts in without duplicating wheel logic, GIL and free-threaded wheels install and run the same value-semantic suite, and the manual/ADR record exact artifact support.
-- Current increment: the release caller uses Atlas merge `848e6649c52e8226a9abf7bc336f8cbf0e39ba08` for the shared `cp314t`/`cp315t` and Python 3.15 `abi3t` matrix, while the default remains CPython 3.9 `abi3`. The caller and package use tokenless OIDC; musllinux is excluded from the `abi3t` job until a compatible 3.15t image exists. Hosted artifact and value-test evidence remain pending.
+- Current increment (2026-09-20): the release caller advances to Atlas merge `982a9e82d22911a0950e6f84c9b789a12878bcf5`, which owns the shared `cp314t`/`cp315t` and Python 3.15 `abi3t` matrix; the default remains CPython 3.9 `abi3`. The caller and package use tokenless OIDC; musllinux is excluded from the `abi3t` job until a compatible 3.15t image exists. Hosted artifact and value-test evidence remain pending because the caller is release-triggered and no release authority has been granted.
 - Local source increment (2026-09-18): a neutral standalone locked build with `--no-default-features --features abi3t --all-targets` passes `cargo check` and strict `cargo clippy -D warnings`; this proves the PyO3 `abi3t-py315` source configuration compiles without the Atlas overlay. It does not claim an installed free-threaded interpreter or hosted wheel artifact.
 - Re-open trigger: a hosted free-threaded run or Atlas contract change invalidates the declared matrix.
 
