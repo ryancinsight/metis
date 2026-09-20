@@ -217,6 +217,9 @@ impl CanvasSurface {
         F: CanvasFrame + ?Sized,
     {
         let size = CanvasSize::new(frame.width(), frame.height())?;
+        if let Some(spacing) = frame.display_spacing() {
+            spacing.aspect(frame.width(), frame.height())?;
+        }
         let frame = RgbaFrame::new(size, frame.rgba())?;
         self.canvas.present(frame)
     }

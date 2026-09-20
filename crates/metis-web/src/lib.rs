@@ -10,7 +10,7 @@ mod canvas;
 pub use canvas::{
     CANVAS_EVENT_CAPACITY, CanvasEvent, CanvasEventError, CanvasEventTrust, CanvasFrame,
     CanvasKeyboardEvent, CanvasKeyboardPhase, CanvasModifiers, CanvasPointerEvent,
-    CanvasPointerPhase, CanvasPointerType, CanvasWheelEvent, CanvasWheelUnit,
+    CanvasPointerPhase, CanvasPointerType, CanvasWheelEvent, CanvasWheelUnit, DisplaySpacing,
 };
 
 #[cfg(target_arch = "wasm32")]

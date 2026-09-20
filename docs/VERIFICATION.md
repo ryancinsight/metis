@@ -2371,6 +2371,53 @@ Capture both successful content and diagnostic states. Test custom GPU output
 against the software/analytical reference using the declared raster contract;
 device loss/recreation is a lifecycle test, not an opportunity for silent fallback.
 
+Native PNG evidence (2026-09-19): the [Windows asset gallery](manual/native.md#native-image-assets)
+shows all five discrete orientations, aspect-preserving letterboxes, exact
+straight-alpha compositing and a real truncated-image rejection. Its entire
+800×272 client crop matches the asserted framebuffer byte-for-byte at 96 DPI;
+the [capture record](manual/images/native-image.json) binds the source and
+executable digests. Decoder tests cover every fixture prefix and single-byte
+corruption, every compressed-stream prefix and split, invalid checksums,
+excess scanlines, trailing IDAT bytes, oversized dimensions/input, rejected
+metadata and scoped-path escape attempts. An independent Adam7 traversal
+reconstructs the same RGBA grid. This closes the admitted static PNG/native
+placement increment, not EXIF/JPEG, clinical orientation or the broader V06
+media/GPU acceptance.
+
+#### Browser WebGPU recovery — 2026-09-19
+
+The `canvas_recovery` example exercises `CanvasSurface` directly with bounded,
+format-neutral RGBA8 frames. Edge 154.0.4258.24 on Windows reports an NVIDIA
+Blackwell adapter, not a fallback adapter. At device scale 1, the initial
+32×32 screenshot matches every opaque red/green reference pixel. The runner
+destroys the device acquired by the provider and awaits its actual `lost`
+promise (`reason = destroyed`). Explicit recreation acquires a distinct
+device, configures the same canvas and draws the changed blue/white frame;
+all 1,024 screenshot pixels match exactly. Retained input guard counts are
+7 initially, 7 after recreation and 0 after stopping.
+
+The baseline with Moirai `8a8daa60cca5484822c772bc6b574acaa8f133ad` exposes a
+provider defect: drawing after confirmed loss still returns success. The
+regression gate rejects that result before attempting recovery. With Moirai
+correction `98579514ae96ca49475a7a0f14d47b65e6872a41`, it passes: the rejected
+draw reports `Other: WebGPU device is lost`, configuration and upload device
+sequences are exactly `[1, 2]`, and there are no uncaptured GPU errors.
+WebDriver session closure succeeds. See [ADR 0036](adr/0036-browser-webgpu-canvas.md)
+for ownership and the asynchronous observation limit.
+Delayed `drawImage` readback returns transparent pixels on this browser;
+the oracle checks decoded compositor PNGs without resizing or tolerance.
+This establishes deliberate device-destruction recovery for opaque frames
+on this browser/adapter only. Driver-reset recovery, alpha, vector parity,
+other browsers, GPU memory and performance remain unmeasured.
+
+Reproduce with `python -S scripts/browser_gpu_recovery.py --webdriver
+http://127.0.0.1:9515 --browser-name MicrosoftEdge` after starting a matching
+Edge WebDriver. The bounded, gitignored `output/browser/gpu-recovery/trace.json`
+records the source/lock/WASM hashes and dirty-tree state; `initial.png` and
+`recreated.png` are the inspected compositor captures. The initial pixel digest
+is `531b42afea4ea2a6c8dac4c2bcb69b70d38b405f2256530effad6a4deb9991b9`;
+the recovered digest is `c31e623eb32f125f8f9a1342cd10e7bd7e13978b30b907c9ccbb06f885adae43`.
+
 <a id="V07"></a>
 ### V07 — Result explorer
 

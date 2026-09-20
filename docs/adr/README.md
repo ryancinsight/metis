@@ -48,3 +48,4 @@
 | [0037](0037-browser-canvas-capture.md) | Context-aware browser canvas capture | Accepted |
 | [0038](0038-durable-audit-recovery.md) | Durable audit recovery | Accepted |
 | [0039](0039-scoped-process-provider.md) | Scoped native process provider | Accepted |
+| [0040](0040-presentation-frame-geometry.md) | Validated physical geometry at the canvas frame seam | Accepted |

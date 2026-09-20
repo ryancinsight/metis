@@ -13,5 +13,9 @@ iris.workspace = true
 metis-core = { workspace = true }
 metis-platform = { workspace = true }
 
+[target.'cfg(not(target_arch = "wasm32"))'.dependencies]
+png.workspace = true
+flate2.workspace = true
+
 [lints]
 workspace = true

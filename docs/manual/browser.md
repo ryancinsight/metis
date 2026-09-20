@@ -412,6 +412,13 @@ existing two-dimensional constructor. After a device or swap-chain loss, the
 consumer can explicitly reacquire the provider without rebuilding the canvas or
 its listeners:
 
+If a consumer has physical display geometry, its `CanvasFrame` implementation
+may return a validated `DisplaySpacing` created with
+`DisplaySpacing::try_new(row, column)`. `CanvasSurface::present` checks the
+resulting positive finite aspect against the frame dimensions before the
+provider upload. Pixel-only frames keep the default `None`; Metis does not
+derive or interpret format-specific geometry.
+
 ```rust,no_run
 surface.recreate().await?;
 surface.present(&frame)?;

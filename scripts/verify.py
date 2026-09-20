@@ -27,6 +27,12 @@ BUILD_LINK_PACKAGES = {
     "wasm-bindgen-shared": "wasm-bindgen browser ABI build contract",
 }
 REGISTRY_BOUNDARIES = {
+    # Native PNG byte decoding has no format-neutral Atlas provider; RITK's
+    # path-based medical readers do not preserve this host's RGBA contract.
+    ("metis-ui-lang", "png"),
+    # png tolerates a missing zlib trailer after producing all pixels; the
+    # inflater separately requires stream end and the exact scanline extent.
+    ("metis-ui-lang", "flate2"),
     ("metis-cli", "serde"),
     ("metis-cli", "serde_json"),
     ("metis-app", "serde"),
@@ -422,6 +428,10 @@ def run_gate():
                 seconds=300, cwd=ROOT)
         cargo("clippy", ["clippy", "--workspace", "--all-targets"], tail=["--", "-D", "warnings"])
         cargo("build", ["build", "--workspace", "--bins", "--examples"])
+        native_image = pathlib.Path(metadata["target_directory"]) / "debug" / "examples" / (
+            "native_image" + (".exe" if sys.platform == "win32" else "")
+        )
+        execute("native-image", [str(native_image)], seconds=60, cwd=ROOT)
         native_capture = pathlib.Path(metadata["target_directory"]) / "debug" / "examples" / (
             "native_host_capture" + (".exe" if sys.platform == "win32" else "")
         )

@@ -11,7 +11,7 @@ pub use events::{
     CanvasKeyboardPhase, CanvasModifiers, CanvasPointerEvent, CanvasPointerPhase,
     CanvasPointerType, CanvasWheelEvent, CanvasWheelUnit,
 };
-pub use frame::CanvasFrame;
+pub use frame::{CanvasFrame, DisplaySpacing};
 
 #[cfg(target_arch = "wasm32")]
 pub use surface::CanvasSurface;
