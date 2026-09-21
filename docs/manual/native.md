@@ -693,6 +693,24 @@ This boundary is format-neutral. RITK owns DICOM parsing, study selection and
 clinical presentation after its own provider receives bytes; a sidecar does
 not grant the browser arbitrary native shell access.
 
+### Scoped native HTTP
+
+Native sidecars that need an HTTP service use
+metis_platform::ScopedHttpProvider. The host supplies a finite allowlist of
+HTTP(S) origins and the caller must present a CapabilityScope::NETWORK witness.
+Requests validate their absolute URL, method, headers and body before Moirai
+sends them. Transport-owned hop-by-hop headers are rejected and redirects are
+disabled, so a response cannot silently move to a new authority.
+
+The provider applies finite header, request-body and response-body budgets.
+Debug output omits URL, header values and payload bytes. The platform tests
+perform a real loopback exchange against a local TcpListener and also cover
+origin, header, body and capability rejection. Run
+cargo nextest run --locked -p metis-platform --lib.
+
+This is a host policy boundary, not a browser or DICOM API. RITK keeps DICOM
+parsing and clinical presentation in its own repository.
+
 ### Native form after a real resize
 
 The same production `metis-app.exe` was captured before and after the host

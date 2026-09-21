@@ -880,6 +880,8 @@ name = "metis-platform"
 version = "0.1.0"
 dependencies = [
  "metis-core",
+ "moirai-executor",
+ "moirai-http",
  "moirai-pal",
  "moirai-transport",
 ]

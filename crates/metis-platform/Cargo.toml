@@ -13,6 +13,12 @@ metis-core = { workspace = true }
 moirai-pal = { workspace = true }
 moirai-transport = { workspace = true }
 
+[dev-dependencies]
+moirai-executor = { workspace = true }
+
+[target.'cfg(not(target_arch = "wasm32"))'.dependencies]
+moirai-http = { workspace = true }
+
 [target.'cfg(windows)'.dependencies]
 moirai-pal = { workspace = true, features = ["webview2"] }
 
