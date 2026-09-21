@@ -484,7 +484,7 @@ class PythonBindingContractTests(unittest.TestCase):
             "abi3t-features: abi3t",
             "verification: ${{ github.event_name == 'workflow_dispatch' }}",
             "id-token: write",
-            "ryancinsight/atlas/.github/workflows/python-wheels.yml@f747b8b4de9fb39dfdbe3d3731f0020bc04a947d",
+            "ryancinsight/atlas/.github/workflows/python-wheels.yml@227ff172612b8aff553be22be89fabdf71838a03",
             "pypa/gh-action-pypi-publish@ba38be9e461d3875417946c167d0b5f3d385a247",
         ):
             with self.subTest(fragment=fragment):

@@ -107,7 +107,7 @@ leaves the GIL disabled. On this host, the release wheel build and extracted
 suite pass with 19 tests and one expected skip under CPython 3.13.12, while no
 free-threaded interpreter is installed. The release caller opts into the shared
 Atlas `cp314t`/`cp315t` and Python 3.15 `abi3t` matrix at revision
-`f747b8b4de9fb39dfdbe3d3731f0020bc04a947d`. `workflow_dispatch` selects Atlas
+`227ff172612b8aff553be22be89fabdf71838a03`. `workflow_dispatch` selects Atlas
 validation mode: it builds, installs, runs the provider-owned value tests,
 validates the complete wheel set and uploads a retained verification artifact
 without a release tag, GitHub Release attachment or PyPI publication. The
