@@ -1663,7 +1663,7 @@ bounded status preview were `00000001.dcm` (528502 bytes), `00000002.dcm`
 
 This run used an automation file chooser to select real files from disk; it did
 not synthesize a `DataTransfer` or embed image data. The public series is the
-same source used by the [reviewed gallery capture](images/browser-gallery.png)
+same source used by the [reviewed gallery capture](images/browser-gallery.webp)
 and the [RITK orthogonal PNG baseline](https://github.com/ryancinsight/ritk/tree/main/docs/manual/images).
 The chooser contract is format-neutral in Metis; RITK owns the DICOM pixels and
 viewer semantics. Physical file-manager drag input remains a separate host
@@ -1713,7 +1713,7 @@ Open `http://127.0.0.1:8000/gallery.html`. The RITK package must be rebuilt afte
 its Metis dependency changes; an old package can still embed the old file limit.
 Without the package, the page reports a viewer startup failure.
 
-The [capture](images/browser-gallery.png) and [trace](images/browser-gallery.json)
+The [capture](images/browser-gallery.webp) and [trace](images/browser-gallery.json)
 record the public CC BY 4.0 MRI-DIR CT phantom: 409 files, 216,156,416 bytes.
 The browser delivered trusted `dragenter`, `dragover` and `drop` events through
 Chromium's file-backed input protocol. Every file's content hash matched the
@@ -1781,7 +1781,7 @@ provider-private resource observations remain separate acceptance gates.
 
 ![Real saved MRI MIP projection through the format-neutral Métis host](https://github.com/ryancinsight/ritk/blob/main/docs/manual/images/dicom-metis-real-browser-mri-projection.png?raw=true)
 
-![Browser gallery after the bounded file drop](images/browser-gallery.png)
+![Browser gallery after the bounded file drop](images/browser-gallery.webp)
 
 Reproduce with a matching local Chromium WebDriver already listening on port
 9515 (use `--browser-name chrome` for Chrome):
@@ -1906,7 +1906,7 @@ and [after input](images/browser-gallery-canvas-ritk-snap-coronal-after-input.pn
 and sagittal [initial](images/browser-gallery-canvas-ritk-snap-sagittal-initial.png)
 and [after input](images/browser-gallery-canvas-ritk-snap-sagittal-after-input.png).
 
-![Live Edge window after the trusted canvas actions](images/browser-gallery-canvas-window-final.png)
+![Live Edge window after the trusted canvas actions](images/browser-gallery-canvas-window-final.webp)
 
 ### Replay a saved MRI study with adaptive canvas input
 

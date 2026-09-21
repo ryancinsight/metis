@@ -237,8 +237,7 @@ typed finite-wait errors. The committed `native_host_capture` example then
 runs the public host loop with a real hidden `Moirai NativeSurface`, records the
 two presented frames and finite empty tick, and validates the written BMP,
 SVG and JSON artifacts against that execution. The reviewed artifacts are
-[`native-host-frame.svg`](manual/images/native-host-frame.svg),
-[`native-host-frame.bmp`](manual/images/native-host-frame.bmp) and
+[`native-host-frame.svg`](manual/images/native-host-frame.svg) and
 [`native-host-trace.json`](manual/images/native-host-trace.json). This is a
 lifecycle and format-neutral seam check, not DICOM or viewer migration
 evidence; RITK remains the owner of DICOM parsing, geometry and medical display
@@ -1125,9 +1124,9 @@ ritk-snap-sagittal: 512x409, axis=2, count=512, frame=presented, load=ready, sli
 ```
 
 The live viewport was visually inspected and showed non-black CT anatomy in
-all three planes. The committed [browser gallery capture](manual/images/browser-gallery.png)
+all three planes. The committed [browser gallery capture](manual/images/browser-gallery.webp)
 and [RITK orthogonal captures](https://github.com/ryancinsight/ritk/tree/main/docs/manual/images)
-are the reviewable PNG baseline for this same public series; the trace's
+are the reviewable image baseline for this same public series; the trace's
 source-neutral transfer is separate from RITK's pixel oracle. The chooser run
 proves actual file-backed browser selection and rendering in the configured
 in-app Chromium host. It does not claim physical file-manager drag input,
@@ -2442,7 +2441,7 @@ to the output digest
 [`python-native-captures.json`](manual/images/python-native-captures.json).
 The source and client crop match exactly at window offset `(8, 31)` with zero
 pixel differences.
-The reviewed image is [`python-native-real-ct-mip.png`](manual/images/python-native-real-ct-mip.png).
+The reviewed image is [`python-native-real-ct-mip.webp`](manual/images/python-native-real-ct-mip.webp).
 The source is the public 409-file porcine-head phantom; private patient
 captures use the same local command and remain outside version control.
 Moirai's provider-side `WM_PRINT`/`WM_PRINTCLIENT` rendering is required for

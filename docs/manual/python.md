@@ -191,7 +191,7 @@ window and prints the image digest:
 maturin build --release --locked --manifest-path crates/metis-python/Cargo.toml --out output/python-native
 python scripts/python_native_capture.py `
   --wheel output/python-native/metis_rs-0.1.0-cp39-abi3-win_amd64.whl `
-  --output docs/manual/images/python-native-window.bmp
+  --output docs/manual/images/python-native-window.png
 ```
 
 The inspected capture is a 320×240 client area in a 336×279 window. It shows
@@ -199,7 +199,7 @@ the two input-sensitive colors, the visible title bar and two bounded resize
 events from generation `0`. Its source revision, runtime, and SHA-256 digest
 are recorded in [`python-native-captures.json`](images/python-native-captures.json).
 
-![Visible NativeApplication checkerboard capture](images/python-native-window.bmp)
+![Visible NativeApplication checkerboard capture](images/python-native-window.png)
 
 ### Present an actual RITK application frame
 
@@ -220,7 +220,7 @@ python scripts/python_native_capture.py `
   --wheel output/python-native/metis_rs-0.1.0-cp39-abi3-win_amd64.whl `
   --frame $frame `
   --title "RITK public CT through Metis Python host" `
-  --output docs/manual/images/python-native-real-ct-mip.png
+  --output output/python-native-real-ct-mip.png
 ```
 
 `--frame` accepts only a bounded, non-interlaced 8-bit RGBA PNG and derives
@@ -230,7 +230,7 @@ the Python-hosted image to the exact RITK output. The inspected capture below
 is application output from the saved public 409-file CT study, including its
 axial, coronal, sagittal and MIP panels; it is not an illustration.
 
-![RITK public CT frame presented through the Metis Python native host](images/python-native-real-ct-mip.png)
+![RITK public CT frame presented through the Metis Python native host](images/python-native-real-ct-mip.webp)
 
 The source is the public CC BY 4.0 porcine-head phantom documented in the
 [RITK DICOM workflow](https://github.com/ryancinsight/ritk/blob/main/docs/manual/dicom-workflow.md).
