@@ -41,6 +41,21 @@ fn main() -> Result<()> {
             print!("{}", commands::completions(shell)?);
             Ok(())
         }
+        Some("install") => {
+            let [_, archive, prefix] = args.as_slice() else {
+                return Err(usage_error("install requires ARCHIVE and PREFIX"));
+            };
+            build::install(Path::new(archive), Path::new(prefix))
+        }
+        Some("uninstall") => {
+            let [_, application_id, prefix] = args.as_slice() else {
+                return Err(usage_error("uninstall requires APPLICATION_ID and PREFIX"));
+            };
+            let application_id = application_id
+                .to_str()
+                .ok_or("application identity must be valid Unicode")?;
+            build::uninstall(application_id, Path::new(prefix))
+        }
         Some("build" | "package") => {
             let [action, input, output] = args.as_slice() else {
                 return Err(usage_error("build and package require MANIFEST and OUTPUT"));

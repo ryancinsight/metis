@@ -86,6 +86,21 @@ uses Rust standard-library file and archive writers and adds no registry tool,
 signing key or publication path. Native macOS/Linux install, launch, permission
 and removal evidence remains a required follow-up before the item closes.
 
+Revision 2026-09-21 (Linux lifecycle): [METIS-DISTRIBUTION-003](../../backlog.md#METIS-DISTRIBUTION-003)
+adds `metis install ARCHIVE PREFIX` and `metis uninstall APPLICATION_ID PREFIX`
+for generated Linux USTAR archives. Installation requires an existing absolute
+prefix, maps the archive's `usr/` tree beneath it, rewrites `Exec` and `Icon`
+paths to the resolved prefix, and records a schema-versioned ownership manifest
+with per-file sizes and SHA-256 digests. The desktop field escaping follows the
+[Desktop Entry specification](https://specifications.freedesktop.org/desktop-entry/latest-single/#exec-variables):
+arguments are quoted and reserved characters are escaped rather than
+concatenated into shell text. Archive traversal, links, duplicate destinations
+and pre-existing conflicts fail before any file is committed. Uninstall verifies
+the recorded identity and every digest, refusing removal when a package file was
+changed; it deletes only unchanged package files and empty directories, preserving
+unrelated user data. Native Linux host installation, launch, permission and
+removal captures remain open.
+
 ## Decision
 
 One versioned application manifest declares identity, Cargo binary targets,

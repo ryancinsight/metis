@@ -201,15 +201,23 @@ fn desktop_entry(application: &Application, entry: &str) -> String {
         let extension = Path::new(&resource.destination).extension()?;
         extension
             .eq_ignore_ascii_case("svg")
-            .then(|| format!("/usr/share/{}/{}", application.id, resource.destination))
+            .then(|| {
+                desktop_icon(&format!(
+                    "/usr/share/{}/{}",
+                    application.id, resource.destination
+                ))
+            })
             .or_else(|| {
-                extension
-                    .eq_ignore_ascii_case("png")
-                    .then(|| format!("/usr/share/{}/{}", application.id, resource.destination))
+                extension.eq_ignore_ascii_case("png").then(|| {
+                    desktop_icon(&format!(
+                        "/usr/share/{}/{}",
+                        application.id, resource.destination
+                    ))
+                })
             })
     });
     let mut output = format!(
-        "[Desktop Entry]\nType=Application\nName={}\nComment={} application\nExec=/usr/bin/{}",
+        "[Desktop Entry]\nVersion=1.0\nType=Application\nName={}\nComment={} application\nExec=/usr/bin/{}",
         desktop_escape(&application.name),
         desktop_escape(&application.name),
         desktop_word(entry),
@@ -229,15 +237,46 @@ fn desktop_entry(application: &Application, entry: &str) -> String {
 }
 
 #[cfg(any(not(windows), test))]
-fn desktop_word(value: &str) -> String {
-    if value
-        .bytes()
-        .all(|byte| byte.is_ascii_alphanumeric() || b"-._/:@%+".contains(&byte))
-    {
-        value.to_owned()
-    } else {
-        format!("\"{}\"", value.replace('\\', "\\\\").replace('"', "\\\""))
+pub(crate) fn desktop_word(value: &str) -> String {
+    let needs_quotes = value.is_empty()
+        || value.bytes().any(|byte| {
+            byte.is_ascii_whitespace()
+                || byte.is_ascii_control()
+                || matches!(byte, b'"' | 96 | b'$' | b'\\' | b'%')
+        });
+    let mut escaped = String::with_capacity(value.len());
+    for character in value.chars() {
+        match character {
+            '\\' | '"' | '\u{60}' | '$' => {
+                escaped.push('\\');
+                escaped.push(character);
+            }
+            '%' => escaped.push_str("%%"),
+            _ => escaped.push(character),
+        }
     }
+    if needs_quotes {
+        format!("\"{escaped}\"")
+    } else {
+        escaped
+    }
+}
+
+#[cfg(any(not(windows), test))]
+pub(crate) fn desktop_icon(value: &str) -> String {
+    let mut escaped = String::with_capacity(value.len());
+    for character in value.chars() {
+        match character {
+            '\\' => escaped.push_str("\\\\"),
+            ' ' => escaped.push_str("\\s"),
+            '\t' => escaped.push_str("\\t"),
+            '\n' => escaped.push_str("\\n"),
+            '\r' => escaped.push_str("\\r"),
+            ';' => escaped.push_str("\\;"),
+            _ => escaped.push(character),
+        }
+    }
+    escaped
 }
 
 #[cfg(any(not(windows), test))]

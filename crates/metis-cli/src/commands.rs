@@ -35,6 +35,18 @@ const COMMANDS: &[Command] = &[
         options: &[],
     },
     Command {
+        name: "install",
+        usage: "install ARCHIVE PREFIX",
+        summary: "Install a Linux USTAR package below a prefix",
+        options: &[],
+    },
+    Command {
+        name: "uninstall",
+        usage: "uninstall APPLICATION_ID PREFIX",
+        summary: "Remove a Linux package installation",
+        options: &[],
+    },
+    Command {
         name: "completions",
         usage: "completions SHELL",
         summary: "Generate a shell completion script",
@@ -55,7 +67,7 @@ pub(crate) fn help() -> String {
         output.push('\n');
     }
     output.push_str(
-        "\nOptions:\n  -h, --help                       Show this help\n\nMANIFEST is a versioned metis.json file. OUTPUT must not exist.\nPortable builds use the host Cargo target; `package` emits a Windows x64 MSI,\nmacOS `.app` bundle or Linux USTAR archive on the matching host. Builds use\nCargo --locked and compiler artifact messages.\nNo signing or publication is performed. `dev --watch` reloads after source or\nresource changes and never runs an artifact from a failed build. See the\ndistribution manual for installation and target limits.\n",
+        "\nOptions:\n  -h, --help                       Show this help\n\nMANIFEST is a versioned metis.json file. OUTPUT must not exist.\nPortable builds use the host Cargo target; `package` emits a Windows x64 MSI,\nmacOS `.app` bundle or Linux USTAR archive on the matching host. Builds use\nCargo --locked and compiler artifact messages.\nOn Linux, install maps the archive usr tree below an absolute PREFIX and\nrewrites its desktop entry; uninstall removes only unchanged package files.\nNo signing or publication is performed. `dev --watch` reloads after source or\nresource changes and never runs an artifact from a failed build. See the\ndistribution manual for installation and target limits.\n",
     );
     output
 }
