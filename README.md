@@ -132,9 +132,10 @@ native screen-reader or operating-system accessibility until a platform bridge
 is implemented and evidenced.
 
 Runtime crates keep direct third-party dependencies at bounded contract
-surfaces: the CLI and application use Serde for manifests and IPC, the image
-decoder uses `png` and `flate2`, the browser text policy uses
-`unicode-segmentation`, and the Python extension uses PyO3. Atlas providers
+surfaces: `metis-cli` and `metis-app` use Serde and `serde_json` for manifests
+and IPC, `metis-ui-lang` uses `png`, `flate2` and `jpeg-encoder` for bounded
+image assets, `metis-web` uses `unicode-segmentation` for browser text policy,
+and `metis-python` uses PyO3. Atlas providers
 have transitive dependencies; the gate records the actual graph instead of
 describing it as dependency-free. The Atlas development overlay resolves first-party code to local
 trees. Standalone builds use the corresponding pushed provider revisions recorded
