@@ -243,9 +243,9 @@ Three deliberately changed renders test detection of text, position and color
 regressions. Their difference images are test evidence, not application states.
 The software gallery exercises production state transitions through API calls;
 the browser workbench exercises editable controls, focus, real service
-requests, explicit disconnects and task/listener teardown. Browser
-accessibility technology, installed IME, native accessibility and OS permission
-journeys remain open; native input and visible form capture are covered by the
+requests, explicit disconnects and task/listener teardown. Browser assistive
+technology, installed IME, screen-reader traversal and OS permission journeys
+remain open; native input and visible form capture are covered by the
 Windows evidence in [native.md](native.md#captured-windows-workflows).
 
 ## Measure a real application lifecycle

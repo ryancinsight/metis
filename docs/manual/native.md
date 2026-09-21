@@ -105,6 +105,42 @@ UIA, NSAccessibility or AT-SPI translation, spoken screen-reader output,
 platform preference enablement or assistive-technology acceptance; those
 remain the native residuals in `METIS-A11Y-001`.
 
+### Use the Windows native accessibility bridge
+
+The Windows native role now forwards the validated semantic tree to Moirai's
+AccessKit provider. `NativeForm` supplies the tree before the HWND becomes
+visible, so the provider never exposes a partially initialized control tree.
+Event-loop updates replace the bounded tree after state changes, and closing
+and reopening a surface reinstalls the retained tree:
+
+```rust,no_run
+use metis_platform::native::{
+    AccessibilityAction, AccessibilityNode, AccessibilityRole, AccessibilityTree,
+    NativeSurface, WindowConfig, WindowVisibility,
+};
+
+let config = WindowConfig::with_visibility("Metis", 800, 600, WindowVisibility::Hidden)?;
+let mut button = AccessibilityNode::new(2, AccessibilityRole::Button, "Submit")?;
+button.set_focusable(true);
+button.add_action(AccessibilityAction::Activate);
+let mut root = AccessibilityNode::new(1, AccessibilityRole::Application, "Metis")?;
+root.set_children(vec![2])?;
+let tree: AccessibilityTree = AccessibilityTree::from_nodes(1, 2, vec![root, button])?;
+let mut surface = NativeSurface::new_with_accessibility(&config, Some(tree.clone()))?;
+surface.update_accessibility(tree)?;
+# Ok::<(), Box<dyn std::error::Error>>(())
+```
+
+The authored form maps its stable `btn-calc` identity to `Activate` and
+focuses that control through the same bounded native event queue as keyboard
+input. Projection rejects duplicate or zero identities, oversized strings and
+future semantic roles/actions that are not in the admitted native vocabulary.
+The provider implementation is in Moirai (PRs [#410](https://github.com/ryancinsight/Moirai/pull/410)
+and [#411](https://github.com/ryancinsight/Moirai/pull/411)); Metis keeps the
+semantic source and application action policy. The component evidence covers
+tree installation, updates and reopen; it does not claim that a specific
+installed screen reader speaks or operates the form.
+
 ## Apply native display scale
 
 Moirai reports the window's integer DPI through `WindowEvent::DpiChanged`.
@@ -356,9 +392,8 @@ does not grant page code filesystem, network or process authority. The
 WebView2 runtime must be installed on the Windows machine. The Windows
 `metis-platform` target explicitly enables Moirai's `webview2` feature; other
 Metis targets do not pull the optional COM binding. The standalone Cargo.lock currently pins merged Moirai revision
-`8a8daa60cca5484822c772bc6b574acaa8f133ad`, whose history contains the
-WebView2 provider revision `c7b49a7623aed533f377aec77f656a16d2b9d68b` used to
-generate the historical capture. The current lock retains the provider feature,
+`88f837ea90c694c5c0b62793fe1edb02b39bdddc`, which includes the AccessKit
+provider and WebView2 0.39.1 bindings. The current lock retains the provider feature,
 bounded host implementation, stable browser canvas extents, the content-box
 mapping used by the RITK consumer and the bounded `CapturePreview` PNG path;
 it also contains the later WebGPU provider recreation. The capture hash and

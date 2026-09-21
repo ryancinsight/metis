@@ -4,13 +4,16 @@ use metis_core::error::{ErrorCode, MetisError, Result};
 use metis_frontend::{FormState, FrontendApp};
 use metis_ipc::{IpcTransport, StreamTransport};
 use metis_platform::native::{
-    CompositionPhase, ModifierState, MouseButton, NativeApplication, NativeFlow, WindowConfig,
-    WindowEvent, run_native_application,
+    AccessibilityAction, AccessibilityActionRequest, AccessibilityTree, CompositionPhase,
+    ModifierState, MouseButton, NativeApplication, NativeFlow, WindowConfig, WindowEvent,
+    run_native_application,
 };
 use metis_platform::{Color, DisplayScale, Framebuffer, Rect};
 use metis_ui_lang::{DisplayCommand, LayoutViewport, compute_layout};
 use std::io::{stdin, stdout};
 use std::time::Duration;
+
+use super::native_accessibility;
 
 const INITIAL_WIDTH: u32 = 800;
 const INITIAL_HEIGHT: u32 = 600;
@@ -67,6 +70,10 @@ impl<T: IpcTransport> NativeApplication for NativeForm<T> {
 
     fn framebuffer(&self) -> &Framebuffer {
         self.app.framebuffer()
+    }
+
+    fn accessibility_tree(&self) -> Result<Option<AccessibilityTree>> {
+        native_accessibility::project(&self.app).map(Some)
     }
 
     fn handle_events(&mut self, events: &[WindowEvent]) -> Result<NativeFlow> {
@@ -148,10 +155,32 @@ impl<T: IpcTransport> NativeApplication for NativeForm<T> {
                         CompositionPhase::Canceled => self.app.set_composition(None)?,
                     }
                 }
+                WindowEvent::AccessibilityAction { request } => {
+                    repaint |= self.apply_accessibility_action(request)?;
+                }
                 _ => {}
             }
         }
         Ok(NativeFlow::Continue { repaint })
+    }
+}
+
+impl<T: IpcTransport> NativeForm<T> {
+    fn apply_accessibility_action(&mut self, request: &AccessibilityActionRequest) -> Result<bool> {
+        if request.target_node != native_accessibility::submit_button_identity() {
+            return Ok(false);
+        }
+        match request.action {
+            AccessibilityAction::Focus => {
+                self.focused = true;
+                Ok(true)
+            }
+            AccessibilityAction::Activate => {
+                submit(&mut self.app, self.pid)?;
+                Ok(true)
+            }
+            _ => Ok(false),
+        }
     }
 }
 
@@ -326,7 +355,8 @@ mod tests {
     use metis_ipc::MemoryTransport;
     use metis_platform::DisplayScale;
     use metis_platform::native::{
-        CompositionPhase, ModifierState, NativeApplication, NativeFlow, WindowEvent,
+        AccessibilityAction, AccessibilityActionRequest, CompositionPhase, ModifierState,
+        NativeApplication, NativeFlow, WindowEvent,
     };
 
     #[test]
@@ -419,6 +449,30 @@ mod tests {
         assert!(button.contains(button.x, button.y));
         assert!(!button.contains(button.x - 1, button.y));
         assert!(!button.contains(button.x, button.y - 1));
+    }
+
+    #[test]
+    fn native_accessibility_focus_targets_the_authored_submit_control() {
+        let (transport, _peer) = MemoryTransport::pair();
+        let app = FrontendApp::new(transport, 800, 600).expect("form");
+        let mut form = NativeForm {
+            app,
+            pid: 1,
+            patient_id: "patient".to_owned(),
+            focused: false,
+        };
+        let flow = form
+            .handle_events(&[WindowEvent::AccessibilityAction {
+                request: AccessibilityActionRequest {
+                    target_node: super::native_accessibility::submit_button_identity(),
+                    action: AccessibilityAction::Focus,
+                    value: None,
+                    delta: None,
+                },
+            }])
+            .expect("accessibility focus");
+        assert!(matches!(flow, NativeFlow::Continue { repaint: true }));
+        assert!(form.focused);
     }
 
     #[test]

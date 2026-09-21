@@ -14,7 +14,9 @@ pub use webview::{
     WebViewEvent, WebViewHostEvent, WebViewPermission, WebViewSurface,
 };
 pub use window::{
-    CompositionPhase, MAX_COMPOSITION_UNITS, MAX_FRAME_DIMENSION, MAX_FRAME_PIXELS,
+    AccessibilityAction, AccessibilityActionRequest, AccessibilityNode, AccessibilityRole,
+    AccessibilityTree, CompositionPhase, MAX_ACCESSIBILITY_ACTIONS, MAX_ACCESSIBILITY_NODES,
+    MAX_ACCESSIBILITY_TEXT_BYTES, MAX_COMPOSITION_UNITS, MAX_FRAME_DIMENSION, MAX_FRAME_PIXELS,
     MAX_PUMP_MESSAGES, MAX_TITLE_UNITS, MAX_WAIT_MILLISECONDS, MAX_WINDOW_EVENTS, ModifierState,
     MouseButton, NativeSurface, WindowConfig, WindowEvent, WindowVisibility,
 };

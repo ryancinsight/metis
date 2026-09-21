@@ -210,8 +210,8 @@ modifier-aware submit transition while leaving Alt/Windows-modified Enter to
 the operating system. `scripts/python_native_input_capture.py --shortcut
 control-enter` exercises that transition through the Win32 input queue when a
 foreground desktop is available. An installed CJK/other IME keyboard journey, WebView2
-composition, broader OS permission enforcement, accessibility behavior,
-two-window captures, and macOS/Linux support remain open under [V05](#V05) and
+composition, broader OS permission enforcement, screen-reader and host-preference
+acceptance, two-window captures, and macOS/Linux support remain open under [V05](#V05) and
 the linked backlog items; a hidden-window test and a passing build cannot
 replace real visual, assistive-technology or denial-probe evidence.
 
@@ -1508,7 +1508,7 @@ bidi/line metrics, native IME or assistive-technology behavior.
 
 The workbench now exposes **Read browser clipboard** and **Copy note to
 clipboard** in the text card. The standalone lock pins Moirai at merged
-revision `8a8daa60cca5484822c772bc6b574acaa8f133ad`. Its secure-context
+revision `88f837ea90c694c5c0b62793fe1edb02b39bdddc`. Its secure-context
 provider creates the
 browser promise synchronously inside the trusted click callback, bounds text to
 1 MiB and returns an explicit unsupported, permission or activation error. The
@@ -2301,16 +2301,19 @@ The authorized workbench runner also accepts `--keyboard-submit` together with
 trusted `Tab` actions, activates the submit control with `Enter`, waits for the
 backend result and records the focus path and post-submit semantic snapshot.
 The dependency-free contract test covers the complete path and rejects missing
-or disabled targets. This closes browser keyboard completion for the trace; it
-does not establish screen-reader speech or a native accessibility bridge.
+or disabled targets. This closes browser keyboard completion for the trace; the
+native Windows bridge now covers the corresponding host boundary, while
+screen-reader speech and preference enablement remain external evidence.
 
 The custom software renderer now validates the same contract before every
 frontend paint through `FrontendApp::semantic_tree`. `metis-ui-lang` tests
 derive the authored form's application, text and button roles, label
 references, disabled/hidden state and typed actions, and reject duplicate IDs,
 unresolved references, malformed state values and oversized semantic text.
-This is host-neutral semantic evidence; UIA, NSAccessibility, AT-SPI, spoken
-output and host preference enablement remain V05/native residuals.
+This is host-neutral semantic evidence for the source tree; native Windows
+translation is covered by the contract increment below. NSAccessibility,
+AT-SPI, spoken output and host preference enablement remain V05/native
+residuals.
 
 The native executable also exposes a reproducible semantic capture role:
 
@@ -2326,8 +2329,15 @@ artifact is schema `1`, contains 22 elements and 10,280 bytes, and hashes to
 value-semantic oracle finds the `main-screen` application root and an enabled,
 focusable `btn-calc` button with the single `activate` action. This exercises
 the production native executable and semantic projection, not an in-memory
-test-only tree. It remains host-neutral evidence: no OS accessibility bridge,
-spoken output or screen-reader acceptance is claimed.
+test-only tree. The Windows native consumer now projects this same tree into
+Moirai's bounded AccessKit provider before showing the HWND. Its focused native
+gate covers hidden installation, tree replacement, close/reopen retention and
+typed focus delivery to the authored submit control. Moirai PR [#410](https://github.com/ryancinsight/Moirai/pull/410)
+merged the provider at `bc6d100`; PR [#411](https://github.com/ryancinsight/Moirai/pull/411)
+merged WebView2 0.39.1 at `88f837e`, aligning the existing WebView2 surface with
+the provider's Windows 0.62 bindings. These are provider and consumer contract
+checks: no OS screen reader, spoken output or host preference enablement is
+claimed.
 
 <a id="V04"></a>
 ### V04 — Responsive layout and clipping

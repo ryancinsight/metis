@@ -136,7 +136,10 @@ host.close(generation)
 The provider validates the title, dimensions, frame length, wait bound and
 close/reopen generation. Event dictionaries preserve pointer, keyboard (key,
 repeat and `ctrl`/`shift`/`alt`/`meta` modifier snapshots), text, IME
-composition, resize, DPI and lifecycle fields. Non-Windows builds retain
+composition, resize, DPI, lifecycle and native accessibility action fields.
+An `accessibility_action` record contains `target_node`, `action`, `value` and
+`delta`; an action introduced by a newer provider is surfaced as
+`action: "unsupported"` rather than discarded. Non-Windows builds retain
 the typed class but construction returns `ERR_UNSUPPORTED_PLATFORM_EVENT`
 without attempting a native provider. This facade owns no filesystem,
 network, process, medical-format or DICOM authority; RITK remains responsible

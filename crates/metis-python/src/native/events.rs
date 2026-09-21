@@ -1,6 +1,8 @@
 //! Native event conversion for the Python host.
 
-use metis_platform::native::{CompositionPhase, ModifierState, MouseButton, WindowEvent};
+use metis_platform::native::{
+    AccessibilityAction, CompositionPhase, ModifierState, MouseButton, WindowEvent,
+};
 use pyo3::prelude::{Bound, PyResult, Python};
 use pyo3::types::{PyDict, PyDictMethods, PyList, PyListMethods};
 pub(super) enum Event {
@@ -51,6 +53,12 @@ pub(super) enum Event {
     },
     DpiChanged {
         dpi: u32,
+    },
+    AccessibilityAction {
+        target_node: u64,
+        action: &'static str,
+        value: Option<String>,
+        delta: Option<i8>,
     },
 }
 
@@ -115,6 +123,18 @@ fn phase_name(value: CompositionPhase) -> &'static str {
     }
 }
 
+fn accessibility_action_name(value: AccessibilityAction) -> &'static str {
+    match value {
+        AccessibilityAction::Activate => "activate",
+        AccessibilityAction::Focus => "focus",
+        AccessibilityAction::SetValue => "set_value",
+        AccessibilityAction::Toggle => "toggle",
+        AccessibilityAction::AdjustValue => "adjust_value",
+        AccessibilityAction::Open => "open",
+        _ => "unsupported",
+    }
+}
+
 pub(super) fn event(value: WindowEvent) -> Event {
     match value {
         WindowEvent::CloseRequested => Event::CloseRequested,
@@ -176,6 +196,12 @@ pub(super) fn event(value: WindowEvent) -> Event {
         },
         WindowEvent::Resized { width, height } => Event::Resized { width, height },
         WindowEvent::DpiChanged { dpi } => Event::DpiChanged { dpi },
+        WindowEvent::AccessibilityAction { request } => Event::AccessibilityAction {
+            target_node: request.target_node,
+            action: accessibility_action_name(request.action),
+            value: request.value,
+            delta: request.delta,
+        },
     }
 }
 
@@ -269,6 +295,38 @@ pub(super) fn append_event<'py>(
             set!("kind", "dpi_changed");
             set!("dpi", dpi);
         }
+        Event::AccessibilityAction {
+            target_node,
+            action,
+            value,
+            delta,
+        } => {
+            set!("kind", "accessibility_action");
+            set!("target_node", target_node);
+            set!("action", action);
+            set!("value", value);
+            set!("delta", delta);
+        }
     }
     list.append(item)
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn accessibility_action_names_are_stable() {
+        let actions = [
+            (AccessibilityAction::Activate, "activate"),
+            (AccessibilityAction::Focus, "focus"),
+            (AccessibilityAction::SetValue, "set_value"),
+            (AccessibilityAction::Toggle, "toggle"),
+            (AccessibilityAction::AdjustValue, "adjust_value"),
+            (AccessibilityAction::Open, "open"),
+        ];
+        for (action, name) in actions {
+            assert_eq!(accessibility_action_name(action), name);
+        }
+    }
 }
