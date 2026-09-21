@@ -448,8 +448,8 @@ does not grant page code filesystem, network or process authority. The
 WebView2 runtime must be installed on the Windows machine. The Windows
 `metis-platform` target explicitly enables Moirai's `webview2` feature; other
 Metis targets do not pull the optional COM binding. The standalone Cargo.lock currently pins merged Moirai revision
-`88f837ea90c694c5c0b62793fe1edb02b39bdddc`, which includes the AccessKit
-provider and WebView2 0.39.1 bindings. The current lock retains the provider feature,
+`d7b38d7c79dfd39096adeda0f5c0845064d7a8c6`, which includes the AccessKit
+provider, the UI Automation value-action mapping and WebView2 0.39.1 bindings. The current lock retains the provider feature,
 bounded host implementation, stable browser canvas extents, the content-box
 mapping used by the RITK consumer and the bounded `CapturePreview` PNG path;
 it also contains the later WebGPU provider recreation. The capture hash and
@@ -826,8 +826,12 @@ PNG retains straight alpha and supports grayscale, RGB, RGBA and complete
 palettes up to eight-bit samples, including Adam7. CRC, Adler checksum,
 complete compressed-stream consumption and exact scanline length are checked.
 JPEG uses the shared Consus raster decoder for sequential, progressive and
-eight-bit lossless samples. Wider lossless medical samples remain available to
-RITK; this display API rejects them rather than choosing a window or truncating.
+lossless samples from two through sixteen bits. Métis converts gray and RGB
+integer samples once to opaque display channels with nearest full-range integer
+mapping; it does not apply windowing, rescaling or clinical interpretation.
+Wider lossless medical samples therefore remain available to RITK with their
+encoded precision, while this presentation boundary only receives its derived
+eight-bit display pixels.
 JPEG/PNG EXIF orientation values 1–8 normalize into the returned dimensions
 and pixels; malformed metadata fails. Unsupported color profiles, animation
 and physical spacing fail closed. Clinical orientation remains RITK-owned.
