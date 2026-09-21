@@ -138,6 +138,17 @@ jobs:
     permissions:
       contents: read
 
+
+  conformance:
+    name: Debt classes at or below the recorded baseline
+    if: github.event_name != 'pull_request' || github.event.pull_request.draft == false
+    uses: ryancinsight/atlas/.github/workflows/conformance-guard.yml@02a304f519c27b95169b87b732e6e631d51c205d
+    with:
+      atlas-ref: 02a304f519c27b95169b87b732e6e631d51c205d
+      member: metis
+    permissions:
+      contents: read
+
   semver:
     name: Public API (informational)
     if: github.event_name == 'pull_request' && github.event.pull_request.draft == false
