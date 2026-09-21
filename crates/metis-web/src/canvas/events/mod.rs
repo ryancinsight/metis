@@ -14,7 +14,7 @@ pub const CANVAS_EVENT_CAPACITY: usize = 256;
 
 #[cfg(any(target_arch = "wasm32", test))]
 pub(crate) use queue::CanvasEventQueue;
-#[cfg(any(target_arch = "wasm32", test))]
+#[cfg(test)]
 pub(super) use types::MAX_KEY_NAME_BYTES;
 pub use types::{
     CanvasEvent, CanvasEventError, CanvasEventTrust, CanvasKeyboardEvent, CanvasKeyboardPhase,
