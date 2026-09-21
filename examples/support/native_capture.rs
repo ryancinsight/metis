@@ -68,15 +68,15 @@ pub(crate) fn decode_bmp(bytes: &[u8]) -> io::Result<(u32, u32, Vec<u32>)> {
             "bitmap header is truncated or has wrong magic",
         ));
     }
-    let file_size = read_u32(bytes, 2)?;
-    let offset = read_u32(bytes, 10)?;
-    let dib_size = read_u32(bytes, 14)?;
-    let width = read_u32(bytes, 18)?;
-    let height = read_u32(bytes, 22)?;
-    let planes = read_u16(bytes, 26)?;
-    let bits = read_u16(bytes, 28)?;
-    let compression = read_u32(bytes, 30)?;
-    let image_size = read_u32(bytes, 34)?;
+    let file_size = u32::from_le_bytes(read_header_bytes::<4>(bytes, 2)?);
+    let offset = u32::from_le_bytes(read_header_bytes::<4>(bytes, 10)?);
+    let dib_size = u32::from_le_bytes(read_header_bytes::<4>(bytes, 14)?);
+    let width = u32::from_le_bytes(read_header_bytes::<4>(bytes, 18)?);
+    let height = u32::from_le_bytes(read_header_bytes::<4>(bytes, 22)?);
+    let planes = u16::from_le_bytes(read_header_bytes::<2>(bytes, 26)?);
+    let bits = u16::from_le_bytes(read_header_bytes::<2>(bytes, 28)?);
+    let compression = u32::from_le_bytes(read_header_bytes::<4>(bytes, 30)?);
+    let image_size = u32::from_le_bytes(read_header_bytes::<4>(bytes, 34)?);
     if usize::try_from(file_size).map_err(|_| invalid_data("bitmap is too large"))? != bytes.len()
         || offset != 54
         || dib_size != 40
@@ -154,28 +154,16 @@ pub(crate) fn decode_bmp(bytes: &[u8]) -> io::Result<(u32, u32, Vec<u32>)> {
     ))
 }
 
-fn read_u16(bytes: &[u8], start: usize) -> io::Result<u16> {
+fn read_header_bytes<const N: usize>(bytes: &[u8], start: usize) -> io::Result<[u8; N]> {
     let end = start
-        .checked_add(2)
+        .checked_add(N)
         .ok_or_else(|| invalid_data("bitmap header offset overflow"))?;
     let value = bytes
         .get(start..end)
         .ok_or_else(|| invalid_data("bitmap header is truncated"))?;
-    Ok(u16::from_le_bytes(value.try_into().map_err(|_| {
-        invalid_data("bitmap header width differs")
-    })?))
-}
-
-fn read_u32(bytes: &[u8], start: usize) -> io::Result<u32> {
-    let end = start
-        .checked_add(4)
-        .ok_or_else(|| invalid_data("bitmap header offset overflow"))?;
-    let value = bytes
-        .get(start..end)
-        .ok_or_else(|| invalid_data("bitmap header is truncated"))?;
-    Ok(u32::from_le_bytes(value.try_into().map_err(|_| {
-        invalid_data("bitmap header width differs")
-    })?))
+    value
+        .try_into()
+        .map_err(|_| invalid_data("bitmap header width differs"))
 }
 
 fn invalid_data(message: &'static str) -> io::Error {

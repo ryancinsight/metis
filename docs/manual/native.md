@@ -779,9 +779,11 @@ The Windows `native_image` example decodes a repository-authored asymmetric
 RGBA PNG and a JPEG color grid. The PNG row exercises five explicit display
 transforms and a half-transparent magenta sample. The JPEG rows exercise all
 eight EXIF orientation values, including transpose and transverse, through
-the decoder. Each resulting raster is displayed with identity placement:
-metadata orientation has already been applied once. Rejection labels report
-actual malformed-input decode results.
+the decoder. It also presents twelve-bit gray and direct-RGB samples with the
+declared nearest full-range display conversion, alongside Consus arithmetic
+sequential, progressive and twelve-bit lossless fixtures. Each resulting raster
+is displayed with identity placement: metadata orientation has already been
+applied once. Rejection labels report actual malformed-input decode results.
 
 ![Native PNG alpha and JPEG EXIF orientation gallery](images/native-image.png)
 
@@ -795,10 +797,15 @@ quarter-turns occupy 140×93 pixels. The remaining area is letterboxed. RGBA
 under the shared integer source-over rule. JPEG produces opaque pixels. Six
 constant-block samples are checked against an independent Pillow decode with
 a one-sample bound derived from the decoder's fixed-point color coefficients.
-Orientation and aspect assertions then compare those decoded samples in their
-specified positions, without treating lossy JPEG as an exact RGB encoder. The
-capture verifies Windows presentation on this host, including the right and
-bottom edges. It does not establish heterogeneous-monitor DPI transitions.
+The precision strip asserts gray `2048/4095` maps to `128` and direct RGB
+`0/2048/4095` maps to `(0,128,255)` before presentation. The arithmetic
+sequential/progressive pair must decode to the same three-block gray grid; the
+twelve-bit arithmetic lossless fixture retains a `0/4095/2048` sample prefix
+before display mapping. Orientation and aspect assertions then compare decoded
+samples in their specified positions, without treating lossy JPEG as an exact
+RGB encoder. The capture verifies Windows presentation on this host, including
+the right and bottom edges. It does not establish heterogeneous-monitor DPI
+transitions.
 
 Build and run the demonstration from a standalone Metis checkout:
 
@@ -825,13 +832,14 @@ workspace budgets, metadata policy and independent orientation oracle.
 PNG retains straight alpha and supports grayscale, RGB, RGBA and complete
 palettes up to eight-bit samples, including Adam7. CRC, Adler checksum,
 complete compressed-stream consumption and exact scanline length are checked.
-JPEG uses the shared Consus raster decoder for sequential, progressive and
-lossless samples from two through sixteen bits. Métis converts gray and RGB
-integer samples once to opaque display channels with nearest full-range integer
-mapping; it does not apply windowing, rescaling or clinical interpretation.
-Wider lossless medical samples therefore remain available to RITK with their
-encoded precision, while this presentation boundary only receives its derived
-eight-bit display pixels.
+JPEG uses the shared Consus raster decoder for eight- and twelve-bit
+sequential/progressive DCT gray and RGB samples plus two- through sixteen-bit
+single-component lossless gray samples. Consus maps those integer samples once
+to opaque display channels with nearest full-range integer mapping; Metis
+assembles opaque raster pixels and does not apply windowing, rescaling or
+clinical interpretation. Wider lossless medical samples therefore remain
+available to RITK with their encoded precision, while this presentation
+boundary only receives its derived eight-bit display pixels.
 JPEG/PNG EXIF orientation values 1–8 normalize into the returned dimensions
 and pixels; malformed metadata fails. Unsupported color profiles, animation
 and physical spacing fail closed. Clinical orientation remains RITK-owned.

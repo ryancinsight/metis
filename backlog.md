@@ -1,3 +1,10 @@
+<a id="METIS-CONFORMANCE-REGROWTH-2026-09-21"></a>
+## METIS-CONFORMANCE-REGROWTH-2026-09-21 — restore structural debt guard [patch]
+- Status: in-progress; priority: P1; owner: Metis integration; integrator: root; last-update: 2026-09-21; blocker: the member guard caller remains draft and depends on structural PR #322; re-open: PR #322 lands and PR #324 runs against Atlas guard `02a304f`.
+- Outcome: the live Metis scan now reports zero `oversized_files` and zero `type_suffixed_fns`; structural delivery is [PR #322](https://github.com/ryancinsight/metis/pull/322), and the member caller is [PR #324](https://github.com/ryancinsight/metis/pull/324).
+- Delivery scope: split the canonical event/layout/http test modules, consolidate type-named helpers, update affected docs, and retain exact visual evidence under the artifact budget. The Atlas workflow adoption remains the only open substep.
+- Oracle: `atlas-conformance.py check --repo metis --member-path .` exits 0 on this tree, and the Metis pull-request workflow calls the pinned Atlas guard with the current member baseline.
+
 <a id="METIS-GALLERY-CYCLES-001"></a>
 ## METIS-GALLERY-CYCLES-001 — Repeated saved-study browser lifecycle
 - Status: done; priority: P1; integrator: root; last-update: 2026-09-16.
@@ -455,8 +462,7 @@ an owner. “Unsupported” cannot replace delivery of a required mobile/native 
 
 <a id="METIS-ASSETS-001"></a>
 ## METIS-ASSETS-001 — Images, vectors and media assets [major]
-- Closure: integrator root; branch `fix/assets-provider-closure`; classify truncated JPEG failures and consume the Consus module-ownership correction before final consumer verification.
-- lease: asset_presentation crates/metis-ui-lang/src/asset/jpeg.rs, crates/metis-ui-lang/src/asset/tests/jpeg_cases.rs, docs/adr/0029-image-orientation.md, docs/manual/native.md 2026-09-21T00:00:00-04:00
+- Closure: integrator root; shared branch `refactor/metis-test-sidecars`; Consus [PR 80](https://github.com/ryancinsight/consus/pull/80) supplies Apollo-owned transforms and arithmetic/precision support. Focused nextest passes 53/53, strict Clippy passes, and refreshed V06 matches all 464,000 pixels; full gate and integration remain.
 - Native JPEG increment: [PR 312](https://github.com/ryancinsight/metis/pull/312) uses merged [Consus PR 76](https://github.com/ryancinsight/consus/pull/76), with [RITK](../ritk/backlog.md#RITK-JPEG-001) owning medical conversion. The integrated full gate passes 386 debug and 386 release tests; native V06 matches all 464,000 client RGB pixels at 120 DPI. Broader media/GPU acceptance remains open.
 - Native PNG increment (2026-09-19): bounded scoped loading, strict complete zlib/PNG decoding, orientation-aware contain and value-semantic malformed/alpha/aspect/orientation fixtures; [ADR 0029](docs/adr/0029-image-orientation.md) and [native V06 gallery](docs/manual/native.md#native-image-assets) own the contract and exact client-pixel capture.
 - Status: in-progress; priority: P1; owner: Metis asset/presentation + existing Atlas format providers; integrator: root; last-update: 2026-09-18; dependencies: METIS-BROWSER-001, METIS-AUTHORITY-001; risk: hostile content

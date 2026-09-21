@@ -1,6 +1,11 @@
-use super::*;
+use super::{DisplayCommand, DisplayList, LayoutViewport, compute_layout};
+use crate::dom::{DomDocument, DomElement, DomNode};
 use crate::parse_markup;
+use crate::parser::{MAX_DEPTH, MAX_NODES};
+use crate::style::{Color, Display, Size};
 use metis_core::error::ErrorCode;
+use metis_platform::framebuffer::{Framebuffer, Rect};
+use metis_platform::rasterizer::{LineCap, LineJoin, MAX_STROKE_POINTS, StrokeWidth};
 
 #[test]
 fn parent_background_precedes_child_and_gap_is_between_children() {

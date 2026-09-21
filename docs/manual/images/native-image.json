@@ -1,43 +1,45 @@
 {
   "schema": 2,
   "demonstration": "V06",
-  "date": "2026-09-20",
+  "date": "2026-09-21",
   "source_sha256": {
     "Cargo.toml": "12073c94003e51b29dcf1d7cb5ac30d802379856eba942c9dd9c2361672dddeb",
-    "Cargo.lock": "a2eaddf9e9a905e7138b2a35567bde036dca65eac73b6b1040bcce5e431fb22b",
+    "Cargo.lock": "2e9f857c936a772f51d0c2d57acdb3327d58c072965102a0e47218927170f107",
     "crates/metis-ui-lang/Cargo.toml": "e6e081e37938c51818ef25adb7c0819ee68c92807c53e5c6846f9b341c14ad5c",
-    "crates/metis-ui-lang/src/asset.rs": "2d975f0b5438e0ee1ecbb6f524fbdfbd8a83134b2379027c30c6e0f7671803ce",
+    "crates/metis-ui-lang/src/asset.rs": "62ccbca4162f5f444f1c911cc5e22db4af7df4e664807d1e9cec9fc53eb7fc68",
     "crates/metis-ui-lang/src/asset/compression.rs": "4d824e52435ddeca76e28bb7ce30d3cf9ec50ad3b9b78561161f3961dde45f4e",
-    "crates/metis-ui-lang/src/asset/jpeg.rs": "b158ee38c3369b0867ccd6a733dfbbb52b51c26caa4aa445d428f2d941d26a0e",
+    "crates/metis-ui-lang/src/asset/jpeg.rs": "69f05a5cdad0ad66cdf11f10a10932bf9abd8f27b93acc0b9476f81cd3099ef7",
     "crates/metis-ui-lang/src/asset/orientation.rs": "450e17514a047332f57598f9b3f89177953740e759975703064c7c93a8789636",
-    "crates/metis-ui-lang/src/asset/tests.rs": "18ec8c0cc2436e9c92eff06285d05ab5d75de1fe062b6c254d613aa8ae3a4485",
-    "crates/metis-ui-lang/src/asset/tests/jpeg_cases.rs": "a5b5577d2874a64412a623e7a34a573c1665afe170fa1c771c9d19dc6b2d6b97",
+    "crates/metis-ui-lang/src/asset/tests.rs": "75c69e423c546a5dfb41ef612cc25d3e7b46235b89146698dded0412cfb6a569",
+    "crates/metis-ui-lang/src/asset/tests/jpeg_cases.rs": "bb6699789a8cd7821d417518bcf87cd533063022e9fbaba90fde2d575cff358d",
+    "crates/metis-ui-lang/src/asset/tests/jpeg_fixtures.rs": "9e1edb633518ea6ac8334664a9319205d8d1f46574d570d43f3db696db28af0a",
     "crates/metis-ui-lang/src/image.rs": "5d52e2a1f2f39c1afae4c11edf306d7214f6b18d325d3b6413d23e6689df852c",
     "crates/metis-ui-lang/src/image/fit.rs": "be54b0f1887204c076d5fa269145376c9db90a4eaeccb67476631a393d4a368d",
     "crates/metis-ui-lang/src/image/transform.rs": "dd2ec45e87f55489d6a4edd86fc2f2a7a0805862a8d6937693d5532bd040a280",
     "crates/metis-platform/src/framebuffer.rs": "a23f660c4cb1b58f091185179b81c2b05aff6e9ecd441c2364c6a4107fc34705",
-    "examples/native_image.rs": "bdf5e2f860d96a3d0939ddef63b5305c724d93a2660ab854bbc765e047f65c71",
-    "examples/support/jpeg_gallery.rs": "85131ec472699f72dfe7329854aaba58c4cc3140f9ed527871897fed774aaede",
+    "examples/native_image.rs": "0e05e91a6efdd97a79b6ab9eb1404dc69eed6ea5b645218275792d8bebcb2bd3",
+    "examples/support/jpeg_gallery.rs": "b796388806a1e2901a20dcc9ac00dda9661464279a242e46f74b5913c3a8aca1",
+    "examples/support/jpeg_arithmetic_gallery.rs": "66a3185685beb3933fde8f2de8e518846bcc360bdd09ca0ff3d5978dfb8fb170",
     "examples/assets/orientation.png": "545795a05db12aa90dda0f0663fe5e2808fc59647124b934f650777cb88abd3d",
     "examples/assets/orientation.jpg": "042782bd0f6c9488e84bfb7e229e3ab594e0d7a75d5f838290034d8199d7ea2e",
     "scripts/native_display.py": "2992025e5aa9726b1069ba6a8f762264cd0b641f9ba7dd0969a197d33f04fef8",
     "scripts/python_native_capture.py": "612b51eab9f422249f41f0c4b863f66da3ec077ff15ef6358041a2a66cb69b77"
   },
-  "executable_sha256": "0200a05aed6a69a7731886be66ec5347f46ef5264da4ff6e4445c543fe956291",
+  "executable_sha256": "de368865f60f02ce184fdd3b06d8b8f30effd43e9d870068e8825b8ae1b487cc",
   "image": "native-image.png",
-  "image_sha256": "56c6e8e4df5bb91bebe08b043529929bf1af20ffe5b83887b5d5947be4d4f791",
-  "fixture_attribution": "Repository-authored asymmetric 2x3 RGBA PNG and independently encoded 3x2 JPEG color grid; no third-party content",
+  "image_sha256": "fdd39b07173ec0cf2fffbf9ed2371dc02dae65ad8c92bd7b4930291628653f3c",
+  "fixture_attribution": "Repository-authored asymmetric 2x3 RGBA PNG and independently encoded 3x2 JPEG color grid; arithmetic DCT streams exactly match Consus libjpeg-turbo 3.1.2 fixtures and the lossless stream exactly matches its ISO reference fixture",
   "host_observation": {
     "mode": "visible",
     "capture": "Win32 PrintWindow",
     "dpi": 120,
     "window": {
-      "width": 818,
-      "height": 627
+      "height": 627,
+      "width": 818
     },
     "client": {
-      "width": 800,
       "height": 580,
+      "width": 800,
       "offset": [
         9,
         38
@@ -47,9 +49,9 @@
     "client_rgb_comparison": {
       "pixels": 464000,
       "different_pixels": 0,
-      "expected_bmp_sha256": "d92cc43aaf495e493694818d3115c0c6c86e2c26293a6613bf85317e0c435a13"
+      "expected_bmp_sha256": "07bf0337b206edd9a50d87508b03fb470beda8636cdffd630eda378d88201f26"
     }
   },
-  "inspection": "Five labeled PNG transforms, eight JPEG/EXIF orientations, aspect-preserving letterboxes and actual truncated PNG + JPEG rejection are visible",
-  "scope": "Admitted static PNG and 8-bit Huffman sequential/progressive/lossless JPEG; EXIF orientation normalized once; no clinical orientation, color management or heterogeneous-DPI claim"
+  "inspection": "Five labeled PNG transforms, 12-bit JPEG display samples, three arithmetic JPEG streams, eight JPEG/EXIF orientations, aspect-preserving letterboxes and actual truncated PNG + JPEG rejection are visible",
+  "scope": "Admitted static PNG; 8- and 12-bit DCT gray/RGB JPEG; 2- through 16-bit single-component lossless JPEG; arithmetic sequential, progressive and lossless fixtures; EXIF orientation normalized once; no clinical orientation, color management or heterogeneous-DPI claim"
 }
