@@ -668,11 +668,10 @@ an owner. “Unsupported” cannot replace delivery of a required mobile/native 
 
 <a id="METIS-DISTRIBUTION-003"></a>
 ## METIS-DISTRIBUTION-003 — macOS and Linux installers [arch] [minor]
-- Status: in-progress; priority: P2; owner: Metis tooling; integrator: root; last-update: 2026-09-20; dependencies: METIS-DISTRIBUTION-001; risk: platform ownership and lifecycle
-- Lease: root owns `crates/metis-cli/src/build.rs`, `crates/metis-cli/src/build/`, `docs/adr/0005-application-distribution.md` and `docs/manual/distribution.md` for the platform-package increment until its verified commit.
+- Status: in-progress; priority: P2; owner: Metis tooling; integrator: root; last-update: 2026-09-21; dependencies: METIS-DISTRIBUTION-001; risk: platform ownership and lifecycle
 - Scope: target-specific executable/bundle and installation formats using the same validated inventory; each target requires its native host for installation evidence.
 - Acceptance: build/install/run/uninstall on macOS and Linux preserves user files and application behavior; actual host evidence and platform manual instructions. [ADR 0005](docs/adr/0005-application-distribution.md), [V10](docs/VERIFICATION.md#V10).
-- Current increment: `metis build` now stages host-native portable executables on Windows, macOS and Linux; only the Windows x64 `package` path selects the explicit MSI target. Native macOS/Linux installer formats and host install evidence remain open.
+- Current increment (2026-09-21): `metis package` emits the existing Windows x64 MSI, a macOS `.app` bundle with `Info.plist`, or a Linux USTAR archive with FHS payload paths and a desktop entry on the matching host. The package inventory records format, digest, bytes and per-file hashes. Native macOS/Linux install, launch, permission and removal evidence, signing and updater behavior remain open.
 - Delivery: Metis PR [#294](https://github.com/ryancinsight/metis/pull/294), merge `1d8836d`; the merged CLI inventory tests and distribution manual preserve the portable Windows/macOS/Linux staging contract and the explicit Windows MSI boundary.
 - Verification: `metis-cli` unit tests cover the target-selection contract and the locked package gate remains Windows-only; the manual and [ADR 0005](docs/adr/0005-application-distribution.md) describe the split.
 

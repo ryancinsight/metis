@@ -14,6 +14,8 @@ use std::{
     time::Duration,
 };
 
+mod platform;
+
 // A cold RITK workspace can exceed five minutes on a hosted Windows runner;
 // fifteen minutes leaves the packaging workflow's remaining budget for MSI
 // authoring and inventory verification while keeping compiler ownership finite.
@@ -32,13 +34,14 @@ struct Inventory {
     entry: String,
     files: Vec<FileRecord>,
     installer: Option<InstallerRecord>,
+    platform_package: Option<platform::PlatformPackageRecord>,
 }
 
 #[derive(Serialize)]
-struct FileRecord {
-    destination: String,
-    bytes: u64,
-    sha256: String,
+pub(crate) struct FileRecord {
+    pub(crate) destination: String,
+    pub(crate) bytes: u64,
+    pub(crate) sha256: String,
 }
 #[derive(Serialize)]
 struct InstallerRecord {
@@ -47,12 +50,18 @@ struct InstallerRecord {
     sha256: String,
 }
 
+struct StagedPayload {
+    files: Vec<FileRecord>,
+    entries: Vec<(PathBuf, String)>,
+}
+
 pub(crate) fn application(input: &Path, output: &Path, kind: OutputKind) -> Result<()> {
-    if matches!(kind, OutputKind::Installer) && !cfg!(all(windows, target_arch = "x86_64")) {
-        return Err("Windows MSI packaging requires an x86-64 Windows host".into());
+    if matches!(kind, OutputKind::Installer) && !supports_host_package() {
+        return Err("package requires an x86-64 Windows, macOS or Linux host".into());
     }
     let (application, root) = Application::read(input)?;
     let cargo_manifest = manifest::source(&root, &application.cargo_manifest)?;
+    #[cfg(windows)]
     let icon = icon(&application, &root)?;
     let output = absolute_output(output)?;
     if output.try_exists()? {
@@ -77,57 +86,30 @@ pub(crate) fn application(input: &Path, output: &Path, kind: OutputKind) -> Resu
     fs::create_dir(&output)?;
     let portable = output.join("app");
     fs::create_dir(&portable)?;
-    let mut files = Vec::new();
-    let mut staged = Vec::new();
-    let mut written = 0_u64;
-    for (path, destination) in payload {
-        let target = portable.join(&destination);
-        fs::create_dir_all(target.parent().ok_or("payload destination has no parent")?)?;
-        let record = copy(&path, &target, destination.clone(), &mut written)?;
-        files.push(record);
-        staged.push((target, destination));
-    }
-    let installer = match kind {
-        OutputKind::Portable => None,
-        OutputKind::Installer => {
-            #[cfg(windows)]
-            {
-                let file = format!("{}.msi", application.id);
-                let path = output.join(&file);
-                let spec = crate::windows::InstallerSpec {
-                    id: &application.id,
-                    name: &application.name,
-                    version: &application.version,
-                    manufacturer: &application.manufacturer,
-                    upgrade_code: &application.upgrade_code,
-                    entry: &entry,
-                    arguments: &application.arguments,
-                    files: &staged,
-                    icon: icon.as_deref(),
-                };
-                let product_code = crate::windows::build(&spec, &path)?;
-                let (stored_code, stored_files) = crate::windows::inspect(&path)?;
-                if stored_code != product_code || stored_files.len() != files.len() {
-                    return Err("installer inventory does not match staged application".into());
-                }
-                Some(InstallerRecord {
-                    file,
-                    product_code,
-                    sha256: digest_file(&path)?,
-                })
-            }
-            #[cfg(not(windows))]
-            {
-                return Err("this installer format requires a Windows build host".into());
-            }
-        }
-    };
+    let staged = stage_payload(&payload, &portable)?;
+    #[cfg(windows)]
+    let installer = installer(
+        kind,
+        &application,
+        &output,
+        &entry,
+        icon.as_deref(),
+        &staged.files,
+        &staged.entries,
+    )?;
+    #[cfg(not(windows))]
+    let installer = installer(kind);
+    #[cfg(windows)]
+    let platform_package = platform_package(kind);
+    #[cfg(not(windows))]
+    let platform_package = platform_package(kind, &application, &output, &entry, &staged.entries)?;
     let inventory = Inventory {
         schema: 1,
         application,
         entry,
-        files,
+        files: staged.files,
         installer,
+        platform_package,
     };
     let mut report = fs::File::options()
         .write(true)
@@ -140,6 +122,91 @@ pub(crate) fn application(input: &Path, output: &Path, kind: OutputKind) -> Resu
     Ok(())
 }
 
+fn supports_host_package() -> bool {
+    cfg!(all(windows, target_arch = "x86_64"))
+        || cfg!(target_os = "macos")
+        || cfg!(target_os = "linux")
+}
+
+fn stage_payload(payload: &[(PathBuf, String)], portable: &Path) -> Result<StagedPayload> {
+    let mut files = Vec::new();
+    let mut staged = Vec::new();
+    let mut written = 0_u64;
+    for (path, destination) in payload {
+        let target = portable.join(destination);
+        fs::create_dir_all(target.parent().ok_or("payload destination has no parent")?)?;
+        files.push(copy(path, &target, destination.clone(), &mut written)?);
+        staged.push((target, destination.clone()));
+    }
+    Ok(StagedPayload {
+        files,
+        entries: staged,
+    })
+}
+
+#[cfg(windows)]
+fn installer(
+    kind: OutputKind,
+    application: &Application,
+    output: &Path,
+    entry: &str,
+    icon: Option<&Path>,
+    files: &[FileRecord],
+    staged: &[(PathBuf, String)],
+) -> Result<Option<InstallerRecord>> {
+    if matches!(kind, OutputKind::Portable) {
+        return Ok(None);
+    }
+    let file = format!("{}.msi", application.id);
+    let path = output.join(&file);
+    let spec = crate::windows::InstallerSpec {
+        id: &application.id,
+        name: &application.name,
+        version: &application.version,
+        manufacturer: &application.manufacturer,
+        upgrade_code: &application.upgrade_code,
+        entry,
+        arguments: &application.arguments,
+        files: staged,
+        icon,
+    };
+    let product_code = crate::windows::build(&spec, &path)?;
+    let (stored_code, stored_files) = crate::windows::inspect(&path)?;
+    if stored_code != product_code || stored_files.len() != files.len() {
+        return Err("installer inventory does not match staged application".into());
+    }
+    Ok(Some(InstallerRecord {
+        file,
+        product_code,
+        sha256: digest_file(&path)?,
+    }))
+}
+
+#[cfg(not(windows))]
+fn installer(_kind: OutputKind) -> Option<InstallerRecord> {
+    None
+}
+
+#[cfg(windows)]
+fn platform_package(_kind: OutputKind) -> Option<platform::PlatformPackageRecord> {
+    None
+}
+
+#[cfg(not(windows))]
+fn platform_package(
+    kind: OutputKind,
+    application: &Application,
+    output: &Path,
+    entry: &str,
+    staged: &[(PathBuf, String)],
+) -> Result<Option<platform::PlatformPackageRecord>> {
+    if matches!(kind, OutputKind::Portable) {
+        return Ok(None);
+    }
+    Ok(Some(platform::build(application, output, entry, staged)?))
+}
+
+#[cfg(windows)]
 fn icon(application: &Application, root: &Path) -> Result<Option<PathBuf>> {
     application
         .icon
@@ -336,7 +403,12 @@ fn absolute_output(path: &Path) -> Result<PathBuf> {
     Ok(parent.canonicalize()?.join(name))
 }
 
-fn copy(source: &Path, target: &Path, destination: String, total: &mut u64) -> Result<FileRecord> {
+pub(super) fn copy(
+    source: &Path,
+    target: &Path,
+    destination: String,
+    total: &mut u64,
+) -> Result<FileRecord> {
     let mut source = fs::File::open(source)?;
     let expected = source.metadata()?.len();
     let mut output = fs::File::options()
@@ -366,6 +438,7 @@ fn copy(source: &Path, target: &Path, destination: String, total: &mut u64) -> R
     if bytes != expected {
         return Err("payload changed size during staging".into());
     }
+    output.set_permissions(source.metadata()?.permissions())?;
     output.sync_all()?;
     Ok(FileRecord {
         destination,
@@ -374,6 +447,7 @@ fn copy(source: &Path, target: &Path, destination: String, total: &mut u64) -> R
     })
 }
 
+#[cfg(windows)]
 fn digest_file(path: &Path) -> Result<String> {
     let mut source = fs::File::open(path)?;
     let mut hash = moirai_crypto::Sha256::new();

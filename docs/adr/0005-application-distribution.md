@@ -76,6 +76,16 @@ collide with stale registry-key-path records. Component GUIDs are UUID version
 keeps its MSI identity across rebuilds. The package-table test and hosted
 lifecycle gate remain the acceptance oracles.
 
+Revision 2026-09-21: [METIS-DISTRIBUTION-003](../../backlog.md#METIS-DISTRIBUTION-003)
+adds host-native package emitters beside the existing Windows MSI. macOS writes
+an `.app` directory with `Contents/MacOS`, `Contents/Resources` and a generated
+`Info.plist`; Linux writes an uncompressed USTAR archive with FHS executable and
+resource paths plus a desktop entry. Both formats reuse the validated staged
+inventory and record package/file digests in `inventory.json`. The implementation
+uses Rust standard-library file and archive writers and adds no registry tool,
+signing key or publication path. Native macOS/Linux install, launch, permission
+and removal evidence remains a required follow-up before the item closes.
+
 ## Decision
 
 One versioned application manifest declares identity, Cargo binary targets,
@@ -116,9 +126,10 @@ framework dependencies and arbitrary installer scripts are rejected.
 [Per-user installation](https://learn.microsoft.com/en-us/windows/win32/msi/installation-context)
 avoids requesting machine-wide privileges. MSIX remains a separate format:
 certificate trust and signing are not silently added to make a package install.
-macOS bundles/DMG, Linux packages, signed distribution and authenticated update
-recovery remain explicit target increments. Local package creation and testing
-do not authorize a release, certificate-store modification or publication.
+The macOS bundle and Linux archive emitters now exist, while native lifecycle
+evidence, signed distribution and authenticated update recovery remain explicit
+target increments. Local package creation and testing do not authorize a
+release, certificate-store modification or publication.
 
 ## Trust boundaries and failure behavior
 

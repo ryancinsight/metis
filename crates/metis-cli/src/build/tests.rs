@@ -84,3 +84,8 @@ fn portable_build_target_is_host_native_except_for_windows_x64_msi() {
         assert_eq!(cargo_target(host.0, host.1), None);
     }
 }
+
+#[test]
+fn package_host_matches_the_platform_emitter() {
+    assert!(supports_host_package());
+}
