@@ -382,7 +382,7 @@ mod tests {
         assert_eq!(app.composition(), Some("東京"));
         assert_eq!(
             app.document()
-                .find_element_by_id("label-patient")
+                .find_element_by_id("patient-input")
                 .expect("patient label")
                 .text_content(),
             "Patient ID: PT-9042-ALPHA [東京]"
@@ -441,6 +441,22 @@ mod tests {
         assert_eq!(
             button.actions,
             vec![metis_ui_lang::SemanticAction::Activate]
+        );
+        let patient = tree
+            .root
+            .children
+            .iter()
+            .flat_map(|node| node.children.iter())
+            .flat_map(|node| node.children.iter())
+            .find(|node| node.id.as_deref() == Some("patient-input"))
+            .expect("patient input");
+        assert_eq!(patient.role, metis_ui_lang::SemanticRole::TextBox);
+        assert_eq!(patient.name, "Patient ID");
+        assert_eq!(patient.value.as_deref(), Some("PT-9042-ALPHA"));
+        assert!(patient.focusable);
+        assert_eq!(
+            patient.actions,
+            vec![metis_ui_lang::SemanticAction::SetValue]
         );
     }
 }

@@ -42,6 +42,11 @@ pub(crate) fn submit_button_identity() -> u64 {
     explicit_identity("btn-calc")
 }
 
+/// Returns the stable identity used for the authored patient input.
+pub(crate) fn patient_input_identity() -> u64 {
+    explicit_identity("patient-input")
+}
+
 fn append_node(
     source: &SemanticNode,
     path: &mut Vec<usize>,
@@ -185,6 +190,7 @@ mod tests {
         let second = project(&app).expect("native accessibility tree");
         assert_eq!(first, second);
         assert_ne!(submit_button_identity(), 0);
+        assert_ne!(patient_input_identity(), 0);
     }
 
     #[test]
@@ -195,6 +201,10 @@ mod tests {
         let explicit =
             find_identity(&tree.root, &mut Vec::new(), "btn-calc").expect("submit button");
         assert_eq!(explicit, submit_button_identity());
+        let patient =
+            find_identity(&tree.root, &mut Vec::new(), "patient-input").expect("patient input");
+        assert_eq!(patient, patient_input_identity());
+        assert_ne!(explicit, patient);
         assert_ne!(path_identity(&[0]), path_identity(&[1]));
     }
 

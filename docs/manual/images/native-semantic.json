@@ -105,18 +105,20 @@
             "actions": [],
             "children": [
               {
-                "id": "label-patient",
-                "role": "text",
-                "name": "Patient ID: demo",
+                "id": "patient-input",
+                "role": "textbox",
+                "name": "Patient ID",
                 "description": null,
-                "value": null,
+                "value": "demo",
                 "disabled": false,
                 "hidden": false,
                 "expanded": null,
                 "selected": null,
                 "checked": null,
-                "focusable": false,
-                "actions": [],
+                "focusable": true,
+                "actions": [
+                  "set_value"
+                ],
                 "children": []
               }
             ]

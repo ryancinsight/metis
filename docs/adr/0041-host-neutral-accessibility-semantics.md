@@ -51,9 +51,10 @@ its platform provider; browser hosts continue to use the browser DOM tree.
 The `metis-app --metis-semantic-capture` role serializes the production
 frontend's validated tree to a bounded schema-1 JSON artifact. The reviewed
 22-element specimen is [the native semantic capture](../manual/images/native-semantic.json);
-its SHA-256 is
-`e86d24258e84d6c2963bae826b7b7671415de52a9114ca1d9c19bd5a4ee76804`.
-The oracle checks the application root and the enabled, focusable `btn-calc`
+it is 10,325 bytes and has SHA-256
+`11a4c02bbc8f718984bf3cd0184e0dfe478224fa9169b6d6e85c3804c006cdc6`. The
+oracle checks the application root, the focusable `patient-input` textbox with
+its bounded value and `set_value` action, and the enabled, focusable `btn-calc`
 button with its `activate` action. The command uses the production
 `FrontendApp` with an in-memory transport and therefore does not claim backend
 execution, an OS accessibility provider, spoken output or screen-reader
@@ -84,3 +85,17 @@ application test dispatches focus to the authored submit control. These checks
 establish provider and consumer contract behavior; an installed UI Automation
 client, spoken screen-reader output and host preference enablement remain
 required evidence under METIS-A11Y-001.
+
+## Revision 2026-09-21 — Native editable action delivery
+
+The authored `patient-input` control now carries a stable textbox identity,
+`aria-label`, current bounded value and `SetValue` action in the format-neutral
+tree. The Windows consumer routes provider `Focus` and `SetValue` requests for
+that identity through the existing patient transition used by keyboard and IME
+commits. The transition rejects values over the native 128-byte bound or values
+containing control characters before mutating `FormInputs`; accepted values
+invalidate the prior result and repaint the same surface. Native tests cover
+focus, value replacement, semantic-value refresh and both rejection classes.
+This strengthens the application action contract; it remains evidence of the
+provider boundary, not proof of spoken output or installed screen-reader
+acceptance.
