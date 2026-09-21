@@ -1,7 +1,7 @@
 <a id="METIS-CONFORMANCE-REGROWTH-2026-09-21"></a>
 ## METIS-CONFORMANCE-REGROWTH-2026-09-21 — restore structural debt guard [patch]
-- Status: in-progress; priority: P1; owner: Metis integration; integrator: root; last-update: 2026-09-21; blocker: reusable Atlas conformance workflow is not yet landed on the Atlas default branch; re-open: guard revision is available for a pinned caller.
-- Outcome: the live Metis scan now reports zero `oversized_files` and zero `type_suffixed_fns`; the split modules and generic readers are committed in this increment, and the member caller adopts the shared guard once its upstream workflow lands.
+- Status: in-progress; priority: P1; owner: Metis integration; integrator: root; last-update: 2026-09-21; blocker: the member guard caller remains draft and depends on structural PR #322; re-open: PR #322 lands and PR #324 runs against Atlas guard `02a304f`.
+- Outcome: the live Metis scan now reports zero `oversized_files` and zero `type_suffixed_fns`; structural delivery is PR #322 at `18537a2`, and the member caller is PR #324 at `ea58404`.
 - Delivery scope: split the canonical event/layout/http test modules, consolidate type-named helpers, update affected docs, and retain exact visual evidence under the artifact budget. The Atlas workflow adoption remains the only open substep.
 - Oracle: `atlas-conformance.py check --repo metis --member-path .` exits 0 on this tree, and the Metis pull-request workflow calls the pinned Atlas guard with the current member baseline.
 
