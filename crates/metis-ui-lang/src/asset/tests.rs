@@ -312,3 +312,4 @@ fn scoped_loader_rejects_parent_absolute_stream_and_oversized_files() {
 }
 
 mod jpeg_cases;
+mod jpeg_fixtures;

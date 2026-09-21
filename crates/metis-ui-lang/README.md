@@ -110,8 +110,11 @@ All eight EXIF orientations normalize into the returned raster exactly once,
 including width/height exchange; use identity placement to display its
 metadata-defined orientation. PNG retains straight alpha; JPEG is opaque.
 JPEG decoding and EXIF interpretation use `consus-raster`; Metis owns the
-capability boundary and conversion into display pixels. Eight-bit lossless
-JPEG is admitted; wider samples require an explicit display mapping.
+capability boundary and conversion into display pixels. Eight- and twelve-bit
+sequential/progressive DCT JPEG, plus two- through sixteen-bit
+single-component lossless JPEG, are mapped once by Consus to opaque eight-bit
+display channels with nearest full-range integer rounding; precision-preserving
+clinical use remains RITK-owned.
 
 PNG requires CRCs, complete zlib termination, Adler checksum and exact scanline
 length. The static subset supports depths up to eight bits and Adam7; indexed

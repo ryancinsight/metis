@@ -95,6 +95,14 @@ dependencies = [
 ]
 
 [[package]]
+name = "apollo-dctdst-core"
+version = "0.16.0"
+source = "git+https://github.com/ryancinsight/apollo#29358d313b518bce220e76a37a0c65fee32e66bf"
+dependencies = [
+ "eunomia",
+]
+
+[[package]]
 name = "autocfg"
 version = "1.5.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -153,6 +161,20 @@ name = "bytemuck"
 version = "1.25.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "95832e849adfb21180ccb6826a99da14e5d266ae5c2e668e1602cf234f153797"
+dependencies = [
+ "bytemuck_derive",
+]
+
+[[package]]
+name = "bytemuck_derive"
+version = "1.12.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "6a1f896587b6f2c069c73d2f0913e2d590c3990285cd2f0b6aa02b786b4c679c"
+dependencies = [
+ "proc-macro2",
+ "quote",
+ "syn 3.0.6",
+]
 
 [[package]]
 name = "bytes"
@@ -220,8 +242,9 @@ checksum = "c2459377285ad874054d797f3ccebf984978aa39129f6eafde5cdc8315b612f8"
 [[package]]
 name = "consus-raster"
 version = "0.1.0"
-source = "git+https://github.com/ryancinsight/consus.git#e34902feccc8e8c11906a9b35651fe72828cbc7e"
+source = "git+https://github.com/ryancinsight/consus.git#7a0b023b388b34c1991b5d5cea6b17ec7857b574"
 dependencies = [
+ "apollo-dctdst-core",
  "jpeg-encoder",
 ]
 
@@ -379,6 +402,26 @@ dependencies = [
  "sec1",
  "subtle",
  "zeroize",
+]
+
+[[package]]
+name = "eunomia"
+version = "0.8.0"
+source = "git+https://github.com/ryancinsight/eunomia#6be6be06f05d3a47eda2e7c22a217b13e20d6072"
+dependencies = [
+ "bytemuck",
+ "eunomia-derive",
+ "libm",
+]
+
+[[package]]
+name = "eunomia-derive"
+version = "0.8.0"
+source = "git+https://github.com/ryancinsight/eunomia#6be6be06f05d3a47eda2e7c22a217b13e20d6072"
+dependencies = [
+ "proc-macro2",
+ "quote",
+ "syn 2.0.119",
 ]
 
 [[package]]

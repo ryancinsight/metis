@@ -1,4 +1,5 @@
 use super::super::{AssetErrorKind, MAX_IMAGE_PIXELS};
+use super::jpeg_fixtures::{direct_rgb_twelve, lossless_gray};
 use crate::RasterImage;
 use jpeg_encoder::{ColorType, Encoder};
 use metis_platform::Color;
@@ -272,6 +273,27 @@ fn grayscale_and_cmyk_decode_to_opaque_rgb() {
 }
 
 #[test]
+fn integer_sample_precisions_map_to_nearest_full_range_display_channels() {
+    for (precision, encoded, expected) in [
+        (2, 2_u16, 170),
+        (7, 64, 129),
+        (12, 2048, 128),
+        (16, 32_768, 128),
+    ] {
+        let image = RasterImage::decode(&lossless_gray(precision)).expect("lossless gray JPEG");
+        assert_eq!(
+            image.pixels(),
+            &[Color::rgb(expected, expected, expected)],
+            "precision {precision} with encoded sample {encoded}"
+        );
+    }
+
+    let image = RasterImage::decode(&direct_rgb_twelve()).expect("twelve-bit RGB JPEG");
+    assert_eq!((image.width(), image.height()), (8, 8));
+    assert_eq!(image.pixels(), vec![Color::rgb(0, 128, 255); 64]);
+}
+
+#[test]
 fn lossless_samples_preserve_display_precision_boundary() {
     // T.81 SOF3, predictor 1, one category-zero sample: 2^(8-1) = 128.
     let mut bytes = vec![
@@ -285,9 +307,9 @@ fn lossless_samples_preserve_display_precision_boundary() {
     bytes[6] = 16;
     assert_eq!(
         RasterImage::decode(&bytes)
-            .expect_err("wide samples need explicit display mapping")
-            .kind(),
-        AssetErrorKind::Unsupported,
+            .expect("wide lossless display sample")
+            .pixels(),
+        &[Color::rgb(128, 128, 128)],
     );
 }
 

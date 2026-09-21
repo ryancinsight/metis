@@ -4,9 +4,11 @@ use metis_ui_lang::{ImagePlacement, ImageTransform, RasterImage};
 use std::{error::Error, io};
 
 use super::{OUTLINE, PANEL_BACKGROUND, TEXT};
+#[path = "../../crates/metis-ui-lang/src/asset/tests/jpeg_fixtures.rs"]
+mod jpeg_fixtures;
 
 const PANEL_WIDTH: i32 = 174;
-const PANEL_HEIGHT: i32 = 100;
+const PANEL_HEIGHT: i32 = 84;
 const LABELS: [&str; 8] = [
     "1 NORMAL",
     "2 MIRROR H",
@@ -124,6 +126,7 @@ fn corner_samples(image: &RasterImage) -> io::Result<[Color; 4]> {
 }
 
 pub(super) fn render(frame: &mut Framebuffer) -> Result<(), Box<dyn Error>> {
+    render_precision_samples(frame)?;
     let base = RasterImage::decode(FIXTURE)?;
     assert_eq!((base.width(), base.height()), (48, 32));
     let base_blocks = block_samples(&base, 3, 2)?;
@@ -149,7 +152,7 @@ pub(super) fn render(frame: &mut Framebuffer) -> Result<(), Box<dyn Error>> {
     draw_text(
         frame,
         18,
-        250,
+        302,
         "NATIVE JPEG/EXIF: ALL 8 ORIENTATIONS NORMALIZED",
         TEXT,
         2,
@@ -171,6 +174,85 @@ pub(super) fn render(frame: &mut Framebuffer) -> Result<(), Box<dyn Error>> {
     };
     assert_eq!(rejection.kind(), AssetErrorKind::Malformed);
 
+    Ok(())
+}
+
+fn render_precision_samples(frame: &mut Framebuffer) -> Result<(), Box<dyn Error>> {
+    let gray = RasterImage::decode(&jpeg_fixtures::lossless_gray(12))?;
+    let rgb = RasterImage::decode(&jpeg_fixtures::direct_rgb_twelve())?;
+    assert_eq!(gray.pixels(), &[Color::rgb(128, 128, 128)]);
+    assert_eq!((rgb.width(), rgb.height()), (8, 8));
+    assert_eq!(rgb.pixels(), vec![Color::rgb(0, 128, 255); 64]);
+
+    draw_text(
+        frame,
+        18,
+        234,
+        "NATIVE JPEG: 12-BIT DISPLAY PRECISION",
+        TEXT,
+        1,
+    );
+    for (label, image, bounds, destination, expected) in [
+        (
+            "GRAY 2048/4095",
+            gray,
+            Rect::new(18, 270, 180, 24),
+            Rect::new(96, 270, 24, 24),
+            Color::rgb(128, 128, 128),
+        ),
+        (
+            "RGB 0/2048/4095",
+            rgb,
+            Rect::new(220, 270, 180, 24),
+            Rect::new(298, 270, 24, 24),
+            Color::rgb(0, 128, 255),
+        ),
+    ] {
+        render_sample(frame, label, image, bounds, destination, [expected; 2])?;
+    }
+    Ok(())
+}
+
+pub(super) fn render_sample(
+    frame: &mut Framebuffer,
+    label: &str,
+    image: RasterImage,
+    bounds: Rect,
+    expected_destination: Rect,
+    expected_corners: [Color; 2],
+) -> Result<(), Box<dyn Error>> {
+    draw_text(frame, bounds.x, bounds.y - 18, label, TEXT, 1);
+    draw_rect_outline(
+        frame,
+        Rect::new(
+            bounds.x - 1,
+            bounds.y - 1,
+            bounds.width + 2,
+            bounds.height + 2,
+        ),
+        1,
+        OUTLINE,
+    );
+    fill_rect(frame, bounds, PANEL_BACKGROUND);
+    let placement = ImagePlacement::contain(image, bounds, ImageTransform::Identity)?;
+    assert_eq!(placement.destination(), expected_destination);
+    placement.render_to(frame);
+    assert_eq!(
+        frame.get_pixel(expected_destination.x, expected_destination.y),
+        expected_corners[0]
+    );
+    assert_eq!(
+        frame.get_pixel(
+            expected_destination.x + expected_destination.width - 1,
+            expected_destination.y + expected_destination.height - 1
+        ),
+        expected_corners[1]
+    );
+    assert_eq!(frame.get_pixel(bounds.x, bounds.y), PANEL_BACKGROUND);
+    assert_eq!(
+        frame.get_pixel(bounds.x + bounds.width - 1, bounds.y + bounds.height - 1),
+        PANEL_BACKGROUND
+    );
     Ok(())
 }
 
@@ -209,7 +291,7 @@ fn render_orientation(
     let row = i32::try_from(index / 4)?;
     let bounds = Rect::new(
         18 + column * 194,
-        310 + row * 124,
+        346 + row * 104,
         PANEL_WIDTH,
         PANEL_HEIGHT,
     );
@@ -229,9 +311,9 @@ fn render_orientation(
 
     let placement = ImagePlacement::contain(image.clone(), bounds, ImageTransform::Identity)?;
     let expected_destination = if orientation >= 5 {
-        Rect::new(bounds.x + 54, bounds.y, 66, 100)
+        Rect::new(bounds.x + 59, bounds.y, 56, 84)
     } else {
-        Rect::new(bounds.x + 12, bounds.y, 150, 100)
+        Rect::new(bounds.x + 24, bounds.y, 126, 84)
     };
     assert_eq!(placement.destination(), expected_destination);
     placement.render_to(frame);

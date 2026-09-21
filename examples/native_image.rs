@@ -2,6 +2,8 @@
 
 #[path = "support/framebuffer.rs"]
 mod framebuffer_artifacts;
+#[path = "support/jpeg_arithmetic_gallery.rs"]
+mod jpeg_arithmetic_gallery;
 #[path = "support/jpeg_gallery.rs"]
 mod jpeg_gallery;
 
@@ -105,7 +107,7 @@ fn render_png_gallery(frame: &mut Framebuffer) -> Result<(), Box<dyn Error>> {
         frame,
         18,
         16,
-        "NATIVE PNG: ASPECT, ALPHA, ORIENTATION",
+        "NATIVE PNG: ASPECT ALPHA ORIENTATION",
         TEXT,
         2,
     );
@@ -162,7 +164,8 @@ fn render_png_gallery(frame: &mut Framebuffer) -> Result<(), Box<dyn Error>> {
 }
 
 fn render_jpeg_gallery(frame: &mut Framebuffer) -> Result<(), Box<dyn Error>> {
-    jpeg_gallery::render(frame)
+    jpeg_gallery::render(frame)?;
+    jpeg_arithmetic_gallery::render(frame)
 }
 
 fn render_frame() -> Result<Framebuffer, Box<dyn Error>> {

@@ -18,9 +18,16 @@ JPEG primitives; its file readers also use an independent image decoder.
 The shared JPEG and EXIF implementation moves to `consus-raster` under
 [Consus ADR 0004](../../../consus/docs/adr/0004-raster-codecs.md).
 This avoids a RITK-to-Metis-to-RITK repository cycle and preserves one format
-provider. Metis converts decoded integer samples into its RGBA contract;
-RITK retains clinical interpretation. The migration must pass both consumer
-suites before the duplicate implementations are considered removed.
+provider. Consus maps decoded integer samples into the display range; Metis
+assembles opaque RGBA pixels and RITK retains clinical interpretation. The
+migration must pass both consumer suites before the duplicate implementations
+are considered removed.
+
+Revision 2026-09-21: Consus [PR 80](https://github.com/ryancinsight/consus/pull/80)
+extends Huffman/arithmetic JPEG process and precision coverage and owns shared
+display quantization. Apollo [PR 526](https://github.com/ryancinsight/apollo/pull/526)
+owns the DCT transform used by reconstruction. Consumer code retains only
+presentation or clinical interpretation; no consumer duplicates these kernels.
 
 Encoded EXIF orientation is normalized once into immutable raster storage.
 The returned width and height describe the oriented pixel grid; presentation
@@ -63,9 +70,23 @@ restart structure, Annex F for sequential Huffman coding, and Annex G for
 progressive coding. It checks the declared scan's coded-block count, amplitude
 and refinement bits, restart order and scan progression during reconstruction.
 JPEG has no checksum: changed bytes that form another valid JPEG cannot be
-classified as corruption without an external integrity digest.
+classified as corruption without an external integrity digest. Arithmetic
+decoding follows Annex D, including its implicit zero bits after a physical
+marker; therefore, not every entropy edit followed by a replacement EOI is
+detectable truncation. Physical EOF and invalid scan structure still fail.
 The premature-marker corpus remains a provider regression oracle. Metis contains
 no separate entropy validator, IDCT or JPEG color conversion after migration.
+
+The provider retains eight- and twelve-bit sequential/progressive DCT gray and
+RGB samples plus two- through sixteen-bit single-component lossless gray
+samples at their declared precision. Consus maps byte or native-endian wide
+samples into its opaque eight-bit display contract through the one exact
+nearest full-range conversion `(sample * 255 + max / 2) / max`, where
+`max = (1 << precision) - 1`. This is display quantization, not clinical
+windowing or rescaling: encoded values are not widened, normalized through a
+floating type, or interpreted as modality values. Metis assembles the returned
+opaque pixels and applies the existing eight-orientation normalization once, so
+orientation cannot apply twice and every returned JPEG pixel has alpha 255.
 
 EXIF parsing checks the TIFF byte order, magic, field types/counts, external
 value extents and directory references. Traversal uses a fixed sixteen-directory
@@ -136,9 +157,12 @@ stroke geometry is defined by [ADR 0030](0030-bounded-polyline-strokes.md).
 
 The generic orientation suite renders one asymmetric 2×3 source through all
 five transforms and asserts the exact row-major pixel order, including both
-axis-swapping rotations. The image example renders identity, clockwise and
-normalized affine placements from the same source, asserts representative
-pixels in each view, and regenerates the inspected SVG/BMP artifact. Focused
+axis-swapping rotations. JPEG fixtures cover two-, seven-, twelve- and
+sixteen-bit gray samples plus twelve-bit RGB samples against the integer
+conversion formula; the existing asymmetric EXIF corpus covers all eight
+orientations. The native image example presents five explicit PNG transforms,
+all eight normalized EXIF orientations, precision conversion, and arithmetic
+JPEG fixtures, with representative pixel and containment assertions. Focused
 `metis-ui-lang` nextest, strict formatting and the full Metis gate provide the
 remaining verification; the manual links the visual artifact and keeps real
 DICOM evidence in the RITK-owned workflow.

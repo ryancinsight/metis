@@ -2494,7 +2494,7 @@ Capture both successful content and diagnostic states. Test custom GPU output
 against the software/analytical reference using the declared raster contract;
 device loss/recreation is a lifecycle test, not an opportunity for silent fallback.
 
-Native PNG/JPEG evidence (2026-09-20): the [Windows asset gallery](manual/native.md#native-image-assets)
+Native PNG/JPEG evidence (2026-09-21): the [Windows asset gallery](manual/native.md#native-image-assets)
 shows five discrete PNG transforms, eight JPEG/EXIF orientations, aspect-
 preserving letterboxes, exact straight-alpha compositing and actual truncated
 PNG/JPEG rejection. A visible Windows capture at 120 DPI contains an 800×580
@@ -2506,7 +2506,11 @@ checksums, excess scanlines, trailing IDAT bytes, oversized dimensions/input,
 rejected metadata and scoped-path escape attempts. Shared Consus JPEG
 entropy decoding and EXIF/TIFF traversal cover sequential/progressive scans,
 restart/refinement structure, both byte orders, all eight orientation values
-and bounded directory references, plus eight-bit lossless display admission.
+and bounded directory references. Consus owns Huffman/arithmetic sequential and
+progressive DCT decoding at eight/twelve bits, single-component lossless decoding
+at two through sixteen bits, and nearest full-range display conversion. The
+gallery additionally checks twelve-bit gray/RGB samples, arithmetic sequential
+and progressive agreement, and arithmetic lossless samples before display.
 The capture utility enters a scoped per-monitor-aware thread context, including
 its worker threads, so geometry and GDI pixels use the same physical units.
 This closes the admitted static

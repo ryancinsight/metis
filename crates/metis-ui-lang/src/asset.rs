@@ -1,6 +1,6 @@
 //! Bounded native PNG and JPEG admission before raster presentation.
 //!
-//! Static PNG and eight-bit JPEG decode to straight row-major
+//! Static PNG and JPEG decode to straight row-major
 //! RGBA. EXIF orientation is normalized into the returned pixel grid. Metadata
 //! without defined presentation semantics, including color profiles, fails
 //! closed rather than being silently ignored.
@@ -119,8 +119,11 @@ impl RasterImage {
     /// Decodes an admitted PNG or JPEG into straight, row-major RGBA samples.
     ///
     /// PNG palette and sub-byte grayscale samples expand losslessly. JPEG
-    /// sequential, progressive and lossless scans preserve eight-bit samples.
-    /// Wider lossless samples require an explicit display mapping and fail here.
+    /// sequential and progressive DCT scans admit eight- and twelve-bit gray and
+    /// RGB samples; single-component lossless scans admit two- through sixteen-bit
+    /// gray samples. The provider maps each sample once to eight-bit display
+    /// channels with nearest full-range integer rounding; this is not clinical
+    /// windowing, rescaling or precision-preserving storage.
     /// A valid EXIF orientation is applied once so the returned dimensions and pixels
     /// already have top-left display orientation. JPEG has opaque alpha.
     /// Container checks require an exact terminal marker and no trailing bytes.
