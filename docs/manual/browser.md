@@ -1680,18 +1680,18 @@ remain in RITK.
 The recorded cross-engine captures show the real anatomy rendered through this
 format-neutral host: [Chromium gallery](https://github.com/ryancinsight/ritk/blob/main/docs/manual/images/dicom-metis-real-browser-mri-cross-engine-chromium.png)
 and [Firefox gallery](https://github.com/ryancinsight/ritk/blob/main/docs/manual/images/dicom-metis-real-browser-mri-cross-engine-firefox.png).
-The current standalone-lock replay uses the RITK source recorded by PR [#557](https://github.com/ryancinsight/ritk/pull/557),
-merged as `de13d6a287e6e0fe5aa5edf43fdcbb11f7128c80`, with source
-`fc85dad03a6c14a617e9687609044497c1eba122`, all six Metis packages at
-`4bceb90fe616465eca91cddc0c182548b295ca95` and Moirai at
-`2a54e010532f76c88027fec8a468620c92fe66b3`. The standalone Cargo.lock SHA-256
-is `b1d7c99a6dcbf788f515f4b18789d10035805e38db10f4a32dd7970b3050e226`. It
+The current standalone-lock replay uses the RITK source recorded by PR [#559](https://github.com/ryancinsight/ritk/pull/559),
+merged as `fcb6dde73c9c1e55cac959586551dc0f4ed7c6ee`, with source
+`c0886e966b94baeda3f8120bd3d99855ffd31f4b`, all six Metis packages at
+`3a3b30b0c3481db00b16175e6418907a6ae6f11c` and Moirai at
+`782f7574a0748febe58dc74cea19b2cb8d63ba72`. The standalone Cargo.lock SHA-256
+is `ce73c2f36b4c2d0b8146a4530ab0ab6ce54fa5c2540dfb9486ea67a73d8bef04`. It
 reads all 94 saved files (49,807,236 bytes), reproduces the revision-bound
 1280 × 800 MRI frame with SHA-256
 `259dd79103482756c4e688621bebafc841cc40f1df10ff2bbd7f9d04b7b4d401` and
 411,589 non-black pixels, and rejects an invalid study. The locked replay's
 executable digest is
-`ca3900b3e8e663883e47e4c297d2ffd3f1ee086732c2a746632c505fff36e699`;
+`7aa0ecc3d725ef548c77eb81e5dec39d8727be16f49b53bc0ee5b252d57fae3d`;
 the [RITK replay provenance](https://github.com/ryancinsight/ritk/blob/main/docs/manual/images/dicom-metis-real-mri.json)
 is authoritative for the example digest, storage-reuse oracles and physical
 spacing carried into the native and browser presentation boundaries.

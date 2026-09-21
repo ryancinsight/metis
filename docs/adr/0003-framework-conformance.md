@@ -390,8 +390,8 @@ keeps Rust-owned state, Moirai transport and HostPolicy as the authority path;
 Svelte and SvelteKit remain comparison subjects with no dependency or runtime
 added to the workspace.
 
-Revision 2026-09-20 (current gap plan): the authoritative RITK consumer replay
-uses geometry source build `b432ae69db2a0578d8f1eb176ae6fdb9233231a9`, delivered
+Revision 2026-09-20 (historical gap plan): the RITK consumer replay used
+geometry source build `b432ae69db2a0578d8f1eb176ae6fdb9233231a9`, delivered
 in RITK PR #518 merge `694904718d7ec922883ab2a6b572e9aa29edab99`, with Metis
 `165c4ec923e76ea7bc32b6b4fb99b4338166b3`, Moirai
 `2a54e010532f76c88027fec8a468620c92fe66b3` and standalone lock
@@ -400,6 +400,18 @@ The locked 94-file MRI replay remains byte-identical at 1280 × 800 and
 continues to prove the format-neutral Metis handoff plus RITK-owned decoding,
 geometry and clinical presentation. Historical replay hashes remain in their
 original evidence records and are not current comparison inputs.
+
+Revision 2026-09-21 (current lock refresh): RITK PR #559 merged as
+`fcb6dde73c9c1e55cac959586551dc0f4ed7c6ee` and refreshed the authoritative
+standalone replay to source `c0886e966b94baeda3f8120bd3d99855ffd31f4b`, Metis
+`3a3b30b0c3481db00b16175e6418907a6ae6f11c`, Moirai
+`782f7574a0748febe58dc74cea19b2cb8d63ba72` and Cargo.lock SHA-256
+`ce73c2f36b4c2d0b8146a4530ab0ab6ce54fa5c2540dfb9486ea67a73d8bef04`. The
+saved 94-file MRI-DIR study still produces the byte-identical 1280 × 800 frame
+(`259dd791...`, 411,589 non-black pixels); executable SHA-256 is
+`7aa0ecc3d725ef548c77eb81e5dec39d8727be16f49b53bc0ee5b252d57fae3d`.
+DICOM discovery, decoding, geometry and clinical presentation remain RITK-owned,
+while Metis remains the format-neutral host.
 
 The next dependency-ordered closure is explicit. Moirai and Metis now carry
 typed capability scopes into real file and process providers with denial tests
