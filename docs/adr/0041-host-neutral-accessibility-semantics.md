@@ -46,5 +46,18 @@ its platform provider; browser hosts continue to use the browser DOM tree.
   rejection cases and hidden/disabled interaction; `metis-frontend` tests
   exercise the authored form through `FrontendApp::semantic_tree`.
 
+## Native capture evidence — 2026-09-20
+
+The `metis-app --metis-semantic-capture` role serializes the production
+frontend's validated tree to a bounded schema-1 JSON artifact. The reviewed
+22-element specimen is [the native semantic capture](../manual/images/native-semantic.json);
+its SHA-256 is
+`e86d24258e84d6c2963bae826b7b7671415de52a9114ca1d9c19bd5a4ee76804`.
+The oracle checks the application root and the enabled, focusable `btn-calc`
+button with its `activate` action. The command uses the production
+`FrontendApp` with an in-memory transport and therefore does not claim backend
+execution, an OS accessibility provider, spoken output or screen-reader
+acceptance.
+
 The remaining METIS-A11Y-001 work is the native OS bridge and supported
 screen-reader evidence. This ADR does not claim those capabilities.

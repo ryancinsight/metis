@@ -80,6 +80,31 @@ screen-reader bridge: UIA, NSAccessibility and AT-SPI translation, spoken
 output and host preference enablement remain platform-specific acceptance
 work under `METIS-A11Y-001`.
 
+### Capture the native semantic projection
+
+The `metis-app` executable can write the production form's host-neutral
+semantic tree as a bounded JSON artifact. The command uses the same
+`FrontendApp` and software-renderer semantic validation as the visible native
+surface, but uses an in-memory transport so it does not start a backend or
+claim a platform accessibility bridge:
+
+```powershell
+New-Item -ItemType Directory -Force output | Out-Null
+$semantic = Join-Path (Resolve-Path .) "output\\native-semantic.json"
+cargo run --locked -p metis-app -- --metis-semantic-capture $semantic 60 2 0.2
+```
+
+The reviewed specimen is
+[`native-semantic.json`](images/native-semantic.json). It is schema `1`, has
+22 elements and 10,280 bytes, and has SHA-256
+`e86d24258e84d6c2963bae826b7b7671415de52a9114ca1d9c19bd5a4ee76804`.
+The `main-screen` application root and `btn-calc` submit button are present;
+the button is focusable, enabled and exposes the typed `activate` action. The
+artifact is a deterministic host-neutral projection. It does not establish
+UIA, NSAccessibility or AT-SPI translation, spoken screen-reader output,
+platform preference enablement or assistive-technology acceptance; those
+remain the native residuals in `METIS-A11Y-001`.
+
 ## Apply native display scale
 
 Moirai reports the window's integer DPI through `WindowEvent::DpiChanged`.
