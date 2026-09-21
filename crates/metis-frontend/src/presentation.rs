@@ -40,7 +40,7 @@ use crate::{FormState, FrontendApp};
 use iris::render::RenderBackend;
 use metis_core::{ErrorCode, MetisError, Result};
 use metis_ipc::{IpcTransport, client::HandshakeError};
-use metis_ui_lang::{Color, LayoutViewport, compute_layout};
+use metis_ui_lang::{Color, LayoutViewport, MAX_SEMANTIC_TEXT_BYTES, compute_layout};
 
 impl<T: IpcTransport> FrontendApp<T> {
     /// Projects the owned state and renders the complete form.
@@ -90,7 +90,11 @@ impl<T: IpcTransport> FrontendApp<T> {
             preview.push(']');
         }
         self.text("patient-input", format!("Patient ID: {preview}"))?;
-        self.attribute("patient-input", "value", self.inputs.patient_id.clone())?;
+        self.attribute(
+            "patient-input",
+            "value",
+            bounded_accessible_value(&self.inputs.patient_id),
+        )?;
         self.text(
             "label-weight",
             format!("Weight: {} kg", input_number(self.inputs.weight_kg, 2)),
@@ -222,6 +226,26 @@ fn layout_error() -> MetisError {
     )
 }
 
+fn bounded_accessible_value(value: &str) -> String {
+    const ELLIPSIS: &str = "...";
+    if value.len() <= MAX_SEMANTIC_TEXT_BYTES {
+        return value.to_owned();
+    }
+    let limit = MAX_SEMANTIC_TEXT_BYTES - ELLIPSIS.len();
+    let mut end = 0;
+    for (index, character) in value.char_indices() {
+        let next = index + character.len_utf8();
+        if next > limit {
+            break;
+        }
+        end = next;
+    }
+    let mut bounded = String::with_capacity(MAX_SEMANTIC_TEXT_BYTES);
+    bounded.push_str(&value[..end]);
+    bounded.push_str(ELLIPSIS);
+    bounded
+}
+
 // Shortest scientific f64 notation fits 24 glyphs: sign, 17 significant digits,
 // decimal point, exponent marker/sign and three exponent digits.
 const NUMBER_GLYPHS: usize = 24;
@@ -266,9 +290,25 @@ fn input_number(value: f64, minimum_decimals: usize) -> String {
 
 #[cfg(test)]
 mod presentation_tests {
-    use super::CLINICAL_SCREEN_XML;
+    use super::{CLINICAL_SCREEN_XML, bounded_accessible_value};
     use metis_platform::{Color, FONT_HEIGHT, FONT_WIDTH, Framebuffer};
-    use metis_ui_lang::{DisplayCommand, LayoutViewport, compute_layout, parse_markup};
+    use metis_ui_lang::{
+        DisplayCommand, LayoutViewport, MAX_SEMANTIC_TEXT_BYTES, compute_layout, parse_markup,
+    };
+
+    #[test]
+    fn accessible_patient_value_is_bounded_without_splitting_utf8() {
+        let short = "PT-9042-ALPHA";
+        assert_eq!(bounded_accessible_value(short), short);
+        let exact = "x".repeat(MAX_SEMANTIC_TEXT_BYTES);
+        assert_eq!(bounded_accessible_value(&exact), exact);
+
+        let oversized = "é".repeat(MAX_SEMANTIC_TEXT_BYTES);
+        let bounded = bounded_accessible_value(&oversized);
+        assert!(bounded.len() <= MAX_SEMANTIC_TEXT_BYTES);
+        assert!(bounded.ends_with("..."));
+        assert!(bounded.is_char_boundary(bounded.len() - 3));
+    }
 
     #[test]
     fn authored_form_text_and_status_fit_the_viewport() {

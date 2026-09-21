@@ -192,7 +192,7 @@ fn encoding_failure_preserves_session_without_sending_request() {
         assert_no_result(app, "Request not sent [0x1004]");
         assert_eq!(app.inputs().patient_id, oversized_reference);
         assert_eq!(
-            label(app, "label-patient"),
+            label(app, "patient-input"),
             format!("Patient ID: {}...", "x".repeat(40))
         );
         app.set_inputs("demo", 60.0, 2.0, 0.2)
