@@ -448,6 +448,7 @@ an owner. “Unsupported” cannot replace delivery of a required mobile/native 
 
 <a id="METIS-ASSETS-001"></a>
 ## METIS-ASSETS-001 — Images, vectors and media assets [major]
+- Closure: integrator root; branch `fix/assets-provider-closure`; classify truncated JPEG failures and consume the Consus module-ownership correction before final consumer verification.
 - Native JPEG increment: [PR 312](https://github.com/ryancinsight/metis/pull/312) uses merged [Consus PR 76](https://github.com/ryancinsight/consus/pull/76), with [RITK](../ritk/backlog.md#RITK-JPEG-001) owning medical conversion. The integrated full gate passes 386 debug and 386 release tests; native V06 matches all 464,000 client RGB pixels at 120 DPI. Broader media/GPU acceptance remains open.
 - Native PNG increment (2026-09-19): bounded scoped loading, strict complete zlib/PNG decoding, orientation-aware contain and value-semantic malformed/alpha/aspect/orientation fixtures; [ADR 0029](docs/adr/0029-image-orientation.md) and [native V06 gallery](docs/manual/native.md#native-image-assets) own the contract and exact client-pixel capture.
 - Status: in-progress; priority: P1; owner: Metis asset/presentation + existing Atlas format providers; integrator: root; last-update: 2026-09-18; dependencies: METIS-BROWSER-001, METIS-AUTHORITY-001; risk: hostile content
