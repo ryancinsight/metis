@@ -1,9 +1,9 @@
 <a id="METIS-CONFORMANCE-REGROWTH-2026-09-21"></a>
 ## METIS-CONFORMANCE-REGROWTH-2026-09-21 — restore structural debt guard [patch]
-- Status: in-progress; priority: P1; owner: Metis integration; integrator: root; last-update: 2026-09-21; blocker: the member guard caller remains draft and depends on structural PR #322; re-open: PR #322 lands and PR #324 runs against Atlas guard `02a304f`.
-- Outcome: the live Metis scan now reports zero `oversized_files` and zero `type_suffixed_fns`; structural delivery is [PR #322](https://github.com/ryancinsight/metis/pull/322), and the member caller is [PR #324](https://github.com/ryancinsight/metis/pull/324).
-- Delivery scope: split the canonical event/layout/http test modules, consolidate type-named helpers, update affected docs, and retain exact visual evidence under the artifact budget. The Atlas workflow adoption remains the only open substep.
-- Oracle: `atlas-conformance.py check --repo metis --member-path .` exits 0 on this tree, and the Metis pull-request workflow calls the pinned Atlas guard with the current member baseline.
+- Status: done; priority: P1; owner: Metis integration; integrator: root; last-update: 2026-09-21; delivery: [PR #322](https://github.com/ryancinsight/metis/pull/322), [PR #324](https://github.com/ryancinsight/metis/pull/324).
+- Outcome: the live Metis scan reports zero `oversized_files` and zero `type_suffixed_fns`, and the pull-request workflow calls Atlas's pinned conformance guard against the member baseline.
+- Delivery scope: split the canonical event/layout/http test modules, consolidate type-named helpers, update affected docs, retain exact visual evidence under the artifact budget, and enforce the debt baseline on future pull requests.
+- Oracle: `atlas-conformance.py check --repo metis --member-path .` exits 0 on this tree; the workflow guard is pinned to Atlas `02a304f519c27b95169b87b732e6e631d51c205d`.
 
 <a id="METIS-GALLERY-CYCLES-001"></a>
 ## METIS-GALLERY-CYCLES-001 — Repeated saved-study browser lifecycle
