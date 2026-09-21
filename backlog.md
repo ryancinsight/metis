@@ -552,13 +552,14 @@ an owner. “Unsupported” cannot replace delivery of a required mobile/native 
 
 <a id="METIS-SERVICES-001"></a>
 ## METIS-SERVICES-001 — Scoped network, shell and sidecars [minor]
-- Status: in-progress; priority: P2; owner: Moirai mechanisms + Metis policy; integrator: root; last-update: 2026-09-21; branch: feat/metis-scoped-network; delivery: `e02ad62`; dependencies: METIS-DESKTOP-001, METIS-COMMANDS-001; risk: privilege escalation
+- Status: in-progress; priority: P2; owner: Moirai mechanisms + Metis policy; integrator: root; last-update: 2026-09-21; branch: feat/metis-scoped-network; delivery: `8e0263a`; dependencies: METIS-DESKTOP-001, METIS-COMMANDS-001; risk: privilege escalation
 - Scope: HTTP/WebSocket and subprocess APIs, sidecar lifecycle, endpoint/argument allowlists, bounded IO and credential redaction; local test services only by default.
 - Acceptance: unauthorized endpoints/commands/arguments fail; transient errors, deadlines, cancellation, crash and cleanup are exercised against real processes/local servers; no shell-string injection or secret output.
 - Demonstration: [V08](docs/VERIFICATION.md#V08), connection/process status and denial journey; browsers never receive arbitrary native shell access.
 - Network-provider increment (2026-09-21): ScopedHttpProvider adds a native-only Moirai HTTP boundary with a host-owned HTTP(S) origin allowlist, NETWORK capability witness, hop-by-hop header denial, redirect suppression, finite request/response budgets and redacted Debug output. Real loopback exchange and invalid-origin, URL, header, body, bound and capability tests pass. WebSocket, certificate pinning, browser APIs, OS sandboxing and broader sidecar lifecycle remain open.
 - Process-provider increment (2026-09-19): Metis `e02ad62` adds `RUN_PROCESS`-witnessed direct execution with host-fixed executable and argument values, bounded stdout, private stderr draining, finite cleanup and real-child denial/redaction/deadline tests; Moirai PR #405 merge `8a8daa60` supplies the opt-in stderr pipe.
 - Scoped-network increment (2026-09-21): `ScopedHttpProvider` now exposes a bounded per-request deadline. Expiry drops the Moirai transport future, and a real delayed loopback server observes connection cleanup; focused tests also cover invalid deadlines, unlisted-origin denial and the NETWORK witness. Explicit cancellation is the same future-drop lifecycle and remains transport-owned; OS sandboxing, retries, TLS pinning and broader sidecar orchestration remain open.
+- Takeover reconciliation (2026-09-21): the stale network branch was resumed, its lock regenerated outside the Atlas overlay, and the series rebased onto Metis main `3830fe7`; the focused native/WASM gates and conformance guard are green.
 
 <a id="METIS-AXUM-001"></a>
 ## METIS-AXUM-001 — First-party bounded HTTP boundary [arch] [minor]
