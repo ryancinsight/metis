@@ -2397,18 +2397,24 @@ Capture both successful content and diagnostic states. Test custom GPU output
 against the software/analytical reference using the declared raster contract;
 device loss/recreation is a lifecycle test, not an opportunity for silent fallback.
 
-Native PNG evidence (2026-09-19): the [Windows asset gallery](manual/native.md#native-image-assets)
-shows all five discrete orientations, aspect-preserving letterboxes, exact
-straight-alpha compositing and a real truncated-image rejection. Its entire
-800×272 client crop matches the asserted framebuffer byte-for-byte at 96 DPI;
-the [capture record](manual/images/native-image.json) binds the source and
-executable digests. Decoder tests cover every fixture prefix and single-byte
-corruption, every compressed-stream prefix and split, invalid checksums,
-excess scanlines, trailing IDAT bytes, oversized dimensions/input, rejected
-metadata and scoped-path escape attempts. An independent Adam7 traversal
-reconstructs the same RGBA grid. This closes the admitted static PNG/native
-placement increment, not EXIF/JPEG, clinical orientation or the broader V06
-media/GPU acceptance.
+Native PNG/JPEG evidence (2026-09-20): the [Windows asset gallery](manual/native.md#native-image-assets)
+shows five discrete PNG transforms, eight JPEG/EXIF orientations, aspect-
+preserving letterboxes, exact straight-alpha compositing and actual truncated
+PNG/JPEG rejection. A visible Windows capture at 120 DPI contains an 800×580
+client inside an 818×627 window. All 464,000 client RGB pixels at offset (9,38)
+equal the asserted framebuffer BMP. The [capture record](manual/images/native-image.json)
+binds the executable, source, capture and expected-frame digests. Decoder tests cover every fixture prefix and
+single-byte corruption, every compressed-stream prefix and split, invalid
+checksums, excess scanlines, trailing IDAT bytes, oversized dimensions/input,
+rejected metadata and scoped-path escape attempts. Shared Consus JPEG
+entropy decoding and EXIF/TIFF traversal cover sequential/progressive scans,
+restart/refinement structure, both byte orders, all eight orientation values
+and bounded directory references, plus eight-bit lossless display admission.
+The capture utility enters a scoped per-monitor-aware thread context, including
+its worker threads, so geometry and GDI pixels use the same physical units.
+This closes the admitted static
+PNG/JPEG/native placement increment; clinical orientation, color management,
+heterogeneous-DPI and the broader V06 media/GPU acceptance remain separate.
 
 #### Browser WebGPU recovery — 2026-09-19
 

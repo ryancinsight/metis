@@ -26,6 +26,7 @@ from native_display import (
     enumerate_monitors,
     flush_window_queue,
     move_window_to_monitor,
+    physical_coordinates,
 )
 
 
@@ -234,6 +235,7 @@ def _load_site(site: pathlib.Path) -> Any:
     return importlib.import_module("metis")
 
 
+@physical_coordinates()
 def _window_for_processes(process_ids: set[int]) -> _WindowBounds:
     if sys.platform != "win32":
         raise RuntimeError("visible native capture requires Windows")
@@ -282,6 +284,7 @@ def _window_for_process(process_id: int) -> _WindowBounds:
     return _window_for_processes({process_id})
 
 
+@physical_coordinates()
 def _window_observation(handle: int) -> _WindowObservation:
     """Read outer/client geometry and the effective per-window DPI."""
     if sys.platform != "win32":
@@ -324,6 +327,7 @@ def _window_observation(handle: int) -> _WindowObservation:
     )
 
 
+@physical_coordinates()
 def _resize_window(handle: int, client_width: int, client_height: int) -> _WindowObservation:
     """Resize one visible HWND to a validated client size and read it back."""
     if sys.platform != "win32":
@@ -335,13 +339,16 @@ def _resize_window(handle: int, client_width: int, client_height: int) -> _Windo
     user32.GetWindowLongPtrW.restype = ctypes.c_ssize_t
     user32.GetMenu.argtypes = [ctypes.c_void_p]
     user32.GetMenu.restype = ctypes.c_void_p
-    user32.AdjustWindowRectEx.argtypes = [
+    user32.AdjustWindowRectExForDpi.argtypes = [
         ctypes.POINTER(_WindowRect),
         ctypes.c_uint32,
         ctypes.c_bool,
         ctypes.c_uint32,
+        ctypes.c_uint32,
     ]
-    user32.AdjustWindowRectEx.restype = ctypes.c_bool
+    user32.AdjustWindowRectExForDpi.restype = ctypes.c_bool
+    user32.GetDpiForWindow.argtypes = [ctypes.c_void_p]
+    user32.GetDpiForWindow.restype = ctypes.c_uint32
     user32.SetWindowPos.argtypes = [
         ctypes.c_void_p,
         ctypes.c_void_p,
@@ -363,11 +370,15 @@ def _resize_window(handle: int, client_width: int, client_height: int) -> _Windo
     style = int(user32.GetWindowLongPtrW(handle, -16)) & 0xFFFFFFFF
     extended_style = int(user32.GetWindowLongPtrW(handle, -20)) & 0xFFFFFFFF
     adjusted = _WindowRect(0, 0, client_width, client_height)
-    if not user32.AdjustWindowRectEx(
+    dpi = user32.GetDpiForWindow(handle)
+    if dpi == 0:
+        raise ctypes.WinError()
+    if not user32.AdjustWindowRectExForDpi(
         ctypes.byref(adjusted),
         style,
         bool(user32.GetMenu(handle)),
         extended_style,
+        dpi,
     ):
         raise ctypes.WinError()
     outer_width = adjusted.right - adjusted.left
@@ -487,6 +498,7 @@ def _wait_for_process_window(process: subprocess.Popen[bytes]) -> _WindowBounds:
     raise TimeoutError("native process window was not discoverable before the capture deadline")
 
 
+@physical_coordinates()
 def _capture_window(bounds: _WindowBounds) -> bytes:
     """Render one HWND through GDI; the caller pumps its owner thread."""
     if sys.platform != "win32":

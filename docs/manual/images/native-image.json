@@ -1,43 +1,55 @@
 {
-  "schema": 1,
+  "schema": 2,
   "demonstration": "V06",
-  "date": "2026-09-19",
+  "date": "2026-09-20",
   "source_sha256": {
-    "Cargo.toml": "9145e8770eb9c3b8baa498c66c708998aa06eb1f3ee48bd464f9219e6ef700f0",
-    "Cargo.lock": "1f9c555c0b8a9b1a30730be72539e86c25413cdd5631cea988d6d7b2e8d8a13e",
-    "crates/metis-ui-lang/Cargo.toml": "a4d202c8c3a257aa4a0a204d231e4b6046eac1825380af840160dd783a10d0f7",
-    "crates/metis-ui-lang/src/asset.rs": "bfcbcae0f7e494c8928e949ebb4585877a46b442bc0788c7cd200c3e58f0275b",
+    "Cargo.toml": "12073c94003e51b29dcf1d7cb5ac30d802379856eba942c9dd9c2361672dddeb",
+    "Cargo.lock": "c6a5ed669cf1b0958fe294054eec53e47de3d3d7b5fc80d94218b1eb72e70a16",
+    "crates/metis-ui-lang/Cargo.toml": "e6e081e37938c51818ef25adb7c0819ee68c92807c53e5c6846f9b341c14ad5c",
+    "crates/metis-ui-lang/src/asset.rs": "2d975f0b5438e0ee1ecbb6f524fbdfbd8a83134b2379027c30c6e0f7671803ce",
     "crates/metis-ui-lang/src/asset/compression.rs": "4d824e52435ddeca76e28bb7ce30d3cf9ec50ad3b9b78561161f3961dde45f4e",
-    "crates/metis-ui-lang/src/asset/tests.rs": "048fcb59dbf987857aae3382b7ecce327f0b9c8620853aa50f753499305cb764",
+    "crates/metis-ui-lang/src/asset/jpeg.rs": "b158ee38c3369b0867ccd6a733dfbbb52b51c26caa4aa445d428f2d941d26a0e",
+    "crates/metis-ui-lang/src/asset/orientation.rs": "450e17514a047332f57598f9b3f89177953740e759975703064c7c93a8789636",
+    "crates/metis-ui-lang/src/asset/tests.rs": "18ec8c0cc2436e9c92eff06285d05ab5d75de1fe062b6c254d613aa8ae3a4485",
+    "crates/metis-ui-lang/src/asset/tests/jpeg_cases.rs": "dbdb5572bbbed80d11a0ced4803bcaccc1f99b1e2f30933e10e205ccc30817a6",
     "crates/metis-ui-lang/src/image.rs": "5d52e2a1f2f39c1afae4c11edf306d7214f6b18d325d3b6413d23e6689df852c",
     "crates/metis-ui-lang/src/image/fit.rs": "be54b0f1887204c076d5fa269145376c9db90a4eaeccb67476631a393d4a368d",
     "crates/metis-ui-lang/src/image/transform.rs": "dd2ec45e87f55489d6a4edd86fc2f2a7a0805862a8d6937693d5532bd040a280",
     "crates/metis-platform/src/framebuffer.rs": "a23f660c4cb1b58f091185179b81c2b05aff6e9ecd441c2364c6a4107fc34705",
-    "examples/native_image.rs": "2f67efa0db9378ee0ac95bcfc73687629aa5bdd80eeb4b166ce5fed355278f0e",
-    "examples/assets/orientation.png": "545795a05db12aa90dda0f0663fe5e2808fc59647124b934f650777cb88abd3d"
+    "examples/native_image.rs": "bdf5e2f860d96a3d0939ddef63b5305c724d93a2660ab854bbc765e047f65c71",
+    "examples/support/jpeg_gallery.rs": "85131ec472699f72dfe7329854aaba58c4cc3140f9ed527871897fed774aaede",
+    "examples/assets/orientation.png": "545795a05db12aa90dda0f0663fe5e2808fc59647124b934f650777cb88abd3d",
+    "examples/assets/orientation.jpg": "042782bd0f6c9488e84bfb7e229e3ab594e0d7a75d5f838290034d8199d7ea2e",
+    "scripts/native_display.py": "2992025e5aa9726b1069ba6a8f762264cd0b641f9ba7dd0969a197d33f04fef8",
+    "scripts/python_native_capture.py": "612b51eab9f422249f41f0c4b863f66da3ec077ff15ef6358041a2a66cb69b77"
   },
-  "executable_sha256": "214224f61e24784ce55dda9009bf643fc4b4e7c54a9715b3442e6a9648774976",
+  "executable_sha256": "9d0d6357cdcfe382d4f045058af8cc2378ed3068cc9b448e43ba2c9f7c93113e",
   "image": "native-image.png",
-  "image_sha256": "1d7f902d713d43f28af8c2de168dd7fae6db130aaaae635df155c003057526da",
-  "fixture_attribution": "Repository-authored asymmetric 2x3 RGBA PNG; no third-party content",
-  "window": {
-    "width": 816,
-    "height": 311
+  "image_sha256": "56c6e8e4df5bb91bebe08b043529929bf1af20ffe5b83887b5d5947be4d4f791",
+  "fixture_attribution": "Repository-authored asymmetric 2x3 RGBA PNG and independently encoded 3x2 JPEG color grid; no third-party content",
+  "host_observation": {
+    "mode": "visible",
+    "capture": "Win32 PrintWindow",
+    "dpi": 120,
+    "window": {
+      "width": 818,
+      "height": 627
+    },
+    "client": {
+      "width": 800,
+      "height": 580,
+      "offset": [
+        9,
+        38
+      ]
+    },
+    "process_returncode": 0,
+    "client_rgb_comparison": {
+      "pixels": 464000,
+      "different_pixels": 0,
+      "expected_bmp_sha256": "d92cc43aaf495e493694818d3115c0c6c86e2c26293a6613bf85317e0c435a13"
+    }
   },
-  "client": {
-    "width": 800,
-    "height": 272,
-    "offset_x": 8,
-    "offset_y": 31
-  },
-  "dpi": 96,
-  "process_returncode": 0,
-  "expected_bmp_sha256": "68074540c99889c48c161f5f16377b1778afd19975711a5d71dc9ff51504da24",
-  "client_comparison": {
-    "pixels": 217600,
-    "different_pixels": 0,
-    "channels": "RGB; native window is opaque"
-  },
-  "inspection": "Five labeled discrete orientations, letterboxes, alpha blend and actual malformed rejection are visible",
-  "scope": "Admitted static PNG subset; no EXIF, JPEG, clinical orientation, color management or heterogeneous-DPI claim"
+  "inspection": "Five labeled PNG transforms, eight JPEG/EXIF orientations, aspect-preserving letterboxes and actual truncated PNG + JPEG rejection are visible",
+  "scope": "Admitted static PNG and 8-bit Huffman sequential/progressive/lossless JPEG; EXIF orientation normalized once; no clinical orientation, color management or heterogeneous-DPI claim"
 }

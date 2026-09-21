@@ -16,6 +16,10 @@ metis-platform = { workspace = true }
 [target.'cfg(not(target_arch = "wasm32"))'.dependencies]
 png.workspace = true
 flate2.workspace = true
+consus-raster.workspace = true
+
+[target.'cfg(not(target_arch = "wasm32"))'.dev-dependencies]
+jpeg-encoder.workspace = true
 
 [lints]
 workspace = true

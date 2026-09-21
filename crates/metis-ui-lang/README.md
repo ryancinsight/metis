@@ -103,16 +103,23 @@ the effective extents for quarter-turns and centers an aspect-preserving fit,
 leaving letterboxing untouched. Its integer fit loses less than one pixel on
 the non-limiting axis; affine mappings use explicit placement instead.
 
-Native hosts can call `RasterImage::decode_png` or capability-checked
-`RasterImage::load_png`. Admission bounds encoded input to 64 MiB, each edge to
-16,384 and output to 16,777,216 pixels. PNG CRCs, complete zlib termination,
-Adler checksum and exact scanline length are required. The static PNG subset
-admits IHDR/PLTE/tRNS/IDAT/IEND, depths up to eight bits, and Adam7; indexed
-images require complete palettes. EXIF, animation, color profiles and physical
-spacing metadata are rejected rather than ignored. Samples retain their
-straight RGBA values; this is not a color-management API. Clinical image
-decoding and orientation metadata remain RITK-owned. The [native gallery](../../docs/manual/native.md#native-image-assets)
-shows the Windows presentation and rejection state.
+Native hosts call `RasterImage::decode` or capability-checked
+`RasterImage::load`. The byte signature selects PNG or JPEG. Admission bounds
+encoded input to 64 MiB, each edge to 16,384 and output to 16,777,216 pixels.
+All eight EXIF orientations normalize into the returned raster exactly once,
+including width/height exchange; use identity placement to display its
+metadata-defined orientation. PNG retains straight alpha; JPEG is opaque.
+JPEG decoding and EXIF interpretation use `consus-raster`; Metis owns the
+capability boundary and conversion into display pixels. Eight-bit lossless
+JPEG is admitted; wider samples require an explicit display mapping.
+
+PNG requires CRCs, complete zlib termination, Adler checksum and exact scanline
+length. The static subset supports depths up to eight bits and Adam7; indexed
+images require complete palettes. The [owning ADR](../../docs/adr/0029-image-orientation.md)
+defines codec and metadata admission. Unsupported color profiles, animation
+and physical spacing fail closed; this is not a color-management API. Clinical
+image decoding and orientation remain RITK-owned. The [native gallery](../../docs/manual/native.md#native-image-assets)
+shows alpha, aspect, JPEG/EXIF orientation and rejection states on Windows.
 
 ```rust
 use metis_platform::{Color, Framebuffer, Rect};

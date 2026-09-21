@@ -2,6 +2,8 @@
 
 #[path = "support/framebuffer.rs"]
 mod framebuffer_artifacts;
+#[path = "support/jpeg_gallery.rs"]
+mod jpeg_gallery;
 
 use metis_platform::{Color, Framebuffer, Rect, draw_rect_outline, draw_text, fill_rect};
 use metis_ui_lang::asset::AssetErrorKind;
@@ -10,7 +12,7 @@ use std::error::Error;
 use std::io;
 
 const FRAME_WIDTH: u32 = 800;
-const FRAME_HEIGHT: u32 = 272;
+const FRAME_HEIGHT: u32 = 580;
 const PANEL_WIDTH: i32 = 140;
 const PANEL_HEIGHT: i32 = 156;
 const PANEL_Y: i32 = 76;
@@ -83,8 +85,8 @@ const CASES: [(&str, ImageTransform, [Color; 4]); 5] = [
     ),
 ];
 
-fn render_frame() -> Result<Framebuffer, Box<dyn Error>> {
-    let image = RasterImage::decode_png(FIXTURE_PNG)?;
+fn render_png_gallery(frame: &mut Framebuffer) -> Result<(), Box<dyn Error>> {
+    let image = RasterImage::decode(FIXTURE_PNG)?;
     assert_eq!((image.width(), image.height()), (2, 3));
     assert_eq!(image.pixels(), FIXTURE_PIXELS);
     let truncated_length = FIXTURE_PNG
@@ -94,15 +96,13 @@ fn render_frame() -> Result<Framebuffer, Box<dyn Error>> {
     let truncated = FIXTURE_PNG
         .get(..truncated_length)
         .ok_or_else(|| io::Error::other("truncated fixture range is outside its bytes"))?;
-    let Err(rejection) = RasterImage::decode_png(truncated) else {
+    let Err(rejection) = RasterImage::decode(truncated) else {
         return Err(io::Error::other("truncated PNG was admitted").into());
     };
     assert_eq!(rejection.kind(), AssetErrorKind::Malformed);
 
-    let mut frame = Framebuffer::new(FRAME_WIDTH, FRAME_HEIGHT)?;
-    frame.clear(PAGE_BACKGROUND);
     draw_text(
-        &mut frame,
+        frame,
         18,
         16,
         "NATIVE PNG: ASPECT, ALPHA, ORIENTATION",
@@ -113,9 +113,9 @@ fn render_frame() -> Result<Framebuffer, Box<dyn Error>> {
     for (index, (label, transform, expected_corners)) in CASES.into_iter().enumerate() {
         let index = i32::try_from(index)?;
         let bounds = Rect::new(18 + index * 156, PANEL_Y, PANEL_WIDTH, PANEL_HEIGHT);
-        draw_text(&mut frame, bounds.x, 52, label, TEXT, 1);
+        draw_text(frame, bounds.x, 52, label, TEXT, 1);
         draw_rect_outline(
-            &mut frame,
+            frame,
             Rect::new(
                 bounds.x - 1,
                 bounds.y - 1,
@@ -125,7 +125,7 @@ fn render_frame() -> Result<Framebuffer, Box<dyn Error>> {
             1,
             OUTLINE,
         );
-        fill_rect(&mut frame, bounds, PANEL_BACKGROUND);
+        fill_rect(frame, bounds, PANEL_BACKGROUND);
 
         let placement = ImagePlacement::contain(image.clone(), bounds, transform)?;
         let expected_destination = match transform {
@@ -136,7 +136,7 @@ fn render_frame() -> Result<Framebuffer, Box<dyn Error>> {
         };
         assert_eq!(placement.destination(), expected_destination);
         assert_eq!(placement.transform(), transform);
-        placement.render_to(&mut frame);
+        placement.render_to(frame);
 
         let destination = placement.destination();
         let samples = [
@@ -158,11 +158,23 @@ fn render_frame() -> Result<Framebuffer, Box<dyn Error>> {
         };
         assert_eq!(frame.get_pixel(letterbox.0, letterbox.1), PANEL_BACKGROUND);
     }
+    Ok(())
+}
+
+fn render_jpeg_gallery(frame: &mut Framebuffer) -> Result<(), Box<dyn Error>> {
+    jpeg_gallery::render(frame)
+}
+
+fn render_frame() -> Result<Framebuffer, Box<dyn Error>> {
+    let mut frame = Framebuffer::new(FRAME_WIDTH, FRAME_HEIGHT)?;
+    frame.clear(PAGE_BACKGROUND);
+    render_png_gallery(&mut frame)?;
+    render_jpeg_gallery(&mut frame)?;
     draw_text(
         &mut frame,
         18,
-        246,
-        "TRUNCATED PNG: REJECTED (MALFORMED)",
+        558,
+        "TRUNCATED PNG + JPEG: REJECTED (MALFORMED)",
         Color::rgb(74, 222, 128),
         1,
     );

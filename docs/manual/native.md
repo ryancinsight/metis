@@ -627,22 +627,30 @@ assistive-technology or broad OS-permission evidence.
 
 ## Native image assets
 
-The Windows `native_image` example decodes the repository's asymmetric 2×3
-RGBA PNG and presents five discrete orientations through `NativeApplication`.
-The fixture is authored in this repository, carries no external content, and
-includes a half-transparent magenta sample. The final row reports the result
-of an actual truncated-image decode.
+The Windows `native_image` example decodes a repository-authored asymmetric
+RGBA PNG and a JPEG color grid. The PNG row exercises five explicit display
+transforms and a half-transparent magenta sample. The JPEG rows exercise all
+eight EXIF orientation values, including transpose and transverse, through
+the decoder. Each resulting raster is displayed with identity placement:
+metadata orientation has already been applied once. Rejection labels report
+actual malformed-input decode results.
 
-![Native PNG alpha, aspect and orientation gallery](images/native-image.png)
+![Native PNG alpha and JPEG EXIF orientation gallery](images/native-image.png)
 
-The [capture record](images/native-image.json) records the executable and
-source digests, geometry and exact comparison. At 96 DPI, all 217,600 client
-pixels match the Rust-asserted 800×272 framebuffer. The original and mirrored
-images occupy 104×156 pixels inside 140×156 bounds; quarter-turns occupy
-140×93 pixels. The remaining area is letterboxed. RGBA `(220,55,210,128)`
-over RGB `(30,41,59)` produces exactly RGB `(125,48,135)` under the shared
-integer source-over rule. This is one Windows host observation, not a
-color-managed display or heterogeneous-DPI claim.
+The [capture record](images/native-image.json) binds the executable and source
+digests to a visible Windows capture at 120 DPI. The committed PNG includes
+the 818×627 window and its 800×580 client at offset (9,38). All 464,000 client
+RGB pixels equal the example's independently read-back framebuffer BMP. The
+PNG original and mirrored images occupy 104×156 pixels inside 140×156 bounds;
+quarter-turns occupy 140×93 pixels. The remaining area is letterboxed. RGBA
+`(220,55,210,128)` over RGB `(30,41,59)` produces exactly RGB `(125,48,135)`
+under the shared integer source-over rule. JPEG produces opaque pixels. Six
+constant-block samples are checked against an independent Pillow decode with
+a one-sample bound derived from the decoder's fixed-point color coefficients.
+Orientation and aspect assertions then compare those decoded samples in their
+specified positions, without treating lossy JPEG as an exact RGB encoder. The
+capture verifies Windows presentation on this host, including the right and
+bottom edges. It does not establish heterogeneous-monitor DPI transitions.
 
 Build and run the demonstration from a standalone Metis checkout:
 
@@ -652,19 +660,29 @@ cargo run --locked --example native_image -- --visible
 ```
 
 The default is a bounded hidden-window smoke. Visible mode closes on a window
-close event or its 30-second deadline. The existing
+close event or its 20-second deadline. The existing
 `scripts/python_native_capture.py --command` runner captures the built example
 with `--argument=--visible`; the configured gate runs its hidden mode under a
 60-second process budget. Atlas checkouts use the existing
 `scripts/cargo_overlay.py` standalone Cargo context and shared target directory.
 
-`RasterImage::load_png` requires a `READ_FILE` capability and a relative path
-below a `ScopedFileProvider` root. Admission rejects absolute paths, parent
+`RasterImage::load` requires a `READ_FILE` capability and a relative path below
+a `ScopedFileProvider` root. Admission rejects absolute paths, parent
 components, alternate streams and the provider's link/non-regular-file cases.
-`decode_png` bounds encoded input to 64 MiB, each edge to 16,384, pixels to
-16,777,216 and decoder workspace to 64 MiB. CRC, Adler checksum, complete
-compressed-stream consumption and exact scanline length are checked. The
-static subset supports grayscale, RGB, RGBA and complete palettes up to
-eight-bit samples, including Adam7. EXIF, animation, ICC profiles, physical
-spacing and other metadata fail closed. Orientation is explicit through
-`ImagePlacement::contain`; JPEG and clinical orientation remain separate work.
+`RasterImage::decode` selects PNG or JPEG from bytes, not the filename. Encoded
+input is bounded to 64 MiB, each edge to 16,384 and output to 16,777,216 pixels.
+The [admission ADR](../adr/0029-image-orientation.md) specifies the format and
+workspace budgets, metadata policy and independent orientation oracle.
+
+PNG retains straight alpha and supports grayscale, RGB, RGBA and complete
+palettes up to eight-bit samples, including Adam7. CRC, Adler checksum,
+complete compressed-stream consumption and exact scanline length are checked.
+JPEG uses the shared Consus raster decoder for sequential, progressive and
+eight-bit lossless samples. Wider lossless medical samples remain available to
+RITK; this display API rejects them rather than choosing a window or truncating.
+JPEG/PNG EXIF orientation values 1–8 normalize into the returned dimensions
+and pixels; malformed metadata fails. Unsupported color profiles, animation
+and physical spacing fail closed. Clinical orientation remains RITK-owned.
+
+The shared JPEG encoder includes an IJG-derived discrete cosine transform:
+this software is based in part on the work of the Independent JPEG Group.

@@ -27,6 +27,11 @@ allow = [
     "Zlib",
 ]
 
+# jpeg-encoder carries the IJG-derived DCT; attribution is in the native manual.
+[[licenses.exceptions]]
+name = "jpeg-encoder"
+allow = ["IJG"]
+
 [bans]
 multiple-versions = "warn"
 wildcards = "warn"
@@ -36,6 +41,7 @@ unknown-registry = "deny"
 unknown-git = "deny"
 allow-registry = ["https://github.com/rust-lang/crates.io-index"]
 allow-git = [
+    "https://github.com/ryancinsight/consus.git",
     "https://github.com/ryancinsight/iris",
     "https://github.com/ryancinsight/melinoe.git",
     "https://github.com/ryancinsight/Mnemosyne.git",

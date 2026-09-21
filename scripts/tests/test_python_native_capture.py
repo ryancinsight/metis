@@ -3,6 +3,8 @@
 from __future__ import annotations
 
 import hashlib
+import ctypes
+from concurrent.futures import ThreadPoolExecutor
 import pathlib
 import struct
 import sys
@@ -13,6 +15,7 @@ from unittest import mock
 
 sys.path.insert(0, str(pathlib.Path(__file__).resolve().parents[1]))
 import python_native_capture as capture
+import native_display
 from native_display import MonitorBounds, display_scale_milli
 
 
@@ -89,6 +92,42 @@ def encoded_png(width: int, rows: list[tuple[int, bytes]]) -> bytes:
 
 
 class NativeCaptureTests(unittest.TestCase):
+    def test_physical_coordinates_restore_pointer_context_on_each_thread(self) -> None:
+        previous = 0x123456789ABC
+        setter = mock.Mock(side_effect=[previous, -4, previous, -4])
+        with mock.patch.object(native_display.sys, "platform", "win32"), mock.patch.object(
+            native_display.ctypes, "windll", create=True
+        ) as library:
+            library.user32.SetThreadDpiAwarenessContext = setter
+            with native_display.physical_coordinates():
+                self.assertEqual(setter.call_args.args[0].value, ctypes.c_void_p(-4).value)
+            self.assertEqual(setter.call_args.args, (previous,))
+
+            def failing_probe():
+                with native_display.physical_coordinates():
+                    raise ValueError("probe failed")
+
+            with ThreadPoolExecutor(max_workers=1) as executor:
+                with self.assertRaisesRegex(ValueError, "probe failed"):
+                    executor.submit(failing_probe).result(timeout=5)
+            self.assertEqual(setter.call_count, 4)
+            self.assertEqual(setter.call_args.args, (previous,))
+            self.assertEqual(setter.argtypes, [ctypes.c_void_p])
+            self.assertIs(setter.restype, ctypes.c_void_p)
+
+    def test_physical_coordinates_reject_failed_context_entry(self) -> None:
+        with mock.patch.object(native_display.sys, "platform", "win32"), mock.patch.object(
+            native_display.ctypes, "windll", create=True
+        ) as library, mock.patch.object(
+            native_display.ctypes, "WinError", return_value=OSError("DPI context"), create=True
+        ):
+            setter = library.user32.SetThreadDpiAwarenessContext
+            setter.return_value = None
+            with self.assertRaisesRegex(OSError, "DPI context"):
+                with native_display.physical_coordinates():
+                    self.fail("failed context must not execute the probe")
+            self.assertEqual(setter.call_count, 1)
+
     def test_read_png_round_trip_preserves_rgba_and_source_digest(self) -> None:
         bounds = capture._WindowBounds(handle=0, width=2, height=2)
         source_bgra = bytes(

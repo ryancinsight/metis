@@ -6,32 +6,73 @@ Date: 2026-09-12
 
 Driver: [METIS-GRAPHICS-001](../../backlog.md#METIS-GRAPHICS-001)
 
-Revision 2026-09-19: [METIS-ASSETS-001](../../backlog.md#METIS-ASSETS-001)
-adds bounded native PNG admission and orientation-aware contain placement.
-The native loader composes `ScopedFileProvider` with the pure-Rust `png`
-decoder. Atlas provider inspection found no format-neutral bounded decoder:
-RITK's path-based medical readers convert into medical image storage and do
-not preserve this RGBA contract. Importing that domain into the host would
-violate the dependency direction. The registry dependency is confined to
-native `metis-ui-lang`; browser decoding remains browser-owned.
+Revision 2026-09-20: [METIS-ASSETS-001](../../backlog.md#METIS-ASSETS-001)
+extends bounded native PNG admission to JPEG and EXIF orientation. The byte
+boundary is `RasterImage::decode`; capability-checked file admission is
+`RasterImage::load`. These replace the PNG-specific entry points.
+Callers migrate `decode_png` to `decode` and `load_png` to `load`; argument and
+result types are unchanged. `cargo-semver-checks` confirms these removals require
+a major API change. Release versioning remains a separate authorized action.
+Browser decoding remains browser-owned. RITK already implements sequential and lossless
+JPEG primitives; its file readers also use an independent image decoder.
+The shared JPEG and EXIF implementation moves to `consus-raster` under
+[Consus ADR 0004](../../../consus/docs/adr/0004-raster-codecs.md).
+This avoids a RITK-to-Metis-to-RITK repository cycle and preserves one format
+provider. Metis converts decoded integer samples into its RGBA contract;
+RITK retains clinical interpretation. The migration must pass both consumer
+suites before the duplicate implementations are considered removed.
+
+Encoded EXIF orientation is normalized once into immutable raster storage.
+The returned width and height describe the oriented pixel grid; presentation
+therefore uses identity unless the caller requests an additional transform.
+This avoids accidentally omitting metadata or applying it twice. No EXIF
+camera metadata enters the framebuffer or platform host.
+
+The independent orientation oracle uses the six row-major cells `A B / C D /
+E F`. [CIPA DC-X010-2017, Table 3](https://cipa.jp/std/documents/e/DC-X010-2017.pdf)
+defines the corresponding row/column origins:
+
+| EXIF value | Returned rows | Dimensions |
+| --- | --- | --- |
+| 1 | AB / CD / EF | 2 by 3 |
+| 2 | BA / DC / FE | 2 by 3 |
+| 3 | FE / DC / BA | 2 by 3 |
+| 4 | EF / CD / AB | 2 by 3 |
+| 5 | ACE / BDF | 3 by 2 |
+| 6 | ECA / FDB | 3 by 2 |
+| 7 | FDB / ECA | 3 by 2 |
+| 8 | BDF / ACE | 3 by 2 |
 
 PNG admission checks the complete chunk envelope before decompression, then
 uses strict CRC and Adler checks and finishes through IEND. `png` 0.18.1's
-reader deliberately discards remaining compressed bytes after producing its
-pixel extent, so a bounded `flate2` pass additionally requires explicit zlib
-stream end, full compressed-input consumption and the exact scanline byte
-count. The Adam7 extent sums the seven nonempty pass extents, each with its
-filter bytes, as specified in [PNG 3 section 8.1](https://www.w3.org/TR/png-3/#8InterlaceMethods).
-Every compressed prefix, checksum corruption, excess output and trailing
-compressed byte is rejected by executable regression fixtures. Encoded bytes,
-dimensions, pixels and decoder/output buffers are bounded. Unsupported
-metadata, including EXIF, animation, ICC profiles and physical pixel spacing,
-fails closed rather than silently changing orientation, colors or aspect.
-Samples are straight RGBA, without color-management conversion. The initial
-admitted subset is static PNG with IHDR/PLTE/tRNS/IDAT/IEND chunks; indexed
-images require all palette entries, preventing the codec's invalid-index
-black substitution. JPEG and
-metadata-bearing images require a separately verified contract.
+reader discards remaining compressed bytes after producing its pixel extent,
+so a bounded `flate2` pass additionally requires explicit zlib stream end,
+full compressed-input consumption and the exact scanline byte count. The
+Adam7 extent sums the seven nonempty pass extents, including filter bytes,
+as specified in [PNG 3 section 8.1](https://www.w3.org/TR/png-3/#8InterlaceMethods).
+Static PNG supports samples up to eight bits and complete indexed palettes;
+EXIF uses the same orientation interpretation as JPEG. Straight RGBA samples
+retain alpha. Color management and physical pixel spacing are separate
+contracts; unsupported color profiles, animation and spacing fail closed.
+
+JPEG reconstruction and strict entropy admission belong to the shared provider.
+Codec review found that terminal-marker checks alone do not establish complete
+scans: permissive decoders can fill missing entropy bits. The shared parser follows
+[ITU-T T.81](https://www.w3.org/Graphics/JPEG/itu-t81.pdf), Annex E for scan and
+restart structure, Annex F for sequential Huffman coding, and Annex G for
+progressive coding. It checks the declared scan's coded-block count, amplitude
+and refinement bits, restart order and scan progression during reconstruction.
+JPEG has no checksum: changed bytes that form another valid JPEG cannot be
+classified as corruption without an external integrity digest.
+The premature-marker corpus remains a provider regression oracle. Metis contains
+no separate entropy validator, IDCT or JPEG color conversion after migration.
+
+EXIF parsing checks the TIFF byte order, magic, field types/counts, external
+value extents and directory references. Traversal uses a fixed sixteen-directory
+budget and rejects cycles. Camera metadata is not exposed; only the primary
+image's orientation changes the returned pixels. Both byte orders and all
+eight orientation values have exact asymmetric-grid tests. This is bounded
+image admission, not a general EXIF metadata editor or TIFF image decoder.
 
 `ImagePlacement::contain` fits the full image after its discrete orientation,
 centers it in positive bounds and leaves letterboxing untouched. Integer
