@@ -555,11 +555,15 @@ rejects a stale fixture rather than silently accepting the dependency change.
 
 ## Linux archive lifecycle implementation — 2026-09-21
 
-Commit `022aae9` adds the Linux USTAR installation boundary. Locked
-`metis-cli` nextest passes 36/36, strict all-target Clippy passes, formatting
-and diff checks pass, and the dependency-free Python suite passes 330/330 with
-one intentional skip. Tests cover prefix installation, desktop path rewriting,
-pre-existing conflicts, user-file preservation and refusal to remove a
+Commit `022aae9` adds the Linux USTAR installation boundary. The full verifier
+at `9b198c0` passes all stages, including the locked `metis-cli` nextest run
+(36/36), strict all-target Clippy, release tests, docs, native capture, image
+and visual checks; its expected negative capture records `PermissionDenied`.
+The follow-up focused `metis-cli` nextest run passes 37/37 after adding desktop
+icon-rewrite and traversal-rejection regressions. Formatting and diff checks
+pass, and the dependency-free Python suite passes 330/330 with one intentional
+skip. Tests cover prefix installation, desktop path rewriting, pre-existing
+conflicts, traversal rejection, user-file preservation and refusal to remove a
 tampered package file. The implementation validates USTAR checksums, bounded
 payloads, relative paths and schema-versioned ownership digests. Native Linux
 launch, permission and removal captures remain open under

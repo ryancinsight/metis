@@ -28,6 +28,14 @@ fn install_and_remove_preserve_user_files() {
         "Exec={}",
         desktop_word(&installed_executable.to_string_lossy())
     )));
+    let installed_icon = installed_prefix
+        .join("share")
+        .join("org.metis.demo")
+        .join("icon.svg");
+    assert!(desktop.contains(&format!(
+        "Icon={}",
+        desktop_icon(&installed_icon.to_string_lossy())
+    )));
     fs::write(prefix.join("user-note.txt"), b"user").expect("user note");
     if cfg!(target_os = "linux") {
         uninstall("org.metis.demo", &prefix).expect("remove");
@@ -97,6 +105,37 @@ fn uninstall_refuses_modified_package_files() {
     fs::remove_dir_all(root).expect("cleanup");
 }
 
+#[test]
+fn install_rejects_traversal_before_writing() {
+    let root = temp_root();
+    let prefix = root.join("prefix");
+    fs::create_dir(&prefix).expect("prefix");
+    let archive = root.join("package.tar");
+    let mut bytes = Vec::new();
+    tar_entry(&mut bytes, "usr/bin/../escape", 0o755, b"escape");
+    bytes.extend([0_u8; BLOCK_BYTES * 2]);
+    fs::write(&archive, bytes).expect("archive");
+    let result = if cfg!(target_os = "linux") {
+        run(&archive, &prefix)
+    } else {
+        install_archive(&archive, &prefix)
+    };
+    let error = result.expect_err("traversal entry must be rejected");
+    assert!(
+        error
+            .to_string()
+            .contains("payload path contains a reserved or ambiguous component")
+    );
+    assert!(!root.join("escape").exists());
+    assert!(
+        fs::read_dir(&prefix)
+            .expect("prefix entries")
+            .next()
+            .is_none()
+    );
+    fs::remove_dir_all(root).expect("cleanup");
+}
+
 fn temp_root() -> PathBuf {
     let root = std::env::temp_dir().join(format!(
         "metis-install-{}-{}",
@@ -118,9 +157,15 @@ fn fixture_archive() -> Vec<u8> {
     );
     tar_entry(
         &mut bytes,
+        "usr/share/org.metis.demo/icon.svg",
+        0o644,
+        b"<svg></svg>",
+    );
+    tar_entry(
+        &mut bytes,
         "usr/share/applications/org.metis.demo.desktop",
         0o644,
-        b"[Desktop Entry]\nType=Application\nName=Demo\nExec=/usr/bin/metis-app \"%f\"\nTerminal=false\nCategories=Utility;\n",
+        b"[Desktop Entry]\nType=Application\nName=Demo\nExec=/usr/bin/metis-app \"%f\"\nIcon=/usr/share/org.metis.demo/icon.svg\nTerminal=false\nCategories=Utility;\n",
     );
     bytes.extend([0_u8; BLOCK_BYTES * 2]);
     bytes
