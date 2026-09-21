@@ -394,7 +394,7 @@ an owner. “Unsupported” cannot replace delivery of a required mobile/native 
 
 <a id="METIS-A11Y-001"></a>
 ## METIS-A11Y-001 — Accessible application interaction [minor]
-- Status: in-progress; priority: P1; owner: Metis host/UI; integrator: root; last-update: 2026-09-20; dependencies: METIS-INPUT-001; risk: inaccessible controls
+- Status: in-progress; priority: P1; owner: Metis host/UI; integrator: root; last-update: 2026-09-21; dependencies: METIS-INPUT-001; risk: inaccessible controls
 - Scope: semantic DOM roles/names/states, focus/action mapping, announcements, reduced motion/high contrast/zoom; OS accessibility bridge for any custom UI path.
 - Acceptance: semantic tree identity/actions and keyboard-only completion pass; actual supported screen readers traverse and operate the application; document platform limits instead of claiming certification from tree presence.
 - Demonstration: [V03](docs/VERIFICATION.md#V03), readable focus/contrast/zoom captures plus semantic/action and assistive-technology evidence.
@@ -416,6 +416,8 @@ an owner. “Unsupported” cannot replace delivery of a required mobile/native 
 - Completed increment (2026-09-20): effective hidden state now propagates through semantic descendants, and a descendant `aria-hidden="false"` cannot restore focusability or typed actions. The semantic regression covers HTML and ARIA ancestor hiding while retaining a visible sibling action surface.
 - Completed increment (2026-09-21): the Windows native consumer projects the validated frontend tree into Moirai's bounded AccessKit provider before showing the HWND, replaces the tree on state updates, retains it across close/reopen, and routes focus and submit activation through typed `WindowEvent::AccessibilityAction` values. Moirai PR [#410](https://github.com/ryancinsight/Moirai/pull/410) merged the provider at `bc6d100`; PR [#411](https://github.com/ryancinsight/Moirai/pull/411) aligned WebView2 with Windows 0.62 at `88f837e`. Focused Metis native tests cover the bridge lifecycle and authored submit focus; this does not claim screen-reader speech or host-preference acceptance.
 - Current increment (2026-09-21): the authored patient field now has a stable `label-patient` textbox identity and bounded semantic value. The native AccessKit action route accepts focus and `SetValue`, rejects oversized or control-bearing replacements before state mutation, and repaints the same frontend surface used by keyboard input. Focused tests cover accepted and invalid value requests; screen-reader speech, host preference enablement and non-Windows bridges remain open.
+- Lease: root `scripts/python_native_accessibility.py` `scripts/tests/test_python_native_accessibility.py` `docs/manual/native.md` `docs/VERIFICATION.md` `backlog.md` 2026-09-21T08:50:00-04:00.
+- Current increment: exercise the production Windows UI Automation tree and `ValuePattern.SetValue`/`InvokePattern` actions against the visible `metis-app` window, with bounded PNG captures and a fail-closed JSON trace; no screen-reader speech claim is inferred.
 - Residuals: supported screen-reader speech, host-specific forced-colors/reduced-motion acceptance and installed-client traversal remain open.
 
 <a id="METIS-LAYOUT-001"></a>
