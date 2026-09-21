@@ -2,7 +2,7 @@
 
 Métis uses one application manifest for Cargo targets, launch arguments and
 resources. The CLI emits a portable `app/` directory, an inventory of SHA-256
-hashes and, with `package`, a Windows Installer package. Application versions
+hashes and, with `package`, a package for the matching host. Application versions
 are independent of the Métis framework version.
 
 ## Configure and build
@@ -26,9 +26,20 @@ metis package metis.json output/installer
 
 `metis build` is host-native and stages a portable application on Windows,
 macOS and Linux. The executable suffix and Cargo artifact path follow the host
-target. `metis package` adds the per-user MSI and therefore remains restricted
-to an x86-64 Windows host; macOS bundles/DMG and Linux package formats are
-tracked separately.
+target. `metis package` emits the Windows x64 MSI on Windows, a `.app` bundle
+on macOS, or a USTAR `.tar` archive on Linux. The package command must run on
+the target host; cross-compilation alone does not provide native installation
+evidence.
+
+The non-Windows package formats use the same staged inventory as the portable
+output. A macOS package contains `<id>.app/Contents/MacOS`,
+`Contents/Resources` and a generated `Contents/Info.plist`. A Linux package is
+an uncompressed USTAR archive with binaries under `usr/bin`, resources under
+`usr/share/<id>` and a generated desktop entry under
+`usr/share/applications`. `inventory.json` records the package format, byte
+count, SHA-256 digest and each archived or bundled file. The generated metadata
+does not add signing, notarization, a package-manager registration or an update
+channel.
 
 Here `metis` denotes the built executable in the configured Cargo target directory;
 put that directory on PATH or use its absolute path. Create `output` first.
@@ -132,6 +143,8 @@ behavior in its own entry executable. Packaging does not create a GUI host.
 
 ## Install and remove
 
+### Windows MSI
+
 Open the generated `.msi` using Windows Installer. It installs for the current
 user under Local AppData, registers an uninstall entry and creates a Start Menu
 shortcut. It does not request a machine-wide installation. The manifest names
@@ -152,11 +165,34 @@ package with the same upgrade GUID rejects while the existing product is
 installed, even at the same version: uninstall first. Automatic updates,
 migration and rollback across releases are not implemented.
 
+### macOS application bundle
+
+Run `metis package metis.json output/package` on macOS, then copy the generated
+`<id>.app` to a user-owned Applications directory and launch its
+`Contents/MacOS/<entry>` executable. Remove the copied bundle to uninstall it.
+The current package writer does not notarize, sign or register a launch service;
+actual macOS host installation, launch, permission and removal captures remain
+open under `METIS-DISTRIBUTION-003`.
+
+### Linux USTAR archive
+
+Run `metis package metis.json output/package` on Linux and extract the generated
+`<id>.tar` into a user-owned prefix. The archive's `usr/bin` executable and
+`usr/share/applications/<id>.desktop` entry are the integration points for a
+launcher; a user may copy the desktop file into the corresponding user
+application directory. Remove the extracted prefix and desktop entry to
+uninstall it. The current writer does not create a distribution-specific package
+database, sign the archive or install a system service; actual X11/Wayland host
+installation, launch, permission and removal captures remain open under
+`METIS-DISTRIBUTION-003`.
+
 ## Inspect the result
 
 `inventory.json` contains application configuration, executable/resource paths,
-byte counts, SHA-256 values and the installer ProductCode/hash. These identify
-the bytes tested; hashes do not authenticate a publisher. Product and package
+byte counts, SHA-256 values and the host package record when `package` is used.
+The Windows record includes ProductCode/hash; macOS/Linux records include the
+bundle/archive file, byte count, digest and per-file paths. These identify the
+bytes tested; hashes do not authenticate a publisher. Product and package
 GUIDs are fresh while component GUIDs are stable per application resource, so
 repeated package builds do not produce identical MSI bytes.
 
@@ -288,7 +324,8 @@ The [verification contract](../VERIFICATION.md#V10) distinguishes installation,
 rendering and host interaction evidence. Executable and installer creation does
 not establish lower memory usage or stronger OS isolation than Tauri.
 
-The first package backend is Windows x64 MSI. macOS bundles/DMG, Linux packages,
-other Windows architectures, signing, authenticated updates and browser deployment
-remain separate target work. This command does not sign, publish or release an
-application.
+Windows x64 MSI remains the only package with a committed install/run/uninstall
+workflow. The macOS bundle and Linux archive emitters are present, while native
+host lifecycle evidence, other Windows architectures, signing, authenticated
+updates and browser deployment remain separate target work. This command does
+not sign, publish or release an application.

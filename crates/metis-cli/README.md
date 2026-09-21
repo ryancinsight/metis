@@ -17,7 +17,8 @@ metis --help
 `init` creates a dependency-free Cargo workspace, a complete locked manifest and
 a runnable starter entry without overwriting an existing directory. `build`
 stages a host-native portable application on Windows, macOS or Linux; `package`
-adds the Windows x64 MSI path. `dev` uses that manifest, runs the declared
+adds the matching host package: Windows x64 MSI, macOS `.app` bundle or Linux
+USTAR archive. `dev` uses that manifest, runs the declared
 entry through Moirai and, on Windows, reloads
 after real source or resource bytes change. Watch mode reports readiness, idle
 and reload events; a failed Cargo run is reported and never launches a previous
