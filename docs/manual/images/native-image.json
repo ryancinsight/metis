@@ -23,7 +23,7 @@
     "scripts/native_display.py": "2992025e5aa9726b1069ba6a8f762264cd0b641f9ba7dd0969a197d33f04fef8",
     "scripts/python_native_capture.py": "612b51eab9f422249f41f0c4b863f66da3ec077ff15ef6358041a2a66cb69b77"
   },
-  "executable_sha256": "9d0d6357cdcfe382d4f045058af8cc2378ed3068cc9b448e43ba2c9f7c93113e",
+  "executable_sha256": "b351ab08417caccbd69464f878126163653cac7232cfd531590909c66ecbe89a",
   "image": "native-image.png",
   "image_sha256": "56c6e8e4df5bb91bebe08b043529929bf1af20ffe5b83887b5d5947be4d4f791",
   "fixture_attribution": "Repository-authored asymmetric 2x3 RGBA PNG and independently encoded 3x2 JPEG color grid; no third-party content",
