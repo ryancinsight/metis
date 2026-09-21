@@ -141,7 +141,10 @@ execute(result => {
     released_locks: releasedLocks,
     revoked_urls: revokedUrls
   };
-  process.stdout.write(JSON.stringify(result));
+  // Close the pipe before ending the process.  Windows runners can retain a
+  // diagnostic subprocess after the promise chain has completed when stdout
+  // stays open, making the Python timeout observe a false cleanup hang.
+  process.stdout.end(JSON.stringify(result), () => process.exit(0));
 });
 """
 
