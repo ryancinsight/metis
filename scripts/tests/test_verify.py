@@ -259,7 +259,7 @@ class WorkflowContractTests(unittest.TestCase):
 
     def test_draft_pull_requests_and_unsupported_hosts_are_excluded(self):
         draft_guard = "if: github.event_name != 'pull_request' || github.event.pull_request.draft == false"
-        self.assertEqual(self.source.count(draft_guard), 3)
+        self.assertEqual(self.source.count(draft_guard), 4)
         self.assertIn("if: github.event_name != 'schedule' && (github.event_name != 'pull_request'", self.source)
         self.assertIn("github.event_name == 'pull_request' && github.event.pull_request.draft == false", self.source)
         self.assertNotIn("pull_request_target", self.source)
