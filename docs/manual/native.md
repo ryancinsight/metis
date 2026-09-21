@@ -291,9 +291,9 @@ tick. The trace includes the two presentation dimensions, deterministic pixel
 checksums and representative ARGB values. The example validates the event and
 presentation sequence before writing, then reads the trace back byte-for-byte.
 
-The paired [`native-host-frame.svg`](images/native-host-frame.svg) and
-[`native-host-frame.bmp`](images/native-host-frame.bmp) files are generated
-from the final framebuffer supplied to the real host. The example decodes the
+The example generates a transient `native-host-frame.bmp`; the repository
+retains the exact SVG representation of the final framebuffer supplied to the
+real host. The example decodes the
 written bitmap and compares every row-major ARGB pixel to that presented
 frame; the SVG is also read back byte-for-byte. The image contains the
 software framebuffer only, so operating-system chrome cannot obscure the
