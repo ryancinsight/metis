@@ -48,6 +48,9 @@ fn run() -> Result<(), Box<dyn std::error::Error>> {
             theme,
             inputs,
         } => frontend::run_webview_theme_capture(&output, theme, inputs),
+        Invocation::SemanticCapture { output, inputs } => {
+            frontend::run_semantic_capture(&output, inputs)
+        }
         Invocation::BrowserService {
             origin,
             port,

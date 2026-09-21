@@ -2312,6 +2312,23 @@ unresolved references, malformed state values and oversized semantic text.
 This is host-neutral semantic evidence; UIA, NSAccessibility, AT-SPI, spoken
 output and host preference enablement remain V05/native residuals.
 
+The native executable also exposes a reproducible semantic capture role:
+
+```powershell
+New-Item -ItemType Directory -Force output | Out-Null
+$semantic = Join-Path (Resolve-Path .) "output\\native-semantic.json"
+cargo run --locked -p metis-app -- --metis-semantic-capture $semantic 60 2 0.2
+```
+
+The reviewed [`native-semantic.json`](manual/images/native-semantic.json)
+artifact is schema `1`, contains 22 elements and 10,280 bytes, and hashes to
+`e86d24258e84d6c2963bae826b7b7671415de52a9114ca1d9c19bd5a4ee76804`. Its
+value-semantic oracle finds the `main-screen` application root and an enabled,
+focusable `btn-calc` button with the single `activate` action. This exercises
+the production native executable and semantic projection, not an in-memory
+test-only tree. It remains host-neutral evidence: no OS accessibility bridge,
+spoken output or screen-reader acceptance is claimed.
+
 <a id="V04"></a>
 ### V04 — Responsive layout and clipping
 
