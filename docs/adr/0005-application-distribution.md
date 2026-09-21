@@ -44,8 +44,8 @@ Revision 2026-09-15 (consumer verification): RITK hosted run
 completed the locked Windows package build at Metis
 `c4276f2586f1ae9a1e3c0fa1dcb1507be4555f24`. Package creation, inventory/hash
 checks and executable `--help` passed within the 30-minute job budget. The
-workflow artifact is package evidence; DICOM execution and MSI lifecycle remain
-consumer-owned acceptance checks.
+workflow artifact is package evidence; DICOM execution remains consumer-owned,
+while the Metis Windows gate owns the MSI lifecycle acceptance.
 
 Revision 2026-09-20: [METIS-DISTRIBUTION-003](../../backlog.md#METIS-DISTRIBUTION-003)
 keeps portable staging host-native on Windows, macOS and Linux. The CLI selects
@@ -53,6 +53,24 @@ the host Cargo artifact for `build`, while the Windows x64 target remains an
 explicit prerequisite for MSI authoring. This closes the cross-host executable
 path without claiming a macOS bundle or Linux installer; those formats still
 require their native packaging and install workflows.
+
+Revision 2026-09-20 (hosted lifecycle): the Windows gate invokes the existing
+bounded `scripts/verify.py --install` workflow. The hosted oracle now installs
+the generated per-user MSI into an isolated directory, runs both input cases,
+checks the Start Menu shortcut and HKCU registration, uninstalls the exact
+ProductCode and verifies that only the user-created sentinel remains. This
+makes hosted Windows lifecycle evidence part of the committed gate without
+changing the MSI's per-user authority boundary or claiming macOS/Linux
+installer support; the first green run binds the evidence to a revision.
+
+Revision 2026-09-20 (service-visible paths): neutral verification may expose
+the repository through a per-user `SUBST` drive so its Cargo resolution is
+independent of the Atlas overlay. Windows Installer runs in its service
+process and cannot inherit that mapping, so the verifier resolves the MSI
+source and its test `INSTALLDIR` to the physical repository path before
+launching `msiexec`. Registry rows use the MSI context-dependent root (`-1`)
+for the package's per-user context; the package-table test and the hosted
+lifecycle gate remain the acceptance oracles.
 
 ## Decision
 

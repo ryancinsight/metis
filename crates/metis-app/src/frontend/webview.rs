@@ -1,5 +1,6 @@
 //! Windows `WebView2` host for the supervised form workflow.
 
+use crate::invocation::WebViewTheme;
 use metis_core::error::{ErrorCode, MetisError, Result};
 use metis_frontend::{FormState, FrontendApp};
 use metis_ipc::{IpcTransport, StreamTransport};
@@ -81,16 +82,25 @@ impl Page {
 }
 
 impl Package {
-    fn create(page: Page) -> io::Result<Self> {
+    fn create(page: Page, initial_theme: Option<WebViewTheme>) -> io::Result<Self> {
         let base = std::env::temp_dir();
         let process = std::process::id();
         let (index, script) = page.assets();
+        let index = initial_theme.map_or_else(
+            || index.to_owned(),
+            |theme| {
+                index.replace(
+                    "data-metis-theme=\"system\"",
+                    &format!("data-metis-theme=\"{}\"", theme.query_value()),
+                )
+            },
+        );
         for attempt in 0..MAX_PACKAGE_ATTEMPTS {
             let root = base.join(format!("metis-webview-{process}-{attempt}"));
             match fs::create_dir(&root) {
                 Ok(()) => {
                     let result = (|| {
-                        fs::write(root.join("index.html"), index)?;
+                        fs::write(root.join("index.html"), index.as_bytes())?;
                         fs::write(root.join("styles.css"), STYLES_CSS)?;
                         fs::write(root.join("app.js"), script)?;
                         Ok(())
@@ -122,12 +132,12 @@ impl Package {
 
 /// Runs the visible `WebView2` form over the supervised private pipe.
 pub(crate) fn run(inputs: [String; 3]) -> Result<(), Box<dyn std::error::Error>> {
-    run_with_page(inputs, Page::Form, None)
+    run_with_page(inputs, Page::Form, None, None)
 }
 
 /// Runs a visible `WebView2` page that requests a denied browser capability.
 pub(crate) fn run_permission_probe(inputs: [String; 3]) -> Result<(), Box<dyn std::error::Error>> {
-    run_with_page(inputs, Page::PermissionProbe, None)
+    run_with_page(inputs, Page::PermissionProbe, None, None)
 }
 
 /// Runs the permission probe and writes a WebView2-owned PNG preview.
@@ -135,13 +145,23 @@ pub(crate) fn run_permission_probe_capture(
     inputs: [String; 3],
     output: &Path,
 ) -> Result<(), Box<dyn std::error::Error>> {
-    run_with_page(inputs, Page::PermissionProbe, Some(output))
+    run_with_page(inputs, Page::PermissionProbe, Some(output), None)
+}
+
+/// Runs the packaged form in one requested theme and captures its first frame.
+pub(crate) fn run_theme_capture(
+    inputs: [String; 3],
+    output: &Path,
+    theme: WebViewTheme,
+) -> Result<(), Box<dyn std::error::Error>> {
+    run_with_page(inputs, Page::Form, Some(output), Some(theme))
 }
 
 fn run_with_page(
     inputs: [String; 3],
     page: Page,
     capture_output: Option<&Path>,
+    initial_theme: Option<WebViewTheme>,
 ) -> Result<(), Box<dyn std::error::Error>> {
     let [weight, concentration, dose] = inputs;
     let transport = StreamTransport::new(stdin(), stdout());
@@ -157,7 +177,7 @@ fn run_with_page(
         dose.parse()?,
     )?;
 
-    let package = Package::create(page)?;
+    let package = Package::create(page, initial_theme)?;
     let uri = match package.entry_uri() {
         Ok(uri) => uri,
         Err(error) => return Err(package_failure(package, error).into()),
@@ -180,7 +200,12 @@ fn run_with_page(
         Err(error) => return Err(package_failure(package, error).into()),
     };
     eprintln!("webview_frontend_pid={pid} window={INITIAL_WIDTH}x{INITIAL_HEIGHT}");
-    let result = run_event_loop(&mut app, &mut surface, capture_output);
+    let result = run_event_loop(
+        &mut app,
+        &mut surface,
+        capture_output,
+        initial_theme.is_some(),
+    );
     finish(result, &mut surface, package)
 }
 
@@ -188,6 +213,7 @@ fn run_event_loop<T: IpcTransport>(
     app: &mut FrontendApp<T>,
     surface: &mut WebViewSurface,
     capture_output: Option<&Path>,
+    close_after_capture: bool,
 ) -> Result<()> {
     let mut captured = false;
     loop {
@@ -271,6 +297,10 @@ fn run_event_loop<T: IpcTransport>(
                 bytes.len()
             );
             captured = true;
+            if close_after_capture {
+                surface.close()?;
+                return Ok(());
+            }
         }
     }
 }

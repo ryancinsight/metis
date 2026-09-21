@@ -38,6 +38,19 @@ fn run() -> Result<(), Box<dyn std::error::Error>> {
         Invocation::WebViewPermissionProbeCaptureFrontend { output, inputs } => {
             frontend::run_webview_permission_probe_capture(&output, inputs)
         }
+        Invocation::WebViewThemeCapture {
+            output,
+            theme,
+            inputs,
+        } => backend::run_webview_theme_capture(output, theme, inputs),
+        Invocation::WebViewThemeCaptureFrontend {
+            output,
+            theme,
+            inputs,
+        } => frontend::run_webview_theme_capture(&output, theme, inputs),
+        Invocation::SemanticCapture { output, inputs } => {
+            frontend::run_semantic_capture(&output, inputs)
+        }
         Invocation::BrowserService {
             origin,
             port,

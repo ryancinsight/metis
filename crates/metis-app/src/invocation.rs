@@ -14,11 +14,45 @@ pub(crate) const WEBVIEW_PERMISSION_PROBE_CAPTURE_ROLE: &str =
     "--metis-webview-permission-probe-capture";
 pub(crate) const WEBVIEW_PERMISSION_PROBE_CAPTURE_FRONTEND_ROLE: &str =
     "--metis-webview-permission-probe-capture-frontend";
+pub(crate) const WEBVIEW_THEME_CAPTURE_ROLE: &str = "--metis-webview-theme-capture";
+pub(crate) const WEBVIEW_THEME_CAPTURE_FRONTEND_ROLE: &str =
+    "--metis-webview-theme-capture-frontend";
+pub(crate) const SEMANTIC_CAPTURE_ROLE: &str = "--metis-semantic-capture";
 pub(crate) const BROWSER_SERVICE_ROLE: &str = "--metis-browser-service";
 pub(crate) const HTTP_SERVICE_ROLE: &str = "--metis-http-service";
 pub(crate) const RESPONSE_DELAY_FLAG: &str = "--response-delay-ms";
 const MAX_RESPONSE_DELAY_MILLISECONDS: u64 = 30_000;
-pub(crate) const USAGE: &str = "usage: metis-app WEIGHT_KG CONCENTRATION_MG_ML DOSE_MCG_KG_MIN\n       metis-app --metis-native-window WEIGHT_KG CONCENTRATION_MG_ML DOSE_MCG_KG_MIN\n       metis-app --metis-webview WEIGHT_KG CONCENTRATION_MG_ML DOSE_MCG_KG_MIN\n       metis-app --metis-webview-permission-probe WEIGHT_KG CONCENTRATION_MG_ML DOSE_MCG_KG_MIN\n       metis-app --metis-webview-permission-probe-capture OUTPUT_PNG WEIGHT_KG CONCENTRATION_MG_ML DOSE_MCG_KG_MIN\n       metis-app --metis-browser-service ORIGIN PORT PRINCIPAL_HEX [--response-delay-ms MILLISECONDS]\n       metis-app --metis-http-service ORIGIN PORT PRINCIPAL_HEX [--response-delay-ms MILLISECONDS]\n       metis-app --help";
+pub(crate) const USAGE: &str = "usage: metis-app WEIGHT_KG CONCENTRATION_MG_ML DOSE_MCG_KG_MIN\n       metis-app --metis-native-window WEIGHT_KG CONCENTRATION_MG_ML DOSE_MCG_KG_MIN\n       metis-app --metis-webview WEIGHT_KG CONCENTRATION_MG_ML DOSE_MCG_KG_MIN\n       metis-app --metis-webview-permission-probe WEIGHT_KG CONCENTRATION_MG_ML DOSE_MCG_KG_MIN\n       metis-app --metis-webview-permission-probe-capture OUTPUT_PNG WEIGHT_KG CONCENTRATION_MG_ML DOSE_MCG_KG_MIN\n       metis-app --metis-webview-theme-capture OUTPUT_PNG THEME WEIGHT_KG CONCENTRATION_MG_ML DOSE_MCG_KG_MIN\n       metis-app --metis-semantic-capture OUTPUT_JSON WEIGHT_KG CONCENTRATION_MG_ML DOSE_MCG_KG_MIN\n       metis-app --metis-browser-service ORIGIN PORT PRINCIPAL_HEX [--response-delay-ms MILLISECONDS]\n       metis-app --metis-http-service ORIGIN PORT PRINCIPAL_HEX [--response-delay-ms MILLISECONDS]\n       metis-app --help";
+
+/// Presentation mode requested by the packaged `WebView2` capture command.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub(crate) enum WebViewTheme {
+    System,
+    Light,
+    Dark,
+    HighContrast,
+}
+
+impl WebViewTheme {
+    fn parse(value: &str) -> Result<Self, InvocationError> {
+        match value {
+            "system" => Ok(Self::System),
+            "light" => Ok(Self::Light),
+            "dark" => Ok(Self::Dark),
+            "high-contrast" => Ok(Self::HighContrast),
+            _ => Err(InvocationError),
+        }
+    }
+
+    pub(crate) const fn query_value(self) -> &'static str {
+        match self {
+            Self::System => "system",
+            Self::Light => "light",
+            Self::Dark => "dark",
+            Self::HighContrast => "high-contrast",
+        }
+    }
+}
 
 /// Bounded delay used by the browser stale-response conformance probe.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -54,6 +88,20 @@ pub(crate) enum Invocation {
         inputs: [String; 3],
     },
     WebViewPermissionProbeCaptureFrontend {
+        output: PathBuf,
+        inputs: [String; 3],
+    },
+    WebViewThemeCapture {
+        output: PathBuf,
+        theme: WebViewTheme,
+        inputs: [String; 3],
+    },
+    WebViewThemeCaptureFrontend {
+        output: PathBuf,
+        theme: WebViewTheme,
+        inputs: [String; 3],
+    },
+    SemanticCapture {
         output: PathBuf,
         inputs: [String; 3],
     },
@@ -167,13 +215,33 @@ fn parse_role(
         WEBVIEW_PERMISSION_PROBE_CAPTURE_FRONTEND_ROLE => {
             InputRole::WebViewPermissionProbeCaptureFrontend
         }
+        WEBVIEW_THEME_CAPTURE_ROLE => InputRole::WebViewThemeCapture,
+        WEBVIEW_THEME_CAPTURE_FRONTEND_ROLE => InputRole::WebViewThemeCaptureFrontend,
+        SEMANTIC_CAPTURE_ROLE => InputRole::SemanticCapture,
         _ => InputRole::Backend,
     };
     let capture_output = if matches!(
         role,
-        InputRole::WebViewPermissionProbeCapture | InputRole::WebViewPermissionProbeCaptureFrontend
+        InputRole::WebViewPermissionProbeCapture
+            | InputRole::WebViewPermissionProbeCaptureFrontend
+            | InputRole::WebViewThemeCapture
+            | InputRole::WebViewThemeCaptureFrontend
+            | InputRole::SemanticCapture
     ) {
-        Some(parse_capture_output(
+        let value = arguments.next().ok_or(InvocationError)??;
+        Some(if role == InputRole::SemanticCapture {
+            parse_json_capture_output(&value)?
+        } else {
+            parse_capture_output(&value)?
+        })
+    } else {
+        None
+    };
+    let theme = if matches!(
+        role,
+        InputRole::WebViewThemeCapture | InputRole::WebViewThemeCaptureFrontend
+    ) {
+        Some(WebViewTheme::parse(
             &arguments.next().ok_or(InvocationError)??,
         )?)
     } else {
@@ -211,6 +279,20 @@ fn parse_role(
                 inputs,
             }
         }
+        InputRole::WebViewThemeCapture => Invocation::WebViewThemeCapture {
+            output: capture_output.expect("invariant: capture role has an output path"),
+            theme: theme.expect("invariant: theme capture role has a theme"),
+            inputs,
+        },
+        InputRole::WebViewThemeCaptureFrontend => Invocation::WebViewThemeCaptureFrontend {
+            output: capture_output.expect("invariant: capture role has an output path"),
+            theme: theme.expect("invariant: theme capture role has a theme"),
+            inputs,
+        },
+        InputRole::SemanticCapture => Invocation::SemanticCapture {
+            output: capture_output.expect("invariant: semantic capture role has an output path"),
+            inputs,
+        },
     })
 }
 
@@ -226,6 +308,9 @@ enum InputRole {
     WebViewPermissionProbeFrontend,
     WebViewPermissionProbeCapture,
     WebViewPermissionProbeCaptureFrontend,
+    WebViewThemeCapture,
+    WebViewThemeCaptureFrontend,
+    SemanticCapture,
 }
 
 fn parse_capture_output(value: &str) -> Result<PathBuf, InvocationError> {
@@ -235,6 +320,22 @@ fn parse_capture_output(value: &str) -> Result<PathBuf, InvocationError> {
         || units > 2 * 1024
         || !path.is_absolute()
         || path.extension().and_then(|extension| extension.to_str()) != Some("png")
+        || path
+            .components()
+            .any(|component| matches!(component, std::path::Component::ParentDir))
+    {
+        return Err(InvocationError);
+    }
+    Ok(path)
+}
+
+fn parse_json_capture_output(value: &str) -> Result<PathBuf, InvocationError> {
+    let path = PathBuf::from(value);
+    let units = value.encode_utf16().count();
+    if value.is_empty()
+        || units > 2 * 1024
+        || !path.is_absolute()
+        || path.extension().and_then(|extension| extension.to_str()) != Some("json")
         || path
             .components()
             .any(|component| matches!(component, std::path::Component::ParentDir))
@@ -275,9 +376,10 @@ mod tests {
     use super::{
         BROWSER_SERVICE_ROLE, BrowserResponseDelay, FRONTEND_ROLE, HTTP_SERVICE_ROLE, Invocation,
         InvocationError, NATIVE_FRONTEND_ROLE, NATIVE_WINDOW_ROLE, RESPONSE_DELAY_FLAG,
-        WEBVIEW_FRONTEND_ROLE, WEBVIEW_PERMISSION_PROBE_CAPTURE_FRONTEND_ROLE,
-        WEBVIEW_PERMISSION_PROBE_CAPTURE_ROLE, WEBVIEW_PERMISSION_PROBE_FRONTEND_ROLE,
-        WEBVIEW_PERMISSION_PROBE_ROLE, WEBVIEW_ROLE,
+        SEMANTIC_CAPTURE_ROLE, WEBVIEW_FRONTEND_ROLE,
+        WEBVIEW_PERMISSION_PROBE_CAPTURE_FRONTEND_ROLE, WEBVIEW_PERMISSION_PROBE_CAPTURE_ROLE,
+        WEBVIEW_PERMISSION_PROBE_FRONTEND_ROLE, WEBVIEW_PERMISSION_PROBE_ROLE, WEBVIEW_ROLE,
+        WEBVIEW_THEME_CAPTURE_FRONTEND_ROLE, WEBVIEW_THEME_CAPTURE_ROLE, WebViewTheme,
     };
     use std::time::Duration;
 
@@ -432,6 +534,71 @@ mod tests {
     }
 
     #[test]
+    fn theme_capture_roles_preserve_mode_output_and_values() {
+        let inputs = ["60".to_owned(), "2".to_owned(), "0.2".to_owned()];
+        let output = r"C:\captures\theme-light.png";
+        assert_eq!(
+            Invocation::parse(
+                [
+                    WEBVIEW_THEME_CAPTURE_ROLE.to_owned(),
+                    output.to_owned(),
+                    "light".to_owned(),
+                ]
+                .into_iter()
+                .chain(inputs.clone())
+            ),
+            Ok(Invocation::WebViewThemeCapture {
+                output: output.into(),
+                theme: WebViewTheme::Light,
+                inputs: inputs.clone(),
+            })
+        );
+        assert_eq!(
+            Invocation::parse(
+                [
+                    WEBVIEW_THEME_CAPTURE_FRONTEND_ROLE.to_owned(),
+                    output.to_owned(),
+                    "high-contrast".to_owned(),
+                ]
+                .into_iter()
+                .chain(inputs.clone())
+            ),
+            Ok(Invocation::WebViewThemeCaptureFrontend {
+                output: output.into(),
+                theme: WebViewTheme::HighContrast,
+                inputs,
+            })
+        );
+    }
+
+    #[test]
+    fn semantic_capture_role_requires_absolute_json_output() {
+        let inputs = ["60".to_owned(), "2".to_owned(), "0.2".to_owned()];
+        assert_eq!(
+            Invocation::parse(
+                [
+                    SEMANTIC_CAPTURE_ROLE.to_owned(),
+                    r"C:\captures\semantic.json".to_owned()
+                ]
+                .into_iter()
+                .chain(inputs.clone())
+            ),
+            Ok(Invocation::SemanticCapture {
+                output: r"C:\captures\semantic.json".into(),
+                inputs,
+            })
+        );
+        assert!(
+            Invocation::parse(
+                [SEMANTIC_CAPTURE_ROLE.to_owned(), "semantic.png".to_owned()]
+                    .into_iter()
+                    .chain(["60", "2", "0.2"].map(str::to_owned))
+            )
+            .is_err()
+        );
+    }
+
+    #[test]
     fn http_service_accepts_bounded_response_delay() {
         assert_eq!(
             Invocation::parse([
@@ -483,6 +650,14 @@ mod tests {
             vec![
                 WEBVIEW_PERMISSION_PROBE_CAPTURE_FRONTEND_ROLE,
                 r"C:\captures\permission-probe.png",
+                "2",
+                "0.2",
+            ],
+            vec![
+                WEBVIEW_THEME_CAPTURE_ROLE,
+                r"C:\captures\theme.png",
+                "invalid",
+                "60",
                 "2",
                 "0.2",
             ],

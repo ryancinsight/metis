@@ -26,6 +26,12 @@ lowercase strings. `System` follows `prefers-color-scheme`; the other values
 select an explicit document mode. Each render writes the mode's CSS value to
 `data-metis-theme` on both the document body and `#metis-app`.
 
+The packaged Windows WebView2 form uses the same four values in a local
+selector. Its page script applies the selected value to the document attribute
+and its stylesheet resolves the palette through local CSS variables. The
+selector is presentation-only: it never posts a bridge message and does not
+change host or backend authority.
+
 The external browser stylesheet owns semantic `--metis-*` variables for page,
 surface, text, accent, focus, status and backdrop colors. Attribute selectors
 provide the light, dark and high-contrast palettes, while reduced-motion and
@@ -75,9 +81,18 @@ The browser asset tests cover the semantic variables, all mode selectors,
 favicon and focus-order markup, while the build script requires the copied SVG,
 PNG and ICO. `metis-cli` tests exercise the bounded SVG grammar, generated ICO,
 malformed header and dimension rejection, and MSI `Icon`/`Shortcut` rows. The
-manual includes the mark and a reproducible mode-by-mode capture procedure.
-Runtime captures must record the browser engine, viewport, scale factor and
-host presentation settings before they can close the remaining V04/V06 gaps.
+manual includes the mark and reproducible browser and WebView2 mode-selection
+procedures. The WebView2 asset contract tests every option and palette selector;
+the packaged capture role writes and visually inspects one `CapturePreview` PNG
+for each mode. The committed captures are 1025×769: system
+(`15c88ffd69531b815e71e28951b2b2bb09e274f2dd6c4c7bc6155b684499e6a6`), light
+(`ec3caec1fd604ffc1272cfdffc958661e40ed90057636c487c601fc601ab8b7e`), dark
+(`75730d4d78b9b8cf499a15afb8d228c1b2ef71ecac9a0e081789ee582d418694`) and
+high-contrast
+(`d1523c8f8bb5daff330ac90131e7b316ce6ce4c89d94ef043a923c4db827b160`).
+The capture role proves visible palette selection in the packaged provider;
+screen-reader behavior, installed IME behavior, physical high-DPI transitions,
+and other host presentation settings remain separate Windows evidence items.
 
 ## Revision — 2026-09-08
 
@@ -88,3 +103,14 @@ packaging path validate each format before persistence, and the Start Menu
 shortcut points to the embedded `MetisIcon` row. The acceptance evidence is the
 focused CLI suite, the browser asset tests and the full gate at the delivery
 revision.
+
+## Revision — 2026-09-20
+
+The packaged WebView2 form now exposes the same four local theme modes as the
+browser workbench. The selector changes only CSS variables and the document
+theme attribute; no page-to-host message is introduced. Static asset tests and
+the manual procedure cover the contract. The bounded
+`--metis-webview-theme-capture` role now produces and commits inspected PNGs for
+all four modes through the packaged provider; their hashes and dimensions are
+recorded in the manual. This closes the visible palette-selection evidence
+while leaving accessibility, IME and physical display-scale evidence open.

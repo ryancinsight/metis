@@ -80,6 +80,31 @@ screen-reader bridge: UIA, NSAccessibility and AT-SPI translation, spoken
 output and host preference enablement remain platform-specific acceptance
 work under `METIS-A11Y-001`.
 
+### Capture the native semantic projection
+
+The `metis-app` executable can write the production form's host-neutral
+semantic tree as a bounded JSON artifact. The command uses the same
+`FrontendApp` and software-renderer semantic validation as the visible native
+surface, but uses an in-memory transport so it does not start a backend or
+claim a platform accessibility bridge:
+
+```powershell
+New-Item -ItemType Directory -Force output | Out-Null
+$semantic = Join-Path (Resolve-Path .) "output\\native-semantic.json"
+cargo run --locked -p metis-app -- --metis-semantic-capture $semantic 60 2 0.2
+```
+
+The reviewed specimen is
+[`native-semantic.json`](images/native-semantic.json). It is schema `1`, has
+22 elements and 10,280 bytes, and has SHA-256
+`e86d24258e84d6c2963bae826b7b7671415de52a9114ca1d9c19bd5a4ee76804`.
+The `main-screen` application root and `btn-calc` submit button are present;
+the button is focusable, enabled and exposes the typed `activate` action. The
+artifact is a deterministic host-neutral projection. It does not establish
+UIA, NSAccessibility or AT-SPI translation, spoken screen-reader output,
+platform preference enablement or assistive-technology acceptance; those
+remain the native residuals in `METIS-A11Y-001`.
+
 ## Apply native display scale
 
 Moirai reports the window's integer DPI through `WindowEvent::DpiChanged`.
@@ -470,6 +495,38 @@ typed message through the WebView2 callback and private backend pipe. The page
 then displays `Rate 0.36 mL/hour; drug 0.72 mg/hour; audit 2`:
 
 ![Metis WebView2 page after submission](images/webview-form-success.png)
+
+The packaged page also exposes the four theme modes used by the browser
+workbench: **System preference**, **Light**, **Dark** and **High contrast**.
+Changing the selector updates only the document's `data-metis-theme` attribute
+and local CSS variables. It does not send a bridge message or alter backend
+authority. The packaged executable also has a bounded capture role, which
+selects the initial mode before the page is shown and writes the provider's
+`CapturePreview` PNG after the first event batch:
+
+```powershell
+cargo run --locked -p metis-app -- --metis-webview-theme-capture C:\captures\metis-webview-theme-light.png light 60 2 0.2
+```
+
+Repeat the command with `system`, `light`, `dark` and `high-contrast` (and a
+different absolute `.png` path for each mode). The four inspected captures
+below came from the packaged Windows executable; each contains the rendered
+form and its selected mode, rather than a stylesheet or DOM-only assertion:
+
+| Mode | Capture | PNG bytes | Dimensions | SHA-256 |
+| --- | --- | ---: | ---: | --- |
+| System preference | [webview-theme-system.png](images/webview-theme-system.png) | 12,991 | 1025×769 | `15c88ffd69531b815e71e28951b2b2bb09e274f2dd6c4c7bc6155b684499e6a6` |
+| Light | [webview-theme-light.png](images/webview-theme-light.png) | 12,529 | 1025×769 | `ec3caec1fd604ffc1272cfdffc958661e40ed90057636c487c601fc601ab8b7e` |
+| Dark | [webview-theme-dark.png](images/webview-theme-dark.png) | 12,492 | 1025×769 | `75730d4d78b9b8cf499a15afb8d228c1b2ef71ecac9a0e081789ee582d418694` |
+| High contrast | [webview-theme-high-contrast.png](images/webview-theme-high-contrast.png) | 12,802 | 1025×769 | `d1523c8f8bb5daff330ac90131e7b316ce6ce4c89d94ef043a923c4db827b160` |
+
+The system capture follows the host preference on the capture machine; the
+other three captures prove the explicit palettes. For a manual interaction
+check, launch the ordinary `--metis-webview` command above, focus **Theme**, select each option,
+and inspect the page background, surface, text, focus ring and result status
+before submitting the calculation. These images establish visible palette
+selection through the packaged provider. They do not establish screen-reader
+behavior, installed-IME behavior, or physical high-DPI transitions.
 
 ### WebView2 permission-probe capture
 

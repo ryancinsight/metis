@@ -145,7 +145,7 @@ fn assert_maintenance_location(database: &Database) {
         ["InstallLocation"]
     );
     assert_eq!(database.strings("SELECT `Key` FROM `RegLocator` WHERE `Signature_`='InstallLocation' AND `Root`=1 AND `Type`=18 AND `Name`='InstallLocation'").expect("same user 64-bit registry lookup"), ["Software\\Metis\\Applications\\org.metis.package-test"]);
-    assert_eq!(database.strings("SELECT `Value` FROM `Registry` WHERE `Registry`='InstallLocation' AND `Root`=1 AND `Name`='InstallLocation' AND `Component_`='C0'").expect("entry owns resolved installation path"), ["[INSTALLDIR]"]);
+    assert_eq!(database.strings("SELECT `Value` FROM `Registry` WHERE `Registry`='InstallLocation' AND `Root`=-1 AND `Name`='InstallLocation' AND `Component_`='C0'").expect("entry owns resolved installation path"), ["[INSTALLDIR]"]);
     assert_eq!(
         database
             .strings("SELECT `Key` FROM `Registry` WHERE `Registry`='InstallLocation'")

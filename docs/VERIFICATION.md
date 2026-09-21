@@ -363,6 +363,32 @@ resize/DPI, native accessibility, installed-IME, broader OS permission
 enforcement, two-window visual behavior or macOS/Linux support; the separate
 permission-probe artifact above is the visible denial-state evidence.
 
+### Windows packaged WebView2 theme captures — 2026-09-20
+
+The packaged form now exposes the four browser theme modes through the same
+local CSS contract. PR [#310](https://github.com/ryancinsight/metis/pull/310)
+adds the bounded capture role and the inspected PNGs. On Windows, reproduce a
+mode with:
+
+```powershell
+cargo run --locked -p metis-app -- --metis-webview-theme-capture C:\captures\metis-webview-theme-light.png light 60 2 0.2
+```
+
+Repeat with `system`, `light`, `dark` and `high-contrast`. The provider
+`CapturePreview` artifacts are 1025×769:
+
+| Mode | Bytes | SHA-256 |
+| --- | ---: | --- |
+| [System preference](manual/images/webview-theme-system.png) | 12,991 | `15c88ffd69531b815e71e28951b2b2bb09e274f2dd6c4c7bc6155b684499e6a6` |
+| [Light](manual/images/webview-theme-light.png) | 12,529 | `ec3caec1fd604ffc1272cfdffc958661e40ed90057636c487c601fc601ab8b7e` |
+| [Dark](manual/images/webview-theme-dark.png) | 12,492 | `75730d4d78b9b8cf499a15afb8d228c1b2ef71ecac9a0e081789ee582d418694` |
+| [High contrast](manual/images/webview-theme-high-contrast.png) | 12,802 | `d1523c8f8bb5daff330ac90131e7b316ce6ce4c89d94ef043a923c4db827b160` |
+
+Each image was opened and inspected. They establish visible palette selection
+through the packaged provider; screen-reader behavior, installed-IME behavior,
+physical high-DPI transitions and broader OS enforcement remain separate host
+evidence.
+
 ### Windows native resize capture — 2026-09-13
 
 The format-neutral capture utility now accepts a bounded client-size resize for
@@ -2285,6 +2311,23 @@ references, disabled/hidden state and typed actions, and reject duplicate IDs,
 unresolved references, malformed state values and oversized semantic text.
 This is host-neutral semantic evidence; UIA, NSAccessibility, AT-SPI, spoken
 output and host preference enablement remain V05/native residuals.
+
+The native executable also exposes a reproducible semantic capture role:
+
+```powershell
+New-Item -ItemType Directory -Force output | Out-Null
+$semantic = Join-Path (Resolve-Path .) "output\\native-semantic.json"
+cargo run --locked -p metis-app -- --metis-semantic-capture $semantic 60 2 0.2
+```
+
+The reviewed [`native-semantic.json`](manual/images/native-semantic.json)
+artifact is schema `1`, contains 22 elements and 10,280 bytes, and hashes to
+`e86d24258e84d6c2963bae826b7b7671415de52a9114ca1d9c19bd5a4ee76804`. Its
+value-semantic oracle finds the `main-screen` application root and an enabled,
+focusable `btn-calc` button with the single `activate` action. This exercises
+the production native executable and semantic projection, not an in-memory
+test-only tree. It remains host-neutral evidence: no OS accessibility bridge,
+spoken output or screen-reader acceptance is claimed.
 
 <a id="V04"></a>
 ### V04 — Responsive layout and clipping
