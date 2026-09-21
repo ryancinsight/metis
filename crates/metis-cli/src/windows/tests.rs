@@ -112,6 +112,25 @@ fn authored_package_retains_payload_identity_and_actions() {
     std::fs::remove_dir(directory).expect("no unexpected staging residue");
 }
 
+#[test]
+fn component_identity_is_stable_per_application_resource() {
+    let first = super::package::component_guid("org.metis.test", "assets/icon.svg");
+    assert_eq!(
+        first,
+        super::package::component_guid("org.metis.test", "assets/icon.svg")
+    );
+    assert_ne!(
+        first,
+        super::package::component_guid("org.metis.test", "assets/icon.png")
+    );
+    assert_ne!(
+        first,
+        super::package::component_guid("org.metis.other", "assets/icon.svg")
+    );
+    assert_eq!(first.as_bytes().get(15), Some(&b'5'));
+    assert!(first.starts_with('{') && first.ends_with('}'));
+}
+
 fn write_icon_fixture(directory: &std::path::Path) -> std::path::PathBuf {
     let icon = directory.join("metis.ico");
     std::fs::write(
@@ -140,12 +159,18 @@ fn assert_embedded_icon(database: &super::database::Database) {
 fn assert_maintenance_location(database: &Database) {
     assert_eq!(
         database
+            .strings("SELECT `KeyPath` FROM `Component` WHERE `Component`='C0'")
+            .expect("file owns the component"),
+        ["F0"]
+    );
+    assert_eq!(
+        database
             .strings("SELECT `Signature_` FROM `AppSearch` WHERE `Property`='INSTALLDIR'")
             .expect("maintenance property"),
         ["InstallLocation"]
     );
     assert_eq!(database.strings("SELECT `Key` FROM `RegLocator` WHERE `Signature_`='InstallLocation' AND `Root`=1 AND `Type`=18 AND `Name`='InstallLocation'").expect("same user 64-bit registry lookup"), ["Software\\Metis\\Applications\\org.metis.package-test"]);
-    assert_eq!(database.strings("SELECT `Value` FROM `Registry` WHERE `Registry`='InstallLocation' AND `Root`=-1 AND `Name`='InstallLocation' AND `Component_`='C0'").expect("entry owns resolved installation path"), ["[INSTALLDIR]"]);
+    assert_eq!(database.strings("SELECT `Value` FROM `Registry` WHERE `Registry`='InstallLocation' AND `Root`=1 AND `Name`='InstallLocation' AND `Component_`='C0'").expect("entry owns resolved installation path"), ["[INSTALLDIR]"]);
     assert_eq!(
         database
             .strings("SELECT `Key` FROM `Registry` WHERE `Registry`='InstallLocation'")
