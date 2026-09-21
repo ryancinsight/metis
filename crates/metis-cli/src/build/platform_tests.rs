@@ -93,3 +93,17 @@ fn tar_path_split_preserves_nested_destination() {
     assert_eq!(name.len(), 100);
     assert_eq!(prefix.len(), 110);
 }
+
+#[test]
+fn desktop_words_preserve_empty_and_reserved_arguments() {
+    assert_eq!(desktop_word(""), "\"\"");
+    assert_eq!(desktop_word("a b"), "\"a b\"");
+    assert_eq!(desktop_word("$HOME"), "\"\\$HOME\"");
+    assert_eq!(desktop_word("a%b"), "\"a%%b\"");
+    assert_eq!(desktop_word("a\u{60}b"), "\"a\\\u{60}b\"");
+}
+
+#[test]
+fn desktop_icon_escapes_string_value_characters() {
+    assert_eq!(desktop_icon("/tmp/a b;icon"), "/tmp/a\\sb\\;icon");
+}

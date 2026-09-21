@@ -176,13 +176,30 @@ open under `METIS-DISTRIBUTION-003`.
 
 ### Linux USTAR archive
 
-Run `metis package metis.json output/package` on Linux and extract the generated
-`<id>.tar` into a user-owned prefix. The archive's `usr/bin` executable and
-`usr/share/applications/<id>.desktop` entry are the integration points for a
-launcher; a user may copy the desktop file into the corresponding user
-application directory. Remove the extracted prefix and desktop entry to
-uninstall it. The current writer does not create a distribution-specific package
-database, sign the archive or install a system service; actual X11/Wayland host
+Build the archive and install it below an existing absolute prefix:
+
+```shell
+metis package metis.json output/package
+metis install output/package/<id>.tar "$HOME/.local"
+```
+
+The installer validates the generated USTAR archive, maps its `usr/` tree below
+the prefix (`$HOME/.local/bin`, `$HOME/.local/share/<id>` and
+`$HOME/.local/share/applications`), and rewrites the desktop entry's `Exec`
+and `Icon` fields to those absolute paths. It writes a schema-versioned
+ownership record containing each installed path, byte count and SHA-256 digest.
+Existing files, linked paths, traversal entries and conflicting destinations are
+rejected without partial installation.
+
+Remove an installation with:
+
+```shell
+metis uninstall <id> "$HOME/.local"
+```
+
+Removal verifies every recorded digest and refuses to delete a package file that
+the user changed or replaced. It removes only unchanged package files and
+empty directories, preserving unrelated files in the prefix. Native X11/Wayland
 installation, launch, permission and removal captures remain open under
 `METIS-DISTRIBUTION-003`.
 
@@ -324,8 +341,10 @@ The [verification contract](../VERIFICATION.md#V10) distinguishes installation,
 rendering and host interaction evidence. Executable and installer creation does
 not establish lower memory usage or stronger OS isolation than Tauri.
 
-Windows x64 MSI remains the only package with a committed install/run/uninstall
-workflow. The macOS bundle and Linux archive emitters are present, while native
-host lifecycle evidence, other Windows architectures, signing, authenticated
-updates and browser deployment remain separate target work. This command does
-not sign, publish or release an application.
+Windows x64 MSI remains the only package with a committed native install/run/
+uninstall workflow. The Linux archive now has a committed prefix installer and
+hash-checked uninstall implementation with user-file preservation tests; native
+Linux launch, permission and removal captures are still open. The macOS bundle
+emitter, other Windows architectures, signing, authenticated updates and browser
+deployment remain separate target work. This command does not sign, publish or
+release an application.

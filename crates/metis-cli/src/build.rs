@@ -14,7 +14,12 @@ use std::{
     time::Duration,
 };
 
+#[cfg(any(not(windows), test))]
+mod install;
 mod platform;
+
+#[cfg(any(not(windows), test))]
+pub(crate) use platform::{desktop_icon, desktop_word};
 
 // A cold RITK workspace can exceed five minutes on a hosted Windows runner;
 // fifteen minutes leaves the packaging workflow's remaining budget for MSI
@@ -120,6 +125,26 @@ pub(crate) fn application(input: &Path, output: &Path, kind: OutputKind) -> Resu
     report.sync_all()?;
     println!("{}", output.join("inventory.json").display());
     Ok(())
+}
+
+#[cfg(not(windows))]
+pub(crate) fn install(archive: &Path, prefix: &Path) -> Result<()> {
+    install::run(archive, prefix)
+}
+
+#[cfg(windows)]
+pub(crate) fn install(_archive: &Path, _prefix: &Path) -> Result<()> {
+    Err("Linux package installation requires a Linux host".into())
+}
+
+#[cfg(not(windows))]
+pub(crate) fn uninstall(application_id: &str, prefix: &Path) -> Result<()> {
+    install::uninstall(application_id, prefix)
+}
+
+#[cfg(windows)]
+pub(crate) fn uninstall(_application_id: &str, _prefix: &Path) -> Result<()> {
+    Err("Linux package removal requires a Linux host".into())
 }
 
 fn supports_host_package() -> bool {
