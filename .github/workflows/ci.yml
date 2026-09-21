@@ -73,6 +73,15 @@ jobs:
           toolchain: 1.97.0
           components: rustfmt, clippy
           targets: wasm32-unknown-unknown
+      - name: Restore the compile cache (keyed on lockfile and toolchain)
+        # The gate rebuilt every dependency from cold on Windows on each run,
+        # nine to twelve minutes per pull request; the cache saves on the
+        # default branch and restores everywhere (engineering_gates: workflow
+        # hygiene).
+        uses: Swatinem/rust-cache@6323deb102c322ba6fcbdcafc7e3dddab59af2b6 # v2.9.2
+        with:
+          shared-key: metis-windows
+          save-if: ${{ github.ref == 'refs/heads/main' }}
       - name: Prime locked Cargo sources
         shell: pwsh
         run: rustup run 1.97.0 cargo fetch --locked --manifest-path Cargo.toml
