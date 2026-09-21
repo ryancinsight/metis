@@ -171,7 +171,7 @@ repository after building `metis-app`:
 
 ```powershell
 cargo build --locked -p metis-app --bin metis-app
-$target = if ($env:CARGO_TARGET_DIR) { $env:CARGO_TARGET_DIR } else { Join-Path (Get-Location) "target" }
+$target = (cargo metadata --locked --no-deps --format-version 1 | ConvertFrom-Json).target_directory
 $binary = Join-Path $target "debug\metis-app.exe"
 New-Item -ItemType Directory -Force output/native-uia | Out-Null
 python -S scripts/python_native_accessibility.py `
