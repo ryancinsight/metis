@@ -25,7 +25,10 @@ bytes.
 
 The provider uses Atlas Moirai HTTP and TLS without adding a second runtime or
 client stack. Browser code remains an authenticated service consumer; it does
-not receive a native network object.
+not receive a native network object. Each request has a finite deadline: the
+default is `MAX_SCOPED_HTTP_DEADLINE`, and callers may select a shorter bound.
+Dropping the request future cancels the transport; expiry drops it through the
+same path.
 
 ## Alternatives
 
@@ -36,11 +39,13 @@ without the same boundary.
 
 ## Verification
 
-Platform tests perform a real loopback HTTP exchange through a local
-TcpListener and Moirai's executor, then assert status, header and body values.
-Rejection tests cover empty and non-HTTP allowlists, URL fragments, forbidden
-headers, oversized bodies, excessive headers and a missing NETWORK witness.
-Nextest, offline check and strict Clippy pass for metis-platform.
+Platform tests perform real loopback HTTP exchanges through local TcpListeners
+and Moirai's executor, then assert status, header and body values. Rejection
+tests cover empty and non-HTTP allowlists, URL fragments, forbidden headers,
+oversized bodies, excessive headers and a missing NETWORK witness. A delayed
+local server proves the explicit deadline returns `TimedOut` and observes the
+client connection closing; invalid deadlines and an unlisted origin fail before
+transport. Nextest, offline check and strict Clippy pass for metis-platform.
 
 ## Residuals
 

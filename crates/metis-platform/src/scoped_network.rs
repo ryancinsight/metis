@@ -2,8 +2,10 @@
 
 use metis_core::capability::CapabilityScope;
 use metis_core::host::{HostOrigin, VerifiedHostCapability};
+use moirai_async::timer::timeout;
 use moirai_http::{HttpClient, Response};
 use std::io;
+use std::time::Duration;
 
 /// Maximum number of configured HTTP origins.
 pub const MAX_SCOPED_HTTP_ORIGINS: usize = 16;
@@ -19,6 +21,8 @@ pub const MAX_SCOPED_HTTP_HEADER_BYTES: usize = 16 * 1024;
 pub const MAX_SCOPED_HTTP_BODY_BYTES: usize = 8 * 1024 * 1024;
 /// Maximum response bytes retained by the provider.
 pub const MAX_SCOPED_HTTP_RESPONSE_BYTES: usize = 16 * 1024 * 1024;
+/// Maximum logical request deadline admitted by the provider.
+pub const MAX_SCOPED_HTTP_DEADLINE: Duration = Duration::from_secs(30);
 
 const FORBIDDEN_HEADERS: [&str; 9] = [
     "connection",
@@ -215,6 +219,8 @@ pub enum ScopedHttpError {
     BodyTooLarge,
     /// The URL origin is not in the provider allowlist.
     OriginDenied,
+    /// The request deadline is zero or exceeds [`MAX_SCOPED_HTTP_DEADLINE`].
+    InvalidDeadline,
     /// The Moirai client rejected the request or transport operation.
     Transport(io::Error),
 }
@@ -233,6 +239,7 @@ impl std::fmt::Display for ScopedHttpError {
             Self::HeadersTooLarge => "scoped HTTP headers exceed their byte bound",
             Self::BodyTooLarge => "scoped HTTP request body exceeds its byte bound",
             Self::OriginDenied => "scoped HTTP URL origin is outside the allowlist",
+            Self::InvalidDeadline => "scoped HTTP request deadline is outside the provider bound",
             Self::Transport(_) => "scoped HTTP transport failed",
         };
         formatter.write_str(message)
@@ -325,9 +332,31 @@ impl ScopedHttpProvider {
     /// allowlist, validation errors from the request, or a transport error.
     pub async fn request(
         &self,
-        _capability: &VerifiedHostCapability<{ CapabilityScope::NETWORK.0 }>,
+        capability: &VerifiedHostCapability<{ CapabilityScope::NETWORK.0 }>,
         request: ScopedHttpRequest,
     ) -> Result<ScopedHttpResponse, ScopedHttpError> {
+        self.request_with_deadline(capability, request, MAX_SCOPED_HTTP_DEADLINE)
+            .await
+    }
+
+    /// Performs one request with an explicit finite logical deadline.
+    ///
+    /// Dropping the returned future cancels the in-flight transport. An
+    /// expired request drops the transport future as well, so no background
+    /// connection task survives the deadline.
+    ///
+    /// # Errors
+    /// Returns a validation, origin-policy or transport error. A deadline
+    /// expiration is reported as [`io::ErrorKind::TimedOut`].
+    pub async fn request_with_deadline(
+        &self,
+        _capability: &VerifiedHostCapability<{ CapabilityScope::NETWORK.0 }>,
+        request: ScopedHttpRequest,
+        deadline: Duration,
+    ) -> Result<ScopedHttpResponse, ScopedHttpError> {
+        if deadline.is_zero() || deadline > MAX_SCOPED_HTTP_DEADLINE {
+            return Err(ScopedHttpError::InvalidDeadline);
+        }
         let origin = request_origin(request.url())?;
         if !self
             .allowed_origins
@@ -341,11 +370,19 @@ impl ScopedHttpProvider {
             .iter()
             .map(|(name, value)| (name.as_str(), value.as_str()))
             .collect::<Vec<_>>();
-        let response = self
-            .client
-            .request(request.method(), request.url(), &headers, request.body())
-            .await
-            .map_err(ScopedHttpError::Transport)?;
+        let response = timeout(
+            deadline,
+            self.client
+                .request(request.method(), request.url(), &headers, request.body()),
+        )
+        .await
+        .map_err(|_| {
+            ScopedHttpError::Transport(io::Error::new(
+                io::ErrorKind::TimedOut,
+                "scoped HTTP request deadline elapsed",
+            ))
+        })?
+        .map_err(ScopedHttpError::Transport)?;
         Ok(response.into())
     }
 }

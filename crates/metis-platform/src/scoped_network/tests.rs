@@ -6,6 +6,7 @@ use moirai_executor::block_on;
 use std::io::{Read, Write};
 use std::net::{Shutdown, TcpListener};
 use std::thread;
+use std::time::Duration;
 
 const KEY: &[u8] = b"metis-scoped-network-test-key";
 
@@ -134,4 +135,90 @@ fn body_and_header_bounds_are_value_checked() {
         ScopedHttpRequest::new("GET", "http://127.0.0.1:8080/", headers, None),
         Err(ScopedHttpError::TooManyHeaders)
     ));
+}
+
+#[test]
+fn deadline_cancels_a_real_slow_server_and_releases_the_connection() {
+    let listener = TcpListener::bind("127.0.0.1:0").expect("slow listener");
+    let address = listener.local_addr().expect("slow address");
+    let task = thread::spawn(move || {
+        let (mut stream, _) = listener.accept().expect("slow connection");
+        let mut request = [0u8; 512];
+        let _ = stream.read(&mut request).expect("slow request");
+        // Hold the response until the client drops the transport future. The
+        // resulting EOF/reset is the cleanup oracle and avoids a wall-clock
+        // sleep in the test.
+        let mut probe = [0u8; 1];
+        let cleanup = stream.read(&mut probe);
+        assert!(
+            matches!(cleanup, Ok(0))
+                || matches!(
+                    cleanup,
+                    Err(error)
+                        if matches!(
+                            error.kind(),
+                            std::io::ErrorKind::ConnectionAborted | std::io::ErrorKind::ConnectionReset
+                        )
+                )
+        );
+    });
+    let origin = format!("http://{address}");
+    let provider = ScopedHttpProvider::new([origin.as_str()]).expect("provider");
+    let request = ScopedHttpRequest::new(
+        "GET",
+        format!("{origin}/slow"),
+        std::iter::empty::<(&str, &str)>(),
+        None,
+    )
+    .expect("request");
+    let error = block_on(provider.request_with_deadline(
+        &capability(CapabilityScope::NETWORK).expect("network capability"),
+        request,
+        Duration::from_millis(25),
+    ))
+    .expect_err("slow response must hit deadline");
+    assert!(matches!(
+        error,
+        ScopedHttpError::Transport(ref error) if error.kind() == std::io::ErrorKind::TimedOut
+    ));
+    task.join().expect("slow server cleanup");
+}
+
+#[test]
+fn deadline_and_denial_bounds_fail_before_transport() {
+    let provider = ScopedHttpProvider::new(["http://127.0.0.1:8080"]).expect("provider");
+    let request = ScopedHttpRequest::new(
+        "GET",
+        "http://127.0.0.1:8080/health",
+        std::iter::empty::<(&str, &str)>(),
+        None,
+    )
+    .expect("request");
+    for deadline in [
+        Duration::ZERO,
+        MAX_SCOPED_HTTP_DEADLINE + Duration::from_nanos(1),
+    ] {
+        let error = block_on(provider.request_with_deadline(
+            &capability(CapabilityScope::NETWORK).expect("network capability"),
+            request.clone(),
+            deadline,
+        ))
+        .expect_err("invalid deadline");
+        assert!(matches!(error, ScopedHttpError::InvalidDeadline));
+    }
+    let denied = block_on(
+        provider.request_with_deadline(
+            &capability(CapabilityScope::NETWORK).expect("network capability"),
+            ScopedHttpRequest::new(
+                "GET",
+                "http://127.0.0.1:8081/health",
+                std::iter::empty::<(&str, &str)>(),
+                None,
+            )
+            .expect("request"),
+            Duration::from_secs(1),
+        ),
+    )
+    .expect_err("unlisted origin");
+    assert!(matches!(denied, ScopedHttpError::OriginDenied));
 }
