@@ -216,31 +216,27 @@ figure is 640×400 while provenance retains the raw 1280×800 source digest. The
 eframe process boundary still differs from Métis, and GPUI/Tauri fixtures remain
 open, so no framework ranking is derived.
 
-The current geometry-aware replay (2026-09-20) uses the standalone lock
-from RITK PR #518 merge `694904718d7ec922883ab2a6b572e9aa29edab99`. The
-executable was built from RITK source `b432ae69db2a0578d8f1eb176ae6fdb9233231a9`,
-with Metis `165c4ec923e76ea7bc32b6b4fb99b4338166b3` and Moirai
+The current standalone replay (2026-09-21) uses the lock recorded by RITK PR
+[#557](https://github.com/ryancinsight/ritk/pull/557), merged as
+`de13d6a287e6e0fe5aa5edf43fdcbb11f7128c80`. The executable was built from
+RITK source `fc85dad03a6c14a617e9687609044497c1eba122`, with Metis
+`4bceb90fe616465eca91cddc0c182548b295ca95` and Moirai
 `2a54e010532f76c88027fec8a468620c92fe66b3`; the standalone lock digest is
-`4f4b96958a0545203775e21b3bd1152a864bd6b77847d2b638213d6b420b1084`, and the
+`b1d7c99a6dcbf788f515f4b18789d10035805e38db10f4a32dd7970b3050e226`, and the
 executable digest is
-`b260611286c309a21a3132c0fbd20f855768f4cfe326e0cb99ab5820b1212b95`.
+`ca3900b3e8e663883e47e4c297d2ffd3f1ee086732c2a746632c505fff36e699`.
 RITK opened the saved 94-file MRI-DIR study (49,807,236 bytes) and produced
 the actual 1280 × 800 three-plane frame below; it contains 411,589 non-black
 pixels and repeats the capture digest
 `259dd79103482756c4e688621bebafc841cc40f1df10ff2bbd7f9d04b7b4d401`.
-The matching three-run resource sample records peak private bytes of
-816,635,904 ± 1,193,823, peak working set of 390,056,619 ± 22,024,617 and
-lifecycle duration of 2,014 ± 25 ms; it uses the application-content capture
-contract and is a fixture measurement, not a framework ranking.
+The matching machine-readable provenance record also carries the example
+binary digest, invalid-study exit and storage-reuse oracles. It is a real
+public MRI-DIR replay, not a framework ranking.
 
-The current RITK presentation path keeps the browser's three frame slots and
-reuses their RGBA capacity across slice updates. RITK PR #520 (`9e222fca5`)
-delivered the storage reuse and PR #521 (`5aeb196a3`) scoped the native-only
-helpers exposed by the hosted Linux lint gate. The locked RITK checks report
-455/455 tests for the default library and 867/867 with `eframe-shell`; the
-current-tree WASM release build, `wasm-bindgen` packaging and Metis browser
-asset build also exit 0. This is allocation-shape and build evidence for the
-real MRI workflow, not a cross-framework memory ranking.
+The earlier three-run resource sample remains a separate 2026-09-20 fixture
+bound to RITK PR #518 and is retained for the resource comparison record. It
+is not evidence about the current standalone executable and does not establish
+a cross-framework memory ranking.
 
 The [real MRI frame](https://github.com/ryancinsight/ritk/blob/main/docs/manual/images/dicom-metis-real-mri.png?raw=true)
 and [revision-bound provenance](https://github.com/ryancinsight/ritk/blob/main/docs/manual/images/dicom-metis-real-mri.json)
@@ -249,7 +245,7 @@ not parse DICOM data.
 
 ![Actual MRI-DIR study from the current standalone-lock replay](https://github.com/ryancinsight/ritk/blob/main/docs/manual/images/dicom-metis-real-mri.png?raw=true)
 
-The paired browser cine replay in RITK PR [#522](https://github.com/ryancinsight/ritk/pull/522)
+The revision-bound paired browser cine replay in RITK PR [#522](https://github.com/ryancinsight/ritk/pull/522)
 (merge `dc56909b07e53eb75ece43aafb65c704984f5811`) uses the lock-pinned Metis
 runtime at `165c4ec923e76ea7bc32b6b4fb99b4338166b3a3`. Hosted run
 [`35487777698`](https://github.com/ryancinsight/ritk/actions/runs/35487777698)
