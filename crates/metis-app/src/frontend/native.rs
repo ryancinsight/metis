@@ -167,17 +167,34 @@ impl<T: IpcTransport> NativeApplication for NativeForm<T> {
 
 impl<T: IpcTransport> NativeForm<T> {
     fn apply_accessibility_action(&mut self, request: &AccessibilityActionRequest) -> Result<bool> {
-        if request.target_node != native_accessibility::submit_button_identity() {
-            return Ok(false);
-        }
-        match request.action {
-            AccessibilityAction::Focus => {
-                self.focused = true;
-                Ok(true)
+        match request.target_node {
+            target if target == native_accessibility::submit_button_identity() => {
+                match request.action {
+                    AccessibilityAction::Focus => {
+                        self.focused = true;
+                        Ok(true)
+                    }
+                    AccessibilityAction::Activate => {
+                        submit(&mut self.app, self.pid)?;
+                        Ok(true)
+                    }
+                    _ => Ok(false),
+                }
             }
-            AccessibilityAction::Activate => {
-                submit(&mut self.app, self.pid)?;
-                Ok(true)
+            target if target == native_accessibility::patient_input_identity() => {
+                match request.action {
+                    AccessibilityAction::Focus => {
+                        self.focused = true;
+                        Ok(true)
+                    }
+                    AccessibilityAction::SetValue => {
+                        let Some(value) = request.value.as_deref() else {
+                            return Ok(false);
+                        };
+                        set_patient_value(&mut self.app, &mut self.patient_id, value)
+                    }
+                    _ => Ok(false),
+                }
             }
             _ => Ok(false),
         }
@@ -281,6 +298,7 @@ fn replace_patient_id<T: IpcTransport>(
     patient_id: &mut String,
     updated: String,
 ) -> Result<bool> {
+    validate_patient_value(&updated)?;
     if *patient_id == updated {
         return Ok(false);
     }
@@ -290,6 +308,28 @@ fn replace_patient_id<T: IpcTransport>(
     app.set_inputs(&updated, weight, concentration, dose)?;
     *patient_id = updated;
     Ok(true)
+}
+
+fn set_patient_value<T: IpcTransport>(
+    app: &mut FrontendApp<T>,
+    patient_id: &mut String,
+    value: &str,
+) -> Result<bool> {
+    validate_patient_value(value)?;
+    replace_patient_id(app, patient_id, value.to_owned())
+}
+
+fn validate_patient_value(value: &str) -> Result<()> {
+    if value.len() > MAX_PATIENT_ID_BYTES {
+        return Err(input_limit_error());
+    }
+    if value.chars().any(char::is_control) {
+        return Err(MetisError::protocol(
+            ErrorCode::MalformedPayload,
+            "Patient identifier contains a control character",
+        ));
+    }
+    Ok(())
 }
 
 fn submit_rect<T: IpcTransport>(app: &FrontendApp<T>) -> Result<Rect> {
@@ -351,6 +391,7 @@ mod tests {
         MAX_PATIENT_ID_BYTES, NativeForm, append_patient_character, append_patient_text,
         input_limit_error, submit_rect,
     };
+    use metis_core::ErrorCode;
     use metis_frontend::FrontendApp;
     use metis_ipc::MemoryTransport;
     use metis_platform::DisplayScale;
@@ -473,6 +514,95 @@ mod tests {
             .expect("accessibility focus");
         assert!(matches!(flow, NativeFlow::Continue { repaint: true }));
         assert!(form.focused);
+    }
+
+    #[test]
+    fn native_accessibility_patient_input_accepts_focus_and_bounded_value() {
+        let (transport, _peer) = MemoryTransport::pair();
+        let mut app = FrontendApp::new(transport, 800, 600).expect("form");
+        app.set_inputs("patient", 70.0, 4.0, 0.5)
+            .expect("patient value");
+        let mut form = NativeForm {
+            app,
+            pid: 1,
+            patient_id: "patient".to_owned(),
+            focused: false,
+        };
+        let flow = form
+            .handle_events(&[WindowEvent::AccessibilityAction {
+                request: AccessibilityActionRequest {
+                    target_node: super::native_accessibility::patient_input_identity(),
+                    action: AccessibilityAction::Focus,
+                    value: None,
+                    delta: None,
+                },
+            }])
+            .expect("patient accessibility focus");
+        assert!(matches!(flow, NativeFlow::Continue { repaint: true }));
+        assert!(form.focused);
+
+        let flow = form
+            .handle_events(&[WindowEvent::AccessibilityAction {
+                request: AccessibilityActionRequest {
+                    target_node: super::native_accessibility::patient_input_identity(),
+                    action: AccessibilityAction::SetValue,
+                    value: Some("screen-reader-value".to_owned()),
+                    delta: None,
+                },
+            }])
+            .expect("patient accessibility value");
+        assert!(matches!(flow, NativeFlow::Continue { repaint: true }));
+        assert_eq!(form.patient_id, "screen-reader-value");
+        assert_eq!(form.app.inputs().patient_id, "screen-reader-value");
+        let tree = form.app.semantic_tree().expect("semantic tree");
+        let patient = tree
+            .root
+            .children
+            .iter()
+            .flat_map(|node| node.children.iter())
+            .flat_map(|node| node.children.iter())
+            .find(|node| node.id.as_deref() == Some("label-patient"))
+            .expect("patient input");
+        assert_eq!(patient.value.as_deref(), Some("screen-reader-value"));
+    }
+
+    #[test]
+    fn native_accessibility_patient_input_rejects_invalid_values() {
+        let (transport, _peer) = MemoryTransport::pair();
+        let mut app = FrontendApp::new(transport, 800, 600).expect("form");
+        app.set_inputs("patient", 70.0, 4.0, 0.5)
+            .expect("patient value");
+        let mut form = NativeForm {
+            app,
+            pid: 1,
+            patient_id: "patient".to_owned(),
+            focused: true,
+        };
+        let oversized = form
+            .handle_events(&[WindowEvent::AccessibilityAction {
+                request: AccessibilityActionRequest {
+                    target_node: super::native_accessibility::patient_input_identity(),
+                    action: AccessibilityAction::SetValue,
+                    value: Some("x".repeat(MAX_PATIENT_ID_BYTES + 1)),
+                    delta: None,
+                },
+            }])
+            .expect_err("oversized accessibility value");
+        assert_eq!(oversized.code, ErrorCode::PayloadTooLarge);
+        assert_eq!(form.patient_id, "patient");
+
+        let control = form
+            .handle_events(&[WindowEvent::AccessibilityAction {
+                request: AccessibilityActionRequest {
+                    target_node: super::native_accessibility::patient_input_identity(),
+                    action: AccessibilityAction::SetValue,
+                    value: Some("patient\n".to_owned()),
+                    delta: None,
+                },
+            }])
+            .expect_err("control accessibility value");
+        assert_eq!(control.code, ErrorCode::MalformedPayload);
+        assert_eq!(form.patient_id, "patient");
     }
 
     #[test]

@@ -10,7 +10,7 @@ pub const CLINICAL_SCREEN_XML: &str = r#"<screen id="main-screen" style="display
   <card id="patient-card" style="display: flex; flex-direction: column; background-color: #ffffff; padding: 16px; border-width: 1px; border-color: #e2e8f0; gap: 10px;">
     <text style="color: #2d3748; font-size: 14px;">Patient Demographics and Drug Prescription</text>
     <div id="row-patient" style="display: flex; flex-direction: row; gap: 10px;">
-      <text id="label-patient" style="color: #4a5568; font-size: 12px;">Patient ID: PT-9042-ALPHA</text>
+      <text id="label-patient" role="textbox" aria-label="Patient ID" value="PT-9042-ALPHA" tabindex="0" style="color: #4a5568; font-size: 12px;">Patient ID: PT-9042-ALPHA</text>
     </div>
     <div id="row-weight" style="display: flex; flex-direction: row; gap: 10px;">
       <text id="label-weight" style="color: #4a5568; font-size: 12px;">Weight: 72.50 kg</text>
@@ -40,7 +40,7 @@ use crate::{FormState, FrontendApp};
 use iris::render::RenderBackend;
 use metis_core::{ErrorCode, MetisError, Result};
 use metis_ipc::{IpcTransport, client::HandshakeError};
-use metis_ui_lang::{Color, LayoutViewport, compute_layout};
+use metis_ui_lang::{Color, LayoutViewport, MAX_SEMANTIC_TEXT_BYTES, compute_layout};
 
 impl<T: IpcTransport> FrontendApp<T> {
     /// Projects the owned state and renders the complete form.
@@ -90,6 +90,11 @@ impl<T: IpcTransport> FrontendApp<T> {
             preview.push(']');
         }
         self.text("label-patient", format!("Patient ID: {preview}"))?;
+        self.attribute(
+            "label-patient",
+            "value",
+            bounded_accessible_value(&self.inputs.patient_id),
+        )?;
         self.text(
             "label-weight",
             format!("Weight: {} kg", input_number(self.inputs.weight_kg, 2)),
@@ -201,6 +206,17 @@ impl<T: IpcTransport> FrontendApp<T> {
             ))
         }
     }
+
+    fn attribute(&mut self, id: &str, key: &str, value: impl Into<String>) -> Result<()> {
+        if self.doc.set_attribute(id, key, value) {
+            Ok(())
+        } else {
+            Err(MetisError::ui(
+                ErrorCode::MalformedMarkup,
+                format!("Authored form is missing semantic field {id}"),
+            ))
+        }
+    }
 }
 
 fn layout_error() -> MetisError {
@@ -208,6 +224,26 @@ fn layout_error() -> MetisError {
         ErrorCode::LayoutOverflow,
         "Surface exceeds layout coordinates",
     )
+}
+
+fn bounded_accessible_value(value: &str) -> String {
+    const ELLIPSIS: &str = "...";
+    if value.len() <= MAX_SEMANTIC_TEXT_BYTES {
+        return value.to_owned();
+    }
+    let limit = MAX_SEMANTIC_TEXT_BYTES - ELLIPSIS.len();
+    let mut end = 0;
+    for (index, character) in value.char_indices() {
+        let next = index + character.len_utf8();
+        if next > limit {
+            break;
+        }
+        end = next;
+    }
+    let mut bounded = String::with_capacity(MAX_SEMANTIC_TEXT_BYTES);
+    bounded.push_str(&value[..end]);
+    bounded.push_str(ELLIPSIS);
+    bounded
 }
 
 // Shortest scientific f64 notation fits 24 glyphs: sign, 17 significant digits,
@@ -254,9 +290,25 @@ fn input_number(value: f64, minimum_decimals: usize) -> String {
 
 #[cfg(test)]
 mod presentation_tests {
-    use super::CLINICAL_SCREEN_XML;
+    use super::{CLINICAL_SCREEN_XML, bounded_accessible_value};
     use metis_platform::{Color, FONT_HEIGHT, FONT_WIDTH, Framebuffer};
-    use metis_ui_lang::{DisplayCommand, LayoutViewport, compute_layout, parse_markup};
+    use metis_ui_lang::{
+        DisplayCommand, LayoutViewport, MAX_SEMANTIC_TEXT_BYTES, compute_layout, parse_markup,
+    };
+
+    #[test]
+    fn accessible_patient_value_is_bounded_without_splitting_utf8() {
+        let short = "PT-9042-ALPHA";
+        assert_eq!(bounded_accessible_value(short), short);
+        let exact = "x".repeat(MAX_SEMANTIC_TEXT_BYTES);
+        assert_eq!(bounded_accessible_value(&exact), exact);
+
+        let oversized = "é".repeat(MAX_SEMANTIC_TEXT_BYTES);
+        let bounded = bounded_accessible_value(&oversized);
+        assert!(bounded.len() <= MAX_SEMANTIC_TEXT_BYTES);
+        assert!(bounded.ends_with("..."));
+        assert!(bounded.is_char_boundary(bounded.len() - 3));
+    }
 
     #[test]
     fn authored_form_text_and_status_fit_the_viewport() {

@@ -58,6 +58,18 @@ markup that produces the pixels:
 # let (transport, _peer) = metis_ipc::MemoryTransport::pair();
 # let app = FrontendApp::new(transport, 800, 600)?;
 let tree = app.semantic_tree()?;
+let patient = tree
+    .root
+    .children
+    .iter()
+    .flat_map(|node| node.children.iter())
+    .flat_map(|node| node.children.iter())
+    .find(|node| node.id.as_deref() == Some("label-patient"))
+    .ok_or_else(|| std::io::Error::other("patient input missing"))?;
+assert_eq!(patient.role, metis_ui_lang::SemanticRole::TextBox);
+assert_eq!(patient.value.as_deref(), Some("PT-9042-ALPHA"));
+assert!(patient.focusable);
+assert_eq!(patient.actions, [metis_ui_lang::SemanticAction::SetValue]);
 let submit = tree
     .root
     .children
@@ -96,11 +108,13 @@ cargo run --locked -p metis-app -- --metis-semantic-capture $semantic 60 2 0.2
 
 The reviewed specimen is
 [`native-semantic.json`](images/native-semantic.json). It is schema `1`, has
-22 elements and 10,280 bytes, and has SHA-256
-`e86d24258e84d6c2963bae826b7b7671415de52a9114ca1d9c19bd5a4ee76804`.
-The `main-screen` application root and `btn-calc` submit button are present;
-the button is focusable, enabled and exposes the typed `activate` action. The
-artifact is a deterministic host-neutral projection. It does not establish
+22 elements and 10,325 bytes, and has SHA-256
+`d1bdfc6089d9d34c9538d0de95a5e5b9607dbf9ef0aa0d52649602347be39628`.
+The `main-screen` application root, the `label-patient` textbox and the
+`btn-calc` submit button are present. The textbox exposes its bounded current
+value and typed `set_value` action; the button is focusable, enabled and
+exposes the typed `activate` action. The artifact is a deterministic
+host-neutral projection. It does not establish
 UIA, NSAccessibility or AT-SPI translation, spoken screen-reader output,
 platform preference enablement or assistive-technology acceptance; those
 remain the native residuals in `METIS-A11Y-001`.
@@ -131,10 +145,13 @@ surface.update_accessibility(tree)?;
 # Ok::<(), Box<dyn std::error::Error>>(())
 ```
 
-The authored form maps its stable `btn-calc` identity to `Activate` and
-focuses that control through the same bounded native event queue as keyboard
-input. Projection rejects duplicate or zero identities, oversized strings and
-future semantic roles/actions that are not in the admitted native vocabulary.
+The authored form maps its stable `btn-calc` identity to `Activate` and its
+stable `label-patient` identity to `Focus` and bounded `SetValue` handling.
+Both routes use the same bounded native event queue as keyboard input; an
+accepted patient value repaints the frontend and updates the semantic value.
+Oversized or control-bearing replacements are rejected before state mutation.
+Projection rejects duplicate or zero identities, oversized strings and future
+semantic roles/actions that are not in the admitted native vocabulary.
 The provider implementation is in Moirai (PRs [#410](https://github.com/ryancinsight/Moirai/pull/410)
 and [#411](https://github.com/ryancinsight/Moirai/pull/411)); Metis keeps the
 semantic source and application action policy. The component evidence covers
