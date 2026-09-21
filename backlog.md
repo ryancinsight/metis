@@ -552,7 +552,7 @@ an owner. “Unsupported” cannot replace delivery of a required mobile/native 
 
 <a id="METIS-SERVICES-001"></a>
 ## METIS-SERVICES-001 — Scoped network, shell and sidecars [minor]
-- Status: review; priority: P2; owner: Moirai mechanisms + Metis policy; integrator: root; last-update: 2026-09-19; branch: feat/metis-scoped-process-001; delivery: `e02ad62`; dependencies: METIS-DESKTOP-001, METIS-COMMANDS-001; risk: privilege escalation
+- Status: in-progress; priority: P2; owner: Moirai mechanisms + Metis policy; integrator: root; last-update: 2026-09-21; branch: feat/metis-scoped-network; lease: root crates/metis-core/src/capability.rs, crates/metis-platform/src/scoped_network.rs, crates/metis-platform/Cargo.toml, docs/adr/0042-scoped-network-provider.md, docs/adr/README.md; delivery: `e02ad62`; dependencies: METIS-DESKTOP-001, METIS-COMMANDS-001; risk: privilege escalation
 - Scope: HTTP/WebSocket and subprocess APIs, sidecar lifecycle, endpoint/argument allowlists, bounded IO and credential redaction; local test services only by default.
 - Acceptance: unauthorized endpoints/commands/arguments fail; transient errors, deadlines, cancellation, crash and cleanup are exercised against real processes/local servers; no shell-string injection or secret output.
 - Demonstration: [V08](docs/VERIFICATION.md#V08), connection/process status and denial journey; browsers never receive arbitrary native shell access.
