@@ -138,8 +138,11 @@ fn every_jpeg_prefix_and_in_scan_reterminated_cut_is_rejected() {
     for progressive in [false, true] {
         let bytes = jpeg(progressive);
         for end in 2..bytes.len() {
-            assert!(
-                RasterImage::decode(&bytes[..end]).is_err(),
+            assert_eq!(
+                RasterImage::decode(&bytes[..end])
+                    .expect_err("truncated JPEG")
+                    .kind(),
+                AssetErrorKind::Malformed,
                 "accepted prefix ending at {end}"
             );
         }
@@ -150,8 +153,11 @@ fn every_jpeg_prefix_and_in_scan_reterminated_cut_is_rejected() {
                 }
                 let mut cut = bytes[..cut_at].to_vec();
                 cut.extend_from_slice(&[0xff, 0xd9]);
-                assert!(
-                    RasterImage::decode(&cut).is_err(),
+                assert_eq!(
+                    RasterImage::decode(&cut)
+                        .expect_err("truncated JPEG entropy")
+                        .kind(),
+                    AssetErrorKind::Malformed,
                     "accepted reterminated entropy at {cut_at}"
                 );
             }
@@ -160,8 +166,12 @@ fn every_jpeg_prefix_and_in_scan_reterminated_cut_is_rejected() {
             for end in 2..bytes.len() - 2 {
                 let mut cut = bytes[..end].to_vec();
                 cut.extend_from_slice(&[0xff, 0xd9]);
-                let result = RasterImage::decode(&cut);
-                assert!(result.is_err(), "accepted reterminated cut ending at {end}");
+                let error = RasterImage::decode(&cut).expect_err("reterminated JPEG cut");
+                assert_eq!(
+                    error.kind(),
+                    AssetErrorKind::Malformed,
+                    "cut ending at {end}"
+                );
             }
         }
     }
