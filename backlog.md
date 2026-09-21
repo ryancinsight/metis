@@ -3,7 +3,15 @@
 - Status: done; priority: P1; owner: Metis integration; integrator: root; last-update: 2026-09-21; delivery: [PR #322](https://github.com/ryancinsight/metis/pull/322), [PR #324](https://github.com/ryancinsight/metis/pull/324).
 - Outcome: the live Metis scan reports zero `oversized_files` and zero `type_suffixed_fns`, and the pull-request workflow calls Atlas's pinned conformance guard against the member baseline.
 - Delivery scope: split the canonical event/layout/http test modules, consolidate type-named helpers, update affected docs, retain exact visual evidence under the artifact budget, and enforce the debt baseline on future pull requests.
-- Oracle: `atlas-conformance.py check --repo metis --member-path .` exits 0 on this tree; the workflow guard is pinned to Atlas `02a304f519c27b95169b87b732e6e631d51c205d`.
+- Oracle: `atlas-conformance.py check --repo metis --member-path .` exits 0 on this tree; the workflow guard is pinned to Atlas `28c44b703681970d64dfde0a18aaa30ff877490c`.
+
+<a id="METIS-CONFORMANCE-GUARD-PIN-2026-09-21"></a>
+## METIS-CONFORMANCE-GUARD-PIN-2026-09-21 — advance the Atlas conformance guard [patch] — in-progress
+- Status: in-progress; priority: P1; owner: Metis integration; integrator: root; last-update: 2026-09-21; dependency: Atlas PR #216.
+- Scope: the reusable conformance workflow reference and the matching structural oracle; no debt baseline changes.
+- The merged scanner exposed one real `oversized_files` regression in `crates/metis-cli/src/build.rs`; the Cargo-artifact selection family now has its own module, preserving behavior while bringing both source files below the 500-line threshold.
+- Acceptance: the workflow invokes Atlas `28c44b703681970d64dfde0a18aaa30ff877490c`; the exact main verification reports no member ratchet regressions; docs and citations name the merged revision.
+- Basis: Metis main run `35648844306` failed only because Atlas `02a304f519c27b95169b87b732e6e631d51c205d` scanned its `_atlas` workflow checkout as member source (`oversized_files 0 -> 3`, `manifest_implementation 0 -> 2`, `existence_only_assertions 0 -> 4`).
 
 <a id="METIS-GALLERY-CYCLES-001"></a>
 ## METIS-GALLERY-CYCLES-001 — Repeated saved-study browser lifecycle
