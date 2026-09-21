@@ -454,5 +454,5 @@ fn http_io_error(error: &io::Error) -> MetisError {
 }
 
 #[cfg(test)]
-#[path = "http_tests.rs"]
+#[path = "http_tests/mod.rs"]
 mod tests;

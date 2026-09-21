@@ -299,23 +299,23 @@ fn decode_snapshot(bytes: &[u8], key: &AuditCheckpointKey) -> Result<Snapshot> {
     if cursor.take(MAGIC.len())? != MAGIC {
         return Err(storage_error(ErrorCode::MagicMismatch));
     }
-    if cursor.u16()? != FORMAT_VERSION {
+    if u16::from_be_bytes(cursor.array::<2>()?) != FORMAT_VERSION {
         return Err(storage_error(ErrorCode::VersionMismatch));
     }
-    let generation = cursor.u64()?;
+    let generation = u64::from_be_bytes(cursor.array::<8>()?);
     if generation == 0 {
         return Err(storage_error(ErrorCode::MalformedPayload));
     }
-    let count = usize::from(cursor.u16()?);
+    let count = usize::from(u16::from_be_bytes(cursor.array::<2>()?));
     if count > AUDIT_CAPACITY {
         return Err(storage_error(ErrorCode::PayloadTooLarge));
     }
-    let checkpoint_sequence = cursor.u64()?;
+    let checkpoint_sequence = u64::from_be_bytes(cursor.array::<8>()?);
     let checkpoint = cursor.array::<32>()?;
     let last_hash = cursor.array::<32>()?;
-    let next_sequence = cursor.u64()?;
-    let body_len =
-        usize::try_from(cursor.u32()?).map_err(|_| storage_error(ErrorCode::PayloadTooLarge))?;
+    let next_sequence = u64::from_be_bytes(cursor.array::<8>()?);
+    let body_len = usize::try_from(u32::from_be_bytes(cursor.array::<4>()?))
+        .map_err(|_| storage_error(ErrorCode::PayloadTooLarge))?;
     let expected_len = HEADER_SIZE
         .checked_add(body_len)
         .and_then(|length| length.checked_add(MAC_SIZE))
@@ -384,14 +384,14 @@ fn validate_ledger_header(ledger: &AuditLedger) -> Result<()> {
 }
 
 fn decode_record(cursor: &mut Cursor<'_>) -> Result<AuditRecord> {
-    let sequence_id = cursor.u64()?;
-    let timestamp_millis = cursor.u64()?;
+    let sequence_id = u64::from_be_bytes(cursor.array::<8>()?);
+    let timestamp_millis = u64::from_be_bytes(cursor.array::<8>()?);
     let actor_id = cursor.array::<16>()?;
     let tag = cursor.byte()?;
     let payload = cursor.take(10)?;
     let event = decode_event(tag, payload)?;
     let present = cursor.byte()?;
-    let outcome_code = cursor.u16()?;
+    let outcome_code = u16::from_be_bytes(cursor.array::<2>()?);
     let outcome = match present {
         0 if outcome_code == 0 => None,
         1 => Some(

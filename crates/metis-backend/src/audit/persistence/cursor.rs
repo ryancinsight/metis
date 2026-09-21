@@ -36,16 +36,4 @@ impl<'a> Cursor<'a> {
         value.copy_from_slice(self.take(N)?);
         Ok(value)
     }
-
-    pub(super) fn u16(&mut self) -> Result<u16> {
-        Ok(u16::from_be_bytes(self.array::<2>()?))
-    }
-
-    pub(super) fn u32(&mut self) -> Result<u32> {
-        Ok(u32::from_be_bytes(self.array::<4>()?))
-    }
-
-    pub(super) fn u64(&mut self) -> Result<u64> {
-        Ok(u64::from_be_bytes(self.array::<8>()?))
-    }
 }

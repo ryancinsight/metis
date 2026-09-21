@@ -1,22 +1,9 @@
 <a id="METIS-CONFORMANCE-REGROWTH-2026-09-21"></a>
-## METIS-CONFORMANCE-REGROWTH-2026-09-21 — two debt classes regrew to 7 and 4 [patch] — todo
-
-- finding: `oversized_files` and `type_suffixed_fns` were closed to zero on
-  2026-09-10 and the atlas baseline records zero for both. They now measure 7
-  and 4, and surfaced only when a gitlink advance hit the umbrella's debt gate
-  — after the debt was already imported.
-- worklist: `metis-app/src/invocation.rs` (734), `metis-web/src/canvas/events.rs`
-  (700), `metis-app/src/frontend/native.rs` (652), `metis-ui-lang/src/layout.rs`
-  (558), `metis-backend/src/http_tests.rs` (528),
-  `metis-platform/src/native/application.rs` (524),
-  `metis-web/src/canvas/surface.rs` (518); and `scale_i32` in
-  `metis-platform/src/display_scale.rs` with the `cursor.rs` reader family.
-- generator: metis runs no conformance gate of its own, so nothing fails in a
-  metis pull request that grows a class. The mechanism for that lands in atlas
-  as `conformance-guard.yml` plus `atlas-conformance.py --member-path`;
-  adopting it here is the first half of this item and the sweep is the second.
-- oracle: `atlas-conformance.py check --repo metis --member-path .` exits 0,
-  and the guard runs on metis pull requests so the next raise fails here.
+## METIS-CONFORMANCE-REGROWTH-2026-09-21 — restore structural debt guard [patch]
+- Status: in-progress; priority: P1; owner: Metis integration; integrator: root; last-update: 2026-09-21; blocker: reusable Atlas conformance workflow is not yet landed on the Atlas default branch; re-open: guard revision is available for a pinned caller.
+- Outcome: the live Metis scan now reports zero `oversized_files` and zero `type_suffixed_fns`; the split modules and generic readers are committed in this increment, and the member caller adopts the shared guard once its upstream workflow lands.
+- Delivery scope: split the canonical event/layout/http test modules, consolidate type-named helpers, update affected docs, and retain exact visual evidence under the artifact budget. The Atlas workflow adoption remains the only open substep.
+- Oracle: `atlas-conformance.py check --repo metis --member-path .` exits 0 on this tree, and the Metis pull-request workflow calls the pinned Atlas guard with the current member baseline.
 
 <a id="METIS-GALLERY-CYCLES-001"></a>
 ## METIS-GALLERY-CYCLES-001 — Repeated saved-study browser lifecycle

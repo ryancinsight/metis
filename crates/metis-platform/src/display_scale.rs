@@ -93,7 +93,7 @@ impl DisplayScale {
     /// # Errors
     /// Returns [`ErrorCode::LayoutOverflow`] when the scaled coordinate does
     /// not fit in an `i32`.
-    pub fn scale_i32(self, value: i32) -> Result<i32> {
+    pub fn scale_coordinate(self, value: i32) -> Result<i32> {
         let product = i128::from(value) * i128::from(self.milli);
         let rounded = round_ratio(product, i128::from(MILLIS_PER_SCALE));
         i32::try_from(rounded).map_err(|_| {
@@ -116,7 +116,7 @@ impl DisplayScale {
                 "Display-scaled extent must be nonnegative",
             ));
         }
-        let scaled = self.scale_i32(value)?;
+        let scaled = self.scale_coordinate(value)?;
         Ok(if value > 0 { scaled.max(1) } else { 0 })
     }
 }
@@ -177,8 +177,8 @@ mod tests {
     #[test]
     fn coordinates_and_extents_round_at_fractional_scale() {
         let scale = DisplayScale::from_milli(1_250).expect("fractional scale");
-        assert_eq!(scale.scale_i32(20).expect("padding"), 25);
-        assert_eq!(scale.scale_i32(-20).expect("negative offset"), -25);
+        assert_eq!(scale.scale_coordinate(20).expect("padding"), 25);
+        assert_eq!(scale.scale_coordinate(-20).expect("negative offset"), -25);
         assert_eq!(scale.scale_extent(1).expect("visible extent"), 1);
         assert_eq!(scale.multiply(2).expect("font multiplier").milli(), 2_500);
     }
