@@ -25,11 +25,18 @@ requires a trusted host context before it serves requests. Its external assets
 carry the strict same-origin CSP from the policy source consumed by
 `HostPolicy`, and the bootstrap rejects cross-origin anchor navigation. The
 Windows `metis-platform::native::NativeSurface` supplies a Moirai-owned
-HWND, bounded event queue, native IME composition phases and ARGB presenter.
+HWND, bounded event queue, native IME composition phases, ARGB presenter and
+the optional bounded AccessKit accessibility tree. A supplied tree is installed
+while the HWND is hidden, then updated on the window thread; the application
+receives typed focus/activation actions through `WindowEvent`.
 `NativeApplication` and `run_native_application` own the reusable
 format-neutral frame/event loop; `metis-app --metis-native-window` implements
-the application policy and composes it with supervised private IPC. The desktop
-WebView host and OS permission boundary remain separate concerns.
+the application policy and composes it with supervised private IPC. The native
+bridge is an application-boundary capability: `metis-ui-lang` stays
+WASM-compatible and host-neutral, while Moirai owns Windows UI Automation
+translation and bounded action delivery. Tree presence is not spoken
+screen-reader evidence. The desktop WebView host and OS permission boundary
+remain separate concerns.
 
 The shared `metis-core` crate owns wire types, typed command descriptors,
 capability catalog and target-surface encoding, remote event envelopes, bounded
@@ -141,7 +148,7 @@ budgets, native FFI boundary and platform expansion contract.
 | Role | Owner | Decision |
 | --- | --- | --- |
 | Scheduling/process lifecycle | Moirai | Reuse executor and process transport; fill missing pipe/deadline support upstream. |
-| Native window and event lifecycle | Moirai PAL + Metis platform adapter | Moirai owns the thread-affine Win32 HWND, bounded message translation including IME composition phases, finite event waiting and retained ARGB frame; Metis exposes `NativeSurface` plus the generic `NativeApplication` loop, while applications own state, event policy and frame production without importing unsafe OS code into domain crates. WebView, permissions, accessibility and non-Windows hosts remain separate items. |
+| Native window and event lifecycle | Moirai PAL + Metis platform adapter | Moirai owns the thread-affine Win32 HWND, bounded message translation including IME composition phases, finite event waiting, retained ARGB frame and AccessKit tree/action delivery; Metis exposes `NativeSurface` plus the generic `NativeApplication` loop, while applications own state, event policy and frame production without importing unsafe OS code into domain crates. WebView, permissions, screen-reader evidence and non-Windows hosts remain separate items. |
 | Rendering contract | Iris | Implement its borrowed-frame interface; retain byte-packed pixel storage. |
 | General allocation | Mnemosyne | Already reachable through Moirai; no extra global allocator override without an allocation contract/measurement. |
 | Recoverable framebuffer allocation | Metis | Mnemosyne aligned storage currently aborts on allocation failure; Metis checks size and uses fallible reservation. |

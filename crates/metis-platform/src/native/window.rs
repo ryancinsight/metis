@@ -12,7 +12,9 @@ use std::io;
 use std::time::Duration;
 
 pub use moirai_pal::windows::window::{
-    CompositionPhase, MAX_COMPOSITION_UNITS, MAX_FRAME_DIMENSION, MAX_FRAME_PIXELS,
+    AccessibilityAction, AccessibilityActionRequest, AccessibilityNode, AccessibilityRole,
+    AccessibilityTree, CompositionPhase, MAX_ACCESSIBILITY_ACTIONS, MAX_ACCESSIBILITY_NODES,
+    MAX_ACCESSIBILITY_TEXT_BYTES, MAX_COMPOSITION_UNITS, MAX_FRAME_DIMENSION, MAX_FRAME_PIXELS,
     MAX_PUMP_MESSAGES, MAX_TITLE_UNITS, MAX_WAIT_MILLISECONDS, MAX_WINDOW_EVENTS, ModifierState,
     MouseButton, WindowConfig, WindowEvent, WindowVisibility,
 };
@@ -27,6 +29,7 @@ pub use moirai_pal::windows::window::{
 pub struct NativeSurface {
     window: NativeWindow,
     config: WindowConfig,
+    accessibility_tree: Option<AccessibilityTree>,
 }
 
 impl NativeSurface {
@@ -35,9 +38,42 @@ impl NativeSurface {
     /// # Errors
     /// Returns the Win32 or configuration error reported by Moirai.
     pub fn new(config: &WindowConfig) -> io::Result<Self> {
+        Self::new_with_accessibility(config, None)
+    }
+
+    /// Creates a native surface and installs an initial accessibility tree before visibility.
+    ///
+    /// The tree is retained so updates and [`Self::reopen`] preserve the same
+    /// host contract. A visible configuration is shown only after the adapter
+    /// has been installed on the hidden HWND.
+    ///
+    /// # Errors
+    /// Returns the Win32, configuration or accessibility validation error
+    /// reported by Moirai.
+    pub fn new_with_accessibility(
+        config: &WindowConfig,
+        accessibility_tree: Option<AccessibilityTree>,
+    ) -> io::Result<Self> {
+        let window = if let Some(tree) = accessibility_tree.clone() {
+            let hidden_config = WindowConfig::with_visibility(
+                config.title(),
+                config.width(),
+                config.height(),
+                WindowVisibility::Hidden,
+            )?;
+            let mut window = NativeWindow::new(&hidden_config)?;
+            window.install_accessibility(tree)?;
+            if config.visibility() == WindowVisibility::Visible {
+                window.show()?;
+            }
+            window
+        } else {
+            NativeWindow::new(config)?
+        };
         Ok(Self {
-            window: NativeWindow::new(config)?,
+            window,
             config: config.clone(),
+            accessibility_tree,
         })
     }
 
@@ -81,6 +117,16 @@ impl NativeSurface {
         self.window.close()
     }
 
+    /// Replaces the native accessibility tree after the HWND is installed.
+    ///
+    /// # Errors
+    /// Returns the validation or native adapter error reported by Moirai.
+    pub fn update_accessibility(&mut self, tree: AccessibilityTree) -> io::Result<()> {
+        self.window.update_accessibility(tree.clone())?;
+        self.accessibility_tree = Some(tree);
+        Ok(())
+    }
+
     /// Recreates a window after [`Self::close`] using its validated configuration.
     ///
     /// A closed surface has no live event stream; pending terminal events are
@@ -97,7 +143,9 @@ impl NativeSurface {
                 "native window must be closed before reopening",
             ));
         }
-        self.window = NativeWindow::new(&self.config)?;
+        let replacement =
+            Self::new_with_accessibility(&self.config, self.accessibility_tree.clone())?;
+        self.window = replacement.window;
         Ok(())
     }
 
@@ -201,5 +249,38 @@ mod tests {
         assert!(!second.is_destroyed());
         second.close().expect("second native close");
         assert!(second.is_destroyed());
+    }
+
+    #[test]
+    fn adapter_installs_updates_and_reopens_accessibility_before_visibility() {
+        let config = WindowConfig::with_visibility(
+            "Metis accessibility test",
+            320,
+            240,
+            WindowVisibility::Hidden,
+        )
+        .expect("bounded native configuration");
+        let mut button = AccessibilityNode::new(2, AccessibilityRole::Button, "Submit")
+            .expect("accessibility button");
+        button.set_focusable(true);
+        button.add_action(AccessibilityAction::Activate);
+        let mut root = AccessibilityNode::new(1, AccessibilityRole::Application, "Metis")
+            .expect("accessibility root");
+        root.set_children(vec![2]).expect("root children");
+        let tree = AccessibilityTree::from_nodes(1, 2, vec![root, button])
+            .expect("validated accessibility tree");
+
+        let mut surface = NativeSurface::new_with_accessibility(&config, Some(tree.clone()))
+            .expect("native surface with accessibility");
+        surface
+            .update_accessibility(tree.clone())
+            .expect("accessibility update");
+        surface.close().expect("native close");
+        surface.reopen().expect("native reopen with accessibility");
+        surface
+            .update_accessibility(tree)
+            .expect("reopened accessibility update");
+        surface.close().expect("reopened native close");
+        assert!(surface.is_destroyed());
     }
 }

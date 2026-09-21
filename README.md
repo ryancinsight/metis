@@ -127,9 +127,11 @@ dependency closure excludes `metis-backend`; the application entry composes both
 libraries. A shared executable image does not remove backend code from the child
 or establish broader OS permission restrictions. See [application entry design](docs/adr/0006-application-entry.md).
 Software-rendered hosts validate the bounded `SemanticTree` from the same
-markup before painting; the tree is a host-neutral contract and does not claim
-native screen-reader or operating-system accessibility until a platform bridge
-is implemented and evidenced.
+markup before painting. Windows native hosts now project that tree into
+Moirai's bounded AccessKit bridge before showing the HWND and dispatch typed
+focus/activation actions back to the application; the implementation does not
+claim spoken output or screen-reader acceptance without an installed-device
+journey.
 
 Runtime crates keep direct third-party dependencies at bounded contract
 surfaces: `metis-cli` and `metis-app` use Serde and `serde_json` for manifests
@@ -141,10 +143,10 @@ describing it as dependency-free. The Atlas development overlay resolves first-p
 trees. Standalone builds use the corresponding pushed provider revisions recorded
 in Cargo.lock. Metis consumes Moirai through git-plus-version requirements;
 the current standalone lock records merged Moirai revision
-`8a8daa60cca5484822c772bc6b574acaa8f133ad`, which descends from the
-WebView2 provider revision `c7b49a7623aed533f377aec77f656a16d2b9d68b`
-used to generate the historical capture. The current revision retains that
-provider graph and adds explicit WebGPU provider recreation. The locked
+`88f837ea90c694c5c0b62793fe1edb02b39bdddc`, which includes the Windows
+AccessKit accessibility provider and WebView2 0.39.1 bindings. The current
+revision retains the historical WebView2 capture provider graph and adds
+explicit WebGPU provider recreation. The locked
 provider history includes the merged process, browser/API, bounded WebSocket service,
 cancellable-task surfaces, semantic control seams, pointer metadata, wheel
 metadata, bounded browser file access through a direct first-read plus object-URL continuation stream and
@@ -167,9 +169,10 @@ Windows native and WebView2 initial/submit journeys plus a 1024×768
 permission-denial capture from runtime `153.0.4234.32` using `CapturePreview`;
 the artifact is 6,561 bytes with SHA-256
 `a9df158ff6a167ed3c708e9621a44446cae93b3c0d87e646c818601606a33b8f`. The
-[desktop item](backlog.md#METIS-DESKTOP-001) tracks remaining host-specific
-evidence for physical display-scale transitions, native accessibility, installed
-IME, broader OS-enforced restrictions and non-Windows hosts.
+[native accessibility item](backlog.md#METIS-A11Y-001) tracks remaining
+screen-reader and host-preference evidence. The [desktop item](backlog.md#METIS-DESKTOP-001)
+tracks physical display-scale transitions, installed IME, broader OS-enforced
+restrictions and non-Windows hosts.
 
 ## Design and evidence
 

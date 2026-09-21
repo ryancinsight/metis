@@ -156,8 +156,9 @@ migration and rollback across releases are not implemented.
 
 `inventory.json` contains application configuration, executable/resource paths,
 byte counts, SHA-256 values and the installer ProductCode/hash. These identify
-the bytes tested; hashes do not authenticate a publisher. MSI GUIDs are fresh,
-so repeated package builds do not produce identical MSI bytes.
+the bytes tested; hashes do not authenticate a publisher. Product and package
+GUIDs are fresh while component GUIDs are stable per application resource, so
+repeated package builds do not produce identical MSI bytes.
 
 Run the complete local installation demonstration with:
 
@@ -211,8 +212,10 @@ development overlay. The Windows Installer service cannot see that per-user
 mapping, so the install probe passes the physical MSI source and physical test
 directory to `msiexec`; this keeps source resolution and transactional cleanup
 on paths visible to the service. The MSI stores its application location under
-the context-dependent per-user registry root and the maintenance probe reads
-that same location before repair or removal.
+the explicit current-user registry root and the maintenance probe reads that
+same location before repair or removal. Each payload file is the key path for
+its MSI component; registry values remain component-owned, and deterministic
+component identities survive package rebuilds.
 
 ## Publish crates through CI
 

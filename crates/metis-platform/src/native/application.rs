@@ -1,6 +1,6 @@
 //! Format-neutral native application lifecycle over a Moirai window.
 
-use super::{NativeSurface, WindowConfig, WindowEvent};
+use super::{AccessibilityTree, NativeSurface, WindowConfig, WindowEvent};
 use crate::Framebuffer;
 use std::{error::Error, fmt, io, time::Duration};
 
@@ -24,6 +24,19 @@ pub trait NativeApplication {
 
     /// Returns the complete frame for the next native presentation.
     fn framebuffer(&self) -> &Framebuffer;
+
+    /// Returns the current native accessibility tree, when the application
+    /// opted into the native provider at startup.
+    ///
+    /// An application that returns `Some` during startup must continue to
+    /// return a validated tree after each event batch. Browser hosts retain
+    /// their DOM accessibility path and return `None`.
+    ///
+    /// # Errors
+    /// Returns the application's typed semantic projection error.
+    fn accessibility_tree(&self) -> Result<Option<AccessibilityTree>, Self::Error> {
+        Ok(None)
+    }
 
     /// Applies one bounded native event batch and reports the next host action.
     ///
@@ -53,6 +66,10 @@ trait NativeSurfaceDriver {
 
     fn present(&mut self, framebuffer: &Framebuffer) -> io::Result<()>;
 
+    fn update_accessibility(&mut self, _tree: AccessibilityTree) -> io::Result<()> {
+        Ok(())
+    }
+
     fn close(&mut self) -> io::Result<()>;
 }
 
@@ -63,6 +80,10 @@ impl NativeSurfaceDriver for NativeSurface {
 
     fn present(&mut self, framebuffer: &Framebuffer) -> io::Result<()> {
         NativeSurface::present(self, framebuffer)
+    }
+
+    fn update_accessibility(&mut self, tree: AccessibilityTree) -> io::Result<()> {
+        NativeSurface::update_accessibility(self, tree)
     }
 
     fn close(&mut self) -> io::Result<()> {
@@ -113,7 +134,11 @@ pub fn run_native_application<A>(
 where
     A: NativeApplication,
 {
-    let surface = NativeSurface::new(config).map_err(NativeHostError::Surface)?;
+    let initial_accessibility = application
+        .accessibility_tree()
+        .map_err(NativeHostError::Application)?;
+    let surface = NativeSurface::new_with_accessibility(config, initial_accessibility)
+        .map_err(NativeHostError::Surface)?;
     run_application_loop(surface, application, wait)
 }
 
@@ -147,6 +172,14 @@ where
         if terminal || matches!(flow, NativeFlow::Exit) {
             surface.close().map_err(NativeHostError::Surface)?;
             return Ok(());
+        }
+        if let Some(tree) = application
+            .accessibility_tree()
+            .map_err(NativeHostError::Application)?
+        {
+            surface
+                .update_accessibility(tree)
+                .map_err(NativeHostError::Surface)?;
         }
         if matches!(flow, NativeFlow::Continue { repaint: true }) {
             surface

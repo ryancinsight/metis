@@ -11,9 +11,11 @@ use std::{
     path::{Path, PathBuf},
 };
 
-// MSI root -1 follows the package's per-user installation context, so a
-// future ALLUSERS policy change cannot silently redirect application state.
-const USER_REGISTRY_ROOT: i32 = -1;
+// This package rejects ALLUSERS, so its inventory is always per-user. Use the
+// explicit MSI current-user root rather than the context-dependent -1 root;
+// the latter is resolved by the elevated Windows Installer service and does
+// not produce values in the installing user's hive on the supported host.
+const USER_REGISTRY_ROOT: i32 = 1;
 
 pub(crate) struct InstallerSpec<'a> {
     pub id: &'a str,
@@ -168,8 +170,12 @@ fn populate(
         let file = format!("F{index}");
         let component = format!("C{index}");
         let registry = format!("R{index}");
-        let component_guid = guid()?;
-        database.execute("INSERT INTO `Component` (`Component`,`ComponentId`,`Directory_`,`Attributes`,`Condition`,`KeyPath`) VALUES (?,?,?,?,?,?)", &[Text(&component), Text(&component_guid), Text(&directory), Number(260), Null, Text(&registry)])?;
+        let component_guid = component_guid(spec.id, destination);
+        // The file is the component key path. Registry values remain owned by
+        // the component, but using them as key paths makes every rebuild with
+        // a different component GUID collide with stale Windows Installer
+        // component records from an older package.
+        database.execute("INSERT INTO `Component` (`Component`,`ComponentId`,`Directory_`,`Attributes`,`Condition`,`KeyPath`) VALUES (?,?,?,?,?,?)", &[Text(&component), Text(&component_guid), Text(&directory), Number(256), Null, Text(&file)])?;
         database.execute(
             "INSERT INTO `FeatureComponents` (`Feature_`,`Component_`) VALUES (?,?)",
             &[Text("Application"), Text(&component)],
@@ -189,6 +195,43 @@ fn populate(
     database.execute(
         "INSERT INTO `_Streams` (`Name`,`Data`) VALUES (?,?)",
         &[Text("payload.cab"), Stream(cabinet)],
+    )
+}
+
+pub(super) fn component_guid(application_id: &str, destination: &str) -> String {
+    // MSI component identity is stable for one application resource. A fresh
+    // GUID on every package rebuild registers the same registry key path as a
+    // different component and leaves repeated per-user installs without their
+    // registry values. UUID version 5 gives the path a deterministic identity.
+    let mut name = Vec::with_capacity(application_id.len() + destination.len() + 24);
+    name.extend_from_slice(b"metis-msi-component\0");
+    name.extend_from_slice(application_id.as_bytes());
+    name.push(0);
+    name.extend_from_slice(destination.as_bytes());
+    let digest = moirai_crypto::sha1(&name);
+    let mut bytes = [0_u8; 16];
+    let length = bytes.len();
+    bytes.copy_from_slice(&digest[..length]);
+    bytes[6] = (bytes[6] & 0x0f) | 0x50;
+    bytes[8] = (bytes[8] & 0x3f) | 0x80;
+    format!(
+        "{{{:02X}{:02X}{:02X}{:02X}-{:02X}{:02X}-{:02X}{:02X}-{:02X}{:02X}-{:02X}{:02X}{:02X}{:02X}{:02X}{:02X}}}",
+        bytes[0],
+        bytes[1],
+        bytes[2],
+        bytes[3],
+        bytes[4],
+        bytes[5],
+        bytes[6],
+        bytes[7],
+        bytes[8],
+        bytes[9],
+        bytes[10],
+        bytes[11],
+        bytes[12],
+        bytes[13],
+        bytes[14],
+        bytes[15]
     )
 }
 

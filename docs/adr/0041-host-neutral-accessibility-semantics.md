@@ -59,5 +59,28 @@ button with its `activate` action. The command uses the production
 execution, an OS accessibility provider, spoken output or screen-reader
 acceptance.
 
-The remaining METIS-A11Y-001 work is the native OS bridge and supported
-screen-reader evidence. This ADR does not claim those capabilities.
+The remaining METIS-A11Y-001 work is supported screen-reader and host-preference
+evidence. This ADR does not claim those capabilities.
+
+## Revision 2026-09-21 — Windows native bridge
+
+The native boundary now consumes the validated tree without adding operating
+system dependencies to `metis-ui-lang`. `metis-platform::NativeSurface` accepts
+an optional tree, creates the Moirai window hidden, installs the AccessKit
+adapter, and shows the HWND only after installation. Subsequent trees replace
+the provider state on the window thread, and `NativeSurface::reopen` preserves
+the supplied tree. `metis-app::NativeForm` projects the authored frontend tree
+with stable nonzero identities, bounded strings and collision checks; focus and
+button activation actions return through `WindowEvent::AccessibilityAction`.
+Unknown future semantic roles or actions fail projection with a typed platform
+error instead of silently changing the role vocabulary.
+
+Moirai PR [#410](https://github.com/ryancinsight/Moirai/pull/410) added the
+format-neutral Windows provider at merge `bc6d100`; PR
+[#411](https://github.com/ryancinsight/Moirai/pull/411) aligned WebView2 0.39.1
+with the same Windows 0.62 API generation at merge `88f837e`. Metis native
+tests exercise hidden installation, update, close and reopen, and the
+application test dispatches focus to the authored submit control. These checks
+establish provider and consumer contract behavior; an installed UI Automation
+client, spoken screen-reader output and host preference enablement remain
+required evidence under METIS-A11Y-001.

@@ -68,8 +68,12 @@ the repository through a per-user `SUBST` drive so its Cargo resolution is
 independent of the Atlas overlay. Windows Installer runs in its service
 process and cannot inherit that mapping, so the verifier resolves the MSI
 source and its test `INSTALLDIR` to the physical repository path before
-launching `msiexec`. Registry rows use the MSI context-dependent root (`-1`)
-for the package's per-user context; the package-table test and the hosted
+launching `msiexec`. Registry rows use the explicit MSI current-user root (`1`)
+because the package rejects `ALLUSERS`. File paths are component key paths;
+registry values remain component-owned without making repeated package builds
+collide with stale registry-key-path records. Component GUIDs are UUID version
+5 values derived from application identity and destination, so one resource
+keeps its MSI identity across rebuilds. The package-table test and hosted
 lifecycle gate remain the acceptance oracles.
 
 ## Decision
@@ -137,8 +141,9 @@ unrepresentable text rejects before native insertion, because an actual MSI
 round-trip showed silent best-fit corruption for CJK, emoji and infinity. Full Unicode localization and non-ASCII cabinet staging paths require further
 work. The native boundary converts only equivalent canonical drive/UNC paths
 to legacy paths and rejects opaque namespaces, normalization-sensitive names and
-paths beyond 259 UTF-16 units. Product/package/component GUIDs are fresh, so MSI bytes are not
-reproducible; the payload inventory records exact source hashes.
+paths beyond 259 UTF-16 units. Product and package GUIDs are fresh while
+component GUIDs are deterministic per application resource, so MSI bytes are
+not reproducible; the payload inventory records exact source hashes.
 
 Related packages with a different ProductCode reject, including a rebuild at
 the same version. Uninstall the existing package first. Repair of the installed

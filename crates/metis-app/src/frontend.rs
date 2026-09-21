@@ -13,6 +13,8 @@ use std::{
 #[cfg(windows)]
 mod native;
 #[cfg(windows)]
+mod native_accessibility;
+#[cfg(windows)]
 mod webview;
 
 /// Runs the visible native host on supported desktop targets.
