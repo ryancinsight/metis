@@ -90,9 +90,11 @@ an owner. “Unsupported” cannot replace delivery of a required mobile/native 
 
 <a id="METIS-DOCS-CLAIMS-001"></a>
 ## METIS-DOCS-CLAIMS-001 — Reconcile public capability claims [patch]
-- Status: review; priority: P1; owner: Metis documentation; integrator: root; last-update: 2026-09-21; dependencies: METIS-GAPS-002; risk: stale capability claims
+- Status: done; priority: P1; owner: Metis documentation; integrator: root; last-update: 2026-09-21; delivery: [PR #314](https://github.com/ryancinsight/metis/pull/314); dependencies: METIS-GAPS-002; risk: stale capability claims
 - Scope: README and Python manual statements about audit persistence, native windows, DICOM ownership and direct dependencies.
 - Acceptance: each claim matches the current public API and manifest graph; no stale denial remains; plan, link and diff checks pass.
+- Outcome: README names the exact direct registry dependencies by owning crate, including `serde_json` and `jpeg-encoder`; the audited Python manual claims match `FileAuditStore`, `NativeApplication`, and the RITK-only DICOM boundary.
+- Verification: `cargo metadata --no-deps` graph inspection; dependency-free Python suite 325/325 with one intentional skip; `scripts/plan.py check`; citation and diff checks pass.
 
 <a id="METIS-SVELTE-001"></a>
 ## METIS-SVELTE-001 — Svelte comparator and migration plan [arch] [patch]
