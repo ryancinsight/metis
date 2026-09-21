@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import ctypes
+from contextlib import contextmanager
 import sys
 from dataclasses import dataclass
 
@@ -48,6 +49,27 @@ class _MonitorInfo(ctypes.Structure):
     ]
 
 
+@contextmanager
+def physical_coordinates():
+    """Use physical pixels on this thread and restore its previous DPI context."""
+    if sys.platform != "win32":
+        raise RuntimeError("native display coordinates require Windows")
+    set_context = ctypes.windll.user32.SetThreadDpiAwarenessContext
+    set_context.argtypes = [ctypes.c_void_p]
+    set_context.restype = ctypes.c_void_p
+    # PER_MONITOR_AWARE_V2 prevents GetWindowRect virtualization while GDI
+    # captures the target's physical pixels. Worker threads enter separately.
+    previous = set_context(ctypes.c_void_p(-4))
+    if not previous:
+        raise ctypes.WinError()
+    try:
+        yield
+    finally:
+        if not set_context(previous):
+            raise ctypes.WinError()
+
+
+@physical_coordinates()
 def enumerate_monitors() -> tuple[MonitorBounds, ...]:
     """Return all attached monitors in deterministic desktop-coordinate order."""
     if sys.platform != "win32":
@@ -115,6 +137,7 @@ def enumerate_monitors() -> tuple[MonitorBounds, ...]:
     )
 
 
+@physical_coordinates()
 def move_window_to_monitor(
     handle: int,
     monitor: MonitorBounds,

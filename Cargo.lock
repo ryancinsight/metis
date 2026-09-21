@@ -185,6 +185,14 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "c2459377285ad874054d797f3ccebf984978aa39129f6eafde5cdc8315b612f8"
 
 [[package]]
+name = "consus-raster"
+version = "0.1.0"
+source = "git+https://github.com/ryancinsight/consus.git#f3de72e2b2a99f857df6f451b04592891bd5fb10"
+dependencies = [
+ "jpeg-encoder",
+]
+
+[[package]]
 name = "cpufeatures"
 version = "0.2.17"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -612,6 +620,12 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "8f42a60cbdf9a97f5d2305f08a87dc4e09308d1276d28c869c684d7777685682"
 
 [[package]]
+name = "jpeg-encoder"
+version = "0.7.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "a0370574b86f7eca156b9f298392b5e69a23f8c86f3f865add60bbc2e79467a6"
+
+[[package]]
 name = "js-sys"
 version = "0.3.105"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -794,8 +808,10 @@ dependencies = [
 name = "metis-ui-lang"
 version = "0.1.0"
 dependencies = [
+ "consus-raster",
  "flate2",
  "iris-viz",
+ "jpeg-encoder",
  "metis-core",
  "metis-platform",
  "png",

@@ -27,9 +27,10 @@ BUILD_LINK_PACKAGES = {
     "wasm-bindgen-shared": "wasm-bindgen browser ABI build contract",
 }
 REGISTRY_BOUNDARIES = {
-    # Native PNG byte decoding has no format-neutral Atlas provider; RITK's
-    # path-based medical readers do not preserve this host's RGBA contract.
+    # PNG admission uses the strict bounded host contract in ADR 0029.
     ("metis-ui-lang", "png"),
+    # Independent Rust encoder manufactures small JPEG test inputs.
+    ("metis-ui-lang", "jpeg-encoder"),
     # png tolerates a missing zlib trailer after producing all pixels; the
     # inflater separately requires stream end and the exact scanline extent.
     ("metis-ui-lang", "flate2"),

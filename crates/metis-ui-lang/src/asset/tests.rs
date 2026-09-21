@@ -55,10 +55,10 @@ fn exact_zlib_end_checksum_and_scanline_extent_are_required() {
         .flat_map(|row| std::iter::once(0).chain(row.iter().copied()))
         .collect();
     let compressed = compress(&rows);
-    let expected = RasterImage::decode_png(&fixture()).expect("reference");
+    let expected = RasterImage::decode(&fixture()).expect("reference");
     for split in 0..=compressed.len() {
         assert_eq!(
-            RasterImage::decode_png(&compressed_png(
+            RasterImage::decode(&compressed_png(
                 &[&compressed[..split], &compressed[split..]],
                 false
             ))
@@ -103,16 +103,16 @@ fn adam7_scanlines_preserve_the_same_rgba_grid() {
     }
     assert_eq!(raw.len(), 29);
     let image =
-        RasterImage::decode_png(&compressed_png(&[&compress(&raw)], true)).expect("Adam7 decode");
+        RasterImage::decode(&compressed_png(&[&compress(&raw)], true)).expect("Adam7 decode");
     assert_eq!(
         image,
-        RasterImage::decode_png(&fixture()).expect("row-major decode")
+        RasterImage::decode(&fixture()).expect("row-major decode")
     );
 }
 
 fn rejected(bytes: &[u8], kind: AssetErrorKind) {
     assert_eq!(
-        RasterImage::decode_png(bytes)
+        RasterImage::decode(bytes)
             .expect_err("rejected fixture")
             .kind(),
         kind
@@ -121,7 +121,7 @@ fn rejected(bytes: &[u8], kind: AssetErrorKind) {
 
 #[test]
 fn decoded_alpha_orientation_and_contained_pixels_match_fixture() {
-    let image = RasterImage::decode_png(&fixture()).expect("decode fixture");
+    let image = RasterImage::decode(&fixture()).expect("decode fixture");
     assert_eq!((image.width(), image.height()), (2, 3));
     let expected: Vec<_> = RGBA
         .chunks_exact(4)
@@ -164,7 +164,7 @@ fn admitted_color_forms_expand_to_exact_straight_channels() {
             Color::rgba(41, 41, 41, 17),
         ),
     ] {
-        let image = RasterImage::decode_png(&encode(1, 1, color, &input)).expect("color fixture");
+        let image = RasterImage::decode(&encode(1, 1, color, &input)).expect("color fixture");
         assert_eq!(image.pixels(), &[expected]);
     }
     let mut bytes = Vec::new();
@@ -179,7 +179,7 @@ fn admitted_color_forms_expand_to_exact_straight_channels() {
         .expect("palette pixels");
     writer.finish().expect("palette end");
     assert_eq!(
-        RasterImage::decode_png(&bytes)
+        RasterImage::decode(&bytes)
             .expect("palette decode")
             .pixels(),
         &[Color::rgb(255, 0, 0), Color::rgba(0, 0, 255, 64)]
@@ -195,7 +195,7 @@ fn every_truncation_and_single_byte_corruption_fails() {
     for index in 0..bytes.len() {
         let mut corrupted = bytes.clone();
         corrupted[index] ^= 1;
-        let error = RasterImage::decode_png(&corrupted).expect_err("corrupted byte");
+        let error = RasterImage::decode(&corrupted).expect_err("corrupted byte");
         assert!(matches!(
             error.kind(),
             AssetErrorKind::Malformed | AssetErrorKind::Unsupported | AssetErrorKind::TooLarge
@@ -222,7 +222,7 @@ fn dimensions_encoded_bytes_and_metadata_fail_before_pixel_allocation() {
         &vec![0; MAX_ENCODED_IMAGE_BYTES + 1],
         AssetErrorKind::TooLarge,
     );
-    for chunk in [*b"eXIf", *b"pHYs", *b"iCCP", *b"acTL", *b"zTXt"] {
+    for chunk in [*b"pHYs", *b"iCCP", *b"acTL", *b"zTXt"] {
         let mut bytes = Vec::new();
         let mut encoder = png::Encoder::new(&mut bytes, 1, 1);
         encoder.set_color(png::ColorType::Rgba);
@@ -274,10 +274,16 @@ fn scoped_loader_rejects_parent_absolute_stream_and_oversized_files() {
     let provider = ScopedFileProvider::new(&root).expect("root");
     let capability = capability();
     assert_eq!(
-        RasterImage::load_png(&provider, &capability, "image.png")
+        RasterImage::load(&provider, &capability, "image.png")
             .expect("scoped decode")
             .pixels()[0],
         Color::rgb(255, 0, 0)
+    );
+    let jpeg = jpeg_cases::jpeg(false);
+    std::fs::write(root.join("image.bin"), &jpeg).expect("JPEG fixture file");
+    assert_eq!(
+        RasterImage::load(&provider, &capability, "image.bin").expect("signature decode"),
+        RasterImage::decode(&jpeg).expect("memory decode")
     );
     for path in [
         root.join("image.png"),
@@ -286,7 +292,7 @@ fn scoped_loader_rejects_parent_absolute_stream_and_oversized_files() {
         "missing.png".into(),
     ] {
         assert_eq!(
-            RasterImage::load_png(&provider, &capability, path)
+            RasterImage::load(&provider, &capability, path)
                 .expect_err("denied path")
                 .kind(),
             AssetErrorKind::Access
@@ -297,10 +303,12 @@ fn scoped_loader_rejects_parent_absolute_stream_and_oversized_files() {
         .expect("oversize length");
     drop(file);
     assert_eq!(
-        RasterImage::load_png(&provider, &capability, "large.png")
+        RasterImage::load(&provider, &capability, "large.png")
             .expect_err("oversize file")
             .kind(),
         AssetErrorKind::Access
     );
     std::fs::remove_dir_all(root).expect("fixture cleanup");
 }
+
+mod jpeg_cases;
