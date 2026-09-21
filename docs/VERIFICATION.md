@@ -2325,9 +2325,9 @@ cargo run --locked -p metis-app -- --metis-semantic-capture $semantic 60 2 0.2
 
 The reviewed [`native-semantic.json`](manual/images/native-semantic.json)
 artifact is schema `1`, contains 22 elements, is 10,325 bytes and hashes to
-`11a4c02bbc8f718984bf3cd0184e0dfe478224fa9169b6d6e85c3804c006cdc6`. It is
+`d1bdfc6089d9d34c9538d0de95a5e5b9607dbf9ef0aa0d52649602347be39628`. It is
 regenerated from the production semantic capture command. Its value-semantic oracle finds the
-`main-screen` application root, the focusable `patient-input` textbox with its
+`main-screen` application root, the focusable `label-patient` textbox with its
 bounded current value and `set_value` action, and an enabled, focusable
 `btn-calc` button with the single `activate` action. This exercises
 the production native executable and semantic projection, not an in-memory

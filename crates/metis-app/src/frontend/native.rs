@@ -561,7 +561,7 @@ mod tests {
             .iter()
             .flat_map(|node| node.children.iter())
             .flat_map(|node| node.children.iter())
-            .find(|node| node.id.as_deref() == Some("patient-input"))
+            .find(|node| node.id.as_deref() == Some("label-patient"))
             .expect("patient input");
         assert_eq!(patient.value.as_deref(), Some("screen-reader-value"));
     }

@@ -44,7 +44,7 @@ pub(crate) fn submit_button_identity() -> u64 {
 
 /// Returns the stable identity used for the authored patient input.
 pub(crate) fn patient_input_identity() -> u64 {
-    explicit_identity("patient-input")
+    explicit_identity("label-patient")
 }
 
 fn append_node(
@@ -202,7 +202,7 @@ mod tests {
             find_identity(&tree.root, &mut Vec::new(), "btn-calc").expect("submit button");
         assert_eq!(explicit, submit_button_identity());
         let patient =
-            find_identity(&tree.root, &mut Vec::new(), "patient-input").expect("patient input");
+            find_identity(&tree.root, &mut Vec::new(), "label-patient").expect("patient input");
         assert_eq!(patient, patient_input_identity());
         assert_ne!(explicit, patient);
         assert_ne!(path_identity(&[0]), path_identity(&[1]));

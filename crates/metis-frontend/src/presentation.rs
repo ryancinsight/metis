@@ -10,7 +10,7 @@ pub const CLINICAL_SCREEN_XML: &str = r#"<screen id="main-screen" style="display
   <card id="patient-card" style="display: flex; flex-direction: column; background-color: #ffffff; padding: 16px; border-width: 1px; border-color: #e2e8f0; gap: 10px;">
     <text style="color: #2d3748; font-size: 14px;">Patient Demographics and Drug Prescription</text>
     <div id="row-patient" style="display: flex; flex-direction: row; gap: 10px;">
-      <text id="patient-input" role="textbox" aria-label="Patient ID" value="PT-9042-ALPHA" tabindex="0" style="color: #4a5568; font-size: 12px;">Patient ID: PT-9042-ALPHA</text>
+      <text id="label-patient" role="textbox" aria-label="Patient ID" value="PT-9042-ALPHA" tabindex="0" style="color: #4a5568; font-size: 12px;">Patient ID: PT-9042-ALPHA</text>
     </div>
     <div id="row-weight" style="display: flex; flex-direction: row; gap: 10px;">
       <text id="label-weight" style="color: #4a5568; font-size: 12px;">Weight: 72.50 kg</text>
@@ -89,9 +89,9 @@ impl<T: IpcTransport> FrontendApp<T> {
             preview.push_str(&composition_preview);
             preview.push(']');
         }
-        self.text("patient-input", format!("Patient ID: {preview}"))?;
+        self.text("label-patient", format!("Patient ID: {preview}"))?;
         self.attribute(
-            "patient-input",
+            "label-patient",
             "value",
             bounded_accessible_value(&self.inputs.patient_id),
         )?;

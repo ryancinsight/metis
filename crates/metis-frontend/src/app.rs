@@ -382,7 +382,7 @@ mod tests {
         assert_eq!(app.composition(), Some("東京"));
         assert_eq!(
             app.document()
-                .find_element_by_id("patient-input")
+                .find_element_by_id("label-patient")
                 .expect("patient label")
                 .text_content(),
             "Patient ID: PT-9042-ALPHA [東京]"
@@ -448,7 +448,7 @@ mod tests {
             .iter()
             .flat_map(|node| node.children.iter())
             .flat_map(|node| node.children.iter())
-            .find(|node| node.id.as_deref() == Some("patient-input"))
+            .find(|node| node.id.as_deref() == Some("label-patient"))
             .expect("patient input");
         assert_eq!(patient.role, metis_ui_lang::SemanticRole::TextBox);
         assert_eq!(patient.name, "Patient ID");

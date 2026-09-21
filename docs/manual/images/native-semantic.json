@@ -105,7 +105,7 @@
             "actions": [],
             "children": [
               {
-                "id": "patient-input",
+                "id": "label-patient",
                 "role": "textbox",
                 "name": "Patient ID",
                 "description": null,

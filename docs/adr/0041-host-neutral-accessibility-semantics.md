@@ -52,8 +52,8 @@ The `metis-app --metis-semantic-capture` role serializes the production
 frontend's validated tree to a bounded schema-1 JSON artifact. The reviewed
 22-element specimen is [the native semantic capture](../manual/images/native-semantic.json);
 it is 10,325 bytes and has SHA-256
-`11a4c02bbc8f718984bf3cd0184e0dfe478224fa9169b6d6e85c3804c006cdc6`. The
-oracle checks the application root, the focusable `patient-input` textbox with
+`d1bdfc6089d9d34c9538d0de95a5e5b9607dbf9ef0aa0d52649602347be39628`. The
+oracle checks the application root, the focusable `label-patient` textbox with
 its bounded value and `set_value` action, and the enabled, focusable `btn-calc`
 button with its `activate` action. The command uses the production
 `FrontendApp` with an in-memory transport and therefore does not claim backend
@@ -88,7 +88,7 @@ required evidence under METIS-A11Y-001.
 
 ## Revision 2026-09-21 — Native editable action delivery
 
-The authored `patient-input` control now carries a stable textbox identity,
+The authored `label-patient` control now carries a stable textbox identity,
 `aria-label`, current bounded value and `SetValue` action in the format-neutral
 tree. The Windows consumer routes provider `Focus` and `SetValue` requests for
 that identity through the existing patient transition used by keyboard and IME

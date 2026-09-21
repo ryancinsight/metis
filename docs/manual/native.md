@@ -64,7 +64,7 @@ let patient = tree
     .iter()
     .flat_map(|node| node.children.iter())
     .flat_map(|node| node.children.iter())
-    .find(|node| node.id.as_deref() == Some("patient-input"))
+    .find(|node| node.id.as_deref() == Some("label-patient"))
     .ok_or_else(|| std::io::Error::other("patient input missing"))?;
 assert_eq!(patient.role, metis_ui_lang::SemanticRole::TextBox);
 assert_eq!(patient.value.as_deref(), Some("PT-9042-ALPHA"));
@@ -109,8 +109,8 @@ cargo run --locked -p metis-app -- --metis-semantic-capture $semantic 60 2 0.2
 The reviewed specimen is
 [`native-semantic.json`](images/native-semantic.json). It is schema `1`, has
 22 elements and 10,325 bytes, and has SHA-256
-`11a4c02bbc8f718984bf3cd0184e0dfe478224fa9169b6d6e85c3804c006cdc6`.
-The `main-screen` application root, the `patient-input` textbox and the
+`d1bdfc6089d9d34c9538d0de95a5e5b9607dbf9ef0aa0d52649602347be39628`.
+The `main-screen` application root, the `label-patient` textbox and the
 `btn-calc` submit button are present. The textbox exposes its bounded current
 value and typed `set_value` action; the button is focusable, enabled and
 exposes the typed `activate` action. The artifact is a deterministic
@@ -146,7 +146,7 @@ surface.update_accessibility(tree)?;
 ```
 
 The authored form maps its stable `btn-calc` identity to `Activate` and its
-stable `patient-input` identity to `Focus` and bounded `SetValue` handling.
+stable `label-patient` identity to `Focus` and bounded `SetValue` handling.
 Both routes use the same bounded native event queue as keyboard input; an
 accepted patient value repaints the frontend and updates the semantic value.
 Oversized or control-bearing replacements are rejected before state mutation.
