@@ -90,7 +90,7 @@ an owner. “Unsupported” cannot replace delivery of a required mobile/native 
 
 <a id="METIS-DOCS-CLAIMS-001"></a>
 ## METIS-DOCS-CLAIMS-001 — Reconcile public capability claims [patch]
-- Status: in-progress; priority: P1; owner: Metis documentation; integrator: root; dependencies: METIS-GAPS-002; risk: stale capability claims
+- Status: review; priority: P1; owner: Metis documentation; integrator: root; last-update: 2026-09-21; dependencies: METIS-GAPS-002; risk: stale capability claims
 - Scope: README and Python manual statements about audit persistence, native windows, DICOM ownership and direct dependencies.
 - Acceptance: each claim matches the current public API and manifest graph; no stale denial remains; plan, link and diff checks pass.
 
