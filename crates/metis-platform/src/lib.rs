@@ -10,6 +10,8 @@ pub mod rasterizer;
 #[cfg(not(target_arch = "wasm32"))]
 pub mod scoped_file;
 #[cfg(not(target_arch = "wasm32"))]
+pub mod scoped_network;
+#[cfg(not(target_arch = "wasm32"))]
 pub mod scoped_process;
 pub mod surface;
 
@@ -26,6 +28,13 @@ pub use rasterizer::{
 };
 #[cfg(not(target_arch = "wasm32"))]
 pub use scoped_file::{MAX_SCOPED_FILE_BYTES, ScopedFileProvider};
+#[cfg(not(target_arch = "wasm32"))]
+pub use scoped_network::{
+    MAX_SCOPED_HTTP_BODY_BYTES, MAX_SCOPED_HTTP_DEADLINE, MAX_SCOPED_HTTP_HEADER_BYTES,
+    MAX_SCOPED_HTTP_HEADERS, MAX_SCOPED_HTTP_METHOD_BYTES, MAX_SCOPED_HTTP_ORIGINS,
+    MAX_SCOPED_HTTP_RESPONSE_BYTES, MAX_SCOPED_HTTP_URL_BYTES, ScopedHttpError, ScopedHttpProvider,
+    ScopedHttpRequest, ScopedHttpResponse,
+};
 #[cfg(not(target_arch = "wasm32"))]
 pub use scoped_process::{
     MAX_SCOPED_PROCESS_ARGUMENT_BYTES, MAX_SCOPED_PROCESS_ARGUMENTS,

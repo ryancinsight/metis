@@ -101,6 +101,14 @@ returns only its byte count, while stdout is capped at
 `MAX_SCOPED_PROCESS_OUTPUT_BYTES`. A deadline requests finite termination and
 reports cleanup failure instead of treating an unconfirmed exit as success.
 
+Native network sidecars use `ScopedHttpProvider` with a host-owned HTTP(S) origin
+allowlist and a NETWORK capability witness. Requests validate URL, method,
+headers and body before reaching Moirai; hop-by-hop headers are rejected,
+redirects are disabled, and response bytes remain bounded. Debug
+representations redact URL, header values and payload bytes. The provider is
+native-only and does not parse DICOM or expose a browser-controlled network
+object.
+
 Applications that use the native pixel surface can share the bounded host loop
 through `metis_platform::native::NativeApplication` and
 `run_native_application`. The application owns its state and frame, applies

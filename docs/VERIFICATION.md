@@ -2709,6 +2709,19 @@ claim an operating-system sandbox, descendant containment for
 provider and broader sidecar lifecycle work stays on
 [METIS-SERVICES-001](../backlog.md#METIS-SERVICES-001).
 
+The scoped network provider now supplies the bounded native HTTP slice of the
+sidecar contract. A host constructs ScopedHttpProvider with a finite HTTP(S)
+origin allowlist; each request requires a NETWORK capability witness and is
+validated before Moirai sends it. Hop-by-hop headers are denied, redirects are
+disabled, and request, response and header budgets are finite. A real loopback
+TcpListener exchange proves status, header and body values; rejection tests
+cover invalid origins, URL fragments, forbidden headers, oversized bodies,
+excessive headers and missing capability. Debug output does not expose URL,
+header values or payload bytes. This evidence does not claim WebSocket policy,
+certificate pinning, browser APIs, an operating-system network sandbox or DICOM
+behavior; those residuals remain under
+[METIS-SERVICES-001](../backlog.md#METIS-SERVICES-001).
+
 The implementation is Metis revision `e02ad62c781000506738c2d34d842985d128137b`;
 the locked full verifier for this increment passed all 26 named stages,
 including the expected `PermissionDenied` capture-failure oracle, and the

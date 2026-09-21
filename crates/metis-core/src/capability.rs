@@ -30,6 +30,8 @@ impl CapabilityScope {
     pub const READ_FILE: Self = Self(1 << 5);
     /// Permission to launch one host-owned, argument-allowlisted process.
     pub const RUN_PROCESS: Self = Self(1 << 6);
+    /// Permission to issue requests through a host-owned network provider.
+    pub const NETWORK: Self = Self(1 << 7);
 
     /// Checks if this scope contains all flags of `other`.
     #[must_use]
