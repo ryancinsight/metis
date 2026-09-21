@@ -152,11 +152,50 @@ accepted patient value repaints the frontend and updates the semantic value.
 Oversized or control-bearing replacements are rejected before state mutation.
 Projection rejects duplicate or zero identities, oversized strings and future
 semantic roles/actions that are not in the admitted native vocabulary.
-The provider implementation is in Moirai (PRs [#410](https://github.com/ryancinsight/Moirai/pull/410)
-and [#411](https://github.com/ryancinsight/Moirai/pull/411)); Metis keeps the
+The provider implementation is in Moirai (PRs [#410](https://github.com/ryancinsight/Moirai/pull/410),
+[#411](https://github.com/ryancinsight/Moirai/pull/411) and [#414](https://github.com/ryancinsight/Moirai/pull/414)); Metis keeps the
 semantic source and application action policy. The component evidence covers
 tree installation, updates and reopen; it does not claim that a specific
 installed screen reader speaks or operates the form.
+
+### Exercise the Windows UI Automation journey
+
+The optional Windows runner exercises the visible production executable through
+the operating system's UI Automation client. It discovers the real `Patient ID`
+edit and submit button, sends a bounded `ValuePattern.SetValue` request, invokes
+the button with `InvokePattern.Invoke`, waits for the backend result and captures
+the window before and after the actions. The runner exits nonzero when the
+required controls, value transition or result are absent, and limits the
+Automation tree, value bytes and PowerShell response. Run it from the Metis
+repository after building `metis-app`:
+
+```powershell
+cargo build --locked -p metis-app --bin metis-app
+$target = if ($env:CARGO_TARGET_DIR) { $env:CARGO_TARGET_DIR } else { Join-Path (Get-Location) "target" }
+$binary = Join-Path $target "debug\metis-app.exe"
+New-Item -ItemType Directory -Force output/native-uia | Out-Null
+python -S scripts/python_native_accessibility.py `
+  --command $binary `
+  --argument=--metis-native-window --argument=60 --argument=2 --argument=0.2 `
+  --initial-output output/native-uia/initial.png `
+  --output output/native-uia/after.png `
+  --manifest output/native-uia/trace.json
+```
+
+The output directory is ignored run output. A local Windows run on 2026-09-21
+used an 818×647 window at 120 DPI and found 10 named UI Automation nodes. It
+observed `demo` → `UIA-PATIENT`, then the backend result
+`Backend Calculation Output Rate: 0.360 mL/hr (0.72 mg/hr)`; the initial and
+after PNGs changed pixels and hash to
+`60adf0767bb162e55ea9f21351b18a16d1c20aa870cad9c631abd3eb34109962` and
+`54ccf53bda8713b130a50cf916d32c11b137c336fb271c80c1c3b9e6a47df1af`.
+The locked build resolved all Moirai packages at merged PR [#414](https://github.com/ryancinsight/Moirai/pull/414),
+revision `d7b38d7`, and its `Cargo.lock` SHA-256 is
+`95bf4b497677c141308de3ad4d44e3be58e90a000d4eb48befb524779009c568`.
+The focused locked native gate passed formatting, warning-denied Clippy and
+32/32 `metis-app` nextest cases before this capture. The trace proves the
+native provider action path and visible result; it does not prove installed
+screen-reader speech, host preference enablement or non-Windows accessibility.
 
 ## Apply native display scale
 

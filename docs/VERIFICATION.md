@@ -2337,9 +2337,51 @@ gate covers hidden installation, tree replacement, close/reopen retention and
 typed focus delivery to the authored submit control. Moirai PR [#410](https://github.com/ryancinsight/Moirai/pull/410)
 merged the provider at `bc6d100`; PR [#411](https://github.com/ryancinsight/Moirai/pull/411)
 merged WebView2 0.39.1 at `88f837e`, aligning the existing WebView2 surface with
-the provider's Windows 0.62 bindings. These are provider and consumer contract
-checks: no OS screen reader, spoken output or host preference enablement is
-claimed.
+the provider's Windows 0.62 bindings. PR [#414](https://github.com/ryancinsight/Moirai/pull/414)
+merged the Windows `ValuePattern.SetValue` action mapping at `d7b38d7`. These
+are provider and consumer contract checks: no OS screen reader, spoken output
+or host preference enablement is claimed.
+
+### Windows UI Automation action evidence — 2026-09-21
+
+The optional `scripts/python_native_accessibility.py` journey exercises the
+visible production `metis-app.exe` through Windows UI Automation. It captures
+the initial window, finds the real `Patient ID` edit and submit button, sends
+`ValuePattern.SetValue`, invokes `InvokePattern.Invoke`, waits for a non-pending
+backend result and captures the changed window. The runner bounds the tree at
+256 named nodes, the value at 128 UTF-8 bytes and the PowerShell trace at 256 KiB;
+missing controls, an unchanged value, a pending result or malformed output is a
+failure. The command is:
+
+```powershell
+cargo build --locked -p metis-app --bin metis-app
+$target = if ($env:CARGO_TARGET_DIR) { $env:CARGO_TARGET_DIR } else { Join-Path (Get-Location) "target" }
+$binary = Join-Path $target "debug\metis-app.exe"
+New-Item -ItemType Directory -Force output/native-uia | Out-Null
+python -S scripts/python_native_accessibility.py `
+  --command $binary `
+  --argument=--metis-native-window --argument=60 --argument=2 --argument=0.2 `
+  --initial-output output/native-uia/initial.png `
+  --output output/native-uia/after.png `
+  --manifest output/native-uia/trace.json
+```
+
+Local Windows evidence: process return code `0`; window `818×647`; DPI `120`;
+10 named UI Automation nodes; `ControlType.Edit` / `Patient ID`;
+`ControlType.Button` / `[ SUBMIT CALCULATION TO BACKEND ]`; value `demo` →
+`UIA-PATIENT`; submit action `InvokePattern.Invoke`; result
+`Backend Calculation Output Rate: 0.360 mL/hr (0.72 mg/hr)`; and changed pixels.
+The initial PNG digest is
+`60adf0767bb162e55ea9f21351b18a16d1c20aa870cad9c631abd3eb34109962`; the
+after digest is
+`54ccf53bda8713b130a50cf916d32c11b137c336fb271c80c1c3b9e6a47df1af`.
+The locked build resolved all Moirai packages at merged PR [#414](https://github.com/ryancinsight/Moirai/pull/414),
+revision `d7b38d7`; the standalone `Cargo.lock` SHA-256 is
+`95bf4b497677c141308de3ad4d44e3be58e90a000d4eb48befb524779009c568`.
+The focused locked native gate passed formatting, warning-denied Clippy and
+32/32 `metis-app` nextest cases before this capture. It establishes the native
+provider action and rendering path, not installed screen-reader speech, host
+preference enablement or non-Windows accessibility.
 
 <a id="V04"></a>
 ### V04 — Responsive layout and clipping
