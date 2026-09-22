@@ -14,6 +14,15 @@
 - Basis: Metis main run `35648844306` failed only because Atlas `02a304f519c27b95169b87b732e6e631d51c205d` scanned its `_atlas` workflow checkout as member source (`oversized_files 0 -> 3`, `manifest_implementation 0 -> 2`, `existence_only_assertions 0 -> 4`).
 - Outcome: PR #331 advanced the workflow and source split; the exact full verifier passed 27 stages with 192 resolved packages, the intentional capture-failure negative oracle, and the merged Atlas scanner reporting zero regressions and zero host-state rows.
 
+<a id="METIS-RASTER-SPAN-001"></a>
+## METIS-RASTER-SPAN-001 — Span-based software fill and glyph runs [patch]
+- Status: in-progress; priority: P1; owner: Metis presentation; integrator: root; last-update: 2026-09-22; dependencies: METIS-UI-001; risk: composite drift
+- lease: root — crates/metis-platform/src/{framebuffer,rasterizer,font}.rs, benches/ — 2026-09-22T00:00:00-04:00
+- Outcome: opaque rectangle fills write contiguous row spans, translucent fills composite through one shared packed blend with the per-source terms hoisted out of the pixel loop, and glyph rows emit coalesced horizontal runs instead of one clipped fill per set bit.
+- Scope: `metis-platform` framebuffer span access, `fill_bounds`, `draw_glyph_scaled`, and the first committed criterion instrument for the software rasterizer. No style-contract, geometry or public-surface change.
+- Oracle: every pixel is bit-identical to the current per-pixel path — a differential test composites randomized rectangles and alphas through both routes and asserts equal framebuffers; the existing platform suite passes unchanged; the committed bench records a measured baseline and post-change comparison.
+- Verification: focused `cargo clippy -p metis-platform --all-targets -- -D warnings` and `cargo nextest run -p metis-platform`, then the committed `python scripts/verify.py` gate.
+
 <a id="METIS-GALLERY-CYCLES-001"></a>
 ## METIS-GALLERY-CYCLES-001 — Repeated saved-study browser lifecycle
 - Status: done; priority: P1; integrator: root; last-update: 2026-09-16.
