@@ -1,7 +1,7 @@
 {
   "schema": 1,
   "source": "examples/browser/styles.css",
-  "source_sha256": "9dfa1d7d5b59299fadfbd0d2636428072e19989e1367ba553a618736f041d53b",
+  "source_sha256": "34e491d1da7dc05557252c588a8707aaf05206f0f289b3a4c59fe8345cbbec59",
   "engine": "Codex In-app Browser",
   "engine_version": "unavailable",
   "captures": {

@@ -1674,6 +1674,18 @@ Windows native path consumes the matching Moirai PAL role contract from PR
 the projection and its value-semantic tests, not spoken screen-reader output
 on every operating system.
 
+The browser workbench now instantiates the same contract with a Rust-owned
+command toolbar and dropdown. `command-menu-toggle` controls the
+`command-menu` landmark, whose three `menuitem` actions focus the patient
+reference or apply validated dark/system themes; `Escape` closes the menu and
+returns focus to the trigger. `view::render` is the only DOM presentation
+path for `aria-expanded`, `aria-hidden`, `data-command-menu-open` and the
+command live status. The focused browser asset contract checks these exact
+landmarks, IDs and focus order, while the WASM `metis-web` check and strict
+Clippy gate compile the listener path. This is static and compile-time
+evidence for the browser command surface; no native tray, notification,
+global-shortcut or spoken screen-reader claim is attached to it.
+
 The fresh CUA trace started from **Start host**, advanced to **Stop host** and
 **Session details**, then traversed **Patient reference**, **Weight (kg)**,
 **Drug concentration (mg/mL)**, **Target dose (mcg/kg/min)**, **Show remote

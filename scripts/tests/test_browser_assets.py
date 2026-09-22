@@ -390,6 +390,9 @@ class BrowserAssetContractTests(unittest.TestCase):
             "body[data-metis-theme=\"dark\"]",
             "body[data-metis-theme=\"high-contrast\"]",
             "data-metis-theme",
+            "#application-toolbar { display: flex; flex-wrap: wrap;",
+            "#command-menu[data-command-menu-open=\"false\"] { display: none; }",
+            "#command-menu { grid-template-columns: 1fr; }",
             ".metis-option { display: flex; align-items: center; gap: 0.55rem; min-height: var(--metis-hit-target); }",
             'input[type="range"] { min-height: var(--metis-hit-target); padding: 0; accent-color: var(--metis-accent); }',
         ):
@@ -440,6 +443,14 @@ class BrowserAssetContractTests(unittest.TestCase):
         for fragment in (
             'aria-haspopup="dialog"',
             'aria-controls="session-dialog"',
+            'id="application-navigation" aria-label="Application navigation"',
+            'id="application-toolbar" role="toolbar" aria-label="Application commands"',
+            'id="command-menu-toggle" type="button" aria-haspopup="menu" aria-expanded="false" aria-controls="command-menu"',
+            'id="command-menu" role="menu" aria-label="Application commands" aria-hidden="true"',
+            'id="command-focus-patient" role="menuitem" type="button"',
+            'id="command-theme-dark" role="menuitem" type="button"',
+            'id="command-theme-system" role="menuitem" type="button"',
+            'id="command-status" role="status" aria-live="polite"',
             'aria-labelledby="pointer-heading"',
             'aria-labelledby="drop-heading"',
             'aria-labelledby="text-heading"',
@@ -462,7 +473,11 @@ class BrowserAssetContractTests(unittest.TestCase):
         ):
             self.assertIn(fragment, view)
         focus_order = (
+            "command-menu-toggle",
             "open-session-dialog",
+            "command-focus-patient",
+            "command-theme-dark",
+            "command-theme-system",
             "patient-id",
             "weight-kg",
             "concentration-mg-ml",

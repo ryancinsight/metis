@@ -1,6 +1,6 @@
 use super::{
-    BrowserState, clipboard, dialog, explorer, file_drop, fragment, gesture, pointer, text, view,
-    wheel,
+    BrowserState, clipboard, commands, dialog, explorer, file_drop, fragment, gesture, pointer,
+    text, view, wheel,
 };
 use crate::controls::{self, ControlField};
 use crate::epoch::Generation;
@@ -41,6 +41,7 @@ pub(super) fn control_listeners(
     let mut listeners = Vec::new();
     listeners.push(input_listener(document, state, app, &root)?);
     listeners.push(change_listener(document, state, &root)?);
+    listeners.extend(commands::listeners(document, state)?);
     listeners.extend(dialog::listeners(document)?);
     listeners.extend(fragment::listeners(
         document,

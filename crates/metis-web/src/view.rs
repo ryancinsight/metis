@@ -14,6 +14,7 @@ use std::io;
 pub(super) fn render(document: &WebDocument, state: &BrowserState) -> io::Result<()> {
     let message = status_message(state);
     render_theme_and_inputs(document, state)?;
+    render_commands(document, state)?;
     render_status(document, state, &message)?;
     render_result(document, state, &message)
 }
@@ -119,6 +120,20 @@ fn render_status(document: &WebDocument, state: &BrowserState, message: &str) ->
         !matches!(state.bridge, BridgeStatus::Ready) || matches!(state.state, FormState::Pending);
     element(document, "submit-calculation")?.set_disabled(submit_disabled)?;
     Ok(())
+}
+
+fn render_commands(document: &WebDocument, state: &BrowserState) -> io::Result<()> {
+    let expanded = state.commands.menu_open;
+    let expanded_value = if expanded { "true" } else { "false" };
+    let hidden_value = if expanded { "false" } else { "true" };
+    element(document, "command-menu-toggle")?.set_attribute("aria-expanded", expanded_value)?;
+    let menu = element(document, "command-menu")?;
+    menu.set_attribute("aria-hidden", hidden_value)?;
+    menu.set_attribute(
+        "data-command-menu-open",
+        if expanded { "true" } else { "false" },
+    )?;
+    set_text(document, "command-status", &state.commands.status)
 }
 
 fn set_request_busy_attributes(document: &WebDocument, state: &BrowserState) -> io::Result<()> {
