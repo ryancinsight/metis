@@ -1,5 +1,6 @@
 use super::*;
 use crate::layout::{DisplayCommand, DisplayList};
+use metis_platform::rasterizer::CornerRadius;
 
 fn image_2x1() -> RasterImage {
     RasterImage::new(2, 1, vec![Color::RED, Color::BLUE]).expect("image")
@@ -73,6 +74,7 @@ fn nearest_scaling_clips_and_preserves_painter_order() {
     let mut list = DisplayList {
         commands: vec![DisplayCommand::FillRect {
             rect: Rect::new(0, 0, 3, 2),
+            radius: CornerRadius::SQUARE,
             color: Color::WHITE,
         }],
     };

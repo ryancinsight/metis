@@ -452,7 +452,7 @@ fn command_rect<T: IpcTransport>(app: &FrontendApp<T>, label: &str) -> Result<Re
         .commands
         .iter()
         .find_map(|command| match command {
-            DisplayCommand::FillRect { rect, color }
+            DisplayCommand::FillRect { rect, color, .. }
                 if *color == UiColor::BLUE && rect.contains(label_x, label_y) =>
             {
                 Some(*rect)

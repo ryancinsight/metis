@@ -5,6 +5,7 @@ use crate::style::{ComputedStyle, Display, EdgeValues, FlexDirection, Size};
 use metis_core::error::Result;
 use metis_platform::DisplayScale;
 use metis_platform::framebuffer::Rect;
+use metis_platform::rasterizer::CornerRadius;
 
 /// Logical viewport dimensions and the host's device-pixel scale.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -226,6 +227,7 @@ impl DisplayList {
             let index = self.commands.len();
             self.push(DisplayCommand::FillRect {
                 rect: Rect::new(x, y, width, 0),
+                radius: CornerRadius::SQUARE,
                 color,
             })?;
             Some(index)
@@ -256,15 +258,24 @@ impl DisplayList {
             display_scale,
         )?;
         let rect = Rect::new(x, y, width, height);
+        // The radius is clamped against the final rectangle, whose height is
+        // known only after the children have been laid out.
+        let radius = CornerRadius::clamped(display_scale.scale_extent(style.border_radius)?, rect);
         if let Some(index) = background_index
-            && let DisplayCommand::FillRect { rect: target, .. } = &mut self.commands[index]
+            && let DisplayCommand::FillRect {
+                rect: target,
+                radius: target_radius,
+                ..
+            } = &mut self.commands[index]
         {
             *target = rect;
+            *target_radius = radius;
         }
         if geometry.border.top > 0 {
             self.push(DisplayCommand::DrawBorder {
                 rect,
                 width: geometry.border.top,
+                radius,
                 color: style.border_color,
             })?;
         }

@@ -46,12 +46,12 @@ rectangles through one scanline routine.
   per-pixel path. Per-pixel cost is therefore proportional to the radius, not
   to the width of the shape.
 
-Layout and the style contract are deliberately not part of this decision. The
-display commands still pass `CornerRadius::SQUARE`, so no authored declaration
-changes yet and `border-radius` keeps its typed rejection. Carrying the radius
-through `DisplayCommand` and admitting the declaration is a separate increment
-against a file another agent currently holds; splitting it keeps this change
-free of a contended region and keeps the primitive independently verifiable.
+Layout and the style contract were split into a follow-up increment so the
+primitive could land free of a contended region and stay independently
+verifiable. [METIS-RASTER-ROUND-002](../../backlog.md#METIS-RASTER-ROUND-002)
+completed that: `DisplayCommand::FillRect` and `DrawBorder` carry the radius,
+layout clamps the authored value against the final rectangle, and
+[ADR 0013](0013-strict-style-contract.md) admits the declaration.
 
 ## Alternatives
 
@@ -79,10 +79,8 @@ costs about 12.7 times its square counterpart and remains about seven times
 faster than the square path before the span-fill change, at roughly one percent
 of a 60 Hz frame budget.
 
-Until the follow-up increment lands, the capability is reachable from Rust
-callers but not from an authored stylesheet. The committed visual
-demonstration also waits for it: the `image` example's artifact is compared
-against a golden snapshot, and growing that snapshot by a quarter to hold a
-demonstration the next increment supersedes is not worth the tracked bytes.
-The form captures regenerate once, under review, when authored surfaces
-actually round.
+An authored stylesheet reaches the capability since the follow-up increment.
+The committed visual demonstration still waits for a surface that adopts it:
+the `image` example's artifact is compared against a golden snapshot, and
+growing that snapshot to hold a demonstration is not worth the tracked bytes
+when the form captures will show it once the authored markup rounds.

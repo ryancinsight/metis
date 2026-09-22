@@ -1,5 +1,6 @@
 //! Renders a bounded raster image through the software display-list path.
 
+use metis_platform::rasterizer::CornerRadius;
 use metis_platform::{Color, Framebuffer, Rect};
 use metis_ui_lang::{
     AffineTransform, DisplayCommand, DisplayList, ImagePlacement, ImageSampling, ImageTransform,
@@ -48,6 +49,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     let mut display = DisplayList {
         commands: vec![DisplayCommand::FillRect {
             rect: Rect::new(0, 0, 240, 180),
+            radius: CornerRadius::SQUARE,
             color: background,
         }],
     };

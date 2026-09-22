@@ -10,6 +10,13 @@ Revision: 2026-09-09 — [METIS-LAYOUT-001](../../backlog.md#METIS-LAYOUT-001)
 closes the silent custom-renderer style gap by rejecting declarations without
 software-renderer semantics.
 
+Revision: 2026-09-22 — [METIS-RASTER-ROUND-002](../../backlog.md#METIS-RASTER-ROUND-002)
+admits `border-radius` now that the software renderer paints it
+([ADR 0043](0043-rounded-rectangle-paint.md)). This is the contract working
+rather than a reversal: the rejection exists to stop a declaration being
+silently dropped, so it lifts exactly when the renderer gains the semantics —
+one property at a time, each with the paint evidence that earns it.
+
 ## Context
 
 `metis-ui-lang` parses a bounded CSS-inspired subset for the software
@@ -35,10 +42,13 @@ browser CSS engine or change browser DOM parsing.
   missing separators, empty values, invalid enum values, malformed pixel or
   percentage dimensions, negative spacing, malformed edge lists, invalid
   colors and unsupported font weights return `ErrorCode::InvalidCssStyle`.
-- Alignment, minimum-size, font-weight and radius declarations are outside the
-  software renderer contract and return `ErrorCode::InvalidCssStyle`. The
-  same validation runs during layout for programmatically constructed DOMs, so
-  a public field cannot silently request an ineffective style.
+- Alignment, minimum-size and font-weight declarations are outside the software
+  renderer contract and return `ErrorCode::InvalidCssStyle`. `border-radius` is
+  admitted since the 2026-09-22 revision: it parses as a nonnegative pixel
+  length on the same grammar as `gap` and `border-width`, scales by the host
+  display scale and clamps to half the shorter side of the laid-out rectangle.
+  The same validation runs during layout for programmatically constructed DOMs,
+  so a public field cannot silently request an ineffective style.
 - `parse_markup` propagates style errors at the element boundary. Layout keeps
   ownership of representability errors for programmatically constructed DOMs,
   including non-finite percentages and coordinate overflow.

@@ -2,9 +2,10 @@ use super::{DisplayCommand, DisplayList, LayoutViewport, compute_layout};
 use crate::dom::{DomDocument, DomElement, DomNode};
 use crate::parse_markup;
 use crate::parser::{MAX_DEPTH, MAX_NODES};
-use crate::style::{Color, Display, Size};
+use crate::style::{Color, Display, EdgeValues, Size};
 use metis_core::error::ErrorCode;
 use metis_platform::framebuffer::{Framebuffer, Rect};
+use metis_platform::rasterizer::CornerRadius;
 use metis_platform::rasterizer::{LineCap, LineJoin, MAX_STROKE_POINTS, StrokeWidth};
 
 #[test]
@@ -20,6 +21,7 @@ fn parent_background_precedes_child_and_gap_is_between_children() {
         list.commands[0],
         DisplayCommand::FillRect {
             rect: Rect::new(0, 0, 4, 7),
+            radius: CornerRadius::SQUARE,
             color: Color::rgb(255, 0, 0)
         }
     );
@@ -48,12 +50,106 @@ fn extreme_styles_return_errors_without_wrapping() {
 #[test]
 fn programmatic_unsupported_style_is_rejected_before_painting() {
     let mut root = DomElement::new("root");
-    root.computed_style.border_radius = 2;
+    root.computed_style.min_width = Size::Px(8);
     root.computed_style.background_color = Some(Color::RED);
     let error = compute_layout(&DomDocument::new(root), LayoutViewport::new(4, 4))
         .expect_err("unsupported style must not be silently ignored");
     assert_eq!(error.code, ErrorCode::InvalidCssStyle);
-    assert!(error.message.contains("border-radius"));
+    assert!(error.message.contains("min-width"));
+}
+
+#[test]
+fn programmatic_border_radius_reaches_the_fill_and_border_commands() {
+    let mut root = DomElement::new("root");
+    root.computed_style.border_radius = 6;
+    root.computed_style.background_color = Some(Color::RED);
+    root.computed_style.border_width = EdgeValues::all(2);
+    root.computed_style.width = Size::Px(40);
+    root.computed_style.height = Size::Px(30);
+    let display = compute_layout(&DomDocument::new(root), LayoutViewport::new(60, 60))
+        .expect("an admitted radius lays out");
+    let radii: Vec<_> = display
+        .commands
+        .iter()
+        .filter_map(|command| match command {
+            DisplayCommand::FillRect { radius, .. } | DisplayCommand::DrawBorder { radius, .. } => {
+                Some(radius.pixels())
+            }
+            _ => None,
+        })
+        .collect();
+    assert_eq!(
+        radii,
+        vec![6, 6],
+        "fill and border carry the authored radius"
+    );
+}
+
+#[test]
+fn an_authored_border_radius_clears_the_painted_corner() {
+    let markup = concat!(
+        "<card id=\"root\" style=\"background-color: #3182ce; border-radius: 10px; ",
+        "width: 40px; height: 40px;\"></card>"
+    );
+    let document = parse_markup(markup).expect("authored radius parses");
+    let display = compute_layout(&document, LayoutViewport::new(40, 40)).expect("lays out");
+    let mut rounded = Framebuffer::new(40, 40).expect("surface");
+    rounded.clear(Color::WHITE);
+    display.render_to(&mut rounded);
+
+    let square_markup = concat!(
+        "<card id=\"root\" style=\"background-color: #3182ce; ",
+        "width: 40px; height: 40px;\"></card>"
+    );
+    let square_document = parse_markup(square_markup).expect("square parses");
+    let square_display =
+        compute_layout(&square_document, LayoutViewport::new(40, 40)).expect("lays out");
+    let mut square = Framebuffer::new(40, 40).expect("surface");
+    square.clear(Color::WHITE);
+    square_display.render_to(&mut square);
+
+    // The square fill paints its extreme corner; the rounded one leaves it.
+    assert_eq!(square.get_pixel(0, 0), Color::rgb(49, 130, 206));
+    assert_eq!(rounded.get_pixel(0, 0), Color::WHITE);
+    // Both keep the centre and the straight edge midpoints.
+    for surface in [&rounded, &square] {
+        assert_eq!(surface.get_pixel(20, 20), Color::rgb(49, 130, 206));
+        assert_eq!(surface.get_pixel(20, 0), Color::rgb(49, 130, 206));
+        assert_eq!(surface.get_pixel(0, 20), Color::rgb(49, 130, 206));
+    }
+    // The authored radius antialiases, so the arc carries partial coverage.
+    let partial = (0..12)
+        .flat_map(|x| (0..12).map(move |y| (x, y)))
+        .filter(|(x, y)| {
+            let pixel = rounded.get_pixel(*x, *y);
+            pixel != Color::WHITE && pixel != Color::rgb(49, 130, 206)
+        })
+        .count();
+    assert!(
+        partial >= 8,
+        "authored radius is not antialiased: {partial}"
+    );
+}
+
+#[test]
+fn border_radius_is_clamped_to_the_laid_out_rectangle() {
+    let mut root = DomElement::new("root");
+    // Half of the shorter side is ten, so a larger request cannot round past it.
+    root.computed_style.border_radius = 400;
+    root.computed_style.background_color = Some(Color::RED);
+    root.computed_style.width = Size::Px(40);
+    root.computed_style.height = Size::Px(20);
+    let display = compute_layout(&DomDocument::new(root), LayoutViewport::new(60, 60))
+        .expect("an oversized radius clamps rather than failing");
+    let radius = display
+        .commands
+        .iter()
+        .find_map(|command| match command {
+            DisplayCommand::FillRect { radius, .. } => Some(radius.pixels()),
+            _ => None,
+        })
+        .expect("the background fill is emitted");
+    assert_eq!(radius, 10);
 }
 
 #[test]
@@ -109,7 +205,7 @@ fn fractional_display_scale_maps_geometry_and_text_to_device_pixels() {
         .commands
         .iter()
         .find_map(|command| match command {
-            DisplayCommand::FillRect { rect, color } if *color == Color::rgb(255, 0, 0) => {
+            DisplayCommand::FillRect { rect, color, .. } if *color == Color::rgb(255, 0, 0) => {
                 Some(*rect)
             }
             _ => None,
@@ -150,7 +246,7 @@ fn percentage_dimensions_use_the_physical_viewport_once() {
         .commands
         .iter()
         .find_map(|command| match command {
-            DisplayCommand::FillRect { rect, color } if *color == Color::rgb(255, 0, 0) => {
+            DisplayCommand::FillRect { rect, color, .. } if *color == Color::rgb(255, 0, 0) => {
                 Some(*rect)
             }
             _ => None,
