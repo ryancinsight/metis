@@ -93,12 +93,21 @@
 
 <a id="METIS-GATE-VISUAL-BUDGET-001"></a>
 ## METIS-GATE-VISUAL-BUDGET-001 — Restore headroom in the visual-tests budget [patch]
-- Status: in-progress; priority: P2; owner: Metis tooling; integrator: root; last-update: 2026-09-22; lease: root scripts/verify.py scripts/tests; dependencies: none; risk: gate flake masking real failures
+- Status: in-progress; priority: P2; owner: Metis tooling; integrator: root; last-update: 2026-09-22; lease: root scripts/citations.py scripts/tests; dependencies: none; risk: gate flake masking real failures
 - Observed 2026-09-22: `python -m unittest discover -s scripts/tests` runs 331 tests in 58.2 s against the stage's 60 s budget — about three percent headroom — so the stage terminates under any concurrent host load. Three consecutive gate runs on unrelated revisions failed in different stages purely on budget.
 - Outcome: the stage completes with headroom proportional to the host variance the repository already records, by making the suite faster rather than by raising the bound.
-- Scope: profile the 331 Python tests, attribute the dominant cost, and remove it — repeated subprocess launches and repeated fixture construction are the first suspects. Raising the 60-second bound in the offending diff is excluded.
+- Scope: profile the 341 Python tests, attribute the dominant cost, and remove it — repeated subprocess launches and repeated fixture construction are the first suspects. Raising the 60-second bound in the offending diff is excluded.
 - Oracle: the suite completes within the committed budget with the documented margin on a loaded host, and the slowest tests are recorded so the next regression is attributable.
-- Note: a failing stage also loses its diagnostic. `run` writes the failure log through `output_path`, which rejects the neutral `subst` drive it is handed, so the real error is replaced by `ValueError: Unsafe gate output path`. Fix that with the budget, or every future stage failure is undiagnosable.
+- Profile 2026-09-22: batched Git resolution reduced
+  `test_citations.RevisionCitationTests.test_repository_citations_resolve`
+  from 30.101 s to 0.643 s.
+- The 60-second-bounded profile ran 341/341 tests (one intentional skip) in
+  45.790 s, leaving 14.210 s (23.7%) headroom.
+- Slowest: `test_browser_drop.FileDropTests.test_probe_timeout_awaits_in_flight_stream_cleanup` 5.434 s;
+  `test_visual.EvidenceTests.test_source_only_change_keeps_baseline_and_pixel_change_fails` 4.588 s;
+  `test_visual.EvidenceTests.test_baseline_acceptance_and_collection_of_every_failure` 4.537 s;
+  `test_visual.EvidenceTests.test_unavailable_baseline_does_not_report_hash_corruption` 3.000 s;
+  `test_visual.EvidenceTests.test_corrupt_baseline_hash_fails_with_equal_pixels` 2.998 s.
 
 <a id="METIS-TYPOGRAPHY-GLYPHS-001"></a>
 ## METIS-TYPOGRAPHY-GLYPHS-001 — Real lowercase and punctuation glyphs [patch]
