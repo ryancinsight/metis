@@ -25,8 +25,10 @@
 
 <a id="METIS-RASTER-ROUND-002"></a>
 ## METIS-RASTER-ROUND-002 — Admit border-radius through layout [minor]
-- Status: blocked; priority: P1; owner: Metis presentation; dependencies: METIS-RASTER-ROUND-001; risk: contended region
-- Blocker: `crates/metis-ui-lang/src/layout/display.rs` carries another agent's live uncommitted edits adding `DisplayCommand::ElementRect`; the radius must land in the same `render_to` match. Re-open trigger: that agent commits or their claim goes stale.
+- Status: in-progress; priority: P1; owner: Metis presentation; integrator: root; last-update: 2026-09-22; dependencies: METIS-RASTER-ROUND-001; risk: contended region
+- lease: root — crates/metis-ui-lang/src/{style.rs,layout/display.rs,layout/geometry.rs} — 2026-09-22T00:00:00-04:00
+- Re-open resolved: the holding work is committed in [PR #359](https://github.com/ryancinsight/metis/pull/359), so `display.rs` is mergeable rather than held. That PR is independently conflicted with main and must rebase regardless; the overlap here is the `render_to` match arms and resolves mechanically.
+- Parity driver: the browser stylesheet already rounds cards at `0.75rem`, menus at `0.55rem` and controls at `0.4rem` against the same palette tokens the software theme uses. The two render targets of one framework shared colors but diverged on shape, because only one of them could paint a radius.
 - Outcome: `DisplayCommand::FillRect` and `DrawBorder` carry the radius, layout clamps the authored `border-radius` against the final rectangle and scales it by the display scale, and the style contract admits the declaration with a dated revision to [ADR 0013](docs/adr/0013-strict-style-contract.md).
 - Oracle: an authored `border-radius` paints rounded corners on the software surface; a zero radius leaves every existing capture unchanged; `font-weight`, `justify-content`, `align-items`, `min-width` and `min-height` keep their typed rejection.
 
