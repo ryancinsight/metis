@@ -56,6 +56,43 @@ fn package_assets_are_script_scoped_and_bridge_bound() {
 }
 
 #[test]
+fn packaged_command_surface_is_local_and_keyboard_closable() {
+    for fragment in [
+        "id=\"application-navigation\"",
+        "role=\"toolbar\"",
+        "id=\"command-menu-toggle\"",
+        "aria-haspopup=\"menu\"",
+        "id=\"command-menu\" role=\"menu\"",
+        "id=\"command-theme-dark\" role=\"menuitem\"",
+        "id=\"command-theme-system\" role=\"menuitem\"",
+        "id=\"command-status\" role=\"status\"",
+    ] {
+        assert!(
+            INDEX_HTML.contains(fragment),
+            "missing WebView2 command-surface fragment: {fragment}"
+        );
+    }
+    for fragment in [
+        "setCommandMenu",
+        "aria-expanded",
+        "aria-hidden",
+        "commandMenu.dataset.commandMenuOpen",
+        "event.key !== 'Escape'",
+        "Patient reference focused",
+        "themeMode.value = 'dark'",
+        "themeMode.value = 'system'",
+    ] {
+        assert!(
+            APP_JS.contains(fragment),
+            "missing local command behavior: {fragment}"
+        );
+    }
+    assert!(STYLES_CSS.contains("#command-menu[data-command-menu-open=\"false\"]"));
+    assert!(STYLES_CSS.contains("@media (forced-colors: active)"));
+    assert!(!APP_JS.contains("postMessage({\n      action: 'command"));
+}
+
+#[test]
 fn page_script_has_no_unscoped_authority_bridge() {
     for forbidden in [
         "hostObjects",

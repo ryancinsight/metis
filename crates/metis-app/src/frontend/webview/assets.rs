@@ -13,6 +13,17 @@ pub(super) const INDEX_HTML: &str = r#"<!doctype html>
   <main>
     <h1>Metis clinical calculation</h1>
     <p id="host-status" role="status" aria-live="polite">Waiting for the host bridge.</p>
+    <nav id="application-navigation" aria-label="Application navigation">
+      <div id="application-toolbar" role="toolbar" aria-label="Application commands">
+        <button id="command-menu-toggle" type="button" aria-haspopup="menu" aria-expanded="false" aria-controls="command-menu">Commands</button>
+        <button id="command-focus-patient" type="button">Focus patient reference</button>
+      </div>
+      <div id="command-menu" role="menu" aria-label="Application commands" aria-hidden="true" data-command-menu-open="false">
+        <button id="command-theme-dark" role="menuitem" type="button">Use dark theme</button>
+        <button id="command-theme-system" role="menuitem" type="button">Use system theme</button>
+      </div>
+      <p id="command-status" role="status" aria-live="polite">Commands ready</p>
+    </nav>
     <fieldset id="view-options">
       <legend>View options</legend>
       <label for="theme-mode">Theme</label>
@@ -73,6 +84,12 @@ body[data-metis-theme="high-contrast"] { --page: #000000; --surface: #000000; --
   body[data-metis-theme="system"] { --page: #0f172a; --surface: #1e293b; --surface-raised: #334155; --text: #e2e8f0; --control-text: #f8fafc; --muted: #bae6fd; --accent: #0891b2; --accent-heading: #67e8f9; --accent-text: #ecfeff; --border: #64748b; --focus: #facc15; color-scheme: dark; }
 }
 main { box-sizing: border-box; width: min(100% - 2rem, 52rem); margin: 0 auto; padding: 2rem 0; }
+#application-navigation { display: grid; gap: 0.6rem; margin: 1rem 0; }
+#application-toolbar { display: flex; flex-wrap: wrap; gap: 0.6rem; }
+#command-menu { display: grid; gap: 0.35rem; width: min(100%, 24rem); padding: 0.6rem; border: 1px solid var(--border); border-radius: 0.6rem; background: var(--surface); }
+#command-menu[data-command-menu-open="false"] { display: none; }
+#command-menu button { width: 100%; text-align: left; }
+#command-status { min-height: 1.5rem; margin: 0; color: var(--muted); }
 fieldset { display: grid; gap: 0.5rem; margin: 1rem 0; padding: 1rem; border: 1px solid var(--border); border-radius: 0.75rem; background: var(--surface); }
 h1 { color: var(--accent-heading); }
 form { display: grid; gap: 1rem; padding: 1.25rem; border: 1px solid var(--border); border-radius: 0.75rem; background: var(--surface); }
@@ -82,13 +99,24 @@ button { min-height: 2.75rem; border: 0; border-radius: 0.4rem; background: var(
 button:disabled { background: var(--surface-raised); color: var(--muted); cursor: not-allowed; }
 input:focus-visible, select:focus-visible, button:focus-visible { outline: 3px solid var(--focus); outline-offset: 2px; }
 #host-status, #theme-state, #result { min-height: 1.5rem; color: var(--muted); }
+@media (max-width: 32rem) {
+  #application-toolbar { flex-direction: column; }
+  #application-toolbar button { width: 100%; }
+}
+@media (forced-colors: active) {
+  #command-menu { border: 1px solid CanvasText; }
+}
 "#;
 
-pub(super) const APP_JS: &str = r"const form = document.getElementById('calculation');
+pub(super) const APP_JS: &str = r#"const form = document.getElementById('calculation');
 const themeMode = document.getElementById('theme-mode');
 const themeState = document.getElementById('theme-state');
 const status = document.getElementById('host-status');
 const result = document.getElementById('result');
+const menuToggle = document.getElementById('command-menu-toggle');
+const commandMenu = document.getElementById('command-menu');
+const commandStatus = document.getElementById('command-status');
+const patientReference = document.getElementById('patient-id');
 const bridge = window.chrome && window.chrome.webview;
 const themes = new Map([
   ['system', 'system preference'],
@@ -109,6 +137,39 @@ const requestedTheme = new URLSearchParams(window.location.search).get('theme')
 if (themes.has(requestedTheme)) themeMode.value = requestedTheme;
 applyTheme(themeMode.value);
 themeMode.addEventListener('change', () => applyTheme(themeMode.value));
+
+function setCommandMenu(open, message) {
+  menuToggle.setAttribute('aria-expanded', String(open));
+  commandMenu.setAttribute('aria-hidden', String(!open));
+  commandMenu.dataset.commandMenuOpen = String(open);
+  commandStatus.textContent = message;
+  if (open) commandMenu.querySelector('[role="menuitem"]').focus();
+  else menuToggle.focus();
+}
+
+menuToggle.addEventListener('click', () => {
+  const open = menuToggle.getAttribute('aria-expanded') !== 'true';
+  setCommandMenu(open, open ? 'Commands opened' : 'Commands closed');
+});
+commandMenu.addEventListener('keydown', (event) => {
+  if (event.key !== 'Escape') return;
+  event.preventDefault();
+  setCommandMenu(false, 'Commands closed');
+});
+document.getElementById('command-focus-patient').addEventListener('click', () => {
+  setCommandMenu(false, 'Patient reference focused');
+  patientReference.focus();
+});
+document.getElementById('command-theme-dark').addEventListener('click', () => {
+  themeMode.value = 'dark';
+  applyTheme(themeMode.value);
+  setCommandMenu(false, 'Theme: dark');
+});
+document.getElementById('command-theme-system').addEventListener('click', () => {
+  themeMode.value = 'system';
+  applyTheme(themeMode.value);
+  setCommandMenu(false, 'Theme: system preference');
+});
 
 function showError(message) {
   result.textContent = message;
@@ -143,7 +204,7 @@ if (!bridge) {
     });
   });
 }
-";
+"#;
 
 pub(super) const PERMISSION_PROBE_APP_JS: &str = r"const status = document.getElementById('host-status');
 const result = document.getElementById('result');

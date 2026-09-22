@@ -389,6 +389,15 @@ through the packaged provider; screen-reader behavior, installed-IME behavior,
 physical high-DPI transitions and broader OS enforcement remain separate host
 evidence.
 
+The same packaged page now carries a local command surface: the navigation
+landmark contains a toolbar, a **Commands** menu with dark/system theme
+actions and a **Focus patient reference** action. Rust's packaged asset
+contract checks the menu roles, state attributes, Escape handling and local
+theme transitions. The actions do not send command messages through the
+WebView2 bridge, so page authority remains bounded to the existing typed
+calculation submission. Visual menu captures and installed accessibility
+technology remain host-specific evidence.
+
 ### Windows native resize capture — 2026-09-13
 
 The format-neutral capture utility now accepts a bounded client-size resize for
