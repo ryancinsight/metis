@@ -51,7 +51,13 @@ pub(super) const PERMISSION_PROBE_INDEX_HTML: &str = r#"<!doctype html>
   <main>
     <h1>Metis permission probe</h1>
     <p id="host-status" role="status" aria-live="polite">Waiting for the host bridge.</p>
-    <p id="result" role="status" aria-live="assertive">Requesting geolocation permission.</p>
+    <p id="result" role="status" aria-live="assertive">Preparing bounded capability requests.</p>
+    <ol id="permission-results" aria-label="Capability denial results">
+      <li id="permission-geolocation">Geolocation: pending</li>
+      <li id="permission-camera">Camera: pending</li>
+      <li id="permission-microphone">Microphone: pending</li>
+      <li id="permission-notifications">Notifications: pending</li>
+    </ol>
   </main>
   <script src="./app.js" defer></script>
 </body>
@@ -142,20 +148,88 @@ if (!bridge) {
 pub(super) const PERMISSION_PROBE_APP_JS: &str = r"const status = document.getElementById('host-status');
 const result = document.getElementById('result');
 const bridge = window.chrome && window.chrome.webview;
+const rows = new Map([
+  ['geolocation', document.getElementById('permission-geolocation')],
+  ['camera', document.getElementById('permission-camera')],
+  ['microphone', document.getElementById('permission-microphone')],
+  ['notifications', document.getElementById('permission-notifications')],
+]);
+const probes = [
+  {
+    permission: 'geolocation',
+    invoke: () => navigator.geolocation
+      ? new Promise((resolve) => navigator.geolocation.getCurrentPosition(
+          () => resolve('unexpected success'),
+          () => resolve('browser rejected the request'),
+        ))
+      : Promise.resolve('API unavailable'),
+  },
+  {
+    permission: 'camera',
+    invoke: () => navigator.mediaDevices
+      ? navigator.mediaDevices.getUserMedia({ video: true }).then((stream) => {
+          for (const track of stream.getTracks()) track.stop();
+          return 'unexpected success';
+        }, () => 'browser rejected the request')
+      : Promise.resolve('API unavailable'),
+  },
+  {
+    permission: 'microphone',
+    invoke: () => navigator.mediaDevices
+      ? navigator.mediaDevices.getUserMedia({ audio: true }).then((stream) => {
+          for (const track of stream.getTracks()) track.stop();
+          return 'unexpected success';
+        }, () => 'browser rejected the request')
+      : Promise.resolve('API unavailable'),
+  },
+  {
+    permission: 'notifications',
+    invoke: () => window.Notification
+      ? Notification.requestPermission().then((permission) => `browser result: ${permission}`)
+      : Promise.resolve('API unavailable'),
+  },
+];
+let active = 0;
+const recorded = new Set();
+
+function record(permission, text) {
+  const row = rows.get(permission);
+  if (row) row.textContent = `${permission}: ${text}`;
+  recorded.add(permission);
+}
+
+function runNext() {
+  if (active >= probes.length) {
+    result.textContent = `Completed ${recorded.size} bounded capability probes.`;
+    return;
+  }
+  const probe = probes[active++];
+  result.textContent = `Requesting ${probe.permission} permission.`;
+  Promise.resolve().then(() => probe.invoke()).then((text) => {
+    if (!recorded.has(probe.permission)) record(probe.permission, text);
+    runNext();
+  }, () => {
+    if (!recorded.has(probe.permission)) record(probe.permission, 'browser rejected the request');
+    runNext();
+  });
+}
 
 if (!bridge) {
   status.textContent = 'Host bridge unavailable';
   result.textContent = 'Permission probe could not reach the host bridge.';
 } else {
-  status.textContent = 'Host bridge connected; requesting geolocation for a denial probe.';
+  status.textContent = 'Host bridge connected; every capability request is denied by policy.';
   bridge.addEventListener('message', (event) => {
     const message = typeof event.data === 'string' ? JSON.parse(event.data) : event.data;
-    if (!message || message.type !== 'error') return;
-    result.textContent = `${message.status}: ${message.message} [0x${message.error_code.toString(16).padStart(4, '0')}]`;
+    if (!message) return;
+    if (message.type === 'permission_denied' && rows.has(message.permission)) {
+      record(message.permission, `host denied${message.user_initiated ? ' after user action' : ''}`);
+      result.textContent = `${message.status}: ${message.message} [0x${message.error_code.toString(16).padStart(4, '0')}]`;
+    }
+    if (message.type === 'error') {
+      result.textContent = `${message.status}: ${message.message} [0x${message.error_code.toString(16).padStart(4, '0')}]`;
+    }
   });
-  navigator.geolocation.getCurrentPosition(
-    () => { result.textContent = 'Permission probe unexpectedly succeeded.'; },
-    () => { result.textContent = 'Browser rejected the geolocation request.'; },
-  );
+  runNext();
 }
 ";

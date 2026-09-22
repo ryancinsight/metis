@@ -60,6 +60,13 @@ enum PageMessage {
         error_code: u16,
         message: String,
     },
+    PermissionDenied {
+        status: &'static str,
+        error_code: u16,
+        permission: String,
+        message: String,
+        user_initiated: bool,
+    },
 }
 
 struct Package {
@@ -238,9 +245,14 @@ fn run_event_loop<T: IpcTransport>(
                     handle_message(app, surface, &json)?;
                 }
                 WebViewHostEvent::WebView(WebViewEvent::PermissionDenied {
-                    permission, ..
+                    permission,
+                    user_initiated,
+                    ..
                 }) => {
-                    post_message(surface, &permission_denied_message(permission))?;
+                    post_message(
+                        surface,
+                        &permission_denied_message(permission, user_initiated),
+                    )?;
                 }
                 WebViewHostEvent::WebView(WebViewEvent::NavigationCompleted {
                     success: false,
@@ -305,11 +317,16 @@ fn run_event_loop<T: IpcTransport>(
     }
 }
 
-fn permission_denied_message(permission: metis_platform::native::WebViewPermission) -> PageMessage {
-    PageMessage::Error {
+fn permission_denied_message(
+    permission: metis_platform::native::WebViewPermission,
+    user_initiated: bool,
+) -> PageMessage {
+    PageMessage::PermissionDenied {
         status: "permission_denied",
         error_code: ErrorCode::PermissionDenied as u16,
+        permission: permission.to_string(),
         message: format!("WebView2 denied {permission} access request"),
+        user_initiated,
     }
 }
 

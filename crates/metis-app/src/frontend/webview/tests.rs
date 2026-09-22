@@ -71,7 +71,19 @@ fn page_script_has_no_unscoped_authority_bridge() {
 fn permission_probe_is_separate_from_the_calculation_page() {
     assert!(!APP_JS.contains("navigator.geolocation"));
     assert!(PERMISSION_PROBE_INDEX_HTML.contains("Metis permission probe"));
+    for permission in ["geolocation", "camera", "microphone", "notifications"] {
+        assert!(
+            PERMISSION_PROBE_INDEX_HTML.contains(&format!("permission-{permission}")),
+            "missing permission result row: {permission}"
+        );
+        assert!(
+            PERMISSION_PROBE_APP_JS.contains(&format!("'{permission}'")),
+            "missing permission probe: {permission}"
+        );
+    }
     assert!(PERMISSION_PROBE_APP_JS.contains("navigator.geolocation"));
+    assert!(PERMISSION_PROBE_APP_JS.contains("navigator.mediaDevices"));
+    assert!(PERMISSION_PROBE_APP_JS.contains("Notification.requestPermission"));
     assert!(PERMISSION_PROBE_APP_JS.contains("message.status"));
 }
 
@@ -111,10 +123,20 @@ fn patient_limit_matches_the_page_contract() {
 
 #[test]
 fn permission_denial_message_is_typed_for_the_page() {
-    let message = permission_denied_message(WebViewPermission::Geolocation);
+    let message = permission_denied_message(WebViewPermission::Geolocation, false);
     let json = serde_json::to_string(&message).expect("permission error payload");
     assert_eq!(
         json,
-        r#"{"type":"error","status":"permission_denied","error_code":8207,"message":"WebView2 denied geolocation access request"}"#
+        r#"{"type":"permission_denied","status":"permission_denied","error_code":8207,"permission":"geolocation","message":"WebView2 denied geolocation access request","user_initiated":false}"#
+    );
+}
+
+#[test]
+fn permission_denial_message_preserves_user_initiation() {
+    let message = permission_denied_message(WebViewPermission::Camera, true);
+    let json = serde_json::to_string(&message).expect("permission error payload");
+    assert_eq!(
+        json,
+        r#"{"type":"permission_denied","status":"permission_denied","error_code":8207,"permission":"camera","message":"WebView2 denied camera access request","user_initiated":true}"#
     );
 }
