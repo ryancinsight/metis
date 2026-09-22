@@ -189,9 +189,6 @@ impl ComputedStyle {
         if !matches!(self.min_height, Size::Auto) {
             return Err(unsupported_style("min-height"));
         }
-        if self.border_radius != 0 {
-            return Err(unsupported_style("border-radius"));
-        }
         if self.font_weight != FontWeight::Normal {
             return Err(unsupported_style("font-weight"));
         }
@@ -243,8 +240,10 @@ impl ComputedStyle {
                         _ => return Err(invalid_value(&key, val)),
                     }
                 }
-                "justify-content" | "align-items" | "min-width" | "min-height"
-                | "border-radius" | "font-weight" => return Err(unsupported_style(&key)),
+                "justify-content" | "align-items" | "min-width" | "min-height" | "font-weight" => {
+                    return Err(unsupported_style(&key));
+                }
+                "border-radius" => style.border_radius = parse_nonnegative_px(&key, val)?,
                 "gap" => style.gap = parse_nonnegative_px(&key, val)?,
                 "width" => style.width = parse_size(&key, val)?,
                 "height" => style.height = parse_size(&key, val)?,
@@ -417,13 +416,42 @@ mod tests {
     }
 
     #[test]
+    fn admits_border_radius_as_a_nonnegative_pixel_length() {
+        let style = ComputedStyle::parse("border-radius: 12px").expect("admitted radius");
+        assert_eq!(style.border_radius, 12);
+        assert_eq!(
+            ComputedStyle::parse("border-radius: 0px")
+                .expect("zero radius")
+                .border_radius,
+            0
+        );
+        // A bare number is the same length grammar the sibling pixel properties
+        // accept, so the radius follows `gap` and `border-width` rather than
+        // inventing a stricter one.
+        assert_eq!(
+            ComputedStyle::parse("border-radius: 4")
+                .expect("bare pixel length")
+                .border_radius,
+            4
+        );
+        for malformed in [
+            "border-radius: -2px",
+            "border-radius: auto",
+            "border-radius: 50%",
+        ] {
+            let error = ComputedStyle::parse(malformed).expect_err("malformed radius");
+            assert_eq!(error.code, ErrorCode::InvalidCssStyle, "{malformed}");
+            assert!(error.message.contains("border-radius"), "{malformed}");
+        }
+    }
+
+    #[test]
     fn rejects_unsupported_rendering_properties_with_property_diagnostic() {
         for (property, value) in [
             ("justify-content", "center"),
             ("align-items", "end"),
             ("min-width", "8px"),
             ("min-height", "8px"),
-            ("border-radius", "2px"),
             ("font-weight", "700"),
         ] {
             let css = format!("{property}: {value}");

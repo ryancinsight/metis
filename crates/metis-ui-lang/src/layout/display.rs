@@ -17,15 +17,19 @@ pub enum DisplayCommand {
     FillRect {
         /// Target rectangle.
         rect: Rect,
+        /// Corner rounding; [`CornerRadius::SQUARE`] keeps square corners.
+        radius: CornerRadius,
         /// Straight RGBA color.
         color: Color,
     },
-    /// Uniform inward square border.
+    /// Uniform inward border following the fill it encloses.
     DrawBorder {
         /// Outer rectangle.
         rect: Rect,
         /// Border width.
         width: i32,
+        /// Corner rounding; [`CornerRadius::SQUARE`] keeps square corners.
+        radius: CornerRadius,
         /// Straight RGBA color.
         color: Color,
     },
@@ -85,11 +89,18 @@ impl DisplayList {
     pub fn render_to(&self, fb: &mut Framebuffer) {
         for command in &self.commands {
             match command {
-                DisplayCommand::FillRect { rect, color } => {
-                    fill_rect(fb, *rect, CornerRadius::SQUARE, *color);
-                }
-                DisplayCommand::DrawBorder { rect, width, color } => {
-                    draw_rect_outline(fb, *rect, *width, CornerRadius::SQUARE, *color);
+                DisplayCommand::FillRect {
+                    rect,
+                    radius,
+                    color,
+                } => fill_rect(fb, *rect, *radius, *color),
+                DisplayCommand::DrawBorder {
+                    rect,
+                    width,
+                    radius,
+                    color,
+                } => {
+                    draw_rect_outline(fb, *rect, *width, *radius, *color);
                 }
                 DisplayCommand::DrawLine { start, end, color } => {
                     draw_line(fb, *start, *end, *color);

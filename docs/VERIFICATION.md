@@ -2428,6 +2428,36 @@ merged the Windows `ValuePattern.SetValue` action mapping at `d7b38d7`. These
 are provider and consumer contract checks: no OS screen reader, spoken output
 or host preference enablement is claimed.
 
+### Authored border-radius evidence — 2026-09-22
+
+`border-radius` is admitted by the software renderer's style subset and reaches
+paint. It parses as a nonnegative pixel length on the same grammar as `gap` and
+`border-width`, scales by the host display scale, and clamps to half the shorter
+side of the laid-out rectangle — a bound that can only be applied after child
+layout, because an automatic height is not known before it.
+`DisplayCommand::FillRect` and `DrawBorder` carry the value, so the border
+follows the same arc as the fill it encloses.
+
+The end-to-end oracle is a rendered comparison rather than a field check:
+authored markup with `border-radius: 10px` and the same markup without it are
+laid out and painted to two framebuffers. The square fill paints its extreme
+corner, the rounded one leaves the background there, both keep the centre and
+the straight-edge midpoints, and the rounded corner carries partially covered
+pixels. Layout tests additionally assert that the authored radius reaches both
+the fill and the border command, and that an oversized request clamps to half
+the shorter side instead of failing.
+
+`justify-content`, `align-items`, `min-width`, `min-height` and `font-weight`
+keep their typed `ERR_INVALID_CSS_STYLE` rejection; the programmatic-rejection
+test now exercises `min-width`. [ADR 0013](adr/0013-strict-style-contract.md)
+carries the dated revision recording why the rejection lifted for this one
+property.
+
+This closes a parity gap rather than adding decoration. The browser stylesheet
+already rounds cards at `0.75rem`, menus at `0.55rem` and controls at `0.4rem`
+against the same palette tokens the software theme uses, so the framework's two
+render targets shared colors while only one of them could paint a radius.
+
 ### Rounded rectangle paint evidence — 2026-09-22
 
 `fill_rect` and `draw_rect_outline` take a validated `CornerRadius`. A square

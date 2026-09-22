@@ -25,12 +25,23 @@
 
 <a id="METIS-RASTER-ROUND-002"></a>
 ## METIS-RASTER-ROUND-002 — Admit border-radius through layout [minor]
-- Status: in-progress; priority: P1; owner: Metis presentation; integrator: root; last-update: 2026-09-22; dependencies: METIS-RASTER-ROUND-001; risk: contended region
-- lease: root — crates/metis-ui-lang/src/{style.rs,layout/display.rs,layout/geometry.rs} — 2026-09-22T00:00:00-04:00
+- Status: review; priority: P1; owner: Metis presentation; integrator: root; last-update: 2026-09-22; dependencies: METIS-RASTER-ROUND-001; ADR: [0013 revision](docs/adr/0013-strict-style-contract.md), [0043](docs/adr/0043-rounded-rectangle-paint.md); risk: contended region
+- Delivered: `border-radius` parses as a nonnegative pixel length, scales by the display scale and clamps against the laid-out rectangle after child layout; `DisplayCommand::FillRect` and `DrawBorder` carry it so the border follows the fill it encloses.
+- Evidence: [authored border-radius evidence](docs/VERIFICATION.md#authored-border-radius-evidence--2026-09-22). A rendered comparison shows the square fill painting its extreme corner while the rounded one leaves it, both keeping centre and edge midpoints, with partial coverage on the arc. The remaining five declarations keep their typed rejection.
+- Residual: no authored surface adopts a radius yet — the demo form markup lives in `presentation.rs`, held by [PR #359](https://github.com/ryancinsight/metis/pull/359). Adopting it is a one-line style change that will regenerate the form captures once.
 - Re-open resolved: the holding work is committed in [PR #359](https://github.com/ryancinsight/metis/pull/359), so `display.rs` is mergeable rather than held. That PR is independently conflicted with main and must rebase regardless; the overlap here is the `render_to` match arms and resolves mechanically.
 - Parity driver: the browser stylesheet already rounds cards at `0.75rem`, menus at `0.55rem` and controls at `0.4rem` against the same palette tokens the software theme uses. The two render targets of one framework shared colors but diverged on shape, because only one of them could paint a radius.
 - Outcome: `DisplayCommand::FillRect` and `DrawBorder` carry the radius, layout clamps the authored `border-radius` against the final rectangle and scales it by the display scale, and the style contract admits the declaration with a dated revision to [ADR 0013](docs/adr/0013-strict-style-contract.md).
 - Oracle: an authored `border-radius` paints rounded corners on the software surface; a zero radius leaves every existing capture unchanged; `font-weight`, `justify-content`, `align-items`, `min-width` and `min-height` keep their typed rejection.
+
+<a id="METIS-VISUAL-FIXTURE-COUPLING-001"></a>
+## METIS-VISUAL-FIXTURE-COUPLING-001 — Bind the visual baseline to output, not to source identity [patch]
+- Status: todo; priority: P2; owner: Metis tooling; dependencies: none; risk: reflexive golden regeneration
+- Observed 2026-09-22: `scripts/visual.py` derives `fixture_sha256` from the digests of every `.rs` under `metis-frontend`, `metis-platform` and `metis-ui-lang`, plus `presentation.rs`, `image.rs` and `Cargo.lock`. A stale fixture fails the stage outright, so any source or lockfile change invalidates the baseline even when the rendered pixels are identical.
+- Evidence: METIS-RASTER-ROUND-002 changed only style and layout sources and left every capture byte-identical; the regenerated baseline differed in exactly one field, `fixture_sha256`, with no `image_sha256` moved. Separately, web-styling [PR #350](https://github.com/ryancinsight/metis/pull/350) had to land a "Refresh fixture fingerprint" commit, and this work hit a `captures.json` rebase conflict for the same reason.
+- Outcome: the gate fails when rendered output changes and not otherwise. The source fingerprint stays in the run report as provenance, where it records which revision produced a capture without gating on it.
+- Oracle: a source-only change that leaves every capture byte-identical passes the visual stage with no baseline edit; a change that moves one pixel still fails until the baseline is regenerated and reviewed.
+- Why it matters beyond churn: a gate that demands regeneration on unrelated edits trains a reflexive `--update`, which is precisely the review that golden images exist to force. It also makes `captures.json` a shared hunk that conflicts between any two concurrent renderer PRs.
 
 <a id="METIS-GATE-VISUAL-BUDGET-001"></a>
 ## METIS-GATE-VISUAL-BUDGET-001 — Restore headroom in the visual-tests budget [patch]
