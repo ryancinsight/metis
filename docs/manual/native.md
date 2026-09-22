@@ -437,6 +437,55 @@ both be true and both images are inspected; with `--shortcut control-enter`,
 the after image must also show the submitted result. Foreground activation
 denial is a failed capture, and a process exit alone is not a pass.
 
+### Exercise the installed Windows IME
+
+`python_native_ime_capture.py` is the separate installed-IME journey. It
+launches the real production `metis-app.exe`, captures a before frame, focuses
+the HWND, activates a requested Windows keyboard layout, toggles the native IME
+through Win32 and sends a bounded physical key sequence. It captures preedit,
+commit, a second preedit and Escape cancellation only after the IME reports an
+open context. Direct combining-mark, emoji and mixed-direction fixtures run in
+fresh production hosts through `SendInput(KEYEVENTF_UNICODE)` and are recorded
+separately; committed Unicode transport is not presented as IME composition.
+
+The measured command was:
+
+```powershell
+D:\miniforge3\python.exe -u -S scripts/python_native_ime_capture.py `
+  --command D:\atlas\target\debug\metis-app.exe `
+  --argument=--metis-native-window `
+  --argument=60 `
+  --argument=2 `
+  --argument=0.2 `
+  --layout japanese `
+  --output-dir output/native-ime-measured `
+  --manifest output/native-ime-measured/trace.json `
+  --source-revision 6c0d553d48dc71bed0311c7c5ce813962eca153b
+```
+
+The capture used an 800×600 client, 818×647 outer window and 120-DPI
+effective scale. Combining `é`, emoji `👩‍🔬` and mixed-direction
+`ABC אבג 123` each appended exactly to the UI Automation value and changed the
+captured pixels: `demo` became `demoé`, `demo👩‍🔬` and
+`demoABC אבג 123`, respectively. The manifest is
+`output/native-ime-measured/trace.json` with SHA-256
+`bc1be3276628f450206f8b94ac0da60108fcf4353adaa9136ff9b585376ee0e`; the
+production binary SHA-256 is
+`d163fcf2b8c5189775a4ebb1d9d9cc30820a3ac64bc8564c254095c3545fdb9`.
+
+The Windows input-method inventory contained only `en-US` with
+`0409:00000409`. The runner captured `cjk/before.png`, but the Japanese
+probe reported `context: false` and `open: false` both before and after the
+IME toggle:
+`layout japanese did not expose an open installed IME (before={'context':
+False, 'open': False, 'conversion': None, 'sentence': None}, after={'context':
+False, 'open': False, 'conversion': None, 'sentence': None})`. The runner
+therefore recorded `ime_journey.status = blocked` and captured no preedit,
+commit or cancel state. The physical sequence is limited to 32 keys, UI
+Automation reads to 5 seconds and process shutdown to 10 seconds. Install and
+enable a CJK Windows IME before using this command as V03 composition evidence;
+this run remains a measured host residual, not a CJK acceptance result.
+
 The older OS-window captures below demonstrate the visible form and WebView2
 shell. RITK's migrated Windows viewer session now supplies a validated frame
 through the format-neutral boundary; the integration is tracked in
@@ -454,9 +503,10 @@ requests are denied and page messages are bounded JSON values. The surface
 does not grant page code filesystem, network or process authority. The
 WebView2 runtime must be installed on the Windows machine. The Windows
 `metis-platform` target explicitly enables Moirai's `webview2` feature; other
-Metis targets do not pull the optional COM binding. The standalone Cargo.lock currently pins merged Moirai revision
-`d7b38d7c79dfd39096adeda0f5c0845064d7a8c6`, which includes the AccessKit
-provider, the UI Automation value-action mapping and WebView2 0.39.1 bindings. The current lock retains the provider feature,
+Metis targets do not pull the optional COM binding. The standalone Cargo.lock currently pins Moirai revision
+`0c2f752e28c6683d91440783a8b5967a78fa909d`, which includes the AccessKit
+provider, the UI Automation value-action mapping, WebView2 0.39.1 bindings and
+the surrogate-preservation correction. The current lock retains the provider feature,
 bounded host implementation, stable browser canvas extents, the content-box
 mapping used by the RITK consumer and the bounded `CapturePreview` PNG path;
 it also contains the later WebGPU provider recreation. The capture hash and

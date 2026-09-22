@@ -310,6 +310,8 @@ def _capture(
 def main() -> None:
     if sys.platform != "win32":
         raise SystemExit("python_native_ime_capture.py requires a Windows desktop")
+    if hasattr(sys.stdout, "reconfigure"):
+        sys.stdout.reconfigure(encoding="utf-8")
     arguments = _parser().parse_args()
     try:
         result = _capture(
