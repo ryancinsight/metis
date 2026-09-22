@@ -84,7 +84,7 @@
 
 <a id="METIS-VISUAL-FIXTURE-COUPLING-001"></a>
 ## METIS-VISUAL-FIXTURE-COUPLING-001 — Bind the visual baseline to output, not to source identity [patch]
-- Status: in-progress; priority: P2; owner: Metis tooling; integrator: root; last-update: 2026-09-22; lease: root scripts/visual.py scripts/tests/test_visual.py docs/manual/images/captures.json docs/VERIFICATION.md backlog.md; dependencies: none; risk: reflexive golden regeneration
+- Status: blocked; priority: P2; owner: Metis tooling; integrator: root; last-update: 2026-09-22; blocker: the rebased committed gate still exceeds the 60-second visual-tests budget; re-open: METIS-GATE-VISUAL-BUDGET-001 passes; dependencies: METIS-GATE-VISUAL-BUDGET-001; risk: reflexive golden regeneration
 - Observed 2026-09-22: `scripts/visual.py` derives `fixture_sha256` from the digests of every `.rs` under `metis-frontend`, `metis-platform` and `metis-ui-lang`, plus `presentation.rs`, `image.rs` and `Cargo.lock`. A stale fixture fails the stage outright, so any source or lockfile change invalidates the baseline even when the rendered pixels are identical.
 - Evidence: METIS-RASTER-ROUND-002 changed only style and layout sources and left every capture byte-identical; the regenerated baseline differed in exactly one field, `fixture_sha256`, with no `image_sha256` moved. Separately, web-styling [PR #350](https://github.com/ryancinsight/metis/pull/350) had to land a "Refresh fixture fingerprint" commit, and this work hit a `captures.json` rebase conflict for the same reason.
 - Outcome: the gate fails when rendered output changes and not otherwise. The source fingerprint stays in the run report as provenance, where it records which revision produced a capture without gating on it.
@@ -93,7 +93,7 @@
 
 <a id="METIS-GATE-VISUAL-BUDGET-001"></a>
 ## METIS-GATE-VISUAL-BUDGET-001 — Restore headroom in the visual-tests budget [patch]
-- Status: todo; priority: P2; owner: Metis tooling; dependencies: none; risk: gate flake masking real failures
+- Status: in-progress; priority: P2; owner: Metis tooling; integrator: root; last-update: 2026-09-22; lease: root scripts/verify.py scripts/tests; dependencies: none; risk: gate flake masking real failures
 - Observed 2026-09-22: `python -m unittest discover -s scripts/tests` runs 331 tests in 58.2 s against the stage's 60 s budget — about three percent headroom — so the stage terminates under any concurrent host load. Three consecutive gate runs on unrelated revisions failed in different stages purely on budget.
 - Outcome: the stage completes with headroom proportional to the host variance the repository already records, by making the suite faster rather than by raising the bound.
 - Scope: profile the 331 Python tests, attribute the dominant cost, and remove it — repeated subprocess launches and repeated fixture construction are the first suspects. Raising the 60-second bound in the offending diff is excluded.
