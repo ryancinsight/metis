@@ -1,7 +1,7 @@
 //! Native accessibility projection for the authored Metis form.
 
 use metis_core::error::{ErrorCode, MetisError, Result};
-use metis_frontend::FrontendApp;
+use metis_frontend::{ApplicationCommand, FrontendApp};
 use metis_ipc::IpcTransport;
 use metis_platform::native::{
     AccessibilityAction, AccessibilityNode, AccessibilityRole, AccessibilityTree,
@@ -45,6 +45,26 @@ pub(crate) fn submit_button_identity() -> u64 {
 /// Returns the stable identity used for the authored patient input.
 pub(crate) fn patient_input_identity() -> u64 {
     explicit_identity("label-patient")
+}
+
+/// Returns the stable identity used for the command-menu toggle.
+pub(crate) fn command_menu_toggle_identity() -> u64 {
+    explicit_identity("command-menu-toggle")
+}
+
+/// Returns the stable identity used for the focus-patient command.
+pub(crate) fn focus_patient_identity() -> u64 {
+    explicit_identity(ApplicationCommand::FocusPatient.id())
+}
+
+/// Returns the stable identity used for the dark-theme command.
+pub(crate) fn theme_dark_identity() -> u64 {
+    explicit_identity(ApplicationCommand::ThemeDark.id())
+}
+
+/// Returns the stable identity used for the system-theme command.
+pub(crate) fn theme_system_identity() -> u64 {
+    explicit_identity(ApplicationCommand::ThemeSystem.id())
 }
 
 fn append_node(
@@ -196,6 +216,10 @@ mod tests {
         assert_eq!(first, second);
         assert_ne!(submit_button_identity(), 0);
         assert_ne!(patient_input_identity(), 0);
+        assert_ne!(command_menu_toggle_identity(), 0);
+        assert_ne!(focus_patient_identity(), 0);
+        assert_ne!(theme_dark_identity(), 0);
+        assert_ne!(theme_system_identity(), 0);
     }
 
     #[test]

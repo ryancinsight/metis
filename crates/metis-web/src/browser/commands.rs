@@ -1,5 +1,6 @@
 use super::{BrowserState, view};
 use crate::controls::{self, ControlField};
+use metis_frontend::ApplicationCommand;
 use moirai_pal::wasm::{WebDocument, WebEventListener};
 use std::{cell::RefCell, io, rc::Rc};
 
@@ -14,40 +15,6 @@ impl Default for CommandState {
         Self {
             menu_open: false,
             status: "Commands ready".to_owned(),
-        }
-    }
-}
-
-#[derive(Clone, Copy, Debug, Eq, PartialEq)]
-enum CommandAction {
-    FocusPatient,
-    ThemeDark,
-    ThemeSystem,
-}
-
-impl CommandAction {
-    fn from_id(id: &str) -> Option<Self> {
-        match id {
-            "command-focus-patient" => Some(Self::FocusPatient),
-            "command-theme-dark" => Some(Self::ThemeDark),
-            "command-theme-system" => Some(Self::ThemeSystem),
-            _ => None,
-        }
-    }
-
-    const fn status(self) -> &'static str {
-        match self {
-            Self::FocusPatient => "Command applied: patient reference focused",
-            Self::ThemeDark => "Command applied: dark theme",
-            Self::ThemeSystem => "Command applied: system theme",
-        }
-    }
-
-    const fn theme_value(self) -> Option<&'static str> {
-        match self {
-            Self::ThemeDark => Some("dark"),
-            Self::ThemeSystem => Some("system"),
-            Self::FocusPatient => None,
         }
     }
 }
@@ -110,16 +77,16 @@ fn action_listener(
     let listener_state = Rc::clone(state);
     control.add_event_listener("click", move |event| {
         event.prevent_default();
-        let Some(action) = event
+        let Some(command) = event
             .target()
-            .and_then(|target| CommandAction::from_id(&target.id()))
+            .and_then(|target| ApplicationCommand::from_id(&target.id()))
         else {
             return;
         };
         let result = (|| -> io::Result<()> {
             let should_focus = {
                 let mut state = listener_state.borrow_mut();
-                if let Some(theme) = action.theme_value() {
+                if let Some(theme) = command.theme_value() {
                     let BrowserState {
                         controls,
                         state: form_state,
@@ -135,9 +102,9 @@ fn action_listener(
                     view::element(&listener_document, "theme-mode")?.set_value(theme)?;
                 }
                 state.commands.menu_open = false;
-                action.status().clone_into(&mut state.commands.status);
+                command.status().clone_into(&mut state.commands.status);
                 view::render(&listener_document, &state)?;
-                action == CommandAction::FocusPatient
+                command == ApplicationCommand::FocusPatient
             };
             if should_focus {
                 view::element(&listener_document, "patient-id")?.focus()?;
@@ -190,29 +157,32 @@ fn escape_listener(
 
 #[cfg(test)]
 mod tests {
-    use super::CommandAction;
+    use metis_frontend::ApplicationCommand;
 
     #[test]
     fn command_ids_map_to_bounded_actions() {
         assert_eq!(
-            CommandAction::from_id("command-focus-patient"),
-            Some(CommandAction::FocusPatient)
+            ApplicationCommand::from_id("command-focus-patient"),
+            Some(ApplicationCommand::FocusPatient)
         );
         assert_eq!(
-            CommandAction::from_id("command-theme-dark"),
-            Some(CommandAction::ThemeDark)
+            ApplicationCommand::from_id("command-theme-dark"),
+            Some(ApplicationCommand::ThemeDark)
         );
         assert_eq!(
-            CommandAction::from_id("command-theme-system"),
-            Some(CommandAction::ThemeSystem)
+            ApplicationCommand::from_id("command-theme-system"),
+            Some(ApplicationCommand::ThemeSystem)
         );
-        assert_eq!(CommandAction::from_id("command-shell"), None);
+        assert_eq!(ApplicationCommand::from_id("command-shell"), None);
     }
 
     #[test]
     fn theme_commands_carry_the_control_value() {
-        assert_eq!(CommandAction::ThemeDark.theme_value(), Some("dark"));
-        assert_eq!(CommandAction::ThemeSystem.theme_value(), Some("system"));
-        assert_eq!(CommandAction::FocusPatient.theme_value(), None);
+        assert_eq!(ApplicationCommand::ThemeDark.theme_value(), Some("dark"));
+        assert_eq!(
+            ApplicationCommand::ThemeSystem.theme_value(),
+            Some("system")
+        );
+        assert_eq!(ApplicationCommand::FocusPatient.theme_value(), None);
     }
 }

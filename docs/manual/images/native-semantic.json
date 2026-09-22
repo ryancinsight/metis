@@ -1,10 +1,10 @@
 {
   "schema": 1,
-  "element_count": 22,
+  "element_count": 34,
   "root": {
     "id": "main-screen",
     "role": "application",
-    "name": "METIS FORM DEMONSTRATION SYSTEM READY Patient Demographics and Drug Prescription Patient ID: demo Weight: 60.00 kg Drug Concentration: 2.00 mg/mL Target Dose: 0.200 mcg/kg/min [ SUBMIT CALCULATION TO BACKEND ] Backend Calculation Output Rate: Awaiting Backend Calculation... Safety Status: Idle Backend MAC: None",
+    "name": "METIS FORM DEMONSTRATION SYSTEM READY [ COMMANDS ] FOCUS PATIENT DARK THEME SYSTEM THEME Commands ready Patient Demographics and Drug Prescription Patient ID: demo Weight: 60.00 kg Drug Concentration: 2.00 mg/mL Target Dose: 0.200 mcg/kg/min [ SUBMIT CALCULATION TO BACKEND ] Backend Calculation Output Rate: Awaiting Backend Calculation... Safety Status: Idle Backend MAC: None",
     "description": null,
     "value": null,
     "disabled": false,
@@ -62,6 +62,197 @@
         ]
       },
       {
+        "id": "application-navigation",
+        "role": "navigation",
+        "name": "Application navigation",
+        "description": null,
+        "value": null,
+        "disabled": false,
+        "hidden": false,
+        "expanded": null,
+        "selected": null,
+        "checked": null,
+        "focusable": false,
+        "actions": [],
+        "children": [
+          {
+            "id": "application-toolbar",
+            "role": "toolbar",
+            "name": "Application commands",
+            "description": null,
+            "value": null,
+            "disabled": false,
+            "hidden": false,
+            "expanded": null,
+            "selected": null,
+            "checked": null,
+            "focusable": false,
+            "actions": [],
+            "children": [
+              {
+                "id": "command-menu-toggle",
+                "role": "button",
+                "name": "[ COMMANDS ]",
+                "description": null,
+                "value": null,
+                "disabled": false,
+                "hidden": false,
+                "expanded": false,
+                "selected": null,
+                "checked": null,
+                "focusable": true,
+                "actions": [
+                  "activate"
+                ],
+                "children": [
+                  {
+                    "id": null,
+                    "role": "text",
+                    "name": "[ COMMANDS ]",
+                    "description": null,
+                    "value": null,
+                    "disabled": false,
+                    "hidden": false,
+                    "expanded": null,
+                    "selected": null,
+                    "checked": null,
+                    "focusable": false,
+                    "actions": [],
+                    "children": []
+                  }
+                ]
+              },
+              {
+                "id": "command-focus-patient",
+                "role": "button",
+                "name": "FOCUS PATIENT",
+                "description": null,
+                "value": null,
+                "disabled": false,
+                "hidden": false,
+                "expanded": null,
+                "selected": null,
+                "checked": null,
+                "focusable": true,
+                "actions": [
+                  "activate"
+                ],
+                "children": [
+                  {
+                    "id": null,
+                    "role": "text",
+                    "name": "FOCUS PATIENT",
+                    "description": null,
+                    "value": null,
+                    "disabled": false,
+                    "hidden": false,
+                    "expanded": null,
+                    "selected": null,
+                    "checked": null,
+                    "focusable": false,
+                    "actions": [],
+                    "children": []
+                  }
+                ]
+              }
+            ]
+          },
+          {
+            "id": "command-menu",
+            "role": "menu",
+            "name": "Application commands",
+            "description": null,
+            "value": null,
+            "disabled": false,
+            "hidden": true,
+            "expanded": null,
+            "selected": null,
+            "checked": null,
+            "focusable": false,
+            "actions": [],
+            "children": [
+              {
+                "id": "command-theme-dark",
+                "role": "menuitem",
+                "name": "DARK THEME",
+                "description": null,
+                "value": null,
+                "disabled": false,
+                "hidden": true,
+                "expanded": null,
+                "selected": null,
+                "checked": null,
+                "focusable": false,
+                "actions": [],
+                "children": [
+                  {
+                    "id": null,
+                    "role": "text",
+                    "name": "DARK THEME",
+                    "description": null,
+                    "value": null,
+                    "disabled": false,
+                    "hidden": true,
+                    "expanded": null,
+                    "selected": null,
+                    "checked": null,
+                    "focusable": false,
+                    "actions": [],
+                    "children": []
+                  }
+                ]
+              },
+              {
+                "id": "command-theme-system",
+                "role": "menuitem",
+                "name": "SYSTEM THEME",
+                "description": null,
+                "value": null,
+                "disabled": false,
+                "hidden": true,
+                "expanded": null,
+                "selected": null,
+                "checked": null,
+                "focusable": false,
+                "actions": [],
+                "children": [
+                  {
+                    "id": null,
+                    "role": "text",
+                    "name": "SYSTEM THEME",
+                    "description": null,
+                    "value": null,
+                    "disabled": false,
+                    "hidden": true,
+                    "expanded": null,
+                    "selected": null,
+                    "checked": null,
+                    "focusable": false,
+                    "actions": [],
+                    "children": []
+                  }
+                ]
+              }
+            ]
+          },
+          {
+            "id": "command-status",
+            "role": "status",
+            "name": "Commands ready",
+            "description": null,
+            "value": null,
+            "disabled": false,
+            "hidden": false,
+            "expanded": null,
+            "selected": null,
+            "checked": null,
+            "focusable": false,
+            "actions": [],
+            "children": []
+          }
+        ]
+      },
+      {
         "id": "patient-card",
         "role": "group",
         "name": "Patient Demographics and Drug Prescription Patient ID: demo Weight: 60.00 kg Drug Concentration: 2.00 mg/mL Target Dose: 0.200 mcg/kg/min [ SUBMIT CALCULATION TO BACKEND ]",
@@ -76,7 +267,7 @@
         "actions": [],
         "children": [
           {
-            "id": null,
+            "id": "patient-heading",
             "role": "text",
             "name": "Patient Demographics and Drug Prescription",
             "description": null,
@@ -282,7 +473,7 @@
         "actions": [],
         "children": [
           {
-            "id": null,
+            "id": "results-heading",
             "role": "text",
             "name": "Backend Calculation Output",
             "description": null,

@@ -25,7 +25,11 @@ left to the operating system instead of triggering the application shortcut.
 The result and audit sequence are painted by the same frontend state machine as
 the headless workflow. Resize the window to exercise framebuffer replacement;
 DPI, focus and close events are consumed by the host. **Escape** or the window
-close control ends the child cleanly.
+close control ends the child cleanly. When the authored **Commands** menu is
+open, Escape closes that menu first; a second Escape closes the child. The
+toolbar's **Focus patient** command moves native input focus to the patient
+reference. Its menu also applies the bounded dark or system presentation theme;
+these actions mutate `FrontendApp` state and never cross the backend IPC seam.
 
 A host that owns the validated `WindowConfig` can call
 `NativeSurface::reopen` after `close` to create a fresh HWND with the same
@@ -108,8 +112,8 @@ cargo run --locked -p metis-app -- --metis-semantic-capture $semantic 60 2 0.2
 
 The reviewed specimen is
 [`native-semantic.json`](images/native-semantic.json). It is schema `1`, has
-22 elements and 10,325 bytes, and has SHA-256
-`d1bdfc6089d9d34c9538d0de95a5e5b9607dbf9ef0aa0d52649602347be39628`.
+34 elements and 16,333 bytes, and has SHA-256
+`0bb048549b94aabfda01c34d1c1239a35b797e67640b1b690fd2a21889bc4bd1`.
 The `main-screen` application root, the `label-patient` textbox and the
 `btn-calc` submit button are present. The textbox exposes its bounded current
 value and typed `set_value` action; the button is focusable, enabled and
