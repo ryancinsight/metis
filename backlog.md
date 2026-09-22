@@ -84,7 +84,7 @@
 
 <a id="METIS-VISUAL-FIXTURE-COUPLING-001"></a>
 ## METIS-VISUAL-FIXTURE-COUPLING-001 — Bind the visual baseline to output, not to source identity [patch]
-- Status: todo; priority: P2; owner: Metis tooling; dependencies: none; risk: reflexive golden regeneration
+- Status: in-progress; priority: P2; owner: Metis tooling; integrator: root; last-update: 2026-09-22; lease: root scripts/visual.py scripts/tests/test_visual.py docs/manual/images/captures.json docs/VERIFICATION.md backlog.md; dependencies: none; risk: reflexive golden regeneration
 - Observed 2026-09-22: `scripts/visual.py` derives `fixture_sha256` from the digests of every `.rs` under `metis-frontend`, `metis-platform` and `metis-ui-lang`, plus `presentation.rs`, `image.rs` and `Cargo.lock`. A stale fixture fails the stage outright, so any source or lockfile change invalidates the baseline even when the rendered pixels are identical.
 - Evidence: METIS-RASTER-ROUND-002 changed only style and layout sources and left every capture byte-identical; the regenerated baseline differed in exactly one field, `fixture_sha256`, with no `image_sha256` moved. Separately, web-styling [PR #350](https://github.com/ryancinsight/metis/pull/350) had to land a "Refresh fixture fingerprint" commit, and this work hit a `captures.json` rebase conflict for the same reason.
 - Outcome: the gate fails when rendered output changes and not otherwise. The source fingerprint stays in the run report as provenance, where it records which revision produced a capture without gating on it.
