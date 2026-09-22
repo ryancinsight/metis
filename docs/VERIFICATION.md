@@ -2469,6 +2469,47 @@ The focused locked native gate passed formatting, warning-denied Clippy and
 provider action and rendering path, not installed screen-reader speech, host
 preference enablement or non-Windows accessibility.
 
+### Windows WebView2 UI Automation control evidence — 2026-09-22
+
+The same bounded runner accepts `--surface webview2` for the visible packaged
+WebView2 form. Its Win32 focus step sends exactly two `Tab` actions before the
+UI Automation query because WebView2 exposes its renderer accessibility tree on
+keyboard traversal. The runner then finds the real `Patient reference` edit,
+the `Submit calculation` button and the `result` status bar, applies
+`ValuePattern.SetValue` with `A11Y-V03`, invokes the submit control with
+`InvokePattern.Invoke`, reads the terminal status text and closes the process.
+The trace is bounded to 256 named nodes, a 128-byte patient value and a 15
+second UI Automation deadline.
+
+```powershell
+$target = (cargo metadata --locked --no-deps --format-version 1 | ConvertFrom-Json).target_directory
+$binary = Join-Path $target "debug\metis-app.exe"
+New-Item -ItemType Directory -Force output/native-uia | Out-Null
+python -S scripts/python_native_accessibility.py `
+  --surface webview2 `
+  --command $binary `
+  --argument=--metis-webview --argument=60 --argument=2 --argument=0.2 `
+  --patient-value A11Y-V03 `
+  --initial-output output/native-uia/webview-initial.png `
+  --output output/native-uia/webview-after.png `
+  --manifest output/native-uia/webview-trace.json
+```
+
+The run used application revision `c29d8a3`, executable SHA-256
+`86512d11fe28516ab9ad5dc2db4fb836c37d82402a756be7191f0a4f679061f2`,
+WebView2 runtime `153.0.4234.32`, a 1024×768 client in a 1042×815 window at
+120 DPI, and 29 named UI Automation nodes after focus priming. The value
+changed from `demo` to `A11Y-V03`; the status bar exposed
+`Rate 0.36 mL/hour; drug 0.72 mg/hour; audit 2`; and the process returned `0`.
+The rendered page was separately checked through WebView2 `CapturePreview`:
+1025×769 pixels, 12,883 bytes, SHA-256
+`1b9c3bfde1c32c374edfcfab0303df3742c3772881d1c06aaf345b62e295282e`.
+The bounded record is [`webview-uia.json`](manual/images/webview-uia.json).
+This evidence establishes WebView2 rendering and Windows control behavior. It
+does not assert spoken output or screen-reader certification; no screen-reader
+process was started for this trace. No semantic or owning WebView2 host defect
+was observed.
+
 ### Windows native Unicode and installed-IME evidence — 2026-09-22
 
 The production `metis-app.exe` was rebuilt with `cargo build --locked
@@ -3255,16 +3296,16 @@ fixture bound to the recorded source revisions; it does not close the matched
 Tauri, GPUI or egui fixture requirement or establish a universal memory ranking.
 
 The current standalone replay supersedes the older resource fixture for the
-saved-study visual claim. RITK PR [#592](https://github.com/ryancinsight/ritk/pull/592)
-merged as `620c03342f3951366441f1f908d05bc3f249f566` records the exact replay
-source `36b8330d3dfa450ae81523fc1ebc6e59413a1dc4`, Metis
-`219143bbf3596aea85fa4624d7d5241a63b4cf0d`, Moirai
+saved-study visual claim. RITK PR [#594](https://github.com/ryancinsight/ritk/pull/594)
+merged as `67d4ad4457823f928b02739ec120bc0329a1b7f0` records the exact replay
+source `c842689b985beecb159bba17cc1b3a6a50e67c6a`, Metis
+`776dbbf94593e42d0a5686b587ed27b72f885a73`, Moirai
 `0e2e1bbb2d81e16dd9c694ba46a9e9710e034417` and standalone lock SHA-256
-`acb5bd6c7c82ced80c052ae542dcd63992badf8d00a982c986f64716f5736b10`.
+`602cba1b0a1a2b6ce8bdb61f42d9c3ef2844bdfd76e5120a29b5a6d8c46552ec`.
 The real 94-file study reads 49,807,236 bytes, exits 0, rejects the invalid
 study with exit 1, and reproduces the 1280×800 frame (`259dd79103482756c4e688621bebafc841cc40f1df10ff2bbd7f9d04b7b4d401`,
 411,589 non-black pixels). The executable SHA-256 is
-`f416deadbb8a17ab4ffa1d58e1eef007bd1887883ad638fbbf82fa038ec063f9`; this is
+`14412a80c37a19a2f4a09cb08165831a2311d4476f24d1ee159b34406eaf9b30`; this is
 real DICOM application output, not generated artwork or a framework ranking.
 
 The shell-free eframe run now accepts `--viewport-size 1024x640` logical
