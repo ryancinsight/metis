@@ -624,6 +624,16 @@ before submitting the calculation. These images establish visible palette
 selection through the packaged provider. They do not establish screen-reader
 behavior, installed-IME behavior, or physical high-DPI transitions.
 
+The packaged page also exposes a local command surface: an application
+navigation landmark contains a toolbar, a **Commands** menu and a
+**Focus patient reference** action. The menu's dark and system theme actions
+update the existing theme selector without crossing the WebView2 bridge. The
+menu state is reflected through `aria-expanded`, `aria-hidden` and a live
+status; Escape closes it and restores focus to the trigger. These actions are
+presentation controls only. They do not grant page script host objects or
+replace the supervised calculation bridge, and this evidence does not cover
+screen-reader speech or installed-IME traversal.
+
 ### WebView2 permission-probe capture
 
 The permission-probe role loads a separate packaged page that requests

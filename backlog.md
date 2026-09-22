@@ -563,12 +563,12 @@ an owner. “Unsupported” cannot replace delivery of a required mobile/native 
 
 <a id="METIS-INTEGRATION-001"></a>
 ## METIS-INTEGRATION-001 — Desktop integration services [minor]
-- Status: in-progress; priority: P2; owner: Metis host/broker; integrator: root; last-update: 2026-09-22; branch: feat/metis-browser-menu-001; dependencies: METIS-DESKTOP-001; risk: OS interaction
-- lease: root — browser command toolbar/menu state, presentation, tests and manual — 2026-09-22T00:00:00-04:00
+- Status: in-progress; priority: P2; owner: Metis host/broker; integrator: root; last-update: 2026-09-22; branch: feat/metis-webview-menu-001; dependencies: METIS-DESKTOP-001; risk: OS interaction
 - Scope: menus/tray, clipboard, notifications, global shortcuts, deep links, file associations, opener, single-instance and window state; bind each exposed API to policy.
 - Acceptance: typed commands/events agree across supported hosts, denial/error paths remain explicit, clipboard/user-content permissions obey host rules and listeners unregister on shutdown.
 - Demonstration: [V08](docs/VERIFICATION.md#V08), actual OS interactions and permission failures; capture menus/dialogs where visible and assert nonvisual events.
 - Completed increment (2026-09-19): browser clipboard read/write controls are implemented through Moirai's bounded secure-context provider; remaining desktop services stay open under this item.
+- Completed increment (2026-09-22): Metis PR #345 (`b491e5950324e53528ad07b7be03ccf8f070aacb`) adds the browser Rust-owned command toolbar/menu; this increment carries the equivalent local command surface into the packaged WebView2 page without granting page authority.
 - Delivery reconciliation (2026-09-19): Metis PR #278 merged at `d7cb62f5139d2e4e30a476d71b81e480c04e0226`; the former `feat/metis-browser-clipboard-001` branch is collected and no longer represents active work. Menus, tray, notifications, global shortcuts, deep links, file associations, opener, single-instance and window-state services remain open.
 - Browser command-surface increment (2026-09-22): the workbench now mounts a
   Rust-owned navigation landmark, toolbar and menu with focus-patient and
@@ -577,6 +577,11 @@ an owner. “Unsupported” cannot replace delivery of a required mobile/native 
   contract and WASM/clippy checks cover the DOM seam. Native tray,
   notifications, global shortcuts, deep links, file associations, opener,
   single-instance and window-state services remain open.
+- WebView2 command-surface increment (2026-09-22): the packaged page now
+  mounts the same bounded navigation landmark, toolbar, local theme menu and
+  patient-focus command. Asset tests cover roles, state attributes, Escape
+  handling and the no-bridge command boundary; native visual menu capture and
+  installed accessibility technology remain host-specific evidence.
 
 <a id="METIS-SERVICES-001"></a>
 ## METIS-SERVICES-001 — Scoped network, shell and sidecars [minor]
