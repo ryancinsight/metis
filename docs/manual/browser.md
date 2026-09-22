@@ -454,6 +454,10 @@ Before every element PNG, the runner centers the named canvas in the browser
 viewport and verifies that its complete CSS rectangle is visible. A driver that
 would clip the element instead produces a bounded failure, so the recorded PNG
 dimensions remain the canvas CSS box multiplied by the measured device scale.
+It then waits for two animation frames before reading the element. This covers
+responsive reflow and queued presentation work without a wall-clock sleep;
+hidden documents, unavailable animation callbacks and a 2,000 ms settle
+deadline fail closed with a diagnostic.
 
 For an Edge canvas run, keep `--engine chromium` and add the same browser-name
 override:

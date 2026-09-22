@@ -30,6 +30,7 @@ from browser_canvas_capture import (
     compare_screenshot_stability,
     validate_context_name,
 )
+from browser_canvas import settle_canvas_input
 from browser_drop_lifecycle import (
     MAX_LIFECYCLE_CYCLES,
     _DeadlineClient,
@@ -370,6 +371,7 @@ class FileDropTests(unittest.TestCase):
         class Client:
             def __init__(self):
                 self.selectors = []
+                self.settles = []
 
             def execute(self, script, arguments):
                 if "scrollIntoView" in script:
@@ -382,6 +384,10 @@ class FileDropTests(unittest.TestCase):
                         "bottom": 512,
                     }
                 return {"width": 512, "height": 512, "context": arguments[1]}
+
+            def execute_async(self, script, arguments):
+                self.settles.append((script, arguments))
+                return {"ok": True}
 
             def find(self, selector):
                 self.selectors.append(selector)
@@ -420,7 +426,23 @@ class FileDropTests(unittest.TestCase):
             )
 
         self.assertEqual(client.selectors, ["#viewer-axial"])
+        self.assertEqual(len(client.settles), 1)
+        self.assertIn("requestAnimationFrame", client.settles[0][0])
+        self.assertEqual(client.settles[0][1][0], 2)
+        self.assertEqual(client.settles[0][1][1], 2_000)
         self.assertEqual(trace.screenshots[0]["label"], "viewer-axial-after-rejections")
+
+    def test_canvas_settle_surfaces_visibility_and_deadline_failures(self):
+        for diagnostic in ("document is not visible", "frame settling deadline exceeded"):
+            class Client:
+                @staticmethod
+                def execute_async(_script, _arguments):
+                    return {"ok": False, "error": diagnostic}
+
+            with self.subTest(diagnostic=diagnostic), self.assertRaisesRegex(
+                BrowserRuntimeError, diagnostic
+            ):
+                settle_canvas_input(Client())
 
     def test_file_selection_preserves_exact_bytes_and_ignores_other_names(self):
         with tempfile.TemporaryDirectory() as directory:

@@ -2127,6 +2127,13 @@ rendered frame. The runner does not interpret the image or claim cross-provider
 equivalence. Consumer-owned RITK attributes and visual inspection supply that
 meaning.
 
+Each element capture first confirms complete viewport visibility, then yields
+through two `requestAnimationFrame` callbacks so responsive layout and queued
+presentation work settle before the PNG is read. The bounded settle script
+fails closed when the document is hidden, when animation callbacks are
+unavailable or when its 2,000 ms deadline expires; the same path serves the
+initial and post-rejection captures.
+
 <a id="browser-frame-timing-evidence--2026-09-13"></a>
 ## Browser frame timing evidence — 2026-09-13
 

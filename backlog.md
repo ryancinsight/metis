@@ -55,6 +55,13 @@
 - Status: done; delivery: Metis PR [#267](https://github.com/ryancinsight/metis/pull/267), merge `5e892245ac52c6455bbb57244fa654e6eb3cc9c1`; RITK hosted run [35395627386](https://github.com/ryancinsight/ritk/actions/runs/35395627386) confirms complete real-study captures; compacted 2026-09-18.
 - Outcome: format-neutral browser capture scrolls each named canvas into view before PNG capture, preserves CSS/device-scale dimensions, and passes the focused regression tests and hosted Chromium/Firefox three-plane MRI evidence; RITK owns DICOM semantics.
 
+<a id="METIS-BROWSER-CAPTURE-003"></a>
+## METIS-BROWSER-CAPTURE-003 — Settle responsive canvas presentation [patch]
+- Status: in-progress; priority: P1; owner: Metis browser verification; integrator: root; last-update: 2026-09-21; dependencies: METIS-BROWSER-CAPTURE-002; risk: capture races responsive reflow
+- Scope: generic element screenshot capture after visibility scrolling; no consumer-specific selectors, sleeps or DICOM logic.
+- Acceptance: initial and post-rejection captures yield through two animation frames, fail closed when the document is hidden or the bounded settle deadline expires, and preserve the existing canvas dimensions and RGBA oracles.
+- Verification: dependency-free browser unit tests cover settle ordering and surfaced visibility/deadline diagnostics; the configured browser matrix reruns the real responsive capture.
+
 <a id="METIS-INPUT-TRUST-001"></a>
 ## METIS-INPUT-TRUST-001 — Preserve browser event trust in canvas input [arch] [minor]
 
