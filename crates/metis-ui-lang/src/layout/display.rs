@@ -5,8 +5,8 @@ use metis_core::error::Result;
 use metis_platform::DisplayScale;
 use metis_platform::framebuffer::{Framebuffer, Rect};
 use metis_platform::rasterizer::{
-    CornerRadius, LineCap, LineJoin, MAX_STROKE_POINTS, StrokeWidth, draw_line, draw_polyline,
-    draw_rect_outline, draw_text, fill_rect,
+    BoxShadow, CornerRadius, LineCap, LineJoin, MAX_STROKE_POINTS, StrokeWidth, draw_box_shadow,
+    draw_line, draw_polyline, draw_rect_outline, draw_text, fill_rect,
 };
 use metis_platform::{GlyphWeight, TextStyle};
 
@@ -14,6 +14,15 @@ use metis_platform::{GlyphWeight, TextStyle};
 #[derive(Debug, Clone, PartialEq)]
 #[non_exhaustive]
 pub enum DisplayCommand {
+    /// Blurred outer shadow of a border box, clipped inside that box.
+    DrawShadow {
+        /// Border box casting the shadow.
+        rect: Rect,
+        /// Corner rounding shared with the border box.
+        radius: CornerRadius,
+        /// Offsets, blur and color in device pixels.
+        shadow: BoxShadow,
+    },
     /// Rectangle fill.
     FillRect {
         /// Target rectangle.
@@ -103,7 +112,9 @@ impl DisplayCommand {
             Ok(())
         };
         match self {
-            Self::FillRect { rect, .. } | Self::DrawBorder { rect, .. } => shift_rect(rect),
+            Self::DrawShadow { rect, .. }
+            | Self::FillRect { rect, .. }
+            | Self::DrawBorder { rect, .. } => shift_rect(rect),
             Self::DrawLine { start, end, .. } => {
                 *start = (shift(start.0, dx)?, shift(start.1, dy)?);
                 *end = (shift(end.0, dx)?, shift(end.1, dy)?);
@@ -137,6 +148,11 @@ impl DisplayList {
     pub fn render_to(&self, fb: &mut Framebuffer) {
         for command in &self.commands {
             match command {
+                DisplayCommand::DrawShadow {
+                    rect,
+                    radius,
+                    shadow,
+                } => draw_box_shadow(fb, *rect, *radius, *shadow),
                 DisplayCommand::FillRect {
                     rect,
                     radius,

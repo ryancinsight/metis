@@ -11,7 +11,7 @@
 use crate::framebuffer::{Color, Framebuffer, Rect, SourceOver};
 
 /// Vertical subsamples integrated per device row.
-const SUBSAMPLES: usize = 16;
+pub(super) const SUBSAMPLES: usize = 16;
 /// Reciprocal of [`SUBSAMPLES`], written as a literal so coverage needs no cast.
 const SUBSAMPLE_RECIPROCAL: f64 = 1.0 / 16.0;
 const _: () = assert!(
@@ -114,7 +114,7 @@ impl RoundRect {
     /// The half-open horizontal extent at continuous row `y`.
     ///
     /// Rows outside the shape report an empty extent.
-    fn extent_at(self, y: f64) -> (f64, f64) {
+    pub(super) fn extent_at(self, y: f64) -> (f64, f64) {
         if y < self.top || y >= self.bottom {
             return (0.0, 0.0);
         }
@@ -135,15 +135,15 @@ impl RoundRect {
 }
 
 /// Half-open horizontal extents sampled once per subsample row.
-type RowSamples = [(f64, f64); SUBSAMPLES];
+pub(super) type RowSamples = [(f64, f64); SUBSAMPLES];
 
 /// Bounds collected while sampling one device row.
 #[derive(Debug, Clone, Copy)]
-struct RowBounds {
+pub(super) struct RowBounds {
     /// Leftmost and rightmost column any outer subsample reaches.
-    touched: (f64, f64),
+    pub(super) touched: (f64, f64),
     /// Columns every outer subsample covers completely.
-    solid: (f64, f64),
+    pub(super) solid: (f64, f64),
     /// Columns any inner extent reaches, empty when there is no inner shape.
     hole: Option<(f64, f64)>,
     /// Columns every inner subsample covers completely.
@@ -162,7 +162,7 @@ fn overlap(extent: (f64, f64), column: f64) -> f64 {
 }
 
 /// Samples both shapes across one device row.
-fn sample_row(
+pub(super) fn sample_row(
     row: u32,
     outer: RoundRect,
     inner: Option<RoundRect>,
@@ -205,7 +205,7 @@ fn sample_row(
 }
 
 /// Mean covered fraction of one pixel across the sampled rows.
-fn pixel_coverage(outer: &RowSamples, inner: Option<&RowSamples>, column: f64) -> f64 {
+pub(super) fn pixel_coverage(outer: &RowSamples, inner: Option<&RowSamples>, column: f64) -> f64 {
     let mut total = 0.0;
     for index in 0..SUBSAMPLES {
         let mut covered = overlap(outer[index], column);
@@ -326,7 +326,13 @@ fn fill_run(fb: &mut Framebuffer, row: u32, from: f64, to: f64, source: SourceOv
 }
 
 /// Composites one partially covered pixel.
-fn composite_pixel(fb: &mut Framebuffer, row: u32, column: f64, color: Color, coverage: f64) {
+pub(super) fn composite_pixel(
+    fb: &mut Framebuffer,
+    row: u32,
+    column: f64,
+    color: Color,
+    coverage: f64,
+) {
     if coverage <= 0.0 {
         return;
     }

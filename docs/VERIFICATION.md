@@ -2472,6 +2472,70 @@ decision's protection actually lives. The bounded subset holds: `space-around`,
 `baseline` and bare `end` are typed errors rather than a silent fall back to
 the default.
 
+### Gaussian box shadows — 2026-09-22
+
+`box-shadow` is admitted for one outer shadow and painted as CSS Backgrounds 3
+§6.1 specifies: a Gaussian of standard deviation half the blur radius, cast
+from the border box, clipped inside it and painted below the background
+([ADR 0046](adr/0046-gaussian-box-shadows.md)).
+
+The oracle is the specification's own tolerance. §6.1.2 accepts any image
+whose pixels lie within 5% of the Gaussian result; the corner test compares
+the rendered shadow against a continuous reference — exact along x through the
+normal distribution, a 1000-row midpoint rule along y — for blur 1, 2, 3, 4, 8
+and 16 with a 12-pixel radius, at every pixel for the three smallest, and every
+pixel lies within 5% of full scale plus half a level of rounding. Read as
+relative error the tolerance is unsatisfiable at 8 bits, since a pixel
+expected at 0.4 levels must round to 0 or 1. On a straight edge the discrete
+kernel is exact, so that test asserts the closed form within half a level plus
+the kernel's truncation bound, `255 · 2Φ(−3.5) ≈ 0.12` levels. The region
+decomposition — running-sum intervals away from the arcs, a ring of arc rows
+integrated as slabs near them, 1024-column tiles — is checked within one level
+against a direct evaluation of every slab for every pixel with independently
+computed Gaussian masses, across a narrow shape, a shape of height `2r`, a wide
+shape, a shape partly off the surface, square corners, a one-pixel blur on an
+arc, a one-pixel crescent and a shape crossing a tile boundary. A zero blur
+equals `fill_rect` of the offset shape outside the border box, pixel for
+pixel. Extreme geometry at the `i32` limits paints nothing when the blurred
+extent misses the surface or the border box covers it.
+
+An independent review of the first delivered form failed it: convolving the
+antialiased coverage mask adds a pixel-wide box on each axis at the arcs, and
+at a one-pixel blur the worst corner pixel sat 15.6 levels from the reference
+against a 13.25-level bound. The review also measured a scratch ring of 7 KB
+per visible column at the maximum blur, allocated even for square corners.
+Arc rows are now integrated as `S` slabs. A second pass showed the slab error
+is first order near the flat apex of large arcs, up to half the largest slab
+weight, and reached 13.16 of 13.25 permitted levels at `σS = 4` on a
+67-million-pixel radius; `S` is now the smallest power of two with `σS ≥ 8`,
+bounding it at 6.35 levels, and a test on radii of 200, 1,000 and 5,000 asserts
+that bound. A one-pixel blur on a 12-pixel radius measures 0.5 levels; the ring holds `min(2K + 1, 2r)` arc rows of one
+1024-column tile, at most 7.3 MB whatever the surface. The new extreme-geometry
+test found a conversion panic on local columns past `i32::MAX`, fixed here.
+
+The oracles were shown to bite: setting σ to the blur radius fails four tests,
+and forcing one slab per arc row fails the corner test at a one-pixel blur.
+
+`fill/elevated_card_stack` (eight 520 × 72 cards, 16-pixel blur, 1280 × 800
+surface, pinned cores 2 and 3) measured 11.9 ms for the first per-pixel
+formulation, 3.49 ms for the coverage-mask form and 2.49 ms [2.48, 2.50] for
+the slab form. Host load rose during that last run; the identical-code control
+`fill/rounded_card_stack` held at 204 µs against 202–208 µs before, so the
+pinned cores were not disturbed.
+
+The demo form casts elevation by role: a 4-pixel lift under controls, a
+10-pixel blur under the cards, the header's own-colour 12-pixel blur, and the
+strongest, 20 pixels, under the floating command menu.
+
+The seven regenerated form captures keep their semantic projections unchanged
+in the visual report; only pixels move. Inspected at full size and at
+three-times magnification against the previous baseline: the header, both
+cards and the controls lift off the page with a soft falloff, control shadows
+land on the navigation band, the arcs stay smooth with no banding or seam where
+the closed-form and arc-row regions meet, and no element moves. Regenerated
+after each review revision, the captures moved by at most one level per pass,
+in 164 and then 118 pixels of the 480,000 in the base capture.
+
 ### Demo form adopts the admitted declarations — 2026-09-22
 
 The authored clinical screen now uses what the renderer paints, so the

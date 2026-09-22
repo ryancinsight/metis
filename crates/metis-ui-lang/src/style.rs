@@ -108,6 +108,22 @@ pub enum FontWeight {
     Bold,
 }
 
+/// An outer box shadow in authored pixels.
+///
+/// The subset is one shadow of two offsets, an optional blur radius and a
+/// color: no `inset`, no spread distance and no comma-separated list.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub struct Shadow {
+    /// Horizontal offset; positive values move the shadow right.
+    pub offset_x: i32,
+    /// Vertical offset; positive values move the shadow down.
+    pub offset_y: i32,
+    /// Nonnegative blur radius: twice the Gaussian's standard deviation.
+    pub blur: i32,
+    /// Straight RGBA shadow color.
+    pub color: Color,
+}
+
 /// Computed CSS style properties for a DOM node.
 #[derive(Debug, Clone, PartialEq)]
 pub struct ComputedStyle {
@@ -115,9 +131,9 @@ pub struct ComputedStyle {
     pub display: Display,
     /// Sequential child layout direction.
     pub flex_direction: FlexDirection,
-    /// Main-axis alignment; non-default values are unsupported by the software renderer.
+    /// Distribution of free main-axis space among the children.
     pub justify_content: JustifyContent,
-    /// Cross-axis alignment; non-default values are unsupported by the software renderer.
+    /// Placement of each child within the cross-axis extent.
     pub align_items: AlignItems,
     /// Space between adjacent children in pixels.
     pub gap: i32,
@@ -125,9 +141,9 @@ pub struct ComputedStyle {
     pub width: Size,
     /// Requested height.
     pub height: Size,
-    /// Minimum width; non-automatic values are unsupported by the software renderer.
+    /// Lower bound on the resolved width.
     pub min_width: Size,
-    /// Minimum height; non-automatic values are unsupported by the software renderer.
+    /// Lower bound on the resolved height.
     pub min_height: Size,
     /// Inner spacing.
     pub padding: EdgeValues,
@@ -137,7 +153,7 @@ pub struct ComputedStyle {
     pub border_width: EdgeValues,
     /// Straight RGBA border color.
     pub border_color: Color,
-    /// Corner radius; nonzero values are unsupported by the software renderer.
+    /// Corner radius, clamped to half the shorter side of the border box.
     pub border_radius: i32,
     /// Optional straight RGBA background fill.
     pub background_color: Option<Color>,
@@ -146,8 +162,10 @@ pub struct ComputedStyle {
     /// Requested authored font size; bitmap scale is max(1, size / 14) before
     /// the host display scale is applied during layout and rasterization.
     pub font_size: u32,
-    /// Weight; bold is unsupported by the software renderer.
+    /// Weight of the bitmap glyph strokes.
     pub font_weight: FontWeight,
+    /// Outer shadow painted beneath the background, if any.
+    pub box_shadow: Option<Shadow>,
 }
 
 impl Default for ComputedStyle {
@@ -171,6 +189,7 @@ impl Default for ComputedStyle {
             text_color: Color::BLACK,
             font_size: 14,
             font_weight: FontWeight::Normal,
+            box_shadow: None,
         }
     }
 }
@@ -247,6 +266,7 @@ impl ComputedStyle {
                         _ => return Err(invalid_value(&key, val)),
                     }
                 }
+                "box-shadow" => style.box_shadow = parse_shadow(&key, val)?,
                 "border-radius" => style.border_radius = parse_nonnegative_px(&key, val)?,
                 "gap" => style.gap = parse_nonnegative_px(&key, val)?,
                 "width" => style.width = parse_size(&key, val)?,
@@ -350,6 +370,37 @@ fn parse_edges(property: &str, value: &str) -> Result<EdgeValues> {
         },
         _ => return Err(invalid_value(property, value)),
     })
+}
+
+/// Parses `none` or `<offset-x> <offset-y> [<blur>] <color>`, with the color
+/// allowed first or last as in CSS.
+fn parse_shadow(property: &str, value: &str) -> Result<Option<Shadow>> {
+    if value == "none" {
+        return Ok(None);
+    }
+    let tokens: Vec<&str> = value.split_whitespace().collect();
+    let (color, lengths) = match tokens.as_slice() {
+        [first, rest @ ..] if first.starts_with('#') => (*first, rest),
+        [rest @ .., last] if last.starts_with('#') => (*last, rest),
+        _ => return Err(invalid_value(property, value)),
+    };
+    let color = parse_color(property, color)?;
+    let length = |token: &str| parse_px(token).ok_or_else(|| invalid_value(property, value));
+    let (offset_x, offset_y, blur) = match lengths {
+        [x, y] => (length(x)?, length(y)?, 0),
+        [x, y, blur] => (
+            length(x)?,
+            length(y)?,
+            parse_nonnegative_px(property, blur)?,
+        ),
+        _ => return Err(invalid_value(property, value)),
+    };
+    Ok(Some(Shadow {
+        offset_x,
+        offset_y,
+        blur,
+        color,
+    }))
 }
 
 fn parse_color(property: &str, value: &str) -> Result<Color> {

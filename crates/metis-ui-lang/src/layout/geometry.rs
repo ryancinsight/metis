@@ -1,14 +1,14 @@
 use super::display::{DisplayCommand, DisplayList};
 use crate::dom::{DomDocument, DomElement, DomNode};
 use crate::parser::{MAX_DEPTH, MAX_INPUT_BYTES, MAX_NODES, copy_text, limit_error};
-use crate::style::{
-    AlignItems, ComputedStyle, Display, EdgeValues, FlexDirection, FontWeight, JustifyContent, Size,
-};
+use crate::style::{AlignItems, ComputedStyle, Display, FlexDirection, FontWeight, JustifyContent};
 use metis_core::error::Result;
 use metis_platform::DisplayScale;
 use metis_platform::GlyphWeight;
 use metis_platform::framebuffer::Rect;
 use metis_platform::rasterizer::CornerRadius;
+
+use super::device::{device_shadow, dimension, minimum, scaled_geometry};
 
 /// Logical viewport dimensions and the host's device-pixel scale.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -305,17 +305,7 @@ impl DisplayList {
         let row = style.flex_direction == FlexDirection::Row;
         // Reserve the parent's painter position before descendants; its auto height is
         // filled after child layout, so siblings never paint behind earlier siblings.
-        let background_index = if let Some(color) = style.background_color {
-            let index = self.commands.len();
-            self.push(DisplayCommand::FillRect {
-                rect: Rect::new(x, y, width, 0),
-                radius: CornerRadius::SQUARE,
-                color,
-            })?;
-            Some(index)
-        } else {
-            None
-        };
+        let slots = self.reserve_box(style, Rect::new(x, y, width, 0), display_scale)?;
         let child_extent = self.children_extent(
             element,
             ChildLayout {
@@ -353,16 +343,7 @@ impl DisplayList {
         // The radius is clamped against the final rectangle, whose height is
         // known only after the children have been laid out.
         let radius = CornerRadius::clamped(display_scale.scale_extent(style.border_radius)?, rect);
-        if let Some(index) = background_index
-            && let DisplayCommand::FillRect {
-                rect: target,
-                radius: target_radius,
-                ..
-            } = &mut self.commands[index]
-        {
-            *target = rect;
-            *target_radius = radius;
-        }
+        self.settle_box(slots, rect, radius);
         if geometry.border.top > 0 {
             self.push(DisplayCommand::DrawBorder {
                 rect,
@@ -373,6 +354,72 @@ impl DisplayList {
         }
         Ok(rect)
     }
+
+    /// Reserves painter slots for the element's shadow and background.
+    ///
+    /// The outer shadow sits immediately below the background (CSS
+    /// Backgrounds 3 §6.1.3), so its slot is reserved first. Both carry a
+    /// placeholder until [`Self::settle_box`] writes the final rectangle.
+    fn reserve_box(
+        &mut self,
+        style: &ComputedStyle,
+        placeholder: Rect,
+        display_scale: DisplayScale,
+    ) -> Result<BoxSlots> {
+        let shadow = match style.box_shadow {
+            Some(shadow) => {
+                let index = self.commands.len();
+                self.push(DisplayCommand::DrawShadow {
+                    rect: placeholder,
+                    radius: CornerRadius::SQUARE,
+                    shadow: device_shadow(shadow, display_scale)?,
+                })?;
+                Some(index)
+            }
+            None => None,
+        };
+        let background = match style.background_color {
+            Some(color) => {
+                let index = self.commands.len();
+                self.push(DisplayCommand::FillRect {
+                    rect: placeholder,
+                    radius: CornerRadius::SQUARE,
+                    color,
+                })?;
+                Some(index)
+            }
+            None => None,
+        };
+        Ok(BoxSlots { shadow, background })
+    }
+
+    /// Writes the final border box into the reserved slots.
+    fn settle_box(&mut self, slots: BoxSlots, rect: Rect, radius: CornerRadius) {
+        for index in [slots.shadow, slots.background].into_iter().flatten() {
+            let (DisplayCommand::DrawShadow {
+                rect: target,
+                radius: target_radius,
+                ..
+            }
+            | DisplayCommand::FillRect {
+                rect: target,
+                radius: target_radius,
+                ..
+            }) = &mut self.commands[index]
+            else {
+                unreachable!("invariant: reserve_box records only shadow and fill slots");
+            };
+            *target = rect;
+            *target_radius = radius;
+        }
+    }
+}
+
+/// Painter slots an element reserves before its children paint.
+#[derive(Clone, Copy)]
+struct BoxSlots {
+    shadow: Option<usize>,
+    background: Option<usize>,
 }
 
 /// Where one child's commands and extents landed during child layout.
@@ -396,14 +443,6 @@ struct ChildExtent {
 }
 
 #[derive(Clone, Copy)]
-struct ScaledGeometry {
-    margin: EdgeValues,
-    padding: EdgeValues,
-    border: EdgeValues,
-    gap: i32,
-}
-
-#[derive(Clone, Copy)]
 struct ChildLayout<'style> {
     style: &'style ComputedStyle,
     content_x: i32,
@@ -413,27 +452,6 @@ struct ChildLayout<'style> {
     row: bool,
     gap: i32,
     display_scale: DisplayScale,
-}
-
-fn scaled_geometry(
-    style: &crate::style::ComputedStyle,
-    display_scale: DisplayScale,
-) -> Result<ScaledGeometry> {
-    Ok(ScaledGeometry {
-        margin: scale_edges(style.margin, display_scale)?,
-        padding: scale_edges(style.padding, display_scale)?,
-        border: scale_edges(style.border_width, display_scale)?,
-        gap: display_scale.scale_coordinate(style.gap)?,
-    })
-}
-
-fn scale_edges(edges: EdgeValues, display_scale: DisplayScale) -> Result<EdgeValues> {
-    Ok(EdgeValues {
-        top: display_scale.scale_coordinate(edges.top)?,
-        right: display_scale.scale_coordinate(edges.right)?,
-        bottom: display_scale.scale_coordinate(edges.bottom)?,
-        left: display_scale.scale_coordinate(edges.left)?,
-    })
 }
 
 fn add(left: i32, right: i32) -> Result<i32> {
@@ -447,49 +465,4 @@ fn sub(left: i32, right: i32) -> Result<i32> {
 fn mul(left: i32, right: i32) -> Result<i32> {
     left.checked_mul(right)
         .ok_or_else(|| limit_error("Layout text extent overflow"))
-}
-
-/// Resolves the floor an extent may not fall below.
-///
-/// `Size::Auto` states no minimum. A declared minimum uses the same length
-/// grammar and display scaling as `width`/`height`, so a minimum and an extent
-/// expressed the same way resolve to the same number.
-fn minimum(size: Size, available: i32, display_scale: DisplayScale) -> Result<i32> {
-    match size {
-        Size::Auto => Ok(0),
-        declared => dimension(declared, available, 0, display_scale),
-    }
-}
-
-fn dimension(
-    size: Size,
-    available: i32,
-    automatic: i32,
-    display_scale: DisplayScale,
-) -> Result<i32> {
-    match size {
-        Size::Auto => Ok(automatic),
-        Size::Px(value) if value >= 0 => display_scale.scale_extent(value),
-        Size::Percent(percent) if percent.is_finite() && percent >= 0.0 => {
-            // The percentage contract is f32; multiplication remains in that precision.
-            #[expect(
-                clippy::cast_precision_loss,
-                reason = "CSS percentage sizing uses f32 coordinates"
-            )]
-            let value = available as f32 * percent;
-            #[expect(
-                clippy::cast_precision_loss,
-                reason = "i32::MAX rounds to the first excluded f32 coordinate"
-            )]
-            if !value.is_finite() || value >= i32::MAX as f32 {
-                return Err(limit_error("Percentage size exceeds coordinate range"));
-            }
-            #[expect(
-                clippy::cast_possible_truncation,
-                reason = "Finite nonnegative value is checked below the i32 upper bound; fractional pixels truncate"
-            )]
-            Ok(value as i32)
-        }
-        _ => Err(limit_error("Size must be finite and nonnegative")),
-    }
 }

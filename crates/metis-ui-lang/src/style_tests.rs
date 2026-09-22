@@ -174,3 +174,62 @@ fn rejects_malformed_values_with_one_code() {
         assert_eq!(error.code, ErrorCode::InvalidCssStyle, "{css}");
     }
 }
+
+#[test]
+fn box_shadow_parses_offsets_blur_and_color_in_either_order() {
+    let elevation = Shadow {
+        offset_x: 0,
+        offset_y: 4,
+        blur: 12,
+        color: Color::rgba(0x0f, 0x17, 0x2a, 0x28),
+    };
+    for css in [
+        "box-shadow: 0 4px 12px #0f172a28",
+        "box-shadow: #0f172a28 0px 4px 12px",
+        "BOX-SHADOW:  0px   4px 12px   #0F172A28",
+    ] {
+        assert_eq!(
+            ComputedStyle::parse(css).expect("shadow").box_shadow,
+            Some(elevation),
+            "{css}"
+        );
+    }
+    // Offsets are signed and the blur defaults to a hard edge.
+    assert_eq!(
+        ComputedStyle::parse("box-shadow: -2px -3px #000")
+            .expect("hard")
+            .box_shadow,
+        Some(Shadow {
+            offset_x: -2,
+            offset_y: -3,
+            blur: 0,
+            color: Color::BLACK,
+        })
+    );
+    assert_eq!(ComputedStyle::default().box_shadow, None);
+    assert_eq!(
+        ComputedStyle::parse("box-shadow: 1px 1px #000; box-shadow: none")
+            .expect("reset")
+            .box_shadow,
+        None
+    );
+}
+
+#[test]
+fn box_shadow_outside_the_subset_is_rejected() {
+    for css in [
+        // Spread distance, inset shadows and shadow lists are outside the subset.
+        "box-shadow: 1px 2px 3px 4px #000",
+        "box-shadow: inset 0 0 4px #000",
+        "box-shadow: 0 0 2px #000, 1px 1px #fff",
+        // A negative blur, a missing color or offset, and a named color.
+        "box-shadow: 1px 2px -3px #000",
+        "box-shadow: 1px 2px 3px",
+        "box-shadow: 1px #000",
+        "box-shadow: #000",
+        "box-shadow: 1px 2px black",
+    ] {
+        let error = ComputedStyle::parse(css).expect_err("outside the subset");
+        assert_eq!(error.code, ErrorCode::InvalidCssStyle, "{css}");
+    }
+}

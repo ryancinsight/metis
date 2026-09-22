@@ -9,6 +9,7 @@ repository.workspace = true
 description = "Bounded software framebuffer and Windows native event/presentation adapter"
 
 [dependencies]
+eunomia = { workspace = true }
 metis-core = { workspace = true }
 moirai-pal = { workspace = true }
 moirai-async = { workspace = true }

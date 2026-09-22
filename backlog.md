@@ -14,6 +14,21 @@
 - Basis: Metis main run `35648844306` failed only because Atlas `02a304f519c27b95169b87b732e6e631d51c205d` scanned its `_atlas` workflow checkout as member source (`oversized_files 0 -> 3`, `manifest_implementation 0 -> 2`, `existence_only_assertions 0 -> 4`).
 - Outcome: PR #331 advanced the workflow and source split; the exact full verifier passed 27 stages with 192 resolved packages, the intentional capture-failure negative oracle, and the merged Atlas scanner reporting zero regressions and zero host-state rows.
 
+<a id="METIS-RASTER-SHADOW-001"></a>
+## METIS-RASTER-SHADOW-001 — Gaussian outer box shadows through layout [arch] [major]
+- Status: done; priority: P1; owner: Metis presentation; integrator: root; last-update: 2026-09-22; dependencies: METIS-RASTER-ROUND-002; risk: paint cost on elevated surfaces; delivery: [PR #370](https://github.com/ryancinsight/metis/pull/370)
+- Evidence: [Gaussian box shadows](docs/VERIFICATION.md#gaussian-box-shadows--2026-09-22); `fill/elevated_card_stack` 2.49 ms for eight elevated cards on the pinned cores. An independent review failed the first form at a one-pixel blur and on scratch memory; both fixed with the review's cases committed.
+- Outcome: raised surfaces cast a soft shadow, so cards, the header, the command menu and controls read as layered rather than flat.
+- Scope: `BoxShadow` and `draw_box_shadow` in `metis-platform`; `box-shadow` in the style subset; `DisplayCommand::DrawShadow` below the background; the demo form's elevation and regenerated captures. `DomNode::Element` boxes its element, which the larger computed style required.
+- Oracle: CSS Backgrounds 3 section 6.1: a Gaussian of standard deviation blur/2 within 5% per pixel, cast from the border box and clipped inside it, painted below the background. Straight edges match the closed form; corners stay within 5% of a continuous reference; the region decomposition matches a naive 2D convolution; zero blur equals the offset fill ([ADR 0046](docs/adr/0046-gaussian-box-shadows.md)).
+- Non-goals: `inset`, spread distance, shadow lists.
+
+<a id="METIS-VISUAL-CAPTURE-SIZE-001"></a>
+## METIS-VISUAL-CAPTURE-SIZE-001 — Bound the committed capture encoding [patch]
+- Status: todo; priority: P2; owner: Metis verification; dependencies: METIS-RASTER-SHADOW-001; risk: repository growth per baseline refresh
+- Finding: shadow gradients took each form capture SVG from 0.56 MB to about 1.2 MB (seven captures, 8.2 MB per refresh), because the encoder emits one rectangle per color run. The Atlas artifact budget counts raster suffixes only, so the SVG captures are unmeasured against the 200 KB image budget.
+- Oracle: every committed capture stays under the image budget with pixel-identical decode, and the budget scan measures the capture format.
+
 <a id="METIS-RASTER-ROUND-001"></a>
 ## METIS-RASTER-ROUND-001 — Antialiased rounded rectangle paint [arch] [major]
 - Status: review; priority: P1; owner: Metis presentation; integrator: root; last-update: 2026-09-22; dependencies: METIS-RASTER-SPAN-001; ADR: [0043](docs/adr/0043-rounded-rectangle-paint.md); risk: composite drift
