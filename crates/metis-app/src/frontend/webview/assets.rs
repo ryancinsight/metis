@@ -201,6 +201,7 @@ function record(permission, text) {
 function runNext() {
   if (active >= probes.length) {
     result.textContent = `Completed ${recorded.size} bounded capability probes.`;
+    bridge.postMessage({ action: 'permission_probe_complete' });
     return;
   }
   const probe = probes[active++];
