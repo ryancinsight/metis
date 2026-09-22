@@ -1712,31 +1712,32 @@ The recorded cross-engine captures show the real anatomy rendered through this
 format-neutral host: [Chromium gallery](https://github.com/ryancinsight/ritk/blob/main/docs/manual/images/dicom-metis-real-browser-mri-cross-engine-chromium.png)
 and [Firefox gallery](https://github.com/ryancinsight/ritk/blob/main/docs/manual/images/dicom-metis-real-browser-mri-cross-engine-firefox.png).
 The current standalone-lock replay (2026-09-22) uses the lock delivered by RITK PR
-[#594](https://github.com/ryancinsight/ritk/pull/594), merged as
-`67d4ad4457823f928b02739ec120bc0329a1b7f0`; its exact replay source is
-`c842689b985beecb159bba17cc1b3a6a50e67c6a`, with all six Metis packages at
-`776dbbf94593e42d0a5686b587ed27b72f885a73` and fifteen Moirai packages at
+[#592](https://github.com/ryancinsight/ritk/pull/592), merged as
+`620c03342f3951366441f1f908d05bc3f249f566`; its exact replay source is
+`36b8330d3dfa450ae81523fc1ebc6e59413a1dc4`, with all six Metis packages at
+`219143bbf3596aea85fa4624d7d5241a63b4cf0d` and fifteen Moirai packages at
 `0e2e1bbb2d81e16dd9c694ba46a9e9710e034417`. The standalone Cargo.lock SHA-256
-is `602cba1b0a1a2b6ce8bdb61f42d9c3ef2844bdfd76e5120a29b5a6d8c46552ec`. It
+is `acb5bd6c7c82ced80c052ae542dcd63992badf8d00a982c986f64716f5736b10`. It
 reads all 94 saved files (49,807,236 bytes), reproduces the revision-bound
 1280 × 800 MRI frame with SHA-256
 `259dd79103482756c4e688621bebafc841cc40f1df10ff2bbd7f9d04b7b4d401` and
 411,589 non-black pixels, and rejects an invalid study. The locked replay's
 executable digest is
-`14412a80c37a19a2f4a09cb08165831a2311d4476f24d1ee159b34406eaf9b30`;
+`f416deadbb8a17ab4ffa1d58e1eef007bd1887883ad638fbbf82fa038ec063f9`;
 the [RITK replay provenance](https://github.com/ryancinsight/ritk/blob/main/docs/manual/images/dicom-metis-real-mri.json)
 is authoritative for the example digest, storage-reuse oracles and physical
 spacing carried into the native and browser presentation boundaries.
-The merged-main hosted browser run [35724926751](https://github.com/ryancinsight/ritk/actions/runs/35724926751)
-uses RITK merge `67d4ad4457823f928b02739ec120bc0329a1b7f0`, Metis
-`776dbbf94593e42d0a5686b587ed27b72f885a73` and Moirai
-`0e2e1bbb2d81e16dd9c694ba46a9e9710e034417`. Chromium and Firefox accepted all
-94 files, read 49,807,236 bytes, matched the three exact RGBA canvas oracles
-through four lifecycle cycles and released their listeners. The Chromium-window
-11-tool replay passed in artifact [10693163040](https://github.com/ryancinsight/ritk/actions/runs/35724926751/artifacts/10693163040),
-and the display-only MIP passed in artifact [10693317438](https://github.com/ryancinsight/ritk/actions/runs/35724926751/artifacts/10693317438).
-Safari 26.6.2 accepted the chooser paths but rejected the bounded whole-file read;
-Chromium reported no WebGPU adapter. The partial result, diagnostics and reviewed
+The post-merge hosted browser run [35704771969](https://github.com/ryancinsight/ritk/actions/runs/35704771969)
+is dispatched against RITK merge `620c03342f3951366441f1f908d05bc3f249f566`
+and Metis `219143bbf3596aea85fa4624d7d5241a63b4cf0d`; browser conclusions are
+recorded only after its artifacts are collected. The prior run
+[35690425860](https://github.com/ryancinsight/ritk/actions/runs/35690425860)
+completed against the older RITK PR #588 replay and remains historical. In that
+historical run, Chromium and Firefox saved-study chooser lanes, Chromium window and projection
+lanes, and the responsive Chromium/Firefox lanes passed the real 94-file,
+49,807,236-byte study with exact RGBA, semantic and teardown oracles. WebKit
+accepted all 94 chooser paths and then rejected the bounded whole-file read;
+Chromium WebGPU reported no adapter. These capability residuals and their source
 captures are recorded in the [RITK cross-engine provenance](https://github.com/ryancinsight/ritk/blob/main/docs/manual/images/dicom-metis-real-browser-mri-cross-engine.json).
 RITK scans and decodes DICOM and owns the clinical pixels; Metis supplies the
 format-neutral chooser, bounded handoff and canvas host.

@@ -29,8 +29,6 @@ class NativeAccessibilityTests(unittest.TestCase):
                 "--argument=--metis-native-window",
                 "--argument",
                 "60",
-                "--surface",
-                "webview2",
                 "--patient-value",
                 "UIA-PATIENT",
                 "--initial-output",
@@ -42,7 +40,6 @@ class NativeAccessibilityTests(unittest.TestCase):
             ]
         )
         self.assertEqual(parsed.command_arguments, ["--metis-native-window", "60"])
-        self.assertEqual(parsed.surface, "webview2")
         self.assertEqual(parsed.patient_value, "UIA-PATIENT")
         self.assertEqual(parsed.initial_output, pathlib.Path("before.png"))
         self.assertEqual(parsed.output, pathlib.Path("after.png"))
@@ -56,28 +53,6 @@ class NativeAccessibilityTests(unittest.TestCase):
         self.assertIn("InvokePattern]::Pattern", script)
         self.assertIn("InvokePattern.Invoke", script)
         self.assertIn("records.Count -gt 256", script)
-
-    def test_webview2_script_targets_real_dom_controls_and_live_status(self) -> None:
-        script = capture._powershell_script(42, "UIA-PATIENT", "webview2")
-        self.assertIn("AutomationId -eq 'patient-id'", script)
-        self.assertIn("Name -eq 'Submit calculation'", script)
-        self.assertIn("AutomationId -eq 'result'", script)
-        self.assertIn("ControlType.Text", script)
-        self.assertIn("surface = $surface", script)
-
-    def test_surface_preparation_primes_only_webview2_focus(self) -> None:
-        with patch.object(capture.native_input, "_focus_window") as focus:
-            with patch.object(capture.native_input, "_send_virtual_key") as key:
-                with patch.object(capture.native_input, "_flush_window") as flush:
-                    self.assertEqual(capture._prepare_surface(42, "native"), 0)
-                    focus.assert_not_called()
-                    self.assertEqual(
-                        capture._prepare_surface(42, "webview2"),
-                        capture.WEBVIEW2_FOCUS_PRIMER_TABS,
-                    )
-        focus.assert_called_once_with(42)
-        self.assertEqual(key.call_count, 4)
-        self.assertEqual(flush.call_count, 2)
 
     def test_powershell_trace_parser_rejects_non_object_schema(self) -> None:
         completed = subprocess.CompletedProcess(

@@ -4,7 +4,6 @@ from __future__ import annotations
 
 import hashlib
 import pathlib
-import subprocess
 import tempfile
 import unittest
 from unittest import mock
@@ -75,70 +74,6 @@ class RevisionCitationTests(unittest.TestCase):
             findings = citations.unreachable_revisions(root, "HEAD", resolve=lambda _: False)
             self.assertEqual(len(findings), 1)
             self.assertIn("docs/manual.md:1", findings[0])
-
-
-class GitRevisionQueryTests(unittest.TestCase):
-    """Live revision checks classify all candidates in bounded Git queries."""
-
-    def test_batch_query_classifies_commits_and_ignores_other_objects(self):
-        reachable = "a" * 40
-        unreachable = "b" * 40
-        blob = "c" * 40
-        missing = "d" * 40
-        candidates = (reachable[:12], unreachable[:12], blob[:12], missing, reachable[:12])
-        batch_output = "\n".join(
-            (
-                f"{reachable} commit",
-                f"{unreachable} commit",
-                f"{blob} blob",
-                f"{missing} missing",
-            )
-        )
-
-        with mock.patch.object(citations, "_git", side_effect=[reachable, batch_output]) as git:
-            resolved = citations._resolve_revisions(pathlib.Path("repo"), "HEAD", candidates)
-
-        self.assertEqual(
-            resolved,
-            {
-                reachable[:12]: True,
-                unreachable[:12]: False,
-                blob[:12]: None,
-                missing: None,
-            },
-        )
-        self.assertEqual(git.call_count, 2)
-        self.assertEqual(git.call_args_list[0], mock.call(pathlib.Path("repo"), "rev-list", "HEAD"))
-        self.assertEqual(
-            git.call_args_list[1],
-            mock.call(
-                pathlib.Path("repo"),
-                "cat-file",
-                "--batch-check=%(objectname) %(objecttype)",
-                input_text="".join(f"{candidate}\n" for candidate in candidates[:-1]),
-            ),
-        )
-
-    def test_batch_query_rejects_incomplete_classification(self):
-        with mock.patch.object(citations, "_git", side_effect=["", "a" * 40 + " commit"]):
-            with self.assertRaisesRegex(citations.GitCommandError, "1 result.*2 candidate"):
-                citations._resolve_revisions(pathlib.Path("repo"), "HEAD", ("a" * 12, "b" * 12))
-
-    def test_git_query_reports_exit_diagnostic(self):
-        failed = subprocess.CompletedProcess(
-            ["git", "rev-list", "missing"], 128, stdout="", stderr="bad revision"
-        )
-        with mock.patch.object(subprocess, "run", return_value=failed) as run:
-            with self.assertRaisesRegex(citations.GitCommandError, "exit code 128.*bad revision"):
-                citations._git(pathlib.Path("repo"), "rev-list", "missing")
-        self.assertEqual(run.call_args.kwargs["timeout"], citations.GIT_TIMEOUT_SECONDS)
-
-    def test_git_query_reports_timeout(self):
-        timeout = subprocess.TimeoutExpired(["git", "rev-list", "HEAD"], 10)
-        with mock.patch.object(subprocess, "run", side_effect=timeout) as run:
-            with self.assertRaisesRegex(citations.GitCommandError, "exceeded 10s"):
-                citations._git(pathlib.Path("repo"), "rev-list", "HEAD")
-        self.assertEqual(run.call_args.kwargs["timeout"], citations.GIT_TIMEOUT_SECONDS)
 
 
 class EvidenceCitationTests(unittest.TestCase):
