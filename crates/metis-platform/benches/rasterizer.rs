@@ -7,7 +7,9 @@
 
 use criterion::{Criterion, criterion_group, criterion_main};
 use metis_platform::framebuffer::{Color, Framebuffer, Rect};
-use metis_platform::rasterizer::{CornerRadius, draw_rect_outline, draw_text, fill_rect};
+use metis_platform::rasterizer::{
+    BoxShadow, CornerRadius, draw_box_shadow, draw_rect_outline, draw_text, fill_rect,
+};
 use metis_platform::{GlyphWeight, TextStyle};
 use std::hint::black_box;
 
@@ -102,6 +104,26 @@ fn fills(c: &mut Criterion) {
                 );
             }
             rounded.get_pixel(24, 24)
+        });
+    });
+    // The demo form's card elevation: a soft 16-pixel blur beneath each card.
+    let elevation = BoxShadow::new(0, 4, 16, Color::rgba(15, 23, 42, 40))
+        .expect("invariant: the fixture blur is within MAX_BLUR");
+    let mut elevated = surface();
+    group.bench_function("elevated_card_stack", |b| {
+        b.iter(|| {
+            for index in 0..CARDS {
+                let rect = Rect::new(24, 24 + index * 90, 520, 72);
+                let radius = CornerRadius::clamped(12, rect);
+                draw_box_shadow(&mut elevated, black_box(rect), radius, black_box(elevation));
+                fill_rect(
+                    &mut elevated,
+                    black_box(rect),
+                    radius,
+                    black_box(Color::WHITE),
+                );
+            }
+            elevated.get_pixel(24, 24)
         });
     });
     group.finish();

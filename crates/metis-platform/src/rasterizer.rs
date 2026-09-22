@@ -3,6 +3,7 @@
 use crate::font::{FONT_WIDTH, TextStyle, draw_glyph_cells};
 use crate::framebuffer::{Color, Framebuffer, Rect, SourceOver};
 mod round_rect;
+mod shadow;
 mod stroke;
 
 const LEFT: u8 = 1;
@@ -12,6 +13,7 @@ const BOTTOM: u8 = 8;
 
 pub use round_rect::CornerRadius;
 use round_rect::{RoundRect, composite_shape};
+pub use shadow::{BoxShadow, draw_box_shadow};
 pub use stroke::{LineCap, LineJoin, MAX_STROKE_POINTS, StrokeWidth, draw_polyline};
 
 /// Composites a color over the visible part of an axis-aligned span rectangle.

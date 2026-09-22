@@ -1117,6 +1117,7 @@ name = "metis-platform"
 version = "0.1.0"
 dependencies = [
  "criterion",
+ "eunomia",
  "metis-core",
  "moirai-async",
  "moirai-executor",

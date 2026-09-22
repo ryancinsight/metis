@@ -21,7 +21,7 @@ from verify import neutral_workspace
 ROOT = pathlib.Path(__file__).resolve().parents[1]
 OUTPUT = ROOT / "output" / "bench"
 TOOLCHAIN = "1.97.0"
-# Committed suite-total bound. Five cases at roughly 2.5 s each leave ample
+# Committed suite-total bound. Eight cases at roughly 2.5 s each leave ample
 # room; a breach is an oversized instrument or a slow system under test, never
 # a reason to raise this number.
 BUDGET_SECONDS = 300
