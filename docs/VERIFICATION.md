@@ -2134,6 +2134,13 @@ fails closed when the document is hidden, when animation callbacks are
 unavailable or when its 2,000 ms deadline expires; the same path serves the
 initial and post-rejection captures.
 
+Hosted Metis run [35684569511](https://github.com/ryancinsight/metis/actions/runs/35684569511)
+passes the locked Windows gate, browser assets, Chromium, Firefox, WebKit,
+LibFuzzer and cross-engine comparator at source `35e55db9d6297e53a05e911474b5ea4d7eae1564`.
+The generic runner evidence is separate from the RITK responsive DICOM replay;
+RITK remains the owner of the saved-study transfer, decoding and clinical
+visual oracle.
+
 <a id="browser-frame-timing-evidence--2026-09-13"></a>
 ## Browser frame timing evidence — 2026-09-13
 

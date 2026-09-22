@@ -57,10 +57,12 @@
 
 <a id="METIS-BROWSER-CAPTURE-003"></a>
 ## METIS-BROWSER-CAPTURE-003 — Settle responsive canvas presentation [patch]
-- Status: in-progress; priority: P1; owner: Metis browser verification; integrator: root; last-update: 2026-09-21; dependencies: METIS-BROWSER-CAPTURE-002; risk: capture races responsive reflow
+- Status: done; priority: P1; owner: Metis browser verification; integrator: root; last-update: 2026-09-22; dependencies: METIS-BROWSER-CAPTURE-002; risk: capture races responsive reflow
 - Scope: generic element screenshot capture after visibility scrolling; no consumer-specific selectors, sleeps or DICOM logic.
 - Acceptance: initial and post-rejection captures yield through two animation frames, fail closed when the document is hidden or the bounded settle deadline expires, and preserve the existing canvas dimensions and RGBA oracles.
-- Verification: dependency-free browser unit tests cover settle ordering and surfaced visibility/deadline diagnostics; the configured browser matrix reruns the real responsive capture.
+- Delivery: Metis PR [#335](https://github.com/ryancinsight/metis/pull/335), merge `fdbaf7180c92f76b0a91cc78619beceffc7c5771`; ordering regression PR [#336](https://github.com/ryancinsight/metis/pull/336), merge `cc1f32e669aecee3388225d0ebbb94c5cd5a8b49`.
+- Outcome: generic screenshot capture now settles through two animation frames after visibility scrolling, uses one bounded hidden-document/deadline diagnostic path for initial and post-rejection captures, and preserves the existing element and RGBA oracles.
+- Verification: focused browser tests pass 34/34; the full local verifier passes all 26 stages at `35e55db9d6297e53a05e911474b5ea4d7eae1564`; hosted Metis run [35684569511](https://github.com/ryancinsight/metis/actions/runs/35684569511) passes Chromium, Firefox, WebKit, LibFuzzer, Windows and the cross-engine comparator.
 
 <a id="METIS-INPUT-TRUST-001"></a>
 ## METIS-INPUT-TRUST-001 — Preserve browser event trust in canvas input [arch] [minor]
