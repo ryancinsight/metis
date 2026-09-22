@@ -274,6 +274,18 @@ impl Framebuffer {
         &self.pixels
     }
 
+    /// Mutable view of the same contiguous storage.
+    ///
+    /// A whole-frame producer — a software renderer writing every pixel — can
+    /// then fill this buffer directly instead of rendering into a scratch
+    /// buffer and copying per pixel through [`Self::set_pixel`], which would
+    /// cost one bounds-checked call and one clip test per pixel. Dimensions are
+    /// not reachable from this view, so a caller cannot resize the buffer
+    /// underneath the surface; only the pixel values can change.
+    pub fn pixels_mut(&mut self) -> &mut [u32] {
+        &mut self.pixels
+    }
+
     /// Replaces every pixel with the supplied straight RGBA color.
     pub fn clear(&mut self, color: Color) {
         self.pixels.fill(pack_color(color));
