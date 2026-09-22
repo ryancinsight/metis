@@ -1248,6 +1248,20 @@ the projection is tested in `metis-ui-lang` and `metis-app`. These checks do not
 claim spoken screen-reader output or native accessibility coverage on every
 host.
 
+The shipped browser workbench now exercises that command surface directly. Its
+Rust-owned header contains an application navigation landmark, a command
+toolbar, and a menu with **Focus patient reference**, **Use dark theme**, and
+**Use system theme** actions. The menu trigger and menu state expose
+`aria-expanded`, `aria-hidden` and `data-command-menu-open`; the same state
+drives the responsive CSS presentation. Selecting a theme updates the existing
+validated `theme-mode` control and the page palette, while the focus command
+returns focus to **Patient reference**. Escape closes the menu and returns focus
+to its trigger. No command state is held in page JavaScript. The focused
+browser asset contract checks the exact landmark and action IDs; the WASM
+`metis-web` check and strict Clippy gate compile the listener and presentation
+path. These checks establish the Rust/DOM contract, not native tray,
+notification, global-shortcut or screen-reader behavior.
+
 ### Decode the shipped image marks
 
 Build the browser output, then add `--asset-probe` to a workbench run. The

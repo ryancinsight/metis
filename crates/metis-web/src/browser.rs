@@ -4,6 +4,8 @@
 mod application;
 #[path = "browser/clipboard.rs"]
 mod clipboard;
+#[path = "browser/commands.rs"]
+mod commands;
 #[path = "browser/config.rs"]
 mod config;
 #[path = "browser/dialog.rs"]
@@ -57,6 +59,7 @@ struct BrowserState {
     clipboard_status: clipboard::ClipboardStatus,
     result_explorer: metis_frontend::ResultExplorer,
     controls: controls::ControlState,
+    commands: commands::CommandState,
 }
 
 impl Default for BrowserState {
@@ -75,6 +78,7 @@ impl Default for BrowserState {
             clipboard_status: clipboard::ClipboardStatus::default(),
             result_explorer: metis_frontend::ResultExplorer::new(),
             controls: controls::ControlState::default(),
+            commands: commands::CommandState::default(),
         }
     }
 }

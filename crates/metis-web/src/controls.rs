@@ -20,7 +20,18 @@ pub(crate) const BROWSER_MARKUP: &str = r#"
   <p id="metis-plugins">Registered frontend extensions: unavailable</p>
   <p id="metis-events" role="status">Remote events: none</p>
   <p id="metis-lifecycle" role="status" data-listener-count="0" data-generation="0">Lifecycle: mounting</p>
-  <button id="open-session-dialog" type="button" aria-haspopup="dialog" aria-controls="session-dialog">Session details</button>
+  <nav id="application-navigation" aria-label="Application navigation">
+    <div id="application-toolbar" role="toolbar" aria-label="Application commands">
+      <button id="command-menu-toggle" type="button" aria-haspopup="menu" aria-expanded="false" aria-controls="command-menu">Commands</button>
+      <button id="open-session-dialog" type="button" aria-haspopup="dialog" aria-controls="session-dialog">Session details</button>
+    </div>
+    <div id="command-menu" role="menu" aria-label="Application commands" aria-hidden="true" data-command-menu-open="false">
+      <button id="command-focus-patient" role="menuitem" type="button">Focus patient reference</button>
+      <button id="command-theme-dark" role="menuitem" type="button">Use dark theme</button>
+      <button id="command-theme-system" role="menuitem" type="button">Use system theme</button>
+    </div>
+    <p id="command-status" role="status" aria-live="polite">Commands ready</p>
+  </nav>
 </header>
 <dialog id="session-dialog" aria-labelledby="session-dialog-heading">
   <h2 id="session-dialog-heading">Authorized session details</h2>
