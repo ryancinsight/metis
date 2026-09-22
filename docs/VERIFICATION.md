@@ -3204,16 +3204,16 @@ fixture bound to the recorded source revisions; it does not close the matched
 Tauri, GPUI or egui fixture requirement or establish a universal memory ranking.
 
 The current standalone replay supersedes the older resource fixture for the
-saved-study visual claim. RITK PR [#592](https://github.com/ryancinsight/ritk/pull/592)
-merged as `620c03342f3951366441f1f908d05bc3f249f566` records the exact replay
-source `36b8330d3dfa450ae81523fc1ebc6e59413a1dc4`, Metis
-`219143bbf3596aea85fa4624d7d5241a63b4cf0d`, Moirai
+saved-study visual claim. RITK PR [#594](https://github.com/ryancinsight/ritk/pull/594)
+merged as `67d4ad4457823f928b02739ec120bc0329a1b7f0` records the exact replay
+source `c842689b985beecb159bba17cc1b3a6a50e67c6a`, Metis
+`776dbbf94593e42d0a5686b587ed27b72f885a73`, Moirai
 `0e2e1bbb2d81e16dd9c694ba46a9e9710e034417` and standalone lock SHA-256
-`acb5bd6c7c82ced80c052ae542dcd63992badf8d00a982c986f64716f5736b10`.
+`602cba1b0a1a2b6ce8bdb61f42d9c3ef2844bdfd76e5120a29b5a6d8c46552ec`.
 The real 94-file study reads 49,807,236 bytes, exits 0, rejects the invalid
 study with exit 1, and reproduces the 1280×800 frame (`259dd79103482756c4e688621bebafc841cc40f1df10ff2bbd7f9d04b7b4d401`,
 411,589 non-black pixels). The executable SHA-256 is
-`f416deadbb8a17ab4ffa1d58e1eef007bd1887883ad638fbbf82fa038ec063f9`; this is
+`14412a80c37a19a2f4a09cb08165831a2311d4476f24d1ee159b34406eaf9b30`; this is
 real DICOM application output, not generated artwork or a framework ranking.
 
 The shell-free eframe run now accepts `--viewport-size 1024x640` logical
