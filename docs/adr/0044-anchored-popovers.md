@@ -1,4 +1,4 @@
-# ADR 0043: Anchored popovers
+# 0044 — Anchored popovers
 
 Status: Accepted
 
