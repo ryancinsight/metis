@@ -7,6 +7,9 @@
 mod display;
 mod geometry;
 #[cfg(test)]
+#[path = "../layout_sizing_tests.rs"]
+mod sizing_tests;
+#[cfg(test)]
 #[path = "../layout_tests.rs"]
 mod tests;
 

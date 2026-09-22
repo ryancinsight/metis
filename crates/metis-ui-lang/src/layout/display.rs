@@ -80,6 +80,51 @@ pub enum DisplayCommand {
     },
 }
 
+impl DisplayCommand {
+    /// Moves every coordinate this command carries.
+    ///
+    /// Alignment redistributes free space after a child has already painted,
+    /// so the child's commands move rather than being emitted twice. Every
+    /// variant is matched without elision: a command kind added later must
+    /// state how it moves, or a laid-out child would tear.
+    pub(crate) fn translate(&mut self, dx: i32, dy: i32) -> Result<()> {
+        let shift = |value: i32, delta: i32| {
+            value
+                .checked_add(delta)
+                .ok_or_else(|| limit_error("Display coordinate exceeds coordinate range"))
+        };
+        let shift_rect = |rect: &mut Rect| -> Result<()> {
+            *rect = Rect::new(
+                shift(rect.x, dx)?,
+                shift(rect.y, dy)?,
+                rect.width,
+                rect.height,
+            );
+            Ok(())
+        };
+        match self {
+            Self::FillRect { rect, .. } | Self::DrawBorder { rect, .. } => shift_rect(rect),
+            Self::DrawLine { start, end, .. } => {
+                *start = (shift(start.0, dx)?, shift(start.1, dy)?);
+                *end = (shift(end.0, dx)?, shift(end.1, dy)?);
+                Ok(())
+            }
+            Self::DrawPolyline { points, .. } => {
+                for point in points.iter_mut() {
+                    *point = (shift(point.0, dx)?, shift(point.1, dy)?);
+                }
+                Ok(())
+            }
+            Self::DrawText { x, y, .. } => {
+                *x = shift(*x, dx)?;
+                *y = shift(*y, dy)?;
+                Ok(())
+            }
+            Self::DrawImage { placement } => placement.translate(dx, dy),
+        }
+    }
+}
+
 /// Drawing commands emitted by bounded layout.
 #[derive(Debug, Clone, Default)]
 pub struct DisplayList {

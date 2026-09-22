@@ -53,3 +53,4 @@
 | [0042](0042-scoped-network-provider.md) | Scoped network provider | Accepted |
 | [0043](0043-rounded-rectangle-paint.md) | Rounded rectangle paint semantics | Accepted |
 | [0044](0044-anchored-popovers.md) | Anchored popovers | Accepted |
+| [0045](0045-flex-alignment-redistribution.md) | Flex alignment by post-layout redistribution | Accepted |

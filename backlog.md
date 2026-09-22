@@ -23,6 +23,27 @@
 - Review (independent judge, 2026-09-22): the scanline classification was ported line-for-line and diffed against a brute-force coverage oracle across roughly 166,000 configurations — zero write-set differences and zero double-writes, with branch counters confirming every column class was exercised. The correctness oracle passed; four test-quality findings were raised and all four are fixed here: an assertion-free clipping test, an opaque-only border test that could not observe double compositing, no committed differential oracle, and two clarity defects (`column_index` also converted rows; `fill_run` dropped a run silently instead of stating its invariant).
 - Residual: the display commands still pass `CornerRadius::SQUARE`, so `border-radius` keeps its typed rejection. Carrying the radius through `DisplayCommand` and admitting the declaration is METIS-RASTER-ROUND-002, held until the agent editing `layout/display.rs` commits.
 
+<a id="METIS-LAYOUT-ALIGN-001"></a>
+## METIS-LAYOUT-ALIGN-001 — Admit flex alignment through layout [arch] [minor]
+- Status: review; priority: P1; owner: Metis presentation; integrator: root; last-update: 2026-09-22; dependencies: METIS-LAYOUT-MINSIZE-001; ADR: [0044](docs/adr/0045-flex-alignment-redistribution.md); risk: painter-order or geometry drift
+- Delivered: child layout records each child's command range and cross extent; the container computes free space once its rectangle is final and translates each child's commands by the offset its keyword defines. `DisplayCommand::translate` matches every variant without elision so a later command kind must state how it moves.
+- Evidence: [authored flex alignment evidence](docs/VERIFICATION.md#authored-flex-alignment-evidence--2026-09-22). Five layout tests cover the four distributions, the four cross alignments, a full container distributing nothing, the zero-offset default, and a text run moving with its box.
+- Consequence: this empties the rejection category [ADR 0013](docs/adr/0013-strict-style-contract.md) created. `validate_renderer_support` and `unsupported_style` are deleted rather than left as a check that can no longer fail; `parse` retains the unknown-property and grammar rejection that was doing the work.
+- Outcome: `justify-content` and `align-items` place children within the free space their container leaves, so an authored surface can centre a control, push a footer to the end edge, or space a row of buttons instead of stacking everything at the start edge.
+- Scope: redistribute after child layout by translating each child's emitted commands, since a child paints while it is measured. Covers the four main-axis distributions and the four cross-axis alignments the style model already declares. No wrapping, no `space-around`/`space-evenly`, no per-item `align-self`.
+- Oracle: with no free space every child lands exactly where start alignment puts it, so existing captures are unchanged; a container with free space places children at the offsets each keyword defines; painter order is preserved; translation moves every command kind a child can emit, including text, strokes and images; `stretch` remains the default and a no-op.
+- Verification: focused and workspace `cargo clippy -D warnings`, `cargo nextest run`, `cargo doc`, and the visual baseline unchanged.
+
+<a id="METIS-LAYOUT-MINSIZE-001"></a>
+## METIS-LAYOUT-MINSIZE-001 — Admit minimum sizes through layout [minor]
+- Status: review; priority: P1; owner: Metis presentation; integrator: root; last-update: 2026-09-22; dependencies: METIS-RASTER-ROUND-002; risk: silent layout change
+- Delivered: `minimum` resolves a floor on the extent length grammar and both axes raise their resolved value by it; the style contract admits both declarations.
+- Evidence: [authored minimum-size evidence](docs/VERIFICATION.md#authored-minimum-size-evidence--2026-09-22). Four layout tests cover raising against declared and automatic extents, percentage resolution and display scaling; the visual baseline is unchanged because no authored surface declares a minimum.
+- Outcome: `min-width` and `min-height` raise the used extent of an element, so an authored surface can hold a control at its hit-target size or keep a panel from collapsing when its content is short.
+- Scope: resolve the minimum on the same length grammar as `width`/`height`, display-scaled, and raise the used extent after the automatic or declared value resolves. `justify-content` and `align-items` stay rejected under their own item, since they redistribute space rather than size one box.
+- Oracle: a minimum above the resolved extent raises it and a minimum below leaves it unchanged; the minimum applies to automatic, pixel and percentage sizes alike; it is display-scaled like every other length; `Size::Auto` means no minimum; a negative or malformed value is a typed error.
+- Verification: focused and workspace `cargo clippy -D warnings`, `cargo nextest run`, `cargo doc`, and the visual baseline unchanged (no authored surface declares a minimum yet).
+
 <a id="METIS-TYPOGRAPHY-WEIGHT-001"></a>
 ## METIS-TYPOGRAPHY-WEIGHT-001 — Admit font-weight through layout to paint [major]
 - Status: review; priority: P1; owner: Metis presentation; integrator: root; last-update: 2026-09-22; dependencies: METIS-TYPOGRAPHY-GLYPHS-001, METIS-RASTER-ROUND-002; risk: glyph collision at the cell advance

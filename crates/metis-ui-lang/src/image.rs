@@ -1,5 +1,6 @@
 //! Validated raster images and clipped display-list placement.
 
+use crate::parser::limit_error;
 use metis_core::error::{ErrorCode, MetisError, Result};
 use metis_platform::framebuffer::{Color, Framebuffer, MAX_PIXELS, Rect};
 use std::sync::Arc;
@@ -222,6 +223,26 @@ impl ImagePlacement {
     #[must_use]
     pub const fn source(&self) -> Rect {
         self.source
+    }
+
+    /// Moves the destination without touching the source crop.
+    ///
+    /// Alignment translates a laid-out child after it has painted, and a
+    /// destination may sit off-screen for clipping, so only overflow can fail.
+    pub(crate) fn translate(&mut self, dx: i32, dy: i32) -> Result<()> {
+        self.destination = Rect::new(
+            self.destination
+                .x
+                .checked_add(dx)
+                .ok_or_else(|| limit_error("Image destination exceeds coordinate range"))?,
+            self.destination
+                .y
+                .checked_add(dy)
+                .ok_or_else(|| limit_error("Image destination exceeds coordinate range"))?,
+            self.destination.width,
+            self.destination.height,
+        );
+        Ok(())
     }
 
     /// Returns the destination rectangle, which may extend beyond a surface.

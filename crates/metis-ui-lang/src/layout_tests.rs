@@ -49,17 +49,6 @@ fn extreme_styles_return_errors_without_wrapping() {
 }
 
 #[test]
-fn programmatic_unsupported_style_is_rejected_before_painting() {
-    let mut root = DomElement::new("root");
-    root.computed_style.min_width = Size::Px(8);
-    root.computed_style.background_color = Some(Color::RED);
-    let error = compute_layout(&DomDocument::new(root), LayoutViewport::new(4, 4))
-        .expect_err("unsupported style must not be silently ignored");
-    assert_eq!(error.code, ErrorCode::InvalidCssStyle);
-    assert!(error.message.contains("min-width"));
-}
-
-#[test]
 fn programmatic_border_radius_reaches_the_fill_and_border_commands() {
     let mut root = DomElement::new("root");
     root.computed_style.border_radius = 6;
