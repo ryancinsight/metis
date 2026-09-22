@@ -1697,23 +1697,27 @@ remain in RITK.
 The recorded cross-engine captures show the real anatomy rendered through this
 format-neutral host: [Chromium gallery](https://github.com/ryancinsight/ritk/blob/main/docs/manual/images/dicom-metis-real-browser-mri-cross-engine-chromium.png)
 and [Firefox gallery](https://github.com/ryancinsight/ritk/blob/main/docs/manual/images/dicom-metis-real-browser-mri-cross-engine-firefox.png).
-The current standalone-lock replay uses the RITK source recorded by PR [#559](https://github.com/ryancinsight/ritk/pull/559),
-merged as `fcb6dde73c9c1e55cac959586551dc0f4ed7c6ee`, with source
-`c0886e966b94baeda3f8120bd3d99855ffd31f4b`, all six Metis packages at
-`3a3b30b0c3481db00b16175e6418907a6ae6f11c` and Moirai at
-`782f7574a0748febe58dc74cea19b2cb8d63ba72`. The standalone Cargo.lock SHA-256
-is `ce73c2f36b4c2d0b8146a4530ab0ab6ce54fa5c2540dfb9486ea67a73d8bef04`. It
+The current standalone-lock replay (2026-09-22) uses the lock delivered by RITK PR
+[#588](https://github.com/ryancinsight/ritk/pull/588), merged as
+`27ac7d12bc69a04f7fb12e5ba41ef8fd4fe93aa9`; its exact replay source is
+`b671ae72a20bb6d113de35314e73874f197d2a83`, with all six Metis packages at
+`ad27d2148cc6b8fa9702cbbd4f37d9e106aa6535` and fifteen Moirai packages at
+`0e2e1bbb2d81e16dd9c694ba46a9e9710e034417`. The standalone Cargo.lock SHA-256
+is `c1ccbc7785cce37d4e2322002fd19b0bb4ab03fec03ab7d4154fa6cfbcf470b1`. It
 reads all 94 saved files (49,807,236 bytes), reproduces the revision-bound
 1280 × 800 MRI frame with SHA-256
 `259dd79103482756c4e688621bebafc841cc40f1df10ff2bbd7f9d04b7b4d401` and
 411,589 non-black pixels, and rejects an invalid study. The locked replay's
 executable digest is
-`7aa0ecc3d725ef548c77eb81e5dec39d8727be16f49b53bc0ee5b252d57fae3d`;
+`2f44ae2f9a3facc7c8659e5ac246af235021ab9a3e84ffabbff9d2d823099035`;
 the [RITK replay provenance](https://github.com/ryancinsight/ritk/blob/main/docs/manual/images/dicom-metis-real-mri.json)
 is authoritative for the example digest, storage-reuse oracles and physical
 spacing carried into the native and browser presentation boundaries.
-RITK scans and decodes DICOM and owns the clinical pixels; Metis supplies the
-format-neutral chooser, bounded handoff and canvas host.
+Hosted browser run [35690425860](https://github.com/ryancinsight/ritk/actions/runs/35690425860)
+has been dispatched against the merged RITK tree; its cross-engine artifacts
+remain pending collection. RITK scans and decodes DICOM and owns the clinical
+pixels; Metis supplies the format-neutral chooser, bounded handoff and canvas
+host.
 
 Build RITK's locked WASM library and package it with the pinned wasm-bindgen CLI
 as described in the RITK browser workflow linked above. From Metis, include that
