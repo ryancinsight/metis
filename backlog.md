@@ -84,16 +84,17 @@
 
 <a id="METIS-VISUAL-FIXTURE-COUPLING-001"></a>
 ## METIS-VISUAL-FIXTURE-COUPLING-001 — Bind the visual baseline to output, not to source identity [patch]
-- Status: blocked; priority: P2; owner: Metis tooling; integrator: root; last-update: 2026-09-22; blocker: the rebased committed gate still exceeds the 60-second visual-tests budget; re-open: METIS-GATE-VISUAL-BUDGET-001 passes; dependencies: METIS-GATE-VISUAL-BUDGET-001; risk: reflexive golden regeneration
+- Status: review; priority: P2; owner: Metis tooling; integrator: root; last-update: 2026-09-22; dependencies: none; risk: reflexive golden regeneration
 - Observed 2026-09-22: `scripts/visual.py` derives `fixture_sha256` from the digests of every `.rs` under `metis-frontend`, `metis-platform` and `metis-ui-lang`, plus `presentation.rs`, `image.rs` and `Cargo.lock`. A stale fixture fails the stage outright, so any source or lockfile change invalidates the baseline even when the rendered pixels are identical.
 - Evidence: METIS-RASTER-ROUND-002 changed only style and layout sources and left every capture byte-identical; the regenerated baseline differed in exactly one field, `fixture_sha256`, with no `image_sha256` moved. Separately, web-styling [PR #350](https://github.com/ryancinsight/metis/pull/350) had to land a "Refresh fixture fingerprint" commit, and this work hit a `captures.json` rebase conflict for the same reason.
 - Outcome: the gate fails when rendered output changes and not otherwise. The source fingerprint stays in the run report as provenance, where it records which revision produced a capture without gating on it.
 - Oracle: a source-only change that leaves every capture byte-identical passes the visual stage with no baseline edit; a change that moves one pixel still fails until the baseline is regenerated and reviewed.
 - Why it matters beyond churn: a gate that demands regeneration on unrelated edits trains a reflexive `--update`, which is precisely the review that golden images exist to force. It also makes `captures.json` a shared hunk that conflicts between any two concurrent renderer PRs.
+- Verification: schema 2 passes all seven captures against the refreshed main baseline with no visual diffs.
 
 <a id="METIS-GATE-VISUAL-BUDGET-001"></a>
 ## METIS-GATE-VISUAL-BUDGET-001 — Restore headroom in the visual-tests budget [patch]
-- Status: in-progress; priority: P2; owner: Metis tooling; integrator: root; last-update: 2026-09-22; lease: root scripts/citations.py scripts/tests; dependencies: none; risk: gate flake masking real failures
+- Status: review; priority: P2; owner: Metis tooling; integrator: root; last-update: 2026-09-22; dependencies: none; risk: gate flake masking real failures
 - Observed 2026-09-22: `python -m unittest discover -s scripts/tests` runs 331 tests in 58.2 s against the stage's 60 s budget — about three percent headroom — so the stage terminates under any concurrent host load. Three consecutive gate runs on unrelated revisions failed in different stages purely on budget.
 - Outcome: the stage completes with headroom proportional to the host variance the repository already records, by making the suite faster rather than by raising the bound.
 - Scope: profile the 341 Python tests, attribute the dominant cost, and remove it — repeated subprocess launches and repeated fixture construction are the first suspects. Raising the 60-second bound in the offending diff is excluded.
@@ -103,6 +104,9 @@
   from 30.101 s to 0.643 s.
 - The 60-second-bounded profile ran 341/341 tests (one intentional skip) in
   45.790 s, leaving 14.210 s (23.7%) headroom.
+- Full verification passed all 28 stages with 220 resolved packages; the
+  uninstrumented visual-tests stage ran in 40.017 s. The expected capture-failure
+  oracle returned PermissionDenied.
 - Slowest: `test_browser_drop.FileDropTests.test_probe_timeout_awaits_in_flight_stream_cleanup` 5.434 s;
   `test_visual.EvidenceTests.test_source_only_change_keeps_baseline_and_pixel_change_fails` 4.588 s;
   `test_visual.EvidenceTests.test_baseline_acceptance_and_collection_of_every_failure` 4.537 s;
