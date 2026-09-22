@@ -79,6 +79,38 @@ fn unsupported_characters_still_render_the_replacement_box() {
 }
 
 #[test]
+fn bold_thickens_every_inked_glyph_without_leaving_its_cell() {
+    let mut thickened = 0;
+    for character in ('!'..='~').chain([' ']) {
+        let regular = get_glyph_bitmap(character);
+        let bold = regular.map(|row| GlyphWeight::Bold.apply(row));
+        let regular_ink: u32 = regular.iter().map(|row| row.count_ones()).sum();
+        let bold_ink: u32 = bold.iter().map(|row| row.count_ones()).sum();
+        assert!(
+            bold_ink >= regular_ink,
+            "bold {character} lost ink: {bold_ink} < {regular_ink}"
+        );
+        if regular_ink > 0 {
+            assert!(bold_ink > regular_ink, "bold {character} is not thicker");
+            thickened += 1;
+        }
+        // The smear must not reach the leading column, or a bold glyph would
+        // close the one-pixel gap at the cell advance.
+        for row in bold {
+            assert_eq!(
+                row & 0x80,
+                0,
+                "bold {character} paints the leading column of its cell"
+            );
+        }
+    }
+    assert!(thickened > 80, "only {thickened} glyphs thickened");
+    assert_eq!(GlyphWeight::default(), GlyphWeight::Regular);
+    assert_eq!(GlyphWeight::Regular.apply(0x3C), 0x3C);
+    assert_eq!(GlyphWeight::Bold.apply(0x3C), 0x3E);
+}
+
+#[test]
 fn every_glyph_stays_inside_its_cell_width() {
     // The advance is FONT_WIDTH, so a glyph that set no bits would collide with
     // nothing and one that set all eight would touch its neighbour. The table

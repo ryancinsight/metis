@@ -6,8 +6,9 @@ use metis_platform::DisplayScale;
 use metis_platform::framebuffer::{Framebuffer, Rect};
 use metis_platform::rasterizer::{
     CornerRadius, LineCap, LineJoin, MAX_STROKE_POINTS, StrokeWidth, draw_line, draw_polyline,
-    draw_rect_outline, draw_text_scaled, fill_rect,
+    draw_rect_outline, draw_text, fill_rect,
 };
+use metis_platform::{GlyphWeight, TextStyle};
 
 /// Primitive command in painter order.
 #[derive(Debug, Clone, PartialEq)]
@@ -69,6 +70,8 @@ pub enum DisplayCommand {
         scale: u32,
         /// Device scale reported by the host for this presentation.
         display_scale: DisplayScale,
+        /// Stroke weight; [`GlyphWeight::Regular`] paints the authored glyph.
+        weight: GlyphWeight,
     },
     /// Raster image crop composited with source-over alpha.
     DrawImage {
@@ -119,7 +122,16 @@ impl DisplayList {
                     color,
                     scale,
                     display_scale,
-                } => draw_text_scaled(fb, *x, *y, text, *color, *scale, *display_scale),
+                    weight,
+                } => draw_text(
+                    fb,
+                    *x,
+                    *y,
+                    text,
+                    TextStyle::new(*color, *scale)
+                        .with_display_scale(*display_scale)
+                        .with_weight(*weight),
+                ),
                 DisplayCommand::DrawImage { placement } => placement.render_to(fb),
             }
         }

@@ -2428,6 +2428,43 @@ merged the Windows `ValuePattern.SetValue` action mapping at `d7b38d7`. These
 are provider and consumer contract checks: no OS screen reader, spoken output
 or host preference enablement is claimed.
 
+### Authored font-weight evidence — 2026-09-22
+
+`font-weight` is admitted for the two weights the renderer can paint and
+reaches rasterization. `GlyphWeight::Bold` smears each glyph row one column
+toward the trailing edge of its cell rather than carrying a second glyph table,
+so the authored table stays the single source of the letterforms.
+
+The safety argument is a property the table already had to satisfy. Bits pushed
+past the last column are dropped, so a bold glyph cannot reach into the next
+cell; and because no glyph paints the leading column in either weight, the
+one-pixel gap at the `FONT_WIDTH` advance survives. The test asserts both: bold
+sets strictly more pixels than regular for every glyph that has any (over
+eighty of them), and no bold row touches the leading column. A rendered run
+additionally confirms the advance is unchanged, so a weight change never
+reflows a line.
+
+Adding the weight as an eighth parameter tripped the argument-count design
+lint. The lint was right: the device scale and the stroke weight are parameters
+of a text run, not separate functions. The run's presentation now bundles into
+`TextStyle`, and `draw_text` has one entry point where `draw_text` and
+`draw_text_scaled` were parallel variants a parameter covers.
+
+Layout maps the authored `FontWeight` onto the platform weight and carries it
+on the text command. An end-to-end test lays out the same markup at `normal`
+and at `bold`, asserts the emitted command carries the matching weight, and
+asserts the bold render paints strictly more pixels.
+
+The subset is deliberately bounded: `normal`/`400` and `bold`/`700` are
+admitted, and `500`, `lighter` and `bolder` are typed errors. Rounding an
+unpaintable weight to the nearest paintable one would be exactly the silent
+drop [ADR 0013](adr/0013-strict-style-contract.md) exists to prevent.
+
+With this, the software renderer covers both shape affordances the browser
+stylesheet already used — rounded corners and bold text — against the shared
+palette tokens. `justify-content`, `align-items`, `min-width` and `min-height`
+remain rejected; each needs layout semantics rather than paint semantics.
+
 ### Authored border-radius evidence — 2026-09-22
 
 `border-radius` is admitted by the software renderer's style subset and reaches

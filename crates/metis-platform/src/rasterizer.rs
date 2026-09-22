@@ -1,7 +1,6 @@
 //! Clipped rectangle, line and bitmap text drawing, bounded by framebuffer area.
 
-use crate::DisplayScale;
-use crate::font::{FONT_WIDTH, draw_glyph_scaled};
+use crate::font::{FONT_WIDTH, TextStyle, draw_glyph_cells};
 use crate::framebuffer::{Color, Framebuffer, Rect, SourceOver};
 mod round_rect;
 mod stroke;
@@ -240,26 +239,10 @@ fn interpolate(first_a: i64, first_b: i64, second_a: i64, second_b: i64, target:
 /// Renders one horizontal text run; newline characters have no advance.
 ///
 /// Scale zero means one. Unsupported characters use the font replacement glyph.
-pub fn draw_text(fb: &mut Framebuffer, x: i32, y: i32, text: &str, color: Color, scale: u32) {
-    draw_text_scaled(fb, x, y, text, color, scale, DisplayScale::ONE);
-}
-
-/// Renders one horizontal text run at a fractional device scale.
-///
-/// The integer `scale` remains the authored bitmap multiplier. The validated
-/// display scale maps authored pixels to physical pixels with deterministic
-/// fixed-point rounding, so native DPI changes repaint geometry and text from
-/// the same display list.
-pub fn draw_text_scaled(
-    fb: &mut Framebuffer,
-    x: i32,
-    y: i32,
-    text: &str,
-    color: Color,
-    scale: u32,
-    display_scale: DisplayScale,
-) {
-    let effective_milli = u64::from(scale.max(1)) * u64::from(display_scale.milli());
+pub fn draw_text(fb: &mut Framebuffer, x: i32, y: i32, text: &str, style: TextStyle) {
+    let effective_milli = u64::from(style.scale.max(1)) * u64::from(style.display_scale.milli());
+    // Bold thickens strokes inside the cell, so the advance is the same in
+    // either weight and a weight change never reflows a run.
     let advance = scaled_extent(u64::from(FONT_WIDTH), effective_milli);
     let mut cursor = i64::from(x);
     for c in text.chars().filter(|c| *c != '\n') {
@@ -270,7 +253,7 @@ pub fn draw_text_scaled(
             break;
         };
         if cursor.saturating_add(advance) > 0 {
-            draw_glyph_scaled(fb, origin, y, c, color, scale, display_scale);
+            draw_glyph_cells(fb, origin, y, c, style.color, effective_milli, style.weight);
         }
         cursor = cursor.saturating_add(advance);
     }
@@ -285,7 +268,8 @@ fn scaled_extent(value: u64, effective_milli: u64) -> i64 {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::font::draw_glyph;
+    use crate::DisplayScale;
+    use crate::font::{GlyphWeight, draw_glyph};
 
     /// Deterministic xorshift source so a differential failure replays exactly.
     struct Sequence(u64);
@@ -368,7 +352,13 @@ mod tests {
                 cells.clear(Color::WHITE);
                 let color = Color::rgba(20, 60, 180, 137);
                 let requested = u32::try_from(scale).expect("small scale fits u32");
-                draw_glyph(&mut runs, 3, 5, character, color, requested);
+                draw_glyph(
+                    &mut runs,
+                    3,
+                    5,
+                    character,
+                    TextStyle::new(color, requested).with_weight(GlyphWeight::Regular),
+                );
                 for (row, byte) in (0_i32..16).zip(crate::font::get_glyph_bitmap(character)) {
                     for column in 0_i32..8 {
                         if byte & (0x80_u8 >> column) == 0 {
@@ -400,9 +390,21 @@ mod tests {
             Color::GREEN,
         );
         assert_eq!(fb.pixels(), &[0xff38_a169; 4]);
-        draw_text(&mut fb, i32::MAX, i32::MIN, "A", Color::WHITE, u32::MAX);
+        draw_text(
+            &mut fb,
+            i32::MAX,
+            i32::MIN,
+            "A",
+            TextStyle::new(Color::WHITE, u32::MAX).with_weight(GlyphWeight::Regular),
+        );
         assert_eq!(fb.get_pixel(0, 0), Color::GREEN);
-        draw_glyph(&mut fb, 0, 0, 'A', Color::WHITE, u32::MAX);
+        draw_glyph(
+            &mut fb,
+            0,
+            0,
+            'A',
+            TextStyle::new(Color::WHITE, u32::MAX).with_weight(GlyphWeight::Regular),
+        );
         assert_eq!(fb.get_pixel(0, 0), Color::GREEN);
     }
 
@@ -425,7 +427,13 @@ mod tests {
     #[test]
     fn glyph_pixels_and_spaces_follow_bitmap_cells() {
         let mut fb = Framebuffer::new(24, 16).expect("text surface");
-        draw_text(&mut fb, 0, 0, "A B", Color::RED, 1);
+        draw_text(
+            &mut fb,
+            0,
+            0,
+            "A B",
+            TextStyle::new(Color::RED, 1).with_weight(GlyphWeight::Regular),
+        );
         assert_eq!(fb.get_pixel(2, 2), Color::RED);
         assert_eq!(fb.get_pixel(0, 0), Color::TRANSPARENT);
         assert_eq!(fb.get_pixel(10, 2), Color::TRANSPARENT);
@@ -435,16 +443,15 @@ mod tests {
     #[test]
     fn fractional_text_scale_changes_pixel_extent_deterministically() {
         let mut one = Framebuffer::new(32, 20).expect("one-scale surface");
-        draw_text_scaled(&mut one, 0, 0, "A", Color::RED, 1, DisplayScale::ONE);
+        draw_text(&mut one, 0, 0, "A", TextStyle::new(Color::RED, 1));
         let mut fractional = Framebuffer::new(32, 20).expect("fractional surface");
-        draw_text_scaled(
+        draw_text(
             &mut fractional,
             0,
             0,
             "A",
-            Color::RED,
-            1,
-            DisplayScale::from_milli(1_500).expect("150 percent"),
+            TextStyle::new(Color::RED, 1)
+                .with_display_scale(DisplayScale::from_milli(1_500).expect("150 percent")),
         );
         let one_pixels = one.pixels().iter().filter(|pixel| **pixel != 0).count();
         let scaled_pixels = fractional
@@ -459,16 +466,51 @@ mod tests {
     #[test]
     fn extreme_fractional_text_scale_clips_without_panicking() {
         let mut framebuffer = Framebuffer::new(8, 8).expect("surface");
-        draw_text_scaled(
+        draw_text(
             &mut framebuffer,
             0,
             0,
             "A",
-            Color::RED,
-            u32::MAX,
-            DisplayScale::from_milli(u32::MAX).expect("validated scale"),
+            TextStyle::new(Color::RED, u32::MAX)
+                .with_display_scale(DisplayScale::from_milli(u32::MAX).expect("validated scale")),
         );
         assert!(framebuffer.pixels().iter().all(|pixel| *pixel == 0));
+    }
+
+    #[test]
+    fn bold_text_paints_more_pixels_without_moving_the_run() {
+        let ink = |weight| {
+            let mut fb = Framebuffer::new(96, 20).expect("text surface");
+            draw_text(
+                &mut fb,
+                0,
+                0,
+                "Backend",
+                TextStyle::new(Color::BLACK, 1).with_weight(weight),
+            );
+            fb.pixels().iter().filter(|pixel| **pixel != 0).count()
+        };
+        let regular = ink(GlyphWeight::Regular);
+        let bold = ink(GlyphWeight::Bold);
+        assert!(bold > regular, "bold painted {bold}, regular {regular}");
+
+        // The advance is unchanged, so the trailing column of the last cell is
+        // the same in both weights and no glyph spills past the run.
+        let mut wide = Framebuffer::new(96, 20).expect("text surface");
+        draw_text(
+            &mut wide,
+            0,
+            0,
+            "Backend",
+            TextStyle::new(Color::BLACK, 1).with_weight(GlyphWeight::Bold),
+        );
+        for y in 0..20 {
+            assert_eq!(
+                wide.get_pixel(56, y),
+                Color::TRANSPARENT,
+                "bold run reached past its seven cells at row {y}"
+            );
+        }
     }
 
     #[test]

@@ -189,9 +189,6 @@ impl ComputedStyle {
         if !matches!(self.min_height, Size::Auto) {
             return Err(unsupported_style("min-height"));
         }
-        if self.font_weight != FontWeight::Normal {
-            return Err(unsupported_style("font-weight"));
-        }
         Ok(())
     }
 
@@ -240,8 +237,15 @@ impl ComputedStyle {
                         _ => return Err(invalid_value(&key, val)),
                     }
                 }
-                "justify-content" | "align-items" | "min-width" | "min-height" | "font-weight" => {
+                "justify-content" | "align-items" | "min-width" | "min-height" => {
                     return Err(unsupported_style(&key));
+                }
+                "font-weight" => {
+                    style.font_weight = match val {
+                        "normal" | "400" => FontWeight::Normal,
+                        "bold" | "700" => FontWeight::Bold,
+                        _ => return Err(invalid_value(&key, val)),
+                    }
                 }
                 "border-radius" => style.border_radius = parse_nonnegative_px(&key, val)?,
                 "gap" => style.gap = parse_nonnegative_px(&key, val)?,
@@ -446,13 +450,39 @@ mod tests {
     }
 
     #[test]
+    fn admits_the_bounded_font_weight_keywords_and_numerics() {
+        for (value, expected) in [
+            ("normal", FontWeight::Normal),
+            ("400", FontWeight::Normal),
+            ("bold", FontWeight::Bold),
+            ("700", FontWeight::Bold),
+        ] {
+            let css = format!("font-weight: {value}");
+            assert_eq!(
+                ComputedStyle::parse(&css)
+                    .expect("admitted weight")
+                    .font_weight,
+                expected,
+                "{css}"
+            );
+        }
+        // The subset is bounded: a weight the renderer cannot paint is a typed
+        // error rather than a silent rounding to the nearest one it can.
+        for value in ["500", "lighter", "bolder", "1000", ""] {
+            let css = format!("font-weight: {value}");
+            let error = ComputedStyle::parse(&css).expect_err("unsupported weight");
+            assert_eq!(error.code, ErrorCode::InvalidCssStyle, "{css}");
+            assert!(error.message.contains("font-weight"), "{css}");
+        }
+    }
+
+    #[test]
     fn rejects_unsupported_rendering_properties_with_property_diagnostic() {
         for (property, value) in [
             ("justify-content", "center"),
             ("align-items", "end"),
             ("min-width", "8px"),
             ("min-height", "8px"),
-            ("font-weight", "700"),
         ] {
             let css = format!("{property}: {value}");
             let error = ComputedStyle::parse(&css).expect_err("unsupported style");

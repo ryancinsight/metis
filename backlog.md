@@ -24,9 +24,11 @@
 - Residual: the display commands still pass `CornerRadius::SQUARE`, so `border-radius` keeps its typed rejection. Carrying the radius through `DisplayCommand` and admitting the declaration is METIS-RASTER-ROUND-002, held until the agent editing `layout/display.rs` commits.
 
 <a id="METIS-TYPOGRAPHY-WEIGHT-001"></a>
-## METIS-TYPOGRAPHY-WEIGHT-001 — Admit font-weight through layout to paint [minor]
-- Status: in-progress; priority: P1; owner: Metis presentation; integrator: root; last-update: 2026-09-22; dependencies: METIS-TYPOGRAPHY-GLYPHS-001, METIS-RASTER-ROUND-002; risk: glyph collision at the cell advance
-- lease: root — crates/metis-platform/src/{font.rs,rasterizer.rs}, crates/metis-ui-lang/src/{style.rs,layout/display.rs,layout/geometry.rs} — 2026-09-22T00:00:00-04:00
+## METIS-TYPOGRAPHY-WEIGHT-001 — Admit font-weight through layout to paint [major]
+- Status: review; priority: P1; owner: Metis presentation; integrator: root; last-update: 2026-09-22; dependencies: METIS-TYPOGRAPHY-GLYPHS-001, METIS-RASTER-ROUND-002; risk: glyph collision at the cell advance
+- Delivered: `GlyphWeight` applies the weight during rasterization by smearing each row one column inside its cell; the text display command carries it, layout maps the authored `FontWeight`, and the style contract admits `normal`/`400` and `bold`/`700`.
+- Also delivered: the run's presentation bundles into `TextStyle`, so `draw_text` has one entry point instead of a `draw_text_scaled` sibling. Adding the weight as an eighth parameter tripped the argument-count design lint, and the lint was right — the device scale and the weight are parameters of a run, not separate functions. Removing the public sibling makes this [major] rather than [minor].
+- Evidence: [authored font-weight evidence](docs/VERIFICATION.md#authored-font-weight-evidence--2026-09-22). Bold sets strictly more pixels for every inked glyph, no bold row reaches the leading column so the advance gap survives, the run does not reflow, and authored markup at `bold` emits the bold command and paints more pixels than at `normal`.
 - Outcome: a bold declaration renders heavier strokes, so an authored surface can carry the typographic hierarchy its headings and controls imply instead of painting every run at one weight.
 - Scope: a platform glyph weight applied during rasterization, carried on the text display command, mapped from the existing `FontWeight` during layout, and admitted by the style contract with a second dated revision to [ADR 0013](docs/adr/0013-strict-style-contract.md). No new glyph table.
 - Oracle: bold sets strictly more pixels than regular for every glyph that has any; no glyph paints the leftmost column of its cell in either weight, so the one-pixel gap at the `FONT_WIDTH` advance survives; the text advance is unchanged; a bold declaration reaches paint through authored markup.

@@ -8,6 +8,7 @@
 use criterion::{Criterion, criterion_group, criterion_main};
 use metis_platform::framebuffer::{Color, Framebuffer, Rect};
 use metis_platform::rasterizer::{CornerRadius, draw_rect_outline, draw_text, fill_rect};
+use metis_platform::{GlyphWeight, TextStyle};
 use std::hint::black_box;
 
 /// Physical width of the measured presentation surface.
@@ -118,8 +119,7 @@ fn text(c: &mut Criterion) {
                 black_box(16),
                 black_box(16),
                 black_box(label),
-                black_box(Color::BLACK),
-                1,
+                black_box(TextStyle::new(Color::BLACK, 1).with_weight(GlyphWeight::Regular)),
             );
             single.get_pixel(16, 16)
         });
@@ -134,11 +134,23 @@ fn text(c: &mut Criterion) {
                     black_box(16),
                     black_box(16 + row * 34),
                     black_box(label),
-                    black_box(Color::BLACK),
-                    2,
+                    black_box(TextStyle::new(Color::BLACK, 2).with_weight(GlyphWeight::Regular)),
                 );
             }
             paragraph.get_pixel(16, 16)
+        });
+    });
+    let mut bold = surface();
+    group.bench_function("label_bold", |b| {
+        b.iter(|| {
+            draw_text(
+                &mut bold,
+                black_box(16),
+                black_box(16),
+                black_box(label),
+                black_box(TextStyle::new(Color::BLACK, 1).with_weight(GlyphWeight::Bold)),
+            );
+            bold.get_pixel(16, 16)
         });
     });
     group.finish();
