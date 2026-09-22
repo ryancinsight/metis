@@ -480,12 +480,14 @@ and new-window requests. These are package/provider restrictions, not a claim
 that the operating system sandbox has been proven. The Moirai provider also
 handles every WebView2 `PermissionRequested` callback, sets the state to deny
 before profile or operating-system prompting, and forwards a bounded
-`WebViewEvent::PermissionDenied` snapshot. `metis-app` renders that event as a
-`permission_denied` page error with `ErrorCode::PermissionDenied`; the default
-calculation page requests no capability, so the existing form capture remains
-unchanged. A consumer page that requests geolocation or another capability
-will show the denied label without receiving an allow decision. Escape or the
-close button ends the finite five-minute session.
+`WebViewEvent::PermissionDenied` snapshot with the permission kind and
+user-initiation bit. `metis-app` renders that event as a typed
+`permission_denied` page message with `ErrorCode::PermissionDenied`. The
+separate permission-probe page requests geolocation, camera, microphone and
+notifications sequentially. Each row records host denial, browser-level
+rejection or an unavailable API; the calculation page requests no capability,
+so its existing form capture remains unchanged. Escape or the close button
+ends the finite five-minute session.
 
 ### Verify the installed WebView2 adapter
 
@@ -625,9 +627,10 @@ behavior, installed-IME behavior, or physical high-DPI transitions.
 ### WebView2 permission-probe capture
 
 The permission-probe role loads a separate packaged page that requests
-geolocation and reports the host's typed denial. Its capture form asks WebView2
-for a PNG through `CapturePreview`, so the inspected pixels do not depend on
-GDI or whether the window is visible to the desktop compositor:
+geolocation, camera, microphone and notifications and reports the host's typed
+denials. Its capture form asks WebView2 for a PNG through `CapturePreview`, so
+the inspected pixels do not depend on GDI or whether the window is visible to
+the desktop compositor:
 
 ```powershell
 cargo run --locked -p metis-app -- --metis-webview-permission-probe-capture C:\captures\metis-permission-probe.png 60 2 0.2
@@ -635,14 +638,17 @@ cargo run --locked -p metis-app -- --metis-webview-permission-probe-capture C:\c
 
 The output path is an absolute `.png` path. The capture is written once after
 the first bounded event batch; close the window or press **Escape** to finish
-the supervised session. The committed run used Metis revision
+the supervised session. The committed visual run predates the four-capability
+matrix. It used Metis revision
 `285322892aca245faf3962d57838682dd6689d77`, Moirai revision
 `d324018efa3b67d2b92350a4e3c781d179019014`, WebView2 runtime
 `153.0.4234.32`, and a 1024×768 client area. It produced 6,561 bytes with
 SHA-256
 `a9df158ff6a167ed3c708e9621a44446cae93b3c0d87e646c818601606a33b8f` and shows
 `permission_denied: WebView2 denied geolocation access request [0x200f]`.
-The image is the inspected visual artifact:
+That image is a historical geolocation-only visual artifact; it does not claim
+the four-row matrix. A Windows visual rerun of the command above is required
+to add the matrix capture and its revision-bound digest:
 
 ![Metis WebView2 permission denial probe](images/native-permission-probe.png)
 
@@ -731,12 +737,13 @@ capture utility recorded changed pixels and exact SHA-256 digests in
 ![Metis native form after resize](images/native-resize-after.png)
 
 The capture session closed the supervised parent and child processes after each
-workflow. These images establish the visible initial, successful and
-permission-denied journeys; they do not establish native accessibility
-technology, an installed CJK IME, a physical display-scale change, or
-macOS/Linux hosts. The provider-level geolocation smoke remains a separate
-runtime residual because WebView2 `153.0.4234.32` did not emit its file-origin
-callback within the bounded wait.
+workflow. These images establish the visible initial, successful and historical
+geolocation-denied journeys; the four-capability matrix requires a fresh
+Windows capture after this source change. They do not establish native
+accessibility technology, an installed CJK IME, a physical display-scale
+change, or macOS/Linux hosts. The provider-level geolocation smoke remains a
+separate runtime residual because WebView2 `153.0.4234.32` did not emit its
+file-origin callback within the bounded wait.
 For a real application frame with saved DICOM pixels, follow the
 [RITK DICOM workflow](https://github.com/ryancinsight/ritk/blob/main/docs/manual/dicom-workflow.md);
 RITK owns opening and decoding those files and Métis owns this format-neutral

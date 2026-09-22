@@ -41,8 +41,11 @@ The `WebView` host disables devtools and default context menus, denies new-windo
 navigation, restricts resources to its generated package directory and grants
 no filesystem, network or process authority to page code. Moirai also denies
 every `WebView2` permission request before profile or OS prompting and sends a
-typed `permission_denied` status back to the page. Close the window or press
-Escape to complete the bounded session.
+typed `permission_denied` message back to the page. The separate permission
+probe requests geolocation, camera, microphone and notifications in sequence;
+each result row distinguishes host denial from browser-level rejection or an
+unavailable API. Close the window or press Escape to complete the bounded
+session.
 
 To inspect the rendered permission page without relying on desktop compositor
 capture, pass an absolute PNG path to the capture role:
@@ -53,8 +56,9 @@ cargo run --locked -p metis-app -- --metis-webview-permission-probe-capture C:\c
 
 The `WebView2` host writes the page-owned `CapturePreview` PNG once, then keeps
 the same bounded interactive session until the window closes or Escape is
-pressed. The role does not grant the requested capability or move permission
-policy into application code.
+pressed. The role does not grant the requested capabilities or move permission
+policy into application code; the page is a visual probe for the host policy,
+not an application permission broker.
 
 The same executable can serve one authenticated browser session through the
 bounded loopback WebSocket role:
