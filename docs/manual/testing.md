@@ -31,8 +31,8 @@ unresolvable to any reader; an artifact absent from the host is reported and doe
 not fail, because the git-ignored `output/` tree exists only where a capture ran.
 Run that check alone with `python scripts/citations.py`, or add
 `--require-artifacts` on a host expected to hold a complete capture set. It
-compares the current seven
-form captures and their recorded inputs, actions, labels and geometry with the
+compares the current nine
+form captures, including light and dark command menus, and their recorded inputs, actions, labels and geometry with the
 committed gallery baseline. A passing WASM build
 does not run a browser; use the browser workbench command below for that
 runtime evidence.

@@ -61,6 +61,14 @@ assert_eq!(
 
 Layout supports sequential row/column flow, explicit and percentage dimensions,
 automatic width/content height, spacing, colors, square borders, and bitmap text.
+An element with `popover-anchor="element-id"` is removed from sequential flow
+and painted after the document at the referenced element's bottom-left corner.
+Popups shift horizontally to fit the viewport and flip above their anchor when
+they would overflow below and have room above. Rasterization clips any remaining
+overflow. `DisplayList::element_rect` exposes the same computed rectangles to
+native hit testing, avoiding a second geometry calculation in the host.
+An anchor must be present in normal flow or an earlier popup layer; unresolved
+and hidden anchors return `ErrorCode::MalformedMarkup`.
 Alignment, minimum-size, font-weight, and radius declarations are outside the
 software renderer contract and return `ErrorCode::InvalidCssStyle`; direct DOM
 construction receives the same diagnostic during layout. The font and glyph
@@ -69,8 +77,9 @@ coverage belong to metis-platform.
 declarations and invalid values with `ErrorCode::InvalidCssStyle`; an empty
 style and a trailing semicolon are valid. Layout rejects coordinate overflow
 and invalid dimensions. Application-built DOMs should observe the parser
-limits; direct DOM construction does not validate them until layout, and
-recursive DOM utility operations assume bounded trees.
+limits; layout bounds their tree depth, node count, text, identifiers, and popup
+anchor references before traversal. Recursive DOM utility operations assume
+bounded trees.
 
 `LayoutViewport` carries the physical framebuffer dimensions and a validated
 `metis_platform::DisplayScale`. Explicit pixel dimensions, spacing, automatic

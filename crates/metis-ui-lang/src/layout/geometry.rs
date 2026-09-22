@@ -2,7 +2,7 @@ use super::display::{DisplayCommand, DisplayList};
 use crate::dom::{DomDocument, DomElement, DomNode};
 use crate::parser::{MAX_DEPTH, MAX_INPUT_BYTES, MAX_NODES, copy_text, limit_error};
 use crate::style::{ComputedStyle, Display, EdgeValues, FlexDirection, Size};
-use metis_core::error::Result;
+use metis_core::error::{ErrorCode, MetisError, Result};
 use metis_platform::DisplayScale;
 use metis_platform::framebuffer::Rect;
 
@@ -52,12 +52,15 @@ impl LayoutViewport {
 
 /// Computes a bounded display list for a nonnegative viewport.
 ///
-/// Programmatic DOMs have the same depth, node, and text-byte limits as parsed DOMs.
+/// Programmatic DOMs have the same depth, node, and relevant content-byte limits
+/// as parsed DOMs.
 /// Integer overflow is rejected rather than wrapped; percentage sizes round toward zero.
 ///
 /// # Errors
 /// Rejects negative viewport or explicit dimensions, non-finite percentages,
-/// coordinate overflow, excessive tree resources, or failed allocations.
+/// coordinate overflow, excessive tree resources, failed allocations, a popup
+/// used as the document root, or a visible popup whose anchor has not been laid
+/// out.
 pub fn compute_layout(doc: &DomDocument, viewport: LayoutViewport) -> Result<DisplayList> {
     if viewport.width < 0 || viewport.height < 0 {
         return Err(limit_error("Viewport dimensions must be nonnegative"));
@@ -66,11 +69,15 @@ pub fn compute_layout(doc: &DomDocument, viewport: LayoutViewport) -> Result<Dis
     let mut remaining_bytes = MAX_INPUT_BYTES;
     validate(&doc.root, 1, &mut remaining_nodes, &mut remaining_bytes)?;
     let mut list = DisplayList::default();
+    if is_visible_popover(&doc.root) {
+        return Err(popup_error("The document root cannot be an anchored popup"));
+    }
     list.element(
         &doc.root,
         Rect::new(0, 0, viewport.width, viewport.height),
         viewport.scale,
     )?;
+    list.popovers(&doc.root, viewport)?;
     Ok(list)
 }
 
@@ -86,6 +93,13 @@ fn validate(
     *nodes = nodes
         .checked_sub(1)
         .ok_or_else(|| limit_error("Layout node limit exceeded"))?;
+    for attribute in ["id", "popover-anchor"] {
+        if let Some(value) = element.attributes.get(attribute) {
+            *bytes = bytes
+                .checked_sub(value.len())
+                .ok_or_else(|| limit_error("Layout attribute byte limit exceeded"))?;
+        }
+    }
     for child in &element.children {
         match child {
             DomNode::Element(child) => validate(child, depth + 1, nodes, bytes)?,
@@ -103,6 +117,40 @@ fn validate(
 }
 
 impl DisplayList {
+    fn popovers(&mut self, element: &DomElement, viewport: LayoutViewport) -> Result<()> {
+        if element.computed_style.display == Display::None {
+            return Ok(());
+        }
+        if let Some(anchor_id) = element.attributes.get("popover-anchor") {
+            let anchor = self.element_rect(anchor_id).ok_or_else(|| {
+                popup_error("A visible popup references an anchor absent from layout")
+            })?;
+            let measured = {
+                let mut measurement = Self::default();
+                measurement.element(
+                    element,
+                    Rect::new(0, 0, viewport.width, viewport.height),
+                    viewport.scale,
+                )?
+            };
+            let x = popup_x(anchor.x, measured.width, viewport.width)?;
+            let y = popup_y(anchor, measured.height, viewport.height)?;
+            let available_x = sub(x, measured.x)?;
+            let available_y = sub(y, measured.y)?;
+            self.element(
+                element,
+                Rect::new(available_x, available_y, viewport.width, viewport.height),
+                viewport.scale,
+            )?;
+        }
+        for child in &element.children {
+            if let DomNode::Element(child) = child {
+                self.popovers(child, viewport)?;
+            }
+        }
+        Ok(())
+    }
+
     fn text(
         &mut self,
         text: &str,
@@ -144,7 +192,7 @@ impl DisplayList {
         let mut cross_size = 0;
         let mut visible_children = 0;
         for child in &element.children {
-            if matches!(child, DomNode::Element(child) if child.computed_style.display == Display::None)
+            if matches!(child, DomNode::Element(child) if child.computed_style.display == Display::None || is_visible_popover(child))
             {
                 continue;
             }
@@ -232,6 +280,16 @@ impl DisplayList {
         } else {
             None
         };
+        let element_rect_index = if let Some(id) = element.id() {
+            let index = self.commands.len();
+            self.push(DisplayCommand::ElementRect {
+                id: copy_text(id)?,
+                rect: Rect::new(x, y, width, 0),
+            })?;
+            Some(index)
+        } else {
+            None
+        };
         let content_height = self.children_extent(
             element,
             ChildLayout {
@@ -261,6 +319,11 @@ impl DisplayList {
         {
             *target = rect;
         }
+        if let Some(index) = element_rect_index
+            && let DisplayCommand::ElementRect { rect: target, .. } = &mut self.commands[index]
+        {
+            *target = rect;
+        }
         if geometry.border.top > 0 {
             self.push(DisplayCommand::DrawBorder {
                 rect,
@@ -269,6 +332,32 @@ impl DisplayList {
             })?;
         }
         Ok(rect)
+    }
+}
+
+fn is_visible_popover(element: &DomElement) -> bool {
+    element.computed_style.display != Display::None
+        && element.attributes.contains_key("popover-anchor")
+}
+
+fn popup_error(message: &'static str) -> MetisError {
+    MetisError::ui(ErrorCode::MalformedMarkup, message)
+}
+
+fn popup_x(anchor_x: i32, popup_width: i32, viewport_width: i32) -> Result<i32> {
+    if popup_width >= viewport_width {
+        return Ok(0);
+    }
+    Ok(anchor_x.clamp(0, sub(viewport_width, popup_width)?))
+}
+
+fn popup_y(anchor: Rect, popup_height: i32, viewport_height: i32) -> Result<i32> {
+    let below = add(anchor.y, anchor.height)?;
+    let bottom = add(below, popup_height)?;
+    if bottom > viewport_height && popup_height <= anchor.y {
+        sub(anchor.y, popup_height)
+    } else {
+        Ok(below)
     }
 }
 

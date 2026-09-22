@@ -13,6 +13,13 @@ use metis_platform::rasterizer::{
 #[derive(Debug, Clone, PartialEq)]
 #[non_exhaustive]
 pub enum DisplayCommand {
+    /// Element rectangle metadata used by host hit testing.
+    ElementRect {
+        /// Authored element identifier.
+        id: String,
+        /// Laid-out border rectangle in framebuffer coordinates.
+        rect: Rect,
+    },
     /// Rectangle fill.
     FillRect {
         /// Target rectangle.
@@ -85,6 +92,7 @@ impl DisplayList {
     pub fn render_to(&self, fb: &mut Framebuffer) {
         for command in &self.commands {
             match command {
+                DisplayCommand::ElementRect { .. } => {}
                 DisplayCommand::FillRect { rect, color } => fill_rect(fb, *rect, *color),
                 DisplayCommand::DrawBorder { rect, width, color } => {
                     draw_rect_outline(fb, *rect, *width, *color);
@@ -110,6 +118,25 @@ impl DisplayList {
                 DisplayCommand::DrawImage { placement } => placement.render_to(fb),
             }
         }
+    }
+
+    /// Returns the laid-out border rectangle for an authored element ID.
+    ///
+    /// Later painter entries take precedence, matching popup stacking when a
+    /// programmatic DOM contains duplicate IDs. Semantic projection rejects
+    /// duplicate IDs before accessibility exposure.
+    #[must_use]
+    pub fn element_rect(&self, id: &str) -> Option<Rect> {
+        self.commands
+            .iter()
+            .rev()
+            .find_map(|command| match command {
+                DisplayCommand::ElementRect {
+                    id: candidate,
+                    rect,
+                } if candidate == id => Some(*rect),
+                _ => None,
+            })
     }
 
     /// Appends a validated image command in painter order.

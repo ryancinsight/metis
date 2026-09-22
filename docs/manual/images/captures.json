@@ -1,7 +1,7 @@
 {
   "captures": {
     "form": {
-      "image_sha256": "cc5817ef2e396bfa680a4c445bdf0a83fff4fcd1263a3707eb94d23968ebe28a",
+      "image_sha256": "8ce8f716756c03355b2017d8185ec8f114d3e58fb217fa5d9d11f29239ef7d33",
       "semantics": {
         "action": {
           "0": "create session: 800x600, bounded MemoryTransport, backend exchanges=4"
@@ -57,13 +57,13 @@
         "text": {
           "0": "METIS FORM DEMONSTRATION",
           "1": "SYSTEM READY",
-          "10": "[ SUBMIT CALCULATION TO BACKEND ]",
+          "10": "Calculate rate",
           "11": "Backend Calculation Output",
           "12": "Rate: Awaiting Backend Calculation...",
           "13": "Safety Status: Idle",
           "14": "Backend MAC: None",
-          "2": "[ COMMANDS ]",
-          "3": "FOCUS PATIENT",
+          "2": "Commands",
+          "3": "Focus patient",
           "4": "Commands ready",
           "5": "Patient Demographics and Drug Prescription",
           "6": "Patient ID: PT-9042-ALPHA",
@@ -74,7 +74,7 @@
       }
     },
     "form-corrected": {
-      "image_sha256": "d97959d7c780698d5c02ddf4570c8721c8cc1d477fc53ac8b5ad79aaa94e98ee",
+      "image_sha256": "42a87e9100ccf6144c0734e2048f3813278ca7376b038b5c9a9fa4bde140a982",
       "semantics": {
         "action": {
           "0": "create session: 800x600, bounded MemoryTransport, backend exchanges=4",
@@ -144,14 +144,14 @@
         "text": {
           "0": "METIS FORM DEMONSTRATION",
           "1": "SESSION ACTIVE",
-          "10": "[ SUBMIT CALCULATION TO BACKEND ]",
+          "10": "Calculate rate",
           "11": "Backend Calculation Output",
           "12": "Rate: 0.360 mL/hr (0.72 mg/hr)",
           "13": "Backend response (Audit Seq #4)",
           "14": "Backend MAC: Present (not verified by frontend)",
-          "2": "[ COMMANDS ]",
-          "3": "FOCUS PATIENT",
-          "4": "Commands ready",
+          "2": "Commands",
+          "3": "Focus patient",
+          "4": "Theme: system",
           "5": "Patient Demographics and Drug Prescription",
           "6": "Patient ID: demo",
           "7": "Weight: 60.00 kg",
@@ -161,7 +161,7 @@
       }
     },
     "form-disconnected": {
-      "image_sha256": "b5af65829d8412ac9e3045445183f398323b2f85947e2f3a5813cbb95f815f1e",
+      "image_sha256": "129e59a104473b820b4e95aa22c320348b5c90d1fff764bedb5be2899619431a",
       "semantics": {
         "action": {
           "0": "create session: 800x600, bounded MemoryTransport, backend exchanges=4",
@@ -229,14 +229,14 @@
         "text": {
           "0": "METIS FORM DEMONSTRATION",
           "1": "SESSION CLOSED",
-          "10": "[ SUBMIT CALCULATION TO BACKEND ]",
+          "10": "Calculate rate",
           "11": "Backend Calculation Output",
           "12": "Rate: No result",
           "13": "Connection failed [0x4002] - reconnect",
           "14": "Backend MAC: No result",
-          "2": "[ COMMANDS ]",
-          "3": "FOCUS PATIENT",
-          "4": "Commands ready",
+          "2": "Commands",
+          "3": "Focus patient",
+          "4": "Theme: system",
           "5": "Patient Demographics and Drug Prescription",
           "6": "Patient ID: demo",
           "7": "Weight: 60.00 kg",
@@ -246,7 +246,7 @@
       }
     },
     "form-edited": {
-      "image_sha256": "f11f83766fa9a19dcd5eef10a6741a2a727e38b8f8ac710b05bc8ce89450bfd8",
+      "image_sha256": "1d85d2db87312a2e1f87d976d1042629dabbd029ec102b070a0eec40712e94f6",
       "semantics": {
         "action": {
           "0": "create session: 800x600, bounded MemoryTransport, backend exchanges=4",
@@ -306,14 +306,14 @@
         "text": {
           "0": "METIS FORM DEMONSTRATION",
           "1": "SESSION ACTIVE",
-          "10": "[ SUBMIT CALCULATION TO BACKEND ]",
+          "10": "Calculate rate",
           "11": "Backend Calculation Output",
           "12": "Rate: Awaiting Backend Calculation...",
           "13": "Safety Status: Idle",
           "14": "Backend MAC: None",
-          "2": "[ COMMANDS ]",
-          "3": "FOCUS PATIENT",
-          "4": "Commands ready",
+          "2": "Commands",
+          "3": "Focus patient",
+          "4": "Theme: system",
           "5": "Patient Demographics and Drug Prescription",
           "6": "Patient ID: demo",
           "7": "Weight: 80.00 kg",
@@ -322,8 +322,162 @@
         }
       }
     },
+    "form-menu": {
+      "image_sha256": "9ca86e6a4b792f0da6726cca77661b018ba5adc1df8bd98ba432a49598a78317",
+      "semantics": {
+        "action": {
+          "0": "create session: 800x600, bounded MemoryTransport, backend exchanges=4"
+        },
+        "expected": {
+          "state": "idle"
+        },
+        "geometry": {
+          "0": "32 32 1.000x",
+          "1": "32 56 1.000x",
+          "10": "53 351 1.000x",
+          "11": "37 414 1.000x",
+          "12": "37 438 1.000x",
+          "13": "37 462 1.000x",
+          "14": "37 486 1.000x",
+          "15": "49 156 1.000x",
+          "16": "49 192 1.000x",
+          "2": "40 115 1.000x",
+          "3": "168 115 1.000x",
+          "4": "28 147 1.000x",
+          "5": "37 203 1.000x",
+          "6": "37 229 1.000x",
+          "7": "37 255 1.000x",
+          "8": "37 281 1.000x",
+          "9": "37 307 1.000x"
+        },
+        "input": {
+          "concentration_mg_ml": "4",
+          "patient_id": "PT-9042-ALPHA",
+          "target_dose_mcg_kg_min": "0.5",
+          "weight_kg": "72.5"
+        },
+        "label": {
+          "label-conc": "Drug Concentration: 4.00 mg/mL",
+          "label-dose": "Target Dose: 0.500 mcg/kg/min",
+          "label-patient": "Patient ID: PT-9042-ALPHA",
+          "label-weight": "Weight: 72.50 kg",
+          "output-rate": "Rate: Awaiting Backend Calculation...",
+          "output-signature": "Backend MAC: None",
+          "output-status": "Safety Status: Idle",
+          "status-badge": "SYSTEM READY"
+        },
+        "meta": {
+          "font": "metis-platform-bitmap",
+          "height": "600",
+          "scale": "1.000x",
+          "scenario": "form-menu",
+          "schema": "1",
+          "target": "software",
+          "width": "800"
+        },
+        "observed": {
+          "state": "idle"
+        },
+        "text": {
+          "0": "METIS FORM DEMONSTRATION",
+          "1": "SYSTEM READY",
+          "10": "Calculate rate",
+          "11": "Backend Calculation Output",
+          "12": "Rate: Awaiting Backend Calculation...",
+          "13": "Safety Status: Idle",
+          "14": "Backend MAC: None",
+          "15": "Dark theme",
+          "16": "System theme",
+          "2": "Commands",
+          "3": "Focus patient",
+          "4": "Commands opened",
+          "5": "Patient Demographics and Drug Prescription",
+          "6": "Patient ID: PT-9042-ALPHA",
+          "7": "Weight: 72.50 kg",
+          "8": "Drug Concentration: 4.00 mg/mL",
+          "9": "Target Dose: 0.500 mcg/kg/min"
+        }
+      }
+    },
+    "form-menu-dark": {
+      "image_sha256": "d49ff782d15ec43da1856ad9026e6bb2e2701ca7cd7fc3f2b8e9f829b380fc3e",
+      "semantics": {
+        "action": {
+          "0": "create session: 800x600, bounded MemoryTransport, backend exchanges=4"
+        },
+        "expected": {
+          "state": "idle"
+        },
+        "geometry": {
+          "0": "32 32 1.000x",
+          "1": "32 56 1.000x",
+          "10": "53 351 1.000x",
+          "11": "37 414 1.000x",
+          "12": "37 438 1.000x",
+          "13": "37 462 1.000x",
+          "14": "37 486 1.000x",
+          "15": "49 156 1.000x",
+          "16": "49 192 1.000x",
+          "2": "40 115 1.000x",
+          "3": "168 115 1.000x",
+          "4": "28 147 1.000x",
+          "5": "37 203 1.000x",
+          "6": "37 229 1.000x",
+          "7": "37 255 1.000x",
+          "8": "37 281 1.000x",
+          "9": "37 307 1.000x"
+        },
+        "input": {
+          "concentration_mg_ml": "4",
+          "patient_id": "PT-9042-ALPHA",
+          "target_dose_mcg_kg_min": "0.5",
+          "weight_kg": "72.5"
+        },
+        "label": {
+          "label-conc": "Drug Concentration: 4.00 mg/mL",
+          "label-dose": "Target Dose: 0.500 mcg/kg/min",
+          "label-patient": "Patient ID: PT-9042-ALPHA",
+          "label-weight": "Weight: 72.50 kg",
+          "output-rate": "Rate: Awaiting Backend Calculation...",
+          "output-signature": "Backend MAC: None",
+          "output-status": "Safety Status: Idle",
+          "status-badge": "SYSTEM READY"
+        },
+        "meta": {
+          "font": "metis-platform-bitmap",
+          "height": "600",
+          "scale": "1.000x",
+          "scenario": "form-menu-dark",
+          "schema": "1",
+          "target": "software",
+          "width": "800"
+        },
+        "observed": {
+          "state": "idle"
+        },
+        "text": {
+          "0": "METIS FORM DEMONSTRATION",
+          "1": "SYSTEM READY",
+          "10": "Calculate rate",
+          "11": "Backend Calculation Output",
+          "12": "Rate: Awaiting Backend Calculation...",
+          "13": "Safety Status: Idle",
+          "14": "Backend MAC: None",
+          "15": "Dark theme",
+          "16": "System theme",
+          "2": "Commands",
+          "3": "Focus patient",
+          "4": "Commands opened",
+          "5": "Patient Demographics and Drug Prescription",
+          "6": "Patient ID: PT-9042-ALPHA",
+          "7": "Weight: 72.50 kg",
+          "8": "Drug Concentration: 4.00 mg/mL",
+          "9": "Target Dose: 0.500 mcg/kg/min"
+        }
+      }
+    },
     "form-recovered": {
-      "image_sha256": "5a0682d59301d39982442523db6b5d687221756f3d205f6026a6a26bb4e633f8",
+      "image_sha256": "863a1c9fd3b93961a4b3b3186e3b3a2f2eddfe0cebffacb946e7d8e9e040ca17",
       "semantics": {
         "action": {
           "0": "create session: 800x600, bounded MemoryTransport, backend exchanges=4",
@@ -399,13 +553,13 @@
         "text": {
           "0": "METIS FORM DEMONSTRATION",
           "1": "SESSION ACTIVE",
-          "10": "[ SUBMIT CALCULATION TO BACKEND ]",
+          "10": "Calculate rate",
           "11": "Backend Calculation Output",
           "12": "Rate: 0.480 mL/hr (0.96 mg/hr)",
           "13": "Backend response (Audit Seq #2)",
           "14": "Backend MAC: Present (not verified by frontend)",
-          "2": "[ COMMANDS ]",
-          "3": "FOCUS PATIENT",
+          "2": "Commands",
+          "3": "Focus patient",
           "4": "Commands ready",
           "5": "Patient Demographics and Drug Prescription",
           "6": "Patient ID: demo",
@@ -416,7 +570,7 @@
       }
     },
     "form-rejected": {
-      "image_sha256": "8ffe4d09bf3d8aba7a1d300ae093031ce30b8e99babeb4c2b77904924e86f1d4",
+      "image_sha256": "54e6d7540a0d9f9e7ad106878746dd4f98833b80309240fa69db1e152606aaa8",
       "semantics": {
         "action": {
           "0": "create session: 800x600, bounded MemoryTransport, backend exchanges=4",
@@ -480,14 +634,14 @@
         "text": {
           "0": "METIS FORM DEMONSTRATION",
           "1": "SESSION ACTIVE",
-          "10": "[ SUBMIT CALCULATION TO BACKEND ]",
+          "10": "Calculate rate",
           "11": "Backend Calculation Output",
           "12": "Rate: No result",
           "13": "Backend rejected request [0x3001]",
           "14": "Backend MAC: No result",
-          "2": "[ COMMANDS ]",
-          "3": "FOCUS PATIENT",
-          "4": "Commands ready",
+          "2": "Commands",
+          "3": "Focus patient",
+          "4": "Theme: system",
           "5": "Patient Demographics and Drug Prescription",
           "6": "Patient ID: demo",
           "7": "Weight: 0.00 kg",
@@ -497,7 +651,7 @@
       }
     },
     "form-success": {
-      "image_sha256": "c6dab164d6617efbd6d0094752d0eda19e8ba50a79ce1f21e839658c99d8421b",
+      "image_sha256": "29c708a26769a5e81973288c9c17c40b38878c31dd184a882c5e94824356f855",
       "semantics": {
         "action": {
           "0": "create session: 800x600, bounded MemoryTransport, backend exchanges=4",
@@ -562,14 +716,14 @@
         "text": {
           "0": "METIS FORM DEMONSTRATION",
           "1": "SESSION ACTIVE",
-          "10": "[ SUBMIT CALCULATION TO BACKEND ]",
+          "10": "Calculate rate",
           "11": "Backend Calculation Output",
           "12": "Rate: 0.360 mL/hr (0.72 mg/hr)",
           "13": "Backend response (Audit Seq #2)",
           "14": "Backend MAC: Present (not verified by frontend)",
-          "2": "[ COMMANDS ]",
-          "3": "FOCUS PATIENT",
-          "4": "Commands ready",
+          "2": "Commands",
+          "3": "Focus patient",
+          "4": "Theme: system",
           "5": "Patient Demographics and Drug Prescription",
           "6": "Patient ID: demo",
           "7": "Weight: 60.00 kg",
@@ -579,6 +733,6 @@
       }
     }
   },
-  "fixture_sha256": "adc4f230d6e586a6d0c9ffae9684e68987bf5e30040491cdc4addf98ac1fd026",
+  "fixture_sha256": "fb0fcd5673ac14a2df749f0cbca3cdf81df7c10c8dc0fbbda4fcef47ba1ec731",
   "schema": 1
 }

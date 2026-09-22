@@ -10,18 +10,18 @@ pub const CLINICAL_SCREEN_XML: &str = r#"<screen id="main-screen" style="display
   <nav id="application-navigation" aria-label="Application navigation" style="display: flex; flex-direction: column; gap: 8px; background-color: #e2e8f0; padding: 8px;">
     <div id="application-toolbar" role="toolbar" aria-label="Application commands" style="display: flex; flex-direction: row; gap: 8px;">
       <button id="command-menu-toggle" aria-haspopup="menu" aria-expanded="false" aria-controls="command-menu" style="width: 120px; background-color: #3182ce; color: #ffffff; padding: 8px 12px;">
-        <text style="color: #ffffff; font-size: 12px;">[ COMMANDS ]</text>
+        <text style="color: #ffffff; font-size: 12px;">Commands</text>
       </button>
       <button id="command-focus-patient" style="width: 144px; background-color: #3182ce; color: #ffffff; padding: 8px 12px;">
-        <text style="color: #ffffff; font-size: 12px;">FOCUS PATIENT</text>
+        <text style="color: #ffffff; font-size: 12px;">Focus patient</text>
       </button>
     </div>
-    <div id="command-menu" role="menu" aria-label="Application commands" aria-hidden="true" style="display: none; flex-direction: column; gap: 6px; background-color: #ffffff; padding: 8px; border-width: 1px; border-color: #e2e8f0;">
-      <button id="command-theme-dark" role="menuitem" style="background-color: #3182ce; color: #ffffff; padding: 8px 12px;">
-        <text style="color: #ffffff; font-size: 12px;">DARK THEME</text>
+    <div id="command-menu" popover-anchor="command-menu-toggle" role="menu" aria-label="Application commands" aria-hidden="true" style="display: none; width: 192px; flex-direction: column; gap: 4px; background-color: #ffffff; padding: 8px; border-width: 1px; border-color: #e2e8f0;">
+      <button id="command-theme-dark" role="menuitem" style="background-color: #ffffff; color: #2d3748; padding: 8px 12px;">
+        <text id="command-theme-dark-label" style="color: #2d3748; font-size: 12px;">Dark theme</text>
       </button>
-      <button id="command-theme-system" role="menuitem" style="background-color: #3182ce; color: #ffffff; padding: 8px 12px;">
-        <text style="color: #ffffff; font-size: 12px;">SYSTEM THEME</text>
+      <button id="command-theme-system" role="menuitem" style="background-color: #ffffff; color: #2d3748; padding: 8px 12px;">
+        <text id="command-theme-system-label" style="color: #2d3748; font-size: 12px;">System theme</text>
       </button>
     </div>
     <text id="command-status" role="status" aria-live="polite" style="color: #4a5568; font-size: 12px;">Commands ready</text>
@@ -43,7 +43,7 @@ pub const CLINICAL_SCREEN_XML: &str = r#"<screen id="main-screen" style="display
     </div>
     <div id="actions" style="display: flex; flex-direction: row; gap: 10px; margin: 10px 0 0 0;">
       <button id="btn-calc" style="background-color: #3182ce; color: #ffffff; padding: 8px 16px;">
-        <text style="color: #ffffff; font-size: 12px;">[ SUBMIT CALCULATION TO BACKEND ]</text>
+        <text style="color: #ffffff; font-size: 12px;">Calculate rate</text>
       </button>
     </div>
   </card>

@@ -19,14 +19,17 @@ The `Metis native form` window renders the production software framebuffer.
 While the window is focused, typed Unicode characters extend the patient
 reference and Backspace removes its last scalar; every edit clears a prior
 calculation through `FrontendApp::set_inputs`. Press **Enter** or **Ctrl+Enter**
-or click the blue **[ SUBMIT CALCULATION TO BACKEND ]** surface to send the
+or click the blue **Calculate rate** surface to send the
 exact numeric inputs through the private pipe. Alt/Windows-modified Enter is
 left to the operating system instead of triggering the application shortcut.
 The result and audit sequence are painted by the same frontend state machine as
 the headless workflow. Resize the window to exercise framebuffer replacement;
 DPI, focus and close events are consumed by the host. **Escape** or the window
 close control ends the child cleanly. When the authored **Commands** menu is
-open, Escape closes that menu first; a second Escape closes the child. The
+open, it floats below the Commands button without moving the form. Clicking
+outside it or switching away from the window dismisses it; an outside click
+does not activate the underlying control. Escape closes that menu first; a
+second Escape closes the child. The
 toolbar's **Focus patient** command moves native input focus to the patient
 reference. Its menu also applies the bounded dark or system presentation theme;
 these actions mutate `FrontendApp` state and never cross the backend IPC seam.

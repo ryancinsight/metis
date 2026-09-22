@@ -1,8 +1,9 @@
 //! Sequential row/column box layout and display-list generation.
 //!
-//! Supports explicit or automatic sizes, margins, padding, backgrounds, text, and
-//! uniform square borders. Unsupported browser layout declarations are rejected
-//! before a display list is emitted so programmatic DOMs cannot silently diverge.
+//! Supports explicit or automatic sizes, margins, padding, backgrounds, text,
+//! uniform square borders, and anchored popup layers. Unsupported browser layout
+//! declarations are rejected before a display list is emitted so programmatic
+//! DOMs cannot silently diverge.
 
 mod display;
 mod geometry;
