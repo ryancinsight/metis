@@ -217,8 +217,11 @@ fn pixel_coverage(outer: &RowSamples, inner: Option<&RowSamples>, column: f64) -
     total * SUBSAMPLE_RECIPROCAL
 }
 
-/// Converts a clamped nonnegative coordinate to a column index.
-fn column_index(value: f64) -> Option<u32> {
+/// Converts a clamped nonnegative coordinate to a surface index.
+///
+/// Both the column walk and the row bounds use this, so the name states the
+/// axis-neutral job rather than either caller.
+fn surface_index(value: f64) -> Option<u32> {
     if !value.is_finite() || value < 0.0 || value > f64::from(u32::MAX) {
         return None;
     }
@@ -252,7 +255,7 @@ pub(crate) fn composite_shape(
     let first_row = outer.top.max(0.0);
     let last_row = outer.bottom.min(f64::from(fb.height())).max(first_row);
     let (Some(first_row), Some(last_row)) =
-        (column_index(first_row), column_index(last_row.ceil()))
+        (surface_index(first_row), surface_index(last_row.ceil()))
     else {
         return;
     };
@@ -310,9 +313,11 @@ pub(crate) fn composite_shape(
 
 /// Fills a fully covered run of one row.
 fn fill_run(fb: &mut Framebuffer, row: u32, from: f64, to: f64, source: SourceOver) {
-    let (Some(left), Some(right)) = (column_index(from), column_index(to)) else {
-        return;
-    };
+    let bounded = "invariant: a run is clamped to the surface before it is filled";
+    let (left, right) = (
+        surface_index(from).expect(bounded),
+        surface_index(to).expect(bounded),
+    );
     if source.is_opaque() {
         fb.row_span_mut(row, left, right).fill(source.packed());
     } else {
@@ -325,7 +330,7 @@ fn composite_pixel(fb: &mut Framebuffer, row: u32, column: f64, color: Color, co
     if coverage <= 0.0 {
         return;
     }
-    let Some(x) = column_index(column) else {
+    let Some(x) = surface_index(column) else {
         return;
     };
     // Coverage is clamped to one and the channel is at most 255, so the

@@ -2459,6 +2459,15 @@ demonstration the next increment supersedes is not worth the tracked bytes.
 The authored form captures regenerate once, under review, when
 METIS-RASTER-ROUND-002 makes surfaces actually round.
 
+The committed differential test is the oracle for the classification itself:
+`span_classification_matches_the_coverage_definition` composites fills and
+borders through `composite_shape` and through a reference that evaluates the
+coverage definition per pixel, and asserts the framebuffers are equal across
+sizes, radii, border widths, origins and both destination-alpha regimes. A
+translucent rounded border additionally asserts no pixel exceeds one pass of
+its source, since compositing a pixel twice compounds opacity in a way an
+opaque source hides.
+
 Cost, measured through `scripts/bench.py` on the same pinned configuration as
 the span-fill evidence:
 

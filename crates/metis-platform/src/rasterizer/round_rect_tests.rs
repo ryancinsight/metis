@@ -170,18 +170,150 @@ fn a_radius_beyond_the_shape_and_an_empty_rectangle_paint_nothing_invalid() {
     }
 }
 
-#[test]
-fn off_surface_rounded_geometry_clips_without_panicking() {
-    let mut fb = surface(16, 16, Color::WHITE);
-    for rect in [
-        Rect::new(-20, -20, 60, 60),
-        Rect::new(i32::MAX - 4, 0, 40, 40),
-        Rect::new(-1, -1, i32::MAX, i32::MAX),
-    ] {
-        let radius = CornerRadius::clamped(9, rect);
-        fill_rect(&mut fb, rect, radius, Color::rgba(10, 20, 30, 128));
-        draw_rect_outline(&mut fb, rect, 2, radius, Color::rgba(10, 20, 30, 128));
+/// Composites the shape one pixel at a time from the coverage definition.
+///
+/// This is the contract `composite_shape` optimizes: coverage is the area
+/// inside `outer` and outside `inner`, integrated over the subsample rows,
+/// and every pixel is composited exactly once.
+fn reference_shape(fb: &mut Framebuffer, outer: RoundRect, inner: Option<RoundRect>, color: Color) {
+    for row in 0..fb.height() {
+        for column in 0..fb.width() {
+            let mut total = 0.0;
+            for index in 0..SUBSAMPLES {
+                let step = u32::try_from(index).expect("the subsample count fits u32");
+                let y = (f64::from(step) + 0.5).mul_add(SUBSAMPLE_RECIPROCAL, f64::from(row));
+                let mut covered = overlap(outer.extent_at(y), f64::from(column));
+                if let Some(inner) = inner {
+                    covered -= overlap(inner.extent_at(y), f64::from(column));
+                }
+                total += covered.max(0.0);
+            }
+            composite_pixel(
+                fb,
+                row,
+                f64::from(column),
+                color,
+                total * SUBSAMPLE_RECIPROCAL,
+            );
+        }
     }
+}
+
+#[test]
+fn span_classification_matches_the_coverage_definition() {
+    // Sizes and radii chosen so rows fall in every class: full spans, hollow
+    // interiors, corner transitions, and rows the shape only partly spans.
+    for (width, height, radius, border) in [
+        (24_u32, 18_u32, 7, None),
+        (24, 18, 7, Some(3)),
+        (9, 9, 4, Some(1)),
+        (32, 12, 6, Some(2)),
+        (5, 21, 2, Some(4)),
+        (16, 16, 8, Some(8)),
+    ] {
+        for color in [Color::rgba(200, 40, 90, 137), Color::BLUE] {
+            for origin in [(0_i32, 0_i32), (-3, -5), (2, 1)] {
+                let rect = Rect::new(
+                    origin.0,
+                    origin.1,
+                    i32::try_from(width).expect("fixture width"),
+                    i32::try_from(height).expect("fixture height"),
+                );
+                let Some(outer) = RoundRect::new(rect, CornerRadius::clamped(radius, rect)) else {
+                    continue;
+                };
+                let inner = border.and_then(|width| outer.inset(f64::from(width)));
+                let mut actual = surface(28, 24, Color::WHITE);
+                let mut expected = surface(28, 24, Color::WHITE);
+                composite_shape(&mut actual, outer, inner, color);
+                reference_shape(&mut expected, outer, inner, color);
+                assert_eq!(
+                    actual.pixels(),
+                    expected.pixels(),
+                    "{width}x{height} radius {radius} border {border:?} at {origin:?} diverged"
+                );
+            }
+        }
+    }
+}
+
+#[test]
+fn a_translucent_rounded_border_composites_each_pixel_once() {
+    // Compositing a pixel twice compounds opacity, which an opaque source
+    // hides. The square path has the same guard.
+    let rect = Rect::new(0, 0, 24, 20);
+    let radius = CornerRadius::clamped(8, rect);
+    let color = Color::rgba(200, 10, 20, 128);
+    let mut once = surface(24, 20, Color::TRANSPARENT);
+    draw_rect_outline(&mut once, rect, 3, radius, color);
+    // On the straight edge the border is exactly the source at one pass.
+    assert_eq!(once.get_pixel(12, 0), color);
+    assert_eq!(once.get_pixel(12, 2), color);
+    assert_eq!(once.get_pixel(0, 10), color);
+    // No pixel anywhere exceeds a single composite of this source.
+    for pixel in once.pixels() {
+        let alpha = pixel.to_be_bytes()[0];
+        assert!(
+            alpha <= color.a,
+            "a pixel reached alpha {alpha}, above one pass of {}",
+            color.a
+        );
+    }
+}
+
+#[test]
+fn off_surface_rounded_geometry_clips_to_the_visible_result() {
+    let color = Color::rgba(10, 20, 30, 128);
+    // A shape covering the whole surface leaves no background behind; its arcs
+    // are off-screen, so every visible pixel is fully covered.
+    let covering = Rect::new(-20, -20, 60, 60);
+    let mut fb = surface(16, 16, Color::WHITE);
+    fill_rect(&mut fb, covering, CornerRadius::clamped(9, covering), color);
+    let mut reference = surface(16, 16, Color::WHITE);
+    fill_rect(&mut reference, covering, CornerRadius::SQUARE, color);
+    assert_eq!(
+        fb.pixels(),
+        reference.pixels(),
+        "an off-screen arc changed the visible fill"
+    );
+
+    // Shapes entirely outside the surface, and extreme coordinates, paint
+    // nothing and do not panic.
+    for rect in [
+        Rect::new(i32::MAX - 4, 0, 40, 40),
+        Rect::new(-80, -80, 40, 40),
+    ] {
+        let mut untouched = surface(16, 16, Color::WHITE);
+        let radius = CornerRadius::clamped(9, rect);
+        fill_rect(&mut untouched, rect, radius, color);
+        draw_rect_outline(&mut untouched, rect, 2, radius, color);
+        assert!(
+            untouched
+                .pixels()
+                .iter()
+                .all(|p| unpack(*p) == Color::WHITE),
+            "off-surface geometry painted {rect:?}"
+        );
+    }
+
+    // An extent spanning the coordinate range clips rather than overflowing.
+    // Its origin is one pixel off-screen, so the corner arc is visible and the
+    // result is checked against the coverage definition rather than assumed
+    // to be a full fill.
+    let spanning = Rect::new(-1, -1, i32::MAX, i32::MAX);
+    let spanning_radius = CornerRadius::clamped(9, spanning);
+    let outer = RoundRect::new(spanning, spanning_radius).expect("a spanning shape has area");
+    let mut spanned = surface(16, 16, Color::WHITE);
+    let mut expected = surface(16, 16, Color::WHITE);
+    fill_rect(&mut spanned, spanning, spanning_radius, color);
+    reference_shape(&mut expected, outer, None, color);
+    assert_eq!(
+        spanned.pixels(),
+        expected.pixels(),
+        "a surface-spanning shape diverged from the coverage definition"
+    );
+    // The arc is genuinely on screen: the extreme corner stays background.
+    assert_eq!(spanned.get_pixel(0, 0), Color::WHITE);
 }
 
 #[test]
