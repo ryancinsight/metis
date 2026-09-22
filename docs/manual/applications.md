@@ -217,14 +217,14 @@ eframe process boundary still differs from Métis, and GPUI/Tauri fixtures remai
 open, so no framework ranking is derived.
 
 The current standalone replay (2026-09-22) uses the lock delivered by RITK PR
-[#588](https://github.com/ryancinsight/ritk/pull/588), merged as
-`27ac7d12bc69a04f7fb12e5ba41ef8fd4fe93aa9`. The exact replay source is
-`b671ae72a20bb6d113de35314e73874f197d2a83`, with Metis
-`ad27d2148cc6b8fa9702cbbd4f37d9e106aa6535` and Moirai
+[#592](https://github.com/ryancinsight/ritk/pull/592), merged as
+`620c03342f3951366441f1f908d05bc3f249f566`. The exact replay source is
+`36b8330d3dfa450ae81523fc1ebc6e59413a1dc4`, with Metis
+`219143bbf3596aea85fa4624d7d5241a63b4cf0d` and Moirai
 `0e2e1bbb2d81e16dd9c694ba46a9e9710e034417`; the standalone lock digest is
-`c1ccbc7785cce37d4e2322002fd19b0bb4ab03fec03ab7d4154fa6cfbcf470b1`, and the
+`acb5bd6c7c82ced80c052ae542dcd63992badf8d00a982c986f64716f5736b10`, and the
 executable digest is
-`2f44ae2f9a3facc7c8659e5ac246af235021ab9a3e84ffabbff9d2d823099035`.
+`f416deadbb8a17ab4ffa1d58e1eef007bd1887883ad638fbbf82fa038ec063f9`.
 RITK opened the saved 94-file MRI-DIR study (49,807,236 bytes) and produced
 the actual 1280 × 800 three-plane frame below; it contains 411,589 non-black
 pixels and repeats the capture digest
