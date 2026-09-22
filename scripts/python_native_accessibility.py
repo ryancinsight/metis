@@ -9,17 +9,16 @@ import json
 import pathlib
 import subprocess
 import sys
+import time
 from typing import Any
 
 import python_native_capture as capture
-import python_native_input_capture as native_input
 
 
 MAX_VALUE_BYTES = 128
 MAX_UIA_OUTPUT_BYTES = 256 * 1024
 UIA_TIMEOUT_SECONDS = 15
 UIA_POLL_MILLISECONDS = 25
-WEBVIEW2_FOCUS_PRIMER_TABS = 2
 
 
 def _parser() -> argparse.ArgumentParser:
@@ -35,12 +34,6 @@ def _parser() -> argparse.ArgumentParser:
         help="one argument passed to --command; repeat for each argument",
     )
     parser.add_argument("--cwd", type=pathlib.Path)
-    parser.add_argument(
-        "--surface",
-        choices=("native", "webview2"),
-        default="native",
-        help="production surface contract to exercise",
-    )
     parser.add_argument(
         "--patient-value",
         default="UIA-PATIENT",
@@ -85,9 +78,7 @@ def _validate_paths(
     return executable
 
 
-def _powershell_script(handle: int, value: str, surface: str = "native") -> str:
-    if surface not in {"native", "webview2"}:
-        raise ValueError(f"unsupported accessibility surface: {surface!r}")
+def _powershell_script(handle: int, value: str) -> str:
     encoded_value = base64.b64encode(value.encode("utf-8")).decode("ascii")
     return f"""
 $ErrorActionPreference = 'Stop'
@@ -95,7 +86,6 @@ Add-Type -AssemblyName UIAutomationClient
 Add-Type -AssemblyName UIAutomationTypes
 $handle = [IntPtr]{handle}
 $requested = [Text.Encoding]::UTF8.GetString([Convert]::FromBase64String('{encoded_value}'))
-$surface = '{surface}'
 $scope = [System.Windows.Automation.TreeScope]::Descendants
 $trueCondition = [System.Windows.Automation.Condition]::TrueCondition
 
@@ -104,13 +94,6 @@ function Get-Nodes([System.Windows.Automation.AutomationElement] $root) {{
 }}
 
 function Get-Patient([System.Windows.Automation.AutomationElement] $root) {{
-    if ($surface -eq 'webview2') {{
-        Get-Nodes $root | Where-Object {{
-            $_.Current.AutomationId -eq 'patient-id' -and
-            $_.Current.ControlType.ProgrammaticName -eq 'ControlType.Edit'
-        }} | Select-Object -First 1
-        return
-    }}
     Get-Nodes $root | Where-Object {{
         $_.Current.ControlType.ProgrammaticName -eq 'ControlType.Edit' -and
         $_.Current.Name -eq 'Patient ID'
@@ -118,13 +101,6 @@ function Get-Patient([System.Windows.Automation.AutomationElement] $root) {{
 }}
 
 function Get-Submit([System.Windows.Automation.AutomationElement] $root) {{
-    if ($surface -eq 'webview2') {{
-        Get-Nodes $root | Where-Object {{
-            $_.Current.ControlType.ProgrammaticName -eq 'ControlType.Button' -and
-            $_.Current.Name -eq 'Submit calculation'
-        }} | Select-Object -First 1
-        return
-    }}
     Get-Nodes $root | Where-Object {{
         $_.Current.ControlType.ProgrammaticName -eq 'ControlType.Button' -and
         $_.Current.Name -like '*SUBMIT CALCULATION*'
@@ -132,13 +108,6 @@ function Get-Submit([System.Windows.Automation.AutomationElement] $root) {{
 }}
 
 function Get-Status([System.Windows.Automation.AutomationElement] $root) {{
-    if ($surface -eq 'webview2') {{
-        Get-Nodes $root | Where-Object {{
-            $_.Current.AutomationId -eq 'result' -and
-            $_.Current.ControlType.ProgrammaticName -eq 'ControlType.StatusBar'
-        }} | Select-Object -First 1
-        return
-    }}
     Get-Nodes $root | Where-Object {{
         $_.Current.ControlType.ProgrammaticName -eq 'ControlType.Group' -and
         $_.Current.Name -like 'Backend Calculation Output*'
@@ -159,33 +128,12 @@ function Get-TreeRecord([System.Windows.Automation.AutomationElement] $root) {{
     $records
 }}
 
-function Get-StatusText([System.Windows.Automation.AutomationElement] $statusNode) {{
-    if ($surface -eq 'webview2') {{
-        $text = Get-Nodes $statusNode | Where-Object {{
-            $_.Current.ControlType.ProgrammaticName -eq 'ControlType.Text' -and
-            $_.Current.Name
-        }} | Select-Object -First 1
-        if ($null -ne $text) {{ return [string]$text.Current.Name }}
-    }}
-    return [string]$statusNode.Current.Name
-}}
-
 $root = [System.Windows.Automation.AutomationElement]::FromHandle($handle)
 if ($null -eq $root) {{ throw 'UI Automation root is unavailable' }}
-$patient = $null
-$submit = $null
-$discoveryDeadline = [DateTime]::UtcNow.AddSeconds({UIA_TIMEOUT_SECONDS})
-do {{
-    $root = [System.Windows.Automation.AutomationElement]::FromHandle($handle)
-    if ($null -ne $root) {{
-        $patient = Get-Patient $root
-        $submit = Get-Submit $root
-    }}
-    if ($null -ne $patient -and $null -ne $submit) {{ break }}
-    Start-Sleep -Milliseconds {UIA_POLL_MILLISECONDS}
-}} while ([DateTime]::UtcNow -lt $discoveryDeadline)
-if ($null -eq $patient -or $null -eq $submit) {{ throw 'required UI Automation controls are missing' }}
 $tree = @(Get-TreeRecord $root)
+$patient = Get-Patient $root
+$submit = Get-Submit $root
+if ($null -eq $patient -or $null -eq $submit) {{ throw 'required UI Automation controls are missing' }}
 $valuePattern = $patient.GetCurrentPattern([System.Windows.Automation.ValuePattern]::Pattern)
 $invokePattern = $submit.GetCurrentPattern([System.Windows.Automation.InvokePattern]::Pattern)
 $before = $valuePattern.Current.Value
@@ -206,18 +154,13 @@ $status = $null
 do {{
     $root = [System.Windows.Automation.AutomationElement]::FromHandle($handle)
     $statusNode = Get-Status $root
-    if ($null -ne $statusNode) {{ $status = Get-StatusText $statusNode }}
-    if ($surface -eq 'webview2') {{
-        if ($status -and $status -notlike 'No calculation submitted.' -and $status -notlike 'Submitting*') {{ break }}
-    }} elseif ($status -and $status -notlike '*Awaiting Backend Calculation*') {{ break }}
+    if ($null -ne $statusNode) {{ $status = $statusNode.Current.Name }}
+    if ($status -and $status -notlike '*Awaiting Backend Calculation*') {{ break }}
     Start-Sleep -Milliseconds {UIA_POLL_MILLISECONDS}
 }} while ([DateTime]::UtcNow -lt $deadline)
-if ($surface -eq 'webview2') {{
-    if (-not $status -or $status -like 'No calculation submitted.' -or $status -like 'Submitting*') {{ throw 'UI Automation submit did not produce a WebView2 result' }}
-}} elseif (-not $status -or $status -like '*Awaiting Backend Calculation*') {{ throw 'UI Automation submit did not produce a backend result' }}
+if (-not $status -or $status -like '*Awaiting Backend Calculation*') {{ throw 'UI Automation submit did not produce a backend result' }}
 [pscustomobject]@{{
     schema = 1
-    surface = $surface
     controls = [pscustomobject]@{{
         patient = [pscustomobject]@{{ role = $patient.Current.ControlType.ProgrammaticName; name = $patient.Current.Name }}
         submit = [pscustomobject]@{{ role = $submit.Current.ControlType.ProgrammaticName; name = $submit.Current.Name }}
@@ -230,21 +173,8 @@ if ($surface -eq 'webview2') {{
 """
 
 
-def _prepare_surface(handle: int, surface: str) -> int:
-    if surface == "native":
-        return 0
-    if surface != "webview2":
-        raise ValueError(f"unsupported accessibility surface: {surface!r}")
-    native_input._focus_window(handle)
-    for _ in range(WEBVIEW2_FOCUS_PRIMER_TABS):
-        native_input._send_virtual_key(0x09, key_up=False)
-        native_input._send_virtual_key(0x09, key_up=True)
-        native_input._flush_window(handle)
-    return WEBVIEW2_FOCUS_PRIMER_TABS
-
-
-def _run_uia(handle: int, value: str, surface: str = "native") -> dict[str, Any]:
-    script = _powershell_script(handle, value, surface)
+def _run_uia(handle: int, value: str) -> dict[str, Any]:
+    script = _powershell_script(handle, value)
     encoded = base64.b64encode(script.encode("utf-16-le")).decode("ascii")
     completed = subprocess.run(
         [
@@ -282,7 +212,6 @@ def _capture(
     command_arguments: list[str],
     cwd: pathlib.Path | None,
     value: str,
-    surface: str,
     initial_output: pathlib.Path,
     output: pathlib.Path,
     manifest: pathlib.Path,
@@ -310,8 +239,7 @@ def _capture(
         initial_digest = capture._write_capture(
             initial_output, initial_observation.bounds, initial_pixels
         )
-        focus_primer_tabs = _prepare_surface(bounds.handle, surface)
-        trace = _run_uia(bounds.handle, value, surface)
+        trace = _run_uia(bounds.handle, value)
         after_observation = capture._window_observation(bounds.handle)
         after_pixels = capture._capture_window(after_observation.bounds)
         after_digest = capture._write_capture(output, after_observation.bounds, after_pixels)
@@ -329,8 +257,6 @@ def _capture(
                 "dpi": after_observation.dpi,
             },
             "value_sha256": hashlib.sha256(value.encode("utf-8")).hexdigest(),
-            "surface": surface,
-            "focus_primer_tabs": focus_primer_tabs,
             "initial": {"image": initial_output.as_posix(), "sha256": initial_digest},
             "after": {"image": output.as_posix(), "sha256": after_digest},
             "pixels_changed": initial_pixels != after_pixels,
@@ -360,7 +286,6 @@ def main() -> None:
             arguments.command_arguments,
             arguments.cwd,
             arguments.patient_value,
-            arguments.surface,
             arguments.initial_output.resolve(),
             arguments.output.resolve(),
             arguments.manifest.resolve(),

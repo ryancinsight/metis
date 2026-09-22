@@ -2510,6 +2510,57 @@ does not assert spoken output or screen-reader certification; no screen-reader
 process was started for this trace. No semantic or owning WebView2 host defect
 was observed.
 
+### Windows native Unicode and installed-IME evidence — 2026-09-22
+
+The production `metis-app.exe` was rebuilt with `cargo build --locked
+--offline -p metis-app --bin metis-app` and exercised by
+`scripts/python_native_ime_capture.py` at Metis source revision
+`6c0d553d48dc71bed0311c7c5ce813962eca153b`. The lock resolved all Moirai
+packages at provider revision `0c2f752e28c6683d91440783a8b5967a78fa909d`,
+which contains the surrogate-preservation correction. The measured binary
+SHA-256 is
+`d163fcf2b8c5189775a4ebb1d9d9cc30820a3ac64bc8564c254095c3545fdb9`; the
+trace manifest is
+`output/native-ime-measured/trace.json` with SHA-256
+`bc1be3276628f450206f8b94ac0da60108fcf4353adaa9136ff9b585376ee0e`.
+
+The host inventory returned only `en-US` with input-method tip
+`0409:00000409`. The three direct Unicode fixtures used Win32
+`SendInput(KEYEVENTF_UNICODE)` through a fresh production host and each
+reported exact UI Automation value text and changed pixels:
+
+| fixture | before value | after value |
+| --- | --- | --- |
+| combining mark `é` | `demo` | `demoé` |
+| emoji `👩‍🔬` | `demo` | `demo👩‍🔬` |
+| mixed direction `ABC אבג 123` | `demo` | `demoABC אבג 123` |
+
+Each host capture used an 800×600 client area, 818×647 outer window and
+120-DPI effective scale. The image SHA-256 pairs in fixture order are
+`0935d4a2a53cde937e8eaf375f4f358c6ef4e25be6657bcca07efb70d7ff171b` /
+`5f850a93fd4da172f07981a8c9a03241aa1c96b72b92cc7a87f59d4ace5a93ca`,
+`0935d4a2a53cde937e8eaf375f4f358c6ef4e25be6657bcca07efb70d7ff171b` /
+`0cccab7a86e47c63bbc4d34d1cec04f1503008fbebc724c0e3e02d2cc02ad03d`,
+and
+`0935d4a2a53cde937e8eaf375f4f358c6ef4e25be6657bcca07efb70d7ff171b` /
+`56ffd6f65b5cb1e3cce64ba966dd5046be1717eaec74881681e7c362bcce4f12`.
+These fixtures prove committed Unicode transport and rendering only; they do
+not substitute for IME composition.
+
+The same runner captured `cjk/before.png`, focused the real HWND, attempted the
+Japanese layout and toggled the native IME. Both bounded `ImmGetContext` probes
+reported `context: false` and `open: false`; the exact result was
+`layout japanese did not expose an open installed IME (before={'context':
+False, 'open': False, 'conversion': None, 'sentence': None}, after={'context':
+False, 'open': False, 'conversion': None, 'sentence': None})`. The journey
+therefore failed closed with no preedit, commit or cancel state captured. The
+physical-key sequence is capped at 32 keys, UI Automation reads at 5 seconds,
+and process shutdown at 10 seconds. V03's CJK preedit/commit/cancel acceptance
+remains open until a CJK IME is installed and exposed by this host; no CJK
+composition claim is made from this run. The procedure and measured command
+are also recorded in the
+[native manual](manual/native.md#exercise-the-installed-windows-ime).
+
 <a id="V04"></a>
 ### V04 — Responsive layout and clipping
 
