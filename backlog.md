@@ -14,6 +14,15 @@
 - Basis: Metis main run `35648844306` failed only because Atlas `02a304f519c27b95169b87b732e6e631d51c205d` scanned its `_atlas` workflow checkout as member source (`oversized_files 0 -> 3`, `manifest_implementation 0 -> 2`, `existence_only_assertions 0 -> 4`).
 - Outcome: PR #331 advanced the workflow and source split; the exact full verifier passed 27 stages with 192 resolved packages, the intentional capture-failure negative oracle, and the merged Atlas scanner reporting zero regressions and zero host-state rows.
 
+<a id="METIS-GATE-VISUAL-BUDGET-001"></a>
+## METIS-GATE-VISUAL-BUDGET-001 — Restore headroom in the visual-tests budget [patch]
+- Status: todo; priority: P2; owner: Metis tooling; dependencies: none; risk: gate flake masking real failures
+- Observed 2026-09-22: `python -m unittest discover -s scripts/tests` runs 331 tests in 58.2 s against the stage's 60 s budget — about three percent headroom — so the stage terminates under any concurrent host load. Three consecutive gate runs on unrelated revisions failed in different stages purely on budget.
+- Outcome: the stage completes with headroom proportional to the host variance the repository already records, by making the suite faster rather than by raising the bound.
+- Scope: profile the 331 Python tests, attribute the dominant cost, and remove it — repeated subprocess launches and repeated fixture construction are the first suspects. Raising the 60-second bound in the offending diff is excluded.
+- Oracle: the suite completes within the committed budget with the documented margin on a loaded host, and the slowest tests are recorded so the next regression is attributable.
+- Note: a failing stage also loses its diagnostic. `run` writes the failure log through `output_path`, which rejects the neutral `subst` drive it is handed, so the real error is replaced by `ValueError: Unsafe gate output path`. Fix that with the budget, or every future stage failure is undiagnosable.
+
 <a id="METIS-TYPOGRAPHY-GLYPHS-001"></a>
 ## METIS-TYPOGRAPHY-GLYPHS-001 — Real lowercase and punctuation glyphs [patch]
 - Status: review; priority: P1; owner: Metis presentation; integrator: root; last-update: 2026-09-22; dependencies: METIS-RASTER-SPAN-001; risk: stale rendered evidence
