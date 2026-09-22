@@ -6,12 +6,13 @@
 - Oracle: `atlas-conformance.py check --repo metis --member-path .` exits 0 on this tree; the workflow guard is pinned to Atlas `28c44b703681970d64dfde0a18aaa30ff877490c`.
 
 <a id="METIS-CONFORMANCE-GUARD-PIN-2026-09-21"></a>
-## METIS-CONFORMANCE-GUARD-PIN-2026-09-21 — advance the Atlas conformance guard [patch] — in-progress
-- Status: in-progress; priority: P1; owner: Metis integration; integrator: root; last-update: 2026-09-21; dependency: Atlas PR #216.
+## METIS-CONFORMANCE-GUARD-PIN-2026-09-21 — advance the Atlas conformance guard [patch] — done
+- Status: done; priority: P1; owner: Metis integration; integrator: root; last-update: 2026-09-21; delivery: [PR #331](https://github.com/ryancinsight/metis/pull/331), merge `5e283127fc54be907917c7cae69791eecc6f4043`.
 - Scope: the reusable conformance workflow reference and the matching structural oracle; no debt baseline changes.
 - The merged scanner exposed one real `oversized_files` regression in `crates/metis-cli/src/build.rs`; the Cargo-artifact selection family now has its own module, preserving behavior while bringing both source files below the 500-line threshold.
 - Acceptance: the workflow invokes Atlas `28c44b703681970d64dfde0a18aaa30ff877490c`; the exact main verification reports no member ratchet regressions; docs and citations name the merged revision.
 - Basis: Metis main run `35648844306` failed only because Atlas `02a304f519c27b95169b87b732e6e631d51c205d` scanned its `_atlas` workflow checkout as member source (`oversized_files 0 -> 3`, `manifest_implementation 0 -> 2`, `existence_only_assertions 0 -> 4`).
+- Outcome: PR #331 advanced the workflow and source split; the exact full verifier passed 27 stages with 192 resolved packages, the intentional capture-failure negative oracle, and the merged Atlas scanner reporting zero regressions and zero host-state rows.
 
 <a id="METIS-GALLERY-CYCLES-001"></a>
 ## METIS-GALLERY-CYCLES-001 — Repeated saved-study browser lifecycle
@@ -552,7 +553,7 @@ an owner. “Unsupported” cannot replace delivery of a required mobile/native 
 
 <a id="METIS-SERVICES-001"></a>
 ## METIS-SERVICES-001 — Scoped network, shell and sidecars [minor]
-- Status: in-progress; priority: P2; owner: Moirai mechanisms + Metis policy; integrator: root; last-update: 2026-09-21; branch: feat/metis-scoped-network; delivery: `8e0263a`; dependencies: METIS-DESKTOP-001, METIS-COMMANDS-001; risk: privilege escalation
+- Status: in-progress; priority: P2; owner: Moirai mechanisms + Metis policy; integrator: root; last-update: 2026-09-21; delivery: [PR #328](https://github.com/ryancinsight/metis/pull/328), merge `e8c37b23e5231234518a29cdc713de0eb21c38d8`; dependencies: METIS-DESKTOP-001, METIS-COMMANDS-001; risk: privilege escalation
 - Scope: HTTP/WebSocket and subprocess APIs, sidecar lifecycle, endpoint/argument allowlists, bounded IO and credential redaction; local test services only by default.
 - Acceptance: unauthorized endpoints/commands/arguments fail; transient errors, deadlines, cancellation, crash and cleanup are exercised against real processes/local servers; no shell-string injection or secret output.
 - Demonstration: [V08](docs/VERIFICATION.md#V08), connection/process status and denial journey; browsers never receive arbitrary native shell access.
@@ -560,6 +561,7 @@ an owner. “Unsupported” cannot replace delivery of a required mobile/native 
 - Process-provider increment (2026-09-19): Metis `e02ad62` adds `RUN_PROCESS`-witnessed direct execution with host-fixed executable and argument values, bounded stdout, private stderr draining, finite cleanup and real-child denial/redaction/deadline tests; Moirai PR #405 merge `8a8daa60` supplies the opt-in stderr pipe.
 - Scoped-network increment (2026-09-21): `ScopedHttpProvider` now exposes a bounded per-request deadline. Expiry drops the Moirai transport future, and a real delayed loopback server observes connection cleanup; focused tests also cover invalid deadlines, unlisted-origin denial and the NETWORK witness. Explicit cancellation is the same future-drop lifecycle and remains transport-owned; OS sandboxing, retries, TLS pinning and broader sidecar orchestration remain open.
 - Takeover reconciliation (2026-09-21): the stale network branch was resumed, its lock regenerated outside the Atlas overlay, and the series rebased onto Metis main `3830fe7`; the focused native/WASM gates and conformance guard are green.
+- Delivery reconciliation (2026-09-21): PR #328 merged at `e8c37b2`; the branch is collected. The full Metis verifier passed all 28 stages on the exact revision, including deterministic delayed-loopback cleanup and the expected `PermissionDenied` capture-failure oracle. WebSocket, TLS pinning, retries, OS sandboxing and broader sidecar orchestration remain open.
 
 <a id="METIS-AXUM-001"></a>
 ## METIS-AXUM-001 — First-party bounded HTTP boundary [arch] [minor]
