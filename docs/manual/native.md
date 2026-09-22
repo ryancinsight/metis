@@ -636,19 +636,16 @@ the desktop compositor:
 cargo run --locked -p metis-app -- --metis-webview-permission-probe-capture C:\captures\metis-permission-probe.png 60 2 0.2
 ```
 
-The output path is an absolute `.png` path. The capture is written once after
-the first bounded event batch; close the window or press **Escape** to finish
-the supervised session. The committed visual run predates the four-capability
-matrix. It used Metis revision
-`285322892aca245faf3962d57838682dd6689d77`, Moirai revision
-`d324018efa3b67d2b92350a4e3c781d179019014`, WebView2 runtime
-`153.0.4234.32`, and a 1024×768 client area. It produced 6,561 bytes with
-SHA-256
-`a9df158ff6a167ed3c708e9621a44446cae93b3c0d87e646c818601606a33b8f` and shows
-`permission_denied: WebView2 denied geolocation access request [0x200f]`.
-That image is a historical geolocation-only visual artifact; it does not claim
-the four-row matrix. A Windows visual rerun of the command above is required
-to add the matrix capture and its revision-bound digest:
+The output path is an absolute `.png` path. The host waits for the page's typed
+`permission_probe_complete` message after all four bounded requests settle,
+writes the WebView2-owned preview, and closes the supervised session. The
+current visual run uses Metis revision `543edfb533be0c0422c38445174001b616c96ace`, Moirai revision
+`0e2e1bbb2d81e16dd9c694ba46a9e9710e034417`, WebView2 runtime
+`153.0.4234.48`, and a 1025×769 CapturePreview image. It produced 9,265 bytes
+with SHA-256
+`0f36794bea61fe540e7a4603b2c56d943718344c68c4e46aa3b0d839e7ab3a36` and shows
+the completed four-row matrix: geolocation and notifications are host-denied,
+while camera and microphone are browser-rejected on this Windows host.
 
 ![Metis WebView2 permission denial probe](images/native-permission-probe.png)
 
@@ -798,7 +795,7 @@ mapping for fractional display scales is covered by deterministic component
 tests, while a physical monitor transition, broader OS permission enforcement,
 native accessibility, an installed CJK or other IME journey, macOS/Linux
 providers, two-window captures and the viewer host remain V05 and migration
-work. WebView2 provider denial and a visible permission-probe capture are
+work. WebView2 provider denial and the four-row permission-probe capture are
 covered; broader Windows sandbox enforcement remains open. Do not treat a
 successful Windows build or a hidden-window test as cross-platform,
 assistive-technology or broad OS-permission evidence.

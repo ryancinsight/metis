@@ -320,15 +320,16 @@ sandbox enforcement; those remain V05 host evidence.
 
 The permission-probe capture role routes the packaged page through the same
 supervised private pipe and asks the WebView2 provider for its bounded
-`CapturePreview` PNG. This keeps the visual evidence tied to renderer pixels
-when GDI cannot see a hardware-composed or occluded child surface. Metis
-revision `285322892aca245faf3962d57838682dd6689d77` with Moirai revision
-`d324018efa3b67d2b92350a4e3c781d179019014` produced a 1024×768 PNG on
-`x86_64-pc-windows-msvc` with WebView2 `153.0.4234.32`; the file is 6,561
+`CapturePreview` PNG. The host waits for the page's typed
+`permission_probe_complete` message after all four requests settle, so the
+image is a complete matrix rather than a first-event snapshot. Metis revision
+`543edfb533be0c0422c38445174001b616c96ace` with Moirai revision
+`0e2e1bbb2d81e16dd9c694ba46a9e9710e034417` produced a 1025×769 PNG on
+`x86_64-pc-windows-msvc` with WebView2 `153.0.4234.48`; the file is 9,265
 bytes, SHA-256
-`a9df158ff6a167ed3c708e9621a44446cae93b3c0d87e646c818601606a33b8f`, and
-contains `permission_denied: WebView2 denied geolocation access request
-[0x200f]`. The command and full provenance are recorded in
+`0f36794bea61fe540e7a4603b2c56d943718344c68c4e46aa3b0d839e7ab3a36`, and
+shows geolocation and notifications host-denied plus browser rejection for
+camera and microphone. The command and full provenance are recorded in
 [`manual/images/native-captures.json`](manual/images/native-captures.json). The
 image proves the rendered page and message translation only. It does not prove
 revocation of another profile's grant or broader OS sandbox enforcement.
