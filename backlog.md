@@ -16,8 +16,9 @@
 
 <a id="METIS-TYPOGRAPHY-GLYPHS-001"></a>
 ## METIS-TYPOGRAPHY-GLYPHS-001 — Real lowercase and punctuation glyphs [patch]
-- Status: in-progress; priority: P1; owner: Metis presentation; integrator: root; last-update: 2026-09-22; dependencies: METIS-RASTER-SPAN-001; risk: stale rendered evidence
-- lease: root — crates/metis-platform/src/font.rs, docs/manual/images/native-* — 2026-09-22T00:00:00-04:00
+- Status: review; priority: P1; owner: Metis presentation; integrator: root; last-update: 2026-09-22; dependencies: METIS-RASTER-SPAN-001; risk: stale rendered evidence
+- Delivered: each letter carries its own lowercase bitmap on the shared baseline and fifteen ASCII punctuation marks replace their replacement-box fallback; the case-folded arms are split so an uppercase literal no longer serves both cases.
+- Evidence: [software renderer lowercase glyph evidence](docs/VERIFICATION.md#software-renderer-lowercase-glyph-evidence--2026-09-22); five contract tests assert case distinction, row bands, punctuation coverage, replacement-box fallback and cell-width containment. The committed `presentation` example renders the authored form as written.
 - Outcome: the bitmap font carries a distinct lowercase bitmap per letter and the common ASCII punctuation that previously fell through to the replacement box, so authored mixed-case text renders as written instead of in capitals.
 - Scope: `metis-platform` glyph table and its tests, plus regenerated native captures and the manifest text they record. No style-contract, weight, layout or display-command change; `font-weight` stays rejected under its own item.
 - Oracle: each letter renders a different bitmap in each case; every added punctuation mark differs from the replacement box; ascender, x-height and descender bands land on the documented rows; the regenerated native capture is inspected and its observed text updated.

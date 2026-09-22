@@ -2428,6 +2428,41 @@ merged the Windows `ValuePattern.SetValue` action mapping at `d7b38d7`. These
 are provider and consumer contract checks: no OS screen reader, spoken output
 or host preference enablement is claimed.
 
+### Software renderer lowercase glyph evidence — 2026-09-22
+
+The bitmap table mapped both cases of every letter to one uppercase bitmap, so
+authored mixed-case text rendered in capitals regardless of its content, and
+fifteen common ASCII punctuation marks fell through to the replacement box.
+Each letter now carries its own lowercase bitmap on the shared baseline: the
+x-height band is rows 4 to 9, ascenders start at row 2 and descenders run
+through row 11.
+
+`metis-platform` asserts the contract rather than the artwork: every letter
+renders a different bitmap in each case and neither case is the replacement box
+or blank; ascender, x-height and descender letters occupy their documented row
+bands; every added punctuation mark differs from the replacement box; unmapped
+characters still render it; and no glyph paints the leftmost column of its
+cell, so a glyph cannot touch its neighbour at the `FONT_WIDTH` advance.
+
+Rendered evidence is reproduced by the committed example, which paints the
+authored form through the production framebuffer:
+
+```powershell
+cargo run --locked --example presentation
+```
+
+At revision `HEAD` the emitted `output/form.bmp` shows `Patient Demographics
+and Drug Prescription`, `Drug Concentration: 4.00 mg/mL` and `Target Dose:
+0.500 mcg/kg/min` as authored, with visible descenders on `g` and `p`. The
+surfaces whose source text is genuinely uppercase — the header, the session
+badge and the command labels — are unchanged.
+
+The window captures recorded in the [native capture
+manifest](manual/images/native-captures.json) are provenance bound to revision
+`0c8bcc32911c087bf686588cd4a7c56a29d0b92e` and remain valid for it. Their
+`observed` text is capitalized because that revision predates this change; they
+are historical records, not a current expectation.
+
 ### Software rasterizer span-fill evidence — 2026-09-22
 
 `crates/metis-platform/benches/rasterizer.rs` is the first committed measurement
