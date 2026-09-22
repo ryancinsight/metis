@@ -52,3 +52,4 @@
 | [0041](0041-host-neutral-accessibility-semantics.md) | Host-neutral accessibility semantics | Accepted |
 | [0042](0042-scoped-network-provider.md) | Scoped network provider | Accepted |
 | [0043](0043-rounded-rectangle-paint.md) | Rounded rectangle paint semantics | Accepted |
+| [0044](0044-anchored-popovers.md) | Anchored popovers | Accepted |
