@@ -204,6 +204,41 @@ The focused locked native gate passed formatting, warning-denied Clippy and
 native provider action path and visible result; it does not prove installed
 screen-reader speech, host preference enablement or non-Windows accessibility.
 
+### Exercise the packaged WebView2 controls
+
+The same runner accepts `--surface webview2` for the real packaged form. It
+focuses the host HWND, sends two bounded `Tab` actions to activate WebView2's
+renderer accessibility provider, then finds the page's `Patient reference`
+edit, `Submit calculation` button and `result` status bar. `ValuePattern.SetValue`
+changes `demo` to `A11Y-V03`; `InvokePattern.Invoke` submits the form; the
+status bar exposes `Rate 0.36 mL/hour; drug 0.72 mg/hour; audit 2`; and the
+window closes with process return code `0`.
+
+```powershell
+$target = (cargo metadata --locked --no-deps --format-version 1 | ConvertFrom-Json).target_directory
+$binary = Join-Path $target "debug\metis-app.exe"
+New-Item -ItemType Directory -Force output/native-uia | Out-Null
+python -S scripts/python_native_accessibility.py `
+  --surface webview2 `
+  --command $binary `
+  --argument=--metis-webview --argument=60 --argument=2 --argument=0.2 `
+  --patient-value A11Y-V03 `
+  --initial-output output/native-uia/webview-initial.png `
+  --output output/native-uia/webview-after.png `
+  --manifest output/native-uia/webview-trace.json
+```
+
+The bounded record is [`webview-uia.json`](images/webview-uia.json). It binds
+the application revision, executable and lock digests, WebView2 runtime,
+window geometry, 29 named UI Automation nodes, the value transition, terminal
+status and orderly close. Rendering is measured with WebView2 `CapturePreview`
+(1025×769, 12,883 bytes, SHA-256
+`1b9c3bfde1c32c374edfcfab0303df3742c3772881d1c06aaf345b62e295282e`); the
+parent-HWND GDI capture used by the native-only runner is not treated as a
+WebView2 rendering oracle. This is control and rendering evidence only: it
+does not assert spoken output or screen-reader certification, and no
+screen-reader process is started by this procedure.
+
 ## Apply native display scale
 
 Moirai reports the window's integer DPI through `WindowEvent::DpiChanged`.

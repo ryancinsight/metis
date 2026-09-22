@@ -2469,6 +2469,47 @@ The focused locked native gate passed formatting, warning-denied Clippy and
 provider action and rendering path, not installed screen-reader speech, host
 preference enablement or non-Windows accessibility.
 
+### Windows WebView2 UI Automation control evidence — 2026-09-22
+
+The same bounded runner accepts `--surface webview2` for the visible packaged
+WebView2 form. Its Win32 focus step sends exactly two `Tab` actions before the
+UI Automation query because WebView2 exposes its renderer accessibility tree on
+keyboard traversal. The runner then finds the real `Patient reference` edit,
+the `Submit calculation` button and the `result` status bar, applies
+`ValuePattern.SetValue` with `A11Y-V03`, invokes the submit control with
+`InvokePattern.Invoke`, reads the terminal status text and closes the process.
+The trace is bounded to 256 named nodes, a 128-byte patient value and a 15
+second UI Automation deadline.
+
+```powershell
+$target = (cargo metadata --locked --no-deps --format-version 1 | ConvertFrom-Json).target_directory
+$binary = Join-Path $target "debug\metis-app.exe"
+New-Item -ItemType Directory -Force output/native-uia | Out-Null
+python -S scripts/python_native_accessibility.py `
+  --surface webview2 `
+  --command $binary `
+  --argument=--metis-webview --argument=60 --argument=2 --argument=0.2 `
+  --patient-value A11Y-V03 `
+  --initial-output output/native-uia/webview-initial.png `
+  --output output/native-uia/webview-after.png `
+  --manifest output/native-uia/webview-trace.json
+```
+
+The run used application revision `c29d8a3`, executable SHA-256
+`86512d11fe28516ab9ad5dc2db4fb836c37d82402a756be7191f0a4f679061f2`,
+WebView2 runtime `153.0.4234.32`, a 1024×768 client in a 1042×815 window at
+120 DPI, and 29 named UI Automation nodes after focus priming. The value
+changed from `demo` to `A11Y-V03`; the status bar exposed
+`Rate 0.36 mL/hour; drug 0.72 mg/hour; audit 2`; and the process returned `0`.
+The rendered page was separately checked through WebView2 `CapturePreview`:
+1025×769 pixels, 12,883 bytes, SHA-256
+`1b9c3bfde1c32c374edfcfab0303df3742c3772881d1c06aaf345b62e295282e`.
+The bounded record is [`webview-uia.json`](manual/images/webview-uia.json).
+This evidence establishes WebView2 rendering and Windows control behavior. It
+does not assert spoken output or screen-reader certification; no screen-reader
+process was started for this trace. No semantic or owning WebView2 host defect
+was observed.
+
 <a id="V04"></a>
 ### V04 — Responsive layout and clipping
 
