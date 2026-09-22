@@ -1,9 +1,10 @@
 <a id="METIS-CONFORMANCE-REGROWTH-2026-09-21"></a>
 ## METIS-CONFORMANCE-REGROWTH-2026-09-21 — restore structural debt guard [patch]
-- Status: done; priority: P1; owner: Metis integration; integrator: root; last-update: 2026-09-21; delivery: [PR #322](https://github.com/ryancinsight/metis/pull/322), [PR #324](https://github.com/ryancinsight/metis/pull/324).
+- Status: in-progress; priority: P1; owner: Atlas pin collection; integrator: root; last-update: 2026-09-22; delivery: [PR #322](https://github.com/ryancinsight/metis/pull/322), [PR #324](https://github.com/ryancinsight/metis/pull/324).
 - Outcome: the live Metis scan reports zero `oversized_files` and zero `type_suffixed_fns`, and the pull-request workflow calls Atlas's pinned conformance guard against the member baseline.
 - Delivery scope: split the canonical event/layout/http test modules, consolidate type-named helpers, update affected docs, retain exact visual evidence under the artifact budget, and enforce the debt baseline on future pull requests.
 - Oracle: `atlas-conformance.py check --repo metis --member-path .` exits 0 on this tree; the workflow guard is pinned to Atlas `28c44b703681970d64dfde0a18aaa30ff877490c`.
+- Current increment (2026-09-22): the current default regressed to three oversized Rust modules (`metis-platform` rasterizer/font and `metis-ui-lang` style); production code and inline tests are split into canonical leaf modules, restoring `oversized_files=0` without changing public paths or behavior.
 
 <a id="METIS-CONFORMANCE-GUARD-PIN-2026-09-21"></a>
 ## METIS-CONFORMANCE-GUARD-PIN-2026-09-21 — advance the Atlas conformance guard [patch] — done
