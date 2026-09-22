@@ -1,6 +1,10 @@
 use super::{
-    APP_JS, INDEX_HTML, MAX_PATIENT_ID_BYTES, PERMISSION_PROBE_APP_JS, PERMISSION_PROBE_INDEX_HTML,
-    STYLES_CSS, WebViewAction, WebViewRequest, file_uri, permission_denied_message,
+    MAX_PATIENT_ID_BYTES, WebViewAction, WebViewRequest,
+    assets::{
+        APP_JS, INDEX_HTML, PERMISSION_PROBE_APP_JS, PERMISSION_PROBE_INDEX_HTML, STYLES_CSS,
+    },
+    package::file_uri,
+    permission_denied_message,
 };
 use metis_platform::native::WebViewPermission;
 

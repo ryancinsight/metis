@@ -10,17 +10,12 @@ use metis_platform::native::{
 };
 use serde::{Deserialize, Serialize};
 use std::io::{stdin, stdout};
-use std::{
-    fs, io,
-    path::{Path, PathBuf},
-    time::Duration,
-};
+use std::{fs, path::Path, time::Duration};
 
 mod assets;
+mod package;
 
-use assets::{
-    APP_JS, INDEX_HTML, PERMISSION_PROBE_APP_JS, PERMISSION_PROBE_INDEX_HTML, STYLES_CSS,
-};
+use package::{Package, Page, package_failure};
 
 const INITIAL_WIDTH: u32 = 1024;
 const INITIAL_HEIGHT: u32 = 768;
@@ -67,74 +62,6 @@ enum PageMessage {
         message: String,
         user_initiated: bool,
     },
-}
-
-struct Package {
-    root: PathBuf,
-}
-
-#[derive(Clone, Copy)]
-enum Page {
-    Form,
-    PermissionProbe,
-}
-
-impl Page {
-    fn assets(self) -> (&'static str, &'static str) {
-        match self {
-            Self::Form => (INDEX_HTML, APP_JS),
-            Self::PermissionProbe => (PERMISSION_PROBE_INDEX_HTML, PERMISSION_PROBE_APP_JS),
-        }
-    }
-}
-
-impl Package {
-    fn create(page: Page, initial_theme: Option<WebViewTheme>) -> io::Result<Self> {
-        let base = std::env::temp_dir();
-        let process = std::process::id();
-        let (index, script) = page.assets();
-        let index = initial_theme.map_or_else(
-            || index.to_owned(),
-            |theme| {
-                index.replace(
-                    "data-metis-theme=\"system\"",
-                    &format!("data-metis-theme=\"{}\"", theme.query_value()),
-                )
-            },
-        );
-        for attempt in 0..MAX_PACKAGE_ATTEMPTS {
-            let root = base.join(format!("metis-webview-{process}-{attempt}"));
-            match fs::create_dir(&root) {
-                Ok(()) => {
-                    let result = (|| {
-                        fs::write(root.join("index.html"), index.as_bytes())?;
-                        fs::write(root.join("styles.css"), STYLES_CSS)?;
-                        fs::write(root.join("app.js"), script)?;
-                        Ok(())
-                    })();
-                    return match result {
-                        Ok(()) => Ok(Self { root }),
-                        Err(error) => Err(cleanup_error(root, error)),
-                    };
-                }
-                Err(error) if error.kind() == io::ErrorKind::AlreadyExists => {}
-                Err(error) => return Err(error),
-            }
-        }
-        Err(io::Error::new(
-            io::ErrorKind::AlreadyExists,
-            "bounded WebView2 package names are exhausted",
-        ))
-    }
-
-    fn entry_uri(&self) -> io::Result<String> {
-        let entry = self.root.join("index.html").canonicalize()?;
-        file_uri(&entry)
-    }
-
-    fn cleanup(self) -> io::Result<()> {
-        fs::remove_dir_all(self.root)
-    }
 }
 
 /// Runs the visible `WebView2` form over the supervised private pipe.
@@ -440,40 +367,6 @@ fn post_message(surface: &mut WebViewSurface, message: &PageMessage) -> Result<(
     Ok(())
 }
 
-fn file_uri(path: &Path) -> io::Result<String> {
-    let text = path.to_str().ok_or_else(|| {
-        io::Error::new(
-            io::ErrorKind::InvalidInput,
-            "WebView2 package path is not valid Unicode",
-        )
-    })?;
-    let normalized = text.replace('\\', "/");
-    let normalized = normalized
-        .strip_prefix("//?/")
-        .map_or(normalized.as_str(), |path| path);
-    if normalized.starts_with('/') || normalized.starts_with("UNC/") {
-        return Err(io::Error::new(
-            io::ErrorKind::InvalidInput,
-            "WebView2 package path must use a local drive",
-        ));
-    }
-    let mut uri = String::from("file:///");
-    for byte in normalized.bytes() {
-        if byte.is_ascii_alphanumeric() || matches!(byte, b'-' | b'.' | b'_' | b'~' | b'/' | b':') {
-            uri.push(char::from(byte));
-        } else {
-            uri.push('%');
-            uri.push(char::from(b"0123456789ABCDEF"[(byte >> 4) as usize]));
-            uri.push(char::from(b"0123456789ABCDEF"[(byte & 0x0f) as usize]));
-        }
-    }
-    Ok(uri)
-}
-
-fn package_failure(package: Package, error: io::Error) -> io::Error {
-    cleanup_error(package.root, error)
-}
-
 fn finish(
     result: Result<()>,
     surface: &mut WebViewSurface,
@@ -493,16 +386,6 @@ fn finish(
         Ok(())
     } else {
         Err(errors.join("; ").into())
-    }
-}
-
-fn cleanup_error(path: PathBuf, error: io::Error) -> io::Error {
-    match fs::remove_dir_all(path) {
-        Ok(()) => error,
-        Err(cleanup) => io::Error::new(
-            error.kind(),
-            format!("{error}; WebView2 package cleanup failed: {cleanup}"),
-        ),
     }
 }
 
