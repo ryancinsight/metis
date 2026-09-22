@@ -183,12 +183,6 @@ impl ComputedStyle {
         if self.align_items != AlignItems::Stretch {
             return Err(unsupported_style("align-items"));
         }
-        if !matches!(self.min_width, Size::Auto) {
-            return Err(unsupported_style("min-width"));
-        }
-        if !matches!(self.min_height, Size::Auto) {
-            return Err(unsupported_style("min-height"));
-        }
         Ok(())
     }
 
@@ -237,9 +231,9 @@ impl ComputedStyle {
                         _ => return Err(invalid_value(&key, val)),
                     }
                 }
-                "justify-content" | "align-items" | "min-width" | "min-height" => {
-                    return Err(unsupported_style(&key));
-                }
+                "justify-content" | "align-items" => return Err(unsupported_style(&key)),
+                "min-width" => style.min_width = parse_size(&key, val)?,
+                "min-height" => style.min_height = parse_size(&key, val)?,
                 "font-weight" => {
                     style.font_weight = match val {
                         "normal" | "400" => FontWeight::Normal,
@@ -477,13 +471,26 @@ mod tests {
     }
 
     #[test]
+    fn admits_minimum_sizes_on_the_extent_length_grammar() {
+        let style = ComputedStyle::parse("min-width: 44px; min-height: 50%")
+            .expect("admitted minimum sizes");
+        assert_eq!(style.min_width, Size::Px(44));
+        assert_eq!(style.min_height, Size::Percent(0.5));
+        assert_eq!(
+            ComputedStyle::parse("min-width: auto")
+                .expect("an explicit auto minimum")
+                .min_width,
+            Size::Auto
+        );
+        for malformed in ["min-width: -4px", "min-height: wide", "min-width: 10em"] {
+            let error = ComputedStyle::parse(malformed).expect_err("malformed minimum");
+            assert_eq!(error.code, ErrorCode::InvalidCssStyle, "{malformed}");
+        }
+    }
+
+    #[test]
     fn rejects_unsupported_rendering_properties_with_property_diagnostic() {
-        for (property, value) in [
-            ("justify-content", "center"),
-            ("align-items", "end"),
-            ("min-width", "8px"),
-            ("min-height", "8px"),
-        ] {
+        for (property, value) in [("justify-content", "center"), ("align-items", "end")] {
             let css = format!("{property}: {value}");
             let error = ComputedStyle::parse(&css).expect_err("unsupported style");
             assert_eq!(error.code, ErrorCode::InvalidCssStyle);

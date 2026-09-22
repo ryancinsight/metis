@@ -10,6 +10,12 @@ Revision: 2026-09-09 — [METIS-LAYOUT-001](../../backlog.md#METIS-LAYOUT-001)
 closes the silent custom-renderer style gap by rejecting declarations without
 software-renderer semantics.
 
+Revision: 2026-09-22 — [METIS-LAYOUT-MINSIZE-001](../../backlog.md#METIS-LAYOUT-MINSIZE-001)
+admits `min-width` and `min-height`. A minimum sizes one box, which layout
+already does; it needs no space redistribution. `justify-content` and
+`align-items` keep their rejection because they do, and that is a separate
+layout capability rather than a longer length list.
+
 Revision: 2026-09-22 — [METIS-TYPOGRAPHY-WEIGHT-001](../../backlog.md#METIS-TYPOGRAPHY-WEIGHT-001)
 admits `font-weight` now that rasterization applies a stroke weight. The subset
 stays bounded to the two weights the renderer can paint: `normal`/`400` and
@@ -49,8 +55,10 @@ browser CSS engine or change browser DOM parsing.
   missing separators, empty values, invalid enum values, malformed pixel or
   percentage dimensions, negative spacing, malformed edge lists, invalid
   colors and unsupported font weights return `ErrorCode::InvalidCssStyle`.
-- Alignment and minimum-size declarations are outside the software renderer
-  contract and return `ErrorCode::InvalidCssStyle`. `font-weight` is admitted
+- Alignment declarations are outside the software renderer contract and return
+  `ErrorCode::InvalidCssStyle`. `min-width` and `min-height` are admitted since
+  the 2026-09-22 revision on the same length grammar and display scaling as
+  `width`/`height`. `font-weight` is admitted
   since the 2026-09-22 revision for the two paintable weights. `border-radius` is
   admitted since the 2026-09-22 revision: it parses as a nonnegative pixel
   length on the same grammar as `gap` and `border-width`, scales by the host

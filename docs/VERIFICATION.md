@@ -2428,6 +2428,34 @@ merged the Windows `ValuePattern.SetValue` action mapping at `d7b38d7`. These
 are provider and consumer contract checks: no OS screen reader, spoken output
 or host preference enablement is claimed.
 
+### Authored minimum-size evidence — 2026-09-22
+
+`min-width` and `min-height` are admitted and raise the used extent of an
+element. A minimum resolves on the same length grammar as `width`/`height` —
+pixels, percentages against the available extent, and `auto` meaning no
+minimum — and is display-scaled identically, so a minimum and an extent written
+the same way resolve to the same number. It applies after the declared or
+automatic value resolves, so it raises an automatic extent as readily as a
+declared one.
+
+The tests assert the raising behavior rather than the plumbing: a minimum above
+the resolved extent raises it on both axes and one below leaves it unchanged; a
+minimum raises the automatic height of an empty element, which is otherwise
+just its edges; a percentage minimum resolves against the available extent; and
+a minimum scales with the host display scale exactly as width and height do.
+
+One assumption this exposed is worth recording: an element with no declared
+width is `auto` and already fills its available extent, so a width minimum
+below the viewport never binds on such an element. The scaling test declares a
+small width so the minimum is what decides the result.
+
+`justify-content` and `align-items` keep their typed rejection; the
+programmatic-rejection test now exercises `justify-content`. They redistribute
+free space between items rather than sizing one box, which is a separate layout
+capability under its own item.
+
+No golden capture changes: no authored surface declares a minimum yet.
+
 ### Authored font-weight evidence — 2026-09-22
 
 `font-weight` is admitted for the two weights the renderer can paint and

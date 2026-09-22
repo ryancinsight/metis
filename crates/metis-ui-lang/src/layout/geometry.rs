@@ -215,7 +215,8 @@ impl DisplayList {
             )?
             .max(0),
             display_scale,
-        )?;
+        )?
+        .max(minimum(style.min_width, available.width, display_scale)?);
         let x = add(available.x, geometry.margin.left)?;
         let y = add(available.y, geometry.margin.top)?;
         let content_x = add(add(x, geometry.padding.left)?, geometry.border.left)?;
@@ -261,7 +262,8 @@ impl DisplayList {
             available.height,
             add(content_height, vertical_edges)?.max(0),
             display_scale,
-        )?;
+        )?
+        .max(minimum(style.min_height, available.height, display_scale)?);
         let rect = Rect::new(x, y, width, height);
         // The radius is clamped against the final rectangle, whose height is
         // known only after the children have been laid out.
@@ -340,6 +342,18 @@ fn sub(left: i32, right: i32) -> Result<i32> {
 fn mul(left: i32, right: i32) -> Result<i32> {
     left.checked_mul(right)
         .ok_or_else(|| limit_error("Layout text extent overflow"))
+}
+
+/// Resolves the floor an extent may not fall below.
+///
+/// `Size::Auto` states no minimum. A declared minimum uses the same length
+/// grammar and display scaling as `width`/`height`, so a minimum and an extent
+/// expressed the same way resolve to the same number.
+fn minimum(size: Size, available: i32, display_scale: DisplayScale) -> Result<i32> {
+    match size {
+        Size::Auto => Ok(0),
+        declared => dimension(declared, available, 0, display_scale),
+    }
 }
 
 fn dimension(

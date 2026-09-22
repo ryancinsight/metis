@@ -2,8 +2,9 @@ use super::{DisplayCommand, DisplayList, LayoutViewport, compute_layout};
 use crate::dom::{DomDocument, DomElement, DomNode};
 use crate::parse_markup;
 use crate::parser::{MAX_DEPTH, MAX_NODES};
-use crate::style::{Color, Display, EdgeValues, Size};
+use crate::style::{Color, Display, EdgeValues, JustifyContent, Size};
 use metis_core::error::ErrorCode;
+use metis_platform::DisplayScale;
 use metis_platform::GlyphWeight;
 use metis_platform::framebuffer::{Framebuffer, Rect};
 use metis_platform::rasterizer::CornerRadius;
@@ -51,12 +52,12 @@ fn extreme_styles_return_errors_without_wrapping() {
 #[test]
 fn programmatic_unsupported_style_is_rejected_before_painting() {
     let mut root = DomElement::new("root");
-    root.computed_style.min_width = Size::Px(8);
+    root.computed_style.justify_content = JustifyContent::Center;
     root.computed_style.background_color = Some(Color::RED);
     let error = compute_layout(&DomDocument::new(root), LayoutViewport::new(4, 4))
         .expect_err("unsupported style must not be silently ignored");
     assert_eq!(error.code, ErrorCode::InvalidCssStyle);
-    assert!(error.message.contains("min-width"));
+    assert!(error.message.contains("justify-content"));
 }
 
 #[test]
@@ -162,6 +163,82 @@ fn an_authored_bold_weight_paints_heavier_strokes() {
         bold_ink > regular_ink,
         "bold painted {bold_ink}, regular {regular_ink}"
     );
+}
+
+/// The laid-out rectangle of the only element in a document.
+fn only_rect(markup: &str, viewport: LayoutViewport) -> Rect {
+    let document = parse_markup(markup).expect("authored markup parses");
+    let display = compute_layout(&document, viewport).expect("lays out");
+    display
+        .commands
+        .iter()
+        .find_map(|command| match command {
+            DisplayCommand::FillRect { rect, .. } => Some(*rect),
+            _ => None,
+        })
+        .expect("the background fill carries the laid-out rectangle")
+}
+
+#[test]
+fn a_minimum_raises_a_smaller_extent_and_leaves_a_larger_one() {
+    let viewport = LayoutViewport::new(200, 200);
+    // Raised: the declared extent is below the minimum on both axes.
+    let raised = only_rect(
+        "<card id=\"root\" style=\"background-color: #ff0000; width: 10px; height: 12px;          min-width: 44px; min-height: 40px;\"></card>",
+        viewport,
+    );
+    assert_eq!((raised.width, raised.height), (44, 40));
+    // Unchanged: the declared extent already clears the minimum.
+    let clear = only_rect(
+        "<card id=\"root\" style=\"background-color: #ff0000; width: 80px; height: 60px;          min-width: 44px; min-height: 40px;\"></card>",
+        viewport,
+    );
+    assert_eq!((clear.width, clear.height), (80, 60));
+}
+
+#[test]
+fn a_minimum_raises_an_automatic_extent() {
+    // An empty element has no content, so its automatic height is its edges;
+    // the minimum is what keeps it visible.
+    let rect = only_rect(
+        "<card id=\"root\" style=\"background-color: #ff0000; min-height: 36px;\"></card>",
+        LayoutViewport::new(120, 120),
+    );
+    assert_eq!(rect.height, 36);
+}
+
+#[test]
+fn a_percentage_minimum_resolves_against_the_available_extent() {
+    let rect = only_rect(
+        "<card id=\"root\" style=\"background-color: #ff0000; width: 10px; min-width: 50%;\"></card>",
+        LayoutViewport::new(120, 80),
+    );
+    assert_eq!(rect.width, 60);
+}
+
+#[test]
+fn a_minimum_scales_with_the_host_display_scale() {
+    let markup = "<card id=\"root\" style=\"background-color: #ff0000; width: 10px;          min-width: 40px; min-height: 20px;\"></card>";
+    let document = parse_markup(markup).expect("parses");
+    let scaled = compute_layout(
+        &document,
+        LayoutViewport::with_scale(
+            200,
+            200,
+            DisplayScale::from_milli(1_500).expect("150 percent"),
+        ),
+    )
+    .expect("lays out");
+    let rect = scaled
+        .commands
+        .iter()
+        .find_map(|command| match command {
+            DisplayCommand::FillRect { rect, .. } => Some(*rect),
+            _ => None,
+        })
+        .expect("background fill");
+    // A minimum is a length, so it scales exactly as width and height do.
+    assert_eq!((rect.width, rect.height), (60, 30));
 }
 
 #[test]
