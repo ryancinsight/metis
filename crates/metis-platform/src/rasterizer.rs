@@ -3,6 +3,7 @@
 use crate::DisplayScale;
 use crate::font::{FONT_WIDTH, draw_glyph_scaled};
 use crate::framebuffer::{Color, Framebuffer, Rect, SourceOver};
+mod round_rect;
 mod stroke;
 
 const LEFT: u8 = 1;
@@ -10,6 +11,8 @@ const RIGHT: u8 = 2;
 const TOP: u8 = 4;
 const BOTTOM: u8 = 8;
 
+pub use round_rect::CornerRadius;
+use round_rect::{RoundRect, composite_shape};
 pub use stroke::{LineCap, LineJoin, MAX_STROKE_POINTS, StrokeWidth, draw_polyline};
 
 /// Composites a color over the visible part of an axis-aligned span rectangle.
@@ -55,20 +58,48 @@ pub(crate) fn fill_bounds(
 }
 
 /// Fills the visible intersection of an axis-aligned rectangle.
-pub fn fill_rect(fb: &mut Framebuffer, rect: Rect, color: Color) {
-    fill_bounds(
-        fb,
-        i64::from(rect.x),
-        i64::from(rect.y),
-        i64::from(rect.x) + i64::from(rect.width),
-        i64::from(rect.y) + i64::from(rect.height),
-        color,
-    );
+///
+/// [`CornerRadius::SQUARE`] takes the unrounded span path, so square output is
+/// unchanged. A rounded radius antialiases the corner arcs by coverage and
+/// leaves the straight edges exact.
+pub fn fill_rect(fb: &mut Framebuffer, rect: Rect, radius: CornerRadius, color: Color) {
+    if radius.is_square() {
+        fill_bounds(
+            fb,
+            i64::from(rect.x),
+            i64::from(rect.y),
+            i64::from(rect.x) + i64::from(rect.width),
+            i64::from(rect.y) + i64::from(rect.height),
+            color,
+        );
+        return;
+    }
+    let Some(outer) = RoundRect::new(rect, radius) else {
+        return;
+    };
+    composite_shape(fb, outer, None, color);
 }
 
-/// Draws an inward border, blending each corner pixel exactly once.
-pub fn draw_rect_outline(fb: &mut Framebuffer, rect: Rect, width: i32, color: Color) {
+/// Draws an inward border, blending each covered pixel exactly once.
+///
+/// A rounded radius paints the ring between the outer shape and the shape
+/// inset by the border width, so the border follows the same arc as the fill
+/// it encloses.
+pub fn draw_rect_outline(
+    fb: &mut Framebuffer,
+    rect: Rect,
+    width: i32,
+    radius: CornerRadius,
+    color: Color,
+) {
     if width <= 0 || rect.width <= 0 || rect.height <= 0 {
+        return;
+    }
+    if !radius.is_square() {
+        let Some(outer) = RoundRect::new(rect, radius) else {
+            return;
+        };
+        composite_shape(fb, outer, outer.inset(f64::from(width)), color);
         return;
     }
     let left = i64::from(rect.x);
@@ -316,7 +347,7 @@ mod tests {
                     sequence.in_range(0, 30),
                 );
                 let color = sequence.color();
-                fill_rect(&mut spans, rect, color);
+                fill_rect(&mut spans, rect, CornerRadius::SQUARE, color);
                 blend_each_pixel(&mut pixels, rect, color);
             }
             assert_eq!(
@@ -362,7 +393,12 @@ mod tests {
     #[test]
     fn extreme_geometry_clips_without_overflow() {
         let mut fb = Framebuffer::new(2, 2).expect("small surface");
-        fill_rect(&mut fb, Rect::new(-1, -1, i32::MAX, i32::MAX), Color::GREEN);
+        fill_rect(
+            &mut fb,
+            Rect::new(-1, -1, i32::MAX, i32::MAX),
+            CornerRadius::SQUARE,
+            Color::GREEN,
+        );
         assert_eq!(fb.pixels(), &[0xff38_a169; 4]);
         draw_text(&mut fb, i32::MAX, i32::MIN, "A", Color::WHITE, u32::MAX);
         assert_eq!(fb.get_pixel(0, 0), Color::GREEN);
@@ -374,7 +410,13 @@ mod tests {
     fn translucent_border_does_not_blend_corners_twice() {
         let mut fb = Framebuffer::new(3, 3).expect("small surface");
         let color = Color::rgba(200, 10, 20, 128);
-        draw_rect_outline(&mut fb, Rect::new(0, 0, 3, 3), 1, color);
+        draw_rect_outline(
+            &mut fb,
+            Rect::new(0, 0, 3, 3),
+            1,
+            CornerRadius::SQUARE,
+            color,
+        );
         assert_eq!(fb.get_pixel(0, 0), color);
         assert_eq!(fb.get_pixel(1, 1), Color::TRANSPARENT);
         assert_eq!(fb.get_pixel(2, 2), color);

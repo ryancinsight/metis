@@ -7,6 +7,7 @@ mod jpeg_arithmetic_gallery;
 #[path = "support/jpeg_gallery.rs"]
 mod jpeg_gallery;
 
+use metis_platform::rasterizer::CornerRadius;
 use metis_platform::{Color, Framebuffer, Rect, draw_rect_outline, draw_text, fill_rect};
 use metis_ui_lang::asset::AssetErrorKind;
 use metis_ui_lang::{ImagePlacement, ImageTransform, RasterImage};
@@ -125,9 +126,10 @@ fn render_png_gallery(frame: &mut Framebuffer) -> Result<(), Box<dyn Error>> {
                 bounds.height + 2,
             ),
             1,
+            CornerRadius::SQUARE,
             OUTLINE,
         );
-        fill_rect(frame, bounds, PANEL_BACKGROUND);
+        fill_rect(frame, bounds, CornerRadius::SQUARE, PANEL_BACKGROUND);
 
         let placement = ImagePlacement::contain(image.clone(), bounds, transform)?;
         let expected_destination = match transform {

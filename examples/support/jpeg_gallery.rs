@@ -1,3 +1,4 @@
+use metis_platform::rasterizer::CornerRadius;
 use metis_platform::{Color, Framebuffer, Rect, draw_rect_outline, draw_text, fill_rect};
 use metis_ui_lang::asset::AssetErrorKind;
 use metis_ui_lang::{ImagePlacement, ImageTransform, RasterImage};
@@ -231,9 +232,10 @@ pub(super) fn render_sample(
             bounds.height + 2,
         ),
         1,
+        CornerRadius::SQUARE,
         OUTLINE,
     );
-    fill_rect(frame, bounds, PANEL_BACKGROUND);
+    fill_rect(frame, bounds, CornerRadius::SQUARE, PANEL_BACKGROUND);
     let placement = ImagePlacement::contain(image, bounds, ImageTransform::Identity)?;
     assert_eq!(placement.destination(), expected_destination);
     placement.render_to(frame);
@@ -305,9 +307,10 @@ fn render_orientation(
             bounds.height + 2,
         ),
         1,
+        CornerRadius::SQUARE,
         OUTLINE,
     );
-    fill_rect(frame, bounds, PANEL_BACKGROUND);
+    fill_rect(frame, bounds, CornerRadius::SQUARE, PANEL_BACKGROUND);
 
     let placement = ImagePlacement::contain(image.clone(), bounds, ImageTransform::Identity)?;
     let expected_destination = if orientation >= 5 {

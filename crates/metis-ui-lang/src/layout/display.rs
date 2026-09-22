@@ -5,8 +5,8 @@ use metis_core::error::Result;
 use metis_platform::DisplayScale;
 use metis_platform::framebuffer::{Framebuffer, Rect};
 use metis_platform::rasterizer::{
-    LineCap, LineJoin, MAX_STROKE_POINTS, StrokeWidth, draw_line, draw_polyline, draw_rect_outline,
-    draw_text_scaled, fill_rect,
+    CornerRadius, LineCap, LineJoin, MAX_STROKE_POINTS, StrokeWidth, draw_line, draw_polyline,
+    draw_rect_outline, draw_text_scaled, fill_rect,
 };
 
 /// Primitive command in painter order.
@@ -85,9 +85,11 @@ impl DisplayList {
     pub fn render_to(&self, fb: &mut Framebuffer) {
         for command in &self.commands {
             match command {
-                DisplayCommand::FillRect { rect, color } => fill_rect(fb, *rect, *color),
+                DisplayCommand::FillRect { rect, color } => {
+                    fill_rect(fb, *rect, CornerRadius::SQUARE, *color);
+                }
                 DisplayCommand::DrawBorder { rect, width, color } => {
-                    draw_rect_outline(fb, *rect, *width, *color);
+                    draw_rect_outline(fb, *rect, *width, CornerRadius::SQUARE, *color);
                 }
                 DisplayCommand::DrawLine { start, end, color } => {
                     draw_line(fb, *start, *end, *color);
