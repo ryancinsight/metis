@@ -2472,6 +2472,62 @@ decision's protection actually lives. The bounded subset holds: `space-around`,
 `baseline` and bare `end` are typed errors rather than a silent fall back to
 the default.
 
+### Antialiased TrueType text — 2026-09-22
+
+The software renderer draws text from Atkinson Hyperlegible Regular and Bold
+through its own TrueType parser and exact-area rasterizer
+([ADR 0047](adr/0047-truetype-text.md)); the 8 × 16 bitmap font is gone.
+
+The oracle is fontTools 4.61.1 reading the same files. Glyph ids and
+advances for nine characters per face, including the composite `é`, match it
+exactly, and rasterized coverage totals match its analytic outline areas
+within the flattening bound — the 1/256-pixel chord tolerance times the
+flattened perimeter — at 11, 16 and 37.5 pixels and three fractional origins.
+Drawn black-on-white runs darken the surface by those same areas, within that
+bound plus half a level per inked pixel.
+
+Area accumulation is exact only without overlapping contours. A test walks
+dense rows of every simple glyph of both faces and finds the winding number
+never exceeds one, proving that premise; composites, whose components can
+overlap, are rasterized by the nonzero rule on 64 rows per pixel and match a
+point-sampled winding reference on the same rows within half a sample column
+per edge crossing. A font assembled byte by byte checks every component
+transform branch against hand-derived bounds and determinant-scaled areas and
+rejects out-of-range and cyclic components. Truncated and mutated copies of
+the regular face fail with typed errors; none panic.
+
+The oracles were shown to bite: dropping implied on-curve midpoints fails the
+area test, shifting a `cmap` delta fails the mapping tests, swapping the 2 × 2
+matrix entries fails the placement test, routing composites through
+accumulation fails the union test, and recoloring the ready badge red fails
+the status-color test.
+
+An independent review of the first delivered form found composite overlaps
+counted twice (up to 0.31 of a pixel too dark on `Å`), a test that claimed ink
+stays inside the advance, work continuing past the segment bound, and glyphs
+overhanging the right edge dropped. Each is fixed with a test that fails
+without the fix. The review also verified the character map for every Unicode
+scalar and the outlines and advances of all 369 glyphs per face against
+fontTools.
+
+Two status-color probes read one pixel of a bitmap glyph. At 12 pixels an
+antialiased stem may never reach full coverage, so they now classify every
+pixel of the status run's line box by its nearest candidate color; the first
+version compared only against the background and failed, because pure red is
+slightly nearer the green state color than the dark header is.
+
+The demo form now carries a type scale — a 22-pixel title, 16-pixel section
+headings, 14-pixel rows and control labels, an 18-pixel rate and 13- and
+12-pixel secondary lines — that the bitmap font, which drew every size from 8
+to 27 pixels identically, could not express.
+
+Two gate scripts carried the bitmap metrics as well: `visual.py` validated
+captured text rows as eight pixels per character and sixteen per line, and
+pinned the capture's font label. Captured rows now carry the size and the
+run's measured width and line height, and the gate checks those for clipping.
+The embedded typefaces join the fixture provenance, since they decide every
+text pixel, and the source digest covers each crate's `fonts` directory.
+
 ### Gaussian box shadows — 2026-09-22
 
 `box-shadow` is admitted for one outer shadow and painted as CSS Backgrounds 3

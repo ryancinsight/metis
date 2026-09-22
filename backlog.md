@@ -25,7 +25,8 @@
 
 <a id="METIS-TYPOGRAPHY-TRUETYPE-001"></a>
 ## METIS-TYPOGRAPHY-TRUETYPE-001 — Antialiased TrueType text [arch] [major]
-- Status: in-progress; priority: P1; owner: Metis presentation; integrator: root; last-update: 2026-09-22; dependencies: none; risk: text metrics move every layout and capture
+- Status: done; priority: P1; owner: Metis presentation; integrator: root; last-update: 2026-09-22; dependencies: none; risk: text metrics move every layout and capture; delivery: [PR #372](https://github.com/ryancinsight/metis/pull/372)
+- Evidence: [Antialiased TrueType text](docs/VERIFICATION.md#antialiased-truetype-text--2026-09-22); an independent review failed the first form on composite overlaps and ink bounds, both fixed with the review's cases committed.
 - Outcome: text is proportional, antialiased and sized in pixels per em, so headings, labels and body text read as typography instead of one scaled bitmap cell.
 - Scope: a TrueType parser and exact-area rasterizer in `metis-platform::typeface`; Atkinson Hyperlegible Regular and Bold (SIL OFL 1.1) embedded; layout measuring runs by glyph advances; the bitmap font deleted with every consumer migrated; captures regenerated.
 - Oracle: glyph ids, advances and outline areas match fontTools; coverage equals polygon area; malformed fonts are typed errors; runs stay inside their measured boxes ([ADR 0047](docs/adr/0047-truetype-text.md)).
