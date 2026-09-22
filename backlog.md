@@ -421,7 +421,7 @@ an owner. “Unsupported” cannot replace delivery of a required mobile/native 
 
 <a id="METIS-A11Y-001"></a>
 ## METIS-A11Y-001 — Accessible application interaction [minor]
-- Status: in-progress; priority: P1; owner: Metis host/UI; integrator: root; last-update: 2026-09-21; dependencies: METIS-INPUT-001; risk: inaccessible controls
+- Status: in-progress; priority: P1; owner: Metis host/UI; integrator: root; last-update: 2026-09-22; dependencies: METIS-INPUT-001; risk: inaccessible controls
 - Scope: semantic DOM roles/names/states, focus/action mapping, announcements, reduced motion/high contrast/zoom; OS accessibility bridge for any custom UI path.
 - Acceptance: semantic tree identity/actions and keyboard-only completion pass; actual supported screen readers traverse and operate the application; document platform limits instead of claiming certification from tree presence.
 - Demonstration: [V03](docs/VERIFICATION.md#V03), readable focus/contrast/zoom captures plus semantic/action and assistive-technology evidence.
@@ -449,6 +449,12 @@ an owner. “Unsupported” cannot replace delivery of a required mobile/native 
 - Lease discharged: `scripts/python_native_accessibility.py`, `scripts/tests/test_python_native_accessibility.py`, `docs/manual/native.md`, `docs/VERIFICATION.md` and this item are synchronized in this increment.
 - Gate correction (2026-09-21): the hosted Windows replay exposed a Node diagnostic subprocess that kept stdout open after bounded cleanup, causing the delayed stream-cancel test to hit its ten-second parent deadline. The test harness now closes stdout and exits only after the serialized result is flushed; the three diagnostic fault cases pass locally, including 25 repeated delayed-cancel runs.
 - Visual baseline correction (2026-09-21): hosted replay 35607367715 passed every pixel and semantic comparison and reported only the derived fixture digest as stale; commit 23dd3e4 records fixture SHA-256 16c7f5cae9f02eb0c47bc412499ef54b9a79762b692cfcd5a7f79392a7e93a36, with rerun 35608777745 queued.
+- Completed increment (2026-09-22): Metis PR #345 merged the browser command
+  surface against the host-neutral semantic roles: navigation, toolbar, menu
+  and menuitem. Rust-owned state drives expanded/hidden attributes, bounded
+  theme/focus actions and Escape restoration; the browser asset contract,
+  WASM check and strict Clippy compile the seam. Native tray and spoken
+  screen-reader evidence remain open.
 - Residuals: supported screen-reader speech, host-specific forced-colors/reduced-motion acceptance and installed-client traversal remain open.
 
 <a id="METIS-LAYOUT-001"></a>
