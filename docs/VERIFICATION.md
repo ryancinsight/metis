@@ -3170,6 +3170,19 @@ repeated capture digest is identical. This is a current real-application
 fixture bound to the recorded source revisions; it does not close the matched
 Tauri, GPUI or egui fixture requirement or establish a universal memory ranking.
 
+The current standalone replay supersedes the older resource fixture for the
+saved-study visual claim. RITK PR [#592](https://github.com/ryancinsight/ritk/pull/592)
+merged as `620c03342f3951366441f1f908d05bc3f249f566` records the exact replay
+source `36b8330d3dfa450ae81523fc1ebc6e59413a1dc4`, Metis
+`219143bbf3596aea85fa4624d7d5241a63b4cf0d`, Moirai
+`0e2e1bbb2d81e16dd9c694ba46a9e9710e034417` and standalone lock SHA-256
+`acb5bd6c7c82ced80c052ae542dcd63992badf8d00a982c986f64716f5736b10`.
+The real 94-file study reads 49,807,236 bytes, exits 0, rejects the invalid
+study with exit 1, and reproduces the 1280×800 frame (`259dd79103482756c4e688621bebafc841cc40f1df10ff2bbd7f9d04b7b4d401`,
+411,589 non-black pixels). The executable SHA-256 is
+`f416deadbb8a17ab4ffa1d58e1eef007bd1887883ad638fbbf82fa038ec063f9`; this is
+real DICOM application output, not generated artwork or a framework ranking.
+
 The shell-free eframe run now accepts `--viewport-size 1024x640` logical
 points. On the controlled 125% Windows host, three bounded runs over the same
 94-file study exit 0 with the same 1280×800 PNG digest

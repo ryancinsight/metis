@@ -1698,24 +1698,28 @@ The recorded cross-engine captures show the real anatomy rendered through this
 format-neutral host: [Chromium gallery](https://github.com/ryancinsight/ritk/blob/main/docs/manual/images/dicom-metis-real-browser-mri-cross-engine-chromium.png)
 and [Firefox gallery](https://github.com/ryancinsight/ritk/blob/main/docs/manual/images/dicom-metis-real-browser-mri-cross-engine-firefox.png).
 The current standalone-lock replay (2026-09-22) uses the lock delivered by RITK PR
-[#588](https://github.com/ryancinsight/ritk/pull/588), merged as
-`27ac7d12bc69a04f7fb12e5ba41ef8fd4fe93aa9`; its exact replay source is
-`b671ae72a20bb6d113de35314e73874f197d2a83`, with all six Metis packages at
-`ad27d2148cc6b8fa9702cbbd4f37d9e106aa6535` and fifteen Moirai packages at
+[#592](https://github.com/ryancinsight/ritk/pull/592), merged as
+`620c03342f3951366441f1f908d05bc3f249f566`; its exact replay source is
+`36b8330d3dfa450ae81523fc1ebc6e59413a1dc4`, with all six Metis packages at
+`219143bbf3596aea85fa4624d7d5241a63b4cf0d` and fifteen Moirai packages at
 `0e2e1bbb2d81e16dd9c694ba46a9e9710e034417`. The standalone Cargo.lock SHA-256
-is `c1ccbc7785cce37d4e2322002fd19b0bb4ab03fec03ab7d4154fa6cfbcf470b1`. It
+is `acb5bd6c7c82ced80c052ae542dcd63992badf8d00a982c986f64716f5736b10`. It
 reads all 94 saved files (49,807,236 bytes), reproduces the revision-bound
 1280 × 800 MRI frame with SHA-256
 `259dd79103482756c4e688621bebafc841cc40f1df10ff2bbd7f9d04b7b4d401` and
 411,589 non-black pixels, and rejects an invalid study. The locked replay's
 executable digest is
-`2f44ae2f9a3facc7c8659e5ac246af235021ab9a3e84ffabbff9d2d823099035`;
+`f416deadbb8a17ab4ffa1d58e1eef007bd1887883ad638fbbf82fa038ec063f9`;
 the [RITK replay provenance](https://github.com/ryancinsight/ritk/blob/main/docs/manual/images/dicom-metis-real-mri.json)
 is authoritative for the example digest, storage-reuse oracles and physical
 spacing carried into the native and browser presentation boundaries.
-Hosted browser run [35690425860](https://github.com/ryancinsight/ritk/actions/runs/35690425860)
-completed against RITK PR #588 merge `27ac7d12bc69a04f7fb12e5ba41ef8fd4fe93aa9`.
-Chromium and Firefox saved-study chooser lanes, Chromium window and projection
+The post-merge hosted browser run [35704771969](https://github.com/ryancinsight/ritk/actions/runs/35704771969)
+is dispatched against RITK merge `620c03342f3951366441f1f908d05bc3f249f566`
+and Metis `219143bbf3596aea85fa4624d7d5241a63b4cf0d`; browser conclusions are
+recorded only after its artifacts are collected. The prior run
+[35690425860](https://github.com/ryancinsight/ritk/actions/runs/35690425860)
+completed against the older RITK PR #588 replay and remains historical. In that
+historical run, Chromium and Firefox saved-study chooser lanes, Chromium window and projection
 lanes, and the responsive Chromium/Firefox lanes passed the real 94-file,
 49,807,236-byte study with exact RGBA, semantic and teardown oracles. WebKit
 accepted all 94 chooser paths and then rejected the bounded whole-file read;
