@@ -851,3 +851,11 @@ an owner. “Unsupported” cannot replace delivery of a required mobile/native 
 ## METIS-GALLERY-001 — User file drop gallery [patch]
 - Status: done; delivery: [PR #81](https://github.com/ryancinsight/metis/pull/81), merge `18cf147`.
 - Outcome: Browser gallery accepts a complete public 409-file DICOM study through the bounded Metis drop area and renders three RITK-owned orthogonal frames; the file-backed Edge run, rejection probes and full Windows gate passed.
+
+<a id="METIS-CITATIONS-002"></a>
+## METIS-CITATIONS-002 — Batch revision citation queries
+- Status: review; priority: P1; integrator: design-session; last-update: 2026-09-22.
+- Outcome: retain complete citation checks within the committed Python test budget.
+- Scope: scripts/citations.py and its existing test module.
+- Acceptance: reachable, unreachable and foreign-object classifications are unchanged; command failures surface.
+- Evidence: 15 focused tests pass; full 339-test Python suite passes in 38.447 seconds with one skip under the unchanged 60-second bound.
