@@ -42,6 +42,10 @@ REGISTRY_BOUNDARIES = {
     # No Atlas provider exposes Unicode extended grapheme segmentation; this
     # pure-Rust dependency is the bounded browser text-policy boundary.
     ("metis-web", "unicode-segmentation"),
+    # Development-only measurement instrument for the software rasterizer; no
+    # Atlas provider supplies statistical benchmark sampling, and the crate
+    # never enters a shipped artifact.
+    ("metis-platform", "criterion"),
 }
 
 
@@ -467,6 +471,11 @@ def run_gate():
                                  "--tool", str(distribution_tool), "--output", str(OUTPUT / "distribution"),
                                  *(["--install"] if arguments.install else [])], seconds=720)
         cargo("release-tests", ["nextest", "run", "--workspace", "--release", "--profile", "ci"])
+        # Benchmarks are local measurement instruments, so the gate proves only
+        # that every bench builds and executes one iteration. Timing runs and
+        # their stored baselines stay on the controlled local machine class.
+        cargo("bench-smoke", ["bench", "-p", "metis-platform", "--bench", "rasterizer"],
+              tail=("--", "--test"))
         cargo("doctests", ["test", "--workspace", "--doc"])
         cargo("docs", ["doc", "--workspace", "--no-deps"])
         example = pathlib.Path(metadata["target_directory"]) / "debug" / "examples" / ("clinical_infusion_workflow" + (".exe" if sys.platform == "win32" else ""))
