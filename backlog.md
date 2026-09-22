@@ -16,8 +16,9 @@
 
 <a id="METIS-RASTER-SPAN-001"></a>
 ## METIS-RASTER-SPAN-001 — Span-based software fill and glyph runs [patch]
-- Status: in-progress; priority: P1; owner: Metis presentation; integrator: root; last-update: 2026-09-22; dependencies: METIS-UI-001; risk: composite drift
-- lease: root — crates/metis-platform/src/{framebuffer,rasterizer,font}.rs, benches/ — 2026-09-22T00:00:00-04:00
+- Status: review; priority: P1; owner: Metis presentation; integrator: root; last-update: 2026-09-22; dependencies: METIS-UI-001; risk: composite drift
+- Delivered: `SourceOver` holds the per-source terms once; opaque fills write `slice::fill` over clipped row spans, translucent fills composite through one shared blend that divides by a constant when the destination is opaque, and glyph rows emit coalesced runs instead of one clipped fill per set bit. `blend_pixel` now delegates to the same terms, so one compositing implementation serves both routes.
+- Evidence: [software rasterizer span-fill evidence](docs/VERIFICATION.md#software-rasterizer-span-fill-evidence--2026-09-22) records 84x on opaque full-surface fills, 88x on the card stack, 4.05x on scaled text and 1.47x on translucent fills, against a measured six-percent identical-code drift on this host. 512 randomized rectangles over both destination-alpha regimes and every glyph at three scales composite bit-identically through both routes.
 - Outcome: opaque rectangle fills write contiguous row spans, translucent fills composite through one shared packed blend with the per-source terms hoisted out of the pixel loop, and glyph rows emit coalesced horizontal runs instead of one clipped fill per set bit.
 - Scope: `metis-platform` framebuffer span access, `fill_bounds`, `draw_glyph_scaled`, and the first committed criterion instrument for the software rasterizer. No style-contract, geometry or public-surface change.
 - Oracle: every pixel is bit-identical to the current per-pixel path — a differential test composites randomized rectangles and alphas through both routes and asserts equal framebuffers; the existing platform suite passes unchanged; the committed bench records a measured baseline and post-change comparison.
