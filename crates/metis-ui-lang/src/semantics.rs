@@ -154,6 +154,11 @@ fn role_for(element: &DomElement) -> Result<SemanticRole> {
     Ok(match tag.as_str() {
         "screen" | "application" => SemanticRole::Application,
         "main" => SemanticRole::Main,
+        "nav" => SemanticRole::Navigation,
+        "aside" => SemanticRole::Complementary,
+        "toolbar" => SemanticRole::Toolbar,
+        "menu" => SemanticRole::Menu,
+        "menuitem" => SemanticRole::MenuItem,
         "button" => SemanticRole::Button,
         "input" | "textarea" | "text-input" => SemanticRole::TextBox,
         "checkbox" => SemanticRole::CheckBox,
@@ -172,7 +177,12 @@ fn role_from_name(value: &str) -> Result<SemanticRole> {
     match value.trim().to_ascii_lowercase().as_str() {
         "application" => Ok(SemanticRole::Application),
         "main" => Ok(SemanticRole::Main),
+        "navigation" => Ok(SemanticRole::Navigation),
+        "complementary" => Ok(SemanticRole::Complementary),
         "group" => Ok(SemanticRole::Group),
+        "toolbar" => Ok(SemanticRole::Toolbar),
+        "menu" => Ok(SemanticRole::Menu),
+        "menuitem" => Ok(SemanticRole::MenuItem),
         "button" => Ok(SemanticRole::Button),
         "text" | "label" => Ok(SemanticRole::Text),
         "textbox" => Ok(SemanticRole::TextBox),
@@ -191,7 +201,7 @@ fn role_from_name(value: &str) -> Result<SemanticRole> {
 
 fn actions_for(role: SemanticRole) -> Vec<SemanticAction> {
     match role {
-        SemanticRole::Button => vec![SemanticAction::Activate],
+        SemanticRole::Button | SemanticRole::MenuItem => vec![SemanticAction::Activate],
         SemanticRole::TextBox => vec![SemanticAction::SetValue],
         SemanticRole::CheckBox | SemanticRole::Radio => vec![SemanticAction::Toggle],
         SemanticRole::Slider => vec![SemanticAction::AdjustValue],
@@ -346,119 +356,4 @@ fn limit_error(message: &'static str) -> MetisError {
 }
 
 #[cfg(test)]
-mod tests {
-    use super::{MAX_SEMANTIC_TEXT_BYTES, SemanticAction, SemanticRole, SemanticTree};
-    use crate::parse_markup;
-    use metis_core::ErrorCode;
-
-    #[test]
-    fn derives_roles_names_states_and_actions() {
-        let document = parse_markup(
-            "<screen id='root'><text id='title'>Clinical study</text><button id='save' aria-labelledby='title'>Save</button><input id='patient' aria-describedby='title' value='PT-1' tabindex='0'/><checkbox id='ready' aria-checked='true'/></screen>",
-        )
-        .expect("document");
-        let tree = SemanticTree::from_document(&document).expect("semantic tree");
-        assert_eq!(tree.element_count, 5);
-        assert_eq!(tree.root.role, SemanticRole::Application);
-        assert_eq!(tree.root.children[1].name, "Clinical study");
-        assert_eq!(
-            tree.root.children[1].actions,
-            vec![SemanticAction::Activate]
-        );
-        assert_eq!(
-            tree.root.children[2].description.as_deref(),
-            Some("Clinical study")
-        );
-        assert_eq!(tree.root.children[2].value.as_deref(), Some("PT-1"));
-        assert!(tree.root.children[2].focusable);
-        assert_eq!(tree.root.children[3].checked, Some(true));
-        assert_eq!(tree.root.children[3].actions, vec![SemanticAction::Toggle]);
-    }
-
-    #[test]
-    fn rejects_duplicate_or_unresolved_identity_and_malformed_state() {
-        for (markup, code) in [
-            (
-                "<screen><text id='same'/><button id='same'/></screen>",
-                ErrorCode::MalformedMarkup,
-            ),
-            (
-                "<screen><button aria-labelledby='missing'>x</button></screen>",
-                ErrorCode::MalformedMarkup,
-            ),
-            (
-                "<screen><checkbox aria-checked='maybe'/></screen>",
-                ErrorCode::MalformedMarkup,
-            ),
-            (
-                "<screen><button role='unsupported'>x</button></screen>",
-                ErrorCode::MalformedMarkup,
-            ),
-        ] {
-            let document = parse_markup(markup).expect("parser accepts source");
-            assert_eq!(
-                SemanticTree::from_document(&document)
-                    .expect_err("semantic validation must reject")
-                    .code,
-                code
-            );
-        }
-    }
-
-    #[test]
-    fn hidden_and_disabled_nodes_have_no_actions_or_focus() {
-        let document = parse_markup(
-            "<screen><button id='hidden' hidden='false'>Hidden</button><button id='disabled' disabled='false'>Disabled</button></screen>",
-        )
-        .expect("document");
-        let tree = SemanticTree::from_document(&document).expect("semantic tree");
-        for node in &tree.root.children {
-            assert!(!node.focusable);
-            assert!(node.actions.is_empty());
-        }
-    }
-
-    #[test]
-    fn hidden_ancestors_hide_descendant_actions_and_focusability() {
-        let document = parse_markup(
-            "<screen><group id='html-hidden' hidden='true'><button id='nested-html'>Hidden</button></group><group id='aria-hidden' aria-hidden='true'><button id='nested-aria' aria-hidden='false'>Hidden</button></group><button id='visible'>Visible</button></screen>",
-        )
-        .expect("document");
-        let tree = SemanticTree::from_document(&document).expect("semantic tree");
-
-        let html_group = &tree.root.children[0];
-        let aria_group = &tree.root.children[1];
-        let visible = &tree.root.children[2];
-        for child in [&html_group.children[0], &aria_group.children[0]] {
-            assert!(child.hidden);
-            assert!(!child.focusable);
-            assert!(child.actions.is_empty());
-        }
-        assert!(html_group.hidden);
-        assert!(aria_group.hidden);
-        assert!(visible.focusable);
-        assert_eq!(visible.actions, vec![SemanticAction::Activate]);
-    }
-
-    #[test]
-    fn bounds_text_and_tabindex_before_host_projection() {
-        let long_text = "x".repeat(MAX_SEMANTIC_TEXT_BYTES + 1);
-        let document = parse_markup(&format!("<screen><button>{long_text}</button></screen>"))
-            .expect("parser accepts bounded source");
-        assert_eq!(
-            SemanticTree::from_document(&document)
-                .expect_err("oversized semantic name")
-                .code,
-            ErrorCode::LayoutOverflow
-        );
-
-        let document = parse_markup("<screen><button tabindex='later'>Open</button></screen>")
-            .expect("parser accepts source");
-        assert_eq!(
-            SemanticTree::from_document(&document)
-                .expect_err("malformed tabindex")
-                .code,
-            ErrorCode::MalformedMarkup
-        );
-    }
-}
+mod tests;

@@ -150,6 +150,9 @@ stable `label-patient` identity to `Focus` and bounded `SetValue` handling.
 Both routes use the same bounded native event queue as keyboard input; an
 accepted patient value repaints the frontend and updates the semantic value.
 Oversized or control-bearing replacements are rejected before state mutation.
+Navigation, complementary, toolbar, menu and menu-item roles map through the
+same format-neutral contract; Moirai PR [#432](https://github.com/ryancinsight/Moirai/pull/432)
+(merge `0e2e1bbb2d81e16dd9c694ba46a9e9710e034417`) maps them to AccessKit.
 Projection rejects duplicate or zero identities, oversized strings and future
 semantic roles/actions that are not in the admitted native vocabulary.
 The provider implementation is in Moirai (PRs [#410](https://github.com/ryancinsight/Moirai/pull/410),

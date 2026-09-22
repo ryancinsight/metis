@@ -63,6 +63,18 @@ acceptance.
 The remaining METIS-A11Y-001 work is supported screen-reader and host-preference
 evidence. This ADR does not claim those capabilities.
 
+## Revision 2026-09-22 — Command-surface role bridge
+
+The admitted role vocabulary now includes navigation and complementary
+landmarks, toolbars, menus and menu items. `metis-app` preserves these names in
+semantic captures and maps them through the host-neutral native contract. The
+Moirai PAL extension in PR [#432](https://github.com/ryancinsight/Moirai/pull/432)
+(merge `0e2e1bbb2d81e16dd9c694ba46a9e9710e034417`) maps the same roles directly
+to AccessKit, keeping operating-system types out of `metis-ui-lang` while
+allowing native UI Automation consumers to retain command-surface semantics.
+Menu items use the existing typed `Activate` action, and the hidden/disabled
+guards remain enforced before any host projection.
+
 ## Revision 2026-09-21 — Windows native bridge
 
 The native boundary now consumes the validated tree without adding operating

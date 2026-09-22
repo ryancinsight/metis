@@ -23,11 +23,14 @@ The same document can be projected into a bounded [`SemanticTree`] before a
 host paints it. Roles are inferred from the admitted element vocabulary or an
 explicit `role`, names resolve through `aria-label`/`aria-labelledby` and text,
 and states/actions cover focus, disabled, hidden, value, selection and
-activation. Duplicate IDs, unresolved references, unknown roles, malformed
-state values and oversized semantic text fail with typed UI errors. The tree
-is a host-neutral contract: native UIA, `NSAccessibility` or AT-SPI bridges
-and browser accessibility remain host responsibilities, and tree presence
-alone does not establish spoken screen-reader support.
+activation. Navigation landmarks, complementary sidebars, toolbars, menus and
+menu items use the same bounded role/action contract, so a title bar or command
+surface does not require a JavaScript state store. Duplicate IDs, unresolved
+references, unknown roles, malformed state values and oversized semantic text
+fail with typed UI errors. The tree is a host-neutral contract: native UIA,
+`NSAccessibility` or AT-SPI bridges and browser accessibility remain host
+responsibilities, and tree presence alone does not establish spoken
+screen-reader support.
 
 ```rust
 use metis_ui_lang::{SemanticAction, SemanticRole, SemanticTree, parse_markup};
@@ -36,6 +39,23 @@ let document = parse_markup("<screen><button id='open'>Open study</button></scre
 let tree = SemanticTree::from_document(&document)?;
 assert_eq!(tree.root.children[0].role, SemanticRole::Button);
 assert_eq!(tree.root.children[0].actions, vec![SemanticAction::Activate]);
+# Ok::<(), metis_core::error::MetisError>(())
+```
+
+Command surfaces use the same projection without a second state model:
+
+```rust
+use metis_ui_lang::{SemanticAction, SemanticRole, SemanticTree, parse_markup};
+
+let document = parse_markup(
+    "<screen><toolbar aria-label='Study toolbar'><menuitem>Open study</menuitem></toolbar></screen>",
+)?;
+let tree = SemanticTree::from_document(&document)?;
+assert_eq!(tree.root.children[0].role, SemanticRole::Toolbar);
+assert_eq!(
+    tree.root.children[0].children[0].actions,
+    vec![SemanticAction::Activate]
+);
 # Ok::<(), metis_core::error::MetisError>(())
 ```
 

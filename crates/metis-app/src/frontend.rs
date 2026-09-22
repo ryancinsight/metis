@@ -201,7 +201,12 @@ fn semantic_role_name(role: SemanticRole) -> &'static str {
     match role {
         SemanticRole::Application => "application",
         SemanticRole::Main => "main",
+        SemanticRole::Navigation => "navigation",
+        SemanticRole::Complementary => "complementary",
         SemanticRole::Group => "group",
+        SemanticRole::Toolbar => "toolbar",
+        SemanticRole::Menu => "menu",
+        SemanticRole::MenuItem => "menuitem",
         SemanticRole::Button => "button",
         SemanticRole::Text => "text",
         SemanticRole::TextBox => "textbox",
