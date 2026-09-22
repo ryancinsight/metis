@@ -2,7 +2,7 @@
 
 use crate::DisplayScale;
 use crate::font::{FONT_WIDTH, draw_glyph_scaled};
-use crate::framebuffer::{Color, Framebuffer, Rect};
+use crate::framebuffer::{Color, Framebuffer, Rect, SourceOver};
 mod stroke;
 
 const LEFT: u8 = 1;
@@ -12,6 +12,13 @@ const BOTTOM: u8 = 8;
 
 pub use stroke::{LineCap, LineJoin, MAX_STROKE_POINTS, StrokeWidth, draw_polyline};
 
+/// Composites a color over the visible part of an axis-aligned span rectangle.
+///
+/// The bounds are clipped once, then each covered row is written as one
+/// contiguous span. An opaque source replaces the span outright because
+/// source-over with a fully opaque source reduces to the source value; a
+/// translucent source composites through the shared [`SourceOver`] terms. The
+/// composited result is identical to blending each pixel on its own.
 pub(crate) fn fill_bounds(
     fb: &mut Framebuffer,
     left: i64,
@@ -20,17 +27,29 @@ pub(crate) fn fill_bounds(
     bottom: i64,
     color: Color,
 ) {
-    let left = left.clamp(0, i64::from(fb.width()));
-    let top = top.clamp(0, i64::from(fb.height()));
-    let right = right.clamp(0, i64::from(fb.width()));
-    let bottom = bottom.clamp(0, i64::from(fb.height()));
-    for y in top..bottom {
-        for x in left..right {
-            fb.blend_pixel(
-                i32::try_from(x).expect("invariant: framebuffer coordinates fit i32"),
-                i32::try_from(y).expect("invariant: framebuffer coordinates fit i32"),
-                color,
-            );
+    let source = SourceOver::new(color);
+    if source.is_transparent() {
+        return;
+    }
+    let clamp = |value: i64, limit: u32| -> u32 {
+        u32::try_from(value.clamp(0, i64::from(limit)))
+            .expect("invariant: a clamped bound is a nonnegative surface coordinate")
+    };
+    let left = clamp(left, fb.width());
+    let right = clamp(right, fb.width());
+    let top = clamp(top, fb.height());
+    let bottom = clamp(bottom, fb.height());
+    if right <= left || bottom <= top {
+        return;
+    }
+    if source.is_opaque() {
+        let packed = source.packed();
+        for y in top..bottom {
+            fb.row_span_mut(y, left, right).fill(packed);
+        }
+    } else {
+        for y in top..bottom {
+            fb.composite_span(y, left, right, source);
         }
     }
 }
@@ -236,6 +255,109 @@ fn scaled_extent(value: u64, effective_milli: u64) -> i64 {
 mod tests {
     use super::*;
     use crate::font::draw_glyph;
+
+    /// Deterministic xorshift source so a differential failure replays exactly.
+    struct Sequence(u64);
+
+    impl Sequence {
+        fn next(&mut self) -> u64 {
+            self.0 ^= self.0 << 13;
+            self.0 ^= self.0 >> 7;
+            self.0 ^= self.0 << 17;
+            self.0
+        }
+
+        fn in_range(&mut self, low: i32, high: i32) -> i32 {
+            let span = u64::from(high.abs_diff(low)) + 1;
+            let offset = i32::try_from(self.next() % span).expect("bounded span fits i32");
+            low + offset
+        }
+
+        fn color(&mut self) -> Color {
+            let bits = self.next();
+            let channel = |shift: u32| {
+                u8::try_from((bits >> shift) & 0xff).expect("byte extracted from a word")
+            };
+            Color::rgba(channel(0), channel(8), channel(16), channel(24))
+        }
+    }
+
+    /// Composites a rectangle one pixel at a time, the contract span filling
+    /// must reproduce exactly.
+    fn blend_each_pixel(fb: &mut Framebuffer, rect: Rect, color: Color) {
+        for row in 0..rect.height {
+            for column in 0..rect.width {
+                fb.blend_pixel(
+                    rect.x.saturating_add(column),
+                    rect.y.saturating_add(row),
+                    color,
+                );
+            }
+        }
+    }
+
+    #[test]
+    fn span_fill_matches_per_pixel_compositing_for_random_rectangles() {
+        let mut sequence = Sequence(0x2545_f491_4f6c_dd1d);
+        for case in 0..512 {
+            let mut spans = Framebuffer::new(37, 23).expect("differential surface");
+            let mut pixels = Framebuffer::new(37, 23).expect("reference surface");
+            // Alternate a transparent and an opaque starting surface so both
+            // destination-alpha regimes take part in the comparison.
+            if case % 2 == 0 {
+                spans.clear(Color::rgba(17, 200, 91, 203));
+                pixels.clear(Color::rgba(17, 200, 91, 203));
+            }
+            for _ in 0..4 {
+                let rect = Rect::new(
+                    sequence.in_range(-8, 40),
+                    sequence.in_range(-8, 26),
+                    sequence.in_range(0, 44),
+                    sequence.in_range(0, 30),
+                );
+                let color = sequence.color();
+                fill_rect(&mut spans, rect, color);
+                blend_each_pixel(&mut pixels, rect, color);
+            }
+            assert_eq!(
+                spans.pixels(),
+                pixels.pixels(),
+                "case {case} diverged from per-pixel compositing"
+            );
+        }
+    }
+
+    #[test]
+    fn glyph_runs_match_per_pixel_cell_compositing() {
+        for character in ['A', 'W', '8', '%', '_', ' ', '\u{1f4a5}'] {
+            for scale in [1_i32, 2, 3] {
+                let mut runs = Framebuffer::new(40, 60).expect("glyph surface");
+                let mut cells = Framebuffer::new(40, 60).expect("cell surface");
+                runs.clear(Color::WHITE);
+                cells.clear(Color::WHITE);
+                let color = Color::rgba(20, 60, 180, 137);
+                let requested = u32::try_from(scale).expect("small scale fits u32");
+                draw_glyph(&mut runs, 3, 5, character, color, requested);
+                for (row, byte) in (0_i32..16).zip(crate::font::get_glyph_bitmap(character)) {
+                    for column in 0_i32..8 {
+                        if byte & (0x80_u8 >> column) == 0 {
+                            continue;
+                        }
+                        blend_each_pixel(
+                            &mut cells,
+                            Rect::new(3 + column * scale, 5 + row * scale, scale, scale),
+                            color,
+                        );
+                    }
+                }
+                assert_eq!(
+                    runs.pixels(),
+                    cells.pixels(),
+                    "glyph {character:?} at scale {scale} diverged from per-cell compositing"
+                );
+            }
+        }
+    }
 
     #[test]
     fn extreme_geometry_clips_without_overflow() {

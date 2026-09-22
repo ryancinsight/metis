@@ -2428,6 +2428,74 @@ merged the Windows `ValuePattern.SetValue` action mapping at `d7b38d7`. These
 are provider and consumer contract checks: no OS screen reader, spoken output
 or host preference enablement is claimed.
 
+### Software renderer lowercase glyph evidence — 2026-09-22
+
+The bitmap table mapped both cases of every letter to one uppercase bitmap, so
+authored mixed-case text rendered in capitals regardless of its content, and
+fifteen common ASCII punctuation marks fell through to the replacement box.
+Each letter now carries its own lowercase bitmap on the shared baseline: the
+x-height band is rows 4 to 9, ascenders start at row 2 and descenders run
+through row 11.
+
+`metis-platform` asserts the contract rather than the artwork: every letter
+renders a different bitmap in each case and neither case is the replacement box
+or blank; ascender, x-height and descender letters occupy their documented row
+bands; every added punctuation mark differs from the replacement box; unmapped
+characters still render it; and no glyph paints the leftmost column of its
+cell, so a glyph cannot touch its neighbour at the `FONT_WIDTH` advance.
+
+Rendered evidence is reproduced by the committed example, which paints the
+authored form through the production framebuffer:
+
+```powershell
+cargo run --locked --example presentation
+```
+
+At revision `HEAD` the emitted `output/form.bmp` shows `Patient Demographics
+and Drug Prescription`, `Drug Concentration: 4.00 mg/mL` and `Target Dose:
+0.500 mcg/kg/min` as authored, with visible descenders on `g` and `p`. The
+surfaces whose source text is genuinely uppercase — the header, the session
+badge and the command labels — are unchanged.
+
+The window captures recorded in the [native capture
+manifest](manual/images/native-captures.json) are provenance bound to revision
+`0c8bcc32911c087bf686588cd4a7c56a29d0b92e` and remain valid for it. Their
+`observed` text is capitalized because that revision predates this change; they
+are historical records, not a current expectation.
+
+### Software rasterizer span-fill evidence — 2026-09-22
+
+`crates/metis-platform/benches/rasterizer.rs` is the first committed measurement
+instrument for the software renderer. `scripts/bench.py` builds it through the
+same neutral workspace the gate uses, pins the timing process to reserved
+performance cores at raised priority, records the host load either side of the
+run, and terminates the suite if it exceeds the committed 300-second budget.
+The gate runs the same binary in single-iteration `--test` mode only; wall-clock
+comparison stays on the controlled local machine.
+
+The measured surface is the 1280x800 physical extent used by the V12 fixtures.
+Before and after values are medians of pinned runs on an Intel Core Ultra 9
+285K (24 cores, reserved cores 2 and 3), host load 22 to 47 percent:
+
+| Case | Before | After | Ratio |
+| --- | --- | --- | --- |
+| `fill/opaque_full_surface` | 4.4057 ms | 52.26 us | 84x |
+| `fill/translucent_full_surface` | 4.4175 ms | 3.0150 ms | 1.47x |
+| `fill/card_stack` | 1.3631 ms | 15.49 us | 88x |
+| `text/label_scale_one` | 14.107 us | 7.326 us | 1.93x |
+| `text/paragraph_scale_two` | 561.73 us | 138.73 us | 4.05x |
+
+Repeating the unchanged opaque case across four runs produced 52.26, 53.04,
+56.66 and 58.92 microseconds, so this host drifts about six percent on identical
+code; only differences beyond that spread are read as real. The translucent case
+is stable to under two percent across the same runs.
+
+Correctness is a differential oracle, not the timing: `metis-platform`
+composites 512 randomized clipped rectangles over both transparent and opaque
+destinations, and every supported glyph at three scales, through both the span
+route and per-pixel `blend_pixel`, and asserts the framebuffers are equal. The
+change is therefore bit-identical, not an approximation traded for speed.
+
 ### Windows UI Automation action evidence — 2026-09-21
 
 The optional `scripts/python_native_accessibility.py` journey exercises the

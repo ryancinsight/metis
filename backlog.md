@@ -14,6 +14,35 @@
 - Basis: Metis main run `35648844306` failed only because Atlas `02a304f519c27b95169b87b732e6e631d51c205d` scanned its `_atlas` workflow checkout as member source (`oversized_files 0 -> 3`, `manifest_implementation 0 -> 2`, `existence_only_assertions 0 -> 4`).
 - Outcome: PR #331 advanced the workflow and source split; the exact full verifier passed 27 stages with 192 resolved packages, the intentional capture-failure negative oracle, and the merged Atlas scanner reporting zero regressions and zero host-state rows.
 
+<a id="METIS-GATE-VISUAL-BUDGET-001"></a>
+## METIS-GATE-VISUAL-BUDGET-001 — Restore headroom in the visual-tests budget [patch]
+- Status: todo; priority: P2; owner: Metis tooling; dependencies: none; risk: gate flake masking real failures
+- Observed 2026-09-22: `python -m unittest discover -s scripts/tests` runs 331 tests in 58.2 s against the stage's 60 s budget — about three percent headroom — so the stage terminates under any concurrent host load. Three consecutive gate runs on unrelated revisions failed in different stages purely on budget.
+- Outcome: the stage completes with headroom proportional to the host variance the repository already records, by making the suite faster rather than by raising the bound.
+- Scope: profile the 331 Python tests, attribute the dominant cost, and remove it — repeated subprocess launches and repeated fixture construction are the first suspects. Raising the 60-second bound in the offending diff is excluded.
+- Oracle: the suite completes within the committed budget with the documented margin on a loaded host, and the slowest tests are recorded so the next regression is attributable.
+- Note: a failing stage also loses its diagnostic. `run` writes the failure log through `output_path`, which rejects the neutral `subst` drive it is handed, so the real error is replaced by `ValueError: Unsafe gate output path`. Fix that with the budget, or every future stage failure is undiagnosable.
+
+<a id="METIS-TYPOGRAPHY-GLYPHS-001"></a>
+## METIS-TYPOGRAPHY-GLYPHS-001 — Real lowercase and punctuation glyphs [patch]
+- Status: review; priority: P1; owner: Metis presentation; integrator: root; last-update: 2026-09-22; dependencies: METIS-RASTER-SPAN-001; risk: stale rendered evidence
+- Delivered: each letter carries its own lowercase bitmap on the shared baseline and fifteen ASCII punctuation marks replace their replacement-box fallback; the case-folded arms are split so an uppercase literal no longer serves both cases.
+- Evidence: [software renderer lowercase glyph evidence](docs/VERIFICATION.md#software-renderer-lowercase-glyph-evidence--2026-09-22); five contract tests assert case distinction, row bands, punctuation coverage, replacement-box fallback and cell-width containment. The committed `presentation` example renders the authored form as written.
+- Outcome: the bitmap font carries a distinct lowercase bitmap per letter and the common ASCII punctuation that previously fell through to the replacement box, so authored mixed-case text renders as written instead of in capitals.
+- Scope: `metis-platform` glyph table and its tests, plus regenerated native captures and the manifest text they record. No style-contract, weight, layout or display-command change; `font-weight` stays rejected under its own item.
+- Oracle: each letter renders a different bitmap in each case; every added punctuation mark differs from the replacement box; ascender, x-height and descender bands land on the documented rows; the regenerated native capture is inspected and its observed text updated.
+- Verification: focused `cargo clippy -p metis-platform --all-targets -- -D warnings` and `cargo nextest run -p metis-platform`, workspace clippy and nextest, and the regenerated `native-host-capture` artifact.
+
+<a id="METIS-RASTER-SPAN-001"></a>
+## METIS-RASTER-SPAN-001 — Span-based software fill and glyph runs [patch]
+- Status: review; priority: P1; owner: Metis presentation; integrator: root; last-update: 2026-09-22; dependencies: METIS-UI-001; risk: composite drift
+- Delivered: `SourceOver` holds the per-source terms once; opaque fills write `slice::fill` over clipped row spans, translucent fills composite through one shared blend that divides by a constant when the destination is opaque, and glyph rows emit coalesced runs instead of one clipped fill per set bit. `blend_pixel` now delegates to the same terms, so one compositing implementation serves both routes.
+- Evidence: [software rasterizer span-fill evidence](docs/VERIFICATION.md#software-rasterizer-span-fill-evidence--2026-09-22) records 84x on opaque full-surface fills, 88x on the card stack, 4.05x on scaled text and 1.47x on translucent fills, against a measured six-percent identical-code drift on this host. 512 randomized rectangles over both destination-alpha regimes and every glyph at three scales composite bit-identically through both routes.
+- Outcome: opaque rectangle fills write contiguous row spans, translucent fills composite through one shared packed blend with the per-source terms hoisted out of the pixel loop, and glyph rows emit coalesced horizontal runs instead of one clipped fill per set bit.
+- Scope: `metis-platform` framebuffer span access, `fill_bounds`, `draw_glyph_scaled`, and the first committed criterion instrument for the software rasterizer. No style-contract, geometry or public-surface change.
+- Oracle: every pixel is bit-identical to the current per-pixel path — a differential test composites randomized rectangles and alphas through both routes and asserts equal framebuffers; the existing platform suite passes unchanged; the committed bench records a measured baseline and post-change comparison.
+- Verification: focused `cargo clippy -p metis-platform --all-targets -- -D warnings` and `cargo nextest run -p metis-platform`, then the committed `python scripts/verify.py` gate.
+
 <a id="METIS-GALLERY-CYCLES-001"></a>
 ## METIS-GALLERY-CYCLES-001 — Repeated saved-study browser lifecycle
 - Status: done; priority: P1; integrator: root; last-update: 2026-09-16.
