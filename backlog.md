@@ -14,6 +14,15 @@
 - Basis: Metis main run `35648844306` failed only because Atlas `02a304f519c27b95169b87b732e6e631d51c205d` scanned its `_atlas` workflow checkout as member source (`oversized_files 0 -> 3`, `manifest_implementation 0 -> 2`, `existence_only_assertions 0 -> 4`).
 - Outcome: PR #331 advanced the workflow and source split; the exact full verifier passed 27 stages with 192 resolved packages, the intentional capture-failure negative oracle, and the merged Atlas scanner reporting zero regressions and zero host-state rows.
 
+<a id="METIS-TYPOGRAPHY-GLYPHS-001"></a>
+## METIS-TYPOGRAPHY-GLYPHS-001 — Real lowercase and punctuation glyphs [patch]
+- Status: in-progress; priority: P1; owner: Metis presentation; integrator: root; last-update: 2026-09-22; dependencies: METIS-RASTER-SPAN-001; risk: stale rendered evidence
+- lease: root — crates/metis-platform/src/font.rs, docs/manual/images/native-* — 2026-09-22T00:00:00-04:00
+- Outcome: the bitmap font carries a distinct lowercase bitmap per letter and the common ASCII punctuation that previously fell through to the replacement box, so authored mixed-case text renders as written instead of in capitals.
+- Scope: `metis-platform` glyph table and its tests, plus regenerated native captures and the manifest text they record. No style-contract, weight, layout or display-command change; `font-weight` stays rejected under its own item.
+- Oracle: each letter renders a different bitmap in each case; every added punctuation mark differs from the replacement box; ascender, x-height and descender bands land on the documented rows; the regenerated native capture is inspected and its observed text updated.
+- Verification: focused `cargo clippy -p metis-platform --all-targets -- -D warnings` and `cargo nextest run -p metis-platform`, workspace clippy and nextest, and the regenerated `native-host-capture` artifact.
+
 <a id="METIS-RASTER-SPAN-001"></a>
 ## METIS-RASTER-SPAN-001 — Span-based software fill and glyph runs [patch]
 - Status: review; priority: P1; owner: Metis presentation; integrator: root; last-update: 2026-09-22; dependencies: METIS-UI-001; risk: composite drift
