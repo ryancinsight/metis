@@ -44,6 +44,12 @@ rather than a reversal: the rejection exists to stop a declaration being
 silently dropped, so it lifts exactly when the renderer gains the semantics —
 one property at a time, each with the paint evidence that earns it.
 
+Revision: 2026-09-22 — [METIS-RASTER-SHADOW-001](../../backlog.md#METIS-RASTER-SHADOW-001)
+admits `box-shadow` for one outer shadow of two offsets, an optional blur and a
+color ([ADR 0046](0046-gaussian-box-shadows.md)). `inset`, a spread distance
+and comma-separated lists stay typed errors: the renderer has no semantics for
+them, so the admission is bounded the way `font-weight` is.
+
 ## Context
 
 `metis-ui-lang` parses a bounded CSS-inspired subset for the software
@@ -78,8 +84,9 @@ browser CSS engine or change browser DOM parsing.
   admitted since the 2026-09-22 revision: it parses as a nonnegative pixel
   length on the same grammar as `gap` and `border-width`, scales by the host
   display scale and clamps to half the shorter side of the laid-out rectangle.
-  The same validation runs during layout for programmatically constructed DOMs,
-  so a public field cannot silently request an ineffective style.
+  `box-shadow` is admitted since the 2026-09-22 revision as `none` or
+  `<x> <y> [<blur>] <color>`; layout scales it and reports a blur past the
+  renderer's bound as a layout overflow.
 - `parse_markup` propagates style errors at the element boundary. Layout keeps
   ownership of representability errors for programmatically constructed DOMs,
   including non-finite percentages and coordinate overflow.

@@ -4,9 +4,10 @@ use crate::parse_markup;
 use crate::parser::{MAX_DEPTH, MAX_NODES};
 use crate::style::{Color, Display, EdgeValues, Size};
 use metis_core::error::ErrorCode;
+use metis_platform::DisplayScale;
 use metis_platform::GlyphWeight;
 use metis_platform::framebuffer::{Framebuffer, Rect};
-use metis_platform::rasterizer::CornerRadius;
+use metis_platform::rasterizer::{BoxShadow, CornerRadius};
 use metis_platform::rasterizer::{LineCap, LineJoin, MAX_STROKE_POINTS, StrokeWidth};
 
 #[test]
@@ -188,7 +189,7 @@ fn hidden_programmatic_trees_still_obey_resource_limits() {
     let mut root = DomElement::new("leaf");
     for _ in 0..MAX_DEPTH {
         let mut parent = DomElement::new("parent");
-        parent.children.push(DomNode::Element(root));
+        parent.children.push(DomNode::Element(Box::new(root)));
         root = parent;
     }
     root.computed_style.display = Display::None;
@@ -337,4 +338,99 @@ fn empty_or_oversized_polylines_are_rejected_before_storage() {
         ErrorCode::LayoutOverflow
     );
     assert!(display.commands.is_empty());
+}
+
+#[test]
+fn box_shadow_is_painted_beneath_the_background_it_belongs_to() {
+    let doc = parse_markup(
+        "<a style='width:40px;height:20px;margin:10px;background:#fff;         border-radius:6px;box-shadow:0 4px 8px #00000080'/>",
+    )
+    .expect("markup");
+    let list = compute_layout(&doc, LayoutViewport::new(80, 60)).expect("layout");
+    let border_box = Rect::new(10, 10, 40, 20);
+    let radius = CornerRadius::clamped(6, border_box);
+    assert_eq!(
+        list.commands[..2],
+        [
+            DisplayCommand::DrawShadow {
+                rect: border_box,
+                radius,
+                shadow: BoxShadow::new(0, 4, 8, Color::rgba(0, 0, 0, 0x80)).expect("blur"),
+            },
+            DisplayCommand::FillRect {
+                rect: border_box,
+                radius,
+                color: Color::WHITE,
+            },
+        ]
+    );
+    let background = Color::rgb(200, 210, 220);
+    let mut fb = Framebuffer::new(80, 60).expect("surface");
+    fb.clear(background);
+    list.render_to(&mut fb);
+    // The box paints over its own shadow; the offset shadow shows below it
+    // and fades with distance.
+    assert_eq!(fb.get_pixel(30, 20), Color::WHITE);
+    let near = fb.get_pixel(30, 31);
+    let far = fb.get_pixel(30, 38);
+    assert!(
+        near.r < far.r && far.r < background.r,
+        "{near:?} then {far:?}"
+    );
+    // Five pixels outside either horizontal edge, the downward offset leaves
+    // the pixel above the box lighter than the one below it.
+    let above = fb.get_pixel(30, 4);
+    let below = fb.get_pixel(30, 35);
+    assert!(above.r > below.r, "{above:?} above, {below:?} below");
+}
+
+#[test]
+fn box_shadow_follows_the_display_scale_and_its_blur_bound() {
+    let scaled = LayoutViewport::with_scale(
+        200,
+        200,
+        DisplayScale::from_milli(2_000).expect("200 percent"),
+    );
+    let doc = parse_markup("<a style='width:20px;height:10px;box-shadow:-1px 3px 5px #000'/>")
+        .expect("markup");
+    let list = compute_layout(&doc, scaled).expect("layout");
+    assert_eq!(
+        list.commands[0],
+        DisplayCommand::DrawShadow {
+            rect: Rect::new(0, 0, 40, 20),
+            radius: CornerRadius::SQUARE,
+            shadow: BoxShadow::new(-2, 6, 10, Color::BLACK).expect("blur"),
+        }
+    );
+    // 200 authored pixels at twice the scale exceed the renderer's bound.
+    let doc = parse_markup("<a style='width:20px;height:10px;box-shadow:0 0 200px #000'/>")
+        .expect("markup");
+    assert_eq!(
+        compute_layout(&doc, scaled).expect_err("blur bound").code,
+        ErrorCode::LayoutOverflow
+    );
+    const { assert!(200 * 2 > BoxShadow::MAX_BLUR && 200 <= BoxShadow::MAX_BLUR) };
+}
+
+#[test]
+fn aligned_children_carry_their_shadow_with_them() {
+    let doc = parse_markup(
+        "<a style='width:100px;height:40px;justify-content:center;align-items:center'>         <b style='width:30px;height:10px;background:#fff;box-shadow:0 2px 4px #0003'/></a>",
+    )
+    .expect("markup");
+    let list = compute_layout(&doc, LayoutViewport::new(100, 40)).expect("layout");
+    let rects: Vec<Rect> = list
+        .commands
+        .iter()
+        .filter_map(|command| match command {
+            DisplayCommand::DrawShadow { rect, .. } | DisplayCommand::FillRect { rect, .. } => {
+                Some(*rect)
+            }
+            _ => None,
+        })
+        .collect();
+    assert_eq!(
+        rects,
+        [Rect::new(35, 15, 30, 10), Rect::new(35, 15, 30, 10)]
+    );
 }
