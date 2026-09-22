@@ -1,6 +1,5 @@
 //! Renders a bounded raster image through the software display-list path.
 
-use metis_platform::rasterizer::{CornerRadius, draw_rect_outline, fill_rect};
 use metis_platform::{Color, Framebuffer, Rect};
 use metis_ui_lang::{
     AffineTransform, DisplayCommand, DisplayList, ImagePlacement, ImageSampling, ImageTransform,
@@ -48,7 +47,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     )?));
     let mut display = DisplayList {
         commands: vec![DisplayCommand::FillRect {
-            rect: Rect::new(0, 0, 240, 240),
+            rect: Rect::new(0, 0, 240, 180),
             color: background,
         }],
     };
@@ -77,31 +76,10 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         LineJoin::Miter,
         Color::GRAY,
     )?;
-    let mut framebuffer = Framebuffer::new(240, 240)?;
+    let mut framebuffer = Framebuffer::new(240, 180)?;
     display.render_to(&mut framebuffer);
-    // A square and a rounded panel side by side: the same fill and border
-    // entry points, differing only in the corner radius they are given.
-    let square_panel = Rect::new(20, 190, 92, 40);
-    fill_rect(
-        &mut framebuffer,
-        square_panel,
-        CornerRadius::SQUARE,
-        Color::WHITE,
-    );
-    draw_rect_outline(
-        &mut framebuffer,
-        square_panel,
-        2,
-        CornerRadius::SQUARE,
-        Color::BLUE,
-    );
-    let rounded_panel = Rect::new(128, 190, 92, 40);
-    let radius = CornerRadius::clamped(14, rounded_panel);
-    fill_rect(&mut framebuffer, rounded_panel, radius, Color::WHITE);
-    draw_rect_outline(&mut framebuffer, rounded_panel, 2, radius, Color::BLUE);
 
     assert_example_pixels(&framebuffer, background);
-    assert_panel_corners(&framebuffer, square_panel, rounded_panel, background);
     std::fs::write(
         "output/image-placement.bmp",
         framebuffer_artifacts::bmp_bytes(&framebuffer)?,
@@ -137,31 +115,4 @@ fn assert_example_pixels(framebuffer: &Framebuffer, background: Color) {
         assert_eq!(framebuffer.get_pixel(x, y), expected);
     }
     assert_eq!(framebuffer.get_pixel(0, 0), background);
-}
-
-/// Asserts the corner contract the two panels demonstrate.
-fn assert_panel_corners(framebuffer: &Framebuffer, square: Rect, rounded: Rect, background: Color) {
-    // A square panel paints its extreme corner; a rounded one leaves it clear.
-    assert_eq!(framebuffer.get_pixel(square.x, square.y), Color::BLUE);
-    assert_eq!(framebuffer.get_pixel(rounded.x, rounded.y), background);
-    // Both keep their straight edges and their interiors.
-    let midpoint = |rect: Rect| (rect.x + rect.width / 2, rect.y);
-    for rect in [square, rounded] {
-        let (x, y) = midpoint(rect);
-        assert_eq!(framebuffer.get_pixel(x, y), Color::BLUE);
-        assert_eq!(
-            framebuffer.get_pixel(x, y + rect.height / 2),
-            Color::WHITE,
-            "panel interior is not filled"
-        );
-    }
-    // The rounded corner is antialiased, so its arc carries partial coverage.
-    let partial = (rounded.x..rounded.x + 16)
-        .flat_map(|x| (rounded.y..rounded.y + 16).map(move |y| (x, y)))
-        .filter(|(x, y)| {
-            let pixel = framebuffer.get_pixel(*x, *y);
-            pixel != background && pixel != Color::WHITE && pixel != Color::BLUE
-        })
-        .count();
-    assert!(partial >= 8, "rounded corner is not antialiased: {partial}");
 }

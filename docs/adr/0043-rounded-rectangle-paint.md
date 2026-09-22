@@ -80,4 +80,9 @@ faster than the square path before the span-fill change, at roughly one percent
 of a 60 Hz frame budget.
 
 Until the follow-up increment lands, the capability is reachable from Rust
-callers and the committed example but not from an authored stylesheet.
+callers but not from an authored stylesheet. The committed visual
+demonstration also waits for it: the `image` example's artifact is compared
+against a golden snapshot, and growing that snapshot by a quarter to hold a
+demonstration the next increment supersedes is not worth the tracked bytes.
+The form captures regenerate once, under review, when authored surfaces
+actually round.

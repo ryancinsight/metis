@@ -2449,9 +2449,15 @@ Eight tests cover the contract: radius clamping to half the shorter side,
 bit-identical square output, corner clearance with a fully covered centre and
 straight edges, antialiasing with horizontal and vertical symmetry, a border
 whose interior keeps its background, a radius clamped past the shape, empty and
-off-surface geometry, and a transparent source. `cargo run --locked --example
-image` renders a square and a rounded panel from the same entry points and
-asserts the corner contract between them.
+off-surface geometry, and a transparent source.
+
+No golden artifact changes here. A rounded panel was rendered and inspected at
+four-times magnification during development — the arcs are smooth, the border
+follows them and the interior stays clean — but the `image` example emits a
+golden-compared artifact, and enlarging it by a quarter to carry a
+demonstration the next increment supersedes is not worth the tracked bytes.
+The authored form captures regenerate once, under review, when
+METIS-RASTER-ROUND-002 makes surfaces actually round.
 
 Cost, measured through `scripts/bench.py` on the same pinned configuration as
 the span-fill evidence:
