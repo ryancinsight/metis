@@ -1714,10 +1714,15 @@ the [RITK replay provenance](https://github.com/ryancinsight/ritk/blob/main/docs
 is authoritative for the example digest, storage-reuse oracles and physical
 spacing carried into the native and browser presentation boundaries.
 Hosted browser run [35690425860](https://github.com/ryancinsight/ritk/actions/runs/35690425860)
-has been dispatched against the merged RITK tree; its cross-engine artifacts
-remain pending collection. RITK scans and decodes DICOM and owns the clinical
-pixels; Metis supplies the format-neutral chooser, bounded handoff and canvas
-host.
+completed against RITK PR #588 merge `27ac7d12bc69a04f7fb12e5ba41ef8fd4fe93aa9`.
+Chromium and Firefox saved-study chooser lanes, Chromium window and projection
+lanes, and the responsive Chromium/Firefox lanes passed the real 94-file,
+49,807,236-byte study with exact RGBA, semantic and teardown oracles. WebKit
+accepted all 94 chooser paths and then rejected the bounded whole-file read;
+Chromium WebGPU reported no adapter. These capability residuals and their source
+captures are recorded in the [RITK cross-engine provenance](https://github.com/ryancinsight/ritk/blob/main/docs/manual/images/dicom-metis-real-browser-mri-cross-engine.json).
+RITK scans and decodes DICOM and owns the clinical pixels; Metis supplies the
+format-neutral chooser, bounded handoff and canvas host.
 
 Build RITK's locked WASM library and package it with the pinned wasm-bindgen CLI
 as described in the RITK browser workflow linked above. From Metis, include that
