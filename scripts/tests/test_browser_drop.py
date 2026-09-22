@@ -372,9 +372,11 @@ class FileDropTests(unittest.TestCase):
             def __init__(self):
                 self.selectors = []
                 self.settles = []
+                self.events = []
 
             def execute(self, script, arguments):
                 if "scrollIntoView" in script:
+                    self.events.append("scroll")
                     return {
                         "ok": True,
                         "error": None,
@@ -383,14 +385,17 @@ class FileDropTests(unittest.TestCase):
                         "right": 512,
                         "bottom": 512,
                     }
+                self.events.append("context")
                 return {"width": 512, "height": 512, "context": arguments[1]}
 
             def execute_async(self, script, arguments):
                 self.settles.append((script, arguments))
+                self.events.append("settle")
                 return {"ok": True}
 
             def find(self, selector):
                 self.selectors.append(selector)
+                self.events.append("find")
                 return selector
 
         client = Client()
@@ -404,6 +409,7 @@ class FileDropTests(unittest.TestCase):
         }
 
         def record_screenshot(_client, target, _directory, label, _element):
+            _client.events.append("screenshot")
             target.screenshots.append({
                 "label": label,
                 "sha256": "stable",
@@ -426,6 +432,7 @@ class FileDropTests(unittest.TestCase):
             )
 
         self.assertEqual(client.selectors, ["#viewer-axial"])
+        self.assertEqual(client.events, ["context", "scroll", "settle", "find", "screenshot"])
         self.assertEqual(len(client.settles), 1)
         self.assertIn("requestAnimationFrame", client.settles[0][0])
         self.assertEqual(client.settles[0][1][0], 2)
