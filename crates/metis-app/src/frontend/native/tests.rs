@@ -236,8 +236,13 @@ fn dpi_event_repaints_and_scales_the_submit_hit_region() {
         DisplayScale::from_dpi(144).expect("144 DPI")
     );
     let scaled = submit_rect(&form.app).expect("scaled submit surface");
+    // The hit region scales on both axes. Its left edge is not a scaling
+    // signal: the control is centred, so its offset is half the space its
+    // card has left over, and on a fixed physical surface the control grows
+    // faster than that card does. A centred control therefore moves inward
+    // as the scale rises, which is correct and was never what this asserted.
     assert!(scaled.height > initial.height);
-    assert!(scaled.x > initial.x);
+    assert!(scaled.width > initial.width);
 }
 
 #[test]

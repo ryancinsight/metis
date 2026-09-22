@@ -34,6 +34,22 @@
 - Oracle: with no free space every child lands exactly where start alignment puts it, so existing captures are unchanged; a container with free space places children at the offsets each keyword defines; painter order is preserved; translation moves every command kind a child can emit, including text, strokes and images; `stretch` remains the default and a no-op.
 - Verification: focused and workspace `cargo clippy -D warnings`, `cargo nextest run`, `cargo doc`, and the visual baseline unchanged.
 
+<a id="METIS-FORM-STYLING-001"></a>
+## METIS-FORM-STYLING-001 — Adopt the admitted declarations in the demo form [patch]
+- Status: review; priority: P1; owner: Metis presentation; integrator: root; last-update: 2026-09-22; dependencies: METIS-LAYOUT-ALIGN-001; risk: stale golden captures
+- Delivered: radius on the header, navigation band, both cards, the command menu and every control; bold on the screen title, both card headings, the rate output and the control labels; a 44-pixel minimum height on controls with the label centred in it; and a fixed-width submit control centred in its row.
+- Evidence: [demo form adopts the admitted declarations](docs/VERIFICATION.md#demo-form-adopts-the-admitted-declarations--2026-09-22). The regenerated captures were inspected at four-times magnification; one DPI test assertion changed with its derivation, from the hit region's left edge to its scaling on both axes.
+- Outcome: the authored surface uses the declarations the renderer now paints, so the demonstration shows the capability instead of describing it: rounded cards and controls, bold headings, controls at an accessible hit-target height with their labels centred in it, and a centred submit control.
+- Scope: style declarations in `CLINICAL_SCREEN_XML` and the regenerated captures. Label text is unchanged — it is asserted by the native accessibility journey and the semantic baseline, so rewording is its own item.
+- Oracle: the regenerated captures are inspected and show rounded corners, heavier headings and centred controls; semantic projection is unchanged because only styles move; the layout tests and the full gate stay green.
+- Follow-up: the submit and menu labels carry bracket decoration (`[ SUBMIT CALCULATION TO BACKEND ]`) that stood in for a button affordance the renderer could not paint. With a rounded, centred control the brackets are redundant, but the text is an accessibility-journey oracle; filed as METIS-FORM-LABELS-001.
+
+<a id="METIS-FORM-LABELS-001"></a>
+## METIS-FORM-LABELS-001 — Drop bracket decoration from control labels [patch]
+- Status: todo; priority: P3; owner: Metis presentation; dependencies: METIS-FORM-STYLING-001; risk: accessibility oracle drift
+- Outcome: control labels read as words rather than ASCII button art, now that the control itself carries the affordance.
+- Blocker-shaped detail: `[ SUBMIT CALCULATION TO BACKEND ]`, `[ COMMANDS ]` and the uppercase menu labels are asserted in `crates/metis-app/src/frontend/native.rs`, `scripts/python_native_accessibility.py`, the native semantic baseline and the manual, so the change is a coordinated rename across those oracles rather than a markup edit.
+
 <a id="METIS-LAYOUT-MINSIZE-001"></a>
 ## METIS-LAYOUT-MINSIZE-001 — Admit minimum sizes through layout [minor]
 - Status: review; priority: P1; owner: Metis presentation; integrator: root; last-update: 2026-09-22; dependencies: METIS-RASTER-ROUND-002; risk: silent layout change
