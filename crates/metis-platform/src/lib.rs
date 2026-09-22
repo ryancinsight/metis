@@ -14,6 +14,7 @@ pub mod scoped_network;
 #[cfg(not(target_arch = "wasm32"))]
 pub mod scoped_process;
 pub mod surface;
+pub mod typeface;
 
 #[cfg(windows)]
 pub mod native;
