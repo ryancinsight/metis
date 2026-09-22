@@ -29,6 +29,7 @@ CANVAS_DRAG_END = (64, 48)
 CANVAS_WHEEL_POSITION = (64, 48)
 CANVAS_WHEEL_DELTA = (0, 120)
 CANVAS_FRAME_SETTLE_COUNT = 2
+CANVAS_FRAME_SETTLE_TIMEOUT_MS = 2_000
 MAX_CANVAS_DIMENSION = 4096
 MAX_CANVAS_CSS_SIZE = 16_384.0
 MAX_CANVAS_POSITION = 16_384.0
@@ -148,13 +149,34 @@ return {
 CANVAS_FRAME_SETTLE_SCRIPT = """
 const done = arguments[arguments.length - 1];
 let remaining = arguments[0];
+const timeoutMs = arguments[1];
+let finished = false;
+let deadline = null;
+const finish = (result) => {
+  if (finished) return;
+  finished = true;
+  if (deadline !== null) window.clearTimeout(deadline);
+  done(result);
+};
+if (document.visibilityState !== 'visible') {
+  finish({ok: false, error: 'document is not visible'});
+  return;
+}
+deadline = window.setTimeout(
+  () => finish({ok: false, error: 'frame settling deadline exceeded'}),
+  timeoutMs,
+);
 const settle = () => {
-  if (remaining === 0) { done({ok: true}); return; }
+  if (document.visibilityState !== 'visible') {
+    finish({ok: false, error: 'document is not visible'});
+    return;
+  }
+  if (remaining === 0) { finish({ok: true}); return; }
   remaining -= 1;
   window.requestAnimationFrame(settle);
 };
 if (typeof window.requestAnimationFrame !== 'function') {
-  done({ok: false});
+  finish({ok: false, error: 'requestAnimationFrame is unavailable'});
 } else {
   settle();
 }
@@ -364,9 +386,13 @@ def _element_screenshot(client: WebDriverClient, trace: Trace, directory: pathli
 
 def settle_canvas_input(client: WebDriverClient) -> None:
     """Yield through two browser frames so queued canvas input is observable."""
-    result = client.execute_async(CANVAS_FRAME_SETTLE_SCRIPT, [CANVAS_FRAME_SETTLE_COUNT])
+    result = client.execute_async(
+        CANVAS_FRAME_SETTLE_SCRIPT,
+        [CANVAS_FRAME_SETTLE_COUNT, CANVAS_FRAME_SETTLE_TIMEOUT_MS],
+    )
     if not isinstance(result, dict) or result.get("ok") is not True:
-        raise BrowserRuntimeError("browser did not expose requestAnimationFrame for canvas settling")
+        detail = result.get("error") if isinstance(result, dict) else result
+        raise BrowserRuntimeError(f"browser canvas frame settling failed: {detail!r}")
 
 
 def _focus_canvas(client: WebDriverClient, canvas_id: str) -> Mapping[str, Any]:

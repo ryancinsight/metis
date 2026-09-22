@@ -6,7 +6,7 @@ import pathlib
 import re
 from typing import Any, Mapping
 
-from browser_canvas import _element_screenshot, ensure_canvas_visible
+from browser_canvas import _element_screenshot, ensure_canvas_visible, settle_canvas_input
 from browser_protocol import BrowserRuntimeError, WebDriverClient
 from browser_trace import Trace
 
@@ -77,6 +77,7 @@ def capture_screenshot(
             f"found {surface}"
         )
     ensure_canvas_visible(client, canvas_id)
+    settle_canvas_input(client)
     _element_screenshot(
         client,
         trace,
