@@ -299,8 +299,8 @@ impl Framebuffer {
     ///
     /// The output alpha numerator is `sa * 255 + da * (255 - sa)`.
     /// Each color numerator includes destination alpha before normalization.
-    /// Span filling shares this arithmetic through [`SourceOver`], so a single
-    /// pixel and a filled run composite identically.
+    /// Span filling shares this arithmetic through the same precomputed
+    /// source terms, so a single pixel and a filled run composite identically.
     pub fn blend_pixel(&mut self, x: i32, y: i32, src: Color) {
         let Some(index) = self.index(x, y) else {
             return;
