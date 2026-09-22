@@ -2428,6 +2428,50 @@ merged the Windows `ValuePattern.SetValue` action mapping at `d7b38d7`. These
 are provider and consumer contract checks: no OS screen reader, spoken output
 or host preference enablement is claimed.
 
+### Rounded rectangle paint evidence — 2026-09-22
+
+`fill_rect` and `draw_rect_outline` take a validated `CornerRadius`. A square
+radius takes the existing span path and a test asserts the framebuffer is
+bit-identical to `fill_bounds` over the same rectangle, so every existing
+capture and pixel oracle is unaffected. A rounded radius composites through one
+scanline routine that fills the area inside an outer shape and outside an
+optional inner shape; a border supplies the outer shape inset by its width, so
+the border follows the same arc as the fill it encloses.
+
+Horizontal coverage is exact within each sampled row and the vertical direction
+is integrated over sixteen subsamples. Three column classes bound the work:
+columns every subsample covers completely are filled as a span, columns the
+inner shape covers completely contribute nothing and are skipped, and only the
+transition bands take the per-pixel path, so per-pixel cost is proportional to
+the radius rather than the width of the shape.
+
+Eight tests cover the contract: radius clamping to half the shorter side,
+bit-identical square output, corner clearance with a fully covered centre and
+straight edges, antialiasing with horizontal and vertical symmetry, a border
+whose interior keeps its background, a radius clamped past the shape, empty and
+off-surface geometry, and a transparent source. `cargo run --locked --example
+image` renders a square and a rounded panel from the same entry points and
+asserts the corner contract between them.
+
+Cost, measured through `scripts/bench.py` on the same pinned configuration as
+the span-fill evidence:
+
+| Case | Time |
+| --- | --- |
+| `fill/card_stack` (8 square cards, fill and border) | 15.62 us |
+| `fill/rounded_card_stack` (the same cards at radius 12) | 198.12 us |
+
+Rounding costs about 12.7 times the square path for the same rectangles. It
+remains about seven times faster than the square path measured before the
+span-fill change (1.3631 ms) and is roughly one percent of a 60 Hz frame
+budget, so the arc integration is affordable at interface sizes.
+
+The display commands still pass `CornerRadius::SQUARE`, so no authored
+declaration changes and `border-radius` keeps its typed rejection under
+[ADR 0013](adr/0013-strict-style-contract.md). [ADR
+0043](adr/0043-rounded-rectangle-paint.md) records the paint contract and names
+the follow-up that admits the declaration.
+
 ### Software renderer lowercase glyph evidence — 2026-09-22
 
 The bitmap table mapped both cases of every letter to one uppercase bitmap, so

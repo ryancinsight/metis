@@ -7,7 +7,7 @@
 
 use criterion::{Criterion, criterion_group, criterion_main};
 use metis_platform::framebuffer::{Color, Framebuffer, Rect};
-use metis_platform::rasterizer::{draw_rect_outline, draw_text, fill_rect};
+use metis_platform::rasterizer::{CornerRadius, draw_rect_outline, draw_text, fill_rect};
 use std::hint::black_box;
 
 /// Physical width of the measured presentation surface.
@@ -34,7 +34,12 @@ fn fills(c: &mut Criterion) {
     let mut opaque = surface();
     group.bench_function("opaque_full_surface", |b| {
         b.iter(|| {
-            fill_rect(&mut opaque, black_box(full), black_box(Color::DARK_BLUE));
+            fill_rect(
+                &mut opaque,
+                black_box(full),
+                CornerRadius::SQUARE,
+                black_box(Color::DARK_BLUE),
+            );
             opaque.get_pixel(0, 0)
         });
     });
@@ -46,6 +51,7 @@ fn fills(c: &mut Criterion) {
             fill_rect(
                 &mut translucent,
                 black_box(full),
+                CornerRadius::SQUARE,
                 black_box(Color::rgba(49, 130, 206, 128)),
             );
             translucent.get_pixel(0, 0)
@@ -57,10 +63,44 @@ fn fills(c: &mut Criterion) {
         b.iter(|| {
             for index in 0..CARDS {
                 let rect = Rect::new(24, 24 + index * 90, 520, 72);
-                fill_rect(&mut cards, black_box(rect), black_box(Color::WHITE));
-                draw_rect_outline(&mut cards, black_box(rect), 1, black_box(Color::LIGHT_GRAY));
+                fill_rect(
+                    &mut cards,
+                    black_box(rect),
+                    CornerRadius::SQUARE,
+                    black_box(Color::WHITE),
+                );
+                draw_rect_outline(
+                    &mut cards,
+                    black_box(rect),
+                    1,
+                    CornerRadius::SQUARE,
+                    black_box(Color::LIGHT_GRAY),
+                );
             }
             cards.get_pixel(24, 24)
+        });
+    });
+    let mut rounded = surface();
+    group.bench_function("rounded_card_stack", |b| {
+        b.iter(|| {
+            for index in 0..CARDS {
+                let rect = Rect::new(24, 24 + index * 90, 520, 72);
+                let radius = CornerRadius::clamped(12, rect);
+                fill_rect(
+                    &mut rounded,
+                    black_box(rect),
+                    radius,
+                    black_box(Color::WHITE),
+                );
+                draw_rect_outline(
+                    &mut rounded,
+                    black_box(rect),
+                    1,
+                    radius,
+                    black_box(Color::LIGHT_GRAY),
+                );
+            }
+            rounded.get_pixel(24, 24)
         });
     });
     group.finish();

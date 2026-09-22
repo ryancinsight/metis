@@ -51,3 +51,4 @@
 | [0040](0040-presentation-frame-geometry.md) | Validated physical geometry at the canvas frame seam | Accepted |
 | [0041](0041-host-neutral-accessibility-semantics.md) | Host-neutral accessibility semantics | Accepted |
 | [0042](0042-scoped-network-provider.md) | Scoped network provider | Accepted |
+| [0043](0043-rounded-rectangle-paint.md) | Rounded rectangle paint semantics | Accepted |

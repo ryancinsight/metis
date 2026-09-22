@@ -10,13 +10,26 @@ The virtual `PlatformSurface` remains application-supplied and does not create
 an operating-system window or provide a GUI isolation boundary.
 
 ```rust
+use metis_platform::rasterizer::CornerRadius;
+
 let mut pixels = metis_platform::Framebuffer::new(32, 16)?;
+let square = metis_platform::Rect::new(0, 0, 8, 8);
+metis_platform::fill_rect(&mut pixels, square, CornerRadius::SQUARE, metis_platform::Color::BLUE);
+assert_eq!(pixels.get_pixel(2, 2), metis_platform::Color::BLUE);
+
+// The same entry point rounds its corners when given a radius. The radius is
+// clamped to half the shorter side, the corner arcs are antialiased by
+// coverage, and the straight edges stay exact.
+let card = metis_platform::Rect::new(12, 2, 18, 12);
 metis_platform::fill_rect(
     &mut pixels,
-    metis_platform::Rect::new(0, 0, 8, 8),
-    metis_platform::Color::BLUE,
+    card,
+    CornerRadius::clamped(5, card),
+    metis_platform::Color::WHITE,
 );
-assert_eq!(pixels.get_pixel(2, 2), metis_platform::Color::BLUE);
+assert_eq!(pixels.get_pixel(21, 8), metis_platform::Color::WHITE);
+// The extreme corner falls outside the arc.
+assert_eq!(pixels.get_pixel(12, 2), metis_platform::Color::TRANSPARENT);
 # Ok::<(), metis_core::error::MetisError>(())
 ```
 

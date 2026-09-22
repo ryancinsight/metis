@@ -14,6 +14,21 @@
 - Basis: Metis main run `35648844306` failed only because Atlas `02a304f519c27b95169b87b732e6e631d51c205d` scanned its `_atlas` workflow checkout as member source (`oversized_files 0 -> 3`, `manifest_implementation 0 -> 2`, `existence_only_assertions 0 -> 4`).
 - Outcome: PR #331 advanced the workflow and source split; the exact full verifier passed 27 stages with 192 resolved packages, the intentional capture-failure negative oracle, and the merged Atlas scanner reporting zero regressions and zero host-state rows.
 
+<a id="METIS-RASTER-ROUND-001"></a>
+## METIS-RASTER-ROUND-001 — Antialiased rounded rectangle paint [arch] [major]
+- Status: review; priority: P1; owner: Metis presentation; integrator: root; last-update: 2026-09-22; dependencies: METIS-RASTER-SPAN-001; ADR: [0043](docs/adr/0043-rounded-rectangle-paint.md); risk: composite drift
+- Outcome: `fill_rect` and `draw_rect_outline` take a validated `CornerRadius`; a square radius keeps the existing span path bit-identical and a rounded radius antialiases the corner arcs by coverage while leaving the straight edges exact. One scanline routine serves both the fill and its border.
+- Delivered: `CornerRadius::clamped` bounds a radius to half the shorter side; the border is the outer shape minus the shape inset by the border width; three column classes per row keep per-pixel coverage proportional to the radius rather than the shape width.
+- Evidence: [rounded rectangle paint evidence](docs/VERIFICATION.md#rounded-rectangle-paint-evidence--2026-09-22); eight tests cover radius clamping, bit-identical square output, corner clearance, antialiasing and symmetry, the hollow border interior, degenerate and off-surface geometry, and a transparent source. The `image` example renders a square and a rounded panel side by side.
+- Residual: the display commands still pass `CornerRadius::SQUARE`, so `border-radius` keeps its typed rejection. Carrying the radius through `DisplayCommand` and admitting the declaration is METIS-RASTER-ROUND-002, held until the agent editing `layout/display.rs` commits.
+
+<a id="METIS-RASTER-ROUND-002"></a>
+## METIS-RASTER-ROUND-002 — Admit border-radius through layout [minor]
+- Status: blocked; priority: P1; owner: Metis presentation; dependencies: METIS-RASTER-ROUND-001; risk: contended region
+- Blocker: `crates/metis-ui-lang/src/layout/display.rs` carries another agent's live uncommitted edits adding `DisplayCommand::ElementRect`; the radius must land in the same `render_to` match. Re-open trigger: that agent commits or their claim goes stale.
+- Outcome: `DisplayCommand::FillRect` and `DrawBorder` carry the radius, layout clamps the authored `border-radius` against the final rectangle and scales it by the display scale, and the style contract admits the declaration with a dated revision to [ADR 0013](docs/adr/0013-strict-style-contract.md).
+- Oracle: an authored `border-radius` paints rounded corners on the software surface; a zero radius leaves every existing capture unchanged; `font-weight`, `justify-content`, `align-items`, `min-width` and `min-height` keep their typed rejection.
+
 <a id="METIS-GATE-VISUAL-BUDGET-001"></a>
 ## METIS-GATE-VISUAL-BUDGET-001 — Restore headroom in the visual-tests budget [patch]
 - Status: todo; priority: P2; owner: Metis tooling; dependencies: none; risk: gate flake masking real failures
