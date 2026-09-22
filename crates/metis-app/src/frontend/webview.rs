@@ -40,6 +40,18 @@ enum WebViewAction {
     Submit,
 }
 
+#[derive(Debug, Deserialize, PartialEq, Eq)]
+#[serde(deny_unknown_fields)]
+struct PermissionProbeComplete {
+    action: PermissionProbeAction,
+}
+
+#[derive(Debug, Deserialize, PartialEq, Eq)]
+enum PermissionProbeAction {
+    #[serde(rename = "permission_probe_complete")]
+    Complete,
+}
+
 #[derive(Debug, Serialize)]
 #[serde(tag = "type", rename_all = "snake_case")]
 enum PageMessage {
@@ -138,18 +150,30 @@ fn run_with_page(
         &mut app,
         &mut surface,
         capture_output,
-        initial_theme.is_some(),
+        capture_output.map(|_| {
+            if matches!(page, Page::PermissionProbe) {
+                CaptureMode::PermissionProbe
+            } else {
+                CaptureMode::FirstFrame
+            }
+        }),
     );
     finish(result, &mut surface, package)
+}
+
+#[derive(Clone, Copy)]
+enum CaptureMode {
+    FirstFrame,
+    PermissionProbe,
 }
 
 fn run_event_loop<T: IpcTransport>(
     app: &mut FrontendApp<T>,
     surface: &mut WebViewSurface,
     capture_output: Option<&Path>,
-    close_after_capture: bool,
+    capture_mode: Option<CaptureMode>,
 ) -> Result<()> {
-    let mut captured = false;
+    let mut permission_probe_complete = false;
     loop {
         let events = surface.wait_events(EVENT_WAIT)?;
         for event in events {
@@ -169,6 +193,7 @@ fn run_event_loop<T: IpcTransport>(
                     surface.resize(width, height)?;
                 }
                 WebViewHostEvent::WebView(WebViewEvent::Message { json, .. }) => {
+                    permission_probe_complete |= is_permission_probe_complete(&json);
                     handle_message(app, surface, &json)?;
                 }
                 WebViewHostEvent::WebView(WebViewEvent::PermissionDenied {
@@ -217,7 +242,11 @@ fn run_event_loop<T: IpcTransport>(
                 WebViewHostEvent::Window(_) | WebViewHostEvent::WebView(_) => {}
             }
         }
-        if !captured && let Some(output) = capture_output {
+        let capture_ready = capture_mode.is_some_and(|mode| match mode {
+            CaptureMode::FirstFrame => true,
+            CaptureMode::PermissionProbe => permission_probe_complete,
+        });
+        if capture_ready && let Some(output) = capture_output {
             let bytes = surface.capture_preview_png().map_err(|error| {
                 MetisError::protocol(
                     ErrorCode::TransportBroken,
@@ -235,13 +264,14 @@ fn run_event_loop<T: IpcTransport>(
                 output.display(),
                 bytes.len()
             );
-            captured = true;
-            if close_after_capture {
-                surface.close()?;
-                return Ok(());
-            }
+            surface.close()?;
+            return Ok(());
         }
     }
+}
+
+fn is_permission_probe_complete(json: &str) -> bool {
+    serde_json::from_str::<PermissionProbeComplete>(json).is_ok()
 }
 
 fn permission_denied_message(
@@ -262,6 +292,9 @@ fn handle_message<T: IpcTransport>(
     surface: &mut WebViewSurface,
     json: &str,
 ) -> Result<()> {
+    if is_permission_probe_complete(json) {
+        return Ok(());
+    }
     let Ok(request) = serde_json::from_str::<WebViewRequest>(json) else {
         return post_message(
             surface,

@@ -70,24 +70,28 @@
     {
       "id": "webview_permission_probe",
       "image": "native-permission-probe.png",
-      "source_revision": "285322892aca245faf3962d57838682dd6689d77",
-      "provider_revision": "d324018efa3b67d2b92350a4e3c781d179019014",
-      "captured_at": "2026-09-17T13:14:48-04:00",
+      "source_revision": "543edfb533be0c0422c38445174001b616c96ace",
+      "provider_revision": "0e2e1bbb2d81e16dd9c694ba46a9e9710e034417",
+      "captured_at": "2026-09-22T03:53:19-04:00",
       "runtime": {
         "target": "x86_64-pc-windows-msvc",
-        "webview2": "153.0.4234.32",
+        "webview2": "153.0.4234.48",
         "timezone": "America/New_York"
       },
-      "client_size": [1024, 768],
+      "client_size": [1025, 769],
       "launch": "metis-app --metis-webview-permission-probe-capture <absolute-output> 60 2 0.2",
-      "input": "WebView2 CapturePreview from packaged permission probe",
+      "input": "WebView2 CapturePreview after typed permission_probe_complete",
       "observed": [
         "Metis permission probe",
-        "Host bridge connected; requesting geolocation for a denial probe.",
-        "permission_denied: WebView2 denied geolocation access request [0x200f]"
+        "Host bridge connected; every capability request is denied by policy.",
+        "Completed 4 bounded capability probes.",
+        "geolocation: host denied",
+        "camera: browser rejected the request",
+        "microphone: browser rejected the request",
+        "notifications: host denied"
       ],
-      "sha256": "a9df158ff6a167ed3c708e9621a44446cae93b3c0d87e646c818601606a33b8f",
-      "bytes": 6561
+      "sha256": "0f36794bea61fe540e7a4603b2c56d943718344c68c4e46aa3b0d839e7ab3a36",
+      "bytes": 9265
     }
   ]
 }

@@ -3,6 +3,7 @@ use super::{
     assets::{
         APP_JS, INDEX_HTML, PERMISSION_PROBE_APP_JS, PERMISSION_PROBE_INDEX_HTML, STYLES_CSS,
     },
+    is_permission_probe_complete,
     package::file_uri,
     permission_denied_message,
 };
@@ -89,6 +90,7 @@ fn permission_probe_is_separate_from_the_calculation_page() {
     assert!(PERMISSION_PROBE_APP_JS.contains("navigator.mediaDevices"));
     assert!(PERMISSION_PROBE_APP_JS.contains("Notification.requestPermission"));
     assert!(PERMISSION_PROBE_APP_JS.contains("message.status"));
+    assert!(PERMISSION_PROBE_APP_JS.contains("permission_probe_complete"));
 }
 
 #[test]
@@ -143,4 +145,15 @@ fn permission_denial_message_preserves_user_initiation() {
         json,
         r#"{"type":"permission_denied","status":"permission_denied","error_code":8207,"permission":"camera","message":"WebView2 denied camera access request","user_initiated":true}"#
     );
+}
+
+#[test]
+fn permission_capture_waits_for_typed_completion_message() {
+    assert!(is_permission_probe_complete(
+        r#"{"action":"permission_probe_complete"}"#
+    ));
+    assert!(!is_permission_probe_complete(
+        r#"{"action":"permission_probe_complete","extra":true}"#
+    ));
+    assert!(!is_permission_probe_complete(r#"{"action":"submit"}"#));
 }
