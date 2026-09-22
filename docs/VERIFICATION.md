@@ -506,9 +506,11 @@ standalone gate so publishing cannot ship an overlay-only dependency graph.
 The user manual replaces a domain book. Its seven application snapshots are produced by
 the Rust presentation example from real backend exchanges and actual framebuffer
 pixels, checked against `docs/manual/images/form*.svg`. `--update-snapshots`
-explicitly refreshes those files and the semantic/fixture baseline
+explicitly refreshes those files and the semantic baseline
 `docs/manual/images/captures.json`; normal verification rejects drift and missing
-local manual links. Comparator unit tests and the actual capture-failure process
+local manual links. Schema 2 stores capture semantics and exact image hashes;
+source and lock fingerprints remain in the run report as provenance. Comparator
+unit tests and the actual capture-failure process
 probe each run under a 60-second bound. A write failure must terminate the
 Moirai session, collect the worker and preserve the primary diagnostic.
 
@@ -558,10 +560,11 @@ a user-created file. The empty application Start Menu directory is removed.
 `output/distribution/latest/workflow.json` records package hashes, commands and
 outcomes; this is host workflow evidence, not signing or OS isolation evidence.
 
-All seven gallery images retain identical pixels and semantic records. Updating
-the dependency-lock-bound fixture changes only `captures.json`'s fixture hash;
-no image or expected outcome changes. The gate records exact source hashes and
-rejects a stale fixture rather than silently accepting the dependency change.
+At that revision, changing the dependency lock updated a source-bound fixture
+hash although the seven images and semantic records stayed identical. The current
+schema-2 baseline stores only rendered output; exact source and lock fingerprints
+remain in verification reports, while unrelated source changes require no image
+baseline edit.
 
 ## Linux archive lifecycle implementation — 2026-09-21
 
@@ -1296,8 +1299,10 @@ The full locked verifier for this increment passes all stages on Windows with
 171 resolved packages. The intentional `capture-failure` probe exits 1 with
 `PermissionDenied` and is accepted; no unexpected stage fails. The visual
 comparison passes all seven captures, three mutation probes and the image
-asset check with zero pixel or semantic differences. The source-bound fixture
-digest is `493526c2f95221e40d5c9014ed2f94f796700dee1f407448fdbd2ee725cb1d1a`.
+asset check with zero pixel or semantic differences. That report's source-bound
+fingerprint is `493526c2f95221e40d5c9014ed2f94f796700dee1f407448fdbd2ee725cb1d1a`;
+the current gate retains it as provenance while comparing output against the
+schema-2 semantic and image baselines.
 
 ## Browser text and composition evidence — 2026-09-08
 

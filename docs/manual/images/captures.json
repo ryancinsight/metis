@@ -579,6 +579,5 @@
       }
     }
   },
-  "fixture_sha256": "9d24c3a600f10213d422a2f98282a5ddbf05a761e5c28ab6d6c8427731e0434a",
-  "schema": 1
+  "schema": 2
 }

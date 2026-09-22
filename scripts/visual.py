@@ -325,12 +325,12 @@ def _load_json(path):
         raise VisualError(f"Malformed JSON: {path}") from error
 
 
-def _baseline(path, fixture):
+def _baseline(path):
     baseline = _load_json(path)
-    _require(isinstance(baseline, dict) and baseline.get("schema") == 1
-             and baseline.get("fixture_sha256") == fixture
+    _require(isinstance(baseline, dict) and baseline.get("schema") == 2
+             and set(baseline) == {"schema", "captures"}
              and isinstance(baseline.get("captures"), dict)
-             and set(baseline["captures"]) == set(CAPTURES), "Missing or stale fixture baseline")
+             and set(baseline["captures"]) == set(CAPTURES), "Missing or malformed visual baseline")
     for entry in baseline["captures"].values():
         _require(isinstance(entry, dict) and isinstance(entry.get("semantics"), dict)
                  and isinstance(entry.get("image_sha256"), str), "Malformed semantic baseline")
@@ -412,10 +412,10 @@ def compare(root, output, provenance, update=False):
     baseline_path = root / "docs" / "manual" / "images" / "captures.json"
     if not update and fixture is not None:
         try:
-            baseline = _baseline(baseline_path, fixture)
+            baseline = _baseline(baseline_path)
         except (VisualError, OSError, AttributeError) as error:
             report["errors"].append(str(error))
-    images, new_baseline = {}, {"schema": 1, "fixture_sha256": fixture, "captures": {}}
+    images, new_baseline = {}, {"schema": 2, "captures": {}}
     for name in CAPTURES:
         result = {"status": "failed", "errors": [], "semantic_diff": []}
         report["captures"][name] = result

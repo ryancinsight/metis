@@ -206,6 +206,9 @@ class EvidenceTests(unittest.TestCase):
         self.assertEqual(first["probes"]["probe-label"]["pixels"], {"changed_pixels": 1, "bounds": [0, 0, 1, 1]})
         baseline_path = self.root / "docs/manual/images/captures.json"
         baseline = baseline_path.read_bytes()
+        baseline_value = json.loads(baseline)
+        self.assertEqual(baseline_value["schema"], 2)
+        self.assertNotIn("fixture_sha256", baseline_value)
         self.produce()
         second = visual.compare(self.root, self.output, self.provenance)
         self.assertEqual(second["status"], "passed")
@@ -235,6 +238,33 @@ class EvidenceTests(unittest.TestCase):
         self.assertTrue(any(item["path"] == "action.0" for item in failed["captures"]["form-recovered"]["semantic_diff"]))
         self.assertEqual(baseline_path.read_bytes(), baseline)
         self.assertFalse((self.output / "visual/latest/manifest.json").exists())
+
+    def test_source_only_change_keeps_baseline_and_pixel_change_fails(self):
+        self.produce()
+        first = visual.compare(self.root, self.output, self.provenance, update=True)
+        baseline_path = self.root / "docs/manual/images/captures.json"
+        baseline = baseline_path.read_bytes()
+
+        source = self.root / "examples/presentation/capture.rs"
+        source.write_text("// Changed trace\n", encoding="utf-8")
+        self.provenance["sources"][str(source.resolve())] = visual.source_digest(source)
+        # Compare the unchanged capture run against the new source provenance.
+        second = visual.compare(self.root, self.output, self.provenance)
+        self.assertEqual(second["status"], "passed")
+        self.assertNotEqual(second["fixture_sha256"], first["fixture_sha256"])
+        self.assertEqual(second["provenance"]["sources"][str(source.resolve())],
+                         visual.source_digest(source))
+        self.assertEqual(baseline_path.read_bytes(), baseline)
+
+        (self.output / "form.svg").write_bytes(solid_svg("#ff0000", 1))
+        black = bytes((0, 0, 0, 255)) * (800 * 600)
+        red_pixel = bytes((0, 0, 255, 255)) + black[4:]
+        (self.output / "form.bmp").write_bytes(bmp_fixture(800, 600, red_pixel))
+        failed = self.report_failure()
+        self.assertIn("Exact SVG baseline differs", failed["captures"]["form"]["errors"])
+        self.assertEqual(failed["captures"]["form"]["pixels"],
+                         {"changed_pixels": 1, "bounds": [0, 0, 1, 1]})
+        self.assertEqual(baseline_path.read_bytes(), baseline)
 
     def test_unavailable_baseline_does_not_report_hash_corruption(self):
         self.produce()
