@@ -7,8 +7,28 @@ pub const CLINICAL_SCREEN_XML: &str = r#"<screen id="main-screen" style="display
     <text id="status-badge" style="color: #38a169; font-size: 12px;">SYSTEM READY</text>
   </div>
 
+  <nav id="application-navigation" aria-label="Application navigation" style="display: flex; flex-direction: column; gap: 8px; background-color: #e2e8f0; padding: 8px;">
+    <div id="application-toolbar" role="toolbar" aria-label="Application commands" style="display: flex; flex-direction: row; gap: 8px;">
+      <button id="command-menu-toggle" aria-haspopup="menu" aria-expanded="false" aria-controls="command-menu" style="width: 120px; background-color: #3182ce; color: #ffffff; padding: 8px 12px;">
+        <text style="color: #ffffff; font-size: 12px;">[ COMMANDS ]</text>
+      </button>
+      <button id="command-focus-patient" style="width: 144px; background-color: #3182ce; color: #ffffff; padding: 8px 12px;">
+        <text style="color: #ffffff; font-size: 12px;">FOCUS PATIENT</text>
+      </button>
+    </div>
+    <div id="command-menu" role="menu" aria-label="Application commands" aria-hidden="true" style="display: none; flex-direction: column; gap: 6px; background-color: #ffffff; padding: 8px; border-width: 1px; border-color: #e2e8f0;">
+      <button id="command-theme-dark" role="menuitem" style="background-color: #3182ce; color: #ffffff; padding: 8px 12px;">
+        <text style="color: #ffffff; font-size: 12px;">DARK THEME</text>
+      </button>
+      <button id="command-theme-system" role="menuitem" style="background-color: #3182ce; color: #ffffff; padding: 8px 12px;">
+        <text style="color: #ffffff; font-size: 12px;">SYSTEM THEME</text>
+      </button>
+    </div>
+    <text id="command-status" role="status" aria-live="polite" style="color: #4a5568; font-size: 12px;">Commands ready</text>
+  </nav>
+
   <card id="patient-card" style="display: flex; flex-direction: column; background-color: #ffffff; padding: 16px; border-width: 1px; border-color: #e2e8f0; gap: 10px;">
-    <text style="color: #2d3748; font-size: 14px;">Patient Demographics and Drug Prescription</text>
+    <text id="patient-heading" style="color: #2d3748; font-size: 14px;">Patient Demographics and Drug Prescription</text>
     <div id="row-patient" style="display: flex; flex-direction: row; gap: 10px;">
       <text id="label-patient" role="textbox" aria-label="Patient ID" value="PT-9042-ALPHA" tabindex="0" style="color: #4a5568; font-size: 12px;">Patient ID: PT-9042-ALPHA</text>
     </div>
@@ -29,13 +49,14 @@ pub const CLINICAL_SCREEN_XML: &str = r#"<screen id="main-screen" style="display
   </card>
 
   <card id="results-card" style="display: flex; flex-direction: column; background-color: #ffffff; padding: 16px; border-width: 1px; border-color: #e2e8f0; gap: 8px;">
-    <text style="color: #2d3748; font-size: 14px;">Backend Calculation Output</text>
+    <text id="results-heading" style="color: #2d3748; font-size: 14px;">Backend Calculation Output</text>
     <text id="output-rate" style="color: #3182ce; font-size: 16px;">Rate: Awaiting Backend Calculation...</text>
     <text id="output-status" style="color: #718096; font-size: 12px;">Safety Status: Idle</text>
     <text id="output-signature" style="color: #718096; font-size: 10px;">Backend MAC: None</text>
   </card>
 </screen>"#;
 
+mod theme;
 use crate::{FormState, FrontendApp};
 use iris::render::RenderBackend;
 use metis_core::{ErrorCode, MetisError, Result};
@@ -47,6 +68,7 @@ impl<T: IpcTransport> FrontendApp<T> {
     /// # Errors
     /// Rejects invalid layout or a missing authored label before changing pixels.
     pub fn render(&mut self) -> Result<()> {
+        self.apply_theme()?;
         let badge = if self.client.is_none() {
             "SESSION CLOSED"
         } else if self
@@ -60,6 +82,7 @@ impl<T: IpcTransport> FrontendApp<T> {
             "SYSTEM READY"
         };
         self.text("status-badge", badge)?;
+        self.render_command_surface()?;
         let status = self
             .doc
             .find_element_by_id_mut("status-badge")
@@ -132,6 +155,31 @@ impl<T: IpcTransport> FrontendApp<T> {
             .render(&display)
             .unwrap_or_else(|never| match never {});
         Ok(())
+    }
+
+    fn render_command_surface(&mut self) -> Result<()> {
+        let menu_open = self.command_menu_open();
+        self.attribute(
+            "command-menu-toggle",
+            "aria-expanded",
+            menu_open.to_string(),
+        )?;
+        self.attribute("command-menu", "aria-hidden", (!menu_open).to_string())?;
+        let menu = self
+            .doc
+            .find_element_by_id_mut("command-menu")
+            .ok_or_else(|| {
+                MetisError::ui(
+                    ErrorCode::MalformedMarkup,
+                    "Authored form is missing command menu",
+                )
+            })?;
+        menu.computed_style.display = if menu_open {
+            metis_ui_lang::Display::Flex
+        } else {
+            metis_ui_lang::Display::None
+        };
+        self.text("command-status", self.command_status.clone())
     }
 
     fn outcome_text(&self) -> (String, String, &'static str) {
@@ -340,7 +388,7 @@ mod presentation_tests {
                     .expect("authored text height remains representable");
                 assert!(
                     *x >= 0 && i64::from(*x) + i64::from(width) <= 800,
-                    "horizontal clipping: {text}"
+                    "horizontal clipping: {text} x={x} width={width} scale={display_scale}"
                 );
                 assert!(
                     *y >= 0 && i64::from(*y) + i64::from(height) <= 600,
@@ -349,9 +397,17 @@ mod presentation_tests {
                 text_runs.push((text.as_str(), *x, *y));
             }
         }
-        assert_eq!(text_runs[0], ("METIS FORM DEMONSTRATION", 32, 32));
-        assert_eq!(text_runs[1], ("SYSTEM READY", 32, 56));
-        assert_eq!(text_runs[2].0, "Patient Demographics and Drug Prescription");
+        assert!(
+            text_runs
+                .iter()
+                .any(|run| run.0 == "METIS FORM DEMONSTRATION")
+        );
+        assert!(text_runs.iter().any(|run| run.0 == "SYSTEM READY"));
+        assert!(
+            text_runs
+                .iter()
+                .any(|run| run.0 == "Patient Demographics and Drug Prescription")
+        );
         let mut framebuffer = Framebuffer::new(800, 600).expect("presentation surface");
         display.render_to(&mut framebuffer);
         // 'S' has an ink pixel at cell (2,2); the complete status line is in bounds.

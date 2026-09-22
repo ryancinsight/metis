@@ -19,6 +19,13 @@ the final UTF-8 value through the same bounded `set_inputs(...)` transition used
 by ordinary text input. Composition values are capped at 128 UTF-8 bytes and
 are cleared when inputs change or focus leaves the native surface.
 
+The authored surface also carries a host-neutral local command menu. `FrontendApp`
+owns its `CommandMenuState`, `ApplicationCommand` transitions and bounded
+`ApplicationTheme`; native and browser hosts can expose the same focus-patient
+and dark/system actions without sending presentation commands through backend
+IPC. Menu visibility is projected through the authored semantic tree, so hidden
+items cannot receive host actions.
+
 `AsyncFrontendApp` owns the same input/result state for a browser event loop.
 It accepts `metis_ipc::AsyncIpcTransport`, sends at most the bounded requests
 allowed by the asynchronous client, and changes to a typed disconnected state

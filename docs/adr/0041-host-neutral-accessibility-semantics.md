@@ -50,9 +50,9 @@ its platform provider; browser hosts continue to use the browser DOM tree.
 
 The `metis-app --metis-semantic-capture` role serializes the production
 frontend's validated tree to a bounded schema-1 JSON artifact. The reviewed
-22-element specimen is [the native semantic capture](../manual/images/native-semantic.json);
-it is 10,325 bytes and has SHA-256
-`d1bdfc6089d9d34c9538d0de95a5e5b9607dbf9ef0aa0d52649602347be39628`. The
+34-element specimen is [the native semantic capture](../manual/images/native-semantic.json);
+it is 16,333 bytes and has SHA-256
+`0bb048549b94aabfda01c34d1c1239a35b797e67640b1b690fd2a21889bc4bd1`. The
 oracle checks the application root, the focusable `label-patient` textbox with
 its bounded value and `set_value` action, and the enabled, focusable `btn-calc`
 button with its `activate` action. The command uses the production
@@ -111,3 +111,13 @@ focus, value replacement, semantic-value refresh and both rejection classes.
 This strengthens the application action contract; it remains evidence of the
 provider boundary, not proof of spoken output or installed screen-reader
 acceptance.
+
+## Revision 2026-09-22 — Native command state
+
+The software-rendered native role now consumes the same typed
+`metis_frontend::ApplicationCommand` identities used by the browser listener.
+Pointer and AccessKit activation toggle the authored command menu, apply the
+bounded dark/system palette and focus the patient reference. Escape closes an
+open menu before the host exits, and hidden menu descendants expose no native
+actions. The focused `metis-app` suite covers these transitions; the semantic
+capture above records the navigation, toolbar, menu and menu-item nodes.

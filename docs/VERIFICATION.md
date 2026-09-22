@@ -1695,6 +1695,18 @@ Clippy gate compile the listener path. This is static and compile-time
 evidence for the browser command surface; no native tray, notification,
 global-shortcut or spoken screen-reader claim is attached to it.
 
+The Windows software-rendered role now mounts the same navigation, toolbar,
+menu and menu-item contract in `CLINICAL_SCREEN_XML`. Its typed
+`metis_frontend::ApplicationCommand` state controls the `aria-expanded` and
+`aria-hidden` projection, keeps hidden menu descendants out of the native
+semantic action set, applies the dark/system palette and focuses the authored
+patient reference. Pointer activation, AccessKit `Activate`, and Escape-first
+menu dismissal are covered by the focused native suite (38/38); the changed
+semantic capture is schema 1 with 34 elements and SHA-256
+`0bb048549b94aabfda01c34d1c1239a35b797e67640b1b690fd2a21889bc4bd1`. This is
+native component and event evidence; installed screen-reader speech, tray,
+notifications, global shortcuts and other OS integrations remain open.
+
 The fresh CUA trace started from **Start host**, advanced to **Stop host** and
 **Session details**, then traversed **Patient reference**, **Weight (kg)**,
 **Drug concentration (mg/mL)**, **Target dose (mcg/kg/min)**, **Show remote
@@ -2398,8 +2410,8 @@ cargo run --locked -p metis-app -- --metis-semantic-capture $semantic 60 2 0.2
 ```
 
 The reviewed [`native-semantic.json`](manual/images/native-semantic.json)
-artifact is schema `1`, contains 22 elements, is 10,325 bytes and hashes to
-`d1bdfc6089d9d34c9538d0de95a5e5b9607dbf9ef0aa0d52649602347be39628`. It is
+artifact is schema `1`, contains 34 elements, is 16,333 bytes and hashes to
+`0bb048549b94aabfda01c34d1c1239a35b797e67640b1b690fd2a21889bc4bd1`. It is
 regenerated from the production semantic capture command. Its value-semantic oracle finds the
 `main-screen` application root, the focusable `label-patient` textbox with its
 bounded current value and `set_value` action, and an enabled, focusable

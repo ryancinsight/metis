@@ -1,4 +1,5 @@
 //! Unprivileged form transitions and correlated backend requests.
+use crate::commands::{ApplicationTheme, CommandMenuState};
 use crate::presentation::CLINICAL_SCREEN_XML;
 use metis_core::error::{ErrorCode, MetisError, Result};
 use metis_core::protocol::{
@@ -75,6 +76,9 @@ pub struct FrontendApp<T> {
     pub(crate) composition: Option<String>,
     pub(crate) state: FormState,
     pub(crate) display_scale: DisplayScale,
+    pub(crate) command_menu: CommandMenuState,
+    pub(crate) command_status: String,
+    pub(crate) theme: ApplicationTheme,
 }
 
 impl<T: IpcTransport> FrontendApp<T> {
@@ -90,6 +94,9 @@ impl<T: IpcTransport> FrontendApp<T> {
             composition: None,
             state: FormState::Idle,
             display_scale: DisplayScale::ONE,
+            command_menu: CommandMenuState::default(),
+            command_status: "Commands ready".to_owned(),
+            theme: ApplicationTheme::default(),
         };
         app.render()?;
         Ok(app)

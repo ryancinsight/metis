@@ -563,7 +563,7 @@ an owner. “Unsupported” cannot replace delivery of a required mobile/native 
 
 <a id="METIS-INTEGRATION-001"></a>
 ## METIS-INTEGRATION-001 — Desktop integration services [minor]
-- Status: in-progress; priority: P2; owner: Metis host/broker; integrator: root; last-update: 2026-09-22; branch: feat/metis-webview-menu-001; dependencies: METIS-DESKTOP-001; risk: OS interaction
+- Status: in-progress; priority: P2; owner: Metis host/broker; integrator: root; last-update: 2026-09-22; branch: feat/metis-native-command-menu-001; dependencies: METIS-DESKTOP-001; risk: OS interaction
 - Scope: menus/tray, clipboard, notifications, global shortcuts, deep links, file associations, opener, single-instance and window state; bind each exposed API to policy.
 - Acceptance: typed commands/events agree across supported hosts, denial/error paths remain explicit, clipboard/user-content permissions obey host rules and listeners unregister on shutdown.
 - Demonstration: [V08](docs/VERIFICATION.md#V08), actual OS interactions and permission failures; capture menus/dialogs where visible and assert nonvisual events.
@@ -573,8 +573,10 @@ an owner. “Unsupported” cannot replace delivery of a required mobile/native 
 - Browser command-surface increment (2026-09-22): the workbench now mounts a
   Rust-owned navigation landmark, toolbar and menu with focus-patient and
   validated dark/system theme actions. Menu state and live status render from
-  `BrowserState`; Escape closes the menu and restores trigger focus. The asset
-  contract and WASM/clippy checks cover the DOM seam. Native tray,
+  `BrowserState`, and its listener consumes the shared
+  `metis_frontend::ApplicationCommand` identities. Escape closes the menu and
+  restores trigger focus. The asset contract and WASM/clippy checks cover the
+  DOM seam. Native tray,
   notifications, global shortcuts, deep links, file associations, opener,
   single-instance and window-state services remain open.
 - WebView2 command-surface increment (2026-09-22): the packaged page now
@@ -582,6 +584,13 @@ an owner. “Unsupported” cannot replace delivery of a required mobile/native 
   patient-focus command. Asset tests cover roles, state attributes, Escape
   handling and the no-bridge command boundary; native visual menu capture and
   installed accessibility technology remain host-specific evidence.
+- Native command-surface increment (2026-09-22): the software-rendered Windows
+  role now mounts the same typed navigation, toolbar, menu and menu-item
+  surface. Pointer and AccessKit activation mutate `FrontendApp` command state,
+  apply dark/system palettes, focus the patient reference and close the menu on
+  Escape before exiting. Native component/event tests pass; installed
+  screen-reader speech, native tray/notification/shortcut services and physical
+  window captures remain host-specific residuals.
 
 <a id="METIS-SERVICES-001"></a>
 ## METIS-SERVICES-001 — Scoped network, shell and sidecars [minor]

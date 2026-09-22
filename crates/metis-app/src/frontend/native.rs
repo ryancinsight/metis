@@ -1,15 +1,15 @@
 //! Visible Windows host for the software-rendered Metis form.
 
 use metis_core::error::{ErrorCode, MetisError, Result};
-use metis_frontend::{FormState, FrontendApp};
+use metis_frontend::{ApplicationCommand, FormState, FrontendApp};
 use metis_ipc::{IpcTransport, StreamTransport};
 use metis_platform::native::{
     AccessibilityAction, AccessibilityActionRequest, AccessibilityTree, CompositionPhase,
     ModifierState, MouseButton, NativeApplication, NativeFlow, WindowConfig, WindowEvent,
     run_native_application,
 };
-use metis_platform::{Color, DisplayScale, Framebuffer, Rect};
-use metis_ui_lang::{DisplayCommand, LayoutViewport, compute_layout};
+use metis_platform::{DisplayScale, Framebuffer, Rect};
+use metis_ui_lang::{Color as UiColor, DisplayCommand, LayoutViewport, compute_layout};
 use std::io::{stdin, stdout};
 use std::time::Duration;
 
@@ -23,6 +23,10 @@ const RETURN_KEY: u32 = 0x0d;
 const ESCAPE_KEY: u32 = 0x1b;
 const BACKSPACE_KEY: u32 = 0x08;
 const SUBMIT_LABEL: &str = "[ SUBMIT CALCULATION TO BACKEND ]";
+const COMMANDS_LABEL: &str = "[ COMMANDS ]";
+const FOCUS_PATIENT_LABEL: &str = "FOCUS PATIENT";
+const THEME_DARK_LABEL: &str = "DARK THEME";
+const THEME_SYSTEM_LABEL: &str = "SYSTEM THEME";
 
 /// Runs the visible Windows software-rendered form over the supervised pipe.
 pub(crate) fn run(inputs: [String; 3]) -> Result<(), Box<dyn std::error::Error>> {
@@ -80,12 +84,19 @@ impl<T: IpcTransport> NativeApplication for NativeForm<T> {
         let mut repaint = false;
         for event in events {
             match event {
-                WindowEvent::CloseRequested
-                | WindowEvent::Destroyed
-                | WindowEvent::KeyDown {
+                WindowEvent::CloseRequested | WindowEvent::Destroyed => {
+                    return Ok(NativeFlow::Exit);
+                }
+                WindowEvent::KeyDown {
                     virtual_key: ESCAPE_KEY,
                     ..
-                } => return Ok(NativeFlow::Exit),
+                } => {
+                    if self.app.close_command_menu()? {
+                        repaint = true;
+                    } else {
+                        return Ok(NativeFlow::Exit);
+                    }
+                }
                 WindowEvent::FocusGained => self.focused = true,
                 WindowEvent::FocusLost => {
                     self.focused = false;
@@ -114,11 +125,7 @@ impl<T: IpcTransport> NativeApplication for NativeForm<T> {
                     y,
                     button: MouseButton::Left,
                 } => {
-                    self.focused = true;
-                    if submit_rect(&self.app)?.contains(*x, *y) {
-                        submit(&mut self.app, self.pid)?;
-                        repaint = true;
-                    }
+                    repaint |= self.handle_pointer_up(*x, *y)?;
                 }
                 WindowEvent::KeyDown {
                     virtual_key: RETURN_KEY,
@@ -166,6 +173,41 @@ impl<T: IpcTransport> NativeApplication for NativeForm<T> {
 }
 
 impl<T: IpcTransport> NativeForm<T> {
+    fn handle_pointer_up(&mut self, x: i32, y: i32) -> Result<bool> {
+        self.focused = true;
+        if command_menu_toggle_rect(&self.app)?.contains(x, y) {
+            self.app.toggle_command_menu()?;
+            return Ok(true);
+        }
+        if self.app.command_menu_open() {
+            if command_rect(&self.app, FOCUS_PATIENT_LABEL)?.contains(x, y) {
+                self.app
+                    .activate_command(ApplicationCommand::FocusPatient)?;
+                self.focused = true;
+                return Ok(true);
+            }
+            if command_rect(&self.app, THEME_DARK_LABEL)?.contains(x, y) {
+                self.app.activate_command(ApplicationCommand::ThemeDark)?;
+                return Ok(true);
+            }
+            if command_rect(&self.app, THEME_SYSTEM_LABEL)?.contains(x, y) {
+                self.app.activate_command(ApplicationCommand::ThemeSystem)?;
+                return Ok(true);
+            }
+        }
+        if command_rect(&self.app, FOCUS_PATIENT_LABEL)?.contains(x, y) {
+            self.app
+                .activate_command(ApplicationCommand::FocusPatient)?;
+            self.focused = true;
+            return Ok(true);
+        }
+        if submit_rect(&self.app)?.contains(x, y) {
+            submit(&mut self.app, self.pid)?;
+            return Ok(true);
+        }
+        Ok(false)
+    }
+
     fn apply_accessibility_action(&mut self, request: &AccessibilityActionRequest) -> Result<bool> {
         match request.target_node {
             target if target == native_accessibility::submit_button_identity() => {
@@ -176,6 +218,52 @@ impl<T: IpcTransport> NativeForm<T> {
                     }
                     AccessibilityAction::Activate => {
                         submit(&mut self.app, self.pid)?;
+                        Ok(true)
+                    }
+                    _ => Ok(false),
+                }
+            }
+            target if target == native_accessibility::command_menu_toggle_identity() => {
+                match request.action {
+                    AccessibilityAction::Focus => Ok(true),
+                    AccessibilityAction::Activate => {
+                        self.app.toggle_command_menu()?;
+                        Ok(true)
+                    }
+                    _ => Ok(false),
+                }
+            }
+            target if target == native_accessibility::focus_patient_identity() => {
+                match request.action {
+                    AccessibilityAction::Focus => Ok(true),
+                    AccessibilityAction::Activate => {
+                        self.app
+                            .activate_command(ApplicationCommand::FocusPatient)?;
+                        self.focused = true;
+                        Ok(true)
+                    }
+                    _ => Ok(false),
+                }
+            }
+            target if target == native_accessibility::theme_dark_identity() => {
+                if !self.app.command_menu_open() {
+                    return Ok(false);
+                }
+                match request.action {
+                    AccessibilityAction::Activate => {
+                        self.app.activate_command(ApplicationCommand::ThemeDark)?;
+                        Ok(true)
+                    }
+                    _ => Ok(false),
+                }
+            }
+            target if target == native_accessibility::theme_system_identity() => {
+                if !self.app.command_menu_open() {
+                    return Ok(false);
+                }
+                match request.action {
+                    AccessibilityAction::Activate => {
+                        self.app.activate_command(ApplicationCommand::ThemeSystem)?;
                         Ok(true)
                     }
                     _ => Ok(false),
@@ -333,6 +421,14 @@ fn validate_patient_value(value: &str) -> Result<()> {
 }
 
 fn submit_rect<T: IpcTransport>(app: &FrontendApp<T>) -> Result<Rect> {
+    command_rect(app, SUBMIT_LABEL)
+}
+
+fn command_menu_toggle_rect<T: IpcTransport>(app: &FrontendApp<T>) -> Result<Rect> {
+    command_rect(app, COMMANDS_LABEL)
+}
+
+fn command_rect<T: IpcTransport>(app: &FrontendApp<T>, label: &str) -> Result<Rect> {
     let width = i32::try_from(app.framebuffer().width()).map_err(|_| layout_error())?;
     let height = i32::try_from(app.framebuffer().height()).map_err(|_| layout_error())?;
     let display = compute_layout(
@@ -343,13 +439,13 @@ fn submit_rect<T: IpcTransport>(app: &FrontendApp<T>) -> Result<Rect> {
         .commands
         .iter()
         .find_map(|command| match command {
-            DisplayCommand::DrawText { text, x, y, .. } if text == SUBMIT_LABEL => Some((*x, *y)),
+            DisplayCommand::DrawText { text, x, y, .. } if text == label => Some((*x, *y)),
             _ => None,
         })
         .ok_or_else(|| {
             MetisError::ui(
                 ErrorCode::MalformedMarkup,
-                "Authored form is missing the submit label",
+                format!("Authored form is missing command label {label}"),
             )
         })?;
     display
@@ -357,7 +453,7 @@ fn submit_rect<T: IpcTransport>(app: &FrontendApp<T>) -> Result<Rect> {
         .iter()
         .find_map(|command| match command {
             DisplayCommand::FillRect { rect, color }
-                if *color == Color::BLUE && rect.contains(label_x, label_y) =>
+                if *color == UiColor::BLUE && rect.contains(label_x, label_y) =>
             {
                 Some(*rect)
             }
@@ -366,7 +462,7 @@ fn submit_rect<T: IpcTransport>(app: &FrontendApp<T>) -> Result<Rect> {
         .ok_or_else(|| {
             MetisError::ui(
                 ErrorCode::MalformedMarkup,
-                "Authored form is missing the submit surface",
+                format!("Authored form is missing command surface for {label}"),
             )
         })
 }

@@ -1,9 +1,9 @@
 use super::{
     MAX_PATIENT_ID_BYTES, NativeForm, append_patient_character, append_patient_text,
-    input_limit_error, submit_rect,
+    command_menu_toggle_rect, input_limit_error, submit_rect,
 };
 use metis_core::ErrorCode;
-use metis_frontend::FrontendApp;
+use metis_frontend::{ApplicationTheme, FrontendApp};
 use metis_ipc::MemoryTransport;
 use metis_platform::DisplayScale;
 use metis_platform::native::{
@@ -258,4 +258,84 @@ fn enter_submission_accepts_plain_and_control_shortcuts() {
         super::submit_shortcut(ModifierState::NONE),
         Some(super::SubmitShortcut::Plain)
     );
+}
+
+#[test]
+fn native_command_menu_pointer_and_escape_follow_host_neutral_state() {
+    let (transport, _peer) = MemoryTransport::pair();
+    let app = FrontendApp::new(transport, 800, 600).expect("form");
+    let mut form = NativeForm {
+        app,
+        pid: 1,
+        patient_id: "patient".to_owned(),
+        focused: true,
+    };
+    let toggle = command_menu_toggle_rect(&form.app).expect("command toggle surface");
+    let flow = form
+        .handle_events(&[WindowEvent::PointerUp {
+            x: toggle.x,
+            y: toggle.y,
+            button: super::MouseButton::Left,
+        }])
+        .expect("open command menu");
+    assert!(matches!(flow, NativeFlow::Continue { repaint: true }));
+    assert!(form.app.command_menu_open());
+
+    let flow = form
+        .handle_events(&[WindowEvent::KeyDown {
+            virtual_key: super::ESCAPE_KEY,
+            repeated: false,
+            modifiers: ModifierState::NONE,
+        }])
+        .expect("close command menu");
+    assert!(matches!(flow, NativeFlow::Continue { repaint: true }));
+    assert!(!form.app.command_menu_open());
+
+    let flow = form
+        .handle_events(&[WindowEvent::KeyDown {
+            virtual_key: super::ESCAPE_KEY,
+            repeated: false,
+            modifiers: ModifierState::NONE,
+        }])
+        .expect("close native form");
+    assert!(matches!(flow, NativeFlow::Exit));
+}
+
+#[test]
+fn native_command_accessibility_action_applies_theme_only_when_menu_is_open() {
+    let (transport, _peer) = MemoryTransport::pair();
+    let app = FrontendApp::new(transport, 800, 600).expect("form");
+    let mut form = NativeForm {
+        app,
+        pid: 1,
+        patient_id: "patient".to_owned(),
+        focused: true,
+    };
+    let closed = form
+        .handle_events(&[WindowEvent::AccessibilityAction {
+            request: AccessibilityActionRequest {
+                target_node: super::native_accessibility::theme_dark_identity(),
+                action: AccessibilityAction::Activate,
+                value: None,
+                delta: None,
+            },
+        }])
+        .expect("closed theme action");
+    assert!(matches!(closed, NativeFlow::Continue { repaint: false }));
+    assert_eq!(form.app.theme(), ApplicationTheme::System);
+
+    form.app.toggle_command_menu().expect("open command menu");
+    let open = form
+        .handle_events(&[WindowEvent::AccessibilityAction {
+            request: AccessibilityActionRequest {
+                target_node: super::native_accessibility::theme_dark_identity(),
+                action: AccessibilityAction::Activate,
+                value: None,
+                delta: None,
+            },
+        }])
+        .expect("dark theme action");
+    assert!(matches!(open, NativeFlow::Continue { repaint: true }));
+    assert_eq!(form.app.theme(), ApplicationTheme::Dark);
+    assert!(!form.app.command_menu_open());
 }
