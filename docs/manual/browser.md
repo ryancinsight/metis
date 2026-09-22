@@ -1235,6 +1235,19 @@ projection; the bounded depth retains the required workbench roles/names while
 ignored text descendants remain inside the byte-bounded response. It does not
 claim spoken screen-reader output or an operating-system accessibility bridge.
 
+The same Rust semantic contract covers application command surfaces. A host
+may project `nav`/`navigation` into a navigation landmark, `aside`/`complementary`
+into a sidebar, `toolbar` into a title bar, and `menu` with `menuitem` children
+into a dropdown command surface. Menu items expose the typed `Activate` action;
+hidden ancestors and disabled items expose no focus or action. This keeps menu
+state in the Rust presentation model and leaves browser, UIA, `NSAccessibility`
+and AT-SPI translation at their host boundaries. The Windows native path uses
+the matching Moirai PAL role contract from PR [#432](https://github.com/ryancinsight/Moirai/pull/432)
+at merge `0e2e1bbb2d81e16dd9c694ba46a9e9710e034417`;
+the projection is tested in `metis-ui-lang` and `metis-app`. These checks do not
+claim spoken screen-reader output or native accessibility coverage on every
+host.
+
 ### Decode the shipped image marks
 
 Build the browser output, then add `--asset-probe` to a workbench run. The

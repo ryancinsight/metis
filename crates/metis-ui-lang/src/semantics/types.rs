@@ -14,8 +14,18 @@ pub enum SemanticRole {
     Application,
     /// A primary document region.
     Main,
+    /// A navigation landmark containing links or commands.
+    Navigation,
+    /// A complementary region such as a collapsible sidebar.
+    Complementary,
     /// A generic grouping container.
     Group,
+    /// A command toolbar or title bar.
+    Toolbar,
+    /// A popup command menu.
+    Menu,
+    /// An actionable command inside a menu.
+    MenuItem,
     /// An actionable button.
     Button,
     /// Static text or a text label.
@@ -42,7 +52,8 @@ impl SemanticRole {
     pub(super) const fn is_interactive(self) -> bool {
         matches!(
             self,
-            Self::Button
+            Self::MenuItem
+                | Self::Button
                 | Self::TextBox
                 | Self::CheckBox
                 | Self::Radio

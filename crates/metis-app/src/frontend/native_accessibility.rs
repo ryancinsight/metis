@@ -138,7 +138,12 @@ fn role(role: SemanticRole) -> Result<AccessibilityRole> {
     match role {
         SemanticRole::Application => Ok(AccessibilityRole::Application),
         SemanticRole::Main => Ok(AccessibilityRole::Main),
+        SemanticRole::Navigation => Ok(AccessibilityRole::Navigation),
+        SemanticRole::Complementary => Ok(AccessibilityRole::Complementary),
         SemanticRole::Group => Ok(AccessibilityRole::Group),
+        SemanticRole::Toolbar => Ok(AccessibilityRole::Toolbar),
+        SemanticRole::Menu => Ok(AccessibilityRole::Menu),
+        SemanticRole::MenuItem => Ok(AccessibilityRole::MenuItem),
         SemanticRole::Button => Ok(AccessibilityRole::Button),
         SemanticRole::Text => Ok(AccessibilityRole::Text),
         SemanticRole::TextBox => Ok(AccessibilityRole::TextInput),
@@ -206,6 +211,23 @@ mod tests {
         assert_eq!(patient, patient_input_identity());
         assert_ne!(explicit, patient);
         assert_ne!(path_identity(&[0]), path_identity(&[1]));
+    }
+
+    #[test]
+    fn command_surface_roles_map_to_native_contract() {
+        let roles = [
+            (SemanticRole::Navigation, AccessibilityRole::Navigation),
+            (
+                SemanticRole::Complementary,
+                AccessibilityRole::Complementary,
+            ),
+            (SemanticRole::Toolbar, AccessibilityRole::Toolbar),
+            (SemanticRole::Menu, AccessibilityRole::Menu),
+            (SemanticRole::MenuItem, AccessibilityRole::MenuItem),
+        ];
+        for (source, expected) in roles {
+            assert_eq!(role(source).expect("role is supported"), expected);
+        }
     }
 
     fn find_identity(node: &SemanticNode, path: &mut Vec<usize>, target: &str) -> Option<u64> {

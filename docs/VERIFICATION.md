@@ -1662,6 +1662,17 @@ scale and bounded element geometry when a configured driver is available;
 host-specific preference enablement, supported screen-reader traversal and
 native host accessibility remain open under `METIS-A11Y-001`.
 
+The host-neutral semantic projection also admits command-surface landmarks:
+`navigation`/`nav`, `complementary`/`aside`, `toolbar`, `menu` and `menuitem`.
+Menu items expose the typed `Activate` action, while hidden descendants and
+disabled items are removed from focus and action sets. Native and browser hosts
+can translate the same tree without a JavaScript command-state store. The
+Windows native path consumes the matching Moirai PAL role contract from PR
+[#432](https://github.com/ryancinsight/Moirai/pull/432) at merge
+`0e2e1bbb2d81e16dd9c694ba46a9e9710e034417`. This increment proves
+the projection and its value-semantic tests, not spoken screen-reader output
+on every operating system.
+
 The fresh CUA trace started from **Start host**, advanced to **Stop host** and
 **Session details**, then traversed **Patient reference**, **Weight (kg)**,
 **Drug concentration (mg/mL)**, **Target dose (mcg/kg/min)**, **Show remote

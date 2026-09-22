@@ -54,6 +54,16 @@ explicit status values. This provider is a host integration surface; it does
 not claim trusted operating-system clipboard access or move DICOM semantics
 into Metis.
 
+Revision 2026-09-22: the host-neutral semantic projection admits navigation,
+complementary, toolbar, menu and menuitem roles. Menu items use the existing
+typed `Activate` action and the projection applies the same hidden-ancestor and
+disabled-state guards as every other interactive role. Command surfaces remain
+declarative markup projected by Rust; host adapters translate them to browser,
+UIA, `NSAccessibility` or AT-SPI controls without a JavaScript state store.
+The Windows path uses the matching Moirai PAL role contract from PR
+[#432](https://github.com/ryancinsight/Moirai/pull/432), merged at
+`0e2e1bbb2d81e16dd9c694ba46a9e9710e034417`.
+
 The classifier follows the W3C [Input Events] vocabulary, including quotation
 paste, line and word deletion, drag deletion and transpose insertion. Names not
 in the bounded mapping remain `other`.
