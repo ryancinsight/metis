@@ -1719,34 +1719,32 @@ remain in RITK.
 The recorded cross-engine captures show the real anatomy rendered through this
 format-neutral host: [Chromium gallery](https://github.com/ryancinsight/ritk/blob/main/docs/manual/images/dicom-metis-real-browser-mri-cross-engine-chromium.png)
 and [Firefox gallery](https://github.com/ryancinsight/ritk/blob/main/docs/manual/images/dicom-metis-real-browser-mri-cross-engine-firefox.png).
-The current standalone-lock replay (2026-09-22) uses the lock delivered by RITK PR
-[#592](https://github.com/ryancinsight/ritk/pull/592), merged as
-`620c03342f3951366441f1f908d05bc3f249f566`; its exact replay source is
-`36b8330d3dfa450ae81523fc1ebc6e59413a1dc4`, with all six Metis packages at
-`219143bbf3596aea85fa4624d7d5241a63b4cf0d` and fifteen Moirai packages at
-`0e2e1bbb2d81e16dd9c694ba46a9e9710e034417`. The standalone Cargo.lock SHA-256
-is `acb5bd6c7c82ced80c052ae542dcd63992badf8d00a982c986f64716f5736b10`. It
+The current standalone-lock replay (2026-09-22) is recorded in RITK PR
+[#605](https://github.com/ryancinsight/ritk/pull/605), merged as
+`29c51440ad4d33ab4109dd665683b7ef5bf45198`; its standalone lock was delivered
+by RITK PR [#604](https://github.com/ryancinsight/ritk/pull/604), merged as
+`5e2b74d0ac7550870c147c43225b36757b9b0663`, and its exact replay source is
+`e88a94219fac9f07339393da2cd0e7a19164f93b`. All six Metis packages resolve at
+`1b10541c2ef7a849e6ff66a3c778874bdf96de7b` and fifteen Moirai packages at
+`b77239dd10bcaf803394c26255c462bc858c1340`. The standalone Cargo.lock SHA-256
+is `d0d6abd6baf3f7d45943e9d1d3f85a2158b7dae605d3ec23ec07981b8b17a9cd`. It
 reads all 94 saved files (49,807,236 bytes), reproduces the revision-bound
 1280 × 800 MRI frame with SHA-256
-`259dd79103482756c4e688621bebafc841cc40f1df10ff2bbd7f9d04b7b4d401` and
-411,589 non-black pixels, and rejects an invalid study. The locked replay's
+`85071f20ca11cb4a9b2524db0a53b21695b7e93141831e7e0ab293c42fbcd582` and
+411,413 non-black pixels, and rejects an invalid study. The locked replay's
 executable digest is
-`f416deadbb8a17ab4ffa1d58e1eef007bd1887883ad638fbbf82fa038ec063f9`;
+`7f81c6fc3d2e76c7e28d603fbaad3eece1fb67c694b7b97bf4ff6c7dc3325484`;
 the [RITK replay provenance](https://github.com/ryancinsight/ritk/blob/main/docs/manual/images/dicom-metis-real-mri.json)
 is authoritative for the example digest, storage-reuse oracles and physical
 spacing carried into the native and browser presentation boundaries.
-The post-merge hosted browser run [35704771969](https://github.com/ryancinsight/ritk/actions/runs/35704771969)
-is dispatched against RITK merge `620c03342f3951366441f1f908d05bc3f249f566`
-and Metis `219143bbf3596aea85fa4624d7d5241a63b4cf0d`; browser conclusions are
-recorded only after its artifacts are collected. The prior run
-[35690425860](https://github.com/ryancinsight/ritk/actions/runs/35690425860)
-completed against the older RITK PR #588 replay and remains historical. In that
-historical run, Chromium and Firefox saved-study chooser lanes, Chromium window and projection
-lanes, and the responsive Chromium/Firefox lanes passed the real 94-file,
-49,807,236-byte study with exact RGBA, semantic and teardown oracles. WebKit
-accepted all 94 chooser paths and then rejected the bounded whole-file read;
-Chromium WebGPU reported no adapter. These capability residuals and their source
-captures are recorded in the [RITK cross-engine provenance](https://github.com/ryancinsight/ritk/blob/main/docs/manual/images/dicom-metis-real-browser-mri-cross-engine.json).
+The current hosted browser run [35759891764](https://github.com/ryancinsight/ritk/actions/runs/35759891764)
+exercises the same 94-file study against Metis `1b10541c2ef7a849e6ff66a3c778874bdf96de7b`.
+Chromium raster, Chromium-window, Chromium MIP projection, Chromium responsive,
+Firefox raster and Firefox responsive lanes pass the real study with their
+RGBA, semantic and teardown oracles. WebKit accepts all 94 chooser paths and
+49,807,236 bytes, then rejects the bounded whole-file read; Chromium WebGPU
+reports no usable adapter on the hosted runner. These capability residuals and
+their source captures are recorded in the [RITK cross-engine provenance](https://github.com/ryancinsight/ritk/blob/main/docs/manual/images/dicom-metis-real-browser-mri-cross-engine.json).
 RITK scans and decodes DICOM and owns the clinical pixels; Metis supplies the
 format-neutral chooser, bounded handoff and canvas host.
 
