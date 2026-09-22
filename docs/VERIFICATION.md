@@ -1206,6 +1206,18 @@ trusted input mapping and lifecycle cleanup. The trace does not establish
 native file-dialog behavior, WebKit file reads, WebGPU rendering or allocator
 and process-memory bounds.
 
+The current responsive consumer replay is recorded in hosted run
+[35681744137](https://github.com/ryancinsight/ritk/actions/runs/35681744137)
+against RITK `37e28c0d541c50f845904543c202e8e055c4e093` and Metis
+`3830fe7d3bf38c45de4258aeb8145b05c5f37436`. Chromium and Firefox accepted
+the same 94-file, 49,807,236-byte study and rendered axial, coronal,
+sagittal and display-only MIP panes through RITK's responsive layout. The
+[RITK responsive workflow record](https://github.com/ryancinsight/ritk/blob/main/docs/manual/dicom-workflow.md)
+is the provenance source; Metis remains responsible for the browser runtime
+and lifecycle contract, while RITK owns DICOM interpretation. WebGPU adapter
+availability, the Chromium window ROI lane and Safari's bounded whole-file
+read remain explicit residuals in that run.
+
 <a id="browser-file-chooser-matrix-contract--2026-09-15"></a>
 ## Browser file chooser matrix contract — 2026-09-15
 
