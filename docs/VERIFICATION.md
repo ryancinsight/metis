@@ -2467,6 +2467,39 @@ decision's protection actually lives. The bounded subset holds: `space-around`,
 `baseline` and bare `end` are typed errors rather than a silent fall back to
 the default.
 
+### Demo form adopts the admitted declarations — 2026-09-22
+
+The authored clinical screen now uses what the renderer paints, so the
+demonstration shows the capability rather than describing it. The header, the
+navigation band, both cards and every control carry a corner radius; the screen
+title, both card headings and the rate output carry bold weight; the controls
+declare a 44-pixel minimum height and centre their label inside it; and the
+submit control takes a fixed width centred in its row instead of stretching
+across the card.
+
+Every declaration here was rejected by the style contract until this week, so
+the capture is the end-to-end evidence: authored markup, through parsing,
+layout and paint, to pixels. The regenerated captures were inspected at
+four-times magnification — the card arcs are smooth, the one-pixel border
+follows the arc rather than cutting the corner, bold headings are visibly
+heavier than the body labels beside them, and control labels sit centred in
+their hit target.
+
+Label text is deliberately unchanged. `[ SUBMIT CALCULATION TO BACKEND ]` and
+`[ COMMANDS ]` carry bracket decoration that stood in for a button affordance
+the renderer could not paint; with a rounded, centred control at hit-target
+height the brackets are redundant, but the strings are oracles in the native
+accessibility journey and the semantic baseline, so removing them is a
+coordinated change filed as METIS-FORM-LABELS-001.
+
+One test changed, with its derivation. `dpi_event_repaints_and_scales_the_submit_hit_region`
+asserted that the hit region's left edge grows with the display scale. That
+held only while the control was left-aligned at a scaled padding offset. A
+centred control sits at half the space its card has left over, and on a fixed
+physical surface the control grows faster than that card, so its offset falls
+as the scale rises. The assertion was incidental to the test's subject; it now
+asserts the region scales on both axes, which is what the name claims.
+
 ### Authored minimum-size evidence — 2026-09-22
 
 `min-width` and `min-height` are admitted and raise the used extent of an
