@@ -2,7 +2,7 @@ use super::{DisplayCommand, DisplayList, LayoutViewport, compute_layout};
 use crate::dom::{DomDocument, DomElement, DomNode};
 use crate::parse_markup;
 use crate::parser::{MAX_DEPTH, MAX_NODES};
-use crate::style::{Color, Display, EdgeValues, JustifyContent, Size};
+use crate::style::{Color, Display, EdgeValues, Size};
 use metis_core::error::ErrorCode;
 use metis_platform::DisplayScale;
 use metis_platform::GlyphWeight;
@@ -47,17 +47,6 @@ fn extreme_styles_return_errors_without_wrapping() {
             .code,
         ErrorCode::LayoutOverflow
     );
-}
-
-#[test]
-fn programmatic_unsupported_style_is_rejected_before_painting() {
-    let mut root = DomElement::new("root");
-    root.computed_style.justify_content = JustifyContent::Center;
-    root.computed_style.background_color = Some(Color::RED);
-    let error = compute_layout(&DomDocument::new(root), LayoutViewport::new(4, 4))
-        .expect_err("unsupported style must not be silently ignored");
-    assert_eq!(error.code, ErrorCode::InvalidCssStyle);
-    assert!(error.message.contains("justify-content"));
 }
 
 #[test]
@@ -163,6 +152,124 @@ fn an_authored_bold_weight_paints_heavier_strokes() {
         bold_ink > regular_ink,
         "bold painted {bold_ink}, regular {regular_ink}"
     );
+}
+
+/// Every child rectangle a laid-out document emits, in painter order.
+fn child_rects(markup: &str, viewport: LayoutViewport) -> Vec<Rect> {
+    let document = parse_markup(markup).expect("authored markup parses");
+    let display = compute_layout(&document, viewport).expect("lays out");
+    display
+        .commands
+        .iter()
+        .filter_map(|command| match command {
+            DisplayCommand::FillRect { rect, color, .. } if *color == Color::rgb(0, 0, 255) => {
+                Some(*rect)
+            }
+            _ => None,
+        })
+        .collect()
+}
+
+/// Three fixed-size children in a taller column, under one alignment pair.
+fn column_children(justify: &str, align: &str) -> Vec<Rect> {
+    let markup = format!(
+        "<card id=\"root\" style=\"height: 200px; width: 100px;          justify-content: {justify}; align-items: {align};\">         <card id=\"a\" style=\"background-color: #0000ff; width: 20px; height: 30px;\"></card>         <card id=\"b\" style=\"background-color: #0000ff; width: 20px; height: 30px;\"></card>         <card id=\"c\" style=\"background-color: #0000ff; width: 20px; height: 30px;\"></card>         </card>"
+    );
+    child_rects(&markup, LayoutViewport::new(100, 200))
+}
+
+#[test]
+fn start_alignment_leaves_every_child_where_it_was_laid_out() {
+    // The contract that keeps every existing document and capture unchanged:
+    // the default pair introduces no offset at all.
+    let defaults = column_children("flex-start", "stretch");
+    assert_eq!(
+        defaults.iter().map(|r| (r.x, r.y)).collect::<Vec<_>>(),
+        vec![(0, 0), (0, 30), (0, 60)]
+    );
+}
+
+#[test]
+fn main_axis_distribution_places_children_in_the_free_space() {
+    // Ninety of the two hundred pixels are occupied, leaving a hundred and ten.
+    for (keyword, expected) in [
+        ("flex-start", vec![0, 30, 60]),
+        ("center", vec![55, 85, 115]),
+        ("flex-end", vec![110, 140, 170]),
+        // The first child holds the start edge and the last reaches the end.
+        ("space-between", vec![0, 85, 170]),
+    ] {
+        let tops: Vec<_> = column_children(keyword, "stretch")
+            .iter()
+            .map(|rect| rect.y)
+            .collect();
+        assert_eq!(tops, expected, "justify-content: {keyword}");
+    }
+}
+
+#[test]
+fn cross_axis_alignment_places_children_across_the_container() {
+    // Each child is twenty wide in a hundred-wide container.
+    for (keyword, expected) in [
+        ("flex-start", 0),
+        ("center", 40),
+        ("flex-end", 80),
+        ("stretch", 0),
+    ] {
+        let lefts: Vec<_> = column_children("flex-start", keyword)
+            .iter()
+            .map(|rect| rect.x)
+            .collect();
+        assert_eq!(lefts, vec![expected; 3], "align-items: {keyword}");
+    }
+}
+
+#[test]
+fn a_full_container_distributes_nothing() {
+    // Three thirty-pixel children exactly fill ninety pixels, so every
+    // keyword must agree with start alignment.
+    let markup = |justify: &str| {
+        format!(
+            "<card id=\"root\" style=\"height: 90px; width: 100px; justify-content: {justify};\">             <card id=\"a\" style=\"background-color: #0000ff; height: 30px;\"></card>             <card id=\"b\" style=\"background-color: #0000ff; height: 30px;\"></card>             <card id=\"c\" style=\"background-color: #0000ff; height: 30px;\"></card>             </card>"
+        )
+    };
+    let start = child_rects(&markup("flex-start"), LayoutViewport::new(100, 90));
+    for keyword in ["center", "flex-end", "space-between"] {
+        assert_eq!(
+            child_rects(&markup(keyword), LayoutViewport::new(100, 90)),
+            start,
+            "justify-content: {keyword} moved a child with no free space"
+        );
+    }
+}
+
+#[test]
+fn alignment_moves_every_command_a_child_emits() {
+    // A child carrying text must move with its box, or the run tears away
+    // from the surface it labels.
+    let markup = "<card id=\"root\" style=\"height: 200px; width: 200px;          justify-content: flex-end;\">         <card id=\"a\" style=\"background-color: #0000ff; height: 30px;\">Rate</card>         </card>";
+    let document = parse_markup(markup).expect("parses");
+    let display = compute_layout(&document, LayoutViewport::new(200, 200)).expect("lays out");
+    let box_top = display
+        .commands
+        .iter()
+        .find_map(|command| match command {
+            DisplayCommand::FillRect { rect, color, .. } if *color == Color::rgb(0, 0, 255) => {
+                Some(rect.y)
+            }
+            _ => None,
+        })
+        .expect("child fill");
+    let text_top = display
+        .commands
+        .iter()
+        .find_map(|command| match command {
+            DisplayCommand::DrawText { y, .. } => Some(*y),
+            _ => None,
+        })
+        .expect("child text");
+    assert_eq!(box_top, 170, "the child did not reach the end edge");
+    assert_eq!(text_top, box_top, "the text run did not move with its box");
 }
 
 /// The laid-out rectangle of the only element in a document.

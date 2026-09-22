@@ -2428,6 +2428,45 @@ merged the Windows `ValuePattern.SetValue` action mapping at `d7b38d7`. These
 are provider and consumer contract checks: no OS screen reader, spoken output
 or host preference enablement is claimed.
 
+### Authored flex alignment evidence — 2026-09-22
+
+`justify-content` and `align-items` place children within the free space their
+container leaves. Alignment cannot be decided while children are measured,
+because a child paints as it is measured and the container's own extent is not
+final until its automatic height is derived from those children. Redistribution
+therefore runs after child layout and translates each child's emitted commands;
+[ADR 0045](adr/0045-flex-alignment-redistribution.md) records why translating
+beats a second paint pass.
+
+The evidence is positional rather than structural. Three thirty-pixel children
+in a two-hundred-pixel column leave one hundred and ten pixels free, and the
+keywords place their tops at 0/30/60 for start, 55/85/115 for centre,
+110/140/170 for end, and 0/85/170 for space-between — the first child holding
+the start edge and the last reaching the end. Cross-axis alignment places
+twenty-wide children in a hundred-wide container at 0, 40 and 80 for start,
+centre and end, with stretch at 0.
+
+Two tests carry the safety argument. A container its children exactly fill
+distributes nothing: every keyword agrees with start alignment, so a document
+without free space cannot move. And the default pair leaves children at
+0/30/60, which is where child layout already put them — that zero-offset
+default is what keeps every existing capture byte-identical, and the golden
+baseline confirms it.
+
+Translation moves every command kind a child emits, not just its box: a child
+carrying a text run pushed to the end edge has its box and its run at the same
+top, so the label cannot tear away from the surface it names. `ImagePlacement`
+gained a crate-internal translation for the same reason.
+
+Admitting these two empties the rejection category
+[ADR 0013](adr/0013-strict-style-contract.md) created.
+`validate_renderer_support` and `unsupported_style` are deleted rather than
+left as a check that can no longer fail; `parse` still rejects unknown
+properties and values outside each admitted grammar, which is where that
+decision's protection actually lives. The bounded subset holds: `space-around`,
+`baseline` and bare `end` are typed errors rather than a silent fall back to
+the default.
+
 ### Authored minimum-size evidence — 2026-09-22
 
 `min-width` and `min-height` are admitted and raise the used extent of an

@@ -1,7 +1,9 @@
 use super::display::{DisplayCommand, DisplayList};
 use crate::dom::{DomDocument, DomElement, DomNode};
 use crate::parser::{MAX_DEPTH, MAX_INPUT_BYTES, MAX_NODES, copy_text, limit_error};
-use crate::style::{ComputedStyle, Display, EdgeValues, FlexDirection, FontWeight, Size};
+use crate::style::{
+    AlignItems, ComputedStyle, Display, EdgeValues, FlexDirection, FontWeight, JustifyContent, Size,
+};
 use metis_core::error::Result;
 use metis_platform::DisplayScale;
 use metis_platform::GlyphWeight;
@@ -108,7 +110,7 @@ impl DisplayList {
     fn text(
         &mut self,
         text: &str,
-        style: &crate::style::ComputedStyle,
+        style: &ComputedStyle,
         x: i32,
         y: i32,
         display_scale: DisplayScale,
@@ -134,7 +136,11 @@ impl DisplayList {
         Ok((text_width, text_height))
     }
 
-    fn children_extent(&mut self, element: &DomElement, layout: ChildLayout<'_>) -> Result<i32> {
+    fn children_extent(
+        &mut self,
+        element: &DomElement,
+        layout: ChildLayout<'_>,
+    ) -> Result<ChildExtent> {
         let ChildLayout {
             style,
             content_x,
@@ -148,6 +154,7 @@ impl DisplayList {
         let mut child_x = content_x;
         let mut child_y = content_y;
         let mut cross_size = 0;
+        let mut placements = Vec::new();
         let mut visible_children = 0;
         for child in &element.children {
             if matches!(child, DomNode::Element(child) if child.computed_style.display == Display::None)
@@ -161,6 +168,7 @@ impl DisplayList {
                     child_y = add(child_y, gap)?;
                 }
             }
+            let first_command = self.commands.len();
             let (child_width, child_height) = match child {
                 DomNode::Element(child) => {
                     let available_width = if row {
@@ -177,6 +185,14 @@ impl DisplayList {
                 }
                 DomNode::Text(text) => self.text(text, style, child_x, child_y, display_scale)?,
             };
+            placements
+                .try_reserve(1)
+                .map_err(|_| limit_error("Child placement allocation failed"))?;
+            placements.push(ChildPlacement {
+                first_command,
+                end_command: self.commands.len(),
+                cross: if row { child_height } else { child_width },
+            });
             if row {
                 child_x = add(child_x, child_width)?;
                 cross_size = cross_size.max(child_height);
@@ -191,7 +207,68 @@ impl DisplayList {
         } else {
             sub(child_y, content_y)?
         };
-        Ok(content_height)
+        // Gaps belong to the occupied main extent, so the cursor delta is the
+        // span alignment redistributes around.
+        let main_used = if row {
+            sub(child_x, content_x)?
+        } else {
+            sub(child_y, content_y)?
+        };
+        Ok(ChildExtent {
+            content_height,
+            main_used,
+            placements,
+        })
+    }
+
+    /// Places children within the free space the container leaves.
+    ///
+    /// Children paint while they are measured, so redistribution translates
+    /// what they already emitted. Start and stretch alignment produce zero
+    /// offsets, which is why a document that declares neither moves at all.
+    fn align_children(
+        &mut self,
+        style: &crate::style::ComputedStyle,
+        extent: &ChildExtent,
+        content_main: i32,
+        content_cross: i32,
+        row: bool,
+    ) -> Result<()> {
+        let free = sub(content_main, extent.main_used)?.max(0);
+        let count = i32::try_from(extent.placements.len())
+            .map_err(|_| limit_error("Child count exceeds coordinate range"))?;
+        for (index, placement) in extent.placements.iter().enumerate() {
+            let ordinal = i32::try_from(index)
+                .map_err(|_| limit_error("Child index exceeds coordinate range"))?;
+            let main_offset = match style.justify_content {
+                JustifyContent::Center => free / 2,
+                JustifyContent::FlexEnd => free,
+                // The first child keeps the start edge and the last reaches the
+                // end edge, so each step is one share of the free space.
+                JustifyContent::SpaceBetween if count > 1 => mul(free, ordinal)? / (count - 1),
+                // A single child has no gap to distribute into, so it sits
+                // where start alignment puts it.
+                JustifyContent::FlexStart | JustifyContent::SpaceBetween => 0,
+            };
+            let cross_free = sub(content_cross, placement.cross)?.max(0);
+            let cross_offset = match style.align_items {
+                AlignItems::FlexStart | AlignItems::Stretch => 0,
+                AlignItems::Center => cross_free / 2,
+                AlignItems::FlexEnd => cross_free,
+            };
+            if main_offset == 0 && cross_offset == 0 {
+                continue;
+            }
+            let (dx, dy) = if row {
+                (main_offset, cross_offset)
+            } else {
+                (cross_offset, main_offset)
+            };
+            for command in &mut self.commands[placement.first_command..placement.end_command] {
+                command.translate(dx, dy)?;
+            }
+        }
+        Ok(())
     }
 
     fn element(
@@ -201,7 +278,6 @@ impl DisplayList {
         display_scale: DisplayScale,
     ) -> Result<Rect> {
         let style = &element.computed_style;
-        style.validate_renderer_support()?;
         if style.display == Display::None {
             return Ok(Rect::new(available.x, available.y, 0, 0));
         }
@@ -240,7 +316,7 @@ impl DisplayList {
         } else {
             None
         };
-        let content_height = self.children_extent(
+        let child_extent = self.children_extent(
             element,
             ChildLayout {
                 style,
@@ -260,11 +336,20 @@ impl DisplayList {
         let height = dimension(
             style.height,
             available.height,
-            add(content_height, vertical_edges)?.max(0),
+            add(child_extent.content_height, vertical_edges)?.max(0),
             display_scale,
         )?
         .max(minimum(style.min_height, available.height, display_scale)?);
         let rect = Rect::new(x, y, width, height);
+        // Free space exists only once the container's own extent is final: an
+        // automatic height is derived from the children that just painted.
+        let content_height_box = sub(height, vertical_edges)?.max(0);
+        let (content_main, content_cross) = if row {
+            (content_width, content_height_box)
+        } else {
+            (content_height_box, content_width)
+        };
+        self.align_children(style, &child_extent, content_main, content_cross, row)?;
         // The radius is clamped against the final rectangle, whose height is
         // known only after the children have been laid out.
         let radius = CornerRadius::clamped(display_scale.scale_extent(style.border_radius)?, rect);
@@ -288,6 +373,26 @@ impl DisplayList {
         }
         Ok(rect)
     }
+}
+
+/// Where one child's commands and extents landed during child layout.
+struct ChildPlacement {
+    /// First command this child emitted, in painter order.
+    first_command: usize,
+    /// One past this child's last command.
+    end_command: usize,
+    /// Extent along the container's cross axis.
+    cross: i32,
+}
+
+/// What child layout leaves for the container to redistribute.
+struct ChildExtent {
+    /// Content height the container uses for its automatic height.
+    content_height: i32,
+    /// Main-axis span the children occupied, gaps included.
+    main_used: i32,
+    /// One record per visible child, in painter order.
+    placements: Vec<ChildPlacement>,
 }
 
 #[derive(Clone, Copy)]

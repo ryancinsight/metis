@@ -10,6 +10,20 @@ Revision: 2026-09-09 — [METIS-LAYOUT-001](../../backlog.md#METIS-LAYOUT-001)
 closes the silent custom-renderer style gap by rejecting declarations without
 software-renderer semantics.
 
+Revision: 2026-09-22 — [METIS-LAYOUT-ALIGN-001](../../backlog.md#METIS-LAYOUT-ALIGN-001)
+admits `justify-content` and `align-items`
+([ADR 0045](0045-flex-alignment-redistribution.md)), which empties this
+decision's rejection category: every declaration the style model carries is now
+painted. `ComputedStyle::validate_renderer_support` and `unsupported_style` are
+deleted rather than kept as an empty call, because a check that can no longer
+fail is not a guard.
+
+What remains is the part that was always doing the work: `parse` still rejects
+unknown properties, malformed declarations and values outside each admitted
+keyword or length grammar. The decision therefore stands with its original
+intent intact — a declaration is either painted or a typed error, never
+silently dropped — and the renderer simply caught up with the subset.
+
 Revision: 2026-09-22 — [METIS-LAYOUT-MINSIZE-001](../../backlog.md#METIS-LAYOUT-MINSIZE-001)
 admits `min-width` and `min-height`. A minimum sizes one box, which layout
 already does; it needs no space redistribution. `justify-content` and
@@ -55,7 +69,8 @@ browser CSS engine or change browser DOM parsing.
   missing separators, empty values, invalid enum values, malformed pixel or
   percentage dimensions, negative spacing, malformed edge lists, invalid
   colors and unsupported font weights return `ErrorCode::InvalidCssStyle`.
-- Alignment declarations are outside the software renderer contract and return
+- Every declaration in the admitted subset is painted since the 2026-09-22
+  revisions; values outside an admitted keyword set or length grammar remain
   `ErrorCode::InvalidCssStyle`. `min-width` and `min-height` are admitted since
   the 2026-09-22 revision on the same length grammar and display scaling as
   `width`/`height`. `font-weight` is admitted

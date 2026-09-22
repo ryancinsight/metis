@@ -176,18 +176,7 @@ impl Default for ComputedStyle {
 }
 
 impl ComputedStyle {
-    pub(crate) fn validate_renderer_support(&self) -> Result<()> {
-        if self.justify_content != JustifyContent::FlexStart {
-            return Err(unsupported_style("justify-content"));
-        }
-        if self.align_items != AlignItems::Stretch {
-            return Err(unsupported_style("align-items"));
-        }
-        Ok(())
-    }
-
     /// Parses an inline declaration list such as `display: flex; gap: 10px`.
-    ///
     ///
     /// # Errors
     /// Returns [`ErrorCode::InvalidCssStyle`] for unknown properties, malformed
@@ -231,7 +220,24 @@ impl ComputedStyle {
                         _ => return Err(invalid_value(&key, val)),
                     }
                 }
-                "justify-content" | "align-items" => return Err(unsupported_style(&key)),
+                "justify-content" => {
+                    style.justify_content = match val {
+                        "flex-start" => JustifyContent::FlexStart,
+                        "center" => JustifyContent::Center,
+                        "flex-end" => JustifyContent::FlexEnd,
+                        "space-between" => JustifyContent::SpaceBetween,
+                        _ => return Err(invalid_value(&key, val)),
+                    }
+                }
+                "align-items" => {
+                    style.align_items = match val {
+                        "flex-start" => AlignItems::FlexStart,
+                        "center" => AlignItems::Center,
+                        "flex-end" => AlignItems::FlexEnd,
+                        "stretch" => AlignItems::Stretch,
+                        _ => return Err(invalid_value(&key, val)),
+                    }
+                }
                 "min-width" => style.min_width = parse_size(&key, val)?,
                 "min-height" => style.min_height = parse_size(&key, val)?,
                 "font-weight" => {
@@ -267,16 +273,8 @@ impl ComputedStyle {
                 }
             }
         }
-        style.validate_renderer_support()?;
         Ok(style)
     }
-}
-
-fn unsupported_style(property: &str) -> MetisError {
-    MetisError::ui(
-        ErrorCode::InvalidCssStyle,
-        format!("CSS property '{property}' is unsupported by the software renderer"),
-    )
 }
 
 fn invalid_style(message: &str) -> MetisError {
@@ -489,12 +487,32 @@ mod tests {
     }
 
     #[test]
-    fn rejects_unsupported_rendering_properties_with_property_diagnostic() {
-        for (property, value) in [("justify-content", "center"), ("align-items", "end")] {
-            let css = format!("{property}: {value}");
-            let error = ComputedStyle::parse(&css).expect_err("unsupported style");
-            assert_eq!(error.code, ErrorCode::InvalidCssStyle);
-            assert!(error.message.contains(property), "{css}");
+    fn admits_the_bounded_alignment_keywords() {
+        let style = ComputedStyle::parse("justify-content: space-between; align-items: center")
+            .expect("admitted alignment");
+        assert_eq!(style.justify_content, JustifyContent::SpaceBetween);
+        assert_eq!(style.align_items, AlignItems::Center);
+        for (css, expected) in [
+            ("justify-content: flex-start", JustifyContent::FlexStart),
+            ("justify-content: center", JustifyContent::Center),
+            ("justify-content: flex-end", JustifyContent::FlexEnd),
+        ] {
+            assert_eq!(
+                ComputedStyle::parse(css).expect("keyword").justify_content,
+                expected,
+                "{css}"
+            );
+        }
+        // The subset is bounded: a keyword the renderer does not distribute is
+        // a typed error rather than a silent fall back to the default.
+        for css in [
+            "justify-content: space-around",
+            "justify-content: end",
+            "align-items: baseline",
+            "align-items: end",
+        ] {
+            let error = ComputedStyle::parse(css).expect_err("unsupported keyword");
+            assert_eq!(error.code, ErrorCode::InvalidCssStyle, "{css}");
         }
     }
 
