@@ -1,17 +1,18 @@
 :root {
   color-scheme: dark;
-  font-family: system-ui, sans-serif;
+  font-family: "Segoe UI", system-ui, sans-serif;
+  line-height: 1.5;
   box-sizing: border-box;
-  --metis-page: #0f172a;
-  --metis-surface: #1e293b;
-  --metis-border: #334155;
+  --metis-page: #10171d;
+  --metis-surface: #182229;
+  --metis-border: #34434b;
   --metis-field-border: #64748b;
   --metis-text: #e2e8f0;
   --metis-text-strong: #f8fafc;
   --metis-muted: #94a3b8;
-  --metis-copy: #bae6fd;
-  --metis-accent: #67e8f9;
-  --metis-accent-strong: #0891b2;
+  --metis-copy: #b6c7ce;
+  --metis-accent: #82d9d0;
+  --metis-accent-strong: #0e7490;
   --metis-accent-foreground: #ecfeff;
   --metis-focus: #facc15;
   --metis-drop-copy: #ddd6fe;
@@ -23,6 +24,8 @@
   --metis-warning: #422006;
   --metis-backdrop: rgb(15 23 42 / 75%);
   --metis-hit-target: 2.75rem;
+  --metis-radius: 0.75rem;
+  --metis-panel-padding: clamp(1.25rem, 3vw, 2rem);
 }
 *, *::before, *::after { box-sizing: inherit; }
 body { margin: 0; min-width: 320px; background: var(--metis-page); color: var(--metis-text); }
@@ -98,13 +101,15 @@ body[data-metis-theme="high-contrast"] {
     --metis-backdrop: rgb(15 23 42 / 25%);
   }
 }
-.metis-host-controls { display: flex; gap: 0.65rem; width: 100%; max-width: 960px; margin: 0 auto; padding: 1rem 2rem 0; }
+.metis-host-controls { display: flex; gap: 0.65rem; width: 100%; max-width: 960px; margin: 0 auto; padding: 1.5rem 2rem 0; }
 .metis-host-controls button { margin-top: 0; }
-#metis-app { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 1.5rem; width: 100%; max-width: 960px; margin: 0 auto; padding: 2rem; background: var(--metis-page); }
-.metis-header, .metis-form, .metis-options, .metis-drop, .metis-text, .metis-result, .metis-explorer { min-width: 0; border: 1px solid var(--metis-border); border-radius: 0.75rem; background: var(--metis-surface); padding: 1.25rem; overflow-wrap: anywhere; }
-.metis-header { grid-column: 1 / -1; }
+#metis-app { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 1.5rem; align-items: start; width: 100%; max-width: 960px; margin: 0 auto; padding: 2rem; background: var(--metis-page); }
+.metis-header, .metis-form, .metis-options, .metis-drop, .metis-text, .metis-result, .metis-explorer, .metis-pointer { min-width: 0; border: 1px solid var(--metis-border); border-radius: var(--metis-radius); background: var(--metis-surface); padding: var(--metis-panel-padding); overflow-wrap: anywhere; }
+.metis-header { grid-column: 1 / -1; border-top: 3px solid var(--metis-accent); }
+.metis-header > p { margin: 0.4rem 0; color: var(--metis-muted); font-size: 0.8125rem; }
+.metis-header #metis-status { margin: 1.25rem 0 0.75rem; color: var(--metis-text); font-size: 0.9375rem; }
 .metis-header > button { margin-top: 1rem; }
-.metis-header nav { display: grid; gap: 0.55rem; margin-top: 1rem; }
+.metis-header nav { display: grid; gap: 0.55rem; margin-top: 1.25rem; padding-top: 1rem; border-top: 1px solid var(--metis-border); }
 .metis-header nav[aria-label="Application navigation"] { min-width: 0; }
 #application-toolbar { display: flex; flex-wrap: wrap; gap: 0.65rem; align-items: center; }
 #application-toolbar button { margin-top: 0; }
@@ -113,17 +118,20 @@ body[data-metis-theme="high-contrast"] {
 #command-menu button { margin-top: 0; min-height: var(--metis-hit-target); }
 #command-status { min-height: 1.5rem; margin: 0; color: var(--metis-copy); }
 .metis-brand { display: flex; align-items: center; gap: 1rem; }
-.metis-mark-frame { flex: 0 0 4rem; width: 4rem; height: 4rem; }
+.metis-mark-frame { flex: 0 0 3rem; width: 3rem; height: 3rem; }
 .metis-mark { display: block; width: 100%; height: 100%; object-fit: contain; }
 .metis-kicker { margin: 0 0 0.5rem; color: var(--metis-accent); font-size: 0.75rem; letter-spacing: 0.12em; }
-h1, h2 { margin-top: 0; }
+h1, h2 { margin-top: 0; color: var(--metis-text-strong); text-wrap: balance; }
+h1 { margin-bottom: 0; font-size: clamp(1.5rem, 3vw, 2rem); line-height: 1.2; letter-spacing: -0.035em; font-weight: 650; }
+h2 { margin-bottom: 1rem; font-size: 1.125rem; line-height: 1.35; letter-spacing: -0.015em; font-weight: 650; }
 dialog { max-width: min(32rem, calc(100vw - 3rem)); border: 1px solid var(--metis-accent); border-radius: 0.75rem; background: var(--metis-surface); color: var(--metis-text); padding: 1.25rem; }
 dialog::backdrop { background: var(--metis-backdrop); }
 dialog p { color: var(--metis-copy); }
-.metis-form { display: grid; gap: 0.65rem; }
+.metis-form { display: grid; gap: 0.5rem; }
+.metis-form label:not(:first-child) { margin-top: 0.75rem; }
+.metis-form button { margin-top: 1rem; }
 .metis-options { display: grid; align-content: start; gap: 0.65rem; margin: 0; }
 .metis-options legend { padding: 0 0.35rem; color: var(--metis-text-strong); font-weight: 700; }
-.metis-pointer { min-width: 0; border: 1px solid var(--metis-border); border-radius: 0.75rem; background: var(--metis-surface); padding: 1.25rem; overflow-wrap: anywhere; }
 .metis-pointer p { color: var(--metis-copy); min-height: 1.5rem; }
 #pointer-surface { display: grid; min-height: 6rem; place-items: center; overflow: hidden; border: 1px dashed var(--metis-accent); border-radius: 0.55rem; background: var(--metis-page); color: var(--metis-copy); padding: 1rem; text-align: center; user-select: none; cursor: crosshair; touch-action: none; }
 #gesture-content { max-width: 28rem; transform-origin: center; }
@@ -152,30 +160,35 @@ dialog p { color: var(--metis-copy); }
 .explorer-entry { box-sizing: border-box; width: 100%; min-height: var(--metis-hit-target); margin: 0; border: 1px solid transparent; border-radius: 0.4rem; background: transparent; color: var(--metis-text-strong); padding: 0.6rem 0.7rem; text-align: left; font: inherit; font-weight: 500; }
 .explorer-entry:hover { border-color: var(--metis-border); background: var(--metis-info); }
 .explorer-entry:focus-visible { outline: 3px solid var(--metis-focus); outline-offset: 2px; }
-.explorer-group { color: var(--metis-accent-strong); font-weight: 700; }
+.explorer-group { color: var(--metis-accent); font-weight: 700; }
 .explorer-row { padding-left: 2rem; }
-.explorer-row-selected { border-color: var(--metis-accent); background: var(--metis-success); }
+.explorer-row-selected { border-color: var(--metis-accent); background: var(--metis-info); }
 .explorer-entry-empty { display: none; }
 .metis-explorer-pagination { display: flex; align-items: center; justify-content: space-between; gap: 0.75rem; margin-top: 0.8rem; }
 #explorer-window-status { min-height: 1.5rem; color: var(--metis-copy); text-align: center; font-variant-numeric: tabular-nums; }
 .metis-option { display: flex; align-items: center; gap: 0.55rem; min-height: var(--metis-hit-target); }
 .metis-option-label { color: var(--metis-muted); font-size: 0.9rem; }
 label { color: var(--metis-text); font-size: 0.9rem; }
-input, select { box-sizing: border-box; width: 100%; border: 1px solid var(--metis-field-border); border-radius: 0.4rem; background: var(--metis-page); color: var(--metis-text-strong); padding: 0.65rem; font: inherit; }
-input[type="checkbox"], input[type="radio"] { width: auto; padding: 0; accent-color: var(--metis-accent); }
+input, select { box-sizing: border-box; width: 100%; min-height: var(--metis-hit-target); border: 1px solid var(--metis-field-border); border-radius: 0.4rem; background: var(--metis-page); color: var(--metis-text-strong); padding: 0.65rem 0.75rem; font: inherit; }
+input[type="checkbox"], input[type="radio"] { width: 1rem; min-height: 0; height: 1rem; margin: 0; padding: 0; accent-color: var(--metis-accent); }
 input[type="range"] { min-height: var(--metis-hit-target); padding: 0; accent-color: var(--metis-accent); }
-button { margin-top: 0.5rem; border: 0; border-radius: 0.4rem; background: var(--metis-accent-strong); color: var(--metis-accent-foreground); padding: 0.7rem 1rem; font: inherit; font-weight: 700; cursor: pointer; }
+button { min-height: var(--metis-hit-target); margin-top: 0.5rem; border: 1px solid var(--metis-field-border); border-radius: 0.4rem; background: var(--metis-surface); color: var(--metis-text-strong); padding: 0.65rem 1rem; font: inherit; font-size: 0.875rem; font-weight: 600; cursor: pointer; transition: background-color 120ms ease, border-color 120ms ease; }
+button:hover:not(:disabled) { border-color: var(--metis-accent); background: var(--metis-info); }
+#submit-calculation:not(:disabled) { border-color: var(--metis-accent-strong); background: var(--metis-accent-strong); color: var(--metis-accent-foreground); }
+#submit-calculation:hover:not(:disabled) { border-color: var(--metis-accent); }
+input::file-selector-button { min-height: var(--metis-hit-target); margin: -0.65rem 0.75rem -0.65rem -0.75rem; border: 0; border-right: 1px solid var(--metis-field-border); background: var(--metis-surface); color: var(--metis-text-strong); padding: 0.65rem 0.75rem; font: inherit; cursor: pointer; }
 button:disabled { background: var(--metis-muted); color: var(--metis-surface); cursor: not-allowed; opacity: 0.75; }
 button:focus-visible, input:focus-visible, select:focus-visible, textarea:focus-visible { outline: 3px solid var(--metis-focus); outline-offset: 2px; }
 .metis-result { min-height: 12rem; }
 #options-state, #result-metrics, #result-detail, #text-status, #composition-status, #selection-status { color: var(--metis-copy); min-height: 1.5rem; }
 dl { display: grid; grid-template-columns: auto 1fr; gap: 0.55rem 1rem; }
 dt { color: var(--metis-muted); }
-dd { margin: 0; color: var(--metis-text-strong); font-variant-numeric: tabular-nums; }
+dd { margin: 0; color: var(--metis-text-strong); font-variant-numeric: tabular-nums; text-align: right; }
 #metis-status, #result-state, #explorer-status { color: var(--metis-accent); min-height: 1.5rem; }
-@media (max-width: 700px) { .metis-host-controls { padding-inline: 1rem; } #metis-app { grid-template-columns: 1fr; padding: 1rem; } .metis-header { grid-column: auto; } #command-menu { grid-template-columns: 1fr; } }
+@media (max-width: 700px) { .metis-host-controls { padding-inline: 1rem; } #metis-app { grid-template-columns: 1fr; padding: 1rem; } .metis-header { grid-column: auto; } #command-menu { grid-template-columns: 1fr; } .metis-explorer-controls { grid-template-columns: minmax(0, 1fr); } }
 @media (prefers-reduced-motion: reduce) {
   html { scroll-behavior: auto; }
+  button, #drop-zone { transition: none; }
   *, *::before, *::after {
     animation-duration: 0.001ms;
     animation-iteration-count: 1;
@@ -200,6 +213,7 @@ dd { margin: 0; color: var(--metis-text-strong); font-variant-numeric: tabular-n
     color: CanvasText;
   }
   button { border: 1px solid ButtonText; background: ButtonFace; color: ButtonText; }
+  #submit-calculation:not(:disabled), button:hover:not(:disabled) { border-color: Highlight; background: ButtonFace; color: ButtonText; }
   button:disabled { border-color: GrayText; background: Canvas; color: GrayText; }
   button:focus-visible, input:focus-visible, select:focus-visible, textarea:focus-visible,
   #pointer-surface:focus-visible, #drop-zone:focus-visible {

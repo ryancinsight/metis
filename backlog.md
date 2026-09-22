@@ -851,3 +851,11 @@ an owner. “Unsupported” cannot replace delivery of a required mobile/native 
 ## METIS-GALLERY-001 — User file drop gallery [patch]
 - Status: done; delivery: [PR #81](https://github.com/ryancinsight/metis/pull/81), merge `18cf147`.
 - Outcome: Browser gallery accepts a complete public 409-file DICOM study through the bounded Metis drop area and renders three RITK-owned orthogonal frames; the file-backed Edge run, rejection probes and full Windows gate passed.
+
+<a id="METIS-WORKBENCH-DESIGN-001"></a>
+## METIS-WORKBENCH-DESIGN-001 — Refine browser visual hierarchy
+- Status: review; priority: P2; integrator: design-session; last-update: 2026-09-22.
+- Outcome: distinguish primary actions, diagnostics and content through typography, palette and spacing.
+- Scope: browser CSS, responsive capture evidence and browser manual; native renderer and IME work excluded.
+- Acceptance: inspected desktop/mobile and theme states; no horizontal overflow; 44px option targets; browser asset checks pass.
+- Evidence: WASM release build and 15 browser asset checks pass; 360/800/1440px captures updated; independent CSS review passes.
