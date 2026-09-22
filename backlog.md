@@ -854,7 +854,7 @@ an owner. “Unsupported” cannot replace delivery of a required mobile/native 
 
 <a id="METIS-NATIVE-POPOVER-001"></a>
 ## METIS-NATIVE-POPOVER-001 — Anchored native command menu
-- Status: blocked; priority: P1; integrator: design-session; last-update: 2026-09-22.
+- Status: review; priority: P1; integrator: design-session; last-update: 2026-09-22.
 - Outcome: command menus float above stationary content; controls use plain labels.
 - Scope: ui-lang popup layout and element bounds, frontend markup, native hit testing and dismissal.
 - Acceptance: anchor-relative placement, topmost paint, unchanged form geometry, theme-independent hits and dismissal without click-through.
@@ -862,4 +862,4 @@ an owner. “Unsupported” cannot replace delivery of a required mobile/native 
 - Decision: [ADR 0043](docs/adr/0043-anchored-popovers.md).
 
 - Evidence: 62 layout and 56 frontend/native tests pass; Clippy passes; 339 Python tests pass; real desktop open/theme/outside-click journey passes.
-- Blocker: full gate and golden provenance require a stable dependency lock after concurrent mesh work and mainline citation restoration; re-open on those integrations.
+- Delivery: [PR #359](https://github.com/ryancinsight/metis/pull/359); exact-branch gate and capture provenance are being verified.
