@@ -286,6 +286,38 @@ WebGPU adapter; neither result is converted into a raster fallback claim. The
 run is a locked evidence record for Metis `ab239d70bb561cbe665f852cc55ecbe4275be349`,
 not a claim that the current Metis main revision is unchanged.
 
+
+### Current responsive browser replay
+
+The current RITK browser consumer also presents the same public 94-file MRI-DIR
+T2 study in a responsive four-pane layout. Hosted run
+[35681744137](https://github.com/ryancinsight/ritk/actions/runs/35681744137)
+uses RITK `37e28c0d541c50f845904543c202e8e055c4e093` with Metis
+`3830fe7d3bf38c45de4258aeb8145b05c5f37436`. Chromium and Firefox both accept
+49,807,236 bytes from 94 chooser files, render interactive axial, coronal and
+sagittal planes, and render a display-only maximum-intensity projection. The
+responsive pane sizing keeps every canvas inside its grid track while preserving
+the RITK-owned physical image placement.
+
+![Actual responsive MRI-DIR study through the Métis Chromium browser path](https://github.com/ryancinsight/ritk/blob/main/docs/manual/images/dicom-metis-real-browser-mri-responsive-chromium.png?raw=true)
+
+![Actual responsive MRI-DIR study through the Métis Firefox browser path](https://github.com/ryancinsight/ritk/blob/main/docs/manual/images/dicom-metis-real-browser-mri-responsive-firefox.png?raw=true)
+
+The [responsive provenance record](https://github.com/ryancinsight/ritk/blob/main/docs/manual/images/dicom-metis-real-browser-mri-responsive.json)
+binds the accepted-file manifest, exact RGBA restores, three bounded rejection
+probes, projection pixels, listener teardown and both engine traces. The
+projection is display-only, so the workflow intentionally does not apply the
+generic canvas input trace to that pane; the three interactive axes retain their
+trusted pointer, wheel and keyboard checks. RITK owns DICOM scanning, decoding,
+geometry and clinical presentation; Metis supplies the format-neutral canvas
+and event host.
+
+The same hosted run records three explicit host residuals: Chromium had no
+WebGPU adapter, the separate Chromium window-ROI lane did not publish its ROI
+annotation, and Safari 26.6.2 accepted the chooser but rejected the first
+bounded whole-file read. These residuals stay visible in the provenance record
+and are not converted into a raster fallback claim.
+
 ### V12 fixture comparison
 
 The recorded measurements make the comparison boundary explicit. Each row is a
