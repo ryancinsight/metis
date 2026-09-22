@@ -9,7 +9,7 @@ use metis_ipc::{
     transport::{IpcTransport, MemoryTransport},
 };
 use metis_platform::framebuffer::{Color, Framebuffer};
-use metis_ui_lang::layout::{LayoutViewport, compute_layout};
+use metis_ui_lang::layout::{DisplayCommand, LayoutViewport, compute_layout};
 use moirai_core::TaskSpawner;
 use moirai_executor::ExecutorBuilder;
 
@@ -40,6 +40,49 @@ fn session_trace(
     executor.shutdown().expect("Moirai shutdown");
     service.ledger().verify_chain().expect("audit consistency");
     (app, service)
+}
+
+/// Pixels inside `bounds` counted by the candidate color each lies nearest,
+/// in RGB distance.
+///
+/// Antialiased strokes at small sizes may never reach full coverage, so a
+/// single probe pixel is not an oracle. Classifying every pixel of a text
+/// run's line box against the background and the colors the run might have
+/// been painted in is: the run's own color collects its strokes and the
+/// others collect nothing.
+fn nearest_counts<const N: usize>(
+    framebuffer: &Framebuffer,
+    bounds: (i32, i32, i32, i32),
+    candidates: [Color; N],
+) -> [usize; N] {
+    let distance = |a: Color, b: Color| {
+        let channel = |x: u8, y: u8| (i32::from(x) - i32::from(y)).pow(2);
+        channel(a.r, b.r) + channel(a.g, b.g) + channel(a.b, b.b)
+    };
+    let (x, y, width, height) = bounds;
+    let mut counts = [0; N];
+    for row in y..y + height {
+        for column in x..x + width {
+            let pixel = framebuffer.get_pixel(column, row);
+            let nearest = (0..N)
+                .min_by_key(|index| distance(pixel, candidates[*index]))
+                .expect("invariant: at least one candidate");
+            counts[nearest] += 1;
+        }
+    }
+    counts
+}
+
+/// Rounds a small nonnegative extent up to a whole pixel count.
+fn whole(extent: f64) -> i32 {
+    let rounded = extent.ceil();
+    assert!((0.0..4096.0).contains(&rounded), "extent {extent}");
+    #[expect(
+        clippy::cast_possible_truncation,
+        reason = "a whole value checked to lie in 0..4096"
+    )]
+    let pixels = rounded as i32;
+    pixels
 }
 
 fn label(app: &FrontendApp<MemoryTransport>, id: &str) -> String {
@@ -218,7 +261,31 @@ fn closed_peer_replaces_success_and_new_session_recovers() {
     assert_ne!(app.framebuffer().pixels(), success_pixels);
     assert_no_result(&app, "Connection failed [0x4002] - reconnect");
     assert_eq!(label(&app, "status-badge"), "SESSION CLOSED");
-    assert_eq!(app.framebuffer().get_pixel(34, 58), Color::RED);
+    let framebuffer = app.framebuffer();
+    let display = compute_layout(
+        app.document(),
+        LayoutViewport::new(
+            i32::try_from(framebuffer.width()).expect("surface width"),
+            i32::try_from(framebuffer.height()).expect("surface height"),
+        ),
+    )
+    .expect("closed-session layout");
+    let bounds = display
+        .commands
+        .iter()
+        .find_map(|command| match command {
+            DisplayCommand::DrawText { text, x, y, style } if text == "SESSION CLOSED" => Some((
+                *x,
+                *y,
+                whole(style.advance(text)),
+                whole(style.line_height()),
+            )),
+            _ => None,
+        })
+        .expect("status run");
+    let header = Color::rgb(0x1a, 0x36, 0x5d);
+    let [_, red, green] = nearest_counts(framebuffer, bounds, [header, Color::RED, Color::GREEN]);
+    assert!(red > 20 && green == 0, "red {red}, green {green}");
     assert_eq!(service.ledger().records().len(), 2);
     let (_, recovered) = session_trace(2, |app| {
         app.init(1234, [1; 16]).expect("new handshake");

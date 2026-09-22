@@ -8,9 +8,9 @@
 use criterion::{Criterion, criterion_group, criterion_main};
 use metis_platform::framebuffer::{Color, Framebuffer, Rect};
 use metis_platform::rasterizer::{
-    BoxShadow, CornerRadius, draw_box_shadow, draw_rect_outline, draw_text, fill_rect,
+    BoxShadow, CornerRadius, draw_box_shadow, draw_rect_outline, fill_rect,
 };
-use metis_platform::{GlyphWeight, TextStyle};
+use metis_platform::typeface::{GlyphWeight, TextSize, TextStyle, draw_text};
 use std::hint::black_box;
 
 /// Physical width of the measured presentation surface.
@@ -132,23 +132,26 @@ fn fills(c: &mut Criterion) {
 fn text(c: &mut Criterion) {
     let mut group = c.benchmark_group("text");
     let label = "Patient weight 72.5 kg / concentration 1.2 mg per ml";
+    // The demo form's body and heading sizes.
+    let body = TextSize::new(14.0).expect("invariant: 14 px is a valid text size");
+    let heading = TextSize::new(28.0).expect("invariant: 28 px is a valid text size");
 
     let mut single = surface();
-    group.bench_function("label_scale_one", |b| {
+    group.bench_function("label_14px", |b| {
         b.iter(|| {
             draw_text(
                 &mut single,
                 black_box(16),
                 black_box(16),
                 black_box(label),
-                black_box(TextStyle::new(Color::BLACK, 1).with_weight(GlyphWeight::Regular)),
+                black_box(TextStyle::new(Color::BLACK, body).with_weight(GlyphWeight::Regular)),
             );
             single.get_pixel(16, 16)
         });
     });
 
     let mut paragraph = surface();
-    group.bench_function("paragraph_scale_two", |b| {
+    group.bench_function("paragraph_28px", |b| {
         b.iter(|| {
             for row in 0..16 {
                 draw_text(
@@ -156,21 +159,23 @@ fn text(c: &mut Criterion) {
                     black_box(16),
                     black_box(16 + row * 34),
                     black_box(label),
-                    black_box(TextStyle::new(Color::BLACK, 2).with_weight(GlyphWeight::Regular)),
+                    black_box(
+                        TextStyle::new(Color::BLACK, heading).with_weight(GlyphWeight::Regular),
+                    ),
                 );
             }
             paragraph.get_pixel(16, 16)
         });
     });
     let mut bold = surface();
-    group.bench_function("label_bold", |b| {
+    group.bench_function("label_14px_bold", |b| {
         b.iter(|| {
             draw_text(
                 &mut bold,
                 black_box(16),
                 black_box(16),
                 black_box(label),
-                black_box(TextStyle::new(Color::BLACK, 1).with_weight(GlyphWeight::Bold)),
+                black_box(TextStyle::new(Color::BLACK, body).with_weight(GlyphWeight::Bold)),
             );
             bold.get_pixel(16, 16)
         });
@@ -180,7 +185,7 @@ fn text(c: &mut Criterion) {
 
 criterion_group! {
     name = rasterizer;
-    // A committed instrument budget: five cases at roughly two seconds each
+    // A committed instrument budget: eight cases at roughly two seconds each
     // stay far inside the repository's suite-total wall-clock bound.
     config = Criterion::default()
         .warm_up_time(std::time::Duration::from_millis(500))

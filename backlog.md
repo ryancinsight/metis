@@ -23,10 +23,18 @@
 - Oracle: CSS Backgrounds 3 section 6.1: a Gaussian of standard deviation blur/2 within 5% per pixel, cast from the border box and clipped inside it, painted below the background. Straight edges match the closed form; corners stay within 5% of a continuous reference; the region decomposition matches a naive 2D convolution; zero blur equals the offset fill ([ADR 0046](docs/adr/0046-gaussian-box-shadows.md)).
 - Non-goals: `inset`, spread distance, shadow lists.
 
+<a id="METIS-TYPOGRAPHY-TRUETYPE-001"></a>
+## METIS-TYPOGRAPHY-TRUETYPE-001 — Antialiased TrueType text [arch] [major]
+- Status: in-progress; priority: P1; owner: Metis presentation; integrator: root; last-update: 2026-09-22; dependencies: none; risk: text metrics move every layout and capture
+- Outcome: text is proportional, antialiased and sized in pixels per em, so headings, labels and body text read as typography instead of one scaled bitmap cell.
+- Scope: a TrueType parser and exact-area rasterizer in `metis-platform::typeface`; Atkinson Hyperlegible Regular and Bold (SIL OFL 1.1) embedded; layout measuring runs by glyph advances; the bitmap font deleted with every consumer migrated; captures regenerated.
+- Oracle: glyph ids, advances and outline areas match fontTools; coverage equals polygon area; malformed fonts are typed errors; runs stay inside their measured boxes ([ADR 0047](docs/adr/0047-truetype-text.md)).
+- Non-goals: hinting, kerning, shaping, glyph caching.
+
 <a id="METIS-VISUAL-CAPTURE-SIZE-001"></a>
 ## METIS-VISUAL-CAPTURE-SIZE-001 — Bound the committed capture encoding [patch]
 - Status: todo; priority: P2; owner: Metis verification; dependencies: METIS-RASTER-SHADOW-001; risk: repository growth per baseline refresh
-- Finding: shadow gradients took each form capture SVG from 0.56 MB to about 1.2 MB (seven captures, 8.2 MB per refresh), because the encoder emits one rectangle per color run. The Atlas artifact budget counts raster suffixes only, so the SVG captures are unmeasured against the 200 KB image budget.
+- Finding: shadow gradients took each form capture SVG from 0.56 MB to about 1.2 MB, and antialiased text to about 2.1 MB (seven captures, about 15 MB per refresh), because the encoder emits one rectangle per color run. The Atlas artifact budget counts raster suffixes only, so the SVG captures are unmeasured against the 200 KB image budget.
 - Oracle: every committed capture stays under the image budget with pixel-identical decode, and the budget scan measures the capture format.
 
 <a id="METIS-RASTER-ROUND-001"></a>
@@ -48,16 +56,6 @@
 - Scope: redistribute after child layout by translating each child's emitted commands, since a child paints while it is measured. Covers the four main-axis distributions and the four cross-axis alignments the style model already declares. No wrapping, no `space-around`/`space-evenly`, no per-item `align-self`.
 - Oracle: with no free space every child lands exactly where start alignment puts it, so existing captures are unchanged; a container with free space places children at the offsets each keyword defines; painter order is preserved; translation moves every command kind a child can emit, including text, strokes and images; `stretch` remains the default and a no-op.
 - Verification: focused and workspace `cargo clippy -D warnings`, `cargo nextest run`, `cargo doc`, and the visual baseline unchanged.
-
-<a id="METIS-FORM-STYLING-001"></a>
-## METIS-FORM-STYLING-001 — Adopt the admitted declarations in the demo form [patch]
-- Status: review; priority: P1; owner: Metis presentation; integrator: root; last-update: 2026-09-22; dependencies: METIS-LAYOUT-ALIGN-001; risk: stale golden captures
-- Delivered: radius on the header, navigation band, both cards, the command menu and every control; bold on the screen title, both card headings, the rate output and the control labels; a 44-pixel minimum height on controls with the label centred in it; and a fixed-width submit control centred in its row.
-- Evidence: [demo form adopts the admitted declarations](docs/VERIFICATION.md#demo-form-adopts-the-admitted-declarations--2026-09-22). The regenerated captures were inspected at four-times magnification; one DPI test assertion changed with its derivation, from the hit region's left edge to its scaling on both axes.
-- Outcome: the authored surface uses the declarations the renderer now paints, so the demonstration shows the capability instead of describing it: rounded cards and controls, bold headings, controls at an accessible hit-target height with their labels centred in it, and a centred submit control.
-- Scope: style declarations in `CLINICAL_SCREEN_XML` and the regenerated captures. Label text is unchanged — it is asserted by the native accessibility journey and the semantic baseline, so rewording is its own item.
-- Oracle: the regenerated captures are inspected and show rounded corners, heavier headings and centred controls; semantic projection is unchanged because only styles move; the layout tests and the full gate stay green.
-- Follow-up: the submit and menu labels carry bracket decoration (`[ SUBMIT CALCULATION TO BACKEND ]`) that stood in for a button affordance the renderer could not paint. With a rounded, centred control the brackets are redundant, but the text is an accessibility-journey oracle; filed as METIS-FORM-LABELS-001.
 
 <a id="METIS-FORM-LABELS-001"></a>
 ## METIS-FORM-LABELS-001 — Drop bracket decoration from control labels [patch]
@@ -127,26 +125,6 @@
   `test_visual.EvidenceTests.test_baseline_acceptance_and_collection_of_every_failure` 4.537 s;
   `test_visual.EvidenceTests.test_unavailable_baseline_does_not_report_hash_corruption` 3.000 s;
   `test_visual.EvidenceTests.test_corrupt_baseline_hash_fails_with_equal_pixels` 2.998 s.
-
-<a id="METIS-TYPOGRAPHY-GLYPHS-001"></a>
-## METIS-TYPOGRAPHY-GLYPHS-001 — Real lowercase and punctuation glyphs [patch]
-- Status: review; priority: P1; owner: Metis presentation; integrator: root; last-update: 2026-09-22; dependencies: METIS-RASTER-SPAN-001; risk: stale rendered evidence
-- Delivered: each letter carries its own lowercase bitmap on the shared baseline and fifteen ASCII punctuation marks replace their replacement-box fallback; the case-folded arms are split so an uppercase literal no longer serves both cases.
-- Evidence: [software renderer lowercase glyph evidence](docs/VERIFICATION.md#software-renderer-lowercase-glyph-evidence--2026-09-22); five contract tests assert case distinction, row bands, punctuation coverage, replacement-box fallback and cell-width containment. The committed `presentation` example renders the authored form as written.
-- Outcome: the bitmap font carries a distinct lowercase bitmap per letter and the common ASCII punctuation that previously fell through to the replacement box, so authored mixed-case text renders as written instead of in capitals.
-- Scope: `metis-platform` glyph table and its tests, plus regenerated native captures and the manifest text they record. No style-contract, weight, layout or display-command change; `font-weight` stays rejected under its own item.
-- Oracle: each letter renders a different bitmap in each case; every added punctuation mark differs from the replacement box; ascender, x-height and descender bands land on the documented rows; the regenerated native capture is inspected and its observed text updated.
-- Verification: focused `cargo clippy -p metis-platform --all-targets -- -D warnings` and `cargo nextest run -p metis-platform`, workspace clippy and nextest, and the regenerated `native-host-capture` artifact.
-
-<a id="METIS-RASTER-SPAN-001"></a>
-## METIS-RASTER-SPAN-001 — Span-based software fill and glyph runs [patch]
-- Status: review; priority: P1; owner: Metis presentation; integrator: root; last-update: 2026-09-22; dependencies: METIS-UI-001; risk: composite drift
-- Delivered: `SourceOver` holds the per-source terms once; opaque fills write `slice::fill` over clipped row spans, translucent fills composite through one shared blend that divides by a constant when the destination is opaque, and glyph rows emit coalesced runs instead of one clipped fill per set bit. `blend_pixel` now delegates to the same terms, so one compositing implementation serves both routes.
-- Evidence: [software rasterizer span-fill evidence](docs/VERIFICATION.md#software-rasterizer-span-fill-evidence--2026-09-22) records 84x on opaque full-surface fills, 88x on the card stack, 4.05x on scaled text and 1.47x on translucent fills, against a measured six-percent identical-code drift on this host. 512 randomized rectangles over both destination-alpha regimes and every glyph at three scales composite bit-identically through both routes.
-- Outcome: opaque rectangle fills write contiguous row spans, translucent fills composite through one shared packed blend with the per-source terms hoisted out of the pixel loop, and glyph rows emit coalesced horizontal runs instead of one clipped fill per set bit.
-- Scope: `metis-platform` framebuffer span access, `fill_bounds`, `draw_glyph_scaled`, and the first committed criterion instrument for the software rasterizer. No style-contract, geometry or public-surface change.
-- Oracle: every pixel is bit-identical to the current per-pixel path — a differential test composites randomized rectangles and alphas through both routes and asserts equal framebuffers; the existing platform suite passes unchanged; the committed bench records a measured baseline and post-change comparison.
-- Verification: focused `cargo clippy -p metis-platform --all-targets -- -D warnings` and `cargo nextest run -p metis-platform`, then the committed `python scripts/verify.py` gate.
 
 <a id="METIS-GALLERY-CYCLES-001"></a>
 ## METIS-GALLERY-CYCLES-001 — Repeated saved-study browser lifecycle

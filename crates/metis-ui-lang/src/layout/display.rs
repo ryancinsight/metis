@@ -2,13 +2,12 @@ use crate::image::ImagePlacement;
 use crate::parser::limit_error;
 use crate::style::Color;
 use metis_core::error::Result;
-use metis_platform::DisplayScale;
 use metis_platform::framebuffer::{Framebuffer, Rect};
 use metis_platform::rasterizer::{
     BoxShadow, CornerRadius, LineCap, LineJoin, MAX_STROKE_POINTS, StrokeWidth, draw_box_shadow,
-    draw_line, draw_polyline, draw_rect_outline, draw_text, fill_rect,
+    draw_line, draw_polyline, draw_rect_outline, fill_rect,
 };
-use metis_platform::{GlyphWeight, TextStyle};
+use metis_platform::typeface::{TextStyle, draw_text};
 
 /// Primitive command in painter order.
 #[derive(Debug, Clone, PartialEq)]
@@ -65,22 +64,17 @@ pub enum DisplayCommand {
         /// Straight RGBA stroke color.
         color: Color,
     },
-    /// Single horizontal bitmap text run.
+    /// Single horizontal antialiased text run.
     DrawText {
-        /// Unicode text; unsupported glyphs display as a box.
+        /// Unicode text; characters the face lacks display as its
+        /// missing-glyph box.
         text: String,
-        /// Horizontal origin.
+        /// Left edge of the line box.
         x: i32,
-        /// Vertical origin.
+        /// Top edge of the line box.
         y: i32,
-        /// Straight RGBA color.
-        color: Color,
-        /// Integer bitmap scale.
-        scale: u32,
-        /// Device scale reported by the host for this presentation.
-        display_scale: DisplayScale,
-        /// Stroke weight; [`GlyphWeight::Regular`] paints the authored glyph.
-        weight: GlyphWeight,
+        /// Color, device-pixel size and weight.
+        style: TextStyle,
     },
     /// Raster image crop composited with source-over alpha.
     DrawImage {
@@ -176,23 +170,9 @@ impl DisplayList {
                     join,
                     color,
                 } => draw_polyline(fb, points, *width, *cap, *join, *color),
-                DisplayCommand::DrawText {
-                    text,
-                    x,
-                    y,
-                    color,
-                    scale,
-                    display_scale,
-                    weight,
-                } => draw_text(
-                    fb,
-                    *x,
-                    *y,
-                    text,
-                    TextStyle::new(*color, *scale)
-                        .with_display_scale(*display_scale)
-                        .with_weight(*weight),
-                ),
+                DisplayCommand::DrawText { text, x, y, style } => {
+                    draw_text(fb, *x, *y, text, *style);
+                }
                 DisplayCommand::DrawImage { placement } => placement.render_to(fb),
             }
         }

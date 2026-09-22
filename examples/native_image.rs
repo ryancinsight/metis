@@ -8,8 +8,8 @@ mod jpeg_arithmetic_gallery;
 mod jpeg_gallery;
 
 use metis_platform::rasterizer::CornerRadius;
-use metis_platform::{Color, Framebuffer, Rect, draw_rect_outline, draw_text, fill_rect};
-use metis_platform::{GlyphWeight, TextStyle};
+use metis_platform::typeface::{TextSize, TextStyle, draw_text};
+use metis_platform::{Color, Framebuffer, Rect, draw_rect_outline, fill_rect};
 use metis_ui_lang::asset::AssetErrorKind;
 use metis_ui_lang::{ImagePlacement, ImageTransform, RasterImage};
 use std::error::Error;
@@ -110,7 +110,10 @@ fn render_png_gallery(frame: &mut Framebuffer) -> Result<(), Box<dyn Error>> {
         18,
         16,
         "NATIVE PNG: ASPECT ALPHA ORIENTATION",
-        TextStyle::new(TEXT, 2).with_weight(GlyphWeight::Regular),
+        TextStyle::new(
+            TEXT,
+            TextSize::new(24.0).expect("invariant: 24 px is a valid text size"),
+        ),
     );
 
     for (index, (label, transform, expected_corners)) in CASES.into_iter().enumerate() {
@@ -121,7 +124,10 @@ fn render_png_gallery(frame: &mut Framebuffer) -> Result<(), Box<dyn Error>> {
             bounds.x,
             52,
             label,
-            TextStyle::new(TEXT, 1).with_weight(GlyphWeight::Regular),
+            TextStyle::new(
+                TEXT,
+                TextSize::new(14.0).expect("invariant: 14 px is a valid text size"),
+            ),
         );
         draw_rect_outline(
             frame,
@@ -186,7 +192,10 @@ fn render_frame() -> Result<Framebuffer, Box<dyn Error>> {
         18,
         558,
         "TRUNCATED PNG + JPEG: REJECTED (MALFORMED)",
-        TextStyle::new(Color::rgb(74, 222, 128), 1),
+        TextStyle::new(
+            Color::rgb(74, 222, 128),
+            TextSize::new(14.0).expect("invariant: 14 px is a valid text size"),
+        ),
     );
 
     Ok(frame)

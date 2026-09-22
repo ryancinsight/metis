@@ -159,10 +159,10 @@ pub struct ComputedStyle {
     pub background_color: Option<Color>,
     /// Straight RGBA text color.
     pub text_color: Color,
-    /// Requested authored font size; bitmap scale is max(1, size / 14) before
-    /// the host display scale is applied during layout and rasterization.
+    /// Authored font size in CSS pixels per em; layout multiplies it by the
+    /// host display scale to size the text in device pixels.
     pub font_size: u32,
-    /// Weight of the bitmap glyph strokes.
+    /// Face weight: the regular or the bold face.
     pub font_weight: FontWeight,
     /// Outer shadow painted beneath the background, if any.
     pub box_shadow: Option<Shadow>,

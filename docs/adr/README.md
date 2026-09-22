@@ -55,3 +55,4 @@
 | [0044](0044-anchored-popovers.md) | Anchored popovers | Accepted |
 | [0045](0045-flex-alignment-redistribution.md) | Flex alignment by post-layout redistribution | Accepted |
 | [0046](0046-gaussian-box-shadows.md) | Gaussian outer box shadows | Accepted |
+| [0047](0047-truetype-text.md) | Antialiased TrueType text in the software renderer | Accepted |

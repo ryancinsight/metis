@@ -229,7 +229,7 @@ def read_semantics(content, name):
                  and len(key) <= 128 and len(value) <= 4096, "Duplicate or unsupported semantic field")
         values[category][key] = value
     _require(values["meta"] == {"schema": "1", "scenario": name, "target": "software",
-             "width": "800", "height": "600", "scale": "1.000x", "font": "metis-platform-bitmap"},
+             "width": "800", "height": "600", "scale": "1.000x", "font": "atkinson-hyperlegible"},
              "Capture target or schema differs")
     _scale_milli(values["meta"]["scale"])
     _require(set(values["input"]) == {"patient_id", "weight_kg", "concentration_mg_ml", "target_dose_mcg_kg_min"},
@@ -244,13 +244,14 @@ def read_semantics(content, name):
     for category in ("action", "text"):
         _require(set(values[category]) == {str(index) for index in range(len(values[category]))},
                  f"{category} indices are not contiguous")
-    for key, geometry in values["geometry"].items():
-        match = re.fullmatch(r"(\d{1,6}) (\d{1,6}) ((?:0|[1-9][0-9]*)\.[0-9]{3}x)", geometry)
+    for geometry in values["geometry"].values():
+        # Origin, size in pixels per em, and the run's measured width and line
+        # height in whole pixels, as the capture's layout reported them.
+        match = re.fullmatch(r"(\d{1,6}) (\d{1,6}) ([1-9][0-9]{0,3}(?:\.[0-9]{1,6})?) (\d{1,6}) (\d{1,6})",
+                             geometry)
         _require(match is not None, "Malformed text geometry")
-        x, y = int(match.group(1)), int(match.group(2))
-        scale_milli = _scale_milli(match.group(3))
-        width = max(1, (len(values["text"][key]) * 8 * scale_milli + 500) // 1_000)
-        height = max(1, (16 * scale_milli + 500) // 1_000)
+        x, y, width, height = (int(match.group(index)) for index in (1, 2, 4, 5))
+        _require(width > 0 and height > 0, "Malformed text geometry")
         _require(x + width <= 800 and y + height <= 600, "Captured text is clipped")
     return values
 
@@ -357,9 +358,10 @@ def _fixture(root, provenance):
                  f"Stale source provenance: {path}")
     roots = (root / "examples" / "presentation", root / "crates" / "metis-frontend" / "src",
              root / "crates" / "metis-platform" / "src", root / "crates" / "metis-ui-lang" / "src")
-    paths = {root / "examples" / "presentation.rs", root / "examples" / "image.rs",
-             root / "crates" / "metis-platform" / "src" / "font.rs"}
+    paths = {root / "examples" / "presentation.rs", root / "examples" / "image.rs"}
     paths.update(path for directory in roots for path in directory.rglob("*.rs"))
+    # The embedded typefaces decide every text pixel.
+    paths.update((root / "crates" / "metis-platform" / "fonts").glob("*.ttf"))
     for path in paths:
         digest = sources.get(str(path.resolve()))
         _require(digest is not None, f"Missing fixture source provenance: {path}")

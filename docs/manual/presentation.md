@@ -13,15 +13,17 @@ pixel buffer supplies both the BMP inspection artifact and the manual snapshot.
 
 Use one root element, matching case-sensitive tags, quoted attributes and literal
 text. Self-closing elements, comments and boolean attributes are supported. Use
-the word “and” when needed: `&amp;` is preserved literally and the bitmap font
-does not cover every punctuation character.
+the word “and” when needed: `&amp;` is preserved literally. Characters the
+embedded Atkinson Hyperlegible faces lack draw a missing-glyph box.
 
-Layout supports sequential rows and columns, pixel/percentage dimensions,
-automatic width/content height, padding, margins, gaps, colors and square borders.
-Each row child with automatic width can consume the available width; assign
-explicit widths or stack content in a column when that is the intended result.
-Alignment, minimum-size, font-weight and radius declarations are outside this
-software subset and fail with the typed `ERR_INVALID_CSS_STYLE` diagnostic.
+Layout supports sequential rows and columns, pixel, percentage and minimum
+dimensions, automatic width/content height, padding, margins, gaps, colors,
+`justify-content` and `align-items`, rounded backgrounds and borders,
+`box-shadow`, and regular or bold text sized in pixels per em. Each row child
+with automatic width can consume the available width; assign explicit widths
+or stack content in a column when that is the intended result. Declarations
+outside this software subset fail with the typed `ERR_INVALID_CSS_STYLE`
+diagnostic.
 Unknown properties, malformed declarations and invalid values use the same
 diagnostic; programmatically constructed DOMs receive it during layout. The
 software parser never silently changes a style. The exact implementation
