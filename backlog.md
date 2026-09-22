@@ -23,6 +23,15 @@
 - Review (independent judge, 2026-09-22): the scanline classification was ported line-for-line and diffed against a brute-force coverage oracle across roughly 166,000 configurations — zero write-set differences and zero double-writes, with branch counters confirming every column class was exercised. The correctness oracle passed; four test-quality findings were raised and all four are fixed here: an assertion-free clipping test, an opaque-only border test that could not observe double compositing, no committed differential oracle, and two clarity defects (`column_index` also converted rows; `fill_run` dropped a run silently instead of stating its invariant).
 - Residual: the display commands still pass `CornerRadius::SQUARE`, so `border-radius` keeps its typed rejection. Carrying the radius through `DisplayCommand` and admitting the declaration is METIS-RASTER-ROUND-002, held until the agent editing `layout/display.rs` commits.
 
+<a id="METIS-TYPOGRAPHY-WEIGHT-001"></a>
+## METIS-TYPOGRAPHY-WEIGHT-001 — Admit font-weight through layout to paint [minor]
+- Status: in-progress; priority: P1; owner: Metis presentation; integrator: root; last-update: 2026-09-22; dependencies: METIS-TYPOGRAPHY-GLYPHS-001, METIS-RASTER-ROUND-002; risk: glyph collision at the cell advance
+- lease: root — crates/metis-platform/src/{font.rs,rasterizer.rs}, crates/metis-ui-lang/src/{style.rs,layout/display.rs,layout/geometry.rs} — 2026-09-22T00:00:00-04:00
+- Outcome: a bold declaration renders heavier strokes, so an authored surface can carry the typographic hierarchy its headings and controls imply instead of painting every run at one weight.
+- Scope: a platform glyph weight applied during rasterization, carried on the text display command, mapped from the existing `FontWeight` during layout, and admitted by the style contract with a second dated revision to [ADR 0013](docs/adr/0013-strict-style-contract.md). No new glyph table.
+- Oracle: bold sets strictly more pixels than regular for every glyph that has any; no glyph paints the leftmost column of its cell in either weight, so the one-pixel gap at the `FONT_WIDTH` advance survives; the text advance is unchanged; a bold declaration reaches paint through authored markup.
+- Parity driver: the browser stylesheet already sets `font-weight: 700` on legends, table headers, group labels and buttons; the software renderer could express none of it.
+
 <a id="METIS-RASTER-ROUND-002"></a>
 ## METIS-RASTER-ROUND-002 — Admit border-radius through layout [minor]
 - Status: review; priority: P1; owner: Metis presentation; integrator: root; last-update: 2026-09-22; dependencies: METIS-RASTER-ROUND-001; ADR: [0013 revision](docs/adr/0013-strict-style-contract.md), [0043](docs/adr/0043-rounded-rectangle-paint.md); risk: contended region
