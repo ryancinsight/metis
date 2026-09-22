@@ -1,7 +1,7 @@
 {
   "captures": {
     "form": {
-      "image_sha256": "d315033c9cc014892234ca8649b33d1129754652ae0ab2f524489d79c9bb88ae",
+      "image_sha256": "f3254b9e939809d05535ac9fe384585fe0409610b824713d1c856eb6913cbf5c",
       "semantics": {
         "action": {
           "0": "create session: 800x600, bounded MemoryTransport, backend exchanges=4"
@@ -74,7 +74,7 @@
       }
     },
     "form-corrected": {
-      "image_sha256": "ba9ed832d619a29a8cd61abeed70a3eb6ccaaf1b364511a8c4c1da3795d7b7d6",
+      "image_sha256": "7d7b68e77f733463e3c358c010a23aa14a261f2618ff050337d505df19bea898",
       "semantics": {
         "action": {
           "0": "create session: 800x600, bounded MemoryTransport, backend exchanges=4",
@@ -161,7 +161,7 @@
       }
     },
     "form-disconnected": {
-      "image_sha256": "63ff19c4ecff07bb89a18b7bd78b6a2b73d43c9bfff46b751cc04f3d87fa7bc8",
+      "image_sha256": "4ca6c3bbe05c059424f26ccaaeb0b962bd0f6c9c1abb05799a4bf9c431676e68",
       "semantics": {
         "action": {
           "0": "create session: 800x600, bounded MemoryTransport, backend exchanges=4",
@@ -246,7 +246,7 @@
       }
     },
     "form-edited": {
-      "image_sha256": "67fe1e57c73f6183b8359f42b55970e89acbf1efc4bc5288689132db964b6b15",
+      "image_sha256": "9e446c37c2951a2b2f0368bc182abf7eabad8fa2feb6825ad884ee190b4d1d8b",
       "semantics": {
         "action": {
           "0": "create session: 800x600, bounded MemoryTransport, backend exchanges=4",
@@ -323,7 +323,7 @@
       }
     },
     "form-recovered": {
-      "image_sha256": "f760d21a3df26293542987066d601da30b2c8734d19c442f6b3e3abc9feb6361",
+      "image_sha256": "1f155f7b55e53d5b6dea3fe52b7f121227913a56d91ab32f9ee2028cd664eb91",
       "semantics": {
         "action": {
           "0": "create session: 800x600, bounded MemoryTransport, backend exchanges=4",
@@ -416,7 +416,7 @@
       }
     },
     "form-rejected": {
-      "image_sha256": "48d6f2aa9e56ec6a885773936d2489fc0bfe7ef21bc710e9f0c66bf99396917b",
+      "image_sha256": "f7844375da0fbcf4cda25876bed93b975b0e4efc7e5a29e7733e741522ba78f0",
       "semantics": {
         "action": {
           "0": "create session: 800x600, bounded MemoryTransport, backend exchanges=4",
@@ -497,7 +497,7 @@
       }
     },
     "form-success": {
-      "image_sha256": "bf579d2aee08194b5c8d2f98f7902fe9d553e090fdb3b8e8e7f258c4a8ca8c6c",
+      "image_sha256": "fed6cfa0e944da9ef74f3f65f8567ab1c5aa22d8175886d6839559aaaa57a61a",
       "semantics": {
         "action": {
           "0": "create session: 800x600, bounded MemoryTransport, backend exchanges=4",
