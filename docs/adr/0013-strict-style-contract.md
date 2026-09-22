@@ -10,6 +10,13 @@ Revision: 2026-09-09 — [METIS-LAYOUT-001](../../backlog.md#METIS-LAYOUT-001)
 closes the silent custom-renderer style gap by rejecting declarations without
 software-renderer semantics.
 
+Revision: 2026-09-22 — [METIS-TYPOGRAPHY-WEIGHT-001](../../backlog.md#METIS-TYPOGRAPHY-WEIGHT-001)
+admits `font-weight` now that rasterization applies a stroke weight. The subset
+stays bounded to the two weights the renderer can paint: `normal`/`400` and
+`bold`/`700`. Any other weight is a typed error rather than a silent rounding
+to the nearest paintable one, which would be the silent-drop the contract
+exists to prevent.
+
 Revision: 2026-09-22 — [METIS-RASTER-ROUND-002](../../backlog.md#METIS-RASTER-ROUND-002)
 admits `border-radius` now that the software renderer paints it
 ([ADR 0043](0043-rounded-rectangle-paint.md)). This is the contract working
@@ -42,8 +49,9 @@ browser CSS engine or change browser DOM parsing.
   missing separators, empty values, invalid enum values, malformed pixel or
   percentage dimensions, negative spacing, malformed edge lists, invalid
   colors and unsupported font weights return `ErrorCode::InvalidCssStyle`.
-- Alignment, minimum-size and font-weight declarations are outside the software
-  renderer contract and return `ErrorCode::InvalidCssStyle`. `border-radius` is
+- Alignment and minimum-size declarations are outside the software renderer
+  contract and return `ErrorCode::InvalidCssStyle`. `font-weight` is admitted
+  since the 2026-09-22 revision for the two paintable weights. `border-radius` is
   admitted since the 2026-09-22 revision: it parses as a nonnegative pixel
   length on the same grammar as `gap` and `border-width`, scales by the host
   display scale and clamps to half the shorter side of the laid-out rectangle.

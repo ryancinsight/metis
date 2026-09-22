@@ -1,9 +1,10 @@
 use super::display::{DisplayCommand, DisplayList};
 use crate::dom::{DomDocument, DomElement, DomNode};
 use crate::parser::{MAX_DEPTH, MAX_INPUT_BYTES, MAX_NODES, copy_text, limit_error};
-use crate::style::{ComputedStyle, Display, EdgeValues, FlexDirection, Size};
+use crate::style::{ComputedStyle, Display, EdgeValues, FlexDirection, FontWeight, Size};
 use metis_core::error::Result;
 use metis_platform::DisplayScale;
+use metis_platform::GlyphWeight;
 use metis_platform::framebuffer::Rect;
 use metis_platform::rasterizer::CornerRadius;
 
@@ -125,6 +126,10 @@ impl DisplayList {
             color: style.text_color,
             scale,
             display_scale,
+            weight: match style.font_weight {
+                FontWeight::Normal => GlyphWeight::Regular,
+                FontWeight::Bold => GlyphWeight::Bold,
+            },
         })?;
         Ok((text_width, text_height))
     }

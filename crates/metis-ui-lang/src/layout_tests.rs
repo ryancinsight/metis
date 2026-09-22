@@ -4,6 +4,7 @@ use crate::parse_markup;
 use crate::parser::{MAX_DEPTH, MAX_NODES};
 use crate::style::{Color, Display, EdgeValues, Size};
 use metis_core::error::ErrorCode;
+use metis_platform::GlyphWeight;
 use metis_platform::framebuffer::{Framebuffer, Rect};
 use metis_platform::rasterizer::CornerRadius;
 use metis_platform::rasterizer::{LineCap, LineJoin, MAX_STROKE_POINTS, StrokeWidth};
@@ -128,6 +129,38 @@ fn an_authored_border_radius_clears_the_painted_corner() {
     assert!(
         partial >= 8,
         "authored radius is not antialiased: {partial}"
+    );
+}
+
+#[test]
+fn an_authored_bold_weight_paints_heavier_strokes() {
+    let ink = |weight: &str| {
+        let markup = format!(
+            "<card id=\"root\" style=\"font-weight: {weight}; width: 120px; height: 20px;\">Backend</card>"
+        );
+        let document = parse_markup(&markup).expect("authored weight parses");
+        let display = compute_layout(&document, LayoutViewport::new(120, 20)).expect("lays out");
+        let mut fb = Framebuffer::new(120, 20).expect("surface");
+        display.render_to(&mut fb);
+        (
+            display
+                .commands
+                .iter()
+                .filter_map(|command| match command {
+                    DisplayCommand::DrawText { weight, .. } => Some(*weight),
+                    _ => None,
+                })
+                .collect::<Vec<_>>(),
+            fb.pixels().iter().filter(|pixel| **pixel != 0).count(),
+        )
+    };
+    let (regular_weights, regular_ink) = ink("normal");
+    let (bold_weights, bold_ink) = ink("bold");
+    assert_eq!(regular_weights, vec![GlyphWeight::Regular]);
+    assert_eq!(bold_weights, vec![GlyphWeight::Bold]);
+    assert!(
+        bold_ink > regular_ink,
+        "bold painted {bold_ink}, regular {regular_ink}"
     );
 }
 
