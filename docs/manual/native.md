@@ -16,11 +16,16 @@ cargo run --locked -p metis-app -- --metis-native-window 60 2 0.2
 ```
 
 The `Metis native form` window renders the production software framebuffer.
-While the window is focused, typed Unicode characters extend the patient
-reference and Backspace removes its last scalar; every edit clears a prior
-calculation through `FrontendApp::set_inputs`. Press **Enter** or **Ctrl+Enter**
-or click the blue **Submit calculation** surface to send the
-exact numeric inputs through the private pipe. Alt/Windows-modified Enter is
+The form opens with focus on the patient reference: typed Unicode characters
+extend it and Backspace removes its last scalar; every edit clears a prior
+calculation through `FrontendApp::set_inputs`. **Tab** and **Shift+Tab** move
+focus through the controls and paint a focus ring; typing reaches the patient
+reference only while it holds focus. **Enter** or **Space** activates a focused
+button, and on the Commands button opens the menu with focus on its first
+item. With the patient reference focused, press **Enter** or **Ctrl+Enter**,
+or click the blue **Submit calculation** surface, to send the
+exact numeric inputs through the private pipe. Clicking a control focuses it
+without a ring. Alt/Windows-modified Enter is
 left to the operating system instead of triggering the application shortcut.
 The result and audit sequence are painted by the same frontend state machine as
 the headless workflow. Resize the window to exercise framebuffer replacement;

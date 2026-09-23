@@ -1,6 +1,6 @@
 use super::{
-    MAX_PATIENT_ID_BYTES, NativeForm, append_patient_character, append_patient_text,
-    command_menu_toggle_rect, input_limit_error, submit_rect,
+    MAX_PATIENT_ID_BYTES, NativeForm, append_patient_character, append_patient_text, command_rect,
+    input_limit_error,
 };
 use metis_core::ErrorCode;
 use metis_frontend::{ApplicationTheme, FrontendApp};
@@ -97,7 +97,7 @@ fn native_composition_events_keep_preedit_transient_and_cancel_on_focus_loss() {
 fn submit_hit_region_comes_from_the_authored_button_surface() {
     let (transport, _peer) = MemoryTransport::pair();
     let app = FrontendApp::new(transport, 800, 600).expect("form");
-    let button = submit_rect(&app).expect("authored submit surface");
+    let button = command_rect(&app, "btn-calc").expect("authored submit surface");
     assert!(button.contains(button.x, button.y));
     assert!(!button.contains(button.x - 1, button.y));
     assert!(!button.contains(button.x, button.y - 1));
@@ -220,7 +220,7 @@ fn native_accessibility_patient_input_rejects_invalid_values() {
 fn dpi_event_repaints_and_scales_the_submit_hit_region() {
     let (transport, _peer) = MemoryTransport::pair();
     let app = FrontendApp::new(transport, 800, 600).expect("form");
-    let initial = submit_rect(&app).expect("initial submit surface");
+    let initial = command_rect(&app, "btn-calc").expect("initial submit surface");
     let mut form = NativeForm {
         app,
         pid: 1,
@@ -235,7 +235,7 @@ fn dpi_event_repaints_and_scales_the_submit_hit_region() {
         form.app.display_scale(),
         DisplayScale::from_dpi(144).expect("144 DPI")
     );
-    let scaled = submit_rect(&form.app).expect("scaled submit surface");
+    let scaled = command_rect(&form.app, "btn-calc").expect("scaled submit surface");
     // The hit region scales on both axes. Its left edge is not a scaling
     // signal: the control is centred, so its offset is half the space its
     // card has left over, and on a fixed physical surface the control grows
@@ -275,7 +275,7 @@ fn native_command_menu_pointer_and_escape_follow_host_neutral_state() {
         patient_id: "patient".to_owned(),
         focused: true,
     };
-    let toggle = command_menu_toggle_rect(&form.app).expect("command toggle surface");
+    let toggle = command_rect(&form.app, "command-menu-toggle").expect("command toggle surface");
     let flow = form
         .handle_events(&[WindowEvent::PointerUp {
             x: toggle.x,
@@ -355,9 +355,12 @@ fn native_popover_dismisses_without_clicking_through_and_tracks_theme() {
         patient_id: "patient".to_owned(),
         focused: true,
     };
-    let submit = submit_rect(&form.app).expect("submit surface");
+    let submit = command_rect(&form.app, "btn-calc").expect("submit surface");
     form.app.toggle_command_menu().expect("open menu");
-    assert_eq!(submit_rect(&form.app).expect("stationary submit"), submit);
+    assert_eq!(
+        command_rect(&form.app, "btn-calc").expect("stationary submit"),
+        submit
+    );
     assert!(
         form.handle_pointer_up(submit.x, submit.y)
             .expect("dismiss without IPC")
@@ -378,7 +381,7 @@ fn native_popover_dismisses_without_clicking_through_and_tracks_theme() {
     assert_eq!(form.app.theme(), ApplicationTheme::Dark);
     assert!(!form.app.command_menu_open());
 
-    let toggle = command_menu_toggle_rect(&form.app).expect("dark toggle");
+    let toggle = command_rect(&form.app, "command-menu-toggle").expect("dark toggle");
     assert!(
         form.handle_pointer_up(toggle.x, toggle.y)
             .expect("reopen dark menu")

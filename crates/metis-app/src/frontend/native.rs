@@ -1,7 +1,7 @@
 //! Visible Windows host for the software-rendered Metis form.
 
 use metis_core::error::{ErrorCode, MetisError, Result};
-use metis_frontend::{ApplicationCommand, FormState, FrontendApp};
+use metis_frontend::{ApplicationCommand, FocusOrigin, FormState, FrontendApp};
 use metis_ipc::{IpcTransport, StreamTransport};
 use metis_platform::native::{
     AccessibilityAction, AccessibilityActionRequest, AccessibilityTree, CompositionPhase,
@@ -14,6 +14,9 @@ use std::io::{stdin, stdout};
 use std::time::Duration;
 
 use super::native_accessibility;
+use keyboard::PATIENT_INPUT;
+
+mod keyboard;
 
 const INITIAL_WIDTH: u32 = 800;
 const INITIAL_HEIGHT: u32 = 600;
@@ -78,6 +81,16 @@ impl<T: IpcTransport> NativeApplication for NativeForm<T> {
     fn handle_events(&mut self, events: &[WindowEvent]) -> Result<NativeFlow> {
         let mut repaint = false;
         for event in events {
+            if let WindowEvent::KeyDown {
+                virtual_key,
+                repeated,
+                modifiers,
+            } = event
+                && let Some(changed) = self.handle_focus_key(*virtual_key, *repeated, *modifiers)?
+            {
+                repaint |= changed;
+                continue;
+            }
             match event {
                 WindowEvent::CloseRequested | WindowEvent::Destroyed => {
                     return Ok(NativeFlow::Exit);
@@ -134,18 +147,18 @@ impl<T: IpcTransport> NativeApplication for NativeForm<T> {
                 WindowEvent::KeyDown {
                     virtual_key: BACKSPACE_KEY,
                     ..
-                } if self.focused => {
+                } if self.patient_has_focus() => {
                     repaint |= remove_patient_character(&mut self.app, &mut self.patient_id)?;
                 }
                 WindowEvent::TextInput { character } => {
-                    repaint |= self.focused
+                    repaint |= self.patient_has_focus()
                         && append_patient_character(
                             &mut self.app,
                             &mut self.patient_id,
                             *character,
                         )?;
                 }
-                WindowEvent::TextComposition { phase, text } if self.focused => {
+                WindowEvent::TextComposition { phase, text } if self.patient_has_focus() => {
                     repaint = true;
                     match phase {
                         CompositionPhase::Started | CompositionPhase::Updated => {
@@ -171,45 +184,54 @@ impl<T: IpcTransport> NativeApplication for NativeForm<T> {
 impl<T: IpcTransport> NativeForm<T> {
     fn handle_pointer_up(&mut self, x: i32, y: i32) -> Result<bool> {
         self.focused = true;
-        if command_menu_toggle_rect(&self.app)?.contains(x, y) {
-            self.app.toggle_command_menu()?;
-            return Ok(true);
+        let menu_open = self.app.command_menu_open();
+        let mut targets = vec!["command-menu-toggle"];
+        if menu_open {
+            targets.extend([
+                ApplicationCommand::ThemeDark.id(),
+                ApplicationCommand::ThemeSystem.id(),
+            ]);
+        } else {
+            targets.extend([ApplicationCommand::FocusPatient.id(), "btn-calc"]);
         }
-        if self.app.command_menu_open() {
-            if command_rect(&self.app, "command-theme-dark")?.contains(x, y) {
-                self.app.activate_command(ApplicationCommand::ThemeDark)?;
-                return Ok(true);
+        for target in targets {
+            if command_rect(&self.app, target)?.contains(x, y) {
+                // A press focuses what it hits without a ring, then acts.
+                self.app.focus_control(target, FocusOrigin::Pointer)?;
+                return self.activate_control(target, FocusOrigin::Pointer);
             }
-            if command_rect(&self.app, "command-theme-system")?.contains(x, y) {
-                self.app.activate_command(ApplicationCommand::ThemeSystem)?;
-                return Ok(true);
-            }
+        }
+        if menu_open {
             if command_rect(&self.app, "command-menu")?.contains(x, y) {
                 return Ok(false);
             }
             return self.app.close_command_menu();
         }
-        if command_rect(&self.app, "command-focus-patient")?.contains(x, y) {
-            self.app
-                .activate_command(ApplicationCommand::FocusPatient)?;
-            self.focused = true;
-            return Ok(true);
-        }
-        if submit_rect(&self.app)?.contains(x, y) {
-            submit(&mut self.app, self.pid)?;
-            return Ok(true);
+        if command_rect(&self.app, PATIENT_INPUT)?.contains(x, y) {
+            return self.app.focus_control(PATIENT_INPUT, FocusOrigin::Pointer);
         }
         Ok(false)
     }
 
     fn apply_accessibility_action(&mut self, request: &AccessibilityActionRequest) -> Result<bool> {
+        if request.action == AccessibilityAction::Focus {
+            // An assistive-technology focus request moves focus as the
+            // keyboard does, ring included; a control that cannot take focus
+            // now, such as an item of a closed menu, keeps focus where it is.
+            let Some(control) = self
+                .app
+                .focus_order()?
+                .into_iter()
+                .find(|id| native_accessibility::control_identity(id) == request.target_node)
+            else {
+                return Ok(false);
+            };
+            self.focused = true;
+            return self.app.focus_control(&control, FocusOrigin::Keyboard);
+        }
         match request.target_node {
             target if target == native_accessibility::submit_button_identity() => {
                 match request.action {
-                    AccessibilityAction::Focus => {
-                        self.focused = true;
-                        Ok(true)
-                    }
                     AccessibilityAction::Activate => {
                         submit(&mut self.app, self.pid)?;
                         Ok(true)
@@ -219,7 +241,6 @@ impl<T: IpcTransport> NativeForm<T> {
             }
             target if target == native_accessibility::command_menu_toggle_identity() => {
                 match request.action {
-                    AccessibilityAction::Focus => Ok(true),
                     AccessibilityAction::Activate => {
                         self.app.toggle_command_menu()?;
                         Ok(true)
@@ -229,7 +250,6 @@ impl<T: IpcTransport> NativeForm<T> {
             }
             target if target == native_accessibility::focus_patient_identity() => {
                 match request.action {
-                    AccessibilityAction::Focus => Ok(true),
                     AccessibilityAction::Activate => {
                         self.app
                             .activate_command(ApplicationCommand::FocusPatient)?;
@@ -265,10 +285,6 @@ impl<T: IpcTransport> NativeForm<T> {
             }
             target if target == native_accessibility::patient_input_identity() => {
                 match request.action {
-                    AccessibilityAction::Focus => {
-                        self.focused = true;
-                        Ok(true)
-                    }
                     AccessibilityAction::SetValue => {
                         let Some(value) = request.value.as_deref() else {
                             return Ok(false);
@@ -412,14 +428,6 @@ fn validate_patient_value(value: &str) -> Result<()> {
         ));
     }
     Ok(())
-}
-
-fn submit_rect<T: IpcTransport>(app: &FrontendApp<T>) -> Result<Rect> {
-    command_rect(app, "btn-calc")
-}
-
-fn command_menu_toggle_rect<T: IpcTransport>(app: &FrontendApp<T>) -> Result<Rect> {
-    command_rect(app, "command-menu-toggle")
 }
 
 fn command_rect<T: IpcTransport>(app: &FrontendApp<T>, id: &str) -> Result<Rect> {

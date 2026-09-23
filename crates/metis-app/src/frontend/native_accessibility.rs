@@ -31,10 +31,16 @@ pub(crate) fn project<T: IpcTransport>(app: &FrontendApp<T>) -> Result<Accessibi
         &mut identities,
         &mut nodes,
         &mut focus,
+        app.focused_control(),
     )?;
     let focus = focus.unwrap_or(root);
     AccessibilityTree::from_nodes(root, focus, nodes)
         .map_err(|_| projection_error("native accessibility projection produced an invalid tree"))
+}
+
+/// Returns the stable identity of the control with authored `id`.
+pub(crate) fn control_identity(id: &str) -> u64 {
+    explicit_identity(id)
 }
 
 /// Returns the stable identity used for the authored submit control.
@@ -73,6 +79,7 @@ fn append_node(
     identities: &mut HashSet<u64>,
     nodes: &mut Vec<AccessibilityNode>,
     focus: &mut Option<u64>,
+    focused_control: &str,
 ) -> Result<u64> {
     let identity = node_identity(source, path);
     if identity == 0 || !identities.insert(identity) {
@@ -80,7 +87,7 @@ fn append_node(
             "native accessibility node identities must be unique and nonzero",
         ));
     }
-    if focus.is_none() && source.focusable && !source.hidden && !source.disabled {
+    if source.id.as_deref() == Some(focused_control) && source.focusable && !source.hidden {
         *focus = Some(identity);
     }
 
@@ -106,7 +113,7 @@ fn append_node(
         .map_err(|_| projection_error("native accessibility child storage reservation failed"))?;
     for (index, child) in source.children.iter().enumerate() {
         path.push(index);
-        let child_identity = append_node(child, path, identities, nodes, focus)?;
+        let child_identity = append_node(child, path, identities, nodes, focus, focused_control)?;
         path.truncate(path.len().saturating_sub(1));
         children.push(child_identity);
     }
