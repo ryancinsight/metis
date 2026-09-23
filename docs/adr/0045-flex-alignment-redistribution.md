@@ -6,6 +6,16 @@ Date: 2026-09-22
 
 Driver: [METIS-LAYOUT-ALIGN-001](../../backlog.md#METIS-LAYOUT-ALIGN-001).
 
+Revision: 2026-09-23 — [METIS-FORM-LABELS-001](../../backlog.md#METIS-FORM-LABELS-001)
+sizes the children of a column whose `align-items` is not `stretch` to their
+content, as CSS flex layout does. Every automatic-width element had filled its
+available width, so a column's children never left cross-axis free space and
+`center`, `flex-start` and `flex-end` moved nothing; a centred button label
+stayed at the left edge. Such a child now takes its max-content width — text
+advances, a row's children and gaps, a column's widest child, plus padding and
+borders — capped at the available width, and redistribution places it.
+`stretch`, the default, and row containers are unchanged.
+
 ## Context
 
 [ADR 0013](0013-strict-style-contract.md) rejects `justify-content` and

@@ -8,6 +8,7 @@
 mod device;
 mod display;
 mod geometry;
+mod intrinsic;
 #[cfg(test)]
 #[path = "../layout_sizing_tests.rs"]
 mod sizing_tests;

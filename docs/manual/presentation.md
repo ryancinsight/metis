@@ -21,7 +21,9 @@ dimensions, automatic width/content height, padding, margins, gaps, colors,
 `justify-content` and `align-items`, rounded backgrounds and borders,
 `box-shadow`, and regular or bold text sized in pixels per em. Each row child
 with automatic width can consume the available width; assign explicit widths
-or stack content in a column when that is the intended result. Declarations
+or stack content in a column when that is the intended result. In a column
+whose `align-items` is not `stretch`, an automatic-width child takes its
+content width instead, so it can be centred or aligned to either edge. Declarations
 outside this software subset fail with the typed `ERR_INVALID_CSS_STYLE`
 diagnostic.
 Unknown properties, malformed declarations and invalid values use the same

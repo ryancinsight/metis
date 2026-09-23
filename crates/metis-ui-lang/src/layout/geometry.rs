@@ -7,7 +7,10 @@ use metis_platform::DisplayScale;
 use metis_platform::framebuffer::Rect;
 use metis_platform::rasterizer::CornerRadius;
 
-use super::device::{device_shadow, dimension, minimum, scaled_geometry, text_style, whole_pixels};
+use super::device::{
+    add, device_shadow, dimension, minimum, scaled_geometry, text_style, whole_pixels,
+};
+use super::intrinsic::{Sizing, max_content_width};
 
 /// Logical viewport dimensions and the host's device-pixel scale.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -73,6 +76,7 @@ pub fn compute_layout(doc: &DomDocument, viewport: LayoutViewport) -> Result<Dis
         &doc.root,
         Rect::new(0, 0, viewport.width, viewport.height),
         viewport.scale,
+        Sizing::Fill,
     )?;
     Ok(list)
 }
@@ -167,10 +171,19 @@ impl DisplayList {
                     } else {
                         content_width
                     };
+                    // A column that does not stretch its children sizes an
+                    // automatic-width child to its content, so cross-axis
+                    // alignment has free space to place it in.
+                    let sizing = if !row && style.align_items != AlignItems::Stretch {
+                        Sizing::Content
+                    } else {
+                        Sizing::Fill
+                    };
                     let child_rect = self.element(
                         child,
                         Rect::new(child_x, child_y, available_width, available_height),
                         display_scale,
+                        sizing,
                     )?;
                     (child_rect.width, child_rect.height)
                 }
@@ -267,23 +280,24 @@ impl DisplayList {
         element: &DomElement,
         available: Rect,
         display_scale: DisplayScale,
+        sizing: Sizing,
     ) -> Result<Rect> {
         let style = &element.computed_style;
         if style.display == Display::None {
             return Ok(Rect::new(available.x, available.y, 0, 0));
         }
         let geometry = scaled_geometry(style, display_scale)?;
-        let width = dimension(
-            style.width,
+        let fill = sub(
             available.width,
-            sub(
-                available.width,
-                add(geometry.margin.left, geometry.margin.right)?,
-            )?
-            .max(0),
-            display_scale,
+            add(geometry.margin.left, geometry.margin.right)?,
         )?
-        .max(minimum(style.min_width, available.width, display_scale)?);
+        .max(0);
+        let automatic = match sizing {
+            Sizing::Fill => fill,
+            Sizing::Content => max_content_width(element, display_scale)?.min(fill),
+        };
+        let width = dimension(style.width, available.width, automatic, display_scale)?
+            .max(minimum(style.min_width, available.width, display_scale)?);
         let x = add(available.x, geometry.margin.left)?;
         let y = add(available.y, geometry.margin.top)?;
         let content_x = add(add(x, geometry.padding.left)?, geometry.border.left)?;
@@ -445,10 +459,6 @@ struct ChildLayout<'style> {
     display_scale: DisplayScale,
 }
 
-fn add(left: i32, right: i32) -> Result<i32> {
-    left.checked_add(right)
-        .ok_or_else(|| limit_error("Layout coordinate addition overflow"))
-}
 fn sub(left: i32, right: i32) -> Result<i32> {
     left.checked_sub(right)
         .ok_or_else(|| limit_error("Layout coordinate subtraction overflow"))
