@@ -36,6 +36,7 @@ from browser_drop_lifecycle import (
     _DeadlineClient,
     _stopped_cleanup,
     assert_lifecycle_growth,
+    summarize_lifecycle_resources,
     validate_lifecycle_request,
 )
 from browser_file_read import (
@@ -246,7 +247,8 @@ class FileDropTests(unittest.TestCase):
         records = []
         for cycle, capacity in enumerate(capacities, start=1):
             phases = []
-            for phase in ("mounted", "transfer", "decoded", "cine"):
+            for index, phase in enumerate(("mounted", "transfer", "decoded", "cine")):
+                used_js_heap_bytes = 1_000_000 + cycle * 1_000 + index * 100
                 phases.append({
                     "phase": phase,
                     "gallery": {
@@ -255,7 +257,13 @@ class FileDropTests(unittest.TestCase):
                         "consumer_listeners": 5,
                         "mounted": True,
                     },
+                    "browser_heap": {
+                        "available": True,
+                        "source": "performance.memory",
+                        "used_js_heap_bytes": used_js_heap_bytes,
+                    },
                 })
+            used_js_heap_bytes = 1_000_000 + cycle * 1_000 + 4 * 100
             phases.append({
                 "phase": "stopped",
                 "gallery": {
@@ -263,6 +271,11 @@ class FileDropTests(unittest.TestCase):
                     "host_listeners": 0,
                     "consumer_listeners": 0,
                     "mounted": False,
+                },
+                "browser_heap": {
+                    "available": True,
+                    "source": "performance.memory",
+                    "used_js_heap_bytes": used_js_heap_bytes,
                 },
             })
             records.append({"cycle": cycle, "status": "complete", "phases": phases})
@@ -538,6 +551,8 @@ class FileDropTests(unittest.TestCase):
             keyboard_trace="cine-rate",
         )
         self.assertEqual(validate_lifecycle_request(valid), 4)
+        valid.lifecycle_cycles = MAX_LIFECYCLE_CYCLES
+        self.assertEqual(validate_lifecycle_request(valid), MAX_LIFECYCLE_CYCLES)
         for value in (0, MAX_LIFECYCLE_CYCLES + 1, True):
             valid.lifecycle_cycles = value
             with self.subTest(value=value), self.assertRaisesRegex(
@@ -558,6 +573,39 @@ class FileDropTests(unittest.TestCase):
 
     def test_growth_gate_accepts_stable_guards_and_post_warmup_capacity(self):
         assert_lifecycle_growth(self._lifecycle_records())
+
+    def test_resource_summary_reports_post_warmup_wasm_capacity_and_heap_uncertainty(self):
+        summary = summarize_lifecycle_resources(self._lifecycle_records())
+        self.assertEqual(summary["warmup_cycles"], 2)
+        self.assertEqual(summary["sampled_cycles"], 2)
+        self.assertEqual(
+            summary["wasm_capacity_bytes"]["stopped"],
+            {"bytes": 131_072, "sample_count": 2, "minimum_bytes": 131_072, "maximum_bytes": 131_072},
+        )
+        stopped_heap = summary["javascript_heap"]["stopped"]
+        heap_values = stopped_heap["used_js_heap_bytes"]
+        self.assertEqual(stopped_heap["available_samples"], 2)
+        self.assertEqual(heap_values["count"], 2)
+        self.assertEqual(heap_values["first_bytes"], 1_003_400)
+        self.assertEqual(heap_values["last_bytes"], 1_004_400)
+        self.assertEqual(heap_values["net_change_bytes"], 1_000)
+        self.assertGreater(heap_values["approximate_95_half_width"], 0)
+        self.assertIn("serial-correlation effects are not modeled", summary["uncertainty"])
+
+    def test_resource_summary_preserves_unavailable_heap_observations(self):
+        records = self._lifecycle_records()
+        for record in records:
+            for phase in record["phases"]:
+                phase["browser_heap"] = {
+                    "available": False,
+                    "reason": "performance.memory unavailable",
+                }
+        summary = summarize_lifecycle_resources(records)
+        stopped_heap = summary["javascript_heap"]["stopped"]
+        self.assertEqual(stopped_heap["available_samples"], 0)
+        self.assertEqual(stopped_heap["unavailable_samples"], 2)
+        self.assertEqual(stopped_heap["unavailable_reasons"], ["performance.memory unavailable"])
+        self.assertIsNone(stopped_heap["used_js_heap_bytes"]["mean"])
 
     def test_growth_gate_rejects_wasm_growth_after_two_warmups(self):
         with self.assertRaisesRegex(BrowserRuntimeError, "capacity grew after warmup"):
