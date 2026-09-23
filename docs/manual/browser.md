@@ -2115,23 +2115,47 @@ latency.
 
 ### Repeat the saved-study gallery lifecycle
 
-`scripts/browser_drop.py --lifecycle-cycles 4` extends the existing real-file
-cine trace command. Repeated mode requires `--canvas-trace`,
-`--keyboard-trace cine-rate`, and either chooser or Chromium file-backed input.
-It admits 4–8 same-page cycles with a maximum 300-second deadline, including
-reserved cleanup time. It records mount, transfer, decode, cine and stop
-samples; every cycle must satisfy the consumer's file/pixel oracle and emits
-its own `canvas-trace-cycle-N.json` for the consumer's semantic validator.
+Repeated mode accepts 4–16 same-page cycles with a 300-second suite limit and
+reserved cleanup time. It requires `--canvas-trace` and `--keyboard-trace cine-rate`, plus chooser or
+Chromium file-backed input. The reproduction command,
+source and asset hashes, per-cycle trace hashes, and sample series are in the
+[provenance record](images/metis-browser-mri-growth.json).
 
-The 2026-09-16 RITK MRI-DIR run completed four cycles each on Chromium chooser,
-Firefox chooser and Chromium CDP drop. All 12 cycles reported 31 host and 21
-consumer listener guards while mounted, zero after stop, and committed WASM
-capacity of 404,357,120 bytes from the first decode onward. Chromium heap
-counters varied with garbage collection; Firefox reported the API unavailable.
-The growth gate compares exact per-phase capacity after two warmup cycles and
-rejects missing phases, retained guards or diagnostic references. It does not
-infer allocator usage or long-duration heap stability.
+On 2026-09-23, Microsoft Edge 154.0.4258.32 loaded the real 94-file MRI-DIR T2
+study (49,807,236 bytes) through the standard file chooser at 125% device scale.
+The 16 cycles ran in one page; two warmups were excluded, leaving 14 samples per
+phase. `WebAssembly.Memory.buffer.byteLength` was 1,835,008 bytes at the first
+mount, grew to 404,357,120 bytes at the first transfer, then stayed at
+404,357,120 bytes through all later mount, transfer, decode, cine and stop
+phases. Every post-warmup phase has 14/14 identical capacity observations.
 
-RITK owns the [measured provenance](https://github.com/ryancinsight/ritk/blob/main/docs/manual/images/dicom-metis-real-browser-mri-memory.json)
-and [reproduction details](https://github.com/ryancinsight/ritk/blob/main/docs/manual/dicom-workflow.md#repeat-the-saved-study-lifecycle-without-reloading).
-DICOM decoding, pixel oracles and cine semantics remain in RITK.
+| Phase | WASM buffer capacity | JavaScript heap mean ± approximate 95% half-width | Observed heap range |
+| --- | ---: | ---: | ---: |
+| mounted | 385.625 MiB | 56.35 ± 21.31 MiB | 5.87–103.13 MiB |
+| transfer | 385.625 MiB | 84.86 ± 10.39 MiB | 57.54–102.76 MiB |
+| decoded | 385.625 MiB | 66.66 ± 19.53 MiB | 6.13–104.82 MiB |
+| cine | 385.625 MiB | 51.70 ± 22.09 MiB | 5.87–103.04 MiB |
+| stopped | 385.625 MiB | 51.74 ± 22.09 MiB | 5.87–103.13 MiB |
+
+The JavaScript values come from Chromium's `performance.memory`. The half-width
+uses `1.96 × sample standard deviation / √n`; garbage collection and serial
+correlation are not modeled. The large overlapping ranges do not show stable
+heap use or prove leak absence, and neither metric reports allocator live bytes.
+
+The Metis lifecycle runner passed all 16 real cycles, the saved-study file and
+canvas oracles, and stop cleanup (zero listener and transfer-observer guards).
+RITK's stricter trace validator passed 9/16 per-cycle traces. The other seven
+passed action, attribute and frame/slice progression before failing the exact
+repeated element-screenshot hash check; the validator's later consumer-cleanup
+assertion did not run for them. Independently, the Metis runner completed all
+16 cycles with zero stopped listener and transfer-observer guards. Across 96 repeated screenshot
+pairs, 25 differed by one intensity level in 1–28 pixels; the raw 512×512 and
+512×94 RGBA canvas oracles remained exact. No tolerance changed. This leaves an
+unresolved screenshot-capture stability limit at 125% scale; the cause is not
+established.
+
+The record pins the actual browser bundle and the reported RITK source revision,
+but it cannot establish that those served JavaScript and WASM assets were built
+from that source revision. DICOM parsing and image correctness remain RITK-owned.
+The earlier [RITK four-cycle provenance](https://github.com/ryancinsight/ritk/blob/main/docs/manual/images/dicom-metis-real-browser-mri-memory.json)
+remains a separate cross-engine baseline.

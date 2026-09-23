@@ -3818,6 +3818,25 @@ growth observation; long-duration leak behavior, allocator-used bytes,
 process/compositor/GPU costs and matched GPUI/Tauri/egui fixtures remain
 unmeasured.
 
+On 2026-09-23, the Metis same-page Edge chooser path completed 16 cycles over
+the same real study after two warmups. The exact linear-memory buffer grew from
+1,835,008 bytes at first mount to 404,357,120 bytes at first transfer, then
+remained unchanged through the remaining cycles and all five lifecycle phases
+(14 post-warmup observations per phase). `performance.memory` heap samples and
+their uncertainty are recorded in the [manual](manual/browser.md#repeat-the-saved-study-gallery-lifecycle)
+and [provenance](manual/images/metis-browser-mri-growth.json); the metric does
+not measure allocator-used bytes or prove leak absence.
+
+The Metis runner passed all 16 file and raw-canvas-oracle cycles and independently
+recorded zero stopped-listener and transfer-observer guards. RITK's exact repeated
+screenshot-hash validator passed 9/16 traces; seven failed the screenshot check
+after action, attribute and frame/slice progression. Its subsequent consumer
+cleanup assertion was not reached for those seven. Pixelwise RGBA comparison
+found 25 differing pairs among 96, with at most one intensity level changed. No
+tolerance changed. The output asset hashes pin the files that were served, but
+their build relation to the reported RITK source revision is not known; the
+record keeps both values separate.
+
 The merged Windows default-shell CT run provides a second current fixture. At
 RITK revision `0ed6e245e2341e6a7888441f54e7e515fc12653b`, Metis revision
 `edcd8cb4a228d1b158f01edd596463d24964c4ab` and Moirai revision
