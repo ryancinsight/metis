@@ -73,6 +73,37 @@ fn status_badge_colors_stay_legible_over_both_headers() {
 }
 
 #[test]
+fn themed_text_meets_its_size_threshold_on_its_panel() {
+    // Every themed run is below the large-text bounds (24 px regular,
+    // 18.66 px bold): headings are 16 px bold and the rate readout 18 px
+    // bold, so each pair needs 4.5:1.
+    for theme in [ApplicationTheme::System, ApplicationTheme::Dark] {
+        let palette = ThemePalette::for_theme(theme);
+        let pairs = [
+            (
+                "command status on the command bar",
+                palette.muted,
+                palette.panel,
+            ),
+            (
+                "labels and output lines on a card",
+                palette.muted,
+                palette.surface,
+            ),
+            ("headings on a card", palette.text, palette.surface),
+            ("rate readout on a card", palette.accent, palette.surface),
+        ];
+        for (name, text, background) in pairs {
+            let ratio = contrast(text, background);
+            assert!(
+                ratio >= 4.5,
+                "{theme:?} {name}: {text:?} on {background:?} gives {ratio:.2}:1"
+            );
+        }
+    }
+}
+
+#[test]
 fn contrast_matches_the_published_reference_points() {
     // WCAG's end points: white on black is 21:1 and white on white 1:1.
     assert!((white_contrast(Color::BLACK) - 21.0).abs() < 1e-12);

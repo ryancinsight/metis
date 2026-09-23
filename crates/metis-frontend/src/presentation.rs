@@ -50,7 +50,7 @@ pub const CLINICAL_SCREEN_XML: &str = r#"<screen id="main-screen" style="display
 
   <card id="results-card" style="display: flex; flex-direction: column; background-color: #ffffff; padding: 16px; border-width: 1px; border-color: #e2e8f0; border-radius: 12px; gap: 8px; box-shadow: 0 2px 10px #0f172a1f;">
     <text id="results-heading" style="color: #2d3748; font-size: 16px; font-weight: bold;">Backend Calculation Output</text>
-    <text id="output-rate" style="color: #3182ce; font-size: 18px; font-weight: bold;">Rate: Awaiting Backend Calculation...</text>
+    <text id="output-rate" style="color: #2b6cb0; font-size: 18px; font-weight: bold;">Rate: Awaiting Backend Calculation...</text>
     <text id="output-status" style="color: #718096; font-size: 13px;">Safety Status: Idle</text>
     <text id="output-signature" style="color: #718096; font-size: 12px;">Backend MAC: None</text>
   </card>
