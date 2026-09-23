@@ -467,8 +467,9 @@ an owner. “Unsupported” cannot replace delivery of a required mobile/native 
 
 <a id="METIS-WORKBENCH-DESIGN-001"></a>
 ## METIS-WORKBENCH-DESIGN-001 — Refine browser visual hierarchy
-- Status: review; priority: P2; integrator: design-session; last-update: 2026-09-22.
+- Status: todo; priority: verification; last-update: 2026-09-23.
 - Outcome: distinguish primary actions, diagnostics and content through typography, palette and spacing.
 - Scope: browser CSS, responsive capture evidence and browser manual; native renderer and IME work excluded.
-- Acceptance: inspected desktop/mobile and theme states; no horizontal overflow; 44px option targets; browser asset checks pass.
-- Evidence: WASM release build and 15 browser asset checks pass; 360/800/1440px captures updated; independent CSS review passes.
+- Acceptance: inspected desktop/mobile and theme states; no horizontal overflow; 44px option targets; browser asset and capture gates pass.
+- Evidence: reachability scan 22.905s; full citation command 0.490s after 5e3ed7e; visual-tests 343 tests in 35.819s (1 skipped, 60s cap); browser assets 15 tests in 0.205s; capture unit tests 22 in 18.217s; asset build passed, WASM compile 108s. Dirty local comparator rejects stale fixture digest; clean-base capture is gated in PR CI.
+- basis: 7ddca83.
