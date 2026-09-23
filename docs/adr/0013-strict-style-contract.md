@@ -44,11 +44,18 @@ rather than a reversal: the rejection exists to stop a declaration being
 silently dropped, so it lifts exactly when the renderer gains the semantics —
 one property at a time, each with the paint evidence that earns it.
 
-Revision: 2026-09-22 — [METIS-RASTER-SHADOW-001](../../backlog.md#METIS-RASTER-SHADOW-001)
+Revision: 2026-09-22 — [METIS-RASTER-SHADOW-001](https://github.com/ryancinsight/metis/pull/370)
 admits `box-shadow` for one outer shadow of two offsets, an optional blur and a
 color ([ADR 0046](0046-gaussian-box-shadows.md)). `inset`, a spread distance
 and comma-separated lists stay typed errors: the renderer has no semantics for
 them, so the admission is bounded the way `font-weight` is.
+
+Revision: 2026-09-23 — [METIS-RASTER-GRADIENT-001](https://github.com/ryancinsight/metis/pull/376)
+admits `background-image` and the gradient form of `background` for one
+`linear-gradient()` of an angle or side keyword and two to eight hex stops with
+optional percentage positions ([ADR 0048](0048-linear-gradient-backgrounds.md)).
+Corner keywords, other angle units, color hints, length positions and the other
+gradient functions stay typed errors.
 
 ## Context
 

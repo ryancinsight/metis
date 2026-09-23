@@ -225,7 +225,7 @@ fn span_classification_matches_the_coverage_definition() {
                 let inner = border.and_then(|width| outer.inset(f64::from(width)));
                 let mut actual = surface(28, 24, Color::WHITE);
                 let mut expected = surface(28, 24, Color::WHITE);
-                composite_shape(&mut actual, outer, inner, color);
+                composite_shape(&mut actual, outer, inner, &color);
                 reference_shape(&mut expected, outer, inner, color);
                 assert_eq!(
                     actual.pixels(),

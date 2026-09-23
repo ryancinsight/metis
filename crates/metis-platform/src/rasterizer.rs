@@ -1,6 +1,8 @@
 //! Clipped rectangle and line drawing, bounded by framebuffer area.
 
 use crate::framebuffer::{Color, Framebuffer, Rect, SourceOver};
+mod gradient;
+mod paint;
 mod round_rect;
 mod shadow;
 mod stroke;
@@ -10,6 +12,8 @@ const RIGHT: u8 = 2;
 const TOP: u8 = 4;
 const BOTTOM: u8 = 8;
 
+use gradient::PlacedGradient;
+pub use gradient::{GradientStop, LinearGradient, MAX_GRADIENT_STOPS};
 pub use round_rect::CornerRadius;
 use round_rect::{RoundRect, composite_shape};
 pub use shadow::{BoxShadow, draw_box_shadow};
@@ -77,7 +81,31 @@ pub fn fill_rect(fb: &mut Framebuffer, rect: Rect, radius: CornerRadius, color: 
     let Some(outer) = RoundRect::new(rect, radius) else {
         return;
     };
-    composite_shape(fb, outer, None, color);
+    composite_shape(fb, outer, None, &color);
+}
+
+/// Fills the visible intersection of a rectangle with a linear gradient.
+///
+/// The gradient line is laid across `rect` itself, so its ends fall on the
+/// rectangle's corners (CSS Images 3 section 3.1 with the box as the
+/// gradient box). A rounded radius antialiases the corner arcs by the same
+/// coverage [`fill_rect`] uses, so a gradient whose stops share one color
+/// paints exactly what `fill_rect` paints with that color.
+pub fn fill_gradient(
+    fb: &mut Framebuffer,
+    rect: Rect,
+    radius: CornerRadius,
+    gradient: &LinearGradient,
+) {
+    let Some(outer) = RoundRect::new(rect, radius) else {
+        return;
+    };
+    let paint = PlacedGradient::new(
+        gradient,
+        (f64::from(rect.x), f64::from(rect.y)),
+        (f64::from(rect.width), f64::from(rect.height)),
+    );
+    composite_shape(fb, outer, None, &paint);
 }
 
 /// Draws an inward border, blending each covered pixel exactly once.
@@ -99,7 +127,7 @@ pub fn draw_rect_outline(
         let Some(outer) = RoundRect::new(rect, radius) else {
             return;
         };
-        composite_shape(fb, outer, outer.inset(f64::from(width)), color);
+        composite_shape(fb, outer, outer.inset(f64::from(width)), &color);
         return;
     }
     let left = i64::from(rect.x);

@@ -61,9 +61,9 @@ assert_eq!(
 
 Layout supports sequential row/column flow with flex alignment, explicit,
 percentage and minimum dimensions, automatic width/content height, spacing,
-colors, rounded backgrounds and borders, outer box shadows, and antialiased
-text measured by its glyph advances. Declarations outside the admitted subset
-return `ErrorCode::InvalidCssStyle` when parsed. The faces and glyph coverage
+colors, rounded backgrounds and borders, linear-gradient backgrounds, outer
+box shadows, and antialiased text measured by its glyph advances. Declarations
+outside the admitted subset return `ErrorCode::InvalidCssStyle` when parsed. The faces and glyph coverage
 belong to metis-platform.
 An element with `popover-anchor="element-id"` leaves normal flow when visible,
 uses that element's laid-out border rectangle as its anchor, and paints after

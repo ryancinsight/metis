@@ -6,7 +6,7 @@ Date: 2026-09-19
 
 Driver: [METIS-DESKTOP-001](../../backlog.md#METIS-DESKTOP-001)
 
-Revision: 2026-09-22 — [METIS-TYPOGRAPHY-TRUETYPE-001](../../backlog.md#METIS-TYPOGRAPHY-TRUETYPE-001)
+Revision: 2026-09-22 — [METIS-TYPOGRAPHY-TRUETYPE-001](https://github.com/ryancinsight/metis/pull/372)
 replaces the bitmap font with TrueType outlines ([ADR 0047](0047-truetype-text.md)).
 Text is now sized rather than scaled: layout multiplies the authored font size
 by the display scale into a device-pixel `TextSize` that `DrawText` carries,

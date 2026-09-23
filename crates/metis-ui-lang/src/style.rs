@@ -1,7 +1,10 @@
 //! CSS-inspired style declarations, box model, and layout properties.
 
+mod background;
+
 use metis_core::error::{ErrorCode, MetisError, Result};
 pub use metis_platform::framebuffer::Color;
+pub use metis_platform::rasterizer::LinearGradient;
 
 /// Display flow mode.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -157,6 +160,9 @@ pub struct ComputedStyle {
     pub border_radius: i32,
     /// Optional straight RGBA background fill.
     pub background_color: Option<Color>,
+    /// Optional linear gradient painted over the background color, across
+    /// the border box.
+    pub background_gradient: Option<LinearGradient>,
     /// Straight RGBA text color.
     pub text_color: Color,
     /// Authored font size in CSS pixels per em; layout multiplies it by the
@@ -186,6 +192,7 @@ impl Default for ComputedStyle {
             border_color: Color::TRANSPARENT,
             border_radius: 0,
             background_color: None,
+            background_gradient: None,
             text_color: Color::BLACK,
             font_size: 14,
             font_weight: FontWeight::Normal,
@@ -277,8 +284,8 @@ impl ComputedStyle {
                 "border-color" => {
                     style.border_color = parse_color(&key, val)?;
                 }
-                "background-color" | "background" => {
-                    style.background_color = Some(parse_color(&key, val)?);
+                "background" | "background-color" | "background-image" => {
+                    style.apply_background(&key, val)?;
                 }
                 "color" => style.text_color = parse_color(&key, val)?,
                 "font-size" => {

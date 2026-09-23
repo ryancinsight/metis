@@ -4,7 +4,7 @@ Status: Accepted
 
 Date: 2026-09-22
 
-Driver: [METIS-TYPOGRAPHY-TRUETYPE-001](../../backlog.md#METIS-TYPOGRAPHY-TRUETYPE-001).
+Driver: [METIS-TYPOGRAPHY-TRUETYPE-001](https://github.com/ryancinsight/metis/pull/372).
 
 ## Context
 

@@ -1,8 +1,9 @@
 # metis-platform
 
-Bounded software framebuffers, clipped and rounded rectangles, box shadows,
-one-pixel lines, bounded polyline strokes and antialiased TrueType text, an
-application-supplied event queue, and ANSI terminal previews.
+Bounded software framebuffers, clipped and rounded rectangles, linear
+gradients, box shadows, one-pixel lines, bounded polyline strokes and
+antialiased TrueType text, an application-supplied event queue, and ANSI
+terminal previews.
 On Windows, the
 `native` module adapts Moirai's thread-owned Win32 window provider to the
 framebuffer without bringing unsafe operating-system code into this crate.

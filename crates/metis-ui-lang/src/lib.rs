@@ -24,5 +24,5 @@ pub use semantics::{
 };
 pub use style::{
     AlignItems, Color, ComputedStyle, Display, EdgeValues, FlexDirection, FontWeight,
-    JustifyContent, Shadow, Size,
+    JustifyContent, LinearGradient, Shadow, Size,
 };

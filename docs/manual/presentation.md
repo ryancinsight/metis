@@ -19,7 +19,7 @@ embedded Atkinson Hyperlegible faces lack draw a missing-glyph box.
 Layout supports sequential rows and columns, pixel, percentage and minimum
 dimensions, automatic width/content height, padding, margins, gaps, colors,
 `justify-content` and `align-items`, rounded backgrounds and borders,
-`box-shadow`, and regular or bold text sized in pixels per em. Each row child
+`linear-gradient()` backgrounds, `box-shadow`, and regular or bold text sized in pixels per em. Each row child
 with automatic width can consume the available width; assign explicit widths
 or stack content in a column when that is the intended result. In a column
 whose `align-items` is not `stretch`, an automatic-width child takes its

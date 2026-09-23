@@ -27,10 +27,16 @@ pixel or percentage dimensions, negative spacing, malformed edge lists,
 invalid hex colors all return `ErrorCode::InvalidCssStyle`. An empty style and a
 trailing semicolon are valid. Every admitted property is painted, including
 `justify-content`, `align-items`, `min-width`, `min-height`, `font-weight`
-(`normal`/`400` and `bold`/`700`), `border-radius` and `box-shadow`. The
-shadow subset is one outer shadow, `none` or `<x> <y> [<blur>] <color>`;
-`inset`, a spread distance and comma-separated lists are rejected with the
-same error. Use the browser HTML5/CSS path when selectors, inheritance or full
+(`normal`/`400` and `bold`/`700`), `border-radius`, `box-shadow` and
+`background-image`. The shadow subset is one outer shadow, `none` or
+`<x> <y> [<blur>] <color>`; `inset`, a spread distance and comma-separated
+lists are rejected with the same error. `background` and `background-image`
+take one `linear-gradient()`: an optional `<n>deg` or `to top|right|bottom|left`
+direction, then two to eight hex colors, each with an optional `<n>%`
+position, for example `linear-gradient(135deg, #1a365d, #2c5282)`. The
+gradient spans the border box and paints over `background-color`; the
+`background` shorthand sets one of the two and clears the other. Corner
+keywords, other angle units, color hints and length positions are rejected. Use the browser HTML5/CSS path when selectors, inheritance or full
 CSS layout are required.
 
 `parse_markup` already propagates the same error while constructing an element,

@@ -8,6 +8,7 @@
 //! the corner arcs produce fractional coverage and a square radius reduces to
 //! the unrounded span fill.
 
+use super::paint::Paint;
 use crate::framebuffer::{Color, Framebuffer, Rect, SourceOver};
 
 /// Vertical subsamples integrated per device row.
@@ -236,19 +237,19 @@ fn surface_index(value: f64) -> Option<u32> {
     Some(column)
 }
 
-/// Composites the area inside `outer` and outside `inner` with `color`.
+/// Composites the area inside `outer` and outside `inner` with `paint`.
 ///
 /// Supplying `None` for `inner` fills the whole shape. Coverage scales the
-/// source alpha, so a fully covered pixel composites exactly as an unrounded
-/// fill of the same color does.
+/// paint's alpha at each partially covered pixel, and fully covered runs go
+/// to [`Paint::fill_run`], so a fully covered pixel composites exactly as an
+/// unrounded fill of the same paint does.
 pub(crate) fn composite_shape(
     fb: &mut Framebuffer,
     outer: RoundRect,
     inner: Option<RoundRect>,
-    color: Color,
+    paint: &impl Paint,
 ) {
-    let solid_source = SourceOver::new(color);
-    if solid_source.is_transparent() {
+    if paint.is_transparent() {
         return;
     }
     let width = f64::from(fb.width());
@@ -292,7 +293,13 @@ pub(crate) fn composite_shape(
                 .find(|(low, high)| high > low && column >= *low && column < *high)
             {
                 let stop = run_end.min(end);
-                fill_run(fb, row, column, stop, solid_source);
+                let bounded = "invariant: a run is clamped to the surface before it is filled";
+                paint.fill_run(
+                    fb,
+                    row,
+                    surface_index(column).expect(bounded),
+                    surface_index(stop).expect(bounded),
+                );
                 column = stop;
                 continue;
             }
@@ -305,23 +312,13 @@ pub(crate) fn composite_shape(
                 continue;
             }
             let coverage = pixel_coverage(&outer_samples, inner_samples, column);
-            composite_pixel(fb, row, column, color, coverage);
+            if coverage > 0.0
+                && let Some(x) = surface_index(column)
+            {
+                composite_pixel(fb, row, column, paint.color_at(x, row), coverage);
+            }
             column += 1.0;
         }
-    }
-}
-
-/// Fills a fully covered run of one row.
-fn fill_run(fb: &mut Framebuffer, row: u32, from: f64, to: f64, source: SourceOver) {
-    let bounded = "invariant: a run is clamped to the surface before it is filled";
-    let (left, right) = (
-        surface_index(from).expect(bounded),
-        surface_index(to).expect(bounded),
-    );
-    if source.is_opaque() {
-        fb.row_span_mut(row, left, right).fill(source.packed());
-    } else {
-        fb.composite_span(row, left, right, source);
     }
 }
 
