@@ -12,7 +12,7 @@ impl<T: IpcTransport> FrontendApp<T> {
         let palette = ThemePalette::for_theme(self.theme);
         self.set_background("main-screen", palette.page)?;
         self.set_gradient("header", &palette.header)?;
-        self.set_background("application-navigation", palette.border)?;
+        self.set_background("application-navigation", palette.panel)?;
         self.set_background("command-menu", palette.surface)?;
         self.set_background("patient-card", palette.surface)?;
         self.set_background("results-card", palette.surface)?;
@@ -122,6 +122,8 @@ fn ramp(degrees: f64, from: Color, to: Color) -> LinearGradient {
         .expect("invariant: two stops at a finite angle form a gradient")
 }
 
+/// Theme colors. Every text color meets WCAG 2.2 criterion 1.4.3 on the
+/// fill it is painted over, as the theme contrast tests assert.
 struct ThemePalette {
     page: Color,
     surface: Color,
@@ -129,7 +131,9 @@ struct ThemePalette {
     text: Color,
     muted: Color,
     border: Color,
-    /// Text accent.
+    /// Fill of the command bar, which carries muted status text.
+    panel: Color,
+    /// Rate readout color.
     accent: Color,
     /// Command control fill; every stop keeps white labels at a 4.5:1
     /// contrast or better (WCAG 2.2 criterion 1.4.3).
@@ -146,7 +150,8 @@ impl ThemePalette {
                 text: Color::rgb(45, 55, 72),
                 muted: Color::rgb(74, 85, 104),
                 border: Color::rgb(226, 232, 240),
-                accent: Color::BLUE,
+                panel: Color::rgb(226, 232, 240),
+                accent: Color::rgb(43, 108, 176),
                 control: ramp(180.0, Color::rgb(44, 120, 196), Color::rgb(38, 98, 168)),
             },
             ApplicationTheme::Dark => ThemePalette {
@@ -156,7 +161,8 @@ impl ThemePalette {
                 text: Color::rgb(226, 232, 240),
                 muted: Color::rgb(186, 230, 253),
                 border: Color::rgb(100, 116, 139),
-                accent: Color::rgb(8, 145, 178),
+                panel: Color::rgb(39, 52, 72),
+                accent: Color::rgb(56, 189, 248),
                 control: ramp(180.0, Color::rgb(14, 116, 144), Color::rgb(21, 94, 117)),
             },
         }
