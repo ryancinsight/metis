@@ -279,7 +279,7 @@ fn torus(major_segments: u32, minor_segments: u32) -> IndexedMesh<Real> {
     mesh
 }
 
-/// Render one frame offscreen and write it as a bitmap and an SVG artifact.
+/// Render one frame offscreen and write it as a bitmap and a PNG artifact.
 ///
 /// # Errors
 /// Propagates a refused viewport, a refused render or a failed artifact write.
@@ -292,8 +292,8 @@ fn render_headless() -> Result<(), ViewerError> {
         framebuffer_artifacts::bmp_bytes(&viewer.frame)?,
     )?;
     std::fs::write(
-        output.join("frame.svg"),
-        framebuffer_artifacts::svg_text(&viewer.frame)?,
+        output.join("frame.png"),
+        framebuffer_artifacts::png_bytes(&viewer.frame)?,
     )?;
     println!(
         "mesh-viewer: {}x{}, {} faces considered, {} triangles rasterized, \

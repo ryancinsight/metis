@@ -60,5 +60,5 @@ overlap-safe translucent blending and clipped rendering. `metis-ui-lang` tests
 cover command style retention, painter execution and the 4,096-point bound.
 The `image` example renders round/round and square/bevel frames around the
 identity and quarter-turn image placements, with a normalized affine shear
-below them; its inspected SVG is the visual component demonstration. Strict
+below them; its inspected PNG is the visual component demonstration. Strict
 Clippy, formatting and focused nextest runs are required before delivery.

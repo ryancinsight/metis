@@ -382,12 +382,12 @@ mod capture {
             .last()
             .ok_or_else(|| invalid_data("capture has no final frame"))?;
         let bitmap = framebuffer_artifacts::bmp_bytes(&frame.frame)?;
-        let svg = framebuffer_artifacts::svg_text(&frame.frame)?;
+        let image = framebuffer_artifacts::png_bytes(&frame.frame)?;
         let bitmap_path = output.join("native-host-frame.bmp");
-        let svg_path = output.join("native-host-frame.svg");
+        let image_path = output.join("native-host-frame.png");
         let trace_path = output.join("native-host-trace.json");
         std::fs::write(&bitmap_path, &bitmap)?;
-        std::fs::write(&svg_path, &svg)?;
+        std::fs::write(&image_path, &image)?;
         let trace_json = trace.json();
         std::fs::write(&trace_path, &trace_json)?;
 
@@ -400,9 +400,9 @@ mod capture {
                 invalid_data("native host bitmap differs from the presented framebuffer").into(),
             );
         }
-        if std::fs::read_to_string(&svg_path)? != svg {
+        if std::fs::read(&image_path)? != image {
             return Err(
-                invalid_data("native host SVG differs from the generated framebuffer").into(),
+                invalid_data("native host PNG differs from the generated framebuffer").into(),
             );
         }
         if std::fs::read_to_string(&trace_path)? != trace_json {

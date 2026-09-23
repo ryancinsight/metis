@@ -11,19 +11,18 @@ import stat
 import struct
 import sys
 import uuid
-import xml.etree.ElementTree as ET
+import zlib
 
 CAPTURES = ("form", "form-menu", "form-menu-dark", "form-success", "form-edited", "form-rejected",
             "form-corrected", "form-disconnected", "form-recovered")
 PROBES = ("probe-label", "probe-geometry", "probe-color")
 ASSETS = ("image-placement",)
 MAX_BYTES, MAX_WIDTH, MAX_HEIGHT = 4 * 1024 * 1024, 800, 600
-NS = "{http://www.w3.org/2000/svg}"
 _ARTIFACTS = ("report.json", "manifest.json", "run.json") + tuple(
-    f"{name}-{kind}.svg" for name in (*CAPTURES, *PROBES)
+    f"{name}-{kind}.png" for name in (*CAPTURES, *PROBES)
     for kind in ("expected", "actual", "difference")) + tuple(
     f"{name}-semantics.json" for name in CAPTURES) + tuple(
-    f"{name}-{kind}.svg" for name in ASSETS
+    f"{name}-{kind}.png" for name in ASSETS
     for kind in ("expected", "actual", "difference"))
 
 
@@ -74,7 +73,7 @@ def begin_run(output):
         if current.exists():
             current.replace(old)
     for name in (*CAPTURES, *PROBES, *ASSETS):
-        for suffix in (".svg", ".bmp", ".csv"):
+        for suffix in (".png", ".bmp", ".csv"):
             _owned(output / (name + suffix), output).unlink(missing_ok=True)
     nonce = uuid.uuid4().hex
     _json(latest / "run.json", {"schema": 1, "nonce": nonce})
@@ -117,56 +116,54 @@ def decode_bitmap(content):
     return width, height, pixels
 
 
-def decode_svg(content):
-    """Read only the renderer's complete, ordered, non-overlapping raster runs."""
-    _require(0 < len(content) <= MAX_BYTES, "Empty or oversized SVG")
-    try:
-        document = content.decode("ascii")
-    except UnicodeError as error:
-        raise VisualError("SVG is not the writer's ASCII encoding") from error
-    _require(all(character in "\t\r\n" or " " <= character <= "~" for character in document)
-             and "<!" not in document and "<?" not in document,
-             "Empty, oversized or declarative SVG is unsupported")
-    try:
-        root = ET.fromstring(document)
-        width, height = int(root.attrib["width"]), int(root.attrib["height"])
-    except (ET.ParseError, KeyError, ValueError) as error:
-        raise VisualError("Malformed SVG dimensions or XML") from error
+_PNG_SIGNATURE = b"\x89PNG\r\n\x1a\n"
+# The capture writer's exact header: 8-bit RGBA, deflate, standard filters,
+# no interlace.
+_PNG_FORMAT = (8, 6, 0, 0, 0)
+
+
+def decode_png(content):
+    """Read only the writer's encoding: 8-bit RGBA, unfiltered rows, no ancillary chunks.
+
+    Chunk lengths are bounded by the remaining input and every CRC is checked,
+    so truncated or tampered captures fail before decompression, and the
+    inflated stream may not exceed the exact size the header implies.
+    """
+    _require(len(_PNG_SIGNATURE) < len(content) <= MAX_BYTES, "Empty or oversized PNG")
+    _require(content.startswith(_PNG_SIGNATURE), "PNG signature differs")
+    offset, chunks = len(_PNG_SIGNATURE), []
+    while offset < len(content):
+        _require(offset + 12 <= len(content), "Truncated PNG chunk")
+        length, kind = struct.unpack_from(">I4s", content, offset)
+        end = offset + 8 + length
+        _require(end + 4 <= len(content), "PNG chunk exceeds the file")
+        data = content[offset + 8:end]
+        (crc,) = struct.unpack_from(">I", content, end)
+        _require(zlib.crc32(kind + data) == crc, "PNG chunk CRC differs")
+        chunks.append((kind, data))
+        offset = end + 4
+    kinds = [kind for kind, _ in chunks]
+    _require(len(kinds) >= 3 and kinds[0] == b"IHDR" and kinds[-1] == b"IEND"
+             and set(kinds[1:-1]) == {b"IDAT"} and not chunks[-1][1],
+             "PNG chunks differ from the writer's IHDR, IDAT and IEND")
+    header = chunks[0][1]
+    _require(len(header) == 13, "PNG header length differs")
+    width, height, *layout = struct.unpack(">IIBBBBB", header)
     _dimensions(width, height)
-    _require(root.tag == NS + "svg" and root.attrib == {
-        "width": str(width), "height": str(height), "viewBox": f"0 0 {width} {height}",
-        "shape-rendering": "crispEdges"}, "Unsupported SVG root")
-    _require(not (root.text or "").strip() and len(root) >= 2, "Malformed SVG content")
-    title = root[0]
-    _require(title.tag == NS + "title" and not title.attrib and not len(title)
-             and title.text == "Metis form software framebuffer" and not (title.tail or "").strip(), "Unsupported SVG title")
-    pixels, next_x, next_y = bytearray(width * height * 4), 0, 0
-    for path in root[1:]:
-        _require(path.tag == NS + "path" and not len(path) and not (path.text or "").strip()
-                 and not (path.tail or "").strip() and set(path.attrib) == {"fill", "fill-opacity", "d"},
-                 "Unsupported SVG element")
-        color = re.fullmatch(r"#([0-9a-f]{6})", path.attrib["fill"])
-        run = re.fullmatch(r"M(\d{1,6}) (\d{1,6})h(\d{1,6})v1H(\d{1,6})z", path.attrib["d"])
-        _require(color is not None and run is not None, "Malformed SVG raster run")
-        try:
-            alpha = float(path.attrib["fill-opacity"])
-        except ValueError as error:
-            raise VisualError("Malformed SVG opacity") from error
-        _require(math.isfinite(alpha) and 0 <= alpha <= 1, "Invalid SVG opacity")
-        channel = round(alpha * 255)
-        # The writer divides an exact byte by 255 in binary64, then prints its round trip.
-        _require(abs(alpha * 255 - channel) <= 255 * sys.float_info.epsilon,
-                 "SVG opacity does not represent an 8-bit channel")
-        x, y, length, end = map(int, run.groups())
-        _require((x, y, end) == (next_x, next_y, x) and length > 0
-                 and x + length <= width and y < height, "SVG has missing, overlapping or out-of-bounds runs")
-        red, green, blue = bytes.fromhex(color.group(1))
-        start = (y * width + x) * 4
-        pixels[start:start + length * 4] = bytes((blue, green, red, channel)) * length
-        next_x += length
-        if next_x == width:
-            next_x, next_y = 0, next_y + 1
-    _require((next_x, next_y) == (0, height), "SVG does not cover every pixel")
+    _require(tuple(layout) == _PNG_FORMAT, "PNG is not 8-bit RGBA without interlace")
+    stride = 1 + width * 4
+    expected = stride * height
+    stream = zlib.decompressobj()
+    try:
+        raw = stream.decompress(b"".join(data for _, data in chunks[1:-1]), expected + 1)
+    except zlib.error as error:
+        raise VisualError("Malformed PNG image data") from error
+    _require(len(raw) == expected and stream.eof and not stream.unused_data
+             and not stream.unconsumed_tail, "PNG image data length differs")
+    _require(all(raw[row * stride] == 0 for row in range(height)), "PNG rows are filtered")
+    rgba = b"".join(raw[row * stride + 1:(row + 1) * stride] for row in range(height))
+    pixels = bytearray(len(rgba))
+    pixels[0::4], pixels[1::4], pixels[2::4], pixels[3::4] = rgba[2::4], rgba[1::4], rgba[0::4], rgba[3::4]
     return width, height, bytes(pixels)
 
 
@@ -190,25 +187,22 @@ def difference(expected, actual):
     return {"changed_pixels": changed, "bounds": bounds}, (width, height, bytes(mask))
 
 
-def encode_svg(image):
-    """Write review difference masks in the same bounded raster-run representation."""
+def encode_png(image):
+    """Write review difference masks in the capture writer's PNG encoding."""
     width, height, pixels = image
     _dimensions(width, height)
     _require(len(pixels) == width * height * 4, "Pixel length differs from image dimensions")
-    lines = [f'<svg xmlns="http://www.w3.org/2000/svg" width="{width}" height="{height}" viewBox="0 0 {width} {height}" shape-rendering="crispEdges">',
-             '<title>Metis form software framebuffer</title>']
-    for y in range(height):
-        x = 0
-        while x < width:
-            start = (y * width + x) * 4
-            pixel, length = pixels[start:start + 4], 1
-            while x + length < width and pixels[start + length * 4:start + (length + 1) * 4] == pixel:
-                length += 1
-            blue, green, red, alpha = pixel
-            lines.append(f'<path fill="#{red:02x}{green:02x}{blue:02x}" fill-opacity="{alpha / 255}" d="M{x} {y}h{length}v1H{x}z"/>')
-            x += length
-    content = ("\n".join((*lines, "</svg>")) + "\n").encode()
-    _require(len(content) <= MAX_BYTES, "Difference SVG exceeds artifact budget")
+    rgba = bytearray(len(pixels))
+    rgba[0::4], rgba[1::4], rgba[2::4], rgba[3::4] = pixels[2::4], pixels[1::4], pixels[0::4], pixels[3::4]
+    stride = width * 4
+    raw = b"".join(b"\x00" + bytes(rgba[row * stride:(row + 1) * stride]) for row in range(height))
+
+    def chunk(kind, data):
+        return struct.pack(">I", len(data)) + kind + data + struct.pack(">I", zlib.crc32(kind + data))
+
+    content = (_PNG_SIGNATURE + chunk(b"IHDR", struct.pack(">II", width, height) + bytes(_PNG_FORMAT))
+               + chunk(b"IDAT", zlib.compress(raw, 9)) + chunk(b"IEND", b""))
+    _require(len(content) <= MAX_BYTES, "Difference PNG exceeds artifact budget")
     return content
 
 
@@ -308,7 +302,8 @@ def _oracle(values):
 
 def _json(path, content):
     _plain(path)
-    path.write_text(json.dumps(content, sort_keys=True, indent=2) + "\n", encoding="utf-8")
+    # LF on every host, matching the repository's normalized text.
+    path.write_text(json.dumps(content, sort_keys=True, indent=2) + "\n", encoding="utf-8", newline="\n")
 
 
 def _load_json(path):
@@ -423,12 +418,12 @@ def compare(root, output, provenance, update=False):
         report["captures"][name] = result
         actual, expected, semantic = None, None, None
         try:
-            actual_bytes = _read(output / f"{name}.svg")
-            actual = decode_svg(actual_bytes)
+            actual_bytes = _read(output / f"{name}.png")
+            actual = decode_png(actual_bytes)
             _require(actual[:2] == (800, 600), "Capture viewport differs")
             images[name] = actual
-            _owned(latest / f"{name}-actual.svg", output).write_bytes(actual_bytes)
-            _require(decode_bitmap(_read(output / f"{name}.bmp")) == actual, "BMP and SVG pixels disagree")
+            _owned(latest / f"{name}-actual.png", output).write_bytes(actual_bytes)
+            _require(decode_bitmap(_read(output / f"{name}.bmp")) == actual, "BMP and PNG pixels disagree")
             result["image_sha256"] = hashlib.sha256(actual_bytes).hexdigest()
         except (VisualError, OSError) as error:
             result["errors"].append(str(error))
@@ -442,17 +437,17 @@ def compare(root, output, provenance, update=False):
         except (VisualError, OSError, KeyError, TypeError) as error:
             result["errors"].append(str(error))
         try:
-            expected_bytes = _read(baseline_path.parent / f"{name}.svg")
-            expected = decode_svg(expected_bytes)
-            _owned(latest / f"{name}-expected.svg", output).write_bytes(expected_bytes)
+            expected_bytes = _read(baseline_path.parent / f"{name}.png")
+            expected = decode_png(expected_bytes)
+            _owned(latest / f"{name}-expected.png", output).write_bytes(expected_bytes)
             if actual is not None:
                 result["pixels"], mask = difference(expected, actual)
-                _owned(latest / f"{name}-difference.svg", output).write_bytes(encode_svg(mask))
-                if not update and expected_bytes != actual_bytes:
-                    result["errors"].append("Exact SVG baseline differs")
+                _owned(latest / f"{name}-difference.png", output).write_bytes(encode_png(mask))
+                if not update and result["pixels"]["changed_pixels"]:
+                    result["errors"].append("Golden PNG pixels differ")
                 if (not update and name in baseline.get("captures", {})
                         and baseline["captures"][name]["image_sha256"] != hashlib.sha256(expected_bytes).hexdigest()):
-                    result["errors"].append("Golden SVG hash differs from its semantic baseline")
+                    result["errors"].append("Golden PNG hash differs from its semantic baseline")
         except (VisualError, OSError) as error:
             if not update:
                 result["errors"].append(str(error))
@@ -462,13 +457,13 @@ def compare(root, output, provenance, update=False):
         result = {"status": "failed", "errors": []}
         report["probes"][name] = result
         try:
-            raw = _read(output / f"{name}.svg")
-            actual = decode_svg(raw)
-            _require(decode_bitmap(_read(output / f"{name}.bmp")) == actual, "Probe BMP and SVG pixels disagree")
+            raw = _read(output / f"{name}.png")
+            actual = decode_png(raw)
+            _require(decode_bitmap(_read(output / f"{name}.bmp")) == actual, "Probe BMP and PNG pixels disagree")
             _require("form" in images, "Initial frame unavailable for mutation probe")
             result["pixels"], mask = difference(images["form"], actual)
-            for kind, content in (("expected", _read(output / "form.svg")), ("actual", raw), ("difference", encode_svg(mask))):
-                _owned(latest / f"{name}-{kind}.svg", output).write_bytes(content)
+            for kind, content in (("expected", _read(output / "form.png")), ("actual", raw), ("difference", encode_png(mask))):
+                _owned(latest / f"{name}-{kind}.png", output).write_bytes(content)
             _require(result["pixels"]["changed_pixels"] > 0, "Mutation probe changed no pixels")
             result["status"] = "passed"
         except (VisualError, OSError) as error:
@@ -479,23 +474,23 @@ def compare(root, output, provenance, update=False):
         actual_bytes, expected_bytes = None, None
         actual, expected = None, None
         try:
-            actual_bytes = _read(output / f"{name}.svg")
-            actual = decode_svg(actual_bytes)
-            _owned(latest / f"{name}-actual.svg", output).write_bytes(actual_bytes)
+            actual_bytes = _read(output / f"{name}.png")
+            actual = decode_png(actual_bytes)
+            _owned(latest / f"{name}-actual.png", output).write_bytes(actual_bytes)
         except (VisualError, OSError) as error:
             result["errors"].append(str(error))
         try:
-            expected_bytes = _read(root / "docs" / "manual" / "images" / f"{name}.svg")
-            expected = decode_svg(expected_bytes)
-            _owned(latest / f"{name}-expected.svg", output).write_bytes(expected_bytes)
+            expected_bytes = _read(root / "docs" / "manual" / "images" / f"{name}.png")
+            expected = decode_png(expected_bytes)
+            _owned(latest / f"{name}-expected.png", output).write_bytes(expected_bytes)
         except (VisualError, OSError) as error:
             if not update:
                 result["errors"].append(str(error))
         if actual is not None and expected is not None:
             result["pixels"], mask = difference(expected, actual)
-            _owned(latest / f"{name}-difference.svg", output).write_bytes(encode_svg(mask))
-            if not update and expected_bytes != actual_bytes:
-                result["errors"].append("Exact SVG baseline differs")
+            _owned(latest / f"{name}-difference.png", output).write_bytes(encode_png(mask))
+            if not update and result["pixels"]["changed_pixels"]:
+                result["errors"].append("Golden PNG pixels differ")
         if not result["errors"]:
             result["status"] = "passed"
     failed = report["errors"] or any(item["status"] != "passed"
@@ -507,11 +502,11 @@ def compare(root, output, provenance, update=False):
             # Check every reviewed destination before the first write; linked paths
             # must not turn an explicit baseline refresh into an external write.
             destinations = [_owned(baseline_path, root)] + [
-                _owned(baseline_path.parent / f"{name}.svg", root) for name in CAPTURES]
+                _owned(baseline_path.parent / f"{name}.png", root) for name in CAPTURES]
             for name in CAPTURES:
-                (baseline_path.parent / f"{name}.svg").write_bytes(_read(output / f"{name}.svg"))
+                (baseline_path.parent / f"{name}.png").write_bytes(_read(output / f"{name}.png"))
             for name in ASSETS:
-                (baseline_path.parent / f"{name}.svg").write_bytes(_read(output / f"{name}.svg"))
+                (baseline_path.parent / f"{name}.png").write_bytes(_read(output / f"{name}.png"))
             _json(destinations[0], new_baseline)
         except (VisualError, OSError) as error:
             failed = True

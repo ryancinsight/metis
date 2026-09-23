@@ -1,9 +1,3 @@
-<a id="METIS-VISUAL-CAPTURE-SIZE-001"></a>
-## METIS-VISUAL-CAPTURE-SIZE-001 — Bound the committed capture encoding [patch]
-- Status: todo; priority: P2; owner: Metis verification; dependencies: none; risk: repository growth per baseline refresh
-- Finding: shadow gradients took each form capture SVG from 0.56 MB to about 1.2 MB, and antialiased text to about 2.1 MB (seven captures, about 15 MB per refresh), because the encoder emits one rectangle per color run. The Atlas artifact budget counts raster suffixes only, so the SVG captures are unmeasured against the 200 KB image budget.
-- Oracle: every committed capture stays under the image budget with pixel-identical decode, and the budget scan measures the capture format.
-
 <a id="METIS-RASTER-ROUND-001"></a>
 ## METIS-RASTER-ROUND-001 — Antialiased rounded rectangle paint [arch] [major]
 - Status: review; priority: P1; owner: Metis presentation; integrator: root; last-update: 2026-09-22; dependencies: METIS-RASTER-SPAN-001; ADR: [0043](docs/adr/0043-rounded-rectangle-paint.md); risk: composite drift

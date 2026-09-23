@@ -10,20 +10,34 @@ import subprocess
 import sys
 import tempfile
 import unittest
+import zlib
 
 sys.path.insert(0, str(pathlib.Path(__file__).resolve().parents[1]))
 import visual
 
 
-def svg_fixture(width, height, pixels):
-    """One explicit rectangle per pixel, independent of production run encoding."""
-    lines = [f'<svg xmlns="http://www.w3.org/2000/svg" width="{width}" height="{height}" viewBox="0 0 {width} {height}" shape-rendering="crispEdges">',
-             '<title>Metis form software framebuffer</title>']
-    for index in range(width * height):
-        blue, green, red, alpha = pixels[index * 4:index * 4 + 4]
-        x, y = index % width, index // width
-        lines.append(f'<path fill="#{red:02x}{green:02x}{blue:02x}" fill-opacity="{alpha / 255}" d="M{x} {y}h1v1H{x}z"/>')
-    return ("\n".join((*lines, "</svg>")) + "\n").encode()
+def png_fixture(width, height, pixels, *, filters=None, idat_parts=1, extra=(), header=None,
+                level=1, trailing=b""):
+    """PNG written chunk by chunk here, independent of the production encoder.
+
+    `filters` gives each row's filter byte (the row bytes are stored as given,
+    so a nonzero byte marks a filtered row); `idat_parts` splits the image data
+    across several IDAT chunks; `extra` inserts chunks after the header.
+    """
+    def chunk(kind, data):
+        return struct.pack(">I", len(data)) + kind + data + struct.pack(">I", zlib.crc32(kind + data))
+
+    rgba = bytearray(len(pixels))
+    rgba[0::4], rgba[1::4], rgba[2::4], rgba[3::4] = pixels[2::4], pixels[1::4], pixels[0::4], pixels[3::4]
+    stride = width * 4
+    rows = [bytes((filters[row] if filters else 0,)) + bytes(rgba[row * stride:(row + 1) * stride])
+            for row in range(height)]
+    compressed = zlib.compress(b"".join(rows), level)
+    step = -(-len(compressed) // idat_parts)
+    parts = [compressed[index:index + step] for index in range(0, len(compressed), step)]
+    ihdr = header if header is not None else struct.pack(">IIBBBBB", width, height, 8, 6, 0, 0, 0)
+    return (b"\x89PNG\r\n\x1a\n" + chunk(b"IHDR", ihdr) + b"".join(chunk(*item) for item in extra)
+            + b"".join(chunk(b"IDAT", part) for part in parts) + chunk(b"IEND", b"") + trailing)
 
 
 def bmp_fixture(width, height, pixels):
@@ -34,14 +48,12 @@ def bmp_fixture(width, height, pixels):
     return header + b"".join(pixels[row * stride:(row + 1) * stride] for row in reversed(range(height)))
 
 
-def solid_svg(color="#000000", first_length=800):
-    """800x600 fixture made of independently specified opaque scanline rectangles."""
-    rows = [f'<path fill="{color}" fill-opacity="1" d="M0 0h{first_length}v1H0z"/>']
-    if first_length != 800:
-        rows.append(f'<path fill="#000000" fill-opacity="1" d="M{first_length} 0h{800 - first_length}v1H{first_length}z"/>')
-    rows.extend(f'<path fill="#000000" fill-opacity="1" d="M0 {y}h800v1H0z"/>' for y in range(1, 600))
-    return ('<svg xmlns="http://www.w3.org/2000/svg" width="800" height="600" viewBox="0 0 800 600" shape-rendering="crispEdges">\n'
-            '<title>Metis form software framebuffer</title>\n' + "\n".join(rows) + '\n</svg>\n').encode()
+def solid_png(color="#000000", first_length=800):
+    """800x600 black fixture whose first row starts with `first_length` pixels of `color`."""
+    red, green, blue = bytes.fromhex(color[1:])
+    pixels = bytearray(bytes((0, 0, 0, 255)) * (800 * 600))
+    pixels[:first_length * 4] = bytes((blue, green, red, 255)) * first_length
+    return png_fixture(800, 600, bytes(pixels))
 
 
 def semantics_fixture(name):
@@ -79,10 +91,11 @@ class CodecTests(unittest.TestCase):
         self.pixels = bytes((0, 0, 255, 255, 0, 255, 0, 128, 255, 0, 0, 255, 0, 0, 0, 255))
         self.image = (2, 2, self.pixels)
 
-    def test_independent_bitmap_and_svg_values(self):
+    def test_independent_bitmap_and_png_values(self):
         self.assertEqual(visual.decode_bitmap(bmp_fixture(2, 2, self.pixels)), self.image)
-        self.assertEqual(visual.decode_svg(svg_fixture(2, 2, self.pixels)), self.image)
-        self.assertEqual(visual.decode_svg(visual.encode_svg(self.image)), self.image)
+        self.assertEqual(visual.decode_png(png_fixture(2, 2, self.pixels)), self.image)
+        self.assertEqual(visual.decode_png(png_fixture(2, 2, self.pixels, idat_parts=3)), self.image)
+        self.assertEqual(visual.decode_png(visual.encode_png(self.image)), self.image)
 
     def test_bitmap_header_and_truncation_are_rejected_before_pixels(self):
         valid = bmp_fixture(2, 2, self.pixels)
@@ -92,26 +105,30 @@ class CodecTests(unittest.TestCase):
             with self.subTest(length=len(malformed)), self.assertRaises(visual.VisualError):
                 visual.decode_bitmap(malformed)
 
-    def test_svg_rejects_overlap_gaps_external_content_and_bounds(self):
-        valid = svg_fixture(2, 2, self.pixels)
-        malformed = (valid[:-7], valid.replace(b'h1v1H0z', b'h3v1H0z', 1),
-                     valid.replace(b'M1 0h1v1H1z', b'M0 0h1v1H0z'),
-                     valid.replace(b'width="2"', b'width="801"', 1),
-                     valid.replace(b'fill-opacity="1.0"', b'fill-opacity="NaN"', 1),
-                     valid.replace(b'<title>', b'<!DOCTYPE svg><title>', 1),
-                     b'<?probe unsafe?>' + valid, b'x' * (visual.MAX_BYTES + 1))
-        for content in malformed:
-            with self.subTest(prefix=content[:50]), self.assertRaises(visual.VisualError):
-                visual.decode_svg(content)
-
-    def test_svg_rejects_encoded_doctypes_before_xml_autodetection(self):
-        valid = svg_fixture(2, 2, self.pixels).decode("ascii")
-        declared = '<!DOCTYPE svg [<!ENTITY title "Metis form software framebuffer">]>' + valid.replace(
-            "<title>Metis form software framebuffer</title>", "<title>&title;</title>")
-        for encoding in ("utf-16", "utf-16-le", "utf-16-be", "utf-32-le", "utf-32-be"):
-            for text in (valid, declared):
-                with self.subTest(encoding=encoding, declared=text is declared), self.assertRaises(visual.VisualError):
-                    visual.decode_svg(text.encode(encoding))
+    def test_png_admits_only_the_writer_encoding(self):
+        valid = png_fixture(2, 2, self.pixels)
+        corrupt_crc = bytearray(valid)
+        corrupt_crc[29] ^= 1
+        header = struct.pack(">IIBBBBB", 2, 2, 8, 6, 0, 0, 0)
+        malformed = {
+            "empty": b"",
+            "signature": b"\x89PNG\r\n\x1a\x0b" + valid[8:],
+            "truncated": valid[:-1],
+            "trailing": png_fixture(2, 2, self.pixels, trailing=b"x"),
+            "crc": bytes(corrupt_crc),
+            "ancillary": png_fixture(2, 2, self.pixels, extra=((b"tEXt", b"k\x00v"),)),
+            "filtered": png_fixture(2, 2, self.pixels, filters=(0, 1)),
+            "interlaced": png_fixture(2, 2, self.pixels, header=header[:-1] + b"\x01"),
+            "depth": png_fixture(2, 2, self.pixels, header=header[:8] + b"\x10" + header[9:]),
+            "rgb": png_fixture(2, 2, self.pixels, header=header[:9] + b"\x02" + header[10:]),
+            "width": png_fixture(2, 2, self.pixels, header=struct.pack(">II", 801, 2) + header[8:]),
+            "short data": png_fixture(2, 2, self.pixels, header=struct.pack(">II", 2, 3) + header[8:]),
+            "long data": png_fixture(2, 2, self.pixels, header=struct.pack(">II", 2, 1) + header[8:]),
+            "oversized": b"x" * (visual.MAX_BYTES + 1),
+        }
+        for name, content in malformed.items():
+            with self.subTest(name), self.assertRaises(visual.VisualError):
+                visual.decode_png(content)
 
     def test_difference_has_exact_count_bounds_and_colors(self):
         actual = bytearray(self.pixels)
@@ -186,13 +203,13 @@ class EvidenceTests(unittest.TestCase):
         self.provenance["run_nonce"] = visual.begin_run(self.output)
         black = bytes((0, 0, 0, 255)) * (800 * 600)
         for name in visual.CAPTURES:
-            (self.output / f"{name}.svg").write_bytes(solid_svg())
+            (self.output / f"{name}.png").write_bytes(solid_png())
             (self.output / f"{name}.bmp").write_bytes(bmp_fixture(800, 600, black))
             (self.output / f"{name}.csv").write_bytes(encode_semantics(semantics_fixture(name)))
         for name in visual.PROBES:
-            (self.output / f"{name}.svg").write_bytes(solid_svg("#ff0000", 1))
+            (self.output / f"{name}.png").write_bytes(solid_png("#ff0000", 1))
             (self.output / f"{name}.bmp").write_bytes(bmp_fixture(800, 600, bytes((0, 0, 255, 255)) + black[4:]))
-        (self.output / "image-placement.svg").write_bytes(svg_fixture(2, 2, self.asset_pixels))
+        (self.output / "image-placement.png").write_bytes(png_fixture(2, 2, self.asset_pixels))
 
     def report_failure(self, update=False):
         with self.assertRaises(visual.VisualError) as failure:
@@ -219,9 +236,9 @@ class EvidenceTests(unittest.TestCase):
         self.assertEqual(baseline_path.read_bytes(), baseline)
         # Recompare the same capture run after corruption: no begin_run call may
         # be needed to invalidate the second comparison's old success manifest.
-        (self.output / "form.svg").unlink()
+        (self.output / "form.png").unlink()
         (self.output / "form-menu.csv").write_bytes(b"invalid semantic capture")
-        (self.output / "form-menu-dark.svg").write_bytes(solid_svg("#ffffff", 1))
+        (self.output / "form-menu-dark.png").write_bytes(solid_png("#ffffff", 1))
         (self.output / "form-success.bmp").write_bytes(b"BM")
         wrong_pixels = bytearray((self.output / "form-edited.bmp").read_bytes())
         wrong_pixels[54] = 255
@@ -232,13 +249,13 @@ class EvidenceTests(unittest.TestCase):
         values = semantics_fixture("form-corrected")
         values["geometry"]["0"] = "799 0 14 90 18"
         (self.output / "form-corrected.csv").write_bytes(encode_semantics(values))
-        (self.output / "form-disconnected.svg").write_bytes(b"x" * (visual.MAX_BYTES + 1))
+        (self.output / "form-disconnected.png").write_bytes(b"x" * (visual.MAX_BYTES + 1))
         values = semantics_fixture("form-recovered")
         values["action"]["0"] = "different input trace"
         (self.output / "form-recovered.csv").write_bytes(encode_semantics(values))
         failed = self.report_failure()
         self.assertEqual([item["status"] for item in failed["captures"].values()], ["failed"] * len(visual.CAPTURES))
-        self.assertIn("BMP and SVG pixels disagree", failed["captures"]["form-edited"]["errors"])
+        self.assertIn("BMP and PNG pixels disagree", failed["captures"]["form-edited"]["errors"])
         self.assertEqual(failed["captures"]["form-rejected"]["semantic_diff"][0]["path"], "observed.error_code")
         self.assertTrue(any(item["path"] == "action.0" for item in failed["captures"]["form-recovered"]["semantic_diff"]))
         self.assertEqual(baseline_path.read_bytes(), baseline)
@@ -261,12 +278,12 @@ class EvidenceTests(unittest.TestCase):
                          visual.source_digest(source))
         self.assertEqual(baseline_path.read_bytes(), baseline)
 
-        (self.output / "form.svg").write_bytes(solid_svg("#ff0000", 1))
+        (self.output / "form.png").write_bytes(solid_png("#ff0000", 1))
         black = bytes((0, 0, 0, 255)) * (800 * 600)
         red_pixel = bytes((0, 0, 255, 255)) + black[4:]
         (self.output / "form.bmp").write_bytes(bmp_fixture(800, 600, red_pixel))
         failed = self.report_failure()
-        self.assertIn("Exact SVG baseline differs", failed["captures"]["form"]["errors"])
+        self.assertIn("Golden PNG pixels differ", failed["captures"]["form"]["errors"])
         self.assertEqual(failed["captures"]["form"]["pixels"],
                          {"changed_pixels": 1, "bounds": [0, 0, 1, 1]})
         self.assertEqual(baseline_path.read_bytes(), baseline)
@@ -291,7 +308,7 @@ class EvidenceTests(unittest.TestCase):
         failed = self.report_failure()
         self.assertEqual(failed["errors"], [])
         self.assertEqual(failed["captures"]["form"]["errors"],
-                         ["Golden SVG hash differs from its semantic baseline"])
+                         ["Golden PNG hash differs from its semantic baseline"])
         self.assertEqual(failed["captures"]["form"]["pixels"],
                          {"changed_pixels": 0, "bounds": None})
         self.assertFalse((self.output / "visual/latest/manifest.json").exists())
@@ -299,10 +316,10 @@ class EvidenceTests(unittest.TestCase):
     def test_asset_golden_mismatch_is_reported(self):
         self.produce()
         visual.compare(self.root, self.output, self.provenance, update=True)
-        (self.output / "image-placement.svg").write_bytes(svg_fixture(2, 2, bytes(16)))
+        (self.output / "image-placement.png").write_bytes(png_fixture(2, 2, bytes(16)))
         failed = self.report_failure()
         self.assertEqual(failed["assets"]["image-placement"]["status"], "failed")
-        self.assertIn("Exact SVG baseline differs", failed["assets"]["image-placement"]["errors"])
+        self.assertIn("Golden PNG pixels differ", failed["assets"]["image-placement"]["errors"])
         self.assertEqual(failed["assets"]["image-placement"]["pixels"]["changed_pixels"], 4)
 
     def test_bad_oracles_or_provenance_never_update_baselines(self):
@@ -371,8 +388,8 @@ class EvidenceTests(unittest.TestCase):
 
     def test_owned_paths_reject_resolved_escape(self):
         with self.assertRaises(visual.VisualError):
-            visual._owned(self.root / ".." / "outside.svg", self.root)
-        self.assertEqual(visual._owned(self.output / "form.svg", self.root), self.output / "form.svg")
+            visual._owned(self.root / ".." / "outside.png", self.root)
+        self.assertEqual(visual._owned(self.output / "form.png", self.root), self.output / "form.png")
 
     def test_owned_retention_and_json_writes_reject_actual_hardlinks(self):
         visual.begin_run(self.output)
@@ -457,11 +474,11 @@ class EvidenceTests(unittest.TestCase):
         latest, previous = self.output / "visual/latest", self.output / "visual/previous"
         (latest / "report.json").write_text('"first"', encoding="utf-8")
         (latest / "user-notes.txt").write_text("unique work", encoding="utf-8")
-        (self.output / "form.svg").write_text("old capture", encoding="utf-8")
+        (self.output / "form.png").write_text("old capture", encoding="utf-8")
         self.assertNotEqual(visual.begin_run(self.output), nonce)
         self.assertEqual((previous / "report.json").read_text(), '"first"')
         self.assertEqual((latest / "user-notes.txt").read_text(), "unique work")
-        self.assertFalse((self.output / "form.svg").exists())
+        self.assertFalse((self.output / "form.png").exists())
         (latest / "report.json").write_text('"second"', encoding="utf-8")
         visual.begin_run(self.output)
         self.assertEqual((previous / "report.json").read_text(), '"second"')
