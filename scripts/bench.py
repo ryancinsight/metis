@@ -16,7 +16,7 @@ import sys
 import time
 
 sys.path.insert(0, str(pathlib.Path(__file__).resolve().parent))
-from verify import neutral_workspace
+from verify import inherited_configuration, neutral_workspace
 
 ROOT = pathlib.Path(__file__).resolve().parents[1]
 OUTPUT = ROOT / "output" / "bench"
@@ -55,14 +55,29 @@ def host_load():
     return {"available": True, "average_percent": int(value), "cpu_count": os.cpu_count()}
 
 
-def build(root, package, bench):
+def cargo_environment():
+    """The environment the bench build and the bench process share.
+
+    The neutral workspace escapes the stack overlay, and with it the stack's
+    target directory; carrying that directory explicitly keeps one build cache,
+    as the verification gate does, and puts criterion's reports beside it
+    instead of in a repository-local `target/`.
+    """
+    environment = os.environ.copy()
+    target, _profiles, _configs = inherited_configuration()
+    if target is not None:
+        environment["CARGO_TARGET_DIR"] = str(target)
+    return environment
+
+
+def build(root, package, bench, environment):
     """Compiles the bench target and returns its executable path."""
     completed = subprocess.run(
         ["rustup", "run", TOOLCHAIN, "cargo", "bench", "--manifest-path",
          str(root / "Cargo.toml"), "--locked", "-p", package, "--bench", bench, "--no-run",
          "--message-format", "json"],
         cwd=root, capture_output=True, text=True, encoding="utf-8", errors="replace",
-        timeout=BUDGET_SECONDS * 4, check=False,
+        timeout=BUDGET_SECONDS * 4, check=False, env=environment,
     )
     if completed.returncode != 0:
         sys.stderr.write(completed.stderr)
@@ -78,14 +93,14 @@ def build(root, package, bench):
     raise SystemExit(f"bench build produced no executable for {bench}")
 
 
-def measure(root, executable, cores, extra):
+def measure(root, executable, cores, extra, environment):
     """Runs the pinned bench process and returns its captured output."""
     creation = subprocess.CREATE_NEW_PROCESS_GROUP if platform.system() == "Windows" else 0
     started = time.monotonic()
     with subprocess.Popen(
         [str(executable), "--bench", *extra], cwd=root, stdout=subprocess.PIPE,
         stderr=subprocess.STDOUT, text=True, encoding="utf-8", errors="replace",
-        creationflags=creation,
+        creationflags=creation, env=environment,
     ) as process:
         if platform.system() == "Windows":
             try:
@@ -132,11 +147,12 @@ def main():
         raise SystemExit("at least one reserved core is required")
 
     before = host_load()
+    environment = cargo_environment()
     with neutral_workspace() as neutral:
         root = pathlib.Path(neutral)
-        executable = build(root, arguments.package, arguments.bench)
+        executable = build(root, arguments.package, arguments.bench, environment)
         output, seconds, code = measure(
-            root, executable, cores, ["--test"] if arguments.smoke else []
+            root, executable, cores, ["--test"] if arguments.smoke else [], environment
         )
     after = host_load()
     sys.stdout.write(output)
