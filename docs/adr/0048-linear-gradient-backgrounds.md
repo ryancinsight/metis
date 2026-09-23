@@ -4,7 +4,7 @@ Status: Accepted
 
 Date: 2026-09-23
 
-Driver: [METIS-RASTER-GRADIENT-001](../../backlog.md#METIS-RASTER-GRADIENT-001).
+Driver: [METIS-RASTER-GRADIENT-001](https://github.com/ryancinsight/metis/pull/376).
 
 ## Context
 

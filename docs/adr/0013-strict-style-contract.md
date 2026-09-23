@@ -50,7 +50,7 @@ color ([ADR 0046](0046-gaussian-box-shadows.md)). `inset`, a spread distance
 and comma-separated lists stay typed errors: the renderer has no semantics for
 them, so the admission is bounded the way `font-weight` is.
 
-Revision: 2026-09-23 — [METIS-RASTER-GRADIENT-001](../../backlog.md#METIS-RASTER-GRADIENT-001)
+Revision: 2026-09-23 — [METIS-RASTER-GRADIENT-001](https://github.com/ryancinsight/metis/pull/376)
 admits `background-image` and the gradient form of `background` for one
 `linear-gradient()` of an angle or side keyword and two to eight hex stops with
 optional percentage positions ([ADR 0048](0048-linear-gradient-backgrounds.md)).
