@@ -8,7 +8,8 @@
 use criterion::{Criterion, criterion_group, criterion_main};
 use metis_platform::framebuffer::{Color, Framebuffer, Rect};
 use metis_platform::rasterizer::{
-    BoxShadow, CornerRadius, draw_box_shadow, draw_rect_outline, fill_rect,
+    BoxShadow, CornerRadius, GradientStop, LinearGradient, draw_box_shadow, draw_rect_outline,
+    fill_gradient, fill_rect,
 };
 use metis_platform::typeface::{GlyphWeight, TextSize, TextStyle, draw_text};
 use std::hint::black_box;
@@ -83,6 +84,12 @@ fn fills(c: &mut Criterion) {
             cards.get_pixel(24, 24)
         });
     });
+    group.finish();
+}
+
+/// Styled card surfaces: rounded, elevated and gradient-lit.
+fn styled_cards(c: &mut Criterion) {
+    let mut group = c.benchmark_group("fill");
     let mut rounded = surface();
     group.bench_function("rounded_card_stack", |b| {
         b.iter(|| {
@@ -124,6 +131,31 @@ fn fills(c: &mut Criterion) {
                 );
             }
             elevated.get_pixel(24, 24)
+        });
+    });
+    // The demo header's diagonal ramp: a diagonal varies along every row, so
+    // this is the per-pixel path rather than the per-row span.
+    let stops = [Color::DARK_BLUE, Color::rgb(44, 82, 130)].map(|color| GradientStop {
+        color,
+        position: None,
+    });
+    let ramp = LinearGradient::new(135.0, &stops).expect("invariant: two stops form a gradient");
+    let mut lit = surface();
+    group.bench_function("gradient_card_stack", |b| {
+        b.iter(|| {
+            for index in 0..CARDS {
+                let rect = Rect::new(24, 24 + index * 90, 520, 72);
+                let radius = CornerRadius::clamped(12, rect);
+                fill_gradient(&mut lit, black_box(rect), radius, black_box(&ramp));
+                draw_rect_outline(
+                    &mut lit,
+                    black_box(rect),
+                    1,
+                    radius,
+                    black_box(Color::LIGHT_GRAY),
+                );
+            }
+            lit.get_pixel(24, 24)
         });
     });
     group.finish();
@@ -185,12 +217,12 @@ fn text(c: &mut Criterion) {
 
 criterion_group! {
     name = rasterizer;
-    // A committed instrument budget: eight cases at roughly two seconds each
+    // A committed instrument budget: nine cases at roughly two seconds each
     // stay far inside the repository's suite-total wall-clock bound.
     config = Criterion::default()
         .warm_up_time(std::time::Duration::from_millis(500))
         .measurement_time(std::time::Duration::from_secs(2))
         .sample_size(20);
-    targets = fills, text
+    targets = fills, styled_cards, text
 }
 criterion_main!(rasterizer);

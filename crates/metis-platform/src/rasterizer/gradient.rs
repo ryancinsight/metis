@@ -30,6 +30,10 @@ pub struct GradientStop {
 #[derive(Debug, Clone, Copy, PartialEq)]
 struct ResolvedStop {
     position: f64,
+    /// Reciprocal of the distance to the next stop, so interpolation
+    /// multiplies instead of dividing per pixel; zero after the last stop and
+    /// before a coincident one, where no fraction interpolates.
+    inverse_span: f64,
     /// Red, green and blue scaled by alpha, then alpha; each in `[0, 255]`.
     premultiplied: [f64; 4],
 }
@@ -106,7 +110,7 @@ impl LinearGradient {
             // so `from.position <= fraction < to.position` and the span is
             // positive.
             if fraction < to.position {
-                let weight = (fraction - from.position) / (to.position - from.position);
+                let weight = (fraction - from.position) * from.inverse_span;
                 let mut channels = [0.0; 4];
                 for ((channel, start), end) in channels
                     .iter_mut()
@@ -193,14 +197,22 @@ fn resolve(stops: &[GradientStop]) -> Vec<ResolvedStop> {
         }
         index = end;
     }
-    stops
+    let mut resolved: Vec<ResolvedStop> = stops
         .iter()
         .zip(positions)
         .map(|(stop, position)| ResolvedStop {
             position: position.expect("invariant: the fixup positions every stop"),
+            inverse_span: 0.0,
             premultiplied: premultiply(stop.color),
         })
-        .collect()
+        .collect();
+    for index in 1..resolved.len() {
+        let span = resolved[index].position - resolved[index - 1].position;
+        if span > 0.0 {
+            resolved[index - 1].inverse_span = span.recip();
+        }
+    }
+    resolved
 }
 
 fn premultiply(color: Color) -> [f64; 4] {
@@ -220,21 +232,33 @@ fn straight(channels: [f64; 4]) -> Color {
     if alpha <= 0.0 {
         return Color::TRANSPARENT;
     }
-    let unscale = 255.0 / alpha;
-    // Interpolation between byte-valued stops keeps every channel in
-    // [0, 255]; the clamp absorbs rounding at the ends.
-    #[expect(
-        clippy::cast_possible_truncation,
-        clippy::cast_sign_loss,
-        reason = "a channel clamped to [0, 255] rounds to a byte"
-    )]
-    let byte = |value: f64| value.round().clamp(0.0, 255.0) as u8;
+    // Opaque colors are already straight; skipping the division matters
+    // because this runs once per pixel of a diagonal gradient.
+    let unscale = if alpha >= 255.0 { 1.0 } else { 255.0 / alpha };
     Color::rgba(
         byte(red * unscale),
         byte(green * unscale),
         byte(blue * unscale),
         byte(alpha),
     )
+}
+
+/// Rounds a channel in `[0, 255]` half up to a byte.
+///
+/// Adding one half and truncating matches `f64::round` on nonnegative values
+/// except for a fractional part within one ulp below one half, where the
+/// addition itself rounds up, and avoids the library call `round` compiles to
+/// on the baseline x86-64 target. Interpolation between
+/// byte-valued stops keeps every channel in range; the clamp absorbs rounding
+/// at the ends.
+fn byte(value: f64) -> u8 {
+    #[expect(
+        clippy::cast_possible_truncation,
+        clippy::cast_sign_loss,
+        reason = "a value clamped to [0, 255] plus one half truncates to a byte"
+    )]
+    let byte = (value.clamp(0.0, 255.0) + 0.5) as u8;
+    byte
 }
 
 /// A gradient placed over one box: the fraction along the gradient line is
