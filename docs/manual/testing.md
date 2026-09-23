@@ -41,16 +41,20 @@ runtime evidence.
 
 The `visual-tests` stage in `scripts/verify.py` runs the full Python test suite
 under the committed 60-second process-tree limit. Citation validation used to
-launch Git separately for each cited revision. Commit `5e3ed7e` batches the
-reachability and object-type queries while preserving the revision and digest
-checks. On one Windows x86_64 host, the earlier reachability-only scan took
-22.905 seconds; the complete citation command, including digest checks, took
-0.490 seconds. The same host completed `visual-tests` in
-35.819 seconds: 343 tests, one skipped, within the unchanged limit. Focused
-browser-asset tests completed 15 tests in 0.205 seconds; capture-validation
-unit tests completed 22 tests in 18.217 seconds. The browser asset build passed;
-its release WASM compilation took 108 seconds. These are single-host
-observations, not new budgets.
+launch Git separately for each cited revision. Commit `5e3ed7e` traverses
+reachable commits once and classifies cited objects in a batched Git query,
+while preserving revision and digest checks. The earlier local
+reachability-only scan took 22.905 seconds; the complete citation command
+after batching took 0.490 seconds.
+
+The clean Windows CI run [35877828557](https://github.com/ryancinsight/metis/actions/runs/35877828557)
+completed 342 visual-tests in 30.051 seconds under the unchanged limit. The
+same committed verifier passed browser asset build, presentation capture and
+visual comparison: all 9 captures and the image-placement asset passed with
+no comparison errors. Focused local browser-asset tests completed 15 tests in
+0.205 seconds; capture-validation unit tests completed 22 tests in 18.217
+seconds. The local browser asset build passed; its release WASM compilation
+took 108 seconds. These are host-specific measurements, not new budgets.
 
 The capture comparator also checks that its recorded fixture digest matches
 the current renderer sources and lockfile. A stale digest fails the overall
