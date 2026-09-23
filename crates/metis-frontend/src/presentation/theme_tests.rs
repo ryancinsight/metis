@@ -104,6 +104,23 @@ fn themed_text_meets_its_size_threshold_on_its_panel() {
 }
 
 #[test]
+fn the_focus_ring_stands_out_from_every_fill_it_borders() {
+    // Criterion 1.4.11: a focus indicator needs 3:1 against adjacent colors.
+    // The ring sits in a gap over the page, the command bar or a card.
+    for theme in [ApplicationTheme::System, ApplicationTheme::Dark] {
+        let palette = ThemePalette::for_theme(theme);
+        for (name, fill) in [
+            ("page", palette.page),
+            ("command bar", palette.panel),
+            ("card", palette.surface),
+        ] {
+            let ratio = contrast(palette.focus, fill);
+            assert!(ratio >= 3.0, "{theme:?} ring on {name}: {ratio:.2}:1");
+        }
+    }
+}
+
+#[test]
 fn contrast_matches_the_published_reference_points() {
     // WCAG's end points: white on black is 21:1 and white on white 1:1.
     assert!((white_contrast(Color::BLACK) - 21.0).abs() < 1e-12);

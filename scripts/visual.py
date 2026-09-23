@@ -13,8 +13,8 @@ import sys
 import uuid
 import zlib
 
-CAPTURES = ("form", "form-menu", "form-menu-dark", "form-success", "form-edited", "form-rejected",
-            "form-corrected", "form-disconnected", "form-recovered")
+CAPTURES = ("form", "form-menu", "form-menu-dark", "form-focus", "form-success", "form-edited",
+            "form-rejected", "form-corrected", "form-disconnected", "form-recovered")
 PROBES = ("probe-label", "probe-geometry", "probe-color")
 ASSETS = ("image-placement",)
 MAX_BYTES, MAX_WIDTH, MAX_HEIGHT = 4 * 1024 * 1024, 800, 600

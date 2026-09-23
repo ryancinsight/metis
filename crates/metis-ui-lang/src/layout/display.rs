@@ -243,6 +243,30 @@ impl DisplayList {
         self.push(DisplayCommand::DrawLine { start, end, color })
     }
 
+    /// Appends an inward border of `width` device pixels in painter order.
+    ///
+    /// Hosts use it for overlays drawn over the laid-out document, such as a
+    /// keyboard focus ring around an element's [`Self::element_rect`].
+    ///
+    /// # Errors
+    ///
+    /// Returns [`metis_core::error::ErrorCode::LayoutOverflow`] when the
+    /// display command storage cannot grow.
+    pub fn append_border(
+        &mut self,
+        rect: Rect,
+        width: i32,
+        radius: CornerRadius,
+        color: Color,
+    ) -> Result<()> {
+        self.push(DisplayCommand::DrawBorder {
+            rect,
+            width,
+            radius,
+            color,
+        })
+    }
+
     /// Appends a bounded polyline stroke in painter order.
     ///
     /// At most [`MAX_STROKE_POINTS`] vertices are retained. The points are

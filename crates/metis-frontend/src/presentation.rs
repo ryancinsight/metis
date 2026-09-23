@@ -56,6 +56,7 @@ pub const CLINICAL_SCREEN_XML: &str = r#"<screen id="main-screen" style="display
   </card>
 </screen>"#;
 
+mod focus_ring;
 mod theme;
 use crate::{FormState, FrontendApp};
 use iris::render::RenderBackend;
@@ -151,15 +152,17 @@ impl<T: IpcTransport> FrontendApp<T> {
         self.text("output-signature", signature)?;
         // Validate the custom renderer's host-neutral semantics before
         // painting so a malformed identity or action cannot be presented as
-        // an accessible control.
-        self.semantic_tree()?;
+        // an accessible control; the same projection decides focus.
+        let semantics = self.semantic_tree()?;
+        self.reconcile_focus(&semantics)?;
         let width = i32::try_from(self.framebuffer.width()).map_err(|_| layout_error())?;
         let height = i32::try_from(self.framebuffer.height()).map_err(|_| layout_error())?;
-        let display = compute_layout(
+        let mut display = compute_layout(
             &self.doc,
             LayoutViewport::with_scale(width, height, self.display_scale),
         )?;
         self.framebuffer.clear(Color::rgb(240, 244, 248));
+        self.append_focus_ring(&mut display)?;
         self.framebuffer
             .render(&display)
             .unwrap_or_else(|never| match never {});

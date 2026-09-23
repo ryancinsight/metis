@@ -57,7 +57,7 @@ def solid_png(color="#000000", first_length=800):
 
 
 def semantics_fixture(name):
-    state = {"form": "idle", "form-menu": "idle", "form-menu-dark": "idle",
+    state = {"form": "idle", "form-menu": "idle", "form-menu-dark": "idle", "form-focus": "idle",
              "form-success": "success", "form-edited": "idle",
              "form-rejected": "rejected", "form-corrected": "success",
              "form-disconnected": "disconnected", "form-recovered": "success"}[name]
@@ -239,6 +239,7 @@ class EvidenceTests(unittest.TestCase):
         (self.output / "form.png").unlink()
         (self.output / "form-menu.csv").write_bytes(b"invalid semantic capture")
         (self.output / "form-menu-dark.png").write_bytes(solid_png("#ffffff", 1))
+        (self.output / "form-focus.png").write_bytes(png_fixture(2, 2, bytes(16)))
         (self.output / "form-success.bmp").write_bytes(b"BM")
         wrong_pixels = bytearray((self.output / "form-edited.bmp").read_bytes())
         wrong_pixels[54] = 255
@@ -256,6 +257,7 @@ class EvidenceTests(unittest.TestCase):
         failed = self.report_failure()
         self.assertEqual([item["status"] for item in failed["captures"].values()], ["failed"] * len(visual.CAPTURES))
         self.assertIn("BMP and PNG pixels disagree", failed["captures"]["form-edited"]["errors"])
+        self.assertIn("Capture viewport differs", failed["captures"]["form-focus"]["errors"])
         self.assertEqual(failed["captures"]["form-rejected"]["semantic_diff"][0]["path"], "observed.error_code")
         self.assertTrue(any(item["path"] == "action.0" for item in failed["captures"]["form-recovered"]["semantic_diff"]))
         self.assertEqual(baseline_path.read_bytes(), baseline)
