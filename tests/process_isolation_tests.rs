@@ -2,7 +2,7 @@
 use metis_backend::{BackendService, clinical::SafetyEnvelope};
 use metis_core::error::ErrorCode;
 use metis_core::protocol::{ClinicalCalcResponsePayload, MessageType};
-use metis_frontend::{FormState, FrontendApp};
+use metis_frontend::{BADGE_CLOSED, BADGE_READY, FormState, FrontendApp};
 use metis_ipc::{
     client::HandshakeError,
     server::{IpcHandler, IpcServer},
@@ -42,32 +42,59 @@ fn session_trace(
     (app, service)
 }
 
-/// Pixels inside `bounds` counted by the candidate color each lies nearest,
-/// in RGB distance.
+/// Inked pixels inside `bounds` counted by the candidate ink that best
+/// explains each.
 ///
 /// Antialiased strokes at small sizes may never reach full coverage, so a
-/// single probe pixel is not an oracle. Classifying every pixel of a text
-/// run's line box against the background and the colors the run might have
-/// been painted in is: the run's own color collects its strokes and the
-/// others collect nothing.
-fn nearest_counts<const N: usize>(
+/// single probe pixel is not an oracle, and a nearest-color vote misreads
+/// half-covered edges, whose blend with the background can lie nearer
+/// another candidate than the ink that produced them. Each pixel is instead
+/// fitted as a blend of the background toward each ink: the run's own ink
+/// fits its strokes exactly and collects them, and the others collect
+/// nothing.
+fn ink_counts<const N: usize>(
     framebuffer: &Framebuffer,
     bounds: (i32, i32, i32, i32),
-    candidates: [Color; N],
+    inks: [Color; N],
 ) -> [usize; N] {
-    let distance = |a: Color, b: Color| {
-        let channel = |x: u8, y: u8| (i32::from(x) - i32::from(y)).pow(2);
-        channel(a.r, b.r) + channel(a.g, b.g) + channel(a.b, b.b)
-    };
     let (x, y, width, height) = bounds;
+    // The header just left of the run is the background the glyphs blend
+    // over; sampling it keeps the model true on a gradient header.
+    let background = framebuffer.get_pixel(x - 4, y + height / 2);
+    let channels = |color: Color| [color.r, color.g, color.b].map(f64::from);
+    let base = channels(background);
     let mut counts = [0; N];
     for row in y..y + height {
         for column in x..x + width {
-            let pixel = framebuffer.get_pixel(column, row);
-            let nearest = (0..N)
-                .min_by_key(|index| distance(pixel, candidates[*index]))
-                .expect("invariant: at least one candidate");
-            counts[nearest] += 1;
+            let pixel = channels(framebuffer.get_pixel(column, row));
+            // An antialiased pixel is `background + a * (ink - background)`:
+            // project onto each ink's blend line and keep the closest.
+            let fits = inks.map(|ink| {
+                let ink = channels(ink);
+                let (mut along, mut length) = (0.0, 0.0);
+                for channel in 0..3 {
+                    along += (pixel[channel] - base[channel]) * (ink[channel] - base[channel]);
+                    length += (ink[channel] - base[channel]).powi(2);
+                }
+                let coverage = (along / length).clamp(0.0, 1.0);
+                let residual: f64 = (0..3)
+                    .map(|channel| {
+                        let blend = coverage.mul_add(ink[channel] - base[channel], base[channel]);
+                        (pixel[channel] - blend).powi(2)
+                    })
+                    .sum();
+                (coverage, residual)
+            });
+            let (index, (coverage, _)) = fits
+                .iter()
+                .enumerate()
+                .min_by(|left, right| left.1.1.total_cmp(&right.1.1))
+                .expect("invariant: at least one ink");
+            // Pixels at least half inked count; fainter edges carry too little
+            // of the ink to tell candidates apart.
+            if *coverage >= 0.5 {
+                counts[index] += 1;
+            }
         }
     }
     counts
@@ -283,9 +310,8 @@ fn closed_peer_replaces_success_and_new_session_recovers() {
             _ => None,
         })
         .expect("status run");
-    let header = Color::rgb(0x1a, 0x36, 0x5d);
-    let [_, red, green] = nearest_counts(framebuffer, bounds, [header, Color::RED, Color::GREEN]);
-    assert!(red > 20 && green == 0, "red {red}, green {green}");
+    let [closed, ready] = ink_counts(framebuffer, bounds, [BADGE_CLOSED, BADGE_READY]);
+    assert!(closed > 20 && ready == 0, "closed {closed}, ready {ready}");
     assert_eq!(service.ledger().records().len(), 2);
     let (_, recovered) = session_trace(2, |app| {
         app.init(1234, [1; 16]).expect("new handshake");

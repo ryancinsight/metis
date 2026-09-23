@@ -10,7 +10,7 @@ mod result_explorer;
 pub use app::{FormInputs, FormState, FrontendApp, MAX_COMPOSITION_BYTES};
 pub use async_app::AsyncFrontendApp;
 pub use commands::{ApplicationCommand, ApplicationTheme, CommandMenuState};
-pub use presentation::CLINICAL_SCREEN_XML;
+pub use presentation::{BADGE_CLOSED, BADGE_READY, CLINICAL_SCREEN_XML};
 pub use result_explorer::{
     ExplorerStatus, GroupId, MAX_PATIENT_LABEL_BYTES, MAX_RESULT_FILTER_BYTES, MAX_RESULT_GROUPS,
     MAX_RESULT_ROWS, RESULT_PAGE_SIZE, RecordOutcome, ResultExplorer, ResultId, ResultRow,

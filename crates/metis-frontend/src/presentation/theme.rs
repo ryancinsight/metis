@@ -4,34 +4,14 @@ use crate::app::FrontendApp;
 use crate::commands::ApplicationTheme;
 use metis_core::{ErrorCode, MetisError, Result};
 use metis_ipc::IpcTransport;
-use metis_ui_lang::Color;
+use metis_platform::rasterizer::GradientStop;
+use metis_ui_lang::{Color, LinearGradient};
 
 impl<T: IpcTransport> FrontendApp<T> {
     pub(super) fn apply_theme(&mut self) -> Result<()> {
-        let palette = match self.theme {
-            ApplicationTheme::System => ThemePalette {
-                page: Color::rgb(240, 244, 248),
-                surface: Color::WHITE,
-                header: Color::DARK_BLUE,
-                text: Color::rgb(45, 55, 72),
-                muted: Color::rgb(74, 85, 104),
-                border: Color::rgb(226, 232, 240),
-                accent: Color::BLUE,
-                status: Color::GREEN,
-            },
-            ApplicationTheme::Dark => ThemePalette {
-                page: Color::rgb(15, 23, 42),
-                surface: Color::rgb(30, 41, 59),
-                header: Color::rgb(51, 65, 85),
-                text: Color::rgb(226, 232, 240),
-                muted: Color::rgb(186, 230, 253),
-                border: Color::rgb(100, 116, 139),
-                accent: Color::rgb(8, 145, 178),
-                status: Color::rgb(103, 232, 249),
-            },
-        };
+        let palette = ThemePalette::for_theme(self.theme);
         self.set_background("main-screen", palette.page)?;
-        self.set_background("header", palette.header)?;
+        self.set_gradient("header", &palette.header)?;
         self.set_background("application-navigation", palette.border)?;
         self.set_background("command-menu", palette.surface)?;
         self.set_background("patient-card", palette.surface)?;
@@ -54,7 +34,6 @@ impl<T: IpcTransport> FrontendApp<T> {
         for id in ["output-status", "output-signature"] {
             self.set_text_color(id, palette.muted)?;
         }
-        self.set_text_color("status-badge", palette.status)?;
         self.set_text_color("output-rate", palette.accent)?;
         self.set_text_color("header", Color::WHITE)?;
         self.set_text_color("patient-card", palette.text)?;
@@ -64,8 +43,9 @@ impl<T: IpcTransport> FrontendApp<T> {
             "command-focus-patient",
             "command-theme-dark",
             "command-theme-system",
+            "btn-calc",
         ] {
-            self.set_background(id, palette.accent)?;
+            self.set_gradient(id, &palette.control)?;
             self.set_text_color(id, Color::WHITE)?;
         }
         Ok(())
@@ -82,6 +62,24 @@ impl<T: IpcTransport> FrontendApp<T> {
             })?
             .computed_style
             .background_color = Some(color);
+        Ok(())
+    }
+
+    /// Replaces the element's background with `gradient`, as the
+    /// `background` shorthand does.
+    fn set_gradient(&mut self, id: &str, gradient: &LinearGradient) -> Result<()> {
+        let style = &mut self
+            .doc
+            .find_element_by_id_mut(id)
+            .ok_or_else(|| {
+                MetisError::ui(
+                    ErrorCode::MalformedMarkup,
+                    format!("Authored form is missing styled element {id}"),
+                )
+            })?
+            .computed_style;
+        style.background_color = None;
+        style.background_gradient = Some(gradient.clone());
         Ok(())
     }
 
@@ -114,14 +112,57 @@ impl<T: IpcTransport> FrontendApp<T> {
     }
 }
 
-#[derive(Clone, Copy)]
+/// A two-stop gradient between `from` and `to` at `degrees`.
+fn ramp(degrees: f64, from: Color, to: Color) -> LinearGradient {
+    let stops = [from, to].map(|color| GradientStop {
+        color,
+        position: None,
+    });
+    LinearGradient::new(degrees, &stops)
+        .expect("invariant: two stops at a finite angle form a gradient")
+}
+
 struct ThemePalette {
     page: Color,
     surface: Color,
-    header: Color,
+    header: LinearGradient,
     text: Color,
     muted: Color,
     border: Color,
+    /// Text accent.
     accent: Color,
-    status: Color,
+    /// Command control fill; every stop keeps white labels at a 4.5:1
+    /// contrast or better (WCAG 2.2 criterion 1.4.3).
+    control: LinearGradient,
 }
+
+impl ThemePalette {
+    fn for_theme(theme: ApplicationTheme) -> Self {
+        match theme {
+            ApplicationTheme::System => ThemePalette {
+                page: Color::rgb(240, 244, 248),
+                surface: Color::WHITE,
+                header: ramp(135.0, Color::DARK_BLUE, Color::rgb(44, 82, 130)),
+                text: Color::rgb(45, 55, 72),
+                muted: Color::rgb(74, 85, 104),
+                border: Color::rgb(226, 232, 240),
+                accent: Color::BLUE,
+                control: ramp(180.0, Color::rgb(44, 120, 196), Color::rgb(38, 98, 168)),
+            },
+            ApplicationTheme::Dark => ThemePalette {
+                page: Color::rgb(15, 23, 42),
+                surface: Color::rgb(30, 41, 59),
+                header: ramp(135.0, Color::rgb(51, 65, 85), Color::rgb(38, 50, 70)),
+                text: Color::rgb(226, 232, 240),
+                muted: Color::rgb(186, 230, 253),
+                border: Color::rgb(100, 116, 139),
+                accent: Color::rgb(8, 145, 178),
+                control: ramp(180.0, Color::rgb(14, 116, 144), Color::rgb(21, 94, 117)),
+            },
+        }
+    }
+}
+
+#[cfg(test)]
+#[path = "theme_tests.rs"]
+mod tests;

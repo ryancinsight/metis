@@ -2,25 +2,25 @@
 
 /// Default declarative UI markup template for the medical data entry screen.
 pub const CLINICAL_SCREEN_XML: &str = r#"<screen id="main-screen" style="display: flex; flex-direction: column; height: 100%; background-color: #f0f4f8; padding: 20px; gap: 15px;">
-  <div id="header" style="display: flex; flex-direction: column; gap: 8px; background-color: #1a365d; padding: 12px; border-radius: 12px; box-shadow: 0 4px 12px #1a365d40;">
+  <div id="header" style="display: flex; flex-direction: column; gap: 8px; background: linear-gradient(135deg, #1a365d, #2c5282); padding: 12px; border-radius: 12px; box-shadow: 0 4px 12px #1a365d40;">
     <text style="color: #ffffff; font-size: 22px; font-weight: bold;">METIS FORM DEMONSTRATION</text>
-    <text id="status-badge" style="color: #38a169; font-size: 13px;">SYSTEM READY</text>
+    <text id="status-badge" style="color: #9ae6b4; font-size: 13px;">SYSTEM READY</text>
   </div>
 
   <nav id="application-navigation" aria-label="Application navigation" style="display: flex; flex-direction: column; gap: 8px; background-color: #e2e8f0; padding: 8px; border-radius: 10px;">
     <div id="application-toolbar" role="toolbar" aria-label="Application commands" style="display: flex; flex-direction: row; gap: 8px; align-items: center;">
-      <button id="command-menu-toggle" aria-haspopup="menu" aria-expanded="false" aria-controls="command-menu" style="width: 120px; background-color: #3182ce; color: #ffffff; padding: 8px 12px; border-radius: 6px; min-height: 44px; justify-content: center; align-items: center; box-shadow: 0 2px 4px #2c528240;">
+      <button id="command-menu-toggle" aria-haspopup="menu" aria-expanded="false" aria-controls="command-menu" style="width: 120px; background: linear-gradient(#2c78c4, #2662a8); color: #ffffff; padding: 8px 12px; border-radius: 6px; min-height: 44px; justify-content: center; align-items: center; box-shadow: 0 2px 4px #2c528240;">
         <text style="color: #ffffff; font-size: 14px; font-weight: bold;">Commands</text>
       </button>
-      <button id="command-focus-patient" style="width: 144px; background-color: #3182ce; color: #ffffff; padding: 8px 12px; border-radius: 6px; min-height: 44px; justify-content: center; align-items: center; box-shadow: 0 2px 4px #2c528240;">
+      <button id="command-focus-patient" style="width: 144px; background: linear-gradient(#2c78c4, #2662a8); color: #ffffff; padding: 8px 12px; border-radius: 6px; min-height: 44px; justify-content: center; align-items: center; box-shadow: 0 2px 4px #2c528240;">
         <text style="color: #ffffff; font-size: 14px; font-weight: bold;">Focus patient</text>
       </button>
     </div>
     <div id="command-menu" popover-anchor="command-menu-toggle" role="menu" aria-label="Application commands" aria-hidden="true" style="display: none; flex-direction: column; gap: 6px; background-color: #ffffff; padding: 8px; border-width: 1px; border-color: #e2e8f0; border-radius: 10px; box-shadow: 0 8px 20px #0f172a33;">
-      <button id="command-theme-dark" role="menuitem" style="background-color: #3182ce; color: #ffffff; padding: 8px 12px; border-radius: 6px; min-height: 44px; justify-content: center; align-items: center; box-shadow: 0 2px 4px #2c528240;">
+      <button id="command-theme-dark" role="menuitem" style="background: linear-gradient(#2c78c4, #2662a8); color: #ffffff; padding: 8px 12px; border-radius: 6px; min-height: 44px; justify-content: center; align-items: center; box-shadow: 0 2px 4px #2c528240;">
         <text style="color: #ffffff; font-size: 14px; font-weight: bold;">Dark theme</text>
       </button>
-      <button id="command-theme-system" role="menuitem" style="background-color: #3182ce; color: #ffffff; padding: 8px 12px; border-radius: 6px; min-height: 44px; justify-content: center; align-items: center; box-shadow: 0 2px 4px #2c528240;">
+      <button id="command-theme-system" role="menuitem" style="background: linear-gradient(#2c78c4, #2662a8); color: #ffffff; padding: 8px 12px; border-radius: 6px; min-height: 44px; justify-content: center; align-items: center; box-shadow: 0 2px 4px #2c528240;">
         <text style="color: #ffffff; font-size: 14px; font-weight: bold;">System theme</text>
       </button>
     </div>
@@ -42,7 +42,7 @@ pub const CLINICAL_SCREEN_XML: &str = r#"<screen id="main-screen" style="display
       <text id="label-dose" style="color: #4a5568; font-size: 14px;">Target Dose: 0.500 mcg/kg/min</text>
     </div>
     <div id="actions" style="display: flex; flex-direction: row; gap: 10px; margin: 10px 0 0 0; justify-content: center;">
-      <button id="btn-calc" style="width: 360px; background-color: #3182ce; color: #ffffff; padding: 8px 16px; border-radius: 6px; min-height: 44px; justify-content: center; align-items: center; box-shadow: 0 2px 4px #2c528240;">
+      <button id="btn-calc" style="width: 360px; background: linear-gradient(#2c78c4, #2662a8); color: #ffffff; padding: 8px 16px; border-radius: 6px; min-height: 44px; justify-content: center; align-items: center; box-shadow: 0 2px 4px #2c528240;">
         <text style="color: #ffffff; font-size: 14px; font-weight: bold;">Submit calculation</text>
       </button>
     </div>
@@ -62,6 +62,15 @@ use iris::render::RenderBackend;
 use metis_core::{ErrorCode, MetisError, Result};
 use metis_ipc::{IpcTransport, client::HandshakeError};
 use metis_ui_lang::{Color, LayoutViewport, MAX_SEMANTIC_TEXT_BYTES, compute_layout};
+
+/// Status badge color while a backend session is open.
+///
+/// Legible at 4.5:1 or better over either theme's header gradient (WCAG 2.2
+/// criterion 1.4.3), as the theme contrast tests assert.
+pub const BADGE_READY: Color = Color::rgb(154, 230, 180);
+/// Status badge color once the backend session has closed, legible over
+/// either theme's header like [`BADGE_READY`].
+pub const BADGE_CLOSED: Color = Color::rgb(254, 178, 178);
 
 impl<T: IpcTransport> FrontendApp<T> {
     /// Projects the owned state and renders the complete form.
@@ -93,9 +102,9 @@ impl<T: IpcTransport> FrontendApp<T> {
                 )
             })?;
         status.computed_style.text_color = if self.client.is_none() {
-            Color::RED
+            BADGE_CLOSED
         } else {
-            Color::GREEN
+            BADGE_READY
         };
         // Forty glyphs plus the label fit the 800-pixel form. The ellipsis states
         // omission explicitly; the wire request uses the full captured identifier.
@@ -338,7 +347,7 @@ fn input_number(value: f64, minimum_decimals: usize) -> String {
 
 #[cfg(test)]
 mod presentation_tests {
-    use super::{CLINICAL_SCREEN_XML, bounded_accessible_value};
+    use super::{BADGE_CLOSED, BADGE_READY, CLINICAL_SCREEN_XML, bounded_accessible_value};
     use metis_platform::{Color, Framebuffer};
     use metis_ui_lang::{
         DisplayCommand, LayoutViewport, MAX_SEMANTIC_TEXT_BYTES, compute_layout, parse_markup,
@@ -358,32 +367,60 @@ mod presentation_tests {
         assert!(bounded.is_char_boundary(bounded.len() - 3));
     }
 
-    /// Pixels inside `bounds` counted by the candidate color each lies nearest,
-    /// in RGB distance.
+    /// Inked pixels inside `bounds` counted by the candidate ink that best
+    /// explains each.
     ///
     /// Antialiased strokes at small sizes may never reach full coverage, so a
-    /// single probe pixel is not an oracle. Classifying every pixel of a text
-    /// run's line box against the background and the colors the run might have
-    /// been painted in is: the run's own color collects its strokes and the
-    /// others collect nothing.
-    fn nearest_counts<const N: usize>(
+    /// single probe pixel is not an oracle, and a nearest-color vote misreads
+    /// half-covered edges, whose blend with the background can lie nearer
+    /// another candidate than the ink that produced them. Each pixel is instead
+    /// fitted as a blend of the background toward each ink: the run's own ink
+    /// fits its strokes exactly and collects them, and the others collect
+    /// nothing.
+    fn ink_counts<const N: usize>(
         framebuffer: &Framebuffer,
         bounds: (i32, i32, i32, i32),
-        candidates: [Color; N],
+        inks: [Color; N],
     ) -> [usize; N] {
-        let distance = |a: Color, b: Color| {
-            let channel = |x: u8, y: u8| (i32::from(x) - i32::from(y)).pow(2);
-            channel(a.r, b.r) + channel(a.g, b.g) + channel(a.b, b.b)
-        };
         let (x, y, width, height) = bounds;
+        // The header just left of the run is the background the glyphs blend
+        // over; sampling it keeps the model true on a gradient header.
+        let background = framebuffer.get_pixel(x - 4, y + height / 2);
+        let channels = |color: Color| [color.r, color.g, color.b].map(f64::from);
+        let base = channels(background);
         let mut counts = [0; N];
         for row in y..y + height {
             for column in x..x + width {
-                let pixel = framebuffer.get_pixel(column, row);
-                let nearest = (0..N)
-                    .min_by_key(|index| distance(pixel, candidates[*index]))
-                    .expect("invariant: at least one candidate");
-                counts[nearest] += 1;
+                let pixel = channels(framebuffer.get_pixel(column, row));
+                // An antialiased pixel is `background + a * (ink - background)`:
+                // project onto each ink's blend line and keep the closest.
+                let fits = inks.map(|ink| {
+                    let ink = channels(ink);
+                    let (mut along, mut length) = (0.0, 0.0);
+                    for channel in 0..3 {
+                        along += (pixel[channel] - base[channel]) * (ink[channel] - base[channel]);
+                        length += (ink[channel] - base[channel]).powi(2);
+                    }
+                    let coverage = (along / length).clamp(0.0, 1.0);
+                    let residual: f64 = (0..3)
+                        .map(|channel| {
+                            let blend =
+                                coverage.mul_add(ink[channel] - base[channel], base[channel]);
+                            (pixel[channel] - blend).powi(2)
+                        })
+                        .sum();
+                    (coverage, residual)
+                });
+                let (index, (coverage, _)) = fits
+                    .iter()
+                    .enumerate()
+                    .min_by(|left, right| left.1.1.total_cmp(&right.1.1))
+                    .expect("invariant: at least one ink");
+                // Pixels at least half inked count; fainter edges carry too little
+                // of the ink to tell candidates apart.
+                if *coverage >= 0.5 {
+                    counts[index] += 1;
+                }
             }
         }
         counts
@@ -447,10 +484,8 @@ mod presentation_tests {
             })
             .expect("status run");
         let bounds = (status.0, status.1, whole(status.2), whole(status.3));
-        let header = Color::rgb(0x1a, 0x36, 0x5d);
-        let [_, green, red] =
-            nearest_counts(&framebuffer, bounds, [header, Color::GREEN, Color::RED]);
-        assert!(green > 20 && red == 0, "green {green}, red {red}");
+        let [ready, closed] = ink_counts(&framebuffer, bounds, [BADGE_READY, BADGE_CLOSED]);
+        assert!(ready > 20 && closed == 0, "ready {ready}, closed {closed}");
         assert_eq!(framebuffer.get_pixel(799, 599), Color::rgb(240, 244, 248));
     }
 }
