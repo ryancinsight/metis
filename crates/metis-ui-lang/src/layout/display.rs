@@ -5,27 +5,41 @@ use metis_core::error::Result;
 use metis_platform::DisplayScale;
 use metis_platform::framebuffer::{Framebuffer, Rect};
 use metis_platform::rasterizer::{
-    LineCap, LineJoin, MAX_STROKE_POINTS, StrokeWidth, draw_line, draw_polyline, draw_rect_outline,
-    draw_text_scaled, fill_rect,
+    BoxShadow, CornerRadius, LineCap, LineJoin, MAX_STROKE_POINTS, StrokeWidth, draw_box_shadow,
+    draw_line, draw_polyline, draw_rect_outline, draw_text, fill_rect,
 };
+use metis_platform::{GlyphWeight, TextStyle};
 
 /// Primitive command in painter order.
 #[derive(Debug, Clone, PartialEq)]
 #[non_exhaustive]
 pub enum DisplayCommand {
+    /// Blurred outer shadow of a border box, clipped inside that box.
+    DrawShadow {
+        /// Border box casting the shadow.
+        rect: Rect,
+        /// Corner rounding shared with the border box.
+        radius: CornerRadius,
+        /// Offsets, blur and color in device pixels.
+        shadow: BoxShadow,
+    },
     /// Rectangle fill.
     FillRect {
         /// Target rectangle.
         rect: Rect,
+        /// Corner rounding; [`CornerRadius::SQUARE`] keeps square corners.
+        radius: CornerRadius,
         /// Straight RGBA color.
         color: Color,
     },
-    /// Uniform inward square border.
+    /// Uniform inward border following the fill it encloses.
     DrawBorder {
         /// Outer rectangle.
         rect: Rect,
         /// Border width.
         width: i32,
+        /// Corner rounding; [`CornerRadius::SQUARE`] keeps square corners.
+        radius: CornerRadius,
         /// Straight RGBA color.
         color: Color,
     },
@@ -65,12 +79,61 @@ pub enum DisplayCommand {
         scale: u32,
         /// Device scale reported by the host for this presentation.
         display_scale: DisplayScale,
+        /// Stroke weight; [`GlyphWeight::Regular`] paints the authored glyph.
+        weight: GlyphWeight,
     },
     /// Raster image crop composited with source-over alpha.
     DrawImage {
         /// Validated source and destination placement.
         placement: ImagePlacement,
     },
+}
+
+impl DisplayCommand {
+    /// Moves every coordinate this command carries.
+    ///
+    /// Alignment redistributes free space after a child has already painted,
+    /// so the child's commands move rather than being emitted twice. Every
+    /// variant is matched without elision: a command kind added later must
+    /// state how it moves, or a laid-out child would tear.
+    pub(crate) fn translate(&mut self, dx: i32, dy: i32) -> Result<()> {
+        let shift = |value: i32, delta: i32| {
+            value
+                .checked_add(delta)
+                .ok_or_else(|| limit_error("Display coordinate exceeds coordinate range"))
+        };
+        let shift_rect = |rect: &mut Rect| -> Result<()> {
+            *rect = Rect::new(
+                shift(rect.x, dx)?,
+                shift(rect.y, dy)?,
+                rect.width,
+                rect.height,
+            );
+            Ok(())
+        };
+        match self {
+            Self::DrawShadow { rect, .. }
+            | Self::FillRect { rect, .. }
+            | Self::DrawBorder { rect, .. } => shift_rect(rect),
+            Self::DrawLine { start, end, .. } => {
+                *start = (shift(start.0, dx)?, shift(start.1, dy)?);
+                *end = (shift(end.0, dx)?, shift(end.1, dy)?);
+                Ok(())
+            }
+            Self::DrawPolyline { points, .. } => {
+                for point in points.iter_mut() {
+                    *point = (shift(point.0, dx)?, shift(point.1, dy)?);
+                }
+                Ok(())
+            }
+            Self::DrawText { x, y, .. } => {
+                *x = shift(*x, dx)?;
+                *y = shift(*y, dy)?;
+                Ok(())
+            }
+            Self::DrawImage { placement } => placement.translate(dx, dy),
+        }
+    }
 }
 
 /// Drawing commands emitted by bounded layout.
@@ -85,9 +148,23 @@ impl DisplayList {
     pub fn render_to(&self, fb: &mut Framebuffer) {
         for command in &self.commands {
             match command {
-                DisplayCommand::FillRect { rect, color } => fill_rect(fb, *rect, *color),
-                DisplayCommand::DrawBorder { rect, width, color } => {
-                    draw_rect_outline(fb, *rect, *width, *color);
+                DisplayCommand::DrawShadow {
+                    rect,
+                    radius,
+                    shadow,
+                } => draw_box_shadow(fb, *rect, *radius, *shadow),
+                DisplayCommand::FillRect {
+                    rect,
+                    radius,
+                    color,
+                } => fill_rect(fb, *rect, *radius, *color),
+                DisplayCommand::DrawBorder {
+                    rect,
+                    width,
+                    radius,
+                    color,
+                } => {
+                    draw_rect_outline(fb, *rect, *width, *radius, *color);
                 }
                 DisplayCommand::DrawLine { start, end, color } => {
                     draw_line(fb, *start, *end, *color);
@@ -106,7 +183,16 @@ impl DisplayList {
                     color,
                     scale,
                     display_scale,
-                } => draw_text_scaled(fb, *x, *y, text, *color, *scale, *display_scale),
+                    weight,
+                } => draw_text(
+                    fb,
+                    *x,
+                    *y,
+                    text,
+                    TextStyle::new(*color, *scale)
+                        .with_display_scale(*display_scale)
+                        .with_weight(*weight),
+                ),
                 DisplayCommand::DrawImage { placement } => placement.render_to(fb),
             }
         }

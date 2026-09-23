@@ -1,10 +1,14 @@
 use super::display::{DisplayCommand, DisplayList};
 use crate::dom::{DomDocument, DomElement, DomNode};
 use crate::parser::{MAX_DEPTH, MAX_INPUT_BYTES, MAX_NODES, copy_text, limit_error};
-use crate::style::{ComputedStyle, Display, EdgeValues, FlexDirection, Size};
+use crate::style::{AlignItems, ComputedStyle, Display, FlexDirection, FontWeight, JustifyContent};
 use metis_core::error::Result;
 use metis_platform::DisplayScale;
+use metis_platform::GlyphWeight;
 use metis_platform::framebuffer::Rect;
+use metis_platform::rasterizer::CornerRadius;
+
+use super::device::{device_shadow, dimension, minimum, scaled_geometry};
 
 /// Logical viewport dimensions and the host's device-pixel scale.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -106,7 +110,7 @@ impl DisplayList {
     fn text(
         &mut self,
         text: &str,
-        style: &crate::style::ComputedStyle,
+        style: &ComputedStyle,
         x: i32,
         y: i32,
         display_scale: DisplayScale,
@@ -124,11 +128,19 @@ impl DisplayList {
             color: style.text_color,
             scale,
             display_scale,
+            weight: match style.font_weight {
+                FontWeight::Normal => GlyphWeight::Regular,
+                FontWeight::Bold => GlyphWeight::Bold,
+            },
         })?;
         Ok((text_width, text_height))
     }
 
-    fn children_extent(&mut self, element: &DomElement, layout: ChildLayout<'_>) -> Result<i32> {
+    fn children_extent(
+        &mut self,
+        element: &DomElement,
+        layout: ChildLayout<'_>,
+    ) -> Result<ChildExtent> {
         let ChildLayout {
             style,
             content_x,
@@ -142,6 +154,7 @@ impl DisplayList {
         let mut child_x = content_x;
         let mut child_y = content_y;
         let mut cross_size = 0;
+        let mut placements = Vec::new();
         let mut visible_children = 0;
         for child in &element.children {
             if matches!(child, DomNode::Element(child) if child.computed_style.display == Display::None)
@@ -155,6 +168,7 @@ impl DisplayList {
                     child_y = add(child_y, gap)?;
                 }
             }
+            let first_command = self.commands.len();
             let (child_width, child_height) = match child {
                 DomNode::Element(child) => {
                     let available_width = if row {
@@ -171,6 +185,14 @@ impl DisplayList {
                 }
                 DomNode::Text(text) => self.text(text, style, child_x, child_y, display_scale)?,
             };
+            placements
+                .try_reserve(1)
+                .map_err(|_| limit_error("Child placement allocation failed"))?;
+            placements.push(ChildPlacement {
+                first_command,
+                end_command: self.commands.len(),
+                cross: if row { child_height } else { child_width },
+            });
             if row {
                 child_x = add(child_x, child_width)?;
                 cross_size = cross_size.max(child_height);
@@ -185,7 +207,68 @@ impl DisplayList {
         } else {
             sub(child_y, content_y)?
         };
-        Ok(content_height)
+        // Gaps belong to the occupied main extent, so the cursor delta is the
+        // span alignment redistributes around.
+        let main_used = if row {
+            sub(child_x, content_x)?
+        } else {
+            sub(child_y, content_y)?
+        };
+        Ok(ChildExtent {
+            content_height,
+            main_used,
+            placements,
+        })
+    }
+
+    /// Places children within the free space the container leaves.
+    ///
+    /// Children paint while they are measured, so redistribution translates
+    /// what they already emitted. Start and stretch alignment produce zero
+    /// offsets, which is why a document that declares neither moves at all.
+    fn align_children(
+        &mut self,
+        style: &crate::style::ComputedStyle,
+        extent: &ChildExtent,
+        content_main: i32,
+        content_cross: i32,
+        row: bool,
+    ) -> Result<()> {
+        let free = sub(content_main, extent.main_used)?.max(0);
+        let count = i32::try_from(extent.placements.len())
+            .map_err(|_| limit_error("Child count exceeds coordinate range"))?;
+        for (index, placement) in extent.placements.iter().enumerate() {
+            let ordinal = i32::try_from(index)
+                .map_err(|_| limit_error("Child index exceeds coordinate range"))?;
+            let main_offset = match style.justify_content {
+                JustifyContent::Center => free / 2,
+                JustifyContent::FlexEnd => free,
+                // The first child keeps the start edge and the last reaches the
+                // end edge, so each step is one share of the free space.
+                JustifyContent::SpaceBetween if count > 1 => mul(free, ordinal)? / (count - 1),
+                // A single child has no gap to distribute into, so it sits
+                // where start alignment puts it.
+                JustifyContent::FlexStart | JustifyContent::SpaceBetween => 0,
+            };
+            let cross_free = sub(content_cross, placement.cross)?.max(0);
+            let cross_offset = match style.align_items {
+                AlignItems::FlexStart | AlignItems::Stretch => 0,
+                AlignItems::Center => cross_free / 2,
+                AlignItems::FlexEnd => cross_free,
+            };
+            if main_offset == 0 && cross_offset == 0 {
+                continue;
+            }
+            let (dx, dy) = if row {
+                (main_offset, cross_offset)
+            } else {
+                (cross_offset, main_offset)
+            };
+            for command in &mut self.commands[placement.first_command..placement.end_command] {
+                command.translate(dx, dy)?;
+            }
+        }
+        Ok(())
     }
 
     fn element(
@@ -195,7 +278,6 @@ impl DisplayList {
         display_scale: DisplayScale,
     ) -> Result<Rect> {
         let style = &element.computed_style;
-        style.validate_renderer_support()?;
         if style.display == Display::None {
             return Ok(Rect::new(available.x, available.y, 0, 0));
         }
@@ -209,7 +291,8 @@ impl DisplayList {
             )?
             .max(0),
             display_scale,
-        )?;
+        )?
+        .max(minimum(style.min_width, available.width, display_scale)?);
         let x = add(available.x, geometry.margin.left)?;
         let y = add(available.y, geometry.margin.top)?;
         let content_x = add(add(x, geometry.padding.left)?, geometry.border.left)?;
@@ -222,17 +305,8 @@ impl DisplayList {
         let row = style.flex_direction == FlexDirection::Row;
         // Reserve the parent's painter position before descendants; its auto height is
         // filled after child layout, so siblings never paint behind earlier siblings.
-        let background_index = if let Some(color) = style.background_color {
-            let index = self.commands.len();
-            self.push(DisplayCommand::FillRect {
-                rect: Rect::new(x, y, width, 0),
-                color,
-            })?;
-            Some(index)
-        } else {
-            None
-        };
-        let content_height = self.children_extent(
+        let slots = self.reserve_box(style, Rect::new(x, y, width, 0), display_scale)?;
+        let child_extent = self.children_extent(
             element,
             ChildLayout {
                 style,
@@ -252,32 +326,120 @@ impl DisplayList {
         let height = dimension(
             style.height,
             available.height,
-            add(content_height, vertical_edges)?.max(0),
+            add(child_extent.content_height, vertical_edges)?.max(0),
             display_scale,
-        )?;
+        )?
+        .max(minimum(style.min_height, available.height, display_scale)?);
         let rect = Rect::new(x, y, width, height);
-        if let Some(index) = background_index
-            && let DisplayCommand::FillRect { rect: target, .. } = &mut self.commands[index]
-        {
-            *target = rect;
-        }
+        // Free space exists only once the container's own extent is final: an
+        // automatic height is derived from the children that just painted.
+        let content_height_box = sub(height, vertical_edges)?.max(0);
+        let (content_main, content_cross) = if row {
+            (content_width, content_height_box)
+        } else {
+            (content_height_box, content_width)
+        };
+        self.align_children(style, &child_extent, content_main, content_cross, row)?;
+        // The radius is clamped against the final rectangle, whose height is
+        // known only after the children have been laid out.
+        let radius = CornerRadius::clamped(display_scale.scale_extent(style.border_radius)?, rect);
+        self.settle_box(slots, rect, radius);
         if geometry.border.top > 0 {
             self.push(DisplayCommand::DrawBorder {
                 rect,
                 width: geometry.border.top,
+                radius,
                 color: style.border_color,
             })?;
         }
         Ok(rect)
     }
+
+    /// Reserves painter slots for the element's shadow and background.
+    ///
+    /// The outer shadow sits immediately below the background (CSS
+    /// Backgrounds 3 §6.1.3), so its slot is reserved first. Both carry a
+    /// placeholder until [`Self::settle_box`] writes the final rectangle.
+    fn reserve_box(
+        &mut self,
+        style: &ComputedStyle,
+        placeholder: Rect,
+        display_scale: DisplayScale,
+    ) -> Result<BoxSlots> {
+        let shadow = match style.box_shadow {
+            Some(shadow) => {
+                let index = self.commands.len();
+                self.push(DisplayCommand::DrawShadow {
+                    rect: placeholder,
+                    radius: CornerRadius::SQUARE,
+                    shadow: device_shadow(shadow, display_scale)?,
+                })?;
+                Some(index)
+            }
+            None => None,
+        };
+        let background = match style.background_color {
+            Some(color) => {
+                let index = self.commands.len();
+                self.push(DisplayCommand::FillRect {
+                    rect: placeholder,
+                    radius: CornerRadius::SQUARE,
+                    color,
+                })?;
+                Some(index)
+            }
+            None => None,
+        };
+        Ok(BoxSlots { shadow, background })
+    }
+
+    /// Writes the final border box into the reserved slots.
+    fn settle_box(&mut self, slots: BoxSlots, rect: Rect, radius: CornerRadius) {
+        for index in [slots.shadow, slots.background].into_iter().flatten() {
+            let (DisplayCommand::DrawShadow {
+                rect: target,
+                radius: target_radius,
+                ..
+            }
+            | DisplayCommand::FillRect {
+                rect: target,
+                radius: target_radius,
+                ..
+            }) = &mut self.commands[index]
+            else {
+                unreachable!("invariant: reserve_box records only shadow and fill slots");
+            };
+            *target = rect;
+            *target_radius = radius;
+        }
+    }
 }
 
+/// Painter slots an element reserves before its children paint.
 #[derive(Clone, Copy)]
-struct ScaledGeometry {
-    margin: EdgeValues,
-    padding: EdgeValues,
-    border: EdgeValues,
-    gap: i32,
+struct BoxSlots {
+    shadow: Option<usize>,
+    background: Option<usize>,
+}
+
+/// Where one child's commands and extents landed during child layout.
+struct ChildPlacement {
+    /// First command this child emitted, in painter order.
+    first_command: usize,
+    /// One past this child's last command.
+    end_command: usize,
+    /// Extent along the container's cross axis.
+    cross: i32,
+}
+
+/// What child layout leaves for the container to redistribute.
+struct ChildExtent {
+    /// Content height the container uses for its automatic height.
+    content_height: i32,
+    /// Main-axis span the children occupied, gaps included.
+    main_used: i32,
+    /// One record per visible child, in painter order.
+    placements: Vec<ChildPlacement>,
 }
 
 #[derive(Clone, Copy)]
@@ -292,27 +454,6 @@ struct ChildLayout<'style> {
     display_scale: DisplayScale,
 }
 
-fn scaled_geometry(
-    style: &crate::style::ComputedStyle,
-    display_scale: DisplayScale,
-) -> Result<ScaledGeometry> {
-    Ok(ScaledGeometry {
-        margin: scale_edges(style.margin, display_scale)?,
-        padding: scale_edges(style.padding, display_scale)?,
-        border: scale_edges(style.border_width, display_scale)?,
-        gap: display_scale.scale_coordinate(style.gap)?,
-    })
-}
-
-fn scale_edges(edges: EdgeValues, display_scale: DisplayScale) -> Result<EdgeValues> {
-    Ok(EdgeValues {
-        top: display_scale.scale_coordinate(edges.top)?,
-        right: display_scale.scale_coordinate(edges.right)?,
-        bottom: display_scale.scale_coordinate(edges.bottom)?,
-        left: display_scale.scale_coordinate(edges.left)?,
-    })
-}
-
 fn add(left: i32, right: i32) -> Result<i32> {
     left.checked_add(right)
         .ok_or_else(|| limit_error("Layout coordinate addition overflow"))
@@ -324,37 +465,4 @@ fn sub(left: i32, right: i32) -> Result<i32> {
 fn mul(left: i32, right: i32) -> Result<i32> {
     left.checked_mul(right)
         .ok_or_else(|| limit_error("Layout text extent overflow"))
-}
-
-fn dimension(
-    size: Size,
-    available: i32,
-    automatic: i32,
-    display_scale: DisplayScale,
-) -> Result<i32> {
-    match size {
-        Size::Auto => Ok(automatic),
-        Size::Px(value) if value >= 0 => display_scale.scale_extent(value),
-        Size::Percent(percent) if percent.is_finite() && percent >= 0.0 => {
-            // The percentage contract is f32; multiplication remains in that precision.
-            #[expect(
-                clippy::cast_precision_loss,
-                reason = "CSS percentage sizing uses f32 coordinates"
-            )]
-            let value = available as f32 * percent;
-            #[expect(
-                clippy::cast_precision_loss,
-                reason = "i32::MAX rounds to the first excluded f32 coordinate"
-            )]
-            if !value.is_finite() || value >= i32::MAX as f32 {
-                return Err(limit_error("Percentage size exceeds coordinate range"));
-            }
-            #[expect(
-                clippy::cast_possible_truncation,
-                reason = "Finite nonnegative value is checked below the i32 upper bound; fractional pixels truncate"
-            )]
-            Ok(value as i32)
-        }
-        _ => Err(limit_error("Size must be finite and nonnegative")),
-    }
 }

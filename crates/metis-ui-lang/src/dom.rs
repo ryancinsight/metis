@@ -51,8 +51,9 @@ impl DomElement {
 /// A node in the DOM tree.
 #[derive(Debug, Clone, PartialEq)]
 pub enum DomNode {
-    /// Nested element.
-    Element(DomElement),
+    /// Nested element, boxed so a text node does not reserve an element's
+    /// computed style.
+    Element(Box<DomElement>),
     /// Literal text content.
     Text(String),
 }

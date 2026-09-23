@@ -25,7 +25,7 @@ import pathlib
 import re
 import subprocess
 import sys
-from collections.abc import Callable, Iterator
+from collections.abc import Callable, Iterable, Iterator
 
 ROOT = pathlib.Path(__file__).resolve().parents[1]
 DOCUMENTS = ("backlog.md", "README.md", "docs")
@@ -44,6 +44,12 @@ DIGEST = re.compile(
     re.IGNORECASE,
 )
 WHITESPACE = re.compile(r"\s+")
+# One local Git query is capped at one-sixth of the visual-tests stage budget.
+GIT_TIMEOUT_SECONDS = 10
+
+
+class GitCommandError(RuntimeError):
+    """A Git query required by citation verification failed."""
 
 
 def documents(root: pathlib.Path) -> Iterator[pathlib.Path]:
@@ -58,29 +64,65 @@ def documents(root: pathlib.Path) -> Iterator[pathlib.Path]:
                 yield from (pathlib.Path(base) / file for file in sorted(files) if file.endswith(".md"))
 
 
-def _git(root: pathlib.Path, *arguments: str) -> tuple[int, str]:
-    result = subprocess.run(
-        ["git", *arguments],
-        cwd=root,
-        capture_output=True,
-        text=True,
-        encoding="utf-8",
-        errors="replace",
-    )
-    return result.returncode, result.stdout.strip()
+def _git(root: pathlib.Path, *arguments: str, input_text: str | None = None) -> str:
+    command = ["git", *arguments]
+    try:
+        result = subprocess.run(
+            command,
+            cwd=root,
+            input=input_text,
+            capture_output=True,
+            text=True,
+            encoding="utf-8",
+            errors="replace",
+            timeout=GIT_TIMEOUT_SECONDS,
+        )
+    except subprocess.TimeoutExpired as error:
+        raise GitCommandError(
+            f"Git citation query exceeded {GIT_TIMEOUT_SECONDS}s: {' '.join(command)}"
+        ) from error
+    if result.returncode != 0:
+        detail = result.stderr.strip() or "no diagnostic"
+        raise GitCommandError(
+            f"Git citation query failed with exit code {result.returncode}: "
+            f"{' '.join(command)}: {detail}"
+        )
+    return result.stdout.strip()
 
 
-def _resolver(root: pathlib.Path, reference: str) -> Callable[[str], bool | None]:
-    """Return a probe reporting whether one cited commit is reachable."""
+def _resolve_revisions(
+    root: pathlib.Path, reference: str, candidates: Iterable[str]
+) -> dict[str, bool | None]:
+    """Classify candidate object names with two bounded Git queries."""
+    unique = tuple(dict.fromkeys(candidates))
+    if not unique:
+        return {}
 
-    def resolve(sha: str) -> bool | None:
-        code, kind = _git(root, "cat-file", "-t", sha)
-        if code != 0 or kind != "commit":
-            # Another repository's revision, an image or a hosted run identifier.
-            return None
-        return _git(root, "merge-base", "--is-ancestor", sha, reference)[0] == 0
+    reachable = set(_git(root, "rev-list", reference).splitlines())
+    classified = _git(
+        root,
+        "cat-file",
+        "--batch-check=%(objectname) %(objecttype)",
+        input_text="".join(f"{candidate}\n" for candidate in unique),
+    ).splitlines()
+    if len(classified) != len(unique):
+        raise GitCommandError(
+            "Git citation object query returned "
+            f"{len(classified)} result(s) for {len(unique)} candidate(s)"
+        )
 
-    return resolve
+    resolved: dict[str, bool | None] = {}
+    for candidate, result in zip(unique, classified, strict=True):
+        fields = result.split()
+        if len(fields) != 2:
+            raise GitCommandError(
+                f"Git citation object query returned an invalid result for {candidate}: {result}"
+            )
+        object_name, object_type = fields
+        # Missing objects include revisions from other repositories and hosted
+        # run identifiers. Existing non-commit objects are equally unrelated.
+        resolved[candidate] = object_name in reachable if object_type == "commit" else None
+    return resolved
 
 
 def unreachable_revisions(
@@ -90,24 +132,45 @@ def unreachable_revisions(
     resolve: Callable[[str], bool | None] | None = None,
 ) -> list[str]:
     """Return citations of this repository's commits that `reference` cannot reach."""
-    resolve = resolve or _resolver(root, reference)
-    findings: list[str] = []
-    known: dict[str, bool | None] = {}
+    occurrences: list[tuple[pathlib.Path, int, str]] = []
     for document in documents(root):
         text = document.read_text(encoding="utf-8", errors="replace")
         for number, line in enumerate(text.splitlines(), 1):
             if "SHA-256" in line:
                 continue
             for match in REVISION.finditer(line):
-                sha = match.group("sha")
-                if sha not in known:
-                    known[sha] = resolve(sha)
-                if known[sha] is False:
-                    _, subject = _git(root, "log", "-1", "--format=%s", sha)
-                    findings.append(
-                        f"{document.relative_to(root).as_posix()}:{number}: "
-                        f"{sha[:12]} is not reachable from {reference} ({subject[:60]})"
-                    )
+                occurrences.append((document, number, match.group("sha")))
+
+    if resolve is None:
+        known = _resolve_revisions(root, reference, (sha for _, _, sha in occurrences))
+        unreachable = tuple(sha for sha, result in known.items() if result is False)
+        if unreachable:
+            subject_lines = _git(
+                root, "log", "--no-walk=unsorted", "--format=%s", *unreachable
+            ).splitlines()
+            if len(subject_lines) != len(unreachable):
+                raise GitCommandError(
+                    "Git citation subject query returned "
+                    f"{len(subject_lines)} result(s) for {len(unreachable)} commit(s)"
+                )
+            subjects = dict(zip(unreachable, subject_lines, strict=True))
+        else:
+            subjects = {}
+    else:
+        known = {}
+        for _, _, sha in occurrences:
+            if sha not in known:
+                known[sha] = resolve(sha)
+        subjects = {}
+
+    findings: list[str] = []
+    for document, number, sha in occurrences:
+        if known[sha] is False:
+            subject = subjects.get(sha, "")
+            findings.append(
+                f"{document.relative_to(root).as_posix()}:{number}: "
+                f"{sha[:12]} is not reachable from {reference} ({subject[:60]})"
+            )
     return findings
 
 

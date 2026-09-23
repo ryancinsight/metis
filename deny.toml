@@ -41,10 +41,13 @@ unknown-registry = "deny"
 unknown-git = "deny"
 allow-registry = ["https://github.com/rust-lang/crates.io-index"]
 allow-git = [
+    "https://github.com/ryancinsight/aequitas",
     "https://github.com/ryancinsight/apollo",
     "https://github.com/ryancinsight/consus.git",
     "https://github.com/ryancinsight/eunomia",
+    "https://github.com/ryancinsight/gaia",
     "https://github.com/ryancinsight/iris",
+    "https://github.com/ryancinsight/leto.git",
     "https://github.com/ryancinsight/melinoe.git",
     "https://github.com/ryancinsight/Mnemosyne.git",
     "https://github.com/ryancinsight/Moirai.git",

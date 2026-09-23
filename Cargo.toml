@@ -41,6 +41,11 @@ flate2 = "1.1.10"
 jpeg-encoder = "0.7.1"
 consus-raster = { git = "https://github.com/ryancinsight/consus.git", version = "0.1" }
 iris = { package = "iris-viz", git = "https://github.com/ryancinsight/iris", version = "0.1" }
+eunomia = { git = "https://github.com/ryancinsight/eunomia", version = "0.8.0", default-features = false }
+# Git plus version, matching the sibling entries below: the package is named
+# `gaia-mesh` but its import path is `gaia`. The mesh viewer renders with gaia's
+# software rasteriser rather than a second one here.
+gaia = { package = "gaia-mesh", git = "https://github.com/ryancinsight/gaia", version = "0.5.0", default-features = false }
 # Git plus version keeps the consumer on the public Moirai default branch
 # during development; Cargo.lock records the exact audited revision.
 moirai-core = { git = "https://github.com/ryancinsight/Moirai.git", version = "0.6", default-features = false, features = ["std"] }
@@ -58,8 +63,10 @@ metis-backend = { path = "crates/metis-backend", version = "0.1.0" }
 metis-frontend = { path = "crates/metis-frontend", version = "0.1.0" }
 metis-web = { path = "crates/metis-web", version = "0.1.0" }
 pyo3 = { version = "0.29.2", default-features = false }
+criterion = { version = "0.8.2", default-features = false, features = ["cargo_bench_support"] }
 
 [dev-dependencies]
+gaia.workspace = true
 iris.workspace = true
 moirai-core.workspace = true
 moirai-executor.workspace = true

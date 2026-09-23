@@ -123,7 +123,7 @@ impl Parser<'_> {
                 return Ok(element);
             }
             let node = if self.starts_with("<") {
-                DomNode::Element(self.parse_element(depth + 1)?)
+                DomNode::Element(Box::new(self.parse_element(depth + 1)?))
             } else {
                 let start = self.pos;
                 self.advance_until('<');

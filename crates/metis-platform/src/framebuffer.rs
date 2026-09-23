@@ -135,6 +135,90 @@ impl Rect {
     }
 }
 
+/// Alpha denominator when the destination is opaque: `255 * 255`.
+const OPAQUE_ALPHA: u32 = 255 * 255;
+
+/// Source-over terms that depend only on the source color.
+///
+/// Compositing a span shares one set of these terms, so the per-source
+/// multiplications leave the pixel loop while the arithmetic and its rounding
+/// stay identical to compositing each pixel on its own.
+#[derive(Debug, Clone, Copy)]
+pub(crate) struct SourceOver {
+    packed: u32,
+    alpha: u32,
+    inverse_alpha: u32,
+    numerators: [u32; 3],
+}
+
+impl SourceOver {
+    /// Precomputes the terms for one straight RGBA source color.
+    pub(crate) fn new(src: Color) -> Self {
+        let alpha = u32::from(src.a);
+        let scaled = alpha * 255;
+        Self {
+            packed: pack_color(src),
+            alpha,
+            inverse_alpha: 255 - alpha,
+            numerators: [
+                u32::from(src.r) * scaled,
+                u32::from(src.g) * scaled,
+                u32::from(src.b) * scaled,
+            ],
+        }
+    }
+
+    /// Reports a source that leaves the destination unchanged.
+    pub(crate) const fn is_transparent(self) -> bool {
+        self.alpha == 0
+    }
+
+    /// Reports a source that replaces the destination outright.
+    pub(crate) const fn is_opaque(self) -> bool {
+        self.alpha == 255
+    }
+
+    /// The packed replacement value for an opaque source.
+    pub(crate) const fn packed(self) -> u32 {
+        self.packed
+    }
+
+    /// Composites this source over one packed destination pixel.
+    ///
+    /// An opaque destination fixes the alpha denominator at `255 * 255`, so
+    /// that case divides by a constant the compiler reduces to a multiply and
+    /// shift. Both arms evaluate the same expression and agree channel for
+    /// channel; the differential rasterizer test asserts it.
+    pub(crate) fn apply(self, dst: u32) -> u32 {
+        let dst = unpack_color(dst);
+        if dst.a == 255 {
+            let dest_weight = self.inverse_alpha * 255;
+            let channel = |numerator: u32, dest: u8| {
+                normalized_channel(
+                    (numerator + u32::from(dest) * dest_weight + OPAQUE_ALPHA / 2) / OPAQUE_ALPHA,
+                )
+            };
+            return pack_color(Color::rgba(
+                channel(self.numerators[0], dst.r),
+                channel(self.numerators[1], dst.g),
+                channel(self.numerators[2], dst.b),
+                255,
+            ));
+        }
+        let dest_weight = u32::from(dst.a) * self.inverse_alpha;
+        let alpha = self.alpha * 255 + dest_weight;
+        let channel = |numerator: u32, dest: u8| {
+            normalized_channel((numerator + u32::from(dest) * dest_weight + alpha / 2) / alpha)
+        };
+        pack_color(Color::rgba(
+            channel(self.numerators[0], dst.r),
+            channel(self.numerators[1], dst.g),
+            channel(self.numerators[2], dst.b),
+            normalized_channel((alpha + 127) / 255),
+        ))
+    }
+}
+
 /// Packed ARGB storage with immutable dimensions and checked allocation.
 #[derive(Debug, Clone)]
 pub struct Framebuffer {
@@ -190,6 +274,18 @@ impl Framebuffer {
         &self.pixels
     }
 
+    /// Mutable view of the same contiguous storage.
+    ///
+    /// A whole-frame producer — a software renderer writing every pixel — can
+    /// then fill this buffer directly instead of rendering into a scratch
+    /// buffer and copying per pixel through [`Self::set_pixel`], which would
+    /// cost one bounds-checked call and one clip test per pixel. Dimensions are
+    /// not reachable from this view, so a caller cannot resize the buffer
+    /// underneath the surface; only the pixel values can change.
+    pub fn pixels_mut(&mut self) -> &mut [u32] {
+        &mut self.pixels
+    }
+
     /// Replaces every pixel with the supplied straight RGBA color.
     pub fn clear(&mut self, color: Color) {
         self.pixels.fill(pack_color(color));
@@ -215,28 +311,45 @@ impl Framebuffer {
     ///
     /// The output alpha numerator is `sa * 255 + da * (255 - sa)`.
     /// Each color numerator includes destination alpha before normalization.
+    /// Span filling shares this arithmetic through the same precomputed
+    /// source terms, so a single pixel and a filled run composite identically.
     pub fn blend_pixel(&mut self, x: i32, y: i32, src: Color) {
         let Some(index) = self.index(x, y) else {
             return;
         };
-        if src.a == 0 {
+        let source = SourceOver::new(src);
+        if source.is_transparent() {
             return;
         }
-        let dst = unpack_color(self.pixels[index]);
-        let source_alpha = u32::from(src.a);
-        let dest_weight = u32::from(dst.a) * (255 - source_alpha);
-        let alpha = source_alpha * 255 + dest_weight;
-        let channel = |source, dest| {
-            let numerator = u32::from(source) * source_alpha * 255 + u32::from(dest) * dest_weight;
-            normalized_channel((numerator + alpha / 2) / alpha)
-        };
-        let opacity = normalized_channel((alpha + 127) / 255);
-        self.pixels[index] = pack_color(Color::rgba(
-            channel(src.r, dst.r),
-            channel(src.g, dst.g),
-            channel(src.b, dst.b),
-            opacity,
-        ));
+        self.pixels[index] = source.apply(self.pixels[index]);
+    }
+
+    /// Borrows the visible pixels of row `y` between the `left` and `right`
+    /// column bounds.
+    ///
+    /// Bounds outside the surface yield an empty slice, so a caller traverses
+    /// only visible work and the pixel loop needs no per-pixel bounds test.
+    pub(crate) fn row_span_mut(&mut self, y: u32, left: u32, right: u32) -> &mut [u32] {
+        if y >= self.height {
+            return &mut [];
+        }
+        let left = left.min(self.width);
+        let right = right.min(self.width);
+        if right <= left {
+            return &mut [];
+        }
+        let fits = "invariant: bounded framebuffer offsets fit usize";
+        let stride = usize::try_from(self.width).expect(fits);
+        let start = usize::try_from(y).expect(fits) * stride + usize::try_from(left).expect(fits);
+        let end = start + usize::try_from(right - left).expect(fits);
+        &mut self.pixels[start..end]
+    }
+
+    /// Composites one precomputed source over the visible part of a row span.
+    pub(crate) fn composite_span(&mut self, y: u32, left: u32, right: u32, source: SourceOver) {
+        for pixel in self.row_span_mut(y, left, right) {
+            *pixel = source.apply(*pixel);
+        }
     }
 
     /// Reads a pixel, returning transparent black for clipped coordinates.

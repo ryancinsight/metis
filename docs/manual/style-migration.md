@@ -25,11 +25,13 @@ let style = ComputedStyle::parse("display: flex; flex-direction: column; padding
 Unknown properties, missing `:`, empty values, invalid enum values, malformed
 pixel or percentage dimensions, negative spacing, malformed edge lists,
 invalid hex colors all return `ErrorCode::InvalidCssStyle`. An empty style and a
-trailing semicolon are valid. Alignment, minimum-size, font-weight and radius
-declarations are rejected because the software renderer has no semantics for
-them. The same diagnostic is returned for those fields on programmatically
-constructed DOMs during layout. Use the browser HTML5/CSS path when selectors,
-inheritance or full CSS layout are required.
+trailing semicolon are valid. Every admitted property is painted, including
+`justify-content`, `align-items`, `min-width`, `min-height`, `font-weight`
+(`normal`/`400` and `bold`/`700`), `border-radius` and `box-shadow`. The
+shadow subset is one outer shadow, `none` or `<x> <y> [<blur>] <color>`;
+`inset`, a spread distance and comma-separated lists are rejected with the
+same error. Use the browser HTML5/CSS path when selectors, inheritance or full
+CSS layout are required.
 
 `parse_markup` already propagates the same error while constructing an element,
 so markup callers continue to use their existing `Result` boundary:

@@ -1,4 +1,6 @@
+use metis_platform::rasterizer::CornerRadius;
 use metis_platform::{Color, Framebuffer, Rect, draw_rect_outline, draw_text, fill_rect};
+use metis_platform::{GlyphWeight, TextStyle};
 use metis_ui_lang::asset::AssetErrorKind;
 use metis_ui_lang::{ImagePlacement, ImageTransform, RasterImage};
 use std::{error::Error, io};
@@ -154,8 +156,7 @@ pub(super) fn render(frame: &mut Framebuffer) -> Result<(), Box<dyn Error>> {
         18,
         302,
         "NATIVE JPEG/EXIF: ALL 8 ORIENTATIONS NORMALIZED",
-        TEXT,
-        2,
+        TextStyle::new(TEXT, 2).with_weight(GlyphWeight::Regular),
     );
 
     for (index, label) in LABELS.into_iter().enumerate() {
@@ -189,8 +190,7 @@ fn render_precision_samples(frame: &mut Framebuffer) -> Result<(), Box<dyn Error
         18,
         234,
         "NATIVE JPEG: 12-BIT DISPLAY PRECISION",
-        TEXT,
-        1,
+        TextStyle::new(TEXT, 1).with_weight(GlyphWeight::Regular),
     );
     for (label, image, bounds, destination, expected) in [
         (
@@ -221,7 +221,13 @@ pub(super) fn render_sample(
     expected_destination: Rect,
     expected_corners: [Color; 2],
 ) -> Result<(), Box<dyn Error>> {
-    draw_text(frame, bounds.x, bounds.y - 18, label, TEXT, 1);
+    draw_text(
+        frame,
+        bounds.x,
+        bounds.y - 18,
+        label,
+        TextStyle::new(TEXT, 1).with_weight(GlyphWeight::Regular),
+    );
     draw_rect_outline(
         frame,
         Rect::new(
@@ -231,9 +237,10 @@ pub(super) fn render_sample(
             bounds.height + 2,
         ),
         1,
+        CornerRadius::SQUARE,
         OUTLINE,
     );
-    fill_rect(frame, bounds, PANEL_BACKGROUND);
+    fill_rect(frame, bounds, CornerRadius::SQUARE, PANEL_BACKGROUND);
     let placement = ImagePlacement::contain(image, bounds, ImageTransform::Identity)?;
     assert_eq!(placement.destination(), expected_destination);
     placement.render_to(frame);
@@ -295,7 +302,13 @@ fn render_orientation(
         PANEL_WIDTH,
         PANEL_HEIGHT,
     );
-    draw_text(frame, bounds.x, bounds.y - 16, label, TEXT, 1);
+    draw_text(
+        frame,
+        bounds.x,
+        bounds.y - 16,
+        label,
+        TextStyle::new(TEXT, 1).with_weight(GlyphWeight::Regular),
+    );
     draw_rect_outline(
         frame,
         Rect::new(
@@ -305,9 +318,10 @@ fn render_orientation(
             bounds.height + 2,
         ),
         1,
+        CornerRadius::SQUARE,
         OUTLINE,
     );
-    fill_rect(frame, bounds, PANEL_BACKGROUND);
+    fill_rect(frame, bounds, CornerRadius::SQUARE, PANEL_BACKGROUND);
 
     let placement = ImagePlacement::contain(image.clone(), bounds, ImageTransform::Identity)?;
     let expected_destination = if orientation >= 5 {
