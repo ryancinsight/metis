@@ -60,7 +60,7 @@
 
 <a id="METIS-FORM-LABELS-001"></a>
 ## METIS-FORM-LABELS-001 — Drop bracket decoration from control labels [patch]
-- Status: todo; priority: P3; owner: Metis presentation; dependencies: METIS-FORM-STYLING-001; risk: accessibility oracle drift
+- Status: done; priority: P3; owner: Metis presentation; integrator: root; last-update: 2026-09-23; dependencies: none; risk: accessibility oracle drift; delivery: [PR #374](https://github.com/ryancinsight/metis/pull/374)
 - Outcome: control labels read as words rather than ASCII button art, now that the control itself carries the affordance.
 - Blocker-shaped detail: `[ SUBMIT CALCULATION TO BACKEND ]`, `[ COMMANDS ]` and the uppercase menu labels are asserted in `crates/metis-app/src/frontend/native.rs`, `scripts/python_native_accessibility.py`, the native semantic baseline and the manual, so the change is a coordinated rename across those oracles rather than a markup edit.
 

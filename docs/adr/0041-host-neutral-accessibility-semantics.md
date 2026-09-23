@@ -6,6 +6,15 @@ Date: 2026-09-20
 
 Driver: [METIS-A11Y-001](../../backlog.md#METIS-A11Y-001).
 
+Revision: 2026-09-23 — [METIS-FORM-LABELS-001](../../backlog.md#METIS-FORM-LABELS-001)
+renames the control labels from bracketed capitals (`[ COMMANDS ]`,
+`[ SUBMIT CALCULATION TO BACKEND ]`) to sentence case (`Commands`,
+`Submit calculation`), matching the browser host. The regenerated specimen
+keeps its 34 elements, roles, states and actions; only the names change. It is
+now 16,246 bytes with SHA-256
+`75b6c507df5cb1fb9619f837b169e409858eb668236a7b49e85cc35704968eab`; the dated
+evidence below records the earlier specimen.
+
 ## Decision
 
 `metis-ui-lang` derives a bounded `SemanticTree` from every declarative
