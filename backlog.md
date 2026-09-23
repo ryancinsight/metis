@@ -1,40 +1,14 @@
-<a id="METIS-CONFORMANCE-REGROWTH-2026-09-21"></a>
-## METIS-CONFORMANCE-REGROWTH-2026-09-21 — restore structural debt guard [patch]
-- Status: done; priority: P1; owner: Metis integration; integrator: root; last-update: 2026-09-21; delivery: [PR #322](https://github.com/ryancinsight/metis/pull/322), [PR #324](https://github.com/ryancinsight/metis/pull/324).
-- Outcome: the live Metis scan reports zero `oversized_files` and zero `type_suffixed_fns`, and the pull-request workflow calls Atlas's pinned conformance guard against the member baseline.
-- Delivery scope: split the canonical event/layout/http test modules, consolidate type-named helpers, update affected docs, retain exact visual evidence under the artifact budget, and enforce the debt baseline on future pull requests.
-- Oracle: `atlas-conformance.py check --repo metis --member-path .` exits 0 on this tree; the workflow guard is pinned to Atlas `28c44b703681970d64dfde0a18aaa30ff877490c`.
-
-<a id="METIS-CONFORMANCE-GUARD-PIN-2026-09-21"></a>
-## METIS-CONFORMANCE-GUARD-PIN-2026-09-21 — advance the Atlas conformance guard [patch] — done
-- Status: done; priority: P1; owner: Metis integration; integrator: root; last-update: 2026-09-21; delivery: [PR #331](https://github.com/ryancinsight/metis/pull/331), merge `5e283127fc54be907917c7cae69791eecc6f4043`.
-- Scope: the reusable conformance workflow reference and the matching structural oracle; no debt baseline changes.
-- The merged scanner exposed one real `oversized_files` regression in `crates/metis-cli/src/build.rs`; the Cargo-artifact selection family now has its own module, preserving behavior while bringing both source files below the 500-line threshold.
-- Acceptance: the workflow invokes Atlas `28c44b703681970d64dfde0a18aaa30ff877490c`; the exact main verification reports no member ratchet regressions; docs and citations name the merged revision.
-- Basis: Metis main run `35648844306` failed only because Atlas `02a304f519c27b95169b87b732e6e631d51c205d` scanned its `_atlas` workflow checkout as member source (`oversized_files 0 -> 3`, `manifest_implementation 0 -> 2`, `existence_only_assertions 0 -> 4`).
-- Outcome: PR #331 advanced the workflow and source split; the exact full verifier passed 27 stages with 192 resolved packages, the intentional capture-failure negative oracle, and the merged Atlas scanner reporting zero regressions and zero host-state rows.
-
-<a id="METIS-RASTER-SHADOW-001"></a>
-## METIS-RASTER-SHADOW-001 — Gaussian outer box shadows through layout [arch] [major]
-- Status: done; priority: P1; owner: Metis presentation; integrator: root; last-update: 2026-09-22; dependencies: METIS-RASTER-ROUND-002; risk: paint cost on elevated surfaces; delivery: [PR #370](https://github.com/ryancinsight/metis/pull/370)
-- Evidence: [Gaussian box shadows](docs/VERIFICATION.md#gaussian-box-shadows--2026-09-22); `fill/elevated_card_stack` 2.49 ms for eight elevated cards on the pinned cores. An independent review failed the first form at a one-pixel blur and on scratch memory; both fixed with the review's cases committed.
-- Outcome: raised surfaces cast a soft shadow, so cards, the header, the command menu and controls read as layered rather than flat.
-- Scope: `BoxShadow` and `draw_box_shadow` in `metis-platform`; `box-shadow` in the style subset; `DisplayCommand::DrawShadow` below the background; the demo form's elevation and regenerated captures. `DomNode::Element` boxes its element, which the larger computed style required.
-- Oracle: CSS Backgrounds 3 section 6.1: a Gaussian of standard deviation blur/2 within 5% per pixel, cast from the border box and clipped inside it, painted below the background. Straight edges match the closed form; corners stay within 5% of a continuous reference; the region decomposition matches a naive 2D convolution; zero blur equals the offset fill ([ADR 0046](docs/adr/0046-gaussian-box-shadows.md)).
-- Non-goals: `inset`, spread distance, shadow lists.
-
-<a id="METIS-TYPOGRAPHY-TRUETYPE-001"></a>
-## METIS-TYPOGRAPHY-TRUETYPE-001 — Antialiased TrueType text [arch] [major]
-- Status: done; priority: P1; owner: Metis presentation; integrator: root; last-update: 2026-09-22; dependencies: none; risk: text metrics move every layout and capture; delivery: [PR #372](https://github.com/ryancinsight/metis/pull/372)
-- Evidence: [Antialiased TrueType text](docs/VERIFICATION.md#antialiased-truetype-text--2026-09-22); an independent review failed the first form on composite overlaps and ink bounds, both fixed with the review's cases committed.
-- Outcome: text is proportional, antialiased and sized in pixels per em, so headings, labels and body text read as typography instead of one scaled bitmap cell.
-- Scope: a TrueType parser and exact-area rasterizer in `metis-platform::typeface`; Atkinson Hyperlegible Regular and Bold (SIL OFL 1.1) embedded; layout measuring runs by glyph advances; the bitmap font deleted with every consumer migrated; captures regenerated.
-- Oracle: glyph ids, advances and outline areas match fontTools; coverage equals polygon area; malformed fonts are typed errors; runs stay inside their measured boxes ([ADR 0047](docs/adr/0047-truetype-text.md)).
-- Non-goals: hinting, kerning, shaping, glyph caching.
+<a id="METIS-RASTER-GRADIENT-001"></a>
+## METIS-RASTER-GRADIENT-001 — Linear gradient backgrounds through layout [arch] [minor]
+- Status: in-progress; priority: P1; owner: Metis presentation; integrator: root; last-update: 2026-09-23; dependencies: none; risk: banding and per-pixel paint cost on large surfaces
+- Outcome: surfaces can carry a directional color ramp, so the header and primary controls read as lit rather than flat fills.
+- Scope: `LinearGradient` and `fill_gradient` in `metis-platform` sharing the rounded-shape scanline through a paint abstraction; `background`/`background-image: linear-gradient(...)` in the style subset; `DisplayCommand::FillGradient` above the background color; the demo form and regenerated captures.
+- Oracle: CSS Images 3 sections 3.1 and 3.4: angle convention, gradient-line length `abs(W sin A) + abs(H cos A)`, stop fixup, premultiplied interpolation and end clamping match closed forms; an all-equal-stop gradient equals `fill_rect` bitwise including rounded corners.
+- Non-goals: radial and conic gradients, color hints, length stop positions, corner keywords, repeating gradients.
 
 <a id="METIS-VISUAL-CAPTURE-SIZE-001"></a>
 ## METIS-VISUAL-CAPTURE-SIZE-001 — Bound the committed capture encoding [patch]
-- Status: todo; priority: P2; owner: Metis verification; dependencies: METIS-RASTER-SHADOW-001; risk: repository growth per baseline refresh
+- Status: todo; priority: P2; owner: Metis verification; dependencies: none; risk: repository growth per baseline refresh
 - Finding: shadow gradients took each form capture SVG from 0.56 MB to about 1.2 MB, and antialiased text to about 2.1 MB (seven captures, about 15 MB per refresh), because the encoder emits one rectangle per color run. The Atlas artifact budget counts raster suffixes only, so the SVG captures are unmeasured against the 200 KB image budget.
 - Oracle: every committed capture stays under the image budget with pixel-identical decode, and the budget scan measures the capture format.
 
@@ -57,12 +31,6 @@
 - Scope: redistribute after child layout by translating each child's emitted commands, since a child paints while it is measured. Covers the four main-axis distributions and the four cross-axis alignments the style model already declares. No wrapping, no `space-around`/`space-evenly`, no per-item `align-self`.
 - Oracle: with no free space every child lands exactly where start alignment puts it, so existing captures are unchanged; a container with free space places children at the offsets each keyword defines; painter order is preserved; translation moves every command kind a child can emit, including text, strokes and images; `stretch` remains the default and a no-op.
 - Verification: focused and workspace `cargo clippy -D warnings`, `cargo nextest run`, `cargo doc`, and the visual baseline unchanged.
-
-<a id="METIS-FORM-LABELS-001"></a>
-## METIS-FORM-LABELS-001 — Drop bracket decoration from control labels [patch]
-- Status: done; priority: P3; owner: Metis presentation; integrator: root; last-update: 2026-09-23; dependencies: none; risk: accessibility oracle drift; delivery: [PR #374](https://github.com/ryancinsight/metis/pull/374)
-- Outcome: control labels read as words rather than ASCII button art, now that the control itself carries the affordance.
-- Blocker-shaped detail: `[ SUBMIT CALCULATION TO BACKEND ]`, `[ COMMANDS ]` and the uppercase menu labels are asserted in `crates/metis-app/src/frontend/native.rs`, `scripts/python_native_accessibility.py`, the native semantic baseline and the manual, so the change is a coordinated rename across those oracles rather than a markup edit.
 
 <a id="METIS-NATIVE-POPOVER-001"></a>
 ## METIS-NATIVE-POPOVER-001 — Anchor native command menus [minor]

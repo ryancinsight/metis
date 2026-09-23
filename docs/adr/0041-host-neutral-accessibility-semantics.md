@@ -6,7 +6,7 @@ Date: 2026-09-20
 
 Driver: [METIS-A11Y-001](../../backlog.md#METIS-A11Y-001).
 
-Revision: 2026-09-23 — [METIS-FORM-LABELS-001](../../backlog.md#METIS-FORM-LABELS-001)
+Revision: 2026-09-23 — [METIS-FORM-LABELS-001](https://github.com/ryancinsight/metis/pull/374)
 renames the control labels from bracketed capitals (`[ COMMANDS ]`,
 `[ SUBMIT CALCULATION TO BACKEND ]`) to sentence case (`Commands`,
 `Submit calculation`), matching the browser host. The regenerated specimen

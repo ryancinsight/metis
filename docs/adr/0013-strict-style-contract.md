@@ -44,7 +44,7 @@ rather than a reversal: the rejection exists to stop a declaration being
 silently dropped, so it lifts exactly when the renderer gains the semantics —
 one property at a time, each with the paint evidence that earns it.
 
-Revision: 2026-09-22 — [METIS-RASTER-SHADOW-001](../../backlog.md#METIS-RASTER-SHADOW-001)
+Revision: 2026-09-22 — [METIS-RASTER-SHADOW-001](https://github.com/ryancinsight/metis/pull/370)
 admits `box-shadow` for one outer shadow of two offsets, an optional blur and a
 color ([ADR 0046](0046-gaussian-box-shadows.md)). `inset`, a spread distance
 and comma-separated lists stay typed errors: the renderer has no semantics for

@@ -4,7 +4,7 @@ Status: Accepted
 
 Date: 2026-09-22
 
-Driver: [METIS-RASTER-SHADOW-001](../../backlog.md#METIS-RASTER-SHADOW-001).
+Driver: [METIS-RASTER-SHADOW-001](https://github.com/ryancinsight/metis/pull/370).
 
 ## Context
 
