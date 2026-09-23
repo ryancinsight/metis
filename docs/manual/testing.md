@@ -37,6 +37,26 @@ committed gallery baseline. A passing WASM build
 does not run a browser; use the browser workbench command below for that
 runtime evidence.
 
+### Visual test budget and citation checks
+
+The `visual-tests` stage in `scripts/verify.py` runs the full Python test suite
+under the committed 60-second process-tree limit. Citation validation used to
+launch Git separately for each cited revision. Commit `5e3ed7e` batches the
+reachability and object-type queries while preserving the revision and digest
+checks. On one Windows x86_64 host, the earlier reachability-only scan took
+22.905 seconds; the complete citation command, including digest checks, took
+0.490 seconds. The same host completed `visual-tests` in
+35.819 seconds: 343 tests, one skipped, within the unchanged limit. Focused
+browser-asset tests completed 15 tests in 0.205 seconds; capture-validation
+unit tests completed 22 tests in 18.217 seconds. The browser asset build passed;
+its release WASM compilation took 108 seconds. These are single-host
+observations, not new budgets.
+
+The capture comparator also checks that its recorded fixture digest matches
+the current renderer sources and lockfile. A stale digest fails the overall
+comparison even when the emitted images match; review the source changes and
+semantic and pixel diffs before updating a baseline.
+
 ## Inspect hosted verification
 
 The single [Metis verification workflow](../../.github/workflows/ci.yml) runs the
