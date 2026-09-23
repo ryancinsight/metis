@@ -6,7 +6,7 @@ use crate::style::{Color, Display, EdgeValues, Size};
 use metis_core::error::ErrorCode;
 use metis_platform::DisplayScale;
 use metis_platform::framebuffer::{Framebuffer, Rect};
-use metis_platform::rasterizer::{BoxShadow, CornerRadius};
+use metis_platform::rasterizer::{BoxShadow, CornerRadius, GradientStop, LinearGradient};
 use metis_platform::rasterizer::{LineCap, LineJoin, MAX_STROKE_POINTS, StrokeWidth};
 use metis_platform::typeface::GlyphWeight;
 
@@ -431,4 +431,54 @@ fn aligned_children_carry_their_shadow_with_them() {
         rects,
         [Rect::new(35, 15, 30, 10), Rect::new(35, 15, 30, 10)]
     );
+}
+
+#[test]
+fn background_gradient_paints_over_its_color_and_moves_with_its_box() {
+    let doc = parse_markup(
+        "<a style='width:100px;height:40px;justify-content:center;align-items:center'>         <b style='width:30px;height:10px;background-color:#fff;border-radius:4px;         background-image:linear-gradient(90deg, #000, #fff);border-width:1px;border-color:#123'/></a>",
+    )
+    .expect("markup");
+    let list = compute_layout(&doc, LayoutViewport::new(100, 40)).expect("layout");
+    let border_box = Rect::new(35, 15, 30, 10);
+    let radius = CornerRadius::clamped(4, border_box);
+    let painted: Vec<&DisplayCommand> = list
+        .commands
+        .iter()
+        .filter(|command| !matches!(command, DisplayCommand::ElementRect { .. }))
+        .collect();
+    let stops = [Color::BLACK, Color::WHITE].map(|color| GradientStop {
+        color,
+        position: None,
+    });
+    let gradient = LinearGradient::new(90.0, &stops).expect("two stops");
+    assert_eq!(
+        painted,
+        [
+            &DisplayCommand::FillRect {
+                rect: border_box,
+                radius,
+                color: Color::WHITE,
+            },
+            &DisplayCommand::FillGradient {
+                rect: border_box,
+                radius,
+                gradient,
+            },
+            &DisplayCommand::DrawBorder {
+                rect: border_box,
+                width: 1,
+                radius,
+                color: Color::rgb(0x11, 0x22, 0x33),
+            },
+        ]
+    );
+    // The ramp runs across the translated box: dark at its left edge, light
+    // at its right, and untouched outside it.
+    let mut fb = Framebuffer::new(100, 40).expect("surface");
+    fb.clear(Color::rgb(200, 0, 0));
+    list.render_to(&mut fb);
+    let (left, right) = (fb.get_pixel(37, 20), fb.get_pixel(62, 20));
+    assert!(left.g < 30 && right.g > 225, "{left:?} {right:?}");
+    assert_eq!(fb.get_pixel(33, 20), Color::rgb(200, 0, 0));
 }

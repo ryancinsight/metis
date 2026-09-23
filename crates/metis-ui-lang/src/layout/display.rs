@@ -1,11 +1,11 @@
 use crate::image::ImagePlacement;
 use crate::parser::limit_error;
-use crate::style::Color;
+use crate::style::{Color, LinearGradient};
 use metis_core::error::Result;
 use metis_platform::framebuffer::{Framebuffer, Rect};
 use metis_platform::rasterizer::{
     BoxShadow, CornerRadius, LineCap, LineJoin, MAX_STROKE_POINTS, StrokeWidth, draw_box_shadow,
-    draw_line, draw_polyline, draw_rect_outline, fill_rect,
+    draw_line, draw_polyline, draw_rect_outline, fill_gradient, fill_rect,
 };
 use metis_platform::typeface::{TextStyle, draw_text};
 
@@ -37,6 +37,15 @@ pub enum DisplayCommand {
         radius: CornerRadius,
         /// Straight RGBA color.
         color: Color,
+    },
+    /// Linear gradient across a rectangle, painted over its background color.
+    FillGradient {
+        /// Target rectangle, which is also the gradient box.
+        rect: Rect,
+        /// Corner rounding; [`CornerRadius::SQUARE`] keeps square corners.
+        radius: CornerRadius,
+        /// Direction and color stops.
+        gradient: LinearGradient,
     },
     /// Uniform inward border following the fill it encloses.
     DrawBorder {
@@ -116,6 +125,7 @@ impl DisplayCommand {
             Self::ElementRect { rect, .. }
             | Self::DrawShadow { rect, .. }
             | Self::FillRect { rect, .. }
+            | Self::FillGradient { rect, .. }
             | Self::DrawBorder { rect, .. } => shift_rect(rect),
             Self::DrawLine { start, end, .. } => {
                 *start = (shift(start.0, dx)?, shift(start.1, dy)?);
@@ -161,6 +171,11 @@ impl DisplayList {
                     radius,
                     color,
                 } => fill_rect(fb, *rect, *radius, *color),
+                DisplayCommand::FillGradient {
+                    rect,
+                    radius,
+                    gradient,
+                } => fill_gradient(fb, *rect, *radius, gradient),
                 DisplayCommand::DrawBorder {
                     rect,
                     width,
