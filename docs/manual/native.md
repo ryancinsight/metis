@@ -26,7 +26,10 @@ The result and audit sequence are painted by the same frontend state machine as
 the headless workflow. Resize the window to exercise framebuffer replacement;
 DPI, focus and close events are consumed by the host. **Escape** or the window
 close control ends the child cleanly. When the authored **Commands** menu is
-open, Escape closes that menu first; a second Escape closes the child. The
+open, it floats at the laid-out Commands button without moving the form.
+Clicking outside it or switching away from the window dismisses it; an outside
+click does not activate the underlying control. Escape closes that menu first;
+a second Escape closes the child. The
 toolbar's **Focus patient** command moves native input focus to the patient
 reference. Its menu also applies the bounded dark or system presentation theme;
 these actions mutate `FrontendApp` state and never cross the backend IPC seam.

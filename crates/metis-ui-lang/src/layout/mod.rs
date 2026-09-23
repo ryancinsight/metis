@@ -2,8 +2,9 @@
 //!
 //! Supports explicit, automatic and minimum sizes, margins, padding, flex
 //! alignment, rounded backgrounds and uniform borders, outer box shadows and
-//! text. Every declaration the style subset admits is painted; anything
-//! outside it is rejected when the style is parsed.
+//! text. A visible `popover-anchor` element leaves normal flow and paints after
+//! the document at its laid-out anchor. Every declaration the style subset
+//! admits is painted; anything outside it is rejected when the style is parsed.
 
 mod device;
 mod display;

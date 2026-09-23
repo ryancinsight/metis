@@ -45,7 +45,8 @@ def solid_svg(color="#000000", first_length=800):
 
 
 def semantics_fixture(name):
-    state = {"form": "idle", "form-success": "success", "form-edited": "idle",
+    state = {"form": "idle", "form-menu": "idle", "form-menu-dark": "idle",
+             "form-success": "success", "form-edited": "idle",
              "form-rejected": "rejected", "form-corrected": "success",
              "form-disconnected": "disconnected", "form-recovered": "success"}[name]
     observation = {"state": state}
@@ -219,6 +220,8 @@ class EvidenceTests(unittest.TestCase):
         # Recompare the same capture run after corruption: no begin_run call may
         # be needed to invalidate the second comparison's old success manifest.
         (self.output / "form.svg").unlink()
+        (self.output / "form-menu.csv").write_bytes(b"invalid semantic capture")
+        (self.output / "form-menu-dark.svg").write_bytes(solid_svg("#ffffff", 1))
         (self.output / "form-success.bmp").write_bytes(b"BM")
         wrong_pixels = bytearray((self.output / "form-edited.bmp").read_bytes())
         wrong_pixels[54] = 255
@@ -234,7 +237,7 @@ class EvidenceTests(unittest.TestCase):
         values["action"]["0"] = "different input trace"
         (self.output / "form-recovered.csv").write_bytes(encode_semantics(values))
         failed = self.report_failure()
-        self.assertEqual([item["status"] for item in failed["captures"].values()], ["failed"] * 7)
+        self.assertEqual([item["status"] for item in failed["captures"].values()], ["failed"] * len(visual.CAPTURES))
         self.assertIn("BMP and SVG pixels disagree", failed["captures"]["form-edited"]["errors"])
         self.assertEqual(failed["captures"]["form-rejected"]["semantic_diff"][0]["path"], "observed.error_code")
         self.assertTrue(any(item["path"] == "action.0" for item in failed["captures"]["form-recovered"]["semantic_diff"]))
@@ -275,7 +278,7 @@ class EvidenceTests(unittest.TestCase):
         source.write_bytes(b"// Changed source\n")
         failed = self.report_failure()
         self.assertEqual(failed["errors"], [f"Stale source provenance: {source}"])
-        self.assertEqual([item["errors"] for item in failed["captures"].values()], [[]] * 7)
+        self.assertEqual([item["errors"] for item in failed["captures"].values()], [[]] * len(visual.CAPTURES))
         self.assertFalse((self.output / "visual/latest/manifest.json").exists())
 
     def test_corrupt_baseline_hash_fails_with_equal_pixels(self):

@@ -9,7 +9,7 @@ use metis_platform::native::{
     run_native_application,
 };
 use metis_platform::{DisplayScale, Framebuffer, Rect};
-use metis_ui_lang::{Color as UiColor, DisplayCommand, LayoutViewport, compute_layout};
+use metis_ui_lang::{LayoutViewport, compute_layout};
 use std::io::{stdin, stdout};
 use std::time::Duration;
 
@@ -22,11 +22,6 @@ const MAX_PATIENT_ID_BYTES: usize = 128;
 const RETURN_KEY: u32 = 0x0d;
 const ESCAPE_KEY: u32 = 0x1b;
 const BACKSPACE_KEY: u32 = 0x08;
-const SUBMIT_LABEL: &str = "Submit calculation";
-const COMMANDS_LABEL: &str = "Commands";
-const FOCUS_PATIENT_LABEL: &str = "Focus patient";
-const THEME_DARK_LABEL: &str = "Dark theme";
-const THEME_SYSTEM_LABEL: &str = "System theme";
 
 /// Runs the visible Windows software-rendered form over the supervised pipe.
 pub(crate) fn run(inputs: [String; 3]) -> Result<(), Box<dyn std::error::Error>> {
@@ -100,6 +95,7 @@ impl<T: IpcTransport> NativeApplication for NativeForm<T> {
                 WindowEvent::FocusGained => self.focused = true,
                 WindowEvent::FocusLost => {
                     self.focused = false;
+                    repaint |= self.app.close_command_menu()?;
                     if self.app.composition().is_some() {
                         self.app.set_composition(None)?;
                         repaint = true;
@@ -180,22 +176,20 @@ impl<T: IpcTransport> NativeForm<T> {
             return Ok(true);
         }
         if self.app.command_menu_open() {
-            if command_rect(&self.app, FOCUS_PATIENT_LABEL)?.contains(x, y) {
-                self.app
-                    .activate_command(ApplicationCommand::FocusPatient)?;
-                self.focused = true;
-                return Ok(true);
-            }
-            if command_rect(&self.app, THEME_DARK_LABEL)?.contains(x, y) {
+            if command_rect(&self.app, "command-theme-dark")?.contains(x, y) {
                 self.app.activate_command(ApplicationCommand::ThemeDark)?;
                 return Ok(true);
             }
-            if command_rect(&self.app, THEME_SYSTEM_LABEL)?.contains(x, y) {
+            if command_rect(&self.app, "command-theme-system")?.contains(x, y) {
                 self.app.activate_command(ApplicationCommand::ThemeSystem)?;
                 return Ok(true);
             }
+            if command_rect(&self.app, "command-menu")?.contains(x, y) {
+                return Ok(false);
+            }
+            return self.app.close_command_menu();
         }
-        if command_rect(&self.app, FOCUS_PATIENT_LABEL)?.contains(x, y) {
+        if command_rect(&self.app, "command-focus-patient")?.contains(x, y) {
             self.app
                 .activate_command(ApplicationCommand::FocusPatient)?;
             self.focused = true;
@@ -421,50 +415,26 @@ fn validate_patient_value(value: &str) -> Result<()> {
 }
 
 fn submit_rect<T: IpcTransport>(app: &FrontendApp<T>) -> Result<Rect> {
-    command_rect(app, SUBMIT_LABEL)
+    command_rect(app, "btn-calc")
 }
 
 fn command_menu_toggle_rect<T: IpcTransport>(app: &FrontendApp<T>) -> Result<Rect> {
-    command_rect(app, COMMANDS_LABEL)
+    command_rect(app, "command-menu-toggle")
 }
 
-fn command_rect<T: IpcTransport>(app: &FrontendApp<T>, label: &str) -> Result<Rect> {
+fn command_rect<T: IpcTransport>(app: &FrontendApp<T>, id: &str) -> Result<Rect> {
     let width = i32::try_from(app.framebuffer().width()).map_err(|_| layout_error())?;
     let height = i32::try_from(app.framebuffer().height()).map_err(|_| layout_error())?;
     let display = compute_layout(
         app.document(),
         LayoutViewport::with_scale(width, height, app.display_scale()),
     )?;
-    let (label_x, label_y) = display
-        .commands
-        .iter()
-        .find_map(|command| match command {
-            DisplayCommand::DrawText { text, x, y, .. } if text == label => Some((*x, *y)),
-            _ => None,
-        })
-        .ok_or_else(|| {
-            MetisError::ui(
-                ErrorCode::MalformedMarkup,
-                format!("Authored form is missing command label {label}"),
-            )
-        })?;
-    display
-        .commands
-        .iter()
-        .find_map(|command| match command {
-            DisplayCommand::FillRect { rect, color, .. }
-                if *color == UiColor::BLUE && rect.contains(label_x, label_y) =>
-            {
-                Some(*rect)
-            }
-            _ => None,
-        })
-        .ok_or_else(|| {
-            MetisError::ui(
-                ErrorCode::MalformedMarkup,
-                format!("Authored form is missing command surface for {label}"),
-            )
-        })
+    display.element_rect(id).ok_or_else(|| {
+        MetisError::ui(
+            ErrorCode::MalformedMarkup,
+            format!("Authored form is missing command surface {id}"),
+        )
+    })
 }
 
 fn input_limit_error() -> MetisError {
