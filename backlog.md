@@ -1,10 +1,11 @@
 <a id="METIS-RASTER-GRADIENT-001"></a>
 ## METIS-RASTER-GRADIENT-001 — Linear gradient backgrounds through layout [arch] [minor]
-- Status: in-progress; priority: P1; owner: Metis presentation; integrator: root; last-update: 2026-09-23; dependencies: none; risk: banding and per-pixel paint cost on large surfaces
+- Status: review; priority: P1; owner: Metis presentation; integrator: root; last-update: 2026-09-23; dependencies: none; risk: banding and per-pixel paint cost on large surfaces; ADR: [0048](docs/adr/0048-linear-gradient-backgrounds.md)
+- Evidence: [Linear gradient backgrounds](docs/VERIFICATION.md#linear-gradient-backgrounds--2026-09-23); `fill/gradient_card_stack` 2.13–2.16 ms for eight diagonal-lit cards on one pinned P-core, down from 3.96 ms with library rounding.
 - Outcome: surfaces can carry a directional color ramp, so the header and primary controls read as lit rather than flat fills.
-- Scope: `LinearGradient` and `fill_gradient` in `metis-platform` sharing the rounded-shape scanline through a paint abstraction; `background`/`background-image: linear-gradient(...)` in the style subset; `DisplayCommand::FillGradient` above the background color; the demo form and regenerated captures.
-- Oracle: CSS Images 3 sections 3.1 and 3.4: angle convention, gradient-line length `abs(W sin A) + abs(H cos A)`, stop fixup, premultiplied interpolation and end clamping match closed forms; an all-equal-stop gradient equals `fill_rect` bitwise including rounded corners.
-- Non-goals: radial and conic gradients, color hints, length stop positions, corner keywords, repeating gradients.
+- Scope: `LinearGradient` and `fill_gradient` in `metis-platform` sharing the rounded-shape scanline through a paint abstraction; `background`/`background-image: linear-gradient(...)` in the style subset; `DisplayCommand::FillGradient` above the background color; the demo form, both theme palettes, legible status badge colors and regenerated captures.
+- Oracle: CSS Images 3 sections 3.1 and 3.4: angle convention, gradient-line length `abs(W sin A) + abs(H cos A)`, stop fixup, premultiplied interpolation and end clamping match closed forms; an all-equal-stop gradient equals `fill_rect` bitwise including rounded corners; themed fills keep white labels at 4.5:1.
+- Non-goals: radial and conic gradients, color hints, length stop positions, corner keywords, repeating gradients, dithering.
 
 <a id="METIS-VISUAL-CAPTURE-SIZE-001"></a>
 ## METIS-VISUAL-CAPTURE-SIZE-001 — Bound the committed capture encoding [patch]

@@ -10,7 +10,7 @@ impl ComputedStyle {
     ///
     /// The shorthand takes one layer, a hex color or a gradient, and resets
     /// the other, so a later `background` replaces an earlier color or
-    /// gradient (CSS Backgrounds 3 section 3.10).
+    /// gradient (CSS Backgrounds 3 section 2.10).
     pub(super) fn apply_background(&mut self, property: &str, value: &str) -> Result<()> {
         match property {
             "background-color" => self.background_color = Some(parse_color(property, value)?),

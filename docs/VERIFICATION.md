@@ -2472,6 +2472,35 @@ decision's protection actually lives. The bounded subset holds: `space-around`,
 `baseline` and bare `end` are typed errors rather than a silent fall back to
 the default.
 
+### Linear gradient backgrounds — 2026-09-23
+
+The software renderer paints `linear-gradient()` backgrounds
+([ADR 0048](adr/0048-linear-gradient-backgrounds.md)); the demo header and
+command controls use them in both themes.
+
+The oracle is CSS Images 3. The fraction along the gradient line at sampled
+pixel centers equals a direct transcription of section 3.1 within 1e-12 over
+48 angles and three box shapes, and the four corners of every box span exactly
+`[0, 1]`. The section 3.4.3 fixup resolves six stop lists as specified;
+interpolation is premultiplied (a transparent-to-red midpoint is
+`(255, 0, 0, 128)`) and clamps at both ends. Vertical and horizontal fills
+match the closed form per row and column, and a gradient whose stops share one
+color paints bitwise what `fill_rect` paints, rounded corners included.
+Replacing the gradient length with the box diagonal fails three of these tests.
+
+The theme tests hold white control labels to 4.5:1 over every sampled point
+of both themes' control and header fills, and both status badge colors to
+4.5:1 over both headers (WCAG 2.2, criterion 1.4.3). The previous green badge,
+`#38a169` at 3.7:1 on the header, fails the badge test. The theme's own badge
+color was dead state — each render overwrote it — and is deleted.
+
+`fill/gradient_card_stack`, eight 520 × 72 cards with the header ramp on the
+1280 × 800 surface, measured 3.96 ms with per-pixel `f64::round` and
+2.13–2.16 ms after replacing it with a truncating conversion, pinned to one
+P-core in alternating runs; `fill/card_stack`, `fill/rounded_card_stack` and
+`fill/elevated_card_stack` stayed within 2% in the same runs. The rounding
+change leaves every form capture pixel-identical.
+
 ### Control labels as words — 2026-09-23
 
 The five control labels read as words in sentence case — `Commands`, `Focus
