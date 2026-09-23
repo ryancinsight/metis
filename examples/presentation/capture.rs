@@ -219,52 +219,13 @@ fn write_framebuffer(
     framebuffer: &Framebuffer,
     name: &str,
 ) -> Result<(), Box<dyn std::error::Error>> {
-    let width = framebuffer.width();
-    let height = framebuffer.height();
-    let pixels = framebuffer.pixels();
-    let mut bitmap = std::io::BufWriter::new(std::fs::File::create(format!("output/{name}.bmp"))?);
-    // BITMAPFILEHEADER followed by 40-byte BITMAPINFOHEADER, 32-bit BI_RGB.
-    let image_size = width * height * 4;
-    bitmap.write_all(b"BM")?;
-    bitmap.write_all(&(54 + image_size).to_le_bytes())?;
-    bitmap.write_all(&[0; 4])?;
-    bitmap.write_all(&54_u32.to_le_bytes())?;
-    bitmap.write_all(&40_u32.to_le_bytes())?;
-    bitmap.write_all(&width.to_le_bytes())?;
-    bitmap.write_all(&height.to_le_bytes())?;
-    bitmap.write_all(&1_u16.to_le_bytes())?;
-    bitmap.write_all(&32_u16.to_le_bytes())?;
-    bitmap.write_all(&0_u32.to_le_bytes())?;
-    bitmap.write_all(&image_size.to_le_bytes())?;
-    bitmap.write_all(&[0; 16])?;
-    for row in pixels.chunks_exact(usize::try_from(width)?).rev() {
-        for pixel in row {
-            bitmap.write_all(&pixel.to_le_bytes())?;
-        }
-    }
-    bitmap.flush()?;
-    let mut snapshot =
-        std::io::BufWriter::new(std::fs::File::create(format!("output/{name}.svg"))?);
-    writeln!(
-        snapshot,
-        "<svg xmlns=\"http://www.w3.org/2000/svg\" width=\"{width}\" height=\"{height}\" viewBox=\"0 0 {width} {height}\" shape-rendering=\"crispEdges\">"
+    std::fs::write(
+        format!("output/{name}.bmp"),
+        crate::framebuffer_artifacts::bmp_bytes(framebuffer)?,
     )?;
-    writeln!(snapshot, "<title>Metis form software framebuffer</title>")?;
-    // Encode the actual raster as horizontal runs; no text or layout is rebuilt.
-    for (y, row) in pixels.chunks_exact(usize::try_from(width)?).enumerate() {
-        let mut x = 0;
-        while let Some(&pixel) = row.get(x) {
-            let length = row[x..].iter().take_while(|&&next| next == pixel).count();
-            let [alpha, red, green, blue] = pixel.to_be_bytes();
-            writeln!(
-                snapshot,
-                "<path fill=\"#{red:02x}{green:02x}{blue:02x}\" fill-opacity=\"{}\" d=\"M{x} {y}h{length}v1H{x}z\"/>",
-                f64::from(alpha) / 255.0
-            )?;
-            x += length;
-        }
-    }
-    writeln!(snapshot, "</svg>")?;
-    snapshot.flush()?;
+    std::fs::write(
+        format!("output/{name}.png"),
+        crate::framebuffer_artifacts::png_bytes(framebuffer)?,
+    )?;
     Ok(())
 }

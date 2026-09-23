@@ -139,7 +139,7 @@ checksum = "330a5ed07fa54e4702c9d6c4174f74427fc0ef6e214bbd677ae50a5099946470"
 [[package]]
 name = "apollo-dctdst-core"
 version = "0.16.0"
-source = "git+https://github.com/ryancinsight/apollo#5a2895f9511a5342f26a4fb70fed0c3dbdcdf2df"
+source = "git+https://github.com/ryancinsight/apollo#9694add9de88bb61e0c315a5c3f540aa6184a2f8"
 dependencies = [
  "eunomia",
 ]
@@ -217,6 +217,12 @@ dependencies = [
  "quote",
  "syn 3.0.6",
 ]
+
+[[package]]
+name = "byteorder"
+version = "1.5.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "1fd0f2584146f6f2ef48085050886acf353beff7305ebd1ae69500e27c67f64b"
 
 [[package]]
 name = "bytes"
@@ -340,9 +346,29 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "c2459377285ad874054d797f3ccebf984978aa39129f6eafde5cdc8315b612f8"
 
 [[package]]
+name = "consus-compression"
+version = "0.1.0"
+source = "git+https://github.com/ryancinsight/consus.git#6f93718bed973932b9ab8b0929d8e0df119a0768"
+dependencies = [
+ "byteorder",
+ "consus-core",
+ "flate2",
+]
+
+[[package]]
+name = "consus-core"
+version = "0.1.0"
+source = "git+https://github.com/ryancinsight/consus.git#6f93718bed973932b9ab8b0929d8e0df119a0768"
+dependencies = [
+ "byteorder",
+ "smallvec",
+ "zerocopy",
+]
+
+[[package]]
 name = "consus-raster"
 version = "0.1.0"
-source = "git+https://github.com/ryancinsight/consus.git#179b0f1a5d749d5d89b094962363b253a2d6a692"
+source = "git+https://github.com/ryancinsight/consus.git#6f93718bed973932b9ab8b0929d8e0df119a0768"
 dependencies = [
  "apollo-dctdst-core",
  "jpeg-encoder",
@@ -1027,6 +1053,7 @@ checksum = "cf8baf1c55e62ffcace7a9f06f4bd9cd3f0c4beb022d3b367256b91b87513d98"
 name = "metis"
 version = "0.1.0"
 dependencies = [
+ "consus-compression",
  "gaia-mesh",
  "iris-viz",
  "metis-backend",

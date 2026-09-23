@@ -207,7 +207,7 @@ their real wire boundaries. These checks establish ownership and build
 closure, not universal side-channel timing or Tauri security superiority.
 
 Open the [application gallery](applications.md) for the committed image, or
-inspect `output/form*.bmp` and `output/form*.svg` produced by this run. The SVG
+inspect `output/form*.bmp` and `output/form*.png` produced by this run. The PNG
 encodes the same raster pixels; it is not a second layout implementation.
 
 ## Read the current form
@@ -234,7 +234,7 @@ Review the changed image and source together. A missing label, clipped control,
 wrong value or stale result must be fixed in the application; accepting a new
 snapshot does not make it correct. Read `output/visual/latest/report.json` for
 each scenario's semantic differences, changed pixel count and difference bounds.
-Its neighboring `*-expected.svg`, `*-actual.svg` and `*-difference.svg` files
+Its neighboring `*-expected.png`, `*-actual.png` and `*-difference.png` files
 show the compared images and a red-on-black mask of changed pixels.
 `manifest.json` exists only for an accepted visual run. The next gate run rotates
 these known artifacts to `output/visual/previous/`, retaining one previous run.

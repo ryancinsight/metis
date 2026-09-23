@@ -66,7 +66,7 @@ provider that owns those bytes.
 destinations, asymmetric nearest-neighbor scaling, clipping, painter order and
 alpha-over-background values. `examples/image.rs` renders a 3×2 fixture into a
 240×180 framebuffer, asserts the source colors and untouched background, and
-writes SVG/BMP artifacts under `output/`. The reviewed SVG is committed in
+writes PNG/BMP artifacts under `output/`. The reviewed PNG is committed in
 `docs/manual/images/`, and the visual gate compares it exactly beside the
 existing form captures. The public API
 check passes with `cargo semver-checks check-release --workspace

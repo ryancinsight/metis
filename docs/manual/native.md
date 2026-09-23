@@ -337,14 +337,16 @@ checksums and representative ARGB values. The example validates the event and
 presentation sequence before writing, then reads the trace back byte-for-byte.
 
 The example generates a transient `native-host-frame.bmp`; the repository
-retains the exact SVG representation of the final framebuffer supplied to the
+retains the exact PNG encoding of the final framebuffer supplied to the
 real host. The example decodes the
 written bitmap and compares every row-major ARGB pixel to that presented
-frame; the SVG is also read back byte-for-byte. The image contains the
+frame; the PNG is also read back byte-for-byte. The image contains the
 software framebuffer only, so operating-system chrome cannot obscure the
-rendered pixels:
+rendered pixels. It shows the current renderer's final frame, while the trace
+above stays pinned to its reviewed revision, so the trace checksums predate
+the TrueType text in the image:
 
-![Format-neutral Metis native host frame](images/native-host-frame.svg)
+![Format-neutral Metis native host frame](images/native-host-frame.png)
 
 ### Capture a complete native application window
 

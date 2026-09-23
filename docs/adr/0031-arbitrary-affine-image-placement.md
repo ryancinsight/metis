@@ -57,6 +57,6 @@ parity.
 with clipped output, and all invalid coefficient classes. They assert exact
 pixel values and preserve the source storage address. The `image` example
 renders identity, quarter-turn and affine shear placements from one shared
-3×2 source and emits the inspected BMP/SVG artifact. Focused strict Clippy,
+3×2 source and emits the inspected BMP/PNG artifact. Focused strict Clippy,
 formatting and nextest runs plus the full locked Metis gate provide the
 revision-bound verification.

@@ -209,8 +209,8 @@ fn write_expected_frame(frame: &Framebuffer) -> io::Result<()> {
         framebuffer_artifacts::bmp_bytes(frame)?,
     )?;
     std::fs::write(
-        output.join("expected-frame.svg"),
-        framebuffer_artifacts::svg_text(frame)?,
+        output.join("expected-frame.png"),
+        framebuffer_artifacts::png_bytes(frame)?,
     )?;
     Ok(())
 }

@@ -5,6 +5,8 @@ use metis_frontend::{FormState, FrontendApp};
 use metis_ipc::{server::IpcServer, transport::MemoryTransport};
 #[path = "presentation/capture.rs"]
 mod capture;
+#[path = "support/framebuffer.rs"]
+mod framebuffer_artifacts;
 use capture::{Oracle, capture, comparator_probes};
 
 use moirai_core::TaskSpawner;

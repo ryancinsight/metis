@@ -39,6 +39,7 @@ unicode-segmentation = "1.13.3"
 png = "0.18.1"
 flate2 = "1.1.10"
 jpeg-encoder = "0.7.1"
+consus-compression = { git = "https://github.com/ryancinsight/consus.git", version = "0.1" }
 consus-raster = { git = "https://github.com/ryancinsight/consus.git", version = "0.1" }
 iris = { package = "iris-viz", git = "https://github.com/ryancinsight/iris", version = "0.1" }
 eunomia = { git = "https://github.com/ryancinsight/eunomia", version = "0.8.0", default-features = false }
@@ -77,6 +78,7 @@ metis-ui-lang = { workspace = true }
 metis-platform = { workspace = true }
 metis-backend = { workspace = true }
 metis-frontend = { workspace = true }
+consus-compression.workspace = true
 
 [workspace.lints.rust]
 missing_docs = "deny"

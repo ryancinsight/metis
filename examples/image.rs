@@ -87,8 +87,8 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         framebuffer_artifacts::bmp_bytes(&framebuffer)?,
     )?;
     std::fs::write(
-        "output/image-placement.svg",
-        framebuffer_artifacts::svg_text(&framebuffer)?,
+        "output/image-placement.png",
+        framebuffer_artifacts::png_bytes(&framebuffer)?,
     )?;
     Ok(())
 }

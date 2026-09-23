@@ -578,15 +578,15 @@ keeping DICOM interpretation in RITK.
 
 ## Initial form
 
-![Initial form](images/form.svg)
+![Initial form](images/form.png)
 
 The defaults are 72.50 kg, 4.00 mg/mL and 0.500 mcg/kg/min. No result exists yet.
 
 ## Anchored command menu
 
-![Command menu over the system theme](images/form-menu.svg)
+![Command menu over the system theme](images/form-menu.png)
 
-![Command menu over the dark theme](images/form-menu-dark.svg)
+![Command menu over the dark theme](images/form-menu-dark.png)
 
 The command menu uses its toggle's laid-out rectangle as its anchor. Opening it
 does not move the navigation status or either card, and it paints above the
@@ -598,7 +598,7 @@ stable while the menu opens.
 
 ## Successful request
 
-![Backend result](images/form-success.svg)
+![Backend result](images/form-success.png)
 
 The example establishes a session and submits patient `demo`, weight 60 kg,
 concentration 2 mg/mL and dose 0.2 mcg/kg/min. The backend returns 0.72 mg/hour
@@ -627,32 +627,32 @@ executable: [initial](images/native-resize-initial.png),
 
 ## Edit invalidates the result
 
-![Edited form awaiting submission](images/form-edited.svg)
+![Edited form awaiting submission](images/form-edited.png)
 
 Changing weight to 80 kg immediately clears the old rate and MAC. No request has
 been sent for these edited inputs; the form displays idle.
 
 ## Rejection and correction
 
-![Backend rejects zero weight](images/form-rejected.svg)
+![Backend rejects zero weight](images/form-rejected.png)
 
 The next request uses zero weight. The backend rejects it with code `0x3001` at
 audit sequence 3. No prior result remains on screen. Full diagnostics are available
 in the typed `FormState::Rejected` value.
 
-![Corrected inputs produce a result](images/form-corrected.svg)
+![Corrected inputs produce a result](images/form-corrected.png)
 
 Restoring weight to 60 kg succeeds on the same session at audit sequence 4.
 
 ## Disconnection and reconnection
 
-![Closed connection clears the result](images/form-disconnected.svg)
+![Closed connection clears the result](images/form-disconnected.png)
 
 The example joins the finite worker, which closes the real peer endpoint. A
 subsequent submission reports `0x4002`, clears the result and shows a closed
 session. Synchronization uses worker completion, not a timed sleep.
 
-![New session produces the changed result](images/form-recovered.svg)
+![New session produces the changed result](images/form-recovered.png)
 
 A new app and backend session submit weight 80 kg and return 0.96 mg/hour and
 0.48 mL/hour. Reconnection never silently retries an uncertain transaction.
@@ -716,7 +716,7 @@ them. The software renderer classifies each visible pixel once, which keeps
 translucent overlays from darkening at segment intersections. Its generated
 artifact is inspected here:
 
-![Software raster image placement](images/image-placement.svg)
+![Software raster image placement](images/image-placement.png)
 
 Run it with `cargo run --locked --example image`; the BMP and SVG captures are
 written under `output/`. This is software-renderer evidence for V06 and covers
