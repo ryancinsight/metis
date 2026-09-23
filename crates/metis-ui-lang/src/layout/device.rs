@@ -19,6 +19,15 @@ pub(super) fn add(left: i32, right: i32) -> Result<i32> {
         .ok_or_else(|| limit_error("Layout coordinate addition overflow"))
 }
 
+/// Subtracts layout coordinates, rejecting overflow.
+///
+/// # Errors
+/// Returns a layout limit error when the difference leaves the `i32` range.
+pub(super) fn sub(left: i32, right: i32) -> Result<i32> {
+    left.checked_sub(right)
+        .ok_or_else(|| limit_error("Layout coordinate subtraction overflow"))
+}
+
 /// Box-model edges and gap resolved to device pixels.
 #[derive(Clone, Copy)]
 pub(super) struct ScaledGeometry {

@@ -46,7 +46,11 @@ pub(super) fn max_content_width(element: &DomElement, display_scale: DisplayScal
     let (mut total, mut widest, mut count) = (0_i32, 0_i32, 0_i32);
     for child in &element.children {
         let width = match child {
-            DomNode::Element(child) if child.computed_style.display == Display::None => continue,
+            DomNode::Element(child)
+                if child.computed_style.display == Display::None || is_visible_popover(child) =>
+            {
+                continue;
+            }
             DomNode::Element(child) => {
                 let margins = scaled_geometry(&child.computed_style, display_scale)?.margin;
                 add(
@@ -74,4 +78,9 @@ pub(super) fn max_content_width(element: &DomElement, display_scale: DisplayScal
         add(geometry.border.left, geometry.border.right)?,
     )?;
     Ok(add(content, edges)?.max(floor))
+}
+
+pub(super) fn is_visible_popover(element: &DomElement) -> bool {
+    element.computed_style.display != Display::None
+        && element.attributes.contains_key("popover-anchor")
 }

@@ -71,7 +71,7 @@
 - Scope: anchored ui-lang layout and element rectangles, frontend menu markup, native hit testing and dismissal, focused regressions, regenerated visual captures, and synchronized manual text.
 - Non-goals: general absolute positioning, browser layout, citation queries, Gaia mesh viewing, and mutable framebuffer work.
 - Acceptance: measured menu content paints last; below/above and horizontal viewport placement follow ADR 0044; missing visible anchors return a typed error; hidden menus skip anchor resolution; oversized content clips at the framebuffer; menu selection, Escape, focus loss, and consumed outside clicks dismiss through geometry independent of theme colors.
-- Verification: 141 focused nextest cases pass; 341 Python unit tests pass with one environment skip; update-snapshot and non-update full verifier runs pass; regenerated light and dark menu captures inspected.
+- Verification: 142 focused nextest cases pass; 341 Python unit tests pass with one environment skip; the committed full verifier covers snapshots and visual captures; the Atlas conformance scan reports zero regressions.
 
 <a id="METIS-LAYOUT-MINSIZE-001"></a>
 ## METIS-LAYOUT-MINSIZE-001 — Admit minimum sizes through layout [minor]
