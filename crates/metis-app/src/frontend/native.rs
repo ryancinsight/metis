@@ -22,11 +22,11 @@ const MAX_PATIENT_ID_BYTES: usize = 128;
 const RETURN_KEY: u32 = 0x0d;
 const ESCAPE_KEY: u32 = 0x1b;
 const BACKSPACE_KEY: u32 = 0x08;
-const SUBMIT_LABEL: &str = "[ SUBMIT CALCULATION TO BACKEND ]";
-const COMMANDS_LABEL: &str = "[ COMMANDS ]";
-const FOCUS_PATIENT_LABEL: &str = "FOCUS PATIENT";
-const THEME_DARK_LABEL: &str = "DARK THEME";
-const THEME_SYSTEM_LABEL: &str = "SYSTEM THEME";
+const SUBMIT_LABEL: &str = "Submit calculation";
+const COMMANDS_LABEL: &str = "Commands";
+const FOCUS_PATIENT_LABEL: &str = "Focus patient";
+const THEME_DARK_LABEL: &str = "Dark theme";
+const THEME_SYSTEM_LABEL: &str = "System theme";
 
 /// Runs the visible Windows software-rendered form over the supervised pipe.
 pub(crate) fn run(inputs: [String; 3]) -> Result<(), Box<dyn std::error::Error>> {

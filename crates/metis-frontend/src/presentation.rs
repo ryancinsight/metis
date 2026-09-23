@@ -9,19 +9,19 @@ pub const CLINICAL_SCREEN_XML: &str = r#"<screen id="main-screen" style="display
 
   <nav id="application-navigation" aria-label="Application navigation" style="display: flex; flex-direction: column; gap: 8px; background-color: #e2e8f0; padding: 8px; border-radius: 10px;">
     <div id="application-toolbar" role="toolbar" aria-label="Application commands" style="display: flex; flex-direction: row; gap: 8px; align-items: center;">
-      <button id="command-menu-toggle" aria-haspopup="menu" aria-expanded="false" aria-controls="command-menu" style="width: 120px; background-color: #3182ce; color: #ffffff; padding: 8px 12px; border-radius: 6px; min-height: 44px; justify-content: center; box-shadow: 0 2px 4px #2c528240;">
-        <text style="color: #ffffff; font-size: 14px; font-weight: bold;">[ COMMANDS ]</text>
+      <button id="command-menu-toggle" aria-haspopup="menu" aria-expanded="false" aria-controls="command-menu" style="width: 120px; background-color: #3182ce; color: #ffffff; padding: 8px 12px; border-radius: 6px; min-height: 44px; justify-content: center; align-items: center; box-shadow: 0 2px 4px #2c528240;">
+        <text style="color: #ffffff; font-size: 14px; font-weight: bold;">Commands</text>
       </button>
-      <button id="command-focus-patient" style="width: 144px; background-color: #3182ce; color: #ffffff; padding: 8px 12px; border-radius: 6px; min-height: 44px; justify-content: center; box-shadow: 0 2px 4px #2c528240;">
-        <text style="color: #ffffff; font-size: 14px; font-weight: bold;">FOCUS PATIENT</text>
+      <button id="command-focus-patient" style="width: 144px; background-color: #3182ce; color: #ffffff; padding: 8px 12px; border-radius: 6px; min-height: 44px; justify-content: center; align-items: center; box-shadow: 0 2px 4px #2c528240;">
+        <text style="color: #ffffff; font-size: 14px; font-weight: bold;">Focus patient</text>
       </button>
     </div>
     <div id="command-menu" role="menu" aria-label="Application commands" aria-hidden="true" style="display: none; flex-direction: column; gap: 6px; background-color: #ffffff; padding: 8px; border-width: 1px; border-color: #e2e8f0; border-radius: 10px; box-shadow: 0 8px 20px #0f172a33;">
-      <button id="command-theme-dark" role="menuitem" style="background-color: #3182ce; color: #ffffff; padding: 8px 12px; border-radius: 6px; min-height: 44px; justify-content: center; box-shadow: 0 2px 4px #2c528240;">
-        <text style="color: #ffffff; font-size: 14px; font-weight: bold;">DARK THEME</text>
+      <button id="command-theme-dark" role="menuitem" style="background-color: #3182ce; color: #ffffff; padding: 8px 12px; border-radius: 6px; min-height: 44px; justify-content: center; align-items: center; box-shadow: 0 2px 4px #2c528240;">
+        <text style="color: #ffffff; font-size: 14px; font-weight: bold;">Dark theme</text>
       </button>
-      <button id="command-theme-system" role="menuitem" style="background-color: #3182ce; color: #ffffff; padding: 8px 12px; border-radius: 6px; min-height: 44px; justify-content: center; box-shadow: 0 2px 4px #2c528240;">
-        <text style="color: #ffffff; font-size: 14px; font-weight: bold;">SYSTEM THEME</text>
+      <button id="command-theme-system" role="menuitem" style="background-color: #3182ce; color: #ffffff; padding: 8px 12px; border-radius: 6px; min-height: 44px; justify-content: center; align-items: center; box-shadow: 0 2px 4px #2c528240;">
+        <text style="color: #ffffff; font-size: 14px; font-weight: bold;">System theme</text>
       </button>
     </div>
     <text id="command-status" role="status" aria-live="polite" style="color: #4a5568; font-size: 13px;">Commands ready</text>
@@ -42,8 +42,8 @@ pub const CLINICAL_SCREEN_XML: &str = r#"<screen id="main-screen" style="display
       <text id="label-dose" style="color: #4a5568; font-size: 14px;">Target Dose: 0.500 mcg/kg/min</text>
     </div>
     <div id="actions" style="display: flex; flex-direction: row; gap: 10px; margin: 10px 0 0 0; justify-content: center;">
-      <button id="btn-calc" style="width: 360px; background-color: #3182ce; color: #ffffff; padding: 8px 16px; border-radius: 6px; min-height: 44px; justify-content: center; box-shadow: 0 2px 4px #2c528240;">
-        <text style="color: #ffffff; font-size: 14px; font-weight: bold;">[ SUBMIT CALCULATION TO BACKEND ]</text>
+      <button id="btn-calc" style="width: 360px; background-color: #3182ce; color: #ffffff; padding: 8px 16px; border-radius: 6px; min-height: 44px; justify-content: center; align-items: center; box-shadow: 0 2px 4px #2c528240;">
+        <text style="color: #ffffff; font-size: 14px; font-weight: bold;">Submit calculation</text>
       </button>
     </div>
   </card>

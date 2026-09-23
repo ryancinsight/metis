@@ -1,7 +1,7 @@
 {
   "captures": {
     "form": {
-      "image_sha256": "b49005de9a360b9c5daf97e6d1070428228b866ebf19dea9648f60991293d0b1",
+      "image_sha256": "32b9204c3e68fcbe168e1f835fa7fe20ae1fb768cce78073f5b093f15e174cec",
       "semantics": {
         "action": {
           "0": "create session: 800x600, bounded MemoryTransport, backend exchanges=4"
@@ -12,13 +12,13 @@
         "geometry": {
           "0": "32 32 22 336 28",
           "1": "32 68 13 93 17",
-          "10": "236 394 14 268 18",
+          "10": "337 394 14 125 18",
           "11": "37 464 16 212 20",
           "12": "37 492 18 317 23",
           "13": "37 523 13 105 17",
           "14": "37 548 12 108 15",
-          "2": "40 133 14 100 18",
-          "3": "168 133 14 111 18",
+          "2": "51 133 14 74 18",
+          "3": "183 133 14 90 18",
           "4": "28 172 13 100 17",
           "5": "37 229 16 339 20",
           "6": "37 259 14 174 18",
@@ -57,13 +57,13 @@
         "text": {
           "0": "METIS FORM DEMONSTRATION",
           "1": "SYSTEM READY",
-          "10": "[ SUBMIT CALCULATION TO BACKEND ]",
+          "10": "Submit calculation",
           "11": "Backend Calculation Output",
           "12": "Rate: Awaiting Backend Calculation...",
           "13": "Safety Status: Idle",
           "14": "Backend MAC: None",
-          "2": "[ COMMANDS ]",
-          "3": "FOCUS PATIENT",
+          "2": "Commands",
+          "3": "Focus patient",
           "4": "Commands ready",
           "5": "Patient Demographics and Drug Prescription",
           "6": "Patient ID: PT-9042-ALPHA",
@@ -74,7 +74,7 @@
       }
     },
     "form-corrected": {
-      "image_sha256": "5d70cfdef9c9c4012be83c136c541587b17794a7bdfec3861edff49ffed41f9d",
+      "image_sha256": "9465f2de7f6cd75edfb72094f2c7b3762cecad7dc93a8777ec581cbc05fa86d6",
       "semantics": {
         "action": {
           "0": "create session: 800x600, bounded MemoryTransport, backend exchanges=4",
@@ -96,13 +96,13 @@
         "geometry": {
           "0": "32 32 22 336 28",
           "1": "32 68 13 103 17",
-          "10": "236 394 14 268 18",
+          "10": "337 394 14 125 18",
           "11": "37 464 16 212 20",
           "12": "37 492 18 269 23",
           "13": "37 523 13 193 17",
           "14": "37 548 12 254 15",
-          "2": "40 133 14 100 18",
-          "3": "168 133 14 111 18",
+          "2": "51 133 14 74 18",
+          "3": "183 133 14 90 18",
           "4": "28 172 13 100 17",
           "5": "37 229 16 339 20",
           "6": "37 259 14 105 18",
@@ -144,13 +144,13 @@
         "text": {
           "0": "METIS FORM DEMONSTRATION",
           "1": "SESSION ACTIVE",
-          "10": "[ SUBMIT CALCULATION TO BACKEND ]",
+          "10": "Submit calculation",
           "11": "Backend Calculation Output",
           "12": "Rate: 0.360 mL/hr (0.72 mg/hr)",
           "13": "Backend response (Audit Seq #4)",
           "14": "Backend MAC: Present (not verified by frontend)",
-          "2": "[ COMMANDS ]",
-          "3": "FOCUS PATIENT",
+          "2": "Commands",
+          "3": "Focus patient",
           "4": "Commands ready",
           "5": "Patient Demographics and Drug Prescription",
           "6": "Patient ID: demo",
@@ -161,7 +161,7 @@
       }
     },
     "form-disconnected": {
-      "image_sha256": "da6debb853fca5f9b94ea3adb115dd8acb595e87d4cc8d4839571dec8a024631",
+      "image_sha256": "a011274e71cca4f759d47c4a9894fd7cbcdf7d66cb81d98d68f3a0b0d8bbf50c",
       "semantics": {
         "action": {
           "0": "create session: 800x600, bounded MemoryTransport, backend exchanges=4",
@@ -183,13 +183,13 @@
         "geometry": {
           "0": "32 32 22 336 28",
           "1": "32 68 13 107 17",
-          "10": "236 394 14 268 18",
+          "10": "337 394 14 125 18",
           "11": "37 464 16 212 20",
           "12": "37 492 18 127 23",
           "13": "37 523 13 229 17",
           "14": "37 548 12 128 15",
-          "2": "40 133 14 100 18",
-          "3": "168 133 14 111 18",
+          "2": "51 133 14 74 18",
+          "3": "183 133 14 90 18",
           "4": "28 172 13 100 17",
           "5": "37 229 16 339 20",
           "6": "37 259 14 105 18",
@@ -229,13 +229,13 @@
         "text": {
           "0": "METIS FORM DEMONSTRATION",
           "1": "SESSION CLOSED",
-          "10": "[ SUBMIT CALCULATION TO BACKEND ]",
+          "10": "Submit calculation",
           "11": "Backend Calculation Output",
           "12": "Rate: No result",
           "13": "Connection failed [0x4002] - reconnect",
           "14": "Backend MAC: No result",
-          "2": "[ COMMANDS ]",
-          "3": "FOCUS PATIENT",
+          "2": "Commands",
+          "3": "Focus patient",
           "4": "Commands ready",
           "5": "Patient Demographics and Drug Prescription",
           "6": "Patient ID: demo",
@@ -246,7 +246,7 @@
       }
     },
     "form-edited": {
-      "image_sha256": "011b6f8ff6f5103e231cf054c8bad90170442472d244e0507c0258fee0108916",
+      "image_sha256": "8897c366e1fd95e5bdd25266f59afbfc674b3dc96d8504eb3f52ede12bf0b719",
       "semantics": {
         "action": {
           "0": "create session: 800x600, bounded MemoryTransport, backend exchanges=4",
@@ -261,13 +261,13 @@
         "geometry": {
           "0": "32 32 22 336 28",
           "1": "32 68 13 103 17",
-          "10": "236 394 14 268 18",
+          "10": "337 394 14 125 18",
           "11": "37 464 16 212 20",
           "12": "37 492 18 317 23",
           "13": "37 523 13 105 17",
           "14": "37 548 12 108 15",
-          "2": "40 133 14 100 18",
-          "3": "168 133 14 111 18",
+          "2": "51 133 14 74 18",
+          "3": "183 133 14 90 18",
           "4": "28 172 13 100 17",
           "5": "37 229 16 339 20",
           "6": "37 259 14 105 18",
@@ -306,13 +306,13 @@
         "text": {
           "0": "METIS FORM DEMONSTRATION",
           "1": "SESSION ACTIVE",
-          "10": "[ SUBMIT CALCULATION TO BACKEND ]",
+          "10": "Submit calculation",
           "11": "Backend Calculation Output",
           "12": "Rate: Awaiting Backend Calculation...",
           "13": "Safety Status: Idle",
           "14": "Backend MAC: None",
-          "2": "[ COMMANDS ]",
-          "3": "FOCUS PATIENT",
+          "2": "Commands",
+          "3": "Focus patient",
           "4": "Commands ready",
           "5": "Patient Demographics and Drug Prescription",
           "6": "Patient ID: demo",
@@ -323,7 +323,7 @@
       }
     },
     "form-recovered": {
-      "image_sha256": "2216c74a4fc2c5074ddefbdc5c31902ab0d12a8e6e1b2400c59af57631ef7aec",
+      "image_sha256": "4f3fdace191612b1c28cf6126834ac108fbc9ef6b662d6536c1bcca2ba72839a",
       "semantics": {
         "action": {
           "0": "create session: 800x600, bounded MemoryTransport, backend exchanges=4",
@@ -351,13 +351,13 @@
         "geometry": {
           "0": "32 32 22 336 28",
           "1": "32 68 13 103 17",
-          "10": "236 394 14 268 18",
+          "10": "337 394 14 125 18",
           "11": "37 464 16 212 20",
           "12": "37 492 18 270 23",
           "13": "37 523 13 193 17",
           "14": "37 548 12 254 15",
-          "2": "40 133 14 100 18",
-          "3": "168 133 14 111 18",
+          "2": "51 133 14 74 18",
+          "3": "183 133 14 90 18",
           "4": "28 172 13 100 17",
           "5": "37 229 16 339 20",
           "6": "37 259 14 105 18",
@@ -399,13 +399,13 @@
         "text": {
           "0": "METIS FORM DEMONSTRATION",
           "1": "SESSION ACTIVE",
-          "10": "[ SUBMIT CALCULATION TO BACKEND ]",
+          "10": "Submit calculation",
           "11": "Backend Calculation Output",
           "12": "Rate: 0.480 mL/hr (0.96 mg/hr)",
           "13": "Backend response (Audit Seq #2)",
           "14": "Backend MAC: Present (not verified by frontend)",
-          "2": "[ COMMANDS ]",
-          "3": "FOCUS PATIENT",
+          "2": "Commands",
+          "3": "Focus patient",
           "4": "Commands ready",
           "5": "Patient Demographics and Drug Prescription",
           "6": "Patient ID: demo",
@@ -416,7 +416,7 @@
       }
     },
     "form-rejected": {
-      "image_sha256": "3a2d78b7f44ddf3e67b7d69e700cffe33ee45176f73ca7e4f3cf677a3ad0ddf4",
+      "image_sha256": "1316519d1431624f20a68d50a6733d3c1331c0eb80c2055dfdbd6cac90af5134",
       "semantics": {
         "action": {
           "0": "create session: 800x600, bounded MemoryTransport, backend exchanges=4",
@@ -434,13 +434,13 @@
         "geometry": {
           "0": "32 32 22 336 28",
           "1": "32 68 13 103 17",
-          "10": "236 394 14 268 18",
+          "10": "337 394 14 125 18",
           "11": "37 464 16 212 20",
           "12": "37 492 18 127 23",
           "13": "37 523 13 203 17",
           "14": "37 548 12 128 15",
-          "2": "40 133 14 100 18",
-          "3": "168 133 14 111 18",
+          "2": "51 133 14 74 18",
+          "3": "183 133 14 90 18",
           "4": "28 172 13 100 17",
           "5": "37 229 16 339 20",
           "6": "37 259 14 105 18",
@@ -480,13 +480,13 @@
         "text": {
           "0": "METIS FORM DEMONSTRATION",
           "1": "SESSION ACTIVE",
-          "10": "[ SUBMIT CALCULATION TO BACKEND ]",
+          "10": "Submit calculation",
           "11": "Backend Calculation Output",
           "12": "Rate: No result",
           "13": "Backend rejected request [0x3001]",
           "14": "Backend MAC: No result",
-          "2": "[ COMMANDS ]",
-          "3": "FOCUS PATIENT",
+          "2": "Commands",
+          "3": "Focus patient",
           "4": "Commands ready",
           "5": "Patient Demographics and Drug Prescription",
           "6": "Patient ID: demo",
@@ -497,7 +497,7 @@
       }
     },
     "form-success": {
-      "image_sha256": "ef77464366130cd47b37dce18edb3eabd5a37c39bb8d872436178694df7e5fd4",
+      "image_sha256": "cffcba884e9f851764fda7dc978826da8e60f1a6f146c1c4b472c9454f68f2e8",
       "semantics": {
         "action": {
           "0": "create session: 800x600, bounded MemoryTransport, backend exchanges=4",
@@ -514,13 +514,13 @@
         "geometry": {
           "0": "32 32 22 336 28",
           "1": "32 68 13 103 17",
-          "10": "236 394 14 268 18",
+          "10": "337 394 14 125 18",
           "11": "37 464 16 212 20",
           "12": "37 492 18 269 23",
           "13": "37 523 13 193 17",
           "14": "37 548 12 254 15",
-          "2": "40 133 14 100 18",
-          "3": "168 133 14 111 18",
+          "2": "51 133 14 74 18",
+          "3": "183 133 14 90 18",
           "4": "28 172 13 100 17",
           "5": "37 229 16 339 20",
           "6": "37 259 14 105 18",
@@ -562,13 +562,13 @@
         "text": {
           "0": "METIS FORM DEMONSTRATION",
           "1": "SESSION ACTIVE",
-          "10": "[ SUBMIT CALCULATION TO BACKEND ]",
+          "10": "Submit calculation",
           "11": "Backend Calculation Output",
           "12": "Rate: 0.360 mL/hr (0.72 mg/hr)",
           "13": "Backend response (Audit Seq #2)",
           "14": "Backend MAC: Present (not verified by frontend)",
-          "2": "[ COMMANDS ]",
-          "3": "FOCUS PATIENT",
+          "2": "Commands",
+          "3": "Focus patient",
           "4": "Commands ready",
           "5": "Patient Demographics and Drug Prescription",
           "6": "Patient ID: demo",

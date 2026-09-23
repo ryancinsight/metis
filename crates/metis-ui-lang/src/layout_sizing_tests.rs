@@ -203,3 +203,73 @@ fn a_minimum_scales_with_the_host_display_scale() {
     // A minimum is a length, so it scales exactly as width and height do.
     assert_eq!((rect.width, rect.height), (60, 30));
 }
+
+/// The blue child of a 200-pixel column under `align`, with `child` styles.
+fn sized_child(align: &str, child: &str, content: &str) -> Rect {
+    let markup = format!(
+        "<card style=\"width: 200px; align-items: {align};\"><card style=\"background-color: #0000ff; {child}\">{content}</card></card>"
+    );
+    let rects = child_rects(&markup, LayoutViewport::new(200, 100));
+    assert_eq!(rects.len(), 1, "{markup}");
+    rects[0]
+}
+
+/// Whole-pixel advance of `text` at the default 14-pixel regular size.
+fn advance(text: &str) -> i32 {
+    let style = metis_platform::typeface::TextStyle::new(
+        Color::BLACK,
+        metis_platform::typeface::TextSize::new(14.0).expect("valid size"),
+    );
+    let width = style.advance(text).ceil();
+    assert!((0.0..1000.0).contains(&width));
+    #[expect(
+        clippy::cast_possible_truncation,
+        reason = "a whole advance checked to lie in 0..1000"
+    )]
+    let width = width as i32;
+    width
+}
+
+#[test]
+fn a_column_that_does_not_stretch_sizes_children_to_their_content() {
+    // Content width: the label's advance plus four pixels of padding each
+    // side. Height: the 14-pixel line box, 1240 units at 14/1000 px rounded
+    // up to 18, plus the same padding.
+    let width = advance("Go") + 8;
+    assert_eq!(
+        sized_child("center", "padding: 4px;", "Go"),
+        Rect::new((200 - width) / 2, 0, width, 26)
+    );
+    assert_eq!(
+        sized_child("flex-start", "padding: 4px;", "Go"),
+        Rect::new(0, 0, width, 26)
+    );
+    assert_eq!(
+        sized_child("flex-end", "padding: 4px;", "Go"),
+        Rect::new(200 - width, 0, width, 26)
+    );
+    // Stretch, the default, keeps filling the column.
+    assert_eq!(
+        sized_child("stretch", "padding: 4px;", "Go"),
+        Rect::new(0, 0, 200, 26)
+    );
+}
+
+#[test]
+fn content_sizing_respects_declared_widths_rows_and_the_available_width() {
+    // A declared width is taken as written.
+    assert_eq!(
+        sized_child("center", "width: 50px; height: 10px;", ""),
+        Rect::new(75, 0, 50, 10)
+    );
+    // A row sums its children and gaps: 30 + 6 + 40.
+    let row = "<card style=\"width: 30px; height: 5px;\"></card><card style=\"width: 40px; height: 5px;\"></card>";
+    assert_eq!(
+        sized_child("center", "flex-direction: row; gap: 6px;", row),
+        Rect::new(62, 0, 76, 5)
+    );
+    // Content wider than the column is capped at the column's width.
+    let long = "A label far longer than the two hundred pixel column it sits in";
+    assert!(advance(long) > 200);
+    assert_eq!(sized_child("center", "", long).width, 200);
+}

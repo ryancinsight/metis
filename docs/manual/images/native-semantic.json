@@ -4,7 +4,7 @@
   "root": {
     "id": "main-screen",
     "role": "application",
-    "name": "METIS FORM DEMONSTRATION SYSTEM READY [ COMMANDS ] FOCUS PATIENT DARK THEME SYSTEM THEME Commands ready Patient Demographics and Drug Prescription Patient ID: demo Weight: 60.00 kg Drug Concentration: 2.00 mg/mL Target Dose: 0.200 mcg/kg/min [ SUBMIT CALCULATION TO BACKEND ] Backend Calculation Output Rate: Awaiting Backend Calculation... Safety Status: Idle Backend MAC: None",
+    "name": "METIS FORM DEMONSTRATION SYSTEM READY Commands Focus patient Dark theme System theme Commands ready Patient Demographics and Drug Prescription Patient ID: demo Weight: 60.00 kg Drug Concentration: 2.00 mg/mL Target Dose: 0.200 mcg/kg/min Submit calculation Backend Calculation Output Rate: Awaiting Backend Calculation... Safety Status: Idle Backend MAC: None",
     "description": null,
     "value": null,
     "disabled": false,
@@ -92,7 +92,7 @@
               {
                 "id": "command-menu-toggle",
                 "role": "button",
-                "name": "[ COMMANDS ]",
+                "name": "Commands",
                 "description": null,
                 "value": null,
                 "disabled": false,
@@ -108,7 +108,7 @@
                   {
                     "id": null,
                     "role": "text",
-                    "name": "[ COMMANDS ]",
+                    "name": "Commands",
                     "description": null,
                     "value": null,
                     "disabled": false,
@@ -125,7 +125,7 @@
               {
                 "id": "command-focus-patient",
                 "role": "button",
-                "name": "FOCUS PATIENT",
+                "name": "Focus patient",
                 "description": null,
                 "value": null,
                 "disabled": false,
@@ -141,7 +141,7 @@
                   {
                     "id": null,
                     "role": "text",
-                    "name": "FOCUS PATIENT",
+                    "name": "Focus patient",
                     "description": null,
                     "value": null,
                     "disabled": false,
@@ -174,7 +174,7 @@
               {
                 "id": "command-theme-dark",
                 "role": "menuitem",
-                "name": "DARK THEME",
+                "name": "Dark theme",
                 "description": null,
                 "value": null,
                 "disabled": false,
@@ -188,7 +188,7 @@
                   {
                     "id": null,
                     "role": "text",
-                    "name": "DARK THEME",
+                    "name": "Dark theme",
                     "description": null,
                     "value": null,
                     "disabled": false,
@@ -205,7 +205,7 @@
               {
                 "id": "command-theme-system",
                 "role": "menuitem",
-                "name": "SYSTEM THEME",
+                "name": "System theme",
                 "description": null,
                 "value": null,
                 "disabled": false,
@@ -219,7 +219,7 @@
                   {
                     "id": null,
                     "role": "text",
-                    "name": "SYSTEM THEME",
+                    "name": "System theme",
                     "description": null,
                     "value": null,
                     "disabled": false,
@@ -255,7 +255,7 @@
       {
         "id": "patient-card",
         "role": "group",
-        "name": "Patient Demographics and Drug Prescription Patient ID: demo Weight: 60.00 kg Drug Concentration: 2.00 mg/mL Target Dose: 0.200 mcg/kg/min [ SUBMIT CALCULATION TO BACKEND ]",
+        "name": "Patient Demographics and Drug Prescription Patient ID: demo Weight: 60.00 kg Drug Concentration: 2.00 mg/mL Target Dose: 0.200 mcg/kg/min Submit calculation",
         "description": null,
         "value": null,
         "disabled": false,
@@ -410,7 +410,7 @@
           {
             "id": "actions",
             "role": "group",
-            "name": "[ SUBMIT CALCULATION TO BACKEND ]",
+            "name": "Submit calculation",
             "description": null,
             "value": null,
             "disabled": false,
@@ -424,7 +424,7 @@
               {
                 "id": "btn-calc",
                 "role": "button",
-                "name": "[ SUBMIT CALCULATION TO BACKEND ]",
+                "name": "Submit calculation",
                 "description": null,
                 "value": null,
                 "disabled": false,
@@ -440,7 +440,7 @@
                   {
                     "id": null,
                     "role": "text",
-                    "name": "[ SUBMIT CALCULATION TO BACKEND ]",
+                    "name": "Submit calculation",
                     "description": null,
                     "value": null,
                     "disabled": false,

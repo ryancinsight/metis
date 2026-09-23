@@ -10,6 +10,15 @@ use metis_platform::DisplayScale;
 use metis_platform::rasterizer::BoxShadow;
 use metis_platform::typeface::{GlyphWeight, TextSize, TextStyle};
 
+/// Adds layout coordinates, rejecting overflow.
+///
+/// # Errors
+/// Returns a layout limit error when the sum leaves the `i32` range.
+pub(super) fn add(left: i32, right: i32) -> Result<i32> {
+    left.checked_add(right)
+        .ok_or_else(|| limit_error("Layout coordinate addition overflow"))
+}
+
 /// Box-model edges and gap resolved to device pixels.
 #[derive(Clone, Copy)]
 pub(super) struct ScaledGeometry {

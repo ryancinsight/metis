@@ -19,7 +19,7 @@ The `Metis native form` window renders the production software framebuffer.
 While the window is focused, typed Unicode characters extend the patient
 reference and Backspace removes its last scalar; every edit clears a prior
 calculation through `FrontendApp::set_inputs`. Press **Enter** or **Ctrl+Enter**
-or click the blue **[ SUBMIT CALCULATION TO BACKEND ]** surface to send the
+or click the blue **Submit calculation** surface to send the
 exact numeric inputs through the private pipe. Alt/Windows-modified Enter is
 left to the operating system instead of triggering the application shortcut.
 The result and audit sequence are painted by the same frontend state machine as
@@ -112,8 +112,8 @@ cargo run --locked -p metis-app -- --metis-semantic-capture $semantic 60 2 0.2
 
 The reviewed specimen is
 [`native-semantic.json`](images/native-semantic.json). It is schema `1`, has
-34 elements and 16,333 bytes, and has SHA-256
-`0bb048549b94aabfda01c34d1c1239a35b797e67640b1b690fd2a21889bc4bd1`.
+34 elements and 16,246 bytes, and has SHA-256
+`75b6c507df5cb1fb9619f837b169e409858eb668236a7b49e85cc35704968eab`.
 The `main-screen` application root, the `label-patient` textbox and the
 `btn-calc` submit button are present. The textbox exposes its bounded current
 value and typed `set_value` action; the button is focusable, enabled and
