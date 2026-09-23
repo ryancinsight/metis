@@ -2,10 +2,13 @@ use super::{DisplayCommand, DisplayList, LayoutViewport, compute_layout};
 use crate::dom::{DomDocument, DomElement, DomNode};
 use crate::parse_markup;
 use crate::parser::{MAX_DEPTH, MAX_NODES};
-use crate::style::{Color, Display, Size};
+use crate::style::{Color, Display, EdgeValues, Size};
 use metis_core::error::ErrorCode;
+use metis_platform::DisplayScale;
 use metis_platform::framebuffer::{Framebuffer, Rect};
+use metis_platform::rasterizer::{BoxShadow, CornerRadius};
 use metis_platform::rasterizer::{LineCap, LineJoin, MAX_STROKE_POINTS, StrokeWidth};
+use metis_platform::typeface::GlyphWeight;
 
 #[test]
 fn parent_background_precedes_child_and_gap_is_between_children() {
@@ -20,6 +23,7 @@ fn parent_background_precedes_child_and_gap_is_between_children() {
         list.commands[0],
         DisplayCommand::FillRect {
             rect: Rect::new(0, 0, 4, 7),
+            radius: CornerRadius::SQUARE,
             color: Color::rgb(255, 0, 0)
         }
     );
@@ -46,14 +50,129 @@ fn extreme_styles_return_errors_without_wrapping() {
 }
 
 #[test]
-fn programmatic_unsupported_style_is_rejected_before_painting() {
+fn programmatic_border_radius_reaches_the_fill_and_border_commands() {
     let mut root = DomElement::new("root");
-    root.computed_style.border_radius = 2;
+    root.computed_style.border_radius = 6;
     root.computed_style.background_color = Some(Color::RED);
-    let error = compute_layout(&DomDocument::new(root), LayoutViewport::new(4, 4))
-        .expect_err("unsupported style must not be silently ignored");
-    assert_eq!(error.code, ErrorCode::InvalidCssStyle);
-    assert!(error.message.contains("border-radius"));
+    root.computed_style.border_width = EdgeValues::all(2);
+    root.computed_style.width = Size::Px(40);
+    root.computed_style.height = Size::Px(30);
+    let display = compute_layout(&DomDocument::new(root), LayoutViewport::new(60, 60))
+        .expect("an admitted radius lays out");
+    let radii: Vec<_> = display
+        .commands
+        .iter()
+        .filter_map(|command| match command {
+            DisplayCommand::FillRect { radius, .. } | DisplayCommand::DrawBorder { radius, .. } => {
+                Some(radius.pixels())
+            }
+            _ => None,
+        })
+        .collect();
+    assert_eq!(
+        radii,
+        vec![6, 6],
+        "fill and border carry the authored radius"
+    );
+}
+
+#[test]
+fn an_authored_border_radius_clears_the_painted_corner() {
+    let markup = concat!(
+        "<card id=\"root\" style=\"background-color: #3182ce; border-radius: 10px; ",
+        "width: 40px; height: 40px;\"></card>"
+    );
+    let document = parse_markup(markup).expect("authored radius parses");
+    let display = compute_layout(&document, LayoutViewport::new(40, 40)).expect("lays out");
+    let mut rounded = Framebuffer::new(40, 40).expect("surface");
+    rounded.clear(Color::WHITE);
+    display.render_to(&mut rounded);
+
+    let square_markup = concat!(
+        "<card id=\"root\" style=\"background-color: #3182ce; ",
+        "width: 40px; height: 40px;\"></card>"
+    );
+    let square_document = parse_markup(square_markup).expect("square parses");
+    let square_display =
+        compute_layout(&square_document, LayoutViewport::new(40, 40)).expect("lays out");
+    let mut square = Framebuffer::new(40, 40).expect("surface");
+    square.clear(Color::WHITE);
+    square_display.render_to(&mut square);
+
+    // The square fill paints its extreme corner; the rounded one leaves it.
+    assert_eq!(square.get_pixel(0, 0), Color::rgb(49, 130, 206));
+    assert_eq!(rounded.get_pixel(0, 0), Color::WHITE);
+    // Both keep the centre and the straight edge midpoints.
+    for surface in [&rounded, &square] {
+        assert_eq!(surface.get_pixel(20, 20), Color::rgb(49, 130, 206));
+        assert_eq!(surface.get_pixel(20, 0), Color::rgb(49, 130, 206));
+        assert_eq!(surface.get_pixel(0, 20), Color::rgb(49, 130, 206));
+    }
+    // The authored radius antialiases, so the arc carries partial coverage.
+    let partial = (0..12)
+        .flat_map(|x| (0..12).map(move |y| (x, y)))
+        .filter(|(x, y)| {
+            let pixel = rounded.get_pixel(*x, *y);
+            pixel != Color::WHITE && pixel != Color::rgb(49, 130, 206)
+        })
+        .count();
+    assert!(
+        partial >= 8,
+        "authored radius is not antialiased: {partial}"
+    );
+}
+
+#[test]
+fn an_authored_bold_weight_paints_heavier_strokes() {
+    let ink = |weight: &str| {
+        let markup = format!(
+            "<card id=\"root\" style=\"font-weight: {weight}; width: 120px; height: 20px;\">Backend</card>"
+        );
+        let document = parse_markup(&markup).expect("authored weight parses");
+        let display = compute_layout(&document, LayoutViewport::new(120, 20)).expect("lays out");
+        let mut fb = Framebuffer::new(120, 20).expect("surface");
+        display.render_to(&mut fb);
+        (
+            display
+                .commands
+                .iter()
+                .filter_map(|command| match command {
+                    DisplayCommand::DrawText { style, .. } => Some(style.weight),
+                    _ => None,
+                })
+                .collect::<Vec<_>>(),
+            fb.pixels().iter().filter(|pixel| **pixel != 0).count(),
+        )
+    };
+    let (regular_weights, regular_ink) = ink("normal");
+    let (bold_weights, bold_ink) = ink("bold");
+    assert_eq!(regular_weights, vec![GlyphWeight::Regular]);
+    assert_eq!(bold_weights, vec![GlyphWeight::Bold]);
+    assert!(
+        bold_ink > regular_ink,
+        "bold painted {bold_ink}, regular {regular_ink}"
+    );
+}
+
+#[test]
+fn border_radius_is_clamped_to_the_laid_out_rectangle() {
+    let mut root = DomElement::new("root");
+    // Half of the shorter side is ten, so a larger request cannot round past it.
+    root.computed_style.border_radius = 400;
+    root.computed_style.background_color = Some(Color::RED);
+    root.computed_style.width = Size::Px(40);
+    root.computed_style.height = Size::Px(20);
+    let display = compute_layout(&DomDocument::new(root), LayoutViewport::new(60, 60))
+        .expect("an oversized radius clamps rather than failing");
+    let radius = display
+        .commands
+        .iter()
+        .find_map(|command| match command {
+            DisplayCommand::FillRect { radius, .. } => Some(radius.pixels()),
+            _ => None,
+        })
+        .expect("the background fill is emitted");
+    assert_eq!(radius, 10);
 }
 
 #[test]
@@ -70,7 +189,7 @@ fn hidden_programmatic_trees_still_obey_resource_limits() {
     let mut root = DomElement::new("leaf");
     for _ in 0..MAX_DEPTH {
         let mut parent = DomElement::new("parent");
-        parent.children.push(DomNode::Element(root));
+        parent.children.push(DomNode::Element(Box::new(root)));
         root = parent;
     }
     root.computed_style.display = Display::None;
@@ -109,26 +228,24 @@ fn fractional_display_scale_maps_geometry_and_text_to_device_pixels() {
         .commands
         .iter()
         .find_map(|command| match command {
-            DisplayCommand::FillRect { rect, color } if *color == Color::rgb(255, 0, 0) => {
+            DisplayCommand::FillRect { rect, color, .. } if *color == Color::rgb(255, 0, 0) => {
                 Some(*rect)
             }
             _ => None,
         })
         .expect("scaled child fill");
     assert_eq!(child, Rect::new(25, 25, 13, 13));
-    let text_scale = list
+    let text_size = list
         .commands
         .iter()
         .find_map(|command| match command {
-            DisplayCommand::DrawText {
-                display_scale,
-                scale,
-                ..
-            } => Some((*display_scale, *scale)),
+            DisplayCommand::DrawText { style, .. } => Some(style.size.pixels()),
             _ => None,
         })
         .expect("scaled text");
-    assert_eq!(text_scale, (scale, 1));
+    // The default 14-pixel size at 125 percent: 17.5 device pixels per em,
+    // exact in binary.
+    assert!((text_size - 17.5).abs() < f64::EPSILON, "{text_size}");
 
     let mut framebuffer = Framebuffer::new(100, 100).expect("surface");
     list.render_to(&mut framebuffer);
@@ -150,7 +267,7 @@ fn percentage_dimensions_use_the_physical_viewport_once() {
         .commands
         .iter()
         .find_map(|command| match command {
-            DisplayCommand::FillRect { rect, color } if *color == Color::rgb(255, 0, 0) => {
+            DisplayCommand::FillRect { rect, color, .. } if *color == Color::rgb(255, 0, 0) => {
                 Some(*rect)
             }
             _ => None,
@@ -219,4 +336,99 @@ fn empty_or_oversized_polylines_are_rejected_before_storage() {
         ErrorCode::LayoutOverflow
     );
     assert!(display.commands.is_empty());
+}
+
+#[test]
+fn box_shadow_is_painted_beneath_the_background_it_belongs_to() {
+    let doc = parse_markup(
+        "<a style='width:40px;height:20px;margin:10px;background:#fff;         border-radius:6px;box-shadow:0 4px 8px #00000080'/>",
+    )
+    .expect("markup");
+    let list = compute_layout(&doc, LayoutViewport::new(80, 60)).expect("layout");
+    let border_box = Rect::new(10, 10, 40, 20);
+    let radius = CornerRadius::clamped(6, border_box);
+    assert_eq!(
+        list.commands[..2],
+        [
+            DisplayCommand::DrawShadow {
+                rect: border_box,
+                radius,
+                shadow: BoxShadow::new(0, 4, 8, Color::rgba(0, 0, 0, 0x80)).expect("blur"),
+            },
+            DisplayCommand::FillRect {
+                rect: border_box,
+                radius,
+                color: Color::WHITE,
+            },
+        ]
+    );
+    let background = Color::rgb(200, 210, 220);
+    let mut fb = Framebuffer::new(80, 60).expect("surface");
+    fb.clear(background);
+    list.render_to(&mut fb);
+    // The box paints over its own shadow; the offset shadow shows below it
+    // and fades with distance.
+    assert_eq!(fb.get_pixel(30, 20), Color::WHITE);
+    let near = fb.get_pixel(30, 31);
+    let far = fb.get_pixel(30, 38);
+    assert!(
+        near.r < far.r && far.r < background.r,
+        "{near:?} then {far:?}"
+    );
+    // Five pixels outside either horizontal edge, the downward offset leaves
+    // the pixel above the box lighter than the one below it.
+    let above = fb.get_pixel(30, 4);
+    let below = fb.get_pixel(30, 35);
+    assert!(above.r > below.r, "{above:?} above, {below:?} below");
+}
+
+#[test]
+fn box_shadow_follows_the_display_scale_and_its_blur_bound() {
+    let scaled = LayoutViewport::with_scale(
+        200,
+        200,
+        DisplayScale::from_milli(2_000).expect("200 percent"),
+    );
+    let doc = parse_markup("<a style='width:20px;height:10px;box-shadow:-1px 3px 5px #000'/>")
+        .expect("markup");
+    let list = compute_layout(&doc, scaled).expect("layout");
+    assert_eq!(
+        list.commands[0],
+        DisplayCommand::DrawShadow {
+            rect: Rect::new(0, 0, 40, 20),
+            radius: CornerRadius::SQUARE,
+            shadow: BoxShadow::new(-2, 6, 10, Color::BLACK).expect("blur"),
+        }
+    );
+    // 200 authored pixels at twice the scale exceed the renderer's bound.
+    let doc = parse_markup("<a style='width:20px;height:10px;box-shadow:0 0 200px #000'/>")
+        .expect("markup");
+    assert_eq!(
+        compute_layout(&doc, scaled).expect_err("blur bound").code,
+        ErrorCode::LayoutOverflow
+    );
+    const { assert!(200 * 2 > BoxShadow::MAX_BLUR && 200 <= BoxShadow::MAX_BLUR) };
+}
+
+#[test]
+fn aligned_children_carry_their_shadow_with_them() {
+    let doc = parse_markup(
+        "<a style='width:100px;height:40px;justify-content:center;align-items:center'>         <b style='width:30px;height:10px;background:#fff;box-shadow:0 2px 4px #0003'/></a>",
+    )
+    .expect("markup");
+    let list = compute_layout(&doc, LayoutViewport::new(100, 40)).expect("layout");
+    let rects: Vec<Rect> = list
+        .commands
+        .iter()
+        .filter_map(|command| match command {
+            DisplayCommand::DrawShadow { rect, .. } | DisplayCommand::FillRect { rect, .. } => {
+                Some(*rect)
+            }
+            _ => None,
+        })
+        .collect();
+    assert_eq!(
+        rects,
+        [Rect::new(35, 15, 30, 10), Rect::new(35, 15, 30, 10)]
+    );
 }

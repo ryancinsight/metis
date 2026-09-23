@@ -45,7 +45,8 @@ def solid_svg(color="#000000", first_length=800):
 
 
 def semantics_fixture(name):
-    state = {"form": "idle", "form-success": "success", "form-edited": "idle",
+    state = {"form": "idle", "form-menu": "idle", "form-menu-dark": "idle",
+             "form-success": "success", "form-edited": "idle",
              "form-rejected": "rejected", "form-corrected": "success",
              "form-disconnected": "disconnected", "form-recovered": "success"}[name]
     observation = {"state": state}
@@ -56,11 +57,11 @@ def semantics_fixture(name):
     labels = {key: key for key in ("status-badge", "label-patient", "label-weight", "label-conc",
                                    "label-dose", "output-rate", "output-status", "output-signature")}
     return {"meta": {"schema": "1", "scenario": name, "target": "software", "width": "800",
-                     "height": "600", "scale": "1.000x", "font": "metis-platform-bitmap"},
+                     "height": "600", "scale": "1.000x", "font": "atkinson-hyperlegible"},
             "input": {"patient_id": 'patient, "quoted"', "weight_kg": "60", "concentration_mg_ml": "2", "target_dose_mcg_kg_min": "0.2"},
             "observed": observation.copy(), "expected": observation.copy(), "label": labels,
             "text": {str(i): text for i, text in enumerate(labels.values())},
-            "geometry": {str(i): f"0 {i * 16} 1.000x" for i in range(len(labels))},
+            "geometry": {str(i): f"0 {i * 20} 14 90 18" for i in range(len(labels))},
             "action": {"0": 'set patient, "quoted"\nsubmit'}}
 
 
@@ -130,7 +131,7 @@ class CodecTests(unittest.TestCase):
         self.assertEqual(visual.read_semantics(encoded, "form"), values)
         with self.assertRaises(visual.VisualError):
             visual.read_semantics(encoded + b"observed,state,idle\r\n", "form")
-        for category, key, replacement in (("geometry", "0", "799 0 1.000x"), ("meta", "width", "801"),
+        for category, key, replacement in (("geometry", "0", "799 0 14 90 18"), ("meta", "width", "801"),
                                             ("input", "weight_kg", "NaN"), ("label", "output-rate", None)):
             changed = semantics_fixture("form")
             if replacement is None:
@@ -169,7 +170,9 @@ class EvidenceTests(unittest.TestCase):
         (self.root / "docs/manual/images").mkdir(parents=True)
         self.sources = {}
         for relative in ("examples/presentation.rs", "examples/presentation/capture.rs", "examples/image.rs",
-                         "crates/metis-platform/src/font.rs", "crates/metis-frontend/src/presentation.rs"):
+                         "crates/metis-platform/fonts/AtkinsonHyperlegible-Regular.ttf",
+                         "crates/metis-platform/fonts/AtkinsonHyperlegible-Bold.ttf",
+                         "crates/metis-frontend/src/presentation.rs"):
             path = self.root / relative
             path.parent.mkdir(parents=True, exist_ok=True)
             path.write_text(f"// Fixture source: {relative}\n", encoding="utf-8")
@@ -206,6 +209,9 @@ class EvidenceTests(unittest.TestCase):
         self.assertEqual(first["probes"]["probe-label"]["pixels"], {"changed_pixels": 1, "bounds": [0, 0, 1, 1]})
         baseline_path = self.root / "docs/manual/images/captures.json"
         baseline = baseline_path.read_bytes()
+        baseline_value = json.loads(baseline)
+        self.assertEqual(baseline_value["schema"], 2)
+        self.assertNotIn("fixture_sha256", baseline_value)
         self.produce()
         second = visual.compare(self.root, self.output, self.provenance)
         self.assertEqual(second["status"], "passed")
@@ -214,6 +220,8 @@ class EvidenceTests(unittest.TestCase):
         # Recompare the same capture run after corruption: no begin_run call may
         # be needed to invalidate the second comparison's old success manifest.
         (self.output / "form.svg").unlink()
+        (self.output / "form-menu.csv").write_bytes(b"invalid semantic capture")
+        (self.output / "form-menu-dark.svg").write_bytes(solid_svg("#ffffff", 1))
         (self.output / "form-success.bmp").write_bytes(b"BM")
         wrong_pixels = bytearray((self.output / "form-edited.bmp").read_bytes())
         wrong_pixels[54] = 255
@@ -222,19 +230,46 @@ class EvidenceTests(unittest.TestCase):
         values["observed"]["error_code"] = "16386"
         (self.output / "form-rejected.csv").write_bytes(encode_semantics(values))
         values = semantics_fixture("form-corrected")
-        values["geometry"]["0"] = "799 0 1.000x"
+        values["geometry"]["0"] = "799 0 14 90 18"
         (self.output / "form-corrected.csv").write_bytes(encode_semantics(values))
         (self.output / "form-disconnected.svg").write_bytes(b"x" * (visual.MAX_BYTES + 1))
         values = semantics_fixture("form-recovered")
         values["action"]["0"] = "different input trace"
         (self.output / "form-recovered.csv").write_bytes(encode_semantics(values))
         failed = self.report_failure()
-        self.assertEqual([item["status"] for item in failed["captures"].values()], ["failed"] * 7)
+        self.assertEqual([item["status"] for item in failed["captures"].values()], ["failed"] * len(visual.CAPTURES))
         self.assertIn("BMP and SVG pixels disagree", failed["captures"]["form-edited"]["errors"])
         self.assertEqual(failed["captures"]["form-rejected"]["semantic_diff"][0]["path"], "observed.error_code")
         self.assertTrue(any(item["path"] == "action.0" for item in failed["captures"]["form-recovered"]["semantic_diff"]))
         self.assertEqual(baseline_path.read_bytes(), baseline)
         self.assertFalse((self.output / "visual/latest/manifest.json").exists())
+
+    def test_source_only_change_keeps_baseline_and_pixel_change_fails(self):
+        self.produce()
+        first = visual.compare(self.root, self.output, self.provenance, update=True)
+        baseline_path = self.root / "docs/manual/images/captures.json"
+        baseline = baseline_path.read_bytes()
+
+        source = self.root / "examples/presentation/capture.rs"
+        source.write_text("// Changed trace\n", encoding="utf-8")
+        self.provenance["sources"][str(source.resolve())] = visual.source_digest(source)
+        # Compare the unchanged capture run against the new source provenance.
+        second = visual.compare(self.root, self.output, self.provenance)
+        self.assertEqual(second["status"], "passed")
+        self.assertNotEqual(second["fixture_sha256"], first["fixture_sha256"])
+        self.assertEqual(second["provenance"]["sources"][str(source.resolve())],
+                         visual.source_digest(source))
+        self.assertEqual(baseline_path.read_bytes(), baseline)
+
+        (self.output / "form.svg").write_bytes(solid_svg("#ff0000", 1))
+        black = bytes((0, 0, 0, 255)) * (800 * 600)
+        red_pixel = bytes((0, 0, 255, 255)) + black[4:]
+        (self.output / "form.bmp").write_bytes(bmp_fixture(800, 600, red_pixel))
+        failed = self.report_failure()
+        self.assertIn("Exact SVG baseline differs", failed["captures"]["form"]["errors"])
+        self.assertEqual(failed["captures"]["form"]["pixels"],
+                         {"changed_pixels": 1, "bounds": [0, 0, 1, 1]})
+        self.assertEqual(baseline_path.read_bytes(), baseline)
 
     def test_unavailable_baseline_does_not_report_hash_corruption(self):
         self.produce()
@@ -243,7 +278,7 @@ class EvidenceTests(unittest.TestCase):
         source.write_bytes(b"// Changed source\n")
         failed = self.report_failure()
         self.assertEqual(failed["errors"], [f"Stale source provenance: {source}"])
-        self.assertEqual([item["errors"] for item in failed["captures"].values()], [[]] * 7)
+        self.assertEqual([item["errors"] for item in failed["captures"].values()], [[]] * len(visual.CAPTURES))
         self.assertFalse((self.output / "visual/latest/manifest.json").exists())
 
     def test_corrupt_baseline_hash_fails_with_equal_pixels(self):

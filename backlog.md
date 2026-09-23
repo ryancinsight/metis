@@ -14,6 +14,128 @@
 - Basis: Metis main run `35648844306` failed only because Atlas `02a304f519c27b95169b87b732e6e631d51c205d` scanned its `_atlas` workflow checkout as member source (`oversized_files 0 -> 3`, `manifest_implementation 0 -> 2`, `existence_only_assertions 0 -> 4`).
 - Outcome: PR #331 advanced the workflow and source split; the exact full verifier passed 27 stages with 192 resolved packages, the intentional capture-failure negative oracle, and the merged Atlas scanner reporting zero regressions and zero host-state rows.
 
+<a id="METIS-RASTER-SHADOW-001"></a>
+## METIS-RASTER-SHADOW-001 — Gaussian outer box shadows through layout [arch] [major]
+- Status: done; priority: P1; owner: Metis presentation; integrator: root; last-update: 2026-09-22; dependencies: METIS-RASTER-ROUND-002; risk: paint cost on elevated surfaces; delivery: [PR #370](https://github.com/ryancinsight/metis/pull/370)
+- Evidence: [Gaussian box shadows](docs/VERIFICATION.md#gaussian-box-shadows--2026-09-22); `fill/elevated_card_stack` 2.49 ms for eight elevated cards on the pinned cores. An independent review failed the first form at a one-pixel blur and on scratch memory; both fixed with the review's cases committed.
+- Outcome: raised surfaces cast a soft shadow, so cards, the header, the command menu and controls read as layered rather than flat.
+- Scope: `BoxShadow` and `draw_box_shadow` in `metis-platform`; `box-shadow` in the style subset; `DisplayCommand::DrawShadow` below the background; the demo form's elevation and regenerated captures. `DomNode::Element` boxes its element, which the larger computed style required.
+- Oracle: CSS Backgrounds 3 section 6.1: a Gaussian of standard deviation blur/2 within 5% per pixel, cast from the border box and clipped inside it, painted below the background. Straight edges match the closed form; corners stay within 5% of a continuous reference; the region decomposition matches a naive 2D convolution; zero blur equals the offset fill ([ADR 0046](docs/adr/0046-gaussian-box-shadows.md)).
+- Non-goals: `inset`, spread distance, shadow lists.
+
+<a id="METIS-TYPOGRAPHY-TRUETYPE-001"></a>
+## METIS-TYPOGRAPHY-TRUETYPE-001 — Antialiased TrueType text [arch] [major]
+- Status: done; priority: P1; owner: Metis presentation; integrator: root; last-update: 2026-09-22; dependencies: none; risk: text metrics move every layout and capture; delivery: [PR #372](https://github.com/ryancinsight/metis/pull/372)
+- Evidence: [Antialiased TrueType text](docs/VERIFICATION.md#antialiased-truetype-text--2026-09-22); an independent review failed the first form on composite overlaps and ink bounds, both fixed with the review's cases committed.
+- Outcome: text is proportional, antialiased and sized in pixels per em, so headings, labels and body text read as typography instead of one scaled bitmap cell.
+- Scope: a TrueType parser and exact-area rasterizer in `metis-platform::typeface`; Atkinson Hyperlegible Regular and Bold (SIL OFL 1.1) embedded; layout measuring runs by glyph advances; the bitmap font deleted with every consumer migrated; captures regenerated.
+- Oracle: glyph ids, advances and outline areas match fontTools; coverage equals polygon area; malformed fonts are typed errors; runs stay inside their measured boxes ([ADR 0047](docs/adr/0047-truetype-text.md)).
+- Non-goals: hinting, kerning, shaping, glyph caching.
+
+<a id="METIS-VISUAL-CAPTURE-SIZE-001"></a>
+## METIS-VISUAL-CAPTURE-SIZE-001 — Bound the committed capture encoding [patch]
+- Status: todo; priority: P2; owner: Metis verification; dependencies: METIS-RASTER-SHADOW-001; risk: repository growth per baseline refresh
+- Finding: shadow gradients took each form capture SVG from 0.56 MB to about 1.2 MB, and antialiased text to about 2.1 MB (seven captures, about 15 MB per refresh), because the encoder emits one rectangle per color run. The Atlas artifact budget counts raster suffixes only, so the SVG captures are unmeasured against the 200 KB image budget.
+- Oracle: every committed capture stays under the image budget with pixel-identical decode, and the budget scan measures the capture format.
+
+<a id="METIS-RASTER-ROUND-001"></a>
+## METIS-RASTER-ROUND-001 — Antialiased rounded rectangle paint [arch] [major]
+- Status: review; priority: P1; owner: Metis presentation; integrator: root; last-update: 2026-09-22; dependencies: METIS-RASTER-SPAN-001; ADR: [0043](docs/adr/0043-rounded-rectangle-paint.md); risk: composite drift
+- Outcome: `fill_rect` and `draw_rect_outline` take a validated `CornerRadius`; a square radius keeps the existing span path bit-identical and a rounded radius antialiases the corner arcs by coverage while leaving the straight edges exact. One scanline routine serves both the fill and its border.
+- Delivered: `CornerRadius::clamped` bounds a radius to half the shorter side; the border is the outer shape minus the shape inset by the border width; three column classes per row keep per-pixel coverage proportional to the radius rather than the shape width.
+- Evidence: [rounded rectangle paint evidence](docs/VERIFICATION.md#rounded-rectangle-paint-evidence--2026-09-22); eight tests cover radius clamping, bit-identical square output, corner clearance, antialiasing and symmetry, the hollow border interior, degenerate and off-surface geometry, and a transparent source. Visual demonstration waits for METIS-RASTER-ROUND-002, when the golden form captures regenerate once under review rather than growing an unrelated snapshot.
+- Review (independent judge, 2026-09-22): the scanline classification was ported line-for-line and diffed against a brute-force coverage oracle across roughly 166,000 configurations — zero write-set differences and zero double-writes, with branch counters confirming every column class was exercised. The correctness oracle passed; four test-quality findings were raised and all four are fixed here: an assertion-free clipping test, an opaque-only border test that could not observe double compositing, no committed differential oracle, and two clarity defects (`column_index` also converted rows; `fill_run` dropped a run silently instead of stating its invariant).
+- Residual: the display commands still pass `CornerRadius::SQUARE`, so `border-radius` keeps its typed rejection. Carrying the radius through `DisplayCommand` and admitting the declaration is METIS-RASTER-ROUND-002, held until the agent editing `layout/display.rs` commits.
+
+<a id="METIS-LAYOUT-ALIGN-001"></a>
+## METIS-LAYOUT-ALIGN-001 — Admit flex alignment through layout [arch] [minor]
+- Status: review; priority: P1; owner: Metis presentation; integrator: root; last-update: 2026-09-22; dependencies: METIS-LAYOUT-MINSIZE-001; ADR: [0044](docs/adr/0045-flex-alignment-redistribution.md); risk: painter-order or geometry drift
+- Delivered: child layout records each child's command range and cross extent; the container computes free space once its rectangle is final and translates each child's commands by the offset its keyword defines. `DisplayCommand::translate` matches every variant without elision so a later command kind must state how it moves.
+- Evidence: [authored flex alignment evidence](docs/VERIFICATION.md#authored-flex-alignment-evidence--2026-09-22). Five layout tests cover the four distributions, the four cross alignments, a full container distributing nothing, the zero-offset default, and a text run moving with its box.
+- Consequence: this empties the rejection category [ADR 0013](docs/adr/0013-strict-style-contract.md) created. `validate_renderer_support` and `unsupported_style` are deleted rather than left as a check that can no longer fail; `parse` retains the unknown-property and grammar rejection that was doing the work.
+- Outcome: `justify-content` and `align-items` place children within the free space their container leaves, so an authored surface can centre a control, push a footer to the end edge, or space a row of buttons instead of stacking everything at the start edge.
+- Scope: redistribute after child layout by translating each child's emitted commands, since a child paints while it is measured. Covers the four main-axis distributions and the four cross-axis alignments the style model already declares. No wrapping, no `space-around`/`space-evenly`, no per-item `align-self`.
+- Oracle: with no free space every child lands exactly where start alignment puts it, so existing captures are unchanged; a container with free space places children at the offsets each keyword defines; painter order is preserved; translation moves every command kind a child can emit, including text, strokes and images; `stretch` remains the default and a no-op.
+- Verification: focused and workspace `cargo clippy -D warnings`, `cargo nextest run`, `cargo doc`, and the visual baseline unchanged.
+
+<a id="METIS-FORM-LABELS-001"></a>
+## METIS-FORM-LABELS-001 — Drop bracket decoration from control labels [patch]
+- Status: done; priority: P3; owner: Metis presentation; integrator: root; last-update: 2026-09-23; dependencies: none; risk: accessibility oracle drift; delivery: [PR #374](https://github.com/ryancinsight/metis/pull/374)
+- Outcome: control labels read as words rather than ASCII button art, now that the control itself carries the affordance.
+- Blocker-shaped detail: `[ SUBMIT CALCULATION TO BACKEND ]`, `[ COMMANDS ]` and the uppercase menu labels are asserted in `crates/metis-app/src/frontend/native.rs`, `scripts/python_native_accessibility.py`, the native semantic baseline and the manual, so the change is a coordinated rename across those oracles rather than a markup edit.
+
+<a id="METIS-NATIVE-POPOVER-001"></a>
+## METIS-NATIVE-POPOVER-001 — Anchor native command menus [minor]
+- Status: review; priority: P1; owner: Metis presentation; integrator: root; last-update: 2026-09-23; dependencies: none; risk: overlay geometry and input routing; decision: [ADR 0044](docs/adr/0044-anchored-popovers.md).
+- Outcome: a visible command menu floats at its laid-out toggle without moving document content and receives native input before covered controls.
+- Scope: anchored ui-lang layout and element rectangles, frontend menu markup, native hit testing and dismissal, focused regressions, regenerated visual captures, and synchronized manual text.
+- Non-goals: general absolute positioning, browser layout, citation queries, Gaia mesh viewing, and mutable framebuffer work.
+- Acceptance: measured menu content paints last; below/above and horizontal viewport placement follow ADR 0044; missing visible anchors return a typed error; hidden menus skip anchor resolution; oversized content clips at the framebuffer; menu selection, Escape, focus loss, and consumed outside clicks dismiss through geometry independent of theme colors.
+- Verification: 142 focused nextest cases pass; 341 Python unit tests pass with one environment skip; the committed full verifier covers snapshots and visual captures; the Atlas conformance scan reports zero regressions.
+
+<a id="METIS-LAYOUT-MINSIZE-001"></a>
+## METIS-LAYOUT-MINSIZE-001 — Admit minimum sizes through layout [minor]
+- Status: review; priority: P1; owner: Metis presentation; integrator: root; last-update: 2026-09-22; dependencies: METIS-RASTER-ROUND-002; risk: silent layout change
+- Delivered: `minimum` resolves a floor on the extent length grammar and both axes raise their resolved value by it; the style contract admits both declarations.
+- Evidence: [authored minimum-size evidence](docs/VERIFICATION.md#authored-minimum-size-evidence--2026-09-22). Four layout tests cover raising against declared and automatic extents, percentage resolution and display scaling; the visual baseline is unchanged because no authored surface declares a minimum.
+- Outcome: `min-width` and `min-height` raise the used extent of an element, so an authored surface can hold a control at its hit-target size or keep a panel from collapsing when its content is short.
+- Scope: resolve the minimum on the same length grammar as `width`/`height`, display-scaled, and raise the used extent after the automatic or declared value resolves. `justify-content` and `align-items` stay rejected under their own item, since they redistribute space rather than size one box.
+- Oracle: a minimum above the resolved extent raises it and a minimum below leaves it unchanged; the minimum applies to automatic, pixel and percentage sizes alike; it is display-scaled like every other length; `Size::Auto` means no minimum; a negative or malformed value is a typed error.
+- Verification: focused and workspace `cargo clippy -D warnings`, `cargo nextest run`, `cargo doc`, and the visual baseline unchanged (no authored surface declares a minimum yet).
+
+<a id="METIS-TYPOGRAPHY-WEIGHT-001"></a>
+## METIS-TYPOGRAPHY-WEIGHT-001 — Admit font-weight through layout to paint [major]
+- Status: review; priority: P1; owner: Metis presentation; integrator: root; last-update: 2026-09-22; dependencies: METIS-TYPOGRAPHY-GLYPHS-001, METIS-RASTER-ROUND-002; risk: glyph collision at the cell advance
+- Delivered: `GlyphWeight` applies the weight during rasterization by smearing each row one column inside its cell; the text display command carries it, layout maps the authored `FontWeight`, and the style contract admits `normal`/`400` and `bold`/`700`.
+- Also delivered: the run's presentation bundles into `TextStyle`, so `draw_text` has one entry point instead of a `draw_text_scaled` sibling. Adding the weight as an eighth parameter tripped the argument-count design lint, and the lint was right — the device scale and the weight are parameters of a run, not separate functions. Removing the public sibling makes this [major] rather than [minor].
+- Evidence: [authored font-weight evidence](docs/VERIFICATION.md#authored-font-weight-evidence--2026-09-22). Bold sets strictly more pixels for every inked glyph, no bold row reaches the leading column so the advance gap survives, the run does not reflow, and authored markup at `bold` emits the bold command and paints more pixels than at `normal`.
+- Outcome: a bold declaration renders heavier strokes, so an authored surface can carry the typographic hierarchy its headings and controls imply instead of painting every run at one weight.
+- Scope: a platform glyph weight applied during rasterization, carried on the text display command, mapped from the existing `FontWeight` during layout, and admitted by the style contract with a second dated revision to [ADR 0013](docs/adr/0013-strict-style-contract.md). No new glyph table.
+- Oracle: bold sets strictly more pixels than regular for every glyph that has any; no glyph paints the leftmost column of its cell in either weight, so the one-pixel gap at the `FONT_WIDTH` advance survives; the text advance is unchanged; a bold declaration reaches paint through authored markup.
+- Parity driver: the browser stylesheet already sets `font-weight: 700` on legends, table headers, group labels and buttons; the software renderer could express none of it.
+
+<a id="METIS-RASTER-ROUND-002"></a>
+## METIS-RASTER-ROUND-002 — Admit border-radius through layout [minor]
+- Status: review; priority: P1; owner: Metis presentation; integrator: root; last-update: 2026-09-22; dependencies: METIS-RASTER-ROUND-001; ADR: [0013 revision](docs/adr/0013-strict-style-contract.md), [0043](docs/adr/0043-rounded-rectangle-paint.md); risk: contended region
+- Delivered: `border-radius` parses as a nonnegative pixel length, scales by the display scale and clamps against the laid-out rectangle after child layout; `DisplayCommand::FillRect` and `DrawBorder` carry it so the border follows the fill it encloses.
+- Evidence: [authored border-radius evidence](docs/VERIFICATION.md#authored-border-radius-evidence--2026-09-22). A rendered comparison shows the square fill painting its extreme corner while the rounded one leaves it, both keeping centre and edge midpoints, with partial coverage on the arc. The remaining five declarations keep their typed rejection.
+- Residual: no authored surface adopts a radius yet — the demo form markup lives in `presentation.rs`, held by [PR #359](https://github.com/ryancinsight/metis/pull/359). Adopting it is a one-line style change that will regenerate the form captures once.
+- Re-open resolved: the holding work is committed in [PR #359](https://github.com/ryancinsight/metis/pull/359), so `display.rs` is mergeable rather than held. That PR is independently conflicted with main and must rebase regardless; the overlap here is the `render_to` match arms and resolves mechanically.
+- Parity driver: the browser stylesheet already rounds cards at `0.75rem`, menus at `0.55rem` and controls at `0.4rem` against the same palette tokens the software theme uses. The two render targets of one framework shared colors but diverged on shape, because only one of them could paint a radius.
+- Outcome: `DisplayCommand::FillRect` and `DrawBorder` carry the radius, layout clamps the authored `border-radius` against the final rectangle and scales it by the display scale, and the style contract admits the declaration with a dated revision to [ADR 0013](docs/adr/0013-strict-style-contract.md).
+- Oracle: an authored `border-radius` paints rounded corners on the software surface; a zero radius leaves every existing capture unchanged; `font-weight`, `justify-content`, `align-items`, `min-width` and `min-height` keep their typed rejection.
+
+<a id="METIS-VISUAL-FIXTURE-COUPLING-001"></a>
+## METIS-VISUAL-FIXTURE-COUPLING-001 — Bind the visual baseline to output, not to source identity [patch]
+- Status: review; priority: P2; owner: Metis tooling; integrator: root; last-update: 2026-09-22; dependencies: none; risk: reflexive golden regeneration
+- Observed 2026-09-22: `scripts/visual.py` derives `fixture_sha256` from the digests of every `.rs` under `metis-frontend`, `metis-platform` and `metis-ui-lang`, plus `presentation.rs`, `image.rs` and `Cargo.lock`. A stale fixture fails the stage outright, so any source or lockfile change invalidates the baseline even when the rendered pixels are identical.
+- Evidence: METIS-RASTER-ROUND-002 changed only style and layout sources and left every capture byte-identical; the regenerated baseline differed in exactly one field, `fixture_sha256`, with no `image_sha256` moved. Separately, web-styling [PR #350](https://github.com/ryancinsight/metis/pull/350) had to land a "Refresh fixture fingerprint" commit, and this work hit a `captures.json` rebase conflict for the same reason.
+- Outcome: the gate fails when rendered output changes and not otherwise. The source fingerprint stays in the run report as provenance, where it records which revision produced a capture without gating on it.
+- Oracle: a source-only change that leaves every capture byte-identical passes the visual stage with no baseline edit; a change that moves one pixel still fails until the baseline is regenerated and reviewed.
+- Why it matters beyond churn: a gate that demands regeneration on unrelated edits trains a reflexive `--update`, which is precisely the review that golden images exist to force. It also makes `captures.json` a shared hunk that conflicts between any two concurrent renderer PRs.
+- Verification: schema 2 passes all seven captures against the refreshed main baseline with no visual diffs.
+
+<a id="METIS-GATE-VISUAL-BUDGET-001"></a>
+## METIS-GATE-VISUAL-BUDGET-001 — Restore headroom in the visual-tests budget [patch]
+- Status: review; priority: P2; owner: Metis tooling; integrator: root; last-update: 2026-09-22; dependencies: none; risk: gate flake masking real failures
+- Observed 2026-09-22: `python -m unittest discover -s scripts/tests` runs 331 tests in 58.2 s against the stage's 60 s budget — about three percent headroom — so the stage terminates under any concurrent host load. Three consecutive gate runs on unrelated revisions failed in different stages purely on budget.
+- Outcome: the stage completes with headroom proportional to the host variance the repository already records, by making the suite faster rather than by raising the bound.
+- Scope: profile the 341 Python tests, attribute the dominant cost, and remove it — repeated subprocess launches and repeated fixture construction are the first suspects. Raising the 60-second bound in the offending diff is excluded.
+- Oracle: the suite completes within the committed budget with the documented margin on a loaded host, and the slowest tests are recorded so the next regression is attributable.
+- Profile 2026-09-22: batched Git resolution reduced
+  `test_citations.RevisionCitationTests.test_repository_citations_resolve`
+  from 30.101 s to 0.643 s.
+- The 60-second-bounded profile ran 341/341 tests (one intentional skip) in
+  45.790 s, leaving 14.210 s (23.7%) headroom.
+- Full verification passed all 28 stages with 220 resolved packages; the
+  uninstrumented visual-tests stage ran in 40.017 s. The expected capture-failure
+  oracle returned PermissionDenied.
+- Slowest: `test_browser_drop.FileDropTests.test_probe_timeout_awaits_in_flight_stream_cleanup` 5.434 s;
+  `test_visual.EvidenceTests.test_source_only_change_keeps_baseline_and_pixel_change_fails` 4.588 s;
+  `test_visual.EvidenceTests.test_baseline_acceptance_and_collection_of_every_failure` 4.537 s;
+  `test_visual.EvidenceTests.test_unavailable_baseline_does_not_report_hash_corruption` 3.000 s;
+  `test_visual.EvidenceTests.test_corrupt_baseline_hash_fails_with_equal_pixels` 2.998 s.
+
 <a id="METIS-GALLERY-CYCLES-001"></a>
 ## METIS-GALLERY-CYCLES-001 — Repeated saved-study browser lifecycle
 - Status: done; priority: P1; integrator: root; last-update: 2026-09-16.
@@ -832,8 +954,8 @@ an owner. “Unsupported” cannot replace delivery of a required mobile/native 
 - Delivery reconciliation (2026-09-15): Metis PR [#168](https://github.com/ryancinsight/metis/pull/168), merge `9d2ffb1f2bf276866b90a9039c0513738a62a424`, records the current consumer conformance evidence in ADR 0003. The former documentation branch is collected; target-specific, security, lifecycle and matched-comparison residuals remain represented by their linked items.
 - Historical evidence reconciliation (2026-09-16; superseded by the current 2026-09-22 lock replay): Metis main `88c60a0b6410c0e07700e965bcdbea43b7b20789` remains format-neutral and the RITK consumer lock resolves Moirai browser PAL `95275651722583f52e098c0d30b1a53ec82c1fc7` plus runtime/iterator/parallel/sync `c0b1131178177da699f0692079a1413a2fb033e8`. Hosted RITK run [35133971196](https://github.com/ryancinsight/ritk/actions/runs/35133971196) passes the real 94-file MRI study on Chromium/Firefox; Safari's selected-file read remains an external WebKit authorization failure and the hosted Chromium WebGPU job reports no adapter. The DICOM ownership row makes RITK's scanner/decoder/presentation boundary explicit; real GPU output and recovery remain open consumer evidence.
 - Historical replay reconciliation (2026-09-19; superseded by the current lock correction below): the standalone-lock replay used RITK source `9ea19856c63dbe5b956c81560bad044a48705ee1`, with Metis `b432446f5dbc39fb328220f45ba0d0341eb03263`, Moirai `5075d4c70ba4f840d4c5a47b67c5d564405badf5` and standalone Cargo.lock SHA-256 `182203ea9a9d13dbd596753055b96777954d68173228cfe22475cf496d58ac32`. It reads all 94 saved MRI-DIR files and reproduced the committed 1280 × 800 MRI frame; the [RITK provenance record](../ritk/docs/manual/images/dicom-metis-real-mri.json) retains this historical visual oracle. RITK owns DICOM decoding and clinical presentation, while Metis remains the format-neutral host.
-- Superseded lock correction (RITK PR #588): its exact lock and replay remain historical evidence; the current lock correction is the RITK PR #594 delivery immediately below. The next conformance slices are OS capability enforcement, native accessibility/IME evidence, matched GPUI/Tauri fixtures, and explicit WebGPU recovery; Safari selected-file authorization remains an external host blocker.
-- Current replay delivery (2026-09-22, RITK PR #594 merge `67d4ad4457823f928b02739ec120bc0329a1b7f0`; source `c842689b985beecb159bba17cc1b3a6a50e67c6a`): the authoritative standalone consumer replay now binds Metis `776dbbf94593e42d0a5686b587ed27b72f885a73`, Moirai `0e2e1bbb2d81e16dd9c694ba46a9e9710e034417` and Cargo.lock SHA-256 `602cba1b0a1a2b6ce8bdb61f42d9c3ef2844bdfd76e5120a29b5a6d8c46552ec`. The locked native replay reads all 94 DICOM files/49,807,236 bytes, exits 0, rejects the invalid-study probe with exit 1 and preserves the byte-identical 1280 × 800 MRI frame (`259dd791...`, 411,589 non-black pixels); executable SHA-256 `14412a80c37a19a2f4a09cb08165831a2311d4476f24d1ee159b34406eaf9b30`. Hosted browser evidence is run `35724926751`; prior hashes remain historical records and matched GPUI/Tauri, WASM memory, compositor/latency and ranking residuals stay open.
+- Superseded lock correction (RITK PR #588): its exact lock and replay remain historical evidence; the current lock correction is the RITK PR #604 delivery immediately below. The next conformance slices are OS capability enforcement, native accessibility/IME evidence, matched GPUI/Tauri fixtures, and explicit WebGPU recovery; Safari selected-file authorization remains an external host blocker.
+- Current replay delivery (2026-09-22, RITK lock PR #604 merge `5e2b74d0ac7550870c147c43225b36757b9b0663`, evidence PR #605 merge `29c51440ad4d33ab4109dd665683b7ef5bf45198`; replay source `e88a94219fac9f07339393da2cd0e7a19164f93b`): the authoritative standalone consumer replay binds Metis `1b10541c2ef7a849e6ff66a3c778874bdf96de7b`, Moirai `b77239dd10bcaf803394c26255c462bc858c1340` and Cargo.lock SHA-256 `d0d6abd6baf3f7d45943e9d1d3f85a2158b7dae605d3ec23ec07981b8b17a9cd`. The locked native replay reads all 94 DICOM files/49,807,236 bytes, exits 0, rejects the invalid-study probe with exit 1 and preserves the revision-bound 1280 × 800 MRI frame (`85071f20ca11cb4a9b2524db0a53b21695b7e93141831e7e0ab293c42fbcd582`, 411,413 non-black pixels); executable SHA-256 `7f81c6fc3d2e76c7e28d603fbaad3eece1fb67c694b7b97bf4ff6c7dc3325484`. Hosted run [35759891764](https://github.com/ryancinsight/ritk/actions/runs/35759891764) passes Chromium, Chromium-window, MIP, responsive Chromium and Firefox lanes; WebKit bounded-read and Chromium WebGPU adapter failures remain explicit host residuals in the [RITK cross-engine provenance](https://github.com/ryancinsight/ritk/blob/main/docs/manual/images/dicom-metis-real-browser-mri-cross-engine.json).
 - Delivery reconciliation (2026-09-17): deleted local documentation branches no longer appear as active leases in the desktop, text, accessibility, asset, file and performance items; their residual acceptance work remains represented by each item's status and dependencies.
 
 <a id="METIS-VERIFY-002"></a>
@@ -854,10 +976,10 @@ an owner. “Unsupported” cannot replace delivery of a required mobile/native 
 - Status: done; delivery: [PR #81](https://github.com/ryancinsight/metis/pull/81), merge `18cf147`.
 - Outcome: Browser gallery accepts a complete public 409-file DICOM study through the bounded Metis drop area and renders three RITK-owned orthogonal frames; the file-backed Edge run, rejection probes and full Windows gate passed.
 
-<a id="METIS-CITATIONS-002"></a>
-## METIS-CITATIONS-002 — Batch revision citation queries
-- Status: review; priority: P1; integrator: design-session; last-update: 2026-09-22.
-- Outcome: retain complete citation checks within the committed Python test budget.
-- Scope: scripts/citations.py and its existing test module.
-- Acceptance: reachable, unreachable and foreign-object classifications are unchanged; command failures surface.
-- Evidence: 15 focused tests pass; full 339-test Python suite passes in 38.447 seconds with one skip under the unchanged 60-second bound.
+<a id="METIS-WORKBENCH-DESIGN-001"></a>
+## METIS-WORKBENCH-DESIGN-001 — Refine browser visual hierarchy
+- Status: review; priority: P2; integrator: design-session; last-update: 2026-09-22.
+- Outcome: distinguish primary actions, diagnostics and content through typography, palette and spacing.
+- Scope: browser CSS, responsive capture evidence and browser manual; native renderer and IME work excluded.
+- Acceptance: inspected desktop/mobile and theme states; no horizontal overflow; 44px option targets; browser asset checks pass.
+- Evidence: WASM release build and 15 browser asset checks pass; 360/800/1440px captures updated; independent CSS review passes.

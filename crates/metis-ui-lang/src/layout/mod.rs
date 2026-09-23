@@ -1,11 +1,23 @@
 //! Sequential row/column box layout and display-list generation.
 //!
-//! Supports explicit or automatic sizes, margins, padding, backgrounds, text, and
-//! uniform square borders. Unsupported browser layout declarations are rejected
-//! before a display list is emitted so programmatic DOMs cannot silently diverge.
+//! Supports explicit, automatic and minimum sizes, margins, padding, flex
+//! alignment, rounded backgrounds and uniform borders, outer box shadows and
+//! text. A visible `popover-anchor` element leaves normal flow and paints after
+//! the document at its laid-out anchor. Every declaration the style subset
+//! admits is painted; anything outside it is rejected when the style is parsed.
 
+mod device;
 mod display;
 mod geometry;
+mod intrinsic;
+mod limits;
+mod popover;
+#[cfg(test)]
+#[path = "../layout_popover_tests.rs"]
+mod popover_tests;
+#[cfg(test)]
+#[path = "../layout_sizing_tests.rs"]
+mod sizing_tests;
 #[cfg(test)]
 #[path = "../layout_tests.rs"]
 mod tests;

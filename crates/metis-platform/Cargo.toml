@@ -9,13 +9,19 @@ repository.workspace = true
 description = "Bounded software framebuffer and Windows native event/presentation adapter"
 
 [dependencies]
+eunomia = { workspace = true }
 metis-core = { workspace = true }
 moirai-pal = { workspace = true }
 moirai-async = { workspace = true }
 moirai-transport = { workspace = true }
 
 [dev-dependencies]
+criterion = { workspace = true }
 moirai-executor = { workspace = true }
+
+[[bench]]
+name = "rasterizer"
+harness = false
 
 [target.'cfg(not(target_arch = "wasm32"))'.dependencies]
 moirai-http = { workspace = true }

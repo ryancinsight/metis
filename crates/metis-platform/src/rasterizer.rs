@@ -1,8 +1,8 @@
-//! Clipped rectangle, line and bitmap text drawing, bounded by framebuffer area.
+//! Clipped rectangle and line drawing, bounded by framebuffer area.
 
-use crate::DisplayScale;
-use crate::font::{FONT_WIDTH, draw_glyph_scaled};
-use crate::framebuffer::{Color, Framebuffer, Rect};
+use crate::framebuffer::{Color, Framebuffer, Rect, SourceOver};
+mod round_rect;
+mod shadow;
 mod stroke;
 
 const LEFT: u8 = 1;
@@ -10,8 +10,18 @@ const RIGHT: u8 = 2;
 const TOP: u8 = 4;
 const BOTTOM: u8 = 8;
 
+pub use round_rect::CornerRadius;
+use round_rect::{RoundRect, composite_shape};
+pub use shadow::{BoxShadow, draw_box_shadow};
 pub use stroke::{LineCap, LineJoin, MAX_STROKE_POINTS, StrokeWidth, draw_polyline};
 
+/// Composites a color over the visible part of an axis-aligned span rectangle.
+///
+/// The bounds are clipped once, then each covered row is written as one
+/// contiguous span. An opaque source replaces the span outright because
+/// source-over with a fully opaque source reduces to the source value; a
+/// translucent source composites through the shared [`SourceOver`] terms. The
+/// composited result is identical to blending each pixel on its own.
 pub(crate) fn fill_bounds(
     fb: &mut Framebuffer,
     left: i64,
@@ -20,36 +30,76 @@ pub(crate) fn fill_bounds(
     bottom: i64,
     color: Color,
 ) {
-    let left = left.clamp(0, i64::from(fb.width()));
-    let top = top.clamp(0, i64::from(fb.height()));
-    let right = right.clamp(0, i64::from(fb.width()));
-    let bottom = bottom.clamp(0, i64::from(fb.height()));
-    for y in top..bottom {
-        for x in left..right {
-            fb.blend_pixel(
-                i32::try_from(x).expect("invariant: framebuffer coordinates fit i32"),
-                i32::try_from(y).expect("invariant: framebuffer coordinates fit i32"),
-                color,
-            );
+    let source = SourceOver::new(color);
+    if source.is_transparent() {
+        return;
+    }
+    let clamp = |value: i64, limit: u32| -> u32 {
+        u32::try_from(value.clamp(0, i64::from(limit)))
+            .expect("invariant: a clamped bound is a nonnegative surface coordinate")
+    };
+    let left = clamp(left, fb.width());
+    let right = clamp(right, fb.width());
+    let top = clamp(top, fb.height());
+    let bottom = clamp(bottom, fb.height());
+    if right <= left || bottom <= top {
+        return;
+    }
+    if source.is_opaque() {
+        let packed = source.packed();
+        for y in top..bottom {
+            fb.row_span_mut(y, left, right).fill(packed);
+        }
+    } else {
+        for y in top..bottom {
+            fb.composite_span(y, left, right, source);
         }
     }
 }
 
 /// Fills the visible intersection of an axis-aligned rectangle.
-pub fn fill_rect(fb: &mut Framebuffer, rect: Rect, color: Color) {
-    fill_bounds(
-        fb,
-        i64::from(rect.x),
-        i64::from(rect.y),
-        i64::from(rect.x) + i64::from(rect.width),
-        i64::from(rect.y) + i64::from(rect.height),
-        color,
-    );
+///
+/// [`CornerRadius::SQUARE`] takes the unrounded span path, so square output is
+/// unchanged. A rounded radius antialiases the corner arcs by coverage and
+/// leaves the straight edges exact.
+pub fn fill_rect(fb: &mut Framebuffer, rect: Rect, radius: CornerRadius, color: Color) {
+    if radius.is_square() {
+        fill_bounds(
+            fb,
+            i64::from(rect.x),
+            i64::from(rect.y),
+            i64::from(rect.x) + i64::from(rect.width),
+            i64::from(rect.y) + i64::from(rect.height),
+            color,
+        );
+        return;
+    }
+    let Some(outer) = RoundRect::new(rect, radius) else {
+        return;
+    };
+    composite_shape(fb, outer, None, color);
 }
 
-/// Draws an inward border, blending each corner pixel exactly once.
-pub fn draw_rect_outline(fb: &mut Framebuffer, rect: Rect, width: i32, color: Color) {
+/// Draws an inward border, blending each covered pixel exactly once.
+///
+/// A rounded radius paints the ring between the outer shape and the shape
+/// inset by the border width, so the border follows the same arc as the fill
+/// it encloses.
+pub fn draw_rect_outline(
+    fb: &mut Framebuffer,
+    rect: Rect,
+    width: i32,
+    radius: CornerRadius,
+    color: Color,
+) {
     if width <= 0 || rect.width <= 0 || rect.height <= 0 {
+        return;
+    }
+    if !radius.is_square() {
+        let Some(outer) = RoundRect::new(rect, radius) else {
+            return;
+        };
+        composite_shape(fb, outer, outer.inset(f64::from(width)), color);
         return;
     }
     let left = i64::from(rect.x);
@@ -187,148 +237,6 @@ fn interpolate(first_a: i64, first_b: i64, second_a: i64, second_b: i64, target:
     i64::try_from(value).expect("invariant: line interpolation remains in coordinate range")
 }
 
-/// Renders one horizontal text run; newline characters have no advance.
-///
-/// Scale zero means one. Unsupported characters use the font replacement glyph.
-pub fn draw_text(fb: &mut Framebuffer, x: i32, y: i32, text: &str, color: Color, scale: u32) {
-    draw_text_scaled(fb, x, y, text, color, scale, DisplayScale::ONE);
-}
-
-/// Renders one horizontal text run at a fractional device scale.
-///
-/// The integer `scale` remains the authored bitmap multiplier. The validated
-/// display scale maps authored pixels to physical pixels with deterministic
-/// fixed-point rounding, so native DPI changes repaint geometry and text from
-/// the same display list.
-pub fn draw_text_scaled(
-    fb: &mut Framebuffer,
-    x: i32,
-    y: i32,
-    text: &str,
-    color: Color,
-    scale: u32,
-    display_scale: DisplayScale,
-) {
-    let effective_milli = u64::from(scale.max(1)) * u64::from(display_scale.milli());
-    let advance = scaled_extent(u64::from(FONT_WIDTH), effective_milli);
-    let mut cursor = i64::from(x);
-    for c in text.chars().filter(|c| *c != '\n') {
-        if cursor >= i64::from(fb.width()) {
-            break;
-        }
-        let Ok(origin) = i32::try_from(cursor) else {
-            break;
-        };
-        if cursor.saturating_add(advance) > 0 {
-            draw_glyph_scaled(fb, origin, y, c, color, scale, display_scale);
-        }
-        cursor = cursor.saturating_add(advance);
-    }
-}
-
-fn scaled_extent(value: u64, effective_milli: u64) -> i64 {
-    let rounded = (u128::from(value) * u128::from(effective_milli) + 500) / 1_000;
-    i64::try_from(rounded.min(u128::from(u64::MAX / 2)))
-        .expect("invariant: clipped text extent fits i64")
-}
-
 #[cfg(test)]
-mod tests {
-    use super::*;
-    use crate::font::draw_glyph;
-
-    #[test]
-    fn extreme_geometry_clips_without_overflow() {
-        let mut fb = Framebuffer::new(2, 2).expect("small surface");
-        fill_rect(&mut fb, Rect::new(-1, -1, i32::MAX, i32::MAX), Color::GREEN);
-        assert_eq!(fb.pixels(), &[0xff38_a169; 4]);
-        draw_text(&mut fb, i32::MAX, i32::MIN, "A", Color::WHITE, u32::MAX);
-        assert_eq!(fb.get_pixel(0, 0), Color::GREEN);
-        draw_glyph(&mut fb, 0, 0, 'A', Color::WHITE, u32::MAX);
-        assert_eq!(fb.get_pixel(0, 0), Color::GREEN);
-    }
-
-    #[test]
-    fn translucent_border_does_not_blend_corners_twice() {
-        let mut fb = Framebuffer::new(3, 3).expect("small surface");
-        let color = Color::rgba(200, 10, 20, 128);
-        draw_rect_outline(&mut fb, Rect::new(0, 0, 3, 3), 1, color);
-        assert_eq!(fb.get_pixel(0, 0), color);
-        assert_eq!(fb.get_pixel(1, 1), Color::TRANSPARENT);
-        assert_eq!(fb.get_pixel(2, 2), color);
-    }
-
-    #[test]
-    fn glyph_pixels_and_spaces_follow_bitmap_cells() {
-        let mut fb = Framebuffer::new(24, 16).expect("text surface");
-        draw_text(&mut fb, 0, 0, "A B", Color::RED, 1);
-        assert_eq!(fb.get_pixel(2, 2), Color::RED);
-        assert_eq!(fb.get_pixel(0, 0), Color::TRANSPARENT);
-        assert_eq!(fb.get_pixel(10, 2), Color::TRANSPARENT);
-        assert_eq!(fb.get_pixel(18, 2), Color::RED);
-    }
-
-    #[test]
-    fn fractional_text_scale_changes_pixel_extent_deterministically() {
-        let mut one = Framebuffer::new(32, 20).expect("one-scale surface");
-        draw_text_scaled(&mut one, 0, 0, "A", Color::RED, 1, DisplayScale::ONE);
-        let mut fractional = Framebuffer::new(32, 20).expect("fractional surface");
-        draw_text_scaled(
-            &mut fractional,
-            0,
-            0,
-            "A",
-            Color::RED,
-            1,
-            DisplayScale::from_milli(1_500).expect("150 percent"),
-        );
-        let one_pixels = one.pixels().iter().filter(|pixel| **pixel != 0).count();
-        let scaled_pixels = fractional
-            .pixels()
-            .iter()
-            .filter(|pixel| **pixel != 0)
-            .count();
-        assert!(scaled_pixels > one_pixels);
-        assert_eq!(one.get_pixel(2, 2), Color::RED);
-    }
-
-    #[test]
-    fn extreme_fractional_text_scale_clips_without_panicking() {
-        let mut framebuffer = Framebuffer::new(8, 8).expect("surface");
-        draw_text_scaled(
-            &mut framebuffer,
-            0,
-            0,
-            "A",
-            Color::RED,
-            u32::MAX,
-            DisplayScale::from_milli(u32::MAX).expect("validated scale"),
-        );
-        assert!(framebuffer.pixels().iter().all(|pixel| *pixel == 0));
-    }
-
-    #[test]
-    fn line_clips_extreme_endpoints_before_traversal() {
-        let mut fb = Framebuffer::new(4, 3).expect("line surface");
-        draw_line(
-            &mut fb,
-            (i32::MIN, i32::MIN),
-            (i32::MAX, i32::MAX),
-            Color::BLUE,
-        );
-        assert_eq!(fb.get_pixel(0, 0), Color::BLUE);
-        assert_eq!(fb.get_pixel(1, 1), Color::BLUE);
-        assert_eq!(fb.get_pixel(2, 2), Color::BLUE);
-        assert_eq!(fb.get_pixel(3, 0), Color::TRANSPARENT);
-    }
-
-    #[test]
-    fn translucent_line_composites_each_pixel_once() {
-        let mut fb = Framebuffer::new(3, 1).expect("line surface");
-        fb.clear(Color::WHITE);
-        draw_line(&mut fb, (-4, 0), (8, 0), Color::rgba(0, 0, 255, 128));
-        assert_eq!(fb.get_pixel(0, 0), Color::rgba(127, 127, 255, 255));
-        assert_eq!(fb.get_pixel(1, 0), Color::rgba(127, 127, 255, 255));
-        assert_eq!(fb.get_pixel(2, 0), Color::rgba(127, 127, 255, 255));
-    }
-}
+#[path = "rasterizer_tests.rs"]
+mod tests;

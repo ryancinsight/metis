@@ -421,10 +421,10 @@ mod tests {
         .expect("scaled layout");
         assert!(display.commands.iter().any(|command| matches!(
             command,
-            DisplayCommand::DrawText {
-                display_scale,
-                ..
-            } if *display_scale == scale
+            // The default 14-pixel size at 150 percent is 21 device
+            // pixels per em, exact in binary.
+            DisplayCommand::DrawText { style, .. }
+                if (style.size.pixels() - 21.0).abs() < f64::EPSILON
         )));
     }
 

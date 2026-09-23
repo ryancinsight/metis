@@ -7,7 +7,9 @@ mod jpeg_arithmetic_gallery;
 #[path = "support/jpeg_gallery.rs"]
 mod jpeg_gallery;
 
-use metis_platform::{Color, Framebuffer, Rect, draw_rect_outline, draw_text, fill_rect};
+use metis_platform::rasterizer::CornerRadius;
+use metis_platform::typeface::{TextSize, TextStyle, draw_text};
+use metis_platform::{Color, Framebuffer, Rect, draw_rect_outline, fill_rect};
 use metis_ui_lang::asset::AssetErrorKind;
 use metis_ui_lang::{ImagePlacement, ImageTransform, RasterImage};
 use std::error::Error;
@@ -108,14 +110,25 @@ fn render_png_gallery(frame: &mut Framebuffer) -> Result<(), Box<dyn Error>> {
         18,
         16,
         "NATIVE PNG: ASPECT ALPHA ORIENTATION",
-        TEXT,
-        2,
+        TextStyle::new(
+            TEXT,
+            TextSize::new(24.0).expect("invariant: 24 px is a valid text size"),
+        ),
     );
 
     for (index, (label, transform, expected_corners)) in CASES.into_iter().enumerate() {
         let index = i32::try_from(index)?;
         let bounds = Rect::new(18 + index * 156, PANEL_Y, PANEL_WIDTH, PANEL_HEIGHT);
-        draw_text(frame, bounds.x, 52, label, TEXT, 1);
+        draw_text(
+            frame,
+            bounds.x,
+            52,
+            label,
+            TextStyle::new(
+                TEXT,
+                TextSize::new(14.0).expect("invariant: 14 px is a valid text size"),
+            ),
+        );
         draw_rect_outline(
             frame,
             Rect::new(
@@ -125,9 +138,10 @@ fn render_png_gallery(frame: &mut Framebuffer) -> Result<(), Box<dyn Error>> {
                 bounds.height + 2,
             ),
             1,
+            CornerRadius::SQUARE,
             OUTLINE,
         );
-        fill_rect(frame, bounds, PANEL_BACKGROUND);
+        fill_rect(frame, bounds, CornerRadius::SQUARE, PANEL_BACKGROUND);
 
         let placement = ImagePlacement::contain(image.clone(), bounds, transform)?;
         let expected_destination = match transform {
@@ -178,8 +192,10 @@ fn render_frame() -> Result<Framebuffer, Box<dyn Error>> {
         18,
         558,
         "TRUNCATED PNG + JPEG: REJECTED (MALFORMED)",
-        Color::rgb(74, 222, 128),
-        1,
+        TextStyle::new(
+            Color::rgb(74, 222, 128),
+            TextSize::new(14.0).expect("invariant: 14 px is a valid text size"),
+        ),
     );
 
     Ok(frame)

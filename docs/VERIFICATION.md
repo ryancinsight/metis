@@ -506,9 +506,11 @@ standalone gate so publishing cannot ship an overlay-only dependency graph.
 The user manual replaces a domain book. Its seven application snapshots are produced by
 the Rust presentation example from real backend exchanges and actual framebuffer
 pixels, checked against `docs/manual/images/form*.svg`. `--update-snapshots`
-explicitly refreshes those files and the semantic/fixture baseline
+explicitly refreshes those files and the semantic baseline
 `docs/manual/images/captures.json`; normal verification rejects drift and missing
-local manual links. Comparator unit tests and the actual capture-failure process
+local manual links. Schema 2 stores capture semantics and exact image hashes;
+source and lock fingerprints remain in the run report as provenance. Comparator
+unit tests and the actual capture-failure process
 probe each run under a 60-second bound. A write failure must terminate the
 Moirai session, collect the worker and preserve the primary diagnostic.
 
@@ -558,10 +560,11 @@ a user-created file. The empty application Start Menu directory is removed.
 `output/distribution/latest/workflow.json` records package hashes, commands and
 outcomes; this is host workflow evidence, not signing or OS isolation evidence.
 
-All seven gallery images retain identical pixels and semantic records. Updating
-the dependency-lock-bound fixture changes only `captures.json`'s fixture hash;
-no image or expected outcome changes. The gate records exact source hashes and
-rejects a stale fixture rather than silently accepting the dependency change.
+At that revision, changing the dependency lock updated a source-bound fixture
+hash although the seven images and semantic records stayed identical. The current
+schema-2 baseline stores only rendered output; exact source and lock fingerprints
+remain in verification reports, while unrelated source changes require no image
+baseline edit.
 
 ## Linux archive lifecycle implementation — 2026-09-21
 
@@ -1296,8 +1299,10 @@ The full locked verifier for this increment passes all stages on Windows with
 171 resolved packages. The intentional `capture-failure` probe exits 1 with
 `PermissionDenied` and is accepted; no unexpected stage fails. The visual
 comparison passes all seven captures, three mutation probes and the image
-asset check with zero pixel or semantic differences. The source-bound fixture
-digest is `493526c2f95221e40d5c9014ed2f94f796700dee1f407448fdbd2ee725cb1d1a`.
+asset check with zero pixel or semantic differences. That report's source-bound
+fingerprint is `493526c2f95221e40d5c9014ed2f94f796700dee1f407448fdbd2ee725cb1d1a`;
+the current gate retains it as provenance while comparing output against the
+schema-2 semantic and image baselines.
 
 ## Browser text and composition evidence — 2026-09-08
 
@@ -2427,6 +2432,440 @@ the provider's Windows 0.62 bindings. PR [#414](https://github.com/ryancinsight/
 merged the Windows `ValuePattern.SetValue` action mapping at `d7b38d7`. These
 are provider and consumer contract checks: no OS screen reader, spoken output
 or host preference enablement is claimed.
+
+### Authored flex alignment evidence — 2026-09-22
+
+`justify-content` and `align-items` place children within the free space their
+container leaves. Alignment cannot be decided while children are measured,
+because a child paints as it is measured and the container's own extent is not
+final until its automatic height is derived from those children. Redistribution
+therefore runs after child layout and translates each child's emitted commands;
+[ADR 0045](adr/0045-flex-alignment-redistribution.md) records why translating
+beats a second paint pass.
+
+The evidence is positional rather than structural. Three thirty-pixel children
+in a two-hundred-pixel column leave one hundred and ten pixels free, and the
+keywords place their tops at 0/30/60 for start, 55/85/115 for centre,
+110/140/170 for end, and 0/85/170 for space-between — the first child holding
+the start edge and the last reaching the end. Cross-axis alignment places
+twenty-wide children in a hundred-wide container at 0, 40 and 80 for start,
+centre and end, with stretch at 0.
+
+Two tests carry the safety argument. A container its children exactly fill
+distributes nothing: every keyword agrees with start alignment, so a document
+without free space cannot move. And the default pair leaves children at
+0/30/60, which is where child layout already put them — that zero-offset
+default is what keeps every existing capture byte-identical, and the golden
+baseline confirms it.
+
+Translation moves every command kind a child emits, not just its box: a child
+carrying a text run pushed to the end edge has its box and its run at the same
+top, so the label cannot tear away from the surface it names. `ImagePlacement`
+gained a crate-internal translation for the same reason.
+
+Admitting these two empties the rejection category
+[ADR 0013](adr/0013-strict-style-contract.md) created.
+`validate_renderer_support` and `unsupported_style` are deleted rather than
+left as a check that can no longer fail; `parse` still rejects unknown
+properties and values outside each admitted grammar, which is where that
+decision's protection actually lives. The bounded subset holds: `space-around`,
+`baseline` and bare `end` are typed errors rather than a silent fall back to
+the default.
+
+### Control labels as words — 2026-09-23
+
+The five control labels read as words in sentence case — `Commands`, `Focus
+patient`, `Dark theme`, `System theme`, `Submit calculation` — instead of
+bracketed capitals that stood in for a button affordance the renderer could
+not paint. `Submit calculation` is the browser host's existing label, so both
+hosts now name the action alike. The native accessibility constants, the
+native semantic specimen (regenerated by its documented command; 34 elements,
+16,246 bytes, only names changed) and the seven form captures follow.
+
+Removing the brackets exposed a layout gap: every automatic-width element
+filled its available width, so a column's `align-items: center` had no free
+space to place a label in, and the labels sat at the left edge of their
+buttons. Columns that do not stretch now size such children to their content
+([ADR 0045](adr/0045-flex-alignment-redistribution.md)); layout tests pin
+centred, start, end and stretched placement, declared widths, a row's summed
+content and the cap at the available width, and fail when content sizing is
+removed. The submit label lands at x 337, centred in its 328-pixel content
+box.
+
+### Antialiased TrueType text — 2026-09-22
+
+The software renderer draws text from Atkinson Hyperlegible Regular and Bold
+through its own TrueType parser and exact-area rasterizer
+([ADR 0047](adr/0047-truetype-text.md)); the 8 × 16 bitmap font is gone.
+
+The oracle is fontTools 4.61.1 reading the same files. Glyph ids and
+advances for nine characters per face, including the composite `é`, match it
+exactly, and rasterized coverage totals match its analytic outline areas
+within the flattening bound — the 1/256-pixel chord tolerance times the
+flattened perimeter — at 11, 16 and 37.5 pixels and three fractional origins.
+Drawn black-on-white runs darken the surface by those same areas, within that
+bound plus half a level per inked pixel.
+
+Area accumulation is exact only without overlapping contours. A test walks
+dense rows of every simple glyph of both faces and finds the winding number
+never exceeds one, proving that premise; composites, whose components can
+overlap, are rasterized by the nonzero rule on 64 rows per pixel and match a
+point-sampled winding reference on the same rows within half a sample column
+per edge crossing. A font assembled byte by byte checks every component
+transform branch against hand-derived bounds and determinant-scaled areas and
+rejects out-of-range and cyclic components. Truncated and mutated copies of
+the regular face fail with typed errors; none panic.
+
+The oracles were shown to bite: dropping implied on-curve midpoints fails the
+area test, shifting a `cmap` delta fails the mapping tests, swapping the 2 × 2
+matrix entries fails the placement test, routing composites through
+accumulation fails the union test, and recoloring the ready badge red fails
+the status-color test.
+
+An independent review of the first delivered form found composite overlaps
+counted twice (up to 0.31 of a pixel too dark on `Å`), a test that claimed ink
+stays inside the advance, work continuing past the segment bound, and glyphs
+overhanging the right edge dropped. Each is fixed with a test that fails
+without the fix. The review also verified the character map for every Unicode
+scalar and the outlines and advances of all 369 glyphs per face against
+fontTools.
+
+Two status-color probes read one pixel of a bitmap glyph. At 12 pixels an
+antialiased stem may never reach full coverage, so they now classify every
+pixel of the status run's line box by its nearest candidate color; the first
+version compared only against the background and failed, because pure red is
+slightly nearer the green state color than the dark header is.
+
+The demo form now carries a type scale — a 22-pixel title, 16-pixel section
+headings, 14-pixel rows and control labels, an 18-pixel rate and 13- and
+12-pixel secondary lines — that the bitmap font, which drew every size from 8
+to 27 pixels identically, could not express.
+
+Two gate scripts carried the bitmap metrics as well: `visual.py` validated
+captured text rows as eight pixels per character and sixteen per line, and
+pinned the capture's font label. Captured rows now carry the size and the
+run's measured width and line height, and the gate checks those for clipping.
+The embedded typefaces join the fixture provenance, since they decide every
+text pixel, and the source digest covers each crate's `fonts` directory.
+
+### Gaussian box shadows — 2026-09-22
+
+`box-shadow` is admitted for one outer shadow and painted as CSS Backgrounds 3
+§6.1 specifies: a Gaussian of standard deviation half the blur radius, cast
+from the border box, clipped inside it and painted below the background
+([ADR 0046](adr/0046-gaussian-box-shadows.md)).
+
+The oracle is the specification's own tolerance. §6.1.2 accepts any image
+whose pixels lie within 5% of the Gaussian result; the corner test compares
+the rendered shadow against a continuous reference — exact along x through the
+normal distribution, a 1000-row midpoint rule along y — for blur 1, 2, 3, 4, 8
+and 16 with a 12-pixel radius, at every pixel for the three smallest, and every
+pixel lies within 5% of full scale plus half a level of rounding. Read as
+relative error the tolerance is unsatisfiable at 8 bits, since a pixel
+expected at 0.4 levels must round to 0 or 1. On a straight edge the discrete
+kernel is exact, so that test asserts the closed form within half a level plus
+the kernel's truncation bound, `255 · 2Φ(−3.5) ≈ 0.12` levels. The region
+decomposition — running-sum intervals away from the arcs, a ring of arc rows
+integrated as slabs near them, 1024-column tiles — is checked within one level
+against a direct evaluation of every slab for every pixel with independently
+computed Gaussian masses, across a narrow shape, a shape of height `2r`, a wide
+shape, a shape partly off the surface, square corners, a one-pixel blur on an
+arc, a one-pixel crescent and a shape crossing a tile boundary. A zero blur
+equals `fill_rect` of the offset shape outside the border box, pixel for
+pixel. Extreme geometry at the `i32` limits paints nothing when the blurred
+extent misses the surface or the border box covers it.
+
+An independent review of the first delivered form failed it: convolving the
+antialiased coverage mask adds a pixel-wide box on each axis at the arcs, and
+at a one-pixel blur the worst corner pixel sat 15.6 levels from the reference
+against a 13.25-level bound. The review also measured a scratch ring of 7 KB
+per visible column at the maximum blur, allocated even for square corners.
+Arc rows are now integrated as `S` slabs. A second pass showed the slab error
+is first order near the flat apex of large arcs, up to half the largest slab
+weight, and reached 13.16 of 13.25 permitted levels at `σS = 4` on a
+67-million-pixel radius; `S` is now the smallest power of two with `σS ≥ 8`,
+bounding it at 6.35 levels, and a test on radii of 200, 1,000 and 5,000 asserts
+that bound. A one-pixel blur on a 12-pixel radius measures 0.5 levels; the ring holds `min(2K + 1, 2r)` arc rows of one
+1024-column tile, at most 7.3 MB whatever the surface. The new extreme-geometry
+test found a conversion panic on local columns past `i32::MAX`, fixed here.
+
+The oracles were shown to bite: setting σ to the blur radius fails four tests,
+and forcing one slab per arc row fails the corner test at a one-pixel blur.
+
+`fill/elevated_card_stack` (eight 520 × 72 cards, 16-pixel blur, 1280 × 800
+surface, pinned cores 2 and 3) measured 11.9 ms for the first per-pixel
+formulation, 3.49 ms for the coverage-mask form and 2.49 ms [2.48, 2.50] for
+the slab form. Host load rose during that last run; the identical-code control
+`fill/rounded_card_stack` held at 204 µs against 202–208 µs before, so the
+pinned cores were not disturbed.
+
+The demo form casts elevation by role: a 4-pixel lift under controls, a
+10-pixel blur under the cards, the header's own-colour 12-pixel blur, and the
+strongest, 20 pixels, under the floating command menu.
+
+The seven regenerated form captures keep their semantic projections unchanged
+in the visual report; only pixels move. Inspected at full size and at
+three-times magnification against the previous baseline: the header, both
+cards and the controls lift off the page with a soft falloff, control shadows
+land on the navigation band, the arcs stay smooth with no banding or seam where
+the closed-form and arc-row regions meet, and no element moves. Regenerated
+after each review revision, the captures moved by at most one level per pass,
+in 164 and then 118 pixels of the 480,000 in the base capture.
+
+### Demo form adopts the admitted declarations — 2026-09-22
+
+The authored clinical screen now uses what the renderer paints, so the
+demonstration shows the capability rather than describing it. The header, the
+navigation band, both cards and every control carry a corner radius; the screen
+title, both card headings and the rate output carry bold weight; the controls
+declare a 44-pixel minimum height and centre their label inside it; and the
+submit control takes a fixed width centred in its row instead of stretching
+across the card.
+
+Every declaration here was rejected by the style contract until this week, so
+the capture is the end-to-end evidence: authored markup, through parsing,
+layout and paint, to pixels. The regenerated captures were inspected at
+four-times magnification — the card arcs are smooth, the one-pixel border
+follows the arc rather than cutting the corner, bold headings are visibly
+heavier than the body labels beside them, and control labels sit centred in
+their hit target.
+
+Label text is deliberately unchanged. `[ SUBMIT CALCULATION TO BACKEND ]` and
+`[ COMMANDS ]` carry bracket decoration that stood in for a button affordance
+the renderer could not paint; with a rounded, centred control at hit-target
+height the brackets are redundant, but the strings are oracles in the native
+accessibility journey and the semantic baseline, so removing them is a
+coordinated change filed as METIS-FORM-LABELS-001.
+
+One test changed, with its derivation. `dpi_event_repaints_and_scales_the_submit_hit_region`
+asserted that the hit region's left edge grows with the display scale. That
+held only while the control was left-aligned at a scaled padding offset. A
+centred control sits at half the space its card has left over, and on a fixed
+physical surface the control grows faster than that card, so its offset falls
+as the scale rises. The assertion was incidental to the test's subject; it now
+asserts the region scales on both axes, which is what the name claims.
+
+### Authored minimum-size evidence — 2026-09-22
+
+`min-width` and `min-height` are admitted and raise the used extent of an
+element. A minimum resolves on the same length grammar as `width`/`height` —
+pixels, percentages against the available extent, and `auto` meaning no
+minimum — and is display-scaled identically, so a minimum and an extent written
+the same way resolve to the same number. It applies after the declared or
+automatic value resolves, so it raises an automatic extent as readily as a
+declared one.
+
+The tests assert the raising behavior rather than the plumbing: a minimum above
+the resolved extent raises it on both axes and one below leaves it unchanged; a
+minimum raises the automatic height of an empty element, which is otherwise
+just its edges; a percentage minimum resolves against the available extent; and
+a minimum scales with the host display scale exactly as width and height do.
+
+One assumption this exposed is worth recording: an element with no declared
+width is `auto` and already fills its available extent, so a width minimum
+below the viewport never binds on such an element. The scaling test declares a
+small width so the minimum is what decides the result.
+
+`justify-content` and `align-items` keep their typed rejection; the
+programmatic-rejection test now exercises `justify-content`. They redistribute
+free space between items rather than sizing one box, which is a separate layout
+capability under its own item.
+
+No golden capture changes: no authored surface declares a minimum yet.
+
+### Authored font-weight evidence — 2026-09-22
+
+`font-weight` is admitted for the two weights the renderer can paint and
+reaches rasterization. `GlyphWeight::Bold` smears each glyph row one column
+toward the trailing edge of its cell rather than carrying a second glyph table,
+so the authored table stays the single source of the letterforms.
+
+The safety argument is a property the table already had to satisfy. Bits pushed
+past the last column are dropped, so a bold glyph cannot reach into the next
+cell; and because no glyph paints the leading column in either weight, the
+one-pixel gap at the `FONT_WIDTH` advance survives. The test asserts both: bold
+sets strictly more pixels than regular for every glyph that has any (over
+eighty of them), and no bold row touches the leading column. A rendered run
+additionally confirms the advance is unchanged, so a weight change never
+reflows a line.
+
+Adding the weight as an eighth parameter tripped the argument-count design
+lint. The lint was right: the device scale and the stroke weight are parameters
+of a text run, not separate functions. The run's presentation now bundles into
+`TextStyle`, and `draw_text` has one entry point where `draw_text` and
+`draw_text_scaled` were parallel variants a parameter covers.
+
+Layout maps the authored `FontWeight` onto the platform weight and carries it
+on the text command. An end-to-end test lays out the same markup at `normal`
+and at `bold`, asserts the emitted command carries the matching weight, and
+asserts the bold render paints strictly more pixels.
+
+The subset is deliberately bounded: `normal`/`400` and `bold`/`700` are
+admitted, and `500`, `lighter` and `bolder` are typed errors. Rounding an
+unpaintable weight to the nearest paintable one would be exactly the silent
+drop [ADR 0013](adr/0013-strict-style-contract.md) exists to prevent.
+
+With this, the software renderer covers both shape affordances the browser
+stylesheet already used — rounded corners and bold text — against the shared
+palette tokens. `justify-content`, `align-items`, `min-width` and `min-height`
+remain rejected; each needs layout semantics rather than paint semantics.
+
+### Authored border-radius evidence — 2026-09-22
+
+`border-radius` is admitted by the software renderer's style subset and reaches
+paint. It parses as a nonnegative pixel length on the same grammar as `gap` and
+`border-width`, scales by the host display scale, and clamps to half the shorter
+side of the laid-out rectangle — a bound that can only be applied after child
+layout, because an automatic height is not known before it.
+`DisplayCommand::FillRect` and `DrawBorder` carry the value, so the border
+follows the same arc as the fill it encloses.
+
+The end-to-end oracle is a rendered comparison rather than a field check:
+authored markup with `border-radius: 10px` and the same markup without it are
+laid out and painted to two framebuffers. The square fill paints its extreme
+corner, the rounded one leaves the background there, both keep the centre and
+the straight-edge midpoints, and the rounded corner carries partially covered
+pixels. Layout tests additionally assert that the authored radius reaches both
+the fill and the border command, and that an oversized request clamps to half
+the shorter side instead of failing.
+
+`justify-content`, `align-items`, `min-width`, `min-height` and `font-weight`
+keep their typed `ERR_INVALID_CSS_STYLE` rejection; the programmatic-rejection
+test now exercises `min-width`. [ADR 0013](adr/0013-strict-style-contract.md)
+carries the dated revision recording why the rejection lifted for this one
+property.
+
+This closes a parity gap rather than adding decoration. The browser stylesheet
+already rounds cards at `0.75rem`, menus at `0.55rem` and controls at `0.4rem`
+against the same palette tokens the software theme uses, so the framework's two
+render targets shared colors while only one of them could paint a radius.
+
+### Rounded rectangle paint evidence — 2026-09-22
+
+`fill_rect` and `draw_rect_outline` take a validated `CornerRadius`. A square
+radius takes the existing span path and a test asserts the framebuffer is
+bit-identical to `fill_bounds` over the same rectangle, so every existing
+capture and pixel oracle is unaffected. A rounded radius composites through one
+scanline routine that fills the area inside an outer shape and outside an
+optional inner shape; a border supplies the outer shape inset by its width, so
+the border follows the same arc as the fill it encloses.
+
+Horizontal coverage is exact within each sampled row and the vertical direction
+is integrated over sixteen subsamples. Three column classes bound the work:
+columns every subsample covers completely are filled as a span, columns the
+inner shape covers completely contribute nothing and are skipped, and only the
+transition bands take the per-pixel path, so per-pixel cost is proportional to
+the radius rather than the width of the shape.
+
+Eight tests cover the contract: radius clamping to half the shorter side,
+bit-identical square output, corner clearance with a fully covered centre and
+straight edges, antialiasing with horizontal and vertical symmetry, a border
+whose interior keeps its background, a radius clamped past the shape, empty and
+off-surface geometry, and a transparent source.
+
+No golden artifact changes here. A rounded panel was rendered and inspected at
+four-times magnification during development — the arcs are smooth, the border
+follows them and the interior stays clean — but the `image` example emits a
+golden-compared artifact, and enlarging it by a quarter to carry a
+demonstration the next increment supersedes is not worth the tracked bytes.
+The authored form captures regenerate once, under review, when
+METIS-RASTER-ROUND-002 makes surfaces actually round.
+
+The committed differential test is the oracle for the classification itself:
+`span_classification_matches_the_coverage_definition` composites fills and
+borders through `composite_shape` and through a reference that evaluates the
+coverage definition per pixel, and asserts the framebuffers are equal across
+sizes, radii, border widths, origins and both destination-alpha regimes. A
+translucent rounded border additionally asserts no pixel exceeds one pass of
+its source, since compositing a pixel twice compounds opacity in a way an
+opaque source hides.
+
+Cost, measured through `scripts/bench.py` on the same pinned configuration as
+the span-fill evidence:
+
+| Case | Time |
+| --- | --- |
+| `fill/card_stack` (8 square cards, fill and border) | 15.62 us |
+| `fill/rounded_card_stack` (the same cards at radius 12) | 198.12 us |
+
+Rounding costs about 12.7 times the square path for the same rectangles. It
+remains about seven times faster than the square path measured before the
+span-fill change (1.3631 ms) and is roughly one percent of a 60 Hz frame
+budget, so the arc integration is affordable at interface sizes.
+
+The display commands still pass `CornerRadius::SQUARE`, so no authored
+declaration changes and `border-radius` keeps its typed rejection under
+[ADR 0013](adr/0013-strict-style-contract.md). [ADR
+0043](adr/0043-rounded-rectangle-paint.md) records the paint contract and names
+the follow-up that admits the declaration.
+
+### Software renderer lowercase glyph evidence — 2026-09-22
+
+The bitmap table mapped both cases of every letter to one uppercase bitmap, so
+authored mixed-case text rendered in capitals regardless of its content, and
+fifteen common ASCII punctuation marks fell through to the replacement box.
+Each letter now carries its own lowercase bitmap on the shared baseline: the
+x-height band is rows 4 to 9, ascenders start at row 2 and descenders run
+through row 11.
+
+`metis-platform` asserts the contract rather than the artwork: every letter
+renders a different bitmap in each case and neither case is the replacement box
+or blank; ascender, x-height and descender letters occupy their documented row
+bands; every added punctuation mark differs from the replacement box; unmapped
+characters still render it; and no glyph paints the leftmost column of its
+cell, so a glyph cannot touch its neighbour at the `FONT_WIDTH` advance.
+
+Rendered evidence is reproduced by the committed example, which paints the
+authored form through the production framebuffer:
+
+```powershell
+cargo run --locked --example presentation
+```
+
+At revision `HEAD` the emitted `output/form.bmp` shows `Patient Demographics
+and Drug Prescription`, `Drug Concentration: 4.00 mg/mL` and `Target Dose:
+0.500 mcg/kg/min` as authored, with visible descenders on `g` and `p`. The
+surfaces whose source text is genuinely uppercase — the header, the session
+badge and the command labels — are unchanged.
+
+The window captures recorded in the [native capture
+manifest](manual/images/native-captures.json) are provenance bound to revision
+`0c8bcc32911c087bf686588cd4a7c56a29d0b92e` and remain valid for it. Their
+`observed` text is capitalized because that revision predates this change; they
+are historical records, not a current expectation.
+
+### Software rasterizer span-fill evidence — 2026-09-22
+
+`crates/metis-platform/benches/rasterizer.rs` is the first committed measurement
+instrument for the software renderer. `scripts/bench.py` builds it through the
+same neutral workspace the gate uses, pins the timing process to reserved
+performance cores at raised priority, records the host load either side of the
+run, and terminates the suite if it exceeds the committed 300-second budget.
+The gate runs the same binary in single-iteration `--test` mode only; wall-clock
+comparison stays on the controlled local machine.
+
+The measured surface is the 1280x800 physical extent used by the V12 fixtures.
+Before and after values are medians of pinned runs on an Intel Core Ultra 9
+285K (24 cores, reserved cores 2 and 3), host load 22 to 47 percent:
+
+| Case | Before | After | Ratio |
+| --- | --- | --- | --- |
+| `fill/opaque_full_surface` | 4.4057 ms | 52.26 us | 84x |
+| `fill/translucent_full_surface` | 4.4175 ms | 3.0150 ms | 1.47x |
+| `fill/card_stack` | 1.3631 ms | 15.49 us | 88x |
+| `text/label_scale_one` | 14.107 us | 7.326 us | 1.93x |
+| `text/paragraph_scale_two` | 561.73 us | 138.73 us | 4.05x |
+
+Repeating the unchanged opaque case across four runs produced 52.26, 53.04,
+56.66 and 58.92 microseconds, so this host drifts about six percent on identical
+code; only differences beyond that spread are read as real. The translucent case
+is stable to under two percent across the same runs.
+
+Correctness is a differential oracle, not the timing: `metis-platform`
+composites 512 randomized clipped rectangles over both transparent and opaque
+destinations, and every supported glyph at three scales, through both the span
+route and per-pixel `blend_pixel`, and asserts the framebuffers are equal. The
+change is therefore bit-identical, not an approximation traded for speed.
 
 ### Windows UI Automation action evidence — 2026-09-21
 

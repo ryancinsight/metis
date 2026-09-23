@@ -10,6 +10,46 @@ Revision: 2026-09-09 — [METIS-LAYOUT-001](../../backlog.md#METIS-LAYOUT-001)
 closes the silent custom-renderer style gap by rejecting declarations without
 software-renderer semantics.
 
+Revision: 2026-09-22 — [METIS-LAYOUT-ALIGN-001](../../backlog.md#METIS-LAYOUT-ALIGN-001)
+admits `justify-content` and `align-items`
+([ADR 0045](0045-flex-alignment-redistribution.md)), which empties this
+decision's rejection category: every declaration the style model carries is now
+painted. `ComputedStyle::validate_renderer_support` and `unsupported_style` are
+deleted rather than kept as an empty call, because a check that can no longer
+fail is not a guard.
+
+What remains is the part that was always doing the work: `parse` still rejects
+unknown properties, malformed declarations and values outside each admitted
+keyword or length grammar. The decision therefore stands with its original
+intent intact — a declaration is either painted or a typed error, never
+silently dropped — and the renderer simply caught up with the subset.
+
+Revision: 2026-09-22 — [METIS-LAYOUT-MINSIZE-001](../../backlog.md#METIS-LAYOUT-MINSIZE-001)
+admits `min-width` and `min-height`. A minimum sizes one box, which layout
+already does; it needs no space redistribution. `justify-content` and
+`align-items` keep their rejection because they do, and that is a separate
+layout capability rather than a longer length list.
+
+Revision: 2026-09-22 — [METIS-TYPOGRAPHY-WEIGHT-001](../../backlog.md#METIS-TYPOGRAPHY-WEIGHT-001)
+admits `font-weight` now that rasterization applies a stroke weight. The subset
+stays bounded to the two weights the renderer can paint: `normal`/`400` and
+`bold`/`700`. Any other weight is a typed error rather than a silent rounding
+to the nearest paintable one, which would be the silent-drop the contract
+exists to prevent.
+
+Revision: 2026-09-22 — [METIS-RASTER-ROUND-002](../../backlog.md#METIS-RASTER-ROUND-002)
+admits `border-radius` now that the software renderer paints it
+([ADR 0043](0043-rounded-rectangle-paint.md)). This is the contract working
+rather than a reversal: the rejection exists to stop a declaration being
+silently dropped, so it lifts exactly when the renderer gains the semantics —
+one property at a time, each with the paint evidence that earns it.
+
+Revision: 2026-09-22 — [METIS-RASTER-SHADOW-001](../../backlog.md#METIS-RASTER-SHADOW-001)
+admits `box-shadow` for one outer shadow of two offsets, an optional blur and a
+color ([ADR 0046](0046-gaussian-box-shadows.md)). `inset`, a spread distance
+and comma-separated lists stay typed errors: the renderer has no semantics for
+them, so the admission is bounded the way `font-weight` is.
+
 ## Context
 
 `metis-ui-lang` parses a bounded CSS-inspired subset for the software
@@ -35,10 +75,18 @@ browser CSS engine or change browser DOM parsing.
   missing separators, empty values, invalid enum values, malformed pixel or
   percentage dimensions, negative spacing, malformed edge lists, invalid
   colors and unsupported font weights return `ErrorCode::InvalidCssStyle`.
-- Alignment, minimum-size, font-weight and radius declarations are outside the
-  software renderer contract and return `ErrorCode::InvalidCssStyle`. The
-  same validation runs during layout for programmatically constructed DOMs, so
-  a public field cannot silently request an ineffective style.
+- Every declaration in the admitted subset is painted since the 2026-09-22
+  revisions; values outside an admitted keyword set or length grammar remain
+  `ErrorCode::InvalidCssStyle`. `min-width` and `min-height` are admitted since
+  the 2026-09-22 revision on the same length grammar and display scaling as
+  `width`/`height`. `font-weight` is admitted
+  since the 2026-09-22 revision for the two paintable weights. `border-radius` is
+  admitted since the 2026-09-22 revision: it parses as a nonnegative pixel
+  length on the same grammar as `gap` and `border-width`, scales by the host
+  display scale and clamps to half the shorter side of the laid-out rectangle.
+  `box-shadow` is admitted since the 2026-09-22 revision as `none` or
+  `<x> <y> [<blur>] <color>`; layout scales it and reports a blur past the
+  renderer's bound as a layout overflow.
 - `parse_markup` propagates style errors at the element boundary. Layout keeps
   ownership of representability errors for programmatically constructed DOMs,
   including non-finite percentages and coordinate overflow.

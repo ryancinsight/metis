@@ -59,12 +59,20 @@ assert_eq!(
 # Ok::<(), metis_core::error::MetisError>(())
 ```
 
-Layout supports sequential row/column flow, explicit and percentage dimensions,
-automatic width/content height, spacing, colors, square borders, and bitmap text.
-Alignment, minimum-size, font-weight, and radius declarations are outside the
-software renderer contract and return `ErrorCode::InvalidCssStyle`; direct DOM
-construction receives the same diagnostic during layout. The font and glyph
-coverage belong to metis-platform.
+Layout supports sequential row/column flow with flex alignment, explicit,
+percentage and minimum dimensions, automatic width/content height, spacing,
+colors, rounded backgrounds and borders, outer box shadows, and antialiased
+text measured by its glyph advances. Declarations outside the admitted subset
+return `ErrorCode::InvalidCssStyle` when parsed. The faces and glyph coverage
+belong to metis-platform.
+An element with `popover-anchor="element-id"` leaves normal flow when visible,
+uses that element's laid-out border rectangle as its anchor, and paints after
+the document. It starts below the anchor, fits horizontally inside the viewport
+when its measured width permits, and flips above when the lower placement
+overflows and there is room. Missing visible anchors return a typed markup
+error; hidden popovers do not resolve anchors. Framebuffer clipping bounds
+oversized popovers. `DisplayList::element_rect` exposes the same retained
+geometry to native hit testing without inspecting text or theme colors.
 `ComputedStyle::parse` strictly rejects unknown properties, malformed
 declarations and invalid values with `ErrorCode::InvalidCssStyle`; an empty
 style and a trailing semicolon are valid. Layout rejects coordinate overflow
@@ -74,7 +82,7 @@ recursive DOM utility operations assume bounded trees.
 
 `LayoutViewport` carries the physical framebuffer dimensions and a validated
 `metis_platform::DisplayScale`. Explicit pixel dimensions, spacing, automatic
-extents and bitmap text are mapped with that scale; percentages resolve once
+extents and text sizes are mapped with that scale; percentages resolve once
 against the physical viewport. Native hosts can repaint after a DPI event and
 reuse the resulting display list for hit testing without a second coordinate
 conversion.

@@ -236,8 +236,13 @@ fn dpi_event_repaints_and_scales_the_submit_hit_region() {
         DisplayScale::from_dpi(144).expect("144 DPI")
     );
     let scaled = submit_rect(&form.app).expect("scaled submit surface");
+    // The hit region scales on both axes. Its left edge is not a scaling
+    // signal: the control is centred, so its offset is half the space its
+    // card has left over, and on a fixed physical surface the control grows
+    // faster than that card does. A centred control therefore moves inward
+    // as the scale rises, which is correct and was never what this asserted.
     assert!(scaled.height > initial.height);
-    assert!(scaled.x > initial.x);
+    assert!(scaled.width > initial.width);
 }
 
 #[test]
@@ -337,5 +342,61 @@ fn native_command_accessibility_action_applies_theme_only_when_menu_is_open() {
         .expect("dark theme action");
     assert!(matches!(open, NativeFlow::Continue { repaint: true }));
     assert_eq!(form.app.theme(), ApplicationTheme::Dark);
+    assert!(!form.app.command_menu_open());
+}
+
+#[test]
+fn native_popover_dismisses_without_clicking_through_and_tracks_theme() {
+    let (transport, _peer) = MemoryTransport::pair();
+    let app = FrontendApp::new(transport, 800, 600).expect("form");
+    let mut form = NativeForm {
+        app,
+        pid: 1,
+        patient_id: "patient".to_owned(),
+        focused: true,
+    };
+    let submit = submit_rect(&form.app).expect("submit surface");
+    form.app.toggle_command_menu().expect("open menu");
+    assert_eq!(submit_rect(&form.app).expect("stationary submit"), submit);
+    assert!(
+        form.handle_pointer_up(submit.x, submit.y)
+            .expect("dismiss without IPC")
+    );
+    assert!(!form.app.command_menu_open());
+    assert_eq!(form.app.state(), &metis_frontend::FormState::Idle);
+
+    form.app.toggle_command_menu().expect("open menu");
+    let menu = super::command_rect(&form.app, "command-menu").expect("menu surface");
+    assert!(
+        !form
+            .handle_pointer_up(menu.x + 1, menu.y + 1)
+            .expect("menu padding")
+    );
+    assert!(form.app.command_menu_open());
+    let dark = super::command_rect(&form.app, "command-theme-dark").expect("dark menu item");
+    assert!(form.handle_pointer_up(dark.x, dark.y).expect("select dark"));
+    assert_eq!(form.app.theme(), ApplicationTheme::Dark);
+    assert!(!form.app.command_menu_open());
+
+    let toggle = command_menu_toggle_rect(&form.app).expect("dark toggle");
+    assert!(
+        form.handle_pointer_up(toggle.x, toggle.y)
+            .expect("reopen dark menu")
+    );
+    let system = super::command_rect(&form.app, "command-theme-system").expect("system menu item");
+    assert!(
+        form.handle_pointer_up(system.x, system.y)
+            .expect("select system")
+    );
+    assert_eq!(form.app.theme(), ApplicationTheme::System);
+    assert!(!form.app.command_menu_open());
+
+    form.app
+        .toggle_command_menu()
+        .expect("open before focus loss");
+    let flow = form
+        .handle_events(&[WindowEvent::FocusLost])
+        .expect("focus loss");
+    assert!(matches!(flow, NativeFlow::Continue { repaint: true }));
     assert!(!form.app.command_menu_open());
 }

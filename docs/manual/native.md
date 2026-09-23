@@ -19,14 +19,17 @@ The `Metis native form` window renders the production software framebuffer.
 While the window is focused, typed Unicode characters extend the patient
 reference and Backspace removes its last scalar; every edit clears a prior
 calculation through `FrontendApp::set_inputs`. Press **Enter** or **Ctrl+Enter**
-or click the blue **[ SUBMIT CALCULATION TO BACKEND ]** surface to send the
+or click the blue **Submit calculation** surface to send the
 exact numeric inputs through the private pipe. Alt/Windows-modified Enter is
 left to the operating system instead of triggering the application shortcut.
 The result and audit sequence are painted by the same frontend state machine as
 the headless workflow. Resize the window to exercise framebuffer replacement;
 DPI, focus and close events are consumed by the host. **Escape** or the window
 close control ends the child cleanly. When the authored **Commands** menu is
-open, Escape closes that menu first; a second Escape closes the child. The
+open, it floats at the laid-out Commands button without moving the form.
+Clicking outside it or switching away from the window dismisses it; an outside
+click does not activate the underlying control. Escape closes that menu first;
+a second Escape closes the child. The
 toolbar's **Focus patient** command moves native input focus to the patient
 reference. Its menu also applies the bounded dark or system presentation theme;
 these actions mutate `FrontendApp` state and never cross the backend IPC seam.
@@ -112,8 +115,8 @@ cargo run --locked -p metis-app -- --metis-semantic-capture $semantic 60 2 0.2
 
 The reviewed specimen is
 [`native-semantic.json`](images/native-semantic.json). It is schema `1`, has
-34 elements and 16,333 bytes, and has SHA-256
-`0bb048549b94aabfda01c34d1c1239a35b797e67640b1b690fd2a21889bc4bd1`.
+34 elements and 16,246 bytes, and has SHA-256
+`75b6c507df5cb1fb9619f837b169e409858eb668236a7b49e85cc35704968eab`.
 The `main-screen` application root, the `label-patient` textbox and the
 `btn-calc` submit button are present. The textbox exposes its bounded current
 value and typed `set_value` action; the button is focusable, enabled and
@@ -249,7 +252,7 @@ DPI as the authored CSS baseline: 96 DPI maps to `1.000x`, 120 DPI to
 
 `LayoutViewport` carries the physical client dimensions and this scale into
 `compute_layout`. Explicit pixel sizes, spacing, borders, automatic child
-extents, bitmap text and the submit hit rectangle use the same mapping.
+extents, text sizes and the submit hit rectangle use the same mapping.
 Percent sizes resolve once against the physical viewport, so a percentage is
 not scaled twice. A failed repaint restores the last valid scale and frame.
 The fixed-point contract is exercised by the layout and rasterizer tests; the

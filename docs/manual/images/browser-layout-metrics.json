@@ -1,7 +1,7 @@
 {
   "schema": 1,
   "source": "examples/browser/styles.css",
-  "source_sha256": "34e491d1da7dc05557252c588a8707aaf05206f0f289b3a4c59fe8345cbbec59",
+  "source_sha256": "e256c2a6bbc9fcf8351aace3a3629d5b7a1cbbbb6ca242f4f8a0c6ffbf074cfa",
   "engine": "Codex In-app Browser",
   "engine_version": "unavailable",
   "captures": {
@@ -10,84 +10,96 @@
         {
           "class": "metis-header",
           "rect": {
-            "bottom": 584.64,
-            "height": 507.84,
+            "bottom": 536.1,
+            "height": 452.1,
             "right": 328.8,
             "width": 312.8,
             "x": 16,
-            "y": 76.8
+            "y": 84
           },
           "tag": "header"
         },
         {
           "class": "metis-form",
           "rect": {
-            "bottom": 1045.44,
-            "height": 436.8,
+            "bottom": 1033.7,
+            "height": 473.6,
             "right": 328.8,
             "width": 312.8,
             "x": 16,
-            "y": 608.64
+            "y": 560.1
           },
           "tag": "form"
         },
         {
           "class": "metis-options",
           "rect": {
-            "bottom": 1688.64,
-            "height": 619.2,
+            "bottom": 1689.7,
+            "height": 632,
             "right": 328.8,
             "width": 312.8,
             "x": 16,
-            "y": 1069.44
+            "y": 1057.7
           },
           "tag": "fieldset"
         },
         {
           "class": "metis-pointer",
           "rect": {
-            "bottom": 2070.95,
-            "height": 358.31,
+            "bottom": 2069.2,
+            "height": 355.5,
             "right": 328.8,
             "width": 312.8,
             "x": 16,
-            "y": 1712.64
+            "y": 1713.7
           },
           "tag": "section"
         },
         {
           "class": "metis-drop",
           "rect": {
-            "bottom": 2392.46,
-            "height": 297.51,
+            "bottom": 2455.1,
+            "height": 361.9,
             "right": 328.8,
             "width": 312.8,
             "x": 16,
-            "y": 2094.95
+            "y": 2093.2
           },
           "tag": "section"
         },
         {
           "class": "metis-text",
           "rect": {
-            "bottom": 2898.78,
-            "height": 482.31,
+            "bottom": 3103.4,
+            "height": 624.3,
             "right": 328.8,
             "width": 312.8,
             "x": 16,
-            "y": 2416.46
+            "y": 2479.1
           },
           "tag": "section"
         },
         {
           "class": "metis-result",
           "rect": {
-            "bottom": 3310.69,
-            "height": 387.91,
+            "bottom": 3515.7,
+            "height": 388.3,
             "right": 328.8,
             "width": 312.8,
             "x": 16,
-            "y": 2922.78
+            "y": 3127.4
+          },
+          "tag": "section"
+        },
+        {
+          "class": "metis-explorer",
+          "rect": {
+            "bottom": 4127.6,
+            "height": 587.9,
+            "right": 328.8,
+            "width": 312.8,
+            "x": 16,
+            "y": 3539.7
           },
           "tag": "section"
         }
@@ -95,7 +107,7 @@
       "document": {
         "maxRight": 328.8,
         "overflowX": "visible",
-        "scrollHeight": 3326,
+        "scrollHeight": 4144,
         "scrollWidth": 345
       },
       "grid": {
@@ -106,12 +118,12 @@
           "disabled": false,
           "id": "metis-start",
           "rect": {
-            "bottom": 60.8,
-            "height": 44.8,
-            "right": 123.2,
-            "width": 107.2,
+            "bottom": 68,
+            "height": 44,
+            "right": 114.4,
+            "width": 98.4,
             "x": 16,
-            "y": 16
+            "y": 24
           },
           "tag": "button",
           "type": "button"
@@ -120,12 +132,26 @@
           "disabled": false,
           "id": "metis-stop",
           "rect": {
-            "bottom": 60.8,
-            "height": 44.8,
-            "right": 237.6,
-            "width": 104,
-            "x": 133.6,
-            "y": 16
+            "bottom": 68,
+            "height": 44,
+            "right": 221.6,
+            "width": 96.8,
+            "x": 124.8,
+            "y": 24
+          },
+          "tag": "button",
+          "type": "button"
+        },
+        {
+          "disabled": false,
+          "id": "command-menu-toggle",
+          "rect": {
+            "bottom": 482.5,
+            "height": 44,
+            "right": 144.8,
+            "width": 108,
+            "x": 36.8,
+            "y": 438.5
           },
           "tag": "button",
           "type": "button"
@@ -134,12 +160,12 @@
           "disabled": false,
           "id": "open-session-dialog",
           "rect": {
-            "bottom": 563.84,
-            "height": 44.8,
-            "right": 180,
-            "width": 143.2,
-            "x": 36.8,
-            "y": 519.04
+            "bottom": 482.5,
+            "height": 44,
+            "right": 287.2,
+            "width": 132,
+            "x": 155.2,
+            "y": 438.5
           },
           "tag": "button",
           "type": "button"
@@ -148,12 +174,12 @@
           "disabled": false,
           "id": "patient-id",
           "rect": {
-            "bottom": 704.64,
-            "height": 44.8,
+            "bottom": 656.9,
+            "height": 46.4,
             "right": 308,
             "width": 271.2,
             "x": 36.8,
-            "y": 659.84
+            "y": 610.5
           },
           "tag": "input",
           "type": null
@@ -162,12 +188,12 @@
           "disabled": false,
           "id": "weight-kg",
           "rect": {
-            "bottom": 790.24,
-            "height": 44.8,
+            "bottom": 752.9,
+            "height": 46.4,
             "right": 308,
             "width": 271.2,
             "x": 36.8,
-            "y": 745.44
+            "y": 706.5
           },
           "tag": "input",
           "type": "number"
@@ -176,12 +202,12 @@
           "disabled": false,
           "id": "concentration-mg-ml",
           "rect": {
-            "bottom": 875.84,
-            "height": 44.8,
+            "bottom": 848.9,
+            "height": 46.4,
             "right": 308,
             "width": 271.2,
             "x": 36.8,
-            "y": 831.04
+            "y": 802.5
           },
           "tag": "input",
           "type": "number"
@@ -190,12 +216,12 @@
           "disabled": false,
           "id": "target-dose",
           "rect": {
-            "bottom": 961.44,
-            "height": 44.8,
+            "bottom": 944.9,
+            "height": 46.4,
             "right": 308,
             "width": 271.2,
             "x": 36.8,
-            "y": 916.64
+            "y": 898.5
           },
           "tag": "input",
           "type": "number"
@@ -204,26 +230,26 @@
           "disabled": true,
           "id": "submit-calculation",
           "rect": {
-            "bottom": 1024.64,
-            "height": 44.8,
+            "bottom": 1012.9,
+            "height": 44,
             "right": 308,
             "width": 271.2,
             "x": 36.8,
-            "y": 979.84
+            "y": 968.9
           },
           "tag": "button",
           "type": "submit"
         },
         {
           "disabled": false,
-          "id": "show-events",
+          "id": "",
           "rect": {
-            "bottom": 1155.84,
+            "bottom": 1145.7,
             "height": 44,
             "right": 308,
             "width": 271.2,
             "x": 36.8,
-            "y": 1111.84
+            "y": 1101.7
           },
           "tag": "label",
           "type": null
@@ -232,26 +258,26 @@
           "disabled": false,
           "id": "show-events",
           "rect": {
-            "bottom": 1140.34,
-            "height": 13,
-            "right": 53.8,
-            "width": 13,
-            "x": 40.8,
-            "y": 1127.34
+            "bottom": 1131.7,
+            "height": 16,
+            "right": 52.8,
+            "width": 16,
+            "x": 36.8,
+            "y": 1115.7
           },
           "tag": "input",
           "type": "checkbox"
         },
         {
           "disabled": false,
-          "id": "dose-volume",
+          "id": "",
           "rect": {
-            "bottom": 1240.64,
+            "bottom": 1232.1,
             "height": 44,
             "right": 308,
             "width": 271.2,
             "x": 36.8,
-            "y": 1196.64
+            "y": 1188.1
           },
           "tag": "label",
           "type": null
@@ -260,26 +286,26 @@
           "disabled": false,
           "id": "dose-volume",
           "rect": {
-            "bottom": 1226.64,
-            "height": 13,
-            "right": 54.8,
-            "width": 13,
-            "x": 41.8,
-            "y": 1213.64
+            "bottom": 1218.1,
+            "height": 16,
+            "right": 52.8,
+            "width": 16,
+            "x": 36.8,
+            "y": 1202.1
           },
           "tag": "input",
           "type": "radio"
         },
         {
           "disabled": false,
-          "id": "dose-mass",
+          "id": "",
           "rect": {
-            "bottom": 1295.04,
+            "bottom": 1286.5,
             "height": 44,
             "right": 308,
             "width": 271.2,
             "x": 36.8,
-            "y": 1251.04
+            "y": 1242.5
           },
           "tag": "label",
           "type": null
@@ -288,12 +314,12 @@
           "disabled": false,
           "id": "dose-mass",
           "rect": {
-            "bottom": 1281.04,
-            "height": 13,
-            "right": 54.8,
-            "width": 13,
-            "x": 41.8,
-            "y": 1268.04
+            "bottom": 1272.5,
+            "height": 16,
+            "right": 52.8,
+            "width": 16,
+            "x": 36.8,
+            "y": 1256.5
           },
           "tag": "input",
           "type": "radio"
@@ -302,12 +328,12 @@
           "disabled": false,
           "id": "result-scale",
           "rect": {
-            "bottom": 1381.84,
+            "bottom": 1374.9,
             "height": 44,
             "right": 310,
             "width": 271.2,
             "x": 38.8,
-            "y": 1337.84
+            "y": 1330.9
           },
           "tag": "input",
           "type": "range"
@@ -316,12 +342,12 @@
           "disabled": false,
           "id": "result-detail-select",
           "rect": {
-            "bottom": 1471.04,
+            "bottom": 1465.7,
             "height": 46.4,
             "right": 308,
             "width": 271.2,
             "x": 36.8,
-            "y": 1424.64
+            "y": 1419.3
           },
           "tag": "select",
           "type": null
@@ -330,12 +356,12 @@
           "disabled": false,
           "id": "theme-mode",
           "rect": {
-            "bottom": 1558.24,
+            "bottom": 1554.5,
             "height": 46.4,
             "right": 308,
             "width": 271.2,
             "x": 36.8,
-            "y": 1511.84
+            "y": 1508.1
           },
           "tag": "select",
           "type": null
@@ -344,12 +370,12 @@
           "disabled": false,
           "id": "pointer-surface",
           "rect": {
-            "bottom": 2050.15,
-            "height": 123.2,
+            "bottom": 2048.4,
+            "height": 129.6,
             "right": 308,
             "width": 271.2,
             "x": 36.8,
-            "y": 1926.95
+            "y": 1918.8
           },
           "tag": "div",
           "type": null
@@ -358,29 +384,127 @@
           "disabled": false,
           "id": "drop-zone",
           "rect": {
-            "bottom": 2371.66,
-            "height": 123.2,
+            "bottom": 2363.9,
+            "height": 129.6,
             "right": 308,
             "width": 271.2,
             "x": 36.8,
-            "y": 2248.46
+            "y": 2234.3
           },
           "tag": "div",
           "type": null
         },
         {
           "disabled": false,
+          "id": "file-input",
+          "rect": {
+            "bottom": 2434.3,
+            "height": 46.4,
+            "right": 308,
+            "width": 271.2,
+            "x": 36.8,
+            "y": 2387.9
+          },
+          "tag": "input",
+          "type": "file"
+        },
+        {
+          "disabled": false,
           "id": "text-specimen",
           "rect": {
-            "bottom": 2673.97,
+            "bottom": 2725.8,
             "height": 121.6,
             "right": 308,
             "width": 271.2,
             "x": 36.8,
-            "y": 2552.38
+            "y": 2604.2
           },
           "tag": "textarea",
           "type": null
+        },
+        {
+          "disabled": false,
+          "id": "clipboard-read",
+          "rect": {
+            "bottom": 2782.6,
+            "height": 44,
+            "right": 228,
+            "width": 191.2,
+            "x": 36.8,
+            "y": 2738.6
+          },
+          "tag": "button",
+          "type": "button"
+        },
+        {
+          "disabled": false,
+          "id": "clipboard-write",
+          "rect": {
+            "bottom": 2834.6,
+            "height": 44,
+            "right": 224,
+            "width": 187.2,
+            "x": 36.8,
+            "y": 2790.6
+          },
+          "tag": "button",
+          "type": "button"
+        },
+        {
+          "disabled": false,
+          "id": "explorer-filter",
+          "rect": {
+            "bottom": 3717.6,
+            "height": 46.4,
+            "right": 308,
+            "width": 271.2,
+            "x": 36.8,
+            "y": 3671.2
+          },
+          "tag": "input",
+          "type": "search"
+        },
+        {
+          "disabled": false,
+          "id": "explorer-sort",
+          "rect": {
+            "bottom": 3803.2,
+            "height": 46.4,
+            "right": 308,
+            "width": 271.2,
+            "x": 36.8,
+            "y": 3756.8
+          },
+          "tag": "select",
+          "type": null
+        },
+        {
+          "disabled": true,
+          "id": "explorer-previous",
+          "rect": {
+            "bottom": 4106.8,
+            "height": 64.4,
+            "right": 139.4,
+            "width": 102.6,
+            "x": 36.8,
+            "y": 4042.4
+          },
+          "tag": "button",
+          "type": "button"
+        },
+        {
+          "disabled": true,
+          "id": "explorer-next",
+          "rect": {
+            "bottom": 4106.8,
+            "height": 64.4,
+            "right": 308,
+            "width": 85.99,
+            "x": 222.01,
+            "y": 4042.4
+          },
+          "tag": "button",
+          "type": "button"
         }
       ],
       "viewport": {
@@ -394,84 +518,96 @@
         {
           "class": "metis-header",
           "rect": {
-            "bottom": 455.04,
-            "height": 362.24,
+            "bottom": 472.8,
+            "height": 372.8,
             "right": 752.8,
             "width": 720.8,
             "x": 32,
-            "y": 92.8
+            "y": 100
           },
           "tag": "header"
         },
         {
           "class": "metis-form",
           "rect": {
-            "bottom": 1098.24,
-            "height": 619.2,
+            "bottom": 978.4,
+            "height": 481.6,
             "right": 380.4,
             "width": 348.4,
             "x": 32,
-            "y": 479.04
+            "y": 496.8
           },
           "tag": "form"
         },
         {
           "class": "metis-options",
           "rect": {
-            "bottom": 1098.24,
-            "height": 619.2,
+            "bottom": 1136.8,
+            "height": 640,
             "right": 752.8,
             "width": 348.4,
             "x": 404.4,
-            "y": 479.04
+            "y": 496.8
           },
           "tag": "fieldset"
         },
         {
           "class": "metis-pointer",
           "rect": {
-            "bottom": 1458.15,
-            "height": 335.91,
+            "bottom": 1500.3,
+            "height": 339.5,
             "right": 380.4,
             "width": 348.4,
             "x": 32,
-            "y": 1122.24
+            "y": 1160.8
           },
           "tag": "section"
         },
         {
           "class": "metis-drop",
           "rect": {
-            "bottom": 1736.46,
-            "height": 254.31,
+            "bottom": 1846.2,
+            "height": 321.9,
             "right": 752.8,
             "width": 720.8,
             "x": 32,
-            "y": 1482.15
+            "y": 1524.3
           },
           "tag": "section"
         },
         {
           "class": "metis-text",
           "rect": {
-            "bottom": 2178.78,
-            "height": 418.31,
+            "bottom": 2378.5,
+            "height": 508.3,
             "right": 752.8,
             "width": 720.8,
             "x": 32,
-            "y": 1760.46
+            "y": 1870.2
           },
           "tag": "section"
         },
         {
           "class": "metis-result",
           "rect": {
-            "bottom": 2590.69,
-            "height": 387.91,
+            "bottom": 2798.8,
+            "height": 396.3,
             "right": 380.4,
             "width": 348.4,
             "x": 32,
-            "y": 2202.78
+            "y": 2402.5
+          },
+          "tag": "section"
+        },
+        {
+          "class": "metis-explorer",
+          "rect": {
+            "bottom": 3289.5,
+            "height": 466.7,
+            "right": 752.8,
+            "width": 720.8,
+            "x": 32,
+            "y": 2822.8
           },
           "tag": "section"
         }
@@ -479,7 +615,7 @@
       "document": {
         "maxRight": 752.8,
         "overflowX": "visible",
-        "scrollHeight": 2622,
+        "scrollHeight": 3322,
         "scrollWidth": 785
       },
       "grid": {
@@ -490,12 +626,12 @@
           "disabled": false,
           "id": "metis-start",
           "rect": {
-            "bottom": 60.8,
-            "height": 44.8,
-            "right": 139.2,
-            "width": 107.2,
+            "bottom": 68,
+            "height": 44,
+            "right": 130.4,
+            "width": 98.4,
             "x": 32,
-            "y": 16
+            "y": 24
           },
           "tag": "button",
           "type": "button"
@@ -504,12 +640,26 @@
           "disabled": false,
           "id": "metis-stop",
           "rect": {
-            "bottom": 60.8,
-            "height": 44.8,
-            "right": 253.6,
-            "width": 104,
-            "x": 149.6,
-            "y": 16
+            "bottom": 68,
+            "height": 44,
+            "right": 237.6,
+            "width": 96.8,
+            "x": 140.8,
+            "y": 24
+          },
+          "tag": "button",
+          "type": "button"
+        },
+        {
+          "disabled": false,
+          "id": "command-menu-toggle",
+          "rect": {
+            "bottom": 415.2,
+            "height": 44,
+            "right": 164.8,
+            "width": 108,
+            "x": 56.8,
+            "y": 371.2
           },
           "tag": "button",
           "type": "button"
@@ -518,12 +668,12 @@
           "disabled": false,
           "id": "open-session-dialog",
           "rect": {
-            "bottom": 434.24,
-            "height": 44.8,
-            "right": 196,
-            "width": 143.2,
-            "x": 52.8,
-            "y": 389.44
+            "bottom": 415.2,
+            "height": 44,
+            "right": 307.2,
+            "width": 132,
+            "x": 175.2,
+            "y": 371.2
           },
           "tag": "button",
           "type": "button"
@@ -532,12 +682,12 @@
           "disabled": false,
           "id": "patient-id",
           "rect": {
-            "bottom": 615.56,
-            "height": 65.06,
-            "right": 359.6,
-            "width": 306.8,
-            "x": 52.8,
-            "y": 550.5
+            "bottom": 597.6,
+            "height": 46.4,
+            "right": 355.6,
+            "width": 298.8,
+            "x": 56.8,
+            "y": 551.2
           },
           "tag": "input",
           "type": null
@@ -546,12 +696,12 @@
           "disabled": false,
           "id": "weight-kg",
           "rect": {
-            "bottom": 741.69,
-            "height": 65.06,
-            "right": 359.6,
-            "width": 306.8,
-            "x": 52.8,
-            "y": 676.63
+            "bottom": 693.6,
+            "height": 46.4,
+            "right": 355.6,
+            "width": 298.8,
+            "x": 56.8,
+            "y": 647.2
           },
           "tag": "input",
           "type": "number"
@@ -560,12 +710,12 @@
           "disabled": false,
           "id": "concentration-mg-ml",
           "rect": {
-            "bottom": 867.81,
-            "height": 65.06,
-            "right": 359.6,
-            "width": 306.8,
-            "x": 52.8,
-            "y": 802.75
+            "bottom": 789.6,
+            "height": 46.4,
+            "right": 355.6,
+            "width": 298.8,
+            "x": 56.8,
+            "y": 743.2
           },
           "tag": "input",
           "type": "number"
@@ -574,12 +724,12 @@
           "disabled": false,
           "id": "target-dose",
           "rect": {
-            "bottom": 993.96,
-            "height": 65.08,
-            "right": 359.6,
-            "width": 306.8,
-            "x": 52.8,
-            "y": 928.89
+            "bottom": 885.6,
+            "height": 46.4,
+            "right": 355.6,
+            "width": 298.8,
+            "x": 56.8,
+            "y": 839.2
           },
           "tag": "input",
           "type": "number"
@@ -588,26 +738,26 @@
           "disabled": true,
           "id": "submit-calculation",
           "rect": {
-            "bottom": 1077.44,
-            "height": 65.08,
-            "right": 359.6,
-            "width": 306.8,
-            "x": 52.8,
-            "y": 1012.36
+            "bottom": 953.6,
+            "height": 44,
+            "right": 355.6,
+            "width": 298.8,
+            "x": 56.8,
+            "y": 909.6
           },
           "tag": "button",
           "type": "submit"
         },
         {
           "disabled": false,
-          "id": "show-events",
+          "id": "",
           "rect": {
-            "bottom": 565.44,
+            "bottom": 588.8,
             "height": 44,
-            "right": 732,
-            "width": 306.8,
-            "x": 425.2,
-            "y": 521.44
+            "right": 728,
+            "width": 298.8,
+            "x": 429.2,
+            "y": 544.8
           },
           "tag": "label",
           "type": null
@@ -616,26 +766,26 @@
           "disabled": false,
           "id": "show-events",
           "rect": {
-            "bottom": 549.94,
-            "height": 13,
-            "right": 442.2,
-            "width": 13,
+            "bottom": 574.8,
+            "height": 16,
+            "right": 445.2,
+            "width": 16,
             "x": 429.2,
-            "y": 536.94
+            "y": 558.8
           },
           "tag": "input",
           "type": "checkbox"
         },
         {
           "disabled": false,
-          "id": "dose-volume",
+          "id": "",
           "rect": {
-            "bottom": 650.24,
+            "bottom": 675.2,
             "height": 44,
-            "right": 732,
-            "width": 306.8,
-            "x": 425.2,
-            "y": 606.24
+            "right": 728,
+            "width": 298.8,
+            "x": 429.2,
+            "y": 631.2
           },
           "tag": "label",
           "type": null
@@ -644,26 +794,26 @@
           "disabled": false,
           "id": "dose-volume",
           "rect": {
-            "bottom": 636.24,
-            "height": 13,
-            "right": 443.2,
-            "width": 13,
-            "x": 430.2,
-            "y": 623.24
+            "bottom": 661.2,
+            "height": 16,
+            "right": 445.2,
+            "width": 16,
+            "x": 429.2,
+            "y": 645.2
           },
           "tag": "input",
           "type": "radio"
         },
         {
           "disabled": false,
-          "id": "dose-mass",
+          "id": "",
           "rect": {
-            "bottom": 704.64,
+            "bottom": 729.6,
             "height": 44,
-            "right": 732,
-            "width": 306.8,
-            "x": 425.2,
-            "y": 660.64
+            "right": 728,
+            "width": 298.8,
+            "x": 429.2,
+            "y": 685.6
           },
           "tag": "label",
           "type": null
@@ -672,12 +822,12 @@
           "disabled": false,
           "id": "dose-mass",
           "rect": {
-            "bottom": 690.64,
-            "height": 13,
-            "right": 443.2,
-            "width": 13,
-            "x": 430.2,
-            "y": 677.64
+            "bottom": 715.6,
+            "height": 16,
+            "right": 445.2,
+            "width": 16,
+            "x": 429.2,
+            "y": 699.6
           },
           "tag": "input",
           "type": "radio"
@@ -686,12 +836,12 @@
           "disabled": false,
           "id": "result-scale",
           "rect": {
-            "bottom": 791.44,
+            "bottom": 818,
             "height": 44,
-            "right": 734,
-            "width": 306.8,
-            "x": 427.2,
-            "y": 747.44
+            "right": 730,
+            "width": 298.8,
+            "x": 431.2,
+            "y": 774
           },
           "tag": "input",
           "type": "range"
@@ -700,12 +850,12 @@
           "disabled": false,
           "id": "result-detail-select",
           "rect": {
-            "bottom": 880.64,
+            "bottom": 908.8,
             "height": 46.4,
-            "right": 732,
-            "width": 306.8,
-            "x": 425.2,
-            "y": 834.24
+            "right": 728,
+            "width": 298.8,
+            "x": 429.2,
+            "y": 862.4
           },
           "tag": "select",
           "type": null
@@ -714,12 +864,12 @@
           "disabled": false,
           "id": "theme-mode",
           "rect": {
-            "bottom": 967.84,
+            "bottom": 997.6,
             "height": 46.4,
-            "right": 732,
-            "width": 306.8,
-            "x": 425.2,
-            "y": 921.44
+            "right": 728,
+            "width": 298.8,
+            "x": 429.2,
+            "y": 951.2
           },
           "tag": "select",
           "type": null
@@ -728,12 +878,12 @@
           "disabled": false,
           "id": "pointer-surface",
           "rect": {
-            "bottom": 1437.35,
-            "height": 100.8,
-            "right": 359.6,
-            "width": 306.8,
-            "x": 52.8,
-            "y": 1336.55
+            "bottom": 1475.5,
+            "height": 105.6,
+            "right": 355.6,
+            "width": 298.8,
+            "x": 56.8,
+            "y": 1369.9
           },
           "tag": "div",
           "type": null
@@ -742,29 +892,127 @@
           "disabled": false,
           "id": "drop-zone",
           "rect": {
-            "bottom": 1715.66,
-            "height": 80,
-            "right": 732,
-            "width": 679.2,
-            "x": 52.8,
-            "y": 1635.66
+            "bottom": 1751,
+            "height": 81.6,
+            "right": 728,
+            "width": 671.2,
+            "x": 56.8,
+            "y": 1669.4
           },
           "tag": "div",
           "type": null
         },
         {
           "disabled": false,
+          "id": "file-input",
+          "rect": {
+            "bottom": 1821.4,
+            "height": 46.4,
+            "right": 728,
+            "width": 671.2,
+            "x": 56.8,
+            "y": 1775
+          },
+          "tag": "input",
+          "type": "file"
+        },
+        {
+          "disabled": false,
           "id": "text-specimen",
           "rect": {
-            "bottom": 2017.97,
+            "bottom": 2120.9,
             "height": 121.6,
-            "right": 732,
-            "width": 679.2,
-            "x": 52.8,
-            "y": 1896.38
+            "right": 728,
+            "width": 671.2,
+            "x": 56.8,
+            "y": 1999.3
           },
           "tag": "textarea",
           "type": null
+        },
+        {
+          "disabled": false,
+          "id": "clipboard-read",
+          "rect": {
+            "bottom": 2177.7,
+            "height": 44,
+            "right": 248,
+            "width": 191.2,
+            "x": 56.8,
+            "y": 2133.7
+          },
+          "tag": "button",
+          "type": "button"
+        },
+        {
+          "disabled": false,
+          "id": "clipboard-write",
+          "rect": {
+            "bottom": 2177.7,
+            "height": 44,
+            "right": 439.2,
+            "width": 187.2,
+            "x": 252,
+            "y": 2133.7
+          },
+          "tag": "button",
+          "type": "button"
+        },
+        {
+          "disabled": false,
+          "id": "explorer-filter",
+          "rect": {
+            "bottom": 2974.3,
+            "height": 46.4,
+            "right": 727.99,
+            "width": 427.95,
+            "x": 300.04,
+            "y": 2927.9
+          },
+          "tag": "input",
+          "type": "search"
+        },
+        {
+          "disabled": false,
+          "id": "explorer-sort",
+          "rect": {
+            "bottom": 3029.5,
+            "height": 46.4,
+            "right": 727.99,
+            "width": 427.95,
+            "x": 300.04,
+            "y": 2983.1
+          },
+          "tag": "select",
+          "type": null
+        },
+        {
+          "disabled": true,
+          "id": "explorer-previous",
+          "rect": {
+            "bottom": 3264.7,
+            "height": 44,
+            "right": 196.8,
+            "width": 140,
+            "x": 56.8,
+            "y": 3220.7
+          },
+          "tag": "button",
+          "type": "button"
+        },
+        {
+          "disabled": true,
+          "id": "explorer-next",
+          "rect": {
+            "bottom": 3264.7,
+            "height": 44,
+            "right": 728,
+            "width": 114.4,
+            "x": 613.6,
+            "y": 3220.7
+          },
+          "tag": "button",
+          "type": "button"
         }
       ],
       "viewport": {
@@ -778,84 +1026,96 @@
         {
           "class": "metis-header",
           "rect": {
-            "bottom": 455.04,
-            "height": 362.24,
+            "bottom": 498.4,
+            "height": 398.4,
             "right": 1160.4,
             "width": 896,
             "x": 264.4,
-            "y": 92.8
+            "y": 100
           },
           "tag": "header"
         },
         {
           "class": "metis-form",
           "rect": {
-            "bottom": 1075.84,
-            "height": 596.8,
+            "bottom": 1020,
+            "height": 497.6,
             "right": 700.4,
             "width": 436,
             "x": 264.4,
-            "y": 479.04
+            "y": 522.4
           },
           "tag": "form"
         },
         {
           "class": "metis-options",
           "rect": {
-            "bottom": 1075.84,
-            "height": 596.8,
+            "bottom": 1178.4,
+            "height": 656,
             "right": 1160.4,
             "width": 436,
             "x": 724.4,
-            "y": 479.04
+            "y": 522.4
           },
           "tag": "fieldset"
         },
         {
           "class": "metis-pointer",
           "rect": {
-            "bottom": 1414.95,
-            "height": 315.11,
+            "bottom": 1533.9,
+            "height": 331.5,
             "right": 700.4,
             "width": 436,
             "x": 264.4,
-            "y": 1099.84
+            "y": 1202.4
           },
           "tag": "section"
         },
         {
           "class": "metis-drop",
           "rect": {
-            "bottom": 1693.26,
-            "height": 254.31,
+            "bottom": 1895.8,
+            "height": 337.9,
             "right": 1160.4,
             "width": 896,
             "x": 264.4,
-            "y": 1438.95
+            "y": 1557.9
           },
           "tag": "section"
         },
         {
           "class": "metis-text",
           "rect": {
-            "bottom": 2135.58,
-            "height": 418.31,
+            "bottom": 2444.1,
+            "height": 524.3,
             "right": 1160.4,
             "width": 896,
             "x": 264.4,
-            "y": 1717.26
+            "y": 1919.8
           },
           "tag": "section"
         },
         {
           "class": "metis-result",
           "rect": {
-            "bottom": 2526.69,
-            "height": 367.11,
+            "bottom": 2856.4,
+            "height": 388.3,
             "right": 700.4,
             "width": 436,
             "x": 264.4,
-            "y": 2159.57
+            "y": 2468.1
+          },
+          "tag": "section"
+        },
+        {
+          "class": "metis-explorer",
+          "rect": {
+            "bottom": 3363.1,
+            "height": 482.7,
+            "right": 1160.4,
+            "width": 896,
+            "x": 264.4,
+            "y": 2880.4
           },
           "tag": "section"
         }
@@ -863,7 +1123,7 @@
       "document": {
         "maxRight": 1160.4,
         "overflowX": "visible",
-        "scrollHeight": 2558,
+        "scrollHeight": 3395,
         "scrollWidth": 1425
       },
       "grid": {
@@ -874,12 +1134,12 @@
           "disabled": false,
           "id": "metis-start",
           "rect": {
-            "bottom": 60.8,
-            "height": 44.8,
-            "right": 371.6,
-            "width": 107.2,
+            "bottom": 68,
+            "height": 44,
+            "right": 362.8,
+            "width": 98.4,
             "x": 264.4,
-            "y": 16
+            "y": 24
           },
           "tag": "button",
           "type": "button"
@@ -888,12 +1148,26 @@
           "disabled": false,
           "id": "metis-stop",
           "rect": {
-            "bottom": 60.8,
-            "height": 44.8,
-            "right": 486,
-            "width": 104,
-            "x": 382,
-            "y": 16
+            "bottom": 68,
+            "height": 44,
+            "right": 470,
+            "width": 96.8,
+            "x": 373.2,
+            "y": 24
+          },
+          "tag": "button",
+          "type": "button"
+        },
+        {
+          "disabled": false,
+          "id": "command-menu-toggle",
+          "rect": {
+            "bottom": 432.8,
+            "height": 44,
+            "right": 405.2,
+            "width": 108,
+            "x": 297.2,
+            "y": 388.8
           },
           "tag": "button",
           "type": "button"
@@ -902,12 +1176,12 @@
           "disabled": false,
           "id": "open-session-dialog",
           "rect": {
-            "bottom": 434.24,
-            "height": 44.8,
-            "right": 428.4,
-            "width": 143.2,
-            "x": 285.2,
-            "y": 389.44
+            "bottom": 432.8,
+            "height": 44,
+            "right": 547.6,
+            "width": 132,
+            "x": 415.6,
+            "y": 388.8
           },
           "tag": "button",
           "type": "button"
@@ -916,12 +1190,12 @@
           "disabled": false,
           "id": "patient-id",
           "rect": {
-            "bottom": 610.59,
-            "height": 62.58,
-            "right": 679.6,
-            "width": 394.4,
-            "x": 285.2,
-            "y": 548.01
+            "bottom": 631.2,
+            "height": 46.4,
+            "right": 667.6,
+            "width": 370.4,
+            "x": 297.2,
+            "y": 584.8
           },
           "tag": "input",
           "type": null
@@ -930,12 +1204,12 @@
           "disabled": false,
           "id": "weight-kg",
           "rect": {
-            "bottom": 731.74,
-            "height": 62.58,
-            "right": 679.6,
-            "width": 394.4,
-            "x": 285.2,
-            "y": 669.16
+            "bottom": 727.2,
+            "height": 46.4,
+            "right": 667.6,
+            "width": 370.4,
+            "x": 297.2,
+            "y": 680.8
           },
           "tag": "input",
           "type": "number"
@@ -944,12 +1218,12 @@
           "disabled": false,
           "id": "concentration-mg-ml",
           "rect": {
-            "bottom": 852.89,
-            "height": 62.58,
-            "right": 679.6,
-            "width": 394.4,
-            "x": 285.2,
-            "y": 790.31
+            "bottom": 823.2,
+            "height": 46.4,
+            "right": 667.6,
+            "width": 370.4,
+            "x": 297.2,
+            "y": 776.8
           },
           "tag": "input",
           "type": "number"
@@ -958,12 +1232,12 @@
           "disabled": false,
           "id": "target-dose",
           "rect": {
-            "bottom": 974.05,
-            "height": 62.59,
-            "right": 679.6,
-            "width": 394.4,
-            "x": 285.2,
-            "y": 911.46
+            "bottom": 919.2,
+            "height": 46.4,
+            "right": 667.6,
+            "width": 370.4,
+            "x": 297.2,
+            "y": 872.8
           },
           "tag": "input",
           "type": "number"
@@ -972,26 +1246,26 @@
           "disabled": true,
           "id": "submit-calculation",
           "rect": {
-            "bottom": 1055.04,
-            "height": 62.59,
-            "right": 679.6,
-            "width": 394.4,
-            "x": 285.2,
-            "y": 992.45
+            "bottom": 987.2,
+            "height": 44,
+            "right": 667.6,
+            "width": 370.4,
+            "x": 297.2,
+            "y": 943.2
           },
           "tag": "button",
           "type": "submit"
         },
         {
           "disabled": false,
-          "id": "show-events",
+          "id": "",
           "rect": {
-            "bottom": 565.44,
+            "bottom": 622.4,
             "height": 44,
-            "right": 1139.6,
-            "width": 394.4,
-            "x": 745.2,
-            "y": 521.44
+            "right": 1127.6,
+            "width": 370.4,
+            "x": 757.2,
+            "y": 578.4
           },
           "tag": "label",
           "type": null
@@ -1000,26 +1274,26 @@
           "disabled": false,
           "id": "show-events",
           "rect": {
-            "bottom": 549.94,
-            "height": 13,
-            "right": 762.2,
-            "width": 13,
-            "x": 749.2,
-            "y": 536.94
+            "bottom": 608.4,
+            "height": 16,
+            "right": 773.2,
+            "width": 16,
+            "x": 757.2,
+            "y": 592.4
           },
           "tag": "input",
           "type": "checkbox"
         },
         {
           "disabled": false,
-          "id": "dose-volume",
+          "id": "",
           "rect": {
-            "bottom": 650.24,
+            "bottom": 708.8,
             "height": 44,
-            "right": 1139.6,
-            "width": 394.4,
-            "x": 745.2,
-            "y": 606.24
+            "right": 1127.6,
+            "width": 370.4,
+            "x": 757.2,
+            "y": 664.8
           },
           "tag": "label",
           "type": null
@@ -1028,26 +1302,26 @@
           "disabled": false,
           "id": "dose-volume",
           "rect": {
-            "bottom": 636.24,
-            "height": 13,
-            "right": 763.2,
-            "width": 13,
-            "x": 750.2,
-            "y": 623.24
+            "bottom": 694.8,
+            "height": 16,
+            "right": 773.2,
+            "width": 16,
+            "x": 757.2,
+            "y": 678.8
           },
           "tag": "input",
           "type": "radio"
         },
         {
           "disabled": false,
-          "id": "dose-mass",
+          "id": "",
           "rect": {
-            "bottom": 704.64,
+            "bottom": 763.2,
             "height": 44,
-            "right": 1139.6,
-            "width": 394.4,
-            "x": 745.2,
-            "y": 660.64
+            "right": 1127.6,
+            "width": 370.4,
+            "x": 757.2,
+            "y": 719.2
           },
           "tag": "label",
           "type": null
@@ -1056,12 +1330,12 @@
           "disabled": false,
           "id": "dose-mass",
           "rect": {
-            "bottom": 690.64,
-            "height": 13,
-            "right": 763.2,
-            "width": 13,
-            "x": 750.2,
-            "y": 677.64
+            "bottom": 749.2,
+            "height": 16,
+            "right": 773.2,
+            "width": 16,
+            "x": 757.2,
+            "y": 733.2
           },
           "tag": "input",
           "type": "radio"
@@ -1070,12 +1344,12 @@
           "disabled": false,
           "id": "result-scale",
           "rect": {
-            "bottom": 791.44,
+            "bottom": 851.6,
             "height": 44,
-            "right": 1141.6,
-            "width": 394.4,
-            "x": 747.2,
-            "y": 747.44
+            "right": 1129.6,
+            "width": 370.4,
+            "x": 759.2,
+            "y": 807.6
           },
           "tag": "input",
           "type": "range"
@@ -1084,12 +1358,12 @@
           "disabled": false,
           "id": "result-detail-select",
           "rect": {
-            "bottom": 880.64,
+            "bottom": 942.4,
             "height": 46.4,
-            "right": 1139.6,
-            "width": 394.4,
-            "x": 745.2,
-            "y": 834.24
+            "right": 1127.6,
+            "width": 370.4,
+            "x": 757.2,
+            "y": 896
           },
           "tag": "select",
           "type": null
@@ -1098,12 +1372,12 @@
           "disabled": false,
           "id": "theme-mode",
           "rect": {
-            "bottom": 967.84,
+            "bottom": 1031.2,
             "height": 46.4,
-            "right": 1139.6,
-            "width": 394.4,
-            "x": 745.2,
-            "y": 921.44
+            "right": 1127.6,
+            "width": 370.4,
+            "x": 757.2,
+            "y": 984.8
           },
           "tag": "select",
           "type": null
@@ -1112,12 +1386,12 @@
           "disabled": false,
           "id": "pointer-surface",
           "rect": {
-            "bottom": 1394.15,
-            "height": 100.8,
-            "right": 679.6,
-            "width": 394.4,
-            "x": 285.2,
-            "y": 1293.35
+            "bottom": 1501.1,
+            "height": 105.6,
+            "right": 667.6,
+            "width": 370.4,
+            "x": 297.2,
+            "y": 1395.5
           },
           "tag": "div",
           "type": null
@@ -1126,29 +1400,127 @@
           "disabled": false,
           "id": "drop-zone",
           "rect": {
-            "bottom": 1672.46,
-            "height": 80,
-            "right": 1139.6,
-            "width": 854.4,
-            "x": 285.2,
-            "y": 1592.46
+            "bottom": 1792.6,
+            "height": 81.6,
+            "right": 1127.6,
+            "width": 830.4,
+            "x": 297.2,
+            "y": 1711
           },
           "tag": "div",
           "type": null
         },
         {
           "disabled": false,
+          "id": "file-input",
+          "rect": {
+            "bottom": 1863,
+            "height": 46.4,
+            "right": 1127.6,
+            "width": 830.4,
+            "x": 297.2,
+            "y": 1816.6
+          },
+          "tag": "input",
+          "type": "file"
+        },
+        {
+          "disabled": false,
           "id": "text-specimen",
           "rect": {
-            "bottom": 1974.78,
+            "bottom": 2178.5,
             "height": 121.6,
-            "right": 1139.6,
-            "width": 854.4,
-            "x": 285.2,
-            "y": 1853.18
+            "right": 1127.6,
+            "width": 830.4,
+            "x": 297.2,
+            "y": 2056.9
           },
           "tag": "textarea",
           "type": null
+        },
+        {
+          "disabled": false,
+          "id": "clipboard-read",
+          "rect": {
+            "bottom": 2235.3,
+            "height": 44,
+            "right": 488.4,
+            "width": 191.2,
+            "x": 297.2,
+            "y": 2191.3
+          },
+          "tag": "button",
+          "type": "button"
+        },
+        {
+          "disabled": false,
+          "id": "clipboard-write",
+          "rect": {
+            "bottom": 2235.3,
+            "height": 44,
+            "right": 679.6,
+            "width": 187.2,
+            "x": 492.4,
+            "y": 2191.3
+          },
+          "tag": "button",
+          "type": "button"
+        },
+        {
+          "disabled": false,
+          "id": "explorer-filter",
+          "rect": {
+            "bottom": 3039.9,
+            "height": 46.4,
+            "right": 1127.6,
+            "width": 531.45,
+            "x": 596.15,
+            "y": 2993.5
+          },
+          "tag": "input",
+          "type": "search"
+        },
+        {
+          "disabled": false,
+          "id": "explorer-sort",
+          "rect": {
+            "bottom": 3095.1,
+            "height": 46.4,
+            "right": 1127.6,
+            "width": 531.45,
+            "x": 596.15,
+            "y": 3048.7
+          },
+          "tag": "select",
+          "type": null
+        },
+        {
+          "disabled": true,
+          "id": "explorer-previous",
+          "rect": {
+            "bottom": 3330.3,
+            "height": 44,
+            "right": 437.2,
+            "width": 140,
+            "x": 297.2,
+            "y": 3286.3
+          },
+          "tag": "button",
+          "type": "button"
+        },
+        {
+          "disabled": true,
+          "id": "explorer-next",
+          "rect": {
+            "bottom": 3330.3,
+            "height": 44,
+            "right": 1127.6,
+            "width": 114.4,
+            "x": 1013.2,
+            "y": 3286.3
+          },
+          "tag": "button",
+          "type": "button"
         }
       ],
       "viewport": {

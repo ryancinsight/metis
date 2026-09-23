@@ -51,3 +51,8 @@
 | [0040](0040-presentation-frame-geometry.md) | Validated physical geometry at the canvas frame seam | Accepted |
 | [0041](0041-host-neutral-accessibility-semantics.md) | Host-neutral accessibility semantics | Accepted |
 | [0042](0042-scoped-network-provider.md) | Scoped network provider | Accepted |
+| [0043](0043-rounded-rectangle-paint.md) | Rounded rectangle paint semantics | Accepted |
+| [0044](0044-anchored-popovers.md) | Anchored popovers | Accepted |
+| [0045](0045-flex-alignment-redistribution.md) | Flex alignment by post-layout redistribution | Accepted |
+| [0046](0046-gaussian-box-shadows.md) | Gaussian outer box shadows | Accepted |
+| [0047](0047-truetype-text.md) | Antialiased TrueType text in the software renderer | Accepted |
