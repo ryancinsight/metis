@@ -2,7 +2,7 @@
 
 - Status: Accepted
 - Date: 2026-09-17
-- Item: [METIS-AUDIT-001](../../backlog.md#METIS-AUDIT-001)
+- Item: `METIS-AUDIT-001`
 
 ## Context
 

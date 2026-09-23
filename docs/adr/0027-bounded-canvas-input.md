@@ -4,7 +4,7 @@ Status: Accepted
 
 Date: 2026-09-11
 
-Driver: [METIS-CANVAS-INPUT-001](../../backlog.md#METIS-CANVAS-INPUT-001).
+Driver: `METIS-CANVAS-INPUT-001`.
 
 ## Context
 

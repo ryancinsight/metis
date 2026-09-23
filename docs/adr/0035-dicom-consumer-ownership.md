@@ -4,7 +4,7 @@ Status: Accepted
 
 Date: 2026-09-16
 
-Drivers: [METIS-DICOM-005](../../backlog.md#METIS-DICOM-005),
+Drivers: `METIS-DICOM-005`,
 [RITK-SNAP-DICOM-SUBSTRATE-001](../../ritk/backlog.md#RITK-SNAP-DICOM-SUBSTRATE-001).
 
 ## Context

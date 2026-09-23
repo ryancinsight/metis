@@ -4,7 +4,7 @@ Status: Accepted
 
 Date: 2026-09-07
 
-Driver: [METIS-COMMANDS-001](../../backlog.md#METIS-COMMANDS-001).
+Driver: `METIS-COMMANDS-001`.
 
 ## Context
 

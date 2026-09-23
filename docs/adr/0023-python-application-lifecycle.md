@@ -4,7 +4,7 @@ Status: Accepted
 
 Date: 2026-09-09
 
-Driver: [METIS-PYTHON-003](../../backlog.md#METIS-PYTHON-003).
+Driver: `METIS-PYTHON-003`.
 
 ## Context
 

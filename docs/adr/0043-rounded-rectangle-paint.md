@@ -4,7 +4,7 @@ Status: Accepted
 
 Date: 2026-09-22
 
-Driver: [METIS-RASTER-ROUND-001](../../backlog.md#METIS-RASTER-ROUND-001).
+Driver: `METIS-RASTER-ROUND-001`.
 
 ## Context
 
@@ -48,7 +48,7 @@ rectangles through one scanline routine.
 
 Layout and the style contract were split into a follow-up increment so the
 primitive could land free of a contended region and stay independently
-verifiable. [METIS-RASTER-ROUND-002](../../backlog.md#METIS-RASTER-ROUND-002)
+verifiable. `METIS-RASTER-ROUND-002`
 completed that: `DisplayCommand::FillRect` and `DrawBorder` carry the radius,
 layout clamps the authored value against the final rectangle, and
 [ADR 0013](0013-strict-style-contract.md) admits the declaration.

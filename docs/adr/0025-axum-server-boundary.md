@@ -4,9 +4,9 @@ Status: Accepted
 
 Date: 2026-09-10
 
-Driver: [METIS-AXUM-001](../../backlog.md#METIS-AXUM-001)
+Driver: `METIS-AXUM-001`
 
-Revision 2026-09-11: [METIS-AXUM-001](../../backlog.md#METIS-AXUM-001)
+Revision 2026-09-11: `METIS-AXUM-001`
 admits a loopback-only `metis-app` server demonstration for the user manual.
 The lifecycle probe implementation is recorded at Metis revision
 `e6b84432bc8a94515f0a332592ff392127788f00`.
@@ -16,7 +16,7 @@ boundary in Metis.
 
 ## Context
 
-Revision 2026-09-16: [METIS-FRAGMENT-001](../../backlog.md#METIS-FRAGMENT-001)
+Revision 2026-09-16: `METIS-FRAGMENT-001`
 replay [35167864608](https://github.com/ryancinsight/metis/actions/runs/35167864608)
 observed Firefox lose the service after `FrameTruncated`. A peer disconnect
 must not terminate the listening service. Accepted connections each consume

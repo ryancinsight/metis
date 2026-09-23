@@ -4,8 +4,8 @@ Status: Accepted
 
 Date: 2026-09-06
 
-Drivers: [METIS-BROWSER-001](../../backlog.md#METIS-BROWSER-001),
-[METIS-ASYNC-001](../../backlog.md#METIS-ASYNC-001).
+Drivers: `METIS-BROWSER-001`,
+`METIS-ASYNC-001`.
 
 ## Context
 

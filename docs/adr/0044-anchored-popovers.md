@@ -4,7 +4,7 @@ Status: Accepted
 
 Date: 2026-09-22
 
-Driver: [METIS-NATIVE-POPOVER-001](../../backlog.md#METIS-NATIVE-POPOVER-001).
+Driver: `METIS-NATIVE-POPOVER-001`.
 
 ## Decision
 

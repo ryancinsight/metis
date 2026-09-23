@@ -4,7 +4,7 @@ Status: Accepted
 
 Date: 2026-09-07
 
-Driver: [METIS-ASYNC-001](../backlog.md#METIS-ASYNC-001),
+Driver: `METIS-ASYNC-001`,
 [Moirai task cancellation](../../../moirai/docs/adr/0045-cancellable-browser-tasks.md).
 
 ## Context

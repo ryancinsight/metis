@@ -4,7 +4,7 @@ Status: Accepted
 
 Date: 2026-09-07
 
-Driver: [METIS-CRYPTO-001](../../backlog.md#METIS-CRYPTO-001).
+Driver: `METIS-CRYPTO-001`.
 
 ## Context
 

@@ -3,20 +3,20 @@
 Status: Accepted
 
 Revision 2026-09-05: the user specifies a public Atlas member and a user manual
-instead of a domain book. [METIS-MANUAL-001](../../backlog.md#METIS-MANUAL-001)
+instead of a domain book. `METIS-MANUAL-001`
 owns runnable application guidance and snapshots from actual framebuffer output.
 The manual lives under `docs/manual/`; Rustdoc retains API contracts and ADRs
 retain decisions. Snapshot generation reuses the presentation example and a
 regenerate/compare gate; no independently drawn mockup stands in for an app.
 
-Revision 2026-09-06: [METIS-APPLICATION-001](../../backlog.md#METIS-APPLICATION-001)
+Revision 2026-09-06: `METIS-APPLICATION-001`
 replaces sibling executables with one application image serving separate process
 roles. [ADR 0006](0006-application-entry.md) owns the entry and migration; private
 transport, session authorization and lifecycle containment remain unchanged.
 
 Date: 2026-09-05
 
-Driver: [METIS-SEC-001](../../backlog.md#METIS-SEC-001), [METIS-PROCESS-001](../../backlog.md#METIS-PROCESS-001).
+Driver: `METIS-SEC-001`, `METIS-PROCESS-001`.
 
 ## Decision
 

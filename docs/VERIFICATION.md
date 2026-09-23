@@ -584,7 +584,7 @@ launch, permission and removal captures remain open under
 
 ## Single-application verification — 2026-09-06
 
-[METIS-APPLICATION-001](../backlog.md#METIS-APPLICATION-001) and
+`METIS-APPLICATION-001` and
 [ADR 0006](adr/0006-application-entry.md) require a copied and renamed
 `metis-app` executable to complete input-sensitive sessions from a directory
 without companion executables. Verify distinct parent/child PIDs, calculation
@@ -635,8 +635,8 @@ workbench. The live service trace below establishes the authenticated loopback
 path. The delayed-response stop/remount trace below closes service-boundary
 stale DOM delivery; post-drop resource counts, cross-engine behavior,
 accessibility technology support and OS permission isolation remain open in
-[METIS-BROWSER-001](../backlog.md#METIS-BROWSER-001),
-[METIS-MEMORY-001](../backlog.md#METIS-MEMORY-001),
+`METIS-BROWSER-001`,
+`METIS-MEMORY-001`,
 [METIS-PERF-001](../backlog.md#METIS-PERF-001),
 [METIS-SERVICES-001](../backlog.md#METIS-SERVICES-001) and
 [METIS-DESKTOP-001](../backlog.md#METIS-DESKTOP-001).
@@ -1079,7 +1079,7 @@ cross-engine parity remain open.
 
 ## Browser file-drop evidence — 2026-09-08
 
-This dated capture predates [METIS-DICOM-003](../backlog.md#METIS-DICOM-003),
+This dated capture predates `METIS-DICOM-003`,
 which removes the format-specific sample labels and decisions. It remains only
 as historical provenance for the bounded handoff; current Metis uses the
 generic **File drop** label and makes no format decision.
@@ -1092,7 +1092,7 @@ bounded `Box<[FileDropEntry]>` for presentation and starts one cancellable task
 for the accepted batch. Each file is read to its declared end through 64 KiB
 continuations, with a 64 MiB per-file and 256 MiB batch budget. The captured
 revision classified the first payload at a format marker; that decision was
-removed by [METIS-DICOM-002](../backlog.md#METIS-DICOM-002). Current Metis
+removed by `METIS-DICOM-002`. Current Metis
 exposes completed named bytes through one `FileDropBatch` handoff slot. Moirai
 rejects any individual read larger than 1 MiB, and the consumer stays below
 that provider bound.
@@ -1650,7 +1650,7 @@ oracle for the synchronized documentation and visual fixtures.
 
 ## Browser accessibility presentation evidence — 2026-09-08
 
-The capture below predates [METIS-DICOM-003](../backlog.md#METIS-DICOM-003);
+The capture below predates `METIS-DICOM-003`;
 the current source names the same semantic group **File drop zone**.
 
 The browser asset contract now checks semantic group names, polite atomic live

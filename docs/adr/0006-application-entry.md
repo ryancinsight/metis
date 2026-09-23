@@ -4,7 +4,7 @@ Status: Accepted
 
 Date: 2026-09-06
 
-Driver: [METIS-APPLICATION-001](../../backlog.md#METIS-APPLICATION-001).
+Driver: `METIS-APPLICATION-001`.
 
 ## Intent and decision
 

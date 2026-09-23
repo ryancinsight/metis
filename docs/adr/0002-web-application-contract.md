@@ -4,11 +4,11 @@ Status: Accepted
 
 Date: 2026-09-05
 
-Driver: [METIS-WEB-001](../../backlog.md#METIS-WEB-001).
+Driver: `METIS-WEB-001`.
 
 Revision 2026-09-06: [ADR 0007](0007-browser-transport.md) records the first
 bounded asynchronous browser transport slice. [ADR 0003](0003-framework-conformance.md), driven by
-[METIS-GAPS-001](../../backlog.md#METIS-GAPS-001), adds the egui/GPUI/Tauri
+`METIS-GAPS-001`, adds the egui/GPUI/Tauri
 capability inventory and per-gap demonstration/verification closure. It retains
 this web/native trust boundary and does not claim API parity from toolkit breadth.
 
@@ -123,7 +123,7 @@ The existing custom binary protocol is not the Tauri invoke protocol.
 | --- | --- | --- |
 | HTML5/CSS/assets | Preserve existing web presentation in browser/system WebView | `metis-web` mounts a real DOM form and page CSS; broader DOM/layout parity and visual cases remain required. |
 | Rust/WASM | Shared portable application code with asynchronous host bindings | `metis-web` compiles and runs in the local browser workbench; the configured loopback bridge and binding-lifetime tests pass, while cross-engine runtime evidence remains required. |
-| Hypermedia actions and fragments | HTML attributes can trigger requests, choose a target and select a swap [H0] [H1] [H2] | WebView/browser concern; server response and script policy remain application-owned | Metis keeps a typed event→action→target path in Rust/WASM and text/attribute-only dynamic updates. Its finite loopback HTTP role carries an authenticated, allowlisted fragment contract over Moirai; it does not add htmx, arbitrary markup or DICOM behavior. [BROWSER](../../backlog.md#METIS-BROWSER-001), [AXUM](../../backlog.md#METIS-AXUM-001), [MIGRATION](../../backlog.md#METIS-MIGRATION-001). |
+| Hypermedia actions and fragments | HTML attributes can trigger requests, choose a target and select a swap [H0] [H1] [H2] | WebView/browser concern; server response and script policy remain application-owned | Metis keeps a typed event→action→target path in Rust/WASM and text/attribute-only dynamic updates. Its finite loopback HTTP role carries an authenticated, allowlisted fragment contract over Moirai; it does not add htmx, arbitrary markup or DICOM behavior. BROWSER (`METIS-BROWSER-001`), AXUM (`METIS-AXUM-001`), [MIGRATION](../../backlog.md#METIS-MIGRATION-001). |
 | Commands/events | Typed requests, correlated responses, bounded event delivery and cancellation | Versioned command and target-surface discovery, bounded local and remote event delivery, typed plugin invocation and cancellation now sit on the shared IPC seam; Tauri migration mappings remain required. |
 | Windows/lifecycle | Desktop window creation, input, navigation, close and teardown | `metis-platform::native::NativeSurface` creates a bounded Win32 window, and `metis-app --metis-native-window` composes the Metis framebuffer with private IPC; WebView2 navigation, denial probes and non-Windows hosts remain required. |
 | Plugins/native APIs | Explicit permission-scoped supported operations | Typed host plugin manifests, scoped command invocation and typed unsupported-plugin errors exist; inventory file/dialog/clipboard/shell/window capabilities against migrated examples and add OS permission enforcement. |

@@ -4,20 +4,20 @@ Status: Accepted
 
 Date: 2026-09-06
 
-Driver: [METIS-DISTRIBUTION-001](../../backlog.md#METIS-DISTRIBUTION-001).
+Driver: `METIS-DISTRIBUTION-001`.
 
-Revision 2026-09-06: [METIS-APPLICATION-001](../../backlog.md#METIS-APPLICATION-001)
+Revision 2026-09-06: `METIS-APPLICATION-001`
 replaces the demonstration's mandatory executable pair with one application
 entry. [ADR 0006](0006-application-entry.md) defines process-role dispatch and the
 command migration. The manifest remains the single payload inventory.
 
 Revision 2026-09-08: [METIS-RELEASE-001](../../backlog.md#METIS-RELEASE-001)
 adds the Atlas-pinned crates.io release caller. Registry authentication remains
-tokenless through GitHub Actions OIDC. [METIS-PYTHON-001](../../backlog.md#METIS-PYTHON-001)
+tokenless through GitHub Actions OIDC. `METIS-PYTHON-001`
 adds the `metis-rs` PyPI caller; its publish job uses the same OIDC model and
 does not carry a registry token or developer key.
 
-Revision 2026-09-09: [METIS-DISTRIBUTION-002](../../backlog.md#METIS-DISTRIBUTION-002)
+Revision 2026-09-09: `METIS-DISTRIBUTION-002`
 adds `init`, `dev` and `completions` to the same manifest-driven tool. `init`
 emits a complete locked Cargo workspace, `dev --once` is a bounded run on every
 host, and Windows `dev --watch` uses native directory notifications plus a
@@ -28,7 +28,7 @@ cannot drift from the CLI. The generated entry is format-neutral: DICOM parsing,
 decoding, geometry and viewer state remain RITK responsibilities, while Métis
 provides the shell and presentation handoff.
 
-Revision 2026-09-15: [METIS-DISTRIBUTION-005](../../backlog.md#METIS-DISTRIBUTION-005)
+Revision 2026-09-15: `METIS-DISTRIBUTION-005`
 extends the package Cargo build deadline to 900 seconds. Hosted run
 [34984471177](https://github.com/ryancinsight/ritk/actions/runs/34984471177)
 reached the former 300-second limit while compiling the cold locked RITK graph,
