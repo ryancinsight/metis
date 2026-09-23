@@ -582,6 +582,18 @@ keeping DICOM interpretation in RITK.
 
 The defaults are 72.50 kg, 4.00 mg/mL and 0.500 mcg/kg/min. No result exists yet.
 
+## Anchored command menu
+
+![Command menu over the system theme](images/form-menu.svg)
+
+![Command menu over the dark theme](images/form-menu-dark.svg)
+
+The command menu uses its toggle's laid-out rectangle as its anchor. Opening it
+does not move the navigation status or either card, and it paints above the
+stationary document in both themes. The native host uses the same retained
+element rectangles for hit testing, so theme colors and label wording do not
+define the interactive regions.
+
 ## Successful request
 
 ![Backend result](images/form-success.svg)
@@ -655,7 +667,7 @@ layout as SVG text. The CSV records actual inputs, actions, state, displayed
 labels and text geometry alongside independently expected outcomes.
 
 The gate removes previous required captures before execution. It validates all
-seven new captures, checks BMP/SVG pixel agreement and compares both images and
+nine new captures, checks BMP/SVG pixel agreement and compares both images and
 semantic records with the [reviewed baseline](images/captures.json). Source,
 lockfile and rendering-fixture hashes bind the observations to this run.
 For an intentional visual change:

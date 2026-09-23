@@ -65,6 +65,14 @@ colors, rounded backgrounds and borders, outer box shadows, and antialiased
 text measured by its glyph advances. Declarations outside the admitted subset
 return `ErrorCode::InvalidCssStyle` when parsed. The faces and glyph coverage
 belong to metis-platform.
+An element with `popover-anchor="element-id"` leaves normal flow when visible,
+uses that element's laid-out border rectangle as its anchor, and paints after
+the document. It starts below the anchor, fits horizontally inside the viewport
+when its measured width permits, and flips above when the lower placement
+overflows and there is room. Missing visible anchors return a typed markup
+error; hidden popovers do not resolve anchors. Framebuffer clipping bounds
+oversized popovers. `DisplayList::element_rect` exposes the same retained
+geometry to native hit testing without inspecting text or theme colors.
 `ComputedStyle::parse` strictly rejects unknown properties, malformed
 declarations and invalid values with `ErrorCode::InvalidCssStyle`; an empty
 style and a trailing semicolon are valid. Layout rejects coordinate overflow

@@ -18,6 +18,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         assert_label(app, "status-badge", "SYSTEM READY");
         capture(app, "form", Oracle::Idle, actions)?;
         comparator_probes(app.document())?;
+        capture_menus(actions)?;
         initialize(app, actions)?;
         set_inputs(app, 60.0, actions)?;
         submit(app, actions)?;
@@ -110,6 +111,21 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         )
     })?;
     assert_eq!(recovered.ledger().records().len(), 2);
+    Ok(())
+}
+
+fn capture_menus(actions: &[String]) -> Result<(), Box<dyn std::error::Error>> {
+    let (transport, _peer) = MemoryTransport::pair();
+    let mut app = FrontendApp::new(transport, 800, 600)?;
+    let mut menu_actions = actions.to_vec();
+    app.toggle_command_menu()?;
+    menu_actions.push("open command menu".into());
+    capture(&app, "form-menu", Oracle::Idle, &menu_actions)?;
+    app.activate_command(metis_frontend::ApplicationCommand::ThemeDark)?;
+    menu_actions.push("select dark theme".into());
+    app.toggle_command_menu()?;
+    menu_actions.push("open command menu".into());
+    capture(&app, "form-menu-dark", Oracle::Idle, &menu_actions)?;
     Ok(())
 }
 

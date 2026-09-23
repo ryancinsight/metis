@@ -322,6 +322,164 @@
         }
       }
     },
+    "form-menu": {
+      "image_sha256": "fd97afae12b7154b21dbdebbebfb296de81dc654536910c6746a9bde934d02b2",
+      "semantics": {
+        "action": {
+          "0": "create session: 800x600, bounded MemoryTransport, backend exchanges=4",
+          "1": "open command menu"
+        },
+        "expected": {
+          "state": "idle"
+        },
+        "geometry": {
+          "0": "32 32 22 336 28",
+          "1": "32 68 13 93 17",
+          "10": "337 394 14 125 18",
+          "11": "37 464 16 212 20",
+          "12": "37 492 18 317 23",
+          "13": "37 523 13 105 17",
+          "14": "37 548 12 108 15",
+          "15": "58 186 14 77 18",
+          "16": "49 236 14 96 18",
+          "2": "51 133 14 74 18",
+          "3": "183 133 14 90 18",
+          "4": "28 172 13 112 17",
+          "5": "37 229 16 339 20",
+          "6": "37 259 14 174 18",
+          "7": "37 287 14 104 18",
+          "8": "37 315 14 206 18",
+          "9": "37 343 14 200 18"
+        },
+        "input": {
+          "concentration_mg_ml": "4",
+          "patient_id": "PT-9042-ALPHA",
+          "target_dose_mcg_kg_min": "0.5",
+          "weight_kg": "72.5"
+        },
+        "label": {
+          "label-conc": "Drug Concentration: 4.00 mg/mL",
+          "label-dose": "Target Dose: 0.500 mcg/kg/min",
+          "label-patient": "Patient ID: PT-9042-ALPHA",
+          "label-weight": "Weight: 72.50 kg",
+          "output-rate": "Rate: Awaiting Backend Calculation...",
+          "output-signature": "Backend MAC: None",
+          "output-status": "Safety Status: Idle",
+          "status-badge": "SYSTEM READY"
+        },
+        "meta": {
+          "font": "atkinson-hyperlegible",
+          "height": "600",
+          "scale": "1.000x",
+          "scenario": "form-menu",
+          "schema": "1",
+          "target": "software",
+          "width": "800"
+        },
+        "observed": {
+          "state": "idle"
+        },
+        "text": {
+          "0": "METIS FORM DEMONSTRATION",
+          "1": "SYSTEM READY",
+          "10": "Submit calculation",
+          "11": "Backend Calculation Output",
+          "12": "Rate: Awaiting Backend Calculation...",
+          "13": "Safety Status: Idle",
+          "14": "Backend MAC: None",
+          "15": "Dark theme",
+          "16": "System theme",
+          "2": "Commands",
+          "3": "Focus patient",
+          "4": "Commands opened",
+          "5": "Patient Demographics and Drug Prescription",
+          "6": "Patient ID: PT-9042-ALPHA",
+          "7": "Weight: 72.50 kg",
+          "8": "Drug Concentration: 4.00 mg/mL",
+          "9": "Target Dose: 0.500 mcg/kg/min"
+        }
+      }
+    },
+    "form-menu-dark": {
+      "image_sha256": "6fc34c9de475b0f7f94874bd510e5dcd0f0c190684f7ee2ffc29d6f2951775ae",
+      "semantics": {
+        "action": {
+          "0": "create session: 800x600, bounded MemoryTransport, backend exchanges=4",
+          "1": "open command menu",
+          "2": "select dark theme",
+          "3": "open command menu"
+        },
+        "expected": {
+          "state": "idle"
+        },
+        "geometry": {
+          "0": "32 32 22 336 28",
+          "1": "32 68 13 93 17",
+          "10": "337 394 14 125 18",
+          "11": "37 464 16 212 20",
+          "12": "37 492 18 317 23",
+          "13": "37 523 13 105 17",
+          "14": "37 548 12 108 15",
+          "15": "58 186 14 77 18",
+          "16": "49 236 14 96 18",
+          "2": "51 133 14 74 18",
+          "3": "183 133 14 90 18",
+          "4": "28 172 13 112 17",
+          "5": "37 229 16 339 20",
+          "6": "37 259 14 174 18",
+          "7": "37 287 14 104 18",
+          "8": "37 315 14 206 18",
+          "9": "37 343 14 200 18"
+        },
+        "input": {
+          "concentration_mg_ml": "4",
+          "patient_id": "PT-9042-ALPHA",
+          "target_dose_mcg_kg_min": "0.5",
+          "weight_kg": "72.5"
+        },
+        "label": {
+          "label-conc": "Drug Concentration: 4.00 mg/mL",
+          "label-dose": "Target Dose: 0.500 mcg/kg/min",
+          "label-patient": "Patient ID: PT-9042-ALPHA",
+          "label-weight": "Weight: 72.50 kg",
+          "output-rate": "Rate: Awaiting Backend Calculation...",
+          "output-signature": "Backend MAC: None",
+          "output-status": "Safety Status: Idle",
+          "status-badge": "SYSTEM READY"
+        },
+        "meta": {
+          "font": "atkinson-hyperlegible",
+          "height": "600",
+          "scale": "1.000x",
+          "scenario": "form-menu-dark",
+          "schema": "1",
+          "target": "software",
+          "width": "800"
+        },
+        "observed": {
+          "state": "idle"
+        },
+        "text": {
+          "0": "METIS FORM DEMONSTRATION",
+          "1": "SYSTEM READY",
+          "10": "Submit calculation",
+          "11": "Backend Calculation Output",
+          "12": "Rate: Awaiting Backend Calculation...",
+          "13": "Safety Status: Idle",
+          "14": "Backend MAC: None",
+          "15": "Dark theme",
+          "16": "System theme",
+          "2": "Commands",
+          "3": "Focus patient",
+          "4": "Commands opened",
+          "5": "Patient Demographics and Drug Prescription",
+          "6": "Patient ID: PT-9042-ALPHA",
+          "7": "Weight: 72.50 kg",
+          "8": "Drug Concentration: 4.00 mg/mL",
+          "9": "Target Dose: 0.500 mcg/kg/min"
+        }
+      }
+    },
     "form-recovered": {
       "image_sha256": "4f3fdace191612b1c28cf6126834ac108fbc9ef6b662d6536c1bcca2ba72839a",
       "semantics": {

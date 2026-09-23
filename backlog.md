@@ -64,6 +64,15 @@
 - Outcome: control labels read as words rather than ASCII button art, now that the control itself carries the affordance.
 - Blocker-shaped detail: `[ SUBMIT CALCULATION TO BACKEND ]`, `[ COMMANDS ]` and the uppercase menu labels are asserted in `crates/metis-app/src/frontend/native.rs`, `scripts/python_native_accessibility.py`, the native semantic baseline and the manual, so the change is a coordinated rename across those oracles rather than a markup edit.
 
+<a id="METIS-NATIVE-POPOVER-001"></a>
+## METIS-NATIVE-POPOVER-001 — Anchor native command menus [minor]
+- Status: review; priority: P1; owner: Metis presentation; integrator: root; last-update: 2026-09-23; dependencies: none; risk: overlay geometry and input routing; decision: [ADR 0044](docs/adr/0044-anchored-popovers.md).
+- Outcome: a visible command menu floats at its laid-out toggle without moving document content and receives native input before covered controls.
+- Scope: anchored ui-lang layout and element rectangles, frontend menu markup, native hit testing and dismissal, focused regressions, regenerated visual captures, and synchronized manual text.
+- Non-goals: general absolute positioning, browser layout, citation queries, Gaia mesh viewing, and mutable framebuffer work.
+- Acceptance: measured menu content paints last; below/above and horizontal viewport placement follow ADR 0044; missing visible anchors return a typed error; hidden menus skip anchor resolution; oversized content clips at the framebuffer; menu selection, Escape, focus loss, and consumed outside clicks dismiss through geometry independent of theme colors.
+- Verification: 141 focused nextest cases pass; 341 Python unit tests pass with one environment skip; update-snapshot and non-update full verifier runs pass; regenerated light and dark menu captures inspected.
+
 <a id="METIS-LAYOUT-MINSIZE-001"></a>
 ## METIS-LAYOUT-MINSIZE-001 — Admit minimum sizes through layout [minor]
 - Status: review; priority: P1; owner: Metis presentation; integrator: root; last-update: 2026-09-22; dependencies: METIS-RASTER-ROUND-002; risk: silent layout change
