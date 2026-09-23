@@ -471,5 +471,5 @@ an owner. “Unsupported” cannot replace delivery of a required mobile/native 
 - Outcome: distinguish primary actions, diagnostics and content through typography, palette and spacing.
 - Scope: browser CSS, responsive capture evidence and browser manual; native renderer and IME work excluded.
 - Acceptance: inspected desktop/mobile and theme states; no horizontal overflow; 44px option targets; browser asset and capture gates pass.
-- Evidence: reachability scan 22.905s; full citation command 0.490s after 5e3ed7e; visual-tests 343 tests in 35.819s (1 skipped, 60s cap); browser assets 15 tests in 0.205s; capture unit tests 22 in 18.217s; asset build passed, WASM compile 108s. Dirty local comparator rejects stale fixture digest; clean-base capture is gated in PR CI.
+- Evidence: [Windows run 35877828557](https://github.com/ryancinsight/metis/actions/runs/35877828557) passed visual-tests (342 tests/30.051s under 60s), browser build, presentation and comparator (9/9 captures, 1/1 asset). Local focused suites: browser 15/0.205s; capture 22/18.217s. Citation reachability scan: 22.905s before batching; full command: 0.490s after 5e3ed7e. Local WASM compile: 108s.
 - basis: 7ddca83.
