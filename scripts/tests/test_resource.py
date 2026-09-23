@@ -42,6 +42,13 @@ class ResourceSummaryTests(unittest.TestCase):
         })
         self.assertEqual(result["handle_count"]["peak"], None)
 
+    def test_numeric_sample_summary_reports_approximate_95_percent_half_width(self):
+        summary = self.resource["summarize_numeric_samples"]((10, 12, 14))
+        self.assertEqual(summary["count"], 3)
+        self.assertEqual(summary["mean"], 12)
+        self.assertEqual(summary["sample_stddev"], 2)
+        self.assertAlmostEqual(summary["approximate_95_half_width"], 1.96 * 2 / (3 ** 0.5))
+
     def test_fingerprint_does_not_expose_arguments(self):
         fingerprint = self.resource["command_fingerprint"]
         command = ["viewer.exe", r"C:\private\patient-study", "1.2.840.999"]
