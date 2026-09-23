@@ -596,6 +596,18 @@ define the interactive regions. Popover width, margins and neighboring gaps do
 not contribute to an auto-sized ancestor, so non-stretch alignment remains
 stable while the menu opens.
 
+## Keyboard focus
+
+![Keyboard focus on the submit control](images/form-focus.png)
+
+Tab and Shift+Tab move focus through the controls in document order and wrap
+at either end; the open menu's items join that order. Keyboard focus paints a
+two-pixel ring two pixels outside the control, following its corner rounding
+in the theme's focus color. A pointer press moves focus without a ring. When
+the menu closes with focus on one of its items, focus returns to the menu
+button. The form opens with focus on the patient reference, so typing edits
+it without a first Tab.
+
 ## Successful request
 
 ![Backend result](images/form-success.png)

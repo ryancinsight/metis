@@ -1,6 +1,7 @@
 //! Host-neutral command state for the authored application surface.
 
 use crate::app::FrontendApp;
+use crate::focus::INITIAL_FOCUS;
 use metis_core::Result;
 use metis_ipc::IpcTransport;
 
@@ -196,15 +197,20 @@ impl<T: IpcTransport> FrontendApp<T> {
         let previous_menu = self.command_menu;
         let previous_status = self.command_status.clone();
         let previous_theme = self.theme;
+        let previous_focus = self.focus.clone();
         self.command_menu = CommandMenuState::Closed;
         command.status().clone_into(&mut self.command_status);
         if let Some(theme) = command.theme() {
             self.theme = theme;
         }
+        if command == ApplicationCommand::FocusPatient {
+            INITIAL_FOCUS.clone_into(&mut self.focus.control);
+        }
         if let Err(error) = self.render() {
             self.command_menu = previous_menu;
             self.command_status = previous_status;
             self.theme = previous_theme;
+            self.focus = previous_focus;
             return Err(error);
         }
         Ok(())

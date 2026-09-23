@@ -57,3 +57,4 @@
 | [0046](0046-gaussian-box-shadows.md) | Gaussian outer box shadows | Accepted |
 | [0047](0047-truetype-text.md) | Antialiased TrueType text in the software renderer | Accepted |
 | [0048](0048-linear-gradient-backgrounds.md) | Linear gradient backgrounds | Accepted |
+| [0049](0049-keyboard-focus-ring.md) | Keyboard focus and its ring in the software form | Accepted |

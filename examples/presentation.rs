@@ -21,6 +21,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         capture(app, "form", Oracle::Idle, actions)?;
         comparator_probes(app.document())?;
         capture_menus(actions)?;
+        capture_focus(actions)?;
         initialize(app, actions)?;
         set_inputs(app, 60.0, actions)?;
         submit(app, actions)?;
@@ -128,6 +129,17 @@ fn capture_menus(actions: &[String]) -> Result<(), Box<dyn std::error::Error>> {
     app.toggle_command_menu()?;
     menu_actions.push("open command menu".into());
     capture(&app, "form-menu-dark", Oracle::Idle, &menu_actions)?;
+    Ok(())
+}
+
+/// Keyboard focus reaches the submit control and paints its ring.
+fn capture_focus(actions: &[String]) -> Result<(), Box<dyn std::error::Error>> {
+    let (transport, _peer) = MemoryTransport::pair();
+    let mut app = FrontendApp::new(transport, 800, 600)?;
+    let mut focus_actions = actions.to_vec();
+    app.move_focus(metis_frontend::FocusDirection::Forward)?;
+    focus_actions.push("press Tab".into());
+    capture(&app, "form-focus", Oracle::Idle, &focus_actions)?;
     Ok(())
 }
 
