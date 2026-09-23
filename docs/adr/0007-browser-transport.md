@@ -4,7 +4,7 @@ Status: Accepted
 
 Date: 2026-09-06
 
-Driver: [METIS-ASYNC-001](../../backlog.md#METIS-ASYNC-001).
+Driver: `METIS-ASYNC-001`.
 
 Revision 2026-09-06: Metis now consumes Moirai's merged browser PAL at
 `66627b9`; the `metis-web` host and

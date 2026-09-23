@@ -4,7 +4,7 @@ Status: Accepted
 
 Date: 2026-09-09
 
-Driver: [METIS-FRAGMENT-001](../../backlog.md#METIS-FRAGMENT-001).
+Driver: `METIS-FRAGMENT-001`.
 
 ## Context
 

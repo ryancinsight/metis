@@ -4,13 +4,13 @@ Status: Accepted
 
 Date: 2026-09-07
 
-Driver: [METIS-UI-001](../../backlog.md#METIS-UI-001).
+Driver: `METIS-UI-001`.
 
-Revision: 2026-09-09 — [METIS-LAYOUT-001](../../backlog.md#METIS-LAYOUT-001)
+Revision: 2026-09-09 — `METIS-LAYOUT-001`
 closes the silent custom-renderer style gap by rejecting declarations without
 software-renderer semantics.
 
-Revision: 2026-09-22 — [METIS-LAYOUT-ALIGN-001](../../backlog.md#METIS-LAYOUT-ALIGN-001)
+Revision: 2026-09-22 — `METIS-LAYOUT-ALIGN-001`
 admits `justify-content` and `align-items`
 ([ADR 0045](0045-flex-alignment-redistribution.md)), which empties this
 decision's rejection category: every declaration the style model carries is now
@@ -24,20 +24,20 @@ keyword or length grammar. The decision therefore stands with its original
 intent intact — a declaration is either painted or a typed error, never
 silently dropped — and the renderer simply caught up with the subset.
 
-Revision: 2026-09-22 — [METIS-LAYOUT-MINSIZE-001](../../backlog.md#METIS-LAYOUT-MINSIZE-001)
+Revision: 2026-09-22 — `METIS-LAYOUT-MINSIZE-001`
 admits `min-width` and `min-height`. A minimum sizes one box, which layout
 already does; it needs no space redistribution. `justify-content` and
 `align-items` keep their rejection because they do, and that is a separate
 layout capability rather than a longer length list.
 
-Revision: 2026-09-22 — [METIS-TYPOGRAPHY-WEIGHT-001](../../backlog.md#METIS-TYPOGRAPHY-WEIGHT-001)
+Revision: 2026-09-22 — `METIS-TYPOGRAPHY-WEIGHT-001`
 admits `font-weight` now that rasterization applies a stroke weight. The subset
 stays bounded to the two weights the renderer can paint: `normal`/`400` and
 `bold`/`700`. Any other weight is a typed error rather than a silent rounding
 to the nearest paintable one, which would be the silent-drop the contract
 exists to prevent.
 
-Revision: 2026-09-22 — [METIS-RASTER-ROUND-002](../../backlog.md#METIS-RASTER-ROUND-002)
+Revision: 2026-09-22 — `METIS-RASTER-ROUND-002`
 admits `border-radius` now that the software renderer paints it
 ([ADR 0043](0043-rounded-rectangle-paint.md)). This is the contract working
 rather than a reversal: the rejection exists to stop a declaration being

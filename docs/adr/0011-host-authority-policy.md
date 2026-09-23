@@ -4,7 +4,7 @@ Status: Accepted
 
 Date: 2026-09-07
 
-Driver: [METIS-AUTHORITY-001](../../backlog.md#METIS-AUTHORITY-001).
+Driver: `METIS-AUTHORITY-001`.
 
 ## Context
 
@@ -89,5 +89,5 @@ result to the delivered revision.
 This decision does not establish TLS endpoint policy, OS process permissions,
 or cross-engine desktop evidence. Those capabilities remain in
 [METIS-SERVICES-001](../../backlog.md#METIS-SERVICES-001),
-[METIS-BROWSER-001](../../backlog.md#METIS-BROWSER-001),
+`METIS-BROWSER-001`,
 and [METIS-DESKTOP-001](../../backlog.md#METIS-DESKTOP-001).

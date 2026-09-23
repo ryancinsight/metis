@@ -4,7 +4,7 @@ Status: Accepted
 
 Date: 2026-09-22
 
-Driver: [METIS-LAYOUT-ALIGN-001](../../backlog.md#METIS-LAYOUT-ALIGN-001).
+Driver: `METIS-LAYOUT-ALIGN-001`.
 
 Revision: 2026-09-23 — [METIS-FORM-LABELS-001](https://github.com/ryancinsight/metis/pull/374)
 sizes the children of a column whose `align-items` is not `stretch` to their

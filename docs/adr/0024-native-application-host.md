@@ -4,7 +4,7 @@ Status: Accepted
 
 Date: 2026-09-10
 
-Driver: [METIS-RITK-HOST-001](../../backlog.md#METIS-RITK-HOST-001)
+Driver: `METIS-RITK-HOST-001`
 
 Related application migration: [RITK-SNAP-METIS-001](../../../ritk/backlog.md#RITK-SNAP-METIS-001)
 

@@ -4,7 +4,7 @@ Status: Accepted
 
 Date: 2026-09-08
 
-Driver: [METIS-LAYOUT-001](../../backlog.md#METIS-LAYOUT-001)
+Driver: `METIS-LAYOUT-001`
 
 Related work: [METIS-ASSETS-001](../../backlog.md#METIS-ASSETS-001)
 

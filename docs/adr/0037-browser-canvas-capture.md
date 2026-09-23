@@ -4,7 +4,7 @@ Status: Accepted
 
 Date: 2026-09-16
 
-Driver: [METIS-BROWSER-001](../../backlog.md#METIS-BROWSER-001)
+Driver: `METIS-BROWSER-001`
 
 ## Context
 

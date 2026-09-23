@@ -4,7 +4,7 @@ Status: Accepted
 
 Date: 2026-09-19
 
-Driver: [METIS-PRESENTATION-GEOMETRY-001](../../backlog.md#METIS-PRESENTATION-GEOMETRY-001).
+Driver: `METIS-PRESENTATION-GEOMETRY-001`.
 
 ## Decision
 
