@@ -273,3 +273,32 @@ fn content_sizing_respects_declared_widths_rows_and_the_available_width() {
     assert!(advance(long) > 200);
     assert_eq!(sized_child("center", "", long).width, 200);
 }
+
+#[test]
+fn opening_popover_does_not_change_non_stretched_row_intrinsics() {
+    let layout = |menu_display: &str| {
+        let document = parse_markup(&format!(
+            "<root style='width:100px;align-items:center'><toolbar id='toolbar' style='flex-direction:row;gap:7px'><button id='toggle' style='width:10px;height:4px'/><menu id='menu' popover-anchor='toggle' style='display:{menu_display};width:40px;height:8px;margin:0 5px'/><content id='content' style='width:20px;height:4px'/></toolbar></root>"
+        ))
+        .expect("popover sizing markup");
+        let display =
+            compute_layout(&document, LayoutViewport::new(100, 40)).expect("popover sizing layout");
+        [
+            display.element_rect("toolbar").expect("toolbar rectangle"),
+            display.element_rect("toggle").expect("toggle rectangle"),
+            display.element_rect("content").expect("content rectangle"),
+        ]
+    };
+
+    let hidden = layout("none");
+    let open = layout("flex");
+    assert_eq!(hidden, open);
+    assert_eq!(
+        open,
+        [
+            Rect::new(31, 0, 37, 4),
+            Rect::new(31, 0, 10, 4),
+            Rect::new(48, 0, 20, 4),
+        ]
+    );
+}

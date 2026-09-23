@@ -592,7 +592,9 @@ The command menu uses its toggle's laid-out rectangle as its anchor. Opening it
 does not move the navigation status or either card, and it paints above the
 stationary document in both themes. The native host uses the same retained
 element rectangles for hit testing, so theme colors and label wording do not
-define the interactive regions.
+define the interactive regions. Popover width, margins and neighboring gaps do
+not contribute to an auto-sized ancestor, so non-stretch alignment remains
+stable while the menu opens.
 
 ## Successful request
 

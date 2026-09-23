@@ -10,6 +10,11 @@ mod device;
 mod display;
 mod geometry;
 mod intrinsic;
+mod limits;
+mod popover;
+#[cfg(test)]
+#[path = "../layout_popover_tests.rs"]
+mod popover_tests;
 #[cfg(test)]
 #[path = "../layout_sizing_tests.rs"]
 mod sizing_tests;

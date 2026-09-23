@@ -1,16 +1,18 @@
 use super::display::{DisplayCommand, DisplayList};
 use crate::dom::{DomDocument, DomElement, DomNode};
-use crate::parser::{MAX_DEPTH, MAX_INPUT_BYTES, MAX_NODES, copy_text, limit_error};
+use crate::parser::{copy_text, limit_error};
 use crate::style::{AlignItems, ComputedStyle, Display, FlexDirection, JustifyContent};
-use metis_core::error::{ErrorCode, MetisError, Result};
+use metis_core::error::Result;
 use metis_platform::DisplayScale;
 use metis_platform::framebuffer::Rect;
 use metis_platform::rasterizer::CornerRadius;
 
 use super::device::{
-    add, device_shadow, dimension, minimum, scaled_geometry, text_style, whole_pixels,
+    add, device_shadow, dimension, minimum, scaled_geometry, sub, text_style, whole_pixels,
 };
-use super::intrinsic::{Sizing, max_content_width};
+use super::intrinsic::{Sizing, is_visible_popover, max_content_width};
+use super::limits::validate_layout_tree;
+use super::popover::popover_error;
 
 /// Logical viewport dimensions and the host's device-pixel scale.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -71,9 +73,7 @@ pub fn compute_layout(doc: &DomDocument, viewport: LayoutViewport) -> Result<Dis
     if viewport.width < 0 || viewport.height < 0 {
         return Err(limit_error("Viewport dimensions must be nonnegative"));
     }
-    let mut remaining_nodes = MAX_NODES;
-    let mut remaining_bytes = MAX_INPUT_BYTES;
-    validate(&doc.root, 1, &mut remaining_nodes, &mut remaining_bytes)?;
+    validate_layout_tree(&doc.root)?;
     let mut list = DisplayList::default();
     if is_visible_popover(&doc.root) {
         return Err(popover_error(
@@ -90,81 +90,7 @@ pub fn compute_layout(doc: &DomDocument, viewport: LayoutViewport) -> Result<Dis
     Ok(list)
 }
 
-fn validate(
-    element: &DomElement,
-    depth: usize,
-    nodes: &mut usize,
-    bytes: &mut usize,
-) -> Result<()> {
-    if depth > MAX_DEPTH {
-        return Err(limit_error("Layout nesting limit exceeded"));
-    }
-    *nodes = nodes
-        .checked_sub(1)
-        .ok_or_else(|| limit_error("Layout node limit exceeded"))?;
-    for attribute in ["id", "popover-anchor"] {
-        if let Some(value) = element.attributes.get(attribute) {
-            *bytes = bytes
-                .checked_sub(value.len())
-                .ok_or_else(|| limit_error("Layout attribute byte limit exceeded"))?;
-        }
-    }
-    for child in &element.children {
-        match child {
-            DomNode::Element(child) => validate(child, depth + 1, nodes, bytes)?,
-            DomNode::Text(text) => {
-                *nodes = nodes
-                    .checked_sub(1)
-                    .ok_or_else(|| limit_error("Layout node limit exceeded"))?;
-                *bytes = bytes
-                    .checked_sub(text.len())
-                    .ok_or_else(|| limit_error("Layout text byte limit exceeded"))?;
-            }
-        }
-    }
-    Ok(())
-}
-
 impl DisplayList {
-    fn popovers(&mut self, element: &DomElement, viewport: LayoutViewport) -> Result<()> {
-        if element.computed_style.display == Display::None {
-            return Ok(());
-        }
-        if let Some(anchor_id) = element.attributes.get("popover-anchor") {
-            let anchor = self.element_rect(anchor_id).ok_or_else(|| {
-                popover_error("A visible popover references an anchor absent from layout")
-            })?;
-            let measured = {
-                let mut measurement = Self::default();
-                measurement.element(
-                    element,
-                    Rect::new(0, 0, viewport.width, viewport.height),
-                    viewport.scale,
-                    Sizing::Content,
-                )?
-            };
-            let x = popover_x(anchor.x, measured.width, viewport.width)?;
-            let y = popover_y(anchor, measured.height, viewport.height)?;
-            self.element(
-                element,
-                Rect::new(
-                    sub(x, measured.x)?,
-                    sub(y, measured.y)?,
-                    viewport.width,
-                    viewport.height,
-                ),
-                viewport.scale,
-                Sizing::Content,
-            )?;
-        }
-        for child in &element.children {
-            if let DomNode::Element(child) = child {
-                self.popovers(child, viewport)?;
-            }
-        }
-        Ok(())
-    }
-
     fn text(
         &mut self,
         text: &str,
@@ -330,7 +256,7 @@ impl DisplayList {
         Ok(())
     }
 
-    fn element(
+    pub(super) fn element(
         &mut self,
         element: &DomElement,
         available: Rect,
@@ -491,32 +417,6 @@ impl DisplayList {
     }
 }
 
-fn is_visible_popover(element: &DomElement) -> bool {
-    element.computed_style.display != Display::None
-        && element.attributes.contains_key("popover-anchor")
-}
-
-fn popover_error(message: &'static str) -> MetisError {
-    MetisError::ui(ErrorCode::MalformedMarkup, message)
-}
-
-fn popover_x(anchor_x: i32, popover_width: i32, viewport_width: i32) -> Result<i32> {
-    if popover_width >= viewport_width {
-        return Ok(0);
-    }
-    Ok(anchor_x.clamp(0, sub(viewport_width, popover_width)?))
-}
-
-fn popover_y(anchor: Rect, popover_height: i32, viewport_height: i32) -> Result<i32> {
-    let below = add(anchor.y, anchor.height)?;
-    let bottom = add(below, popover_height)?;
-    if bottom > viewport_height && popover_height <= anchor.y {
-        sub(anchor.y, popover_height)
-    } else {
-        Ok(below)
-    }
-}
-
 /// Painter slots an element reserves before its children paint.
 #[derive(Clone, Copy)]
 struct BoxSlots {
@@ -556,10 +456,6 @@ struct ChildLayout<'style> {
     display_scale: DisplayScale,
 }
 
-fn sub(left: i32, right: i32) -> Result<i32> {
-    left.checked_sub(right)
-        .ok_or_else(|| limit_error("Layout coordinate subtraction overflow"))
-}
 fn mul(left: i32, right: i32) -> Result<i32> {
     left.checked_mul(right)
         .ok_or_else(|| limit_error("Layout text extent overflow"))
