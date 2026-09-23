@@ -4,10 +4,11 @@
 //! here, so layout arithmetic downstream works in one unit.
 
 use crate::parser::limit_error;
-use crate::style::{ComputedStyle, EdgeValues, Shadow, Size};
+use crate::style::{ComputedStyle, EdgeValues, FontWeight, Shadow, Size};
 use metis_core::error::Result;
 use metis_platform::DisplayScale;
 use metis_platform::rasterizer::BoxShadow;
+use metis_platform::typeface::{GlyphWeight, TextSize, TextStyle};
 
 /// Box-model edges and gap resolved to device pixels.
 #[derive(Clone, Copy)]
@@ -100,4 +101,40 @@ pub(super) fn device_shadow(shadow: Shadow, display_scale: DisplayScale) -> Resu
         shadow.color,
     )
     .ok_or_else(|| limit_error("Shadow blur exceeds the renderer's blur bound"))
+}
+
+/// The text style an element's declarations resolve to, sized in device
+/// pixels per em.
+///
+/// # Errors
+/// Returns a layout limit error when the scaled size exceeds
+/// [`TextSize::MAX`].
+pub(super) fn text_style(style: &ComputedStyle, display_scale: DisplayScale) -> Result<TextStyle> {
+    let pixels = f64::from(style.font_size) * f64::from(display_scale.milli()) / 1000.0;
+    let size = TextSize::new(pixels)
+        .ok_or_else(|| limit_error("Text size exceeds the renderer's bound"))?;
+    let weight = match style.font_weight {
+        FontWeight::Normal => GlyphWeight::Regular,
+        FontWeight::Bold => GlyphWeight::Bold,
+    };
+    Ok(TextStyle::new(style.text_color, size).with_weight(weight))
+}
+
+/// Rounds a nonnegative device-pixel extent up to whole pixels, so a box
+/// always holds what it measures.
+///
+/// # Errors
+/// Returns a layout limit error when the extent exceeds the coordinate range.
+pub(super) fn whole_pixels(extent: f64) -> Result<i32> {
+    let whole = extent.ceil();
+    if !(0.0..=f64::from(i32::MAX)).contains(&whole) {
+        return Err(limit_error("Text extent exceeds coordinate range"));
+    }
+    // The guard bounds a whole value to the nonnegative i32 range.
+    #[expect(
+        clippy::cast_possible_truncation,
+        reason = "a whole value checked against the i32 range"
+    )]
+    let pixels = whole as i32;
+    Ok(pixels)
 }

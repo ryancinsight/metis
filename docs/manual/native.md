@@ -214,7 +214,7 @@ DPI as the authored CSS baseline: 96 DPI maps to `1.000x`, 120 DPI to
 
 `LayoutViewport` carries the physical client dimensions and this scale into
 `compute_layout`. Explicit pixel sizes, spacing, borders, automatic child
-extents, bitmap text and the submit hit rectangle use the same mapping.
+extents, text sizes and the submit hit rectangle use the same mapping.
 Percent sizes resolve once against the physical viewport, so a percentage is
 not scaled twice. A failed repaint restores the last valid scale and frame.
 The fixed-point contract is exercised by the layout and rasterizer tests; the

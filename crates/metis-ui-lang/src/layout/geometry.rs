@@ -1,14 +1,13 @@
 use super::display::{DisplayCommand, DisplayList};
 use crate::dom::{DomDocument, DomElement, DomNode};
 use crate::parser::{MAX_DEPTH, MAX_INPUT_BYTES, MAX_NODES, copy_text, limit_error};
-use crate::style::{AlignItems, ComputedStyle, Display, FlexDirection, FontWeight, JustifyContent};
+use crate::style::{AlignItems, ComputedStyle, Display, FlexDirection, JustifyContent};
 use metis_core::error::Result;
 use metis_platform::DisplayScale;
-use metis_platform::GlyphWeight;
 use metis_platform::framebuffer::Rect;
 use metis_platform::rasterizer::CornerRadius;
 
-use super::device::{device_shadow, dimension, minimum, scaled_geometry};
+use super::device::{device_shadow, dimension, minimum, scaled_geometry, text_style, whole_pixels};
 
 /// Logical viewport dimensions and the host's device-pixel scale.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -115,23 +114,15 @@ impl DisplayList {
         y: i32,
         display_scale: DisplayScale,
     ) -> Result<(i32, i32)> {
-        let scale = (style.font_size / 14).max(1);
-        let effective_scale = display_scale.multiply(scale)?;
-        let count = i32::try_from(text.chars().filter(|c| *c != '\n').count())
-            .map_err(|_| limit_error("Text length exceeds coordinate range"))?;
-        let text_width = effective_scale.scale_extent(mul(count, 8)?)?;
-        let text_height = effective_scale.scale_extent(16)?;
+        let text_style = text_style(style, display_scale)?;
+        // Extents round up so the box always holds the glyphs it measures.
+        let text_width = whole_pixels(text_style.advance(text))?;
+        let text_height = whole_pixels(text_style.line_height())?;
         self.push(DisplayCommand::DrawText {
             text: copy_text(text)?,
             x,
             y,
-            color: style.text_color,
-            scale,
-            display_scale,
-            weight: match style.font_weight {
-                FontWeight::Normal => GlyphWeight::Regular,
-                FontWeight::Bold => GlyphWeight::Bold,
-            },
+            style: text_style,
         })?;
         Ok((text_width, text_height))
     }

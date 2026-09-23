@@ -1,8 +1,6 @@
-//! Value-semantic tests for clipped rectangle, line and text drawing.
+//! Value-semantic tests for clipped rectangle and line drawing.
 
 use super::*;
-use crate::DisplayScale;
-use crate::font::{GlyphWeight, draw_glyph};
 
 /// Deterministic xorshift source so a differential failure replays exactly.
 struct Sequence(u64);
@@ -75,44 +73,6 @@ fn span_fill_matches_per_pixel_compositing_for_random_rectangles() {
 }
 
 #[test]
-fn glyph_runs_match_per_pixel_cell_compositing() {
-    for character in ['A', 'W', '8', '%', '_', ' ', '\u{1f4a5}'] {
-        for scale in [1_i32, 2, 3] {
-            let mut runs = Framebuffer::new(40, 60).expect("glyph surface");
-            let mut cells = Framebuffer::new(40, 60).expect("cell surface");
-            runs.clear(Color::WHITE);
-            cells.clear(Color::WHITE);
-            let color = Color::rgba(20, 60, 180, 137);
-            let requested = u32::try_from(scale).expect("small scale fits u32");
-            draw_glyph(
-                &mut runs,
-                3,
-                5,
-                character,
-                TextStyle::new(color, requested).with_weight(GlyphWeight::Regular),
-            );
-            for (row, byte) in (0_i32..16).zip(crate::font::get_glyph_bitmap(character)) {
-                for column in 0_i32..8 {
-                    if byte & (0x80_u8 >> column) == 0 {
-                        continue;
-                    }
-                    blend_each_pixel(
-                        &mut cells,
-                        Rect::new(3 + column * scale, 5 + row * scale, scale, scale),
-                        color,
-                    );
-                }
-            }
-            assert_eq!(
-                runs.pixels(),
-                cells.pixels(),
-                "glyph {character:?} at scale {scale} diverged from per-cell compositing"
-            );
-        }
-    }
-}
-
-#[test]
 fn extreme_geometry_clips_without_overflow() {
     let mut fb = Framebuffer::new(2, 2).expect("small surface");
     fill_rect(
@@ -122,22 +82,6 @@ fn extreme_geometry_clips_without_overflow() {
         Color::GREEN,
     );
     assert_eq!(fb.pixels(), &[0xff38_a169; 4]);
-    draw_text(
-        &mut fb,
-        i32::MAX,
-        i32::MIN,
-        "A",
-        TextStyle::new(Color::WHITE, u32::MAX).with_weight(GlyphWeight::Regular),
-    );
-    assert_eq!(fb.get_pixel(0, 0), Color::GREEN);
-    draw_glyph(
-        &mut fb,
-        0,
-        0,
-        'A',
-        TextStyle::new(Color::WHITE, u32::MAX).with_weight(GlyphWeight::Regular),
-    );
-    assert_eq!(fb.get_pixel(0, 0), Color::GREEN);
 }
 
 #[test]
@@ -154,95 +98,6 @@ fn translucent_border_does_not_blend_corners_twice() {
     assert_eq!(fb.get_pixel(0, 0), color);
     assert_eq!(fb.get_pixel(1, 1), Color::TRANSPARENT);
     assert_eq!(fb.get_pixel(2, 2), color);
-}
-
-#[test]
-fn glyph_pixels_and_spaces_follow_bitmap_cells() {
-    let mut fb = Framebuffer::new(24, 16).expect("text surface");
-    draw_text(
-        &mut fb,
-        0,
-        0,
-        "A B",
-        TextStyle::new(Color::RED, 1).with_weight(GlyphWeight::Regular),
-    );
-    assert_eq!(fb.get_pixel(2, 2), Color::RED);
-    assert_eq!(fb.get_pixel(0, 0), Color::TRANSPARENT);
-    assert_eq!(fb.get_pixel(10, 2), Color::TRANSPARENT);
-    assert_eq!(fb.get_pixel(18, 2), Color::RED);
-}
-
-#[test]
-fn fractional_text_scale_changes_pixel_extent_deterministically() {
-    let mut one = Framebuffer::new(32, 20).expect("one-scale surface");
-    draw_text(&mut one, 0, 0, "A", TextStyle::new(Color::RED, 1));
-    let mut fractional = Framebuffer::new(32, 20).expect("fractional surface");
-    draw_text(
-        &mut fractional,
-        0,
-        0,
-        "A",
-        TextStyle::new(Color::RED, 1)
-            .with_display_scale(DisplayScale::from_milli(1_500).expect("150 percent")),
-    );
-    let one_pixels = one.pixels().iter().filter(|pixel| **pixel != 0).count();
-    let scaled_pixels = fractional
-        .pixels()
-        .iter()
-        .filter(|pixel| **pixel != 0)
-        .count();
-    assert!(scaled_pixels > one_pixels);
-    assert_eq!(one.get_pixel(2, 2), Color::RED);
-}
-
-#[test]
-fn extreme_fractional_text_scale_clips_without_panicking() {
-    let mut framebuffer = Framebuffer::new(8, 8).expect("surface");
-    draw_text(
-        &mut framebuffer,
-        0,
-        0,
-        "A",
-        TextStyle::new(Color::RED, u32::MAX)
-            .with_display_scale(DisplayScale::from_milli(u32::MAX).expect("validated scale")),
-    );
-    assert!(framebuffer.pixels().iter().all(|pixel| *pixel == 0));
-}
-
-#[test]
-fn bold_text_paints_more_pixels_without_moving_the_run() {
-    let ink = |weight| {
-        let mut fb = Framebuffer::new(96, 20).expect("text surface");
-        draw_text(
-            &mut fb,
-            0,
-            0,
-            "Backend",
-            TextStyle::new(Color::BLACK, 1).with_weight(weight),
-        );
-        fb.pixels().iter().filter(|pixel| **pixel != 0).count()
-    };
-    let regular = ink(GlyphWeight::Regular);
-    let bold = ink(GlyphWeight::Bold);
-    assert!(bold > regular, "bold painted {bold}, regular {regular}");
-
-    // The advance is unchanged, so the trailing column of the last cell is
-    // the same in both weights and no glyph spills past the run.
-    let mut wide = Framebuffer::new(96, 20).expect("text surface");
-    draw_text(
-        &mut wide,
-        0,
-        0,
-        "Backend",
-        TextStyle::new(Color::BLACK, 1).with_weight(GlyphWeight::Bold),
-    );
-    for y in 0..20 {
-        assert_eq!(
-            wide.get_pixel(56, y),
-            Color::TRANSPARENT,
-            "bold run reached past its seven cells at row {y}"
-        );
-    }
 }
 
 #[test]

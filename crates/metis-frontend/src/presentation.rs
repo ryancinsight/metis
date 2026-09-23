@@ -3,56 +3,56 @@
 /// Default declarative UI markup template for the medical data entry screen.
 pub const CLINICAL_SCREEN_XML: &str = r#"<screen id="main-screen" style="display: flex; flex-direction: column; height: 100%; background-color: #f0f4f8; padding: 20px; gap: 15px;">
   <div id="header" style="display: flex; flex-direction: column; gap: 8px; background-color: #1a365d; padding: 12px; border-radius: 12px; box-shadow: 0 4px 12px #1a365d40;">
-    <text style="color: #ffffff; font-size: 16px; font-weight: bold;">METIS FORM DEMONSTRATION</text>
-    <text id="status-badge" style="color: #38a169; font-size: 12px;">SYSTEM READY</text>
+    <text style="color: #ffffff; font-size: 22px; font-weight: bold;">METIS FORM DEMONSTRATION</text>
+    <text id="status-badge" style="color: #38a169; font-size: 13px;">SYSTEM READY</text>
   </div>
 
   <nav id="application-navigation" aria-label="Application navigation" style="display: flex; flex-direction: column; gap: 8px; background-color: #e2e8f0; padding: 8px; border-radius: 10px;">
     <div id="application-toolbar" role="toolbar" aria-label="Application commands" style="display: flex; flex-direction: row; gap: 8px; align-items: center;">
       <button id="command-menu-toggle" aria-haspopup="menu" aria-expanded="false" aria-controls="command-menu" style="width: 120px; background-color: #3182ce; color: #ffffff; padding: 8px 12px; border-radius: 6px; min-height: 44px; justify-content: center; box-shadow: 0 2px 4px #2c528240;">
-        <text style="color: #ffffff; font-size: 12px; font-weight: bold;">[ COMMANDS ]</text>
+        <text style="color: #ffffff; font-size: 14px; font-weight: bold;">[ COMMANDS ]</text>
       </button>
       <button id="command-focus-patient" style="width: 144px; background-color: #3182ce; color: #ffffff; padding: 8px 12px; border-radius: 6px; min-height: 44px; justify-content: center; box-shadow: 0 2px 4px #2c528240;">
-        <text style="color: #ffffff; font-size: 12px; font-weight: bold;">FOCUS PATIENT</text>
+        <text style="color: #ffffff; font-size: 14px; font-weight: bold;">FOCUS PATIENT</text>
       </button>
     </div>
     <div id="command-menu" role="menu" aria-label="Application commands" aria-hidden="true" style="display: none; flex-direction: column; gap: 6px; background-color: #ffffff; padding: 8px; border-width: 1px; border-color: #e2e8f0; border-radius: 10px; box-shadow: 0 8px 20px #0f172a33;">
       <button id="command-theme-dark" role="menuitem" style="background-color: #3182ce; color: #ffffff; padding: 8px 12px; border-radius: 6px; min-height: 44px; justify-content: center; box-shadow: 0 2px 4px #2c528240;">
-        <text style="color: #ffffff; font-size: 12px; font-weight: bold;">DARK THEME</text>
+        <text style="color: #ffffff; font-size: 14px; font-weight: bold;">DARK THEME</text>
       </button>
       <button id="command-theme-system" role="menuitem" style="background-color: #3182ce; color: #ffffff; padding: 8px 12px; border-radius: 6px; min-height: 44px; justify-content: center; box-shadow: 0 2px 4px #2c528240;">
-        <text style="color: #ffffff; font-size: 12px; font-weight: bold;">SYSTEM THEME</text>
+        <text style="color: #ffffff; font-size: 14px; font-weight: bold;">SYSTEM THEME</text>
       </button>
     </div>
-    <text id="command-status" role="status" aria-live="polite" style="color: #4a5568; font-size: 12px;">Commands ready</text>
+    <text id="command-status" role="status" aria-live="polite" style="color: #4a5568; font-size: 13px;">Commands ready</text>
   </nav>
 
   <card id="patient-card" style="display: flex; flex-direction: column; background-color: #ffffff; padding: 16px; border-width: 1px; border-color: #e2e8f0; border-radius: 12px; gap: 10px; box-shadow: 0 2px 10px #0f172a1f;">
-    <text id="patient-heading" style="color: #2d3748; font-size: 14px; font-weight: bold;">Patient Demographics and Drug Prescription</text>
+    <text id="patient-heading" style="color: #2d3748; font-size: 16px; font-weight: bold;">Patient Demographics and Drug Prescription</text>
     <div id="row-patient" style="display: flex; flex-direction: row; gap: 10px;">
-      <text id="label-patient" role="textbox" aria-label="Patient ID" value="PT-9042-ALPHA" tabindex="0" style="color: #4a5568; font-size: 12px;">Patient ID: PT-9042-ALPHA</text>
+      <text id="label-patient" role="textbox" aria-label="Patient ID" value="PT-9042-ALPHA" tabindex="0" style="color: #4a5568; font-size: 14px;">Patient ID: PT-9042-ALPHA</text>
     </div>
     <div id="row-weight" style="display: flex; flex-direction: row; gap: 10px;">
-      <text id="label-weight" style="color: #4a5568; font-size: 12px;">Weight: 72.50 kg</text>
+      <text id="label-weight" style="color: #4a5568; font-size: 14px;">Weight: 72.50 kg</text>
     </div>
     <div id="row-conc" style="display: flex; flex-direction: row; gap: 10px;">
-      <text id="label-conc" style="color: #4a5568; font-size: 12px;">Drug Concentration: 4.00 mg/mL</text>
+      <text id="label-conc" style="color: #4a5568; font-size: 14px;">Drug Concentration: 4.00 mg/mL</text>
     </div>
     <div id="row-dose" style="display: flex; flex-direction: row; gap: 10px;">
-      <text id="label-dose" style="color: #4a5568; font-size: 12px;">Target Dose: 0.500 mcg/kg/min</text>
+      <text id="label-dose" style="color: #4a5568; font-size: 14px;">Target Dose: 0.500 mcg/kg/min</text>
     </div>
     <div id="actions" style="display: flex; flex-direction: row; gap: 10px; margin: 10px 0 0 0; justify-content: center;">
       <button id="btn-calc" style="width: 360px; background-color: #3182ce; color: #ffffff; padding: 8px 16px; border-radius: 6px; min-height: 44px; justify-content: center; box-shadow: 0 2px 4px #2c528240;">
-        <text style="color: #ffffff; font-size: 12px; font-weight: bold;">[ SUBMIT CALCULATION TO BACKEND ]</text>
+        <text style="color: #ffffff; font-size: 14px; font-weight: bold;">[ SUBMIT CALCULATION TO BACKEND ]</text>
       </button>
     </div>
   </card>
 
   <card id="results-card" style="display: flex; flex-direction: column; background-color: #ffffff; padding: 16px; border-width: 1px; border-color: #e2e8f0; border-radius: 12px; gap: 8px; box-shadow: 0 2px 10px #0f172a1f;">
-    <text id="results-heading" style="color: #2d3748; font-size: 14px; font-weight: bold;">Backend Calculation Output</text>
-    <text id="output-rate" style="color: #3182ce; font-size: 16px; font-weight: bold;">Rate: Awaiting Backend Calculation...</text>
-    <text id="output-status" style="color: #718096; font-size: 12px;">Safety Status: Idle</text>
-    <text id="output-signature" style="color: #718096; font-size: 10px;">Backend MAC: None</text>
+    <text id="results-heading" style="color: #2d3748; font-size: 16px; font-weight: bold;">Backend Calculation Output</text>
+    <text id="output-rate" style="color: #3182ce; font-size: 18px; font-weight: bold;">Rate: Awaiting Backend Calculation...</text>
+    <text id="output-status" style="color: #718096; font-size: 13px;">Safety Status: Idle</text>
+    <text id="output-signature" style="color: #718096; font-size: 12px;">Backend MAC: None</text>
   </card>
 </screen>"#;
 
@@ -339,7 +339,7 @@ fn input_number(value: f64, minimum_decimals: usize) -> String {
 #[cfg(test)]
 mod presentation_tests {
     use super::{CLINICAL_SCREEN_XML, bounded_accessible_value};
-    use metis_platform::{Color, FONT_HEIGHT, FONT_WIDTH, Framebuffer};
+    use metis_platform::{Color, Framebuffer};
     use metis_ui_lang::{
         DisplayCommand, LayoutViewport, MAX_SEMANTIC_TEXT_BYTES, compute_layout, parse_markup,
     };
@@ -358,6 +358,49 @@ mod presentation_tests {
         assert!(bounded.is_char_boundary(bounded.len() - 3));
     }
 
+    /// Pixels inside `bounds` counted by the candidate color each lies nearest,
+    /// in RGB distance.
+    ///
+    /// Antialiased strokes at small sizes may never reach full coverage, so a
+    /// single probe pixel is not an oracle. Classifying every pixel of a text
+    /// run's line box against the background and the colors the run might have
+    /// been painted in is: the run's own color collects its strokes and the
+    /// others collect nothing.
+    fn nearest_counts<const N: usize>(
+        framebuffer: &Framebuffer,
+        bounds: (i32, i32, i32, i32),
+        candidates: [Color; N],
+    ) -> [usize; N] {
+        let distance = |a: Color, b: Color| {
+            let channel = |x: u8, y: u8| (i32::from(x) - i32::from(y)).pow(2);
+            channel(a.r, b.r) + channel(a.g, b.g) + channel(a.b, b.b)
+        };
+        let (x, y, width, height) = bounds;
+        let mut counts = [0; N];
+        for row in y..y + height {
+            for column in x..x + width {
+                let pixel = framebuffer.get_pixel(column, row);
+                let nearest = (0..N)
+                    .min_by_key(|index| distance(pixel, candidates[*index]))
+                    .expect("invariant: at least one candidate");
+                counts[nearest] += 1;
+            }
+        }
+        counts
+    }
+
+    /// Rounds a small nonnegative extent up to a whole pixel count.
+    fn whole(extent: f64) -> i32 {
+        let rounded = extent.ceil();
+        assert!((0.0..4096.0).contains(&rounded), "extent {extent}");
+        #[expect(
+            clippy::cast_possible_truncation,
+            reason = "a whole value checked to lie in 0..4096"
+        )]
+        let pixels = rounded as i32;
+        pixels
+    }
+
     #[test]
     fn authored_form_text_and_status_fit_the_viewport() {
         let document = parse_markup(CLINICAL_SCREEN_XML).expect("authored markup");
@@ -365,33 +408,15 @@ mod presentation_tests {
             compute_layout(&document, LayoutViewport::new(800, 600)).expect("authored layout");
         let mut text_runs = Vec::new();
         for command in &display.commands {
-            if let DisplayCommand::DrawText {
-                text,
-                x,
-                y,
-                scale: base_scale,
-                display_scale,
-                ..
-            } = command
-            {
-                let effective_scale = display_scale
-                    .multiply(*base_scale)
-                    .expect("authored text scale remains representable");
-                let width = effective_scale
-                    .scale_extent(
-                        i32::try_from(text.chars().count()).expect("bounded text")
-                            * i32::try_from(FONT_WIDTH).expect("font width fits coordinates"),
-                    )
-                    .expect("authored text width remains representable");
-                let height = effective_scale
-                    .scale_extent(i32::try_from(FONT_HEIGHT).expect("font height fits coordinates"))
-                    .expect("authored text height remains representable");
+            if let DisplayCommand::DrawText { text, x, y, style } = command {
+                let width = style.advance(text);
+                let height = style.line_height();
                 assert!(
-                    *x >= 0 && i64::from(*x) + i64::from(width) <= 800,
-                    "horizontal clipping: {text} x={x} width={width} scale={display_scale}"
+                    *x >= 0 && f64::from(*x) + width <= 800.0,
+                    "horizontal clipping: {text} x={x} width={width}"
                 );
                 assert!(
-                    *y >= 0 && i64::from(*y) + i64::from(height) <= 600,
+                    *y >= 0 && f64::from(*y) + height <= 600.0,
                     "vertical clipping: {text}"
                 );
                 text_runs.push((text.as_str(), *x, *y));
@@ -410,8 +435,22 @@ mod presentation_tests {
         );
         let mut framebuffer = Framebuffer::new(800, 600).expect("presentation surface");
         display.render_to(&mut framebuffer);
-        // 'S' has an ink pixel at cell (2,2); the complete status line is in bounds.
-        assert_eq!(framebuffer.get_pixel(34, 58), Color::GREEN);
+        // The status run paints in the ready color over the header.
+        let status = display
+            .commands
+            .iter()
+            .find_map(|command| match command {
+                DisplayCommand::DrawText { text, x, y, style } if text == "SYSTEM READY" => {
+                    Some((*x, *y, style.advance(text), style.line_height()))
+                }
+                _ => None,
+            })
+            .expect("status run");
+        let bounds = (status.0, status.1, whole(status.2), whole(status.3));
+        let header = Color::rgb(0x1a, 0x36, 0x5d);
+        let [_, green, red] =
+            nearest_counts(&framebuffer, bounds, [header, Color::GREEN, Color::RED]);
+        assert!(green > 20 && red == 0, "green {green}, red {red}");
         assert_eq!(framebuffer.get_pixel(799, 599), Color::rgb(240, 244, 248));
     }
 }

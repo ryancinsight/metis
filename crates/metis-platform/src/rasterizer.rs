@@ -1,6 +1,5 @@
-//! Clipped rectangle, line and bitmap text drawing, bounded by framebuffer area.
+//! Clipped rectangle and line drawing, bounded by framebuffer area.
 
-use crate::font::{FONT_WIDTH, TextStyle, draw_glyph_cells};
 use crate::framebuffer::{Color, Framebuffer, Rect, SourceOver};
 mod round_rect;
 mod shadow;
@@ -236,35 +235,6 @@ fn interpolate(first_a: i64, first_b: i64, second_a: i64, second_b: i64, target:
     let denominator = i128::from(second_a) - i128::from(first_a);
     let value = i128::from(first_b) + numerator / denominator;
     i64::try_from(value).expect("invariant: line interpolation remains in coordinate range")
-}
-
-/// Renders one horizontal text run; newline characters have no advance.
-///
-/// Scale zero means one. Unsupported characters use the font replacement glyph.
-pub fn draw_text(fb: &mut Framebuffer, x: i32, y: i32, text: &str, style: TextStyle) {
-    let effective_milli = u64::from(style.scale.max(1)) * u64::from(style.display_scale.milli());
-    // Bold thickens strokes inside the cell, so the advance is the same in
-    // either weight and a weight change never reflows a run.
-    let advance = scaled_extent(u64::from(FONT_WIDTH), effective_milli);
-    let mut cursor = i64::from(x);
-    for c in text.chars().filter(|c| *c != '\n') {
-        if cursor >= i64::from(fb.width()) {
-            break;
-        }
-        let Ok(origin) = i32::try_from(cursor) else {
-            break;
-        };
-        if cursor.saturating_add(advance) > 0 {
-            draw_glyph_cells(fb, origin, y, c, style.color, effective_milli, style.weight);
-        }
-        cursor = cursor.saturating_add(advance);
-    }
-}
-
-fn scaled_extent(value: u64, effective_milli: u64) -> i64 {
-    let rounded = (u128::from(value) * u128::from(effective_milli) + 500) / 1_000;
-    i64::try_from(rounded.min(u128::from(u64::MAX / 2)))
-        .expect("invariant: clipped text extent fits i64")
 }
 
 #[cfg(test)]

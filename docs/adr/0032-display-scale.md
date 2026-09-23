@@ -6,10 +6,17 @@ Date: 2026-09-19
 
 Driver: [METIS-DESKTOP-001](../../backlog.md#METIS-DESKTOP-001)
 
+Revision: 2026-09-22 — [METIS-TYPOGRAPHY-TRUETYPE-001](../../backlog.md#METIS-TYPOGRAPHY-TRUETYPE-001)
+replaces the bitmap font with TrueType outlines ([ADR 0047](0047-truetype-text.md)).
+Text is now sized rather than scaled: layout multiplies the authored font size
+by the display scale into a device-pixel `TextSize` that `DrawText` carries,
+and glyphs sit at fractional pen positions. Every other length keeps the
+fixed-point mapping below.
+
 ## Context
 
 The Windows provider reports `DpiChanged` events, but the application used to
-log the value without applying it. Layout, bitmap text, and native hit testing
+log the value without applying it. Layout, text, and native hit testing
 therefore shared a 96-DPI coordinate system even when a window moved to a
 fractional display scale. The host must map authored dimensions and text to the
 same physical framebuffer while keeping the native surface format-neutral.
@@ -24,11 +31,11 @@ extent mapping use checked fixed-point arithmetic with nearest-pixel rounding.
 
 `metis-ui-lang::LayoutViewport` carries the physical viewport dimensions and
 the validated scale. `compute_layout` consumes this value so explicit pixel
-sizes, margins, padding, borders, gaps, automatic child extents, and bitmap
-text all use one scale. Percent sizes resolve once against the physical
-viewport. `DisplayCommand::DrawText` retains the scale used by the layout and
-the rasterizer applies the same fixed-point mapping without an intermediate
-image or floating-point coordinate state.
+sizes, margins, padding, borders, gaps, automatic child extents, and text
+sizes all use one scale. Percent sizes resolve once against the physical
+viewport. `DisplayCommand::DrawText` carries the device-pixel text size layout
+derived from that scale, and the rasterizer draws at that size without an
+intermediate image.
 
 `FrontendApp` owns the current scale. The native adapter converts each
 `DpiChanged` event, repaints the application, and uses the same scale while

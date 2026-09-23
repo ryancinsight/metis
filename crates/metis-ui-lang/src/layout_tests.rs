@@ -5,10 +5,10 @@ use crate::parser::{MAX_DEPTH, MAX_NODES};
 use crate::style::{Color, Display, EdgeValues, Size};
 use metis_core::error::ErrorCode;
 use metis_platform::DisplayScale;
-use metis_platform::GlyphWeight;
 use metis_platform::framebuffer::{Framebuffer, Rect};
 use metis_platform::rasterizer::{BoxShadow, CornerRadius};
 use metis_platform::rasterizer::{LineCap, LineJoin, MAX_STROKE_POINTS, StrokeWidth};
+use metis_platform::typeface::GlyphWeight;
 
 #[test]
 fn parent_background_precedes_child_and_gap_is_between_children() {
@@ -137,7 +137,7 @@ fn an_authored_bold_weight_paints_heavier_strokes() {
                 .commands
                 .iter()
                 .filter_map(|command| match command {
-                    DisplayCommand::DrawText { weight, .. } => Some(*weight),
+                    DisplayCommand::DrawText { style, .. } => Some(style.weight),
                     _ => None,
                 })
                 .collect::<Vec<_>>(),
@@ -235,19 +235,17 @@ fn fractional_display_scale_maps_geometry_and_text_to_device_pixels() {
         })
         .expect("scaled child fill");
     assert_eq!(child, Rect::new(25, 25, 13, 13));
-    let text_scale = list
+    let text_size = list
         .commands
         .iter()
         .find_map(|command| match command {
-            DisplayCommand::DrawText {
-                display_scale,
-                scale,
-                ..
-            } => Some((*display_scale, *scale)),
+            DisplayCommand::DrawText { style, .. } => Some(style.size.pixels()),
             _ => None,
         })
         .expect("scaled text");
-    assert_eq!(text_scale, (scale, 1));
+    // The default 14-pixel size at 125 percent: 17.5 device pixels per em,
+    // exact in binary.
+    assert!((text_size - 17.5).abs() < f64::EPSILON, "{text_size}");
 
     let mut framebuffer = Framebuffer::new(100, 100).expect("surface");
     list.render_to(&mut framebuffer);

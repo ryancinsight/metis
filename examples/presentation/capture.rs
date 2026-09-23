@@ -2,7 +2,7 @@
 use iris::render::RenderBackend;
 use metis_frontend::{FormState, FrontendApp};
 use metis_ipc::transport::MemoryTransport;
-use metis_platform::{Color, FONT_HEIGHT, FONT_WIDTH, Framebuffer};
+use metis_platform::{Color, Framebuffer};
 use metis_ui_lang::{DisplayCommand, DomDocument, LayoutViewport, compute_layout};
 use std::io::Write;
 
@@ -40,7 +40,7 @@ pub(super) fn capture(
         ("schema", "1"),
         ("scenario", name),
         ("target", "software"),
-        ("font", "metis-platform-bitmap"),
+        ("font", "atkinson-hyperlegible"),
     ] {
         row(&mut records, "meta", key, value)?;
     }
@@ -110,33 +110,29 @@ fn capture_details(
     }
     let mut index = 0;
     for command in commands {
-        if let DisplayCommand::DrawText {
-            text,
-            x,
-            y,
-            scale: base_scale,
-            display_scale,
-            ..
-        } = command
-        {
-            let effective_scale = display_scale.multiply(*base_scale)?;
-            let glyph_count = i32::try_from(text.chars().count())?;
-            let glyph_extent = i32::try_from(i64::from(glyph_count) * i64::from(FONT_WIDTH))?;
-            let width = i64::from(effective_scale.scale_extent(glyph_extent)?);
-            let height = i64::from(effective_scale.scale_extent(i32::try_from(FONT_HEIGHT)?)?);
+        if let DisplayCommand::DrawText { text, x, y, style } = command {
+            let width = style.advance(text);
+            let height = style.line_height();
             assert!(
-                *x >= 0 && i64::from(*x) + width <= i64::from(app.framebuffer().width()),
+                *x >= 0 && f64::from(*x) + width <= f64::from(app.framebuffer().width()),
                 "horizontal clipping: {text}"
             );
             assert!(
-                *y >= 0 && i64::from(*y) + height <= i64::from(app.framebuffer().height()),
+                *y >= 0 && f64::from(*y) + height <= f64::from(app.framebuffer().height()),
                 "vertical clipping: {text}"
             );
             row(
                 &mut records,
                 "geometry",
                 &index.to_string(),
-                &format!("{x} {y} {effective_scale}"),
+                // Size in pixels per em, then the measured run width and
+                // line height rounded up to whole pixels.
+                &format!(
+                    "{x} {y} {} {:.0} {:.0}",
+                    style.size.pixels(),
+                    width.ceil(),
+                    height.ceil()
+                ),
             )?;
             row(&mut records, "text", &index.to_string(), text)?;
             index += 1;

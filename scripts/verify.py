@@ -286,7 +286,8 @@ def source_state(metadata, configs):
             directory = manifest.parent
             inputs.update(directory.glob("*.rs"))
             inputs.update(directory.glob("*.md"))
-            for folder in ("src", "tests", "examples", "scripts", "python", ".config"):
+            # `fonts` holds typefaces the renderer embeds, a rendering input.
+            for folder in ("src", "tests", "examples", "scripts", "python", ".config", "fonts"):
                 inputs.update(path for path in (directory / folder).rglob("*") if path.is_file() and "__pycache__" not in path.parts)
             if package["name"] == "metis-python":
                 inputs.add(directory / "pyproject.toml")

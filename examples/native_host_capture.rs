@@ -18,8 +18,8 @@ mod capture {
         run_native_application,
     };
     use metis_platform::rasterizer::CornerRadius;
-    use metis_platform::{Color, Framebuffer, Rect, draw_rect_outline, draw_text, fill_rect};
-    use metis_platform::{GlyphWeight, TextStyle};
+    use metis_platform::typeface::{TextSize, TextStyle, draw_text};
+    use metis_platform::{Color, Framebuffer, Rect, draw_rect_outline, fill_rect};
     use std::error::Error;
     use std::io;
     use std::path::Path;
@@ -348,21 +348,30 @@ mod capture {
             24,
             32,
             "METIS NATIVE HOST",
-            TextStyle::new(Color::WHITE, 2).with_weight(GlyphWeight::Regular),
+            TextStyle::new(
+                Color::WHITE,
+                TextSize::new(24.0).expect("invariant: 24 px is a valid text size"),
+            ),
         );
         draw_text(
             &mut frame,
             24,
             76,
             label,
-            TextStyle::new(accent, 2).with_weight(GlyphWeight::Regular),
+            TextStyle::new(
+                accent,
+                TextSize::new(24.0).expect("invariant: 24 px is a valid text size"),
+            ),
         );
         draw_text(
             &mut frame,
             24,
             height.saturating_sub(34),
             "FORMAT-NEUTRAL FRAME",
-            TextStyle::new(Color::LIGHT_GRAY, 1).with_weight(GlyphWeight::Regular),
+            TextStyle::new(
+                Color::LIGHT_GRAY,
+                TextSize::new(14.0).expect("invariant: 14 px is a valid text size"),
+            ),
         );
         Ok(frame)
     }

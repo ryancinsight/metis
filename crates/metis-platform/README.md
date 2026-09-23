@@ -1,8 +1,8 @@
 # metis-platform
 
-Bounded software framebuffers, clipped rectangles, one-pixel lines, bounded
-polyline strokes and bitmap text drawing, an application-supplied event queue,
-and ANSI terminal previews.
+Bounded software framebuffers, clipped and rounded rectangles, box shadows,
+one-pixel lines, bounded polyline strokes and antialiased TrueType text, an
+application-supplied event queue, and ANSI terminal previews.
 On Windows, the
 `native` module adapts Moirai's thread-owned Win32 window provider to the
 framebuffer without bringing unsafe operating-system code into this crate.
@@ -72,9 +72,12 @@ assert_eq!(pixels.get_pixel(4, 4), metis_platform::Color::RED);
 
 Framebuffer allocation is limited to 16,777,216 pixels (64 MiB); the virtual
 surface queue holds at most 1,024 events. Pixel storage uses straight alpha;
-source-over composition includes destination opacity. The font covers digits,
-case-insensitive Latin letters, and selected punctuation; unsupported glyphs
-produce a replacement box. It is not a Unicode shaping engine.
+source-over composition includes destination opacity. Text uses the embedded
+Atkinson Hyperlegible Regular and Bold faces (SIL Open Font License 1.1,
+`fonts/OFL.txt`), rasterized unhinted with exact area coverage at fractional
+positions; characters the faces lack draw the missing-glyph box. Glyphs
+advance by their `hmtx` widths without kerning, and it is not a Unicode
+shaping engine.
 
 `DisplayScale` is the validated native device-pixel ratio used by the layout
 and rasterizer seams. It stores thousandths so 120 DPI and 144 DPI map to
