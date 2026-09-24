@@ -50,11 +50,25 @@ reached it, `FocusOrigin::Pointer` or `FocusOrigin::Keyboard`.
 - The Focus patient command moves focus to the patient reference and keeps its
   origin.
 
-Host wiring is the next increment of the item. It maps Tab and Shift+Tab to
-`move_focus`, Enter and Space on a focused button to its action, a pointer
-press to pointer-origin focus, and assistive-technology focus requests to
-`focus_control`, and projects the focused control as the accessibility
-tree's focus.
+The native host maps keys to that model:
+
+- Tab and Shift+Tab call `move_focus`. With Control, Alt or the Windows key
+  held, the key is left to other handlers.
+- Enter and Space activate a focused control other than the patient
+  reference, following the button pattern. Keyboard activation of the
+  menu button opens the menu with focus on its first item, as the menu-button
+  pattern does. With the patient reference focused, Enter keeps its submit
+  shortcut and Space stays text.
+- Typing, Backspace and IME composition reach the patient reference only while
+  it holds focus.
+- A pointer press focuses the control it hits with pointer origin, then acts.
+- An assistive-technology focus request focuses its target with keyboard
+  origin, or leaves focus in place when the target cannot take focus.
+- The native accessibility tree reports the focused control as its focus.
+
+Moirai `ModifierState` gained public `SHIFT`, `CONTROL`, `ALT` and `META`
+constants ([Moirai PR 443](https://github.com/ryancinsight/Moirai/pull/443))
+so these rules are tested with real modifier states.
 
 ## Alternatives
 
@@ -72,7 +86,12 @@ change the control's appearance rather than frame it.
 
 ## Verification
 
-`crates/metis-frontend/src/focus_tests.rs` covers the initial unringed focus,
+`crates/metis-app/src/frontend/native/keyboard_tests.rs` covers Tab and
+Shift+Tab, modified Tab left alone, Space opening the menu on its first item,
+Enter applying an item and returning focus to the button, typing refused while
+a button holds focus, pointer focus without a ring, and assistive-technology
+focus requests. Letting typed text follow window focus alone fails the typing
+test. `crates/metis-frontend/src/focus_tests.rs` covers the initial unringed focus,
 the order with the menu closed and open, wrapping in both directions, and the
 ring's pixels. The ring pixel carries the theme's focus color and the gap
 pixel keeps the card fill under keyboard focus; the same pixel keeps the card
