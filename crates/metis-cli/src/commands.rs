@@ -18,7 +18,7 @@ const COMMANDS: &[Command] = &[
     },
     Command {
         name: "dev",
-        usage: "dev MANIFEST [--once|--watch]",
+        usage: "dev [MANIFEST] [--once|--watch]",
         summary: "Build, run and reload an application during development",
         options: &["--once", "--watch"],
     },
@@ -73,7 +73,7 @@ pub(crate) fn help() -> String {
         output.push('\n');
     }
     output.push_str(
-        "\nOptions:\n  -h, --help                       Show this help\n\nMANIFEST is a versioned metis.json file, ./metis.json when omitted.\nA native build's OUTPUT is required and must not exist.\nPortable builds use the host Cargo target; `package` emits a Windows x64 MSI,\nmacOS `.app` bundle or Linux USTAR archive on the matching host. Builds use\nCargo --locked and compiler artifact messages.\nOn Linux, install maps the archive usr tree below an absolute PREFIX and\nrewrites its desktop entry; uninstall removes only unchanged package files.\nNo signing or publication is performed. `dev --watch` reloads after source or\nresource changes and never runs an artifact from a failed build.\nA manifest with a `frontend` is a browser application: build compiles its\npackage to WebAssembly, generates the loader with the wasm-bindgen CLI\nmatching the locked crate (WASM_BINDGEN overrides PATH) and stages the page\nin OUTPUT/app, OUTPUT defaulting to dist beside the manifest. serve builds,\nthen serves that page on 127.0.0.1 port 1420 until interrupted.\nSee the distribution manual for installation and target limits.\n",
+        "\nOptions:\n  -h, --help                       Show this help\n\nMANIFEST is a versioned metis.json file, ./metis.json when omitted.\nA native build's OUTPUT is required and must not exist.\nPortable builds use the host Cargo target; `package` emits a Windows x64 MSI,\nmacOS `.app` bundle or Linux USTAR archive on the matching host. Builds use\nCargo --locked and compiler artifact messages.\nOn Linux, install maps the archive usr tree below an absolute PREFIX and\nrewrites its desktop entry; uninstall removes only unchanged package files.\nNo signing or publication is performed. `dev --watch` reloads after source or\nresource changes and never runs an artifact from a failed build.\nA manifest with a `frontend` is a browser application: build compiles its\npackage to WebAssembly, generates the loader with the wasm-bindgen CLI\nmatching the locked crate (WASM_BINDGEN overrides PATH) and stages the page\nin OUTPUT/app, OUTPUT defaulting to dist beside the manifest. serve builds,\nthen serves that page on 127.0.0.1 port 1420 until interrupted. On Windows,\ndev builds it and opens it in a WebView2 window; with --watch a source\nchange rebuilds and reloads the window.\nSee the distribution manual for installation and target limits.\n",
     );
     output
 }
