@@ -26,6 +26,13 @@
 //! Run it with `cargo run --locked --example mesh_viewer`. Pass `--headless` to
 //! render one frame offscreen, write `output/mesh-viewer/frame.bmp`, print the
 //! render statistics and exit, which is the form a non-interactive gate can use.
+#![cfg_attr(
+    not(windows),
+    expect(
+        dead_code,
+        reason = "the interactive bindings are driven only by the Windows host"
+    )
+)]
 
 use gaia::IndexedMesh;
 use gaia::application::render::{CullMode, OrbitCamera, RenderSettings, RenderStats, Renderer};

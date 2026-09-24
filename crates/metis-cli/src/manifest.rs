@@ -18,7 +18,9 @@ pub(crate) const MANIFEST_LIMIT: u64 = 1024 * 1024;
 pub(crate) const FILE_LIMIT: usize = 4096;
 pub(crate) const PAYLOAD_LIMIT: u64 = 1024 * 1024 * 1024;
 #[cfg(windows)]
-pub(crate) use icon::{ICON_LIMIT, source as icon_source, validate_file as validate_icon_file};
+pub(crate) use icon::ICON_LIMIT;
+#[cfg(windows)]
+pub(crate) use icon::{source as icon_source, validate_file as validate_icon_file};
 pub(crate) use web::WebApplication;
 
 /// The manifest `metis build` and `metis serve` read when none is named.

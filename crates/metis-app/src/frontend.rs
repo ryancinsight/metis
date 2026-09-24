@@ -25,7 +25,7 @@ pub(crate) fn run_native(inputs: [String; 3]) -> Result<(), Box<dyn std::error::
     }
     #[cfg(not(windows))]
     {
-        let _ = inputs;
+        drop(inputs);
         Err("the native frontend role requires Windows".into())
     }
 }
@@ -38,7 +38,7 @@ pub(crate) fn run_webview(inputs: [String; 3]) -> Result<(), Box<dyn std::error:
     }
     #[cfg(not(windows))]
     {
-        let _ = inputs;
+        drop(inputs);
         Err("the WebView2 frontend role requires Windows".into())
     }
 }
@@ -53,7 +53,7 @@ pub(crate) fn run_webview_permission_probe(
     }
     #[cfg(not(windows))]
     {
-        let _ = inputs;
+        drop(inputs);
         Err("the WebView2 permission-probe frontend requires Windows".into())
     }
 }
