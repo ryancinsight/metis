@@ -5,7 +5,8 @@ Status: Accepted
 Date: 2026-09-23
 
 Revised 2026-09-24: building and serving moved from `scripts/starter.py`
-into `metis build` and `metis serve`, driven by the crate's `metis.json`.
+into `metis build` and `metis serve`, driven by the crate's `metis.json`, and
+`metis dev` hosts the page in a WebView2 window.
 
 Driver: [METIS-STARTER-001](https://github.com/ryancinsight/metis/pull/387).
 
@@ -46,7 +47,9 @@ owning the page.
   ([ADR 0049](0049-keyboard-focus-ring.md)).
 - The crate carries a `metis.json` whose `frontend` names the page directory
   and the package, so `metis build` and `metis serve` build and serve it as
-  `tauri build` and `tauri dev` do a Tauri project; the
+  `tauri build` and `tauri dev` do a Tauri project, and `metis dev` opens it
+  in a native WebView2 window served from a reserved `https` host (Moirai
+  `WebViewConfig::folder`), since a `file:///` page cannot load modules; the
   [distribution manual](../manual/distribution.md#build-and-serve-a-browser-application)
   owns the command contract. The page keeps its own copy of the Metis mark so
   the starter is a self-contained template, as each create-tauri-app template
@@ -87,6 +90,6 @@ script's build and serve steps.
 
 ## Limits
 
-The starter runs in a browser. Hosting the same page in the Windows WebView2
-window needs that host to serve the module and admit `'wasm-unsafe-eval'`,
-which it does not today.
+The native window is Windows-only (WebView2); other hosts use `metis serve`.
+`metis dev --watch` reloads the page after a rebuild but does not preserve
+page state, and it rebuilds only for changes under the manifest directory.

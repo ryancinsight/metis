@@ -2,7 +2,7 @@
 
 use crate::{
     Result,
-    manifest::{self, Application},
+    manifest::{self, Application, DEFAULT_MANIFEST, Manifest},
     process::{self, Containment},
     tree,
 };
@@ -15,6 +15,7 @@ use std::{
     time::Duration,
 };
 
+mod browser;
 #[cfg(windows)]
 #[expect(
     unsafe_code,
@@ -29,7 +30,7 @@ const SINGLE_RUN_DEADLINE: Duration = Duration::from_mins(5);
 const WATCH_BYTES_LIMIT: u64 = 512 * 1024 * 1024;
 
 #[derive(Clone, Copy)]
-enum DevMode {
+pub(super) enum DevMode {
     Once,
     Watch,
 }
@@ -40,38 +41,20 @@ enum RunOutcome {
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
-struct Snapshot([u8; 32]);
+pub(super) struct Snapshot([u8; 32]);
 
 /// Runs the manifest entry once or reloads it after source/resource changes.
 pub(crate) fn run(args: &[OsString]) -> Result<()> {
-    let manifest_path = args
-        .get(1)
-        .ok_or("dev requires a manifest path")?
-        .as_os_str();
-    let mut mode = None;
-    for argument in args.iter().skip(2) {
-        match argument.to_str() {
-            Some("--once") => {
-                if mode.replace(DevMode::Once).is_some() {
-                    return Err("dev accepts exactly one of --once or --watch".into());
-                }
-            }
-            Some("--watch") => {
-                if mode.replace(DevMode::Watch).is_some() {
-                    return Err("dev accepts exactly one of --once or --watch".into());
-                }
-            }
-            _ => return Err("dev accepts MANIFEST followed by --once or --watch".into()),
-        }
-    }
-    let mode = mode.unwrap_or(DevMode::Once);
+    let (manifest_path, mode) = arguments(args.get(1..).unwrap_or_default())?;
     if matches!(mode, DevMode::Watch) && !cfg!(windows) {
         return Err(
             "dev --watch currently requires the Windows filesystem notification host".into(),
         );
     }
-    let manifest_path = PathBuf::from(manifest_path);
-    let (_, root) = Application::read(&manifest_path)?;
+    let root = match Manifest::read(&manifest_path)? {
+        (Manifest::Web(application), root) => return browser::run(&application, &root, mode),
+        (Manifest::Native(_), root) => root,
+    };
     let cargo = process::tool("cargo")?;
     let mut baseline = snapshot(&root)?;
     let watcher = matches!(mode, DevMode::Watch)
@@ -135,6 +118,30 @@ pub(crate) fn run(args: &[OsString]) -> Result<()> {
             }
         }
     }
+}
+
+/// `dev [MANIFEST] [--once|--watch]`: `./metis.json` and `--once` when omitted.
+fn arguments(args: &[OsString]) -> Result<(PathBuf, DevMode)> {
+    let mut manifest_path = None;
+    let mut mode = None;
+    for argument in args {
+        let flag = match argument.to_str() {
+            Some("--once") => Some(DevMode::Once),
+            Some("--watch") => Some(DevMode::Watch),
+            _ => None,
+        };
+        if let Some(flag) = flag {
+            if mode.replace(flag).is_some() {
+                return Err("dev accepts exactly one of --once or --watch".into());
+            }
+        } else if manifest_path.replace(PathBuf::from(argument)).is_some() {
+            return Err("dev accepts one MANIFEST and one of --once or --watch".into());
+        }
+    }
+    Ok((
+        manifest_path.unwrap_or_else(|| PathBuf::from(DEFAULT_MANIFEST)),
+        mode.unwrap_or(DevMode::Once),
+    ))
 }
 
 fn launch(
@@ -214,7 +221,7 @@ fn wait_for_source_change(
     }
 }
 
-fn snapshot(root: &Path) -> Result<Snapshot> {
+pub(super) fn snapshot(root: &Path) -> Result<Snapshot> {
     let files = tree::regular_files(root, ignored_directory)?;
     let mut total = 0_u64;
     let mut hash = moirai_crypto::Sha256::new();
@@ -247,13 +254,40 @@ fn snapshot(root: &Path) -> Result<Snapshot> {
 fn ignored_directory(name: &std::ffi::OsStr) -> bool {
     matches!(
         name.to_str(),
-        Some(".git" | "target" | "output" | "node_modules")
+        Some(".git" | "target" | "output" | "node_modules" | "dist")
     )
 }
 
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn arguments_default_the_manifest_and_mode() {
+        let parse = |args: &[&str]| {
+            arguments(&args.iter().map(OsString::from).collect::<Vec<_>>())
+                .map(|(path, mode)| (path, matches!(mode, DevMode::Watch)))
+        };
+        assert_eq!(
+            parse(&[]).expect("defaults"),
+            (PathBuf::from(DEFAULT_MANIFEST), false)
+        );
+        assert_eq!(
+            parse(&["--watch"]).expect("default manifest"),
+            (PathBuf::from(DEFAULT_MANIFEST), true)
+        );
+        assert_eq!(
+            parse(&["app/metis.json", "--once"]).expect("manifest and mode"),
+            (PathBuf::from("app/metis.json"), false)
+        );
+        assert_eq!(
+            parse(&["--watch", "app/metis.json"]).expect("mode first"),
+            (PathBuf::from("app/metis.json"), true)
+        );
+        for rejected in [&["--once", "--watch"][..], &["a.json", "b.json"]] {
+            assert!(parse(rejected).is_err(), "accepted {rejected:?}");
+        }
+    }
 
     #[test]
     fn snapshot_changes_for_source_and_resource_bytes() {
