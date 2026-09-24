@@ -6,6 +6,7 @@ pub mod async_app;
 mod commands;
 mod focus;
 mod presentation;
+pub mod reactive;
 #[path = "result_explorer/mod.rs"]
 mod result_explorer;
 pub use app::{FormInputs, FormState, FrontendApp, MAX_COMPOSITION_BYTES};
