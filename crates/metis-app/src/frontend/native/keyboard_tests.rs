@@ -136,3 +136,36 @@ fn an_accessibility_focus_request_moves_focus_with_a_ring() {
     .expect("focus request for a hidden item");
     assert_eq!(form.app.focused_control(), "btn-calc");
 }
+
+#[test]
+fn command_accelerators_apply_once_and_leave_other_chords_alone() {
+    let mut form = form();
+    let alt_shift = ModifierState::ALT | ModifierState::SHIFT;
+    key(&mut form, u32::from(b'D'), alt_shift);
+    assert_eq!(form.app.theme(), ApplicationTheme::Dark);
+    assert_eq!(form.app.command_status(), "Theme: dark");
+
+    // An auto-repeated chord is ignored, so holding it applies it once.
+    form.handle_events(&[WindowEvent::KeyDown {
+        virtual_key: u32::from(b'S'),
+        repeated: true,
+        modifiers: alt_shift,
+    }])
+    .expect("repeated chord");
+    assert_eq!(form.app.theme(), ApplicationTheme::Dark);
+
+    key(&mut form, u32::from(b'S'), alt_shift);
+    assert_eq!(form.app.theme(), ApplicationTheme::System);
+
+    // The same letter with Control alone is not a command accelerator.
+    key(&mut form, u32::from(b'D'), ModifierState::CONTROL);
+    assert_eq!(form.app.theme(), ApplicationTheme::System);
+
+    key(&mut form, TAB_KEY, ModifierState::NONE);
+    key(&mut form, u32::from(b'P'), alt_shift);
+    assert_eq!(form.app.focused_control(), PATIENT_INPUT);
+    assert_eq!(
+        form.app.command_status(),
+        ApplicationCommand::FocusPatient.status()
+    );
+}

@@ -1,5 +1,7 @@
 //! Host-neutral command state for the authored application surface.
 
+mod shortcut;
+
 use crate::app::FrontendApp;
 use crate::focus::INITIAL_FOCUS;
 use metis_core::Result;

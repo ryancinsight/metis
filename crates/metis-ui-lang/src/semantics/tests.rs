@@ -154,3 +154,17 @@ fn bounds_text_and_tabindex_before_host_projection() {
         ErrorCode::MalformedMarkup
     );
 }
+
+#[test]
+fn announces_normalized_keyboard_shortcuts() {
+    let document = parse_markup(
+        "<screen><button id='save' aria-keyshortcuts='  Control+S   Meta+S '>Save</button><button id='plain'>Plain</button></screen>",
+    )
+    .expect("document");
+    let tree = SemanticTree::from_document(&document).expect("semantic tree");
+    assert_eq!(
+        tree.root.children[0].keyboard_shortcuts.as_deref(),
+        Some("Control+S Meta+S")
+    );
+    assert_eq!(tree.root.children[1].keyboard_shortcuts, None);
+}

@@ -100,6 +100,11 @@ fn build_element(
         .get("value")
         .map(|value| normalize_text(value))
         .transpose()?;
+    let keyboard_shortcuts = element
+        .attributes
+        .get("aria-keyshortcuts")
+        .map(|value| normalize_text(value))
+        .transpose()?;
     let expanded = optional_boolean(element, "aria-expanded")?;
     let selected = optional_boolean(element, "aria-selected")?;
     let checked = optional_boolean(element, "aria-checked")?
@@ -135,6 +140,7 @@ fn build_element(
         name,
         description,
         value,
+        keyboard_shortcuts,
         disabled,
         hidden,
         expanded,

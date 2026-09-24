@@ -86,7 +86,7 @@ impl<T: IpcTransport> NativeApplication for NativeForm<T> {
                 repeated,
                 modifiers,
             } = event
-                && let Some(changed) = self.handle_focus_key(*virtual_key, *repeated, *modifiers)?
+                && let Some(changed) = self.handle_key_down(*virtual_key, *repeated, *modifiers)?
             {
                 repaint |= changed;
                 continue;
