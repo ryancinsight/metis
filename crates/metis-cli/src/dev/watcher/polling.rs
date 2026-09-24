@@ -140,7 +140,7 @@ fn fingerprint(root: &Path) -> Result<u64> {
 
 #[cfg(test)]
 mod tests {
-    use super::Watcher;
+    use super::{Watcher, fingerprint};
     use std::{fs, path::PathBuf, time::Duration};
 
     fn scratch(name: &str) -> PathBuf {
@@ -157,10 +157,11 @@ mod tests {
         let root = scratch("edit");
         let watcher =
             Watcher::with_interval(&root, Duration::from_millis(10)).expect("polling watcher");
+        // Build output is outside the fingerprint, so it cannot trigger a poll.
+        let before = fingerprint(&root).expect("fingerprint");
         fs::create_dir_all(root.join("target")).expect("build directory");
         fs::write(root.join("target").join("artifact"), b"ignored").expect("artifact");
-        std::thread::sleep(Duration::from_millis(60));
-        assert!(!watcher.changed().expect("poll"), "build output is ignored");
+        assert_eq!(fingerprint(&root).expect("fingerprint"), before);
 
         fs::write(root.join("src").join("lib.rs"), b"pub fn edited() {}").expect("edit");
         watcher.wait().expect("change notification");

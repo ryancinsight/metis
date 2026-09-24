@@ -160,7 +160,8 @@ fn apply(
             // A `<select>` has no settable value through the DOM provider,
             // so its options are rebuilt with the chosen mode selected.
             if let Some(theme) = crate::Theme::parse(value) {
-                view::select_theme(document, theme)?;
+                view::element(document, "theme-mode")?
+                    .set_inner_html(&crate::Theme::options_markup(theme));
             }
         }
         state.commands.menu_open = false;

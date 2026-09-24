@@ -43,13 +43,6 @@ pub(super) fn render_lifecycle(
     Ok(())
 }
 
-/// Reflects a theme chosen outside the theme control, such as by a command,
-/// by rebuilding its options with that mode selected.
-pub(super) fn select_theme(document: &WebDocument, theme: crate::Theme) -> io::Result<()> {
-    element(document, "theme-mode")?.set_inner_html(&crate::Theme::options_markup(theme));
-    Ok(())
-}
-
 fn render_theme_and_inputs(document: &WebDocument, state: &BrowserState) -> io::Result<()> {
     let inputs = &state.inputs;
     document
