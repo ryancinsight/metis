@@ -326,7 +326,7 @@ an owner. “Unsupported” cannot replace delivery of a required mobile/native 
 
 - Autostart increment (2026-09-24): `metis_platform::Autostart` enables, checks and disables a per-user login item: an XDG autostart entry, a macOS launch agent, or a Windows `Run` value through Moirai `windows::startup` (Moirai PR #465), which reaches no other registry location. `metis_core::command_line` is now the single Windows CRT and desktop `Exec` quoting implementation shared by the MSI shortcut, the Linux package and login items, and `atomic_file::replace` is the shared write-and-rename save.
 
-- Dioxus comparison (2026-09-24): ADR 0003 adds Dioxus 0.7.10, inspected from its published crates, as the closest Rust comparator. Its signals, memos, store fields and `use_resource` are now matched by `metis_frontend::reactive::{derived2, Writable::project, resource}`, with explicit dependencies and stale-result rejection. Its typed router, native menu bars, SSR/hydration, code hot patching and mobile bundles remain open.
+- Dioxus comparison (2026-09-24): ADR 0003 adds Dioxus 0.7.10, inspected from its published crates, as the closest Rust comparator. Its signals, memos, store fields and `use_resource` are now matched by `metis_frontend::reactive::{derived2, Writable::project, resource}`, with explicit dependencies and stale-result rejection. `metis_core::route::Router` then closes its typed-routing gap (literal/parameter/rest patterns, order-independent precedence, conflict refusal, `href`, deep-link segments through one shared path decoder). Nested layouts and history, native menu bars, SSR/hydration, code hot patching and mobile bundles remain open.
 
 <a id="METIS-SERVICES-001"></a>
 ## METIS-SERVICES-001 — Scoped network, shell and sidecars [minor]

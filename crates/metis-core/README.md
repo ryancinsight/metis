@@ -85,6 +85,28 @@ assert!(DeepLink::parse("org.example.viewer://open/../etc", &schemes).is_err());
 # Ok::<(), metis_core::deep_link::DeepLinkError>(())
 ```
 
+`route` maps path patterns to application screens, like Dioxus's `Routable`
+router. A literal beats a `:parameter`, which beats a final `*rest`, whatever
+order routes were added in, and a second pattern of the same shape is refused.
+Paths decode under the deep-link rule, so a deep link routes through its
+segments, and `RoutePattern::href` builds a path that routes back.
+
+```rust
+use metis_core::route::{RoutePattern, Router};
+
+#[derive(Debug, PartialEq)]
+enum Screen { Study, NewStudy }
+
+let mut router = Router::new();
+router.add("/study/:id", Screen::Study)?;
+router.add("/study/new", Screen::NewStudy)?;
+let found = router.resolve("/study/a%20b?tab=info")?.expect("a route");
+assert_eq!((found.route, found.parameter("id")), (&Screen::Study, Some("a b")));
+assert_eq!(*router.resolve("/study/new")?.expect("a route").route, Screen::NewStudy);
+assert_eq!(RoutePattern::parse("/study/:id")?.href(&[("id", "a b")])?, "/study/a%20b");
+# Ok::<(), metis_core::route::RouteError>(())
+```
+
 `window_state` holds a window's restorable geometry, the value Tauri's
 window-state plugin saves: the restored rectangle (where the window returns
 when it is not maximized) and whether it is maximized. Its text form is
