@@ -1597,13 +1597,16 @@ strings inside their cards. Option rows and the result-scale slider use a
 `44px` CSS hit target. The static browser contract suite checks the responsive
 declarations.
 
-The Browser viewport capability captured the generated page at
-`360×640`, `800×600` and `1440×900` CSS pixels with device scale `1`. The
-runtime manifest and JPEG captures are committed under
-`docs/manual/images/browser-layout-*`; its source hash binds the measurements to
-`examples/browser/styles.css`. The narrow capture resolves to one `312.8px`
-grid column; the fixture resolves to two `348.4px` columns; the wide capture
-resolves to two `436px` columns. All three have no horizontal overflow and every
+Playwright 1.56.1 driving Chromium 141.0.7390.37 with classic scrollbars
+captured the generated page at `360×640`, `800×600` and `1440×900` CSS pixels
+with device scale `1`, after the stylesheet moved to single-declaration
+`light-dark()` tokens. The runtime manifest and JPEG captures are committed
+under `docs/manual/images/browser-layout-*`; its source hash binds the
+measurements to `examples/browser/styles.css`. The narrow capture resolves to
+one `313px` grid column; the fixture resolves to two `348.5px` columns; the
+wide capture resolves to two `436px` columns. The earlier capture engine
+reported `312.8px` and `348.4px`; the difference is sub-pixel rounding across
+engines, not a layout change. All three have no horizontal overflow and every
 required card or target ends inside the viewport. The full Metis gate passes on
 the delivered revision.
 

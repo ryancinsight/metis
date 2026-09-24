@@ -413,8 +413,8 @@ class BrowserAssetContractTests(unittest.TestCase):
             hashlib.sha256(styles_path.read_bytes()).hexdigest(),
         )
         expected = {
-            "360x640": (360, 640, "312.8px"),
-            "800x600": (800, 600, "348.4px 348.4px"),
+            "360x640": (360, 640, "313px"),
+            "800x600": (800, 600, "348.5px 348.5px"),
             "1440x900": (1440, 900, "436px 436px"),
         }
         for name, (width, height, columns) in expected.items():
