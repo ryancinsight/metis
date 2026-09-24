@@ -2,6 +2,10 @@
 #![forbid(unsafe_code)]
 #![deny(missing_docs)]
 
+#[cfg(not(target_arch = "wasm32"))]
+mod atomic_file;
+#[cfg(not(target_arch = "wasm32"))]
+pub mod autostart;
 pub mod display_scale;
 pub mod event;
 pub mod framebuffer;
@@ -11,13 +15,21 @@ pub mod scoped_file;
 #[cfg(not(target_arch = "wasm32"))]
 pub mod scoped_network;
 #[cfg(not(target_arch = "wasm32"))]
+pub mod scoped_opener;
+#[cfg(not(target_arch = "wasm32"))]
 pub mod scoped_process;
+#[cfg(any(unix, windows))]
+pub mod single_instance;
 pub mod surface;
 pub mod typeface;
+#[cfg(not(target_arch = "wasm32"))]
+pub mod window_state_file;
 
 #[cfg(windows)]
 pub mod native;
 
+#[cfg(not(target_arch = "wasm32"))]
+pub use autostart::{Autostart, MAX_AUTOSTART_ARGUMENT_BYTES, MAX_AUTOSTART_ARGUMENTS};
 pub use display_scale::DisplayScale;
 pub use event::PlatformEvent;
 pub use framebuffer::{Clip, Color, Framebuffer, Rect};
@@ -35,10 +47,19 @@ pub use scoped_network::{
     ScopedHttpRequest, ScopedHttpResponse,
 };
 #[cfg(not(target_arch = "wasm32"))]
+pub use scoped_opener::{
+    MAX_OPEN_DEADLINE, MAX_OPEN_ORIGINS, MAX_OPEN_URL_BYTES, OpenError, OpenLauncher, OpenTarget,
+    ScopedOpener,
+};
+#[cfg(not(target_arch = "wasm32"))]
 pub use scoped_process::{
     MAX_SCOPED_PROCESS_ARGUMENT_BYTES, MAX_SCOPED_PROCESS_ARGUMENTS,
     MAX_SCOPED_PROCESS_ENVIRONMENT_BYTES, MAX_SCOPED_PROCESS_ENVIRONMENT_ENTRIES,
     MAX_SCOPED_PROCESS_OUTPUT_BYTES, MAX_SCOPED_PROCESS_RUNTIME, ProcessContainment,
     ScopedProcessError, ScopedProcessOutput, ScopedProcessProvider,
 };
+#[cfg(any(unix, windows))]
+pub use single_instance::{Launch, MAX_FORWARDED_ARGUMENTS, PrimaryInstance, claim_or_forward};
 pub use surface::PlatformSurface;
+#[cfg(not(target_arch = "wasm32"))]
+pub use window_state_file::WindowStateFile;

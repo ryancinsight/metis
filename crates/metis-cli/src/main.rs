@@ -71,7 +71,7 @@ fn main() -> Result<()> {
                     let output = output.ok_or_else(|| {
                         usage_error("building a native application requires OUTPUT")
                     })?;
-                    build::application(application, &root, output, build::OutputKind::Portable)
+                    build::application(*application, &root, output, build::OutputKind::Portable)
                 }
                 (Manifest::Web(application), root) => {
                     let served = build::web::application(&application, &root, output)?;

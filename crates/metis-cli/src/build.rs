@@ -199,6 +199,8 @@ fn installer(
         upgrade_code: &application.upgrade_code,
         entry,
         arguments: &application.arguments,
+        url_schemes: &application.url_schemes,
+        file_associations: &application.file_associations,
         files: staged,
         icon,
     };

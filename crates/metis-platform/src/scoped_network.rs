@@ -444,23 +444,7 @@ fn validate_url(url: &str) -> Result<(), ScopedHttpError> {
 }
 
 fn request_origin(url: &str) -> Result<HostOrigin, ScopedHttpError> {
-    let Some(scheme_end) = url.find("://") else {
-        return Err(ScopedHttpError::InvalidUrl);
-    };
-    let authority_start = scheme_end
-        .checked_add(3)
-        .ok_or(ScopedHttpError::InvalidUrl)?;
-    let remainder = url
-        .get(authority_start..)
-        .ok_or(ScopedHttpError::InvalidUrl)?;
-    let authority_end = remainder.find(['/', '?']).unwrap_or(remainder.len());
-    if authority_end == 0 {
-        return Err(ScopedHttpError::InvalidUrl);
-    }
-    let origin_text = url
-        .get(..authority_start + authority_end)
-        .ok_or(ScopedHttpError::InvalidUrl)?;
-    let origin = HostOrigin::parse(origin_text).map_err(|_| ScopedHttpError::InvalidOrigin)?;
+    let origin = HostOrigin::from_url(url).map_err(|_| ScopedHttpError::InvalidOrigin)?;
     if !origin.as_str().starts_with("http://") && !origin.as_str().starts_with("https://") {
         return Err(ScopedHttpError::InvalidUrl);
     }

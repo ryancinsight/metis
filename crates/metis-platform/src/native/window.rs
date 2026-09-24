@@ -7,7 +7,7 @@
 //! translation.
 
 use crate::Framebuffer;
-use moirai_pal::windows::window::NativeWindow;
+use moirai_pal::windows::window::{NativeWindow, WindowPlacement};
 use std::io;
 use std::time::Duration;
 
@@ -149,10 +149,67 @@ impl NativeSurface {
         Ok(())
     }
 
+    /// Reads the window's restored rectangle and maximized state for saving.
+    ///
+    /// # Errors
+    /// Returns the native error, or `InvalidInput` once the window is closed.
+    pub fn placement(&self) -> io::Result<WindowPlacement> {
+        self.window.placement()
+    }
+
     /// Returns whether the native window has completed destruction.
     #[must_use]
     pub const fn is_destroyed(&self) -> bool {
         self.window.is_destroyed()
+    }
+}
+
+impl crate::native::TrayHost for NativeSurface {
+    fn show_tray_icon(
+        &mut self,
+        image: &crate::native::TrayIconImage,
+        tooltip: &str,
+    ) -> io::Result<()> {
+        self.window.show_tray_icon(image, tooltip)
+    }
+
+    fn show_notification(&mut self, title: &str, body: &str) -> io::Result<()> {
+        self.window.show_notification(title, body)
+    }
+
+    fn remove_tray_icon(&mut self) -> io::Result<bool> {
+        self.window.remove_tray_icon()
+    }
+
+    fn take_tray_events(&mut self) -> Vec<crate::native::TrayEvent> {
+        self.window.take_tray_events()
+    }
+
+    fn show_popup_menu(
+        &mut self,
+        menu: &crate::native::PopupMenu,
+        x: i32,
+        y: i32,
+    ) -> io::Result<Option<usize>> {
+        self.window.show_popup_menu(menu, x, y)
+    }
+}
+
+impl crate::native::HotkeyHost for NativeSurface {
+    fn register_hotkey(
+        &mut self,
+        id: crate::native::HotkeyId,
+        hotkey: crate::native::GlobalHotkey,
+    ) -> io::Result<()> {
+        self.window.register_hotkey(id, hotkey)
+    }
+
+    fn unregister_hotkey(&mut self, id: crate::native::HotkeyId) -> io::Result<bool> {
+        self.window.unregister_hotkey(id)
+    }
+
+    fn take_hotkey_presses(&mut self) -> Vec<crate::native::HotkeyId> {
+        self.window.take_hotkey_presses()
     }
 }
 

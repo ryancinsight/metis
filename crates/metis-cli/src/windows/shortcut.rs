@@ -1,4 +1,5 @@
-//! Shortcut arguments follow the documented Microsoft CRT quoting rules.
+//! Shortcut arguments quoted by `metis_core::command_line::windows_argument`,
+//! the Microsoft CRT rules.
 //!
 //! [Microsoft parsing rules](https://learn.microsoft.com/en-us/cpp/c-language/parsing-c-command-line-arguments).
 use std::error::Error;
@@ -16,24 +17,7 @@ pub(super) fn arguments(arguments: &[String]) -> Result<String, Box<dyn Error>> 
         if !encoded.is_empty() {
             encoded.push(' ');
         }
-        encoded.push('"');
-        let mut backslashes = 0;
-        for character in argument.chars() {
-            if character == '\\' {
-                backslashes += 1;
-                continue;
-            }
-            let escapes = if character == '"' {
-                backslashes * 2 + 1
-            } else {
-                backslashes
-            };
-            encoded.extend(std::iter::repeat_n('\\', escapes));
-            encoded.push(character);
-            backslashes = 0;
-        }
-        encoded.extend(std::iter::repeat_n('\\', backslashes * 2));
-        encoded.push('"');
+        encoded.push_str(&metis_core::command_line::windows_argument(argument));
         // The standard Shortcut.Arguments column is CHAR(255); enforce the
         // encoded bound instead of letting native insertion truncate silently.
         if encoded.encode_utf16().count() > 255 {

@@ -129,6 +129,61 @@ representations redact URL, header values and payload bytes. The provider is
 native-only and does not parse DICOM or expose a browser-controlled network
 object.
 
+`ScopedOpener` hands a URL to the user's default handler, as Tauri's opener
+plugin does, behind an `OPEN_EXTERNAL` capability witness. The host fixes the
+launcher (`OpenLauncher::platform_default()` finds `xdg-open`, `open` or the
+Windows URL protocol handler at its standard path, never on `PATH`) and an
+http(s) origin allowlist. The URL must be printable RFC 3986 ASCII with
+complete percent escapes and no credentials, and reaches the launcher as one
+argument. The launcher sees only a short list of desktop-session variables.
+It is detached rather than contained, because the browser it starts must
+outlive the request.
+
+`WindowStateFile` saves a `WindowState` to one host-chosen absolute path and
+loads it on the next launch; a missing file means no saved state. A save
+writes a fresh sibling file and renames it over the old one, so an
+interrupted save leaves the previous state intact. On Windows,
+`native::placement_from_state` feeds `WindowConfig::with_placement`, which
+restores the rectangle and maximized state before the window first appears,
+and `NativeSurface::placement` or `WebViewSurface::placement` reads the
+state to save when the window reports `CloseRequested`.
+
+`native::GlobalShortcuts` registers `metis_core::input::Accelerator` values
+as system-wide hotkeys on a native surface, like Tauri's global-shortcut
+plugin: they fire while other applications have focus. A chord needs a
+modifier, holding it reports one press, and a chord another application owns
+is refused with the native error. The surface queues presses apart from
+window events; `take_commands` turns them into the bound commands after each
+event wait. Closing the surface releases every registration.
+
+`native::TrayHost` shows a notification-area icon and notifications, like
+Tauri's tray and notification plugins. The application draws a 16 or 32 pixel
+icon into a `Framebuffer` with the Metis rasterizer and converts it with
+`native::tray_image`. Notifications are shell balloons, which Windows 10 and
+later present as toasts. Clicks, keyboard selection, notification clicks and
+context requests arrive as `TrayEvent` values from `take_tray_events`; a
+context request carries the screen position at which `show_popup_menu` opens
+a native menu and returns the chosen item's index. Closing the surface
+removes the icon.
+
+`claim_or_forward` keeps one running instance per application, like Tauri's
+single-instance plugin. The first launch becomes the `PrimaryInstance`; a later
+launch forwards its arguments (at most `MAX_FORWARDED_ARGUMENTS`, UTF-8 without
+NUL) and should exit. The primary polls `try_receive` from its event loop and
+can pass each list to `metis_core::deep_link::DeepLink::from_arguments`. Moirai
+holds the claim: an advisory lock and a socket in an owner-only directory on
+Unix, or a session-scoped, local-only named pipe on Windows, released by the
+operating system when the primary exits.
+
+`Autostart` registers a per-user login item, like Tauri's autostart plugin:
+an XDG autostart desktop entry on freedesktop systems, a launch agent in
+`~/Library/LaunchAgents` on macOS, or a value in the user's `Run` key on
+Windows. The program path must be absolute and the command is quoted by
+`metis_core::command_line` for the parser that reads it. `is_enabled` reports
+whether that exact command is registered, so a stale entry from another build
+reads as disabled. Entry files are replaced with the same write-and-rename
+save that `WindowStateFile` uses.
+
 Applications that use the native pixel surface can share the bounded host loop
 through `metis_platform::native::NativeApplication` and
 `run_native_application`. The application owns its state and frame, applies

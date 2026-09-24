@@ -56,6 +56,26 @@ impl HostOrigin {
         Ok(Self(format!("{scheme}://{authority}")))
     }
 
+    /// Parses the origin of an absolute URL: its scheme and authority, which
+    /// end at the first `/`, `?` or `#` after `://`.
+    ///
+    /// # Errors
+    /// Returns [`ErrorCode::InvalidOrigin`] when the URL has no authority or
+    /// its origin is not one [`Self::parse`] admits.
+    pub fn from_url(url: &str) -> Result<Self> {
+        let Some(scheme_end) = url.find("://") else {
+            return Err(invalid_origin());
+        };
+        let authority_start = scheme_end + 3;
+        let authority_end = url[authority_start..]
+            .find(['/', '?', '#'])
+            .map_or(url.len(), |end| authority_start + end);
+        if authority_end == authority_start {
+            return Err(invalid_origin());
+        }
+        Self::parse(&url[..authority_end])
+    }
+
     /// Returns the host-controlled native application origin.
     #[must_use]
     pub fn native() -> Self {

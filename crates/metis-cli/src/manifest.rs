@@ -1,7 +1,9 @@
 //! Validated application identity and explicit payload ownership.
+mod file_associations;
 #[cfg(any(windows, test))]
 mod icon;
 mod svg;
+mod url_schemes;
 mod web;
 
 use crate::Result;
@@ -17,6 +19,7 @@ use std::{
 pub(crate) const MANIFEST_LIMIT: u64 = 1024 * 1024;
 pub(crate) const FILE_LIMIT: usize = 4096;
 pub(crate) const PAYLOAD_LIMIT: u64 = 1024 * 1024 * 1024;
+pub(crate) use file_associations::FileAssociation;
 #[cfg(windows)]
 pub(crate) use icon::ICON_LIMIT;
 #[cfg(windows)]
@@ -29,7 +32,7 @@ pub(crate) const DEFAULT_MANIFEST: &str = "metis.json";
 /// A validated `metis.json`: a native application, or a browser application
 /// whose `frontend` names its page and WebAssembly package.
 pub(crate) enum Manifest {
-    Native(Application),
+    Native(Box<Application>),
     Web(WebApplication),
 }
 
@@ -54,7 +57,7 @@ impl Manifest {
         } else {
             let application: Application = serde_json::from_value(document)?;
             application.validate()?;
-            Self::Native(application)
+            Self::Native(Box::new(application))
         };
         let absolute = path.canonicalize()?;
         let root = absolute
@@ -90,6 +93,13 @@ pub(crate) struct Application {
     pub(crate) icon: Option<String>,
     #[serde(default)]
     pub(crate) arguments: Vec<String>,
+    /// Custom URL schemes the installers register for this application,
+    /// validated by `metis_core::deep_link::DeepLinkScheme`.
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub(crate) url_schemes: Vec<String>,
+    /// Document types the installers associate with this application.
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub(crate) file_associations: Vec<FileAssociation>,
     pub(crate) binaries: Vec<Binary>,
     #[serde(default)]
     pub(crate) resources: Vec<Resource>,
@@ -113,7 +123,7 @@ impl Application {
     /// Reads a native application manifest.
     pub(crate) fn read(path: &Path) -> Result<(Self, PathBuf)> {
         match Manifest::read(path)? {
-            (Manifest::Native(application), root) => Ok((application, root)),
+            (Manifest::Native(application), root) => Ok((*application, root)),
             (Manifest::Web(_), _) => Err(
                 "this manifest describes a browser application; use metis build or metis serve"
                     .into(),
@@ -172,6 +182,8 @@ impl Application {
                 "launch arguments exceed the installer budget or contain formatted syntax".into(),
             );
         }
+        url_schemes::validate(&self.url_schemes)?;
+        file_associations::validate(&self.file_associations)?;
         self.validate_inventory()
     }
 

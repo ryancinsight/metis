@@ -2,7 +2,17 @@
 
 use super::FileRecord;
 #[cfg(any(not(windows), test))]
+mod desktop;
+#[cfg(any(not(windows), test))]
+mod file_associations;
+#[cfg(any(not(windows), test))]
+mod url_schemes;
+#[cfg(any(not(windows), test))]
 use crate::{Result, manifest::Application};
+#[cfg(any(not(windows), test))]
+use desktop::desktop_entry;
+#[cfg(any(not(windows), test))]
+pub(crate) use desktop::{desktop_icon, desktop_word};
 #[cfg(any(not(windows), test))]
 use moirai_crypto::Sha256;
 use serde::Serialize;
@@ -140,13 +150,15 @@ fn info_plist(
         return Err("macOS bundle entry is absent from its staged binaries".into());
     }
     Ok(format!(
-        "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n<!DOCTYPE plist PUBLIC \"-//Apple//DTD PLIST 1.0//EN\" \"http://www.apple.com/DTDs/PropertyList-1.0.dtd\">\n<plist version=\"1.0\"><dict><key>CFBundleDisplayName</key><string>{}</string><key>CFBundleExecutable</key><string>{}</string><key>CFBundleIdentifier</key><string>{}</string><key>CFBundleName</key><string>{}</string><key>CFBundlePackageType</key><string>APPL</string><key>CFBundleShortVersionString</key><string>{}</string><key>CFBundleVersion</key><string>{}</string></dict></plist>\n",
+        "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n<!DOCTYPE plist PUBLIC \"-//Apple//DTD PLIST 1.0//EN\" \"http://www.apple.com/DTDs/PropertyList-1.0.dtd\">\n<plist version=\"1.0\"><dict><key>CFBundleDisplayName</key><string>{}</string><key>CFBundleExecutable</key><string>{}</string><key>CFBundleIdentifier</key><string>{}</string><key>CFBundleName</key><string>{}</string><key>CFBundlePackageType</key><string>APPL</string><key>CFBundleShortVersionString</key><string>{}</string><key>CFBundleVersion</key><string>{}</string>{}{}</dict></plist>\n",
         xml_escape(&application.name),
         xml_escape(&entry),
         xml_escape(&application.id),
         xml_escape(&application.name),
         xml_escape(&application.version),
         xml_escape(&application.version),
+        url_schemes::plist_registration(application),
+        file_associations::plist_registration(application),
     ))
 }
 
@@ -185,6 +197,10 @@ fn linux_archive(
     let desktop_path = format!("usr/share/applications/{}.desktop", application.id);
     let desktop = desktop_entry(application, entry);
     records.push(archive.add_bytes(&desktop_path, desktop.as_bytes(), 0o644)?);
+    if let Some(package) = file_associations::mime_package(application) {
+        let package_path = format!("usr/share/mime/packages/{}.xml", application.id);
+        records.push(archive.add_bytes(&package_path, package.as_bytes(), 0o644)?);
+    }
     let (bytes, sha256) = archive.finish()?;
     Ok(PlatformPackageRecord {
         format: "linux-tar",
@@ -193,98 +209,6 @@ fn linux_archive(
         sha256,
         files: records,
     })
-}
-
-#[cfg(any(not(windows), test))]
-fn desktop_entry(application: &Application, entry: &str) -> String {
-    let icon = application.resources.iter().find_map(|resource| {
-        let extension = Path::new(&resource.destination).extension()?;
-        extension
-            .eq_ignore_ascii_case("svg")
-            .then(|| {
-                desktop_icon(&format!(
-                    "/usr/share/{}/{}",
-                    application.id, resource.destination
-                ))
-            })
-            .or_else(|| {
-                extension.eq_ignore_ascii_case("png").then(|| {
-                    desktop_icon(&format!(
-                        "/usr/share/{}/{}",
-                        application.id, resource.destination
-                    ))
-                })
-            })
-    });
-    let mut output = format!(
-        "[Desktop Entry]\nVersion=1.0\nType=Application\nName={}\nComment={} application\nExec=/usr/bin/{}",
-        desktop_escape(&application.name),
-        desktop_escape(&application.name),
-        desktop_word(entry),
-    );
-    for argument in &application.arguments {
-        output.push(' ');
-        output.push_str(&desktop_word(argument));
-    }
-    output.push_str("\nTerminal=false\n");
-    if let Some(icon) = icon {
-        output.push_str("Icon=");
-        output.push_str(&icon);
-        output.push('\n');
-    }
-    output.push_str("Categories=Utility;\n");
-    output
-}
-
-#[cfg(any(not(windows), test))]
-pub(crate) fn desktop_word(value: &str) -> String {
-    let needs_quotes = value.is_empty()
-        || value.bytes().any(|byte| {
-            byte.is_ascii_whitespace()
-                || byte.is_ascii_control()
-                || matches!(byte, b'"' | 96 | b'$' | b'\\' | b'%')
-        });
-    let mut escaped = String::with_capacity(value.len());
-    for character in value.chars() {
-        match character {
-            '\\' | '"' | '\u{60}' | '$' => {
-                escaped.push('\\');
-                escaped.push(character);
-            }
-            '%' => escaped.push_str("%%"),
-            _ => escaped.push(character),
-        }
-    }
-    if needs_quotes {
-        format!("\"{escaped}\"")
-    } else {
-        escaped
-    }
-}
-
-#[cfg(any(not(windows), test))]
-pub(crate) fn desktop_icon(value: &str) -> String {
-    let mut escaped = String::with_capacity(value.len());
-    for character in value.chars() {
-        match character {
-            '\\' => escaped.push_str("\\\\"),
-            ' ' => escaped.push_str("\\s"),
-            '\t' => escaped.push_str("\\t"),
-            '\n' => escaped.push_str("\\n"),
-            '\r' => escaped.push_str("\\r"),
-            ';' => escaped.push_str("\\;"),
-            _ => escaped.push(character),
-        }
-    }
-    escaped
-}
-
-#[cfg(any(not(windows), test))]
-fn desktop_escape(value: &str) -> String {
-    value
-        .replace('\\', "\\\\")
-        .replace('\n', "\\n")
-        .replace('\r', "\\r")
 }
 
 #[cfg(any(not(windows), test))]

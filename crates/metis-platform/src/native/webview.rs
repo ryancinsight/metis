@@ -2,7 +2,7 @@
 
 use moirai_pal::windows::{
     webview::WebViewHost,
-    window::{NativeWindow, WindowConfig, WindowVisibility},
+    window::{NativeWindow, WindowConfig, WindowPlacement, WindowVisibility},
 };
 use std::{io, time::Duration};
 
@@ -54,6 +54,14 @@ impl WebViewSurface {
     /// `WebView2` error.
     pub fn resize(&mut self, width: u32, height: u32) -> io::Result<()> {
         self.host.resize(width, height)
+    }
+
+    /// Reads the parent window's restored rectangle and maximized state.
+    ///
+    /// # Errors
+    /// Returns the native error, or `InvalidInput` once the surface is closed.
+    pub fn placement(&self) -> io::Result<WindowPlacement> {
+        self.host.window_placement()
     }
 
     /// Changes page visibility without changing the parent HWND visibility.
@@ -119,6 +127,55 @@ impl WebViewSurface {
     /// Returns the first teardown error after all cleanup steps are attempted.
     pub fn close(&mut self) -> io::Result<()> {
         self.host.close()
+    }
+}
+
+impl crate::native::TrayHost for WebViewSurface {
+    fn show_tray_icon(
+        &mut self,
+        image: &crate::native::TrayIconImage,
+        tooltip: &str,
+    ) -> io::Result<()> {
+        self.host.show_tray_icon(image, tooltip)
+    }
+
+    fn show_notification(&mut self, title: &str, body: &str) -> io::Result<()> {
+        self.host.show_notification(title, body)
+    }
+
+    fn remove_tray_icon(&mut self) -> io::Result<bool> {
+        self.host.remove_tray_icon()
+    }
+
+    fn take_tray_events(&mut self) -> Vec<crate::native::TrayEvent> {
+        self.host.take_tray_events()
+    }
+
+    fn show_popup_menu(
+        &mut self,
+        menu: &crate::native::PopupMenu,
+        x: i32,
+        y: i32,
+    ) -> io::Result<Option<usize>> {
+        self.host.show_popup_menu(menu, x, y)
+    }
+}
+
+impl crate::native::HotkeyHost for WebViewSurface {
+    fn register_hotkey(
+        &mut self,
+        id: crate::native::HotkeyId,
+        hotkey: crate::native::GlobalHotkey,
+    ) -> io::Result<()> {
+        self.host.register_hotkey(id, hotkey)
+    }
+
+    fn unregister_hotkey(&mut self, id: crate::native::HotkeyId) -> io::Result<bool> {
+        self.host.unregister_hotkey(id)
+    }
+
+    fn take_hotkey_presses(&mut self) -> Vec<crate::native::HotkeyId> {
+        self.host.take_hotkey_presses()
     }
 }
 

@@ -2,12 +2,27 @@
 
 mod application;
 mod dialog;
+mod global_shortcut;
+mod placement;
+mod tray;
 mod webview;
 mod window;
 
 pub use application::{NativeApplication, NativeFlow, NativeHostError, run_native_application};
 pub use dialog::{DialogSelection, MAX_DIALOG_PATH_UNITS, pick};
+pub use global_shortcut::{
+    GlobalHotkey, GlobalShortcuts, HotkeyHost, HotkeyId, MAX_GLOBAL_HOTKEYS,
+    MAX_PENDING_HOTKEY_PRESSES, hotkey_for,
+};
+pub use placement::{
+    MAX_PLACEMENT_COORDINATE, WindowPlacement, placement_from_state, state_from_placement,
+};
 
+pub use tray::{
+    MAX_NOTIFICATION_BODY_UNITS, MAX_NOTIFICATION_TITLE_UNITS, MAX_PENDING_TRAY_EVENTS,
+    MAX_POPUP_MENU_ITEMS, MAX_POPUP_MENU_LABEL_UNITS, MAX_TRAY_TOOLTIP_UNITS, PopupMenu,
+    PopupMenuItem, TRAY_ICON_SIZES, TrayEvent, TrayHost, TrayIconImage, tray_image,
+};
 pub use webview::{
     MAX_WEBVIEW_CAPTURE_BYTES, MAX_WEBVIEW_EVENTS, MAX_WEBVIEW_MESSAGE_BYTES,
     MAX_WEBVIEW_MESSAGE_UNITS, MAX_WEBVIEW_URI_UNITS, MAX_WEBVIEW_WAIT_MILLISECONDS, WebViewConfig,

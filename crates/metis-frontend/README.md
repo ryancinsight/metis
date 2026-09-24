@@ -98,3 +98,24 @@ The renderer accepts the documented [presentation subset](../metis-ui-lang/READM
 Backend responses carry a MAC which this frontend does not verify. See the
 [process contract](../../docs/INTERFACE.md) and [verification](../../docs/VERIFICATION.md).
 This package is unpublished.
+
+## Reactive stores
+
+`metis_frontend::reactive` provides Svelte-style stores for Rust-owned state.
+A `Writable` notifies subscribers when its value changes, `derived` computes a
+`Readable` from another store, and each `Subscription` unsubscribes when it is
+dropped. Listeners may set stores during delivery; a change cascade longer
+than `MAX_CASCADE` rounds is cut off and reported instead of hanging a frame.
+
+```rust
+use metis_frontend::reactive::{Store, Writable, derived};
+
+let dose = Writable::new(0.5_f64);
+let label = derived(&dose, |mcg| format!("{mcg:.2} mcg/kg/min"));
+let seen = std::rc::Rc::new(std::cell::RefCell::new(Vec::new()));
+let sink = seen.clone();
+let subscription = label.subscribe(move |text| sink.borrow_mut().push(text.clone()));
+dose.set(0.75).expect("no runaway cascade");
+assert_eq!(*seen.borrow(), ["0.50 mcg/kg/min", "0.75 mcg/kg/min"]);
+drop(subscription);
+```

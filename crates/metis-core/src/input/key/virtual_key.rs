@@ -27,36 +27,60 @@ const VK_OEM_MINUS: u32 = 0xBD;
 const VK_OEM_PERIOD: u32 = 0xBE;
 const VK_OEM_2: u32 = 0xBF;
 
+/// Every named key with its virtual-key code; the one table both directions
+/// read.
+const NAMED: [(u32, Key); 20] = [
+    (VK_BACK, Key::Backspace),
+    (VK_TAB, Key::Tab),
+    (VK_RETURN, Key::Enter),
+    (VK_ESCAPE, Key::Escape),
+    (VK_SPACE, Key::Space),
+    (VK_PRIOR, Key::PageUp),
+    (VK_NEXT, Key::PageDown),
+    (VK_END, Key::End),
+    (VK_HOME, Key::Home),
+    (VK_LEFT, Key::ArrowLeft),
+    (VK_UP, Key::ArrowUp),
+    (VK_RIGHT, Key::ArrowRight),
+    (VK_DOWN, Key::ArrowDown),
+    (VK_INSERT, Key::Insert),
+    (VK_DELETE, Key::Delete),
+    (VK_OEM_PLUS, Key::Equal),
+    (VK_OEM_COMMA, Key::Comma),
+    (VK_OEM_MINUS, Key::Minus),
+    (VK_OEM_PERIOD, Key::Period),
+    (VK_OEM_2, Key::Slash),
+];
+
 impl Key {
     /// Resolves a Windows virtual-key code as `WM_KEYDOWN` reports it.
     #[must_use]
     pub fn from_windows_virtual_key(code: u32) -> Option<Self> {
         let byte = u8::try_from(code).ok()?;
-        Some(match code {
-            0x41..=0x5A => Self::Letter(Letter::new(byte)?),
-            0x30..=0x39 => Self::Digit(Digit::new(byte - b'0')?),
-            VK_F1..=0x87 => Self::Function(FunctionKey::new(byte - 0x6F)?),
-            VK_BACK => Self::Backspace,
-            VK_TAB => Self::Tab,
-            VK_RETURN => Self::Enter,
-            VK_ESCAPE => Self::Escape,
-            VK_SPACE => Self::Space,
-            VK_PRIOR => Self::PageUp,
-            VK_NEXT => Self::PageDown,
-            VK_END => Self::End,
-            VK_HOME => Self::Home,
-            VK_LEFT => Self::ArrowLeft,
-            VK_UP => Self::ArrowUp,
-            VK_RIGHT => Self::ArrowRight,
-            VK_DOWN => Self::ArrowDown,
-            VK_INSERT => Self::Insert,
-            VK_DELETE => Self::Delete,
-            VK_OEM_PLUS => Self::Equal,
-            VK_OEM_COMMA => Self::Comma,
-            VK_OEM_MINUS => Self::Minus,
-            VK_OEM_PERIOD => Self::Period,
-            VK_OEM_2 => Self::Slash,
-            _ => return None,
-        })
+        match code {
+            0x41..=0x5A => Letter::new(byte).map(Self::Letter),
+            0x30..=0x39 => Digit::new(byte - b'0').map(Self::Digit),
+            VK_F1..=0x87 => FunctionKey::new(byte - 0x6F).map(Self::Function),
+            _ => NAMED
+                .iter()
+                .find(|(named, _)| *named == code)
+                .map(|(_, key)| *key),
+        }
+    }
+
+    /// The Windows virtual-key code that produces this key, the inverse of
+    /// [`Self::from_windows_virtual_key`]; `None` for a key Windows has no
+    /// code for.
+    #[must_use]
+    pub fn windows_virtual_key(self) -> Option<u32> {
+        match self {
+            Self::Letter(letter) => Some(u32::from(letter.byte())),
+            Self::Digit(digit) => Some(u32::from(b'0' + digit.value())),
+            Self::Function(function) => Some(VK_F1 + u32::from(function.number()) - 1),
+            named => NAMED
+                .iter()
+                .find(|(_, key)| *key == named)
+                .map(|(code, _)| *code),
+        }
     }
 }

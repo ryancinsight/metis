@@ -107,3 +107,65 @@ fn desktop_words_preserve_empty_and_reserved_arguments() {
 fn desktop_icon_escapes_string_value_characters() {
     assert_eq!(desktop_icon("/tmp/a b;icon"), "/tmp/a\\sb\\;icon");
 }
+
+#[test]
+fn declared_url_schemes_are_registered_in_desktop_entry_and_bundle() {
+    let (mut application, root, _) = fixture();
+    let unregistered = desktop_entry(&application, "metis-app");
+    assert!(!unregistered.contains("MimeType") && !unregistered.contains("%u"));
+    assert!(url_schemes::plist_registration(&application).is_empty());
+
+    application.url_schemes = vec!["org.atlas.viewer".to_owned(), "atlas-viewer".to_owned()];
+    let entry = desktop_entry(&application, "metis-app");
+    let exec = entry
+        .lines()
+        .find(|line| line.starts_with("Exec="))
+        .expect("Exec line");
+    assert!(exec.ends_with(" %u"), "{exec}");
+    assert!(
+        entry.contains(
+            "MimeType=x-scheme-handler/org.atlas.viewer;x-scheme-handler/atlas-viewer;\n"
+        )
+    );
+    let plist = url_schemes::plist_registration(&application);
+    assert!(plist.contains("<key>CFBundleURLName</key><string>org.atlas.metis.demo</string>"));
+    assert!(
+        plist.contains(
+            "<array><string>org.atlas.viewer</string><string>atlas-viewer</string></array>"
+        )
+    );
+    fs::remove_dir_all(root).expect("remove package fixture");
+}
+
+#[test]
+fn declared_file_associations_are_registered_in_every_package() {
+    let (mut application, root, staged) = fixture();
+    assert!(file_associations::mime_package(&application).is_none());
+    assert!(file_associations::plist_registration(&application).is_empty());
+    application.file_associations = vec![crate::manifest::FileAssociation {
+        extensions: vec!["dcm".to_owned(), "dicom".to_owned()],
+        mime_type: "application/dicom".to_owned(),
+        description: "DICOM <image>".to_owned(),
+    }];
+    application.url_schemes = vec!["org.atlas.viewer".to_owned()];
+    let entry = desktop_entry(&application, "metis-app");
+    assert_eq!(entry.matches("%u").count(), 1, "{entry}");
+    assert!(entry.contains("MimeType=x-scheme-handler/org.atlas.viewer;application/dicom;\n"));
+    let package = file_associations::mime_package(&application).expect("MIME package");
+    assert!(package.contains("<mime-type type=\"application/dicom\">"));
+    assert!(package.contains("<comment>DICOM &lt;image&gt;</comment>"));
+    assert!(package.contains("<glob pattern=\"*.dicom\"/>"));
+    let plist = file_associations::plist_registration(&application);
+    assert!(plist.contains("<key>CFBundleTypeName</key><string>DICOM &lt;image&gt;</string>"));
+    assert!(plist.contains("<array><string>dcm</string><string>dicom</string></array>"));
+
+    let record = build_for(Platform::Linux, &application, &root, "metis-app", &staged)
+        .expect("Linux package");
+    assert!(
+        record
+            .files
+            .iter()
+            .any(|file| file.destination == "usr/share/mime/packages/org.atlas.metis.demo.xml")
+    );
+    fs::remove_dir_all(root).expect("remove package fixture");
+}

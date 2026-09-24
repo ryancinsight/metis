@@ -25,6 +25,8 @@ pub(crate) fn create(directory: &Path) -> Result<()> {
         entry: "metis-app".to_owned(),
         icon: None,
         arguments: Vec::new(),
+        url_schemes: Vec::new(),
+        file_associations: Vec::new(),
         binaries: vec![Binary {
             package: "metis-app".to_owned(),
             bin: "metis-app".to_owned(),

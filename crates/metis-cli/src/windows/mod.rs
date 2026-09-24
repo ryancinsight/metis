@@ -12,11 +12,13 @@
 mod database;
 mod encoding;
 mod ffi;
+mod file_associations;
 mod package;
 mod paths;
 mod payload;
 mod schema;
 mod shortcut;
+mod url_schemes;
 
 pub(crate) use package::{InstallerSpec, build, inspect};
 
