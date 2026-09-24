@@ -4,7 +4,7 @@ use super::Typeface;
 use super::faces;
 use super::glyf::Transform;
 use super::raster::{Canvas, Outline};
-use crate::framebuffer::{Color, Framebuffer, SourceOver};
+use crate::framebuffer::{Color, Framebuffer, Rect, SourceOver};
 
 /// Glyph stroke weight, selecting the embedded face.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Default)]
@@ -95,6 +95,42 @@ impl TextStyle {
         self.size.pixels() / f64::from(face.units_per_em())
     }
 
+    /// The device pixels [`draw_text`] can change for `text` with its pen at
+    /// `(x, y)`, or `None` for a run with no characters.
+    ///
+    /// The bound is the face's glyph box placed at the first and last pen
+    /// positions, widened by one pixel for antialiasing, so it holds every
+    /// outline whatever the characters are.
+    #[must_use]
+    pub fn extent(self, x: i32, y: i32, text: &str) -> Option<Rect> {
+        if !text.chars().any(|character| character != '\n') {
+            return None;
+        }
+        let face = self.weight.face();
+        let scale = self.scale(face);
+        let baseline = f64::from(face.ascender()).mul_add(scale, f64::from(y));
+        let left = f64::from(face.min_x().min(0)).mul_add(scale, f64::from(x));
+        let right =
+            f64::from(face.max_x().max(0)).mul_add(scale, f64::from(x) + self.advance(text));
+        let top = f64::from(face.max_y()).mul_add(-scale, baseline);
+        let bottom = f64::from(face.min_y()).mul_add(-scale, baseline);
+        // A size is at most `TextSize::MAX` and a run's advance is finite, so
+        // each edge is a finite device coordinate; saturation keeps it an i32.
+        #[expect(
+            clippy::cast_possible_truncation,
+            reason = "the saturating float-to-int cast is the intended clamp"
+        )]
+        let pixel = |value: f64| value as i32;
+        let (left, top) = (pixel(left.floor()) - 1, pixel(top.floor()) - 1);
+        let (right, bottom) = (pixel(right.ceil()) + 1, pixel(bottom.ceil()) + 1);
+        Some(Rect::new(
+            left,
+            top,
+            right.saturating_sub(left),
+            bottom.saturating_sub(top),
+        ))
+    }
+
     /// Width of `text` in device pixels: the sum of its glyph advances.
     /// Newlines have no advance.
     #[must_use]
@@ -135,15 +171,16 @@ pub fn draw_text(fb: &mut Framebuffer, x: i32, y: i32, text: &str, style: TextSt
     let face = style.weight.face();
     let scale = style.scale(face);
     let baseline = f64::from(face.ascender()).mul_add(scale, f64::from(y));
-    let surface_width = f64::from(fb.width());
+    let clip = fb.clip();
+    let clip_right = f64::from(clip.right());
     let mut pen = f64::from(x);
     let mut outline = Outline::default();
     let mut canvas = Canvas::default();
     // No glyph reaches further left of its pen than the face's bounding box,
-    // so once that edge is past the surface nothing later can be visible.
+    // so once that edge is past the clip nothing later can be visible.
     let overhang = f64::from(face.min_x()) * scale;
     for character in text.chars().filter(|character| *character != '\n') {
-        if pen + overhang >= surface_width {
+        if pen + overhang >= clip_right {
             break;
         }
         let glyph = face.glyph(character);
@@ -159,11 +196,13 @@ pub fn draw_text(fb: &mut Framebuffer, x: i32, y: i32, text: &str, style: TextSt
         let Some(bounds) = outline.bounds() else {
             continue;
         };
-        let visible = |start: i32, end: i32, limit: u32| {
-            i64::from(end) > 0 && i64::from(start) < i64::from(limit)
+        // A glyph wholly outside the clip is skipped before its outline is
+        // rasterized, which is where a glyph's cost lies.
+        let visible = |start: i32, end: i32, low: u32, high: u32| {
+            i64::from(end) > i64::from(low) && i64::from(start) < i64::from(high)
         };
-        if !visible(bounds.left, bounds.right, fb.width())
-            || !visible(bounds.top, bounds.bottom, fb.height())
+        if !visible(bounds.left, bounds.right, clip.left(), clip.right())
+            || !visible(bounds.top, bounds.bottom, clip.top(), clip.bottom())
         {
             continue;
         }

@@ -3,8 +3,11 @@
 use metis_core::error::{ErrorCode, MetisError, Result};
 use std::fmt;
 
+mod clip;
 mod composite;
 
+pub use clip::Clip;
+use clip::ClipScope;
 pub(crate) use composite::SourceOver;
 
 /// Maximum storage: 16,777,216 pixels, or 64 MiB of packed RGBA.
@@ -140,11 +143,15 @@ impl Rect {
 }
 
 /// Packed ARGB storage with immutable dimensions and checked allocation.
+///
+/// Writes land only inside the current [`Clip`], the whole surface unless a
+/// [`Self::render_clipped`] call narrows it; reads see every pixel.
 #[derive(Debug, Clone)]
 pub struct Framebuffer {
     width: u32,
     height: u32,
     pixels: Vec<u32>,
+    clip: Clip,
 }
 
 impl Framebuffer {
@@ -175,7 +182,49 @@ impl Framebuffer {
             width,
             height,
             pixels,
+            clip: Clip::new(0, 0, width, height),
         })
+    }
+
+    pub(crate) const fn surface(&self) -> Clip {
+        Clip::new(0, 0, self.width, self.height)
+    }
+
+    pub(crate) const fn set_clip(&mut self, clip: Clip) {
+        self.clip = clip;
+    }
+
+    /// The region writes may currently change.
+    #[must_use]
+    pub const fn clip(&self) -> Clip {
+        self.clip
+    }
+
+    /// Runs `draw` with writes confined to `region` on the surface, then
+    /// restores the whole-surface clip.
+    ///
+    /// Every pixel outside `region` keeps its value, and every pixel inside
+    /// it receives exactly what an unclipped draw would give it: rasterizers
+    /// evaluate pixels independently, so narrowing the clip changes which
+    /// pixels are computed, never their values.
+    ///
+    /// # Panics
+    ///
+    /// Panics only if `draw` does; the whole-surface clip is restored first.
+    pub fn render_clipped<R>(&mut self, region: Rect, draw: impl FnOnce(&mut Self) -> R) -> R {
+        let bound = |start: i32, extent: i32, limit: u32| {
+            let low = i64::from(start).clamp(0, i64::from(limit));
+            let high = (i64::from(start) + i64::from(extent.max(0))).clamp(low, i64::from(limit));
+            let fits = "invariant: a coordinate clamped to the surface fits u32";
+            (
+                u32::try_from(low).expect(fits),
+                u32::try_from(high).expect(fits),
+            )
+        };
+        let (left, right) = bound(region.x, region.width, self.width);
+        let (top, bottom) = bound(region.y, region.height, self.height);
+        let scope = ClipScope::narrow(self, Clip::new(left, top, right, bottom));
+        draw(scope.surface)
     }
 
     /// Horizontal pixel count.
@@ -206,9 +255,19 @@ impl Framebuffer {
         &mut self.pixels
     }
 
-    /// Replaces every pixel with the supplied straight RGBA color.
+    /// Replaces every pixel inside the clip with the supplied straight RGBA
+    /// color.
     pub fn clear(&mut self, color: Color) {
-        self.pixels.fill(pack_color(color));
+        let packed = pack_color(color);
+        if self.clip == self.surface() {
+            self.pixels.fill(packed);
+            return;
+        }
+        let clip = self.clip;
+        for row in clip.top()..clip.bottom() {
+            self.row_span_mut(row, clip.left(), clip.right())
+                .fill(packed);
+        }
     }
 
     fn index(&self, x: i32, y: i32) -> Option<usize> {
@@ -220,9 +279,18 @@ impl Framebuffer {
         usize::try_from(u64::from(y) * u64::from(self.width) + u64::from(x)).ok()
     }
 
-    /// Overwrites an in-bounds pixel; off-screen writes are clipped.
+    /// The storage index of a pixel writes may change.
+    fn writable_index(&self, x: i32, y: i32) -> Option<usize> {
+        let index = self.index(x, y)?;
+        let fits = "invariant: an indexed pixel's coordinates are nonnegative";
+        self.clip
+            .contains(u32::try_from(x).expect(fits), u32::try_from(y).expect(fits))
+            .then_some(index)
+    }
+
+    /// Overwrites a pixel inside the clip; other writes are dropped.
     pub fn set_pixel(&mut self, x: i32, y: i32, color: Color) {
-        if let Some(index) = self.index(x, y) {
+        if let Some(index) = self.writable_index(x, y) {
             self.pixels[index] = pack_color(color);
         }
     }
@@ -234,7 +302,7 @@ impl Framebuffer {
     /// Span filling shares this arithmetic through the same precomputed
     /// source terms, so a single pixel and a filled run composite identically.
     pub fn blend_pixel(&mut self, x: i32, y: i32, src: Color) {
-        let Some(index) = self.index(x, y) else {
+        let Some(index) = self.writable_index(x, y) else {
             return;
         };
         let source = SourceOver::new(src);
@@ -244,17 +312,18 @@ impl Framebuffer {
         self.pixels[index] = source.apply(self.pixels[index]);
     }
 
-    /// Borrows the visible pixels of row `y` between the `left` and `right`
+    /// Borrows the writable pixels of row `y` between the `left` and `right`
     /// column bounds.
     ///
-    /// Bounds outside the surface yield an empty slice, so a caller traverses
-    /// only visible work and the pixel loop needs no per-pixel bounds test.
+    /// The span is clamped to the clip, and a row outside it yields an empty
+    /// slice, so the pixel loop needs no per-pixel bounds test. A caller that
+    /// pairs columns with the returned pixels bounds `left` by the clip first.
     pub(crate) fn row_span_mut(&mut self, y: u32, left: u32, right: u32) -> &mut [u32] {
-        if y >= self.height {
+        if y < self.clip.top() || y >= self.clip.bottom() {
             return &mut [];
         }
-        let left = left.min(self.width);
-        let right = right.min(self.width);
+        let left = left.clamp(self.clip.left(), self.clip.right());
+        let right = right.clamp(left, self.clip.right());
         if right <= left {
             return &mut [];
         }

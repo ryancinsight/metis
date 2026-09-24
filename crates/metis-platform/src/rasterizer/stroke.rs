@@ -1,6 +1,6 @@
 //! Bounded width-aware polyline rasterization with explicit caps and joins.
 
-use crate::framebuffer::{Color, Framebuffer};
+use crate::framebuffer::{Color, Framebuffer, Rect};
 use metis_core::error::{ErrorCode, MetisError, Result};
 use std::num::NonZeroU32;
 
@@ -111,12 +111,32 @@ pub fn draw_polyline(
     }
 }
 
-fn stroke_bounds(
-    fb: &Framebuffer,
+/// The device pixels [`draw_polyline`] can change, or `None` without points.
+///
+/// # Panics
+///
+/// Does not panic: each edge is clamped to the `i32` range before conversion.
+#[must_use]
+pub fn polyline_extent(points: &[(i32, i32)], width: StrokeWidth, join: LineJoin) -> Option<Rect> {
+    let (min_x, max_x, min_y, max_y) = unclipped_bounds(points, width, join)?;
+    let saturate = |value: i64| {
+        i32::try_from(value.clamp(i64::from(i32::MIN), i64::from(i32::MAX)))
+            .expect("invariant: a value clamped to the i32 range fits i32")
+    };
+    Some(Rect::new(
+        saturate(min_x),
+        saturate(min_y),
+        saturate(max_x - min_x + 1),
+        saturate(max_y - min_y + 1),
+    ))
+}
+
+/// Inclusive `(min_x, max_x, min_y, max_y)` the stroke can reach.
+fn unclipped_bounds(
     points: &[(i32, i32)],
     width: StrokeWidth,
     join: LineJoin,
-) -> Option<(i32, i32, i32, i32)> {
+) -> Option<(i64, i64, i64, i64)> {
     let first = points.first()?;
     let (mut min_x, mut max_x, mut min_y, mut max_y) = (
         i64::from(first.0),
@@ -136,14 +156,26 @@ fn stroke_bounds(
         LineJoin::Miter => i64::from(width.get()) * 2,
         LineJoin::Bevel | LineJoin::Round => i64::from(width.get()),
     };
-    min_x = min_x.saturating_sub(expansion).max(0);
-    min_y = min_y.saturating_sub(expansion).max(0);
-    max_x = max_x
-        .saturating_add(expansion)
-        .min(i64::from(fb.width()) - 1);
-    max_y = max_y
-        .saturating_add(expansion)
-        .min(i64::from(fb.height()) - 1);
+    Some((
+        min_x.saturating_sub(expansion),
+        max_x.saturating_add(expansion),
+        min_y.saturating_sub(expansion),
+        max_y.saturating_add(expansion),
+    ))
+}
+
+fn stroke_bounds(
+    fb: &Framebuffer,
+    points: &[(i32, i32)],
+    width: StrokeWidth,
+    join: LineJoin,
+) -> Option<(i32, i32, i32, i32)> {
+    let (min_x, max_x, min_y, max_y) = unclipped_bounds(points, width, join)?;
+    let clip = fb.clip();
+    let min_x = min_x.max(i64::from(clip.left()));
+    let min_y = min_y.max(i64::from(clip.top()));
+    let max_x = max_x.min(i64::from(clip.right()) - 1);
+    let max_y = max_y.min(i64::from(clip.bottom()) - 1);
     if min_x > max_x || min_y > max_y {
         return None;
     }

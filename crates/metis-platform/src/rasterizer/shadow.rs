@@ -101,6 +101,31 @@ impl BoxShadow {
     pub const fn color(self) -> Color {
         self.color
     }
+
+    /// The device pixels [`draw_box_shadow`] can change for `border_box`:
+    /// the offset box widened by the blur's reach on every side.
+    ///
+    /// # Panics
+    ///
+    /// Does not panic: the reach of a blur at most [`Self::MAX_BLUR`] fits
+    /// `i32`.
+    #[must_use]
+    pub fn extent(self, border_box: Rect) -> Rect {
+        let reach = i32::try_from(kernel::reach(self.blur))
+            .expect("invariant: the reach of a bounded blur fits i32");
+        Rect::new(
+            border_box
+                .x
+                .saturating_add(self.offset_x)
+                .saturating_sub(reach),
+            border_box
+                .y
+                .saturating_add(self.offset_y)
+                .saturating_sub(reach),
+            border_box.width.saturating_add(reach.saturating_mul(2)),
+            border_box.height.saturating_add(reach.saturating_mul(2)),
+        )
+    }
 }
 
 /// Paints an outer box shadow for `border_box` beneath its element.
@@ -143,12 +168,13 @@ pub fn draw_box_shadow(
     let reach = kernel.reach;
     let origin_x = i64::from(border_box.x) + i64::from(shadow.offset_x);
     let origin_y = i64::from(border_box.y) + i64::from(shadow.offset_y);
-    let visible = |start: i64, extent: i64, limit: u32| {
-        (start - reach).clamp(0, i64::from(limit))
-            ..(start + extent + reach).clamp(0, i64::from(limit))
+    let clip = fb.clip();
+    let visible = |start: i64, extent: i64, low: u32, high: u32| {
+        let (low, high) = (i64::from(low), i64::from(high));
+        (start - reach).clamp(low, high)..(start + extent + reach).clamp(low, high)
     };
-    let columns = visible(origin_x, shape.width, fb.width());
-    let rows = visible(origin_y, shape.height, fb.height());
+    let columns = visible(origin_x, shape.width, clip.left(), clip.right());
+    let rows = visible(origin_y, shape.height, clip.top(), clip.bottom());
     if columns.is_empty() || rows.is_empty() {
         return;
     }
