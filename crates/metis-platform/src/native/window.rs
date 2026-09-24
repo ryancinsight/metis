@@ -7,7 +7,7 @@
 //! translation.
 
 use crate::Framebuffer;
-use moirai_pal::windows::window::NativeWindow;
+use moirai_pal::windows::window::{NativeWindow, WindowPlacement};
 use std::io;
 use std::time::Duration;
 
@@ -147,6 +147,14 @@ impl NativeSurface {
             Self::new_with_accessibility(&self.config, self.accessibility_tree.clone())?;
         self.window = replacement.window;
         Ok(())
+    }
+
+    /// Reads the window's restored rectangle and maximized state for saving.
+    ///
+    /// # Errors
+    /// Returns the native error, or `InvalidInput` once the window is closed.
+    pub fn placement(&self) -> io::Result<WindowPlacement> {
+        self.window.placement()
     }
 
     /// Returns whether the native window has completed destruction.

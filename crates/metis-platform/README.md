@@ -139,6 +139,15 @@ argument. The launcher sees only a short list of desktop-session variables.
 It is detached rather than contained, because the browser it starts must
 outlive the request.
 
+`WindowStateFile` saves a `WindowState` to one host-chosen absolute path and
+loads it on the next launch; a missing file means no saved state. A save
+writes a fresh sibling file and renames it over the old one, so an
+interrupted save leaves the previous state intact. On Windows,
+`native::placement_from_state` feeds `WindowConfig::with_placement`, which
+restores the rectangle and maximized state before the window first appears,
+and `NativeSurface::placement` or `WebViewSurface::placement` reads the
+state to save when the window reports `CloseRequested`.
+
 Applications that use the native pixel surface can share the bounded host loop
 through `metis_platform::native::NativeApplication` and
 `run_native_application`. The application owns its state and frame, applies

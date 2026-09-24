@@ -16,6 +16,8 @@ pub mod scoped_opener;
 pub mod scoped_process;
 pub mod surface;
 pub mod typeface;
+#[cfg(not(target_arch = "wasm32"))]
+pub mod window_state_file;
 
 #[cfg(windows)]
 pub mod native;
@@ -49,3 +51,5 @@ pub use scoped_process::{
     ScopedProcessError, ScopedProcessOutput, ScopedProcessProvider,
 };
 pub use surface::PlatformSurface;
+#[cfg(not(target_arch = "wasm32"))]
+pub use window_state_file::WindowStateFile;

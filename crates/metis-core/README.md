@@ -84,3 +84,17 @@ assert_eq!(link.query_value("series"), Some("3"));
 assert!(DeepLink::parse("org.example.viewer://open/../etc", &schemes).is_err());
 # Ok::<(), metis_core::deep_link::DeepLinkError>(())
 ```
+
+`window_state` holds a window's restorable geometry, the value Tauri's
+window-state plugin saves: the restored rectangle (where the window returns
+when it is not maximized) and whether it is maximized. Its text form is
+bounded, and the decoder accepts only the exact form the encoder writes.
+
+```rust
+use metis_core::window_state::WindowState;
+
+let state = WindowState::new(-1_280, 40, 1_024, 768, true)?;
+assert_eq!(WindowState::decode(&state.encode())?, state);
+assert!(WindowState::decode("left=0\n").is_err());
+# Ok::<(), metis_core::window_state::WindowStateError>(())
+```

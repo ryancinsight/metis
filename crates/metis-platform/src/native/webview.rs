@@ -2,7 +2,7 @@
 
 use moirai_pal::windows::{
     webview::WebViewHost,
-    window::{NativeWindow, WindowConfig, WindowVisibility},
+    window::{NativeWindow, WindowConfig, WindowPlacement, WindowVisibility},
 };
 use std::{io, time::Duration};
 
@@ -54,6 +54,14 @@ impl WebViewSurface {
     /// `WebView2` error.
     pub fn resize(&mut self, width: u32, height: u32) -> io::Result<()> {
         self.host.resize(width, height)
+    }
+
+    /// Reads the parent window's restored rectangle and maximized state.
+    ///
+    /// # Errors
+    /// Returns the native error, or `InvalidInput` once the surface is closed.
+    pub fn placement(&self) -> io::Result<WindowPlacement> {
+        self.host.window_placement()
     }
 
     /// Changes page visibility without changing the parent HWND visibility.

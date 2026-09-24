@@ -2,11 +2,15 @@
 
 mod application;
 mod dialog;
+mod placement;
 mod webview;
 mod window;
 
 pub use application::{NativeApplication, NativeFlow, NativeHostError, run_native_application};
 pub use dialog::{DialogSelection, MAX_DIALOG_PATH_UNITS, pick};
+pub use placement::{
+    MAX_PLACEMENT_COORDINATE, WindowPlacement, placement_from_state, state_from_placement,
+};
 
 pub use webview::{
     MAX_WEBVIEW_CAPTURE_BYTES, MAX_WEBVIEW_EVENTS, MAX_WEBVIEW_MESSAGE_BYTES,
