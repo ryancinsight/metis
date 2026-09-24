@@ -53,39 +53,6 @@ impl Theme {
         }
     }
 
-    /// Every mode, in the order the theme control lists them.
-    pub const ALL: [Self; 4] = [Self::System, Self::Light, Self::Dark, Self::HighContrast];
-
-    /// Returns the label the theme control shows for this mode.
-    #[must_use]
-    pub const fn option_label(self) -> &'static str {
-        match self {
-            Self::System => "System preference",
-            Self::Light => "Light",
-            Self::Dark => "Dark",
-            Self::HighContrast => "High contrast",
-        }
-    }
-
-    /// Returns the `<option>` list for a theme `<select>` with `selected`
-    /// marked, so a host can reflect a mode chosen outside the control.
-    #[must_use]
-    pub fn options_markup(selected: Self) -> String {
-        let mut markup = String::with_capacity(192);
-        for mode in Self::ALL {
-            markup.push_str("<option value=\"");
-            markup.push_str(mode.css_value());
-            markup.push('"');
-            if mode == selected {
-                markup.push_str(" selected");
-            }
-            markup.push('>');
-            markup.push_str(mode.option_label());
-            markup.push_str("</option>");
-        }
-        markup
-    }
-
     /// Returns the reader-facing label for this mode.
     #[must_use]
     pub const fn label(self) -> &'static str {
@@ -120,22 +87,6 @@ mod tests {
             assert_eq!(expected.css_value(), value);
         }
         assert_eq!(Theme::default(), Theme::System);
-    }
-
-    #[test]
-    fn options_markup_lists_every_mode_and_marks_one() {
-        let markup = Theme::options_markup(Theme::Dark);
-        assert_eq!(markup.matches("<option ").count(), Theme::ALL.len());
-        assert_eq!(markup.matches(" selected").count(), 1);
-        assert!(markup.contains(r#"<option value="dark" selected>Dark</option>"#));
-        assert!(markup.contains(r#"<option value="system">System preference</option>"#));
-        // The mounted markup starts from the same options with the default
-        // selected, so the control and the declaration cannot drift.
-        let initial = Theme::options_markup(Theme::DEFAULT);
-        let authored = include_str!("controls.rs");
-        for option in initial.split_inclusive("</option>") {
-            assert!(authored.contains(option), "{option}");
-        }
     }
 
     #[test]
