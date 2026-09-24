@@ -19,6 +19,7 @@ mod artifacts;
 #[cfg(any(not(windows), test))]
 mod install;
 mod platform;
+pub(crate) mod web;
 
 #[cfg(any(not(windows), test))]
 pub(crate) use platform::{desktop_icon, desktop_word};
@@ -62,21 +63,25 @@ struct StagedPayload {
     entries: Vec<(PathBuf, String)>,
 }
 
-pub(crate) fn application(input: &Path, output: &Path, kind: OutputKind) -> Result<()> {
+pub(crate) fn application(
+    application: Application,
+    root: &Path,
+    output: &Path,
+    kind: OutputKind,
+) -> Result<()> {
     if matches!(kind, OutputKind::Installer) && !supports_host_package() {
         return Err("package requires an x86-64 Windows, macOS or Linux host".into());
     }
-    let (application, root) = Application::read(input)?;
-    let cargo_manifest = manifest::source(&root, &application.cargo_manifest)?;
+    let cargo_manifest = manifest::source(root, &application.cargo_manifest)?;
     #[cfg(windows)]
-    let icon = icon(&application, &root)?;
+    let icon = icon(&application, root)?;
     let output = absolute_output(output)?;
     if output.try_exists()? {
         return Err("output already exists; choose a new output directory".into());
     }
     let mut resources = Vec::new();
     for resource in &application.resources {
-        let source = manifest::source(&root, &resource.source)?;
+        let source = manifest::source(root, &resource.source)?;
         manifest::validate_resource_file(&source)?;
         resources.push((source, resource.destination.clone()));
     }
@@ -370,7 +375,6 @@ pub(super) fn copy(
     })
 }
 
-#[cfg(windows)]
 fn digest_file(path: &Path) -> Result<String> {
     let mut source = fs::File::open(path)?;
     let mut hash = moirai_crypto::Sha256::new();

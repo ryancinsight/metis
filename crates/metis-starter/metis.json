@@ -1,0 +1,9 @@
+{
+  "schema": 1,
+  "name": "Metis Starter",
+  "cargo_manifest": "Cargo.toml",
+  "frontend": {
+    "package": "metis-starter",
+    "directory": "frontend"
+  }
+}

@@ -4,6 +4,9 @@ Status: Accepted
 
 Date: 2026-09-23
 
+Revised 2026-09-24: building and serving moved from `scripts/starter.py`
+into `metis build` and `metis serve`, driven by the crate's `metis.json`.
+
 Driver: [METIS-STARTER-001](https://github.com/ryancinsight/metis/pull/387).
 
 ## Context
@@ -41,10 +44,17 @@ owning the page.
 - The template's `outline: none` on inputs and buttons is replaced with a
   `:focus-visible` outline, keeping keyboard focus visible
   ([ADR 0049](0049-keyboard-focus-ring.md)).
-- `scripts/starter.py` builds, serves and checks the page. `check` greets a
-  name through W3C WebDriver and requires the reply to equal the Rust wording
-  and the page to run exactly one script. With `--color-scheme` it pins light
-  or dark rendering through Chromium's `preferredColorScheme` setting, so
+- The crate carries a `metis.json` whose `frontend` names the page directory
+  and the package, so `metis build` and `metis serve` build and serve it as
+  `tauri build` and `tauri dev` do a Tauri project; the
+  [distribution manual](../manual/distribution.md#build-and-serve-a-browser-application)
+  owns the command contract. The page keeps its own copy of the Metis mark so
+  the starter is a self-contained template, as each create-tauri-app template
+  carries its own logos; a test holds it byte-identical to the canonical mark.
+- `scripts/starter.py` checks the page: it runs `metis serve`, greets a name
+  through W3C WebDriver and requires the reply to equal the Rust wording and
+  the page to run exactly one script. With `--color-scheme` it pins light or
+  dark rendering through Chromium's `preferredColorScheme` setting, so
   captures do not follow the host theme.
 
 ## Alternatives
@@ -63,7 +73,8 @@ migrating Tauri frontend keeps.
 The `greet` tests and doctests pin the wording, including an empty name and
 untrimmed spaces. `scripts/tests/test_starter.py` checks that:
 
-- every served file has one source;
+- the manifest builds this crate and a page with an `index.html`;
+- the page's Metis mark equals the canonical mark;
 - the page runs only the loader, which calls the export `browser.rs` defines;
 - the policy admits WebAssembly and nothing inline;
 - Rust binds exactly the ids the page declares;
@@ -71,7 +82,8 @@ untrimmed spaces. `scripts/tests/test_starter.py` checks that:
 
 The gate's WebAssembly stage compiles the crate. A WebDriver run on Edge
 155.0.4283.13 greeted `Metis` in both schemes and produced the manual's
-captures.
+captures, and repeated through `metis serve` after the commands replaced the
+script's build and serve steps.
 
 ## Limits
 

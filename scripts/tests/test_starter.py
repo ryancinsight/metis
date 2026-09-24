@@ -1,5 +1,6 @@
 """The starter page's structure and its agreement with the Rust crate."""
 import html.parser
+import json
 import pathlib
 import re
 import sys
@@ -9,7 +10,13 @@ sys.path.insert(0, str(pathlib.Path(__file__).resolve().parents[1]))
 import starter
 from browser_protocol import BrowserRuntimeError, WebDriverClient
 
-CRATE = starter.ROOT / "crates" / "metis-starter"
+CRATE = starter.STARTER
+FRONTEND = CRATE / "frontend"
+CANONICAL_MARK = starter.ROOT / "examples" / "browser" / "assets" / "metis-mark.svg"
+
+
+def _manifest() -> dict:
+    return json.loads(starter.MANIFEST.read_text(encoding="utf-8"))
 
 
 class _Page(html.parser.HTMLParser):
@@ -33,23 +40,27 @@ class _Page(html.parser.HTMLParser):
 
 def _page() -> _Page:
     page = _Page()
-    page.feed((starter.FRONTEND / "index.html").read_text(encoding="utf-8"))
+    page.feed((FRONTEND / "index.html").read_text(encoding="utf-8"))
     return page
 
 
 class StarterPageTests(unittest.TestCase):
-    def test_every_served_file_has_one_source(self):
-        for relative in starter.FRONTEND_FILES:
-            self.assertTrue((starter.FRONTEND / relative).is_file(), relative)
-        self.assertTrue(starter.METIS_MARK.is_file())
-        self.assertFalse((starter.FRONTEND / "assets" / starter.METIS_MARK.name).exists(),
-                         "the Metis mark is copied at build time, not duplicated")
+    def test_the_manifest_builds_this_crate_and_page(self):
+        frontend = _manifest()["frontend"]
+        package = re.search(r'^name = "([\w-]+)"$', (CRATE / "Cargo.toml").read_text(encoding="utf-8"),
+                            re.MULTILINE).group(1)
+        self.assertEqual(frontend["package"], package)
+        self.assertTrue((CRATE / frontend["directory"] / "index.html").is_file())
+
+    def test_the_mark_matches_the_canonical_mark(self):
+        self.assertEqual((FRONTEND / "assets" / "metis-mark.svg").read_bytes(), CANONICAL_MARK.read_bytes())
 
     def test_the_page_runs_only_the_module_loader(self):
         page = _page()
         self.assertEqual(page.scripts, [{"type": "module", "src": "main.js"}])
-        loader = (starter.FRONTEND / "main.js").read_text(encoding="utf-8")
-        self.assertIn(f'from "./{starter.MODULE}.js"', loader)
+        loader = (FRONTEND / "main.js").read_text(encoding="utf-8")
+        module = _manifest()["frontend"]["package"].replace("-", "_")
+        self.assertIn(f'from "./{module}.js"', loader)
         export = re.search(r"\.(\w+)\(\);", loader).group(1)
         rust = (CRATE / "src" / "browser.rs").read_text(encoding="utf-8")
         self.assertIn(f'pub extern "C" fn {export}()', rust)

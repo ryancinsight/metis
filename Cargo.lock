@@ -1106,6 +1106,7 @@ dependencies = [
  "moirai-core",
  "moirai-crypto",
  "moirai-executor",
+ "moirai-http",
  "moirai-transport",
  "serde",
  "serde_json",

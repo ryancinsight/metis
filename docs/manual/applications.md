@@ -28,18 +28,21 @@ import init from "./metis_starter.js";
 (await init()).metis_starter_start();
 ```
 
+In `crates/metis-starter`, as in a Tauri project:
+
 ```bash
-python scripts/starter.py build
-python scripts/starter.py serve
+metis serve
 ```
 
-`build` assembles `output/browser/starter/`, and `serve` prints a loopback
-address to open. With a W3C WebDriver endpoint, `check` types a name, submits
-the form and requires the reply Rust wrote. `--color-scheme light` or
-`--color-scheme dark` pins the rendering, and `--capture` writes the page
-image. The captures above come from
-`check --driver-url <endpoint> --color-scheme <scheme> --capture <path>` on
-Edge 155. The logo row pairs the Metis mark with the WebAssembly logo, since
+`metis serve` builds the page and serves it on `http://127.0.0.1:1420/`;
+`metis build` only builds, into `dist/`. The
+[distribution manual](distribution.md#build-and-serve-a-browser-application)
+describes the manifest and both commands. `python scripts/starter.py`, given a
+W3C WebDriver endpoint, runs `metis serve`, types a name, submits the form and
+requires the reply Rust wrote. `--color-scheme light` or `--color-scheme dark`
+pins the rendering, and `--capture` writes the page image. The captures above
+come from `--driver-url <endpoint> --color-scheme <scheme> --capture <path>`
+on Edge 155. The logo row pairs the Metis mark with the WebAssembly logo, since
 Tauri's logo is not licensed for reuse; [ADR 0050](../adr/0050-starter-application.md)
 records the other differences from the template.
 

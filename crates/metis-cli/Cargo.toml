@@ -21,6 +21,7 @@ metis-core.workspace = true
 moirai-crypto.workspace = true
 moirai-core.workspace = true
 moirai-executor.workspace = true
+moirai-http.workspace = true
 moirai-transport.workspace = true
 serde.workspace = true
 serde_json.workspace = true

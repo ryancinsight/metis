@@ -89,3 +89,114 @@ fn portable_build_target_is_host_native_except_for_windows_x64_msi() {
 fn package_host_matches_the_platform_emitter() {
     assert!(supports_host_package());
 }
+
+/// Workspace metadata for a browser package whose closure reaches
+/// `wasm-bindgen` through `bridge`, beside an unrelated member that locks
+/// another `wasm-bindgen`.
+fn module_metadata(bridge_bindgen: &str) -> serde_json::Value {
+    serde_json::json!({
+        "packages": [
+            {"id": "starter", "name": "metis-starter", "version": "0.1.0",
+             "targets": [{"name": "metis_starter", "kind": ["cdylib", "rlib"]}]},
+            {"id": "bridge", "name": "moirai-pal", "version": "0.6.0", "targets": []},
+            {"id": "bindgen-new", "name": "wasm-bindgen", "version": "0.2.128", "targets": []},
+            {"id": "bindgen-old", "name": "wasm-bindgen", "version": "0.2.100", "targets": []},
+            {"id": "other", "name": "other-member", "version": "0.1.0", "targets": []}
+        ],
+        "workspace_members": ["starter", "other"],
+        "resolve": {"nodes": [
+            {"id": "starter", "dependencies": ["bridge"]},
+            {"id": "bridge", "dependencies": [bridge_bindgen]},
+            {"id": "bindgen-new", "dependencies": []},
+            {"id": "bindgen-old", "dependencies": []},
+            {"id": "other", "dependencies": ["bindgen-old"]}
+        ]}
+    })
+}
+
+#[test]
+fn module_target_takes_the_bindgen_version_from_the_package_closure() {
+    let metadata = serde_json::to_vec(&module_metadata("bindgen-new")).expect("metadata");
+    let target = artifacts::module_target(&metadata, "metis-starter").expect("module target");
+    assert_eq!(target.package_id, "starter");
+    assert_eq!(target.target, "metis_starter");
+    assert_eq!(target.bindgen_version, "0.2.128");
+    let metadata = serde_json::to_vec(&module_metadata("bindgen-old")).expect("metadata");
+    let target = artifacts::module_target(&metadata, "metis-starter").expect("module target");
+    assert_eq!(target.bindgen_version, "0.2.100");
+}
+
+#[test]
+fn module_target_rejects_packages_it_cannot_bind() {
+    let mut document = module_metadata("bindgen-new");
+    document["resolve"]["nodes"][1]["dependencies"] =
+        serde_json::json!(["bindgen-new", "bindgen-old"]);
+    let two = serde_json::to_vec(&document).expect("metadata");
+    let error = artifacts::module_target(&two, "metis-starter").expect_err("two versions");
+    assert!(
+        error.to_string().contains("more than one wasm-bindgen"),
+        "{error}"
+    );
+    document["resolve"]["nodes"][1]["dependencies"] = serde_json::json!([]);
+    let none = serde_json::to_vec(&document).expect("metadata");
+    let error = artifacts::module_target(&none, "metis-starter").expect_err("no bindgen");
+    assert!(
+        error
+            .to_string()
+            .contains("does not depend on wasm-bindgen"),
+        "{error}"
+    );
+    document["packages"][0]["targets"][0]["kind"] = serde_json::json!(["rlib"]);
+    let library = serde_json::to_vec(&document).expect("metadata");
+    let error = artifacts::module_target(&library, "metis-starter").expect_err("no cdylib");
+    assert!(error.to_string().contains("no cdylib target"), "{error}");
+    let error = artifacts::module_target(&library, "moirai-pal").expect_err("not a member");
+    assert!(
+        error.to_string().contains("not a workspace member"),
+        "{error}"
+    );
+}
+
+#[test]
+fn module_artifact_is_the_reported_wasm_file() {
+    let target = artifacts::ModuleTarget {
+        package_id: "starter".into(),
+        target: "metis_starter".into(),
+        bindgen_version: "0.2.128".into(),
+    };
+    let root = std::env::current_dir().expect("working directory");
+    let wasm = root.join("metis_starter.wasm");
+    let message = |package: &str, files: Vec<std::path::PathBuf>| {
+        serde_json::json!({
+            "reason": "compiler-artifact",
+            "package_id": package,
+            "target": {"name": "metis_starter", "kind": ["cdylib", "rlib"]},
+            "filenames": files,
+        })
+        .to_string()
+    };
+    let noise = serde_json::json!({"reason": "build-finished", "success": true}).to_string();
+    let stream = [
+        message("elsewhere", vec![root.join("other.wasm")]),
+        message(
+            "starter",
+            vec![root.join("libmetis_starter.rlib"), wasm.clone()],
+        ),
+        noise,
+    ]
+    .join("\n");
+    assert_eq!(
+        artifacts::module(stream.as_bytes(), &target).expect("module"),
+        wasm
+    );
+    let doubled = format!("{stream}\n{}", message("starter", vec![wasm.clone()]));
+    assert!(
+        artifacts::module(doubled.as_bytes(), &target).is_err(),
+        "duplicate module"
+    );
+    let missing = message("elsewhere", vec![wasm]);
+    assert!(
+        artifacts::module(missing.as_bytes(), &target).is_err(),
+        "no module reported"
+    );
+}
