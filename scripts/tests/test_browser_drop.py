@@ -241,6 +241,20 @@ process.stdout.write(JSON.stringify({
 }));
 """
 
+# The first launch of node.exe on a hosted Windows runner includes loading and
+# on-access scanning of the executable; twice the first harness to run hit its
+# 10 s deadline with nothing written while every later one finished. The
+# per-harness deadlines bound the harness, so interpreter start is paid here,
+# once, under its own bound.
+NODE_FIRST_LAUNCH_SECONDS = 120
+
+
+def setUpModule() -> None:
+    if shutil.which("node"):
+        subprocess.run(
+            ["node", "-e", ""], check=True, capture_output=True, timeout=NODE_FIRST_LAUNCH_SECONDS
+        )
+
 
 class FileDropTests(unittest.TestCase):
     @staticmethod
