@@ -40,7 +40,9 @@ metis serve
 
 `metis serve` builds the page and serves it on `http://127.0.0.1:1420/`, the
 port a Tauri development server uses, until interrupted; `--port` selects
-another. `metis build` only builds. Both read `metis.json` here, whose
+another. On Windows, `metis dev --watch` opens the same page in a native
+window, as `tauri dev` does, and reloads it after each change. `metis build`
+only builds. Both read `metis.json` here, whose
 `frontend` names the page directory and this package. The build compiles the
 package for `wasm32-unknown-unknown`, generates the loader with the
 `wasm-bindgen` CLI whose version equals the locked `wasm-bindgen` crate
