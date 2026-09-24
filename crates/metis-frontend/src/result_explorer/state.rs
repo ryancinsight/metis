@@ -4,7 +4,7 @@ use super::{
     VisibleEntry,
 };
 use metis_core::error::{ErrorCode, MetisError, Result};
-use std::collections::VecDeque;
+use std::collections::{HashMap, VecDeque};
 
 mod mutations;
 mod visibility;
@@ -13,6 +13,35 @@ struct ResultGroup {
     id: GroupId,
     label: Box<str>,
     expanded: bool,
+    /// Retained rows for this patient, independent of the filter.
+    row_count: usize,
+}
+
+/// An empty vector with room for `capacity` values, or a bounded
+/// allocation error naming `what`.
+fn reserved<T>(capacity: usize, what: &'static str) -> Result<Vec<T>> {
+    let mut values = Vec::new();
+    values
+        .try_reserve(capacity)
+        .map_err(|_| MetisError::protocol(ErrorCode::PayloadTooLarge, what))?;
+    Ok(values)
+}
+
+/// Maps each distinct label to its position in `labels`, in one pass.
+fn label_index<'a>(
+    labels: impl ExactSizeIterator<Item = &'a str>,
+) -> Result<HashMap<&'a str, usize>> {
+    let mut index = HashMap::new();
+    index.try_reserve(labels.len()).map_err(|_| {
+        MetisError::protocol(
+            ErrorCode::PayloadTooLarge,
+            "Result explorer label index allocation failed",
+        )
+    })?;
+    for (position, label) in labels.enumerate() {
+        index.entry(label).or_insert(position);
+    }
+    Ok(index)
 }
 
 fn validate_filter(value: &str) -> Result<()> {
@@ -167,68 +196,53 @@ impl ResultExplorer {
         Ok(outcome)
     }
 
+    /// Regroups rows by patient in first-seen order, keeping each surviving
+    /// group's identity and disclosure. One hash lookup per row replaces a
+    /// scan of every group, and a label is copied only for a new group.
     fn rebuild_groups(&mut self) -> Result<()> {
         let previous = std::mem::take(&mut self.groups);
-        let mut groups = Vec::new();
-        groups.try_reserve(self.rows.len()).map_err(|_| {
+        let previous_index = label_index(previous.iter().map(|group| group.label.as_ref()))?;
+        let mut groups: Vec<ResultGroup> = reserved(
+            self.rows.len(),
+            "Result explorer group index allocation failed",
+        )?;
+        let mut current: HashMap<&str, usize> = HashMap::new();
+        current.try_reserve(self.rows.len()).map_err(|_| {
             MetisError::protocol(
                 ErrorCode::PayloadTooLarge,
-                "Result explorer group index allocation failed",
+                "Result explorer label index allocation failed",
             )
         })?;
-        for index in 0..self.rows.len() {
-            let label = self
-                .rows
-                .get(index)
-                .map(ResultRow::patient_id)
-                .ok_or_else(|| {
-                    MetisError::protocol(
-                        ErrorCode::MalformedPayload,
-                        "Result explorer row index is inconsistent",
-                    )
-                })?
-                .to_owned();
-            if groups
-                .iter()
-                .any(|group: &ResultGroup| group.label.as_ref() == label.as_str())
-            {
+        let mut next_group_id = self.next_group_id;
+        for row in &self.rows {
+            let label = row.patient_id();
+            if let Some(position) = current.get(label) {
+                if let Some(group) = groups.get_mut(*position) {
+                    group.row_count += 1;
+                }
                 continue;
             }
-            let (id, expanded) = if let Some(group) = previous
-                .iter()
-                .find(|group| group.label.as_ref() == label.as_str())
+            if groups.len() == MAX_RESULT_GROUPS {
+                continue;
+            }
+            let (id, expanded) = match previous_index
+                .get(label)
+                .and_then(|position| previous.get(*position))
             {
-                (group.id, group.expanded)
-            } else {
-                (self.allocate_group_id()?, true)
+                Some(group) => (group.id, group.expanded),
+                None => (allocate_group_id(&mut next_group_id)?, true),
             };
+            current.insert(label, groups.len());
             groups.push(ResultGroup {
                 id,
                 label: label.into(),
                 expanded,
+                row_count: 1,
             });
-            if groups.len() == MAX_RESULT_GROUPS {
-                break;
-            }
         }
+        self.next_group_id = next_group_id;
         self.groups = groups;
         Ok(())
-    }
-
-    fn allocate_group_id(&mut self) -> Result<GroupId> {
-        let id = GroupId::try_from(self.next_group_id).map_err(|_| {
-            MetisError::protocol(
-                ErrorCode::MalformedPayload,
-                "Result explorer group identity exhausted",
-            )
-        })?;
-        self.next_group_id = self.next_group_id.checked_add(1).ok_or_else(|| {
-            MetisError::protocol(
-                ErrorCode::MalformedPayload,
-                "Result explorer group identity exhausted",
-            )
-        })?;
-        Ok(id)
     }
 
     fn retain_selection(&mut self) {
@@ -239,4 +253,17 @@ impl ResultExplorer {
             self.selected = None;
         }
     }
+}
+
+/// Issues the next group identity from `next`, failing once exhausted.
+fn allocate_group_id(next: &mut u64) -> Result<GroupId> {
+    let exhausted = || {
+        MetisError::protocol(
+            ErrorCode::MalformedPayload,
+            "Result explorer group identity exhausted",
+        )
+    };
+    let id = GroupId::try_from(*next).map_err(|_| exhausted())?;
+    *next = next.checked_add(1).ok_or_else(exhausted)?;
+    Ok(id)
 }

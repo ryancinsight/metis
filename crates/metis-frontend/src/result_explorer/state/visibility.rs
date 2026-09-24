@@ -1,6 +1,6 @@
 use super::{
-    ErrorCode, MetisError, RESULT_PAGE_SIZE, Result, ResultExplorer, ResultRow, SortDirection,
-    SortKey, VisibleEntry, VisibleIndex,
+    RESULT_PAGE_SIZE, Result, ResultExplorer, ResultRow, SortDirection, SortKey, VisibleEntry,
+    VisibleIndex, label_index, reserved,
 };
 
 impl ResultExplorer {
@@ -11,16 +11,11 @@ impl ResultExplorer {
         match index {
             VisibleIndex::Group(index) => {
                 let group = self.groups.get(index)?;
-                let row_count = self
-                    .rows
-                    .iter()
-                    .filter(|row| row.patient_id() == group.label.as_ref())
-                    .count();
                 Some(VisibleEntry::Group {
                     id: group.id,
                     label: &group.label,
                     expanded: group.expanded,
-                    row_count,
+                    row_count: group.row_count,
                 })
             }
             VisibleIndex::Row(index) => self.rows.get(index).map(VisibleEntry::Row),
@@ -40,60 +35,72 @@ impl ResultExplorer {
         })
     }
 
+    /// Rebuilds the flattened tree: filtered rows in sort order, bucketed
+    /// under their patient group, groups ordered by the sort key.
+    ///
+    /// Rows are assigned to groups through one label lookup each and then
+    /// placed with a stable counting sort, so the rebuild costs one sort of
+    /// the filtered rows plus linear passes, not a scan of every row per group.
     pub(crate) fn rebuild_visible(&mut self) -> Result<()> {
-        let mut row_indices = Vec::new();
-        row_indices.try_reserve(self.rows.len()).map_err(|_| {
-            MetisError::protocol(
-                ErrorCode::PayloadTooLarge,
-                "Result explorer row index allocation failed",
-            )
-        })?;
-        for (index, row) in self.rows.iter().enumerate() {
-            if matches_filter(row, &self.filter) {
-                row_indices.push(index);
-            }
-        }
+        const ROWS: &str = "Result explorer row index allocation failed";
+        let mut row_indices: Vec<usize> = reserved(self.rows.len(), ROWS)?;
+        row_indices.extend(
+            self.rows
+                .iter()
+                .enumerate()
+                .filter(|(_, row)| matches_filter(row, &self.filter))
+                .map(|(index, _)| index),
+        );
         row_indices.sort_by(|left, right| self.compare_rows(*left, *right));
-        let mut visible = Vec::new();
-        visible
-            .try_reserve(row_indices.len().saturating_add(self.groups.len()))
-            .map_err(|_| {
-                MetisError::protocol(
-                    ErrorCode::PayloadTooLarge,
-                    "Result explorer visible index allocation failed",
-                )
-            })?;
-        let mut group_indices = Vec::new();
-        group_indices.try_reserve(self.groups.len()).map_err(|_| {
-            MetisError::protocol(
-                ErrorCode::PayloadTooLarge,
-                "Result explorer group index allocation failed",
-            )
-        })?;
-        for (group_index, group) in self.groups.iter().enumerate() {
-            let group_rows = row_indices.iter().copied().filter(|index| {
-                self.rows
-                    .get(*index)
-                    .is_some_and(|row| row.patient_id() == group.label.as_ref())
-            });
-            if group_rows.clone().next().is_some() {
-                group_indices.push(group_index);
+
+        let groups = label_index(self.groups.iter().map(|group| group.label.as_ref()))?;
+        let mut row_group: Vec<usize> = reserved(row_indices.len(), ROWS)?;
+        let mut bucket_start: Vec<usize> = reserved(self.groups.len() + 1, ROWS)?;
+        bucket_start.resize(self.groups.len() + 1, 0);
+        for index in &row_indices {
+            // Every retained row has a group; a missing one is skipped as
+            // the pre-bucketing implementation skipped it.
+            let group = self
+                .rows
+                .get(*index)
+                .and_then(|row| groups.get(row.patient_id()).copied())
+                .unwrap_or(self.groups.len());
+            row_group.push(group);
+            if let Some(count) = bucket_start.get_mut(group + 1) {
+                *count += 1;
             }
         }
-        group_indices.sort_by(|left, right| self.compare_groups(*left, *right, &row_indices));
-        for group_index in group_indices {
-            let Some(group) = self.groups.get(group_index) else {
-                continue;
-            };
-            let group_rows = row_indices.iter().copied().filter(|index| {
-                self.rows
-                    .get(*index)
-                    .is_some_and(|row| row.patient_id() == group.label.as_ref())
-            });
-            let group_rows = group_rows.peekable();
-            visible.push(VisibleIndex::Group(group_index));
-            if group.expanded {
-                visible.extend(group_rows.map(VisibleIndex::Row));
+        for position in 1..bucket_start.len() {
+            bucket_start[position] += bucket_start[position - 1];
+        }
+        let mut next_slot = bucket_start.clone();
+        let mut bucketed: Vec<usize> = reserved(row_indices.len(), ROWS)?;
+        bucketed.resize(row_indices.len(), usize::MAX);
+        for (index, group) in row_indices.iter().zip(&row_group) {
+            if let Some(slot) = next_slot.get_mut(*group) {
+                bucketed[*slot] = *index;
+                *slot += 1;
+            }
+        }
+
+        let bucket = |group: usize| &bucketed[bucket_start[group]..bucket_start[group + 1]];
+        let mut group_order: Vec<usize> = reserved(
+            self.groups.len(),
+            "Result explorer group index allocation failed",
+        )?;
+        group_order.extend((0..self.groups.len()).filter(|group| !bucket(*group).is_empty()));
+        group_order.sort_by(|left, right| {
+            self.compare_groups(*left, *right, bucket(*left)[0], bucket(*right)[0])
+        });
+
+        let mut visible = reserved(
+            row_indices.len().saturating_add(group_order.len()),
+            "Result explorer visible index allocation failed",
+        )?;
+        for group in group_order {
+            visible.push(VisibleIndex::Group(group));
+            if self.groups[group].expanded {
+                visible.extend(bucket(group).iter().copied().map(VisibleIndex::Row));
             }
         }
         self.visible = visible;
@@ -103,35 +110,23 @@ impl ResultExplorer {
         Ok(())
     }
 
-    fn compare_groups(&self, left: usize, right: usize, rows: &[usize]) -> std::cmp::Ordering {
-        let Some(left_group) = self.groups.get(left) else {
-            return std::cmp::Ordering::Equal;
-        };
-        let Some(right_group) = self.groups.get(right) else {
-            return std::cmp::Ordering::Equal;
-        };
+    /// Orders two non-empty groups: by label under the patient key, otherwise
+    /// by each group's first row in the current row order.
+    fn compare_groups(
+        &self,
+        left: usize,
+        right: usize,
+        left_first: usize,
+        right_first: usize,
+    ) -> std::cmp::Ordering {
         if self.sort.key() == SortKey::Patient {
+            let (left, right) = (&self.groups[left].label, &self.groups[right].label);
             return match self.sort.direction() {
-                SortDirection::Ascending => left_group.label.cmp(&right_group.label),
-                SortDirection::Descending => right_group.label.cmp(&left_group.label),
+                SortDirection::Ascending => left.cmp(right),
+                SortDirection::Descending => right.cmp(left),
             };
         }
-        let left_row = rows.iter().copied().find(|index| {
-            self.rows
-                .get(*index)
-                .is_some_and(|row| row.patient_id() == left_group.label.as_ref())
-        });
-        let right_row = rows.iter().copied().find(|index| {
-            self.rows
-                .get(*index)
-                .is_some_and(|row| row.patient_id() == right_group.label.as_ref())
-        });
-        match (left_row, right_row) {
-            (Some(left), Some(right)) => self.compare_rows(left, right),
-            (Some(_), None) => std::cmp::Ordering::Less,
-            (None, Some(_)) => std::cmp::Ordering::Greater,
-            (None, None) => left_group.id.cmp(&right_group.id),
-        }
+        self.compare_rows(left_first, right_first)
     }
 
     fn compare_rows(&self, left: usize, right: usize) -> std::cmp::Ordering {
