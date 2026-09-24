@@ -46,11 +46,6 @@ pub(super) struct Snapshot([u8; 32]);
 /// Runs the manifest entry once or reloads it after source/resource changes.
 pub(crate) fn run(args: &[OsString]) -> Result<()> {
     let (manifest_path, mode) = arguments(args.get(1..).unwrap_or_default())?;
-    if matches!(mode, DevMode::Watch) && !cfg!(windows) {
-        return Err(
-            "dev --watch currently requires the Windows filesystem notification host".into(),
-        );
-    }
     let root = match Manifest::read(&manifest_path)? {
         (Manifest::Web(application), root) => return browser::run(&application, &root, mode),
         (Manifest::Native(_), root) => root,
