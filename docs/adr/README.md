@@ -58,3 +58,4 @@
 | [0047](0047-truetype-text.md) | Antialiased TrueType text in the software renderer | Accepted |
 | [0048](0048-linear-gradient-backgrounds.md) | Linear gradient backgrounds | Accepted |
 | [0049](0049-keyboard-focus-ring.md) | Keyboard focus and its ring in the software form | Accepted |
+| [0050](0050-starter-application.md) | Starter application | Accepted |

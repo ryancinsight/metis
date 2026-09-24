@@ -218,8 +218,19 @@ class WebDriverClient:
             raise BrowserRuntimeError(f"WebDriver {method} {path}: {value['error']}: {_bounded_text(message, 'driver error')}")
         return value
 
-    def create_session(self, browser_name: str, device_scale_milli: Optional[int] = None, *, headless: bool = False) -> None:
-        """Create one session with a matrix-pinned browser name and scale."""
+    def create_session(
+        self,
+        browser_name: str,
+        device_scale_milli: Optional[int] = None,
+        *,
+        headless: bool = False,
+        chromium_arguments: Sequence[str] = (),
+    ) -> None:
+        """Create one session with a matrix-pinned browser name and scale.
+
+        `chromium_arguments` are extra command-line switches for Chrome or Edge;
+        other browsers reject them rather than ignore them.
+        """
         if not isinstance(browser_name, str) or not browser_name:
             raise BrowserRuntimeError("WebDriver browser name is empty")
         capabilities: Dict[str, Any] = {"browserName": browser_name}
@@ -236,6 +247,11 @@ class WebDriverClient:
                 raise BrowserRuntimeError(
                     "WebKit does not expose a WebDriver device-scale override; use scale 1"
                 )
+        if chromium_arguments:
+            if browser_name not in ("chrome", "MicrosoftEdge"):
+                raise BrowserRuntimeError("Chromium arguments apply only to Chrome and Edge")
+            option_name = "goog:chromeOptions" if browser_name == "chrome" else "ms:edgeOptions"
+            capabilities.setdefault(option_name, {}).setdefault("args", []).extend(chromium_arguments)
         if headless:
             if browser_name not in ("chrome", "MicrosoftEdge", "firefox"):
                 raise BrowserRuntimeError("headless capture is unavailable for this browser")

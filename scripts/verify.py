@@ -429,7 +429,7 @@ def run_gate():
         # collected by scripts/browser.py and the manual browser trace.
         cargo("wasm-libraries", ["build", "--lib", "--target", "wasm32-unknown-unknown",
                                  "-p", "metis-core", "-p", "metis-platform", "-p", "metis-ui-lang",
-                                 "-p", "metis-web"])
+                                 "-p", "metis-web", "-p", "metis-starter"])
         execute("browser-assets", [sys.executable, str(ROOT / "scripts" / "browser.py"), "build"],
                 seconds=300, cwd=ROOT)
         cargo("clippy", ["clippy", "--workspace", "--all-targets"], tail=["--", "-D", "warnings"])

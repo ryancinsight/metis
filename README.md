@@ -16,8 +16,9 @@ claims. Migrating an existing JavaScript frontend does not automatically remove
 its JavaScript, and Tauri API/plugin compatibility remains a mapped work item.
 
 The current implementation provides binary IPC, session capabilities, backend
-calculation and audit ownership, a software rasterizer, a headless form workflow
-and a runnable HTML5/CSS browser workbench. The browser workbench keeps state and
+calculation and audit ownership, a software rasterizer, a headless form workflow,
+a runnable HTML5/CSS browser workbench, and a [starter application](crates/metis-starter/README.md)
+with create-tauri-app's page and a Rust/WASM greeting behind a two-line loader. The browser workbench keeps state and
 events in Rust/WASM while Moirai owns browser handles; its external assets use a
 strict same-origin CSP and its service bridge validates Origin before the
 upgrade, then binds grants to origin, window and session. The loopback bridge

@@ -21,6 +21,7 @@ members = [
     "crates/metis-cli",
     "crates/metis-app",
     "crates/metis-web",
+    "crates/metis-starter",
     "crates/metis-python",
 ]
 
