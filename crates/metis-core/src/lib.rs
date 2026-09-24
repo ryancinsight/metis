@@ -6,6 +6,7 @@ pub mod capability;
 pub mod crypto;
 pub mod error;
 pub mod host;
+pub mod input;
 pub mod protocol;
 
 pub use capability::{CapabilityGrantSpec, CapabilityScope, CapabilityToken, VerifiedCapability};
