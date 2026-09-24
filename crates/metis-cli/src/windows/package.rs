@@ -4,7 +4,7 @@ use super::database::{
     Value::{Null, Number, Stream, Text},
     guid,
 };
-use super::{payload, schema, shortcut, url_schemes};
+use super::{file_associations, payload, schema, shortcut, url_schemes};
 use std::{
     collections::BTreeMap,
     error::Error,
@@ -26,6 +26,7 @@ pub(crate) struct InstallerSpec<'a> {
     pub entry: &'a str,
     pub arguments: &'a [String],
     pub url_schemes: &'a [String],
+    pub file_associations: &'a [crate::manifest::FileAssociation],
     pub files: &'a [(PathBuf, String)],
     pub icon: Option<&'a Path>,
 }
@@ -241,7 +242,7 @@ fn write_icon(database: &Database, spec: &InstallerSpec<'_>) -> Result<(), Box<d
 }
 
 /// The entry component's extra rows: the maintenance location, the menu
-/// folder and shortcut, and its URL-scheme registration.
+/// folder and shortcut, and its URL-scheme and document-type registration.
 fn write_entry(
     database: &Database,
     spec: &InstallerSpec<'_>,
@@ -262,6 +263,14 @@ fn write_entry(
         USER_REGISTRY_ROOT,
         spec.url_schemes,
         spec.name,
+        component,
+        file,
+    )?;
+    file_associations::register(
+        database,
+        USER_REGISTRY_ROOT,
+        spec.file_associations,
+        spec.id,
         component,
         file,
     )

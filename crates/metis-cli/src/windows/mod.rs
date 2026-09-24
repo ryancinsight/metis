@@ -12,6 +12,7 @@
 mod database;
 mod encoding;
 mod ffi;
+mod file_associations;
 mod package;
 mod paths;
 mod payload;

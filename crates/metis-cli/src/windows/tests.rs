@@ -31,6 +31,11 @@ fn authored_package_retains_payload_identity_and_actions() {
         entry: "app.exe",
         arguments: &["60".into(), "2".into(), "0.2".into()],
         url_schemes: &["org.metis.package-test".into()],
+        file_associations: &[crate::manifest::FileAssociation {
+            extensions: vec!["mpt".into(), "mptx".into()],
+            mime_type: "application/x-metis-package-test".into(),
+            description: "Metis test document".into(),
+        }],
         files: &files,
         icon: Some(&icon),
     };
@@ -293,5 +298,23 @@ fn assert_entry_rows(database: &Database) {
             .strings("SELECT `Key` FROM `Registry` WHERE `Registry`='UP0'")
             .expect("URL protocol marker"),
         ["Software\\Classes\\org.metis.package-test"]
+    );
+    assert_eq!(
+        database
+            .strings("SELECT `Value` FROM `Registry` WHERE `Registry`='FC0'")
+            .expect("document open command"),
+        ["\"[#F0]\" \"%1\""]
+    );
+    assert_eq!(
+        database
+            .strings("SELECT `Key` FROM `Registry` WHERE `Registry`='FE0_1'")
+            .expect("extension listing"),
+        ["Software\\Classes\\.mptx\\OpenWithProgids"]
+    );
+    assert_eq!(
+        database
+            .strings("SELECT `Name` FROM `Registry` WHERE `Registry`='FE0_0'")
+            .expect("listed identifier"),
+        ["org.metis.package-test.document0"]
     );
 }
