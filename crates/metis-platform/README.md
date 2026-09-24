@@ -129,6 +129,16 @@ representations redact URL, header values and payload bytes. The provider is
 native-only and does not parse DICOM or expose a browser-controlled network
 object.
 
+`ScopedOpener` hands a URL to the user's default handler, as Tauri's opener
+plugin does, behind an `OPEN_EXTERNAL` capability witness. The host fixes the
+launcher (`OpenLauncher::platform_default()` finds `xdg-open`, `open` or the
+Windows URL protocol handler at its standard path, never on `PATH`) and an
+http(s) origin allowlist. The URL must be printable RFC 3986 ASCII with
+complete percent escapes and no credentials, and reaches the launcher as one
+argument. The launcher sees only a short list of desktop-session variables.
+It is detached rather than contained, because the browser it starts must
+outlive the request.
+
 Applications that use the native pixel surface can share the bounded host loop
 through `metis_platform::native::NativeApplication` and
 `run_native_application`. The application owns its state and frame, applies

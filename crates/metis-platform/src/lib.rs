@@ -11,6 +11,8 @@ pub mod scoped_file;
 #[cfg(not(target_arch = "wasm32"))]
 pub mod scoped_network;
 #[cfg(not(target_arch = "wasm32"))]
+pub mod scoped_opener;
+#[cfg(not(target_arch = "wasm32"))]
 pub mod scoped_process;
 pub mod surface;
 pub mod typeface;
@@ -33,6 +35,11 @@ pub use scoped_network::{
     MAX_SCOPED_HTTP_HEADERS, MAX_SCOPED_HTTP_METHOD_BYTES, MAX_SCOPED_HTTP_ORIGINS,
     MAX_SCOPED_HTTP_RESPONSE_BYTES, MAX_SCOPED_HTTP_URL_BYTES, ScopedHttpError, ScopedHttpProvider,
     ScopedHttpRequest, ScopedHttpResponse,
+};
+#[cfg(not(target_arch = "wasm32"))]
+pub use scoped_opener::{
+    MAX_OPEN_DEADLINE, MAX_OPEN_ORIGINS, MAX_OPEN_URL_BYTES, OpenError, OpenLauncher, OpenTarget,
+    ScopedOpener,
 };
 #[cfg(not(target_arch = "wasm32"))]
 pub use scoped_process::{
