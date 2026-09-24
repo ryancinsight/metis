@@ -57,12 +57,15 @@ pub const CLINICAL_SCREEN_XML: &str = r#"<screen id="main-screen" style="display
 </screen>"#;
 
 mod focus_ring;
+#[cfg(test)]
+mod repaint_tests;
 mod theme;
 use crate::{FormState, FrontendApp};
 use iris::render::RenderBackend;
 use metis_core::{ErrorCode, MetisError, Result};
 use metis_ipc::{IpcTransport, client::HandshakeError};
-use metis_ui_lang::{Color, LayoutViewport, MAX_SEMANTIC_TEXT_BYTES, compute_layout};
+use metis_platform::Framebuffer;
+use metis_ui_lang::{Color, Damage, LayoutViewport, MAX_SEMANTIC_TEXT_BYTES, compute_layout};
 
 /// Status badge color while a backend session is open.
 ///
@@ -72,6 +75,8 @@ pub const BADGE_READY: Color = Color::rgb(154, 230, 180);
 /// Status badge color once the backend session has closed, legible over
 /// either theme's header like [`BADGE_READY`].
 pub const BADGE_CLOSED: Color = Color::rgb(254, 178, 178);
+/// Surface color behind the authored form.
+const BACKDROP: Color = Color::rgb(240, 244, 248);
 
 impl<T: IpcTransport> FrontendApp<T> {
     /// Projects the owned state and renders the complete form.
@@ -161,11 +166,25 @@ impl<T: IpcTransport> FrontendApp<T> {
             &self.doc,
             LayoutViewport::with_scale(width, height, self.display_scale),
         )?;
-        self.framebuffer.clear(Color::rgb(240, 244, 248));
         self.append_focus_ring(&mut display)?;
-        self.framebuffer
-            .render(&display)
-            .unwrap_or_else(|never| match never {});
+        // Repaint only what changed since the painted frame: a keystroke
+        // changes one field, not the form.
+        let surface = metis_ui_lang::Rect::new(0, 0, width, height);
+        let damage = self.painted.as_ref().map_or(Damage::Full, |painted| {
+            display.damage_since(painted, surface)
+        });
+        let repaint = |framebuffer: &mut Framebuffer| {
+            framebuffer.clear(BACKDROP);
+            framebuffer
+                .render(&display)
+                .unwrap_or_else(|never| match never {});
+        };
+        match damage {
+            Damage::Unchanged => {}
+            Damage::Region(region) => self.framebuffer.render_clipped(region, repaint),
+            Damage::Full => repaint(&mut self.framebuffer),
+        }
+        self.painted = Some(display);
         Ok(())
     }
 

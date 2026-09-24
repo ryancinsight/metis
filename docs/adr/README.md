@@ -59,3 +59,4 @@
 | [0048](0048-linear-gradient-backgrounds.md) | Linear gradient backgrounds | Accepted |
 | [0049](0049-keyboard-focus-ring.md) | Keyboard focus and its ring in the software form | Accepted |
 | [0050](0050-starter-application.md) | Starter application | Accepted |
+| [0051](0051-damage-limited-repaint.md) | Damage-limited repaint | Accepted |

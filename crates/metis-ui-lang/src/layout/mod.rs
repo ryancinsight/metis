@@ -6,6 +6,7 @@
 //! the document at its laid-out anchor. Every declaration the style subset
 //! admits is painted; anything outside it is rejected when the style is parsed.
 
+mod damage;
 mod device;
 mod display;
 mod geometry;
@@ -22,6 +23,7 @@ mod sizing_tests;
 #[path = "../layout_tests.rs"]
 mod tests;
 
+pub use damage::Damage;
 pub use display::{DisplayCommand, DisplayList};
 pub use geometry::{LayoutViewport, compute_layout};
 pub use metis_platform::framebuffer::Rect;
