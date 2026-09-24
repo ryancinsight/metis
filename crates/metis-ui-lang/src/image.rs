@@ -295,18 +295,37 @@ impl ImagePlacement {
         }
     }
 
+    /// The destination's device pixels inside the framebuffer's clip, as
+    /// half-open `(left, top, right, bottom)`, or `None` when none are.
+    fn visible(&self, framebuffer: &Framebuffer) -> Option<(i64, i64, i64, i64)> {
+        let clip = framebuffer.clip();
+        let bound = |start: i32, extent: i32, low: u32, high: u32| {
+            let (low, high) = (i64::from(low), i64::from(high));
+            let start = i64::from(start);
+            (
+                start.clamp(low, high),
+                (start + i64::from(extent)).clamp(low, high),
+            )
+        };
+        let (left, right) = bound(
+            self.destination.x,
+            self.destination.width,
+            clip.left(),
+            clip.right(),
+        );
+        let (top, bottom) = bound(
+            self.destination.y,
+            self.destination.height,
+            clip.top(),
+            clip.bottom(),
+        );
+        (left < right && top < bottom).then_some((left, top, right, bottom))
+    }
+
     fn render_affine(&self, framebuffer: &mut Framebuffer, transform: AffineTransform) {
-        let destination_left = i64::from(self.destination.x);
-        let destination_top = i64::from(self.destination.y);
-        let destination_right = destination_left + i64::from(self.destination.width);
-        let destination_bottom = destination_top + i64::from(self.destination.height);
-        let clip_left = destination_left.clamp(0, i64::from(framebuffer.width()));
-        let clip_top = destination_top.clamp(0, i64::from(framebuffer.height()));
-        let clip_right = destination_right.clamp(0, i64::from(framebuffer.width()));
-        let clip_bottom = destination_bottom.clamp(0, i64::from(framebuffer.height()));
-        if clip_left >= clip_right || clip_top >= clip_bottom {
+        let Some((clip_left, clip_top, clip_right, clip_bottom)) = self.visible(framebuffer) else {
             return;
-        }
+        };
 
         let inverse = transform.inverse();
         let destination_width = f64::from(self.destination.width);
@@ -343,17 +362,11 @@ impl ImagePlacement {
     }
 
     fn render_with<M: ImageMapper>(&self, framebuffer: &mut Framebuffer) {
+        let Some((clip_left, clip_top, clip_right, clip_bottom)) = self.visible(framebuffer) else {
+            return;
+        };
         let destination_left = i64::from(self.destination.x);
         let destination_top = i64::from(self.destination.y);
-        let destination_right = destination_left + i64::from(self.destination.width);
-        let destination_bottom = destination_top + i64::from(self.destination.height);
-        let clip_left = destination_left.clamp(0, i64::from(framebuffer.width()));
-        let clip_top = destination_top.clamp(0, i64::from(framebuffer.height()));
-        let clip_right = destination_right.clamp(0, i64::from(framebuffer.width()));
-        let clip_bottom = destination_bottom.clamp(0, i64::from(framebuffer.height()));
-        if clip_left >= clip_right || clip_top >= clip_bottom {
-            return;
-        }
 
         let source_x = i64::from(self.source.x);
         let source_y = i64::from(self.source.y);

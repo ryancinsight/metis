@@ -252,9 +252,10 @@ pub(crate) fn composite_shape(
     if paint.is_transparent() {
         return;
     }
-    let width = f64::from(fb.width());
-    let first_row = outer.top.max(0.0);
-    let last_row = outer.bottom.min(f64::from(fb.height())).max(first_row);
+    let clip = fb.clip();
+    let (low, high) = (f64::from(clip.left()), f64::from(clip.right()));
+    let first_row = outer.top.max(f64::from(clip.top()));
+    let last_row = outer.bottom.min(f64::from(clip.bottom())).max(first_row);
     let (Some(first_row), Some(last_row)) =
         (surface_index(first_row), surface_index(last_row.ceil()))
     else {
@@ -262,12 +263,12 @@ pub(crate) fn composite_shape(
     };
     let mut outer_samples: RowSamples = [(0.0, 0.0); SUBSAMPLES];
     let mut inner_samples: RowSamples = [(0.0, 0.0); SUBSAMPLES];
-    for row in first_row..last_row.min(fb.height()) {
+    for row in first_row..last_row.min(clip.bottom()) {
         let bounds = sample_row(row, outer, inner, &mut outer_samples, &mut inner_samples);
         if bounds.touched.1 <= bounds.touched.0 {
             continue;
         }
-        let clamp = |value: f64| value.clamp(0.0, width);
+        let clamp = |value: f64| value.clamp(low, high);
         let start = clamp(bounds.touched.0.floor());
         let end = clamp(bounds.touched.1.ceil());
         let solid_start = clamp(bounds.solid.0.ceil());

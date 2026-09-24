@@ -10,7 +10,7 @@ use metis_core::protocol::{
 use metis_ipc::client::{HandshakeError, IpcClient};
 use metis_ipc::transport::IpcTransport;
 use metis_platform::{DisplayScale, Framebuffer};
-use metis_ui_lang::{DomDocument, SemanticTree, parse_markup};
+use metis_ui_lang::{DisplayList, DomDocument, SemanticTree, parse_markup};
 
 /// Outcome for the current inputs. Only success carries a result.
 /// Pending is painted before synchronous IPC; it does not imply an async host.
@@ -81,6 +81,9 @@ pub struct FrontendApp<T> {
     pub(crate) command_status: String,
     pub(crate) theme: ApplicationTheme,
     pub(crate) focus: Focus,
+    /// The display list the framebuffer shows, so the next render repaints
+    /// only what changed; `None` when the surface holds no complete frame.
+    pub(crate) painted: Option<DisplayList>,
 }
 
 impl<T: IpcTransport> FrontendApp<T> {
@@ -100,6 +103,7 @@ impl<T: IpcTransport> FrontendApp<T> {
             command_status: "Commands ready".to_owned(),
             theme: ApplicationTheme::default(),
             focus: Focus::initial(),
+            painted: None,
         };
         app.render()?;
         Ok(app)
@@ -240,6 +244,9 @@ impl<T: IpcTransport> FrontendApp<T> {
     pub fn resize(&mut self, width: u32, height: u32) -> Result<()> {
         let replacement = Framebuffer::new(width, height)?;
         let previous = std::mem::replace(&mut self.framebuffer, replacement);
+        // Neither the blank replacement nor a restored surface is known to
+        // show the painted list, so the next frame repaints in full.
+        self.painted = None;
         if let Err(error) = self.render() {
             self.framebuffer = previous;
             return Err(error);

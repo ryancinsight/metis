@@ -52,6 +52,18 @@ pub(super) struct Kernel {
     slabs: Vec<f64>,
 }
 
+/// Pixels the blur of radius `blur` reaches beyond the shape on each side.
+pub(super) fn reach(blur: u32) -> i64 {
+    // The blur is bounded by `BoxShadow::MAX_BLUR`, so the reach is a small
+    // nonnegative integer before it is truncated.
+    #[expect(
+        clippy::cast_possible_truncation,
+        reason = "the reach is at most 1.75 * MAX_BLUR, far inside i64"
+    )]
+    let reach = (REACH_DEVIATIONS * f64::from(blur) / 2.0).ceil() as i64;
+    reach
+}
+
 impl Kernel {
     pub(super) fn new(blur: u32) -> Self {
         if blur == 0 {
@@ -68,13 +80,7 @@ impl Kernel {
             };
         }
         let deviation = f64::from(blur) / 2.0;
-        // The blur is bounded by `BoxShadow::MAX_BLUR`, so the reach is a
-        // small positive integer before it is truncated.
-        #[expect(
-            clippy::cast_possible_truncation,
-            reason = "the reach is at most 1.75 * MAX_BLUR, far inside i64"
-        )]
-        let reach = (REACH_DEVIATIONS * deviation).ceil() as i64;
+        let reach = reach(blur);
         // One side is evaluated and mirrored, so opposite taps are equal to
         // the bit and mirrored corners receive identical sums.
         let side: Vec<f64> = (0..=reach)

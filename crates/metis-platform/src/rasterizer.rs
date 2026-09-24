@@ -17,7 +17,9 @@ pub use gradient::{GradientStop, LinearGradient, MAX_GRADIENT_STOPS};
 pub use round_rect::CornerRadius;
 use round_rect::{RoundRect, composite_shape};
 pub use shadow::{BoxShadow, draw_box_shadow};
-pub use stroke::{LineCap, LineJoin, MAX_STROKE_POINTS, StrokeWidth, draw_polyline};
+pub use stroke::{
+    LineCap, LineJoin, MAX_STROKE_POINTS, StrokeWidth, draw_polyline, polyline_extent,
+};
 
 /// Composites a color over the visible part of an axis-aligned span rectangle.
 ///
@@ -38,14 +40,15 @@ pub(crate) fn fill_bounds(
     if source.is_transparent() {
         return;
     }
-    let clamp = |value: i64, limit: u32| -> u32 {
-        u32::try_from(value.clamp(0, i64::from(limit)))
+    let clip = fb.clip();
+    let clamp = |value: i64, low: u32, high: u32| -> u32 {
+        u32::try_from(value.clamp(i64::from(low), i64::from(high)))
             .expect("invariant: a clamped bound is a nonnegative surface coordinate")
     };
-    let left = clamp(left, fb.width());
-    let right = clamp(right, fb.width());
-    let top = clamp(top, fb.height());
-    let bottom = clamp(bottom, fb.height());
+    let left = clamp(left, clip.left(), clip.right());
+    let right = clamp(right, clip.left(), clip.right());
+    let top = clamp(top, clip.top(), clip.bottom());
+    let bottom = clamp(bottom, clip.top(), clip.bottom());
     if right <= left || bottom <= top {
         return;
     }
@@ -268,3 +271,6 @@ fn interpolate(first_a: i64, first_b: i64, second_a: i64, second_b: i64, target:
 #[cfg(test)]
 #[path = "rasterizer_tests.rs"]
 mod tests;
+
+#[cfg(test)]
+mod clip_tests;

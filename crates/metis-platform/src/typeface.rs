@@ -106,8 +106,12 @@ enum LocationFormat {
 #[derive(Clone)]
 pub struct Typeface<'font> {
     units_per_em: u16,
-    /// Leftmost extent of any glyph from its origin (`head.xMin`).
+    /// Union of every glyph's box from its origin (`head.xMin`, `yMin`,
+    /// `xMax`, `yMax`), y up.
     min_x: i16,
+    min_y: i16,
+    max_x: i16,
+    max_y: i16,
     ascender: i16,
     descender: i16,
     line_gap: i16,
@@ -193,6 +197,9 @@ impl<'font> Typeface<'font> {
         let face = Self {
             units_per_em,
             min_x: head.read::<i16>(36)?,
+            min_y: head.read::<i16>(38)?,
+            max_x: head.read::<i16>(40)?,
+            max_y: head.read::<i16>(42)?,
             ascender: hhea.read::<i16>(4)?,
             descender: hhea.read::<i16>(6)?,
             line_gap: hhea.read::<i16>(8)?,
@@ -235,6 +242,25 @@ impl<'font> Typeface<'font> {
     #[must_use]
     pub const fn min_x(&self) -> i16 {
         self.min_x
+    }
+
+    /// Rightmost extent of any glyph relative to its origin, in font units.
+    #[must_use]
+    pub const fn max_x(&self) -> i16 {
+        self.max_x
+    }
+
+    /// Lowest extent of any glyph relative to the baseline, in font units,
+    /// negative below it.
+    #[must_use]
+    pub const fn min_y(&self) -> i16 {
+        self.min_y
+    }
+
+    /// Highest extent of any glyph relative to the baseline, in font units.
+    #[must_use]
+    pub const fn max_y(&self) -> i16 {
+        self.max_y
     }
 
     /// Height of one line box — ascender, descender and line gap — in font
