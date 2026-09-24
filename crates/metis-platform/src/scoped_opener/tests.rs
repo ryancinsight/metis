@@ -1,4 +1,4 @@
-use super::{MAX_OPEN_URL_BYTES, OpenError, OpenLauncher, OpenTarget, ScopedOpener};
+use super::{MAX_OPEN_URL_BYTES, OpenError, OpenTarget};
 
 #[test]
 fn targets_admit_only_plain_http_urls() {
@@ -34,7 +34,7 @@ fn targets_admit_only_plain_http_urls() {
 
 #[cfg(unix)]
 mod launch {
-    use super::super::MAX_OPEN_DEADLINE;
+    use super::super::{MAX_OPEN_DEADLINE, OpenLauncher, ScopedOpener};
     use super::*;
     use metis_core::capability::{CapabilityGrantSpec, CapabilityScope};
     use metis_core::host::{
