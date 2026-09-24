@@ -24,9 +24,9 @@ workbench is a clinical demonstrator, not a starting point.
 `crates/metis-starter` reproduces that template's page and behavior with Rust
 owning the page.
 
-- The markup and stylesheet follow the template (create-tauri-app
-  `890e6208661617b2e86a21f662b6efe9e3035788`, MIT OR Apache-2.0), with the
-  source and changes recorded at the top of `frontend/styles.css`. `greet`
+- The markup and stylesheet follow the create-tauri-app template at the exact
+  revision recorded in `frontend/styles.css` (MIT OR Apache-2.0); that file also
+  records the source paths and changes. `greet`
   keeps the template's wording, `Hello, {name}! You've been greeted from
   Rust!`.
 - The crate compiles to WebAssembly and binds the page itself through Moirai's
