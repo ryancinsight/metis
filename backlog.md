@@ -206,7 +206,7 @@ an owner. “Unsupported” cannot replace delivery of a required mobile/native 
 - Scope: native WebView hosting under Wayland and X11, input/accessibility/IME, process containment, permission restrictions and bounded teardown.
 - Acceptance: [V05](docs/VERIFICATION.md#V05) on both display paths, positive IPC and unauthorized file/network/process denial; unavailable prerequisites produce actionable errors, never sandbox bypass.
 - Demonstration: actual captures and distribution/display prerequisites in the manual; no support inferred from a Linux build.
-- Portability increment (2026-09-24): the workspace now builds, lints (`clippy -D warnings`) and passes its script suites on Linux, and `metis dev --watch` polls a bounded fingerprint where no native notifier exists. Three `metis-app` process tests still fail on Linux because Moirai's portable transport reports `UnsupportedContainment`; process containment remains this item's Moirai dependency.
+- Portability increment (2026-09-24): the workspace now builds, lints (`clippy -D warnings`) and passes its script suites on Linux, and `metis dev --watch` polls a bounded fingerprint where no native notifier exists. Moirai PR #458 (merge `693350c7`) contains process trees in a POSIX process group on Linux, Android and Apple targets and lets `set_value` select a `<select>` option; with the lock advanced, all 548 workspace tests pass on Linux, including the three `metis-app` process tests, and the browser theme commands use the provider instead of rebuilding options. A parent crash still leaves a Unix group unsignalled, unlike a kill-on-close job.
 
 <a id="METIS-ASSETS-001"></a>
 ## METIS-ASSETS-001 — Images, vectors and media assets [major]
