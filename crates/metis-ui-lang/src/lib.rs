@@ -14,8 +14,8 @@ pub mod style;
 pub use dom::{DomDocument, DomElement, DomNode};
 pub use image::{AffineTransform, ImagePlacement, ImageSampling, ImageTransform, RasterImage};
 pub use layout::{
-    Damage, DisplayCommand, DisplayList, LayoutViewport, LineCap, LineJoin, Rect, StrokeWidth,
-    compute_layout,
+    Damage, DisplayCommand, DisplayList, LayoutViewport, LineCap, LineJoin, Rect, ScrollAlign,
+    StrokeWidth, VirtualList, VisibleWindow, compute_layout,
 };
 pub use parser::parse_markup;
 pub use semantics::{
