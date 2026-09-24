@@ -150,14 +150,18 @@ fn apply(
 ) -> io::Result<()> {
     {
         let mut state = state.borrow_mut();
-        if let Some(theme) = command.theme_value() {
+        if let Some(value) = command.theme_value() {
             let BrowserState {
                 controls,
                 state: form_state,
                 ..
             } = &mut *state;
-            controls::update_control(controls, form_state, ControlField::Theme, None, Some(theme));
-            view::element(document, "theme-mode")?.set_value(theme)?;
+            controls::update_control(controls, form_state, ControlField::Theme, None, Some(value));
+            // A `<select>` has no settable value through the DOM provider,
+            // so its options are rebuilt with the chosen mode selected.
+            if let Some(theme) = crate::Theme::parse(value) {
+                view::select_theme(document, theme)?;
+            }
         }
         state.commands.menu_open = false;
         command.status().clone_into(&mut state.commands.status);
