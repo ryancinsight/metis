@@ -320,6 +320,8 @@ an owner. “Unsupported” cannot replace delivery of a required mobile/native 
 
 - Tray and notification increment (2026-09-24): Moirai `NativeWindow::show_tray_icon`, `show_notification` and `take_tray_events` (Moirai PR #463) show one notification-area icon from a validated 16/32 pixel ARGB image, raise shell-balloon notifications (presented as toasts on Windows 10+ without a packaged identity) and decode version-4 callbacks into `TrayEvent` values queued apart from `WindowEvent`. `native::TrayHost` exposes them on the pixel and WebView2 surfaces, and `tray_image` converts an application-drawn `Framebuffer`. `show_popup_menu` opens a bounded native menu at a context request's anchor and returns the chosen index. File associations and single-instance remain open.
 
+- Single-instance increment (2026-09-24): Moirai `instance::claim` (Moirai PR #464) makes the first launch primary through an advisory lock and owner-only socket on Unix, or the first instance of a session-scoped, local-only named pipe on Windows, and forwards one bounded frame from later launches. `metis_platform::claim_or_forward` encodes the launch arguments, so a second launch hands its deep link to the running instance. File associations and installed-OS click-through evidence remain open.
+
 <a id="METIS-SERVICES-001"></a>
 ## METIS-SERVICES-001 — Scoped network, shell and sidecars [minor]
 - Status: todo; priority: P2; owner: Moirai mechanisms + Metis policy; last-update: 2026-09-21; delivery: [PR #328](https://github.com/ryancinsight/metis/pull/328), merge `e8c37b23e5231234518a29cdc713de0eb21c38d8`; dependencies: METIS-DESKTOP-001, METIS-COMMANDS-001; risk: privilege escalation

@@ -166,6 +166,15 @@ context request carries the screen position at which `show_popup_menu` opens
 a native menu and returns the chosen item's index. Closing the surface
 removes the icon.
 
+`claim_or_forward` keeps one running instance per application, like Tauri's
+single-instance plugin. The first launch becomes the `PrimaryInstance`; a later
+launch forwards its arguments (at most `MAX_FORWARDED_ARGUMENTS`, UTF-8 without
+NUL) and should exit. The primary polls `try_receive` from its event loop and
+can pass each list to `metis_core::deep_link::DeepLink::from_arguments`. Moirai
+holds the claim: an advisory lock and a socket in an owner-only directory on
+Unix, or a session-scoped, local-only named pipe on Windows, released by the
+operating system when the primary exits.
+
 Applications that use the native pixel surface can share the bounded host loop
 through `metis_platform::native::NativeApplication` and
 `run_native_application`. The application owns its state and frame, applies

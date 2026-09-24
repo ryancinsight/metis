@@ -14,6 +14,8 @@ pub mod scoped_network;
 pub mod scoped_opener;
 #[cfg(not(target_arch = "wasm32"))]
 pub mod scoped_process;
+#[cfg(any(unix, windows))]
+pub mod single_instance;
 pub mod surface;
 pub mod typeface;
 #[cfg(not(target_arch = "wasm32"))]
@@ -50,6 +52,8 @@ pub use scoped_process::{
     MAX_SCOPED_PROCESS_OUTPUT_BYTES, MAX_SCOPED_PROCESS_RUNTIME, ProcessContainment,
     ScopedProcessError, ScopedProcessOutput, ScopedProcessProvider,
 };
+#[cfg(any(unix, windows))]
+pub use single_instance::{Launch, MAX_FORWARDED_ARGUMENTS, PrimaryInstance, claim_or_forward};
 pub use surface::PlatformSurface;
 #[cfg(not(target_arch = "wasm32"))]
 pub use window_state_file::WindowStateFile;
