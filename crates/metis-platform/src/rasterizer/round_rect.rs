@@ -336,15 +336,7 @@ pub(super) fn composite_pixel(
     let Some(x) = surface_index(column) else {
         return;
     };
-    // Coverage is clamped to one and the channel is at most 255, so the
-    // rounded product already lies inside the byte range.
-    #[expect(
-        clippy::cast_possible_truncation,
-        clippy::cast_sign_loss,
-        reason = "a clamped coverage times a byte channel rounds to a byte"
-    )]
-    let alpha = (f64::from(color.a) * coverage.clamp(0.0, 1.0)).round() as u8;
-    let source = SourceOver::new(Color::rgba(color.r, color.g, color.b, alpha));
+    let source = SourceOver::covering(color, coverage);
     if source.is_transparent() {
         return;
     }

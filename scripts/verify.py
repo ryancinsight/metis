@@ -42,10 +42,11 @@ REGISTRY_BOUNDARIES = {
     # No Atlas provider exposes Unicode extended grapheme segmentation; this
     # pure-Rust dependency is the bounded browser text-policy boundary.
     ("metis-web", "unicode-segmentation"),
-    # Development-only measurement instrument for the software rasterizer; no
-    # Atlas provider supplies statistical benchmark sampling, and the crate
-    # never enters a shipped artifact.
+    # Development-only measurement instrument for the software rasterizer and
+    # the whole-frame repaint; no Atlas provider supplies statistical benchmark
+    # sampling, and the crate never enters a shipped artifact.
     ("metis-platform", "criterion"),
+    ("metis-frontend", "criterion"),
 }
 
 

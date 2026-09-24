@@ -322,14 +322,8 @@ impl ClipRow {
 /// Composites a constant shadow value over device columns `[from, to)`.
 fn composite_run(fb: &mut Framebuffer, row: u32, from: i64, to: i64, color: Color, value: f64) {
     // The value is a convolution of a coverage in [0, 1] with a kernel whose
-    // mass is at most one, so the product stays inside the byte range.
-    #[expect(
-        clippy::cast_possible_truncation,
-        clippy::cast_sign_loss,
-        reason = "a value in [0, 1] times a byte channel rounds to a byte"
-    )]
-    let alpha = (f64::from(color.a) * value.clamp(0.0, 1.0)).round() as u8;
-    let source = SourceOver::new(Color::rgba(color.r, color.g, color.b, alpha));
+    // mass is at most one, so it is itself a coverage.
+    let source = SourceOver::covering(color, value);
     if source.is_transparent() {
         return;
     }

@@ -191,15 +191,7 @@ fn composite(
             let Some(x) = surface_coordinate(bounds.left, column, fb.width()) else {
                 continue;
             };
-            // Coverage lies in [0, 1] and the channel is at most 255, so the
-            // rounded product is a byte.
-            #[expect(
-                clippy::cast_possible_truncation,
-                clippy::cast_sign_loss,
-                reason = "coverage in [0, 1] times a byte channel rounds to a byte"
-            )]
-            let alpha = (f64::from(color.a) * value).round() as u8;
-            let source = SourceOver::new(Color::rgba(color.r, color.g, color.b, alpha));
+            let source = SourceOver::covering(color, *value);
             if !source.is_transparent() {
                 fb.composite_span(y, x, x + 1, source);
             }

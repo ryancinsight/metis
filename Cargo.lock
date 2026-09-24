@@ -1123,6 +1123,7 @@ dependencies = [
 name = "metis-frontend"
 version = "0.1.0"
 dependencies = [
+ "criterion",
  "iris-viz",
  "metis-core",
  "metis-ipc",
