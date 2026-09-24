@@ -87,6 +87,31 @@ fn packaged_command_surface_is_local_and_keyboard_closable() {
             "missing local command behavior: {fragment}"
         );
     }
+    for command in metis_frontend::ApplicationCommand::ALL {
+        let start = INDEX_HTML
+            .find(&format!("id=\"{}\"", command.id()))
+            .expect("packaged command button");
+        let tag = INDEX_HTML[start..].split('>').next().unwrap_or_default();
+        let announced = format!(
+            "aria-keyshortcuts=\"{}\"",
+            command.accelerator().aria_keyshortcuts()
+        );
+        assert!(
+            tag.contains(&announced),
+            "{} must announce its declared accelerator",
+            command.id()
+        );
+    }
+    for fragment in [
+        "button[aria-keyshortcuts]",
+        "event.repeat",
+        "command.click()",
+    ] {
+        assert!(
+            APP_JS.contains(fragment),
+            "missing shortcut dispatch: {fragment}"
+        );
+    }
     assert!(STYLES_CSS.contains("#command-menu[data-command-menu-open=\"false\"]"));
     assert!(STYLES_CSS.contains("@media (forced-colors: active)"));
     assert!(!APP_JS.contains("postMessage({\n      action: 'command"));
