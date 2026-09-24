@@ -119,3 +119,30 @@ dose.set(0.75).expect("no runaway cascade");
 assert_eq!(*seen.borrow(), ["0.50 mcg/kg/min", "0.75 mcg/kg/min"]);
 drop(subscription);
 ```
+
+`derived2` computes from two stores, as a Dioxus memo over two signals does.
+`Writable::project` gives a writable view of one field that notifies only when
+that field changes, like a Dioxus store field. `resource` holds the outcome of
+asynchronous work started for each source value, like `use_resource`: the
+caller runs the work on any executor and hands the result to a one-shot
+`Completion`, which is ignored once the source has moved on.
+
+```rust
+use metis_frontend::reactive::{ResourceState, Writable, derived2, resource};
+
+#[derive(Clone, PartialEq)]
+struct Infusion { weight_kg: f64, rate: f64 }
+
+let infusion = Writable::new(Infusion { weight_kg: 70.0, rate: 0.5 });
+let weight = infusion.project((|i| &i.weight_kg, |i| &mut i.weight_kg));
+let rate = infusion.project((|i| &i.rate, |i| &mut i.rate));
+let dose = derived2(&weight, &rate, |kg, rate| kg * rate);
+weight.set(80.0).expect("no runaway cascade");
+assert_eq!(dose.get(), 40.0);
+
+let lookup = resource(&dose, |value: &f64, done| {
+    // Start real work here; this example completes at once.
+    let _ = done.complete(Ok::<_, String>(format!("{value} mcg/min")));
+});
+assert_eq!(lookup.get(), ResourceState::Ready("40 mcg/min".to_owned()));
+```

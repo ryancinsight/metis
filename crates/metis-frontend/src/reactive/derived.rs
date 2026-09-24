@@ -19,6 +19,16 @@ impl<T> Clone for Readable<T> {
     }
 }
 
+impl<T> Readable<T> {
+    /// A computed store that keeps `source` alive exactly as long as itself.
+    pub(super) fn with_sources(store: Writable<T>, source: Subscription) -> Self {
+        Self {
+            store,
+            source: Rc::new(source),
+        }
+    }
+}
+
 impl<T: Clone + PartialEq + 'static> Readable<T> {
     /// A copy of the current value.
     #[must_use]
@@ -58,8 +68,5 @@ where
             let _ = store.set(compute(value));
         }
     });
-    Readable {
-        store,
-        source: Rc::new(subscription),
-    }
+    Readable::with_sources(store, subscription)
 }

@@ -5,7 +5,11 @@
 //! recomputes it whenever the source changes. Subscribing calls the listener
 //! once with the current value, as Svelte's `subscribe` does, and the
 //! returned [`Subscription`] unsubscribes when dropped, so a component that
-//! drops its handles cannot leave a listener behind.
+//! drops its handles cannot leave a listener behind. [`derived2`] computes
+//! from two sources, [`Writable::project`] gives a writable view of one
+//! field that notifies only when that field changes, and [`resource`] holds
+//! the outcome of asynchronous work started for each source value, ignoring
+//! results that arrive after the source moved on.
 //!
 //! Stores are single-threaded (`Rc`), matching the one presentation thread
 //! each host runs. A listener may set other stores, or the store notifying
@@ -13,11 +17,17 @@
 //! cascade of more than [`MAX_CASCADE`] rounds is cut off and reported, so
 //! two stores that keep setting each other cannot hang the frame.
 
+mod combine;
 mod derived;
+mod projection;
+mod resource;
 mod store;
 mod subscription;
 
+pub use combine::derived2;
 pub use derived::{Readable, derived};
+pub use projection::{Field, Projection};
+pub use resource::{Completion, Resource, ResourceState, resource};
 pub use store::{CascadeLimit, MAX_CASCADE, MAX_SUBSCRIBERS, Writable};
 pub use subscription::Subscription;
 

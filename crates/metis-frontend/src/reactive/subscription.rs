@@ -19,6 +19,14 @@ impl Subscription {
         Self { unsubscribe: None }
     }
 
+    /// One handle that removes both listeners when dropped.
+    pub(super) fn both(first: Self, second: Self) -> Self {
+        Self::new(move || {
+            drop(first);
+            drop(second);
+        })
+    }
+
     /// Whether dropping this handle removes a listener.
     #[must_use]
     pub fn is_active(&self) -> bool {
