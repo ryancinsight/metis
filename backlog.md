@@ -310,6 +310,8 @@ an owner. “Unsupported” cannot replace delivery of a required mobile/native 
 
 - Opener increment (2026-09-24): `ScopedOpener` opens allowlisted http(s) URLs through a host-fixed launcher (`xdg-open`, `open` or the Windows URL protocol handler at standard paths) behind the new `OPEN_EXTERNAL` capability. URLs are validated as printable RFC 3986 ASCII without credentials and passed as one argument with a session-only environment. A recording launcher verifies the argument, origin denial, deadline bounds and launcher failure. `HostOrigin::from_url` is now the one URL-origin parser that the network and opener providers share. Menus/tray, notifications, global shortcuts, deep links, file associations, single-instance and window state remain open.
 
+- Deep-link increment (2026-09-24): manifests declare `url_schemes`, validated by the same `metis_core::deep_link::DeepLinkScheme` rule the parser applies. The Linux desktop entry registers `x-scheme-handler` types with `%u`, the macOS bundle adds `CFBundleURLTypes`, and the Windows MSI writes per-user `Software\Classes` rows owned by the entry component. `DeepLink` parses bounded, percent-decoded routes and query pairs and rejects dot segments, control characters and undeclared schemes. Forwarding a link to an already running instance (single instance) and installed-OS click-through evidence remain open.
+
 <a id="METIS-SERVICES-001"></a>
 ## METIS-SERVICES-001 — Scoped network, shell and sidecars [minor]
 - Status: todo; priority: P2; owner: Moirai mechanisms + Metis policy; last-update: 2026-09-21; delivery: [PR #328](https://github.com/ryancinsight/metis/pull/328), merge `e8c37b23e5231234518a29cdc713de0eb21c38d8`; dependencies: METIS-DESKTOP-001, METIS-COMMANDS-001; risk: privilege escalation

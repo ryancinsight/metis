@@ -107,3 +107,32 @@ fn desktop_words_preserve_empty_and_reserved_arguments() {
 fn desktop_icon_escapes_string_value_characters() {
     assert_eq!(desktop_icon("/tmp/a b;icon"), "/tmp/a\\sb\\;icon");
 }
+
+#[test]
+fn declared_url_schemes_are_registered_in_desktop_entry_and_bundle() {
+    let (mut application, root, _) = fixture();
+    let unregistered = desktop_entry(&application, "metis-app");
+    assert!(!unregistered.contains("MimeType") && !unregistered.contains("%u"));
+    assert!(url_schemes::plist_registration(&application).is_empty());
+
+    application.url_schemes = vec!["org.atlas.viewer".to_owned(), "atlas-viewer".to_owned()];
+    let entry = desktop_entry(&application, "metis-app");
+    let exec = entry
+        .lines()
+        .find(|line| line.starts_with("Exec="))
+        .expect("Exec line");
+    assert!(exec.ends_with(" %u"), "{exec}");
+    assert!(
+        entry.contains(
+            "MimeType=x-scheme-handler/org.atlas.viewer;x-scheme-handler/atlas-viewer;\n"
+        )
+    );
+    let plist = url_schemes::plist_registration(&application);
+    assert!(plist.contains("<key>CFBundleURLName</key><string>org.atlas.metis.demo</string>"));
+    assert!(
+        plist.contains(
+            "<array><string>org.atlas.viewer</string><string>atlas-viewer</string></array>"
+        )
+    );
+    fs::remove_dir_all(root).expect("remove package fixture");
+}

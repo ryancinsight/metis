@@ -68,3 +68,19 @@ assert_eq!(shortcuts.resolve(pressed), Some(&"save"));
 assert_eq!(save.aria_keyshortcuts(), "Control+S");
 # Ok::<(), metis_core::input::AcceleratorError>(())
 ```
+
+`deep_link` holds the one rule for an application's custom URL schemes
+(`DeepLinkScheme`), which the `metis` build tool also applies before it
+registers schemes with an installer. `DeepLink::parse` turns untrusted link
+text into bounded, percent-decoded route segments and query pairs.
+
+```rust
+use metis_core::deep_link::{DeepLink, DeepLinkScheme};
+
+let schemes = [DeepLinkScheme::new("org.example.viewer")?];
+let link = DeepLink::parse("org.example.viewer://open/study%201?series=3", &schemes)?;
+assert_eq!(link.segments(), ["open", "study 1"]);
+assert_eq!(link.query_value("series"), Some("3"));
+assert!(DeepLink::parse("org.example.viewer://open/../etc", &schemes).is_err());
+# Ok::<(), metis_core::deep_link::DeepLinkError>(())
+```

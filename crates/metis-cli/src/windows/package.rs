@@ -4,7 +4,7 @@ use super::database::{
     Value::{Null, Number, Stream, Text},
     guid,
 };
-use super::{payload, schema, shortcut};
+use super::{payload, schema, shortcut, url_schemes};
 use std::{
     collections::BTreeMap,
     error::Error,
@@ -25,6 +25,7 @@ pub(crate) struct InstallerSpec<'a> {
     pub upgrade_code: &'a str,
     pub entry: &'a str,
     pub arguments: &'a [String],
+    pub url_schemes: &'a [String],
     pub files: &'a [(PathBuf, String)],
     pub icon: Option<&'a Path>,
 }
@@ -85,7 +86,6 @@ fn populate(
     product: &str,
     cabinet: &Path,
 ) -> Result<(), Box<dyn Error>> {
-    let arguments = shortcut::arguments(spec.arguments)?;
     for (key, value) in [
         ("ProductCode", product),
         ("UpgradeCode", spec.upgrade_code),
@@ -183,12 +183,7 @@ fn populate(
         database.execute("INSERT INTO `File` (`File`,`Component_`,`FileName`,`FileSize`,`Version`,`Language`,`Attributes`,`Sequence`) VALUES (?,?,?,?,?,?,?,?)", &[Text(&file), Text(&component), Text(&format!("F{index}|{name}")), Number(i32::try_from(source.metadata()?.len())?), Null, Null, Number(16384), Number(i32::try_from(index + 1)?)])?;
         database.execute("INSERT INTO `Registry` (`Registry`,`Root`,`Key`,`Name`,`Value`,`Component_`) VALUES (?,?,?,?,?,?)", &[Text(&registry), Number(USER_REGISTRY_ROOT), Text(&registry_key), Text(&file), Text(spec.version), Text(&component)])?;
         if destination == spec.entry {
-            database.execute("INSERT INTO `Registry` (`Registry`,`Root`,`Key`,`Name`,`Value`,`Component_`) VALUES (?,?,?,?,?,?)", &[Text("InstallLocation"), Number(USER_REGISTRY_ROOT), Text(&registry_key), Text("InstallLocation"), Text("[INSTALLDIR]"), Text(&component)])?;
-            database.execute(
-                "INSERT INTO `CreateFolder` (`Directory_`,`Component_`) VALUES (?,?)",
-                &[Text("APPLICATIONMENU"), Text(&component)],
-            )?;
-            write_shortcut(database, spec, product, &component, &file, &arguments)?;
+            write_entry(database, spec, product, &registry_key, &component, &file)?;
         }
     }
     database.execute("INSERT INTO `Media` (`DiskId`,`LastSequence`,`DiskPrompt`,`Cabinet`,`VolumeLabel`,`Source`) VALUES (?,?,?,?,?,?)", &[Number(1), Number(i32::try_from(spec.files.len())?), Null, Text("#payload.cab"), Null, Null])?;
@@ -243,6 +238,33 @@ fn write_icon(database: &Database, spec: &InstallerSpec<'_>) -> Result<(), Box<d
         )?;
     }
     Ok(())
+}
+
+/// The entry component's extra rows: the maintenance location, the menu
+/// folder and shortcut, and its URL-scheme registration.
+fn write_entry(
+    database: &Database,
+    spec: &InstallerSpec<'_>,
+    product: &str,
+    registry_key: &str,
+    component: &str,
+    file: &str,
+) -> Result<(), Box<dyn Error>> {
+    let arguments = shortcut::arguments(spec.arguments)?;
+    database.execute("INSERT INTO `Registry` (`Registry`,`Root`,`Key`,`Name`,`Value`,`Component_`) VALUES (?,?,?,?,?,?)", &[Text("InstallLocation"), Number(USER_REGISTRY_ROOT), Text(registry_key), Text("InstallLocation"), Text("[INSTALLDIR]"), Text(component)])?;
+    database.execute(
+        "INSERT INTO `CreateFolder` (`Directory_`,`Component_`) VALUES (?,?)",
+        &[Text("APPLICATIONMENU"), Text(component)],
+    )?;
+    write_shortcut(database, spec, product, component, file, &arguments)?;
+    url_schemes::register(
+        database,
+        USER_REGISTRY_ROOT,
+        spec.url_schemes,
+        spec.name,
+        component,
+        file,
+    )
 }
 
 fn write_shortcut(

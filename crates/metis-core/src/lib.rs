@@ -4,6 +4,7 @@
 
 pub mod capability;
 pub mod crypto;
+pub mod deep_link;
 pub mod error;
 pub mod host;
 pub mod input;

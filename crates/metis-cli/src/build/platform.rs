@@ -2,6 +2,8 @@
 
 use super::FileRecord;
 #[cfg(any(not(windows), test))]
+mod url_schemes;
+#[cfg(any(not(windows), test))]
 use crate::{Result, manifest::Application};
 #[cfg(any(not(windows), test))]
 use moirai_crypto::Sha256;
@@ -140,13 +142,14 @@ fn info_plist(
         return Err("macOS bundle entry is absent from its staged binaries".into());
     }
     Ok(format!(
-        "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n<!DOCTYPE plist PUBLIC \"-//Apple//DTD PLIST 1.0//EN\" \"http://www.apple.com/DTDs/PropertyList-1.0.dtd\">\n<plist version=\"1.0\"><dict><key>CFBundleDisplayName</key><string>{}</string><key>CFBundleExecutable</key><string>{}</string><key>CFBundleIdentifier</key><string>{}</string><key>CFBundleName</key><string>{}</string><key>CFBundlePackageType</key><string>APPL</string><key>CFBundleShortVersionString</key><string>{}</string><key>CFBundleVersion</key><string>{}</string></dict></plist>\n",
+        "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n<!DOCTYPE plist PUBLIC \"-//Apple//DTD PLIST 1.0//EN\" \"http://www.apple.com/DTDs/PropertyList-1.0.dtd\">\n<plist version=\"1.0\"><dict><key>CFBundleDisplayName</key><string>{}</string><key>CFBundleExecutable</key><string>{}</string><key>CFBundleIdentifier</key><string>{}</string><key>CFBundleName</key><string>{}</string><key>CFBundlePackageType</key><string>APPL</string><key>CFBundleShortVersionString</key><string>{}</string><key>CFBundleVersion</key><string>{}</string>{}</dict></plist>\n",
         xml_escape(&application.name),
         xml_escape(&entry),
         xml_escape(&application.id),
         xml_escape(&application.name),
         xml_escape(&application.version),
         xml_escape(&application.version),
+        url_schemes::plist_registration(application),
     ))
 }
 
@@ -226,7 +229,10 @@ fn desktop_entry(application: &Application, entry: &str) -> String {
         output.push(' ');
         output.push_str(&desktop_word(argument));
     }
+    let (link_field, mime_types) = url_schemes::desktop_registration(application);
+    output.push_str(link_field);
     output.push_str("\nTerminal=false\n");
+    output.push_str(&mime_types);
     if let Some(icon) = icon {
         output.push_str("Icon=");
         output.push_str(&icon);

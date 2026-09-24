@@ -30,6 +30,7 @@ fn authored_package_retains_payload_identity_and_actions() {
         upgrade_code: &upgrade,
         entry: "app.exe",
         arguments: &["60".into(), "2".into(), "0.2".into()],
+        url_schemes: &["org.metis.package-test".into()],
         files: &files,
         icon: Some(&icon),
     };
@@ -46,17 +47,12 @@ fn authored_package_retains_payload_identity_and_actions() {
         );
         assert_eq!(
             database
-                .strings("SELECT `Directory_` FROM `CreateFolder` WHERE `Component_`='C0'")
-                .expect("owned menu directory"),
-            ["APPLICATIONMENU"]
-        );
-        assert_eq!(
-            database
                 .strings("SELECT `Arguments` FROM `Shortcut`")
                 .expect("shortcut arguments"),
             ["\"60\" \"2\" \"0.2\""]
         );
         assert_embedded_icon(&database);
+        assert_entry_rows(&database);
         assert_eq!(
             database
                 .strings("SELECT `Value` FROM `Property` WHERE `Property`='Manufacturer'")
@@ -274,5 +270,28 @@ fn unrepresentable_metadata_is_rejected_before_persistence() {
     assert_eq!(
         actual,
         vec![Err("MSI metadata cannot be represented losslessly in Windows-1252".to_owned()); 6]
+    );
+}
+
+/// The entry component owns the menu folder, and its declared scheme opens
+/// the installed entry with the link argument.
+fn assert_entry_rows(database: &Database) {
+    assert_eq!(
+        database
+            .strings("SELECT `Directory_` FROM `CreateFolder` WHERE `Component_`='C0'")
+            .expect("owned menu directory"),
+        ["APPLICATIONMENU"]
+    );
+    assert_eq!(
+        database
+            .strings("SELECT `Value` FROM `Registry` WHERE `Registry`='UC0'")
+            .expect("URL scheme command"),
+        ["\"[#F0]\" \"%1\""]
+    );
+    assert_eq!(
+        database
+            .strings("SELECT `Key` FROM `Registry` WHERE `Registry`='UP0'")
+            .expect("URL protocol marker"),
+        ["Software\\Classes\\org.metis.package-test"]
     );
 }

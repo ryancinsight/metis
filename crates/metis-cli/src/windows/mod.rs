@@ -17,6 +17,7 @@ mod paths;
 mod payload;
 mod schema;
 mod shortcut;
+mod url_schemes;
 
 pub(crate) use package::{InstallerSpec, build, inspect};
 

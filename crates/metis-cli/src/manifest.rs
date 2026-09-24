@@ -2,6 +2,7 @@
 #[cfg(any(windows, test))]
 mod icon;
 mod svg;
+mod url_schemes;
 mod web;
 
 use crate::Result;
@@ -90,6 +91,10 @@ pub(crate) struct Application {
     pub(crate) icon: Option<String>,
     #[serde(default)]
     pub(crate) arguments: Vec<String>,
+    /// Custom URL schemes the installers register for this application,
+    /// validated by `metis_core::deep_link::DeepLinkScheme`.
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub(crate) url_schemes: Vec<String>,
     pub(crate) binaries: Vec<Binary>,
     #[serde(default)]
     pub(crate) resources: Vec<Resource>,
@@ -172,6 +177,7 @@ impl Application {
                 "launch arguments exceed the installer budget or contain formatted syntax".into(),
             );
         }
+        url_schemes::validate(&self.url_schemes)?;
         self.validate_inventory()
     }
 

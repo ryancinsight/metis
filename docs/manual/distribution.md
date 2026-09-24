@@ -41,6 +41,36 @@ count, SHA-256 digest and each archived or bundled file. The generated metadata
 does not add signing, notarization, a package-manager registration or an update
 channel.
 
+### Register URL schemes
+
+List custom URL schemes in `url_schemes` to have the installers open your
+application for links such as `org.example.viewer://open/study?series=3`, as
+Tauri's deep-link plugin does:
+
+```json
+"url_schemes": ["org.example.viewer"]
+```
+
+A scheme is a lowercase ASCII letter followed by lowercase letters, digits,
+`+`, `-` or `.`, at most 32 bytes, and never a standard scheme such as
+`https`, `file` or `mailto`. A reverse-domain name avoids collisions with
+other applications. At most eight are accepted. Each installer registers them
+for the entry binary:
+
+- The Linux desktop entry adds `MimeType=x-scheme-handler/<scheme>;` and passes
+  the link through `%u`.
+- The macOS bundle adds a `CFBundleURLTypes` entry.
+- The Windows MSI writes `HKCU\Software\Classes\<scheme>` with `URL Protocol`
+  and an `open` command. These rows belong to the entry component, so
+  uninstalling removes them.
+
+The operating system starts the application with the link as an argument.
+`metis_core::deep_link::DeepLink::from_arguments` finds that argument and
+parses it against the same schemes. It returns percent-decoded path segments
+and query pairs, and rejects `..` segments, control characters and undeclared
+schemes. A second launch starts a second process: the application decides
+whether to forward the link to an instance that is already running.
+
 Here `metis` denotes the built executable in the configured Cargo target directory;
 put that directory on PATH or use its absolute path. Create `output` first.
 Each destination must be new. A failed build leaves its partial directory for
