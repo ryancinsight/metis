@@ -3,11 +3,19 @@
 use super::Typeface;
 use super::faces;
 use super::glyf::Transform;
+use super::glyph_cache::{GlyphCache, GlyphCoverage, GlyphKey, GlyphLookup};
 use super::raster::{Canvas, Outline};
 use crate::framebuffer::{Color, Framebuffer, Rect, SourceOver};
+use std::cell::RefCell;
+
+thread_local! {
+    /// Glyph coverage memo for the rendering thread; bounded by its own
+    /// generations, and never shared, because surfaces are thread-affine.
+    static GLYPHS: RefCell<GlyphCache> = RefCell::default();
+}
 
 /// Glyph stroke weight, selecting the embedded face.
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Default)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Default)]
 pub enum GlyphWeight {
     /// The regular face.
     #[default]
@@ -179,36 +187,49 @@ pub fn draw_text(fb: &mut Framebuffer, x: i32, y: i32, text: &str, style: TextSt
     // No glyph reaches further left of its pen than the face's bounding box,
     // so once that edge is past the clip nothing later can be visible.
     let overhang = f64::from(face.min_x()) * scale;
-    for character in text.chars().filter(|character| *character != '\n') {
-        if pen + overhang >= clip_right {
-            break;
+    GLYPHS.with_borrow_mut(|glyphs| {
+        for character in text.chars().filter(|character| *character != '\n') {
+            if pen + overhang >= clip_right {
+                break;
+            }
+            let glyph = face.glyph(character);
+            let key = GlyphKey::new(style.weight, glyph, scale, pen, baseline);
+            let transform = Transform::device(scale, pen, baseline);
+            pen += f64::from(face.advance(glyph)) * scale;
+            let lookup = glyphs.get_or_render(key, || {
+                outline.clear();
+                face.outline(glyph, &transform, &mut outline)
+                    .expect("invariant: every glyph of the embedded faces decodes");
+                let Some(bounds) = outline.bounds() else {
+                    return Some(GlyphCoverage {
+                        bounds: None,
+                        coverage: Box::default(),
+                    });
+                };
+                // A glyph wholly outside the clip is skipped before its
+                // outline is rasterized, which is where a glyph's cost lies,
+                // and is not retained for a frame that cannot show it.
+                let visible = |start: i32, end: i32, low: u32, high: u32| {
+                    i64::from(end) > i64::from(low) && i64::from(start) < i64::from(high)
+                };
+                if !visible(bounds.left, bounds.right, clip.left(), clip.right())
+                    || !visible(bounds.top, bounds.bottom, clip.top(), clip.bottom())
+                {
+                    return None;
+                }
+                outline.rasterize(bounds, &mut canvas);
+                Some(GlyphCoverage {
+                    bounds: Some(bounds),
+                    coverage: canvas.coverage.as_slice().into(),
+                })
+            });
+            if let Some(glyph) = lookup.as_ref().map(GlyphLookup::coverage)
+                && let Some(bounds) = glyph.bounds
+            {
+                composite(fb, &glyph.coverage, bounds, color);
+            }
         }
-        let glyph = face.glyph(character);
-        let advance = f64::from(face.advance(glyph)) * scale;
-        outline.clear();
-        face.outline(
-            glyph,
-            &Transform::device(scale, pen, baseline),
-            &mut outline,
-        )
-        .expect("invariant: every glyph of the embedded faces decodes");
-        pen += advance;
-        let Some(bounds) = outline.bounds() else {
-            continue;
-        };
-        // A glyph wholly outside the clip is skipped before its outline is
-        // rasterized, which is where a glyph's cost lies.
-        let visible = |start: i32, end: i32, low: u32, high: u32| {
-            i64::from(end) > i64::from(low) && i64::from(start) < i64::from(high)
-        };
-        if !visible(bounds.left, bounds.right, clip.left(), clip.right())
-            || !visible(bounds.top, bounds.bottom, clip.top(), clip.bottom())
-        {
-            continue;
-        }
-        outline.rasterize(bounds, &mut canvas);
-        composite(fb, &canvas.coverage, bounds, color);
-    }
+    });
 }
 
 /// Composites a coverage bitmap at `bounds`, clipped to the surface.
@@ -218,22 +239,9 @@ fn composite(
     bounds: super::raster::PixelBounds,
     color: Color,
 ) {
-    let width = bounds.width();
-    for (row, values) in coverage.chunks_exact(width).enumerate() {
-        let Some(y) = surface_coordinate(bounds.top, row, fb.height()) else {
-            continue;
-        };
-        for (column, value) in values.iter().enumerate() {
-            if *value <= 0.0 {
-                continue;
-            }
-            let Some(x) = surface_coordinate(bounds.left, column, fb.width()) else {
-                continue;
-            };
-            let source = SourceOver::covering(color, *value);
-            if !source.is_transparent() {
-                fb.composite_span(y, x, x + 1, source);
-            }
+    for (row, values) in coverage.chunks_exact(bounds.width()).enumerate() {
+        if let Some(y) = surface_coordinate(bounds.top, row, fb.height()) {
+            fb.composite_coverage_row(y, i64::from(bounds.left), values, color);
         }
     }
 }
