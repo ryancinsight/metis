@@ -10,6 +10,8 @@ metis dev path/to/new-app/metis.json --once
 metis dev path/to/new-app/metis.json --watch
 metis build path/to/metis.json path/to/new-output
 metis package path/to/metis.json path/to/new-output
+metis build            # browser manifest in this directory, into dist/
+metis serve            # build it, then serve http://127.0.0.1:1420/
 metis completions powershell > metis-completion.ps1
 metis --help
 ```
@@ -22,7 +24,10 @@ USTAR archive. `dev` uses that manifest, runs the declared
 entry through Moirai and, on Windows, reloads
 after real source or resource bytes change. Watch mode reports readiness, idle
 and reload events; a failed Cargo run is reported and never launches a previous
-executable. `completions` generates bash, fish,
+executable. A manifest with a `frontend` is a browser application: `build`
+compiles its package to WebAssembly and stages the page with the generated
+loader, and `serve` builds it and serves it on loopback, as the
+[starter](../metis-starter/README.md) shows. `completions` generates bash, fish,
 PowerShell or zsh output from the same command table as `--help`.
 
 See the [distribution manual](../../docs/manual/distribution.md) for the manifest,

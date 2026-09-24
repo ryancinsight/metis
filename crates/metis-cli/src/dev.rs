@@ -4,10 +4,10 @@ use crate::{
     Result,
     manifest::{self, Application},
     process::{self, Containment},
+    tree,
 };
 use moirai_transport::process::ProcessOutcome;
 use std::{
-    collections::VecDeque,
     ffi::OsString,
     fs,
     io::Read,
@@ -26,9 +26,7 @@ mod watcher;
 
 const PROCESS_OBSERVATION: Duration = Duration::from_millis(100);
 const SINGLE_RUN_DEADLINE: Duration = Duration::from_mins(5);
-const WATCH_FILE_LIMIT: usize = 4096;
 const WATCH_BYTES_LIMIT: u64 = 512 * 1024 * 1024;
-const WATCH_DEPTH_LIMIT: usize = 64;
 
 #[derive(Clone, Copy)]
 enum DevMode {
@@ -217,35 +215,7 @@ fn wait_for_source_change(
 }
 
 fn snapshot(root: &Path) -> Result<Snapshot> {
-    let mut files = Vec::new();
-    let mut pending = VecDeque::from([(root.to_path_buf(), 0_usize)]);
-    while let Some((directory, depth)) = pending.pop_front() {
-        if depth > WATCH_DEPTH_LIMIT {
-            return Err("dev watch tree exceeds the 64-level depth budget".into());
-        }
-        let mut entries = fs::read_dir(&directory)?.collect::<std::result::Result<Vec<_>, _>>()?;
-        entries.sort_by_key(std::fs::DirEntry::file_name);
-        for entry in entries {
-            let path = entry.path();
-            let metadata = fs::symlink_metadata(&path)?;
-            if manifest::linked(&metadata) {
-                return Err("dev watch input contains a linked path".into());
-            }
-            if metadata.is_dir() {
-                if !ignored_directory(entry.file_name().as_os_str()) {
-                    pending.push_back((path, depth + 1));
-                }
-            } else if metadata.is_file() {
-                files.push(path);
-                if files.len() > WATCH_FILE_LIMIT {
-                    return Err("dev watch tree exceeds the 4096-file budget".into());
-                }
-            } else {
-                return Err("dev watch input contains a non-regular file".into());
-            }
-        }
-    }
-    files.sort();
+    let files = tree::regular_files(root, ignored_directory)?;
     let mut total = 0_u64;
     let mut hash = moirai_crypto::Sha256::new();
     let mut buffer = [0_u8; 16 * 1024];

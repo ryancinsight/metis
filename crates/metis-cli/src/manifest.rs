@@ -2,6 +2,7 @@
 #[cfg(any(windows, test))]
 mod icon;
 mod svg;
+mod web;
 
 use crate::Result;
 use serde::{Deserialize, Serialize};
@@ -18,6 +19,49 @@ pub(crate) const FILE_LIMIT: usize = 4096;
 pub(crate) const PAYLOAD_LIMIT: u64 = 1024 * 1024 * 1024;
 #[cfg(windows)]
 pub(crate) use icon::{ICON_LIMIT, source as icon_source, validate_file as validate_icon_file};
+pub(crate) use web::WebApplication;
+
+/// The manifest `metis build` and `metis serve` read when none is named.
+pub(crate) const DEFAULT_MANIFEST: &str = "metis.json";
+
+/// A validated `metis.json`: a native application, or a browser application
+/// whose `frontend` names its page and WebAssembly package.
+pub(crate) enum Manifest {
+    Native(Application),
+    Web(WebApplication),
+}
+
+impl Manifest {
+    /// Reads and validates the manifest; returns it with its canonical directory.
+    ///
+    /// A document with a `frontend` member is a browser application; any
+    /// other is native. Each shape rejects the other's fields.
+    pub(crate) fn read(path: &Path) -> Result<(Self, PathBuf)> {
+        let mut bytes = Vec::new();
+        fs::File::open(path)?
+            .take(MANIFEST_LIMIT + 1)
+            .read_to_end(&mut bytes)?;
+        if bytes.len() as u64 > MANIFEST_LIMIT {
+            return Err("application manifest exceeds the 1 MiB budget".into());
+        }
+        let document: serde_json::Value = serde_json::from_slice(&bytes)?;
+        let manifest = if document.get("frontend").is_some() {
+            let application: WebApplication = serde_json::from_value(document)?;
+            application.validate()?;
+            Self::Web(application)
+        } else {
+            let application: Application = serde_json::from_value(document)?;
+            application.validate()?;
+            Self::Native(application)
+        };
+        let absolute = path.canonicalize()?;
+        let root = absolute
+            .parent()
+            .ok_or("manifest has no parent")?
+            .to_path_buf();
+        Ok((manifest, root))
+    }
+}
 
 pub(crate) fn validate_resource_file(path: &Path) -> Result<()> {
     if path
@@ -64,22 +108,15 @@ pub(crate) struct Resource {
 }
 
 impl Application {
+    /// Reads a native application manifest.
     pub(crate) fn read(path: &Path) -> Result<(Self, PathBuf)> {
-        let mut bytes = Vec::new();
-        fs::File::open(path)?
-            .take(MANIFEST_LIMIT + 1)
-            .read_to_end(&mut bytes)?;
-        if bytes.len() as u64 > MANIFEST_LIMIT {
-            return Err("application manifest exceeds the 1 MiB budget".into());
+        match Manifest::read(path)? {
+            (Manifest::Native(application), root) => Ok((application, root)),
+            (Manifest::Web(_), _) => Err(
+                "this manifest describes a browser application; use metis build or metis serve"
+                    .into(),
+            ),
         }
-        let value: Self = serde_json::from_slice(&bytes)?;
-        value.validate()?;
-        let absolute = path.canonicalize()?;
-        let root = absolute
-            .parent()
-            .ok_or("manifest has no parent")?
-            .to_path_buf();
-        Ok((value, root))
     }
 
     pub(crate) fn validate(&self) -> Result<()> {
@@ -87,18 +124,8 @@ impl Application {
             return Err("unsupported application manifest schema".into());
         }
         identifier(&self.id)?;
-        for field in [&self.name, &self.manufacturer] {
-            if field.is_empty()
-                || field.len() > 100
-                || field
-                    .chars()
-                    .any(|c| c.is_control() || matches!(c, '[' | ']' | '"' | ';'))
-            {
-                return Err(
-                    "application label is empty, too long or contains installer syntax".into(),
-                );
-            }
-        }
+        label(&self.name)?;
+        label(&self.manufacturer)?;
         let version: Vec<_> = self
             .version
             .split('.')
@@ -193,6 +220,18 @@ impl Application {
         }
         Ok(())
     }
+}
+
+fn label(value: &str) -> Result<()> {
+    if value.is_empty()
+        || value.len() > 100
+        || value
+            .chars()
+            .any(|c| c.is_control() || matches!(c, '[' | ']' | '"' | ';'))
+    {
+        return Err("application label is empty, too long or contains installer syntax".into());
+    }
+    Ok(())
 }
 
 fn identifier(value: &str) -> Result<()> {

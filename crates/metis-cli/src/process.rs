@@ -60,7 +60,9 @@ pub(crate) fn spawn(
         Containment::Required => spec.tree_containment(),
         Containment::Uncontained => spec,
     };
-    Ok(ProcessSupervisor::new().spawn(spec, ProcessDropPolicy::TerminateOnDrop)?)
+    ProcessSupervisor::new()
+        .spawn(spec, ProcessDropPolicy::TerminateOnDrop)
+        .map_err(|error| start_error(program, &error))
 }
 
 pub(crate) fn capture(program: &Path, args: &[OsString], timeout: Duration) -> Result<Vec<u8>> {
@@ -69,13 +71,15 @@ pub(crate) fn capture(program: &Path, args: &[OsString], timeout: Duration) -> R
         .async_threads(1)
         .build()?;
     let result = (|| {
-        let mut child = ProcessSupervisor::new().spawn(
-            ProcessSpec::new(program)
-                .args(args)
-                .piped_stdio()
-                .tree_containment(),
-            ProcessDropPolicy::TerminateOnDrop,
-        )?;
+        let mut child = ProcessSupervisor::new()
+            .spawn(
+                ProcessSpec::new(program)
+                    .args(args)
+                    .piped_stdio()
+                    .tree_containment(),
+                ProcessDropPolicy::TerminateOnDrop,
+            )
+            .map_err(|error| start_error(program, &error))?;
         drop(child.take_stdin());
         let stdout = child
             .take_stdout()
@@ -105,4 +109,9 @@ pub(crate) fn capture(program: &Path, args: &[OsString], timeout: Duration) -> R
     })();
     executor.shutdown()?;
     result
+}
+
+/// A spawn failure carries the OS error but not the program; name it.
+fn start_error(program: &Path, error: &impl std::fmt::Debug) -> Box<dyn std::error::Error> {
+    format!("could not start {}: {error:?}", program.display()).into()
 }

@@ -122,6 +122,54 @@ Windows command-line quoting. Payloads are limited to 4096 files and 1 GiB; the 
 limited to 1 MiB. Linked inputs, traversal and destination collisions reject.
 Keep source files and output ancestors stable while the command runs.
 
+## Build and serve a browser application
+
+A manifest with a `frontend` member describes a page served to a browser rather
+than a native executable, like a Tauri project's frontend with its Rust code
+compiled to WebAssembly. The [starter manifest](../../crates/metis-starter/metis.json)
+is the reference:
+
+```json
+{
+  "schema": 1,
+  "name": "Metis Starter",
+  "cargo_manifest": "Cargo.toml",
+  "frontend": { "package": "metis-starter", "directory": "frontend" }
+}
+```
+
+`frontend.package` is a workspace package with a `cdylib` target and
+`frontend.directory` holds the static page, which must include `index.html`.
+Native fields such as `binaries` or `entry` are rejected in this shape, and a
+native manifest rejects `frontend`. In the manifest's directory:
+
+```powershell
+metis build
+metis serve
+```
+
+Either command reads `./metis.json` unless a manifest path is given. `build`
+compiles the package with `--release --locked --target wasm32-unknown-unknown`,
+runs the `wasm-bindgen` CLI with `--target web --no-typescript`, copies the page
+beside the generated loader, and writes `dist/app` and `dist/inventory.json`
+beside the manifest; `metis build MANIFEST OUTPUT` chooses another output. A
+page file named like a generated file is an error. The CLI's version must equal
+the `wasm-bindgen` crate the package's locked dependency graph resolves, because
+the loader and the crate's embedded schema change together: `WASM_BINDGEN`
+names the executable, otherwise it is found on `PATH`, and a mismatch reports
+the install command. Rebuilding replaces an output only when its inventory
+records a previous browser build; any other existing directory is refused.
+
+`serve` builds, reads the staged page into memory and serves it on
+`http://127.0.0.1:1420/`, the port a Tauri development server uses, until
+interrupted. `--port PORT` selects another port; `0` asks the system for one,
+and the address line reports it. Requests are `GET` only; a path outside the
+build is 404 and a malformed target 400. Responses carry `Cache-Control:
+no-cache`, so reloading after a rebuild fetches the new files, and
+`X-Content-Type-Options: nosniff`, with `application/wasm` for modules. The
+server accepts at most 16 connections at a time, each with a 10-second request
+deadline. Serving does not watch sources; run `metis serve` again after a change.
+
 ## Run the portable application
 
 ```powershell

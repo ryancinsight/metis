@@ -1,4 +1,6 @@
 /output/
+# `metis build` output beside a browser application manifest.
+/crates/metis-starter/dist/
 /target/
 /fuzz/artifacts/
 /fuzz/corpus/

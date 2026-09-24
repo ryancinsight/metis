@@ -24,9 +24,15 @@ const COMMANDS: &[Command] = &[
     },
     Command {
         name: "build",
-        usage: "build MANIFEST OUTPUT",
-        summary: "Build and stage a portable application",
+        usage: "build [MANIFEST] [OUTPUT]",
+        summary: "Build a portable or browser application",
         options: &[],
+    },
+    Command {
+        name: "serve",
+        usage: "serve [MANIFEST] [--port PORT]",
+        summary: "Build a browser application and serve it locally",
+        options: &["--port"],
     },
     Command {
         name: "package",
@@ -67,7 +73,7 @@ pub(crate) fn help() -> String {
         output.push('\n');
     }
     output.push_str(
-        "\nOptions:\n  -h, --help                       Show this help\n\nMANIFEST is a versioned metis.json file. OUTPUT must not exist.\nPortable builds use the host Cargo target; `package` emits a Windows x64 MSI,\nmacOS `.app` bundle or Linux USTAR archive on the matching host. Builds use\nCargo --locked and compiler artifact messages.\nOn Linux, install maps the archive usr tree below an absolute PREFIX and\nrewrites its desktop entry; uninstall removes only unchanged package files.\nNo signing or publication is performed. `dev --watch` reloads after source or\nresource changes and never runs an artifact from a failed build. See the\ndistribution manual for installation and target limits.\n",
+        "\nOptions:\n  -h, --help                       Show this help\n\nMANIFEST is a versioned metis.json file, ./metis.json when omitted.\nA native build's OUTPUT is required and must not exist.\nPortable builds use the host Cargo target; `package` emits a Windows x64 MSI,\nmacOS `.app` bundle or Linux USTAR archive on the matching host. Builds use\nCargo --locked and compiler artifact messages.\nOn Linux, install maps the archive usr tree below an absolute PREFIX and\nrewrites its desktop entry; uninstall removes only unchanged package files.\nNo signing or publication is performed. `dev --watch` reloads after source or\nresource changes and never runs an artifact from a failed build.\nA manifest with a `frontend` is a browser application: build compiles its\npackage to WebAssembly, generates the loader with the wasm-bindgen CLI\nmatching the locked crate (WASM_BINDGEN overrides PATH) and stages the page\nin OUTPUT/app, OUTPUT defaulting to dist beside the manifest. serve builds,\nthen serves that page on 127.0.0.1 port 1420 until interrupted.\nSee the distribution manual for installation and target limits.\n",
     );
     output
 }
@@ -122,7 +128,7 @@ fn fish() -> String {
         .collect::<Vec<_>>()
         .join("\n");
     format!(
-        "{commands}\ncomplete -c metis -n '__fish_seen_subcommand_from completions' -a 'bash fish powershell zsh'\ncomplete -c metis -l help -s h -d 'Show this help'\ncomplete -c metis -n '__fish_seen_subcommand_from dev' -l once -d 'Run one build and exit'\ncomplete -c metis -n '__fish_seen_subcommand_from dev' -l watch -d 'Reload on source or resource changes'\n"
+        "{commands}\ncomplete -c metis -n '__fish_seen_subcommand_from completions' -a 'bash fish powershell zsh'\ncomplete -c metis -l help -s h -d 'Show this help'\ncomplete -c metis -n '__fish_seen_subcommand_from dev' -l once -d 'Run one build and exit'\ncomplete -c metis -n '__fish_seen_subcommand_from dev' -l watch -d 'Reload on source or resource changes'\ncomplete -c metis -n '__fish_seen_subcommand_from serve' -l port -d 'Loopback port, 1420 by default'\n"
     )
 }
 
