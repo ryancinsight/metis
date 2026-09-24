@@ -130,6 +130,37 @@ impl WebViewSurface {
     }
 }
 
+impl crate::native::TrayHost for WebViewSurface {
+    fn show_tray_icon(
+        &mut self,
+        image: &crate::native::TrayIconImage,
+        tooltip: &str,
+    ) -> io::Result<()> {
+        self.host.show_tray_icon(image, tooltip)
+    }
+
+    fn show_notification(&mut self, title: &str, body: &str) -> io::Result<()> {
+        self.host.show_notification(title, body)
+    }
+
+    fn remove_tray_icon(&mut self) -> io::Result<bool> {
+        self.host.remove_tray_icon()
+    }
+
+    fn take_tray_events(&mut self) -> Vec<crate::native::TrayEvent> {
+        self.host.take_tray_events()
+    }
+
+    fn show_popup_menu(
+        &mut self,
+        menu: &crate::native::PopupMenu,
+        x: i32,
+        y: i32,
+    ) -> io::Result<Option<usize>> {
+        self.host.show_popup_menu(menu, x, y)
+    }
+}
+
 impl crate::native::HotkeyHost for WebViewSurface {
     fn register_hotkey(
         &mut self,

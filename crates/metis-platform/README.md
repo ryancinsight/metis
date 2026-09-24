@@ -156,6 +156,16 @@ is refused with the native error. The surface queues presses apart from
 window events; `take_commands` turns them into the bound commands after each
 event wait. Closing the surface releases every registration.
 
+`native::TrayHost` shows a notification-area icon and notifications, like
+Tauri's tray and notification plugins. The application draws a 16 or 32 pixel
+icon into a `Framebuffer` with the Metis rasterizer and converts it with
+`native::tray_image`. Notifications are shell balloons, which Windows 10 and
+later present as toasts. Clicks, keyboard selection, notification clicks and
+context requests arrive as `TrayEvent` values from `take_tray_events`; a
+context request carries the screen position at which `show_popup_menu` opens
+a native menu and returns the chosen item's index. Closing the surface
+removes the icon.
+
 Applications that use the native pixel surface can share the bounded host loop
 through `metis_platform::native::NativeApplication` and
 `run_native_application`. The application owns its state and frame, applies
