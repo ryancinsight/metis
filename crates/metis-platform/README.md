@@ -78,7 +78,10 @@ Atkinson Hyperlegible Regular and Bold faces (SIL Open Font License 1.1,
 `fonts/OFL.txt`), rasterized unhinted with exact area coverage at fractional
 positions; characters the faces lack draw the missing-glyph box. Glyphs
 advance by their `hmtx` widths without kerning, and it is not a Unicode
-shaping engine.
+shaping engine. Rasterized coverage is memoized per rendering thread, keyed on
+face, glyph, scale and the exact device pen and baseline, so a repaint that
+redraws a glyph where it was reproduces it bit for bit without rasterizing
+again; two generations of at most 2 MiB each bound the memo.
 
 `DisplayScale` is the validated native device-pixel ratio used by the layout
 and rasterizer seams. It stores thousandths so 120 DPI and 144 DPI map to
