@@ -90,7 +90,8 @@ application for them, as a Tauri bundle's `fileAssociations` does:
 Extensions are 1 to 16 lowercase letters or digits without the dot, and a
 MIME type is a lowercase `type/subtype`. Both must be unique across the
 manifest. The description is at most 64 characters, without control
-characters or the `[]{}` installer formatting syntax. At most eight types,
+characters or the `[]{}` installer formatting syntax, and does not start
+with `#`, which the MSI reads as a number. At most eight types,
 each with at most eight extensions, are accepted.
 
 - The Linux package lists the MIME types in the desktop entry, which receives

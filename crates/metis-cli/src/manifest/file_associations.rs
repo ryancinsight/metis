@@ -62,14 +62,16 @@ pub(super) fn validate(associations: &[FileAssociation]) -> Result<()> {
             return Err(format!("{} is not a unique type/subtype", field("mime_type")).into());
         }
         let description = &association.description;
+        // The MSI Registry table reads a leading `#` as a numeric value.
         if description.trim().is_empty()
+            || description.starts_with('#')
             || description.chars().count() > DESCRIPTION_CHARS
             || description
                 .chars()
                 .any(|c| c.is_control() || matches!(c, '[' | ']' | '{' | '}'))
         {
             return Err(format!(
-                "{} must be 1 to 64 characters without control or formatted syntax",
+                "{} must be 1 to 64 characters without control or formatted syntax or a leading #",
                 field("description")
             )
             .into());
@@ -126,6 +128,7 @@ mod tests {
             association(&["a"], "application/x-a", " "),
             association(&["a"], "application/x-a", "line\nbreak"),
             association(&["a"], "application/x-a", "[ProgramFilesFolder]"),
+            association(&["a"], "application/x-a", "#1 format"),
             association(&["a"; 9], "application/x-a", "A"),
         ] {
             assert!(
