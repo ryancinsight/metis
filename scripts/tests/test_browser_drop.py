@@ -143,10 +143,11 @@ execute(result => {
     released_locks: releasedLocks,
     revoked_urls: revokedUrls
   };
-  // Close the pipe before ending the process.  Windows runners can retain a
-  // diagnostic subprocess after the promise chain has completed when stdout
-  // stays open, making the Python timeout observe a false cleanup hang.
-  process.stdout.end(JSON.stringify(result), () => process.exit(0));
+  // Write synchronously and exit unconditionally: an asynchronous stdout
+  // flush callback left hosted Windows runners holding the process past the
+  // parent deadline after the promise chain had completed.
+  require('node:fs').writeSync(1, JSON.stringify(result));
+  process.exit(0);
 });
 """
 
@@ -908,13 +909,21 @@ class FileDropTests(unittest.TestCase):
             diagnostic_path = root / "diagnostic.js"
             harness_path.write_text(file_harness, encoding="utf-8")
             diagnostic_path.write_text(READ_FAILURE_DIAGNOSTIC, encoding="utf-8")
-            process = subprocess.run(
-                ["node", str(harness_path), str(diagnostic_path), mode],
-                check=True,
-                capture_output=True,
-                text=True,
-                timeout=10,
-            )
+            try:
+                process = subprocess.run(
+                    ["node", str(harness_path), str(diagnostic_path), mode],
+                    check=True,
+                    capture_output=True,
+                    text=True,
+                    encoding="utf-8",
+                    timeout=10,
+                )
+            except subprocess.TimeoutExpired as error:
+                # Whether the result was already written separates a hang in
+                # the diagnostic's cleanup from one in process startup or exit.
+                raise AssertionError(
+                    f"{mode}: node exceeded 10 s; stdout={error.stdout!r} stderr={error.stderr!r}"
+                ) from error
         return json.loads(process.stdout)
 
     @unittest.skipUnless(shutil.which("node"), "Node.js is required for browser-script fault injection")
