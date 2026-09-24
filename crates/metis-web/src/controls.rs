@@ -26,9 +26,9 @@ pub(crate) const BROWSER_MARKUP: &str = r#"
       <button id="open-session-dialog" type="button" aria-haspopup="dialog" aria-controls="session-dialog">Session details</button>
     </div>
     <div id="command-menu" role="menu" aria-label="Application commands" aria-hidden="true" data-command-menu-open="false">
-      <button id="command-focus-patient" role="menuitem" type="button">Focus patient reference</button>
-      <button id="command-theme-dark" role="menuitem" type="button">Use dark theme</button>
-      <button id="command-theme-system" role="menuitem" type="button">Use system theme</button>
+      <button id="command-focus-patient" role="menuitem" type="button" aria-keyshortcuts="Alt+Shift+P">Focus patient reference</button>
+      <button id="command-theme-dark" role="menuitem" type="button" aria-keyshortcuts="Alt+Shift+D">Use dark theme</button>
+      <button id="command-theme-system" role="menuitem" type="button" aria-keyshortcuts="Alt+Shift+S">Use system theme</button>
     </div>
     <p id="command-status" role="status" aria-live="polite">Commands ready</p>
   </nav>

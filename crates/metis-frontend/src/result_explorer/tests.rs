@@ -134,3 +134,129 @@ fn bounds_and_malformed_values_are_rejected() {
     );
     assert_eq!(explorer.row_count(), 0);
 }
+
+/// One row as `(patient, audit id, volume rate, drug rate)`.
+type Spec = (String, u64, f64, f64);
+
+/// The flattened tree as the specification describes it, computed naively:
+/// groups in first-seen order, each group's filtered rows in row order, and
+/// groups ordered by label or by their first row.
+fn reference_tree(explorer: &ResultExplorer, rows: &[Spec]) -> Vec<String> {
+    let filter = explorer.filter();
+    let sort = explorer.sort();
+    let row_order = |left: &Spec, right: &Spec| {
+        let ordering = match sort.key() {
+            SortKey::Sequence => left.1.cmp(&right.1),
+            SortKey::Patient => left.0.cmp(&right.0),
+            SortKey::VolumeRate => left.2.total_cmp(&right.2),
+            SortKey::DrugRate => left.3.total_cmp(&right.3),
+        };
+        let ordering = match sort.direction() {
+            SortDirection::Ascending => ordering,
+            SortDirection::Descending => ordering.reverse(),
+        };
+        ordering.then_with(|| left.1.cmp(&right.1))
+    };
+    let mut labels: Vec<&str> = Vec::new();
+    for (label, ..) in rows {
+        if !labels.contains(&label.as_str()) {
+            labels.push(label);
+        }
+    }
+    let mut groups: Vec<(&str, Vec<&Spec>)> = labels
+        .iter()
+        .map(|label| {
+            let mut members: Vec<_> = rows
+                .iter()
+                .filter(|row| row.0 == *label && row.0.contains(filter))
+                .collect();
+            members.sort_by(|left, right| row_order(left, right));
+            (*label, members)
+        })
+        .filter(|(_, members)| !members.is_empty())
+        .collect();
+    groups.sort_by(|left, right| {
+        if sort.key() == SortKey::Patient {
+            match sort.direction() {
+                SortDirection::Ascending => left.0.cmp(right.0),
+                SortDirection::Descending => right.0.cmp(left.0),
+            }
+        } else {
+            row_order(left.1[0], right.1[0])
+        }
+    });
+    let total = |label: &str| rows.iter().filter(|row| row.0 == label).count();
+    groups
+        .into_iter()
+        .flat_map(|(label, members)| {
+            std::iter::once(format!("group {label} {}", total(label)))
+                .chain(members.into_iter().map(|row| format!("row {}", row.1)))
+        })
+        .collect()
+}
+
+fn flattened_tree(explorer: &mut ResultExplorer) -> Vec<String> {
+    while explorer.can_previous() {
+        explorer.previous_page();
+    }
+    let mut entries = Vec::new();
+    loop {
+        let start = explorer.window_start();
+        let skip = entries.len().saturating_sub(start);
+        entries.extend(
+            explorer
+                .visible_entries()
+                .skip(skip)
+                .map(|entry| match entry {
+                    VisibleEntry::Group {
+                        label, row_count, ..
+                    } => format!("group {label} {row_count}"),
+                    VisibleEntry::Row(row) => format!("row {}", row.id().get()),
+                }),
+        );
+        if !explorer.can_next() {
+            return entries;
+        }
+        explorer.next_page();
+    }
+}
+
+#[test]
+fn bucketed_tree_matches_the_reference_under_every_sort_and_filter() {
+    let rows: Vec<Spec> = (1_u64..=40)
+        .map(|id| {
+            // Deterministic scatter across five patients with repeated rates,
+            // so ties fall through to the identity order.
+            let patient = format!("PT-{}", ["D", "A", "C", "E", "B"][(id * 7 % 5) as usize]);
+            let volume = f64::from(u32::try_from(id * 13 % 9).expect("small"));
+            let drug = f64::from(u32::try_from(id * 5 % 11).expect("small"));
+            (patient, id, volume, drug)
+        })
+        .collect();
+    let mut explorer = ResultExplorer::new();
+    for (patient, id, volume, drug) in &rows {
+        explorer
+            .record_response(patient, &response(*id, *volume, *drug))
+            .expect("valid row");
+    }
+    for key in [
+        SortKey::Sequence,
+        SortKey::Patient,
+        SortKey::VolumeRate,
+        SortKey::DrugRate,
+    ] {
+        for direction in [SortDirection::Ascending, SortDirection::Descending] {
+            explorer
+                .set_sort(SortOrder::new(key, direction))
+                .expect("sort");
+            for filter in ["", "PT-", "A", "E", "missing"] {
+                explorer.set_filter(filter).expect("filter");
+                assert_eq!(
+                    flattened_tree(&mut explorer),
+                    reference_tree(&explorer, &rows),
+                    "{key:?} {direction:?} {filter:?}"
+                );
+            }
+        }
+    }
+}

@@ -92,6 +92,9 @@ pub struct SemanticNode {
     pub description: Option<String>,
     /// Current value for a value-bearing control.
     pub value: Option<String>,
+    /// Keyboard shortcuts announced through `aria-keyshortcuts`, in the
+    /// WAI-ARIA `Control+Shift+K` spelling.
+    pub keyboard_shortcuts: Option<String>,
     /// Whether the node is disabled for host actions.
     pub disabled: bool,
     /// Whether the node is hidden from host interaction.

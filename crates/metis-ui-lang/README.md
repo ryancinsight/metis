@@ -202,3 +202,23 @@ let pixels = framebuffer.render(&display).expect("clipped rendering is infallibl
 assert_eq!(pixels[0], 0xff12_3456);
 # Ok::<(), metis_core::error::MetisError>(())
 ```
+
+## Virtual lists
+
+`VirtualList` lays a long list out along one scroll axis without building its
+items. A host asks for the window that intersects its viewport, builds only
+those items at `window.start`, and reserves `total_extent()` so the scrollbar
+covers the whole list. Uniform lists answer in constant time; variable lists
+keep extents in a Fenwick tree, so locating an offset, measuring an item and
+updating a measured extent are logarithmic.
+
+```rust
+use metis_ui_lang::{ScrollAlign, VirtualList};
+
+let list = VirtualList::uniform(10_000, 24)?.with_overscan(2);
+let window = list.window(2_400, 480);
+assert_eq!(window.items, 98..122);
+assert_eq!(window.start, 98 * 24);
+assert_eq!(list.scroll_to(500, 480, 0, ScrollAlign::Center), Some(11_772));
+# Ok::<(), metis_core::error::MetisError>(())
+```

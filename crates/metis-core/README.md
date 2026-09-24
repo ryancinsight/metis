@@ -47,3 +47,24 @@ Metis's capability and audit tests exercise the same functions at their
 canonical wire boundaries.
 See the workspace [wire contract](../../docs/INTERFACE.md) and
 [verification limits](../../docs/VERIFICATION.md). This package is unpublished.
+
+`input` owns the keyboard accelerator vocabulary every host shares. It
+parses the `CmdOrCtrl+Shift+K` text Tauri and Electron menus use, resolves
+browser `KeyboardEvent` codes and Windows virtual keys onto the same keys, and
+formats the WAI-ARIA `aria-keyshortcuts` spelling. `ShortcutMap` refuses a
+conflicting binding when it is made.
+
+```rust
+use metis_core::input::{Accelerator, Key, Modifiers, ShortcutMap};
+
+let save = Accelerator::parse_with_primary("CmdOrCtrl+S", Modifiers::CTRL)?;
+let pressed = Accelerator::new(
+    Modifiers::NONE.with(Modifiers::CTRL, true),
+    Key::from_browser_code("KeyS").expect("letter key"),
+);
+let mut shortcuts = ShortcutMap::new();
+shortcuts.bind(save, "save").expect("unbound accelerator");
+assert_eq!(shortcuts.resolve(pressed), Some(&"save"));
+assert_eq!(save.aria_keyshortcuts(), "Control+S");
+# Ok::<(), metis_core::input::AcceleratorError>(())
+```

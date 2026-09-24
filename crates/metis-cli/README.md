@@ -21,8 +21,9 @@ a runnable starter entry without overwriting an existing directory. `build`
 stages a host-native portable application on Windows, macOS or Linux; `package`
 adds the matching host package: Windows x64 MSI, macOS `.app` bundle or Linux
 USTAR archive. `dev` uses that manifest, runs the declared
-entry through Moirai and, on Windows, reloads
-after real source or resource bytes change. Watch mode reports readiness, idle
+entry through Moirai and reloads after real
+source or resource bytes change: Windows is notified by the kernel, and other
+hosts poll a bounded metadata fingerprint before the byte check. Watch mode reports readiness, idle
 and reload events; a failed Cargo run is reported and never launches a previous
 executable. A manifest with a `frontend` is a browser application: `build`
 compiles its package to WebAssembly and stages the page with the generated

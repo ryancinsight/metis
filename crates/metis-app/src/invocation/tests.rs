@@ -8,6 +8,16 @@ use super::{
 };
 use std::time::Duration;
 
+/// An absolute capture path on the host running the test; the roles reject
+/// relative outputs, and absoluteness is platform-defined.
+fn capture_path(name: &str) -> String {
+    if cfg!(windows) {
+        format!(r"C:\captures\{name}")
+    } else {
+        format!("/captures/{name}")
+    }
+}
+
 #[test]
 fn dispatch_preserves_values_and_selects_one_role() {
     let inputs = ["60".to_owned(), "2".to_owned(), "0.2".to_owned()];
@@ -127,7 +137,7 @@ fn permission_probe_roles_preserve_values() {
 #[test]
 fn permission_probe_capture_roles_preserve_output_and_values() {
     let inputs = ["60".to_owned(), "2".to_owned(), "0.2".to_owned()];
-    let output = r"C:\captures\permission-probe.png";
+    let output = &capture_path("permission-probe.png");
     assert_eq!(
         Invocation::parse(
             [
@@ -161,7 +171,7 @@ fn permission_probe_capture_roles_preserve_output_and_values() {
 #[test]
 fn theme_capture_roles_preserve_mode_output_and_values() {
     let inputs = ["60".to_owned(), "2".to_owned(), "0.2".to_owned()];
-    let output = r"C:\captures\theme-light.png";
+    let output = &capture_path("theme-light.png");
     assert_eq!(
         Invocation::parse(
             [
@@ -203,13 +213,13 @@ fn semantic_capture_role_requires_absolute_json_output() {
         Invocation::parse(
             [
                 SEMANTIC_CAPTURE_ROLE.to_owned(),
-                r"C:\captures\semantic.json".to_owned()
+                capture_path("semantic.json")
             ]
             .into_iter()
             .chain(inputs.clone())
         ),
         Ok(Invocation::SemanticCapture {
-            output: r"C:\captures\semantic.json".into(),
+            output: capture_path("semantic.json").into(),
             inputs,
         })
     );

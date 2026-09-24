@@ -206,6 +206,7 @@ an owner. “Unsupported” cannot replace delivery of a required mobile/native 
 - Scope: native WebView hosting under Wayland and X11, input/accessibility/IME, process containment, permission restrictions and bounded teardown.
 - Acceptance: [V05](docs/VERIFICATION.md#V05) on both display paths, positive IPC and unauthorized file/network/process denial; unavailable prerequisites produce actionable errors, never sandbox bypass.
 - Demonstration: actual captures and distribution/display prerequisites in the manual; no support inferred from a Linux build.
+- Portability increment (2026-09-24): the workspace now builds, lints (`clippy -D warnings`) and passes its script suites on Linux, and `metis dev --watch` polls a bounded fingerprint where no native notifier exists. Three `metis-app` process tests still fail on Linux because Moirai's portable transport reports `UnsupportedContainment`; process containment remains this item's Moirai dependency.
 
 <a id="METIS-ASSETS-001"></a>
 ## METIS-ASSETS-001 — Images, vectors and media assets [major]
@@ -305,6 +306,7 @@ an owner. “Unsupported” cannot replace delivery of a required mobile/native 
   Escape before exiting. Native component/event tests pass; installed
   screen-reader speech, native tray/notification/shortcut services and physical
   window captures remain host-specific residuals.
+- Shortcut increment (2026-09-24): `metis_core::input` parses `CmdOrCtrl` accelerator text, resolves browser `KeyboardEvent` codes/keys and Windows virtual keys onto one key vocabulary and refuses conflicting bindings in a bounded `ShortcutMap`. The native window and browser workbench activate the local commands with Alt+Shift+P/D/S, ignore auto-repeat, and announce the bindings through `aria-keyshortcuts` (carried by the semantic tree). A real Chromium run applied the dark/system themes and focused the patient field by shortcut; that run also exposed and fixed the theme commands failing on the `<select>` provider seam. The packaged WebView2 page dispatches the same shortcuts from its buttons' `aria-keyshortcuts` (exercised in Chromium; its Windows asset test binds the attributes to the Rust declarations). OS-global hotkeys, tray, notifications, deep links, file associations, opener, single-instance and window state remain open.
 
 <a id="METIS-SERVICES-001"></a>
 ## METIS-SERVICES-001 — Scoped network, shell and sidecars [minor]
@@ -424,6 +426,7 @@ an owner. “Unsupported” cannot replace delivery of a required mobile/native 
 - limits: capacity is not allocator live bytes; served assets are pinned but their build relation to the reported RITK source is unknown; native/process/compositor/GPU usage is unmeasured.
 - next: resolve strict screenshot stability; measure allocator-used bytes and longer soak growth; add matched GPUI/Tauri fixtures on controlled hosts.
 - basis: 60ac67cbcaa09b1870144920c4024d7a38c08f16
+- Frame-path increment (2026-09-24): glyph coverage is memoized across repaints with bit-identical frame hashes; the `frame` bench's keystroke repaint fell from 1.01 ms to 0.21 ms (800x600) and from 1.20 ms to 0.28 ms (1600x1200), full theme repaints by 28% and 18%. The result explorer's regrouping and tree rebuild became linear passes (20 × 256 recorded rows across 64 patients: 501 ms to 86 ms, release). Box shadows and diagonal gradients are now the dominant full-repaint costs.
 
 <a id="METIS-PERF-PRESENT-003"></a>
 ## METIS-PERF-PRESENT-003 — Present only the damaged region [patch]
@@ -458,3 +461,4 @@ an owner. “Unsupported” cannot replace delivery of a required mobile/native 
 - Acceptance: inspected desktop/mobile and theme states; no horizontal overflow; 44px option targets; browser asset and capture gates pass.
 - Evidence: [Windows run 35877828557](https://github.com/ryancinsight/metis/actions/runs/35877828557) passed visual-tests (342 tests/30.051s under 60s), browser build, presentation and comparator (9/9 captures, 1/1 asset). Local focused suites: browser 15/0.205s; capture 22/18.217s. Citation reachability scan: 22.905s before batching; full command: 0.490s after 5e3ed7e. Local WASM compile: 108s.
 - basis: 7ddca83.
+- Increment (2026-09-24): color tokens are declared once through `light-dark()` and themes choose only the color scheme; the status line leads with a state indicator, diagnostics read as a monospace log, cards are elevated on a darker page, section headings carry an accent rule, the primary action is taller and the command menu shows each item's shortcut from `aria-keyshortcuts`. The layout manifest and 360/800/1440 captures were re-recorded in Chromium 141 through Playwright 1.56.1 with classic scrollbars; 44px option targets hold and no viewport overflows. Firefox/WebKit captures and scale-2 evidence remain open.

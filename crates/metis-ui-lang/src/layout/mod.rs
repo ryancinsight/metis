@@ -1,5 +1,7 @@
 //! Sequential row/column box layout and display-list generation.
 //!
+//! [`VirtualList`] windows long lists so a host builds only visible items.
+//!
 //! Supports explicit, automatic and minimum sizes, margins, padding, flex
 //! alignment, rounded backgrounds and uniform borders, outer box shadows and
 //! text. A visible `popover-anchor` element leaves normal flow and paints after
@@ -22,9 +24,13 @@ mod sizing_tests;
 #[cfg(test)]
 #[path = "../layout_tests.rs"]
 mod tests;
+mod virtual_list;
 
 pub use damage::Damage;
 pub use display::{DisplayCommand, DisplayList};
 pub use geometry::{LayoutViewport, compute_layout};
 pub use metis_platform::framebuffer::Rect;
 pub use metis_platform::rasterizer::{LineCap, LineJoin, StrokeWidth};
+pub use virtual_list::{
+    MAX_ITEM_EXTENT, MAX_VIRTUAL_ITEMS, ScrollAlign, VirtualList, VisibleWindow,
+};

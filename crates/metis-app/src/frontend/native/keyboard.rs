@@ -8,6 +8,7 @@
 
 use super::{NativeForm, submit};
 use metis_core::error::Result;
+use metis_core::input::{Accelerator, Key, Modifiers};
 use metis_frontend::{ApplicationCommand, FocusDirection, FocusOrigin};
 use metis_ipc::IpcTransport;
 use metis_platform::native::ModifierState;
@@ -22,10 +23,40 @@ const MENU_BUTTON: &str = "command-menu-toggle";
 /// Authored id of the submit control.
 const SUBMIT: &str = "btn-calc";
 
+/// The accelerator a key press forms, or `None` for keys outside the
+/// shared vocabulary, such as a bare modifier.
+pub(super) fn accelerator(virtual_key: u32, held: ModifierState) -> Option<Accelerator> {
+    let key = Key::from_windows_virtual_key(virtual_key)?;
+    let modifiers = Modifiers::NONE
+        .with(Modifiers::CTRL, held.ctrl())
+        .with(Modifiers::ALT, held.alt())
+        .with(Modifiers::SHIFT, held.shift())
+        .with(Modifiers::META, held.meta());
+    Some(Accelerator::new(modifiers, key))
+}
+
 impl<T: IpcTransport> NativeForm<T> {
+    /// Handles the keys this module owns: a first press of a command
+    /// accelerator, then focus keys. Returns whether the frame changed, or
+    /// `None` for a key that other handlers own.
+    pub(super) fn handle_key_down(
+        &mut self,
+        virtual_key: u32,
+        repeated: bool,
+        modifiers: ModifierState,
+    ) -> Result<Option<bool>> {
+        if !repeated
+            && let Some(accelerator) = accelerator(virtual_key, modifiers)
+            && self.app.activate_shortcut(accelerator)?
+        {
+            return Ok(Some(true));
+        }
+        self.handle_focus_key(virtual_key, repeated, modifiers)
+    }
+
     /// Handles a focus key, returning whether the frame changed, or `None`
     /// for a key that other handlers own.
-    pub(super) fn handle_focus_key(
+    fn handle_focus_key(
         &mut self,
         virtual_key: u32,
         repeated: bool,

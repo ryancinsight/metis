@@ -12,6 +12,7 @@
 mod cmap;
 mod faces;
 mod glyf;
+mod glyph_cache;
 mod raster;
 mod reader;
 mod text;

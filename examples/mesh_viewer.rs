@@ -5,9 +5,8 @@
 //! a framebuffer the renderer writes into directly. Nothing here re-implements
 //! projection, clipping, shading or depth.
 //!
-//! The viewer's input policy is expressed as semantic operations rather than as
-//! host events, so the state and rendering half of this file builds and runs
-//! everywhere while only the event translation is Windows-specific.
+//! Input policy is expressed as semantic operations rather than host events, so
+//! state and rendering build everywhere; only event translation is Windows-only.
 //!
 //! Controls, with the model following the cursor:
 //!
@@ -26,6 +25,7 @@
 //! Run it with `cargo run --locked --example mesh_viewer`. Pass `--headless` to
 //! render one frame offscreen, write `output/mesh-viewer/frame.bmp`, print the
 //! render statistics and exit, which is the form a non-interactive gate can use.
+#![cfg_attr(not(windows), expect(dead_code, reason = "Windows host input"))]
 
 use gaia::IndexedMesh;
 use gaia::application::render::{CullMode, OrbitCamera, RenderSettings, RenderStats, Renderer};

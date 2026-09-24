@@ -413,8 +413,8 @@ class BrowserAssetContractTests(unittest.TestCase):
             hashlib.sha256(styles_path.read_bytes()).hexdigest(),
         )
         expected = {
-            "360x640": (360, 640, "312.8px"),
-            "800x600": (800, 600, "348.4px 348.4px"),
+            "360x640": (360, 640, "313px"),
+            "800x600": (800, 600, "348.5px 348.5px"),
             "1440x900": (1440, 900, "436px 436px"),
         }
         for name, (width, height, columns) in expected.items():
@@ -450,9 +450,9 @@ class BrowserAssetContractTests(unittest.TestCase):
             'id="application-toolbar" role="toolbar" aria-label="Application commands"',
             'id="command-menu-toggle" type="button" aria-haspopup="menu" aria-expanded="false" aria-controls="command-menu"',
             'id="command-menu" role="menu" aria-label="Application commands" aria-hidden="true"',
-            'id="command-focus-patient" role="menuitem" type="button"',
-            'id="command-theme-dark" role="menuitem" type="button"',
-            'id="command-theme-system" role="menuitem" type="button"',
+            'id="command-focus-patient" role="menuitem" type="button" aria-keyshortcuts="Alt+Shift+P"',
+            'id="command-theme-dark" role="menuitem" type="button" aria-keyshortcuts="Alt+Shift+D"',
+            'id="command-theme-system" role="menuitem" type="button" aria-keyshortcuts="Alt+Shift+S"',
             'id="command-status" role="status" aria-live="polite"',
             'aria-labelledby="pointer-heading"',
             'aria-labelledby="drop-heading"',

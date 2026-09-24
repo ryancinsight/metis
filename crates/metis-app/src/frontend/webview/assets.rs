@@ -16,11 +16,11 @@ pub(super) const INDEX_HTML: &str = r#"<!doctype html>
     <nav id="application-navigation" aria-label="Application navigation">
       <div id="application-toolbar" role="toolbar" aria-label="Application commands">
         <button id="command-menu-toggle" type="button" aria-haspopup="menu" aria-expanded="false" aria-controls="command-menu">Commands</button>
-        <button id="command-focus-patient" type="button">Focus patient reference</button>
+        <button id="command-focus-patient" type="button" aria-keyshortcuts="Alt+Shift+P">Focus patient reference</button>
       </div>
       <div id="command-menu" role="menu" aria-label="Application commands" aria-hidden="true" data-command-menu-open="false">
-        <button id="command-theme-dark" role="menuitem" type="button">Use dark theme</button>
-        <button id="command-theme-system" role="menuitem" type="button">Use system theme</button>
+        <button id="command-theme-dark" role="menuitem" type="button" aria-keyshortcuts="Alt+Shift+D">Use dark theme</button>
+        <button id="command-theme-system" role="menuitem" type="button" aria-keyshortcuts="Alt+Shift+S">Use system theme</button>
       </div>
       <p id="command-status" role="status" aria-live="polite">Commands ready</p>
     </nav>
@@ -139,12 +139,15 @@ applyTheme(themeMode.value);
 themeMode.addEventListener('change', () => applyTheme(themeMode.value));
 
 function setCommandMenu(open, message) {
+  // Focus returns to the toggle only when a visible menu closes; a shortcut
+  // applied with the menu closed leaves focus where the user was.
+  const wasOpen = menuToggle.getAttribute('aria-expanded') === 'true';
   menuToggle.setAttribute('aria-expanded', String(open));
   commandMenu.setAttribute('aria-hidden', String(!open));
   commandMenu.dataset.commandMenuOpen = String(open);
   commandStatus.textContent = message;
   if (open) commandMenu.querySelector('[role="menuitem"]').focus();
-  else menuToggle.focus();
+  else if (wasOpen) menuToggle.focus();
 }
 
 menuToggle.addEventListener('click', () => {
@@ -169,6 +172,32 @@ document.getElementById('command-theme-system').addEventListener('click', () => 
   themeMode.value = 'system';
   applyTheme(themeMode.value);
   setCommandMenu(false, 'Theme: system preference');
+});
+
+// Each command's shortcut is read from its aria-keyshortcuts, so the binding
+// announced to assistive technology is the one that runs. The spelling puts
+// modifiers in Control, Alt, Shift, Meta order before the physical letter key,
+// as metis_core::input formats it; the page binds only letter shortcuts.
+const shortcutCommands = [...document.querySelectorAll('button[aria-keyshortcuts]')];
+function pressedShortcut(event) {
+  if (!/^Key[A-Z]$/.test(event.code)) return null;
+  const held = [
+    ['Control', event.ctrlKey],
+    ['Alt', event.altKey],
+    ['Shift', event.shiftKey],
+    ['Meta', event.metaKey],
+  ].filter(([, down]) => down).map(([name]) => name);
+  return [...held, event.code.slice(3)].join('+');
+}
+document.addEventListener('keydown', (event) => {
+  if (event.repeat) return;
+  const pressed = pressedShortcut(event);
+  const command = shortcutCommands.find(
+    (candidate) => candidate.getAttribute('aria-keyshortcuts') === pressed,
+  );
+  if (!command) return;
+  event.preventDefault();
+  command.click();
 });
 
 function showError(message) {

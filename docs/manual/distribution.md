@@ -81,22 +81,27 @@ one supplied argument and has no DICOM, image or clinical-domain behavior.
 Replace that entry with the application you own, then keep the manifest's
 explicit binary and resource inventory synchronized with it.
 
-Use the Windows filesystem notification host for a live development session:
+Start a live development session on any host:
 
 ```powershell
 metis dev .\sample-app\metis.json --watch
 ```
 
-The watcher observes the manifest directory through a bounded native handle and
-hashes regular source/resource bytes. Cargo is run with `--locked` for every
+On Windows the watcher observes the manifest directory through a bounded
+native change-notification handle. Other hosts poll a metadata fingerprint —
+relative path, size and modification time — of the same bounded file tree
+every 250 ms. Either signal only prompts a check: the loop then hashes regular
+source/resource bytes and rebuilds only when those bytes changed, so a coarse
+filesystem clock delays a reload rather than missing or duplicating one. Cargo is run with `--locked` for every
 generation. A source or resource change terminates the contained child and
-starts a new Cargo run; changes under `.git`, `target`, `output` and
+starts a new Cargo run; changes under `.git`, `target`, `output`, `dist` and
 `node_modules` are excluded from the fingerprint so compiler output cannot
 trigger a reload loop. If the manifest or source does not parse, or Cargo
 returns a failure status, the diagnostic is shown and no previously built
-executable is launched. Fix the input and save it again to retry. `--once` is
-available on every host and has a 300-second process deadline; `--watch`
-currently requires Windows filesystem notifications. Watch mode prints a
+executable is launched. Fix the input and save it again to retry. `--once` has
+a 300-second process deadline. The Windows child runs in a contained job;
+other hosts run it uncontained until Moirai provides their containment. Watch
+mode prints a
 readiness line before the first build, an idle line after each generation and a
 reload line for every accepted source or resource change.
 

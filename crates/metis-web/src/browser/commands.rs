@@ -1,7 +1,8 @@
 use super::{BrowserState, view};
 use crate::controls::{self, ControlField};
+use metis_core::input::{Accelerator, Key, Modifiers};
 use metis_frontend::ApplicationCommand;
-use moirai_pal::wasm::{WebDocument, WebEventListener};
+use moirai_pal::wasm::{KeyboardMetadata, WebDocument, WebEventListener};
 use std::{cell::RefCell, io, rc::Rc};
 
 /// Rust-owned state for the browser command surface.
@@ -43,6 +44,7 @@ pub(super) fn listeners(
             &view::element(document, "command-theme-system")?,
         )?,
         escape_listener(document, state, &menu, &toggle)?,
+        shortcut_listener(document, state)?,
     ])
 }
 
@@ -83,38 +85,93 @@ fn action_listener(
         else {
             return;
         };
-        let result = (|| -> io::Result<()> {
-            let should_focus = {
-                let mut state = listener_state.borrow_mut();
-                if let Some(theme) = command.theme_value() {
-                    let BrowserState {
-                        controls,
-                        state: form_state,
-                        ..
-                    } = &mut *state;
-                    controls::update_control(
-                        controls,
-                        form_state,
-                        ControlField::Theme,
-                        None,
-                        Some(theme),
-                    );
-                    view::element(&listener_document, "theme-mode")?.set_value(theme)?;
-                }
-                state.commands.menu_open = false;
-                command.status().clone_into(&mut state.commands.status);
-                view::render(&listener_document, &state)?;
-                command == ApplicationCommand::FocusPatient
-            };
-            if should_focus {
-                view::element(&listener_document, "patient-id")?.focus()?;
-            }
-            Ok(())
-        })();
-        if let Err(error) = result {
+        if let Err(error) = apply(&listener_document, &listener_state, command) {
             view::set_mount_error(&listener_document, &error);
         }
     })
+}
+
+/// Resolves keyboard accelerators anywhere in the page to the same commands
+/// the menu activates. Auto-repeat is ignored so a held chord applies once,
+/// and unbound chords keep the browser's default action.
+fn shortcut_listener(
+    document: &WebDocument,
+    state: &Rc<RefCell<BrowserState>>,
+) -> io::Result<WebEventListener> {
+    let listener_document = document.clone();
+    let listener_state = Rc::clone(state);
+    document
+        .body()?
+        .add_event_listener("keydown", move |event| {
+            let metadata = match event.keyboard_metadata() {
+                Ok(Some(metadata)) => metadata,
+                Ok(None) => return,
+                Err(error) => {
+                    view::set_mount_error(&listener_document, &error);
+                    return;
+                }
+            };
+            if metadata.is_repeat() {
+                return;
+            }
+            let Some(command) =
+                accelerator(&metadata).and_then(ApplicationCommand::from_accelerator)
+            else {
+                return;
+            };
+            event.prevent_default();
+            if let Err(error) = apply(&listener_document, &listener_state, command) {
+                view::set_mount_error(&listener_document, &error);
+            }
+        })
+}
+
+/// Builds the pressed accelerator, preferring the layout-independent
+/// physical code and falling back to the produced key value.
+fn accelerator(metadata: &KeyboardMetadata) -> Option<Accelerator> {
+    let key = Key::from_browser_code(metadata.code())
+        .or_else(|| Key::from_browser_key(metadata.key()))?;
+    let held = metadata.modifiers();
+    let modifiers = Modifiers::NONE
+        .with(Modifiers::CTRL, held.ctrl())
+        .with(Modifiers::ALT, held.alt())
+        .with(Modifiers::SHIFT, held.shift())
+        .with(Modifiers::META, held.meta());
+    Some(Accelerator::new(modifiers, key))
+}
+
+/// Applies one command: theme commands update the bound control, every
+/// command closes the menu and reports its status, and the focus command
+/// moves focus after the render so the new frame is what receives it.
+fn apply(
+    document: &WebDocument,
+    state: &Rc<RefCell<BrowserState>>,
+    command: ApplicationCommand,
+) -> io::Result<()> {
+    {
+        let mut state = state.borrow_mut();
+        if let Some(value) = command.theme_value() {
+            let BrowserState {
+                controls,
+                state: form_state,
+                ..
+            } = &mut *state;
+            controls::update_control(controls, form_state, ControlField::Theme, None, Some(value));
+            // A `<select>` has no settable value through the DOM provider,
+            // so its options are rebuilt with the chosen mode selected.
+            if let Some(theme) = crate::Theme::parse(value) {
+                view::element(document, "theme-mode")?
+                    .set_inner_html(&crate::Theme::options_markup(theme));
+            }
+        }
+        state.commands.menu_open = false;
+        command.status().clone_into(&mut state.commands.status);
+        view::render(document, &state)?;
+    }
+    if command == ApplicationCommand::FocusPatient {
+        view::element(document, "patient-id")?.focus()?;
+    }
+    Ok(())
 }
 
 fn escape_listener(

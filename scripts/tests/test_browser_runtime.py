@@ -2085,7 +2085,9 @@ class BrowserRuntimeTests(unittest.TestCase):
             return None
 
         client._request = record
-        paths = [pathlib.Path("C:/studies/one.dcm"), pathlib.Path("C:/studies/two.dcm")]
+        # The filesystem root keeps the paths absolute on every host.
+        root = pathlib.Path(pathlib.Path.cwd().anchor)
+        paths = [root / "studies" / "one.dcm", root / "studies" / "two.dcm"]
         client.send_file_paths("opaque/id", paths)
         self.assertEqual(requests[0][0:2], ("POST", "/session/session/element/opaque%2Fid/value"))
         expected = "\n".join(str(path) for path in paths)

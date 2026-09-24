@@ -12,15 +12,15 @@ pub const CLINICAL_SCREEN_XML: &str = r#"<screen id="main-screen" style="display
       <button id="command-menu-toggle" aria-haspopup="menu" aria-expanded="false" aria-controls="command-menu" style="width: 120px; background: linear-gradient(#2c78c4, #2662a8); color: #ffffff; padding: 8px 12px; border-radius: 6px; min-height: 44px; justify-content: center; align-items: center; box-shadow: 0 2px 4px #2c528240;">
         <text style="color: #ffffff; font-size: 14px; font-weight: bold;">Commands</text>
       </button>
-      <button id="command-focus-patient" style="width: 144px; background: linear-gradient(#2c78c4, #2662a8); color: #ffffff; padding: 8px 12px; border-radius: 6px; min-height: 44px; justify-content: center; align-items: center; box-shadow: 0 2px 4px #2c528240;">
+      <button id="command-focus-patient" aria-keyshortcuts="Alt+Shift+P" style="width: 144px; background: linear-gradient(#2c78c4, #2662a8); color: #ffffff; padding: 8px 12px; border-radius: 6px; min-height: 44px; justify-content: center; align-items: center; box-shadow: 0 2px 4px #2c528240;">
         <text style="color: #ffffff; font-size: 14px; font-weight: bold;">Focus patient</text>
       </button>
     </div>
     <div id="command-menu" popover-anchor="command-menu-toggle" role="menu" aria-label="Application commands" aria-hidden="true" style="display: none; flex-direction: column; gap: 6px; background-color: #ffffff; padding: 8px; border-width: 1px; border-color: #e2e8f0; border-radius: 10px; box-shadow: 0 8px 20px #0f172a33;">
-      <button id="command-theme-dark" role="menuitem" style="background: linear-gradient(#2c78c4, #2662a8); color: #ffffff; padding: 8px 12px; border-radius: 6px; min-height: 44px; justify-content: center; align-items: center; box-shadow: 0 2px 4px #2c528240;">
+      <button id="command-theme-dark" role="menuitem" aria-keyshortcuts="Alt+Shift+D" style="background: linear-gradient(#2c78c4, #2662a8); color: #ffffff; padding: 8px 12px; border-radius: 6px; min-height: 44px; justify-content: center; align-items: center; box-shadow: 0 2px 4px #2c528240;">
         <text style="color: #ffffff; font-size: 14px; font-weight: bold;">Dark theme</text>
       </button>
-      <button id="command-theme-system" role="menuitem" style="background: linear-gradient(#2c78c4, #2662a8); color: #ffffff; padding: 8px 12px; border-radius: 6px; min-height: 44px; justify-content: center; align-items: center; box-shadow: 0 2px 4px #2c528240;">
+      <button id="command-theme-system" role="menuitem" aria-keyshortcuts="Alt+Shift+S" style="background: linear-gradient(#2c78c4, #2662a8); color: #ffffff; padding: 8px 12px; border-radius: 6px; min-height: 44px; justify-content: center; align-items: center; box-shadow: 0 2px 4px #2c528240;">
         <text style="color: #ffffff; font-size: 14px; font-weight: bold;">System theme</text>
       </button>
     </div>

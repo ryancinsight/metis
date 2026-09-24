@@ -1039,8 +1039,6 @@ def _capture_command(
 
 def main() -> None:
     """Capture one visible frame from a supplied wheel or native command."""
-    if sys.platform != "win32":
-        raise SystemExit("python_native_capture.py requires a Windows desktop")
     arguments = _parser().parse_args()
     if (arguments.width is None) != (arguments.height is None):
         raise SystemExit("--width and --height must be supplied together")
@@ -1052,6 +1050,9 @@ def main() -> None:
         raise SystemExit("--argument and --cwd require --command")
     if arguments.frame is not None and arguments.command is not None:
         raise SystemExit("--frame cannot be combined with --command")
+    # Usage errors are reported on every host; only a capture needs Windows.
+    if sys.platform != "win32":
+        raise SystemExit("python_native_capture.py requires a Windows desktop")
     resize = None if arguments.resize is None else tuple(arguments.resize)
     try:
         _validate_resize_options(arguments.command, resize, arguments.resize_output, arguments.output)

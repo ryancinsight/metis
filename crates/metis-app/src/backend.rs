@@ -35,7 +35,7 @@ pub(crate) fn run_native(inputs: [String; 3]) -> Result<(), Box<dyn std::error::
     }
     #[cfg(not(windows))]
     {
-        let _ = inputs;
+        drop(inputs);
         Err("the native window role requires Windows".into())
     }
 }
@@ -48,7 +48,7 @@ pub(crate) fn run_webview(inputs: [String; 3]) -> Result<(), Box<dyn std::error:
     }
     #[cfg(not(windows))]
     {
-        let _ = inputs;
+        drop(inputs);
         Err("the WebView2 role requires Windows".into())
     }
 }
@@ -63,7 +63,7 @@ pub(crate) fn run_webview_permission_probe(
     }
     #[cfg(not(windows))]
     {
-        let _ = inputs;
+        drop(inputs);
         Err("the WebView2 permission-probe role requires Windows".into())
     }
 }
@@ -101,6 +101,13 @@ pub(crate) fn run_webview_theme_capture(
     }
 }
 
+#[cfg_attr(
+    not(windows),
+    expect(
+        dead_code,
+        reason = "visible host modes are constructed only on Windows"
+    )
+)]
 enum FrontendMode {
     Headless,
     NativeWindow,

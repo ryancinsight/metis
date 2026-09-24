@@ -201,8 +201,8 @@ mod tests {
     fn rejects_symlinked_file_inside_root() {
         use std::os::unix::fs::symlink;
 
-        let root = root("symlink");
         let outside = root("symlink-target");
+        let root = root("symlink");
         fs::create_dir_all(&root).expect("test directory");
         fs::create_dir_all(&outside).expect("target directory");
         fs::write(outside.join("outside.dcm"), b"outside").expect("target file");

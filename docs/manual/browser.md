@@ -1127,11 +1127,25 @@ workspace-prefix extraction path that would otherwise fail before comparison.
 ## Responsive runtime capture
 
 The workbench uses a charcoal and teal dark palette, a compact utility bar,
-and a separate title and diagnostic text hierarchy. Outlined secondary
-buttons keep the filled treatment for an enabled backend submission. Shared
-panel padding scales from `1.25rem` to `2rem`; controls retain their `44px`
-minimum target. Selected explorer entries use the information palette rather
-than the success palette, reserving success color for accepted operations.
+and a separate title and diagnostic text hierarchy. The primary status line
+leads with a state indicator; the capability, extension, event and lifecycle
+lines below it read as a monospace diagnostic log, so they are not mistaken
+for content. Cards rest on a slightly darker page with a soft elevation, and
+each section heading carries an accent rule. Outlined secondary buttons keep
+the filled treatment for an enabled backend submission, which is also taller.
+The command menu lists one command per row with its keyboard shortcut drawn
+from the item's `aria-keyshortcuts` attribute, so the visible hint and the
+announced shortcut cannot differ. Shared panel padding scales from `1.25rem`
+to `2rem`; controls retain their `44px` minimum target. Selected explorer
+entries use the information palette rather than the success palette,
+reserving success color for accepted operations.
+
+Every color token is declared once as `light-dark(light, dark)`. A theme
+chooses only the color scheme that resolves the tokens: `light` and `dark`
+fix it, `system` sets `light dark` so the browser follows the operating-system
+preference, and high contrast replaces the tokens outright. This removes the
+second copy of the light palette the system mode previously repeated inside a
+media query.
 Light, system and high-contrast modes retain the same layout and focus rings.
 
 The page uses a bounded responsive grid. At widths below `700px`, the form and
@@ -1142,8 +1156,10 @@ buttons use the same narrow-viewport padding. Option rows and the result-scale
 slider expose a `44px` CSS hit target so their labels remain usable on touch
 and keyboard layouts. The CSS contract test checks these declarations.
 
-The Browser viewport capability captured the generated workbench at
-`360×640`, `800×600` and `1440×900` CSS pixels with device scale `1`. The
+Playwright 1.56.1 driving Chromium 141.0.7390.37, with classic 15px scrollbars
+enabled so the viewport matches a desktop window, captured the generated
+workbench at `360×640`, `800×600` and `1440×900` CSS pixels with device scale
+`1`. The
 runtime manifest records the exact card rectangles, grid columns, scroll
 extents and interactive target rectangles in
 [`browser-layout-metrics.json`](images/browser-layout-metrics.json), bound to

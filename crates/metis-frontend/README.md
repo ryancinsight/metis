@@ -24,7 +24,11 @@ owns its `CommandMenuState`, `ApplicationCommand` transitions and bounded
 `ApplicationTheme`; native and browser hosts can expose the same focus-patient
 and dark/system actions without sending presentation commands through backend
 IPC. Menu visibility is projected through the authored semantic tree, so hidden
-items cannot receive host actions.
+items cannot receive host actions. Each command also declares one keyboard
+accelerator (`ApplicationCommand::accelerator`, Alt+Shift+P/D/S); hosts resolve
+their key events through `metis_core::input` and call
+`FrontendApp::activate_shortcut`, and the authored menu announces the same
+bindings through `aria-keyshortcuts`.
 
 `AsyncFrontendApp` owns the same input/result state for a browser event loop.
 It accepts `metis_ipc::AsyncIpcTransport`, sends at most the bounded requests
