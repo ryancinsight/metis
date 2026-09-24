@@ -3,6 +3,7 @@
 #![forbid(unsafe_code)]
 
 pub mod capability;
+pub mod command_line;
 pub mod crypto;
 pub mod deep_link;
 pub mod error;

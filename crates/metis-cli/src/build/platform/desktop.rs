@@ -58,30 +58,7 @@ pub(super) fn desktop_entry(application: &Application, entry: &str) -> String {
     output
 }
 
-pub(crate) fn desktop_word(value: &str) -> String {
-    let needs_quotes = value.is_empty()
-        || value.bytes().any(|byte| {
-            byte.is_ascii_whitespace()
-                || byte.is_ascii_control()
-                || matches!(byte, b'"' | 96 | b'$' | b'\\' | b'%')
-        });
-    let mut escaped = String::with_capacity(value.len());
-    for character in value.chars() {
-        match character {
-            '\\' | '"' | '\u{60}' | '$' => {
-                escaped.push('\\');
-                escaped.push(character);
-            }
-            '%' => escaped.push_str("%%"),
-            _ => escaped.push(character),
-        }
-    }
-    if needs_quotes {
-        format!("\"{escaped}\"")
-    } else {
-        escaped
-    }
-}
+pub(crate) use metis_core::command_line::desktop_exec_word as desktop_word;
 
 pub(crate) fn desktop_icon(value: &str) -> String {
     let mut escaped = String::with_capacity(value.len());

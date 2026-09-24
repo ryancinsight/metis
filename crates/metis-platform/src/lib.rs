@@ -2,6 +2,10 @@
 #![forbid(unsafe_code)]
 #![deny(missing_docs)]
 
+#[cfg(not(target_arch = "wasm32"))]
+mod atomic_file;
+#[cfg(not(target_arch = "wasm32"))]
+pub mod autostart;
 pub mod display_scale;
 pub mod event;
 pub mod framebuffer;
@@ -24,6 +28,8 @@ pub mod window_state_file;
 #[cfg(windows)]
 pub mod native;
 
+#[cfg(not(target_arch = "wasm32"))]
+pub use autostart::{Autostart, MAX_AUTOSTART_ARGUMENT_BYTES, MAX_AUTOSTART_ARGUMENTS};
 pub use display_scale::DisplayScale;
 pub use event::PlatformEvent;
 pub use framebuffer::{Clip, Color, Framebuffer, Rect};

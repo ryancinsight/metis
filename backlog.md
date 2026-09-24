@@ -324,6 +324,8 @@ an owner. “Unsupported” cannot replace delivery of a required mobile/native 
 
 - File-association increment (2026-09-24): manifests declare bounded, unique `file_associations` (extensions, MIME type, description). The Linux package lists the types in the desktop entry and installs a shared-mime-info package mapping extensions to types, the macOS bundle adds `CFBundleDocumentTypes`, and the Windows MSI writes per-user ProgIDs listed under each extension's `OpenWithProgids`, owned by the entry component. Installed-OS click-through evidence remains open.
 
+- Autostart increment (2026-09-24): `metis_platform::Autostart` enables, checks and disables a per-user login item: an XDG autostart entry, a macOS launch agent, or a Windows `Run` value through Moirai `windows::startup` (Moirai PR #465), which reaches no other registry location. `metis_core::command_line` is now the single Windows CRT and desktop `Exec` quoting implementation shared by the MSI shortcut, the Linux package and login items, and `atomic_file::replace` is the shared write-and-rename save.
+
 <a id="METIS-SERVICES-001"></a>
 ## METIS-SERVICES-001 — Scoped network, shell and sidecars [minor]
 - Status: todo; priority: P2; owner: Moirai mechanisms + Metis policy; last-update: 2026-09-21; delivery: [PR #328](https://github.com/ryancinsight/metis/pull/328), merge `e8c37b23e5231234518a29cdc713de0eb21c38d8`; dependencies: METIS-DESKTOP-001, METIS-COMMANDS-001; risk: privilege escalation

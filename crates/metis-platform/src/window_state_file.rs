@@ -7,16 +7,14 @@
 //! saved state" so a first launch uses the application's defaults.
 
 use metis_core::window_state::{MAX_WINDOW_STATE_BYTES, WindowState};
-use std::ffi::OsString;
-use std::fs::{self, File, OpenOptions};
-use std::io::{self, Read, Write};
+use std::fs::File;
+use std::io::{self, Read};
 use std::path::{Path, PathBuf};
 
 /// The file one window's state is saved to.
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct WindowStateFile {
     path: PathBuf,
-    staging: PathBuf,
 }
 
 impl WindowStateFile {
@@ -26,16 +24,13 @@ impl WindowStateFile {
     /// Returns `InvalidInput` when the path is relative or has no file name.
     pub fn new(path: impl Into<PathBuf>) -> io::Result<Self> {
         let path = path.into();
-        let Some(name) = path.file_name().filter(|_| path.is_absolute()) else {
+        if path.file_name().is_none() || !path.is_absolute() {
             return Err(io::Error::new(
                 io::ErrorKind::InvalidInput,
                 "window state file must be an absolute file path",
             ));
-        };
-        let mut staging_name = OsString::from(name);
-        staging_name.push(".saving");
-        let staging = path.with_file_name(staging_name);
-        Ok(Self { path, staging })
+        }
+        Ok(Self { path })
     }
 
     /// The file the state is saved to.
@@ -71,28 +66,7 @@ impl WindowStateFile {
     /// Returns the I/O error from creating, writing, flushing or renaming the
     /// file.
     pub fn save(&self, state: &WindowState) -> io::Result<()> {
-        if let Some(parent) = self.path.parent() {
-            fs::create_dir_all(parent)?;
-        }
-        match fs::remove_file(&self.staging) {
-            Err(error) if error.kind() != io::ErrorKind::NotFound => return Err(error),
-            _ => {}
-        }
-        // `create_new` refuses any file, including a link, left at the
-        // staging path since the removal above.
-        let mut staged = OpenOptions::new()
-            .write(true)
-            .create_new(true)
-            .open(&self.staging)?;
-        let written = staged
-            .write_all(state.encode().as_bytes())
-            .and_then(|()| staged.sync_all());
-        drop(staged);
-        if let Err(error) = written.and_then(|()| fs::rename(&self.staging, &self.path)) {
-            let _ = fs::remove_file(&self.staging);
-            return Err(error);
-        }
-        Ok(())
+        crate::atomic_file::replace(&self.path, state.encode().as_bytes())
     }
 }
 

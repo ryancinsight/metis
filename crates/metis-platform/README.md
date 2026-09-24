@@ -175,6 +175,15 @@ holds the claim: an advisory lock and a socket in an owner-only directory on
 Unix, or a session-scoped, local-only named pipe on Windows, released by the
 operating system when the primary exits.
 
+`Autostart` registers a per-user login item, like Tauri's autostart plugin:
+an XDG autostart desktop entry on freedesktop systems, a launch agent in
+`~/Library/LaunchAgents` on macOS, or a value in the user's `Run` key on
+Windows. The program path must be absolute and the command is quoted by
+`metis_core::command_line` for the parser that reads it. `is_enabled` reports
+whether that exact command is registered, so a stale entry from another build
+reads as disabled. Entry files are replaced with the same write-and-rename
+save that `WindowStateFile` uses.
+
 Applications that use the native pixel surface can share the bounded host loop
 through `metis_platform::native::NativeApplication` and
 `run_native_application`. The application owns its state and frame, applies
