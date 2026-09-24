@@ -9,6 +9,40 @@ execute in a browser; the separate [browser workbench](browser.md) exercises the
 HTML5/CSS host.
 The separate [process demonstration](getting-started.md) tests actual child processes.
 
+## Starter application
+
+![Starter application, light scheme](images/starter-light.png)
+
+![Starter application, dark scheme](images/starter-dark.png)
+
+[`metis-starter`](../../crates/metis-starter/README.md) is the page
+create-tauri-app's vanilla template produces: a heading, a logo row, a name
+field and a **Greet** button. The greeting is computed in Rust. Where the Tauri
+template's `main.js` sends the name to a Rust command over IPC, the Metis
+starter compiles its Rust to WebAssembly and binds the page directly, so its
+only JavaScript is the module loader:
+
+```js
+import init from "./metis_starter.js";
+
+(await init()).metis_starter_start();
+```
+
+```bash
+python scripts/starter.py build
+python scripts/starter.py serve
+```
+
+`build` assembles `output/browser/starter/`, and `serve` prints a loopback
+address to open. With a W3C WebDriver endpoint, `check` types a name, submits
+the form and requires the reply Rust wrote. `--color-scheme light` or
+`--color-scheme dark` pins the rendering, and `--capture` writes the page
+image. The captures above come from
+`check --driver-url <endpoint> --color-scheme <scheme> --capture <path>` on
+Edge 155. The logo row pairs the Metis mark with the WebAssembly logo, since
+Tauri's logo is not licensed for reuse; [ADR 0050](../adr/0050-starter-application.md)
+records the other differences from the template.
+
 ## Real DICOM application evidence
 
 The browser DICOM gallery has a slice slider beneath each anatomical view.

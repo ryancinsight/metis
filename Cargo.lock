@@ -1165,6 +1165,13 @@ dependencies = [
 ]
 
 [[package]]
+name = "metis-starter"
+version = "0.1.0"
+dependencies = [
+ "moirai-pal",
+]
+
+[[package]]
 name = "metis-ui-lang"
 version = "0.1.0"
 dependencies = [

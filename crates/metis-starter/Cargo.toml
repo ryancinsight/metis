@@ -1,0 +1,21 @@
+[package]
+name = "metis-starter"
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+authors.workspace = true
+license.workspace = true
+repository.workspace = true
+description = "Starter application: a Rust-owned HTML page with the create-tauri-app layout"
+readme = "README.md"
+
+[target.'cfg(target_arch = "wasm32")'.dependencies]
+moirai-pal.workspace = true
+
+[lib]
+name = "metis_starter"
+path = "src/lib.rs"
+crate-type = ["cdylib", "rlib"]
+
+[lints]
+workspace = true

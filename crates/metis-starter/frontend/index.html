@@ -1,0 +1,36 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta
+      http-equiv="Content-Security-Policy"
+      content="default-src 'self'; script-src 'self' 'wasm-unsafe-eval'; style-src 'self'; img-src 'self'; connect-src 'self'; object-src 'none'; base-uri 'none'; form-action 'none'"
+    />
+    <link rel="stylesheet" href="styles.css" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Metis App</title>
+    <script type="module" src="main.js"></script>
+  </head>
+
+  <body>
+    <main class="container">
+      <h1>Welcome to Metis</h1>
+
+      <div class="row">
+        <a href="https://github.com/ryancinsight/metis" target="_blank" rel="noopener noreferrer">
+          <img src="assets/metis-mark.svg" class="logo metis" alt="Metis logo" />
+        </a>
+        <a href="https://webassembly.org" target="_blank" rel="noopener noreferrer">
+          <img src="assets/webassembly.svg" class="logo wasm" alt="WebAssembly logo" />
+        </a>
+      </div>
+      <p>Click on the Metis logo to learn more about the framework</p>
+
+      <form class="row" id="greet-form">
+        <input id="greet-input" placeholder="Enter a name..." aria-label="Name" />
+        <button type="submit">Greet</button>
+      </form>
+      <p id="greet-msg" role="status"></p>
+    </main>
+  </body>
+</html>
