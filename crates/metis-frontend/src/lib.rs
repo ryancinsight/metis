@@ -5,6 +5,7 @@ pub mod app;
 pub mod async_app;
 mod commands;
 mod focus;
+pub mod navigation;
 mod presentation;
 pub mod reactive;
 #[path = "result_explorer/mod.rs"]

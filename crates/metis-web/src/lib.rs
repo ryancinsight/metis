@@ -53,6 +53,12 @@ mod fragment;
 mod browser;
 
 #[cfg(target_arch = "wasm32")]
+mod navigation;
+
+#[cfg(target_arch = "wasm32")]
+pub use navigation::BrowserNavigator;
+
+#[cfg(target_arch = "wasm32")]
 pub use browser::{metis_start, metis_stop};
 
 /// Takes the latest completed browser file batch, if one is waiting.

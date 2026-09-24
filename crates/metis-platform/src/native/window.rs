@@ -164,6 +164,16 @@ impl NativeSurface {
     }
 }
 
+impl crate::native::MenuBarHost for NativeSurface {
+    fn set_menu_bar(&mut self, bar: Option<&crate::native::MenuBar>) -> io::Result<()> {
+        self.window.set_menu_bar(bar)
+    }
+
+    fn take_menu_commands(&mut self) -> Vec<crate::native::MenuCommand> {
+        self.window.take_menu_commands()
+    }
+}
+
 impl crate::native::TrayHost for NativeSurface {
     fn show_tray_icon(
         &mut self,
