@@ -35,7 +35,8 @@ metis serve
 ```
 
 `metis serve` builds the page and serves it on `http://127.0.0.1:1420/`;
-`metis build` only builds, into `dist/`. The
+`metis build` only builds, into `dist/`. On Windows, `metis dev --watch` opens
+the page in a native WebView2 window instead and reloads it after each change. The
 [distribution manual](distribution.md#build-and-serve-a-browser-application)
 describes the manifest and both commands. `python scripts/starter.py`, given a
 W3C WebDriver endpoint, runs `metis serve`, types a name, submits the form and

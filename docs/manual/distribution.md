@@ -170,6 +170,24 @@ no-cache`, so reloading after a rebuild fetches the new files, and
 server accepts at most 16 connections at a time, each with a 10-second request
 deadline. Serving does not watch sources; run `metis serve` again after a change.
 
+On Windows, `metis dev` opens the page in a native window instead of a browser,
+as `tauri dev` does:
+
+```powershell
+metis dev --watch
+```
+
+`dev` builds as `build` does, then hosts `dist/app` in a WebView2 window of
+create-tauri-app's 800 × 600 size, titled with the manifest `name`. WebView2
+serves the folder as `https://app.metis.example/` (a name under the `.example`
+domain reserved by RFC 2606, so it cannot shadow a real site), so the page
+loads as a secure origin: its modules, WebAssembly and `default-src 'self'`
+policy behave as they do under `metis serve`, which a `file:///` page does not
+allow. Navigation is confined to that host. With `--watch`, a change under the
+manifest directory, `dist/` excluded, rebuilds the page and reloads the window;
+a failed compile is reported and the previous page stays. Closing the window
+ends the command. Without `--watch` the window runs until closed.
+
 ## Run the portable application
 
 ```powershell

@@ -26,5 +26,9 @@ moirai-transport.workspace = true
 serde.workspace = true
 serde_json.workspace = true
 
+[target.'cfg(windows)'.dependencies]
+# The WebView2 window `metis dev` opens for a browser application.
+metis-platform.workspace = true
+
 [lints]
 workspace = true
