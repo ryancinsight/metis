@@ -97,6 +97,8 @@ fn append_node(
         .map_err(|_| projection_error("native accessibility description exceeds its bound"))?;
     node.set_value(source.value.clone())
         .map_err(|_| projection_error("native accessibility value exceeds its bound"))?;
+    node.set_keyboard_shortcut(source.keyboard_shortcuts.clone())
+        .map_err(|_| projection_error("native accessibility shortcut exceeds its bound"))?;
     node.set_hidden(source.hidden);
     node.set_disabled(source.disabled);
     node.set_focusable(source.focusable);

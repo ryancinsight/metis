@@ -193,6 +193,8 @@ an owner. “Unsupported” cannot replace delivery of a required mobile/native 
   screen-reader evidence remain open.
 - Residuals: supported screen-reader speech, host-specific forced-colors/reduced-motion acceptance and installed-client traversal remain open.
 
+- Native shortcut announcement (2026-09-24): Moirai PR #460 (merge `7f6ca66e`) adds `AccessibilityNode::set_keyboard_shortcut`, projected into AccessKit's `keyboard_shortcut`; the Windows native host now passes each semantic node's `aria-keyshortcuts` through it, so UI Automation clients can announce the Alt+Shift command shortcuts. Screen-reader speech remains installed-host evidence.
+
 <a id="METIS-MACOS-001"></a>
 ## METIS-MACOS-001 — macOS restricted desktop [arch] [minor]
 - Status: todo; priority: P1; owner: Metis macOS host + Moirai; dependencies: METIS-DESKTOP-001; risk: OS boundary
