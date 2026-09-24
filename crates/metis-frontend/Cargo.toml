@@ -19,5 +19,12 @@ metis-platform = { workspace = true }
 name = "metis_frontend"
 path = "src/lib.rs"
 
+[dev-dependencies]
+criterion = { workspace = true }
+
+[[bench]]
+name = "frame"
+harness = false
+
 [lints]
 workspace = true

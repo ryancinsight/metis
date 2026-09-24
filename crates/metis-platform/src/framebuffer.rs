@@ -3,6 +3,10 @@
 use metis_core::error::{ErrorCode, MetisError, Result};
 use std::fmt;
 
+mod composite;
+
+pub(crate) use composite::SourceOver;
+
 /// Maximum storage: 16,777,216 pixels, or 64 MiB of packed RGBA.
 pub const MAX_PIXELS: usize = 16 * 1024 * 1024;
 
@@ -135,90 +139,6 @@ impl Rect {
     }
 }
 
-/// Alpha denominator when the destination is opaque: `255 * 255`.
-const OPAQUE_ALPHA: u32 = 255 * 255;
-
-/// Source-over terms that depend only on the source color.
-///
-/// Compositing a span shares one set of these terms, so the per-source
-/// multiplications leave the pixel loop while the arithmetic and its rounding
-/// stay identical to compositing each pixel on its own.
-#[derive(Debug, Clone, Copy)]
-pub(crate) struct SourceOver {
-    packed: u32,
-    alpha: u32,
-    inverse_alpha: u32,
-    numerators: [u32; 3],
-}
-
-impl SourceOver {
-    /// Precomputes the terms for one straight RGBA source color.
-    pub(crate) fn new(src: Color) -> Self {
-        let alpha = u32::from(src.a);
-        let scaled = alpha * 255;
-        Self {
-            packed: pack_color(src),
-            alpha,
-            inverse_alpha: 255 - alpha,
-            numerators: [
-                u32::from(src.r) * scaled,
-                u32::from(src.g) * scaled,
-                u32::from(src.b) * scaled,
-            ],
-        }
-    }
-
-    /// Reports a source that leaves the destination unchanged.
-    pub(crate) const fn is_transparent(self) -> bool {
-        self.alpha == 0
-    }
-
-    /// Reports a source that replaces the destination outright.
-    pub(crate) const fn is_opaque(self) -> bool {
-        self.alpha == 255
-    }
-
-    /// The packed replacement value for an opaque source.
-    pub(crate) const fn packed(self) -> u32 {
-        self.packed
-    }
-
-    /// Composites this source over one packed destination pixel.
-    ///
-    /// An opaque destination fixes the alpha denominator at `255 * 255`, so
-    /// that case divides by a constant the compiler reduces to a multiply and
-    /// shift. Both arms evaluate the same expression and agree channel for
-    /// channel; the differential rasterizer test asserts it.
-    pub(crate) fn apply(self, dst: u32) -> u32 {
-        let dst = unpack_color(dst);
-        if dst.a == 255 {
-            let dest_weight = self.inverse_alpha * 255;
-            let channel = |numerator: u32, dest: u8| {
-                normalized_channel(
-                    (numerator + u32::from(dest) * dest_weight + OPAQUE_ALPHA / 2) / OPAQUE_ALPHA,
-                )
-            };
-            return pack_color(Color::rgba(
-                channel(self.numerators[0], dst.r),
-                channel(self.numerators[1], dst.g),
-                channel(self.numerators[2], dst.b),
-                255,
-            ));
-        }
-        let dest_weight = u32::from(dst.a) * self.inverse_alpha;
-        let alpha = self.alpha * 255 + dest_weight;
-        let channel = |numerator: u32, dest: u8| {
-            normalized_channel((numerator + u32::from(dest) * dest_weight + alpha / 2) / alpha)
-        };
-        pack_color(Color::rgba(
-            channel(self.numerators[0], dst.r),
-            channel(self.numerators[1], dst.g),
-            channel(self.numerators[2], dst.b),
-            normalized_channel((alpha + 127) / 255),
-        ))
-    }
-}
-
 /// Packed ARGB storage with immutable dimensions and checked allocation.
 #[derive(Debug, Clone)]
 pub struct Framebuffer {
@@ -346,9 +266,20 @@ impl Framebuffer {
     }
 
     /// Composites one precomputed source over the visible part of a row span.
+    ///
+    /// A span lying wholly on opaque pixels, the common case once a surface
+    /// is cleared, takes the branch-free opaque kernel; the check is one
+    /// read pass the compiler vectorizes.
     pub(crate) fn composite_span(&mut self, y: u32, left: u32, right: u32, source: SourceOver) {
-        for pixel in self.row_span_mut(y, left, right) {
-            *pixel = source.apply(*pixel);
+        let span = self.row_span_mut(y, left, right);
+        if span.iter().all(|pixel| pixel >> 24 == 0xFF) {
+            for pixel in span {
+                *pixel = source.over_opaque(*pixel);
+            }
+        } else {
+            for pixel in span {
+                *pixel = source.apply(*pixel);
+            }
         }
     }
 
@@ -367,16 +298,12 @@ pub(crate) fn allocation_error() -> MetisError {
     )
 }
 
-const fn pack_color(c: Color) -> u32 {
+pub(crate) const fn pack_color(c: Color) -> u32 {
     u32::from_be_bytes([c.a, c.r, c.g, c.b])
 }
-const fn unpack_color(value: u32) -> Color {
+pub(crate) const fn unpack_color(value: u32) -> Color {
     let [a, r, g, b] = value.to_be_bytes();
     Color::rgba(r, g, b, a)
-}
-
-fn normalized_channel(value: u32) -> u8 {
-    u8::try_from(value).expect("invariant: normalized composite channel is at most 255")
 }
 
 #[cfg(test)]
