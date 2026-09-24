@@ -9,7 +9,7 @@ use metis_core::protocol::{
 };
 use metis_ipc::client::{HandshakeError, IpcClient};
 use metis_ipc::transport::IpcTransport;
-use metis_platform::{DisplayScale, Framebuffer};
+use metis_platform::{Damage, DisplayScale, Framebuffer};
 use metis_ui_lang::{DisplayList, DomDocument, SemanticTree, parse_markup};
 
 /// Outcome for the current inputs. Only success carries a result.
@@ -84,6 +84,8 @@ pub struct FrontendApp<T> {
     /// The display list the framebuffer shows, so the next render repaints
     /// only what changed; `None` when the surface holds no complete frame.
     pub(crate) painted: Option<DisplayList>,
+    /// Pixels repainted since the host last took the damage to present.
+    pub(crate) unpresented: Damage,
 }
 
 impl<T: IpcTransport> FrontendApp<T> {
@@ -104,6 +106,7 @@ impl<T: IpcTransport> FrontendApp<T> {
             theme: ApplicationTheme::default(),
             focus: Focus::initial(),
             painted: None,
+            unpresented: Damage::Unchanged,
         };
         app.render()?;
         Ok(app)
@@ -149,6 +152,16 @@ impl<T: IpcTransport> FrontendApp<T> {
     #[must_use]
     pub const fn framebuffer(&self) -> &Framebuffer {
         &self.framebuffer
+    }
+
+    /// Takes the framebuffer pixels repainted since the last take, so a host
+    /// presents only those.
+    ///
+    /// Every render since the last take merges into the result; the first
+    /// take after construction or a resize reports [`Damage::Full`].
+    #[must_use]
+    pub fn take_damage(&mut self) -> Damage {
+        std::mem::replace(&mut self.unpresented, Damage::Unchanged)
     }
 
     /// Device-pixel scale used for the current presentation.

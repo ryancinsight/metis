@@ -26,7 +26,6 @@ mod sizing_tests;
 mod tests;
 mod virtual_list;
 
-pub use damage::Damage;
 pub use display::{DisplayCommand, DisplayList};
 pub use geometry::{LayoutViewport, compute_layout};
 pub use metis_platform::framebuffer::Rect;

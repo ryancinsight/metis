@@ -459,14 +459,6 @@ an owner. “Unsupported” cannot replace delivery of a required mobile/native 
 - next: derive the fixture budget from measured parent-plus-child launch latency (isolated `-I -S` interpreters shorten it), or have the timeout path observe readiness before its wait.
 - basis: be44daeb7e51
 
-<a id="METIS-PERF-PRESENT-003"></a>
-## METIS-PERF-PRESENT-003 — Present only the damaged region [patch]
-- Status: todo; priority: tightening; needs: none
-- outcome: after a damage-limited repaint ([ADR 0051](docs/adr/0051-damage-limited-repaint.md)), the native host copies only the damaged rectangle to the window instead of the whole framebuffer.
-- scope: crates/metis-platform/src/native/application.rs, crates/metis-platform/src/native/window, crates/metis-frontend/src/presentation.rs
-- acceptance: `NativeApplication` receives the render's damage and `NativeSurface::present` uploads that rectangle; a keystroke presents fewer bytes than the surface; a test compares the window contents after partial and full presents.
-- next: measure the present cost at 800x600 and 1600x1200 against the 0.4-0.5 ms keystroke repaint to size the gain before changing the host.
-
 <a id="METIS-CONFORMANCE-001"></a>
 ## METIS-CONFORMANCE-001 — Final capability and target closure [patch]
 - Status: todo; priority: P3; owner: Metis integration; last-update: 2026-09-21; risk: structural conformance debt

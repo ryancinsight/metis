@@ -6,8 +6,8 @@
 //! decisions while Moirai owns the operating-system handle and message
 //! translation.
 
-use crate::Framebuffer;
-use moirai_pal::windows::window::{NativeWindow, WindowPlacement};
+use crate::{Framebuffer, Rect};
+use moirai_pal::windows::window::{FrameRegion, NativeWindow, WindowPlacement};
 use std::io;
 use std::time::Duration;
 
@@ -106,6 +106,25 @@ impl NativeSurface {
             framebuffer.width(),
             framebuffer.height(),
             framebuffer.pixels(),
+        )
+    }
+
+    /// Presents the part of `framebuffer` inside `region`, the only part that
+    /// differs from the previously presented frame.
+    ///
+    /// The region is clipped to the frame. The provider copies and repaints
+    /// only that part, unless the frame's dimensions or the window's client
+    /// size changed, when it presents the whole frame.
+    ///
+    /// # Errors
+    /// Returns an invalid-frame, allocation or native-window error from Moirai.
+    pub fn present_region(&mut self, framebuffer: &Framebuffer, region: Rect) -> io::Result<()> {
+        let (width, height) = (framebuffer.width(), framebuffer.height());
+        self.window.present_argb8888_region(
+            width,
+            height,
+            framebuffer.pixels(),
+            frame_region(region, width, height)?,
         )
     }
 
@@ -223,10 +242,58 @@ impl crate::native::HotkeyHost for NativeSurface {
     }
 }
 
+/// The pixels of `region` inside a `width` by `height` frame.
+fn frame_region(region: Rect, width: u32, height: u32) -> io::Result<FrameRegion> {
+    let span = |start: i32, extent: i32, limit: u32| {
+        let start = i64::from(start);
+        let end = start + i64::from(extent.max(0));
+        // Clamped into `[0, limit]`, so the conversion cannot fail.
+        let edge = |value: i64| u32::try_from(value.clamp(0, i64::from(limit))).unwrap_or(limit);
+        (edge(start), edge(end))
+    };
+    let (left, right) = span(region.x, region.width, width);
+    let (top, bottom) = span(region.y, region.height, height);
+    FrameRegion::new(left, top, right, bottom)
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
     use crate::{Color, Framebuffer};
+
+    #[test]
+    fn frame_region_clips_damage_to_the_frame() {
+        let region = |x, y, width, height| frame_region(Rect::new(x, y, width, height), 800, 600);
+        let expected = |left, top, right, bottom| FrameRegion::new(left, top, right, bottom);
+        assert_eq!(region(10, 20, 30, 40).ok(), expected(10, 20, 40, 60).ok());
+        assert_eq!(region(-5, -7, 30, 40).ok(), expected(0, 0, 25, 33).ok());
+        assert_eq!(
+            region(790, 590, 30, 40).ok(),
+            expected(790, 590, 800, 600).ok()
+        );
+        assert_eq!(
+            region(i32::MIN, i32::MIN, i32::MAX, i32::MAX).ok(),
+            expected(0, 0, 0, 0).ok()
+        );
+        assert_eq!(region(900, 10, 5, 5).ok(), expected(800, 10, 800, 15).ok());
+        assert_eq!(region(10, 10, -5, 5).ok(), expected(10, 10, 10, 15).ok());
+    }
+
+    #[test]
+    fn adapter_presents_a_damaged_region() {
+        let config =
+            WindowConfig::with_visibility("Metis region test", 320, 240, WindowVisibility::Hidden)
+                .expect("bounded native configuration");
+        let mut surface = NativeSurface::new(&config).expect("native surface");
+        let mut framebuffer = Framebuffer::new(320, 240).expect("bounded framebuffer");
+        framebuffer.clear(Color::BLUE);
+        surface.present(&framebuffer).expect("whole presentation");
+        framebuffer.clear(Color::GREEN);
+        surface
+            .present_region(&framebuffer, Rect::new(-10, 200, 400, 100))
+            .expect("region presentation clipped to the frame");
+        surface.close().expect("native close");
+    }
 
     #[test]
     fn adapter_presents_framebuffer_and_closes_native_window() {

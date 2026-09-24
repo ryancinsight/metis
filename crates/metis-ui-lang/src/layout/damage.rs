@@ -8,20 +8,8 @@
 //! every command clipped to that region, reproduces a full repaint.
 
 use super::display::{DisplayCommand, DisplayList};
-use metis_platform::framebuffer::Rect;
+use metis_platform::framebuffer::{Damage, Rect};
 use metis_platform::rasterizer::polyline_extent;
-
-/// What a repaint must cover to bring a painted list up to date.
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
-pub enum Damage {
-    /// Every command paints what it painted before.
-    Unchanged,
-    /// Only pixels inside this device rectangle can change.
-    Region(Rect),
-    /// The lists differ in length, or the changes cover the whole surface;
-    /// repaint all of it.
-    Full,
-}
 
 impl DisplayCommand {
     /// A device rectangle holding every pixel this command can change, or
@@ -63,8 +51,9 @@ impl DisplayList {
     /// # Examples
     ///
     /// ```
-    /// use metis_ui_lang::{Color, Damage, DisplayCommand, DisplayList, Rect};
+    /// use metis_platform::framebuffer::Damage;
     /// use metis_platform::rasterizer::CornerRadius;
+    /// use metis_ui_lang::{Color, DisplayCommand, DisplayList, Rect};
     ///
     /// let fill = |x, color| DisplayCommand::FillRect {
     ///     rect: Rect::new(x, 0, 10, 10),
@@ -94,40 +83,14 @@ impl DisplayList {
             .flatten()
             .filter(|rect| rect.width > 0 && rect.height > 0);
         for rect in changed {
-            let grown = region.map_or(rect, |region| union(region, rect));
-            if covers(grown, surface) {
+            let grown = region.map_or(rect, |region| region.union(rect));
+            if grown.covers(surface) {
                 return Damage::Full;
             }
             region = Some(grown);
         }
         region.map_or(Damage::Unchanged, Damage::Region)
     }
-}
-
-/// Reports whether `outer` holds every pixel of `inner`.
-fn covers(outer: Rect, inner: Rect) -> bool {
-    let right = |rect: Rect| i64::from(rect.x) + i64::from(rect.width);
-    let bottom = |rect: Rect| i64::from(rect.y) + i64::from(rect.height);
-    outer.x <= inner.x
-        && outer.y <= inner.y
-        && right(outer) >= right(inner)
-        && bottom(outer) >= bottom(inner)
-}
-
-/// The smallest rectangle holding both.
-fn union(first: Rect, second: Rect) -> Rect {
-    let edges = |rect: Rect| {
-        let (x, y) = (i64::from(rect.x), i64::from(rect.y));
-        (x, y, x + i64::from(rect.width), y + i64::from(rect.height))
-    };
-    let (a_left, a_top, a_right, a_bottom) = edges(first);
-    let (b_left, b_top, b_right, b_bottom) = edges(second);
-    span(
-        a_left.min(b_left),
-        a_top.min(b_top),
-        a_right.max(b_right),
-        a_bottom.max(b_bottom),
-    )
 }
 
 /// The half-open rectangle `[left, right) × [top, bottom)`, saturated to the

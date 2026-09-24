@@ -5,10 +5,12 @@ use std::fmt;
 
 mod clip;
 mod composite;
+mod damage;
 
 pub use clip::Clip;
 use clip::ClipScope;
 pub(crate) use composite::SourceOver;
+pub use damage::Damage;
 
 /// Maximum storage: 16,777,216 pixels, or 64 MiB of packed RGBA.
 pub const MAX_PIXELS: usize = 16 * 1024 * 1024;

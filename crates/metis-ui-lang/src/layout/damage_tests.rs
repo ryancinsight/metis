@@ -1,6 +1,6 @@
 use super::*;
 use crate::style::{Color, LinearGradient};
-use metis_platform::framebuffer::Framebuffer;
+use metis_platform::framebuffer::{Damage, Framebuffer};
 use metis_platform::rasterizer::{BoxShadow, CornerRadius, LineCap, LineJoin, StrokeWidth};
 use metis_platform::typeface::{GlyphWeight, TextSize, TextStyle};
 
