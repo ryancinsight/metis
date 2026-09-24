@@ -160,7 +160,8 @@ fn a_panicking_draw_restores_the_whole_surface_clip() {
     let outcome = std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| {
         fb.render_clipped(Rect::new(2, 2, 3, 3), |_| panic!("draw failed"));
     }));
-    assert!(outcome.is_err(), "the draw panicked");
+    let payload = outcome.expect_err("the draw panicked");
+    assert_eq!(payload.downcast_ref::<&str>(), Some(&"draw failed"));
     assert_eq!(fb.clip(), whole);
     fb.set_pixel(0, 0, Color::WHITE);
     assert_eq!(
