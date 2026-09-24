@@ -164,6 +164,24 @@ impl NativeSurface {
     }
 }
 
+impl crate::native::HotkeyHost for NativeSurface {
+    fn register_hotkey(
+        &mut self,
+        id: crate::native::HotkeyId,
+        hotkey: crate::native::GlobalHotkey,
+    ) -> io::Result<()> {
+        self.window.register_hotkey(id, hotkey)
+    }
+
+    fn unregister_hotkey(&mut self, id: crate::native::HotkeyId) -> io::Result<bool> {
+        self.window.unregister_hotkey(id)
+    }
+
+    fn take_hotkey_presses(&mut self) -> Vec<crate::native::HotkeyId> {
+        self.window.take_hotkey_presses()
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;

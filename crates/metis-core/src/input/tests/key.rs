@@ -109,3 +109,15 @@ fn every_key_name_parses_back_to_its_key() {
         assert_eq!(Key::from_token(key.name()), Some(key), "{}", key.name());
     }
 }
+
+#[test]
+fn every_windows_virtual_key_maps_back_to_its_code() {
+    let mut mapped = 0;
+    for code in 0..=0xFF {
+        if let Some(key) = Key::from_windows_virtual_key(code) {
+            assert_eq!(key.windows_virtual_key(), Some(code), "{key:?}");
+            mapped += 1;
+        }
+    }
+    assert_eq!(mapped, 26 + 10 + 24 + 20);
+}

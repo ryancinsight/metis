@@ -316,6 +316,8 @@ an owner. “Unsupported” cannot replace delivery of a required mobile/native 
 
 - Window-state increment (2026-09-24): `metis_core::window_state::WindowState` is the bounded, platform-neutral restored rectangle and maximized flag, with an exact text codec; `WindowStateFile` saves it by write-and-rename and loads it with a byte bound. Moirai `NativeWindow::placement`/`set_placement` and `WindowConfig::with_placement` (Moirai PR #461) let the Windows pixel and WebView2 surfaces restore it before first show and read it on close; a hidden window stays hidden and shows maximized when asked. Menus/tray, notifications, global shortcuts, file associations and single-instance remain open.
 
+- Global-shortcut increment (2026-09-24): Moirai `NativeWindow::register_hotkey` (Moirai PR #462) registers modifier chords through `RegisterHotKey` with repeat suppressed, queues presses apart from `WindowEvent` so exhaustive matchers in Metis and RITK still compile, and releases every registration on close. `native::GlobalShortcuts` binds `Accelerator` values to commands on the pixel and WebView2 surfaces through the `HotkeyHost` seam, reusing `ShortcutMap` for conflict refusal; `Key::windows_virtual_key` inverts the one virtual-key table. Tray, notifications, file associations and single-instance remain open.
+
 <a id="METIS-SERVICES-001"></a>
 ## METIS-SERVICES-001 — Scoped network, shell and sidecars [minor]
 - Status: todo; priority: P2; owner: Moirai mechanisms + Metis policy; last-update: 2026-09-21; delivery: [PR #328](https://github.com/ryancinsight/metis/pull/328), merge `e8c37b23e5231234518a29cdc713de0eb21c38d8`; dependencies: METIS-DESKTOP-001, METIS-COMMANDS-001; risk: privilege escalation

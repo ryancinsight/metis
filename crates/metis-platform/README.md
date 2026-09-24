@@ -148,6 +148,14 @@ restores the rectangle and maximized state before the window first appears,
 and `NativeSurface::placement` or `WebViewSurface::placement` reads the
 state to save when the window reports `CloseRequested`.
 
+`native::GlobalShortcuts` registers `metis_core::input::Accelerator` values
+as system-wide hotkeys on a native surface, like Tauri's global-shortcut
+plugin: they fire while other applications have focus. A chord needs a
+modifier, holding it reports one press, and a chord another application owns
+is refused with the native error. The surface queues presses apart from
+window events; `take_commands` turns them into the bound commands after each
+event wait. Closing the surface releases every registration.
+
 Applications that use the native pixel surface can share the bounded host loop
 through `metis_platform::native::NativeApplication` and
 `run_native_application`. The application owns its state and frame, applies

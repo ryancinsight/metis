@@ -130,6 +130,24 @@ impl WebViewSurface {
     }
 }
 
+impl crate::native::HotkeyHost for WebViewSurface {
+    fn register_hotkey(
+        &mut self,
+        id: crate::native::HotkeyId,
+        hotkey: crate::native::GlobalHotkey,
+    ) -> io::Result<()> {
+        self.host.register_hotkey(id, hotkey)
+    }
+
+    fn unregister_hotkey(&mut self, id: crate::native::HotkeyId) -> io::Result<bool> {
+        self.host.unregister_hotkey(id)
+    }
+
+    fn take_hotkey_presses(&mut self) -> Vec<crate::native::HotkeyId> {
+        self.host.take_hotkey_presses()
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;

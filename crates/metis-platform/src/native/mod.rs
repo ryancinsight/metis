@@ -2,12 +2,17 @@
 
 mod application;
 mod dialog;
+mod global_shortcut;
 mod placement;
 mod webview;
 mod window;
 
 pub use application::{NativeApplication, NativeFlow, NativeHostError, run_native_application};
 pub use dialog::{DialogSelection, MAX_DIALOG_PATH_UNITS, pick};
+pub use global_shortcut::{
+    GlobalHotkey, GlobalShortcuts, HotkeyHost, HotkeyId, MAX_GLOBAL_HOTKEYS,
+    MAX_PENDING_HOTKEY_PRESSES, hotkey_for,
+};
 pub use placement::{
     MAX_PLACEMENT_COORDINATE, WindowPlacement, placement_from_state, state_from_placement,
 };

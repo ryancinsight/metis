@@ -144,11 +144,12 @@ describing it as dependency-free. The Atlas development overlay resolves first-p
 trees. Standalone builds use the corresponding pushed provider revisions recorded
 in Cargo.lock. Metis consumes Moirai through git-plus-version requirements;
 the current standalone lock records merged Moirai revision
-`359fc0f8c0c4c455ef1057d95f5e8fe1cc4ddafb`, which includes the Windows
+`4276a2a3bca9f77f90cd0dad1d5e4b12ac27383e`, which includes the Windows
 AccessKit accessibility provider, the UI Automation value-action mapping,
 WebView2 0.39.1 bindings, POSIX process-group tree containment,
 `<select>` values through `WebElement::set_value`, keyboard shortcuts on
-native accessibility nodes and restorable native window placement. The current
+native accessibility nodes, restorable native window placement and
+system-wide hotkeys. The current
 revision retains the historical WebView2 capture provider graph and adds
 explicit WebGPU provider recreation. The locked
 provider history includes the merged process, browser/API, bounded WebSocket service,
