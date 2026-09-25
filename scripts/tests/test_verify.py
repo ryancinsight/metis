@@ -208,7 +208,7 @@ class WorkflowContractTests(unittest.TestCase):
     def test_one_pinned_pipeline_covers_supported_targets(self):
         required = (
             "pull_request:",
-            "merge_group:",
+            "ready_for_review",
             "schedule:",
             "workflow_dispatch:",
             "push:",
@@ -240,6 +240,24 @@ class WorkflowContractTests(unittest.TestCase):
             with self.subTest(fragment=fragment):
                 self.assertIn(fragment, self.source)
 
+    def test_one_aggregate_check_gates_every_job(self):
+        # The ruleset requires only "Metis gate". A workflow skipped by a
+        # path filter leaves required checks pending, and a job skipped
+        # because a job it needs failed reports success, so the aggregate
+        # runs always, needs every gated job, and rejects drafts.
+        self.assertNotRegex(self.source, r"(?m)^  merge_group:")
+        self.assertNotRegex(self.source, r"(?m)^    paths(-ignore)?:")
+        for fragment in (
+            "name: Metis gate",
+            "needs: [changes, verify, workflow-lint, lockfile, adr-index, conformance, semver, artifact-budget]",
+            "if: always()",
+            "name: Reject draft pull requests",
+            'select(.value.result == "failure" or .value.result == "cancelled")',
+            "name: verified-tree-${{ needs.changes.outputs.tree }}",
+        ):
+            with self.subTest(fragment=fragment):
+                self.assertIn(fragment, self.source)
+
     def test_gate_tools_use_release_binaries_with_checksums(self):
         self.assertNotIn("cargo install cargo-nextest", self.source)
         self.assertNotIn("cargo install cargo-deny", self.source)
@@ -259,8 +277,12 @@ class WorkflowContractTests(unittest.TestCase):
 
     def test_draft_pull_requests_and_unsupported_hosts_are_excluded(self):
         draft_guard = "if: github.event_name != 'pull_request' || github.event.pull_request.draft == false"
-        self.assertEqual(self.source.count(draft_guard), 4)
-        self.assertIn("if: github.event_name != 'schedule' && (github.event_name != 'pull_request'", self.source)
+        # workflow-lint, lockfile, adr-index, conformance, artifact-budget
+        self.assertEqual(self.source.count(draft_guard), 5)
+        # The Windows gate enumerates the events it runs on; schedule is not one.
+        verify = self.source.split("\n  verify:\n", 1)[1].split("\n  workflow-lint:\n", 1)[0]
+        self.assertNotIn("'schedule'", verify)
+        self.assertIn("github.event_name == 'pull_request' && github.event.pull_request.draft == false", verify)
         self.assertIn("github.event_name == 'pull_request' && github.event.pull_request.draft == false", self.source)
         self.assertNotIn("pull_request_target", self.source)
         self.assertIn("runs-on: windows-latest", self.source)
