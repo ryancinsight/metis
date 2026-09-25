@@ -8,7 +8,9 @@
 //! of its center onto that line.
 
 use super::paint::Paint;
-use crate::framebuffer::{Color, Framebuffer, SourceOver};
+use crate::framebuffer::{Color, Framebuffer};
+
+mod span;
 
 /// Most color stops one gradient carries.
 ///
@@ -321,9 +323,7 @@ impl Paint for PlacedGradient<'_> {
             return;
         }
         if self.opaque {
-            for (column, pixel) in (left..right).zip(fb.row_span_mut(row, left, right)) {
-                *pixel = SourceOver::new(self.color_at(column, row)).packed();
-            }
+            self.fill_opaque_row(fb.row_span_mut(row, left, right), row, left);
             return;
         }
         for column in left..right {
