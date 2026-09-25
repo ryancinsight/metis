@@ -28,11 +28,11 @@ impl SemanticTree {
     /// Returns a UI error for duplicate IDs, unresolved ARIA references,
     /// unknown roles, malformed state values, or a semantic text/depth bound.
     pub fn from_document(document: &DomDocument) -> Result<Self> {
-        let mut ids = HashMap::new();
+        let mut index = DocumentIndex::default();
         let mut source_nodes = 0;
-        index_element(&document.root, 1, &mut source_nodes, &mut ids)?;
+        index_element(&document.root, 1, &mut source_nodes, &mut index)?;
         let mut elements = 0;
-        let root = build_element(&document.root, 1, &ids, &mut elements, false)?;
+        let root = build_element(&document.root, 1, &index, &mut elements, false)?;
         Ok(Self {
             root,
             element_count: elements,
@@ -40,46 +40,86 @@ impl SemanticTree {
     }
 }
 
+/// An element's text content: its text nodes and its descendants' content,
+/// each normalized and joined by single spaces. A content longer than
+/// [`MAX_SEMANTIC_TEXT_BYTES`] is an error, reported only if a name or
+/// description needs it.
+type Content = std::result::Result<String, MetisError>;
+
+/// Every element's ID and text content, in document (pre-)order.
+///
+/// Each content is joined from its children's once, so naming every element
+/// from its content costs one pass over the document rather than one per
+/// ancestor.
+#[derive(Default)]
+struct DocumentIndex<'a> {
+    ids: HashMap<&'a str, usize>,
+    contents: Vec<Content>,
+}
+
 fn index_element<'a>(
     element: &'a DomElement,
     depth: usize,
     source_nodes: &mut usize,
-    ids: &mut HashMap<&'a str, &'a DomElement>,
+    index: &mut DocumentIndex<'a>,
 ) -> Result<()> {
     if depth > MAX_DEPTH {
         return Err(limit_error("Semantic tree depth limit exceeded"));
     }
     count_node(source_nodes)?;
+    let position = index.contents.len();
+    index.contents.push(Ok(String::new()));
     if let Some(id) = element.id() {
         bounded_id(id)?;
-        if ids.insert(id, element).is_some() {
+        if index.ids.insert(id, position).is_some() {
             return Err(markup_error("Semantic element IDs must be unique"));
         }
     }
+    let mut content: Content = Ok(String::new());
     for child in &element.children {
         match child {
-            DomNode::Element(child) => index_element(child, depth + 1, source_nodes, ids)?,
-            DomNode::Text(text) => {
-                if text.len() > MAX_SEMANTIC_TEXT_BYTES {
+            DomNode::Element(child) => {
+                let child_position = index.contents.len();
+                index_element(child, depth + 1, source_nodes, index)?;
+                if let Ok(text) = &mut content
+                    && let Err(error) = index.contents[child_position]
+                        .as_ref()
+                        .map_err(Clone::clone)
+                        .and_then(|part| append_normalized(text, part))
+                {
+                    content = Err(error);
+                }
+            }
+            DomNode::Text(raw) => {
+                if raw.len() > MAX_SEMANTIC_TEXT_BYTES {
                     return Err(limit_error("Semantic text node exceeds its byte limit"));
                 }
                 count_node(source_nodes)?;
+                if let Ok(text) = &mut content
+                    && let Err(error) =
+                        normalize_text(raw).and_then(|part| append_normalized(text, &part))
+                {
+                    content = Err(error);
+                }
             }
         }
     }
+    index.contents[position] = content;
     Ok(())
 }
 
 fn build_element(
     element: &DomElement,
     depth: usize,
-    ids: &HashMap<&str, &DomElement>,
+    index: &DocumentIndex<'_>,
     elements: &mut usize,
     inherited_hidden: bool,
 ) -> Result<SemanticNode> {
     if depth > MAX_DEPTH {
         return Err(limit_error("Semantic tree depth limit exceeded"));
     }
+    // Elements are built in the order they were indexed.
+    let position = *elements;
     *elements = elements
         .checked_add(1)
         .ok_or_else(|| limit_error("Semantic element count overflow"))?;
@@ -93,8 +133,9 @@ fn build_element(
     let hidden = inherited_hidden || local_hidden;
     let disabled = element.attributes.contains_key("disabled")
         || boolean_attribute(element, "aria-disabled")?.unwrap_or(false);
-    let name = accessible_name(element, ids, depth)?;
-    let description = referenced_or_literal(element, "aria-description", "aria-describedby", ids)?;
+    let name = accessible_name(element, position, index)?;
+    let description =
+        referenced_or_literal(element, "aria-description", "aria-describedby", index)?;
     let value = element
         .attributes
         .get("value")
@@ -131,7 +172,7 @@ fn build_element(
         .map_err(|_| limit_error("Semantic child allocation failed"))?;
     for child in &element.children {
         if let DomNode::Element(child) = child {
-            children.push(build_element(child, depth + 1, ids, elements, hidden)?);
+            children.push(build_element(child, depth + 1, index, elements, hidden)?);
         }
     }
     Ok(SemanticNode {
@@ -218,23 +259,23 @@ fn actions_for(role: SemanticRole) -> Vec<SemanticAction> {
 
 fn accessible_name(
     element: &DomElement,
-    ids: &HashMap<&str, &DomElement>,
-    depth: usize,
+    position: usize,
+    index: &DocumentIndex<'_>,
 ) -> Result<String> {
     if let Some(value) = element.attributes.get("aria-label") {
         return normalize_text(value);
     }
     if let Some(value) = element.attributes.get("aria-labelledby") {
-        return referenced_text(value, ids);
+        return referenced_text(value, index);
     }
-    text_content(element, depth)
+    content(index, position)
 }
 
 fn referenced_or_literal(
     element: &DomElement,
     literal: &str,
     references: &str,
-    ids: &HashMap<&str, &DomElement>,
+    index: &DocumentIndex<'_>,
 ) -> Result<Option<String>> {
     if let Some(value) = element.attributes.get(literal) {
         return Ok(Some(normalize_text(value)?));
@@ -242,46 +283,41 @@ fn referenced_or_literal(
     element
         .attributes
         .get(references)
-        .map(|value| referenced_text(value, ids))
+        .map(|value| referenced_text(value, index))
         .transpose()
 }
 
-fn referenced_text(value: &str, ids: &HashMap<&str, &DomElement>) -> Result<String> {
+fn referenced_text(value: &str, index: &DocumentIndex<'_>) -> Result<String> {
     let mut result = String::new();
     for id in value.split_whitespace() {
-        let target = ids
+        let target = index
+            .ids
             .get(id)
             .copied()
             .ok_or_else(|| markup_error("Semantic ARIA reference does not resolve to an ID"))?;
-        append_text(&mut result, &text_content(target, 1)?)?;
+        append_normalized(&mut result, &content(index, target)?)?;
     }
     Ok(result)
 }
 
-fn text_content(element: &DomElement, depth: usize) -> Result<String> {
-    if depth > MAX_DEPTH {
-        return Err(limit_error("Semantic text traversal depth exceeded"));
-    }
-    let mut result = String::new();
-    for child in &element.children {
-        match child {
-            DomNode::Text(text) => append_text(&mut result, text)?,
-            DomNode::Element(child) => append_text(&mut result, &text_content(child, depth + 1)?)?,
-        }
-    }
-    Ok(result)
+/// The indexed content of the element at `position`, or its deferred error.
+fn content(index: &DocumentIndex<'_>, position: usize) -> Result<String> {
+    index.contents[position].clone()
 }
 
-fn append_text(output: &mut String, text: &str) -> Result<()> {
-    let normalized = normalize_text(text)?;
-    if normalized.is_empty() {
+/// Appends already-normalized `text`, separated by one space.
+///
+/// Normalized text has no leading, trailing or repeated whitespace, so the
+/// joined result is normalized too.
+fn append_normalized(output: &mut String, text: &str) -> Result<()> {
+    if text.is_empty() {
         return Ok(());
     }
     let separator = usize::from(!output.is_empty());
     if output
         .len()
         .checked_add(separator)
-        .and_then(|length| length.checked_add(normalized.len()))
+        .and_then(|length| length.checked_add(text.len()))
         .is_none_or(|length| length > MAX_SEMANTIC_TEXT_BYTES)
     {
         return Err(limit_error("Semantic text exceeds its byte limit"));
@@ -289,7 +325,7 @@ fn append_text(output: &mut String, text: &str) -> Result<()> {
     if separator != 0 {
         output.push(' ');
     }
-    output.push_str(&normalized);
+    output.push_str(text);
     Ok(())
 }
 
