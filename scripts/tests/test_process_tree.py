@@ -5,10 +5,13 @@ from __future__ import annotations
 import json
 import os
 import pathlib
+import socket
 import subprocess
 import sys
 import tempfile
 import textwrap
+import threading
+import time
 import unittest
 from unittest.mock import patch
 
@@ -34,6 +37,10 @@ CHILD = textwrap.dedent(
     else:
         import fcntl
         fcntl.flock(lock, fcntl.LOCK_EX)
+    ready_port = os.environ.get("METIS_TEST_READY_PORT")
+    if ready_port:
+        import socket
+        socket.create_connection(("127.0.0.1", int(ready_port))).close()
     print(f"child-ready {os.getpid()}", flush=True)
     threading.Event().wait()
     """
@@ -73,6 +80,49 @@ EXITING_PARENT = textwrap.dedent(
     print(ready, end="", flush=True)
     """
 )
+
+
+# Bounds only a child that never starts: the test then fails at this deadline.
+# A child that starts signals within its launch latency and never waits here.
+READY_SECONDS = 60
+
+
+def _budget_from_readiness(listener: socket.socket):
+    """Hold the supervisor's clock and first wait until the child signals.
+
+    A budget counted from launch can expire before two interpreter launches
+    finish on a loaded host, with no descendant yet to retire. Counting from
+    readiness keeps the one-second budget and makes it expire with the child
+    alive, holding its lock.
+    """
+    ready = threading.Event()
+    real_monotonic = time.monotonic
+    frozen: list[float] = []
+
+    def clock() -> float:
+        if ready.is_set():
+            return real_monotonic()
+        if not frozen:
+            frozen.append(real_monotonic())
+        return frozen[0]
+
+    def after_ready(wait):
+        def supervised(*args, **kwargs):
+            if not ready.is_set():
+                connection, _ = listener.accept()
+                connection.close()
+                ready.set()
+            return wait(*args, **kwargs)
+
+        return supervised
+
+    return (
+        patch.object(process_tree.time, "monotonic", clock),
+        patch.object(process_tree.subprocess.Popen, "wait", after_ready(subprocess.Popen.wait)),
+        patch.object(
+            process_tree, "_read_posix_status", after_ready(process_tree._read_posix_status)
+        ),
+    )
 
 
 def _assert_lock_released(test: unittest.TestCase, path: pathlib.Path) -> None:
@@ -240,7 +290,16 @@ class ProcessTreeTests(unittest.TestCase):
             lock = root / "descendant.lock"
             lock.write_bytes(b"x")
             evidence = {"schema": 1, "status": "running", "stages": {}, "commands": {}}
+            listener = socket.create_server(("127.0.0.1", 0))
+            listener.settimeout(READY_SECONDS)
+            environment = os.environ.copy()
+            environment["METIS_TEST_READY_PORT"] = str(listener.getsockname()[1])
+            clock, windows_wait, posix_wait = _budget_from_readiness(listener)
             with (
+                listener,
+                clock,
+                windows_wait,
+                posix_wait,
                 patch.object(verify, "ROOT", root),
                 patch.object(verify, "OUTPUT", output),
                 patch.object(verify, "EVIDENCE", evidence),
@@ -250,7 +309,7 @@ class ProcessTreeTests(unittest.TestCase):
                         "descendant-timeout",
                         [sys.executable, "-c", PARENT, str(lock), CHILD],
                         cwd=root,
-                        environment=os.environ.copy(),
+                        environment=environment,
                         seconds=1,
                     )
 
