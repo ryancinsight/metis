@@ -9,7 +9,7 @@ mod damage;
 
 pub use clip::Clip;
 use clip::ClipScope;
-pub(crate) use composite::SourceOver;
+pub(crate) use composite::{SourceOver, coverage_alpha};
 pub use damage::Damage;
 
 /// Maximum storage: 16,777,216 pixels, or 64 MiB of packed RGBA.

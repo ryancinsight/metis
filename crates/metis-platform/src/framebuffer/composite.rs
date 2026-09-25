@@ -45,15 +45,12 @@ impl SourceOver {
     /// transparent source, as the saturating cast of `f64::round` does.
     #[inline]
     pub(crate) fn covering(color: Color, coverage: f64) -> Self {
-        let scaled = f64::from(color.a) * coverage.clamp(0.0, 1.0);
-        #[expect(
-            clippy::cast_possible_truncation,
-            clippy::cast_sign_loss,
-            reason = "a clamped coverage times a byte channel lies in [0, 255]"
-        )]
-        let whole = scaled as u8;
-        let alpha = whole + u8::from(scaled - f64::from(whole) >= 0.5);
-        Self::new(Color::rgba(color.r, color.g, color.b, alpha))
+        Self::new(Color::rgba(
+            color.r,
+            color.g,
+            color.b,
+            coverage_alpha(color.a, coverage),
+        ))
     }
 
     /// Reports a source that leaves the destination unchanged.
@@ -150,6 +147,69 @@ impl SourceOver {
             | channel(self.numerators[0], 16)
             | channel(self.numerators[1], 8)
             | channel(self.numerators[2], 0)
+    }
+}
+
+/// `alpha` scaled by an antialiasing `coverage` clamped to `[0, 1]`, rounded
+/// half up; a NaN coverage gives zero. [`SourceOver::covering`] uses exactly
+/// this alpha, so a stored result composites as the coverage would.
+#[inline]
+pub(crate) fn coverage_alpha(alpha: u8, coverage: f64) -> u8 {
+    let scaled = f64::from(alpha) * coverage.clamp(0.0, 1.0);
+    #[expect(
+        clippy::cast_possible_truncation,
+        clippy::cast_sign_loss,
+        reason = "a clamped coverage times a byte channel lies in [0, 255]"
+    )]
+    let whole = scaled as u8;
+    whole + u8::from(scaled - f64::from(whole) >= 0.5)
+}
+
+/// `color` at `alpha` composited over the opaque pixel `dst`: exactly what
+/// [`SourceOver::over_opaque`] gives for that source, in the `u16` lanes of
+/// [`SourceOver::over_opaque_span`]. Alpha zero returns `dst`, since
+/// `(255·d + 127) / 255 = d`.
+#[inline]
+fn over_opaque_at(color: Color, alpha: u8, dst: u32) -> u32 {
+    let alpha = u16::from(alpha);
+    let weight = 255 - alpha;
+    let lanes = dst.to_le_bytes();
+    // Little-endian lanes of `0xAARRGGBB`: blue, green, red, alpha.
+    u32::from_le_bytes([
+        opaque_lane(u16::from(color.b).wrapping_mul(alpha), weight, lanes[0]),
+        opaque_lane(u16::from(color.g).wrapping_mul(alpha), weight, lanes[1]),
+        opaque_lane(u16::from(color.r).wrapping_mul(alpha), weight, lanes[2]),
+        opaque_lane(255 * 255, 0, lanes[3]),
+    ])
+}
+
+impl super::Framebuffer {
+    /// Composites `color` at per-pixel `alphas`, the first at column `left`
+    /// of row `y`, which the caller has clipped to the clip rectangle.
+    ///
+    /// Each pixel receives exactly what a one-pixel span of `color` at its
+    /// alpha gives it, and alpha zero leaves it unchanged. A row lying wholly
+    /// on opaque pixels blends in the `u16` lanes.
+    pub(crate) fn composite_alpha_row(&mut self, y: u32, left: u32, alphas: &[u8], color: Color) {
+        let length = u32::try_from(alphas.len()).unwrap_or(u32::MAX);
+        let span = self.row_span_mut(y, left, left.saturating_add(length));
+        debug_assert_eq!(
+            span.len(),
+            alphas.len(),
+            "invariant: the caller clips the row"
+        );
+        if span.iter().all(|pixel| pixel >> 24 == 0xFF) {
+            for (pixel, &alpha) in span.iter_mut().zip(alphas) {
+                *pixel = over_opaque_at(color, alpha, *pixel);
+            }
+            return;
+        }
+        for (pixel, &alpha) in span.iter_mut().zip(alphas) {
+            if alpha > 0 {
+                *pixel =
+                    SourceOver::new(Color::rgba(color.r, color.g, color.b, alpha)).apply(*pixel);
+            }
+        }
     }
 }
 
@@ -267,6 +327,35 @@ mod tests {
                 .map(|d| source.over_opaque(pack_color(destination(d * 7))))
                 .collect();
             assert_eq!(span, expected, "span of {length}");
+        }
+    }
+
+    /// An alpha row gives every pixel what a one-pixel source at that alpha
+    /// gives it, over opaque and translucent rows alike.
+    #[test]
+    fn an_alpha_row_matches_one_pixel_sources() {
+        let destination = |index: usize, alpha: u8| {
+            let byte = u8::try_from(index * 37 % 256).expect("reduced modulo 256");
+            Color::rgba(byte, 255 - byte, byte / 2, alpha)
+        };
+        let alphas: Vec<u8> = (0..=255).collect();
+        for destination_alpha in [255, 200, 0] {
+            for color in [Color::rgba(15, 23, 42, 40), Color::rgba(250, 128, 3, 255)] {
+                let mut row = super::super::Framebuffer::new(256, 1).expect("test row");
+                for (index, pixel) in row.pixels.iter_mut().enumerate() {
+                    *pixel = pack_color(destination(index, destination_alpha));
+                }
+                row.composite_alpha_row(0, 0, &alphas, color);
+                for (index, (&pixel, &alpha)) in row.pixels.iter().zip(&alphas).enumerate() {
+                    let before = pack_color(destination(index, destination_alpha));
+                    let expected = if alpha == 0 {
+                        before
+                    } else {
+                        SourceOver::new(Color::rgba(color.r, color.g, color.b, alpha)).apply(before)
+                    };
+                    assert_eq!(pixel, expected, "alpha {alpha} over {destination_alpha}");
+                }
+            }
         }
     }
 

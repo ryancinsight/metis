@@ -1,9 +1,11 @@
 //! Value-semantic tests for Gaussian box shadows.
 
-use super::kernel::normal_cdf;
+use super::kernel::{Kernel, normal_cdf, small_float};
 use super::*;
 use crate::rasterizer::fill_rect;
-use crate::rasterizer::round_rect::composite_pixel;
+use crate::rasterizer::round_rect::{
+    RoundRect, RowSamples, SUBSAMPLES, composite_pixel, pixel_coverage, sample_row,
+};
 
 fn surface(width: u32, height: u32, background: Color) -> Framebuffer {
     let mut fb = Framebuffer::new(width, height).expect("test surface");

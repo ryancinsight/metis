@@ -60,3 +60,4 @@
 | [0049](0049-keyboard-focus-ring.md) | Keyboard focus and its ring in the software form | Accepted |
 | [0050](0050-starter-application.md) | Starter application | Accepted |
 | [0051](0051-damage-limited-repaint.md) | Damage-limited repaint | Accepted |
+| [0052](0052-memoized-box-shadow-masks.md) | Memoized box-shadow masks | Accepted |
