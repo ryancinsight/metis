@@ -3,9 +3,10 @@
 use super::Typeface;
 use super::faces;
 use super::glyf::Transform;
-use super::glyph_cache::{GlyphCache, GlyphCoverage, GlyphKey, GlyphLookup};
+use super::glyph_cache::{GlyphCache, GlyphCoverage, GlyphKey};
 use super::raster::{Canvas, Outline};
 use crate::framebuffer::{Color, Framebuffer, Rect, SourceOver};
+use crate::memo::Lookup;
 use std::cell::RefCell;
 
 thread_local! {
@@ -223,7 +224,7 @@ pub fn draw_text(fb: &mut Framebuffer, x: i32, y: i32, text: &str, style: TextSt
                     coverage: canvas.coverage.as_slice().into(),
                 })
             });
-            if let Some(glyph) = lookup.as_ref().map(GlyphLookup::coverage)
+            if let Some(glyph) = lookup.as_ref().map(Lookup::value)
                 && let Some(bounds) = glyph.bounds
             {
                 composite(fb, &glyph.coverage, bounds, color);
