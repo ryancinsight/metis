@@ -352,47 +352,6 @@ impl Framebuffer {
         }
     }
 
-    /// Composites `color` scaled by a row of antialiasing `coverage` values
-    /// whose first value lies at column `x` of row `y`, clipped to the
-    /// surface and clip rectangle.
-    ///
-    /// Each pixel receives exactly the source a one-pixel
-    /// [`composite_span`](Self::composite_span) would give it; resolving the
-    /// row once removes the per-pixel bounds and clip checks.
-    pub(crate) fn composite_coverage_row(
-        &mut self,
-        y: u32,
-        x: i64,
-        coverage: &[f64],
-        color: Color,
-    ) {
-        let Ok(length) = i64::try_from(coverage.len()) else {
-            return;
-        };
-        let start = x.max(i64::from(self.clip.left()));
-        let end = x.saturating_add(length).min(i64::from(self.clip.right()));
-        let (Ok(left), Ok(right)) = (u32::try_from(start), u32::try_from(end)) else {
-            return;
-        };
-        if left >= right {
-            return;
-        }
-        let span = self.row_span_mut(y, left, right);
-        let skip = usize::try_from(start - x).unwrap_or(usize::MAX);
-        let Some(values) = coverage.get(skip..) else {
-            return;
-        };
-        for (pixel, value) in span.iter_mut().zip(values) {
-            if *value <= 0.0 {
-                continue;
-            }
-            let source = SourceOver::covering(color, *value);
-            if !source.is_transparent() {
-                *pixel = source.apply(*pixel);
-            }
-        }
-    }
-
     /// Reads a pixel, returning transparent black for clipped coordinates.
     #[must_use]
     pub fn get_pixel(&self, x: i32, y: i32) -> Color {
