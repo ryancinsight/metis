@@ -342,9 +342,7 @@ impl Framebuffer {
     pub(crate) fn composite_span(&mut self, y: u32, left: u32, right: u32, source: SourceOver) {
         let span = self.row_span_mut(y, left, right);
         if span.iter().all(|pixel| pixel >> 24 == 0xFF) {
-            for pixel in span {
-                *pixel = source.over_opaque(*pixel);
-            }
+            source.over_opaque_span(span);
         } else {
             for pixel in span {
                 *pixel = source.apply(*pixel);
