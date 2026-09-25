@@ -46,7 +46,7 @@ jobs:
         # commit's own tree.
         id: tree
         shell: bash
-        run: echo "tree=$(git rev-parse HEAD^{tree})" >> "$GITHUB_OUTPUT"
+        run: echo "tree=$(git rev-parse 'HEAD^{tree}')" >> "$GITHUB_OUTPUT"
       - name: Determine whether tracked paths changed
         id: diff
         shell: bash
