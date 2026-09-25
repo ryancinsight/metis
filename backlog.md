@@ -449,16 +449,6 @@ an owner. “Unsupported” cannot replace delivery of a required mobile/native 
 - falsified (2026-09-24, pinned A/B): blending varying-coverage rows (text, shadow edges) in the `u16` opaque lanes gave nothing on shadows and was 3–9% slower on text, because per-pixel f64 coverage-to-alpha conversion dominates and glyph rows skip zero coverage; building the gradient bench with `+fma` was 7% slower, so software `fma` calls are not the diagonal gradient's cost.
 - Frame-path increment (2026-09-24): glyph coverage is memoized across repaints with bit-identical frame hashes; the `frame` bench's keystroke repaint fell from 1.01 ms to 0.21 ms (800x600) and from 1.20 ms to 0.28 ms (1600x1200), full theme repaints by 28% and 18%. The result explorer's regrouping and tree rebuild became linear passes (20 × 256 recorded rows across 64 patients: 501 ms to 86 ms, release). Box shadows and diagonal gradients are now the dominant full-repaint costs.
 
-<a id="METIS-VERIFY-DESCENDANT-TIMEOUT-001"></a>
-## METIS-VERIFY-DESCENDANT-TIMEOUT-001 — Time the descendant timeout test past launch latency [patch]
-- Status: todo; priority: verification; needs: none
-- outcome: `scripts/tests/test_process_tree.py::test_timeout_reports_gate_budget_and_retires_descendant` passes on a loaded host; it failed `verify.py`'s visual-tests stage on 2026-09-24 with `'child-ready ' not found`, because two interpreter launches outlasted its 1-second budget before the child took its lock.
-- cause: on Windows `process_tree.run` waits once with `Popen.wait(timeout)`, so the budget is an operating-system wait; a patched `time.monotonic` cannot hold it open (tried: the test still fails with the child delayed 2 s).
-- acceptance: the test passes with the child's start delayed 2 s, and keeps asserting the budget message, the released lock and the retired descendant.
-- scope: scripts/tests/test_process_tree.py, scripts/process_tree.py
-- next: derive the fixture budget from measured parent-plus-child launch latency (isolated `-I -S` interpreters shorten it), or have the timeout path observe readiness before its wait.
-- basis: be44daeb7e51
-
 <a id="METIS-CONFORMANCE-001"></a>
 ## METIS-CONFORMANCE-001 — Final capability and target closure [patch]
 - Status: todo; priority: P3; owner: Metis integration; last-update: 2026-09-21; risk: structural conformance debt
