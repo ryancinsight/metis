@@ -44,6 +44,8 @@ consus-compression = { git = "https://github.com/ryancinsight/consus.git", versi
 consus-raster = { git = "https://github.com/ryancinsight/consus.git", version = "0.1" }
 iris = { package = "iris-viz", git = "https://github.com/ryancinsight/iris", version = "0.1" }
 eunomia = { git = "https://github.com/ryancinsight/eunomia", version = "0.8.0", default-features = false }
+# Runtime ISA dispatch for rasterizer kernels (ADR 0053).
+hermes-simd = { git = "https://github.com/ryancinsight/hermes.git", version = "0.7.0", default-features = false, features = ["std"] }
 # Git plus version, matching the sibling entries below: the package is named
 # `gaia-mesh` but its import path is `gaia`. The mesh viewer renders with gaia's
 # software rasteriser rather than a second one here.

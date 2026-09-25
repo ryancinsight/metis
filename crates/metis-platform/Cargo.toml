@@ -10,6 +10,7 @@ description = "Bounded software framebuffer and Windows native event/presentatio
 
 [dependencies]
 eunomia = { workspace = true }
+hermes-simd = { workspace = true }
 metis-core = { workspace = true }
 moirai-pal = { workspace = true }
 moirai-async = { workspace = true }
