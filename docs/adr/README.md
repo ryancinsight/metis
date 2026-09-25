@@ -61,3 +61,4 @@
 | [0050](0050-starter-application.md) | Starter application | Accepted |
 | [0051](0051-damage-limited-repaint.md) | Damage-limited repaint | Accepted |
 | [0052](0052-memoized-box-shadow-masks.md) | Memoized box-shadow masks | Accepted |
+| [0053](0053-runtime-isa-dispatch-for-raster-kernels.md) | Runtime instruction-set dispatch for raster kernels | Accepted |

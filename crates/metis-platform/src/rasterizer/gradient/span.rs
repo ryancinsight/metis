@@ -7,7 +7,11 @@
 //! first and last pixel of a run of columns fall in the same interval, every
 //! pixel between them does too, and the run interpolates without searching
 //! the stops. Each pixel still takes exactly the color
-//! [`LinearGradient::color_at_fraction`] gives it.
+//! [`LinearGradient::color_at_fraction`] gives it. The kernel runs under
+//! Hermes' instruction-set dispatch, recorded in
+//! `docs/adr/0053-runtime-isa-dispatch-for-raster-kernels.md`.
+
+use hermes_simd::{LaneKernel, Simd, SimdArch, SimdKernel, vectorize};
 
 use super::super::paint::Paint;
 use super::{LinearGradient, PlacedGradient, ResolvedStop, byte};
@@ -53,10 +57,53 @@ impl LinearGradient {
     }
 }
 
+/// One row of an opaque gradient, run inside the widest instruction set the
+/// host supports.
+///
+/// Every operation is correctly rounded on every instruction set, so the
+/// choice changes speed, never pixels. Where fused multiply-add is an
+/// instruction the interpolating runs vectorize; on the baseline x86-64 target
+/// each `mul_add` is a library call.
+struct OpaqueRow<'row, 'gradient> {
+    placed: &'row PlacedGradient<'gradient>,
+    pixels: &'row mut [u32],
+    row: u32,
+    left: u32,
+}
+
+impl LaneKernel<f64> for OpaqueRow<'_, '_> {
+    type Output = ();
+
+    #[expect(
+        clippy::inline_always,
+        reason = "`vectorize` reaches its target-feature scope only by inlining `call` (`LaneKernel` docs)"
+    )]
+    #[inline(always)]
+    fn call<A: SimdArch + SimdKernel<f64>>(self, _simd: Simd<f64, A>) {
+        self.placed.opaque_row(self.pixels, self.row, self.left);
+    }
+}
+
 impl PlacedGradient<'_> {
     /// Writes the opaque gradient over `pixels`, the columns of `row` from
     /// `left`.
     pub(super) fn fill_opaque_row(&self, pixels: &mut [u32], row: u32, left: u32) {
+        vectorize(OpaqueRow {
+            placed: self,
+            pixels,
+            row,
+            left,
+        });
+    }
+
+    /// [`Self::fill_opaque_row`]'s body, inlined into each instruction set's
+    /// scope.
+    #[expect(
+        clippy::inline_always,
+        reason = "outlined, the row compiles at baseline: 1.81 ms against 1.38 ms on the card-stack bench"
+    )]
+    #[inline(always)]
+    fn opaque_row(&self, pixels: &mut [u32], row: u32, left: u32) {
         let (runs, tail) = pixels.as_chunks_mut::<RUN>();
         let mut column = left;
         let run = u32::try_from(RUN).expect("invariant: a run is eight columns");
@@ -84,6 +131,11 @@ impl PlacedGradient<'_> {
     /// The same operations as [`LinearGradient::color_at_fraction`] on the
     /// color channels; alpha is 255 at both stops, so it interpolates to 255
     /// and the straight color is the premultiplied one.
+    #[expect(
+        clippy::inline_always,
+        reason = "outlined, the run compiles at baseline: 1.79 ms against 1.38 ms on the card-stack bench"
+    )]
+    #[inline(always)]
     fn interpolate(&self, pixels: &mut [u32; RUN], row: u32, column: u32, index: usize) {
         let (from, to) = self.gradient.bounds(index);
         let [red, green, blue, _] = from.premultiplied;
