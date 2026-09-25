@@ -17,15 +17,18 @@
 
 mod field;
 mod kernel;
+mod mask;
 
-use super::round_rect::{
-    CornerRadius, RoundRect, RowBounds, RowSamples, SUBSAMPLES, pixel_coverage, sample_row,
-};
-use std::ops::Range;
+use super::round_rect::CornerRadius;
+use std::cell::RefCell;
 
-use crate::framebuffer::{Color, Framebuffer, Rect, SourceOver};
-use field::{Field, Shape};
-use kernel::{Kernel, small_float};
+use crate::framebuffer::{Color, Framebuffer, Rect};
+use mask::{ShadowKey, ShadowMask, ShadowMasks};
+
+thread_local! {
+    /// Shadow alpha masks kept across repaints; see [`mask`].
+    static SHADOWS: RefCell<ShadowMasks> = RefCell::default();
+}
 
 /// Visible columns evaluated together.
 ///
@@ -146,239 +149,32 @@ pub fn draw_box_shadow(
     radius: CornerRadius,
     shadow: BoxShadow,
 ) {
-    let color = shadow.color;
-    if color.a == 0 || border_box.width <= 0 || border_box.height <= 0 {
+    if shadow.color.a == 0 || border_box.width <= 0 || border_box.height <= 0 {
+        return;
+    }
+    // A shadow wholly outside the clip is neither rendered nor retained.
+    let extent = shadow.extent(border_box);
+    let clip = fb.clip();
+    let reaches = |start: i32, length: i32, low: u32, high: u32| {
+        let (start, end) = (i64::from(start), i64::from(start) + i64::from(length));
+        end > i64::from(low) && start < i64::from(high)
+    };
+    if !reaches(extent.x, extent.width, clip.left(), clip.right())
+        || !reaches(extent.y, extent.height, clip.top(), clip.bottom())
+    {
         return;
     }
     let radius = CornerRadius::clamped(radius.pixels(), border_box);
-    let (Some(outline), Some(element)) = (
-        RoundRect::new(Rect::new(0, 0, border_box.width, border_box.height), radius),
-        RoundRect::new(border_box, radius),
-    ) else {
-        return;
-    };
-    let shape = Shape {
-        width: i64::from(border_box.width),
-        height: i64::from(border_box.height),
-        radius: i64::from(radius.pixels()),
-        outline,
-    };
-    let kernel = Kernel::new(shadow.blur);
-    let reach = kernel.reach;
-    let origin_x = i64::from(border_box.x) + i64::from(shadow.offset_x);
-    let origin_y = i64::from(border_box.y) + i64::from(shadow.offset_y);
-    let clip = fb.clip();
-    let visible = |start: i64, extent: i64, low: u32, high: u32| {
-        let (low, high) = (i64::from(low), i64::from(high));
-        (start - reach).clamp(low, high)..(start + extent + reach).clamp(low, high)
-    };
-    let columns = visible(origin_x, shape.width, clip.left(), clip.right());
-    let rows = visible(origin_y, shape.height, clip.top(), clip.bottom());
-    if columns.is_empty() || rows.is_empty() {
-        return;
-    }
-    let mut field = Field::new(&kernel, &shape);
-    let interior = field.interior();
-    let interior = interior.start + origin_x..interior.end + origin_x;
-    let mut clip = Clip {
-        element,
-        samples: [(0.0, 0.0); SUBSAMPLES],
-        unused: [(0.0, 0.0); SUBSAMPLES],
-    };
-    // Tiling bounds the scratch memory by the tile, not the surface width.
-    let tiles = std::iter::successors(Some(columns.start), |start| Some(start + TILE_WIDTH))
-        .take_while(|start| *start < columns.end)
-        .map(|start| start..(start + TILE_WIDTH).min(columns.end));
-    // Reused across rows: a row's edge pixels between two breaks.
-    let mut stretch = Vec::new();
-    for tile in tiles {
-        field.set_tile(tile.start - origin_x..tile.end - origin_x);
-        for device_row in rows.clone() {
-            paint_row(
-                fb,
-                &mut field,
-                &mut clip,
-                &mut stretch,
-                RowSpan {
-                    row: device_row,
-                    columns: tile.clone(),
-                    origin: (origin_x, origin_y),
-                    interior: interior.clone(),
-                },
-                color,
-            );
+    let surface = (fb.width(), fb.height());
+    let key = ShadowKey::new(border_box, radius, shadow, surface);
+    SHADOWS.with_borrow_mut(|masks| {
+        let mask = masks.get_or_render(key, || {
+            ShadowMask::render(surface, border_box, radius, shadow)
+        });
+        if let Some(mask) = mask {
+            mask.value().composite(fb, shadow.color);
         }
-    }
-}
-
-/// One device row of one tile, with the shadow's placement.
-struct RowSpan {
-    row: i64,
-    columns: Range<i64>,
-    origin: (i64, i64),
-    /// Device columns whose value is the row's interior value.
-    interior: Range<i64>,
-}
-
-/// Composites one row of one tile, skipping pixels the border box covers.
-fn paint_row(
-    fb: &mut Framebuffer,
-    field: &mut Field<'_>,
-    clip: &mut Clip,
-    stretch: &mut Vec<f64>,
-    span: RowSpan,
-    color: Color,
-) {
-    let RowSpan {
-        row: device_row,
-        columns,
-        origin: (origin_x, origin_y),
-        interior,
-    } = span;
-    let row = device_row - origin_y;
-    field.evaluate(row);
-    let interior_value = field.interior_value(row);
-    let surface_row =
-        u32::try_from(device_row).expect("invariant: rows are clamped to the surface");
-    let bounds = clip.row(surface_row);
-    // Edge pixels gather into `stretch` from `stretch_start` and composite
-    // together at each break, instead of resolving the row once per pixel.
-    stretch.clear();
-    let mut stretch_start = columns.start;
-    let mut column = columns.start;
-    while column < columns.end {
-        let covered = bounds.map_or(Coverage::Outside, |bounds| bounds.classify(column));
-        match covered {
-            Coverage::Solid(end) => {
-                composite_stretch(fb, surface_row, stretch_start, stretch, color);
-                column = end.min(columns.end);
-                stretch_start = column;
-                continue;
-            }
-            Coverage::Outside if interior.contains(&column) => {
-                composite_stretch(fb, surface_row, stretch_start, stretch, color);
-                // The interior value is constant along the row, so the run up
-                // to the next border-box pixel composites at once.
-                let mut end = interior.end.min(columns.end);
-                if let Some(bounds) = bounds
-                    && bounds.touched.0 > column
-                {
-                    end = end.min(bounds.touched.0);
-                }
-                composite_run(fb, surface_row, column, end, color, interior_value);
-                column = end;
-                stretch_start = column;
-                continue;
-            }
-            Coverage::Outside | Coverage::Partial => {}
-        }
-        let value = if interior.contains(&column) {
-            interior_value
-        } else {
-            field.edge_value(column - origin_x)
-        };
-        let uncovered = match covered {
-            Coverage::Partial => 1.0 - pixel_coverage(&clip.samples, None, small_float(column)),
-            _ => 1.0,
-        };
-        stretch.push(value * uncovered);
-        column += 1;
-    }
-    composite_stretch(fb, surface_row, stretch_start, stretch, color);
-}
-
-/// Composites the gathered edge values, the first at column `start`, and
-/// empties the stretch for the next one.
-fn composite_stretch(
-    fb: &mut Framebuffer,
-    row: u32,
-    start: i64,
-    stretch: &mut Vec<f64>,
-    color: Color,
-) {
-    if !stretch.is_empty() {
-        fb.composite_coverage_row(row, start, stretch, color);
-        stretch.clear();
-    }
-}
-
-/// How the border box covers one device pixel.
-#[derive(Clone, Copy)]
-enum Coverage {
-    /// Not at all.
-    Outside,
-    /// Partly, along an arc.
-    Partial,
-    /// Completely, through the returned exclusive end column.
-    Solid(i64),
-}
-
-/// Border-box samples for the clip, reused across rows.
-struct Clip {
-    element: RoundRect,
-    samples: RowSamples,
-    unused: RowSamples,
-}
-
-/// Device columns the border box reaches and fills on one row.
-#[derive(Clone, Copy)]
-struct ClipRow {
-    touched: (i64, i64),
-    solid: (i64, i64),
-}
-
-impl Clip {
-    fn row(&mut self, row: u32) -> Option<ClipRow> {
-        let RowBounds { touched, solid, .. } =
-            sample_row(row, self.element, None, &mut self.samples, &mut self.unused);
-        if touched.1 <= touched.0 {
-            return None;
-        }
-        let column = |value: f64| {
-            // Border-box bounds are i32 coordinates, so rounding them to whole
-            // columns stays inside i64.
-            #[expect(
-                clippy::cast_possible_truncation,
-                reason = "border-box columns are integral values inside the i32 range"
-            )]
-            let column = value as i64;
-            column
-        };
-        let solid_start = column(solid.0.ceil());
-        Some(ClipRow {
-            touched: (column(touched.0.floor()), column(touched.1.ceil())),
-            solid: (solid_start, column(solid.1.floor()).max(solid_start)),
-        })
-    }
-}
-
-impl ClipRow {
-    fn classify(self, column: i64) -> Coverage {
-        if column >= self.solid.0 && column < self.solid.1 {
-            Coverage::Solid(self.solid.1)
-        } else if column >= self.touched.0 && column < self.touched.1 {
-            Coverage::Partial
-        } else {
-            Coverage::Outside
-        }
-    }
-}
-
-/// Composites a constant shadow value over device columns `[from, to)`.
-fn composite_run(fb: &mut Framebuffer, row: u32, from: i64, to: i64, color: Color, value: f64) {
-    // The value is a convolution of a coverage in [0, 1] with a kernel whose
-    // mass is at most one, so it is itself a coverage.
-    let source = SourceOver::covering(color, value);
-    if source.is_transparent() {
-        return;
-    }
-    let bounded = "invariant: runs are clamped to the surface";
-    fb.composite_span(
-        row,
-        u32::try_from(from).expect(bounded),
-        u32::try_from(to).expect(bounded),
-        source,
-    );
+    });
 }
 
 #[cfg(test)]
