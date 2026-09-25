@@ -103,6 +103,42 @@ impl SourceOver {
     /// so each rounded quotient is at most 255 and fits its byte without a
     /// checked conversion. That keeps the loop free of panicking branches, so
     /// a span over an opaque surface compiles to straight-line code.
+    /// Composites this source over every pixel of `span`, each of which must
+    /// be opaque, giving each exactly [`Self::over_opaque`]'s result.
+    ///
+    /// With `t = s·α + d·(255 − α)`, `over_opaque` computes
+    /// `(255·t + 32512) / 65025`. Writing `t = 255·q + k`, both that and
+    /// `(t + 127) / 255` equal `q + [k ≥ 128]`. The second form keeps every
+    /// intermediate within `u16`, so the loop vectorizes to 16-bit lanes. The
+    /// alpha lane uses `t = 255 · 255`, which gives 255.
+    #[inline]
+    pub(crate) fn over_opaque_span(self, span: &mut [u32]) {
+        debug_assert!(
+            span.iter().all(|pixel| pixel >> 24 == 0xFF),
+            "invariant: the destination span is opaque"
+        );
+        let src = unpack_color(self.packed);
+        let alpha = u16::from(src.a);
+        let weight = 255 - alpha;
+        // Little-endian lanes of `0xAARRGGBB`: blue, green, red, alpha.
+        let add = [
+            u16::from(src.b) * alpha,
+            u16::from(src.g) * alpha,
+            u16::from(src.r) * alpha,
+            255 * 255,
+        ];
+        let scale = [weight, weight, weight, 0];
+        for pixel in span {
+            let lanes = pixel.to_le_bytes();
+            *pixel = u32::from_le_bytes([
+                opaque_lane(add[0], scale[0], lanes[0]),
+                opaque_lane(add[1], scale[1], lanes[1]),
+                opaque_lane(add[2], scale[2], lanes[2]),
+                opaque_lane(add[3], scale[3], lanes[3]),
+            ]);
+        }
+    }
+
     #[inline]
     pub(crate) fn over_opaque(self, dst: u32) -> u32 {
         let dest_weight = self.inverse_alpha * 255;
@@ -115,6 +151,25 @@ impl SourceOver {
             | channel(self.numerators[1], 8)
             | channel(self.numerators[2], 0)
     }
+}
+
+/// One byte lane of [`SourceOver::over_opaque_span`]: `(add + d·scale + 127) / 255`.
+///
+/// `add + d·scale` is at most `255 · 255`, so the sum plus 127 is at most
+/// 65152 and never wraps, and the quotient is a byte. The operations are
+/// written wrapping because this crate's release profile keeps overflow
+/// checks, whose per-lane branches would stop the loop vectorizing.
+#[inline]
+fn opaque_lane(add: u16, scale: u16, destination: u8) -> u8 {
+    let sum = add
+        .wrapping_add(u16::from(destination).wrapping_mul(scale))
+        .wrapping_add(127);
+    #[expect(
+        clippy::cast_possible_truncation,
+        reason = "the quotient of at most 65152 by 255 is at most 255"
+    )]
+    let value = (sum / 255) as u8;
+    value
 }
 
 fn normalized_channel(value: u32) -> u8 {
@@ -176,6 +231,42 @@ mod tests {
                 );
             }
             coverages.truncate(4103);
+        }
+    }
+
+    /// Every source alpha, source channels at the rounding extremes, and every
+    /// destination byte in each channel, over spans long enough to take the
+    /// vector body and short enough to take every tail length.
+    #[test]
+    fn an_opaque_span_matches_the_definition_for_every_byte() {
+        let channels = [0, 1, 17, 127, 128, 200, 254, 255];
+        let destination = |d: u8| Color::rgba(d, 255 - d, d / 2, 255);
+        for source_alpha in 1..=255_u8 {
+            for &value in &channels {
+                let src = Color::rgba(value, 255 - value, value / 3, source_alpha);
+                let source = SourceOver::new(src);
+                let mut span: Vec<u32> = (0..=255).map(|d| pack_color(destination(d))).collect();
+                source.over_opaque_span(&mut span);
+                for (d, &pixel) in (0..=255_u8).zip(&span) {
+                    assert_eq!(
+                        unpack_color(pixel),
+                        reference(src, destination(d)),
+                        "{src:?} over {:?}",
+                        destination(d)
+                    );
+                }
+            }
+        }
+        let source = SourceOver::new(Color::rgba(49, 130, 206, 128));
+        for length in 0..=33_u8 {
+            let mut span: Vec<u32> = (0..length)
+                .map(|d| pack_color(destination(d * 7)))
+                .collect();
+            source.over_opaque_span(&mut span);
+            let expected: Vec<u32> = (0..length)
+                .map(|d| source.over_opaque(pack_color(destination(d * 7))))
+                .collect();
+            assert_eq!(span, expected, "span of {length}");
         }
     }
 
