@@ -9,6 +9,7 @@ pub mod autostart;
 pub mod display_scale;
 pub mod event;
 pub mod framebuffer;
+mod memo;
 pub mod rasterizer;
 #[cfg(not(target_arch = "wasm32"))]
 pub mod scoped_file;
