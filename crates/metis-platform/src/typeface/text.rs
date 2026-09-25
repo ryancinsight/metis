@@ -3,9 +3,9 @@
 use super::Typeface;
 use super::faces;
 use super::glyf::Transform;
-use super::glyph_cache::{GlyphCache, GlyphCoverage, GlyphKey};
-use super::raster::{Canvas, Outline};
-use crate::framebuffer::{Color, Framebuffer, Rect, SourceOver};
+use super::glyph_cache::{GlyphCache, GlyphKey, GlyphMask};
+use super::raster::{Canvas, Outline, PixelBounds};
+use crate::framebuffer::{Color, Framebuffer, Rect, SourceOver, coverage_alpha};
 use crate::memo::Lookup;
 use std::cell::RefCell;
 
@@ -194,7 +194,7 @@ pub fn draw_text(fb: &mut Framebuffer, x: i32, y: i32, text: &str, style: TextSt
                 break;
             }
             let glyph = face.glyph(character);
-            let key = GlyphKey::new(style.weight, glyph, scale, pen, baseline);
+            let key = GlyphKey::new(style.weight, glyph, scale, pen, baseline, color.a);
             let transform = Transform::device(scale, pen, baseline);
             pen += f64::from(face.advance(glyph)) * scale;
             let lookup = glyphs.get_or_render(key, || {
@@ -202,9 +202,9 @@ pub fn draw_text(fb: &mut Framebuffer, x: i32, y: i32, text: &str, style: TextSt
                 face.outline(glyph, &transform, &mut outline)
                     .expect("invariant: every glyph of the embedded faces decodes");
                 let Some(bounds) = outline.bounds() else {
-                    return Some(GlyphCoverage {
+                    return Some(GlyphMask {
                         bounds: None,
-                        coverage: Box::default(),
+                        alphas: Box::default(),
                     });
                 };
                 // A glyph wholly outside the clip is skipped before its
@@ -219,30 +219,50 @@ pub fn draw_text(fb: &mut Framebuffer, x: i32, y: i32, text: &str, style: TextSt
                     return None;
                 }
                 outline.rasterize(bounds, &mut canvas);
-                Some(GlyphCoverage {
+                Some(GlyphMask {
                     bounds: Some(bounds),
-                    coverage: canvas.coverage.as_slice().into(),
+                    alphas: canvas
+                        .coverage
+                        .iter()
+                        .map(|coverage| coverage_alpha(color.a, *coverage))
+                        .collect(),
                 })
             });
             if let Some(glyph) = lookup.as_ref().map(Lookup::value)
                 && let Some(bounds) = glyph.bounds
             {
-                composite(fb, &glyph.coverage, bounds, color);
+                composite(fb, &glyph.alphas, bounds, color);
             }
         }
     });
 }
 
-/// Composites a coverage bitmap at `bounds`, clipped to the surface.
-fn composite(
-    fb: &mut Framebuffer,
-    coverage: &[f64],
-    bounds: super::raster::PixelBounds,
-    color: Color,
-) {
-    for (row, values) in coverage.chunks_exact(bounds.width()).enumerate() {
-        if let Some(y) = surface_coordinate(bounds.top, row, fb.height()) {
-            fb.composite_coverage_row(y, i64::from(bounds.left), values, color);
+/// Composites a glyph's alpha mask at `bounds`, clipped to the surface's
+/// clip.
+///
+/// Each pixel takes the source `color` at its mask alpha, exactly the source
+/// [`SourceOver::covering`] gives its coverage; a zero alpha leaves the pixel
+/// unchanged.
+fn composite(fb: &mut Framebuffer, alphas: &[u8], bounds: PixelBounds, color: Color) {
+    let clip = fb.clip();
+    let Ok(width) = i64::try_from(bounds.width()) else {
+        return;
+    };
+    let left = i64::from(bounds.left);
+    let start = left.max(i64::from(clip.left()));
+    let end = left.saturating_add(width).min(i64::from(clip.right()));
+    let (Ok(column), Ok(skip), Ok(count)) = (
+        u32::try_from(start),
+        usize::try_from(start - left),
+        usize::try_from(end - start),
+    ) else {
+        return;
+    };
+    for (row, mask) in alphas.chunks_exact(bounds.width()).enumerate() {
+        if let Some(y) = surface_coordinate(bounds.top, row, fb.height())
+            && (clip.top()..clip.bottom()).contains(&y)
+        {
+            fb.composite_alpha_row(y, column, &mask[skip..skip + count], color);
         }
     }
 }

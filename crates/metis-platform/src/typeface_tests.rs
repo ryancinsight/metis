@@ -411,3 +411,26 @@ fn glyphs_overhanging_the_right_edge_still_paint() {
     }
     assert!(visible > 0, "the overhang painted nothing");
 }
+
+#[test]
+fn each_text_alpha_draws_as_on_an_empty_glyph_cache() {
+    fn render(color: Color) -> Vec<u32> {
+        let size = TextSize::new(16.0).expect("valid size");
+        let mut fb = Framebuffer::new(64, 24).expect("test surface");
+        fb.clear(Color::WHITE);
+        draw_text(&mut fb, 2, 2, "Ag", TextStyle::new(color, size));
+        fb.pixels().to_vec()
+    }
+    let fresh = |color| {
+        std::thread::spawn(move || render(color))
+            .join()
+            .expect("render thread")
+    };
+    // This thread caches every glyph opaque first; each alpha must then
+    // render its own mask rather than reuse another's.
+    render(Color::rgb(20, 40, 60));
+    for alpha in [255, 200, 128, 7] {
+        let color = Color::rgba(20, 40, 60, alpha);
+        assert_eq!(render(color), fresh(color), "alpha {alpha}");
+    }
+}
