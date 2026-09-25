@@ -5,7 +5,7 @@ use super::BACKDROP;
 use crate::{ApplicationCommand, FocusDirection, FrontendApp};
 use iris::render::RenderBackend;
 use metis_ipc::MemoryTransport;
-use metis_platform::{DisplayScale, Framebuffer};
+use metis_platform::{Damage, DisplayScale, Framebuffer, Rect};
 
 fn full_repaint(app: &FrontendApp<MemoryTransport>) -> Framebuffer {
     let mut reference = app.framebuffer().clone();
@@ -50,6 +50,7 @@ impl Edit {
 fn every_edit_leaves_the_surface_as_a_full_repaint_would() {
     let (transport, _peer) = MemoryTransport::pair();
     let mut app = FrontendApp::new(transport, 800, 600).expect("initial form");
+    assert_eq!(app.take_damage(), Damage::Full);
     for edit in [
         Edit::Keystroke("PT-9042-ALPHAB"),
         Edit::Keystroke("PT-9042-ALPHABC"),
@@ -64,11 +65,62 @@ fn every_edit_leaves_the_surface_as_a_full_repaint_would() {
         Edit::Scale(1_250),
         Edit::Keystroke("PT-9042"),
     ] {
+        let before = app.framebuffer().clone();
         edit.apply(&mut app);
         assert_eq!(
             app.framebuffer().pixels(),
             full_repaint(&app).pixels(),
             "{edit:?}: the damaged repaint diverged from a full repaint"
         );
+        let damage = app.take_damage();
+        assert_eq!(
+            app.take_damage(),
+            Damage::Unchanged,
+            "{edit:?}: taking clears"
+        );
+        assert_presented_damage_covers_changes(&before, app.framebuffer(), damage, edit);
     }
+}
+
+/// Every pixel that differs from the previously presented frame lies in the
+/// damage the host is told to present.
+fn assert_presented_damage_covers_changes(
+    before: &Framebuffer,
+    after: &Framebuffer,
+    damage: Damage,
+    edit: Edit,
+) {
+    let resized = (before.width(), before.height()) != (after.width(), after.height());
+    match damage {
+        Damage::Full => {}
+        _ if resized => panic!("{edit:?}: a resized frame reported {damage:?}"),
+        Damage::Unchanged => assert_eq!(before.pixels(), after.pixels(), "{edit:?}"),
+        Damage::Region(region) => {
+            let width = usize::try_from(after.width()).expect("width fits usize");
+            let changed = before.pixels().iter().zip(after.pixels()).enumerate();
+            for (index, _) in changed.filter(|(_, (old, new))| old != new) {
+                let x = i32::try_from(index % width).expect("column fits i32");
+                let y = i32::try_from(index / width).expect("row fits i32");
+                assert!(
+                    region.covers(Rect::new(x, y, 1, 1)),
+                    "{edit:?}: pixel ({x}, {y}) changed outside {region:?}"
+                );
+            }
+        }
+    }
+}
+
+#[test]
+fn construction_and_resize_report_the_whole_frame() {
+    let (transport, _peer) = MemoryTransport::pair();
+    let mut app = FrontendApp::new(transport, 320, 240).expect("initial form");
+    assert_eq!(app.take_damage(), Damage::Full);
+    app.set_inputs("PT-9042-ALPHAB", 72.5, 4.0, 0.5)
+        .expect("input");
+    app.resize(400, 300).expect("resize");
+    assert_eq!(
+        app.take_damage(),
+        Damage::Full,
+        "a resize merges to the whole frame"
+    );
 }

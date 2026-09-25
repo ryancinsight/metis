@@ -64,8 +64,8 @@ use crate::{FormState, FrontendApp};
 use iris::render::RenderBackend;
 use metis_core::{ErrorCode, MetisError, Result};
 use metis_ipc::{IpcTransport, client::HandshakeError};
-use metis_platform::Framebuffer;
-use metis_ui_lang::{Color, Damage, LayoutViewport, MAX_SEMANTIC_TEXT_BYTES, compute_layout};
+use metis_platform::{Damage, Framebuffer};
+use metis_ui_lang::{Color, LayoutViewport, MAX_SEMANTIC_TEXT_BYTES, compute_layout};
 
 /// Status badge color while a backend session is open.
 ///
@@ -184,6 +184,7 @@ impl<T: IpcTransport> FrontendApp<T> {
             Damage::Region(region) => self.framebuffer.render_clipped(region, repaint),
             Damage::Full => repaint(&mut self.framebuffer),
         }
+        self.unpresented = self.unpresented.merge(damage);
         self.painted = Some(display);
         Ok(())
     }

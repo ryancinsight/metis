@@ -8,7 +8,7 @@ use metis_platform::native::{
     ModifierState, MouseButton, NativeApplication, NativeFlow, WindowConfig, WindowEvent,
     run_native_application,
 };
-use metis_platform::{DisplayScale, Framebuffer, Rect};
+use metis_platform::{Damage, DisplayScale, Framebuffer, Rect};
 use metis_ui_lang::{LayoutViewport, compute_layout};
 use std::io::{stdin, stdout};
 use std::time::Duration;
@@ -72,6 +72,10 @@ impl<T: IpcTransport> NativeApplication for NativeForm<T> {
 
     fn framebuffer(&self) -> &Framebuffer {
         self.app.framebuffer()
+    }
+
+    fn take_damage(&mut self) -> Damage {
+        self.app.take_damage()
     }
 
     fn accessibility_tree(&self) -> Result<Option<AccessibilityTree>> {

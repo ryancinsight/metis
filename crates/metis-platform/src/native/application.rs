@@ -1,7 +1,7 @@
 //! Format-neutral native application lifecycle over a Moirai window.
 
 use super::{AccessibilityTree, NativeSurface, WindowConfig, WindowEvent};
-use crate::Framebuffer;
+use crate::{Damage, Framebuffer, Rect};
 use std::{error::Error, fmt, io, time::Duration};
 
 /// Result of one application event-batch transition.
@@ -24,6 +24,17 @@ pub trait NativeApplication {
 
     /// Returns the complete frame for the next native presentation.
     fn framebuffer(&self) -> &Framebuffer;
+
+    /// Takes the part of the framebuffer changed since the last take, so the
+    /// host presents only that part.
+    ///
+    /// The default reports the whole frame, which is correct for any
+    /// application; one that tracks its repaints reports less. The host takes
+    /// damage before the first presentation and at each requested repaint,
+    /// and presents nothing for [`Damage::Unchanged`].
+    fn take_damage(&mut self) -> Damage {
+        Damage::Full
+    }
 
     /// Returns the current native accessibility tree, when the application
     /// opted into the native provider at startup.
@@ -66,6 +77,8 @@ trait NativeSurfaceDriver {
 
     fn present(&mut self, framebuffer: &Framebuffer) -> io::Result<()>;
 
+    fn present_region(&mut self, framebuffer: &Framebuffer, region: Rect) -> io::Result<()>;
+
     fn update_accessibility(&mut self, _tree: AccessibilityTree) -> io::Result<()> {
         Ok(())
     }
@@ -80,6 +93,10 @@ impl NativeSurfaceDriver for NativeSurface {
 
     fn present(&mut self, framebuffer: &Framebuffer) -> io::Result<()> {
         NativeSurface::present(self, framebuffer)
+    }
+
+    fn present_region(&mut self, framebuffer: &Framebuffer, region: Rect) -> io::Result<()> {
+        NativeSurface::present_region(self, framebuffer, region)
     }
 
     fn update_accessibility(&mut self, tree: AccessibilityTree) -> io::Result<()> {
@@ -152,8 +169,10 @@ where
     A: NativeApplication,
 {
     let mut application = application;
-    surface
-        .present(application.framebuffer())
+    // The first presentation is whole whatever the application reports;
+    // taking its damage starts the accounting from this frame.
+    let initial = application.take_damage().merge(Damage::Full);
+    present_damage(&mut surface, application.framebuffer(), initial)
         .map_err(NativeHostError::Surface)?;
 
     loop {
@@ -182,10 +201,22 @@ where
                 .map_err(NativeHostError::Surface)?;
         }
         if matches!(flow, NativeFlow::Continue { repaint: true }) {
-            surface
-                .present(application.framebuffer())
+            let damage = application.take_damage();
+            present_damage(&mut surface, application.framebuffer(), damage)
                 .map_err(NativeHostError::Surface)?;
         }
+    }
+}
+
+fn present_damage<S: NativeSurfaceDriver>(
+    surface: &mut S,
+    framebuffer: &Framebuffer,
+    damage: Damage,
+) -> io::Result<()> {
+    match damage {
+        Damage::Unchanged => Ok(()),
+        Damage::Region(region) => surface.present_region(framebuffer, region),
+        Damage::Full => surface.present(framebuffer),
     }
 }
 

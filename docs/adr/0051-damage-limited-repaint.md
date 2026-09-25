@@ -4,7 +4,10 @@ Status: Accepted
 
 Date: 2026-09-24
 
-Driver: METIS-PERF-DAMAGE-002 (this change's pull request).
+Driver: METIS-PERF-DAMAGE-002; presentation by METIS-PERF-PRESENT-003.
+
+Revised 2026-09-24: the native host presents only the damaged region
+(METIS-PERF-PRESENT-003), replacing the limit that it presented whole.
 
 ## Context
 
@@ -41,6 +44,16 @@ Render repaints only the region the change can affect.
   order, so every pixel outside that union keeps its value.
 - `FrontendApp` keeps the display list its framebuffer shows. A resize, which
   replaces the surface, forgets it, and the next frame repaints in full.
+- `Damage` lives in `metis-platform` beside `Rect`, so the display list and the
+  native host share it. `FrontendApp` merges each render's damage until the
+  host takes it. `NativeApplication::take_damage` defaults to `Full`, which is
+  correct for an application that does not track repaints. The host takes the
+  damage at each requested repaint: it presents nothing for `Unchanged`, the
+  whole frame for `Full`, and otherwise the region clipped to the frame through
+  Moirai's `present_argb8888_region`. That call copies only the region's rows
+  and invalidates only its rectangle. It presents whole when the frame's
+  dimensions or the window's client size changed, because frame coordinates
+  are then not client coordinates.
 
 ## Alternatives
 
@@ -64,7 +77,13 @@ its label's region.
   repainted through their damage equal a fresh full repaint, bitwise.
 - `every_edit_leaves_the_surface_as_a_full_repaint_would`: keystrokes,
   composition, focus moves, the command menu, theme changes, a resize and a
-  scale change on the real form.
+  scale change on the real form. After each edit, every pixel that differs
+  from the previous frame lies inside the damage the host takes. The test
+  fails when renders stop merging their damage.
+- `generic_host_presents_exactly_the_reported_damage`: the host presents the
+  first frame whole, a region as that region, nothing for `Unchanged`, and
+  `Full` whole. `frame_region_clips_damage_to_the_frame` covers regions that
+  cross every edge, have negative extents or lie outside the frame.
 
 Each of the first three tests failed when its guard was weakened on purpose,
 as a check that it can fail: a glyph visibility test off by six pixels, text
@@ -80,5 +99,10 @@ for identical code; classifying it costs 18 ns.
 
 A change that shifts layout, such as a label that grows and moves its
 siblings, damages the union of old and new positions of every moved command.
-A command-count change repaints in full. The native host still presents the
-whole framebuffer; handing it the damaged rectangle is a separate change.
+A command-count change repaints in full.
+
+Presenting whole cost 0.53 ms at 640×480 and 1.32 ms at 1280×960. A 300×40
+region cost 0.025 and 0.050 ms (Moirai PR #457: a visible window, 200
+alternating frames per case). Those figures bound the per-keystroke
+presentation saving; an end-to-end keystroke-to-screen measurement was not
+taken.
