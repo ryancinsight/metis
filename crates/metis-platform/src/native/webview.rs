@@ -130,6 +130,16 @@ impl WebViewSurface {
     }
 }
 
+impl crate::native::MenuBarHost for WebViewSurface {
+    fn set_menu_bar(&mut self, bar: Option<&crate::native::MenuBar>) -> io::Result<()> {
+        self.host.set_menu_bar(bar)
+    }
+
+    fn take_menu_commands(&mut self) -> Vec<crate::native::MenuCommand> {
+        self.host.take_menu_commands()
+    }
+}
+
 impl crate::native::TrayHost for WebViewSurface {
     fn show_tray_icon(
         &mut self,

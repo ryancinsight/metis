@@ -172,3 +172,11 @@ same-origin resource and favicon. `scripts/browser.py build` copies nested
 browser assets and fails if the declared mark is absent. Applications replace
 that resource and the `.metis-mark` rule with their own project-owned artwork;
 the browser host does not fetch icons, fonts or media from an external origin.
+
+## Routes and history
+
+`BrowserNavigator` keeps a `metis_frontend::navigation::Navigator` in step
+with the page's history through Moirai's same-origin `WebHistory`: it starts
+from the page's path, follows back and forward, and `navigate` or `redirect`
+push or replace an entry only for a path some route matches. History entries
+are always same-origin paths, so a route cannot send the page elsewhere.

@@ -49,29 +49,10 @@ impl DeepLink {
         let rest = rest.strip_prefix("//").unwrap_or(rest);
         let (path, query) = rest.split_once('?').unwrap_or((rest, ""));
 
-        let mut segments = Vec::new();
-        for raw in path.split('/').filter(|segment| !segment.is_empty()) {
-            if segments.len() == MAX_DEEP_LINK_SEGMENTS {
-                return Err(DeepLinkError::TooLarge);
-            }
-            let segment = decode(raw)?;
-            if segment == "." || segment == ".." || segment.contains('/') {
-                return Err(DeepLinkError::Malformed);
-            }
-            segments.push(segment);
-        }
-        let mut pairs = Vec::new();
-        for raw in query.split('&').filter(|pair| !pair.is_empty()) {
-            if pairs.len() == MAX_DEEP_LINK_QUERY_PAIRS {
-                return Err(DeepLinkError::TooLarge);
-            }
-            let (key, value) = raw.split_once('=').unwrap_or((raw, ""));
-            let key = decode(key)?;
-            if key.is_empty() {
-                return Err(DeepLinkError::Malformed);
-            }
-            pairs.push((key, decode(value)?));
-        }
+        let segments =
+            crate::uri_path::segments(path, MAX_DEEP_LINK_SEGMENTS).map_err(from_path)?;
+        let pairs =
+            crate::uri_path::query_pairs(query, MAX_DEEP_LINK_QUERY_PAIRS).map_err(from_path)?;
         Ok(Self {
             scheme,
             segments,
@@ -119,28 +100,9 @@ impl DeepLink {
     }
 }
 
-/// Percent-decodes one component into UTF-8 without control characters.
-/// `+` stays a literal plus: this is a URI component, not a form body.
-fn decode(component: &str) -> Result<String, DeepLinkError> {
-    let bytes = component.as_bytes();
-    let mut decoded = Vec::with_capacity(bytes.len());
-    let mut index = 0;
-    while let Some(&byte) = bytes.get(index) {
-        if byte == b'%' {
-            let digits = bytes
-                .get(index + 1..index + 3)
-                .ok_or(DeepLinkError::Malformed)?;
-            let text = std::str::from_utf8(digits).map_err(|_| DeepLinkError::Malformed)?;
-            decoded.push(u8::from_str_radix(text, 16).map_err(|_| DeepLinkError::Malformed)?);
-            index += 3;
-        } else {
-            decoded.push(byte);
-            index += 1;
-        }
+const fn from_path(error: crate::uri_path::PathError) -> DeepLinkError {
+    match error {
+        crate::uri_path::PathError::Malformed => DeepLinkError::Malformed,
+        crate::uri_path::PathError::TooLarge => DeepLinkError::TooLarge,
     }
-    let text = String::from_utf8(decoded).map_err(|_| DeepLinkError::Malformed)?;
-    if text.chars().any(char::is_control) {
-        return Err(DeepLinkError::Malformed);
-    }
-    Ok(text)
 }

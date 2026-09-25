@@ -119,3 +119,56 @@ dose.set(0.75).expect("no runaway cascade");
 assert_eq!(*seen.borrow(), ["0.50 mcg/kg/min", "0.75 mcg/kg/min"]);
 drop(subscription);
 ```
+
+`derived2` computes from two stores, as a Dioxus memo over two signals does.
+`Writable::project` gives a writable view of one field that notifies only when
+that field changes, like a Dioxus store field. `resource` holds the outcome of
+asynchronous work started for each source value, like `use_resource`: the
+caller runs the work on any executor and hands the result to a one-shot
+`Completion`, which is ignored once the source has moved on.
+
+```rust
+use metis_frontend::reactive::{ResourceState, Writable, derived2, resource};
+
+#[derive(Clone, PartialEq)]
+struct Infusion { weight_kg: f64, rate: f64 }
+
+let infusion = Writable::new(Infusion { weight_kg: 70.0, rate: 0.5 });
+let weight = infusion.project((|i| &i.weight_kg, |i| &mut i.weight_kg));
+let rate = infusion.project((|i| &i.rate, |i| &mut i.rate));
+let dose = derived2(&weight, &rate, |kg, rate| kg * rate);
+weight.set(80.0).expect("no runaway cascade");
+assert_eq!(dose.get(), 40.0);
+
+let lookup = resource(&dose, |value: &f64, done| {
+    // Start real work here; this example completes at once.
+    let _ = done.complete(Ok::<_, String>(format!("{value} mcg/min")));
+});
+assert_eq!(lookup.get(), ResourceState::Ready("40 mcg/min".to_owned()));
+```
+
+## Navigation
+
+`metis_frontend::navigation::Navigator` pairs a `metis_core::route::Router`
+with the current route as a store, so views derive from navigation like any
+other state. A host checks a path before committing it to its history
+(`check` refuses paths no route matches) and reports every path it arrives
+at (`arrive`), including back/forward and typed URLs; an unmatched arrival
+sets the current route to `None`. The browser host's `BrowserNavigator`
+drives it from the page history.
+
+```rust
+use metis_core::route::Router;
+use metis_frontend::navigation::Navigator;
+use metis_frontend::reactive::derived;
+
+let mut router = Router::new();
+router.add("/study/:id", "study")?;
+let navigator = Navigator::new(router, "/").expect("decodable path");
+let title = derived(&navigator, |current| {
+    current.as_ref().and_then(|route| route.parameter("id").map(str::to_owned))
+});
+navigator.arrive("/study/7").expect("decodable path");
+assert_eq!(title.get().as_deref(), Some("7"));
+# Ok::<(), metis_core::route::RouteError>(())
+```

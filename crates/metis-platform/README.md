@@ -166,6 +166,12 @@ context request carries the screen position at which `show_popup_menu` opens
 a native menu and returns the chosen item's index. Closing the surface
 removes the icon.
 
+`native::MenuBarHost` attaches a native menu bar of titled `PopupMenu`s, the
+menus `muda` gives Tauri and Dioxus, and reports each chosen item as a
+`MenuCommand` of menu and item indexes. `native::menu_label` right-aligns an
+item's shortcut from the same `Accelerator` the application's `ShortcutMap`
+binds, so the menu shows the key that actually runs the command.
+
 `claim_or_forward` keeps one running instance per application, like Tauri's
 single-instance plugin. The first launch becomes the `PrimaryInstance`; a later
 launch forwards its arguments (at most `MAX_FORWARDED_ARGUMENTS`, UTF-8 without

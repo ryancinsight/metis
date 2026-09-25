@@ -10,6 +10,8 @@ pub mod error;
 pub mod host;
 pub mod input;
 pub mod protocol;
+pub mod route;
+mod uri_path;
 pub mod window_state;
 
 pub use capability::{CapabilityGrantSpec, CapabilityScope, CapabilityToken, VerifiedCapability};

@@ -3,6 +3,7 @@
 mod application;
 mod dialog;
 mod global_shortcut;
+mod menu_bar;
 mod placement;
 mod tray;
 mod webview;
@@ -13,6 +14,9 @@ pub use dialog::{DialogSelection, MAX_DIALOG_PATH_UNITS, pick};
 pub use global_shortcut::{
     GlobalHotkey, GlobalShortcuts, HotkeyHost, HotkeyId, MAX_GLOBAL_HOTKEYS,
     MAX_PENDING_HOTKEY_PRESSES, hotkey_for,
+};
+pub use menu_bar::{
+    MAX_MENU_BAR_MENUS, MAX_PENDING_MENU_COMMANDS, MenuBar, MenuBarHost, MenuCommand, menu_label,
 };
 pub use placement::{
     MAX_PLACEMENT_COORDINATE, WindowPlacement, placement_from_state, state_from_placement,
