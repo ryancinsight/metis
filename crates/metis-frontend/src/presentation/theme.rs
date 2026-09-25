@@ -8,7 +8,14 @@ use metis_platform::rasterizer::GradientStop;
 use metis_ui_lang::{Color, LinearGradient};
 
 impl<T: IpcTransport> FrontendApp<T> {
+    /// Styles the document with the current theme's palette.
+    ///
+    /// The palette styles are written only here and the document is never
+    /// replaced, so once applied they stay until the theme changes.
     pub(super) fn apply_theme(&mut self) -> Result<()> {
+        if self.applied_theme == Some(self.theme) {
+            return Ok(());
+        }
         let palette = ThemePalette::for_theme(self.theme);
         self.set_background("main-screen", palette.page)?;
         self.set_gradient("header", &palette.header)?;
@@ -48,6 +55,7 @@ impl<T: IpcTransport> FrontendApp<T> {
             self.set_gradient(id, &palette.control)?;
             self.set_text_color(id, Color::WHITE)?;
         }
+        self.applied_theme = Some(self.theme);
         Ok(())
     }
 

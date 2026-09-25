@@ -80,6 +80,9 @@ pub struct FrontendApp<T> {
     pub(crate) command_menu: CommandMenuState,
     pub(crate) command_status: String,
     pub(crate) theme: ApplicationTheme,
+    /// The theme whose palette the document's styles hold, so a render that
+    /// keeps the theme does not restyle; `None` before the first render.
+    pub(crate) applied_theme: Option<ApplicationTheme>,
     pub(crate) focus: Focus,
     /// The display list the framebuffer shows, so the next render repaints
     /// only what changed; `None` when the surface holds no complete frame.
@@ -104,6 +107,7 @@ impl<T: IpcTransport> FrontendApp<T> {
             command_menu: CommandMenuState::default(),
             command_status: "Commands ready".to_owned(),
             theme: ApplicationTheme::default(),
+            applied_theme: None,
             focus: Focus::initial(),
             painted: None,
             unpresented: Damage::Unchanged,
