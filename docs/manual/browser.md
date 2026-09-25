@@ -1126,6 +1126,14 @@ workspace-prefix extraction path that would otherwise fail before comparison.
 
 ## Responsive runtime capture
 
+The workbench uses a charcoal and teal dark palette, a compact utility bar,
+and a separate title and diagnostic text hierarchy. Outlined secondary
+buttons keep the filled treatment for an enabled backend submission. Shared
+panel padding scales from `1.25rem` to `2rem`; controls retain their `44px`
+minimum target. Selected explorer entries use the information palette rather
+than the success palette, reserving success color for accepted operations.
+Light, system and high-contrast modes retain the same layout and focus rings.
+
 The page uses a bounded responsive grid. At widths below `700px`, the form and
 options stack in one column with `1rem` page padding; wider viewports use two
 `minmax(0, 1fr)` columns inside a `960px` content bound. Grid items accept

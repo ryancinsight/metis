@@ -36,9 +36,10 @@ impl<T: IpcTransport> FrontendApp<T> {
         self.set_background("command-menu", palette.surface)?;
         self.set_background("patient-card", palette.surface)?;
         self.set_background("results-card", palette.surface)?;
-        for id in ["patient-card", "results-card", "command-menu"] {
+        for id in ["patient-card", "results-card"] {
             self.set_border(id, palette.border)?;
         }
+        self.set_border("command-menu", palette.muted)?;
         for id in [
             "label-patient",
             "label-weight",
@@ -59,14 +60,15 @@ impl<T: IpcTransport> FrontendApp<T> {
         self.set_text_color("header", Color::WHITE)?;
         self.set_text_color("patient-card", palette.text)?;
         self.set_text_color("results-card", palette.text)?;
-        for id in [
-            "command-menu-toggle",
-            "command-focus-patient",
-            "command-theme-dark",
-            "command-theme-system",
-        ] {
+        for id in ["command-menu-toggle", "command-focus-patient"] {
             self.set_background(id, palette.accent)?;
             self.set_text_color(id, Color::WHITE)?;
+        }
+        for id in ["command-theme-dark", "command-theme-system"] {
+            self.set_background(id, palette.surface)?;
+        }
+        for id in ["command-theme-dark-label", "command-theme-system-label"] {
+            self.set_text_color(id, palette.text)?;
         }
         Ok(())
     }

@@ -3,7 +3,9 @@
 from __future__ import annotations
 
 import hashlib
+import os
 import pathlib
+import subprocess
 import tempfile
 import unittest
 from unittest import mock
@@ -26,6 +28,116 @@ class RevisionCitationTests(unittest.TestCase):
 
     def test_repository_citations_resolve(self):
         self.assertEqual(citations.unreachable_revisions(citations.ROOT), [])
+
+    def test_batch_resolution_reports_local_commit_outside_reference_history(self):
+        with tempfile.TemporaryDirectory(prefix="metis-citations-") as directory:
+            root = workspace(directory)
+            environment = {
+                **os.environ,
+                "GIT_AUTHOR_NAME": "Metis Test",
+                "GIT_AUTHOR_EMAIL": "metis-test@example.invalid",
+                "GIT_COMMITTER_NAME": "Metis Test",
+                "GIT_COMMITTER_EMAIL": "metis-test@example.invalid",
+            }
+
+            def git(*arguments):
+                return subprocess.run(
+                    ["git", *arguments],
+                    cwd=root,
+                    env=environment,
+                    check=True,
+                    capture_output=True,
+                    text=True,
+                ).stdout.strip()
+
+            git("init", "--quiet")
+            (root / "README.md").write_text("Citation resolver fixture.\n", encoding="utf-8")
+            git("add", "README.md")
+            git("commit", "--quiet", "-m", "Create reachable citation")
+            reachable = git("rev-parse", "HEAD")
+            tree = git("rev-parse", "HEAD^{tree}")
+            orphaned_first = git("commit-tree", tree, "-m", "First unreachable cited commit")
+            orphaned_second = git("commit-tree", tree, "-m", "Second unreachable cited commit")
+            (root / "backlog.md").write_text(
+                f"- Reachable `{reachable}`.\n"
+                f"- Second `{orphaned_second}`.\n"
+                f"- First `{orphaned_first}`.\n",
+                encoding="utf-8",
+            )
+            git("add", "backlog.md")
+            git("commit", "--quiet", "-m", "Record revision citations")
+
+            findings = citations.unreachable_revisions(root)
+
+            self.assertEqual(len(findings), 2)
+            self.assertIn(orphaned_second[:12], findings[0])
+            self.assertIn("Second unreachable cited commit", findings[0])
+            self.assertIn(orphaned_first[:12], findings[1])
+            self.assertIn("First unreachable cited commit", findings[1])
+
+
+class GitRevisionQueryTests(unittest.TestCase):
+    """Live revision checks classify all candidates in bounded Git queries."""
+
+    def test_batch_query_classifies_commits_and_ignores_other_objects(self):
+        reachable = "a" * 40
+        unreachable = "b" * 40
+        blob = "c" * 40
+        missing = "d" * 40
+        candidates = (reachable[:12], unreachable[:12], blob[:12], missing, reachable[:12])
+        batch_output = "\n".join(
+            (
+                f"{reachable} commit",
+                f"{unreachable} commit",
+                f"{blob} blob",
+                f"{missing} missing",
+            )
+        )
+
+        with mock.patch.object(citations, "_git", side_effect=[reachable, batch_output]) as git:
+            resolved = citations._resolve_revisions(pathlib.Path("repo"), "HEAD", candidates)
+
+        self.assertEqual(
+            resolved,
+            {
+                reachable[:12]: True,
+                unreachable[:12]: False,
+                blob[:12]: None,
+                missing: None,
+            },
+        )
+        self.assertEqual(git.call_count, 2)
+        self.assertEqual(git.call_args_list[0], mock.call(pathlib.Path("repo"), "rev-list", "HEAD"))
+        self.assertEqual(
+            git.call_args_list[1],
+            mock.call(
+                pathlib.Path("repo"),
+                "cat-file",
+                "--batch-check=%(objectname) %(objecttype)",
+                input_text="".join(f"{candidate}\n" for candidate in candidates[:-1]),
+            ),
+        )
+
+    def test_batch_query_rejects_incomplete_classification(self):
+        with mock.patch.object(citations, "_git", side_effect=["", "a" * 40 + " commit"]):
+            with self.assertRaisesRegex(citations.GitCommandError, "1 result.*2 candidate"):
+                citations._resolve_revisions(pathlib.Path("repo"), "HEAD", ("a" * 12, "b" * 12))
+
+    def test_git_query_reports_exit_diagnostic(self):
+        failed = subprocess.CompletedProcess(
+            ["git", "rev-list", "missing"], 128, stdout="", stderr="bad revision"
+        )
+        with mock.patch.object(subprocess, "run", return_value=failed) as run:
+            with self.assertRaisesRegex(citations.GitCommandError, "exit code 128.*bad revision"):
+                citations._git(pathlib.Path("repo"), "rev-list", "missing")
+        self.assertEqual(run.call_args.kwargs["timeout"], citations.GIT_TIMEOUT_SECONDS)
+
+    def test_git_query_reports_timeout(self):
+        timeout = subprocess.TimeoutExpired(["git", "rev-list", "HEAD"], 10)
+        with mock.patch.object(subprocess, "run", side_effect=timeout) as run:
+            with self.assertRaisesRegex(citations.GitCommandError, "exceeded 10s"):
+                citations._git(pathlib.Path("repo"), "rev-list", "HEAD")
+        self.assertEqual(run.call_args.kwargs["timeout"], citations.GIT_TIMEOUT_SECONDS)
 
     def test_rewritten_revision_is_reported_with_its_location(self):
         with tempfile.TemporaryDirectory(prefix="metis-citations-") as directory:

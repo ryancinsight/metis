@@ -13,9 +13,11 @@ from browser_canvas import KeyboardTraceKind, capture_canvas_trace, validate_can
 from browser_protocol import BrowserRuntimeError, WebDriverClient
 from browser_runtime import _wait_for_selector, _wait_for_text
 from browser_trace import Trace, browser_heap_sample, browser_memory_sample
+from resource import summarize_numeric_samples
 
 
-MAX_LIFECYCLE_CYCLES = 8
+# Fourteen post-warmup observations fit inside the existing five-minute suite bound.
+MAX_LIFECYCLE_CYCLES = 16
 LIFECYCLE_WARMUP_CYCLES = 2
 LIFECYCLE_GROWTH_MINIMUM_CYCLES = 4
 MAX_LIFECYCLE_SUITE_SECONDS = 300
@@ -307,6 +309,72 @@ def assert_lifecycle_growth(records: object) -> None:
             raise BrowserRuntimeError("gallery WebAssembly capacity grew after warmup")
 
 
+def summarize_lifecycle_resources(records: object) -> dict:
+    """Summarize exact WASM capacity and repeated browser-heap observations."""
+    assert_lifecycle_growth(records)
+    post_warmup = records[LIFECYCLE_WARMUP_CYCLES:]
+    capacity_summary = {}
+    heap_summary = {}
+    for phase_name in LIFECYCLE_PHASES:
+        phases = [
+            next(phase for phase in record["phases"] if phase["phase"] == phase_name)
+            for record in post_warmup
+        ]
+        capacities = [phase["gallery"]["wasm_bytes"] for phase in phases]
+        capacity_summary[phase_name] = {
+            "bytes": capacities[0],
+            "sample_count": len(capacities),
+            "minimum_bytes": min(capacities),
+            "maximum_bytes": max(capacities),
+        }
+
+        observations = [phase.get("browser_heap") for phase in phases]
+        if any(not isinstance(value, dict) for value in observations):
+            raise BrowserRuntimeError("gallery lifecycle omitted browser heap observations")
+        available = [value for value in observations if value.get("available") is True]
+        unavailable = [value for value in observations if value.get("available") is False]
+        if len(available) + len(unavailable) != len(observations):
+            raise BrowserRuntimeError("gallery lifecycle returned an invalid browser heap observation")
+        used_bytes = [value.get("used_js_heap_bytes") for value in available]
+        if any(type(value) is not int or value < 0 for value in used_bytes):
+            raise BrowserRuntimeError("gallery lifecycle returned invalid JavaScript heap bytes")
+        reasons = sorted({
+            value.get("reason") for value in unavailable
+            if isinstance(value.get("reason"), str) and value["reason"]
+        })
+        if len(reasons) != len({value.get("reason") for value in unavailable}):
+            raise BrowserRuntimeError("gallery lifecycle returned an invalid heap-unavailable reason")
+        statistics = dict(summarize_numeric_samples(used_bytes))
+        if used_bytes:
+            statistics.update(
+                {
+                    "first_bytes": used_bytes[0],
+                    "last_bytes": used_bytes[-1],
+                    "net_change_bytes": used_bytes[-1] - used_bytes[0],
+                    "minimum_bytes": min(used_bytes),
+                    "maximum_bytes": max(used_bytes),
+                }
+            )
+        heap_summary[phase_name] = {
+            "source": "performance.memory",
+            "available_samples": len(available),
+            "unavailable_samples": len(unavailable),
+            "unavailable_reasons": reasons,
+            "used_js_heap_bytes": statistics,
+        }
+    return {
+        "warmup_cycles": LIFECYCLE_WARMUP_CYCLES,
+        "sampled_cycles": len(post_warmup),
+        "wasm_capacity_bytes": capacity_summary,
+        "javascript_heap": heap_summary,
+        "uncertainty": (
+            "Approximate 95% half-width of the post-warmup mean: "
+            "1.96 times sample standard deviation divided by square root of n. "
+            "Garbage-collection and serial-correlation effects are not modeled."
+        ),
+    }
+
+
 def _mount_gallery(client: WebDriverClient) -> dict:
     result = client.execute_async(MOUNT_GALLERY)
     if not isinstance(result, dict) or result.get("ok") is not True:
@@ -565,6 +633,7 @@ def run_gallery_lifecycle(
         cleanup_bounded.restore()
         bounded.restore()
     assert_lifecycle_growth(records)
+    trace.metrics["gallery_lifecycle_summary"] = summarize_lifecycle_resources(records)
     trace.cleanup.update(
         {
             "lifecycle_cycles": len(records),

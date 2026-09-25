@@ -253,6 +253,7 @@ def _source_digests() -> dict[str, str]:
         "browser_drop_lifecycle.py",
         "browser_file_read.py",
         "browser_protocol.py",
+        "resource.py",
         "browser_runtime.py",
         "browser_trace.py",
     )
@@ -683,7 +684,7 @@ def build_parser() -> argparse.ArgumentParser:
         "--lifecycle-cycles",
         type=int,
         default=1,
-        metavar="1..8",
+        metavar="1..16",
         help="bounded same-page gallery lifecycle cycles; repeated mode requires cine trace",
     )
     parser.add_argument(
