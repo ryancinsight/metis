@@ -4,6 +4,8 @@ Status: Accepted
 
 Date: 2026-09-25
 
+Revised 2026-09-25: the run body computes one quantity per loop, because the per-pixel form stayed scalar inside the scope (measured below).
+
 Driver: METIS-PERF-001 (the diagonal gradient as the dominant full-repaint cost); this change's pull request.
 
 ## Context
@@ -29,13 +31,16 @@ from the consumer.
   features off, `std` on). Raster kernels whose speed depends on the
   instruction set enter through `vectorize`. They do not use their own
   trampolines or `core::arch` intrinsics.
-- A kernel is a `LaneKernel<f64>` whose `call` runs the ordinary scalar body.
-  The compiler vectorizes it inside each instruction set's scope. The body and
-  the helpers that carry its loops are `#[inline(always)]`, each with a
-  measured reason, because an outlined body compiles at baseline. Measured
-  with `opaque_row` or `interpolate` left to the inliner, the bench fell back
-  to 1.79–1.81 ms; small helpers such as `fraction` and `byte` inline without
-  forcing.
+- A kernel is a `LaneKernel<f64>` whose `call` runs an ordinary scalar body,
+  which the compiler vectorizes inside each instruction set's scope. The body
+  and the helpers that carry its loops are `#[inline(always)]` because an
+  outlined body compiles at baseline. With `opaque_row` or `interpolate` left
+  to the inliner, the bench fell back to 1.79–1.81 ms, against 1.38 ms forced.
+  Small helpers such as `fraction` and `byte` inline without forcing.
+- The body is written one quantity per loop over the run's lanes: first the
+  weights, then each color channel. Written per pixel, the same operations
+  stayed scalar inside the scope, with scalar fused multiply-adds (1.38 ms).
+  Per quantity they vectorize (1.12 ms).
 - Output does not depend on the instruction set. Every operation in these
   kernels (`mul_add`, subtraction, multiplication, clamping, truncation) is
   correctly rounded on every backend, the C library's `fma` included. The
@@ -60,10 +65,14 @@ from the consumer.
   `rkyv` and its derive crates, which Hermes uses for zero-copy containers.
   `deny.toml` allows the Hermes git source.
 - wasm32 builds select Hermes' scalar backend: same pixels, baseline speed.
-- On the card-stack bench, the gradient went from 2.34 ms before the run
-  kernel to 1.81 ms with it and to 1.38 ms with dispatch, on a host with AVX2
-  and FMA. The remaining gap to a full `+fma` build is antialiased edge
-  pixels, which still take the per-pixel path outside the scope.
+- On the card-stack bench, on a host with AVX2 and FMA, the gradient went
+  from 2.34 ms before the run kernel to 1.81 ms with it, and to 1.12 ms with
+  dispatch and per-quantity loops. A whole-bench `+avx2,+fma` build of the
+  per-pixel body measured 1.02 ms. Antialiased edge pixels still take the
+  per-pixel path outside the scope.
+- The float-to-byte conversion stays one scalar instruction per lane.
+  Replacing it with exact floating-point steps that vectorize measured 3%,
+  inside this host's run-to-run drift, and is not adopted.
 
 ## Verification
 

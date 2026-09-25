@@ -100,7 +100,7 @@ impl PlacedGradient<'_> {
     /// scope.
     #[expect(
         clippy::inline_always,
-        reason = "outlined, the row compiles at baseline: 1.81 ms against 1.38 ms on the card-stack bench"
+        reason = "outlined, the row compiles at baseline codegen (measured in ADR 0053)"
     )]
     #[inline(always)]
     fn opaque_row(&self, pixels: &mut [u32], row: u32, left: u32) {
@@ -133,7 +133,7 @@ impl PlacedGradient<'_> {
     /// and the straight color is the premultiplied one.
     #[expect(
         clippy::inline_always,
-        reason = "outlined, the run compiles at baseline: 1.79 ms against 1.38 ms on the card-stack bench"
+        reason = "outlined, the run compiles at baseline codegen (measured in ADR 0053)"
     )]
     #[inline(always)]
     fn interpolate(&self, pixels: &mut [u32; RUN], row: u32, column: u32, index: usize) {
@@ -142,19 +142,26 @@ impl PlacedGradient<'_> {
         let [end_red, end_green, end_blue, _] = to.premultiplied;
         let (span_red, span_green, span_blue) = (end_red - red, end_green - green, end_blue - blue);
         let (row, column) = (f64::from(row), f64::from(column));
-        for (pixel, offset) in pixels.iter_mut().zip(OFFSETS) {
+        // One pass per quantity over all lanes, so each loop is a vector op.
+        let mut weights = [0.0; RUN];
+        for (weight, offset) in weights.iter_mut().zip(OFFSETS) {
             let fraction = self
                 .step
                 .1
                 .mul_add(row, self.step.0.mul_add(column + offset, self.origin));
-            let weight = (fraction - from.position) * from.inverse_span;
-            *pixel = u32::from_be_bytes([
-                255,
-                byte(span_red.mul_add(weight, red)),
-                byte(span_green.mul_add(weight, green)),
-                byte(span_blue.mul_add(weight, blue)),
-            ]);
+            *weight = (fraction - from.position) * from.inverse_span;
         }
+        let mut packed = [0xff00_0000_u32; RUN];
+        for (shift, span, start) in [
+            (16, span_red, red),
+            (8, span_green, green),
+            (0, span_blue, blue),
+        ] {
+            for (pixel, weight) in packed.iter_mut().zip(weights) {
+                *pixel |= u32::from(byte(span.mul_add(weight, start))) << shift;
+            }
+        }
+        *pixels = packed;
     }
 
     fn fill_each(&self, pixels: &mut [u32], row: u32, left: u32) {
