@@ -3,6 +3,7 @@
 use super::kernel::normal_cdf;
 use super::*;
 use crate::rasterizer::fill_rect;
+use crate::rasterizer::round_rect::composite_pixel;
 
 fn surface(width: u32, height: u32, background: Color) -> Framebuffer {
     let mut fb = Framebuffer::new(width, height).expect("test surface");

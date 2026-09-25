@@ -19,8 +19,7 @@ mod field;
 mod kernel;
 
 use super::round_rect::{
-    CornerRadius, RoundRect, RowBounds, RowSamples, SUBSAMPLES, composite_pixel, pixel_coverage,
-    sample_row,
+    CornerRadius, RoundRect, RowBounds, RowSamples, SUBSAMPLES, pixel_coverage, sample_row,
 };
 use std::ops::Range;
 
@@ -190,6 +189,8 @@ pub fn draw_box_shadow(
     let tiles = std::iter::successors(Some(columns.start), |start| Some(start + TILE_WIDTH))
         .take_while(|start| *start < columns.end)
         .map(|start| start..(start + TILE_WIDTH).min(columns.end));
+    // Reused across rows: a row's edge pixels between two breaks.
+    let mut stretch = Vec::new();
     for tile in tiles {
         field.set_tile(tile.start - origin_x..tile.end - origin_x);
         for device_row in rows.clone() {
@@ -197,6 +198,7 @@ pub fn draw_box_shadow(
                 fb,
                 &mut field,
                 &mut clip,
+                &mut stretch,
                 RowSpan {
                     row: device_row,
                     columns: tile.clone(),
@@ -223,6 +225,7 @@ fn paint_row(
     fb: &mut Framebuffer,
     field: &mut Field<'_>,
     clip: &mut Clip,
+    stretch: &mut Vec<f64>,
     span: RowSpan,
     color: Color,
 ) {
@@ -232,54 +235,70 @@ fn paint_row(
         origin: (origin_x, origin_y),
         interior,
     } = span;
-    {
-        let row = device_row - origin_y;
-        field.evaluate(row);
-        let interior_value = field.interior_value(row);
-        let surface_row =
-            u32::try_from(device_row).expect("invariant: rows are clamped to the surface");
-        let bounds = clip.row(surface_row);
-        let mut column = columns.start;
-        while column < columns.end {
-            let covered = bounds.map_or(Coverage::Outside, |bounds| bounds.classify(column));
-            match covered {
-                Coverage::Solid(end) => {
-                    column = end.min(columns.end);
-                    continue;
-                }
-                Coverage::Outside if interior.contains(&column) => {
-                    // The interior value is constant along the row, so the
-                    // run up to the next border-box pixel composites at once.
-                    let mut end = interior.end.min(columns.end);
-                    if let Some(bounds) = bounds
-                        && bounds.touched.0 > column
-                    {
-                        end = end.min(bounds.touched.0);
-                    }
-                    composite_run(fb, surface_row, column, end, color, interior_value);
-                    column = end;
-                    continue;
-                }
-                Coverage::Outside | Coverage::Partial => {}
+    let row = device_row - origin_y;
+    field.evaluate(row);
+    let interior_value = field.interior_value(row);
+    let surface_row =
+        u32::try_from(device_row).expect("invariant: rows are clamped to the surface");
+    let bounds = clip.row(surface_row);
+    // Edge pixels gather into `stretch` from `stretch_start` and composite
+    // together at each break, instead of resolving the row once per pixel.
+    stretch.clear();
+    let mut stretch_start = columns.start;
+    let mut column = columns.start;
+    while column < columns.end {
+        let covered = bounds.map_or(Coverage::Outside, |bounds| bounds.classify(column));
+        match covered {
+            Coverage::Solid(end) => {
+                composite_stretch(fb, surface_row, stretch_start, stretch, color);
+                column = end.min(columns.end);
+                stretch_start = column;
+                continue;
             }
-            let value = if interior.contains(&column) {
-                interior_value
-            } else {
-                field.edge_value(column - origin_x)
-            };
-            let uncovered = match covered {
-                Coverage::Partial => 1.0 - pixel_coverage(&clip.samples, None, small_float(column)),
-                _ => 1.0,
-            };
-            composite_pixel(
-                fb,
-                surface_row,
-                small_float(column),
-                color,
-                value * uncovered,
-            );
-            column += 1;
+            Coverage::Outside if interior.contains(&column) => {
+                composite_stretch(fb, surface_row, stretch_start, stretch, color);
+                // The interior value is constant along the row, so the run up
+                // to the next border-box pixel composites at once.
+                let mut end = interior.end.min(columns.end);
+                if let Some(bounds) = bounds
+                    && bounds.touched.0 > column
+                {
+                    end = end.min(bounds.touched.0);
+                }
+                composite_run(fb, surface_row, column, end, color, interior_value);
+                column = end;
+                stretch_start = column;
+                continue;
+            }
+            Coverage::Outside | Coverage::Partial => {}
         }
+        let value = if interior.contains(&column) {
+            interior_value
+        } else {
+            field.edge_value(column - origin_x)
+        };
+        let uncovered = match covered {
+            Coverage::Partial => 1.0 - pixel_coverage(&clip.samples, None, small_float(column)),
+            _ => 1.0,
+        };
+        stretch.push(value * uncovered);
+        column += 1;
+    }
+    composite_stretch(fb, surface_row, stretch_start, stretch, color);
+}
+
+/// Composites the gathered edge values, the first at column `start`, and
+/// empties the stretch for the next one.
+fn composite_stretch(
+    fb: &mut Framebuffer,
+    row: u32,
+    start: i64,
+    stretch: &mut Vec<f64>,
+    color: Color,
+) {
+    if !stretch.is_empty() {
+        fb.composite_coverage_row(row, start, stretch, color);
+        stretch.clear();
     }
 }
 
