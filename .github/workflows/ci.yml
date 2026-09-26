@@ -3,42 +3,11 @@ name: Metis verification
 on:
   pull_request:
     types: [opened, synchronize, reopened, ready_for_review]
-    paths:
-      - 'Cargo.toml'
-      - 'Cargo.lock'
-      - 'rust-toolchain.toml'
-      - '.config/**'
-      - 'crates/**'
-      - 'src/**'
-      - 'tests/**'
-      - 'examples/**'
-      - 'docs/**'
-      - 'scripts/**'
-      - 'metis.json'
-      - 'backlog.md'
-      - '.githooks/**'
-      - '.github/workflows/**'
-  merge_group:
+  push:
+    branches: [main]
   schedule:
     - cron: '17 3 * * 1'
   workflow_dispatch:
-  push:
-    branches: [main]
-    paths:
-      - 'Cargo.toml'
-      - 'Cargo.lock'
-      - 'rust-toolchain.toml'
-      - '.config/**'
-      - 'crates/**'
-      - 'src/**'
-      - 'tests/**'
-      - 'examples/**'
-      - 'docs/**'
-      - 'scripts/**'
-      - 'metis.json'
-      - 'backlog.md'
-      - '.githooks/**'
-      - '.github/workflows/**'
 
 permissions:
   contents: read
@@ -48,9 +17,114 @@ concurrency:
   cancel-in-progress: ${{ github.event_name == 'pull_request' }}
 
 jobs:
+  changes:
+    name: Changed paths
+    # merge_group and path filters are gone (a path-filtered required
+    # workflow never starts, leaving its check pending forever); this job
+    # replaces the path filter so the expensive jobs below still skip on
+    # PM-only or docs-only changes. It does not run on schedule/dispatch,
+    # where every downstream job keeps its own unconditional behavior.
+    if: github.event_name == 'pull_request' || github.event_name == 'push'
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    permissions:
+      contents: read
+      actions: read
+    outputs:
+      code: ${{ steps.diff.outputs.code }}
+      tree: ${{ steps.tree.outputs.tree }}
+      verified: ${{ steps.verified.outputs.verified }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+      - name: Record the checked-out tree
+        # For pull_request this is refs/pull/<N>/merge: the tree that lands
+        # if main does not move before merge. For push it is the pushed
+        # commit's own tree.
+        id: tree
+        shell: bash
+        run: echo "tree=$(git rev-parse 'HEAD^{tree}')" >> "$GITHUB_OUTPUT"
+      - name: Determine whether tracked paths changed
+        id: diff
+        shell: bash
+        run: |
+          set -euo pipefail
+          if [[ "${{ github.event_name }}" == "pull_request" ]]; then
+            range="${{ github.event.pull_request.base.sha }}...${{ github.event.pull_request.head.sha }}"
+          else
+            before="${{ github.event.before }}"
+            if [[ "$before" == "0000000000000000000000000000000000000000" ]]; then
+              # New branch pushed with no prior commit to diff against: treat
+              # as code changed rather than guess.
+              echo "code=true" >> "$GITHUB_OUTPUT"
+              exit 0
+            fi
+            range="$before..${{ github.sha }}"
+          fi
+          pattern='^(Cargo\.toml|Cargo\.lock|rust-toolchain\.toml|\.config/|crates/|src/|tests/|examples/|docs/|scripts/|metis\.json|backlog\.md|\.githooks/|\.github/workflows/)'
+          if git diff --name-only "$range" | grep -Eq "$pattern"; then
+            echo "code=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "code=false" >> "$GITHUB_OUTPUT"
+          fi
+      - name: Check for a prior verified run of this tree
+        # Only a successful run of this workflow can authorize reusing a tree.
+        if: github.event_name == 'push'
+        id: verified
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+          TREE: ${{ steps.tree.outputs.tree }}
+        run: |
+          set -euo pipefail
+          python3 - <<'PY'
+          import json
+          import os
+          import subprocess
+
+          def api(path, *arguments):
+              response = subprocess.run(
+                  ["gh", "api", path, *arguments], check=True,
+                  capture_output=True, text=True, timeout=30,
+              )
+              return json.loads(response.stdout)
+
+          repository = os.environ["GITHUB_REPOSITORY"]
+          repository_id = int(os.environ["GITHUB_REPOSITORY_ID"])
+          workflow = api(f"repos/{repository}/actions/runs/{os.environ['GITHUB_RUN_ID']}")["workflow_id"]
+          name = "verified-tree-" + os.environ["TREE"]
+          pages = api(f"repos/{repository}/actions/artifacts", "--method", "GET",
+                      "--field", f"name={name}", "--paginate", "--slurp")
+          verified = False
+          for page in pages:
+              for artifact in page["artifacts"]:
+                  if (artifact["name"] != name or artifact["expired"] or
+                          artifact["workflow_run"]["head_repository_id"] != repository_id):
+                      continue
+                  run = api(f"repos/{repository}/actions/runs/{artifact['workflow_run']['id']}")
+                  if (run["workflow_id"] == workflow and run["path"] == ".github/workflows/ci.yml" and
+                          run["event"] == "pull_request" and run["status"] == "completed" and
+                          run["conclusion"] == "success" and
+                          run["head_repository"]["id"] == repository_id):
+                      verified = True
+          with open(os.environ["GITHUB_OUTPUT"], "a", encoding="utf-8") as output:
+              output.write(f"verified={str(verified).lower()}\n")
+          PY
+
   verify:
     name: Windows gate
-    if: github.event_name != 'schedule' && (github.event_name != 'pull_request' || github.event.pull_request.draft == false)
+    needs: changes
+    if: >-
+      always() &&
+      (needs.changes.result == 'success' || needs.changes.result == 'skipped') &&
+      (
+        github.event_name == 'workflow_dispatch' ||
+        (github.event_name == 'pull_request' && github.event.pull_request.draft == false && needs.changes.outputs.code == 'true') ||
+        (github.event_name == 'push' && needs.changes.outputs.code == 'true' && needs.changes.outputs.verified != 'true')
+      )
     runs-on: windows-latest
     timeout-minutes: 20
     env:
@@ -144,21 +218,82 @@ jobs:
   conformance:
     name: Debt classes at or below the recorded baseline
     if: github.event_name != 'pull_request' || github.event.pull_request.draft == false
-    uses: ryancinsight/atlas/.github/workflows/conformance-guard.yml@28c44b703681970d64dfde0a18aaa30ff877490c
+    uses: ryancinsight/atlas/.github/workflows/conformance-guard.yml@81e132e4cb94bf1a4a163fe5fe22c2da5cabbb8d
     with:
-      atlas-ref: 28c44b703681970d64dfde0a18aaa30ff877490c
+      atlas-ref: 81e132e4cb94bf1a4a163fe5fe22c2da5cabbb8d
       member: metis
     permissions:
       contents: read
 
   semver:
     name: Public API (informational)
-    if: github.event_name == 'pull_request' && github.event.pull_request.draft == false
+    needs: changes
+    if: >-
+      always() &&
+      (needs.changes.result == 'success' || needs.changes.result == 'skipped') &&
+      github.event_name == 'pull_request' && github.event.pull_request.draft == false &&
+      needs.changes.outputs.code == 'true'
     uses: ryancinsight/atlas/.github/workflows/semver-gate.yml@848e6649c52e8226a9abf7bc336f8cbf0e39ba08
     with:
       package: metis,metis-core,metis-backend,metis-frontend,metis-ipc,metis-ui-lang,metis-platform,metis-web
     permissions:
       contents: read
+
+  artifact-budget:
+    name: Artifact budget
+    if: github.event_name != 'pull_request' || github.event.pull_request.draft == false
+    uses: ryancinsight/atlas/.github/workflows/artifact-budget.yml@d22a9895b5967b2ccdd76668a95e6fc3851c99a7
+    with:
+      atlas-ref: d22a9895b5967b2ccdd76668a95e6fc3851c99a7
+    permissions:
+      contents: read
+
+  gate:
+    name: Metis gate
+    if: always()
+    needs: [changes, verify, workflow-lint, lockfile, adr-index, conformance, semver, artifact-budget, fuzz, browser-assets, browser-runtime, browser-text-cross-engine]
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Reject draft pull requests
+        # Every other job above skips on a draft PR, so an all-skipped gate
+        # would otherwise report success on the draft head commit; that
+        # stale green would satisfy the ruleset until ready_for_review
+        # produces its own run. A draft is never merge-ready.
+        if: github.event_name == 'pull_request' && github.event.pull_request.draft == true
+        shell: bash
+        run: |
+          echo "::error::Draft pull requests are never merge-ready; this check stays red until ready_for_review." >&2
+          exit 1
+      - name: Fail if any required job failed or was cancelled
+        shell: bash
+        env:
+          NEEDS_JSON: ${{ toJSON(needs) }}
+        run: |
+          set -euo pipefail
+          failed=$(echo "$NEEDS_JSON" | jq -r '
+            to_entries[]
+            | select(.value.result == "failure" or .value.result == "cancelled")
+            | .key
+          ')
+          if [[ -n "$failed" ]]; then
+            echo "failed or cancelled required jobs:" >&2
+            echo "$failed" >&2
+            exit 1
+          fi
+      - name: Create verified-tree marker
+        if: github.event_name == 'pull_request' && needs.verify.result == 'success'
+        shell: bash
+        run: echo "${{ needs.changes.outputs.tree }}" > verified-tree.txt
+      - name: Record verified tree
+        # Lets the next push's `changes` job skip re-running the Windows
+        # gate when the pushed commit's tree already passed it here.
+        if: github.event_name == 'pull_request' && needs.verify.result == 'success'
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        with:
+          name: verified-tree-${{ needs.changes.outputs.tree }}
+          path: verified-tree.txt
+          retention-days: 7
 
   fuzz:
     name: LibFuzzer parser campaign
