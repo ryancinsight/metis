@@ -8,8 +8,10 @@ import shutil
 import subprocess
 import sys
 import tempfile
+import textwrap
 import unittest
 import zipfile
+from unittest.mock import patch
 
 
 SCRIPTS = pathlib.Path(__file__).resolve().parents[1]
@@ -240,23 +242,94 @@ class WorkflowContractTests(unittest.TestCase):
             with self.subTest(fragment=fragment):
                 self.assertIn(fragment, self.source)
 
+    @staticmethod
+    def blocks(source, indentation):
+        """Read anchored mapping blocks without matching comments or script text."""
+        pattern = rf"(?m)^{' ' * indentation}([a-z][a-z_-]*):(?:[^\n]*)$"
+        matches = list(re.finditer(pattern, source))
+        return {
+            match.group(1): source[match.end():matches[index + 1].start()
+                                  if index + 1 < len(matches) else len(source)]
+            for index, match in enumerate(matches)
+        }
+
+    def jobs(self, source=None):
+        return self.blocks(self.blocks(source or self.source, 0)["jobs"], 2)
+
+    def step(self, job, name):
+        pattern = r"(?m)^      - name: (.+)$"
+        matches = list(re.finditer(pattern, job))
+        for index, match in enumerate(matches):
+            if match.group(1) == name:
+                return job[match.end():matches[index + 1].start()
+                           if index + 1 < len(matches) else len(job)]
+        self.fail(f"missing step: {name}")
+
+    def run_script(self, step):
+        return textwrap.dedent(step.split("        run: |\n", 1)[1]).strip()
+
+    def assert_aggregate(self, source):
+        jobs = self.jobs(source)
+        gate = jobs["gate"]
+        needs = re.search(r"(?m)^    needs: \[([^\]]+)\]$", gate).group(1)
+        self.assertEqual(set(part.strip() for part in needs.split(",")), set(jobs) - {"gate"})
+        self.assertRegex(gate, r"(?m)^    if: always\(\)$")
+        draft = self.step(gate, "Reject draft pull requests")
+        self.assertRegex(draft, r"(?m)^        if: github.event_name == 'pull_request' && github.event.pull_request.draft == true$")
+        result = subprocess.run(["bash", "-c", self.run_script(draft)],
+                                capture_output=True, text=True, timeout=10)
+        self.assertEqual(result.returncode, 1, result.stderr)
+
     def test_one_aggregate_check_gates_every_job(self):
-        # The ruleset requires only "Metis gate". A workflow skipped by a
-        # path filter leaves required checks pending, and a job skipped
-        # because a job it needs failed reports success, so the aggregate
-        # runs always, needs every gated job, and rejects drafts.
-        self.assertNotRegex(self.source, r"(?m)^  merge_group:")
+        triggers = self.blocks(self.blocks(self.source, 0)["on"], 2)
+        self.assertNotIn("merge_group", triggers)
+        self.assertRegex(triggers["pull_request"], r"types: \[opened, synchronize, reopened, ready_for_review\]")
         self.assertNotRegex(self.source, r"(?m)^    paths(-ignore)?:")
-        for fragment in (
-            "name: Metis gate",
-            "needs: [changes, verify, workflow-lint, lockfile, adr-index, conformance, semver, artifact-budget]",
-            "if: always()",
-            "name: Reject draft pull requests",
-            'select(.value.result == "failure" or .value.result == "cancelled")',
-            "name: verified-tree-${{ needs.changes.outputs.tree }}",
-        ):
-            with self.subTest(fragment=fragment):
-                self.assertIn(fragment, self.source)
+        self.assert_aggregate(self.source)
+
+    def test_aggregate_rejects_missing_dependency_and_draft_success(self):
+        for broken in (self.source.replace(", browser-text-cross-engine]", "]", 1),
+                       self.source.replace("          exit 1\n", "          exit 0\n", 1)):
+            with self.subTest(mutation=broken[-80:]), self.assertRaises(AssertionError):
+                self.assert_aggregate(broken)
+
+    def test_tree_reuse_requires_successful_matching_pull_request_run(self):
+        step = self.step(self.jobs()["changes"], "Check for a prior verified run of this tree")
+        script = self.run_script(step).split("python3 - <<'PY'\n", 1)[1].rsplit("\nPY", 1)[0]
+        artifact = {"name": "verified-tree-tree123", "expired": False,
+                    "workflow_run": {"head_repository_id": 42, "id": 7}}
+        run = {"workflow_id": 9, "path": ".github/workflows/ci.yml", "event": "pull_request",
+               "status": "completed", "conclusion": "success", "head_repository": {"id": 42}}
+        cases = [("accepted", {}, {}, True), ("wrong tree", {"name": "verified-tree-other"}, {}, False),
+                 ("expired", {"expired": True}, {}, False),
+                 ("fork artifact", {"workflow_run": {"head_repository_id": 43, "id": 7}}, {}, False)]
+        cases += [(key, {}, {key: value}, False) for key, value in (
+            ("workflow_id", 10), ("path", ".github/workflows/other.yml"), ("event", "push"),
+            ("status", "in_progress"), ("conclusion", "failure"), ("conclusion", "cancelled"),
+            ("head_repository", {"id": 43}))]
+        for name, artifact_changes, run_changes, expected in cases:
+            with self.subTest(name=name), tempfile.TemporaryDirectory() as directory:
+                output = pathlib.Path(directory) / "output"
+                candidate = dict(artifact, **artifact_changes)
+                record = dict(run, **run_changes)
+                responses = {"repos/owner/metis/actions/runs/1": {"workflow_id": 9},
+                             "repos/owner/metis/actions/artifacts": [{"artifacts": [candidate]}],
+                             "repos/owner/metis/actions/runs/7": record}
+                calls = []
+
+                def request(arguments, **options):
+                    calls.append(arguments)
+                    self.assertEqual(options, {"check": True, "capture_output": True,
+                                               "text": True, "timeout": 30})
+                    return subprocess.CompletedProcess(arguments, 0, json.dumps(responses[arguments[2]]))
+
+                environment = {"GITHUB_REPOSITORY": "owner/metis", "GITHUB_REPOSITORY_ID": "42",
+                               "GITHUB_RUN_ID": "1", "TREE": "tree123", "GITHUB_OUTPUT": str(output)}
+                with patch.dict(os.environ, environment), patch("subprocess.run", side_effect=request):
+                    exec(compile(script, "ci.yml:verified", "exec"), {})
+                self.assertEqual(output.read_text(), f"verified={str(expected).lower()}\n")
+                self.assertEqual(calls[1], ["gh", "api", "repos/owner/metis/actions/artifacts",
+                    "--method", "GET", "--field", "name=verified-tree-tree123", "--paginate", "--slurp"])
 
     def test_gate_tools_use_release_binaries_with_checksums(self):
         self.assertNotIn("cargo install cargo-nextest", self.source)

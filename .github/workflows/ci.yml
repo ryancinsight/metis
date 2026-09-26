@@ -71,9 +71,7 @@ jobs:
             echo "code=false" >> "$GITHUB_OUTPUT"
           fi
       - name: Check for a prior verified run of this tree
-        # A push landing a tree a pull request already ran the Windows gate
-        # against (fast-forward or squash merge with no intervening main
-        # commits) does not need to pay for that gate twice.
+        # Only a successful run of this workflow can authorize reusing a tree.
         if: github.event_name == 'push'
         id: verified
         shell: bash
@@ -82,14 +80,39 @@ jobs:
           TREE: ${{ steps.tree.outputs.tree }}
         run: |
           set -euo pipefail
-          count=$(gh api -X GET "repos/${{ github.repository }}/actions/artifacts" \
-            -f "name=verified-tree-$TREE" \
-            --jq "[.artifacts[] | select(.expired == false and .workflow_run.head_repository_id == ${{ github.repository_id }})] | length")
-          if [[ "$count" -gt 0 ]]; then
-            echo "verified=true" >> "$GITHUB_OUTPUT"
-          else
-            echo "verified=false" >> "$GITHUB_OUTPUT"
-          fi
+          python3 - <<'PY'
+          import json
+          import os
+          import subprocess
+
+          def api(path, *arguments):
+              response = subprocess.run(
+                  ["gh", "api", path, *arguments], check=True,
+                  capture_output=True, text=True, timeout=30,
+              )
+              return json.loads(response.stdout)
+
+          repository = os.environ["GITHUB_REPOSITORY"]
+          repository_id = int(os.environ["GITHUB_REPOSITORY_ID"])
+          workflow = api(f"repos/{repository}/actions/runs/{os.environ['GITHUB_RUN_ID']}")["workflow_id"]
+          name = "verified-tree-" + os.environ["TREE"]
+          pages = api(f"repos/{repository}/actions/artifacts", "--method", "GET",
+                      "--field", f"name={name}", "--paginate", "--slurp")
+          verified = False
+          for page in pages:
+              for artifact in page["artifacts"]:
+                  if (artifact["name"] != name or artifact["expired"] or
+                          artifact["workflow_run"]["head_repository_id"] != repository_id):
+                      continue
+                  run = api(f"repos/{repository}/actions/runs/{artifact['workflow_run']['id']}")
+                  if (run["workflow_id"] == workflow and run["path"] == ".github/workflows/ci.yml" and
+                          run["event"] == "pull_request" and run["status"] == "completed" and
+                          run["conclusion"] == "success" and
+                          run["head_repository"]["id"] == repository_id):
+                      verified = True
+          with open(os.environ["GITHUB_OUTPUT"], "a", encoding="utf-8") as output:
+              output.write(f"verified={str(verified).lower()}\n")
+          PY
 
   verify:
     name: Windows gate
@@ -228,7 +251,7 @@ jobs:
   gate:
     name: Metis gate
     if: always()
-    needs: [changes, verify, workflow-lint, lockfile, adr-index, conformance, semver, artifact-budget]
+    needs: [changes, verify, workflow-lint, lockfile, adr-index, conformance, semver, artifact-budget, fuzz, browser-assets, browser-runtime, browser-text-cross-engine]
     runs-on: ubuntu-latest
     timeout-minutes: 5
     steps:
