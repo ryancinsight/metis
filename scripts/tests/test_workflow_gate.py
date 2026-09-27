@@ -5,6 +5,7 @@ import pathlib
 import re
 import subprocess
 import sys
+import tempfile
 import unittest
 
 
@@ -99,6 +100,68 @@ class RequiredGateTests(unittest.TestCase):
         draft = self.run_gate(passed, draft=True)
         self.assertEqual(draft.returncode, 1)
         self.assertIn("draft pull requests", draft.stderr)
+
+
+    def test_required_workflow_uses_job_level_path_filtering(self):
+        triggers = self.source.split("\npermissions:\n", 1)[0]
+        self.assertNotIn("\n    paths:", triggers)
+        self.assertNotIn("\n    paths-ignore:", triggers)
+        self.assertIn("  changes:\n", self.source)
+        self.assertIn("git diff --name-only -z", self.source)
+        self.assertIn('range="$BASE_SHA...$HEAD_SHA"', self.source)
+        self.assertIn('range="$BEFORE_SHA..$CURRENT_SHA"', self.source)
+        self.assertIn("0000000000000000000000000000000000000000", self.source)
+        self.assertIn("needs: changes", self.source)
+        self.assertIn("needs.changes.outputs.code == 'true'", self.source)
+        self.assertIn("needs: [changes,", self.block)
+
+    def test_path_classifier_only_skips_the_three_root_report_files(self):
+        match = re.search(
+            r"(?ms)^          python3 - <<'PY'\n(?P<script>.*?)^          PY$",
+            self.source,
+        )
+        if match is None:
+            self.fail("the changed-path classifier is missing")
+        script = "\n".join(
+            line[10:] for line in match.group("script").splitlines()
+        )
+        cases = (
+            ((b"README.md",), False),
+            ((b"LICENSE",), False),
+            ((b"CHANGELOG.md",), False),
+            ((), False),
+            ((b"deny.toml",), True),
+            ((b"crates/metis-core/Cargo.toml",), True),
+            ((b"docs/manual/browser.md",), True),
+            ((b"README.md", b"crates/metis-core/src/lib.rs"), True),
+            ((b"new-unknown-file",), True),
+        )
+        with tempfile.TemporaryDirectory() as directory:
+            changed = pathlib.Path(directory) / "metis-changed-files"
+            output = pathlib.Path(directory) / "github-output"
+            for paths, expected in cases:
+                with self.subTest(paths=paths):
+                    changed.write_bytes(
+                        b"\0".join(paths) + (b"\0" if paths else b"")
+                    )
+                    output.write_text("", encoding="utf-8")
+                    environment = os.environ.copy()
+                    environment["RUNNER_TEMP"] = directory
+                    environment["GITHUB_OUTPUT"] = str(output)
+                    result = subprocess.run(
+                        [sys.executable, "-c", script],
+                        check=False,
+                        capture_output=True,
+                        env=environment,
+                        text=True,
+                        timeout=10,
+                    )
+                    self.assertEqual(result.returncode, 0, result.stderr)
+                    self.assertEqual(
+                        output.read_text(encoding="utf-8").strip(),
+                        "code=" + str(expected).lower(),
+                    )
+
 
 
 if __name__ == "__main__":

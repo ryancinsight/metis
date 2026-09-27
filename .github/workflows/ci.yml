@@ -3,42 +3,12 @@ name: Metis verification
 on:
   pull_request:
     types: [opened, synchronize, reopened, ready_for_review]
-    paths:
-      - 'Cargo.toml'
-      - 'Cargo.lock'
-      - 'rust-toolchain.toml'
-      - '.config/**'
-      - 'crates/**'
-      - 'src/**'
-      - 'tests/**'
-      - 'examples/**'
-      - 'docs/**'
-      - 'scripts/**'
-      - 'metis.json'
-      - 'backlog.md'
-      - '.githooks/**'
-      - '.github/workflows/**'
   merge_group:
   schedule:
     - cron: '17 3 * * 1'
   workflow_dispatch:
   push:
     branches: [main]
-    paths:
-      - 'Cargo.toml'
-      - 'Cargo.lock'
-      - 'rust-toolchain.toml'
-      - '.config/**'
-      - 'crates/**'
-      - 'src/**'
-      - 'tests/**'
-      - 'examples/**'
-      - 'docs/**'
-      - 'scripts/**'
-      - 'metis.json'
-      - 'backlog.md'
-      - '.githooks/**'
-      - '.github/workflows/**'
 
 permissions:
   contents: read
@@ -48,9 +18,67 @@ concurrency:
   cancel-in-progress: ${{ github.event_name == 'pull_request' }}
 
 jobs:
+  changes:
+    name: Changed paths
+    if: github.event_name == 'pull_request' || github.event_name == 'push'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    permissions:
+      contents: read
+    outputs:
+      code: ${{ steps.diff.outputs.code }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+      - name: Determine changed paths
+        id: diff
+        shell: bash
+        env:
+          EVENT_NAME: ${{ github.event_name }}
+          BEFORE_SHA: ${{ github.event.before }}
+          BASE_SHA: ${{ github.event.pull_request.base.sha }}
+          HEAD_SHA: ${{ github.event.pull_request.head.sha }}
+          CURRENT_SHA: ${{ github.sha }}
+        run: |
+          set -euo pipefail
+          if [[ "$EVENT_NAME" == "pull_request" ]]; then
+            range="$BASE_SHA...$HEAD_SHA"
+          else
+            if [[ "$BEFORE_SHA" == "0000000000000000000000000000000000000000" ]]; then
+              echo "code=true" >> "$GITHUB_OUTPUT"
+              exit 0
+            fi
+            range="$BEFORE_SHA..$CURRENT_SHA"
+          fi
+          git diff --name-only -z "$range" > "$RUNNER_TEMP/metis-changed-files"
+          python3 - <<'PY'
+          import os
+          from pathlib import Path
+
+          changed = Path(os.environ["RUNNER_TEMP"], "metis-changed-files").read_bytes()
+          paths = [path for path in changed.split(b"\0") if path]
+          documentation_only = {b"README.md", b"LICENSE", b"CHANGELOG.md"}
+          has_code_changes = any(path not in documentation_only for path in paths)
+          with open(os.environ["GITHUB_OUTPUT"], "a", encoding="utf-8") as output:
+              output.write(f"code={str(has_code_changes).lower()}\n")
+          PY
+
   verify:
     name: Windows gate
-    if: github.event_name != 'schedule' && (github.event_name != 'pull_request' || github.event.pull_request.draft == false)
+    needs: changes
+    if: >-
+      always() &&
+      (needs.changes.result == 'success' || needs.changes.result == 'skipped') &&
+      github.event_name != 'schedule' &&
+      (github.event_name != 'pull_request' || github.event.pull_request.draft == false) &&
+      (
+        github.event_name == 'workflow_dispatch' ||
+        github.event_name == 'merge_group' ||
+        needs.changes.outputs.code == 'true'
+      )
     runs-on: windows-latest
     timeout-minutes: 20
     env:
@@ -153,7 +181,12 @@ jobs:
 
   semver:
     name: Public API (informational)
-    if: github.event_name == 'pull_request' && github.event.pull_request.draft == false
+    needs: changes
+    if: >-
+      always() &&
+      (needs.changes.result == 'success' || needs.changes.result == 'skipped') &&
+      github.event_name == 'pull_request' && github.event.pull_request.draft == false &&
+      needs.changes.outputs.code == 'true'
     uses: ryancinsight/atlas/.github/workflows/semver-gate.yml@848e6649c52e8226a9abf7bc336f8cbf0e39ba08
     with:
       package: metis,metis-core,metis-backend,metis-frontend,metis-ipc,metis-ui-lang,metis-platform,metis-web
@@ -519,7 +552,7 @@ jobs:
   gate:
     name: Metis gate
     if: always()
-    needs: [verify, workflow-lint, lockfile, adr-index, conformance, semver, fuzz, browser-assets, browser-runtime, browser-text-cross-engine]
+    needs: [changes, verify, workflow-lint, lockfile, adr-index, conformance, semver, fuzz, browser-assets, browser-runtime, browser-text-cross-engine]
     runs-on: ubuntu-24.04
     timeout-minutes: 5
     permissions: {}
