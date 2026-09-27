@@ -21,6 +21,7 @@ mod popover_tests;
 #[cfg(test)]
 #[path = "../layout_sizing_tests.rs"]
 mod sizing_tests;
+mod slots;
 #[cfg(test)]
 #[path = "../layout_tests.rs"]
 mod tests;
