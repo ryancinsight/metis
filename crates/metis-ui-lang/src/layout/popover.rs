@@ -3,6 +3,7 @@
 use super::device::{add, sub};
 use super::display::DisplayList;
 use super::geometry::LayoutViewport;
+use super::grow::Grown;
 use super::intrinsic::Sizing;
 use crate::dom::{DomElement, DomNode};
 use crate::style::Display;
@@ -29,6 +30,7 @@ impl DisplayList {
                     Rect::new(0, 0, viewport.width(), viewport.height()),
                     viewport.scale(),
                     Sizing::Content,
+                    Grown::Natural,
                 )?
             };
             let x = popover_x(anchor.x, measured.width, viewport.width())?;
@@ -43,6 +45,7 @@ impl DisplayList {
                 ),
                 viewport.scale(),
                 Sizing::Content,
+                Grown::Natural,
             )?;
         }
         for child in &element.children {

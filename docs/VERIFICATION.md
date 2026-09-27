@@ -2497,6 +2497,47 @@ no gap to widen. A container its children exactly fill still moves nothing under
 either keyword, and negative free space is still floored at zero, so an
 overflowing container keeps start alignment.
 
+### Flex growth — 2026-09-27
+
+`flex-grow` shares a container's free main-axis space among its children. A
+child's size is fixed while it paints, so the container plans every child's
+main size before laying any of them out
+([ADR 0054](adr/0054-flex-grow-planned-before-layout.md)). Base sizes come from
+the intrinsic measures, and each child is laid out once at its planned size.
+
+The evidence is positional.
+
+- A 300-pixel row holding an 80-pixel label and a growing field places the field
+  at 80 with width 220.
+- Weights 1 and 2 across 300 pixels with a 30-pixel gap give widths of 90 and
+  180, and the second child starts at 120.
+- A declared width of 50 is the base that growth adds to, giving 250 beside a
+  fixed 50-pixel sibling.
+- Weights summing to less than one distribute only their fraction:
+  `flex-grow: 0.5` alone in 200 free pixels grows by 100.
+- Three equal weights over 100 pixels give 33, 33 and 34, and every tested
+  combination sums to exactly the space it distributes.
+- An overfull row grows nothing.
+- At 200 percent display scale, every length and share doubles.
+
+In a column, a body between 30-pixel headers and footers fills a 200-pixel
+container, whether the 200 pixels are its declared `height` or its
+`min-height`. The body lands at y 30 with height 140, and the footer at 170. An
+automatic-height column has no free space, so its body stays at its natural
+height of zero.
+
+The column plan relies on a height measure that restates layout's height rule.
+`measured_heights_equal_laid_out_heights` compares the two for every element of
+a ten-document corpus at 100 and 150 percent scale. The corpus covers text,
+padding and borders, gaps, margins, minimums, percentages, hidden children,
+nested rows and columns, and growing children. Growing children are required to
+be at least their measured height, and every other element must match to the
+pixel. Dropping column gaps from the measure makes the oracle fail, at 56 pixels
+laid out against 42 measured.
+
+A document that declares no `flex-grow` is never planned. The 103 existing
+layout, style and alignment tests pass unchanged.
+
 ### Linear gradient backgrounds — 2026-09-23
 
 The software renderer paints `linear-gradient()` backgrounds

@@ -7,10 +7,9 @@ use metis_platform::DisplayScale;
 use metis_platform::framebuffer::Rect;
 use metis_platform::rasterizer::CornerRadius;
 
-use super::device::{
-    add, device_shadow, dimension, minimum, scaled_geometry, sub, text_style, whole_pixels,
-};
-use super::intrinsic::{Sizing, is_visible_popover, max_content_width};
+use super::device::{add, dimension, minimum, scaled_geometry, sub, text_style, whole_pixels};
+use super::grow::{self, GrowContainer, Grown};
+use super::intrinsic::{Sizing, border_box_width, is_visible_popover};
 use super::limits::validate_layout_tree;
 use super::popover::popover_error;
 
@@ -85,6 +84,7 @@ pub fn compute_layout(doc: &DomDocument, viewport: LayoutViewport) -> Result<Dis
         Rect::new(0, 0, viewport.width, viewport.height),
         viewport.scale,
         Sizing::Fill,
+        Grown::Natural,
     )?;
     list.popovers(&doc.root, viewport)?;
     Ok(list)
@@ -132,7 +132,18 @@ impl DisplayList {
         let mut cross_size = 0;
         let mut placements = Vec::new();
         let mut visible_children = 0;
-        for child in &element.children {
+        let plan = grow::plan(
+            element,
+            GrowContainer {
+                style,
+                row,
+                content_width,
+                available_height,
+                gap,
+                display_scale,
+            },
+        )?;
+        for (index, child) in element.children.iter().enumerate() {
             if matches!(child, DomNode::Element(child) if child.computed_style.display == Display::None || is_visible_popover(child))
             {
                 continue;
@@ -165,6 +176,7 @@ impl DisplayList {
                         Rect::new(child_x, child_y, available_width, available_height),
                         display_scale,
                         sizing,
+                        plan.as_ref().map_or(Grown::Natural, |plan| plan[index]),
                     )?;
                     (child_rect.width, child_rect.height)
                 }
@@ -269,23 +281,19 @@ impl DisplayList {
         available: Rect,
         display_scale: DisplayScale,
         sizing: Sizing,
+        grown: Grown,
     ) -> Result<Rect> {
         let style = &element.computed_style;
         if style.display == Display::None {
             return Ok(Rect::new(available.x, available.y, 0, 0));
         }
         let geometry = scaled_geometry(style, display_scale)?;
-        let fill = sub(
-            available.width,
-            add(geometry.margin.left, geometry.margin.right)?,
-        )?
-        .max(0);
-        let automatic = match sizing {
-            Sizing::Fill => fill,
-            Sizing::Content => max_content_width(element, display_scale)?.min(fill),
+        let width = match grown {
+            Grown::Width(width) => width,
+            Grown::Natural | Grown::Height(_) => {
+                border_box_width(element, available.width, sizing, display_scale)?
+            }
         };
-        let width = dimension(style.width, available.width, automatic, display_scale)?
-            .max(minimum(style.min_width, available.width, display_scale)?);
         let x = add(available.x, geometry.margin.left)?;
         let y = add(available.y, geometry.margin.top)?;
         let content_x = add(add(x, geometry.padding.left)?, geometry.border.left)?;
@@ -326,13 +334,17 @@ impl DisplayList {
             add(geometry.padding.top, geometry.padding.bottom)?,
             add(geometry.border.top, geometry.border.bottom)?,
         )?;
-        let height = dimension(
-            style.height,
-            available.height,
-            add(child_extent.content_height, vertical_edges)?.max(0),
-            display_scale,
-        )?
-        .max(minimum(style.min_height, available.height, display_scale)?);
+        let height = if let Grown::Height(height) = grown {
+            height
+        } else {
+            dimension(
+                style.height,
+                available.height,
+                add(child_extent.content_height, vertical_edges)?.max(0),
+                display_scale,
+            )?
+            .max(minimum(style.min_height, available.height, display_scale)?)
+        };
         let rect = Rect::new(x, y, width, height);
         // Free space exists only once the container's own extent is final: an
         // automatic height is derived from the children that just painted.
@@ -363,98 +375,6 @@ impl DisplayList {
         }
         Ok(rect)
     }
-
-    /// Reserves painter slots for the element's shadow and background.
-    ///
-    /// The outer shadow sits immediately below the background (CSS
-    /// Backgrounds 3 §6.1.3), so its slot is reserved first; the background
-    /// image paints over the background color (§3.1). Every slot carries a
-    /// placeholder until [`Self::settle_box`] writes the final rectangle.
-    fn reserve_box(
-        &mut self,
-        style: &ComputedStyle,
-        placeholder: Rect,
-        display_scale: DisplayScale,
-    ) -> Result<BoxSlots> {
-        let shadow = match style.box_shadow {
-            Some(shadow) => {
-                let index = self.commands.len();
-                self.push(DisplayCommand::DrawShadow {
-                    rect: placeholder,
-                    radius: CornerRadius::SQUARE,
-                    shadow: device_shadow(shadow, display_scale)?,
-                })?;
-                Some(index)
-            }
-            None => None,
-        };
-        let background = match style.background_color {
-            Some(color) => {
-                let index = self.commands.len();
-                self.push(DisplayCommand::FillRect {
-                    rect: placeholder,
-                    radius: CornerRadius::SQUARE,
-                    color,
-                })?;
-                Some(index)
-            }
-            None => None,
-        };
-        let gradient = match &style.background_gradient {
-            Some(gradient) => {
-                let index = self.commands.len();
-                self.push(DisplayCommand::FillGradient {
-                    rect: placeholder,
-                    radius: CornerRadius::SQUARE,
-                    gradient: gradient.clone(),
-                })?;
-                Some(index)
-            }
-            None => None,
-        };
-        Ok(BoxSlots {
-            shadow,
-            background,
-            gradient,
-        })
-    }
-
-    /// Writes the final border box into the reserved slots.
-    fn settle_box(&mut self, slots: BoxSlots, rect: Rect, radius: CornerRadius) {
-        for index in [slots.shadow, slots.background, slots.gradient]
-            .into_iter()
-            .flatten()
-        {
-            let (DisplayCommand::DrawShadow {
-                rect: target,
-                radius: target_radius,
-                ..
-            }
-            | DisplayCommand::FillRect {
-                rect: target,
-                radius: target_radius,
-                ..
-            }
-            | DisplayCommand::FillGradient {
-                rect: target,
-                radius: target_radius,
-                ..
-            }) = &mut self.commands[index]
-            else {
-                unreachable!("invariant: reserve_box records only shadow and fill slots");
-            };
-            *target = rect;
-            *target_radius = radius;
-        }
-    }
-}
-
-/// Painter slots an element reserves before its children paint.
-#[derive(Clone, Copy)]
-struct BoxSlots {
-    shadow: Option<usize>,
-    background: Option<usize>,
-    gradient: Option<usize>,
 }
 
 /// Where one child's commands and extents landed during child layout.

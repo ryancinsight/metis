@@ -1,6 +1,9 @@
 //! CSS-inspired style declarations, box model, and layout properties.
 
 mod background;
+mod grow;
+
+pub use grow::FlexGrow;
 
 use metis_core::error::{ErrorCode, MetisError, Result};
 pub use metis_platform::framebuffer::Color;
@@ -9,7 +12,7 @@ pub use metis_platform::rasterizer::LinearGradient;
 /// Display flow mode.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum Display {
-    /// Sequential flex-like flow (without browser flex distribution).
+    /// Sequential flex flow: one line, no shrinking or wrapping.
     Flex,
     /// Block flow, using the configured direction.
     Block,
@@ -143,6 +146,8 @@ pub struct ComputedStyle {
     pub justify_content: JustifyContent,
     /// Placement of each child within the cross-axis extent.
     pub align_items: AlignItems,
+    /// This element's share of its container's free main-axis space.
+    pub flex_grow: FlexGrow,
     /// Space between adjacent children in pixels.
     pub gap: i32,
     /// Requested width.
@@ -186,6 +191,7 @@ impl Default for ComputedStyle {
             flex_direction: FlexDirection::Column,
             justify_content: JustifyContent::FlexStart,
             align_items: AlignItems::Stretch,
+            flex_grow: FlexGrow::NONE,
             gap: 0,
             width: Size::Auto,
             height: Size::Auto,
@@ -282,6 +288,7 @@ impl ComputedStyle {
                 }
                 "box-shadow" => style.box_shadow = parse_shadow(&key, val)?,
                 "border-radius" => style.border_radius = parse_nonnegative_px(&key, val)?,
+                "flex-grow" => style.flex_grow = grow::parse_flex_grow(&key, val)?,
                 "gap" => style.gap = parse_nonnegative_px(&key, val)?,
                 "width" => style.width = parse_size(&key, val)?,
                 "height" => style.height = parse_size(&key, val)?,
