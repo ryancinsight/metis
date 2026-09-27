@@ -2471,9 +2471,31 @@ Admitting these two empties the rejection category
 `validate_renderer_support` and `unsupported_style` are deleted rather than
 left as a check that can no longer fail; `parse` still rejects unknown
 properties and values outside each admitted grammar, which is where that
-decision's protection actually lives. The bounded subset holds: `space-around`,
-`baseline` and bare `end` are typed errors rather than a silent fall back to
-the default.
+decision's protection actually lives. The bounded subset holds: `baseline`,
+bare `end` and `justify-content: stretch` are typed errors rather than a silent
+fall back to the default.
+
+### Space-around and space-evenly distribution — 2026-09-27
+
+`justify-content: space-around` and `space-evenly` join the admitted
+distributions through the same post-layout translation, so no child is
+measured or painted twice. The oracle is CSS Box Alignment 3, section 5.3.
+For `n` children and free space `F`:
+
+- `space-around` gives each child an equal share centred on it, so child `i`
+  moves by `F·(2i + 1) / 2n`. The edge gaps are half the inner gaps.
+- `space-evenly` makes all `n + 1` gaps equal, so child `i` moves by
+  `F·(i + 1) / (n + 1)`.
+
+Both round down in whole device pixels, the same way `space-between` does.
+
+The three-child column from the evidence above has 110 pixels free. With
+`space-around` the tops land at 18/85/151; with `space-evenly` they land at
+27/85/142. A lone child is centred by both keywords, at 85, as the specification
+requires. `space-between` keeps start alignment for a lone child, because it has
+no gap to widen. A container its children exactly fill still moves nothing under
+either keyword, and negative free space is still floored at zero, so an
+overflowing container keeps start alignment.
 
 ### Linear gradient backgrounds — 2026-09-23
 

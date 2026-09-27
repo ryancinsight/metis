@@ -138,6 +138,8 @@ fn admits_the_bounded_alignment_keywords() {
         ("justify-content: flex-start", JustifyContent::FlexStart),
         ("justify-content: center", JustifyContent::Center),
         ("justify-content: flex-end", JustifyContent::FlexEnd),
+        ("justify-content: space-around", JustifyContent::SpaceAround),
+        ("justify-content: space-evenly", JustifyContent::SpaceEvenly),
     ] {
         assert_eq!(
             ComputedStyle::parse(css).expect("keyword").justify_content,
@@ -148,7 +150,7 @@ fn admits_the_bounded_alignment_keywords() {
     // The subset is bounded: a keyword the renderer does not distribute is
     // a typed error rather than a silent fall back to the default.
     for css in [
-        "justify-content: space-around",
+        "justify-content: stretch",
         "justify-content: end",
         "align-items: baseline",
         "align-items: end",

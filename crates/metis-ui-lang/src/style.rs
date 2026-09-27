@@ -39,6 +39,11 @@ pub enum JustifyContent {
     FlexEnd,
     /// Distribute free space between items.
     SpaceBetween,
+    /// Give each item an equal share of free space, split half before and
+    /// half after it, so the edge gaps are half the inner gaps.
+    SpaceAround,
+    /// Make every gap, the two edge gaps included, the same size.
+    SpaceEvenly,
 }
 
 /// Align items cross-axis alignment.
@@ -252,6 +257,8 @@ impl ComputedStyle {
                         "center" => JustifyContent::Center,
                         "flex-end" => JustifyContent::FlexEnd,
                         "space-between" => JustifyContent::SpaceBetween,
+                        "space-around" => JustifyContent::SpaceAround,
+                        "space-evenly" => JustifyContent::SpaceEvenly,
                         _ => return Err(invalid_value(&key, val)),
                     }
                 }
