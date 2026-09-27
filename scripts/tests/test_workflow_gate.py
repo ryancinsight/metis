@@ -1,8 +1,9 @@
-"""Verify the required workflow status gate against job result values."""
+"""Verify the required Metis workflow status against job results and changed paths."""
 import json
 import os
 import pathlib
 import re
+import shlex
 import subprocess
 import sys
 import tempfile
@@ -37,6 +38,22 @@ class RequiredGateTests(unittest.TestCase):
         cls.script = "\n".join(
             line[10:] for line in script.group("script").splitlines()
         )
+        classifier = re.search(
+            r"(?ms)^          python3 - <<'PY'\n(?P<script>.*?)^          PY$",
+            cls.source,
+        )
+        if classifier is None:
+            raise AssertionError("the changed-path classifier is missing")
+        cls.classifier = "\n".join(
+            line[10:] for line in classifier.group("script").splitlines()
+        )
+        diff = re.search(
+            r'(?m)^          git diff (?P<options>.*?) "\$range" > ',
+            cls.source,
+        )
+        if diff is None:
+            raise AssertionError("the changed-path Git diff is missing")
+        cls.diff_options = tuple(shlex.split(diff.group("options")))
 
     def test_gate_covers_every_job_and_runs_when_pull_request_is_ready(self):
         jobs = self.source.split("\njobs:\n", 1)[1]
@@ -52,10 +69,10 @@ class RequiredGateTests(unittest.TestCase):
         self.assertIn("if: always()", self.block)
         self.assertIn("permissions: {}", self.block)
         self.assertIn("timeout-minutes: 5", self.block)
-        self.assertIn("METIS_GATE_NEEDS: " + "$" + "{{ toJSON(needs) }}", self.block)
+        self.assertIn("METIS_GATE_NEEDS: " + chr(36) + "{{ toJSON(needs) }}", self.block)
         self.assertIn(
             "METIS_GATE_DRAFT: "
-            + "$"
+            + chr(36)
             + "{{ github.event_name == 'pull_request' && github.event.pull_request.draft || false }}",
             self.block,
         )
@@ -76,6 +93,26 @@ class RequiredGateTests(unittest.TestCase):
             text=True,
             timeout=10,
         )
+
+    def classify(self, changed_paths):
+        with tempfile.TemporaryDirectory() as directory:
+            changed = pathlib.Path(directory) / "metis-changed-files"
+            output = pathlib.Path(directory) / "github-output"
+            changed.write_bytes(changed_paths)
+            output.write_text("", encoding="utf-8")
+            environment = os.environ.copy()
+            environment["RUNNER_TEMP"] = directory
+            environment["GITHUB_OUTPUT"] = str(output)
+            result = subprocess.run(
+                [sys.executable, "-c", self.classifier],
+                check=False,
+                capture_output=True,
+                env=environment,
+                text=True,
+                timeout=10,
+            )
+            self.assertEqual(result.returncode, 0, result.stderr)
+            return output.read_text(encoding="utf-8").strip()
 
     def test_success_and_skipped_dependencies_pass(self):
         results = {job: {"result": "success"} for job in self.dependencies}
@@ -101,13 +138,12 @@ class RequiredGateTests(unittest.TestCase):
         self.assertEqual(draft.returncode, 1)
         self.assertIn("draft pull requests", draft.stderr)
 
-
     def test_required_workflow_uses_job_level_path_filtering(self):
         triggers = self.source.split("\npermissions:\n", 1)[0]
         self.assertNotIn("\n    paths:", triggers)
         self.assertNotIn("\n    paths-ignore:", triggers)
         self.assertIn("  changes:\n", self.source)
-        self.assertIn("git diff --name-only -z", self.source)
+        self.assertIn("git diff --name-only --no-renames -z", self.source)
         self.assertIn('range="$BASE_SHA...$HEAD_SHA"', self.source)
         self.assertIn('range="$BEFORE_SHA..$CURRENT_SHA"', self.source)
         self.assertIn("0000000000000000000000000000000000000000", self.source)
@@ -116,15 +152,6 @@ class RequiredGateTests(unittest.TestCase):
         self.assertIn("needs: [changes,", self.block)
 
     def test_path_classifier_only_skips_the_three_root_report_files(self):
-        match = re.search(
-            r"(?ms)^          python3 - <<'PY'\n(?P<script>.*?)^          PY$",
-            self.source,
-        )
-        if match is None:
-            self.fail("the changed-path classifier is missing")
-        script = "\n".join(
-            line[10:] for line in match.group("script").splitlines()
-        )
         cases = (
             ((b"README.md",), False),
             ((b"LICENSE",), False),
@@ -136,32 +163,48 @@ class RequiredGateTests(unittest.TestCase):
             ((b"README.md", b"crates/metis-core/src/lib.rs"), True),
             ((b"new-unknown-file",), True),
         )
-        with tempfile.TemporaryDirectory() as directory:
-            changed = pathlib.Path(directory) / "metis-changed-files"
-            output = pathlib.Path(directory) / "github-output"
-            for paths, expected in cases:
-                with self.subTest(paths=paths):
-                    changed.write_bytes(
-                        b"\0".join(paths) + (b"\0" if paths else b"")
-                    )
-                    output.write_text("", encoding="utf-8")
-                    environment = os.environ.copy()
-                    environment["RUNNER_TEMP"] = directory
-                    environment["GITHUB_OUTPUT"] = str(output)
-                    result = subprocess.run(
-                        [sys.executable, "-c", script],
-                        check=False,
-                        capture_output=True,
-                        env=environment,
-                        text=True,
-                        timeout=10,
-                    )
-                    self.assertEqual(result.returncode, 0, result.stderr)
-                    self.assertEqual(
-                        output.read_text(encoding="utf-8").strip(),
-                        "code=" + str(expected).lower(),
-                    )
+        for paths, expected in cases:
+            with self.subTest(paths=paths):
+                data = b"\0".join(paths) + (b"\0" if paths else b"")
+                self.assertEqual(
+                    self.classify(data),
+                    "code=" + str(expected).lower(),
+                )
 
+    def test_rename_to_report_file_keeps_the_source_path_in_the_gate(self):
+        with tempfile.TemporaryDirectory() as directory:
+            repository = pathlib.Path(directory) / "repo"
+            repository.mkdir()
+
+            def git(*arguments, input_bytes=None):
+                result = subprocess.run(
+                    ["git", "-C", str(repository), *arguments],
+                    check=True,
+                    capture_output=True,
+                    input=input_bytes,
+                    timeout=10,
+                )
+                return result.stdout.strip()
+
+            git("init", "--quiet", "-b", "main")
+            git("config", "diff.renames", "true")
+            blob = git("hash-object", "-w", "--stdin", input_bytes=b"fn main() {}\n")
+            source_tree = git(
+                "mktree",
+                input_bytes=f"100644 blob {blob.decode('ascii')}\tsource.rs\n".encode(),
+            )
+            report_tree = git(
+                "mktree",
+                input_bytes=f"100644 blob {blob.decode('ascii')}\tREADME.md\n".encode(),
+            )
+            default_diff = git(
+                "diff", "--name-only", "-z", source_tree, report_tree
+            )
+            self.assertEqual([path for path in default_diff.split(bytes([0])) if path], [b"README.md"])
+            changed = git("diff", *self.diff_options, source_tree, report_tree)
+            paths = set(path for path in changed.split(b"\0") if path)
+            self.assertEqual(paths, {b"README.md", b"source.rs"})
+            self.assertEqual(self.classify(changed), "code=true")
 
 
 if __name__ == "__main__":

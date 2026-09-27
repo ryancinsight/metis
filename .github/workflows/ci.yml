@@ -53,7 +53,7 @@ jobs:
             fi
             range="$BEFORE_SHA..$CURRENT_SHA"
           fi
-          git diff --name-only -z "$range" > "$RUNNER_TEMP/metis-changed-files"
+          git diff --name-only --no-renames -z "$range" > "$RUNNER_TEMP/metis-changed-files"
           python3 - <<'PY'
           import os
           from pathlib import Path
