@@ -151,15 +151,22 @@ class RequiredGateTests(unittest.TestCase):
         self.assertIn("needs.changes.outputs.code == 'true'", self.source)
         self.assertIn("needs: [changes,", self.block)
 
-    def test_path_classifier_only_skips_the_three_root_report_files(self):
+    def test_path_classifier_marks_documentation_and_boards_non_code(self):
         cases = (
             ((b"README.md",), False),
+            ((b"crates/metis-core/README.md",), False),
             ((b"LICENSE",), False),
             ((b"CHANGELOG.md",), False),
+            ((b"docs/manual/browser.md",), False),
+            ((b"docs/manual/images/gallery.webp",), False),
+            ((b"docs/manual/images/captures.json",), False),
+            ((b"backlog.md",), False),
+            ((b"backlog/METIS-001.md",), False),
+            ((b"gap_audit.md",), False),
             ((), False),
             ((b"deny.toml",), True),
             ((b"crates/metis-core/Cargo.toml",), True),
-            ((b"docs/manual/browser.md",), True),
+            ((b"docs/build.py",), True),
             ((b"README.md", b"crates/metis-core/src/lib.rs"), True),
             ((b"new-unknown-file",), True),
         )
@@ -170,6 +177,19 @@ class RequiredGateTests(unittest.TestCase):
                     self.classify(data),
                     "code=" + str(expected).lower(),
                 )
+
+    def test_windows_and_semver_skip_documentation_only_changes(self):
+        verify = self.source.split("\n  verify:\n", 1)[1].split(
+            "\n  workflow-lint:\n", 1
+        )[0]
+        semver = self.source.split("\n  semver:\n", 1)[1].split(
+            "\n  fuzz:\n", 1
+        )[0]
+        for name, job in (("Windows", verify), ("SemVer", semver)):
+            with self.subTest(job=name):
+                self.assertIn("needs: changes", job)
+                self.assertIn("needs.changes.outputs.code == 'true'", job)
+                self.assertIn("github.event.pull_request.draft == false", job)
 
     def test_rename_to_report_file_keeps_the_source_path_in_the_gate(self):
         with tempfile.TemporaryDirectory() as directory:
