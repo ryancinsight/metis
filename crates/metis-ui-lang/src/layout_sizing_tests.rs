@@ -54,6 +54,11 @@ fn main_axis_distribution_places_children_in_the_free_space() {
         ("flex-end", vec![110, 140, 170]),
         // The first child holds the start edge and the last reaches the end.
         ("space-between", vec![0, 85, 170]),
+        // Each child owns a 110/3 share centred on it, so the edge gaps are
+        // half the inner gaps: offsets 110 * {1, 3, 5} / 6, floored.
+        ("space-around", vec![18, 85, 151]),
+        // Four equal gaps of 27.5: offsets 110 * {1, 2, 3} / 4, floored.
+        ("space-evenly", vec![27, 85, 142]),
     ] {
         let tops: Vec<_> = column_children(keyword, "stretch")
             .iter()
@@ -81,6 +86,30 @@ fn cross_axis_alignment_places_children_across_the_container() {
 }
 
 #[test]
+fn a_lone_child_is_centred_by_the_spacing_keywords() {
+    // One child leaves a single share of free space, which `space-around`
+    // splits evenly on both sides and `space-evenly` divides into two equal
+    // gaps; either way the child is centred. `space-between` has no gap to
+    // widen and keeps start alignment.
+    let markup = |justify: &str| {
+        format!(
+            "<card id=\"root\" style=\"height: 200px; width: 100px; justify-content: {justify};\">             <card id=\"a\" style=\"background-color: #0000ff; height: 30px;\"></card>             </card>"
+        )
+    };
+    for (keyword, top) in [
+        ("space-around", 85),
+        ("space-evenly", 85),
+        ("space-between", 0),
+    ] {
+        let tops: Vec<_> = child_rects(&markup(keyword), LayoutViewport::new(100, 200))
+            .iter()
+            .map(|rect| rect.y)
+            .collect();
+        assert_eq!(tops, vec![top], "justify-content: {keyword}");
+    }
+}
+
+#[test]
 fn a_full_container_distributes_nothing() {
     // Three thirty-pixel children exactly fill ninety pixels, so every
     // keyword must agree with start alignment.
@@ -90,7 +119,13 @@ fn a_full_container_distributes_nothing() {
         )
     };
     let start = child_rects(&markup("flex-start"), LayoutViewport::new(100, 90));
-    for keyword in ["center", "flex-end", "space-between"] {
+    for keyword in [
+        "center",
+        "flex-end",
+        "space-between",
+        "space-around",
+        "space-evenly",
+    ] {
         assert_eq!(
             child_rects(&markup(keyword), LayoutViewport::new(100, 90)),
             start,
