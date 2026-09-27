@@ -260,7 +260,11 @@ class WorkflowContractTests(unittest.TestCase):
     def test_draft_pull_requests_and_unsupported_hosts_are_excluded(self):
         draft_guard = "if: github.event_name != 'pull_request' || github.event.pull_request.draft == false"
         self.assertEqual(self.source.count(draft_guard), 4)
-        self.assertIn("if: github.event_name != 'schedule' && (github.event_name != 'pull_request'", self.source)
+        verify = self.source.split("\n  verify:\n", 1)[1].split("\n  workflow-lint:\n", 1)[0]
+        self.assertIn("github.event_name != 'schedule'", verify)
+        self.assertIn("github.event_name == 'merge_group'", verify)
+        self.assertIn("needs.changes.outputs.code == 'true'", verify)
+        self.assertIn("merge_group:", self.source)
         self.assertIn("github.event_name == 'pull_request' && github.event.pull_request.draft == false", self.source)
         self.assertNotIn("pull_request_target", self.source)
         self.assertIn("runs-on: windows-latest", self.source)
