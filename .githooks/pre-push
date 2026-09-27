@@ -641,6 +641,10 @@ trap restore_gate_lock EXIT INT TERM
 if ! workspace_members="$(
   cd "$gate_cwd" && cargo metadata --no-deps --format-version 1 $gate_manifest |
     "$python_bin" -c 'import json, os, sys
+# LF records: text-mode stdout on Windows writes CRLF, and bash keeps the CR
+# in the package name, so a new-member push gated `helios-core<CR>` beside
+# `helios-core` and the identity checker found no such package.
+sys.stdout.reconfigure(newline="\n")
 metadata = json.load(sys.stdin)
 members = set(metadata["workspace_members"])
 root = os.path.realpath(sys.argv[1])

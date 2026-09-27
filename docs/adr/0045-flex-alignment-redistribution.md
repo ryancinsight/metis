@@ -16,6 +16,13 @@ advances, a row's children and gaps, a column's widest child, plus padding and
 borders — capped at the available width, and redistribution places it.
 `stretch`, the default, and row containers are unchanged.
 
+Revision: 2026-09-27 — `justify-content: space-around` and `space-evenly` are
+admitted. Each is one more per-child offset translated through the same
+mechanism: child `i` of `n` moves by `F·(2i + 1) / 2n` or `F·(i + 1) / (n + 1)`
+of the free space `F`. No paint path or allocation is added. Wrapping,
+`align-self` and `flex-grow` stay out of scope. `flex-grow` resizes a child
+rather than moving it, so translation cannot deliver it.
+
 ## Context
 
 [ADR 0013](0013-strict-style-contract.md) rejects `justify-content` and
@@ -61,8 +68,8 @@ duplicated-variant defect the renderer is organized to avoid.
 
 Scope is the capability the style model already declares: four main-axis
 distributions, four cross-axis alignments, single-line only. No wrapping, no
-`space-around`/`space-evenly`, no per-item `align-self`; each would be its own
-declaration with its own evidence.
+`space-around`/`space-evenly` (admitted by the 2026-09-27 revision), no
+per-item `align-self`; each would be its own declaration with its own evidence.
 
 ## Alternatives
 

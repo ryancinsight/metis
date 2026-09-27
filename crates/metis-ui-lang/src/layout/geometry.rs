@@ -231,6 +231,13 @@ impl DisplayList {
                 // The first child keeps the start edge and the last reaches the
                 // end edge, so each step is one share of the free space.
                 JustifyContent::SpaceBetween if count > 1 => mul(free, ordinal)? / (count - 1),
+                // Each child owns one share of the free space, centred on it:
+                // child `i` starts `(2i + 1) / 2n` of the way through it.
+                JustifyContent::SpaceAround => {
+                    mul(free, add(mul(ordinal, 2)?, 1)?)? / mul(count, 2)?
+                }
+                // `n + 1` equal gaps, so child `i` sits after `i + 1` of them.
+                JustifyContent::SpaceEvenly => mul(free, add(ordinal, 1)?)? / add(count, 1)?,
                 // A single child has no gap to distribute into, so it sits
                 // where start alignment puts it.
                 JustifyContent::FlexStart | JustifyContent::SpaceBetween => 0,
