@@ -475,3 +475,12 @@ an owner. “Unsupported” cannot replace delivery of a required mobile/native 
 - Evidence: [Windows run 35877828557](https://github.com/ryancinsight/metis/actions/runs/35877828557) passed visual-tests (342 tests/30.051s under 60s), browser build, presentation and comparator (9/9 captures, 1/1 asset). Local focused suites: browser 15/0.205s; capture 22/18.217s. Citation reachability scan: 22.905s before batching; full command: 0.490s after 5e3ed7e. Local WASM compile: 108s.
 - basis: 7ddca83.
 - Increment (2026-09-24): color tokens are declared once through `light-dark()` and themes choose only the color scheme; the status line leads with a state indicator, diagnostics read as a monospace log, cards are elevated on a darker page, section headings carry an accent rule, the primary action is taller and the command menu shows each item's shortcut from `aria-keyshortcuts`. The layout manifest and 360/800/1440 captures were re-recorded in Chromium 141 through Playwright 1.56.1 with classic scrollbars; 44px option targets hold and no viewport overflows. Firefox/WebKit captures and scale-2 evidence remain open.
+
+<a id="METIS-CI-TREE-REUSE-001"></a>
+## METIS-CI-TREE-REUSE-001 — Skip re-verifying a landed tree [patch]
+- Status: blocked; priority: verification; last-update: 2026-09-27.
+- Outcome: a default-branch push whose tree already passed a pull-request run skips the Windows gate instead of running it twice.
+- Scope: `.github/workflows/ci.yml` (`changes` and `gate` jobs), `scripts/tests/test_verify.py`.
+- Acceptance: the gate uploads `verified-tree-<tree>` after a green pull-request Windows gate; the push run finds it through the artifacts API, trusting only completed successful `pull_request` runs of `ci.yml` from this repository, and a test covers each rejected case (other tree, expired, fork, other workflow, event, status or conclusion).
+- Blocker: the lookup reads the artifact API's `workflow_run` field. The pinned Atlas conformance guard counts any `workflow_run` substring as a trigger; guards from atlas#301 on parse the triggers, but in member CI they measure `unresolved_references` on a depth-1 checkout (4 -> 232 on metis#418). Re-open when the guard measures citations against full history and the pin moves past atlas#301.
+- Prior work: metis#418 carried a tested implementation, dropped when that PR was reconciled with the gate from metis#424.
