@@ -23,6 +23,6 @@ pub use semantics::{
     SemanticTree,
 };
 pub use style::{
-    AlignItems, Color, ComputedStyle, Display, EdgeValues, FlexDirection, FontWeight,
+    AlignItems, Color, ComputedStyle, Display, EdgeValues, FlexDirection, FlexGrow, FontWeight,
     JustifyContent, LinearGradient, Shadow, Size,
 };

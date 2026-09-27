@@ -8,7 +8,8 @@ use metis_platform::framebuffer::Rect;
 use metis_platform::rasterizer::CornerRadius;
 
 use super::device::{add, dimension, minimum, scaled_geometry, sub, text_style, whole_pixels};
-use super::intrinsic::{Sizing, is_visible_popover, max_content_width};
+use super::grow::{self, GrowContainer, Grown};
+use super::intrinsic::{Sizing, border_box_width, is_visible_popover};
 use super::limits::validate_layout_tree;
 use super::popover::popover_error;
 
@@ -83,6 +84,7 @@ pub fn compute_layout(doc: &DomDocument, viewport: LayoutViewport) -> Result<Dis
         Rect::new(0, 0, viewport.width, viewport.height),
         viewport.scale,
         Sizing::Fill,
+        Grown::Natural,
     )?;
     list.popovers(&doc.root, viewport)?;
     Ok(list)
@@ -130,7 +132,18 @@ impl DisplayList {
         let mut cross_size = 0;
         let mut placements = Vec::new();
         let mut visible_children = 0;
-        for child in &element.children {
+        let plan = grow::plan(
+            element,
+            GrowContainer {
+                style,
+                row,
+                content_width,
+                available_height,
+                gap,
+                display_scale,
+            },
+        )?;
+        for (index, child) in element.children.iter().enumerate() {
             if matches!(child, DomNode::Element(child) if child.computed_style.display == Display::None || is_visible_popover(child))
             {
                 continue;
@@ -163,6 +176,7 @@ impl DisplayList {
                         Rect::new(child_x, child_y, available_width, available_height),
                         display_scale,
                         sizing,
+                        plan.as_ref().map_or(Grown::Natural, |plan| plan[index]),
                     )?;
                     (child_rect.width, child_rect.height)
                 }
@@ -267,23 +281,19 @@ impl DisplayList {
         available: Rect,
         display_scale: DisplayScale,
         sizing: Sizing,
+        grown: Grown,
     ) -> Result<Rect> {
         let style = &element.computed_style;
         if style.display == Display::None {
             return Ok(Rect::new(available.x, available.y, 0, 0));
         }
         let geometry = scaled_geometry(style, display_scale)?;
-        let fill = sub(
-            available.width,
-            add(geometry.margin.left, geometry.margin.right)?,
-        )?
-        .max(0);
-        let automatic = match sizing {
-            Sizing::Fill => fill,
-            Sizing::Content => max_content_width(element, display_scale)?.min(fill),
+        let width = match grown {
+            Grown::Width(width) => width,
+            Grown::Natural | Grown::Height(_) => {
+                border_box_width(element, available.width, sizing, display_scale)?
+            }
         };
-        let width = dimension(style.width, available.width, automatic, display_scale)?
-            .max(minimum(style.min_width, available.width, display_scale)?);
         let x = add(available.x, geometry.margin.left)?;
         let y = add(available.y, geometry.margin.top)?;
         let content_x = add(add(x, geometry.padding.left)?, geometry.border.left)?;
@@ -324,13 +334,17 @@ impl DisplayList {
             add(geometry.padding.top, geometry.padding.bottom)?,
             add(geometry.border.top, geometry.border.bottom)?,
         )?;
-        let height = dimension(
-            style.height,
-            available.height,
-            add(child_extent.content_height, vertical_edges)?.max(0),
-            display_scale,
-        )?
-        .max(minimum(style.min_height, available.height, display_scale)?);
+        let height = if let Grown::Height(height) = grown {
+            height
+        } else {
+            dimension(
+                style.height,
+                available.height,
+                add(child_extent.content_height, vertical_edges)?.max(0),
+                display_scale,
+            )?
+            .max(minimum(style.min_height, available.height, display_scale)?)
+        };
         let rect = Rect::new(x, y, width, height);
         // Free space exists only once the container's own extent is final: an
         // automatic height is derived from the children that just painted.

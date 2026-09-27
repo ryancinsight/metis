@@ -19,9 +19,10 @@ borders — capped at the available width, and redistribution places it.
 Revision: 2026-09-27 — `justify-content: space-around` and `space-evenly` are
 admitted. Each is one more per-child offset translated through the same
 mechanism: child `i` of `n` moves by `F·(2i + 1) / 2n` or `F·(i + 1) / (n + 1)`
-of the free space `F`. No paint path or allocation is added. Wrapping,
-`align-self` and `flex-grow` stay out of scope. `flex-grow` resizes a child
-rather than moving it, so translation cannot deliver it.
+of the free space `F`. No paint path or allocation is added. Wrapping and
+`align-self` stay out of scope. `flex-grow` resizes a child rather than moving
+it, so translation cannot deliver it; [ADR 0054](0054-flex-grow-planned-before-layout.md)
+plans it before layout instead.
 
 ## Context
 

@@ -354,3 +354,41 @@ fn gradients_outside_the_subset_are_rejected() {
         .expect_err("a color longhand takes no gradient");
     assert_eq!(error.code, ErrorCode::InvalidCssStyle);
 }
+
+#[test]
+fn parses_flex_grow_as_a_nonnegative_number() {
+    for (css, thousandths) in [
+        ("flex-grow: 0", 0),
+        ("flex-grow: 1", 1000),
+        ("flex-grow: 2.5", 2500),
+        ("flex-grow: .25", 250),
+        ("flex-grow: 1e2", 100_000),
+        ("flex-grow: 0.0004", 0),
+        ("flex-grow: 1000", 1_000_000),
+    ] {
+        assert_eq!(
+            ComputedStyle::parse(css)
+                .expect("admitted factor")
+                .flex_grow
+                .thousandths(),
+            thousandths,
+            "{css}"
+        );
+    }
+    assert_eq!(
+        ComputedStyle::default().flex_grow,
+        crate::style::FlexGrow::NONE
+    );
+    for css in [
+        "flex-grow: -1",
+        "flex-grow: 1px",
+        "flex-grow: auto",
+        "flex-grow: inf",
+        "flex-grow: NaN",
+        "flex-grow: 1000.5",
+        "flex-grow:",
+    ] {
+        let error = ComputedStyle::parse(css).expect_err("rejected factor");
+        assert_eq!(error.code, ErrorCode::InvalidCssStyle, "{css}");
+    }
+}

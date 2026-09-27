@@ -3,7 +3,7 @@
 //! [`VirtualList`] windows long lists so a host builds only visible items.
 //!
 //! Supports explicit, automatic and minimum sizes, margins, padding, flex
-//! alignment, rounded backgrounds and uniform borders, outer box shadows and
+//! growth and alignment, rounded backgrounds and uniform borders, outer box shadows and
 //! text. A visible `popover-anchor` element leaves normal flow and paints after
 //! the document at its laid-out anchor. Every declaration the style subset
 //! admits is painted; anything outside it is rejected when the style is parsed.
@@ -12,6 +12,10 @@ mod damage;
 mod device;
 mod display;
 mod geometry;
+mod grow;
+#[cfg(test)]
+#[path = "../layout_grow_tests.rs"]
+mod grow_tests;
 mod intrinsic;
 mod limits;
 mod popover;
