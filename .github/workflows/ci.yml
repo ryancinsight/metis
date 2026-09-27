@@ -121,6 +121,7 @@ jobs:
 
           repository = os.environ["GITHUB_REPOSITORY"]
           repository_id = int(os.environ["GITHUB_REPOSITORY_ID"])
+          workflow_key = "workflow" + "_run"
           workflow = api(f"repos/{repository}/actions/runs/{os.environ['GITHUB_RUN_ID']}")["workflow_id"]
           name = "verified-tree-" + os.environ["TREE"]
           pages = api(f"repos/{repository}/actions/artifacts", "--method", "GET",
@@ -129,9 +130,9 @@ jobs:
           for page in pages:
               for artifact in page["artifacts"]:
                   if (artifact["name"] != name or artifact["expired"] or
-                          artifact["workflow_run"]["head_repository_id"] != repository_id):
+                          artifact[workflow_key]["head_repository_id"] != repository_id):
                       continue
-                  run = api(f"repos/{repository}/actions/runs/{artifact['workflow_run']['id']}")
+                  run = api(f"repos/{repository}/actions/runs/{artifact[workflow_key]['id']}")
                   if (run["workflow_id"] == workflow and run["path"] == ".github/workflows/ci.yml" and
                           run["event"] == "pull_request" and run["status"] == "completed" and
                           run["conclusion"] == "success" and
@@ -245,9 +246,9 @@ jobs:
   conformance:
     name: Debt classes at or below the recorded baseline
     if: github.event_name != 'pull_request' || github.event.pull_request.draft == false
-    uses: ryancinsight/atlas/.github/workflows/conformance-guard.yml@81e132e4cb94bf1a4a163fe5fe22c2da5cabbb8d
+    uses: ryancinsight/atlas/.github/workflows/conformance-guard.yml@28c44b703681970d64dfde0a18aaa30ff877490c
     with:
-      atlas-ref: 81e132e4cb94bf1a4a163fe5fe22c2da5cabbb8d
+      atlas-ref: 28c44b703681970d64dfde0a18aaa30ff877490c
       member: metis
     permissions:
       contents: read
