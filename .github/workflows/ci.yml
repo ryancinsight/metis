@@ -515,3 +515,38 @@ jobs:
           path: output/browser/runtime/text-cross-engine.json
           if-no-files-found: error
           retention-days: 7
+
+  gate:
+    name: Metis gate
+    if: always()
+    needs: [verify, workflow-lint, lockfile, adr-index, conformance, semver, fuzz, browser-assets, browser-runtime, browser-text-cross-engine]
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    permissions: {}
+    steps:
+      - name: Check required job results
+        env:
+          METIS_GATE_NEEDS: ${{ toJSON(needs) }}
+          METIS_GATE_DRAFT: ${{ github.event_name == 'pull_request' && github.event.pull_request.draft || false }}
+        run: |
+          python3 - <<'PY'
+          import json
+          import os
+          import sys
+
+          if os.environ["METIS_GATE_DRAFT"].lower() == "true":
+              print("draft pull requests are not merge-ready", file=sys.stderr)
+              raise SystemExit(1)
+
+          needs = json.loads(os.environ["METIS_GATE_NEEDS"])
+          invalid = sorted(
+              job
+              for job, result in needs.items()
+              if not isinstance(result, dict)
+              or result.get("result") not in {"success", "skipped"}
+          )
+          if invalid:
+              print("required jobs did not succeed: " + ", ".join(invalid), file=sys.stderr)
+              raise SystemExit(1)
+          print("All required Metis jobs completed.")
+          PY
