@@ -288,8 +288,18 @@ class WorkflowContractTests(unittest.TestCase):
         self.assert_aggregate(self.source)
 
     def test_aggregate_rejects_missing_dependency_and_draft_success(self):
-        for broken in (self.source.replace(", browser-text-cross-engine]", "]", 1),
-                       self.source.replace("          exit 1\n", "          exit 0\n", 1)):
+        missing_dependency = re.sub(
+            r"(?m)^(    needs: \[[^\]]*), browser-text-cross-engine\]$",
+            r"\1]",
+            self.source,
+            count=1,
+        )
+        draft_success = self.source.replace(
+            "Draft pull requests are never merge-ready; this check stays red until ready_for_review.\" >&2\n          exit 1\n",
+            "Draft pull requests are never merge-ready; this check stays red until ready_for_review.\" >&2\n          exit 0\n",
+            1,
+        )
+        for broken in (missing_dependency, draft_success):
             with self.subTest(mutation=broken[-80:]), self.assertRaises(AssertionError):
                 self.assert_aggregate(broken)
 
