@@ -29,6 +29,13 @@ class RequiredGateTests(unittest.TestCase):
         if needs is None:
             raise AssertionError("the Metis gate job must declare every dependency")
         cls.dependencies = tuple(job.strip() for job in needs.group(1).split(","))
+        expected_jobs = re.search(
+            r"(?m)^          METIS_GATE_EXPECTED_JOBS: '([^']+)'$",
+            cls.block,
+        )
+        if expected_jobs is None:
+            raise AssertionError("the Metis gate must declare its expected job set")
+        cls.expected_jobs = tuple(json.loads(expected_jobs.group(1)))
         script = re.search(
             r"(?ms)^          python3 - <<'PY'\n(?P<script>.*?)^          PY$",
             cls.block,
@@ -65,6 +72,7 @@ class RequiredGateTests(unittest.TestCase):
             set(job_ids) - {"gate"},
         )
         self.assertEqual(len(self.dependencies), len(set(self.dependencies)))
+        self.assertEqual(set(self.dependencies), set(self.expected_jobs))
         self.assertIn("name: Metis gate", self.block)
         self.assertIn("if: always()", self.block)
         self.assertIn("permissions: {}", self.block)
@@ -84,6 +92,7 @@ class RequiredGateTests(unittest.TestCase):
     def run_gate(self, results, *, draft=False):
         environment = os.environ.copy()
         environment["METIS_GATE_NEEDS"] = json.dumps(results)
+        environment["METIS_GATE_EXPECTED_JOBS"] = json.dumps(self.expected_jobs)
         environment["METIS_GATE_DRAFT"] = str(draft).lower()
         return subprocess.run(
             [sys.executable, "-c", self.script],
@@ -137,6 +146,20 @@ class RequiredGateTests(unittest.TestCase):
         draft = self.run_gate(passed, draft=True)
         self.assertEqual(draft.returncode, 1)
         self.assertIn("draft pull requests", draft.stderr)
+
+        incomplete = dict(passed)
+        incomplete.pop("verify")
+        for results in (incomplete, {}):
+            with self.subTest(results=results):
+                outcome = self.run_gate(results)
+                self.assertEqual(outcome.returncode, 1)
+                self.assertIn("job set", outcome.stderr)
+
+        unknown = dict(passed)
+        unknown["verify"] = {"result": "neutral"}
+        outcome = self.run_gate(unknown)
+        self.assertEqual(outcome.returncode, 1)
+        self.assertIn("verify", outcome.stderr)
 
     def test_required_workflow_uses_job_level_path_filtering(self):
         triggers = self.source.split("\npermissions:\n", 1)[0]

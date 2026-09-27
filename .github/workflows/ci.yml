@@ -577,6 +577,7 @@ jobs:
       - name: Check required job results
         env:
           METIS_GATE_NEEDS: ${{ toJSON(needs) }}
+          METIS_GATE_EXPECTED_JOBS: '["changes","verify","workflow-lint","lockfile","adr-index","conformance","semver","fuzz","browser-assets","browser-runtime","browser-text-cross-engine"]'
           METIS_GATE_DRAFT: ${{ github.event_name == 'pull_request' && github.event.pull_request.draft || false }}
         run: |
           python3 - <<'PY'
@@ -588,7 +589,19 @@ jobs:
               print("draft pull requests are not merge-ready", file=sys.stderr)
               raise SystemExit(1)
 
+          expected_jobs = json.loads(os.environ["METIS_GATE_EXPECTED_JOBS"])
           needs = json.loads(os.environ["METIS_GATE_NEEDS"])
+          if (
+              not isinstance(expected_jobs, list)
+              or any(not isinstance(job, str) for job in expected_jobs)
+              or len(expected_jobs) != len(set(expected_jobs))
+          ):
+              print("expected Metis job set is invalid", file=sys.stderr)
+              raise SystemExit(1)
+          if not isinstance(needs, dict) or set(needs) != set(expected_jobs):
+              print("required job set does not match expected dependencies", file=sys.stderr)
+              raise SystemExit(1)
+
           invalid = sorted(
               job
               for job, result in needs.items()
