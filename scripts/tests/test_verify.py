@@ -257,6 +257,17 @@ class WorkflowContractTests(unittest.TestCase):
             with self.subTest(guard=guard):
                 self.assertIn(f"ryancinsight/atlas/.github/workflows/{guard}@{atlas}", self.source)
 
+    def test_artifact_budget_runs_inside_the_pipeline_where_it_has_a_base(self):
+        job = self.source.split("\n  artifact-budget:\n", 1)[1].split("\n  fuzz:\n", 1)[0]
+        self.assertIn(
+            "    if: >-\n"
+            "      github.event_name == 'push' ||\n"
+            "      (github.event_name == 'pull_request' && github.event.pull_request.draft == false)\n",
+            job,
+        )
+        self.assertIn("uses: ryancinsight/atlas/.github/workflows/artifact-budget.yml@", job)
+        self.assertFalse((self.workflow.parent / "artifact-budget.yml").exists())
+
     def test_draft_pull_requests_and_unsupported_hosts_are_excluded(self):
         draft_guard = "if: github.event_name != 'pull_request' || github.event.pull_request.draft == false"
         self.assertEqual(self.source.count(draft_guard), 4)

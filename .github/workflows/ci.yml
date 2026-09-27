@@ -210,6 +210,20 @@ jobs:
     permissions:
       contents: read
 
+  artifact-budget:
+    name: Artifact budget
+    # Runs where the ratchet has a base: the pull request's base or the
+    # pushed range's parent. A scheduled run has neither and would judge
+    # every board and image against the absolute budget instead.
+    if: >-
+      github.event_name == 'push' ||
+      (github.event_name == 'pull_request' && github.event.pull_request.draft == false)
+    uses: ryancinsight/atlas/.github/workflows/artifact-budget.yml@d22a9895b5967b2ccdd76668a95e6fc3851c99a7
+    with:
+      atlas-ref: d22a9895b5967b2ccdd76668a95e6fc3851c99a7
+    permissions:
+      contents: read
+
   fuzz:
     name: LibFuzzer parser campaign
     if: github.event_name == 'schedule' || github.event_name == 'workflow_dispatch'
@@ -569,7 +583,7 @@ jobs:
   gate:
     name: Metis gate
     if: always()
-    needs: [changes, verify, workflow-lint, lockfile, adr-index, conformance, semver, fuzz, browser-assets, browser-runtime, browser-text-cross-engine]
+    needs: [changes, verify, workflow-lint, lockfile, adr-index, conformance, semver, artifact-budget, fuzz, browser-assets, browser-runtime, browser-text-cross-engine]
     runs-on: ubuntu-24.04
     timeout-minutes: 5
     permissions: {}
@@ -577,7 +591,7 @@ jobs:
       - name: Check required job results
         env:
           METIS_GATE_NEEDS: ${{ toJSON(needs) }}
-          METIS_GATE_EXPECTED_JOBS: '["changes","verify","workflow-lint","lockfile","adr-index","conformance","semver","fuzz","browser-assets","browser-runtime","browser-text-cross-engine"]'
+          METIS_GATE_EXPECTED_JOBS: '["changes","verify","workflow-lint","lockfile","adr-index","conformance","semver","artifact-budget","fuzz","browser-assets","browser-runtime","browser-text-cross-engine"]'
           METIS_GATE_DRAFT: ${{ github.event_name == 'pull_request' && github.event.pull_request.draft || false }}
         run: |
           python3 - <<'PY'
