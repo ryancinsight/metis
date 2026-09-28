@@ -6,11 +6,14 @@ import importlib.util
 import json
 import pathlib
 import struct
+import sys
 import tempfile
 import unittest
 
 
 ROOT = pathlib.Path(__file__).resolve().parents[2]
+SCRIPTS = ROOT / "scripts"
+sys.path.insert(0, str(SCRIPTS))
 
 
 class BrowserAssetContractTests(unittest.TestCase):
@@ -134,7 +137,7 @@ class BrowserAssetContractTests(unittest.TestCase):
         self.assertIn('OUTPUT / "assets" / "metis-mark.svg"', browser_script)
 
     def test_consumer_gallery_is_explicit_and_bounded(self):
-        spec = importlib.util.spec_from_file_location("metis_browser_packager", ROOT / "scripts" / "browser.py")
+        spec = importlib.util.spec_from_file_location("metis_browser_packager", SCRIPTS / "browser.py")
         self.assertIsNotNone(spec)
         self.assertIsNotNone(spec.loader)
         browser = importlib.util.module_from_spec(spec)

@@ -277,7 +277,7 @@ def summarize(samples: Iterable[ProcessSample]) -> Mapping[str, object]:
     }
 
 
-def _statistics(values: Iterable[int]) -> Mapping[str, float | int | None]:
+def summarize_numeric_samples(values: Iterable[int | float]) -> Mapping[str, float | int | None]:
     """Return a bounded sample spread and an explicitly approximate interval."""
     numbers = tuple(float(value) for value in values)
     if not numbers:
@@ -302,7 +302,7 @@ def aggregate_measurements(measurements: Iterable[Mapping[str, object]]) -> Mapp
     runs = tuple(measurements)
     scalar_fields = ("duration_ms", "startup_observation_ms")
     scalars = {
-        field: _statistics(
+        field: summarize_numeric_samples(
             measurement[field] for measurement in runs
             if isinstance(measurement.get(field), (int, float))
         )
@@ -313,7 +313,7 @@ def aggregate_measurements(measurements: Iterable[Mapping[str, object]]) -> Mapp
     for field in summary_fields:
         summary[field] = {}
         for phase in ("initial", "final", "peak", "growth"):
-            summary[field][phase] = _statistics(
+            summary[field][phase] = summarize_numeric_samples(
                 measurement["summary"][field][phase]
                 for measurement in runs
                 if isinstance(measurement.get("summary"), Mapping)
@@ -333,7 +333,7 @@ def aggregate_measurements(measurements: Iterable[Mapping[str, object]]) -> Mapp
             "count": len(captures),
             "sha256": digests[0] if len(set(digests)) == 1 else None,
             "repeat_sha256_match": len(captures) == len(runs) and len(set(digests)) == 1,
-            "bytes": _statistics(
+            "bytes": summarize_numeric_samples(
                 capture["bytes"] for capture in captures if isinstance(capture.get("bytes"), int)
             ),
         }

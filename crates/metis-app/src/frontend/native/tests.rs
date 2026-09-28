@@ -339,3 +339,52 @@ fn native_command_accessibility_action_applies_theme_only_when_menu_is_open() {
     assert_eq!(form.app.theme(), ApplicationTheme::Dark);
     assert!(!form.app.command_menu_open());
 }
+
+#[test]
+fn native_popup_dismisses_without_clicking_through_and_tracks_dark_theme() {
+    let (transport, _peer) = MemoryTransport::pair();
+    let app = FrontendApp::new(transport, 800, 600).expect("form");
+    let mut form = NativeForm {
+        app,
+        pid: 1,
+        patient_id: "patient".to_owned(),
+        focused: true,
+    };
+    let submit = submit_rect(&form.app).expect("submit surface");
+    form.app.toggle_command_menu().expect("open menu");
+    assert_eq!(submit_rect(&form.app).expect("stationary submit"), submit);
+    assert!(
+        form.handle_pointer_up(submit.x, submit.y)
+            .expect("dismiss without IPC")
+    );
+    assert!(!form.app.command_menu_open());
+    assert_eq!(form.app.state(), &metis_frontend::FormState::Idle);
+    form.app.toggle_command_menu().expect("open menu");
+    let menu = super::command_rect(&form.app, "command-menu").expect("menu surface");
+    assert!(
+        !form
+            .handle_pointer_up(menu.x + 1, menu.y + 1)
+            .expect("menu padding")
+    );
+    assert!(form.app.command_menu_open());
+    let dark = super::command_rect(&form.app, "command-theme-dark").expect("dark item");
+    assert!(form.handle_pointer_up(dark.x, dark.y).expect("select dark"));
+    assert_eq!(form.app.theme(), ApplicationTheme::Dark);
+    let toggle = command_menu_toggle_rect(&form.app).expect("dark toggle");
+    assert!(
+        form.handle_pointer_up(toggle.x, toggle.y)
+            .expect("reopen dark menu")
+    );
+    let system = super::command_rect(&form.app, "command-theme-system").expect("system item");
+    assert!(
+        form.handle_pointer_up(system.x, system.y)
+            .expect("select system")
+    );
+    assert_eq!(form.app.theme(), ApplicationTheme::System);
+    form.app
+        .toggle_command_menu()
+        .expect("open before focus loss");
+    form.handle_events(&[WindowEvent::FocusLost])
+        .expect("focus loss");
+    assert!(!form.app.command_menu_open());
+}

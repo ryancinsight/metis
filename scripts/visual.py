@@ -13,7 +13,7 @@ import sys
 import uuid
 import xml.etree.ElementTree as ET
 
-CAPTURES = ("form", "form-success", "form-edited", "form-rejected",
+CAPTURES = ("form", "form-menu", "form-menu-dark", "form-success", "form-edited", "form-rejected",
             "form-corrected", "form-disconnected", "form-recovered")
 PROBES = ("probe-label", "probe-geometry", "probe-color")
 ASSETS = ("image-placement",)

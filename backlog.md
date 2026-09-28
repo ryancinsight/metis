@@ -851,3 +851,25 @@ an owner. “Unsupported” cannot replace delivery of a required mobile/native 
 ## METIS-GALLERY-001 — User file drop gallery [patch]
 - Status: done; delivery: [PR #81](https://github.com/ryancinsight/metis/pull/81), merge `18cf147`.
 - Outcome: Browser gallery accepts a complete public 409-file DICOM study through the bounded Metis drop area and renders three RITK-owned orthogonal frames; the file-backed Edge run, rejection probes and full Windows gate passed.
+
+<a id="METIS-WORKBENCH-DESIGN-001"></a>
+## METIS-WORKBENCH-DESIGN-001 — Refine browser visual hierarchy
+- Status: blocked; priority: P2; integrator: design-session; last-update: 2026-09-22.
+- Outcome: distinguish primary actions, diagnostics and content through typography, palette and spacing.
+- Scope: browser CSS, responsive capture evidence and browser manual; native renderer and IME work excluded.
+- Acceptance: inspected desktop/mobile and theme states; no horizontal overflow; 44px option targets; browser asset checks pass.
+- Evidence: WASM release build and 15 browser asset checks pass; 360/800/1440px captures updated; independent CSS review passes.
+- Blocker: full verifier visual-tests stage exceeds its 60-second bound; re-open after that stage passes within the existing budget.
+
+<a id="METIS-NATIVE-POPOVER-001"></a>
+## METIS-NATIVE-POPOVER-001 — Anchored native command menu
+- Status: blocked; priority: P1; integrator: design-session; last-update: 2026-09-22.
+- Outcome: command menus float above stationary content; controls use plain labels.
+- Scope: ui-lang popup layout and element bounds, frontend markup, native hit testing and dismissal.
+- Acceptance: anchor-relative placement, topmost paint, unchanged form geometry, theme-independent hits and dismissal without click-through.
+- Verification: layout/frontend/native nextest, full committed verifier, inspected render.
+- Decision: [ADR 0043](docs/adr/0043-anchored-popovers.md).
+
+- Evidence: 62 layout and 56 frontend/native tests pass; Clippy passes; 339 Python tests pass; real desktop open/theme/outside-click journey passes.
+- Blocker: full gate and golden provenance require a stable dependency lock after concurrent mesh work and mainline citation restoration; re-open on those integrations.
+
