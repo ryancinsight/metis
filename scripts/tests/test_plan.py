@@ -29,9 +29,6 @@ class PlanIntegrityTests(unittest.TestCase):
                 "- See [missing](docs/missing.md)\n",
                 encoding="utf-8",
             )
-            (root / "checklist.md").write_text(
-                "- [fixture](backlog.md#METIS-TEST-001)\n", encoding="utf-8"
-            )
             findings = plan.check_plan(root)
             self.assertTrue(any("unknown dependency METIS-MISSING-001" in value for value in findings))
             self.assertTrue(any("missing local link target" in value for value in findings))
@@ -46,7 +43,6 @@ class PlanIntegrityTests(unittest.TestCase):
                 "- See [Atlas](../../backlog.md#metis-unregistered-member)\n",
                 encoding="utf-8",
             )
-            (root / "checklist.md").write_text("", encoding="utf-8")
             self.assertEqual(plan.check_plan(root), [])
 
     def test_missing_local_anchor_is_reported(self):
@@ -59,7 +55,6 @@ class PlanIntegrityTests(unittest.TestCase):
                 "- See [manual](docs/manual.md#missing)\n",
                 encoding="utf-8",
             )
-            (root / "checklist.md").write_text("", encoding="utf-8")
             manual = root / "docs" / "manual.md"
             manual.parent.mkdir()
             manual.write_text("# Existing\n", encoding="utf-8")

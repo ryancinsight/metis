@@ -60,7 +60,6 @@ def check_plan(root: pathlib.Path = ROOT) -> list[str]:
     root = root.resolve()
     findings: list[str] = []
     backlog = root / "backlog.md"
-    checklist = root / "checklist.md"
     if not backlog.is_file():
         return [f"missing plan board: {backlog}"]
 
@@ -109,20 +108,16 @@ def check_plan(root: pathlib.Path = ROOT) -> list[str]:
                         f"{backlog}:{line_number}: unknown dependency {dependency_id}: {item_id}"
                     )
 
-    for document in (backlog, checklist):
-        if not document.is_file():
-            findings.append(f"missing plan document: {document}")
-            continue
-        for number, line in enumerate(document.read_text(encoding="utf-8").splitlines(), 1):
-            for match in LINK.finditer(line):
-                target = _local_target(document, match.group("destination"), root)
-                if target is None:
-                    continue
-                path, fragment = target
-                if not path.is_file():
-                    findings.append(f"{document}:{number}: missing local link target: {path}")
-                elif fragment and fragment not in _fragment_names(path):
-                    findings.append(f"{document}:{number}: missing local link anchor: {fragment}")
+    for number, line in enumerate(lines, 1):
+        for match in LINK.finditer(line):
+            target = _local_target(backlog, match.group("destination"), root)
+            if target is None:
+                continue
+            path, fragment = target
+            if not path.is_file():
+                findings.append(f"{backlog}:{number}: missing local link target: {path}")
+            elif fragment and fragment not in _fragment_names(path):
+                findings.append(f"{backlog}:{number}: missing local link anchor: {fragment}")
     return sorted(findings)
 
 
