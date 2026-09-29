@@ -60,16 +60,19 @@ jobs:
 
           changed = Path(os.environ["RUNNER_TEMP"], "metis-changed-files").read_bytes()
           paths = [path for path in changed.split(b"\0") if path]
-          # Unknown files stay code; only known documentation formats skip heavy gates.
+          # Unknown files stay code; only known documentation formats and the git
+          # hooks, which run on a developer's machine and in no job here, skip
+          # heavy gates.
           markdown_suffixes = (b".md", b".mdx", b".rst", b".adoc")
           documentation_asset_suffixes = (
               b".json", b".jpg", b".jpeg", b".png", b".svg", b".webp", b".pdf"
           )
 
-          def is_documentation(path):
+          def cannot_affect_build(path):
               lowered = path.lower()
               return (
-                  lowered.endswith(markdown_suffixes)
+                  lowered.startswith(b".githooks/")
+                  or lowered.endswith(markdown_suffixes)
                   or lowered == b"license"
                   or lowered.endswith(b"/license")
                   or (
@@ -78,7 +81,7 @@ jobs:
                   )
               )
 
-          has_code_changes = any(not is_documentation(path) for path in paths)
+          has_code_changes = any(not cannot_affect_build(path) for path in paths)
           with open(os.environ["GITHUB_OUTPUT"], "a", encoding="utf-8") as output:
               output.write(f"code={str(has_code_changes).lower()}\n")
           PY
