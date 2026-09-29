@@ -424,7 +424,7 @@ standalone replay from source `b671ae72a20bb6d113de35314e73874f197d2a83`, Metis
 `0e2e1bbb2d81e16dd9c694ba46a9e9710e034417` and Cargo.lock SHA-256
 `c1ccbc7785cce37d4e2322002fd19b0bb4ab03fec03ab7d4154fa6cfbcf470b1`. The
 saved 94-file MRI-DIR study still produces the byte-identical 1280 × 800 frame
-(`259dd791...`, 411,589 non-black pixels); executable SHA-256 is
+(411,589 non-black pixels); executable SHA-256 is
 `2f44ae2f9a3facc7c8659e5ac246af235021ab9a3e84ffabbff9d2d823099035`.
 DICOM discovery, decoding, geometry and clinical presentation remain RITK-owned,
 while Metis remains the format-neutral host.
@@ -499,8 +499,8 @@ initial comparison limits.
 
 | Reference | Inspected baseline | Qualification |
 | --- | --- | --- |
-| egui ecosystem | [0.36.1 release][E0], `4c1f2fae95475a40e524884ebb298bcb1714b08e`, 2026-08-07 | Versioned crate docs where available; IME/extras `latest` resolved to 0.36.1; accessibility/template `main` pages are dated observations. |
-| GPUI / Zed | Official `main` sources read on the inspection date; observed head `5a9b9558db01a6b906cec2fb70a797affdc58cdd` | Source inventory, not a checked-out build or proof every API is in the published GPUI crate. |
+| egui ecosystem | [0.36.1 release][E0], [commit](https://github.com/emilk/egui/commit/4c1f2fae95475a40e524884ebb298bcb1714b08e), 2026-08-07 | Versioned crate docs where available; IME/extras `latest` resolved to 0.36.1; accessibility/template `main` pages are dated observations. |
+| GPUI / Zed | Official `main` sources read on the inspection date; observed head [commit](https://github.com/zed-industries/zed/commit/5a9b9558db01a6b906cec2fb70a797affdc58cdd) | Source inventory, not a checked-out build or proof every API is in the published GPUI crate. |
 | Tauri | [tauri-v2.11.5 release][T0], 2026-07-01; v2 documentation read on inspection date | Documentation can describe newer integrations than a release; pin application/driver revisions when building comparison fixtures. |
 | Iced | [0.14.0 crate and API docs][I0], released 2025-12-07; official examples and release notes [I1] [I2] | Versioned docs describe Windows/macOS/Linux/Web, Elm-style state/messages/view/update, async tasks, native rendering and wgpu/tiny-skia paths. The former DOM runtime is archived [I3]; DOM reuse is not inferred from current Iced. |
 | Svelte / SvelteKit | Official Svelte 5 [overview][S0], [runes][S1] and [custom-elements][S2] docs, plus SvelteKit [introduction][S3] and [project types][S4], inspected 2026-09-18 | Current documentation describes compiler-generated JavaScript/CSS components, rune-based reactivity, custom-element output and configurable SSR/CSR/prerendering. It is a web-component/deployment reference, not evidence for Rust/WASM memory, native-window, permission or installer parity. |
