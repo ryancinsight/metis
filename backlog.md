@@ -484,3 +484,99 @@ an owner. “Unsupported” cannot replace delivery of a required mobile/native 
 - Acceptance: the gate uploads `verified-tree-<tree>` after a green pull-request Windows gate; the push run finds it through the artifacts API, trusting only completed successful `pull_request` runs of `ci.yml` from this repository, and a test covers each rejected case (other tree, expired, fork, other workflow, event, status or conclusion).
 - Blocker: the lookup reads the artifact API's `workflow_run` field. The pinned Atlas conformance guard counts any `workflow_run` substring as a trigger; guards from atlas#301 on parse the triggers, but in member CI they measure `unresolved_references` on a depth-1 checkout (4 -> 232 on metis#418). Re-open when the guard measures citations against full history and the pin moves past atlas#301.
 - Prior work: metis#418 carried a tested implementation, dropped when that PR was reconciled with the gate from metis#424.
+
+<a id="METIS-SEC-HTTP-PRINCIPAL-001"></a>
+## METIS-SEC-HTTP-PRINCIPAL-001 — Bind the HTTP host to the launcher principal [minor]
+- Status: todo; priority: correctness; needs: none
+- Outcome: an HTTP session opens only for the principal the launcher supplied, matching the WebSocket path, and a local client cannot fill the session table.
+- Scope: `crates/metis-backend/src/http.rs`, `crates/metis-app/src/backend.rs`, http tests.
+- Acceptance: `open_session` derives its trusted context from the request principal (http.rs:127-131) while `run_http_service` only prints the launcher principal (backend.rs:270); `run_browser_service` binds it (backend.rs:209-216). Test: a handshake with another principal returns the invalid-principal status, the launcher principal then returns 200, and nine earlier handshakes cannot lock it out; the table evicts at token expiry. If label-only HTTP sessions are the intended design, record it in an ADR and delete the dead parameter instead.
+- basis: 7b50219
+
+<a id="METIS-SEC-PROCESS-DEADLINE-001"></a>
+## METIS-SEC-PROCESS-DEADLINE-001 — Bound scoped process runs past descendant pipes [patch]
+- Status: todo; priority: correctness; needs: none
+- Outcome: `ScopedProcess::run` returns within its deadline plus cleanup even when a descendant holds the child stdout.
+- Scope: `crates/metis-platform/src/scoped_process.rs`, its tests.
+- Acceptance: Under `DirectChild` containment `std::thread::scope` joins pipe readers that a descendant keeps open (scoped_process.rs:315-336); `metis-cli/src/process.rs:96-100` closes the job before joining. Test on Windows reusing the descendant pattern in `metis-backend/src/supervisor/tests.rs:70-101`: a descendant holds stdout 60 s and `run` returns a typed deadline or pipe error within the derived bound.
+- basis: 7b50219
+
+<a id="METIS-SEC-PYTHON-WAIT-001"></a>
+## METIS-SEC-PYTHON-WAIT-001 — Detach and bound the Python native host waits [patch]
+- Status: todo; priority: correctness; needs: none
+- Outcome: no Python thread blocks while attached to the interpreter behind a native request, and every native wait has a deadline.
+- Scope: `crates/metis-python/src/native/windows.rs`, `host.rs`, pytest suite.
+- Acceptance: The `generation` getter takes a plain `Mutex::lock` while attached (windows.rs:31-42) and `wait_events` holds it up to 30 s; `NativeApplication::new` and `Client::request` wait without deadline (host.rs:89, :140). Test on GIL and free-threaded interpreters: one thread in `wait_events(timeout_ms=2000)`, another reading `generation`, and a counter thread advancing throughout.
+- basis: 7b50219
+
+<a id="METIS-SEC-INPUT-001"></a>
+## METIS-SEC-INPUT-001 — Bound file reads and encoded separators in trust-boundary code [patch]
+- Status: todo; priority: correctness; needs: none
+- Outcome: archive and served-file reads are bounded at the open handle and URI segments reject an encoded backslash.
+- Scope: `crates/metis-cli/src/build/install/archive.rs`, `build/install.rs`, `serve.rs`, `crates/metis-core/src/uri_path.rs`.
+- Acceptance: Archive size is checked by path then read unbounded with infallible allocation (archive.rs:22-28, :79); `serve.rs:44` reads before its 32 MiB check; `install.rs:335` sets permissions by path after `create_new`; `%5C` decodes into a segment (uri_path.rs:25). Tests: an over-bound reader is rejected without a full read; `app:open/..%5Cx` is `DeepLinkError::Malformed`. `read_archive` splits into a bounded read and `parse(&[u8])`, the fuzz seam for METIS-FUZZ-PARSERS-001.
+- basis: 7b50219
+
+<a id="METIS-SEC-UNSAFE-001"></a>
+## METIS-SEC-UNSAFE-001 — Mechanize and tighten the Windows unsafe surface [patch]
+- Status: todo; priority: correctness; needs: none
+- Outcome: `clippy::undocumented_unsafe_blocks` denies in the workspace and three hardening defects in the CLI Windows code are closed.
+- Scope: `Cargo.toml`, `crates/metis-cli/src/windows/database.rs`, `dev/watcher/windows.rs`.
+- Acceptance: The MSI `Handle` is `Send` though its SAFETY text assumes the creating thread (database.rs:5); the watcher encodes paths lossily, leaks the change handle when the spawn fails and describes an INFINITE wait as bounded (watcher/windows.rs:84-173). Tests: a `compile_fail` doctest moving a `Database` across threads; an `OsString` holding an unpaired surrogate yields an error or the exact watched path; deleting any SAFETY comment fails clippy.
+- basis: 7b50219
+
+<a id="METIS-FUZZ-PARSERS-001"></a>
+## METIS-FUZZ-PARSERS-001 — Fuzz every untrusted-input parser [patch]
+- Status: todo; priority: verification; needs: none
+- Outcome: each parser below has a fuzz target and a committed seed corpus that runs under a finite budget.
+- Scope: `fuzz/`, the parser modules named below.
+- Acceptance: Uncovered: `FragmentPatchSet::decode`, `FragmentAction::decode`, `DeepLink::parse`, `HostOrigin::parse`, `WindowState::decode`, `Accelerator::parse`, `RoutePattern::parse` (metis-core, no manifest change); `read_frame` (metis-ipc); `parse_markup`, `ComputedStyle::parse`, `RasterImage::decode` (metis-ui-lang); `Typeface::parse` (metis-platform); archive parse (metis-cli, after METIS-SEC-INPUT-001). No crash per target within the committed time budget.
+- basis: 7b50219
+
+<a id="METIS-MEM-SURFACE-001"></a>
+## METIS-MEM-SURFACE-001 — Write each surface pixel once per paint and once per resize batch [patch]
+- Status: todo; priority: tightening; needs: none
+- Outcome: resize fills the surface once, a repaint skips the backdrop clear a covering opaque fill repeats, and one resize batch allocates one surface.
+- Scope: `crates/metis-platform/src/framebuffer.rs`, `crates/metis-frontend/src/presentation.rs`, `app.rs`, `crates/metis-app/src/frontend/native.rs`.
+- Acceptance: Zero-fill, backdrop clear and the root fill write the same pixels (framebuffer.rs:178-182, presentation.rs:176-186): 3.84 MB per resize and one redundant pass per full repaint at 800x600. Each superseded `Resized` in a batch allocates and repaints (native.rs:121-129). Oracle: the bitwise repaint differential tests stay green; a counting allocator over `[Resized(640,480), Resized(700,500), Resized(800,600)]` sees one surface allocation; `benches/frame.rs` shows the pass removed.
+- basis: 7b50219
+
+<a id="METIS-MEM-SHADOW-001"></a>
+## METIS-MEM-SHADOW-001 — Store shadow masks without the empty interior [patch]
+- Status: todo; priority: tightening; needs: none
+- Outcome: a shadow mask retains only its non-hole runs, so large cards stay under the memo generation and the memo reuses its table across rolls.
+- Scope: `crates/metis-platform/src/rasterizer/shadow/mask.rs`, `memo.rs`, `glyph_cache.rs`.
+- Acceptance: About 82% of a 760x225 blur-10 mask is zero bytes composite skips (mask.rs:143-149, :204-214), and a mask over 4 MiB is never retained (memo.rs:59-62), so a 3000x1800 card on a 4K surface re-renders each repaint; the memo drops its table at each roll and undercounts entry overhead (memo.rs:63-66). Output is unchanged, so no golden moves. Oracle: mask footprint <= extent - hole + 16 x rows; the large card renders once across two repaints; no table reallocation after the first roll.
+- basis: 7b50219
+
+<a id="METIS-PERF-IDLE-001"></a>
+## METIS-PERF-IDLE-001 — Stop rebuilding accessibility and layout when nothing changed [patch]
+- Status: todo; priority: tightening; needs: none
+- Outcome: an idle event batch allocates nothing and a click reuses the painted layout for hit-testing.
+- Scope: `crates/metis-platform/src/native/application.rs`, `native/window.rs`, `crates/metis-app/src/frontend/native.rs`, `native_accessibility.rs`, `crates/metis-frontend/src/app.rs`.
+- Acceptance: Every 250 ms batch, including empty ones, rebuilds and deep-clones the accessibility tree (about 430 allocations, application.rs:195-202, window.rs:143-146); a click recomputes the whole layout up to four times through `command_rect` (native.rs:189-217, :437-450, verified at basis) though `FrontendApp` holds the painted display list. Oracle: a counting allocator over the loop with empty batches sees zero allocations and zero provider updates after the first frame; `handle_pointer_up` on a miss allocates nothing.
+- basis: 7b50219
+
+<a id="METIS-MEM-RENDER-001"></a>
+## METIS-MEM-RENDER-001 — Render from shared ids and text, and skip unchanged DOM writes [minor]
+- Status: todo; priority: tightening; needs: none
+- Outcome: an unchanged-state render allocates only the new display list spine and `DisplayCommand` is at most 56 bytes.
+- Scope: `crates/metis-frontend/src/presentation.rs`, `focus.rs`, `crates/metis-ui-lang/src/dom.rs`, `layout/display.rs`, `layout/geometry.rs`, `layout/slots.rs`.
+- Acceptance: A keystroke render builds about 310 allocations: semantic tree, layout, string sets, and id/text copies in `ElementRect`/`DrawText` (display.rs:17-94); `set_text_content` and `set_attribute` replace equal values (dom.rs:87-110); gradient and image payloads set the enum to about 104 bytes. Breaks the ui-lang display API; all callers change in one PR. Oracle: counting allocator bound on `render()`; `size_of::<DisplayCommand>() <= 56` const assertion; pinned keystroke bench.
+- basis: 7b50219
+
+<a id="METIS-MEM-WEB-001"></a>
+## METIS-MEM-WEB-001 — Write only changed browser DOM state and reuse transfer buffers [patch]
+- Status: todo; priority: tightening; needs: none
+- Outcome: a keystroke mutates only the changed nodes and file drop and canvas polling allocate per batch, not per item.
+- Scope: `crates/metis-web/src/view.rs`, `browser/listeners.rs`, `browser/file_drop.rs`, `canvas/events/queue.rs`.
+- Acceptance: Each input event issues 147 DOM writes and 49 lookups (view.rs:14-321, :464-476); file drop allocates and zero-fills a chunk per file (file_drop.rs:387-411: 94 chunks for the 49.8 MB study); each canvas poll boxes its events (queue.rs:41-42). Oracle: a MutationObserver run through `scripts/browser_input_latency.py` sees at most four records per keystroke; allocations over `read_batch` equal files + 1.
+- basis: 7b50219
+
+<a id="METIS-MEM-IPC-001"></a>
+## METIS-MEM-IPC-001 — Reuse IPC and glyph scratch buffers [patch]
+- Status: todo; priority: tightening; needs: none
+- Outcome: frame send and receive, glyph rasterization and the Python framebuffer export stop allocating per call.
+- Scope: `crates/metis-core/src/protocol/wire.rs`, `crates/metis-ipc/src/frame.rs`, `transport.rs`, `browser.rs`, `crates/metis-platform/src/typeface/text.rs`, `raster.rs`, `crates/metis-python/src/application.rs`.
+- Acceptance: `build_frame` copies the payload and `read_frame` zero-fills a fresh buffer per message (wire.rs:159-177, frame.rs:13-26); glyph `Outline` and `Canvas` scratch is created per text run (text.rs:186-187); `to_rgba` builds W x H x 4 bytes per pixel through `get_pixel` and copies again into `PyBytes` (application.rs:130-157). Oracle: counting allocator: zero send allocations with a reused buffer, at most one per receive, one mask per visible glyph on a cold `draw_text`, and no W x H x 4 Rust-side allocation per `to_rgba`.
+- basis: 7b50219
