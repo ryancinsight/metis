@@ -13,8 +13,8 @@ pub mod semantics;
 pub mod style;
 
 pub use catalog::{
-    Catalog, Locale, Resolved, format_message,
-    MAX_KEY_BYTES, MAX_LOCALE_TAG_BYTES, MAX_MESSAGE_SLOTS, MAX_VALUE_BYTES,
+    Catalog, Locale, MAX_KEY_BYTES, MAX_LOCALE_TAG_BYTES, MAX_MESSAGE_SLOTS, MAX_VALUE_BYTES,
+    Resolved, format_message,
 };
 pub use dom::{DomDocument, DomElement, DomNode};
 pub use image::{AffineTransform, ImagePlacement, ImageSampling, ImageTransform, RasterImage};
