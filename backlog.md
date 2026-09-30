@@ -580,3 +580,12 @@ an owner. “Unsupported” cannot replace delivery of a required mobile/native 
 - Scope: `crates/metis-core/src/protocol/wire.rs`, `crates/metis-ipc/src/frame.rs`, `transport.rs`, `browser.rs`, `crates/metis-platform/src/typeface/text.rs`, `raster.rs`, `crates/metis-python/src/application.rs`.
 - Acceptance: `build_frame` copies the payload and `read_frame` zero-fills a fresh buffer per message (wire.rs:159-177, frame.rs:13-26); glyph `Outline` and `Canvas` scratch is created per text run (text.rs:186-187); `to_rgba` builds W x H x 4 bytes per pixel through `get_pixel` and copies again into `PyBytes` (application.rs:130-157). Oracle: counting allocator: zero send allocations with a reused buffer, at most one per receive, one mask per visible glyph on a cold `draw_text`, and no W x H x 4 Rust-side allocation per `to_rgba`.
 - basis: 7b50219
+
+<a id="METIS-I18N-001"></a>
+## METIS-I18N-001 — Localize UI strings through a message catalog [minor]
+- Status: todo; priority: P2; needs: METIS-TEXT-001
+- Outcome: user-visible strings render in the selected locale instead of the source language they were written in.
+- Scope: message catalog + locale selection only; text shaping, bidi, and IME stay in METIS-TEXT-001. Measured 432 hardcoded sentence-case literals in `crates/metis-app/src` and `crates/metis-frontend/src` alone (pattern `"[A-Z][A-Za-z ]{4,}"`); the catalog covers at least those two crates' user-visible strings first, then the remaining crates.
+- Acceptance: every covered string resolves through the catalog (no literal survives in the covered crates); switching locale re-renders without restart; missing key fails closed to the source string with a logged miss (never blank, never panic); locale-specific number/date formatting follows the selected locale where the UI presents quantities.
+- basis: 98899f3
+- next: choose the catalog mechanism (compile-time macro table vs runtime Fluent-style bundle) against the binary-size and startup-latency budgets before migrating any string; slint's translator model is the documented comparator and has no metis counterpart today (zero mentions in docs/).
