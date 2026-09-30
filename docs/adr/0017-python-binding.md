@@ -20,7 +20,7 @@ not make `metis-core` or `metis-backend` depend on Python, hold a Python object
 in a Rust domain value, or duplicate validation and arithmetic. The package
 also needs the same release evidence as the Rust crates. The PyPI distribution
 name `metis` is already occupied by an unrelated package, so the distribution
-uses `metis-rs` while its import name remains `metis`.
+uses `metis-ui` while its import name remains `metis`.
 
 ## Decision
 
@@ -76,7 +76,7 @@ classify failures without a second error taxonomy. The clinical example is
 engineering arithmetic, not treatment guidance or regulatory evidence.
 
 The wheel does not sandbox Python, restrict OS permissions or provide a native
-window. A wheel can only be published after the `metis-rs` PyPI trusted
+window. A wheel can only be published after the `metis-ui` PyPI trusted
 publisher and the `pypi` environment are registered by the release authority.
 
 ## Verification

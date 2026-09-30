@@ -110,7 +110,7 @@ console application; the native and WebView2 desktop hosts are explicit
 `metis-app` modes and are documented separately from the console package.
 Crates.io release validation and publication use the Atlas OIDC workflow in
 `.github/workflows/rust-release.yml`. The `metis-python` crate builds the
-`metis-rs` distribution for `import metis`; `.github/workflows/python-release.yml`
+`metis-ui` distribution for `import metis`; `.github/workflows/python-release.yml`
 uses the same tokenless OIDC model for PyPI. Both registries require their
 trusted publishers to be registered by the release authority; the empty
 `crates-io` and `pypi` GitHub environments are present and contain no secrets.

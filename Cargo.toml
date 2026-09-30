@@ -1,5 +1,5 @@
 [package]
-name = "metis"
+name = "metis-ui"
 version.workspace = true
 edition.workspace = true
 rust-version.workspace = true
@@ -7,6 +7,11 @@ authors.workspace = true
 license.workspace = true
 repository.workspace = true
 description = "Rust presentation and isolated backend process contract"
+
+# The crates.io name `metis` belongs to another publisher. The library target
+# keeps the name `metis`, so every `use metis::` path is unchanged.
+[lib]
+name = "metis"
 
 [workspace]
 resolver = "3"

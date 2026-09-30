@@ -84,7 +84,7 @@ def validate_wheel_surface(wheel: pathlib.Path) -> None:
         metadata = Parser().parsestr(
             archive.read(metadata_members[0]).decode("utf-8")
         )
-        if metadata.get("Name") != "metis-rs":
+        if metadata.get("Name") != "metis-ui":
             raise SystemExit(f"wheel metadata has unexpected Name: {metadata.get('Name')!r}")
         if metadata.get("Requires-Python") != ">=3.9":
             raise SystemExit(

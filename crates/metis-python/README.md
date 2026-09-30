@@ -1,13 +1,13 @@
 # metis-python
 
-The `metis-python` crate builds the `metis-rs` Python distribution. It exposes
+The `metis-python` crate builds the `metis-ui` Python distribution. It exposes
 the validated Metis Rust boundary through `import metis`; Python owns no
 clinical arithmetic, safety policy or process state.
 
 ## Install
 
 ```bash
-python -m pip install metis-rs
+python -m pip install metis-ui
 ```
 
 The wheels use the stable CPython 3.9 ABI. One wheel per supported operating

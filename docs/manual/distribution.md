@@ -410,7 +410,10 @@ component identities survive package rebuilds.
 `.github/workflows/rust-release.yml` is a thin caller of Atlas's pinned
 `crates-publish.yml` and `semver-gate.yml` workflows. A GitHub Release tagged
 `crate-<package>-v<version>` runs the release gate and publishes one validated
-workspace package. `workflow_dispatch` calls a separate validation-only job;
+workspace package. The root facade package is `metis-ui` because the crates.io
+name `metis` belongs to another publisher; its library target keeps the name
+`metis`, so `use metis::...` paths and the `metis-ui` release tag
+`crate-metis-ui-v<version>` are the only places the two names meet. `workflow_dispatch` calls a separate validation-only job;
 that path has no OIDC permission and cannot publish.
 
 The publish job requests a short-lived crates.io token through GitHub Actions
@@ -426,7 +429,7 @@ installation asks for a signing key, cancel it and inspect that local Git
 configuration; Metis publication does not invoke local signing. The GitHub
 jobs exchange their OIDC identity for a short-lived registry credential.
 
-The `metis-python` crate builds the `metis-rs` PyPI distribution for
+The `metis-python` crate builds the `metis-ui` PyPI distribution for
 `import metis`. Its caller uses Atlas's `python-wheels.yml` and the `pypi`
 environment with OIDC; a long-lived PyPI token or developer private key is not
 added to the repository. See the [Python binding manual](python.md) for the
@@ -457,7 +460,7 @@ release step. After that, the publisher entry authorizes the reusable Atlas job
 to exchange its GitHub OIDC identity for a short-lived upload token. See the
 [Rust Forge trusted-publishing guide](https://forge.rust-lang.org/infra/docs/trusted-publishing.html).
 
-For the `metis-rs` project on PyPI, add a GitHub Actions trusted publisher (or
+For the `metis-ui` project on PyPI, add a GitHub Actions trusted publisher (or
 a pending publisher before the project is created) with:
 
 ```text

@@ -2,9 +2,9 @@
 
 Metis exposes a typed Python package over the same Rust validation and backend
 calculation used by the application. The native extension is `metis._metis`;
-the installable distribution is `metis-rs` because the existing
+the installable distribution is `metis-ui` because the existing
 [PyPI `metis` project](https://pypi.org/project/metis/) is an unrelated
-package. Python code owns composition and presentation of values. Rust owns
+package; the import name stays `metis`. Python code owns composition and presentation of values. Rust owns
 units, bounds, arithmetic and the safety envelope.
 
 ## Build and exercise locally
@@ -240,11 +240,11 @@ paths and identifiers stay on the local machine.
 ## Release path
 
 `.github/workflows/python-release.yml` accepts a GitHub Release tag of the form
-`metis-python-v<version>`. Atlas builds and tests the wheel on the supported
+`metis-ui-v<version>`. Atlas builds and tests the wheel on the supported
 systems, attaches the artifacts and emits a source distribution. The publish
 job requests only GitHub's OIDC identity and uses PyPI Trusted Publishing; no
 PyPI API token, SSH key or developer private key is stored in the repository.
-The `pypi` environment and the `metis-rs` trusted publisher are administrative
+The `pypi` environment and the `metis-ui` trusted publisher are administrative
 release prerequisites. A manual `workflow_dispatch` runs the same Atlas matrix
 in validation mode, uploads a retained `verification-wheels` artifact and
 skips both GitHub Release attachment and the PyPI publish job. It does not

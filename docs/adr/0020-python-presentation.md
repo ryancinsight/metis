@@ -8,7 +8,7 @@ Driver: `METIS-PYTHON-002`.
 
 ## Context
 
-The first `metis-rs` wheel exposed validated clinical values but could not
+The first `metis-ui` wheel exposed validated clinical values but could not
 compose a Rust-rendered frame. A Python consumer needs a small surface for
 image inspection and application composition before a native window and event
 loop can be bound. The presentation contract already owns bounded RGBA images,

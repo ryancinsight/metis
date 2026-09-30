@@ -8,6 +8,7 @@ import shutil
 import subprocess
 import sys
 import tempfile
+import tomllib
 import unittest
 import zipfile
 
@@ -352,7 +353,7 @@ class ReleaseWorkflowContractTests(unittest.TestCase):
             "release-gate: true",
             "needs: identify",
             "package: ${{ needs.identify.outputs.package }}",
-            "metis|metis-backend|metis-core|metis-frontend|metis-ipc|metis-platform|metis-ui-lang|metis-app|metis-web|metis-python",
+            "metis-ui|metis-backend|metis-core|metis-frontend|metis-ipc|metis-platform|metis-ui-lang|metis-app|metis-web|metis-python",
             "id-token: write",
             "ryancinsight/atlas/.github/workflows/semver-gate.yml@848e6649c52e8226a9abf7bc336f8cbf0e39ba08",
             "ryancinsight/atlas/.github/workflows/crates-publish.yml@848e6649c52e8226a9abf7bc336f8cbf0e39ba08",
@@ -360,6 +361,11 @@ class ReleaseWorkflowContractTests(unittest.TestCase):
         for fragment in required:
             with self.subTest(fragment=fragment):
                 self.assertIn(fragment, self.source)
+
+    def test_facade_publishes_as_metis_ui_with_library_metis(self):
+        manifest = tomllib.loads((SCRIPTS.parent / "Cargo.toml").read_text(encoding="utf-8"))
+        self.assertEqual(manifest["package"]["name"], "metis-ui")
+        self.assertEqual(manifest["lib"]["name"], "metis")
 
     def test_caller_has_no_registry_secret_or_implicit_publish_trigger(self):
         self.assertNotIn("secrets:", self.source)
@@ -410,7 +416,7 @@ class PythonBindingContractTests(unittest.TestCase):
             'crate-type = ["cdylib"]',
             'metis-backend.workspace = true',
             'pyo3.workspace = true',
-            'name = "metis-rs"',
+            'name = "metis-ui"',
             'requires-python = ">=3.9"',
             'module-name = "metis._metis"',
             'python-source = "python"',
@@ -440,8 +446,8 @@ class PythonBindingContractTests(unittest.TestCase):
         temporary = tempfile.TemporaryDirectory(prefix="metis-wheel-contract-")
         self.addCleanup(temporary.cleanup)
         root = pathlib.Path(temporary.name)
-        wheel = root / f"metis_rs-0.1.0-{tag}.whl"
-        dist_info = "metis_rs-0.1.0.dist-info"
+        wheel = root / f"metis_ui-0.1.0-{tag}.whl"
+        dist_info = "metis_ui-0.1.0.dist-info"
         members = {
             "metis/__init__.py": b"from ._metis import Application\n",
             "metis/_metis.pyi": b"class Application: ...\n",
@@ -449,7 +455,7 @@ class PythonBindingContractTests(unittest.TestCase):
             "metis/_metis.cp39-win_amd64.pyd": b"extension",
             f"{dist_info}/METADATA": (
                 b"Metadata-Version: 2.1\n"
-                b"Name: metis-rs\n"
+                b"Name: metis-ui\n"
                 b"Version: 0.1.0\n"
                 b"Requires-Python: >=3.9\n"
                 b"Classifier: Typing :: Typed\n"
@@ -485,8 +491,8 @@ class PythonBindingContractTests(unittest.TestCase):
             "release:\n    types: [published]",
             "workflow_dispatch:",
             "github.event_name == 'workflow_dispatch'",
-            "metis-python-v",
-            "distribution: metis-rs",
+            "metis-ui-v",
+            "distribution: metis-ui",
             "import-name: metis",
             "manifest-path: crates/metis-python/Cargo.toml",
             "abi3: true",
@@ -505,7 +511,7 @@ class PythonBindingContractTests(unittest.TestCase):
             with self.subTest(fragment=fragment):
                 self.assertIn(fragment, self.workflow)
         self.assertIn(
-            "if: github.event_name == 'release' && startsWith(github.event.release.tag_name, 'metis-python-v')",
+            "if: github.event_name == 'release' && startsWith(github.event.release.tag_name, 'metis-ui-v')",
             self.workflow,
         )
         for forbidden in ("secrets:", "PYPI_TOKEN", "TWINE_PASSWORD", "private_key", "signing-key", "GPG", "SSH_PRIVATE_KEY"):

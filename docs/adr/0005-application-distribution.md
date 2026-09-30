@@ -14,7 +14,7 @@ command migration. The manifest remains the single payload inventory.
 Revision 2026-09-08: [METIS-RELEASE-001](../../backlog.md#METIS-RELEASE-001)
 adds the Atlas-pinned crates.io release caller. Registry authentication remains
 tokenless through GitHub Actions OIDC. `METIS-PYTHON-001`
-adds the `metis-rs` PyPI caller; its publish job uses the same OIDC model and
+adds the PyPI caller for the `metis-ui` distribution; its publish job uses the same OIDC model and
 does not carry a registry token or developer key.
 
 Revision 2026-09-09: `METIS-DISTRIBUTION-002`
@@ -100,6 +100,11 @@ the recorded identity and every digest, refusing removal when a package file was
 changed; it deletes only unchanged package files and empty directories, preserving
 unrelated user data. Native Linux host installation, launch, permission and
 removal captures remain open.
+
+Revision 2026-09-30: the crates.io facade package `metis` and the PyPI
+distribution `metis-rs` collide with packages other owners already publish.
+Both registries now use `metis-ui`; the facade library target stays `metis` and
+the Python import name stays `metis`.
 
 ## Decision
 

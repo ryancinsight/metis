@@ -86,7 +86,7 @@ Moirai loopback service; it demonstrates CORS and readiness only, not DICOM.
 - [Build and run](getting-started.md): requirements, the demonstration and verification.
 - [Run the Windows native surface](native.md): present a framebuffer and inspect real Win32 events.
 - [Build executables and installers](distribution.md): configure an application, create a portable bundle, install and remove it.
-- [Use the Python binding](python.md): build and test the typed `metis-rs` PyO3 package.
+- [Use the Python binding](python.md): build and test the typed `metis-ui` PyO3 package.
 - [Create a presentation](presentation.md): supported markup, styles and application state.
 - [Migrate presentation styles](style-migration.md): handle strict software-style diagnostics and move full CSS to the browser path.
 - [Connect a backend](backend.md): process ownership, requests and errors.
