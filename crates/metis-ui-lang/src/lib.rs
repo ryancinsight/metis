@@ -4,6 +4,7 @@
 
 #[cfg(not(target_arch = "wasm32"))]
 pub mod asset;
+pub mod catalog;
 pub mod dom;
 pub mod image;
 pub mod layout;
@@ -11,6 +12,10 @@ pub mod parser;
 pub mod semantics;
 pub mod style;
 
+pub use catalog::{
+    Catalog, Locale, Resolved, format_message,
+    MAX_KEY_BYTES, MAX_LOCALE_TAG_BYTES, MAX_MESSAGE_SLOTS, MAX_VALUE_BYTES,
+};
 pub use dom::{DomDocument, DomElement, DomNode};
 pub use image::{AffineTransform, ImagePlacement, ImageSampling, ImageTransform, RasterImage};
 pub use layout::{
