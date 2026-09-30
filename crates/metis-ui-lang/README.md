@@ -70,15 +70,17 @@ uses that element's laid-out border rectangle as its anchor, and paints after
 the document. It starts below the anchor, fits horizontally inside the viewport
 when its measured width permits, and flips above when the lower placement
 overflows and there is room. Missing visible anchors return a typed markup
-error; hidden popovers do not resolve anchors. Framebuffer clipping bounds
-oversized popovers. `DisplayList::element_rect` exposes the same retained
+error; an anchor hidden from layout is missing too, and a hidden popover does
+not resolve its own anchor. An anchor may sit in normal flow or inside an
+earlier popover. Framebuffer clipping bounds oversized popovers. `DisplayList::element_rect` exposes the same retained
 geometry to native hit testing without inspecting text or theme colors.
 `ComputedStyle::parse` strictly rejects unknown properties, malformed
 declarations and invalid values with `ErrorCode::InvalidCssStyle`; an empty
 style and a trailing semicolon are valid. Layout rejects coordinate overflow
 and invalid dimensions. Application-built DOMs should observe the parser
-limits; direct DOM construction does not validate them until layout, and
-recursive DOM utility operations assume bounded trees.
+limits; layout bounds tree depth, node count, text, and the `id` and
+`popover-anchor` attribute bytes before traversal. Recursive DOM utility
+operations assume bounded trees.
 
 `LayoutViewport` carries the physical framebuffer dimensions and a validated
 `metis_platform::DisplayScale`. Explicit pixel dimensions, spacing, automatic
