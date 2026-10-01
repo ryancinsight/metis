@@ -4,7 +4,7 @@ The owning gate is `python scripts/verify.py`. It records bounded logs under the
 ignored `output/` directory and checks formatting, strict Clippy, debug and release
 nextest suites, plan identifiers/dependencies/local links, the generated
 `wasm-bindgen` browser assets, doctests, documentation, example execution,
-dependency closure and the built `metis-rs` Python wheel test. It also runs the pinned cargo-deny advisory, source, license
+dependency closure and the built `metis-ui` Python wheel test. It also runs the pinned cargo-deny advisory, source, license
 and ban checks and records the reviewed Cargo build-link inventory.
 Native tests use `.config/nextest.toml`: slow at 30 seconds, terminate at 60 seconds,
 zero retries. The demonstration executable has a 60-second outer budget.
@@ -56,7 +56,7 @@ do not invoke it.
 
 The local package inventory contains ten publishable Cargo packages and one
 `publish = false` tooling package (`metis-cli`). `metis-python` builds the
-`metis-rs` PyPI distribution and `.github/workflows/python-release.yml`
+`metis-ui` PyPI distribution and `.github/workflows/python-release.yml`
 delegates wheel construction to Atlas's `python-wheels.yml`, then uploads
 through PyPI Trusted Publishing with `id-token: write`. This source-level
 check does not prove registry publisher registration, first publication,

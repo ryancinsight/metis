@@ -209,7 +209,7 @@ jobs:
       needs.changes.outputs.code == 'true'
     uses: ryancinsight/atlas/.github/workflows/semver-gate.yml@848e6649c52e8226a9abf7bc336f8cbf0e39ba08
     with:
-      package: metis,metis-core,metis-backend,metis-frontend,metis-ipc,metis-ui-lang,metis-platform,metis-web
+      package: metis-ui,metis-core,metis-backend,metis-frontend,metis-ipc,metis-ui-lang,metis-platform,metis-web
     permissions:
       contents: read
 

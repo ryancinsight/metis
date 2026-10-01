@@ -3,7 +3,7 @@ requires = ["maturin>=1.9.4,<2.0"]
 build-backend = "maturin"
 
 [project]
-name = "metis-rs"
+name = "metis-ui"
 dynamic = ["version"]
 description = "Typed Python bindings for the Metis Rust application framework"
 readme = "README.md"
