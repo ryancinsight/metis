@@ -206,7 +206,8 @@ pub(crate) fn run_browser_service(
     let origin = HostOrigin::parse(raw_origin)?;
     let window = WindowId::new(1)?;
     let policy = HostPolicy::new(origin.clone(), window);
-    let context = HostContext::new(origin.clone(), window, HostSessionId::new(principal)?);
+    let session_id = HostSessionId::new(principal)?;
+    let context = HostContext::new(origin.clone(), window, session_id);
     let mut service = BackendService::with_trusted_context(
         entropy::session_key()?,
         SafetyEnvelope::default(),
@@ -250,8 +251,7 @@ pub(crate) fn run_http_service(
     response_delay: Option<BrowserResponseDelay>,
 ) -> Result<(), Box<dyn std::error::Error>> {
     let origin = HostOrigin::parse(raw_origin)?;
-    let window = WindowId::new(1)?;
-    let policy = HostPolicy::new(origin.clone(), window);
+    let application = http_application(&origin, principal)?;
     let server_config = ServerConfig::new(
         16,
         16 * 1024,
@@ -268,8 +268,6 @@ pub(crate) fn run_http_service(
     eprintln!("browser_http_endpoint=http://{address}");
     eprintln!("browser_http_origin={origin}");
     eprintln!("browser_http_principal={}", principal_hex(principal));
-    let application =
-        BrowserHttpService::new(entropy::session_key()?, SafetyEnvelope::default(), policy);
     moirai_executor::block_on(serve_browser_http_with_response_delay(
         server,
         application,
@@ -280,6 +278,21 @@ pub(crate) fn run_http_service(
     Ok(())
 }
 
+/// Builds the HTTP application that admits sessions only for `principal`.
+fn http_application(
+    origin: &HostOrigin,
+    principal: [u8; 16],
+) -> Result<BrowserHttpService, Box<dyn std::error::Error>> {
+    let policy = HostPolicy::new(origin.clone(), WindowId::new(1)?);
+    let session_id = HostSessionId::new(principal)?;
+    Ok(BrowserHttpService::new(
+        entropy::session_key()?,
+        SafetyEnvelope::default(),
+        policy,
+        session_id,
+    ))
+}
+
 fn principal_hex(principal: [u8; 16]) -> String {
     use std::fmt::Write as _;
     let mut output = String::with_capacity(32);
@@ -288,3 +301,6 @@ fn principal_hex(principal: [u8; 16]) -> String {
     }
     output
 }
+
+#[cfg(test)]
+mod tests;

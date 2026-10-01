@@ -30,8 +30,11 @@ invalid snapshots fail closed and the key never enters a record. See
 The native-only `BrowserHttpService` composes the first-party Moirai HTTP
 transport for a bounded loopback demonstration. It exposes only typed session,
 fragment and health routes, checks the exact browser origin before dispatch,
-retains at most eight sessions and closes after the application's finite
-connection-attempt budget, including rejected peers. Peer parse, timeout and
+and accepts only the launcher-supplied session principal. Forged principals do
+not consume session capacity, and an expired session is replaced by the next
+valid handshake. The service retains only its launcher-bound session and
+closes after the application's finite connection-attempt budget, including
+rejected peers. Peer parse, timeout and
 disconnect failures close only that connection and reach the host's required
 typed error observer; listener and response-construction failures remain
 terminal. Both serving functions now take an `on_connection_error` closure as

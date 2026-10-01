@@ -485,14 +485,6 @@ an owner. “Unsupported” cannot replace delivery of a required mobile/native 
 - Blocker: the lookup reads the artifact API's `workflow_run` field. The pinned Atlas conformance guard counts any `workflow_run` substring as a trigger; guards from atlas#301 on parse the triggers, but in member CI they measure `unresolved_references` on a depth-1 checkout (4 -> 232 on metis#418). Re-open when the guard measures citations against full history and the pin moves past atlas#301.
 - Prior work: metis#418 carried a tested implementation, dropped when that PR was reconciled with the gate from metis#424.
 
-<a id="METIS-SEC-HTTP-PRINCIPAL-001"></a>
-## METIS-SEC-HTTP-PRINCIPAL-001 — Bind the HTTP host to the launcher principal [minor]
-- Status: todo; priority: correctness; needs: none
-- Outcome: an HTTP session opens only for the principal the launcher supplied, matching the WebSocket path, and a local client cannot fill the session table.
-- Scope: `crates/metis-backend/src/http.rs`, `crates/metis-app/src/backend.rs`, http tests.
-- Acceptance: `open_session` derives its trusted context from the request principal (http.rs:127-131) while `run_http_service` only prints the launcher principal (backend.rs:270); `run_browser_service` binds it (backend.rs:209-216). Test: a handshake with another principal returns the invalid-principal status, the launcher principal then returns 200, and nine earlier handshakes cannot lock it out; the table evicts at token expiry. If label-only HTTP sessions are the intended design, record it in an ADR and delete the dead parameter instead.
-- basis: 7b50219
-
 <a id="METIS-SEC-PROCESS-DEADLINE-001"></a>
 ## METIS-SEC-PROCESS-DEADLINE-001 — Bound scoped process runs past descendant pipes [patch]
 - Status: todo; priority: correctness; needs: none

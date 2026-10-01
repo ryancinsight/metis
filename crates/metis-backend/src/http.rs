@@ -4,25 +4,20 @@
 //! envelopes and returns bounded text or attribute patch bytes; application
 //! data formats and domain semantics remain owned by the consuming application.
 
+use self::session::HttpSession;
 use crate::clinical::SafetyEnvelope;
-use crate::fragment::UiFragmentPlugin;
-use crate::service::{BackendService, SystemClock};
+use crate::service::{Clock, SystemClock};
 use metis_core::crc32;
 use metis_core::error::{ErrorCode, MetisError, Result};
-use metis_core::host::{HostPolicy, HostSessionId};
+use metis_core::host::{HostContext, HostPolicy, HostSessionId};
 use metis_core::protocol::{
-    ErrorResponsePayload, FrameHeader, HandshakeRequestPayload, HandshakeResponsePayload,
-    MAX_PAYLOAD_SIZE, MessageType, PROTOCOL_VERSION, PluginInvocationPayload,
+    ErrorResponsePayload, FrameHeader, MAX_PAYLOAD_SIZE, MessageType, PluginInvocationPayload,
     PluginInvocationResponsePayload,
 };
 use metis_ipc::server::IpcHandler;
 use moirai_http::{HttpRequest, HttpResponse, HttpServer};
-use std::collections::BTreeMap;
 use std::io;
 use std::time::Duration;
-
-/// Maximum authenticated browser sessions retained by one HTTP host.
-pub const MAX_HTTP_SESSIONS: usize = 8;
 
 /// Maximum connection attempts before a demonstration host performs orderly teardown.
 pub const MAX_HTTP_REQUESTS: usize = 64;
@@ -37,35 +32,73 @@ const BINARY_CONTENT_TYPE: &str = "application/metis";
 const ERROR_CONTENT_TYPE: &str = "application/metis-error";
 const TEXT_CONTENT_TYPE: &str = "text/plain; charset=utf-8";
 
-struct HttpSession {
-    service: BackendService<SystemClock>,
-    next_sequence: u64,
-}
-
 /// Bounded HTTP application state for one exact browser origin.
-pub struct BrowserHttpService {
+pub struct BrowserHttpService<C = SystemClock> {
     master_key: [u8; 32],
     envelope: SafetyEnvelope,
     policy: HostPolicy,
-    sessions: BTreeMap<[u8; 16], HttpSession>,
+    trusted_context: HostContext,
+    clock: C,
+    session: Option<HttpSession<C>>,
 }
 
 impl BrowserHttpService {
     /// Creates a format-neutral service with a deny-by-default origin policy.
+    ///
+    /// Sessions open only for `session_id`, the principal the launcher
+    /// supplied; a handshake naming any other principal receives HTTP 403
+    /// with [`ErrorCode::InvalidPrincipal`] and never occupies the session
+    /// slot. At most one session is retained. It expires
+    /// [`SESSION_LIFETIME`](crate::service::SESSION_LIFETIME) after its
+    /// handshake on the monotonic clock and is replaced by the next valid
+    /// handshake at or after that instant; until then a further handshake
+    /// receives HTTP 409.
     #[must_use]
-    pub fn new(master_key: [u8; 32], envelope: SafetyEnvelope, policy: HostPolicy) -> Self {
+    pub fn new(
+        master_key: [u8; 32],
+        envelope: SafetyEnvelope,
+        policy: HostPolicy,
+        session_id: HostSessionId,
+    ) -> Self {
+        Self::with_clock(
+            master_key,
+            envelope,
+            policy,
+            session_id,
+            SystemClock::default(),
+        )
+    }
+}
+
+impl<C: Clock + Clone> BrowserHttpService<C> {
+    /// Creates the service with an explicit clock for deterministic expiry.
+    ///
+    /// The clock drives both the session expiry and the inner
+    /// [`BackendService`](crate::BackendService); clones must observe one
+    /// shared time axis.
+    #[must_use]
+    pub fn with_clock(
+        master_key: [u8; 32],
+        envelope: SafetyEnvelope,
+        policy: HostPolicy,
+        session_id: HostSessionId,
+        clock: C,
+    ) -> Self {
+        let trusted_context = policy.context_for(session_id);
         Self {
             master_key,
             envelope,
             policy,
-            sessions: BTreeMap::new(),
+            trusted_context,
+            clock,
+            session: None,
         }
     }
 
     /// Returns the number of retained authenticated sessions.
     #[must_use]
     pub fn session_count(&self) -> usize {
-        self.sessions.len()
+        usize::from(self.session.is_some())
     }
 
     /// Produces one bounded response for a validated Moirai HTTP request.
@@ -102,98 +135,18 @@ impl BrowserHttpService {
         }
     }
 
-    fn open_session(&mut self, body: &[u8]) -> io::Result<HttpResponse> {
-        let request = match HandshakeRequestPayload::decode(body) {
-            Ok(request) => request,
-            Err(error) => return self.error_response(status_for_code(error.code), &error),
-        };
-        let principal = request.principal_id;
-        if self.sessions.contains_key(&principal) {
-            return self.error_response(
-                409,
-                &MetisError::capability(
-                    ErrorCode::PrivilegeEscalationAttempt,
-                    "HTTP session principal is already active",
-                ),
-            );
-        }
-        if self.sessions.len() >= MAX_HTTP_SESSIONS {
-            return self.error_response(
-                503,
-                &MetisError::transport(ErrorCode::QueueFull, "HTTP session capacity is exhausted"),
-            );
-        }
-
-        let session_id = match HostSessionId::new(principal) {
-            Ok(session_id) => session_id,
-            Err(error) => return self.error_response(status_for_code(error.code), &error),
-        };
-        let context = self.policy.context_for(session_id);
-        let mut service = match BackendService::with_trusted_context(
-            self.master_key,
-            self.envelope,
-            SystemClock::default(),
-            self.policy.clone(),
-            context,
-        ) {
-            Ok(service) => service,
-            Err(error) => return self.error_response(500, &error),
-        };
-        if let Err(error) = service.register_plugin(UiFragmentPlugin) {
-            return self.error_response(500, &error);
-        }
-        let header = match frame_header(MessageType::HandshakeReq, 1, body) {
-            Ok(header) => header,
-            Err(error) => return self.error_response(status_for_code(error.code), &error),
-        };
-        let (message, response) = match service.handle_request(&header, body) {
-            Ok(response) => response,
-            Err(error) => return self.error_response(500, &error),
-        };
-        match message {
-            MessageType::HandshakeResp => {
-                let decoded = match HandshakeResponsePayload::decode(&response) {
-                    Ok(decoded) => decoded,
-                    Err(error) => return self.error_response(500, &error),
-                };
-                if decoded.server_version != PROTOCOL_VERSION
-                    || decoded.initial_token.principal_id != principal
-                {
-                    return self.error_response(
-                        500,
-                        &MetisError::protocol(
-                            ErrorCode::VersionMismatch,
-                            "HTTP handshake response violated the session contract",
-                        ),
-                    );
-                }
-                self.sessions.insert(
-                    principal,
-                    HttpSession {
-                        service,
-                        next_sequence: 2,
-                    },
-                );
-                self.binary_response(200, response)
-            }
-            MessageType::ErrorResp => self.wire_error_response(&response),
-            _ => self.error_response(
-                500,
-                &MetisError::protocol(
-                    ErrorCode::UnexpectedMessageType,
-                    "HTTP handshake returned an invalid response type",
-                ),
-            ),
-        }
-    }
-
     fn invoke_fragment(&mut self, body: &[u8]) -> io::Result<HttpResponse> {
         let invocation = match PluginInvocationPayload::decode(body) {
             Ok(invocation) => invocation,
             Err(error) => return self.error_response(status_for_code(error.code), &error),
         };
         let principal = invocation.token().principal_id;
-        let Some(session) = self.sessions.get_mut(&principal) else {
+        let trusted_principal = self.trusted_context.session_id().as_bytes();
+        let Some(session) = self
+            .session
+            .as_mut()
+            .filter(|_| principal == trusted_principal)
+        else {
             return self.error_response(
                 401,
                 &MetisError::capability(
@@ -452,6 +405,8 @@ fn http_io_error(error: &io::Error) -> MetisError {
     };
     MetisError::transport(code, "HTTP transport terminated")
 }
+
+mod session;
 
 #[cfg(test)]
 #[path = "http_tests/mod.rs"]

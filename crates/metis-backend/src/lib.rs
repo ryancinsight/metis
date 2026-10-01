@@ -15,8 +15,8 @@ pub mod websocket;
 pub use fragment::UiFragmentPlugin;
 #[cfg(not(target_arch = "wasm32"))]
 pub use http::{
-    BrowserHttpService, MAX_HTTP_REQUESTS, MAX_HTTP_RESPONSE_DELAY, MAX_HTTP_SESSIONS,
-    serve_browser_http, serve_browser_http_with_response_delay,
+    BrowserHttpService, MAX_HTTP_REQUESTS, MAX_HTTP_RESPONSE_DELAY, serve_browser_http,
+    serve_browser_http_with_response_delay,
 };
 pub use plugins::PluginExecutor;
 pub use service::BackendService;

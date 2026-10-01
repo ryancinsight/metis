@@ -3325,7 +3325,10 @@ generation-bound fragment response, then records malformed, unauthorized and
 stale-generation probes. The delayed service trace resets the page while
 `/health` is pending and confirms that the new generation retains an empty
 response, fragment and negative state after the delayed completion window. The
-service retains at most eight sessions and closes after a finite request budget.
+service binds the launcher-supplied principal: a handshake naming any other
+principal receives HTTP 403 and never occupies the session slot. It retains one
+session, replaced by the next valid handshake once its lifetime has elapsed, and
+closes after a finite request budget.
 This is local presentation transport evidence;
 it does not claim public deployment, TLS, or DICOM behavior. DICOM parsing,
 study selection, geometry and viewer state remain in the [RITK
@@ -3483,12 +3486,12 @@ contains the corresponding MRI gallery. TLS, operating-system permissions,
 physical input, accessibility/IME behavior and provider-private listener or
 allocation counts remain separate evidence requirements.
 
-The current review revision adds explicit native assertions for a missing
-session, an inadmissible method, the eight-session capacity boundary, the
-configured response-byte limit and the bounded HTTP delay. The focused
-`cargo nextest` run passes 114/114 tests across `metis-app`, `metis-backend`,
-`metis-core` and `metis-web`; warning-denied Clippy passes for `metis-backend`
-and `metis-app`.
+Revision bcd3a0c (2026-09-10) added explicit native assertions for a missing
+session, an inadmissible method, the eight-session capacity boundary (since
+replaced by the single launcher-bound session), the configured response-byte
+limit and the bounded HTTP delay. Its focused `cargo nextest` run passed
+114/114 tests across `metis-app`, `metis-backend`, `metis-core` and
+`metis-web`; warning-denied Clippy passed for `metis-backend` and `metis-app`.
 
 The authentication slice uses the Moirai provider with its TLS feature
 disabled. `cargo tree --locked -p metis-core --edges normal` and the Metis
