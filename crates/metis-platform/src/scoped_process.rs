@@ -1,5 +1,6 @@
 //! Capability-witnessed direct process execution with bounded output.
 
+use self::output_reader::{OutputReader, ReaderSlot, drain_bounded};
 use metis_core::capability::CapabilityScope;
 use metis_core::host::VerifiedHostCapability;
 use moirai_transport::process::{
@@ -8,10 +9,9 @@ use moirai_transport::process::{
 };
 use std::{
     ffi::{OsStr, OsString},
-    fs::{self, File},
-    io::{self, Read},
+    fs, io,
     path::{Path, PathBuf},
-    time::Duration,
+    time::{Duration, Instant},
 };
 
 /// Maximum number of arguments admitted by one scoped process request.
@@ -26,6 +26,12 @@ pub const MAX_SCOPED_PROCESS_ENVIRONMENT_ENTRIES: usize = 32;
 pub const MAX_SCOPED_PROCESS_ENVIRONMENT_BYTES: usize = 16 * 1024;
 /// Maximum process lifetime admitted by the provider.
 pub const MAX_SCOPED_PROCESS_RUNTIME: Duration = Duration::from_secs(30);
+/// Maximum output reader threads alive at once across all runs.
+///
+/// A descendant that outlives its direct child under
+/// [`ProcessContainment::DirectChild`] can keep an output pipe open after
+/// `run` has returned; its reader stays blocked until the pipe closes.
+pub const MAX_SCOPED_PROCESS_OUTPUT_READERS: usize = 64;
 const CLEANUP_DEADLINE: Duration = Duration::from_secs(1);
 
 /// Process-tree policy selected by the trusted host configuration.
@@ -73,6 +79,7 @@ impl ScopedProcessOutput {
 
 /// Failure from validation, bounded I/O, or the Moirai process lifecycle.
 #[derive(Debug)]
+#[non_exhaustive]
 pub enum ScopedProcessError {
     /// The configured executable is not an absolute regular file.
     InvalidProgram,
@@ -90,7 +97,8 @@ pub enum ScopedProcessError {
     Io(io::Error),
     /// The process provider rejected or could not complete a lifecycle operation.
     Process(ProcessError),
-    /// The process did not complete before its finite deadline.
+    /// The process did not exit, or its output did not end, before its finite
+    /// deadline.
     DeadlineExceeded,
     /// Cleanup could not confirm process termination.
     Cleanup(ProcessError),
@@ -100,6 +108,10 @@ pub enum ScopedProcessError {
     OutputTooLarge,
     /// A bounded output reader terminated unexpectedly.
     ReaderPanicked,
+    /// Too many output readers are live: earlier runs left readers blocked on
+    /// pipes that a descendant process still holds open, or that many runs are
+    /// in progress at once. No process was started.
+    OutputReadersExhausted,
 }
 
 impl std::fmt::Display for ScopedProcessError {
@@ -118,6 +130,7 @@ impl std::fmt::Display for ScopedProcessError {
             Self::MissingPipe => "scoped process output pipe was not created",
             Self::OutputTooLarge => "scoped process output exceeds the provider byte bound",
             Self::ReaderPanicked => "scoped process output reader terminated unexpectedly",
+            Self::OutputReadersExhausted => "scoped process output reader limit reached",
         };
         formatter.write_str(message)
     }
@@ -278,7 +291,9 @@ impl ScopedProcessProvider {
     /// inside the process boundary only long enough to enforce the bound.
     ///
     /// # Errors
-    /// Returns a validation, lifecycle, cleanup, deadline or bounded-I/O error.
+    /// Returns a validation, lifecycle, cleanup, deadline or bounded-I/O error,
+    /// or [`ScopedProcessError::OutputReadersExhausted`] before starting the
+    /// process when [`MAX_SCOPED_PROCESS_OUTPUT_READERS`] readers are live.
     pub fn run<A, I>(
         &self,
         _capability: &VerifiedHostCapability<{ CapabilityScope::RUN_PROCESS.0 }>,
@@ -291,6 +306,10 @@ impl ScopedProcessProvider {
     {
         validate_deadline(deadline)?;
         let arguments = self.validate_arguments(arguments)?;
+        // Claimed before the process starts, so a refused run has no side effects.
+        let stdout_slot = ReaderSlot::acquire()?;
+        let stderr_slot = ReaderSlot::acquire()?;
+        let started = Instant::now();
         let mut specification = ProcessSpec::new(self.program.clone())
             .args(arguments)
             .env_clear()
@@ -305,38 +324,56 @@ impl ScopedProcessProvider {
         let mut process = ProcessSupervisor::new()
             .spawn(specification, ProcessDropPolicy::TerminateOnDrop)
             .map_err(ScopedProcessError::Process)?;
+        match Self::supervise(&mut process, [stdout_slot, stderr_slot], started, deadline) {
+            Ok(output) => Ok(output),
+            Err(error) => {
+                // Every failure after the spawn ends the child before it is reported.
+                terminate(&mut process)?;
+                Err(error)
+            }
+        }
+    }
+
+    /// Waits for the child and its output within `deadline` of `started`.
+    fn supervise(
+        process: &mut ManagedProcess,
+        [stdout_slot, stderr_slot]: [ReaderSlot; 2],
+        started: Instant,
+        deadline: Duration,
+    ) -> Result<ScopedProcessOutput, ScopedProcessError> {
         let stdout = process
             .take_stdout()
             .ok_or(ScopedProcessError::MissingPipe)?;
         let stderr = process
             .take_stderr()
             .ok_or(ScopedProcessError::MissingPipe)?;
-
-        std::thread::scope(|scope| {
-            let stdout_reader = scope.spawn(|| read_bounded(stdout));
-            let stderr_reader = scope.spawn(|| read_bounded(stderr));
-            let status = match process.wait_timeout(deadline) {
-                Ok(Some(status)) => status,
-                Ok(None) => {
-                    terminate_after_deadline(&mut process)?;
-                    return Err(ScopedProcessError::DeadlineExceeded);
-                }
-                Err(error) => {
-                    terminate_after_error(&mut process)?;
-                    return Err(ScopedProcessError::Process(error));
-                }
-            };
-            let stdout = stdout_reader
-                .join()
-                .map_err(|_| ScopedProcessError::ReaderPanicked)??;
-            let stderr = stderr_reader
-                .join()
-                .map_err(|_| ScopedProcessError::ReaderPanicked)??;
-            Ok(ScopedProcessOutput {
-                status,
-                stderr_bytes: stderr.len(),
-                stdout: stdout.into_boxed_slice(),
+        let stdout = OutputReader::spawn(stdout, stdout_slot, |bytes| {
+            let mut captured = Vec::new();
+            drain_bounded(bytes, |chunk| {
+                captured
+                    .try_reserve(chunk.len())
+                    .map_err(|_| ScopedProcessError::OutputTooLarge)?;
+                captured.extend_from_slice(chunk);
+                Ok(())
             })
+            .map(|_| captured)
+        })?;
+        let stderr = OutputReader::spawn(stderr, stderr_slot, |bytes| {
+            drain_bounded(bytes, |_| Ok(()))
+        })?;
+
+        let status = process
+            .wait_timeout(deadline.saturating_sub(started.elapsed()))
+            .map_err(ScopedProcessError::Process)?
+            .ok_or(ScopedProcessError::DeadlineExceeded)?;
+        // The deadline covers output completion as well as exit: a descendant
+        // that holds a pipe open after the child exits must not extend the run.
+        let stdout = stdout.collect(started, deadline)?;
+        let stderr_bytes = stderr.collect(started, deadline)?;
+        Ok(ScopedProcessOutput {
+            status,
+            stderr_bytes,
+            stdout: stdout.into_boxed_slice(),
         })
     }
 
@@ -382,36 +419,14 @@ fn validate_deadline(deadline: Duration) -> Result<(), ScopedProcessError> {
     Ok(())
 }
 
-fn terminate_after_deadline(process: &mut ManagedProcess) -> Result<(), ScopedProcessError> {
+fn terminate(process: &mut ManagedProcess) -> Result<(), ScopedProcessError> {
     process
         .terminate_timeout(CLEANUP_DEADLINE)
         .map(|_| ())
         .map_err(ScopedProcessError::Cleanup)
 }
 
-fn terminate_after_error(process: &mut ManagedProcess) -> Result<(), ScopedProcessError> {
-    process
-        .terminate_timeout(CLEANUP_DEADLINE)
-        .map(|_| ())
-        .map_err(ScopedProcessError::Cleanup)
-}
-
-fn read_bounded(reader: File) -> Result<Vec<u8>, ScopedProcessError> {
-    let capacity = MAX_SCOPED_PROCESS_OUTPUT_BYTES
-        .checked_add(1)
-        .ok_or(ScopedProcessError::OutputTooLarge)?;
-    let mut bytes = Vec::new();
-    bytes
-        .try_reserve_exact(capacity)
-        .map_err(|_| ScopedProcessError::OutputTooLarge)?;
-    reader
-        .take(u64::try_from(capacity).map_err(|_| ScopedProcessError::OutputTooLarge)?)
-        .read_to_end(&mut bytes)?;
-    if bytes.len() > MAX_SCOPED_PROCESS_OUTPUT_BYTES {
-        return Err(ScopedProcessError::OutputTooLarge);
-    }
-    Ok(bytes)
-}
+mod output_reader;
 
 #[cfg(test)]
 mod tests;

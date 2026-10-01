@@ -485,14 +485,6 @@ an owner. “Unsupported” cannot replace delivery of a required mobile/native 
 - Blocker: the lookup reads the artifact API's `workflow_run` field. The pinned Atlas conformance guard counts any `workflow_run` substring as a trigger; guards from atlas#301 on parse the triggers, but in member CI they measure `unresolved_references` on a depth-1 checkout (4 -> 232 on metis#418). Re-open when the guard measures citations against full history and the pin moves past atlas#301.
 - Prior work: metis#418 carried a tested implementation, dropped when that PR was reconciled with the gate from metis#424.
 
-<a id="METIS-SEC-PROCESS-DEADLINE-001"></a>
-## METIS-SEC-PROCESS-DEADLINE-001 — Bound scoped process runs past descendant pipes [patch]
-- Status: todo; priority: correctness; needs: none
-- Outcome: `ScopedProcess::run` returns within its deadline plus cleanup even when a descendant holds the child stdout.
-- Scope: `crates/metis-platform/src/scoped_process.rs`, its tests.
-- Acceptance: Under `DirectChild` containment `std::thread::scope` joins pipe readers that a descendant keeps open (scoped_process.rs:315-336); `metis-cli/src/process.rs:96-100` closes the job before joining. Test on Windows reusing the descendant pattern in `metis-backend/src/supervisor/tests.rs:70-101`: a descendant holds stdout 60 s and `run` returns a typed deadline or pipe error within the derived bound.
-- basis: 7b50219
-
 <a id="METIS-SEC-PYTHON-WAIT-001"></a>
 ## METIS-SEC-PYTHON-WAIT-001 — Detach and bound the Python native host waits [patch]
 - Status: todo; priority: correctness; needs: none

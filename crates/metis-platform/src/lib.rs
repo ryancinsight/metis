@@ -56,8 +56,8 @@ pub use scoped_opener::{
 pub use scoped_process::{
     MAX_SCOPED_PROCESS_ARGUMENT_BYTES, MAX_SCOPED_PROCESS_ARGUMENTS,
     MAX_SCOPED_PROCESS_ENVIRONMENT_BYTES, MAX_SCOPED_PROCESS_ENVIRONMENT_ENTRIES,
-    MAX_SCOPED_PROCESS_OUTPUT_BYTES, MAX_SCOPED_PROCESS_RUNTIME, ProcessContainment,
-    ScopedProcessError, ScopedProcessOutput, ScopedProcessProvider,
+    MAX_SCOPED_PROCESS_OUTPUT_BYTES, MAX_SCOPED_PROCESS_OUTPUT_READERS, MAX_SCOPED_PROCESS_RUNTIME,
+    ProcessContainment, ScopedProcessError, ScopedProcessOutput, ScopedProcessProvider,
 };
 #[cfg(any(unix, windows))]
 pub use single_instance::{Launch, MAX_FORWARDED_ARGUMENTS, PrimaryInstance, claim_or_forward};
