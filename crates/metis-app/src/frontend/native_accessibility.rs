@@ -1,20 +1,19 @@
 //! Native accessibility projection for the authored Metis form.
 
 use metis_core::error::{ErrorCode, MetisError, Result};
-use metis_frontend::{ApplicationCommand, FrontendApp};
-use metis_ipc::IpcTransport;
+use metis_frontend::ApplicationCommand;
 use metis_platform::native::{
     AccessibilityAction, AccessibilityNode, AccessibilityRole, AccessibilityTree,
 };
-use metis_ui_lang::{SemanticAction, SemanticNode, SemanticRole};
+use metis_ui_lang::{SemanticAction, SemanticNode, SemanticRole, SemanticTree};
 use std::collections::HashSet;
 
 const FNV_OFFSET: u64 = 0xcbf2_9ce4_8422_2325;
 const FNV_PRIME: u64 = 0x0000_0001_0000_01b3;
 
-/// Projects one rendered Metis document into the native accessibility contract.
-pub(crate) fn project<T: IpcTransport>(app: &FrontendApp<T>) -> Result<AccessibilityTree> {
-    let source = app.semantic_tree()?;
+/// Projects one semantic tree into the native accessibility contract, with
+/// focus on the control `focused_control` when it is visible and focusable.
+pub(crate) fn project(source: &SemanticTree, focused_control: &str) -> Result<AccessibilityTree> {
     let mut nodes = Vec::new();
     nodes
         .try_reserve(source.element_count)
@@ -31,7 +30,7 @@ pub(crate) fn project<T: IpcTransport>(app: &FrontendApp<T>) -> Result<Accessibi
         &mut identities,
         &mut nodes,
         &mut focus,
-        app.focused_control(),
+        focused_control,
     )?;
     let focus = focus.unwrap_or(root);
     AccessibilityTree::from_nodes(root, focus, nodes)
@@ -220,8 +219,9 @@ mod tests {
     fn authored_form_projects_to_a_stable_native_tree() {
         let (transport, _peer) = MemoryTransport::pair();
         let app = FrontendApp::new(transport, 800, 600).expect("form");
-        let first = project(&app).expect("native accessibility tree");
-        let second = project(&app).expect("native accessibility tree");
+        let source = app.semantic_tree().expect("semantic tree");
+        let first = project(&source, app.focused_control()).expect("native accessibility tree");
+        let second = project(&source, app.focused_control()).expect("native accessibility tree");
         assert_eq!(first, second);
         assert_ne!(submit_button_identity(), 0);
         assert_ne!(patient_input_identity(), 0);

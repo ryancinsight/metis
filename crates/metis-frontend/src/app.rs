@@ -11,7 +11,7 @@ use metis_core::protocol::{
 use metis_ipc::client::{HandshakeError, IpcClient};
 use metis_ipc::transport::IpcTransport;
 use metis_platform::{Damage, DisplayScale, Framebuffer};
-use metis_ui_lang::{DisplayList, DomDocument, SemanticTree, parse_markup};
+use metis_ui_lang::{DisplayList, DomDocument, parse_markup};
 
 /// Outcome for the current inputs. Only success carries a result.
 /// Pending is painted before synchronous IPC; it does not imply an async host.
@@ -88,6 +88,8 @@ pub struct FrontendApp<T> {
     /// The display list the framebuffer shows, so the next render repaints
     /// only what changed; `None` when the surface holds no complete frame.
     pub(crate) painted: Option<DisplayList>,
+    /// Whether a render completed since the last semantic take.
+    pub(crate) semantics_pending: bool,
     /// Pixels repainted since the host last took the damage to present.
     pub(crate) unpresented: Damage,
     pub(crate) cache: RenderCache,
@@ -112,6 +114,7 @@ impl<T: IpcTransport> FrontendApp<T> {
             applied_theme: None,
             focus: Focus::initial(),
             painted: None,
+            semantics_pending: false,
             unpresented: Damage::Unchanged,
             cache: RenderCache::default(),
         };
@@ -141,20 +144,6 @@ impl<T: IpcTransport> FrontendApp<T> {
         self.doc.document()
     }
 
-    /// Projects the current document into the host-neutral semantic tree.
-    ///
-    /// Native hosts can translate this value to an operating-system
-    /// accessibility provider. Browser hosts continue to use their DOM
-    /// accessibility tree; this method does not claim spoken or OS-level
-    /// accessibility support.
-    ///
-    /// # Errors
-    /// Returns a bounded UI error when the authored document has duplicate
-    /// identities, unresolved references, malformed states or unsupported
-    /// semantic values.
-    pub fn semantic_tree(&self) -> Result<SemanticTree> {
-        SemanticTree::from_document(&self.doc)
-    }
     /// Actual rendered pixels for host presentation or capture.
     #[must_use]
     pub const fn framebuffer(&self) -> &Framebuffer {

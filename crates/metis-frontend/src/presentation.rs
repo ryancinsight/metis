@@ -59,9 +59,14 @@ pub const CLINICAL_SCREEN_XML: &str = r#"<screen id="main-screen" style="display
 mod cache;
 #[cfg(test)]
 mod cache_tests;
+#[cfg(test)]
+mod element_rect_tests;
 mod focus_ring;
 #[cfg(test)]
 mod repaint_tests;
+mod semantic_take;
+#[cfg(test)]
+mod semantic_take_tests;
 mod theme;
 use crate::document::TrackedDocument;
 use crate::{FormState, FrontendApp};
@@ -140,10 +145,10 @@ impl<T: IpcTransport> FrontendApp<T> {
             &self.doc,
             LayoutViewport::with_scale(width, height, self.display_scale),
         )?;
+        let surface = metis_ui_lang::Rect::new(0, 0, width, height);
         self.append_focus_ring(&mut display)?;
         // Repaint only what changed since the painted frame: a keystroke
         // changes one field, not the form.
-        let surface = metis_ui_lang::Rect::new(0, 0, width, height);
         let damage = self.painted.as_ref().map_or(Damage::Full, |painted| {
             display.damage_since(painted, surface)
         });
@@ -155,6 +160,7 @@ impl<T: IpcTransport> FrontendApp<T> {
         }
         self.unpresented = self.unpresented.merge(damage);
         self.painted = Some(display);
+        self.semantics_pending = true;
         Ok(())
     }
 

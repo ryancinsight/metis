@@ -8,15 +8,14 @@ use metis_platform::native::{
     ModifierState, MouseButton, NativeApplication, NativeFlow, WindowConfig, WindowEvent,
     run_native_application,
 };
-use metis_platform::{Damage, DisplayScale, Framebuffer, Rect};
-use metis_ui_lang::{LayoutViewport, compute_layout};
+use metis_platform::{Damage, DisplayScale, Framebuffer};
 use std::io::{stdin, stdout};
 use std::time::Duration;
 
 use super::native_accessibility;
-use keyboard::PATIENT_INPUT;
 
 mod keyboard;
+mod pointer;
 
 const INITIAL_WIDTH: u32 = 800;
 const INITIAL_HEIGHT: u32 = 600;
@@ -25,7 +24,6 @@ const MAX_PATIENT_ID_BYTES: usize = 128;
 const RETURN_KEY: u32 = 0x0d;
 const ESCAPE_KEY: u32 = 0x1b;
 const BACKSPACE_KEY: u32 = 0x08;
-
 /// Runs the visible Windows software-rendered form over the supervised pipe.
 pub(crate) fn run(inputs: [String; 3]) -> Result<(), Box<dyn std::error::Error>> {
     let [weight, concentration, dose] = inputs;
@@ -78,8 +76,11 @@ impl<T: IpcTransport> NativeApplication for NativeForm<T> {
         self.app.take_damage()
     }
 
-    fn accessibility_tree(&self) -> Result<Option<AccessibilityTree>> {
-        native_accessibility::project(&self.app).map(Some)
+    fn take_accessibility(&mut self) -> Result<Option<AccessibilityTree>> {
+        self.app
+            .take_semantic_tree()?
+            .map(|source| native_accessibility::project(&source, self.app.focused_control()))
+            .transpose()
     }
 
     fn handle_events(&mut self, events: &[WindowEvent]) -> Result<NativeFlow> {
@@ -187,37 +188,6 @@ impl<T: IpcTransport> NativeApplication for NativeForm<T> {
 }
 
 impl<T: IpcTransport> NativeForm<T> {
-    fn handle_pointer_up(&mut self, x: i32, y: i32) -> Result<bool> {
-        self.focused = true;
-        let menu_open = self.app.command_menu_open();
-        let mut targets = vec!["command-menu-toggle"];
-        if menu_open {
-            targets.extend([
-                ApplicationCommand::ThemeDark.id(),
-                ApplicationCommand::ThemeSystem.id(),
-            ]);
-        } else {
-            targets.extend([ApplicationCommand::FocusPatient.id(), "btn-calc"]);
-        }
-        for target in targets {
-            if command_rect(&self.app, target)?.contains(x, y) {
-                // A press focuses what it hits without a ring, then acts.
-                self.app.focus_control(target, FocusOrigin::Pointer)?;
-                return self.activate_control(target, FocusOrigin::Pointer);
-            }
-        }
-        if menu_open {
-            if command_rect(&self.app, "command-menu")?.contains(x, y) {
-                return Ok(false);
-            }
-            return self.app.close_command_menu();
-        }
-        if command_rect(&self.app, PATIENT_INPUT)?.contains(x, y) {
-            return self.app.focus_control(PATIENT_INPUT, FocusOrigin::Pointer);
-        }
-        Ok(false)
-    }
-
     fn apply_accessibility_action(&mut self, request: &AccessibilityActionRequest) -> Result<bool> {
         if request.action == AccessibilityAction::Focus {
             // An assistive-technology focus request moves focus as the
@@ -455,21 +425,6 @@ fn resize_superseded(following: &[WindowEvent]) -> bool {
         .any(|(width, height)| width > 0 && height > 0)
 }
 
-fn command_rect<T: IpcTransport>(app: &FrontendApp<T>, id: &str) -> Result<Rect> {
-    let width = i32::try_from(app.framebuffer().width()).map_err(|_| layout_error())?;
-    let height = i32::try_from(app.framebuffer().height()).map_err(|_| layout_error())?;
-    let display = compute_layout(
-        app.document(),
-        LayoutViewport::with_scale(width, height, app.display_scale()),
-    )?;
-    display.element_rect(id).ok_or_else(|| {
-        MetisError::ui(
-            ErrorCode::MalformedMarkup,
-            format!("Authored form is missing command surface {id}"),
-        )
-    })
-}
-
 fn input_limit_error() -> MetisError {
     MetisError::protocol(
         ErrorCode::PayloadTooLarge,
@@ -477,12 +432,14 @@ fn input_limit_error() -> MetisError {
     )
 }
 
-fn layout_error() -> MetisError {
-    MetisError::ui(
-        ErrorCode::LayoutOverflow,
-        "Native surface dimensions exceed layout coordinates",
-    )
-}
+#[cfg(test)]
+mod alloc_counter;
+
+#[cfg(test)]
+mod hit_tests;
+
+#[cfg(test)]
+mod idle_tests;
 
 #[cfg(test)]
 mod tests;
