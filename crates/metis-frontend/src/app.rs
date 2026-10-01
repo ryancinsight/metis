@@ -87,6 +87,8 @@ pub struct FrontendApp<T> {
     /// The display list the framebuffer shows, so the next render repaints
     /// only what changed; `None` when the surface holds no complete frame.
     pub(crate) painted: Option<DisplayList>,
+    /// Whether a render completed since the last semantic take.
+    pub(crate) semantics_pending: bool,
     /// Pixels repainted since the host last took the damage to present.
     pub(crate) unpresented: Damage,
 }
@@ -110,6 +112,7 @@ impl<T: IpcTransport> FrontendApp<T> {
             applied_theme: None,
             focus: Focus::initial(),
             painted: None,
+            semantics_pending: false,
             unpresented: Damage::Unchanged,
         };
         app.render()?;

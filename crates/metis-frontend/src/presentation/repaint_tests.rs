@@ -20,7 +20,7 @@ fn full_repaint(app: &FrontendApp<MemoryTransport>) -> Framebuffer {
 
 /// One user-visible change to the form.
 #[derive(Debug, Clone, Copy)]
-enum Edit {
+pub(super) enum Edit {
     Keystroke(&'static str),
     Composition(Option<&'static str>),
     Focus(FocusDirection),
@@ -31,7 +31,7 @@ enum Edit {
 }
 
 impl Edit {
-    fn apply(self, app: &mut FrontendApp<MemoryTransport>) {
+    pub(super) fn apply(self, app: &mut FrontendApp<MemoryTransport>) {
         match self {
             Self::Keystroke(patient) => app.set_inputs(patient, 72.5, 4.0, 0.5).expect("input"),
             Self::Composition(text) => app

@@ -493,14 +493,6 @@ an owner. “Unsupported” cannot replace delivery of a required mobile/native 
 - Acceptance: Uncovered: `FragmentPatchSet::decode`, `FragmentAction::decode`, `DeepLink::parse`, `HostOrigin::parse`, `WindowState::decode`, `Accelerator::parse`, `RoutePattern::parse` (metis-core, no manifest change); `read_frame` (metis-ipc); `parse_markup`, `ComputedStyle::parse`, `RasterImage::decode` (metis-ui-lang); `Typeface::parse` (metis-platform); archive parse (metis-cli, `archive::parse`). No crash per target within the committed time budget.
 - basis: 7b50219
 
-<a id="METIS-PERF-IDLE-001"></a>
-## METIS-PERF-IDLE-001 — Stop rebuilding accessibility and layout when nothing changed [patch]
-- Status: todo; priority: tightening; needs: none
-- Outcome: an idle event batch allocates nothing and a click reuses the painted layout for hit-testing.
-- Scope: `crates/metis-platform/src/native/application.rs`, `native/window.rs`, `crates/metis-app/src/frontend/native.rs`, `native_accessibility.rs`, `crates/metis-frontend/src/app.rs`.
-- Acceptance: Every 250 ms batch, including empty ones, rebuilds and deep-clones the accessibility tree (about 430 allocations, application.rs:195-202, window.rs:143-146); a click recomputes the whole layout up to four times through `command_rect` (native.rs:189-217, :437-450, verified at basis) though `FrontendApp` holds the painted display list. Oracle: a counting allocator over the loop with empty batches sees zero allocations and zero provider updates after the first frame; `handle_pointer_up` on a miss allocates nothing.
-- basis: 7b50219
-
 <a id="METIS-MEM-RENDER-001"></a>
 ## METIS-MEM-RENDER-001 — Render from shared ids and text, and skip unchanged DOM writes [minor]
 - Status: todo; priority: tightening; needs: none

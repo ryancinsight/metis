@@ -6,7 +6,7 @@ use std::sync::atomic::{AtomicBool, AtomicUsize, Ordering};
 use std::sync::{Arc, Mutex};
 
 #[derive(Debug)]
-struct ProbeError;
+pub(super) struct ProbeError;
 
 impl fmt::Display for ProbeError {
     fn fmt(&self, formatter: &mut fmt::Formatter<'_>) -> fmt::Result {
@@ -85,25 +85,29 @@ struct PresentedFrame {
 }
 
 #[derive(Clone)]
-struct RecordingTrace {
+pub(super) struct RecordingTrace {
     presentations: Arc<Mutex<Vec<PresentedFrame>>>,
     close_calls: Arc<AtomicUsize>,
     destroyed: Arc<AtomicBool>,
     drops: Arc<AtomicUsize>,
+    pub(super) accessibility_updates: Arc<Mutex<Vec<AccessibilityTree>>>,
 }
 
-struct RecordingSurface {
+pub(super) struct RecordingSurface {
     events: VecDeque<Vec<WindowEvent>>,
     trace: RecordingTrace,
 }
 
 impl RecordingSurface {
-    fn new(events: impl IntoIterator<Item = Vec<WindowEvent>>) -> (Self, RecordingTrace) {
+    pub(super) fn new(
+        events: impl IntoIterator<Item = Vec<WindowEvent>>,
+    ) -> (Self, RecordingTrace) {
         let trace = RecordingTrace {
             presentations: Arc::new(Mutex::new(Vec::new())),
             close_calls: Arc::new(AtomicUsize::new(0)),
             destroyed: Arc::new(AtomicBool::new(false)),
             drops: Arc::new(AtomicUsize::new(0)),
+            accessibility_updates: Arc::new(Mutex::new(Vec::new())),
         };
         (
             Self {
@@ -144,6 +148,15 @@ impl NativeSurfaceDriver for RecordingSurface {
         if let Some(last) = presentations.last_mut() {
             last.region = Some(region);
         }
+        Ok(())
+    }
+
+    fn update_accessibility(&mut self, tree: AccessibilityTree) -> io::Result<()> {
+        self.trace
+            .accessibility_updates
+            .lock()
+            .expect("accessibility trace lock remains healthy")
+            .push(tree);
         Ok(())
     }
 

@@ -36,16 +36,22 @@ pub trait NativeApplication {
         Damage::Full
     }
 
-    /// Returns the current native accessibility tree, when the application
-    /// opted into the native provider at startup.
+    /// Takes the native accessibility tree if it may differ from the one last
+    /// taken.
     ///
-    /// An application that returns `Some` during startup must continue to
-    /// return a validated tree after each event batch. Browser hosts retain
-    /// their DOM accessibility path and return `None`.
+    /// The host takes the tree before the surface is created, which installs
+    /// it, and after each event batch, which replaces the surface's tree only
+    /// when this returns `Some`. An application that opts into the native
+    /// provider returns its tree from the first take, then `Some` after each
+    /// batch that may have changed it and `None` after one that cannot have,
+    /// so an idle batch rebuilds and replaces nothing. A `Some` does not
+    /// promise a different tree: the application decides how coarsely it
+    /// tracks changes. Browser hosts retain their DOM accessibility path and
+    /// always return `None`.
     ///
     /// # Errors
     /// Returns the application's typed semantic projection error.
-    fn accessibility_tree(&self) -> Result<Option<AccessibilityTree>, Self::Error> {
+    fn take_accessibility(&mut self) -> Result<Option<AccessibilityTree>, Self::Error> {
         Ok(None)
     }
 
@@ -145,14 +151,14 @@ where
 /// batch.
 pub fn run_native_application<A>(
     config: &WindowConfig,
-    application: A,
+    mut application: A,
     wait: Duration,
 ) -> Result<(), NativeHostError<A::Error>>
 where
     A: NativeApplication,
 {
     let initial_accessibility = application
-        .accessibility_tree()
+        .take_accessibility()
         .map_err(NativeHostError::Application)?;
     let surface = NativeSurface::new_with_accessibility(config, initial_accessibility)
         .map_err(NativeHostError::Surface)?;
@@ -193,7 +199,7 @@ where
             return Ok(());
         }
         if let Some(tree) = application
-            .accessibility_tree()
+            .take_accessibility()
             .map_err(NativeHostError::Application)?
         {
             surface
@@ -227,6 +233,9 @@ fn is_destroyed(event: &WindowEvent) -> bool {
 fn is_terminal(event: &WindowEvent) -> bool {
     matches!(event, WindowEvent::CloseRequested | WindowEvent::Destroyed)
 }
+
+#[cfg(test)]
+mod accessibility_tests;
 
 #[cfg(test)]
 mod tests;

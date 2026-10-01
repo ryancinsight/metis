@@ -56,17 +56,22 @@ pub const CLINICAL_SCREEN_XML: &str = r#"<screen id="main-screen" style="display
   </card>
 </screen>"#;
 
+#[cfg(test)]
+mod element_rect_tests;
 mod focus_ring;
 #[cfg(test)]
 mod repaint_tests;
+#[cfg(test)]
+mod semantic_take_tests;
 mod theme;
 use crate::{FormState, FrontendApp};
 use iris::render::RenderBackend;
 use metis_core::{ErrorCode, MetisError, Result};
 use metis_ipc::{IpcTransport, client::HandshakeError};
-use metis_platform::{Damage, Framebuffer};
+use metis_platform::{Damage, Framebuffer, Rect};
 use metis_ui_lang::{
-    Color, DisplayCommand, DisplayList, LayoutViewport, MAX_SEMANTIC_TEXT_BYTES, compute_layout,
+    Color, DisplayCommand, DisplayList, LayoutViewport, MAX_SEMANTIC_TEXT_BYTES, SemanticTree,
+    compute_layout,
 };
 
 /// Status badge color while a backend session is open.
@@ -162,16 +167,10 @@ impl<T: IpcTransport> FrontendApp<T> {
         // an accessible control; the same projection decides focus.
         let semantics = self.semantic_tree()?;
         self.reconcile_focus(&semantics)?;
-        let width = i32::try_from(self.framebuffer.width()).map_err(|_| layout_error())?;
-        let height = i32::try_from(self.framebuffer.height()).map_err(|_| layout_error())?;
-        let mut display = compute_layout(
-            &self.doc,
-            LayoutViewport::with_scale(width, height, self.display_scale),
-        )?;
+        let (mut display, surface) = self.lay_out()?;
         self.append_focus_ring(&mut display)?;
         // Repaint only what changed since the painted frame: a keystroke
         // changes one field, not the form.
-        let surface = metis_ui_lang::Rect::new(0, 0, width, height);
         let damage = self.painted.as_ref().map_or(Damage::Full, |painted| {
             display.damage_since(painted, surface)
         });
@@ -183,7 +182,68 @@ impl<T: IpcTransport> FrontendApp<T> {
         }
         self.unpresented = self.unpresented.merge(damage);
         self.painted = Some(display);
+        self.semantics_pending = true;
         Ok(())
+    }
+
+    /// Takes the semantic tree if a render completed since the last take, so
+    /// a host that takes after each event batch rebuilds the tree only after
+    /// a batch that rendered.
+    ///
+    /// Every successful render marks the tree pending, whether or not it
+    /// changed the document; the form is rendered on construction, so the
+    /// first take reports the tree. A take that fails keeps the tree pending.
+    ///
+    /// # Errors
+    /// Returns the semantic projection error of [`Self::semantic_tree`].
+    pub fn take_semantic_tree(&mut self) -> Result<Option<SemanticTree>> {
+        if !self.semantics_pending {
+            return Ok(None);
+        }
+        let tree = self.semantic_tree()?;
+        self.semantics_pending = false;
+        Ok(Some(tree))
+    }
+
+    /// Returns the border rectangle of the authored element `id` as painted,
+    /// so a host hit-tests the frame the user sees.
+    ///
+    /// Every successful render rebuilds the painted display list from the
+    /// document, surface size and display scale, so the list is current after
+    /// each one. A render that fails after editing the document leaves the
+    /// list of the last successful render, which can lag the document. A
+    /// resize that failed to render leaves no list, and the rectangle is then
+    /// laid out afresh.
+    ///
+    /// # Errors
+    /// Returns a layout error when the surface exceeds layout coordinates or
+    /// layout fails, and a markup error when the form has no element `id`.
+    pub fn element_rect(&self, id: &str) -> Result<Rect> {
+        let laid_out;
+        let display = if let Some(painted) = &self.painted {
+            painted
+        } else {
+            laid_out = self.lay_out()?.0;
+            &laid_out
+        };
+        display.element_rect(id).ok_or_else(|| {
+            MetisError::ui(
+                ErrorCode::MalformedMarkup,
+                format!("Authored form is missing element {id}"),
+            )
+        })
+    }
+
+    /// Lays the document out over the framebuffer at the display scale,
+    /// returning the display list and the surface rectangle.
+    fn lay_out(&self) -> Result<(DisplayList, Rect)> {
+        let width = i32::try_from(self.framebuffer.width()).map_err(|_| layout_error())?;
+        let height = i32::try_from(self.framebuffer.height()).map_err(|_| layout_error())?;
+        let display = compute_layout(
+            &self.doc,
+            LayoutViewport::with_scale(width, height, self.display_scale),
+        )?;
+        Ok((display, Rect::new(0, 0, width, height)))
     }
 
     fn render_command_surface(&mut self) -> Result<()> {
