@@ -509,14 +509,6 @@ an owner. “Unsupported” cannot replace delivery of a required mobile/native 
 - Acceptance: Zero-fill, backdrop clear and the root fill write the same pixels (framebuffer.rs:178-182, presentation.rs:176-186): 3.84 MB per resize and one redundant pass per full repaint at 800x600. Each superseded `Resized` in a batch allocates and repaints (native.rs:121-129). Oracle: the bitwise repaint differential tests stay green; a counting allocator over `[Resized(640,480), Resized(700,500), Resized(800,600)]` sees one surface allocation; `benches/frame.rs` shows the pass removed.
 - basis: 7b50219
 
-<a id="METIS-MEM-SHADOW-001"></a>
-## METIS-MEM-SHADOW-001 — Store shadow masks without the empty interior [patch]
-- Status: todo; priority: tightening; needs: none
-- Outcome: a shadow mask retains only its non-hole runs, so large cards stay under the memo generation and the memo reuses its table across rolls.
-- Scope: `crates/metis-platform/src/rasterizer/shadow/mask.rs`, `memo.rs`, `glyph_cache.rs`.
-- Acceptance: About 82% of a 760x225 blur-10 mask is zero bytes composite skips (mask.rs:143-149, :204-214), and a mask over 4 MiB is never retained (memo.rs:59-62), so a 3000x1800 card on a 4K surface re-renders each repaint; the memo drops its table at each roll and undercounts entry overhead (memo.rs:63-66). Output is unchanged, so no golden moves. Oracle: mask footprint <= extent - hole + 16 x rows; the large card renders once across two repaints; no table reallocation after the first roll.
-- basis: 7b50219
-
 <a id="METIS-PERF-IDLE-001"></a>
 ## METIS-PERF-IDLE-001 — Stop rebuilding accessibility and layout when nothing changed [patch]
 - Status: todo; priority: tightening; needs: none

@@ -26,10 +26,13 @@ use crate::rasterizer::round_rect::{
 
 /// Mask bytes admitted to one generation.
 ///
-/// A mask is one byte per pixel of a shadow's extent clipped to the surface,
-/// so any shadow on a 1600×1200 surface, at most 1,920,000 bytes, fits one
-/// generation; larger surfaces can hold larger masks than a generation
-/// admits, and those are rendered each time rather than retained.
+/// A mask retains one byte per pixel of a shadow's extent clipped to the
+/// surface, less the pixels its border box covers. A card's extent is mostly
+/// that interior, so the retained bytes scale with the blur ring around it,
+/// its perimeter times about twice the blur reach, not with the card's area: a
+/// 3000×1800 card at blur 10 keeps a few hundred KiB where its extent is over
+/// 5 MB. A mask larger than a generation, such as one with a very large blur,
+/// is rendered each time rather than retained.
 pub(super) const GENERATION_BYTES: usize = 4 * 1024 * 1024;
 
 /// Everything that determines a shadow's per-pixel alpha.
@@ -69,24 +72,46 @@ impl ShadowKey {
 /// Shadow masks for the current and previous generations.
 pub(super) type ShadowMasks = GenerationalMemo<ShadowKey, ShadowMask, GENERATION_BYTES>;
 
-/// A shadow's alpha over its extent clipped to the surface, row-major.
+/// A shadow's alpha over its extent clipped to the surface, row by row.
 ///
-/// Pixels the border box covers hold zero, which leaves them untouched, and
-/// each row records the one run of them the border box fills, so compositing
-/// skips it: a card's interior is most of its shadow's extent.
+/// Each row records the one run of columns the border box fills, which
+/// compositing leaves untouched, and stores only the alphas on either side of
+/// it: a card's interior is most of its shadow's extent.
 #[derive(Debug)]
 pub(super) struct ShadowMask {
     left: u32,
     top: u32,
+    /// Columns of the extent, hole included.
     width: usize,
+    /// Each row's alphas left of its hole, then right of it; rows follow one
+    /// another in order.
     alphas: Box<[u8]>,
-    /// Per row, the mask columns `[start, end)` the border box fills.
-    holes: Box<[(usize, usize)]>,
+    rows: Box<[MaskRow]>,
+}
+
+/// Where one mask row keeps its alphas and which columns it omits.
+#[derive(Debug, Clone, Copy)]
+struct MaskRow {
+    /// Index in [`ShadowMask::alphas`] of the row's first stored alpha.
+    offset: usize,
+    /// The mask columns `[start, end)` the border box fills; empty when it
+    /// fills none.
+    hole: (u32, u32),
+}
+
+impl MaskRow {
+    fn hole(self) -> (usize, usize) {
+        let fits = "invariant: mask columns fit usize";
+        (
+            usize::try_from(self.hole.0).expect(fits),
+            usize::try_from(self.hole.1).expect(fits),
+        )
+    }
 }
 
 impl Footprint for ShadowMask {
     fn footprint(&self) -> usize {
-        self.alphas.len() + self.holes.len() * size_of::<(usize, usize)>() + size_of::<Self>()
+        self.alphas.len() + self.rows.len() * size_of::<MaskRow>() + size_of::<Self>()
     }
 }
 
@@ -139,22 +164,17 @@ impl ShadowMask {
         }
         let fits = "invariant: surface coordinates fit u32 and usize";
         let width = usize::try_from(columns.end - columns.start).expect(fits);
-        let height = usize::try_from(rows.end - rows.start).expect(fits);
-        let mut mask = Self {
-            left: u32::try_from(columns.start).expect(fits),
-            top: u32::try_from(rows.start).expect(fits),
-            width,
-            alphas: vec![0; width * height].into_boxed_slice(),
-            holes: vec![(0, 0); height].into_boxed_slice(),
-        };
-        let mut field = Field::new(&kernel, &shape);
-        let interior = field.interior();
-        let interior = interior.start + origin_x..interior.end + origin_x;
         let mut clip = Clip {
             element,
             samples: [(0.0, 0.0); SUBSAMPLES],
             unused: [(0.0, 0.0); SUBSAMPLES],
         };
+        let (mask_rows, stored) = layout_rows(&mut clip, rows.clone(), &columns);
+        let mut alphas = vec![0; stored].into_boxed_slice();
+        let mut row_alphas = split_rows(&mut alphas, &mask_rows, width);
+        let mut field = Field::new(&kernel, &shape);
+        let interior = field.interior();
+        let interior = interior.start + origin_x..interior.end + origin_x;
         let alpha = shadow.color().a;
         // Tiling bounds the field's scratch memory by the tile, not the width.
         let tiles = std::iter::successors(Some(columns.start), |start| Some(start + TILE_WIDTH))
@@ -162,16 +182,13 @@ impl ShadowMask {
             .map(|start| start..(start + TILE_WIDTH).min(columns.end));
         for tile in tiles {
             field.set_tile(tile.start - origin_x..tile.end - origin_x);
-            let mask_rows = mask
-                .alphas
-                .chunks_exact_mut(width)
-                .zip(mask.holes.iter_mut());
-            for (device_row, (alphas, hole)) in rows.clone().zip(mask_rows) {
+            let pieces = row_alphas.iter_mut().zip(mask_rows.iter());
+            for (device_row, (alphas, row)) in rows.clone().zip(pieces) {
                 render_row(
                     &mut field,
                     &mut clip,
                     alphas,
-                    hole,
+                    row.hole(),
                     RowSpan {
                         row: device_row,
                         columns: tile.clone(),
@@ -183,17 +200,22 @@ impl ShadowMask {
                 );
             }
         }
-        Some(mask)
+        Some(Self {
+            left: u32::try_from(columns.start).expect(fits),
+            top: u32::try_from(rows.start).expect(fits),
+            width,
+            alphas,
+            rows: mask_rows,
+        })
     }
 
     /// Composites the mask's visible part in `color`, whose alpha the mask
     /// already carries.
     pub(super) fn composite(&self, fb: &mut Framebuffer, color: Color) {
         let clip = fb.clip();
-        let height = self.alphas.len() / self.width.max(1);
         let fits = "invariant: mask extents fit the surface's u32 coordinates";
         let right = self.left + u32::try_from(self.width).expect(fits);
-        let bottom = self.top + u32::try_from(height).expect(fits);
+        let bottom = self.top + u32::try_from(self.rows.len()).expect(fits);
         let (left, top) = (self.left.max(clip.left()), self.top.max(clip.top()));
         let (right, bottom) = (right.min(clip.right()), bottom.min(clip.bottom()));
         if left >= right || top >= bottom {
@@ -202,18 +224,75 @@ impl ShadowMask {
         let from = usize::try_from(left - self.left).expect(fits);
         let to = usize::try_from(right - self.left).expect(fits);
         for row in top..bottom {
-            let index = usize::try_from(row - self.top).expect(fits);
-            let alphas = &self.alphas[index * self.width..(index + 1) * self.width];
-            let (hole_start, hole_end) = self.holes[index];
-            // The visible columns less the hole: at most two runs.
+            let stored = self.rows[usize::try_from(row - self.top).expect(fits)];
+            let (hole_start, hole_end) = stored.hole();
+            // The visible columns less the hole: at most two runs. A column
+            // left of the hole is stored at the row's offset plus itself, one
+            // right of it after the stored left run.
             for (start, end) in [(from, to.min(hole_start)), (from.max(hole_end), to)] {
                 if start < end {
+                    let first = if start >= hole_end {
+                        stored.offset + hole_start + (start - hole_end)
+                    } else {
+                        stored.offset + start
+                    };
+                    let alphas = &self.alphas[first..first + (end - start)];
                     let column = self.left + u32::try_from(start).expect(fits);
-                    fb.composite_alpha_row(row, column, &alphas[start..end], color);
+                    fb.composite_alpha_row(row, column, alphas, color);
                 }
             }
         }
     }
+}
+
+/// Places each of `rows` in the mask: the columns of `columns` its border box
+/// fills, and where its remaining alphas start. Also returns the stored total.
+fn layout_rows(clip: &mut Clip, rows: Range<i64>, columns: &Range<i64>) -> (Box<[MaskRow]>, usize) {
+    let width = usize::try_from(columns.end - columns.start).expect("invariant: fits usize");
+    let column = |value: i64| {
+        u32::try_from(value - columns.start).expect("invariant: columns lie in the mask")
+    };
+    let mut stored = 0;
+    let layout = rows
+        .map(|device_row| {
+            let surface_row =
+                u32::try_from(device_row).expect("invariant: rows are clamped to the surface");
+            let hole = clip.row(surface_row).map_or((0, 0), |bounds| {
+                let start = bounds.solid.0.max(columns.start);
+                let end = bounds.solid.1.min(columns.end);
+                if start < end {
+                    (column(start), column(end))
+                } else {
+                    (0, 0)
+                }
+            });
+            let row = MaskRow {
+                offset: stored,
+                hole,
+            };
+            let (start, end) = row.hole();
+            stored += width - (end - start);
+            row
+        })
+        .collect();
+    (layout, stored)
+}
+
+/// Splits `alphas` into the stored alphas of each of `rows`, in order.
+fn split_rows<'alphas>(
+    alphas: &'alphas mut [u8],
+    rows: &[MaskRow],
+    width: usize,
+) -> Vec<&'alphas mut [u8]> {
+    let mut rest = alphas;
+    rows.iter()
+        .map(|row| {
+            let (start, end) = row.hole();
+            let (piece, tail) = std::mem::take(&mut rest).split_at_mut(width - (end - start));
+            rest = tail;
+            piece
+        })
+        .collect()
 }
 
 /// One device row of one tile, with the mask's and the shadow's placement.
@@ -227,12 +306,13 @@ struct RowSpan {
     interior: Range<i64>,
 }
 
-/// Renders one row of one tile, leaving pixels the border box covers zero.
+/// Renders one row of one tile into `alphas`, the row's stored alphas, which
+/// omit the `hole` columns the border box fills.
 fn render_row(
     field: &mut Field<'_>,
     clip: &mut Clip,
     alphas: &mut [u8],
-    hole: &mut (usize, usize),
+    hole: (usize, usize),
     span: RowSpan,
     alpha: u8,
 ) {
@@ -249,21 +329,33 @@ fn render_row(
     let surface_row =
         u32::try_from(device_row).expect("invariant: rows are clamped to the surface");
     let bounds = clip.row(surface_row);
-    let index =
-        |column: i64| usize::try_from(column - left).expect("invariant: columns lie in the mask");
+    let hole_len = hole.1 - hole.0;
+    // A stored alpha's index, for a column that is not in the hole.
+    let index = |column: i64| {
+        let column = usize::try_from(column - left).expect("invariant: columns lie in the mask");
+        if column < hole.0 {
+            column
+        } else {
+            column - hole_len
+        }
+    };
+    // The index one past the last stored alpha of a run that ends at `column`,
+    // which may be the hole's first column.
+    let run_end = |column: i64| {
+        let column = usize::try_from(column - left).expect("invariant: columns lie in the mask");
+        if column <= hole.0 {
+            column
+        } else {
+            column - hole_len
+        }
+    };
     let mut column = columns.start;
     while column < columns.end {
         let covered = bounds.map_or(Coverage::Outside, |bounds| bounds.classify(column));
         match covered {
             Coverage::Solid(end) => {
-                let end = end.min(columns.end);
-                // A tile boundary can split the hole; the pieces are adjacent.
-                *hole = if hole.0 == hole.1 {
-                    (index(column), index(end))
-                } else {
-                    (hole.0.min(index(column)), hole.1.max(index(end)))
-                };
-                column = end;
+                // The hole's columns have no stored alpha.
+                column = end.min(columns.end);
                 continue;
             }
             Coverage::Outside if interior.contains(&column) => {
@@ -275,7 +367,7 @@ fn render_row(
                 {
                     end = end.min(bounds.touched.0);
                 }
-                alphas[index(column)..index(end)].fill(coverage_alpha(alpha, interior_value));
+                alphas[index(column)..run_end(end)].fill(coverage_alpha(alpha, interior_value));
                 column = end;
                 continue;
             }

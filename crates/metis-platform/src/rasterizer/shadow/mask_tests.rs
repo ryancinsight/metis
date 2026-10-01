@@ -2,9 +2,11 @@
 //! so a scene drawn on a new thread is the oracle for the same scene drawn
 //! after unrelated shadows on this one.
 
-use super::RENDERS;
+use super::{RENDERS, ShadowMask};
 use crate::framebuffer::{Color, Framebuffer, Rect};
+use crate::memo::Footprint;
 use crate::rasterizer::{BoxShadow, CornerRadius, draw_box_shadow};
+use std::mem::size_of;
 
 fn surface() -> Framebuffer {
     let mut fb = Framebuffer::new(160, 120).expect("test surface");
@@ -111,4 +113,45 @@ fn a_shadow_outside_the_clip_is_not_rendered() {
     });
     assert_eq!(RENDERS.get(), before);
     assert_eq!(fb.pixels(), surface().pixels());
+}
+
+#[test]
+fn a_mask_retains_only_the_pixels_outside_the_border_box() {
+    // A square-cornered box inside the surface covers exactly its own area.
+    let rect = Rect::new(60, 60, 760, 225);
+    let described = shadow((0, 0), 10, 120);
+    let mask = ShadowMask::render((900, 400), rect, CornerRadius::clamped(0, rect), described)
+        .expect("the shadow is on the surface");
+    let extent = mask.width * mask.rows.len();
+    let hole = usize::try_from(rect.width * rect.height).expect("positive area");
+    assert_eq!(mask.alphas.len(), extent - hole);
+    assert!(
+        mask.footprint() <= extent - hole + 16 * mask.rows.len() + size_of::<ShadowMask>(),
+        "{} bytes for {extent} pixels",
+        mask.footprint()
+    );
+}
+
+#[test]
+fn a_card_larger_than_a_generation_renders_once() {
+    // Its extent is over 4 MiB, but the blur ring around it is a fraction.
+    let scene = [(Rect::new(100, 100, 2400, 1800), 24, shadow((0, 8), 10, 60))];
+    let draw_large = || {
+        let mut fb = Framebuffer::new(2700, 2100).expect("large surface");
+        fb.clear(Color::rgb(236, 240, 244));
+        for &(rect, radius, described) in &scene {
+            draw_box_shadow(
+                &mut fb,
+                rect,
+                CornerRadius::clamped(radius, rect),
+                described,
+            );
+        }
+        fb
+    };
+    let before = RENDERS.get();
+    let first = draw_large();
+    let second = draw_large();
+    assert_eq!(RENDERS.get() - before, 1);
+    assert_eq!(first.pixels(), second.pixels());
 }
