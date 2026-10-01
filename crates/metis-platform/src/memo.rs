@@ -5,14 +5,17 @@
 //! the same box. A memo keyed on everything that determines a value returns
 //! the value bit for bit instead of recomputing it.
 //!
-//! Memory is bounded by two generations of at most `BYTES` each. When the
-//! current generation fills it becomes the previous one and the older
-//! generation is dropped; a hit in the previous generation moves the entry
-//! forward. Values used every frame therefore stay resident while values no
-//! longer used age out, without per-entry recency bookkeeping.
+//! Memory is bounded by two generations of at most `BYTES` each, counting
+//! each entry's key and table slot with its value. When the current
+//! generation fills it becomes the previous one and the older generation is
+//! emptied and reused as the next current table; a hit in the previous
+//! generation moves the entry forward. Values used every frame therefore stay
+//! resident while values no longer used age out, without per-entry recency
+//! bookkeeping.
 
 use std::collections::HashMap;
 use std::hash::Hash;
+use std::mem::size_of;
 
 /// The bytes a memoized value keeps alive, counted against its generation.
 pub(crate) trait Footprint {
@@ -56,27 +59,31 @@ impl<K: Eq + Hash, V: Footprint, const BYTES: usize> GenerationalMemo<K, V, BYTE
             Some(value) => value,
             None => render()?,
         };
-        let bytes = value.footprint();
+        let bytes = Self::entry_bytes(&value);
         if bytes > BYTES {
             return Some(Lookup::Uncached(value));
         }
         if self.current_bytes + bytes > BYTES {
-            self.previous = std::mem::take(&mut self.current);
+            // The older generation's table is emptied in place, so its
+            // capacity serves the next generation instead of regrowing.
+            std::mem::swap(&mut self.current, &mut self.previous);
+            self.current.clear();
             self.current_bytes = 0;
         }
         self.current_bytes += bytes;
         Some(Lookup::Cached(self.current.entry(key).or_insert(value)))
     }
 
+    /// Bytes one entry keeps alive: the value, its key, and the table's control
+    /// byte.
+    fn entry_bytes(value: &V) -> usize {
+        value.footprint() + size_of::<K>() + 1
+    }
+
     /// Bytes retained across both generations.
     #[cfg(test)]
     pub(crate) fn retained_bytes(&self) -> usize {
-        self.current_bytes
-            + self
-                .previous
-                .values()
-                .map(Footprint::footprint)
-                .sum::<usize>()
+        self.current_bytes + self.previous.values().map(Self::entry_bytes).sum::<usize>()
     }
 }
 
@@ -99,6 +106,7 @@ impl<V> Lookup<'_, V> {
 #[cfg(test)]
 mod tests {
     use super::{Footprint, GenerationalMemo};
+    use std::mem::size_of;
 
     const BYTES: usize = 1024;
 
@@ -152,18 +160,50 @@ mod tests {
     #[test]
     fn previous_generation_hits_move_forward() {
         let mut memo = GenerationalMemo::<u32, Block, BYTES>::default();
-        memo.get_or_render(0, || Some(Block(BYTES / 2)));
+        // Two entries, each with its key and control byte, fill a generation.
+        let half = BYTES / 2 - (size_of::<u32>() + 1);
+        memo.get_or_render(0, || Some(Block(half)));
         // Filling the current generation demotes key 0 to the previous one.
-        memo.get_or_render(1, || Some(Block(BYTES / 2)));
-        memo.get_or_render(2, || Some(Block(BYTES / 2)));
+        memo.get_or_render(1, || Some(Block(half)));
+        memo.get_or_render(2, || Some(Block(half)));
         let mut rendered = false;
         memo.get_or_render(0, || {
             rendered = true;
-            Some(Block(BYTES / 2))
+            Some(Block(half))
         });
         assert!(
             !rendered,
             "a previous-generation hit is served, not rendered"
+        );
+    }
+
+    #[test]
+    fn entries_count_their_keys_against_the_generation() {
+        let mut memo = GenerationalMemo::<u64, Block, BYTES>::default();
+        for key in 0..10_000 {
+            memo.get_or_render(key, || Some(Block(0)));
+        }
+        let entry = size_of::<u64>() + 1;
+        assert!(
+            memo.current.len() <= BYTES / entry,
+            "{}",
+            memo.current.len()
+        );
+        assert!(memo.retained_bytes() <= 2 * BYTES);
+    }
+
+    #[test]
+    fn a_rolled_generation_reuses_the_older_table() {
+        let mut memo = GenerationalMemo::<u32, Block, BYTES>::default();
+        let entry = size_of::<u32>() + 1 + 16;
+        let per_generation = BYTES / entry;
+        for key in 0..u32::try_from(3 * per_generation + 1).expect("small") {
+            memo.get_or_render(key, || Some(Block(16)));
+        }
+        assert!(
+            memo.current.capacity() >= per_generation,
+            "the current table regrew after a roll: capacity {}",
+            memo.current.capacity()
         );
     }
 

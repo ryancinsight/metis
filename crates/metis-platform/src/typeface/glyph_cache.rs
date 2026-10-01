@@ -16,8 +16,8 @@ use super::text::GlyphWeight;
 use crate::memo::{Footprint, GenerationalMemo};
 use std::mem::size_of;
 
-/// Mask bytes admitted to one generation: one byte per pixel, so about 3,500
-/// glyphs of 24 by 24 pixels.
+/// Mask bytes admitted to one generation: one byte per pixel plus each entry's
+/// fixed overhead, so a few thousand glyphs of 24 by 24 pixels.
 pub(super) const GENERATION_BYTES: usize = 2 * 1024 * 1024;
 
 /// Everything that determines one glyph's alpha mask.
