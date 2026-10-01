@@ -54,6 +54,11 @@ the bounded service in a second terminal:
 cargo run --locked -p metis-app -- --metis-http-service http://127.0.0.1:8080 8766 66666666666666666666666666666666
 ```
 
+The last argument is the only session principal the service accepts; a
+handshake naming any other principal receives HTTP 403. The service keeps one
+session; a second handshake for a live session receives HTTP 409, and the first
+handshake after the session lifetime elapses replaces it.
+
 Open `http://127.0.0.1:8080/http-health.html`. The page sends a real
 cross-origin `GET /health`, performs a binary session handshake, dispatches a
 generation-bound fragment action and displays the returned text patch. It then

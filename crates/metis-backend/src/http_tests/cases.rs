@@ -367,5 +367,5 @@ fn response_delay_probe_rejects_unbounded_values() {
     assert_eq!(error.code, ErrorCode::Timeout);
 }
 
-#[path = "../http_tests_extra.rs"]
+#[path = "extra.rs"]
 mod extra;

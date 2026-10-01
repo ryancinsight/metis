@@ -61,6 +61,14 @@ browser asset policy therefore admits the `blob:` scheme only in `connect-src`;
 policy change is required for the reader contract and does not grant a page
 authority to reach a network endpoint.
 
+Revision 2026-09-29: the loopback HTTP fragment host now receives the
+launcher-supplied session identity at construction, rejects every handshake
+whose principal differs, and removes the retained session when its lifetime
+elapses on the monotonic clock, before admitting a new handshake. A forged
+principal is rejected before eviction or conflict evaluation. HTTP and
+WebSocket transports therefore enforce the same host-context authority
+boundary.
+
 ## Alternatives
 
 Trusting a caller-supplied origin or window would allow substitution at the
@@ -76,7 +84,10 @@ primitives.
 Core tests cover canonicalization, strict IPv6, malformed and injection forms, exact policy
 matches, origin/window/session substitutions, unbound-token rejection and
 retargeted host signatures. Backend process and IPC tests continue to exercise
-one-handshake session binding and expiry. The native WebSocket service tests
+one-handshake session binding and expiry. HTTP tests submit nine forged
+principals before the launcher principal, then verify typed rejection, a
+successful trusted handshake, a conflict while the session lives, and
+expiry-driven replacement. The native WebSocket service tests
 complete an authorized loopback handshake and verify that an unauthorized
 Origin receives no 101 response. The browser asset test and manual trace verify
 external assets, strict CSP directives, live service results and lifecycle

@@ -39,6 +39,10 @@ pub trait Clock {
 }
 
 /// Production clock using `SystemTime` for UTC and `Instant` for elapsed time.
+///
+/// Clones share the monotonic origin, so readings from any clone are
+/// comparable.
+#[derive(Clone)]
 pub struct SystemClock {
     origin: Instant,
 }

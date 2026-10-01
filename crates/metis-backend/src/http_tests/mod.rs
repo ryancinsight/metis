@@ -1,8 +1,10 @@
 use super::*;
+use crate::service::SESSION_LIFETIME;
 use metis_core::capability::{CapabilityScope, CapabilityToken};
 use metis_core::host::{HostOrigin, WindowId};
 use metis_core::protocol::{
-    FragmentAction, FragmentPatchSet, HandshakeRequestPayload, PROTOCOL_VERSION,
+    FragmentAction, FragmentPatchSet, HandshakeRequestPayload, HandshakeResponsePayload,
+    PROTOCOL_VERSION,
 };
 use moirai_async::io::AsyncWriteExt;
 use moirai_async::net::TcpStream;
@@ -22,7 +24,12 @@ fn policy() -> HostPolicy {
 }
 
 fn application() -> BrowserHttpService {
-    BrowserHttpService::new([7; 32], SafetyEnvelope::default(), policy())
+    BrowserHttpService::new(
+        [7; 32],
+        SafetyEnvelope::default(),
+        policy(),
+        HostSessionId::new(PRINCIPAL).expect("test principal"),
+    )
 }
 
 fn config() -> ServerConfig {

@@ -93,8 +93,9 @@ against the real service boundary.
 `POST /v1/session` accepts a `HandshakeRequestPayload`, and authenticated
 `POST /v1/fragments` returns a bounded `FragmentPatchSet` for the registered
 UI plugin. `GET /health` is a text-only readiness probe. Every route requires
-the exact configured `Origin`; arbitrary HTML, scripts and DICOM data are not
-part of this service boundary.
+the exact configured `Origin`, and the handshake principal must equal the
+launcher-supplied session identity. Arbitrary HTML, scripts and DICOM data are
+not part of this service boundary.
 
 See the [user manual](../../docs/manual/distribution.md) for portable and
 installer workflows and the [application decision](../../docs/adr/0006-application-entry.md)
