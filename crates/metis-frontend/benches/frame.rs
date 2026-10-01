@@ -1,6 +1,7 @@
 //! Repaint cost of the authored form after the edits that drive it: a
-//! keystroke, which changes one field, and a theme change, which recolors
-//! nearly every command and so approaches a full repaint.
+//! keystroke, which changes one field, a theme change, which recolors
+//! nearly every command and so approaches a full repaint, and a resize, which
+//! allocates a surface and paints it in full.
 //!
 //! Two surfaces bound the regimes a desktop presents: the 800x600 logical form
 //! at 100% scale, and the same form at 200% on a 1600x1200 surface, where
@@ -62,13 +63,29 @@ fn repaint(c: &mut Criterion) {
                 app.framebuffer().get_pixel(1, 1)
             });
         });
+        let mut app = form(width, height, milli);
+        let mut shrunk = false;
+        group.bench_function(format!("resize_{surface}"), |b| {
+            b.iter(|| {
+                shrunk = !shrunk;
+                let (width, height) = if shrunk {
+                    (width - 160, height - 120)
+                } else {
+                    (width, height)
+                };
+                black_box(&mut app)
+                    .resize(black_box(width), black_box(height))
+                    .expect("invariant: the fixture extent is a valid surface");
+                app.framebuffer().get_pixel(1, 1)
+            });
+        });
     }
     group.finish();
 }
 
 criterion_group! {
     name = frame;
-    // Four cases at about two and a half seconds each.
+    // Six cases at about two and a half seconds each.
     config = Criterion::default()
         .warm_up_time(std::time::Duration::from_millis(500))
         .measurement_time(std::time::Duration::from_secs(2))

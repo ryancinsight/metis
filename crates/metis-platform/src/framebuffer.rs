@@ -60,6 +60,12 @@ impl Color {
         Self::rgba(r, g, b, 255)
     }
 
+    /// Reports whether this color replaces whatever it is painted over.
+    #[must_use]
+    pub const fn is_opaque(self) -> bool {
+        self.a == 255
+    }
+
     /// Parses ASCII `#RGB`, `#RGBA`, `#RRGGBB`, or `#RRGGBBAA`.
     ///
     /// Malformed values, including non-ASCII characters, return `None`.
@@ -229,6 +235,16 @@ impl Framebuffer {
         draw(scope.surface)
     }
 
+    /// Reports whether `rect` contains every pixel writes may currently
+    /// change; an empty clip is contained by any rectangle.
+    ///
+    /// A square, opaque fill of such a rectangle overwrites every writable
+    /// pixel, so it leaves no trace of anything painted before it.
+    #[must_use]
+    pub fn clip_within(&self, rect: Rect) -> bool {
+        self.clip.is_empty() || rect.covers(self.clip.rect())
+    }
+
     /// Horizontal pixel count.
     #[must_use]
     pub const fn width(&self) -> u32 {
@@ -392,6 +408,34 @@ mod tests {
             Color::from_hex("#12345678"),
             Some(Color::rgba(18, 52, 86, 120))
         );
+    }
+
+    #[test]
+    fn clip_within_compares_the_writable_region_not_the_surface() {
+        let mut fb = Framebuffer::new(10, 8).expect("small surface");
+        assert!(fb.clip_within(Rect::new(0, 0, 10, 8)));
+        assert!(fb.clip_within(Rect::new(-3, -3, 99, 99)));
+        assert!(!fb.clip_within(Rect::new(0, 0, 9, 8)), "last column");
+        assert!(!fb.clip_within(Rect::new(0, 1, 10, 7)), "first row");
+        assert!(!fb.clip_within(Rect::new(1, 0, 10, 8)), "first column");
+        assert!(!fb.clip_within(Rect::new(0, 0, 10, 7)), "last row");
+        fb.render_clipped(Rect::new(2, 2, 4, 3), |narrowed| {
+            assert!(narrowed.clip_within(Rect::new(2, 2, 4, 3)));
+            assert!(narrowed.clip_within(Rect::new(1, 1, 6, 5)));
+            assert!(!narrowed.clip_within(Rect::new(3, 2, 3, 3)));
+            assert!(!narrowed.clip_within(Rect::new(2, 2, 4, 2)));
+        });
+        fb.render_clipped(Rect::new(20, 20, 4, 4), |outside| {
+            assert!(outside.clip().is_empty());
+            assert!(outside.clip_within(Rect::new(0, 0, 0, 0)));
+        });
+    }
+
+    #[test]
+    fn only_full_alpha_replaces_its_destination() {
+        assert!(Color::RED.is_opaque());
+        assert!(!Color::rgba(1, 2, 3, 254).is_opaque());
+        assert!(!Color::TRANSPARENT.is_opaque());
     }
 
     #[test]

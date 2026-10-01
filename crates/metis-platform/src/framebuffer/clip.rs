@@ -1,6 +1,6 @@
 //! The region of a framebuffer that writes may change.
 
-use super::Framebuffer;
+use super::{Framebuffer, Rect};
 
 /// The half-open pixel region writes may change.
 ///
@@ -50,6 +50,19 @@ impl Clip {
     }
     pub(super) const fn contains(self, x: u32, y: u32) -> bool {
         x >= self.left && x < self.right && y >= self.top && y < self.bottom
+    }
+    /// The clip as a [`Rect`].
+    pub(super) fn rect(self) -> Rect {
+        let edge = |value: u32| {
+            i32::try_from(value)
+                .expect("invariant: Framebuffer::new bounds each dimension by i32::MAX")
+        };
+        Rect::new(
+            edge(self.left),
+            edge(self.top),
+            edge(self.right.saturating_sub(self.left)),
+            edge(self.bottom.saturating_sub(self.top)),
+        )
     }
 }
 

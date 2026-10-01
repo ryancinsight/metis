@@ -84,7 +84,7 @@ impl<T: IpcTransport> NativeApplication for NativeForm<T> {
 
     fn handle_events(&mut self, events: &[WindowEvent]) -> Result<NativeFlow> {
         let mut repaint = false;
-        for event in events {
+        for (index, event) in events.iter().enumerate() {
             if let WindowEvent::KeyDown {
                 virtual_key,
                 repeated,
@@ -121,6 +121,7 @@ impl<T: IpcTransport> NativeApplication for NativeForm<T> {
                 WindowEvent::Resized { width, height }
                     if *width > 0
                         && *height > 0
+                        && !resize_superseded(&events[index + 1..])
                         && (*width != self.app.framebuffer().width()
                             || *height != self.app.framebuffer().height()) =>
                 {
@@ -434,6 +435,26 @@ fn validate_patient_value(value: &str) -> Result<()> {
     Ok(())
 }
 
+/// Reports whether the event before `following` is skipped because the
+/// consecutive `Resized` events at the head of `following` include a usable
+/// size, which replaces the surface the earlier event would have allocated.
+///
+/// Only a directly following run is skipped: any other event between two
+/// resizes, a pointer hit test for one, reads the surface the first produced.
+/// A skipped size is never allocated, so its allocation failure is not
+/// observed: an oversize size followed by a usable one now ends at the usable
+/// size instead of returning the error, and an oversize size at the end of a
+/// run returns its error without the earlier sizes having been applied.
+fn resize_superseded(following: &[WindowEvent]) -> bool {
+    following
+        .iter()
+        .map_while(|event| match event {
+            WindowEvent::Resized { width, height } => Some((*width, *height)),
+            _ => None,
+        })
+        .any(|(width, height)| width > 0 && height > 0)
+}
+
 fn command_rect<T: IpcTransport>(app: &FrontendApp<T>, id: &str) -> Result<Rect> {
     let width = i32::try_from(app.framebuffer().width()).map_err(|_| layout_error())?;
     let height = i32::try_from(app.framebuffer().height()).map_err(|_| layout_error())?;
@@ -465,3 +486,6 @@ fn layout_error() -> MetisError {
 
 #[cfg(test)]
 mod tests;
+
+#[cfg(test)]
+mod surface_tests;
