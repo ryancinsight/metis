@@ -146,6 +146,33 @@ fn temp_root() -> PathBuf {
     root
 }
 
+#[test]
+fn parsed_entries_borrow_their_payload_from_the_archive_bytes() {
+    let archive = fixture_archive();
+    let entries = archive::parse(&archive).expect("fixture archive");
+    let executable = entries
+        .iter()
+        .find(|entry| entry.path == "usr/bin/metis-app")
+        .expect("executable entry");
+    assert_eq!(executable.bytes, b"executable");
+    assert_eq!(executable.mode, 0o755);
+    assert!(archive.as_ptr_range().contains(&executable.bytes.as_ptr()));
+}
+
+#[test]
+fn archive_without_its_end_blocks_is_rejected() {
+    let archive = fixture_archive();
+    let truncated = archive
+        .get(..archive.len() - 2 * BLOCK_BYTES)
+        .expect("archive longer than its end blocks");
+    assert_eq!(
+        archive::parse(truncated)
+            .err()
+            .map(|error| error.to_string()),
+        Some("Linux archive is missing its USTAR end blocks".to_owned())
+    );
+}
+
 fn fixture_archive() -> Vec<u8> {
     let mut bytes = Vec::new();
     tar_entry(&mut bytes, "usr/bin/metis-app", 0o755, b"executable");

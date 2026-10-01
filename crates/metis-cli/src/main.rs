@@ -1,4 +1,5 @@
 //! Build and distribute applications from a single validated manifest.
+mod bounded_read;
 mod build;
 mod commands;
 mod dev;

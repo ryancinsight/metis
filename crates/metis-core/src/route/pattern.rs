@@ -85,7 +85,7 @@ impl RoutePattern {
     /// # Errors
     /// Returns [`RouteError::Malformed`] when a parameter is missing or a
     /// value would not route back to this pattern: an empty segment, `.`,
-    /// `..`, or a `/` inside a single-segment parameter.
+    /// `..`, or a `/` or `\` inside a single-segment parameter.
     pub fn href(&self, parameters: &[(&str, &str)]) -> Result<String, RouteError> {
         let value_of = |name: &str| {
             parameters
@@ -94,7 +94,7 @@ impl RoutePattern {
                 .ok_or(RouteError::Malformed)
         };
         let segment = |value: &str| {
-            if value.is_empty() || value == "." || value == ".." || value.contains('/') {
+            if value.is_empty() || value == "." || value == ".." || value.contains(['/', '\\']) {
                 Err(RouteError::Malformed)
             } else {
                 Ok(uri_path::encode_segment(value))

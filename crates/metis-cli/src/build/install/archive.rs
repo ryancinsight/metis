@@ -1,10 +1,7 @@
 //! Bounded USTAR reading for Linux package installation.
 
-use crate::{Result, manifest};
-use std::{
-    fs,
-    path::{Component, Path},
-};
+use crate::{Result, bounded_read, manifest};
+use std::path::{Component, Path};
 
 const BLOCK_BYTES: usize = 512;
 const MAX_FILES: usize = 4096;
@@ -12,20 +9,25 @@ const MAX_FILES: usize = 4096;
 // headers and the two end blocks without permitting an unbounded read.
 const MAX_ARCHIVE_BYTES: u64 = manifest::PAYLOAD_LIMIT + 8 * 1024 * 1024;
 
-pub(super) struct ArchiveEntry {
+/// One regular file of an archive, its contents borrowed from the archive bytes.
+pub(super) struct ArchiveEntry<'archive> {
     pub(super) path: String,
     pub(super) mode: u32,
-    pub(super) bytes: Vec<u8>,
+    pub(super) bytes: &'archive [u8],
 }
 
-pub(super) fn read_archive(path: &Path) -> Result<Vec<ArchiveEntry>> {
-    let size = fs::metadata(path)?.len();
-    if size > MAX_ARCHIVE_BYTES {
-        return Err("Linux archive exceeds the bounded installation size".into());
-    }
-    let mut file = fs::File::open(path)?;
-    let mut bytes = Vec::with_capacity(usize::try_from(size).map_err(|_| "archive is too large")?);
-    std::io::Read::read_to_end(&mut file, &mut bytes)?;
+/// Reads the archive at `path` under [`MAX_ARCHIVE_BYTES`], checking the size
+/// on the open handle.
+pub(super) fn read_archive(path: &Path) -> Result<Vec<u8>> {
+    bounded_read::read_file(
+        path,
+        MAX_ARCHIVE_BYTES,
+        "Linux archive exceeds the bounded installation size",
+    )
+}
+
+/// Parses the USTAR `bytes` of a package, validating every header and path.
+pub(super) fn parse(bytes: &[u8]) -> Result<Vec<ArchiveEntry<'_>>> {
     let mut entries = Vec::new();
     let mut offset = 0_usize;
     let mut zero_blocks = 0_u8;
@@ -76,7 +78,7 @@ pub(super) fn read_archive(path: &Path) -> Result<Vec<ArchiveEntry>> {
         entries.push(ArchiveEntry {
             path,
             mode: u32::try_from(mode).map_err(|_| "USTAR mode is too large")?,
-            bytes: bytes[offset..end].to_vec(),
+            bytes: &bytes[offset..end],
         });
         if entries.len() > MAX_FILES {
             return Err("Linux archive contains too many files".into());

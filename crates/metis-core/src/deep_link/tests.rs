@@ -59,6 +59,7 @@ fn hostile_links_are_rejected() {
             DeepLinkError::Malformed,
         ),
         ("org.atlas.viewer://open/a%2Fb", DeepLinkError::Malformed),
+        ("org.atlas.viewer://open/..%5Cx", DeepLinkError::Malformed),
         ("org.atlas.viewer://open/%0a", DeepLinkError::Malformed),
         ("org.atlas.viewer://open/%ff", DeepLinkError::Malformed),
         ("org.atlas.viewer://open/%4", DeepLinkError::Malformed),
