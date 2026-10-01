@@ -493,14 +493,6 @@ an owner. “Unsupported” cannot replace delivery of a required mobile/native 
 - Acceptance: The `generation` getter takes a plain `Mutex::lock` while attached (windows.rs:31-42) and `wait_events` holds it up to 30 s; `NativeApplication::new` and `Client::request` wait without deadline (host.rs:89, :140). Test on GIL and free-threaded interpreters: one thread in `wait_events(timeout_ms=2000)`, another reading `generation`, and a counter thread advancing throughout.
 - basis: 7b50219
 
-<a id="METIS-SEC-UNSAFE-001"></a>
-## METIS-SEC-UNSAFE-001 — Mechanize and tighten the Windows unsafe surface [patch]
-- Status: todo; priority: correctness; needs: none
-- Outcome: `clippy::undocumented_unsafe_blocks` denies in the workspace and three hardening defects in the CLI Windows code are closed.
-- Scope: `Cargo.toml`, `crates/metis-cli/src/windows/database.rs`, `dev/watcher/windows.rs`.
-- Acceptance: The MSI `Handle` is `Send` though its SAFETY text assumes the creating thread (database.rs:5); the watcher encodes paths lossily, leaks the change handle when the spawn fails and describes an INFINITE wait as bounded (watcher/windows.rs:84-173). Tests: a `compile_fail` doctest moving a `Database` across threads; an `OsString` holding an unpaired surrogate yields an error or the exact watched path; deleting any SAFETY comment fails clippy.
-- basis: 7b50219
-
 <a id="METIS-FUZZ-PARSERS-001"></a>
 ## METIS-FUZZ-PARSERS-001 — Fuzz every untrusted-input parser [patch]
 - Status: todo; priority: verification; needs: none

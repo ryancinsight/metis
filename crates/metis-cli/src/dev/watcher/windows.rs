@@ -7,7 +7,10 @@ use super::WatchEvent;
 use crate::Result;
 use std::path::Path;
 use std::{
-    os::windows::io::{AsRawHandle, FromRawHandle, OwnedHandle},
+    os::windows::{
+        ffi::OsStrExt,
+        io::{AsRawHandle, FromRawHandle, OwnedHandle},
+    },
     ptr::null,
     sync::mpsc::{Receiver, SyncSender, TryRecvError, TrySendError, sync_channel},
     thread::{self, JoinHandle},
@@ -62,11 +65,11 @@ struct ChangeHandle(RawHandle);
 
 impl Drop for ChangeHandle {
     fn drop(&mut self) {
-        if !native::invalid_handle(self.0) {
-            // SAFETY: the handle was returned by FindFirstChangeNotificationW
-            // and remains owned until this destructor runs after the worker has
-            // joined.
-            let _ = unsafe { native::FindCloseChangeNotification(self.0) };
+        // SAFETY: the handle is the valid value FindFirstChangeNotificationW
+        // returned, and this is its only owner. No thread waits on it now:
+        // either no worker was started, or `Watcher::drop` joined it first.
+        if unsafe { native::FindCloseChangeNotification(self.0) } == 0 {
+            std::process::abort();
         }
     }
 }
@@ -81,11 +84,13 @@ pub(crate) struct Watcher {
 
 impl Watcher {
     pub(crate) fn new(directory: &Path) -> Result<Self> {
-        let text = directory.to_string_lossy();
-        if text.contains('\0') {
+        // The exact UTF-16 units of the path, including any unpaired surrogate:
+        // a lossy conversion would watch a different directory.
+        let mut wide: Vec<u16> = directory.as_os_str().encode_wide().collect();
+        if wide.contains(&0) {
             return Err("dev watch directory contains an embedded NUL".into());
         }
-        let wide: Vec<u16> = text.encode_utf16().chain(std::iter::once(0)).collect();
+        wide.push(0);
         let filter = native::FILE_NOTIFY_CHANGE_FILE_NAME
             | native::FILE_NOTIFY_CHANGE_DIR_NAME
             | native::FILE_NOTIFY_CHANGE_LAST_WRITE
@@ -96,19 +101,18 @@ impl Watcher {
         if native::invalid_handle(change) {
             return Err(std::io::Error::last_os_error().to_string().into());
         }
+        // Owned from here on, so every later failure closes it.
+        let change = ChangeHandle(change);
         // SAFETY: null security attributes request the current process default;
         // a manual-reset, initially non-signaled event is owned below.
         let stop_raw = unsafe { native::CreateEventW(null(), 1, 0, null()) };
         if stop_raw.is_null() {
-            // SAFETY: `change` is the valid notification handle just created and
-            // no worker owns it yet.
-            let _ = unsafe { native::FindCloseChangeNotification(change) };
             return Err(std::io::Error::last_os_error().to_string().into());
         }
         // SAFETY: CreateEventW returned a new owned kernel handle.
         let stop = unsafe { OwnedHandle::from_raw_handle(stop_raw) };
         let stop_handle = stop.as_raw_handle() as usize;
-        let change_handle = change as usize;
+        let change_handle = change.0 as usize;
         let (sender, receiver) = sync_channel(1);
         let worker = thread::Builder::new()
             .name("metis-dev-watch".to_owned())
@@ -116,7 +120,7 @@ impl Watcher {
         Ok(Self {
             receiver,
             stop,
-            _change: ChangeHandle(change),
+            _change: change,
             worker: Some(worker),
         })
     }
@@ -142,8 +146,8 @@ impl Watcher {
 impl Drop for Watcher {
     fn drop(&mut self) {
         // SAFETY: the stop event is a live handle owned by this value; setting
-        // it wakes the worker's bounded handle wait before the change handle is
-        // closed by `ChangeHandle`.
+        // it wakes the worker's wait, which has no timeout, before the change
+        // handle is closed by `ChangeHandle`.
         let signaled = unsafe { native::SetEvent(self.stop.as_raw_handle()) };
         if signaled == 0 {
             std::process::abort();
@@ -164,15 +168,19 @@ fn watch_loop(change_value: usize, stop_value: usize, sender: &SyncSender<WatchE
     // they are converted back only on the worker that waits on them.
     let change = change_value as RawHandle;
     let stop = stop_value as RawHandle;
-    let handles = [change, stop];
+    // The stop event comes first: a wait that finds several handles signaled
+    // reports the lowest index, so a steady stream of changes cannot starve it.
+    let handles = [stop, change];
     loop {
         // SAFETY: both handles remain owned by Watcher until this worker joins;
-        // the array is live for the duration of the call and requests a bounded
-        // two-handle wait with no alertable callbacks.
+        // the array is live for the duration of the call. The wait has no
+        // timeout but always ends: `Watcher::drop` signals the stop handle,
+        // which is entry zero. It is not alertable.
         let result =
             unsafe { native::WaitForMultipleObjects(2, handles.as_ptr(), 0, native::INFINITE) };
         match result {
-            native::WAIT_OBJECT_0 => {
+            native::WAIT_OBJECT_0 => return,
+            value if value == native::WAIT_OBJECT_0 + 1 => {
                 match sender.try_send(WatchEvent::Changed) {
                     Ok(()) | Err(TrySendError::Full(_)) => {}
                     Err(TrySendError::Disconnected(_)) => return,
@@ -186,7 +194,6 @@ fn watch_loop(change_value: usize, stop_value: usize, sender: &SyncSender<WatchE
                     return;
                 }
             }
-            value if value == native::WAIT_OBJECT_0 + 1 => return,
             native::WAIT_FAILED => {
                 let _ = sender.try_send(WatchEvent::Failed(
                     std::io::Error::last_os_error().to_string(),
@@ -200,5 +207,55 @@ fn watch_loop(change_value: usize, stop_value: usize, sender: &SyncSender<WatchE
                 return;
             }
         }
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::{WatchEvent, Watcher};
+    use std::{ffi::OsString, fs, os::windows::ffi::OsStringExt, path::PathBuf, time::Duration};
+
+    /// The Win32 code for a watched directory that does not exist.
+    const ERROR_FILE_NOT_FOUND: i32 = 2;
+
+    /// Bound on a wait that only a lost notification can prolong: the kernel
+    /// queues the change before the write returns. Half the 60 s termination
+    /// budget of the nextest profile.
+    const NOTIFICATION_DEADLINE: Duration = Duration::from_secs(30);
+
+    #[test]
+    fn a_path_with_an_unpaired_surrogate_is_watched_exactly() {
+        let mut name: Vec<u16> = "metis-watch-".encode_utf16().collect();
+        name.push(0xD800);
+        name.extend(std::process::id().to_string().encode_utf16());
+        let directory: PathBuf = std::env::temp_dir().join(OsString::from_wide(&name));
+        fs::create_dir(&directory).expect("directory named with an unpaired surrogate");
+        let watcher = Watcher::new(&directory).expect("watch the exact directory");
+        fs::write(directory.join("changed"), b"x").expect("write inside the directory");
+        // A lossy conversion would watch a different, absent directory and
+        // never report this write.
+        let event = watcher.receiver.recv_timeout(NOTIFICATION_DEADLINE);
+        drop(watcher);
+        fs::remove_dir_all(&directory).expect("cleanup");
+        assert_eq!(event, Ok(WatchEvent::Changed));
+    }
+
+    #[test]
+    fn a_dropped_watcher_joins_its_worker() {
+        let directory = std::env::temp_dir().join(format!("metis-stop-{}", std::process::id()));
+        fs::create_dir(&directory).expect("directory");
+        let watcher = Watcher::new(&directory).expect("watch");
+        drop(watcher);
+        fs::remove_dir(&directory).expect("the directory is removable after the drop");
+    }
+
+    #[test]
+    fn a_missing_directory_is_an_error() {
+        let directory = std::env::temp_dir().join(format!("metis-absent-{}", std::process::id()));
+        let error = Watcher::new(&directory).expect_err("the directory does not exist");
+        assert_eq!(
+            error.to_string(),
+            std::io::Error::from_raw_os_error(ERROR_FILE_NOT_FOUND).to_string()
+        );
     }
 }
