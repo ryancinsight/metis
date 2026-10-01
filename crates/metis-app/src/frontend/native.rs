@@ -84,7 +84,18 @@ impl<T: IpcTransport> NativeApplication for NativeForm<T> {
 
     fn handle_events(&mut self, events: &[WindowEvent]) -> Result<NativeFlow> {
         let mut repaint = false;
+        // A resize only matters once something reads the surface, so the
+        // latest one in a run of resizes waits here: each superseded size
+        // would allocate, lay out and paint a surface nothing presents.
+        let mut resize = None;
         for event in events {
+            if let WindowEvent::Resized { width, height } = event {
+                if *width > 0 && *height > 0 {
+                    resize = Some((*width, *height));
+                }
+                continue;
+            }
+            repaint |= self.apply_resize(resize.take())?;
             if let WindowEvent::KeyDown {
                 virtual_key,
                 repeated,
@@ -117,15 +128,6 @@ impl<T: IpcTransport> NativeApplication for NativeForm<T> {
                         self.app.set_composition(None)?;
                         repaint = true;
                     }
-                }
-                WindowEvent::Resized { width, height }
-                    if *width > 0
-                        && *height > 0
-                        && (*width != self.app.framebuffer().width()
-                            || *height != self.app.framebuffer().height()) =>
-                {
-                    self.app.resize(*width, *height)?;
-                    repaint = true;
                 }
                 WindowEvent::DpiChanged { dpi } => {
                     let display_scale = DisplayScale::from_dpi(*dpi)?;
@@ -181,11 +183,30 @@ impl<T: IpcTransport> NativeApplication for NativeForm<T> {
                 _ => {}
             }
         }
+        repaint |= self.apply_resize(resize)?;
         Ok(NativeFlow::Continue { repaint })
     }
 }
 
 impl<T: IpcTransport> NativeForm<T> {
+    /// Resizes the surface to `size` when it differs from the current one,
+    /// reporting whether it did.
+    fn apply_resize(&mut self, size: Option<(u32, u32)>) -> Result<bool> {
+        let Some((width, height)) = size else {
+            return Ok(false);
+        };
+        if (width, height)
+            == (
+                self.app.framebuffer().width(),
+                self.app.framebuffer().height(),
+            )
+        {
+            return Ok(false);
+        }
+        self.app.resize(width, height)?;
+        Ok(true)
+    }
+
     fn handle_pointer_up(&mut self, x: i32, y: i32) -> Result<bool> {
         self.focused = true;
         let menu_open = self.app.command_menu_open();
@@ -463,5 +484,7 @@ fn layout_error() -> MetisError {
     )
 }
 
+#[cfg(test)]
+mod resize_tests;
 #[cfg(test)]
 mod tests;

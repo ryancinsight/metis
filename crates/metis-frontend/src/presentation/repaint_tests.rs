@@ -2,6 +2,7 @@
 //! the same frame would.
 
 use super::BACKDROP;
+use super::backdrop::replaces_clip;
 use crate::{ApplicationCommand, FocusDirection, FrontendApp};
 use iris::render::RenderBackend;
 use metis_ipc::MemoryTransport;
@@ -123,4 +124,24 @@ fn construction_and_resize_report_the_whole_frame() {
         Damage::Full,
         "a resize merges to the whole frame"
     );
+}
+
+#[test]
+fn the_authored_root_replaces_the_backdrop_clear_in_every_theme_and_size() {
+    let (transport, _peer) = MemoryTransport::pair();
+    let mut app = FrontendApp::new(transport, 800, 600).expect("initial form");
+    for edit in [
+        Edit::Keystroke("PT-9042-ALPHAB"),
+        Edit::Command(ApplicationCommand::ThemeDark),
+        Edit::Resize(640, 520),
+        Edit::Scale(1_250),
+        Edit::Command(ApplicationCommand::ThemeSystem),
+    ] {
+        edit.apply(&mut app);
+        let display = app.painted.as_ref().expect("a rendered frame");
+        assert!(
+            replaces_clip(display, app.framebuffer().clip()),
+            "{edit:?}: the form's root fill no longer covers the surface"
+        );
+    }
 }

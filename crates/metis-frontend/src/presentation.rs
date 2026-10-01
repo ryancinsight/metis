@@ -56,12 +56,12 @@ pub const CLINICAL_SCREEN_XML: &str = r#"<screen id="main-screen" style="display
   </card>
 </screen>"#;
 
+mod backdrop;
 mod focus_ring;
 #[cfg(test)]
 mod repaint_tests;
 mod theme;
 use crate::{FormState, FrontendApp};
-use iris::render::RenderBackend;
 use metis_core::{ErrorCode, MetisError, Result};
 use metis_ipc::{IpcTransport, client::HandshakeError};
 use metis_platform::{Damage, Framebuffer};
@@ -173,12 +173,7 @@ impl<T: IpcTransport> FrontendApp<T> {
         let damage = self.painted.as_ref().map_or(Damage::Full, |painted| {
             display.damage_since(painted, surface)
         });
-        let repaint = |framebuffer: &mut Framebuffer| {
-            framebuffer.clear(BACKDROP);
-            framebuffer
-                .render(&display)
-                .unwrap_or_else(|never| match never {});
-        };
+        let repaint = |framebuffer: &mut Framebuffer| backdrop::paint(framebuffer, &display);
         match damage {
             Damage::Unchanged => {}
             Damage::Region(region) => self.framebuffer.render_clipped(region, repaint),

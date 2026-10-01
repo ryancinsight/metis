@@ -509,14 +509,6 @@ an owner. “Unsupported” cannot replace delivery of a required mobile/native 
 - Acceptance: Uncovered: `FragmentPatchSet::decode`, `FragmentAction::decode`, `DeepLink::parse`, `HostOrigin::parse`, `WindowState::decode`, `Accelerator::parse`, `RoutePattern::parse` (metis-core, no manifest change); `read_frame` (metis-ipc); `parse_markup`, `ComputedStyle::parse`, `RasterImage::decode` (metis-ui-lang); `Typeface::parse` (metis-platform); archive parse (metis-cli, `archive::parse`). No crash per target within the committed time budget.
 - basis: 7b50219
 
-<a id="METIS-MEM-SURFACE-001"></a>
-## METIS-MEM-SURFACE-001 — Write each surface pixel once per paint and once per resize batch [patch]
-- Status: todo; priority: tightening; needs: none
-- Outcome: resize fills the surface once, a repaint skips the backdrop clear a covering opaque fill repeats, and one resize batch allocates one surface.
-- Scope: `crates/metis-platform/src/framebuffer.rs`, `crates/metis-frontend/src/presentation.rs`, `app.rs`, `crates/metis-app/src/frontend/native.rs`.
-- Acceptance: Zero-fill, backdrop clear and the root fill write the same pixels (framebuffer.rs:178-182, presentation.rs:176-186): 3.84 MB per resize and one redundant pass per full repaint at 800x600. Each superseded `Resized` in a batch allocates and repaints (native.rs:121-129). Oracle: the bitwise repaint differential tests stay green; a counting allocator over `[Resized(640,480), Resized(700,500), Resized(800,600)]` sees one surface allocation; `benches/frame.rs` shows the pass removed.
-- basis: 7b50219
-
 <a id="METIS-MEM-SHADOW-001"></a>
 ## METIS-MEM-SHADOW-001 — Store shadow masks without the empty interior [patch]
 - Status: todo; priority: tightening; needs: none
