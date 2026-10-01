@@ -1,10 +1,11 @@
 //! Safe installation and removal of Linux USTAR application packages.
 
 use super::{desktop_icon, desktop_word};
-use crate::{Result, manifest};
+use crate::{Result, bounded_read, manifest};
 use moirai_crypto::Sha256;
 use serde::{Deserialize, Serialize};
 use std::{
+    borrow::Cow,
     collections::BTreeSet,
     fs::{self, File, OpenOptions},
     io::{Read, Write},
@@ -12,7 +13,11 @@ use std::{
 };
 
 mod archive;
-use archive::{ArchiveEntry, read_archive, safe_relative};
+use archive::{ArchiveEntry, parse, read_archive, safe_relative};
+
+/// Bytes an installation record may occupy: at most 4,096 archived files, each
+/// recorded with a path, size and SHA-256 digest in under 1 KiB of JSON.
+const RECORD_LIMIT: u64 = 4 * 1024 * 1024;
 
 #[derive(Debug, Deserialize, Serialize)]
 #[serde(deny_unknown_fields)]
@@ -53,7 +58,8 @@ pub(crate) fn uninstall(application_id: &str, prefix: &Path) -> Result<()> {
 pub(crate) fn install_archive(archive: &Path, prefix: &Path) -> Result<()> {
     let prefix = canonical_prefix(prefix)?;
     let archive = canonical_file(archive)?;
-    let entries = read_archive(&archive)?;
+    let archive_bytes = read_archive(&archive)?;
+    let entries = parse(&archive_bytes)?;
     let (application_id, desktop_index) = application_identity(&entries)?;
     let marker = marker_path(&prefix, &application_id)?;
     if marker.try_exists()? {
@@ -86,9 +92,14 @@ pub(crate) fn install_archive(archive: &Path, prefix: &Path) -> Result<()> {
         for ((relative, target), entry) in planned.iter().zip(entries.iter()) {
             ensure_parent(&prefix, target, &mut created_dirs)?;
             let bytes = if entry.path == entries[desktop_index].path {
-                rewrite_desktop(&entry.bytes, &application_id, &prefix, &entries)?
+                Cow::Owned(rewrite_desktop(
+                    entry.bytes,
+                    &application_id,
+                    &prefix,
+                    &entries,
+                )?)
             } else {
-                entry.bytes.clone()
+                Cow::Borrowed(entry.bytes)
             };
             write_file(target, &bytes, entry.mode)?;
             created_files.push(target.clone());
@@ -125,7 +136,11 @@ pub(crate) fn install_archive(archive: &Path, prefix: &Path) -> Result<()> {
 fn remove_installation(application_id: &str, prefix: &Path) -> Result<()> {
     validate_application_id(application_id)?;
     let marker = marker_path(prefix, application_id)?;
-    let bytes = fs::read(&marker)?;
+    let bytes = bounded_read::read_file(
+        &marker,
+        RECORD_LIMIT,
+        "installation record exceeds its size bound",
+    )?;
     let record: InstallationRecord = serde_json::from_slice(&bytes)?;
     if record.schema != 1
         || record.application_id != application_id
@@ -167,7 +182,7 @@ fn remove_installation(application_id: &str, prefix: &Path) -> Result<()> {
 }
 
 #[cfg(any(not(windows), test))]
-fn application_identity(entries: &[ArchiveEntry]) -> Result<(String, usize)> {
+fn application_identity(entries: &[ArchiveEntry<'_>]) -> Result<(String, usize)> {
     let mut identity = None;
     for (index, entry) in entries.iter().enumerate() {
         let Some(name) = entry.path.strip_prefix("usr/share/applications/") else {
@@ -192,7 +207,7 @@ fn rewrite_desktop(
     bytes: &[u8],
     application_id: &str,
     prefix: &Path,
-    entries: &[ArchiveEntry],
+    entries: &[ArchiveEntry<'_>],
 ) -> Result<Vec<u8>> {
     let text = std::str::from_utf8(bytes).map_err(|_| "desktop entry is not UTF-8")?;
     let mut output = String::new();
@@ -332,7 +347,9 @@ fn write_file(path: &Path, bytes: &[u8], mode: u32) -> Result<()> {
     #[cfg(unix)]
     {
         use std::os::unix::fs::PermissionsExt;
-        fs::set_permissions(path, fs::Permissions::from_mode(mode & 0o777))?;
+        // Through the handle that `create_new` returned: a path could be
+        // swapped for a link between the create and the chmod.
+        file.set_permissions(fs::Permissions::from_mode(mode & 0o777))?;
     }
     Ok(())
 }

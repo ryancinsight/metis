@@ -11,7 +11,6 @@ use serde::{Deserialize, Serialize};
 use std::{
     collections::{BTreeMap, BTreeSet},
     fs,
-    io::Read,
     path::{Component, Path, PathBuf},
 };
 
@@ -42,13 +41,11 @@ impl Manifest {
     /// A document with a `frontend` member is a browser application; any
     /// other is native. Each shape rejects the other's fields.
     pub(crate) fn read(path: &Path) -> Result<(Self, PathBuf)> {
-        let mut bytes = Vec::new();
-        fs::File::open(path)?
-            .take(MANIFEST_LIMIT + 1)
-            .read_to_end(&mut bytes)?;
-        if bytes.len() as u64 > MANIFEST_LIMIT {
-            return Err("application manifest exceeds the 1 MiB budget".into());
-        }
+        let bytes = crate::bounded_read::read_file(
+            path,
+            MANIFEST_LIMIT,
+            "application manifest exceeds the 1 MiB budget",
+        )?;
         let document: serde_json::Value = serde_json::from_slice(&bytes)?;
         let manifest = if document.get("frontend").is_some() {
             let application: WebApplication = serde_json::from_value(document)?;

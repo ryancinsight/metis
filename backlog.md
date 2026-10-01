@@ -509,14 +509,6 @@ an owner. “Unsupported” cannot replace delivery of a required mobile/native 
 - Acceptance: The `generation` getter takes a plain `Mutex::lock` while attached (windows.rs:31-42) and `wait_events` holds it up to 30 s; `NativeApplication::new` and `Client::request` wait without deadline (host.rs:89, :140). Test on GIL and free-threaded interpreters: one thread in `wait_events(timeout_ms=2000)`, another reading `generation`, and a counter thread advancing throughout.
 - basis: 7b50219
 
-<a id="METIS-SEC-INPUT-001"></a>
-## METIS-SEC-INPUT-001 — Bound file reads and encoded separators in trust-boundary code [patch]
-- Status: todo; priority: correctness; needs: none
-- Outcome: archive and served-file reads are bounded at the open handle and URI segments reject an encoded backslash.
-- Scope: `crates/metis-cli/src/build/install/archive.rs`, `build/install.rs`, `serve.rs`, `crates/metis-core/src/uri_path.rs`.
-- Acceptance: Archive size is checked by path then read unbounded with infallible allocation (archive.rs:22-28, :79); `serve.rs:44` reads before its 32 MiB check; `install.rs:335` sets permissions by path after `create_new`; `%5C` decodes into a segment (uri_path.rs:25). Tests: an over-bound reader is rejected without a full read; `app:open/..%5Cx` is `DeepLinkError::Malformed`. `read_archive` splits into a bounded read and `parse(&[u8])`, the fuzz seam for METIS-FUZZ-PARSERS-001.
-- basis: 7b50219
-
 <a id="METIS-SEC-UNSAFE-001"></a>
 ## METIS-SEC-UNSAFE-001 — Mechanize and tighten the Windows unsafe surface [patch]
 - Status: todo; priority: correctness; needs: none
@@ -530,7 +522,7 @@ an owner. “Unsupported” cannot replace delivery of a required mobile/native 
 - Status: todo; priority: verification; needs: none
 - Outcome: each parser below has a fuzz target and a committed seed corpus that runs under a finite budget.
 - Scope: `fuzz/`, the parser modules named below.
-- Acceptance: Uncovered: `FragmentPatchSet::decode`, `FragmentAction::decode`, `DeepLink::parse`, `HostOrigin::parse`, `WindowState::decode`, `Accelerator::parse`, `RoutePattern::parse` (metis-core, no manifest change); `read_frame` (metis-ipc); `parse_markup`, `ComputedStyle::parse`, `RasterImage::decode` (metis-ui-lang); `Typeface::parse` (metis-platform); archive parse (metis-cli, after METIS-SEC-INPUT-001). No crash per target within the committed time budget.
+- Acceptance: Uncovered: `FragmentPatchSet::decode`, `FragmentAction::decode`, `DeepLink::parse`, `HostOrigin::parse`, `WindowState::decode`, `Accelerator::parse`, `RoutePattern::parse` (metis-core, no manifest change); `read_frame` (metis-ipc); `parse_markup`, `ComputedStyle::parse`, `RasterImage::decode` (metis-ui-lang); `Typeface::parse` (metis-platform); archive parse (metis-cli, `archive::parse`). No crash per target within the committed time budget.
 - basis: 7b50219
 
 <a id="METIS-MEM-SURFACE-001"></a>

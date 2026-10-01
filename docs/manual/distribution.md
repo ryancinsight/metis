@@ -67,8 +67,8 @@ for the entry binary:
 The operating system starts the application with the link as an argument.
 `metis_core::deep_link::DeepLink::from_arguments` finds that argument and
 parses it against the same schemes. It returns percent-decoded path segments
-and query pairs, and rejects `..` segments, control characters and undeclared
-schemes. A second launch starts a second process; call
+and query pairs, and rejects `..` segments, segments holding `/` or a
+backslash, control characters and undeclared schemes. A second launch starts a second process; call
 `metis_platform::claim_or_forward` first so that process hands its arguments
 to the running instance and exits.
 

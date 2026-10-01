@@ -7,7 +7,7 @@
 //! are rejected before the asset enters a portable or installed payload.
 
 use crate::Result;
-use std::{fs, io::Read, path::Path};
+use std::path::Path;
 
 /// Maximum encoded size of one packaged SVG resource.
 pub(crate) const SVG_LIMIT: u64 = 256 * 1024;
@@ -19,10 +19,8 @@ const MAX_PATHS: usize = 64;
 const MAX_PATH_DATA: usize = 64 * 1024;
 
 pub(crate) fn validate_file(path: &Path) -> Result<()> {
-    let mut bytes = Vec::new();
-    fs::File::open(path)?
-        .take(SVG_LIMIT + 1)
-        .read_to_end(&mut bytes)?;
+    let bytes =
+        crate::bounded_read::read_file(path, SVG_LIMIT, "SVG asset exceeds the 256 KiB budget")?;
     validate(&bytes)
 }
 

@@ -95,7 +95,13 @@ fn patterns_conflicts_and_bounds_are_checked() {
             "{invalid}"
         );
     }
-    for rejected in ["/study/%2F", "/study/..", "/study/%zz", "/study/%00"] {
+    for rejected in [
+        "/study/%2F",
+        "/study/%5C",
+        "/study/..",
+        "/study/%zz",
+        "/study/%00",
+    ] {
         assert_eq!(
             router.resolve(rejected).map(|m| m.is_some()),
             Err(RouteError::Malformed),
@@ -125,6 +131,11 @@ fn hrefs_route_back_to_their_parameters() {
         pattern.href(&[("id", "a/b"), ("series", "3")]),
         Err(RouteError::Malformed),
         "a separator cannot hide inside one segment"
+    );
+    assert_eq!(
+        pattern.href(&[("id", r"a\b"), ("series", "3")]),
+        Err(RouteError::Malformed),
+        "a backslash would not route back"
     );
     assert_eq!(pattern.href(&[("id", "7")]), Err(RouteError::Malformed));
     assert_eq!(

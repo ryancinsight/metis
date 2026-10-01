@@ -2,8 +2,9 @@
 //!
 //! Deep links and routes read paths the same way: segments are
 //! percent-decoded UTF-8 without control characters, empty segments are
-//! dropped, and `.`, `..` or an encoded `/` are rejected rather than
-//! resolved, so one path can never be written to look like another.
+//! dropped, and `.`, `..` or a `/` or `\` in a segment, encoded or not, are
+//! rejected rather than resolved, so one path can never be written to look
+//! like another.
 
 /// Why a path or query was rejected.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -22,7 +23,7 @@ pub(crate) fn segments(path: &str, limit: usize) -> Result<Vec<String>, PathErro
             return Err(PathError::TooLarge);
         }
         let segment = decode(raw)?;
-        if segment == "." || segment == ".." || segment.contains('/') {
+        if segment == "." || segment == ".." || segment.contains(['/', '\\']) {
             return Err(PathError::Malformed);
         }
         segments.push(segment);

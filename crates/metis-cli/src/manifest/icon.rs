@@ -8,11 +8,7 @@ use crate::Result;
 #[cfg(windows)]
 use crate::manifest;
 #[cfg(windows)]
-use std::{
-    fs,
-    io::Read,
-    path::{Path, PathBuf},
-};
+use std::path::{Path, PathBuf};
 
 pub(crate) const ICON_LIMIT: u64 = 1024 * 1024;
 
@@ -31,13 +27,11 @@ pub(crate) fn source(root: &Path, relative_path: &str) -> Result<PathBuf> {
 
 #[cfg(windows)]
 pub(crate) fn validate_file(path: &Path) -> Result<()> {
-    let mut bytes = Vec::new();
-    fs::File::open(path)?
-        .take(ICON_LIMIT + 1)
-        .read_to_end(&mut bytes)?;
-    if u64::try_from(bytes.len())? > ICON_LIMIT {
-        return Err("application icon exceeds the 1 MiB budget".into());
-    }
+    let bytes = crate::bounded_read::read_file(
+        path,
+        ICON_LIMIT,
+        "application icon exceeds the 1 MiB budget",
+    )?;
     validate(&bytes)
 }
 

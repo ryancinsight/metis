@@ -3,7 +3,7 @@
 //! The built tree is read into memory once, so a request is a map lookup: no
 //! request path reaches the file system and no handler blocks the executor on
 //! file I/O.
-use crate::{Result, tree};
+use crate::{Result, bounded_read, tree};
 use moirai_core::{
     executor::{ExecutorControl, TaskSpawner},
     task::TaskHandle,
@@ -14,7 +14,7 @@ use moirai_http::{
 };
 use std::{
     collections::{BTreeMap, VecDeque},
-    fs, io,
+    io,
     path::Path,
     sync::Arc,
     time::Duration,
@@ -41,10 +41,11 @@ impl Site {
         let mut total = 0_usize;
         for path in tree::regular_files(root, |_| false)? {
             let name = tree::relative_name(root, &path)?;
-            let bytes = fs::read(&path)?;
-            if bytes.len() > FILE_LIMIT {
-                return Err(format!("{name} exceeds the 32 MiB served-file budget").into());
-            }
+            let bytes = bounded_read::read_file(
+                &path,
+                FILE_LIMIT as u64,
+                &format!("{name} exceeds the 32 MiB served-file budget"),
+            )?;
             total += bytes.len();
             if total > SITE_LIMIT {
                 return Err("the built application exceeds the 256 MiB served budget".into());

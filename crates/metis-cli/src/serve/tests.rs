@@ -1,5 +1,8 @@
 use super::*;
-use std::io::{Read, Write};
+use std::{
+    fs,
+    io::{Read, Write},
+};
 
 struct Built(std::path::PathBuf);
 

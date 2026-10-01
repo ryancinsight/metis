@@ -15,8 +15,8 @@ pub const MAX_DEEP_LINK_QUERY_PAIRS: usize = 32;
 /// without control characters. An authority after `//` is read as the first
 /// path segment, as `myapp://open/study` and `myapp:open/study` name the
 /// same route. A fragment is ignored. Empty segments are dropped, and `.` or
-/// `..` segments are rejected rather than resolved, so a route cannot be
-/// written to look like a different one.
+/// `..` segments, or ones holding a `/` or `\`, are rejected rather than
+/// resolved, so a route cannot be written to look like a different one.
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct DeepLink {
     scheme: DeepLinkScheme,
