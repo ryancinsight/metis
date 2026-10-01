@@ -3,6 +3,8 @@
 import math
 import sys
 import sysconfig
+import threading
+import time
 from concurrent.futures import ThreadPoolExecutor
 
 import pytest
@@ -274,3 +276,48 @@ def test_native_applications_keep_two_windows_independent_on_windows() -> None:
             first.close(first_generation)
         if second_open:
             second.close(second_generation)
+
+
+def test_generation_reads_do_not_wait_for_a_pending_event_wait_on_windows() -> None:
+    if not sys.platform.startswith("win"):
+        pytest.skip("Windows native provider is required")
+    application = metis.NativeApplication("Metis wait", 2, 1, "hidden")
+    generation = application.generation
+    application.wait_events(generation, 0)
+    wait_entered = threading.Event()
+    wait_timeout_ms = 2000
+    read_results: list[tuple[int, float]] = []
+    failures: list[BaseException] = []
+
+    def wait() -> None:
+        wait_entered.set()
+        try:
+            application.wait_events(generation, wait_timeout_ms)
+        except BaseException as error:  # reported on the main thread below
+            failures.append(error)
+
+    def read() -> None:
+        wait_entered.wait()
+        # Gives the waiter time to take the native wait. A shorter gap only
+        # lets the read run before it, which can pass a regression but never
+        # fail a correct getter; only a read stalled for the 0.5 s bound below
+        # could, and that bound is 2.5 times the gap.
+        time.sleep(0.2)
+        started = time.monotonic()
+        value = application.generation
+        read_results.append((value, time.monotonic() - started))
+
+    waiter = threading.Thread(target=wait)
+    reader = threading.Thread(target=read)
+    waiter.start()
+    reader.start()
+    reader.join()
+    waiter.join()
+    try:
+        assert failures == []
+        value, seconds = read_results[0]
+        assert value == generation
+        # A getter that took the client lock would wait out the native wait.
+        assert seconds < wait_timeout_ms / 4000
+    finally:
+        application.close(generation)
