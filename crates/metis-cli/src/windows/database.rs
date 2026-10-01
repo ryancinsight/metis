@@ -1,8 +1,18 @@
 //! Owned MSI handles and parameterized records keep package metadata out of SQL.
 use super::{encoding, ffi, paths};
-use std::{error::Error, ffi::OsStr, os::windows::ffi::OsStrExt, path::Path, ptr};
+use std::{
+    error::Error, ffi::OsStr, marker::PhantomData, os::windows::ffi::OsStrExt, path::Path, ptr,
+};
 
-pub(super) struct Handle(u32);
+/// An owned MSI handle. The raw pointer marker makes it `!Send`: its release
+/// is documented on the creating thread.
+pub(super) struct Handle(u32, PhantomData<*const ()>);
+
+impl Handle {
+    fn new(raw: u32) -> Self {
+        Self(raw, PhantomData)
+    }
+}
 
 impl Drop for Handle {
     fn drop(&mut self) {
@@ -52,25 +62,25 @@ impl Database {
     pub(super) fn open(path: &Path) -> Result<Self, Box<dyn Error>> {
         let path = wide(paths::legacy(path)?.as_os_str())?;
         let mut handle = 0;
-        // SAFETY: Path is terminated, result writable, null mode is MSI read-only.
         check(
+            // SAFETY: Path is terminated, result writable, null mode is MSI read-only.
             unsafe { ffi::MsiOpenDatabaseW(path.as_ptr(), ptr::null(), &raw mut handle) },
             "open database",
         )?;
-        Ok(Self(Handle(handle)))
+        Ok(Self(Handle::new(handle)))
     }
 
     pub(super) fn strings(&self, sql: &str) -> Result<Vec<String>, Box<dyn Error>> {
         let query = wide(OsStr::new(sql))?;
         let mut view = 0;
-        // SAFETY: Query is terminated; database and writable handle storage live.
         check(
+            // SAFETY: Query is terminated; database and writable handle storage live.
             unsafe { ffi::MsiDatabaseOpenViewW(self.0.0, query.as_ptr(), &raw mut view) },
             "open inspection query",
         )?;
-        let view = Handle(view);
-        // SAFETY: View lives; this fixed read query has no bound parameters.
+        let view = Handle::new(view);
         check(
+            // SAFETY: View lives; this fixed read query has no bound parameters.
             unsafe { ffi::MsiViewExecute(view.0, 0) },
             "execute inspection query",
         )?;
@@ -83,15 +93,15 @@ impl Database {
                 break;
             } // ERROR_NO_MORE_ITEMS is normal exhaustion.
             check(status, "fetch inspection row")?;
-            let record = Handle(record);
+            let record = Handle::new(record);
             if values.len() >= 4096 {
                 return Err("MSI inspection exceeds 4096 rows".into());
             }
             let mut encoded = [0_u16; 512];
             let mut length = u32::try_from(encoded.len())?;
-            // SAFETY: Buffer is writable for length UTF-16 units; field 1 exists
-            // in all static single-column queries used by the inspection API.
             check(
+                // SAFETY: Buffer is writable for length UTF-16 units; field 1 exists
+                // in all static single-column queries used by the inspection API.
                 unsafe {
                     ffi::MsiRecordGetStringW(record.0, 1, encoded.as_mut_ptr(), &raw mut length)
                 },
@@ -113,7 +123,7 @@ impl Database {
             ffi::MsiOpenDatabaseW(path.as_ptr(), ptr::without_provenance(3), &raw mut handle)
         };
         check(status, "create database")?;
-        Ok(Self(Handle(handle)))
+        Ok(Self(Handle::new(handle)))
     }
 
     pub(super) fn codepage(&self, folder: &Path) -> Result<(), Box<dyn Error>> {
@@ -125,9 +135,9 @@ impl Database {
         )?;
         let folder = wide(paths::legacy(folder)?.as_os_str())?;
         let filename = wide(OsStr::new("codepage.idt"))?;
-        // SAFETY: Live database and terminated folder/filename strings; the API
-        // reads the owned file before any localized metadata is inserted.
         check(
+            // SAFETY: Live database and terminated folder/filename strings; the API
+            // reads the owned file before any localized metadata is inserted.
             unsafe { ffi::MsiDatabaseImportW(self.0.0, folder.as_ptr(), filename.as_ptr()) },
             "set database code page",
         )
@@ -137,18 +147,18 @@ impl Database {
         let operation = format!("prepare query {sql}");
         let sql = wide(OsStr::new(sql))?;
         let mut view = 0;
-        // SAFETY: Database is live; query is terminated; result has writable storage.
         check(
+            // SAFETY: Database is live; query is terminated; result has writable storage.
             unsafe { ffi::MsiDatabaseOpenViewW(self.0.0, sql.as_ptr(), &raw mut view) },
             &operation,
         )?;
-        let view = Handle(view);
+        let view = Handle::new(view);
         // SAFETY: Checked field count fits the SDK's UINT parameter.
         let record = unsafe { ffi::MsiCreateRecord(u32::try_from(fields.len())?) };
         if record == 0 {
             return Err("Windows Installer cannot allocate record".into());
         }
-        let record = Handle(record);
+        let record = Handle::new(record);
         for (index, value) in fields.iter().enumerate() {
             let index = u32::try_from(index + 1)?;
             let status = match value {
@@ -170,8 +180,8 @@ impl Database {
             };
             check(status, "set record field")?;
         }
-        // SAFETY: View and parameter record are live until execution returns.
         check(
+            // SAFETY: View and parameter record are live until execution returns.
             unsafe { ffi::MsiViewExecute(view.0, if fields.is_empty() { 0 } else { record.0 }) },
             "execute query",
         )
@@ -179,12 +189,12 @@ impl Database {
 
     pub(super) fn summary(&self, package: &str, manufacturer: &str) -> Result<(), Box<dyn Error>> {
         let mut summary = 0;
-        // SAFETY: Database is live; null path selects that database; result writable.
         check(
+            // SAFETY: Database is live; null path selects that database; result writable.
             unsafe { ffi::MsiGetSummaryInformationW(self.0.0, ptr::null(), 10, &raw mut summary) },
             "open summary",
         )?;
-        let summary = Handle(summary);
+        let summary = Handle::new(summary);
         for (property, text) in [
             (2, "Installation Database"),
             (4, manufacturer),
@@ -193,8 +203,8 @@ impl Database {
             (18, "Metis"),
         ] {
             let text = metadata(text)?;
-            // SAFETY: VT_LPSTR (30) takes the live UTF-16 value in this W API.
             check(
+                // SAFETY: VT_LPSTR (30) takes the live UTF-16 value in this W API.
                 unsafe {
                     ffi::MsiSummaryInfoSetPropertyW(
                         summary.0,
@@ -215,8 +225,8 @@ impl Database {
             (15, 3, 10),
             (19, 3, 2),
         ] {
-            // SAFETY: VT_I2/VT_I4 select number, so time/text are null and ignored.
             check(
+                // SAFETY: VT_I2/VT_I4 select number, so time/text are null and ignored.
                 unsafe {
                     ffi::MsiSummaryInfoSetPropertyW(
                         summary.0,
@@ -230,16 +240,16 @@ impl Database {
                 "write summary number",
             )?;
         }
-        // SAFETY: Summary is live and owns the pending property changes.
         check(
+            // SAFETY: Summary is live and owns the pending property changes.
             unsafe { ffi::MsiSummaryInfoPersist(summary.0) },
             "persist summary",
         )
     }
 
     pub(super) fn commit(&self) -> Result<(), Box<dyn Error>> {
-        // SAFETY: Database is an open transaction on its creating thread.
         check(
+            // SAFETY: Database is an open transaction on its creating thread.
             unsafe { ffi::MsiDatabaseCommit(self.0.0) },
             "commit database",
         )
@@ -272,4 +282,22 @@ pub(super) fn guid() -> Result<String, Box<dyn Error>> {
     Ok(format!(
         "{{{data1:08X}-{data2:04X}-{data3:04X}-{octet0:02X}{octet1:02X}-{octet2:02X}{octet3:02X}{octet4:02X}{octet5:02X}{octet6:02X}{octet7:02X}}}"
     ))
+}
+
+#[cfg(test)]
+mod tests {
+    use super::{Database, Handle};
+
+    /// Compiles only for types that are not `Send`: a `Send` type matches both
+    /// blanket impls and makes the item lookup ambiguous.
+    trait AmbiguousIfSend<Marker> {
+        fn item() {}
+    }
+    impl<T: ?Sized> AmbiguousIfSend<()> for T {}
+    impl<T: ?Sized + Send> AmbiguousIfSend<u8> for T {}
+
+    const _: fn() = || {
+        let _ = <Handle as AmbiguousIfSend<_>>::item;
+        let _ = <Database as AmbiguousIfSend<_>>::item;
+    };
 }

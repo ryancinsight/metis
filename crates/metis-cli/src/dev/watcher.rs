@@ -16,7 +16,7 @@ pub(crate) use polling::Watcher;
 pub(crate) use windows::Watcher;
 
 /// One coalesced notification from a watcher worker.
-#[derive(Debug)]
+#[derive(Debug, PartialEq, Eq)]
 enum WatchEvent {
     Changed,
     Failed(String),
