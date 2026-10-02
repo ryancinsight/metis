@@ -7,6 +7,13 @@ name: Crates.io Release
 on:
   release:
     types: [published]
+  # Version-change publishing (ATLAS-PUB-010, ADR 0068): a merged version bump
+  # publishes on the push; the schedule retries a set the registry lacked a
+  # dependency for.
+  push:
+    branches: [main]
+  schedule:
+    - cron: "42 6 * * *"
   workflow_dispatch:
     inputs:
       package:
@@ -22,7 +29,7 @@ permissions:
   contents: read
 
 concurrency:
-  group: crates-release-${{ github.event.release.tag_name || inputs.package }}
+  group: crates-release-${{ github.event.release.tag_name || inputs.package || github.event_name }}
   cancel-in-progress: false
 
 env:
@@ -111,3 +118,13 @@ jobs:
       tag-prefix: "crate-"
       dispatch-package: ${{ inputs.package }}
       dispatch-version: ${{ inputs.version }}
+
+  publish-pending:
+    name: Publish pending versions
+    if: github.event_name == 'push' || github.event_name == 'schedule'
+    uses: ryancinsight/atlas/.github/workflows/crates-publish-pending.yml@ee2b7200c4781e39b5ea3e379d2aa97947758099
+    permissions:
+      contents: write # release tags for the published versions
+      id-token: write # OIDC trusted publishing; no stored registry token
+    with:
+      rust-toolchain: "1.97.0"
