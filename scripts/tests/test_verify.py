@@ -394,7 +394,10 @@ class ReleaseWorkflowContractTests(unittest.TestCase):
             self.source,
         )
         dispatch_block = self.source.split("  validate:\n", 1)[1].split("  publish:\n", 1)[0]
-        self.assertNotIn("id-token: write", dispatch_block)
+        # GitHub checks the called workflow's nested publish job against this grant
+        # before any `if:` runs, so validate must grant id-token: write; that job
+        # runs only on release events, and validate runs only on dispatch.
+        self.assertIn("    permissions:\n      contents: read\n      id-token: write\n", dispatch_block)
         references = re.findall(
             r"^\s*(?:-\s+)?uses:\s+([^@\s]+)@([^\s#]+)",
             self.source,
