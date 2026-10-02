@@ -201,6 +201,41 @@ class RequiredGateTests(unittest.TestCase):
                     "code=" + str(expected).lower(),
                 )
 
+    def test_push_looks_up_a_verified_tree_and_the_windows_gate_honors_it(self):
+        changes = self.source.split("\n  changes:\n", 1)[1].split("\n  verify:\n", 1)[0]
+        verify = self.source.split("\n  verify:\n", 1)[1].split("\n  workflow-lint:\n", 1)[0]
+        self.assertIn("      actions: read", changes)
+        self.assertIn("tree: ${{ steps.tree.outputs.tree }}", changes)
+        self.assertIn("verified: ${{ steps.verified.outputs.verified }}", changes)
+        lookup = changes.split("      - name: Look up a pull-request run", 1)[1].split(
+            "\n      - name: Determine changed paths", 1
+        )[0]
+        self.assertIn("if: github.event_name == 'push'", lookup)
+        self.assertIn("id: verified", lookup)
+        self.assertIn("python3 scripts/verified_tree.py", lookup)
+        self.assertIn('--tree "$TREE"', lookup)
+        self.assertIn("(github.event_name != 'push' || needs.changes.outputs.verified != 'true')", verify)
+        # Scheduled, dispatched and merge-group runs never read the marker.
+        self.assertIn("github.event_name == 'workflow_dispatch' ||", verify)
+        self.assertIn("github.event_name == 'merge_group' ||", verify)
+
+    def test_gate_records_the_verified_tree_only_after_a_green_pull_request(self):
+        marker = "verified-tree-${{ needs.changes.outputs.tree }}"
+        steps = self.block.split("\n      - name: ")[1:]
+        recording = [step for step in steps if marker in step or "verified-tree.txt" in step]
+        self.assertEqual(len(recording), 2)
+        for step in recording:
+            with self.subTest(step=step.splitlines()[0]):
+                self.assertIn(
+                    "if: github.event_name == 'pull_request' && needs.verify.result == 'success'",
+                    step,
+                )
+        # A step with no `if` implies success(), so the result check above it
+        # has already passed before the marker is written.
+        self.assertTrue(steps[0].startswith("Check required job results"))
+        self.assertNotIn("always()", "".join(recording))
+        self.assertIn(marker, "".join(recording))
+
     def test_windows_and_semver_skip_documentation_only_changes(self):
         verify = self.source.split("\n  verify:\n", 1)[1].split(
             "\n  workflow-lint:\n", 1
