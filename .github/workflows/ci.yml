@@ -30,6 +30,7 @@ jobs:
       code: ${{ steps.diff.outputs.code }}
       tree: ${{ steps.tree.outputs.tree }}
       verified: ${{ steps.verified.outputs.verified }}
+      fuzz: ${{ steps.diff.outputs.fuzz }}
     steps:
       - name: Checkout
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
@@ -74,6 +75,7 @@ jobs:
           else
             if [[ "$BEFORE_SHA" == "0000000000000000000000000000000000000000" ]]; then
               echo "code=true" >> "$GITHUB_OUTPUT"
+              echo "fuzz=true" >> "$GITHUB_OUTPUT"
               exit 0
             fi
             range="$BEFORE_SHA..$CURRENT_SHA"
@@ -107,8 +109,12 @@ jobs:
               )
 
           has_code_changes = any(not cannot_affect_build(path) for path in paths)
+          # The fuzz campaign runs for a pull request only when the harness,
+          # its seeds or its lock changed; the weekly run covers parser changes.
+          has_fuzz_changes = any(path.startswith(b"fuzz/") for path in paths)
           with open(os.environ["GITHUB_OUTPUT"], "a", encoding="utf-8") as output:
               output.write(f"code={str(has_code_changes).lower()}\n")
+              output.write(f"fuzz={str(has_fuzz_changes).lower()}\n")
           PY
 
   verify:
@@ -257,9 +263,23 @@ jobs:
 
   fuzz:
     name: LibFuzzer parser campaign
-    if: github.event_name == 'schedule' || github.event_name == 'workflow_dispatch'
+    needs: changes
+    if: >-
+      always() &&
+      (needs.changes.result == 'success' || needs.changes.result == 'skipped') &&
+      (
+        github.event_name == 'schedule' ||
+        github.event_name == 'workflow_dispatch' ||
+        (
+          github.event_name == 'pull_request' &&
+          github.event.pull_request.draft == false &&
+          needs.changes.outputs.fuzz == 'true'
+        )
+      )
     runs-on: ubuntu-latest
-    timeout-minutes: 10
+    # One locked build of the instrumented dependency graph, then the 300-second
+    # protocol campaign and 30 seconds for each of the thirteen parser targets.
+    timeout-minutes: 30
     env:
       CARGO_INCREMENTAL: '0'
       CARGO_TERM_COLOR: always
@@ -293,9 +313,20 @@ jobs:
           checksum: true
       - name: Run bounded parser campaign
         working-directory: fuzz
-        run: >-
-          cargo fuzz run --target x86_64-unknown-linux-gnu protocol --
-          -max_total_time=300 -rss_limit_mb=2048 -timeout=25 -print_final_stats=1
+        run: |
+          set -euo pipefail
+          # Each target replays its committed seeds from fuzz/seeds, then
+          # explores for its budget. New inputs land in the ignored corpus
+          # directory, never in the tracked seeds.
+          for target in $(cargo fuzz list); do
+            case "$target" in
+              protocol) budget=300 ;;
+              *) budget=30 ;;
+            esac
+            mkdir -p "corpus/$target"
+            cargo fuzz run --target x86_64-unknown-linux-gnu "$target" "corpus/$target" "seeds/$target" -- \
+              -max_total_time="$budget" -rss_limit_mb=2048 -timeout=25 -print_final_stats=1
+          done
       - name: Upload crash artifacts
         if: failure()
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2

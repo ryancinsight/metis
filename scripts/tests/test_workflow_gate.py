@@ -103,7 +103,7 @@ class RequiredGateTests(unittest.TestCase):
             timeout=10,
         )
 
-    def classify(self, changed_paths):
+    def outputs(self, changed_paths):
         with tempfile.TemporaryDirectory() as directory:
             changed = pathlib.Path(directory) / "metis-changed-files"
             output = pathlib.Path(directory) / "github-output"
@@ -121,7 +121,13 @@ class RequiredGateTests(unittest.TestCase):
                 timeout=10,
             )
             self.assertEqual(result.returncode, 0, result.stderr)
-            return output.read_text(encoding="utf-8").strip()
+            return dict(
+                line.split("=", 1)
+                for line in output.read_text(encoding="utf-8").splitlines()
+            )
+
+    def classify(self, changed_paths):
+        return "code=" + self.outputs(changed_paths)["code"]
 
     def test_success_and_skipped_dependencies_pass(self):
         results = {job: {"result": "success"} for job in self.dependencies}
@@ -235,6 +241,26 @@ class RequiredGateTests(unittest.TestCase):
         self.assertTrue(steps[0].startswith("Check required job results"))
         self.assertNotIn("always()", "".join(recording))
         self.assertIn(marker, "".join(recording))
+
+    def test_fuzz_campaign_follows_the_harness_for_pull_requests(self):
+        cases = (
+            ((b"fuzz/Cargo.toml",), True),
+            ((b"fuzz/seeds/typeface/one-rectangle.ttf",), True),
+            ((b"README.md", b"fuzz/fuzz_targets/archive.rs"), True),
+            ((b"crates/metis-core/src/lib.rs",), False),
+            ((b"docs/fuzz/notes.md",), False),
+            ((), False),
+        )
+        for paths, expected in cases:
+            with self.subTest(paths=paths):
+                data = b"\0".join(paths) + (b"\0" if paths else b"")
+                self.assertEqual(self.outputs(data)["fuzz"], str(expected).lower())
+        fuzz = self.source.split("\n  fuzz:\n", 1)[1].split("\n  browser-assets:\n", 1)[0]
+        self.assertIn("needs: changes", fuzz)
+        self.assertIn("needs.changes.outputs.fuzz == 'true'", fuzz)
+        self.assertIn("github.event.pull_request.draft == false", fuzz)
+        self.assertIn("github.event_name == 'schedule'", fuzz)
+        self.assertIn("github.event_name == 'workflow_dispatch'", fuzz)
 
     def test_windows_and_semver_skip_documentation_only_changes(self):
         verify = self.source.split("\n  verify:\n", 1)[1].split(

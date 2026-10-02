@@ -1,0 +1,6 @@
+metis-window-state 1
+top=0
+left=0
+width=1
+height=1
+maximized=0
