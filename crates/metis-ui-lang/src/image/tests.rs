@@ -20,15 +20,61 @@ fn image_validation_rejects_empty_oversized_and_mismatched_storage() {
 
 #[test]
 fn rgba_bytes_preserve_row_major_channels_and_reject_length_mismatch() {
-    let image = RasterImage::from_rgba_bytes(2, 1, [1, 2, 3, 4, 5, 6, 7, 8]).expect("rgba bytes");
+    let image =
+        RasterImage::from_rgba_bytes(2, 1, vec![1, 2, 3, 4, 5, 6, 7, 8]).expect("rgba bytes");
     assert_eq!(
         image.pixels(),
         &[Color::rgba(1, 2, 3, 4), Color::rgba(5, 6, 7, 8)]
     );
 
-    let error = RasterImage::from_rgba_bytes(2, 1, [0; 4]).expect_err("short rgba bytes");
+    let error = RasterImage::from_rgba_bytes(2, 1, vec![0; 4]).expect_err("short rgba bytes");
     assert_eq!(error.code, ErrorCode::RenderFailure);
     assert!(error.message.contains("byte count"));
+}
+
+#[test]
+fn owned_pixel_and_byte_buffers_become_the_image_storage() {
+    let pixels = vec![Color::RED, Color::BLUE];
+    let address = pixels.as_ptr();
+    let image = RasterImage::new(2, 1, pixels).expect("owned pixels");
+    assert_eq!(image.pixels().as_ptr(), address);
+
+    let bytes = vec![1, 2, 3, 4, 5, 6, 7, 8];
+    let address = bytes.as_ptr().cast::<Color>();
+    let image = RasterImage::from_rgba_bytes(2, 1, bytes).expect("owned bytes");
+    assert_eq!(image.pixels().as_ptr(), address);
+    assert_eq!(
+        image.pixels(),
+        &[Color::rgba(1, 2, 3, 4), Color::rgba(5, 6, 7, 8)]
+    );
+}
+
+#[test]
+fn spare_pixel_capacity_is_released_into_the_image() {
+    let mut pixels = Vec::with_capacity(1024);
+    pixels.extend([Color::RED, Color::BLUE]);
+    let image = RasterImage::new(2, 1, pixels).expect("pixels with spare capacity");
+    assert_eq!(image.pixels.capacity(), 2);
+    assert_eq!(image.pixels(), &[Color::RED, Color::BLUE]);
+
+    let mut bytes = Vec::with_capacity(4096);
+    bytes.extend_from_slice(&[1, 2, 3, 4, 5, 6, 7, 8]);
+    let image = RasterImage::from_rgba_bytes(2, 1, bytes).expect("bytes with spare capacity");
+    assert_eq!(image.pixels.capacity(), 2);
+}
+
+#[test]
+fn rgba_bytes_in_a_partial_pixel_allocation_are_converted_once() {
+    let mut bytes = Vec::with_capacity(9);
+    bytes.extend_from_slice(&[1, 2, 3, 4, 5, 6, 7, 8]);
+    assert_eq!(bytes.capacity() % 4, 1, "fixture allocation has slack");
+    let address = bytes.as_ptr().cast::<Color>();
+    let image = RasterImage::from_rgba_bytes(2, 1, bytes).expect("slack allocation");
+    assert_ne!(image.pixels().as_ptr(), address);
+    assert_eq!(
+        image.pixels(),
+        &[Color::rgba(1, 2, 3, 4), Color::rgba(5, 6, 7, 8)]
+    );
 }
 
 #[test]

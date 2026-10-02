@@ -121,7 +121,9 @@ clipped rasterization path without allocating another frame.
 Raster presentation uses [`RasterImage`](https://docs.rs/metis-ui-lang/latest/metis_ui_lang/struct.RasterImage.html)
 and [`ImagePlacement`](https://docs.rs/metis-ui-lang/latest/metis_ui_lang/struct.ImagePlacement.html).
 Images validate dimensions and row-major pixel storage at construction;
-`RasterImage::from_rgba_bytes` converts a bounded RGBA byte boundary once.
+`RasterImage::from_rgba_bytes` takes ownership of a bounded RGBA byte buffer and
+reinterprets it as pixel storage without copying unless the allocation ends in a
+partial pixel, which is converted once.
 Placements validate the source crop, clip the destination to the framebuffer
 and composite with source-over alpha. A placement can apply an identity,
 horizontal or vertical flip, a quarter-turn, or a validated arbitrary affine
@@ -146,7 +148,10 @@ single-component lossless JPEG, are mapped once by Consus to opaque eight-bit
 display channels with nearest full-range integer rounding; precision-preserving
 clinical use remains RITK-owned.
 
-PNG requires CRCs, complete zlib termination, Adler checksum and exact scanline
+PNG decode reserves one pixel buffer, decodes and expands into it, and moves it
+into the shared image, so an unrotated decode holds one pixel buffer; an EXIF
+rotation holds the source and the rotated grid together until the source drops. PNG
+requires CRCs, complete zlib termination, Adler checksum and exact scanline
 length. The static subset supports depths up to eight bits and Adam7; indexed
 images require complete palettes. The [owning ADR](../../docs/adr/0029-image-orientation.md)
 defines codec and metadata admission. Unsupported color profiles, animation

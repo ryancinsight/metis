@@ -18,22 +18,23 @@ use transform::{
 pub struct RasterImage {
     width: u32,
     height: u32,
-    pixels: Arc<[Color]>,
+    pixels: Arc<Vec<Color>>,
 }
 
 impl RasterImage {
     /// Creates an image from row-major straight RGBA pixels.
     ///
     /// The dimensions and pixel count use the same limits as the software
-    /// framebuffer. The pixel storage is retained through an atomic reference
-    /// count so placements can share decoded image data without copying it.
+    /// framebuffer. The pixel buffer is moved into the image without a copy and
+    /// retained through an atomic reference count so placements can share
+    /// decoded image data without copying it. Spare capacity beyond the pixels
+    /// is released, so the image retains exactly the storage its bound counts.
     ///
     /// # Errors
     /// Returns [`ErrorCode::SurfaceAllocationError`] for zero, oversized or
     /// unrepresentable dimensions, and [`ErrorCode::RenderFailure`] when the
     /// pixel count does not match the dimensions.
-    pub fn new(width: u32, height: u32, pixels: impl Into<Arc<[Color]>>) -> Result<Self> {
-        let pixels = pixels.into();
+    pub fn new(width: u32, height: u32, mut pixels: Vec<Color>) -> Result<Self> {
         let expected = pixel_count(width, height)?;
         if pixels.len() != expected {
             return Err(MetisError::ui(
@@ -46,25 +47,27 @@ impl RasterImage {
                 ),
             ));
         }
+        pixels.shrink_to_fit();
         Ok(Self {
             width,
             height,
-            pixels,
+            pixels: Arc::new(pixels),
         })
     }
 
     /// Creates an image from row-major RGBA bytes.
     ///
-    /// The byte length must equal four channels for every pixel. Conversion is
-    /// performed once at the boundary, after the shared image dimensions and
-    /// storage limits have been validated.
+    /// The byte length must equal four channels for every pixel. The owned
+    /// buffer is reinterpreted as the pixel storage without a copy when its
+    /// capacity is a whole number of pixels, as an exact-length buffer's is.
+    /// A buffer whose capacity ends in a partial pixel cannot be reinterpreted,
+    /// so its bytes are converted once into freshly reserved storage.
     ///
     /// # Errors
     /// Returns [`ErrorCode::SurfaceAllocationError`] for invalid dimensions or
     /// allocation failure, and [`ErrorCode::RenderFailure`] for a byte-length
     /// mismatch.
-    pub fn from_rgba_bytes(width: u32, height: u32, rgba: impl AsRef<[u8]>) -> Result<Self> {
-        let rgba = rgba.as_ref();
+    pub fn from_rgba_bytes(width: u32, height: u32, rgba: Vec<u8>) -> Result<Self> {
         let expected_pixels = pixel_count(width, height)?;
         let expected_bytes = expected_pixels.checked_mul(4).ok_or_else(|| {
             MetisError::ui(
@@ -83,22 +86,10 @@ impl RasterImage {
                 ),
             ));
         }
-        let mut pixels = Vec::new();
-        pixels.try_reserve_exact(expected_pixels).map_err(|_| {
-            MetisError::ui(
-                ErrorCode::SurfaceAllocationError,
-                "Unable to reserve raster image pixel storage",
-            )
-        })?;
-        for channels in rgba.chunks_exact(4) {
-            let &[red, green, blue, alpha] = channels else {
-                return Err(MetisError::ui(
-                    ErrorCode::RenderFailure,
-                    "RGBA byte chunks do not contain four channels",
-                ));
-            };
-            pixels.push(Color::rgba(red, green, blue, alpha));
-        }
+        let pixels = match eunomia::layout::try_cast_vec::<u8, Color>(rgba) {
+            Ok(pixels) => pixels,
+            Err((_, rgba)) => convert_rgba_bytes(&rgba, expected_pixels)?,
+        };
         Self::new(width, height, pixels)
     }
 
@@ -119,6 +110,26 @@ impl RasterImage {
     pub fn pixels(&self) -> &[Color] {
         &self.pixels
     }
+}
+
+fn convert_rgba_bytes(rgba: &[u8], pixel_count: usize) -> Result<Vec<Color>> {
+    let mut pixels = Vec::new();
+    pixels.try_reserve_exact(pixel_count).map_err(|_| {
+        MetisError::ui(
+            ErrorCode::SurfaceAllocationError,
+            "Unable to reserve raster image pixel storage",
+        )
+    })?;
+    for channels in rgba.chunks_exact(4) {
+        let &[red, green, blue, alpha] = channels else {
+            return Err(MetisError::ui(
+                ErrorCode::RenderFailure,
+                "RGBA byte chunks do not contain four channels",
+            ));
+        };
+        pixels.push(Color::rgba(red, green, blue, alpha));
+    }
+    Ok(pixels)
 }
 
 fn pixel_count(width: u32, height: u32) -> Result<usize> {

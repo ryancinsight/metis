@@ -6,6 +6,17 @@ Date: 2026-09-09
 
 Driver: [METIS-ASSETS-001](../../backlog.md#METIS-ASSETS-001).
 
+Revision 2026-09-29 ([PR 435](https://github.com/ryancinsight/metis/pull/435)):
+pixel storage is `Arc<Vec<Color>>`, so a decoder's fallibly reserved buffer
+becomes the image without the infallible full-size copy that `Arc<[Color]>`
+construction requires. `RasterImage::new` takes `Vec<Color>` and releases
+spare capacity; `RasterImage::from_rgba_bytes` takes `Vec<u8>` and reinterprets
+it in place after validating its length. Both take owned buffers so a
+borrowed or wrong-length input is never copied before validation; slice and
+array callers call `to_vec()`.
+Rejected: `Arc::new_uninit_slice`, which is stable but aborts instead of
+returning an error when the allocation fails.
+
 ## Context
 
 The software display list previously covered rectangles, borders and bitmap
@@ -24,7 +35,7 @@ the current workspace version until an explicitly authorized release increment.
 Add `RasterImage`, `ImagePlacement` and `ImageSampling::Nearest` to
 `metis-ui-lang`. `RasterImage::new` validates nonzero dimensions, coordinate
 limits, the shared 16,777,216-pixel storage bound and an exact row-major pixel
-count, then retains the immutable pixels in `Arc<[Color]>`. A placement validates
+count, then retains the immutable pixels in `Arc<Vec<Color>>`. A placement validates
 an in-bounds positive source crop and positive destination dimensions; its
 coordinates may extend off-screen for clipping.
 

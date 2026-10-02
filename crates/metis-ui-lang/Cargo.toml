@@ -9,6 +9,7 @@ repository.workspace = true
 description = "Bounded XML-like markup parsing and sequential software presentation layout"
 
 [dependencies]
+eunomia = { workspace = true }
 iris.workspace = true
 metis-core = { workspace = true }
 metis-platform = { workspace = true }
