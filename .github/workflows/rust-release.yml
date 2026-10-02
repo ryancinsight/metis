@@ -98,8 +98,13 @@ jobs:
     needs: [identify, semver]
     if: github.event_name == 'workflow_dispatch'
     uses: ryancinsight/atlas/.github/workflows/crates-publish.yml@848e6649c52e8226a9abf7bc336f8cbf0e39ba08
+    # The called workflow's publish job requests id-token: write. GitHub checks a
+    # nested job's permissions against this grant before any `if:` runs, so a
+    # narrower grant rejects the whole file on every event. A dispatch run only
+    # validates; the publish job inside skips it.
     permissions:
       contents: read
+      id-token: write
     with:
       rust-toolchain: "1.97.0"
       tag-prefix: "crate-"
