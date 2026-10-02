@@ -339,7 +339,7 @@ class WorkflowContractTests(unittest.TestCase):
 
 
 class ReleaseWorkflowContractTests(unittest.TestCase):
-    """Keep registry publication tokenless and release-only."""
+    """Keep registry publication tokenless and limited to its named triggers."""
 
     @classmethod
     def setUpClass(cls):
@@ -357,6 +357,7 @@ class ReleaseWorkflowContractTests(unittest.TestCase):
             "id-token: write",
             "ryancinsight/atlas/.github/workflows/semver-gate.yml@848e6649c52e8226a9abf7bc336f8cbf0e39ba08",
             "ryancinsight/atlas/.github/workflows/crates-publish.yml@848e6649c52e8226a9abf7bc336f8cbf0e39ba08",
+            "ryancinsight/atlas/.github/workflows/crates-publish-pending.yml@ee2b7200c4781e39b5ea3e379d2aa97947758099",
         )
         for fragment in required:
             with self.subTest(fragment=fragment):
@@ -367,13 +368,23 @@ class ReleaseWorkflowContractTests(unittest.TestCase):
         self.assertEqual(manifest["package"]["name"], "metis-ui")
         self.assertEqual(manifest["lib"]["name"], "metis")
 
-    def test_caller_has_no_registry_secret_or_implicit_publish_trigger(self):
+    def test_caller_has_no_registry_secret_and_publishes_only_from_named_jobs(self):
         self.assertNotIn("secrets:", self.source)
         self.assertNotIn("CARGO_REGISTRY_TOKEN", self.source)
         for forbidden in ("private_key", "signing-key", "GPG", "SSH_PRIVATE_KEY"):
             with self.subTest(forbidden=forbidden):
                 self.assertNotIn(forbidden, self.source)
-        self.assertNotIn("push:", self.source)
+        # Version-change publishing (ADR 0068) is the one push trigger: default
+        # branch only, and only the publish-pending job runs on push/schedule.
+        triggers = self.source.split("\non:\n", 1)[1].split("\npermissions:\n", 1)[0]
+        self.assertEqual(triggers.count("push:"), 1)
+        self.assertIn("  push:\n    branches: [main]\n", triggers)
+        self.assertIn("  schedule:\n    - cron:", triggers)
+        self.assertIn(
+            "publish-pending:\n    name: Publish pending versions\n    if: github.event_name == 'push' || github.event_name == 'schedule'",
+            self.source,
+        )
+        self.assertEqual(self.source.count("contents: write"), 1)
         self.assertIn(
             "validate:\n    needs: [identify, semver]\n    if: github.event_name == 'workflow_dispatch'",
             self.source,
@@ -389,7 +400,7 @@ class ReleaseWorkflowContractTests(unittest.TestCase):
             self.source,
             re.MULTILINE,
         )
-        self.assertEqual(len(references), 3)
+        self.assertEqual(len(references), 4)
         for action, revision in references:
             with self.subTest(action=action):
                 self.assertRegex(revision, r"\A[0-9a-f]{40}\Z")

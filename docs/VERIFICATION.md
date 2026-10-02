@@ -44,10 +44,15 @@ before reporting GitHub runner results or CI timing evidence.
 `.github/workflows/rust-release.yml` delegates release validation and crates.io
 publication to the Atlas reusable `semver-gate.yml` and `crates-publish.yml`
 workflows at Atlas revision `848e6649c52e8226a9abf7bc336f8cbf0e39ba08`.
-The caller triggers only on a published GitHub Release or an explicit
-`workflow_dispatch`; it carries no registry secret and grants `id-token: write`
-only to the release-only reusable publish job. Manual dispatch calls the
-validation-only reusable job without `id-token: write`. The Atlas workflow obtains a short-lived
+The caller triggers on a published GitHub Release, an explicit
+`workflow_dispatch`, a push to `main`, and a daily schedule; it carries no
+registry secret and grants `id-token: write` only to the release-event publish
+job and the `publish-pending` job. Manual dispatch calls the validation-only
+reusable job without `id-token: write`. Push and schedule runs call only
+`publish-pending`, Atlas's `crates-publish-pending.yml` at revision
+`ee2b7200c4781e39b5ea3e379d2aa97947758099` (ADR 0068), which publishes each
+workspace package whose manifest version the registry index lacks, so a merged
+version bump publishes without a hand-created release. The Atlas workflow obtains a short-lived
 crates.io token through OIDC and gates it with the `crates-io` environment.
 No private-key prompt or local signing step belongs to this release path. If a
 developer's Git installation asks for a signing key, that prompt comes from

@@ -414,7 +414,10 @@ workspace package. The root facade package is `metis-ui` because the crates.io
 name `metis` belongs to another publisher; its library target keeps the name
 `metis`, so `use metis::...` paths and the `metis-ui` release tag
 `crate-metis-ui-v<version>` are the only places the two names meet. `workflow_dispatch` calls a separate validation-only job;
-that path has no OIDC permission and cannot publish.
+that path has no OIDC permission and cannot publish. A push to `main` and a
+daily schedule call Atlas's `crates-publish-pending.yml`, which publishes every
+workspace package whose manifest version crates.io lacks, so a merged version
+bump publishes without a hand-created release.
 
 The publish job requests a short-lived crates.io token through GitHub Actions
 OIDC and the `crates-io` environment. The repository stores no Cargo token,
