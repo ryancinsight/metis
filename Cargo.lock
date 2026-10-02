@@ -606,8 +606,8 @@ checksum = "877a4ace8713b0bcf2a4e7eec82529c029f1d0619886d18145fea96c3ffe5c0f"
 
 [[package]]
 name = "eunomia"
-version = "0.8.0"
-source = "git+https://github.com/ryancinsight/eunomia#487afa6247623329e2f95ccd1e57dbc2e66ec74f"
+version = "0.8.1"
+source = "git+https://github.com/ryancinsight/eunomia#3fdd30882bdd136593d624937791e0aa1a65cb1b"
 dependencies = [
  "bytemuck",
  "eunomia-derive",
@@ -617,8 +617,8 @@ dependencies = [
 
 [[package]]
 name = "eunomia-derive"
-version = "0.8.0"
-source = "git+https://github.com/ryancinsight/eunomia#487afa6247623329e2f95ccd1e57dbc2e66ec74f"
+version = "0.8.1"
+source = "git+https://github.com/ryancinsight/eunomia#3fdd30882bdd136593d624937791e0aa1a65cb1b"
 dependencies = [
  "proc-macro2",
  "quote",
@@ -1257,6 +1257,7 @@ name = "metis-ui-lang"
 version = "0.1.0"
 dependencies = [
  "consus-raster",
+ "eunomia",
  "flate2",
  "iris-viz",
  "jpeg-encoder",

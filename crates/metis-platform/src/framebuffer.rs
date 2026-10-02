@@ -16,7 +16,12 @@ pub use damage::Damage;
 pub const MAX_PIXELS: usize = 16 * 1024 * 1024;
 
 /// Straight (unpremultiplied) RGBA channels.
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+///
+/// The layout is four contiguous bytes in `r, g, b, a` order with no padding,
+/// so a decoded RGBA8 byte buffer and a pixel buffer are the same allocation
+/// viewed through [`eunomia::layout`].
+#[derive(Debug, Clone, Copy, PartialEq, Eq, eunomia::Pod, eunomia::Zeroable)]
+#[repr(C)]
 pub struct Color {
     /// Red channel.
     pub r: u8,
@@ -27,6 +32,10 @@ pub struct Color {
     /// Opacity, from transparent zero to opaque 255.
     pub a: u8,
 }
+
+// Byte and pixel views of one allocation rely on exactly four bytes per pixel
+// at byte alignment; a field or `repr` change that breaks it fails the build.
+const _: () = assert!(size_of::<Color>() == 4 && align_of::<Color>() == 1);
 
 impl Color {
     /// Opaque black.

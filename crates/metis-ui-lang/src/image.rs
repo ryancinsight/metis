@@ -18,22 +18,24 @@ use transform::{
 pub struct RasterImage {
     width: u32,
     height: u32,
-    pixels: Arc<[Color]>,
+    pixels: Arc<Vec<Color>>,
 }
 
 impl RasterImage {
     /// Creates an image from row-major straight RGBA pixels.
     ///
     /// The dimensions and pixel count use the same limits as the software
-    /// framebuffer. The pixel storage is retained through an atomic reference
-    /// count so placements can share decoded image data without copying it.
+    /// framebuffer. The pixel buffer is moved into the image and retained
+    /// through an atomic reference count so placements can share decoded image
+    /// data without copying it. Spare capacity beyond the pixels is released,
+    /// which reallocates only a buffer that has any, so the image retains
+    /// exactly the storage its bound counts.
     ///
     /// # Errors
     /// Returns [`ErrorCode::SurfaceAllocationError`] for zero, oversized or
     /// unrepresentable dimensions, and [`ErrorCode::RenderFailure`] when the
     /// pixel count does not match the dimensions.
-    pub fn new(width: u32, height: u32, pixels: impl Into<Arc<[Color]>>) -> Result<Self> {
-        let pixels = pixels.into();
+    pub fn new(width: u32, height: u32, mut pixels: Vec<Color>) -> Result<Self> {
         let expected = pixel_count(width, height)?;
         if pixels.len() != expected {
             return Err(MetisError::ui(
@@ -46,25 +48,28 @@ impl RasterImage {
                 ),
             ));
         }
+        pixels.shrink_to_fit();
         Ok(Self {
             width,
             height,
-            pixels,
+            pixels: Arc::new(pixels),
         })
     }
 
     /// Creates an image from row-major RGBA bytes.
     ///
-    /// The byte length must equal four channels for every pixel. Conversion is
-    /// performed once at the boundary, after the shared image dimensions and
-    /// storage limits have been validated.
+    /// The byte length must equal four channels for every pixel. The owned
+    /// buffer is reinterpreted as the pixel storage without a copy when its
+    /// capacity is a whole number of pixels; an exact-length buffer is then
+    /// stored as is, and spare capacity is released as by [`Self::new`]. A
+    /// buffer whose capacity ends in a partial pixel cannot be reinterpreted,
+    /// so its bytes are converted once into freshly reserved storage.
     ///
     /// # Errors
     /// Returns [`ErrorCode::SurfaceAllocationError`] for invalid dimensions or
     /// allocation failure, and [`ErrorCode::RenderFailure`] for a byte-length
     /// mismatch.
-    pub fn from_rgba_bytes(width: u32, height: u32, rgba: impl AsRef<[u8]>) -> Result<Self> {
-        let rgba = rgba.as_ref();
+    pub fn from_rgba_bytes(width: u32, height: u32, rgba: Vec<u8>) -> Result<Self> {
         let expected_pixels = pixel_count(width, height)?;
         let expected_bytes = expected_pixels.checked_mul(4).ok_or_else(|| {
             MetisError::ui(
@@ -83,22 +88,10 @@ impl RasterImage {
                 ),
             ));
         }
-        let mut pixels = Vec::new();
-        pixels.try_reserve_exact(expected_pixels).map_err(|_| {
-            MetisError::ui(
-                ErrorCode::SurfaceAllocationError,
-                "Unable to reserve raster image pixel storage",
-            )
-        })?;
-        for channels in rgba.chunks_exact(4) {
-            let &[red, green, blue, alpha] = channels else {
-                return Err(MetisError::ui(
-                    ErrorCode::RenderFailure,
-                    "RGBA byte chunks do not contain four channels",
-                ));
-            };
-            pixels.push(Color::rgba(red, green, blue, alpha));
-        }
+        let pixels = match eunomia::layout::try_cast_vec::<u8, Color>(rgba) {
+            Ok(pixels) => pixels,
+            Err((_, rgba)) => convert_rgba_bytes(&rgba, expected_pixels)?,
+        };
         Self::new(width, height, pixels)
     }
 
@@ -119,6 +112,26 @@ impl RasterImage {
     pub fn pixels(&self) -> &[Color] {
         &self.pixels
     }
+}
+
+fn convert_rgba_bytes(rgba: &[u8], pixel_count: usize) -> Result<Vec<Color>> {
+    let mut pixels = Vec::new();
+    pixels.try_reserve_exact(pixel_count).map_err(|_| {
+        MetisError::ui(
+            ErrorCode::SurfaceAllocationError,
+            "Unable to reserve raster image pixel storage",
+        )
+    })?;
+    for channels in rgba.chunks_exact(4) {
+        let &[red, green, blue, alpha] = channels else {
+            return Err(MetisError::ui(
+                ErrorCode::RenderFailure,
+                "RGBA byte chunks do not contain four channels",
+            ));
+        };
+        pixels.push(Color::rgba(red, green, blue, alpha));
+    }
+    Ok(pixels)
 }
 
 fn pixel_count(width: u32, height: u32) -> Result<usize> {
@@ -331,6 +344,7 @@ impl ImagePlacement {
         let destination_width = f64::from(self.destination.width);
         let destination_height = f64::from(self.destination.height);
         let image_width = u64::from(self.image.width());
+        let pixels = self.image.pixels();
         for y in clip_top..clip_bottom {
             let local_y = (f64::from(i32::try_from(y).expect("invariant: framebuffer y fits i32"))
                 - f64::from(self.destination.y)
@@ -351,7 +365,7 @@ impl ImagePlacement {
                 };
                 let selected_x = i64::from(self.source.x) + source_x;
                 let selected_y = i64::from(self.source.y) + source_y;
-                let color = self.pixel_at(selected_x, selected_y, image_width);
+                let color = pixel_at(pixels, selected_x, selected_y, image_width);
                 framebuffer.blend_pixel(
                     i32::try_from(x).expect("invariant: clipped framebuffer x fits i32"),
                     i32::try_from(y).expect("invariant: clipped framebuffer y fits i32"),
@@ -375,6 +389,7 @@ impl ImagePlacement {
         let destination_width = i64::from(self.destination.width);
         let destination_height = i64::from(self.destination.height);
         let image_width = u64::from(self.image.width());
+        let pixels = self.image.pixels();
         for y in clip_top..clip_bottom {
             let relative_y = y - destination_top;
             for x in clip_left..clip_right {
@@ -389,7 +404,7 @@ impl ImagePlacement {
                 );
                 let selected_x = source_x + local_x;
                 let selected_y = source_y + local_y;
-                let color = self.pixel_at(selected_x, selected_y, image_width);
+                let color = pixel_at(pixels, selected_x, selected_y, image_width);
                 framebuffer.blend_pixel(
                     i32::try_from(x).expect("invariant: clipped framebuffer x fits i32"),
                     i32::try_from(y).expect("invariant: clipped framebuffer y fits i32"),
@@ -398,22 +413,24 @@ impl ImagePlacement {
             }
         }
     }
+}
 
-    fn pixel_at(&self, selected_x: i64, selected_y: i64, image_width: u64) -> Color {
-        let source_index = usize::try_from(
-            u64::try_from(selected_y)
-                .expect("invariant: validated image source coordinate is nonnegative")
-                * image_width
-                + u64::try_from(selected_x)
-                    .expect("invariant: validated image source coordinate is nonnegative"),
-        )
-        .expect("invariant: validated image storage fits addressable memory");
-        *self
-            .image
-            .pixels()
-            .get(source_index)
-            .expect("invariant: validated crop maps inside image storage")
-    }
+/// The pixel at a validated source coordinate of row-major `pixels`.
+///
+/// The render loops borrow the slice once rather than dereferencing the shared
+/// storage per pixel.
+fn pixel_at(pixels: &[Color], selected_x: i64, selected_y: i64, image_width: u64) -> Color {
+    let source_index = usize::try_from(
+        u64::try_from(selected_y)
+            .expect("invariant: validated image source coordinate is nonnegative")
+            * image_width
+            + u64::try_from(selected_x)
+                .expect("invariant: validated image source coordinate is nonnegative"),
+    )
+    .expect("invariant: validated image storage fits addressable memory");
+    *pixels
+        .get(source_index)
+        .expect("invariant: validated crop maps inside image storage")
 }
 
 fn normalized_source_index(value: f64, extent: i32) -> Option<i64> {

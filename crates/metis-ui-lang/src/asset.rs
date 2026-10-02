@@ -14,6 +14,7 @@ use std::{fmt, io, path::Path};
 mod compression;
 mod jpeg;
 mod orientation;
+mod samples;
 
 /// Maximum encoded image bytes, matching the scoped file-read budget.
 pub const MAX_ENCODED_IMAGE_BYTES: usize = 64 * 1024 * 1024;
@@ -128,8 +129,15 @@ impl RasterImage {
     /// already have top-left display orientation. JPEG has opaque alpha.
     /// Container checks require an exact terminal marker and no trailing bytes.
     /// Encoded input is at most 64 MiB, decoded pixels at most 16 Mi, and each
-    /// edge at most 16,384. The decoder has a separate 64 MiB workspace limit;
-    /// output and immutable raster storage each require at most 64 MiB.
+    /// edge at most 16,384. The decoder has a separate 64 MiB workspace limit.
+    ///
+    /// PNG decode reserves one pixel buffer of at most 64 MiB, writes the decoded
+    /// samples into it, expands them in place and moves it into the shared image
+    /// storage, so no second image-sized buffer exists; every other allocation
+    /// (codec state, row and inflate buffers, the shared-storage header) scales
+    /// at most with the row width, never with the row count. An EXIF rotation
+    /// holds the source and the rotated grid together. JPEG holds the
+    /// provider's decoded samples beside the pixel buffer.
     ///
     /// # Errors
     /// Returns a classified [`AssetError`] for malformed/truncated input,
@@ -219,37 +227,36 @@ fn decode_png(bytes: &[u8]) -> Result<RasterImage, AssetError> {
     }
     compression::validate(bytes, header)?;
     let mut reader = decoder.read_info()?;
+    let samples = reader.output_color_type().0.samples();
     let size = reader
         .output_buffer_size()
         .filter(|size| *size <= MAX_DECODE_BYTES)
         .ok_or_else(|| AssetError::new(AssetErrorKind::TooLarge))?;
-    let mut channels = Vec::new();
-    channels
-        .try_reserve_exact(size)
-        .map_err(|_| AssetError::new(AssetErrorKind::Allocation))?;
-    channels.resize(size, 0);
-    let output = reader.next_frame(&mut channels)?;
-    reader.finish()?;
-    drop(reader);
     let count = usize::try_from(count).map_err(|_| AssetError::new(AssetErrorKind::TooLarge))?;
+    if count.checked_mul(samples) != Some(size) {
+        return Err(AssetError::new(AssetErrorKind::Malformed));
+    }
+    // The decoder writes its samples into the tail of the pixel storage and the
+    // expansion fills the head, so the reserved buffer is the only image-sized
+    // allocation. The decoder API takes initialized bytes, hence the fill.
     let mut pixels = Vec::new();
     pixels
         .try_reserve_exact(count)
         .map_err(|_| AssetError::new(AssetErrorKind::Allocation))?;
-    let samples = channels
-        .get(..output.buffer_size())
+    pixels.resize(count, Color::TRANSPARENT);
+    let storage: &mut [u8] = eunomia::layout::cast_slice_mut(&mut pixels);
+    let tail = storage
+        .len()
+        .checked_sub(size)
+        .and_then(|start| storage.get_mut(start..))
         .ok_or_else(|| AssetError::new(AssetErrorKind::Malformed))?;
-    for sample in samples.chunks_exact(output.color_type.samples()) {
-        let pixel = match *sample {
-            [gray] => Color::rgb(gray, gray, gray),
-            [gray, alpha] => Color::rgba(gray, gray, gray, alpha),
-            [red, green, blue] => Color::rgb(red, green, blue),
-            [red, green, blue, alpha] => Color::rgba(red, green, blue, alpha),
-            _ => return Err(AssetError::new(AssetErrorKind::Unsupported)),
-        };
-        pixels.push(pixel);
+    let output = reader.next_frame(tail)?;
+    reader.finish()?;
+    if output.buffer_size() != size {
+        return Err(AssetError::new(AssetErrorKind::Malformed));
     }
-    drop(channels);
+    drop(reader);
+    samples::expand_to_rgba(storage, samples)?;
     orientation::apply(output.width, output.height, pixels, orientation)
 }
 

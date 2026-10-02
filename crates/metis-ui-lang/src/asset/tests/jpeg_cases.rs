@@ -112,7 +112,7 @@ fn png_exif_uses_the_same_eight_orientation_contracts_with_alpha() {
         Color::rgba(0, 255, 255, 200),
         Color::rgba(255, 0, 255, 17),
     ];
-    let source_image = RasterImage::new(2, 3, source).expect("source grid");
+    let source_image = RasterImage::new(2, 3, source.to_vec()).expect("source grid");
     let rgba: Vec<_> = source
         .iter()
         .flat_map(|pixel| [pixel.r, pixel.g, pixel.b, pixel.a])
