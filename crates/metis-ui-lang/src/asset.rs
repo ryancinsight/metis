@@ -134,10 +134,10 @@ impl RasterImage {
     /// PNG decode reserves one pixel buffer of at most 64 MiB, writes the decoded
     /// samples into it, expands them in place and moves it into the shared image
     /// storage, so no second image-sized buffer exists; every other allocation
-    /// (codec state, scanline and inflate buffers, the shared-storage header) is
-    /// independent of the image size. An EXIF rotation holds the
-    /// source and the rotated grid together. JPEG holds the provider's decoded
-    /// samples beside the pixel buffer.
+    /// (codec state, row and inflate buffers, the shared-storage header) scales
+    /// at most with the row width, never with the row count. An EXIF rotation
+    /// holds the source and the rotated grid together. JPEG holds the
+    /// provider's decoded samples beside the pixel buffer.
     ///
     /// # Errors
     /// Returns a classified [`AssetError`] for malformed/truncated input,

@@ -11,7 +11,8 @@ pixel storage is `Arc<Vec<Color>>`, so a decoder's fallibly reserved buffer
 becomes the image without the infallible full-size copy that `Arc<[Color]>`
 construction requires. `RasterImage::new` takes `Vec<Color>` and releases
 spare capacity; `RasterImage::from_rgba_bytes` takes `Vec<u8>` and reinterprets
-it in place after validating its length. Both take owned buffers so a
+it in place after validating its length, except a buffer whose capacity ends
+in a partial pixel, which is converted once into newly reserved storage. Both take owned buffers so a
 borrowed or wrong-length input is never copied before validation; slice and
 array callers call `to_vec()`.
 Rejected: `Arc::new_uninit_slice`, which is stable but aborts instead of

@@ -25,10 +25,11 @@ impl RasterImage {
     /// Creates an image from row-major straight RGBA pixels.
     ///
     /// The dimensions and pixel count use the same limits as the software
-    /// framebuffer. The pixel buffer is moved into the image without a copy and
-    /// retained through an atomic reference count so placements can share
-    /// decoded image data without copying it. Spare capacity beyond the pixels
-    /// is released, so the image retains exactly the storage its bound counts.
+    /// framebuffer. The pixel buffer is moved into the image and retained
+    /// through an atomic reference count so placements can share decoded image
+    /// data without copying it. Spare capacity beyond the pixels is released,
+    /// which reallocates only a buffer that has any, so the image retains
+    /// exactly the storage its bound counts.
     ///
     /// # Errors
     /// Returns [`ErrorCode::SurfaceAllocationError`] for zero, oversized or
@@ -59,8 +60,9 @@ impl RasterImage {
     ///
     /// The byte length must equal four channels for every pixel. The owned
     /// buffer is reinterpreted as the pixel storage without a copy when its
-    /// capacity is a whole number of pixels, as an exact-length buffer's is.
-    /// A buffer whose capacity ends in a partial pixel cannot be reinterpreted,
+    /// capacity is a whole number of pixels; an exact-length buffer is then
+    /// stored as is, and spare capacity is released as by [`Self::new`]. A
+    /// buffer whose capacity ends in a partial pixel cannot be reinterpreted,
     /// so its bytes are converted once into freshly reserved storage.
     ///
     /// # Errors
@@ -342,6 +344,7 @@ impl ImagePlacement {
         let destination_width = f64::from(self.destination.width);
         let destination_height = f64::from(self.destination.height);
         let image_width = u64::from(self.image.width());
+        let pixels = self.image.pixels();
         for y in clip_top..clip_bottom {
             let local_y = (f64::from(i32::try_from(y).expect("invariant: framebuffer y fits i32"))
                 - f64::from(self.destination.y)
@@ -362,7 +365,7 @@ impl ImagePlacement {
                 };
                 let selected_x = i64::from(self.source.x) + source_x;
                 let selected_y = i64::from(self.source.y) + source_y;
-                let color = self.pixel_at(selected_x, selected_y, image_width);
+                let color = pixel_at(pixels, selected_x, selected_y, image_width);
                 framebuffer.blend_pixel(
                     i32::try_from(x).expect("invariant: clipped framebuffer x fits i32"),
                     i32::try_from(y).expect("invariant: clipped framebuffer y fits i32"),
@@ -386,6 +389,7 @@ impl ImagePlacement {
         let destination_width = i64::from(self.destination.width);
         let destination_height = i64::from(self.destination.height);
         let image_width = u64::from(self.image.width());
+        let pixels = self.image.pixels();
         for y in clip_top..clip_bottom {
             let relative_y = y - destination_top;
             for x in clip_left..clip_right {
@@ -400,7 +404,7 @@ impl ImagePlacement {
                 );
                 let selected_x = source_x + local_x;
                 let selected_y = source_y + local_y;
-                let color = self.pixel_at(selected_x, selected_y, image_width);
+                let color = pixel_at(pixels, selected_x, selected_y, image_width);
                 framebuffer.blend_pixel(
                     i32::try_from(x).expect("invariant: clipped framebuffer x fits i32"),
                     i32::try_from(y).expect("invariant: clipped framebuffer y fits i32"),
@@ -409,22 +413,24 @@ impl ImagePlacement {
             }
         }
     }
+}
 
-    fn pixel_at(&self, selected_x: i64, selected_y: i64, image_width: u64) -> Color {
-        let source_index = usize::try_from(
-            u64::try_from(selected_y)
-                .expect("invariant: validated image source coordinate is nonnegative")
-                * image_width
-                + u64::try_from(selected_x)
-                    .expect("invariant: validated image source coordinate is nonnegative"),
-        )
-        .expect("invariant: validated image storage fits addressable memory");
-        *self
-            .image
-            .pixels()
-            .get(source_index)
-            .expect("invariant: validated crop maps inside image storage")
-    }
+/// The pixel at a validated source coordinate of row-major `pixels`.
+///
+/// The render loops borrow the slice once rather than dereferencing the shared
+/// storage per pixel.
+fn pixel_at(pixels: &[Color], selected_x: i64, selected_y: i64, image_width: u64) -> Color {
+    let source_index = usize::try_from(
+        u64::try_from(selected_y)
+            .expect("invariant: validated image source coordinate is nonnegative")
+            * image_width
+            + u64::try_from(selected_x)
+                .expect("invariant: validated image source coordinate is nonnegative"),
+    )
+    .expect("invariant: validated image storage fits addressable memory");
+    *pixels
+        .get(source_index)
+        .expect("invariant: validated crop maps inside image storage")
 }
 
 fn normalized_source_index(value: f64, extent: i32) -> Option<i64> {
