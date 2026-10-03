@@ -484,13 +484,13 @@ an owner. “Unsupported” cannot replace delivery of a required mobile/native 
 - Acceptance: Every 250 ms batch, including empty ones, rebuilds and deep-clones the accessibility tree (about 430 allocations, application.rs:195-202, window.rs:143-146); a click recomputes the whole layout up to four times through `command_rect` (native.rs:189-217, :437-450, verified at basis) though `FrontendApp` holds the painted display list. Oracle: a counting allocator over the loop with empty batches sees zero allocations and zero provider updates after the first frame; `handle_pointer_up` on a miss allocates nothing.
 - basis: 7b50219
 
-<a id="METIS-MEM-RENDER-001"></a>
-## METIS-MEM-RENDER-001 — Render from shared ids and text, and skip unchanged DOM writes [minor]
+<a id="METIS-MEM-RENDER-002"></a>
+## METIS-MEM-RENDER-002 — Rebuild only the changed elements' layout and semantics on an edit [patch]
 - Status: todo; priority: tightening; needs: none
-- Outcome: an unchanged-state render allocates only the new display list spine and `DisplayCommand` is at most 56 bytes.
-- Scope: `crates/metis-frontend/src/presentation.rs`, `focus.rs`, `crates/metis-ui-lang/src/dom.rs`, `layout/display.rs`, `layout/geometry.rs`, `layout/slots.rs`.
-- Acceptance: A keystroke render builds about 310 allocations: semantic tree, layout, string sets, and id/text copies in `ElementRect`/`DrawText` (display.rs:17-94); `set_text_content` and `set_attribute` replace equal values (dom.rs:87-110); gradient and image payloads set the enum to about 104 bytes. Breaks the ui-lang display API; all callers change in one PR. Oracle: counting allocator bound on `render()`; `size_of::<DisplayCommand>() <= 56` const assertion; pinned keystroke bench.
-- basis: 7b50219
+- Outcome: a render that changes one label requests memory in proportion to the changed elements, not the whole form.
+- Scope: `crates/metis-ui-lang/src/layout/geometry.rs`, `grow.rs`, `intrinsic.rs`, `slots.rs`, `crates/metis-ui-lang/src/semantics.rs`, `crates/metis-frontend/src/presentation/cache.rs`.
+- Acceptance: An unchanged render now requests one allocation (METIS-MEM-RENDER-001); a one-character `set_inputs` edit still requests 350 (372 before), because `compute_layout` and `SemanticTree::from_document` rebuild every element once the document revision moves. Oracle: a counting allocator over `set_inputs` with a one-character patient edit, with a bound derived from the changed elements; and the pinned keystroke bench: the `frame` bench's `keystroke_*` baselines stored with the PR and compared. The bench smoke (`cargo test --benches -p metis-frontend`) failed to compile `metis-ipc/src/async_server.rs` at c9b99c1; it compiles and runs at origin/main since b6ebd19 (#452), so no blocker item stands.
+- basis: c9b99c1
 
 <a id="METIS-MEM-WEB-001"></a>
 ## METIS-MEM-WEB-001 — Write only changed browser DOM state and reuse transfer buffers [patch]
