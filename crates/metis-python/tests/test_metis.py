@@ -167,6 +167,37 @@ def test_application_close_reopen_rejects_stale_generation() -> None:
     assert application.to_rgba(new_generation) == bytes((1, 2, 3, 255))
 
 
+def test_application_rgba_export_keeps_channel_order_and_size() -> None:
+    application = metis.Application(3, 2)
+    generation = application.generation
+    application.clear(generation, 1, 2, 3, 4)
+    frame = application.to_rgba(generation)
+    assert type(frame) is bytes
+    assert frame == bytes((1, 2, 3, 4)) * 6
+    application.clear(generation, 255, 0, 128, 0)
+    assert application.to_rgba(generation) == bytes((255, 0, 128, 0)) * 6
+
+
+def test_application_rgba_export_is_atomic_against_concurrent_clears() -> None:
+    application = metis.Application(64, 64)
+    generation = application.generation
+    colors = ((200, 10, 20, 255), (5, 150, 250, 128))
+    pixels = 64 * 64
+
+    def clear_or_read(index: int) -> bytes:
+        if index % 2 == 0:
+            application.clear(generation, *colors[(index // 2) % 2])
+            return b""
+        return application.to_rgba(generation)
+
+    with ThreadPoolExecutor(max_workers=8) as pool:
+        results = list(pool.map(clear_or_read, range(64)))
+    expected = {bytes(color) * pixels for color in colors} | {bytes(4 * pixels)}
+    frames = [frame for frame in results if frame]
+    assert frames
+    assert all(frame in expected for frame in frames)
+
+
 def test_application_queue_is_bounded() -> None:
     application = metis.Application(1, 1)
     generation = application.generation

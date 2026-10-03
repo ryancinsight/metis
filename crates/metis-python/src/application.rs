@@ -127,34 +127,22 @@ impl Application {
     }
 
     /// Returns a bounded copy of the current row-major RGBA framebuffer.
+    ///
+    /// The `bytes` object is filled in place from the framebuffer's packed
+    /// pixels, so no intermediate Rust buffer exists.
     fn to_rgba<'py>(&self, py: Python<'py>, generation: u64) -> PyResult<Bound<'py, PyBytes>> {
-        let bytes: Result<Vec<u8>> = py.detach(|| {
-            let state = self
-                .state
-                .lock()
-                .map_err(|_| lifecycle_error("Application state lock is poisoned"))?;
-            let surface = Self::active_surface_ref(&state, generation)?;
-            let mut bytes = Vec::new();
-            let pixels = u64::from(surface.framebuffer.width())
-                .checked_mul(u64::from(surface.framebuffer.height()))
-                .and_then(|count| count.checked_mul(4))
-                .and_then(|count| usize::try_from(count).ok())
-                .ok_or_else(|| lifecycle_error("Framebuffer byte count overflows"))?;
-            bytes
-                .try_reserve_exact(pixels)
-                .map_err(|_| lifecycle_error("Framebuffer byte allocation failed"))?;
-            for y in 0..surface.framebuffer.height() {
-                for x in 0..surface.framebuffer.width() {
-                    let x = i32::try_from(x).expect("invariant: framebuffer width fits i32");
-                    let y = i32::try_from(y).expect("invariant: framebuffer height fits i32");
-                    let color = surface.framebuffer.get_pixel(x, y);
-                    bytes.extend([color.r, color.g, color.b, color.a]);
-                }
-            }
-            Ok(bytes)
-        });
-        let bytes = bytes.map_err(|error| map_error(&error))?;
-        Ok(PyBytes::new(py, &bytes))
+        let state = self.lock(py)?;
+        let surface =
+            Self::active_surface_ref(&state, generation).map_err(|error| map_error(&error))?;
+        let pixels = surface.framebuffer.pixels();
+        let length = pixels
+            .len()
+            .checked_mul(4)
+            .ok_or_else(|| map_error(&lifecycle_error("Framebuffer byte count overflows")))?;
+        PyBytes::new_with(py, length, |bytes| {
+            py.detach(|| write_rgba(pixels, bytes));
+            Ok(())
+        })
     }
 
     /// Enqueues a key event in the bounded FIFO queue.
@@ -251,6 +239,15 @@ impl Application {
             })()
         };
         result.map_err(|error| map_error(&error))
+    }
+}
+
+/// Writes `pixels`, packed `0xAARRGGBB`, as consecutive `[red, green, blue, alpha]`
+/// bytes.
+fn write_rgba(pixels: &[u32], bytes: &mut [u8]) {
+    for (rgba, pixel) in bytes.chunks_exact_mut(4).zip(pixels) {
+        let [alpha, red, green, blue] = pixel.to_be_bytes();
+        rgba.copy_from_slice(&[red, green, blue, alpha]);
     }
 }
 
