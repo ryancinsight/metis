@@ -1,6 +1,6 @@
 //! Browser WebSocket transport backed by Moirai's WebAssembly PAL.
 
-use crate::frame::read_frame;
+use crate::frame::split_frame;
 use crate::transport::{AsyncIpcTransport, check_wire_size};
 use metis_core::error::{ErrorCode, MetisError, Result};
 use metis_core::protocol::{FrameHeader, HEADER_SIZE, MAX_PAYLOAD_SIZE};
@@ -134,7 +134,8 @@ impl AsyncIpcTransport for BrowserWebSocketTransport {
             let bytes = ReceiveOrTimeout { receive, timer }
                 .await
                 .map_err(|error| map_browser_error(&error))?;
-            decode_frame(&bytes)
+            check_wire_size(&bytes)?;
+            split_frame(bytes)
         }
     }
 }
@@ -201,25 +202,6 @@ impl Drop for BrowserWebSocketTransport {
         // deliberately rather than asserted.
         let _ = self.reactor.websocket_close(self.fd);
     }
-}
-
-fn decode_frame(bytes: &[u8]) -> Result<(FrameHeader, Vec<u8>)> {
-    if bytes.is_empty() {
-        return Err(MetisError::protocol(
-            ErrorCode::FrameTruncated,
-            "Empty WebSocket message cannot contain a Metis frame",
-        ));
-    }
-    check_wire_size(bytes)?;
-    let mut wire = bytes;
-    let frame = read_frame(&mut wire)?;
-    if !wire.is_empty() {
-        return Err(MetisError::protocol(
-            ErrorCode::MalformedPayload,
-            "Trailing bytes after WebSocket frame",
-        ));
-    }
-    Ok(frame)
 }
 
 fn map_browser_error(error: &io::Error) -> MetisError {

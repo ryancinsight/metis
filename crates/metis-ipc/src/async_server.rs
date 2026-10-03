@@ -1,6 +1,6 @@
 //! Asynchronous request dispatch over a bounded Moirai WebSocket stream.
 
-use crate::frame::read_frame;
+use crate::frame::split_frame;
 use crate::server::{FailureContext, IpcHandler, dispatch_request};
 use crate::transport::check_wire_size;
 use metis_core::error::{ErrorCode, MetisError, Result};
@@ -88,7 +88,7 @@ impl<S: AsyncRead + AsyncWrite + Unpin> AsyncIpcServer<S> {
                 return Err(error);
             }
         };
-        let (header, payload) = match decode_message(&bytes) {
+        let (header, payload) = match split_frame(bytes) {
             Ok(message) => message,
             Err(error) => {
                 handler.handle_failure(FailureContext::Receive, error.code)?;
@@ -173,24 +173,6 @@ impl<S: AsyncRead + AsyncWrite + Unpin> AsyncIpcServer<S> {
             .await
             .map_err(|error| websocket_error(&error))
     }
-}
-
-fn decode_message(bytes: &[u8]) -> Result<(metis_core::protocol::FrameHeader, Vec<u8>)> {
-    if bytes.is_empty() {
-        return Err(MetisError::protocol(
-            ErrorCode::FrameTruncated,
-            "Empty WebSocket message cannot contain a Metis frame",
-        ));
-    }
-    let mut wire = bytes;
-    let message = read_frame(&mut wire)?;
-    if !wire.is_empty() {
-        return Err(MetisError::protocol(
-            ErrorCode::MalformedPayload,
-            "Trailing bytes after WebSocket Metis frame",
-        ));
-    }
-    Ok(message)
 }
 
 fn is_peer_close(error: &io::Error) -> bool {
