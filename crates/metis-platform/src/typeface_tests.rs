@@ -434,3 +434,63 @@ fn each_text_alpha_draws_as_on_an_empty_glyph_cache() {
         assert_eq!(render(color), fresh(color), "alpha {alpha}");
     }
 }
+
+#[test]
+fn reused_rasterization_scratch_draws_as_on_a_fresh_thread() {
+    // Each run is drawn into its own surface; an earlier run's coverage,
+    // accumulation or outline entries must not reach a later one. The runs
+    // alternate simple and composite glyphs (accented capitals take the
+    // nonzero-winding path), weights and sizes, so buffers shrink in use as
+    // well as grow.
+    const RUNS: [(&str, GlyphWeight, f64); 5] = [
+        ("Wg@%", GlyphWeight::Regular, 28.0),
+        ("Ärgé ÅÇ", GlyphWeight::Bold, 18.0),
+        ("il.", GlyphWeight::Regular, 12.0),
+        ("MWQ&", GlyphWeight::Bold, 40.0),
+        ("ÉÈÊ", GlyphWeight::Regular, 22.0),
+    ];
+    fn render((text, weight, pixels): (&str, GlyphWeight, f64)) -> Vec<u32> {
+        let size = TextSize::new(pixels).expect("valid size");
+        let style = TextStyle::new(Color::rgb(30, 60, 90), size).with_weight(weight);
+        let mut fb = Framebuffer::new(220, 64).expect("test surface");
+        fb.clear(Color::WHITE);
+        draw_text(&mut fb, 3, 4, text, style);
+        fb.pixels().to_vec()
+    }
+    let reused = RUNS.map(render);
+    for (run, drawn) in RUNS.into_iter().zip(&reused) {
+        let fresh = std::thread::spawn(move || render(run))
+            .join()
+            .expect("render thread");
+        assert_eq!(drawn, &fresh, "{run:?}");
+        assert!(
+            drawn.iter().any(|pixel| *pixel != 0xFFFF_FFFF),
+            "{run:?} painted nothing"
+        );
+    }
+}
+
+#[test]
+fn scratch_grown_by_an_oversized_glyph_is_released_after_the_run() {
+    let size = TextSize::new(TextSize::MAX).expect("largest size");
+    let style = TextStyle::new(Color::BLACK, size);
+    let mut fb = Framebuffer::new(1100, 1100).expect("test surface");
+    fb.clear(Color::WHITE);
+    draw_text(&mut fb, 0, 0, "W", style);
+    let inked = fb
+        .pixels()
+        .iter()
+        .filter(|pixel| **pixel != 0xFFFF_FFFF)
+        .count();
+    // The bound is every buffer at its retention limit. Coverage and
+    // accumulation hold 16 bytes per glyph pixel and the ink is a lower bound
+    // on the glyph's pixels, so unreleased the scratch would exceed the
+    // bound by the margin asserted here.
+    let bound = text::retained_scratch_bound();
+    assert!(inked * 16 > bound, "{inked} inked pixels");
+    assert!(
+        text::retained_scratch_bytes() <= bound,
+        "{} bytes retained",
+        text::retained_scratch_bytes()
+    );
+}

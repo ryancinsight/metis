@@ -227,3 +227,33 @@ fn outlines_beyond_the_cell_bound_have_no_raster_bounds() {
     );
     assert!(outline.bounds().is_none());
 }
+
+impl Outline {
+    /// The most bytes [`Self::trim`] leaves retained: each buffer at its limit.
+    pub(in crate::typeface) const fn retained_bound() -> usize {
+        RETAINED_OUTLINE_ENTRIES
+            * (size_of::<(Point, Point)>() + size_of::<u8>() + size_of::<(i32, i32)>())
+    }
+
+    /// Bytes of buffer capacity retained.
+    pub(in crate::typeface) fn retained_bytes(&self) -> usize {
+        self.lines.capacity() * size_of::<(Point, Point)>()
+            + self.flags.capacity()
+            + self.coordinates.capacity() * size_of::<(i32, i32)>()
+    }
+}
+
+impl Canvas {
+    /// The most bytes [`Self::trim`] leaves retained: each buffer at its limit.
+    pub(in crate::typeface) const fn retained_bound() -> usize {
+        (ACCUMULATION_CELLS + RETAINED_CELLS + RETAINED_OUTLINE_ENTRIES) * size_of::<f64>()
+            + RETAINED_OUTLINE_ENTRIES * size_of::<(f64, i32)>()
+    }
+
+    /// Bytes of buffer capacity retained.
+    pub(in crate::typeface) fn retained_bytes(&self) -> usize {
+        (self.accumulation.capacity() + self.coverage.capacity() + self.crossings.capacity())
+            * size_of::<f64>()
+            + self.windings.capacity() * size_of::<(f64, i32)>()
+    }
+}
