@@ -4,7 +4,7 @@
 /// again.
 #[derive(Default)]
 pub(crate) struct RenderCache {
-    /// Buffer the form's projected text is written into, so a render that
+    /// Buffers the form's projected text is written into, so a render that
     /// leaves the text as it was requests no memory for it.
-    pub(super) text: String,
+    pub(super) text: [String; 2],
 }

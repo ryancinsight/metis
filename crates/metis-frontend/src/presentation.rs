@@ -71,6 +71,7 @@ use metis_ui_lang::{
     compute_layout,
 };
 use std::borrow::Cow;
+use std::fmt::{self, Write};
 
 pub(crate) use cache::RenderCache;
 
@@ -162,7 +163,7 @@ impl<T: IpcTransport> FrontendApp<T> {
     /// Writes the labels that show the inputs and the outcome, each through
     /// a reused buffer so text that did not change requests no memory.
     fn render_form_text(&mut self) -> Result<()> {
-        let text = &mut self.cache.text;
+        let [text, detail] = &mut self.cache.text;
         let doc = &mut self.doc;
         let inputs = &self.inputs;
         text.clear();
@@ -182,30 +183,36 @@ impl<T: IpcTransport> FrontendApp<T> {
             "value",
             &bounded_accessible_value(&inputs.patient_id),
         )?;
-        set_text(
-            doc,
-            "label-weight",
-            &format!("Weight: {} kg", input_number(inputs.weight_kg, 2)),
-        )?;
-        set_text(
-            doc,
-            "label-conc",
-            &format!(
-                "Drug Concentration: {} mg/mL",
-                input_number(inputs.concentration_mg_ml, 2)
+        for (id, label, value, decimals, unit) in [
+            ("label-weight", "Weight", inputs.weight_kg, 2, "kg"),
+            (
+                "label-conc",
+                "Drug Concentration",
+                inputs.concentration_mg_ml,
+                2,
+                "mg/mL",
             ),
-        )?;
-        set_text(
-            doc,
-            "label-dose",
-            &format!(
-                "Target Dose: {} mcg/kg/min",
-                input_number(inputs.target_dose_mcg_kg_min, 3)
+            (
+                "label-dose",
+                "Target Dose",
+                inputs.target_dose_mcg_kg_min,
+                3,
+                "mcg/kg/min",
             ),
-        )?;
-        let (rate, status, signature) = outcome_text(&self.state);
-        set_text(doc, "output-rate", &rate)?;
-        set_text(doc, "output-status", &status)?;
+        ] {
+            text.clear();
+            text.push_str(label);
+            text.push_str(": ");
+            written(write_input_number(text, value, decimals))?;
+            text.push(' ');
+            text.push_str(unit);
+            set_text(doc, id, text)?;
+        }
+        text.clear();
+        detail.clear();
+        let signature = written(write_outcome(&self.state, text, detail))?;
+        set_text(doc, "output-rate", text)?;
+        set_text(doc, "output-status", detail)?;
         set_text(doc, "output-signature", signature)
     }
 
@@ -235,25 +242,35 @@ impl<T: IpcTransport> FrontendApp<T> {
     }
 }
 
-fn outcome_text(state: &FormState) -> (String, String, &'static str) {
+/// Writes the rate and the safety status for `state` and returns the
+/// signature line, which is fixed text.
+fn write_outcome(
+    state: &FormState,
+    rate: &mut String,
+    status: &mut String,
+) -> std::result::Result<&'static str, fmt::Error> {
+    const AWAITING: &str = "Rate: Awaiting Backend Calculation...";
+    const NO_RESULT: &str = "Rate: No result";
+    const NO_SIGNATURE: &str = "Backend MAC: No result";
     match state {
-        FormState::Idle => (
-            "Rate: Awaiting Backend Calculation...".into(),
-            "Safety Status: Idle".into(),
-            "Backend MAC: None",
-        ),
-        FormState::Pending => (
-            "Rate: Awaiting Backend Calculation...".into(),
-            "Request in progress".into(),
-            "Backend MAC: None",
-        ),
-        FormState::Success(response) => (
-            format!(
-                "Rate: {} mL/hr ({} mg/hr)",
-                result_number(response.rate_ml_hr, 3),
-                result_number(response.drug_rate_mg_hr, 2)
-            ),
-            format!(
+        FormState::Idle => {
+            rate.push_str(AWAITING);
+            status.push_str("Safety Status: Idle");
+            Ok("Backend MAC: None")
+        }
+        FormState::Pending => {
+            rate.push_str(AWAITING);
+            status.push_str("Request in progress");
+            Ok("Backend MAC: None")
+        }
+        FormState::Success(response) => {
+            rate.push_str("Rate: ");
+            write_result_number(rate, response.rate_ml_hr, 3)?;
+            rate.push_str(" mL/hr (");
+            write_result_number(rate, response.drug_rate_mg_hr, 2)?;
+            rate.push_str(" mg/hr)");
+            write!(
+                status,
                 "Backend response (Audit Seq #{}){}",
                 response.audit_sequence_id,
                 if response.is_pediatric {
@@ -261,38 +278,42 @@ fn outcome_text(state: &FormState) -> (String, String, &'static str) {
                 } else {
                     ""
                 }
-            ),
-            "Backend MAC: Present (not verified by frontend)",
-        ),
-        FormState::Rejected(error) => (
-            "Rate: No result".into(),
-            format!("Backend rejected request [0x{:04X}]", error.error_code),
-            "Backend MAC: No result",
-        ),
-        FormState::Failed(error) => (
-            "Rate: No result".into(),
-            format!("Request not sent [0x{:04X}]", error.code as u16),
-            "Backend MAC: No result",
-        ),
-        FormState::Disconnected(error) => (
-            "Rate: No result".into(),
-            format!(
+            )?;
+            Ok("Backend MAC: Present (not verified by frontend)")
+        }
+        FormState::Rejected(error) => {
+            rate.push_str(NO_RESULT);
+            write!(
+                status,
+                "Backend rejected request [0x{:04X}]",
+                error.error_code
+            )?;
+            Ok(NO_SIGNATURE)
+        }
+        FormState::Failed(error) => {
+            rate.push_str(NO_RESULT);
+            write!(status, "Request not sent [0x{:04X}]", error.code as u16)?;
+            Ok(NO_SIGNATURE)
+        }
+        FormState::Disconnected(error) => {
+            rate.push_str(NO_RESULT);
+            write!(
+                status,
                 "Connection failed [0x{:04X}] - reconnect",
                 error.code as u16
-            ),
-            "Backend MAC: No result",
-        ),
+            )?;
+            Ok(NO_SIGNATURE)
+        }
         FormState::SessionFailed(error) => {
-            let code = match error {
-                HandshakeError::Local(error) => format!("0x{:04X}", error.code as u16),
-                HandshakeError::Remote(error) => format!("0x{:04X}", error.error_code),
-                _ => "unrecognized".into(),
-            };
-            (
-                "Rate: No result".into(),
-                format!("Session failed [{code}] - reconnect"),
-                "Backend MAC: No result",
-            )
+            rate.push_str(NO_RESULT);
+            status.push_str("Session failed [");
+            match error {
+                HandshakeError::Local(error) => write!(status, "0x{:04X}", error.code as u16)?,
+                HandshakeError::Remote(error) => write!(status, "0x{:04X}", error.error_code)?,
+                _ => status.push_str("unrecognized"),
+            }
+            status.push_str("] - reconnect");
+            Ok(NO_SIGNATURE)
         }
     }
 }
@@ -320,6 +341,19 @@ fn set_attribute(doc: &mut DomDocument, id: &str, key: &str, value: &str) -> Res
 
 fn bool_text(value: bool) -> &'static str {
     if value { "true" } else { "false" }
+}
+
+/// Converts a formatting failure into the form's error.
+///
+/// Writing into a `String` fails only when a `Display` implementation
+/// reports failure, which the integers and floats the form writes never do.
+fn written<V>(result: std::result::Result<V, fmt::Error>) -> Result<V> {
+    result.map_err(|_| {
+        MetisError::ui(
+            ErrorCode::MalformedMarkup,
+            "Authored form text could not be formatted",
+        )
+    })
 }
 
 /// Appends the first `glyphs` characters of `value`, and an ellipsis when
@@ -414,42 +448,49 @@ fn bounded_accessible_value(value: &str) -> Cow<'_, str> {
 // decimal point, exponent marker/sign and three exponent digits.
 const NUMBER_GLYPHS: usize = 24;
 
-fn result_number(value: f64, decimals: usize) -> String {
-    let rounded = format!("{value:.decimals$}");
+/// Appends `value` rounded to `decimals` places.
+fn write_result_number(out: &mut String, value: f64, decimals: usize) -> fmt::Result {
+    let start = out.len();
+    write!(out, "{value:.decimals$}")?;
+    let rounded = &out[start..];
     // Scientific notation keeps a nonzero mantissa when fixed decimal rounding
     // would erase every significant digit, with the same displayed precision.
     if rounded.len() > NUMBER_GLYPHS
         || value.is_subnormal()
         || (value.is_normal() && rounded.chars().all(|c| matches!(c, '0' | '.' | '-')))
     {
-        format!("{value:.decimals$e}")
-    } else {
-        rounded
+        out.truncate(start);
+        write!(out, "{value:.decimals$e}")?;
     }
+    Ok(())
 }
 
-fn input_number(value: f64, minimum_decimals: usize) -> String {
+/// Appends `value` in shortest notation with at least `minimum_decimals`
+/// decimal places.
+fn write_input_number(out: &mut String, value: f64, minimum_decimals: usize) -> fmt::Result {
     // Shortest scientific f64 notation fits 24 glyphs: sign, 17 significant
     // digits, decimal point, exponent marker/sign and three exponent digits.
     // Preserve those digits instead of rounding accepted small inputs to zero.
-    let mut text = value.to_string();
-    if text.len() > NUMBER_GLYPHS {
-        return format!("{value:e}");
+    let start = out.len();
+    write!(out, "{value}")?;
+    if out.len() - start > NUMBER_GLYPHS {
+        out.truncate(start);
+        return write!(out, "{value:e}");
     }
     if value.is_finite() {
-        let decimals = text
+        let decimals = out[start..]
             .split_once('.')
             .map_or(0, |(_, fraction)| fraction.len());
         if decimals < minimum_decimals {
             if decimals == 0 {
-                text.push('.');
+                out.push('.');
             }
             for _ in decimals..minimum_decimals {
-                text.push('0');
+                out.push('0');
             }
         }
     }
-    text
+    Ok(())
 }
 
 #[cfg(test)]
