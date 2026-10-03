@@ -175,6 +175,18 @@ pub fn build_frame(msg_type: MessageType, sequence_id: u64, payload: &[u8]) -> R
     frame.extend_from_slice(payload);
     Ok(frame)
 }
+/// Reserves room for `additional` more bytes in `buffer` without over-allocating.
+///
+/// Callers validate `additional` against a wire bound first, so a hostile
+/// length field never sizes an allocation; this returns the allocator's
+/// refusal as a typed error instead of aborting the process.
+/// # Errors
+/// Returns `QueueFull` if the allocation fails.
+pub fn reserve_frame_bytes(buffer: &mut Vec<u8>, additional: usize) -> Result<()> {
+    buffer
+        .try_reserve_exact(additional)
+        .map_err(|_| MetisError::transport(ErrorCode::QueueFull, "Frame buffer allocation failed"))
+}
 pub(super) fn check_length(length: usize) -> Result<()> {
     if length > MAX_PAYLOAD_SIZE {
         return Err(MetisError::protocol(

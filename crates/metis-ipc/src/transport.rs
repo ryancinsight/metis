@@ -1,6 +1,6 @@
 //! Stream and bounded in-memory transports sharing the same wire decoder.
 
-use crate::frame::{read_frame, write_wire};
+use crate::frame::{read_frame, split_frame, write_wire};
 use metis_core::error::{ErrorCode, MetisError, Result};
 use metis_core::protocol::{FrameHeader, HEADER_SIZE, MAX_PAYLOAD_SIZE, MessageType, build_frame};
 use std::future::Future;
@@ -159,21 +159,7 @@ impl IpcTransport for MemoryTransport {
                     "Memory transport peer closed",
                 ),
             })?;
-        let mut wire = bytes.as_slice();
-        if wire.is_empty() {
-            return Err(MetisError::protocol(
-                ErrorCode::FrameTruncated,
-                "Empty wire frame received",
-            ));
-        }
-        let message = read_frame(&mut wire)?;
-        if !wire.is_empty() {
-            return Err(MetisError::protocol(
-                ErrorCode::MalformedPayload,
-                "Trailing bytes after memory transport frame",
-            ));
-        }
-        Ok(message)
+        split_frame(bytes)
     }
 }
 pub(crate) fn check_wire_size(frame: &[u8]) -> Result<()> {

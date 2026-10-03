@@ -33,5 +33,5 @@ pub use target::{
 };
 pub use wire::{
     FrameHeader, HEADER_SIZE, MAX_PAYLOAD_SIZE, MessageType, PROTOCOL_MAGIC, PROTOCOL_VERSION,
-    build_frame,
+    build_frame, reserve_frame_bytes,
 };
