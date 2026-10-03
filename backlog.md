@@ -476,14 +476,6 @@ an owner. “Unsupported” cannot replace delivery of a required mobile/native 
 - basis: 7ddca83.
 - Increment (2026-09-24): color tokens are declared once through `light-dark()` and themes choose only the color scheme; the status line leads with a state indicator, diagnostics read as a monospace log, cards are elevated on a darker page, section headings carry an accent rule, the primary action is taller and the command menu shows each item's shortcut from `aria-keyshortcuts`. The layout manifest and 360/800/1440 captures were re-recorded in Chromium 141 through Playwright 1.56.1 with classic scrollbars; 44px option targets hold and no viewport overflows. Firefox/WebKit captures and scale-2 evidence remain open.
 
-<a id="METIS-FUZZ-PARSERS-001"></a>
-## METIS-FUZZ-PARSERS-001 — Fuzz every untrusted-input parser [patch]
-- Status: todo; priority: verification; needs: none
-- Outcome: each parser below has a fuzz target and a committed seed corpus that runs under a finite budget.
-- Scope: `fuzz/`, the parser modules named below.
-- Acceptance: Uncovered: `FragmentPatchSet::decode`, `FragmentAction::decode`, `DeepLink::parse`, `HostOrigin::parse`, `WindowState::decode`, `Accelerator::parse`, `RoutePattern::parse` (metis-core, no manifest change); `read_frame` (metis-ipc); `parse_markup`, `ComputedStyle::parse`, `RasterImage::decode` (metis-ui-lang); `Typeface::parse` (metis-platform); archive parse (metis-cli, `archive::parse`). No crash per target within the committed time budget.
-- basis: 7b50219
-
 <a id="METIS-PERF-IDLE-001"></a>
 ## METIS-PERF-IDLE-001 — Stop rebuilding accessibility and layout when nothing changed [patch]
 - Status: todo; priority: tightening; needs: none
