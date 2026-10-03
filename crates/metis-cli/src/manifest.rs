@@ -2,6 +2,7 @@
 mod file_associations;
 #[cfg(any(windows, test))]
 mod icon;
+mod payload_path;
 mod svg;
 mod url_schemes;
 mod web;
@@ -11,18 +12,18 @@ use serde::{Deserialize, Serialize};
 use std::{
     collections::{BTreeMap, BTreeSet},
     fs,
-    path::{Component, Path, PathBuf},
+    path::{Path, PathBuf},
 };
 
-/// Committed tool resource budgets: metadata is small; payload fits one cabinet.
+/// Committed tool resource budgets: the manifest is small and the file count bounded.
 pub(crate) const MANIFEST_LIMIT: u64 = 1024 * 1024;
 pub(crate) const FILE_LIMIT: usize = 4096;
-pub(crate) const PAYLOAD_LIMIT: u64 = 1024 * 1024 * 1024;
 pub(crate) use file_associations::FileAssociation;
 #[cfg(windows)]
 pub(crate) use icon::ICON_LIMIT;
 #[cfg(windows)]
 pub(crate) use icon::{source as icon_source, validate_file as validate_icon_file};
+pub(crate) use payload_path::{PAYLOAD_LIMIT, relative};
 pub(crate) use web::WebApplication;
 
 /// The manifest `metis build` and `metis serve` read when none is named.
@@ -256,49 +257,6 @@ fn identifier(value: &str) -> Result<()> {
         return Err("identity/target must be a bounded ASCII identifier".into());
     }
     relative(value)
-}
-
-pub(crate) fn relative(value: &str) -> Result<()> {
-    if value.is_empty()
-        || value.len() > 240
-        || value.contains('\\')
-        || value.chars().any(|c| {
-            c.is_control() || matches!(c, ':' | '*' | '?' | '"' | '<' | '>' | '|' | '[' | ']' | ';')
-        })
-    {
-        return Err("payload path must be a bounded relative path without platform syntax".into());
-    }
-    for part in value.split('/') {
-        let stem = part.split('.').next().unwrap_or("").to_ascii_uppercase();
-        if part.is_empty()
-            || part == "."
-            || part == ".."
-            || part.ends_with(['.', ' '])
-            || matches!(
-                stem.as_str(),
-                "CON" | "PRN" | "AUX" | "NUL" | "CONIN$" | "CONOUT$"
-            )
-            || (stem.len() == 4
-                && (stem.starts_with("COM") || stem.starts_with("LPT"))
-                && stem
-                    .as_bytes()
-                    .last()
-                    .is_some_and(|last| b"123456789".contains(last)))
-            || ["COM", "LPT"].iter().any(|prefix| {
-                stem.strip_prefix(prefix)
-                    .is_some_and(|number| matches!(number, "¹" | "²" | "³"))
-            })
-        {
-            return Err("payload path contains a reserved or ambiguous component".into());
-        }
-    }
-    if Path::new(value)
-        .components()
-        .any(|part| !matches!(part, Component::Normal(_)))
-    {
-        return Err("payload path must remain relative".into());
-    }
-    Ok(())
 }
 
 pub(crate) fn source(root: &Path, relative_path: &str) -> Result<PathBuf> {
