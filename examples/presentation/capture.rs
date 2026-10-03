@@ -3,7 +3,7 @@ use iris::render::RenderBackend;
 use metis_frontend::{FormState, FrontendApp};
 use metis_ipc::transport::MemoryTransport;
 use metis_platform::{Color, Framebuffer};
-use metis_ui_lang::{DisplayCommand, DomDocument, LayoutViewport, compute_layout};
+use metis_ui_lang::{DisplayCommand, DomDocument, Edit, LayoutViewport, compute_layout};
 use std::io::Write;
 
 #[derive(Clone, Copy)]
@@ -187,7 +187,7 @@ pub(super) fn comparator_probes(initial: &DomDocument) -> Result<(), Box<dyn std
         let mut document = initial.clone();
         match name {
             "probe-label" => {
-                if !document.set_text_content("status-badge", "SYSTEM CHANGED") {
+                if document.set_text_content("status-badge", "SYSTEM CHANGED") == Edit::Missing {
                     return Err("Missing probe label".into());
                 }
             }

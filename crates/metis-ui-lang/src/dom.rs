@@ -58,6 +58,18 @@ pub enum DomNode {
     Text(String),
 }
 
+/// What an edit addressed by element ID did to a document.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+#[must_use]
+pub enum Edit {
+    /// No element carries the ID; the document is unchanged.
+    Missing,
+    /// The element already held the value; the document is unchanged.
+    Unchanged,
+    /// The element now holds a different value.
+    Changed,
+}
+
 /// A complete declarative UI document.
 #[derive(Debug, Clone, PartialEq)]
 pub struct DomDocument {
@@ -84,29 +96,44 @@ impl DomDocument {
     }
 
     /// Sets the text content of the element with the specified ID.
-    pub fn set_text_content(&mut self, id: &str, text: impl Into<String>) -> bool {
-        if let Some(el) = self.find_element_by_id_mut(id) {
-            el.children.clear();
-            el.children.push(DomNode::Text(text.into()));
-            true
+    ///
+    /// The element's children become one text node holding `text`; an
+    /// element that already holds exactly that node is left untouched.
+    pub fn set_text_content(&mut self, id: &str, text: &str) -> Edit {
+        let Some(element) = self.find_element_by_id_mut(id) else {
+            return Edit::Missing;
+        };
+        if let [DomNode::Text(current)] = element.children.as_mut_slice() {
+            if current == text {
+                return Edit::Unchanged;
+            }
+            current.clear();
+            current.push_str(text);
         } else {
-            false
+            element.children.clear();
+            element.children.push(DomNode::Text(text.to_owned()));
         }
+        Edit::Changed
     }
 
     /// Sets an attribute on the element with the specified ID.
-    pub fn set_attribute(
-        &mut self,
-        id: &str,
-        key: impl Into<String>,
-        value: impl Into<String>,
-    ) -> bool {
-        if let Some(el) = self.find_element_by_id_mut(id) {
-            el.attributes.insert(key.into(), value.into());
-            true
-        } else {
-            false
+    ///
+    /// An attribute that already holds `value` is left untouched.
+    pub fn set_attribute(&mut self, id: &str, key: &str, value: &str) -> Edit {
+        let Some(element) = self.find_element_by_id_mut(id) else {
+            return Edit::Missing;
+        };
+        match element.attributes.get_mut(key) {
+            Some(current) if current == value => return Edit::Unchanged,
+            Some(current) => {
+                current.clear();
+                current.push_str(value);
+            }
+            None => {
+                element.attributes.insert(key.to_owned(), value.to_owned());
+            }
         }
+        Edit::Changed
     }
 
     fn find_rec_elem<'a>(el: &'a DomElement, id: &str) -> Option<&'a DomElement> {
@@ -137,3 +164,7 @@ impl DomDocument {
         None
     }
 }
+
+#[cfg(test)]
+#[path = "dom_tests.rs"]
+mod tests;

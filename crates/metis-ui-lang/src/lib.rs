@@ -16,7 +16,7 @@ pub use catalog::{
     Catalog, Locale, MAX_KEY_BYTES, MAX_LOCALE_TAG_BYTES, MAX_MESSAGE_SLOTS, MAX_VALUE_BYTES,
     Resolved, format_message,
 };
-pub use dom::{DomDocument, DomElement, DomNode};
+pub use dom::{DomDocument, DomElement, DomNode, Edit};
 pub use image::{AffineTransform, ImagePlacement, ImageSampling, ImageTransform, RasterImage};
 pub use layout::{
     DisplayCommand, DisplayList, LayoutViewport, LineCap, LineJoin, Rect, ScrollAlign, StrokeWidth,

@@ -66,7 +66,8 @@ use metis_core::{ErrorCode, MetisError, Result};
 use metis_ipc::{IpcTransport, client::HandshakeError};
 use metis_platform::{Damage, Framebuffer};
 use metis_ui_lang::{
-    Color, DisplayCommand, DisplayList, LayoutViewport, MAX_SEMANTIC_TEXT_BYTES, compute_layout,
+    Color, DisplayCommand, DisplayList, Edit, LayoutViewport, MAX_SEMANTIC_TEXT_BYTES,
+    compute_layout,
 };
 
 /// Status badge color while a backend session is open.
@@ -129,33 +130,33 @@ impl<T: IpcTransport> FrontendApp<T> {
             preview.push_str(&composition_preview);
             preview.push(']');
         }
-        self.text("label-patient", format!("Patient ID: {preview}"))?;
+        self.text("label-patient", &format!("Patient ID: {preview}"))?;
         self.attribute(
             "label-patient",
             "value",
-            bounded_accessible_value(&self.inputs.patient_id),
+            &bounded_accessible_value(&self.inputs.patient_id),
         )?;
         self.text(
             "label-weight",
-            format!("Weight: {} kg", input_number(self.inputs.weight_kg, 2)),
+            &format!("Weight: {} kg", input_number(self.inputs.weight_kg, 2)),
         )?;
         self.text(
             "label-conc",
-            format!(
+            &format!(
                 "Drug Concentration: {} mg/mL",
                 input_number(self.inputs.concentration_mg_ml, 2)
             ),
         )?;
         self.text(
             "label-dose",
-            format!(
+            &format!(
                 "Target Dose: {} mcg/kg/min",
                 input_number(self.inputs.target_dose_mcg_kg_min, 3)
             ),
         )?;
         let (rate, status, signature) = self.outcome_text();
-        self.text("output-rate", rate)?;
-        self.text("output-status", status)?;
+        self.text("output-rate", &rate)?;
+        self.text("output-status", &status)?;
         self.text("output-signature", signature)?;
         // Validate the custom renderer's host-neutral semantics before
         // painting so a malformed identity or action cannot be presented as
@@ -191,9 +192,13 @@ impl<T: IpcTransport> FrontendApp<T> {
         self.attribute(
             "command-menu-toggle",
             "aria-expanded",
-            menu_open.to_string(),
+            if menu_open { "true" } else { "false" },
         )?;
-        self.attribute("command-menu", "aria-hidden", (!menu_open).to_string())?;
+        self.attribute(
+            "command-menu",
+            "aria-hidden",
+            if menu_open { "false" } else { "true" },
+        )?;
         let menu = self
             .doc
             .find_element_by_id_mut("command-menu")
@@ -208,7 +213,8 @@ impl<T: IpcTransport> FrontendApp<T> {
         } else {
             metis_ui_lang::Display::None
         };
-        self.text("command-status", self.command_status.clone())
+        let status = self.command_status.clone();
+        self.text("command-status", &status)
     }
 
     fn outcome_text(&self) -> (String, String, &'static str) {
@@ -273,25 +279,25 @@ impl<T: IpcTransport> FrontendApp<T> {
         }
     }
 
-    fn text(&mut self, id: &str, value: impl Into<String>) -> Result<()> {
-        if self.doc.set_text_content(id, value) {
-            Ok(())
-        } else {
+    fn text(&mut self, id: &str, value: &str) -> Result<()> {
+        if self.doc.set_text_content(id, value) == Edit::Missing {
             Err(MetisError::ui(
                 ErrorCode::MalformedMarkup,
                 format!("Authored form is missing label {id}"),
             ))
+        } else {
+            Ok(())
         }
     }
 
-    fn attribute(&mut self, id: &str, key: &str, value: impl Into<String>) -> Result<()> {
-        if self.doc.set_attribute(id, key, value) {
-            Ok(())
-        } else {
+    fn attribute(&mut self, id: &str, key: &str, value: &str) -> Result<()> {
+        if self.doc.set_attribute(id, key, value) == Edit::Missing {
             Err(MetisError::ui(
                 ErrorCode::MalformedMarkup,
                 format!("Authored form is missing semantic field {id}"),
             ))
+        } else {
+            Ok(())
         }
     }
 }
