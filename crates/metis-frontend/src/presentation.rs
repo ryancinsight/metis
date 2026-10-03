@@ -57,17 +57,20 @@ pub const CLINICAL_SCREEN_XML: &str = r#"<screen id="main-screen" style="display
 </screen>"#;
 
 mod cache;
+#[cfg(test)]
+mod cache_tests;
 mod focus_ring;
 #[cfg(test)]
 mod repaint_tests;
 mod theme;
+use crate::document::TrackedDocument;
 use crate::{FormState, FrontendApp};
 use iris::render::RenderBackend;
 use metis_core::{ErrorCode, MetisError, Result};
 use metis_ipc::{IpcTransport, client::HandshakeError};
 use metis_platform::{Damage, Framebuffer};
 use metis_ui_lang::{
-    Color, DisplayCommand, DisplayList, DomDocument, Edit, LayoutViewport, MAX_SEMANTIC_TEXT_BYTES,
+    Color, DisplayCommand, DisplayList, Edit, LayoutViewport, MAX_SEMANTIC_TEXT_BYTES,
     compute_layout,
 };
 use std::borrow::Cow;
@@ -120,22 +123,17 @@ impl<T: IpcTransport> FrontendApp<T> {
         } else {
             BADGE_READY
         };
-        let status = self
-            .doc
-            .find_element_by_id_mut("status-badge")
-            .ok_or_else(|| {
-                MetisError::ui(
-                    ErrorCode::MalformedMarkup,
-                    "Authored form is missing status badge",
-                )
-            })?;
-        status.computed_style.text_color = badge_color;
+        found(
+            self.doc
+                .restyle("status-badge", |style| style.text_color = badge_color),
+            || "Authored form is missing status badge".to_owned(),
+        )?;
         self.render_form_text()?;
         // Validate the custom renderer's host-neutral semantics before
         // painting so a malformed identity or action cannot be presented as
         // an accessible control; the same projection decides focus.
-        let semantics = self.semantic_tree()?;
-        self.reconcile_focus(&semantics)?;
+        let order = self.cache.focusable(&self.doc)?;
+        self.focus.reconcile(&self.doc, order)?;
         let width = i32::try_from(self.framebuffer.width()).map_err(|_| layout_error())?;
         let height = i32::try_from(self.framebuffer.height()).map_err(|_| layout_error())?;
         let mut display = compute_layout(
@@ -231,13 +229,10 @@ impl<T: IpcTransport> FrontendApp<T> {
         } else {
             metis_ui_lang::Display::None
         };
-        let menu = doc.find_element_by_id_mut("command-menu").ok_or_else(|| {
-            MetisError::ui(
-                ErrorCode::MalformedMarkup,
-                "Authored form is missing command menu",
-            )
-        })?;
-        menu.computed_style.display = display;
+        found(
+            doc.restyle("command-menu", |style| style.display = display),
+            || "Authored form is missing command menu".to_owned(),
+        )?;
         set_text(doc, "command-status", &self.command_status)
     }
 }
@@ -327,13 +322,13 @@ fn found(edit: Edit, missing: impl FnOnce() -> String) -> Result<()> {
     }
 }
 
-fn set_text(doc: &mut DomDocument, id: &str, text: &str) -> Result<()> {
-    found(doc.set_text_content(id, text), || {
+fn set_text(doc: &mut TrackedDocument, id: &str, text: &str) -> Result<()> {
+    found(doc.set_text(id, text), || {
         format!("Authored form is missing label {id}")
     })
 }
 
-fn set_attribute(doc: &mut DomDocument, id: &str, key: &str, value: &str) -> Result<()> {
+fn set_attribute(doc: &mut TrackedDocument, id: &str, key: &str, value: &str) -> Result<()> {
     found(doc.set_attribute(id, key, value), || {
         format!("Authored form is missing semantic field {id}")
     })

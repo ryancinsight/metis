@@ -4,6 +4,7 @@
 pub mod app;
 pub mod async_app;
 mod commands;
+mod document;
 mod focus;
 pub mod navigation;
 mod presentation;

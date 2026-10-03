@@ -1,5 +1,6 @@
 //! Unprivileged form transitions and correlated backend requests.
 use crate::commands::{ApplicationTheme, CommandMenuState};
+use crate::document::TrackedDocument;
 use crate::focus::Focus;
 use crate::presentation::{CLINICAL_SCREEN_XML, RenderCache};
 use metis_core::error::{ErrorCode, MetisError, Result};
@@ -71,7 +72,7 @@ impl FormInputs {
 /// Owns inputs and presentation so callers cannot bypass result invalidation.
 pub struct FrontendApp<T> {
     pub(crate) client: Option<IpcClient<T>>,
-    pub(crate) doc: DomDocument,
+    pub(crate) doc: TrackedDocument,
     pub(crate) framebuffer: Framebuffer,
     pub(crate) inputs: FormInputs,
     pub(crate) composition: Option<String>,
@@ -89,7 +90,6 @@ pub struct FrontendApp<T> {
     pub(crate) painted: Option<DisplayList>,
     /// Pixels repainted since the host last took the damage to present.
     pub(crate) unpresented: Damage,
-    /// Buffers kept between renders.
     pub(crate) cache: RenderCache,
 }
 
@@ -100,7 +100,7 @@ impl<T: IpcTransport> FrontendApp<T> {
     pub fn new(transport: T, width: u32, height: u32) -> Result<Self> {
         let mut app = Self {
             client: Some(IpcClient::new(transport)),
-            doc: parse_markup(CLINICAL_SCREEN_XML)?,
+            doc: TrackedDocument::new(parse_markup(CLINICAL_SCREEN_XML)?),
             framebuffer: Framebuffer::new(width, height)?,
             inputs: FormInputs::new("PT-9042-ALPHA", 72.5, 4.0, 0.5),
             composition: None,
@@ -138,7 +138,7 @@ impl<T: IpcTransport> FrontendApp<T> {
     /// Presentation document; mutations go through form transitions.
     #[must_use]
     pub const fn document(&self) -> &DomDocument {
-        &self.doc
+        self.doc.document()
     }
 
     /// Projects the current document into the host-neutral semantic tree.
