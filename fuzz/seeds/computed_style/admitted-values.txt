@@ -1,0 +1,1 @@
+display: block; flex-direction: row; gap: 4px; width: 50%; height: 12px; padding: 1px 2px 3px 4px; margin: 5px 6px; border-width: 1px; border-color: #123456; background: #abcdef80; color: #fedcba; font-size: 10px;

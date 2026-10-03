@@ -1,0 +1,1 @@
+<label id='answer'>42</label>
