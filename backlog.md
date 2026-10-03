@@ -508,14 +508,6 @@ an owner. “Unsupported” cannot replace delivery of a required mobile/native 
 - Acceptance: Each input event issues 147 DOM writes and 49 lookups (view.rs:14-321, :464-476); file drop allocates and zero-fills a chunk per file (file_drop.rs:387-411: 94 chunks for the 49.8 MB study); each canvas poll boxes its events (queue.rs:41-42). Oracle: a MutationObserver run through `scripts/browser_input_latency.py` sees at most four records per keystroke; allocations over `read_batch` equal files + 1.
 - basis: 7b50219
 
-<a id="METIS-MEM-IPC-001"></a>
-## METIS-MEM-IPC-001 — Reuse IPC and glyph scratch buffers [patch]
-- Status: todo; priority: tightening; needs: none
-- Outcome: frame send and receive, glyph rasterization and the Python framebuffer export stop allocating per call.
-- Scope: `crates/metis-core/src/protocol/wire.rs`, `crates/metis-ipc/src/frame.rs`, `transport.rs`, `browser.rs`, `crates/metis-platform/src/typeface/text.rs`, `raster.rs`, `crates/metis-python/src/application.rs`.
-- Acceptance: `build_frame` copies the payload and `read_frame` zero-fills a fresh buffer per message (wire.rs:159-177, frame.rs:13-26); glyph `Outline` and `Canvas` scratch is created per text run (text.rs:186-187); `to_rgba` builds W x H x 4 bytes per pixel through `get_pixel` and copies again into `PyBytes` (application.rs:130-157). Oracle: counting allocator: zero send allocations with a reused buffer, at most one per receive, one mask per visible glyph on a cold `draw_text`, and no W x H x 4 Rust-side allocation per `to_rgba`.
-- basis: 7b50219
-
 <a id="METIS-I18N-001"></a>
 ## METIS-I18N-001 — Localize UI strings through a message catalog [minor]
 - Status: todo; priority: P2; needs: METIS-TEXT-001
