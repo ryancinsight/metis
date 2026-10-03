@@ -1,0 +1,1 @@
+org.atlas.viewer://open/study%20A?series=3&label=CT%2FMR&flag#ignored

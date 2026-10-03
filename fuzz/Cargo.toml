@@ -10,6 +10,9 @@ cargo-fuzz = true
 [dependencies]
 libfuzzer-sys = "0.4"
 metis-core = { path = "../crates/metis-core" }
+metis-ipc = { path = "../crates/metis-ipc" }
+metis-platform = { path = "../crates/metis-platform" }
+metis-ui-lang = { path = "../crates/metis-ui-lang" }
 
 # The fuzz harness is kept out of the normal workspace so libFuzzer's native
 # runtime never enters application builds or the release dependency graph.
@@ -25,6 +28,90 @@ bench = false
 [[bin]]
 name = "protocol"
 path = "fuzz_targets/protocol.rs"
+test = false
+doc = false
+bench = false
+
+[[bin]]
+name = "fragment_patch_set"
+path = "fuzz_targets/fragment_patch_set.rs"
+test = false
+doc = false
+bench = false
+
+[[bin]]
+name = "fragment_action"
+path = "fuzz_targets/fragment_action.rs"
+test = false
+doc = false
+bench = false
+
+[[bin]]
+name = "deep_link"
+path = "fuzz_targets/deep_link.rs"
+test = false
+doc = false
+bench = false
+
+[[bin]]
+name = "host_origin"
+path = "fuzz_targets/host_origin.rs"
+test = false
+doc = false
+bench = false
+
+[[bin]]
+name = "window_state"
+path = "fuzz_targets/window_state.rs"
+test = false
+doc = false
+bench = false
+
+[[bin]]
+name = "accelerator"
+path = "fuzz_targets/accelerator.rs"
+test = false
+doc = false
+bench = false
+
+[[bin]]
+name = "route_pattern"
+path = "fuzz_targets/route_pattern.rs"
+test = false
+doc = false
+bench = false
+
+[[bin]]
+name = "ipc_frame"
+path = "fuzz_targets/ipc_frame.rs"
+test = false
+doc = false
+bench = false
+
+[[bin]]
+name = "ui_markup"
+path = "fuzz_targets/ui_markup.rs"
+test = false
+doc = false
+bench = false
+
+[[bin]]
+name = "computed_style"
+path = "fuzz_targets/computed_style.rs"
+test = false
+doc = false
+bench = false
+
+[[bin]]
+name = "raster_image"
+path = "fuzz_targets/raster_image.rs"
+test = false
+doc = false
+bench = false
+
+[[bin]]
+name = "typeface"
+path = "fuzz_targets/typeface.rs"
 test = false
 doc = false
 bench = false

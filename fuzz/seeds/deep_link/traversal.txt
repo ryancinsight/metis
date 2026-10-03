@@ -1,0 +1,1 @@
+org.atlas.viewer://open/%2e%2e/secrets
