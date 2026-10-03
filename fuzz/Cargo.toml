@@ -16,6 +16,13 @@ metis-core = { path = "../crates/metis-core" }
 [workspace]
 
 [[bin]]
+name = "archive"
+path = "fuzz_targets/archive.rs"
+test = false
+doc = false
+bench = false
+
+[[bin]]
 name = "protocol"
 path = "fuzz_targets/protocol.rs"
 test = false

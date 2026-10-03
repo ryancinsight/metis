@@ -1,0 +1,5 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="256" height="256" viewBox="0 0 256 256" preserveAspectRatio="xMidYMid meet">
+  <path d="M128 8 232 68v120l-104 60L24 188V68Z" fill="#0f766e"/>
+  <path d="M50 188V76h28l50 62 50-62h28v112h-28v-68l-50 62-50-62v68Z" fill="#4338ca"/>
+  <path d="m128 138 50-62h28l-78 96-78-96h28Z" fill="#14b8a6" fill-opacity="0.88"/>
+</svg>

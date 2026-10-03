@@ -234,8 +234,11 @@ class WorkflowContractTests(unittest.TestCase):
             "semver:",
             "semver-gate.yml",
             "fuzz:",
-            "cargo fuzz run --target x86_64-unknown-linux-gnu protocol",
-            "-max_total_time=300 -rss_limit_mb=2048 -timeout=25",
+            "cargo fuzz list",
+            'cargo fuzz run --target x86_64-unknown-linux-gnu "$target" "corpus/$target" "seeds/$target"',
+            "protocol) budget=300",
+            "*) budget=30",
+            '-max_total_time="$budget" -rss_limit_mb=2048 -timeout=25',
         )
         for fragment in required:
             with self.subTest(fragment=fragment):
