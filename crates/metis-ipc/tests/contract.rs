@@ -22,7 +22,8 @@ use std::time::Duration;
 
 #[test]
 fn every_partial_frame_reports_truncation() {
-    let wire = build_frame(MessageType::HeartbeatReq, 1, b"heart beat").expect("bounded frame");
+    let mut wire = Vec::new();
+    build_frame(MessageType::HeartbeatReq, 1, b"heart beat", &mut wire).expect("bounded frame");
     for length in 0..wire.len() {
         let error = read_frame(&mut &wire[..length]).expect_err("partial frame");
         assert_eq!(
@@ -48,7 +49,8 @@ fn fragmented_reads_preserve_frame_bytes() {
             self.0.read(&mut buf[..count])
         }
     }
-    let wire = build_frame(MessageType::HeartbeatReq, 7, b"1234").expect("frame");
+    let mut wire = Vec::new();
+    build_frame(MessageType::HeartbeatReq, 7, b"1234", &mut wire).expect("frame");
     let (header, payload) = read_frame(&mut Fragmented(&wire)).expect("fragmented frame");
     assert_eq!(header.sequence_id, 7);
     assert_eq!(payload, b"1234");
@@ -479,7 +481,8 @@ fn memory_message_boundaries_reject_empty_and_trailing_frames() {
         endpoint.recv_message().expect_err("empty frame").code,
         ErrorCode::FrameTruncated
     );
-    let mut wire = build_frame(MessageType::HeartbeatReq, 1, b"").expect("frame");
+    let mut wire = Vec::new();
+    build_frame(MessageType::HeartbeatReq, 1, b"", &mut wire).expect("frame");
     wire.push(0);
     peer.send_frame(&wire).expect("trailing byte");
     assert_eq!(

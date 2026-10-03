@@ -137,7 +137,10 @@ pub(crate) fn io_error(error: &std::io::Error) -> MetisError {
     MetisError::transport(code, error.to_string())
 }
 
-/// Encodes and writes one bounded frame, then flushes the stream.
+/// Encodes one bounded frame into `frame`, writes it, then flushes the stream.
+///
+/// `frame` is the caller's reusable encode buffer; see
+/// [`build_frame`] for its capacity contract.
 /// # Errors
 /// Returns an oversized-payload error or the underlying transport failure.
 pub fn write_frame<W: Write>(
@@ -145,9 +148,10 @@ pub fn write_frame<W: Write>(
     msg_type: MessageType,
     sequence_id: u64,
     payload: &[u8],
+    frame: &mut Vec<u8>,
 ) -> Result<()> {
-    let frame = build_frame(msg_type, sequence_id, payload)?;
-    write_wire(writer, &frame)
+    build_frame(msg_type, sequence_id, payload, frame)?;
+    write_wire(writer, frame)
 }
 
 pub(crate) fn write_wire<W: Write>(writer: &mut W, frame: &[u8]) -> Result<()> {

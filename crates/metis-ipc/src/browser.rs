@@ -3,7 +3,7 @@
 use crate::frame::split_frame;
 use crate::transport::{AsyncIpcTransport, check_wire_size};
 use metis_core::error::{ErrorCode, MetisError, Result};
-use metis_core::protocol::{FrameHeader, HEADER_SIZE, MAX_PAYLOAD_SIZE};
+use metis_core::protocol::{FrameHeader, HEADER_SIZE, MAX_PAYLOAD_SIZE, MessageType, build_frame};
 use moirai_pal::wasm::{WebReactor, WebSocketLimits, WebSocketOpen, WebSocketReceive, WebTimer};
 use moirai_pal::{Interest, RawFd, Reactor};
 use std::future::Future;
@@ -22,6 +22,7 @@ pub const DEFAULT_QUEUED_MESSAGES: usize = 16;
 pub struct BrowserWebSocketTransport {
     reactor: WebReactor,
     fd: RawFd,
+    frame: Vec<u8>,
 }
 
 impl BrowserWebSocketTransport {
@@ -50,7 +51,11 @@ impl BrowserWebSocketTransport {
                 )),
             };
         }
-        Ok(Self { reactor, fd })
+        Ok(Self {
+            reactor,
+            fd,
+            frame: Vec::new(),
+        })
     }
 
     /// Opens a connection with a frame-sized message bound and a finite queue.
@@ -120,6 +125,18 @@ impl AsyncIpcTransport for BrowserWebSocketTransport {
         check_wire_size(frame)?;
         self.reactor
             .websocket_send(self.fd, frame)
+            .map_err(|error| map_browser_error(&error))
+    }
+
+    fn send_message(
+        &mut self,
+        msg_type: MessageType,
+        sequence_id: u64,
+        payload: &[u8],
+    ) -> Result<()> {
+        build_frame(msg_type, sequence_id, payload, &mut self.frame)?;
+        self.reactor
+            .websocket_send(self.fd, &self.frame)
             .map_err(|error| map_browser_error(&error))
     }
 

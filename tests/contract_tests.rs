@@ -114,7 +114,8 @@ fn test_clinical_calc_response_roundtrip() {
 #[test]
 fn test_crc32_checksum_validation_in_frame() {
     let payload = b"critical-medical-payload-data";
-    let mut frame = build_frame(MessageType::ClinicalCalcReq, 10, payload).expect("bounded frame");
+    let mut frame = Vec::new();
+    build_frame(MessageType::ClinicalCalcReq, 10, payload, &mut frame).expect("bounded frame");
 
     // Read valid frame
     let mut slice = &frame[..];

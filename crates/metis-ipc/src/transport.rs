@@ -1,6 +1,6 @@
 //! Stream and bounded in-memory transports sharing the same wire decoder.
 
-use crate::frame::{read_frame, split_frame, write_wire};
+use crate::frame::{read_frame, split_frame, write_frame, write_wire};
 use metis_core::error::{ErrorCode, MetisError, Result};
 use metis_core::protocol::{FrameHeader, HEADER_SIZE, MAX_PAYLOAD_SIZE, MessageType, build_frame};
 use std::future::Future;
@@ -17,6 +17,10 @@ pub trait IpcTransport: Send {
     /// Returns capacity, size, deadline, or transport failures.
     fn send_frame(&mut self, frame: &[u8]) -> Result<()>;
     /// Encodes and sends a bounded message.
+    ///
+    /// The default encodes into a fresh buffer. A transport that owns a
+    /// reusable encode buffer overrides it so steady-state sends allocate
+    /// nothing.
     /// # Errors
     /// Returns payload-size or transport failures.
     fn send_message(
@@ -25,9 +29,13 @@ pub trait IpcTransport: Send {
         sequence_id: u64,
         payload: &[u8],
     ) -> Result<()> {
-        self.send_frame(&build_frame(msg_type, sequence_id, payload)?)
+        let mut frame = Vec::new();
+        build_frame(msg_type, sequence_id, payload, &mut frame)?;
+        self.send_frame(&frame)
     }
     /// Receives and validates a frame.
+    ///
+    /// The payload is one allocation owned by the caller.
     /// # Errors
     /// Returns deadline, transport, or wire-validation failures.
     fn recv_message(&mut self) -> Result<(FrameHeader, Vec<u8>)>;
@@ -49,6 +57,10 @@ pub trait AsyncIpcTransport {
 
     /// Encodes and sends a bounded message.
     ///
+    /// The default encodes into a fresh buffer. A transport that owns a
+    /// reusable encode buffer overrides it so steady-state sends allocate
+    /// nothing.
+    ///
     /// # Errors
     /// Returns payload-size, backpressure, or transport failures.
     fn send_message(
@@ -57,7 +69,9 @@ pub trait AsyncIpcTransport {
         sequence_id: u64,
         payload: &[u8],
     ) -> Result<()> {
-        self.send_frame(&build_frame(msg_type, sequence_id, payload)?)
+        let mut frame = Vec::new();
+        build_frame(msg_type, sequence_id, payload, &mut frame)?;
+        self.send_frame(&frame)
     }
 
     /// Receives and validates one frame within the supplied finite deadline.
@@ -74,20 +88,42 @@ pub trait AsyncIpcTransport {
 ///
 /// Callers must set read/write deadlines on the underlying streams before
 /// construction. Generic `Read`/`Write` cannot interrupt blocking OS pipe I/O.
+///
+/// The transport keeps one encode buffer, so after the first frame of a given
+/// size [`IpcTransport::send_message`] allocates nothing.
 pub struct StreamTransport<R, W> {
     reader: R,
     writer: W,
+    frame: Vec<u8>,
 }
 impl<R, W> StreamTransport<R, W> {
     /// Takes ownership of streams with caller-configured I/O deadlines.
     pub const fn new(reader: R, writer: W) -> Self {
-        Self { reader, writer }
+        Self {
+            reader,
+            writer,
+            frame: Vec::new(),
+        }
     }
 }
 impl<R: Read + Send, W: Write + Send> IpcTransport for StreamTransport<R, W> {
     fn send_frame(&mut self, frame: &[u8]) -> Result<()> {
         check_wire_size(frame)?;
         write_wire(&mut self.writer, frame)
+    }
+    fn send_message(
+        &mut self,
+        msg_type: MessageType,
+        sequence_id: u64,
+        payload: &[u8],
+    ) -> Result<()> {
+        write_frame(
+            &mut self.writer,
+            msg_type,
+            sequence_id,
+            payload,
+            &mut self.frame,
+        )
     }
     fn recv_message(&mut self) -> Result<(FrameHeader, Vec<u8>)> {
         read_frame(&mut self.reader)
@@ -129,21 +165,33 @@ impl MemoryTransport {
             },
         )
     }
+    /// Queues one owned frame; the queue takes the allocation, so a send
+    /// costs exactly one.
+    fn enqueue(&self, frame: Vec<u8>) -> Result<()> {
+        self.sender.try_send(frame).map_err(|error| match error {
+            TrySendError::Full(_) => {
+                MetisError::transport(ErrorCode::QueueFull, "Memory transport queue is full")
+            }
+            TrySendError::Disconnected(_) => {
+                MetisError::transport(ErrorCode::ConnectionClosed, "Memory transport peer closed")
+            }
+        })
+    }
 }
 impl IpcTransport for MemoryTransport {
     fn send_frame(&mut self, frame: &[u8]) -> Result<()> {
         check_wire_size(frame)?;
-        self.sender
-            .try_send(frame.to_vec())
-            .map_err(|error| match error {
-                TrySendError::Full(_) => {
-                    MetisError::transport(ErrorCode::QueueFull, "Memory transport queue is full")
-                }
-                TrySendError::Disconnected(_) => MetisError::transport(
-                    ErrorCode::ConnectionClosed,
-                    "Memory transport peer closed",
-                ),
-            })
+        self.enqueue(frame.to_vec())
+    }
+    fn send_message(
+        &mut self,
+        msg_type: MessageType,
+        sequence_id: u64,
+        payload: &[u8],
+    ) -> Result<()> {
+        let mut frame = Vec::new();
+        build_frame(msg_type, sequence_id, payload, &mut frame)?;
+        self.enqueue(frame)
     }
     fn recv_message(&mut self) -> Result<(FrameHeader, Vec<u8>)> {
         let bytes = self
