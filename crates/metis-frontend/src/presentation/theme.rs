@@ -6,6 +6,7 @@ use metis_core::{ErrorCode, MetisError, Result};
 use metis_ipc::IpcTransport;
 use metis_platform::rasterizer::GradientStop;
 use metis_ui_lang::{Color, LinearGradient};
+use std::sync::Arc;
 
 impl<T: IpcTransport> FrontendApp<T> {
     /// Styles the document with the current theme's palette.
@@ -87,7 +88,7 @@ impl<T: IpcTransport> FrontendApp<T> {
             })?
             .computed_style;
         style.background_color = None;
-        style.background_gradient = Some(gradient.clone());
+        style.background_gradient = Some(Arc::new(gradient.clone()));
         Ok(())
     }
 

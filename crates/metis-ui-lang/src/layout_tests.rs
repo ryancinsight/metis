@@ -312,7 +312,7 @@ fn display_polyline_command_preserves_style_and_bounds_points() {
             cap: LineCap::Round,
             join: LineJoin::Miter,
             color: Color::BLUE,
-        } if stored == &points && *stored_width == width
+        } if **stored == points && *stored_width == width
     ));
 }
 
@@ -463,7 +463,7 @@ fn background_gradient_paints_over_its_color_and_moves_with_its_box() {
             &DisplayCommand::FillGradient {
                 rect: border_box,
                 radius,
-                gradient,
+                gradient: gradient.into(),
             },
             &DisplayCommand::DrawBorder {
                 rect: border_box,

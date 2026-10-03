@@ -41,7 +41,7 @@ impl Sequence {
         let radius = CornerRadius::clamped(self.in_range(0, 10), rect);
         match kind % 8 {
             0 => DisplayCommand::ElementRect {
-                id: format!("element-{}", self.in_range(0, 3)),
+                id: format!("element-{}", self.in_range(0, 3)).into(),
                 rect,
             },
             1 => DisplayCommand::DrawShadow {
@@ -75,7 +75,8 @@ impl Sequence {
                     rect,
                     radius,
                     gradient: LinearGradient::new(f64::from(self.in_range(0, 359)), &stops)
-                        .expect("two finite stops"),
+                        .expect("two finite stops")
+                        .into(),
                 }
             }
             4 => DisplayCommand::DrawBorder {
@@ -90,10 +91,11 @@ impl Sequence {
                 color: self.color(),
             },
             6 => DisplayCommand::DrawPolyline {
-                points: vec![
+                points: [
                     (self.in_range(-10, 100), self.in_range(-10, 80)),
                     (self.in_range(-10, 100), self.in_range(-10, 80)),
-                ],
+                ]
+                .into(),
                 width: StrokeWidth::new(u32::try_from(self.in_range(1, 5)).expect("positive"))
                     .expect("width within range"),
                 cap: LineCap::Round,
@@ -103,7 +105,7 @@ impl Sequence {
             _ => DisplayCommand::DrawText {
                 text: ["Ag", "Wy", "Metis", "jq|"]
                     [usize::try_from(self.next() % 4).expect("index")]
-                .to_owned(),
+                .into(),
                 x: self.in_range(-10, 80),
                 y: self.in_range(-10, 60),
                 style: TextStyle::new(
@@ -185,7 +187,7 @@ fn repainting_the_damage_matches_a_full_repaint() {
 #[test]
 fn metadata_only_changes_and_length_changes_are_classified() {
     let element = |id: &str| DisplayCommand::ElementRect {
-        id: id.to_owned(),
+        id: id.into(),
         rect: Rect::new(0, 0, 4, 4),
     };
     let painted = DisplayList {

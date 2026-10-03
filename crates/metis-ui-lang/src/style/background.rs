@@ -4,6 +4,7 @@
 use super::{ComputedStyle, invalid_value, parse_color};
 use metis_core::error::Result;
 use metis_platform::rasterizer::{GradientStop, LinearGradient};
+use std::sync::Arc;
 
 impl ComputedStyle {
     /// Applies `background`, `background-color` or `background-image`.
@@ -16,14 +17,14 @@ impl ComputedStyle {
             "background-color" => self.background_color = Some(parse_color(property, value)?),
             "background-image" if value == "none" => self.background_gradient = None,
             "background-image" => {
-                self.background_gradient = Some(parse_linear_gradient(property, value)?);
+                self.background_gradient = Some(Arc::new(parse_linear_gradient(property, value)?));
             }
             _ if value.starts_with('#') => {
                 self.background_color = Some(parse_color(property, value)?);
                 self.background_gradient = None;
             }
             _ => {
-                self.background_gradient = Some(parse_linear_gradient(property, value)?);
+                self.background_gradient = Some(Arc::new(parse_linear_gradient(property, value)?));
                 self.background_color = None;
             }
         }

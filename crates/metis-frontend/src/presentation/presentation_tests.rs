@@ -108,7 +108,7 @@ fn authored_form_text_and_status_fit_the_viewport() {
                 *y >= 0 && f64::from(*y) + height <= 600.0,
                 "vertical clipping: {text}"
             );
-            text_runs.push((text.as_str(), *x, *y));
+            text_runs.push((&**text, *x, *y));
         }
     }
     assert!(
@@ -129,7 +129,7 @@ fn authored_form_text_and_status_fit_the_viewport() {
         .commands
         .iter()
         .find_map(|command| match command {
-            DisplayCommand::DrawText { text, x, y, style } if text == "SYSTEM READY" => {
+            DisplayCommand::DrawText { text, x, y, style } if &**text == "SYSTEM READY" => {
                 Some((*x, *y, style.advance(text), style.line_height()))
             }
             _ => None,

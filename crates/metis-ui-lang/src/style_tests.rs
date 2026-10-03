@@ -285,7 +285,11 @@ fn linear_gradients_parse_to_their_direction_and_stops() {
     ];
     for (css, expected) in cases {
         let style = ComputedStyle::parse(css).expect("admitted gradient");
-        assert_eq!(style.background_gradient, Some(expected), "{css}");
+        assert_eq!(
+            style.background_gradient.as_deref(),
+            Some(&expected),
+            "{css}"
+        );
         assert_eq!(style.background_color, None, "{css}");
     }
 }
@@ -298,11 +302,11 @@ fn background_layers_follow_the_shorthand_reset() {
     // The longhands set one layer each and keep the other.
     let both = parse("background-color: #1a365d; background-image: linear-gradient(#1a365d, #fff)");
     assert_eq!(both.background_color, Some(navy));
-    assert_eq!(both.background_gradient, Some(ramp.clone()));
+    assert_eq!(both.background_gradient.as_deref(), Some(&ramp));
     // The shorthand sets its layer and resets the other.
     let shorthand = parse("background-color: #fff; background: linear-gradient(#1a365d, #fff)");
     assert_eq!(shorthand.background_color, None);
-    assert_eq!(shorthand.background_gradient, Some(ramp));
+    assert_eq!(shorthand.background_gradient.as_deref(), Some(&ramp));
     let replaced = parse("background: linear-gradient(#1a365d, #fff); background: #1a365d");
     assert_eq!(replaced.background_color, Some(navy));
     assert_eq!(replaced.background_gradient, None);
