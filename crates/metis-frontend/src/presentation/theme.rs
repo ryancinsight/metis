@@ -117,15 +117,24 @@ pub(super) struct ThemePalette {
     panel: Color,
     /// Rate readout color.
     accent: Color,
-    /// Keyboard focus ring; at least 3:1 against every fill it can border
-    /// (WCAG 2.2 criterion 1.4.11).
-    pub(super) focus: Color,
     /// Command control fill; every stop keeps white labels at a 4.5:1
     /// contrast or better (WCAG 2.2 criterion 1.4.3).
     control: LinearGradient,
 }
 
 impl ThemePalette {
+    /// Keyboard focus ring color; at least 3:1 against every fill it can
+    /// border (WCAG 2.2 criterion 1.4.11).
+    ///
+    /// A color alone, so painting a ring does not build the gradients of the
+    /// whole palette.
+    pub(super) const fn focus_color(theme: ApplicationTheme) -> Color {
+        match theme {
+            ApplicationTheme::System => Color::rgb(43, 108, 176),
+            ApplicationTheme::Dark => Color::rgb(56, 189, 248),
+        }
+    }
+
     pub(super) fn for_theme(theme: ApplicationTheme) -> Self {
         match theme {
             ApplicationTheme::System => ThemePalette {
@@ -137,7 +146,6 @@ impl ThemePalette {
                 border: Color::rgb(226, 232, 240),
                 panel: Color::rgb(226, 232, 240),
                 accent: Color::rgb(43, 108, 176),
-                focus: Color::rgb(43, 108, 176),
                 control: ramp(180.0, Color::rgb(44, 120, 196), Color::rgb(38, 98, 168)),
             },
             ApplicationTheme::Dark => ThemePalette {
@@ -149,7 +157,6 @@ impl ThemePalette {
                 border: Color::rgb(100, 116, 139),
                 panel: Color::rgb(39, 52, 72),
                 accent: Color::rgb(56, 189, 248),
-                focus: Color::rgb(56, 189, 248),
                 control: ramp(180.0, Color::rgb(14, 116, 144), Color::rgb(21, 94, 117)),
             },
         }

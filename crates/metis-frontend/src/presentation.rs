@@ -71,7 +71,6 @@ use metis_ipc::{IpcTransport, client::HandshakeError};
 use metis_platform::{Damage, Framebuffer};
 use metis_ui_lang::{
     Color, DisplayCommand, DisplayList, Edit, LayoutViewport, MAX_SEMANTIC_TEXT_BYTES,
-    compute_layout,
 };
 use std::borrow::Cow;
 use std::fmt::{self, Write};
@@ -98,8 +97,9 @@ const COMPOSITION_PREVIEW_GLYPHS: usize = 24;
 impl<T: IpcTransport> FrontendApp<T> {
     /// Projects the owned state and renders the complete form.
     ///
-    /// The labels are written through reused buffers and replace the held
-    /// text only when it differs.
+    /// A render of unchanged state keeps the document, its semantic
+    /// projection and its layout; the only memory it requests is the new
+    /// display list's command storage.
     /// # Errors
     /// Rejects invalid layout or a missing authored label before changing pixels.
     pub fn render(&mut self) -> Result<()> {
@@ -136,7 +136,7 @@ impl<T: IpcTransport> FrontendApp<T> {
         self.focus.reconcile(&self.doc, order)?;
         let width = i32::try_from(self.framebuffer.width()).map_err(|_| layout_error())?;
         let height = i32::try_from(self.framebuffer.height()).map_err(|_| layout_error())?;
-        let mut display = compute_layout(
+        let mut display = self.cache.frame(
             &self.doc,
             LayoutViewport::with_scale(width, height, self.display_scale),
         )?;

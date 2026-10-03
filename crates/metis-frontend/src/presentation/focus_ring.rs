@@ -47,7 +47,7 @@ impl<T: IpcTransport> FrontendApp<T> {
             ring,
             width,
             CornerRadius::clamped(radius, ring),
-            ThemePalette::for_theme(self.theme).focus,
+            ThemePalette::focus_color(self.theme),
         )
     }
 }

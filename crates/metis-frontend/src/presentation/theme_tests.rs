@@ -114,7 +114,7 @@ fn the_focus_ring_stands_out_from_every_fill_it_borders() {
             ("command bar", palette.panel),
             ("card", palette.surface),
         ] {
-            let ratio = contrast(palette.focus, fill);
+            let ratio = contrast(ThemePalette::focus_color(theme), fill);
             assert!(ratio >= 3.0, "{theme:?} ring on {name}: {ratio:.2}:1");
         }
     }
