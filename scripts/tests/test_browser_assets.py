@@ -278,6 +278,25 @@ class BrowserAssetContractTests(unittest.TestCase):
         ):
             self.assertIn(selector, styles)
 
+    def test_shell_has_no_consumer_specific_viewer_markup(self):
+        controls = (ROOT / "crates" / "metis-web" / "src" / "controls.rs").read_text(
+            encoding="utf-8"
+        )
+        styles = (ROOT / "examples" / "browser" / "styles.css").read_text(
+            encoding="utf-8"
+        )
+        browser_assets = "\\n".join(
+            path.name for path in (ROOT / "examples" / "browser" / "assets").iterdir()
+        )
+        for source in (controls, styles, browser_assets):
+            for forbidden in (
+                "viewer-shell",
+                "dicom-viewport",
+                "series-row",
+                "application/dicom",
+                "clinical-ct-mip",
+            ):
+                self.assertNotIn(forbidden, source)
     def test_text_surface_is_semantic_and_tracks_composition(self):
         controls = (ROOT / "crates" / "metis-web" / "src" / "controls.rs").read_text(
             encoding="utf-8"
