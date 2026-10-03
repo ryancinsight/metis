@@ -9,10 +9,37 @@ use crate::framebuffer::{Color, Framebuffer, Rect, SourceOver, coverage_alpha};
 use crate::memo::Lookup;
 use std::cell::RefCell;
 
+/// The rendering thread's glyph state: the coverage memo and the outline and
+/// rasterization scratch that a memo miss fills.
+///
+/// Keeping the scratch beside the memo lets every miss reuse the buffers the
+/// previous miss grew, so a cold run allocates one mask per glyph it keeps and
+/// nothing else once the scratch has met its largest ordinary glyph.
+#[derive(Default)]
+struct GlyphState {
+    memo: GlyphCache,
+    outline: Outline,
+    canvas: Canvas,
+}
+
 thread_local! {
-    /// Glyph coverage memo for the rendering thread; bounded by its own
-    /// generations, and never shared, because surfaces are thread-affine.
-    static GLYPHS: RefCell<GlyphCache> = RefCell::default();
+    /// Glyph state for the rendering thread; the memo is bounded by its own
+    /// generations, the scratch by [`Outline::trim`] and [`Canvas::trim`], and
+    /// none of it is shared, because surfaces are thread-affine.
+    static GLYPHS: RefCell<GlyphState> = RefCell::default();
+}
+
+/// The most bytes the rendering thread's rasterization scratch retains
+/// between runs.
+#[cfg(test)]
+pub(super) const fn retained_scratch_bound() -> usize {
+    Outline::retained_bound() + Canvas::retained_bound()
+}
+
+/// Bytes the rendering thread's rasterization scratch currently retains.
+#[cfg(test)]
+pub(super) fn retained_scratch_bytes() -> usize {
+    GLYPHS.with_borrow(|state| state.outline.retained_bytes() + state.canvas.retained_bytes())
 }
 
 /// Glyph stroke weight, selecting the embedded face.
@@ -183,12 +210,15 @@ pub fn draw_text(fb: &mut Framebuffer, x: i32, y: i32, text: &str, style: TextSt
     let clip = fb.clip();
     let clip_right = f64::from(clip.right());
     let mut pen = f64::from(x);
-    let mut outline = Outline::default();
-    let mut canvas = Canvas::default();
     // No glyph reaches further left of its pen than the face's bounding box,
     // so once that edge is past the clip nothing later can be visible.
     let overhang = f64::from(face.min_x()) * scale;
-    GLYPHS.with_borrow_mut(|glyphs| {
+    GLYPHS.with_borrow_mut(|state| {
+        let GlyphState {
+            memo,
+            outline,
+            canvas,
+        } = state;
         for character in text.chars().filter(|character| *character != '\n') {
             if pen + overhang >= clip_right {
                 break;
@@ -197,9 +227,9 @@ pub fn draw_text(fb: &mut Framebuffer, x: i32, y: i32, text: &str, style: TextSt
             let key = GlyphKey::new(style.weight, glyph, scale, pen, baseline, color.a);
             let transform = Transform::device(scale, pen, baseline);
             pen += f64::from(face.advance(glyph)) * scale;
-            let lookup = glyphs.get_or_render(key, || {
+            let lookup = memo.get_or_render(key, || {
                 outline.clear();
-                face.outline(glyph, &transform, &mut outline)
+                face.outline(glyph, &transform, outline)
                     .expect("invariant: every glyph of the embedded faces decodes");
                 let Some(bounds) = outline.bounds() else {
                     return Some(GlyphMask {
@@ -218,7 +248,7 @@ pub fn draw_text(fb: &mut Framebuffer, x: i32, y: i32, text: &str, style: TextSt
                 {
                     return None;
                 }
-                outline.rasterize(bounds, &mut canvas);
+                outline.rasterize(bounds, canvas);
                 Some(GlyphMask {
                     bounds: Some(bounds),
                     alphas: canvas
@@ -234,6 +264,9 @@ pub fn draw_text(fb: &mut Framebuffer, x: i32, y: i32, text: &str, style: TextSt
                 composite(fb, &glyph.alphas, bounds, color);
             }
         }
+        // One oversized glyph must not pin its buffers for the thread's life.
+        outline.trim();
+        canvas.trim();
     });
 }
 

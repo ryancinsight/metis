@@ -1,4 +1,4 @@
-//! Allocation counts of frame transport.
+//! Allocation counts of frame transport and glyph rasterization.
 //!
 //! A counting global allocator tallies the allocations of the measuring thread
 //! only, so the test runner and other threads cannot perturb a count. Each
@@ -9,6 +9,8 @@
 use metis_core::error::ErrorCode;
 use metis_core::protocol::{FrameHeader, HEADER_SIZE, MAX_PAYLOAD_SIZE, MessageType, build_frame};
 use metis_ipc::{IpcTransport, MemoryTransport, StreamTransport, read_frame, write_frame};
+use metis_platform::framebuffer::{Color, Framebuffer};
+use metis_platform::typeface::{TextSize, TextStyle, draw_text};
 use std::alloc::{GlobalAlloc, Layout, System};
 use std::cell::Cell;
 
@@ -272,4 +274,40 @@ fn a_memory_transport_decodes_the_received_frame_in_place() {
         assert_eq!(header.sequence_id, sequence);
         assert_eq!(decoded, body);
     }
+}
+
+#[test]
+fn a_cold_text_run_allocates_one_mask_per_visible_glyph() {
+    let mut surface = Framebuffer::new(2048, 64).expect("surface");
+    surface.clear(Color::WHITE);
+    let size = TextSize::new(14.0).expect("size");
+    let style = TextStyle::new(Color::rgba(0, 0, 0, 255), size);
+
+    // Nine runs at distinct pens leave the glyph memo with about 390 entries,
+    // inside the 512-bucket table (capacity 448) that grows from 224, so the
+    // measured run inserts without growing the table, and they size every
+    // rasterization buffer to the face's ordinary glyphs.
+    let warm = "The quick brown fox jumps over the lazy dog";
+    for shift in 0..9 {
+        draw_text(&mut surface, shift, 4, warm, style);
+    }
+
+    let cold = "Pack my box with five dozen liquor jugs";
+    let visible = cold.chars().filter(|glyph| !glyph.is_whitespace()).count();
+    surface.clear(Color::WHITE);
+    let ((), allocations) = allocations_during(|| draw_text(&mut surface, 100, 4, cold, style));
+    assert_eq!(allocations, visible);
+
+    let drawn = surface.pixels().to_vec();
+    surface.clear(Color::WHITE);
+    let ((), repeated) = allocations_during(|| draw_text(&mut surface, 100, 4, cold, style));
+    assert_eq!(repeated, 0, "a memoized run allocates nothing");
+    assert!(
+        surface.pixels() == drawn,
+        "the memoized run repeats its pixels"
+    );
+    assert!(
+        drawn.iter().any(|pixel| *pixel != 0xFFFF_FFFF),
+        "the run painted nothing"
+    );
 }

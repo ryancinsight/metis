@@ -44,6 +44,22 @@ pub(super) const NONZERO_SUBROWS: u16 = 64;
 /// squares at that size and stops a hostile outline from sizing the buffers.
 const MAX_RASTER_CELLS: u64 = 4 << 20;
 
+/// Entries one outline buffer keeps between glyphs. Ordinary text flattens a
+/// glyph to at most a few thousand segments or points, so this admits tens of
+/// times that; only a glyph at a display size past it reallocates, and
+/// [`Outline::trim`] then releases the excess.
+const RETAINED_OUTLINE_ENTRIES: usize = 1 << 14;
+
+/// Pixels one coverage buffer keeps between glyphs: a 256 by 256 pixel glyph
+/// box, the box of a glyph at about 256 pixels per em. Text above that size
+/// reallocates per glyph and [`Canvas::trim`] releases the excess.
+const RETAINED_CELLS: usize = 1 << 16;
+
+/// Cells the accumulation buffer keeps: a retained glyph box plus the spare
+/// column per row that receives the right-hand share of each row's last cell,
+/// bounded by an eighth of the box for any box at least eight pixels wide.
+const ACCUMULATION_CELLS: usize = RETAINED_CELLS + RETAINED_CELLS / 8;
+
 /// Flattened outline segments and the decode scratch they are built from.
 #[derive(Default)]
 pub(super) struct Outline {
@@ -61,6 +77,19 @@ impl Outline {
         self.lines.clear();
         self.exceeded = false;
         self.components = 0;
+    }
+
+    /// Empties the buffers and releases capacity beyond
+    /// [`RETAINED_OUTLINE_ENTRIES`], so one glyph at a very large size does not
+    /// pin its buffers. A buffer cannot shrink below its length, so the
+    /// contents go first; nothing reads them between glyphs.
+    pub(super) fn trim(&mut self) {
+        self.clear();
+        self.flags.clear();
+        self.coordinates.clear();
+        self.lines.shrink_to(RETAINED_OUTLINE_ENTRIES);
+        self.flags.shrink_to(RETAINED_OUTLINE_ENTRIES);
+        self.coordinates.shrink_to(RETAINED_OUTLINE_ENTRIES);
     }
 
     /// The flattened segments.
@@ -311,6 +340,23 @@ pub(super) struct Canvas {
     pub(super) coverage: Vec<f64>,
     crossings: Vec<f64>,
     windings: Vec<(f64, i32)>,
+}
+
+impl Canvas {
+    /// Empties the buffers and releases capacity beyond the retained bounds,
+    /// so one glyph at a very large size does not pin its buffers. A buffer
+    /// cannot shrink below its length, so the contents go first; the next
+    /// rasterization rebuilds them.
+    pub(super) fn trim(&mut self) {
+        self.accumulation.clear();
+        self.coverage.clear();
+        self.crossings.clear();
+        self.windings.clear();
+        self.accumulation.shrink_to(ACCUMULATION_CELLS);
+        self.coverage.shrink_to(RETAINED_CELLS);
+        self.crossings.shrink_to(RETAINED_OUTLINE_ENTRIES);
+        self.windings.shrink_to(RETAINED_OUTLINE_ENTRIES);
+    }
 }
 
 /// Whole-pixel bounds of a rasterized glyph.
