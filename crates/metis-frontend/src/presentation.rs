@@ -56,6 +56,7 @@ pub const CLINICAL_SCREEN_XML: &str = r#"<screen id="main-screen" style="display
   </card>
 </screen>"#;
 
+mod cache;
 mod focus_ring;
 #[cfg(test)]
 mod repaint_tests;
@@ -66,9 +67,12 @@ use metis_core::{ErrorCode, MetisError, Result};
 use metis_ipc::{IpcTransport, client::HandshakeError};
 use metis_platform::{Damage, Framebuffer};
 use metis_ui_lang::{
-    Color, DisplayCommand, DisplayList, Edit, LayoutViewport, MAX_SEMANTIC_TEXT_BYTES,
+    Color, DisplayCommand, DisplayList, DomDocument, Edit, LayoutViewport, MAX_SEMANTIC_TEXT_BYTES,
     compute_layout,
 };
+use std::borrow::Cow;
+
+pub(crate) use cache::RenderCache;
 
 /// Status badge color while a backend session is open.
 ///
@@ -80,9 +84,18 @@ pub const BADGE_READY: Color = Color::rgb(154, 230, 180);
 pub const BADGE_CLOSED: Color = Color::rgb(254, 178, 178);
 /// Surface color behind the authored form.
 const BACKDROP: Color = Color::rgb(240, 244, 248);
+/// Glyphs of the patient reference a label shows before it states the
+/// omission with an ellipsis; forty glyphs plus the label fit the 800-pixel
+/// form.
+const PATIENT_PREVIEW_GLYPHS: usize = 40;
+/// Glyphs of the uncommitted composition a label shows before the ellipsis.
+const COMPOSITION_PREVIEW_GLYPHS: usize = 24;
 
 impl<T: IpcTransport> FrontendApp<T> {
     /// Projects the owned state and renders the complete form.
+    ///
+    /// The labels are written through reused buffers and replace the held
+    /// text only when it differs.
     /// # Errors
     /// Rejects invalid layout or a missing authored label before changing pixels.
     pub fn render(&mut self) -> Result<()> {
@@ -99,8 +112,13 @@ impl<T: IpcTransport> FrontendApp<T> {
         } else {
             "SYSTEM READY"
         };
-        self.text("status-badge", badge)?;
+        set_text(&mut self.doc, "status-badge", badge)?;
         self.render_command_surface()?;
+        let badge_color = if self.client.is_none() {
+            BADGE_CLOSED
+        } else {
+            BADGE_READY
+        };
         let status = self
             .doc
             .find_element_by_id_mut("status-badge")
@@ -110,54 +128,8 @@ impl<T: IpcTransport> FrontendApp<T> {
                     "Authored form is missing status badge",
                 )
             })?;
-        status.computed_style.text_color = if self.client.is_none() {
-            BADGE_CLOSED
-        } else {
-            BADGE_READY
-        };
-        // Forty glyphs plus the label fit the 800-pixel form. The ellipsis states
-        // omission explicitly; the wire request uses the full captured identifier.
-        let mut preview: String = self.inputs.patient_id.chars().take(40).collect();
-        if self.inputs.patient_id.chars().nth(40).is_some() {
-            preview.push_str("...");
-        }
-        if let Some(composition) = self.composition.as_deref() {
-            preview.push_str(" [");
-            let mut composition_preview: String = composition.chars().take(24).collect();
-            if composition.chars().nth(24).is_some() {
-                composition_preview.push_str("...");
-            }
-            preview.push_str(&composition_preview);
-            preview.push(']');
-        }
-        self.text("label-patient", &format!("Patient ID: {preview}"))?;
-        self.attribute(
-            "label-patient",
-            "value",
-            &bounded_accessible_value(&self.inputs.patient_id),
-        )?;
-        self.text(
-            "label-weight",
-            &format!("Weight: {} kg", input_number(self.inputs.weight_kg, 2)),
-        )?;
-        self.text(
-            "label-conc",
-            &format!(
-                "Drug Concentration: {} mg/mL",
-                input_number(self.inputs.concentration_mg_ml, 2)
-            ),
-        )?;
-        self.text(
-            "label-dose",
-            &format!(
-                "Target Dose: {} mcg/kg/min",
-                input_number(self.inputs.target_dose_mcg_kg_min, 3)
-            ),
-        )?;
-        let (rate, status, signature) = self.outcome_text();
-        self.text("output-rate", &rate)?;
-        self.text("output-status", &status)?;
-        self.text("output-signature", signature)?;
+        status.computed_style.text_color = badge_color;
+        self.render_form_text()?;
         // Validate the custom renderer's host-neutral semantics before
         // painting so a malformed identity or action cannot be presented as
         // an accessible control; the same projection decides focus.
@@ -187,118 +159,178 @@ impl<T: IpcTransport> FrontendApp<T> {
         Ok(())
     }
 
+    /// Writes the labels that show the inputs and the outcome, each through
+    /// a reused buffer so text that did not change requests no memory.
+    fn render_form_text(&mut self) -> Result<()> {
+        let text = &mut self.cache.text;
+        let doc = &mut self.doc;
+        let inputs = &self.inputs;
+        text.clear();
+        text.push_str("Patient ID: ");
+        push_preview(text, &inputs.patient_id, PATIENT_PREVIEW_GLYPHS);
+        // The composition is uncommitted native input; the wire request
+        // uses the committed identifier alone.
+        if let Some(composition) = self.composition.as_deref() {
+            text.push_str(" [");
+            push_preview(text, composition, COMPOSITION_PREVIEW_GLYPHS);
+            text.push(']');
+        }
+        set_text(doc, "label-patient", text)?;
+        set_attribute(
+            doc,
+            "label-patient",
+            "value",
+            &bounded_accessible_value(&inputs.patient_id),
+        )?;
+        set_text(
+            doc,
+            "label-weight",
+            &format!("Weight: {} kg", input_number(inputs.weight_kg, 2)),
+        )?;
+        set_text(
+            doc,
+            "label-conc",
+            &format!(
+                "Drug Concentration: {} mg/mL",
+                input_number(inputs.concentration_mg_ml, 2)
+            ),
+        )?;
+        set_text(
+            doc,
+            "label-dose",
+            &format!(
+                "Target Dose: {} mcg/kg/min",
+                input_number(inputs.target_dose_mcg_kg_min, 3)
+            ),
+        )?;
+        let (rate, status, signature) = outcome_text(&self.state);
+        set_text(doc, "output-rate", &rate)?;
+        set_text(doc, "output-status", &status)?;
+        set_text(doc, "output-signature", signature)
+    }
+
     fn render_command_surface(&mut self) -> Result<()> {
         let menu_open = self.command_menu_open();
-        self.attribute(
+        let doc = &mut self.doc;
+        set_attribute(
+            doc,
             "command-menu-toggle",
             "aria-expanded",
-            if menu_open { "true" } else { "false" },
+            bool_text(menu_open),
         )?;
-        self.attribute(
-            "command-menu",
-            "aria-hidden",
-            if menu_open { "false" } else { "true" },
-        )?;
-        let menu = self
-            .doc
-            .find_element_by_id_mut("command-menu")
-            .ok_or_else(|| {
-                MetisError::ui(
-                    ErrorCode::MalformedMarkup,
-                    "Authored form is missing command menu",
-                )
-            })?;
-        menu.computed_style.display = if menu_open {
+        set_attribute(doc, "command-menu", "aria-hidden", bool_text(!menu_open))?;
+        let display = if menu_open {
             metis_ui_lang::Display::Flex
         } else {
             metis_ui_lang::Display::None
         };
-        let status = self.command_status.clone();
-        self.text("command-status", &status)
-    }
-
-    fn outcome_text(&self) -> (String, String, &'static str) {
-        match &self.state {
-            FormState::Idle => (
-                "Rate: Awaiting Backend Calculation...".into(),
-                "Safety Status: Idle".into(),
-                "Backend MAC: None",
-            ),
-            FormState::Pending => (
-                "Rate: Awaiting Backend Calculation...".into(),
-                "Request in progress".into(),
-                "Backend MAC: None",
-            ),
-            FormState::Success(response) => (
-                format!(
-                    "Rate: {} mL/hr ({} mg/hr)",
-                    result_number(response.rate_ml_hr, 3),
-                    result_number(response.drug_rate_mg_hr, 2)
-                ),
-                format!(
-                    "Backend response (Audit Seq #{}){}",
-                    response.audit_sequence_id,
-                    if response.is_pediatric {
-                        " [PEDIATRIC]"
-                    } else {
-                        ""
-                    }
-                ),
-                "Backend MAC: Present (not verified by frontend)",
-            ),
-            FormState::Rejected(error) => (
-                "Rate: No result".into(),
-                format!("Backend rejected request [0x{:04X}]", error.error_code),
-                "Backend MAC: No result",
-            ),
-            FormState::Failed(error) => (
-                "Rate: No result".into(),
-                format!("Request not sent [0x{:04X}]", error.code as u16),
-                "Backend MAC: No result",
-            ),
-            FormState::Disconnected(error) => (
-                "Rate: No result".into(),
-                format!(
-                    "Connection failed [0x{:04X}] - reconnect",
-                    error.code as u16
-                ),
-                "Backend MAC: No result",
-            ),
-            FormState::SessionFailed(error) => {
-                let code = match error {
-                    HandshakeError::Local(error) => format!("0x{:04X}", error.code as u16),
-                    HandshakeError::Remote(error) => format!("0x{:04X}", error.error_code),
-                    _ => "unrecognized".into(),
-                };
-                (
-                    "Rate: No result".into(),
-                    format!("Session failed [{code}] - reconnect"),
-                    "Backend MAC: No result",
-                )
-            }
-        }
-    }
-
-    fn text(&mut self, id: &str, value: &str) -> Result<()> {
-        if self.doc.set_text_content(id, value) == Edit::Missing {
-            Err(MetisError::ui(
+        let menu = doc.find_element_by_id_mut("command-menu").ok_or_else(|| {
+            MetisError::ui(
                 ErrorCode::MalformedMarkup,
-                format!("Authored form is missing label {id}"),
-            ))
-        } else {
-            Ok(())
+                "Authored form is missing command menu",
+            )
+        })?;
+        menu.computed_style.display = display;
+        set_text(doc, "command-status", &self.command_status)
+    }
+}
+
+fn outcome_text(state: &FormState) -> (String, String, &'static str) {
+    match state {
+        FormState::Idle => (
+            "Rate: Awaiting Backend Calculation...".into(),
+            "Safety Status: Idle".into(),
+            "Backend MAC: None",
+        ),
+        FormState::Pending => (
+            "Rate: Awaiting Backend Calculation...".into(),
+            "Request in progress".into(),
+            "Backend MAC: None",
+        ),
+        FormState::Success(response) => (
+            format!(
+                "Rate: {} mL/hr ({} mg/hr)",
+                result_number(response.rate_ml_hr, 3),
+                result_number(response.drug_rate_mg_hr, 2)
+            ),
+            format!(
+                "Backend response (Audit Seq #{}){}",
+                response.audit_sequence_id,
+                if response.is_pediatric {
+                    " [PEDIATRIC]"
+                } else {
+                    ""
+                }
+            ),
+            "Backend MAC: Present (not verified by frontend)",
+        ),
+        FormState::Rejected(error) => (
+            "Rate: No result".into(),
+            format!("Backend rejected request [0x{:04X}]", error.error_code),
+            "Backend MAC: No result",
+        ),
+        FormState::Failed(error) => (
+            "Rate: No result".into(),
+            format!("Request not sent [0x{:04X}]", error.code as u16),
+            "Backend MAC: No result",
+        ),
+        FormState::Disconnected(error) => (
+            "Rate: No result".into(),
+            format!(
+                "Connection failed [0x{:04X}] - reconnect",
+                error.code as u16
+            ),
+            "Backend MAC: No result",
+        ),
+        FormState::SessionFailed(error) => {
+            let code = match error {
+                HandshakeError::Local(error) => format!("0x{:04X}", error.code as u16),
+                HandshakeError::Remote(error) => format!("0x{:04X}", error.error_code),
+                _ => "unrecognized".into(),
+            };
+            (
+                "Rate: No result".into(),
+                format!("Session failed [{code}] - reconnect"),
+                "Backend MAC: No result",
+            )
         }
     }
+}
 
-    fn attribute(&mut self, id: &str, key: &str, value: &str) -> Result<()> {
-        if self.doc.set_attribute(id, key, value) == Edit::Missing {
-            Err(MetisError::ui(
-                ErrorCode::MalformedMarkup,
-                format!("Authored form is missing semantic field {id}"),
-            ))
-        } else {
-            Ok(())
+/// Reports an edit that found no element as a malformed authored form.
+fn found(edit: Edit, missing: impl FnOnce() -> String) -> Result<()> {
+    if edit == Edit::Missing {
+        Err(MetisError::ui(ErrorCode::MalformedMarkup, missing()))
+    } else {
+        Ok(())
+    }
+}
+
+fn set_text(doc: &mut DomDocument, id: &str, text: &str) -> Result<()> {
+    found(doc.set_text_content(id, text), || {
+        format!("Authored form is missing label {id}")
+    })
+}
+
+fn set_attribute(doc: &mut DomDocument, id: &str, key: &str, value: &str) -> Result<()> {
+    found(doc.set_attribute(id, key, value), || {
+        format!("Authored form is missing semantic field {id}")
+    })
+}
+
+fn bool_text(value: bool) -> &'static str {
+    if value { "true" } else { "false" }
+}
+
+/// Appends the first `glyphs` characters of `value`, and an ellipsis when
+/// more follow, so the omission is stated explicitly.
+fn push_preview(out: &mut String, value: &str, glyphs: usize) {
+    match value.char_indices().nth(glyphs) {
+        Some((end, _)) => {
+            out.push_str(&value[..end]);
+            out.push_str("...");
         }
+        None => out.push_str(value),
     }
 }
 
@@ -358,10 +390,10 @@ fn layout_error() -> MetisError {
     )
 }
 
-fn bounded_accessible_value(value: &str) -> String {
+fn bounded_accessible_value(value: &str) -> Cow<'_, str> {
     const ELLIPSIS: &str = "...";
     if value.len() <= MAX_SEMANTIC_TEXT_BYTES {
-        return value.to_owned();
+        return Cow::Borrowed(value);
     }
     let limit = MAX_SEMANTIC_TEXT_BYTES - ELLIPSIS.len();
     let mut end = 0;
@@ -375,7 +407,7 @@ fn bounded_accessible_value(value: &str) -> String {
     let mut bounded = String::with_capacity(MAX_SEMANTIC_TEXT_BYTES);
     bounded.push_str(&value[..end]);
     bounded.push_str(ELLIPSIS);
-    bounded
+    Cow::Owned(bounded)
 }
 
 // Shortest scientific f64 notation fits 24 glyphs: sign, 17 significant digits,

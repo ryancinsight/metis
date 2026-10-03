@@ -1,7 +1,7 @@
 //! Unprivileged form transitions and correlated backend requests.
 use crate::commands::{ApplicationTheme, CommandMenuState};
 use crate::focus::Focus;
-use crate::presentation::CLINICAL_SCREEN_XML;
+use crate::presentation::{CLINICAL_SCREEN_XML, RenderCache};
 use metis_core::error::{ErrorCode, MetisError, Result};
 use metis_core::protocol::{
     ClinicalCalcRequestPayload, ClinicalCalcResponsePayload, ErrorResponsePayload, MessageType,
@@ -89,6 +89,8 @@ pub struct FrontendApp<T> {
     pub(crate) painted: Option<DisplayList>,
     /// Pixels repainted since the host last took the damage to present.
     pub(crate) unpresented: Damage,
+    /// Buffers kept between renders.
+    pub(crate) cache: RenderCache,
 }
 
 impl<T: IpcTransport> FrontendApp<T> {
@@ -111,6 +113,7 @@ impl<T: IpcTransport> FrontendApp<T> {
             focus: Focus::initial(),
             painted: None,
             unpresented: Damage::Unchanged,
+            cache: RenderCache::default(),
         };
         app.render()?;
         Ok(app)
