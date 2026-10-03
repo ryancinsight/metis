@@ -28,7 +28,8 @@ structured diagnostics do not copy untrusted paths or identifiers.
 
 ```rust
 use metis_core::{build_frame, FrameHeader, MessageType, HEADER_SIZE};
-let bytes = build_frame(MessageType::HandshakeReq, 7, b"request")?;
+let mut bytes = Vec::new();
+build_frame(MessageType::HandshakeReq, 7, b"request", &mut bytes)?;
 let header_bytes: &[u8; HEADER_SIZE] = bytes[..HEADER_SIZE].try_into().expect("frame includes header");
 let header = FrameHeader::decode(header_bytes)?;
 assert_eq!(header.sequence_id, 7);

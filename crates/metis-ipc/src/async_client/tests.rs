@@ -48,7 +48,8 @@ fn frame(
     sequence: u64,
     payload: &[u8],
 ) -> Result<(FrameHeader, Vec<u8>)> {
-    let wire = build_frame(message_type, sequence, payload)?;
+    let mut wire = Vec::new();
+    build_frame(message_type, sequence, payload, &mut wire)?;
     let mut bytes = wire.as_slice();
     crate::read_frame(&mut bytes)
 }

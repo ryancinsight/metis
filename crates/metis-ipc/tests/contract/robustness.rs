@@ -228,7 +228,8 @@ fn deterministic_mutations_remain_parser_safe() {
         }
     }
 
-    let frame = build_frame(MessageType::HeartbeatReq, 11, b"bounded").expect("frame");
+    let mut frame = Vec::new();
+    build_frame(MessageType::HeartbeatReq, 11, b"bounded", &mut frame).expect("frame");
     for (index, mask) in
         (0..frame.len()).flat_map(|index| [1_u8, 0x80].map(move |mask| (index, mask)))
     {

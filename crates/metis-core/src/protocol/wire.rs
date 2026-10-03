@@ -153,10 +153,23 @@ impl FrameHeader {
         })
     }
 }
-/// Builds a frame after validating the payload resource bound.
+/// Builds a frame into `frame` after validating the payload resource bound.
+///
+/// The previous contents of `frame` are replaced. Its capacity is reused, so
+/// a sender that keeps one buffer allocates only while a frame is larger than
+/// every frame it sent before; a frame never exceeds
+/// `HEADER_SIZE + MAX_PAYLOAD_SIZE` bytes.
 /// # Errors
-/// Returns `PayloadTooLarge` if the payload exceeds 65,536 bytes.
-pub fn build_frame(msg_type: MessageType, sequence_id: u64, payload: &[u8]) -> Result<Vec<u8>> {
+/// Returns `PayloadTooLarge` if the payload exceeds 65,536 bytes, or
+/// `QueueFull` if the buffer cannot grow to hold the frame. `frame` is empty
+/// after an error.
+pub fn build_frame(
+    msg_type: MessageType,
+    sequence_id: u64,
+    payload: &[u8],
+    frame: &mut Vec<u8>,
+) -> Result<()> {
+    frame.clear();
     check_length(payload.len())?;
     let payload_len = u32::try_from(payload.len()).map_err(|_| {
         MetisError::protocol(
@@ -170,11 +183,12 @@ pub fn build_frame(msg_type: MessageType, sequence_id: u64, payload: &[u8]) -> R
         payload_crc32: crc32(payload),
         payload_len,
     };
-    let mut frame = Vec::with_capacity(HEADER_SIZE + payload.len());
+    reserve_frame_bytes(frame, HEADER_SIZE + payload.len())?;
     frame.extend_from_slice(&header.encode());
     frame.extend_from_slice(payload);
-    Ok(frame)
+    Ok(())
 }
+
 /// Reserves room for `additional` more bytes in `buffer` without over-allocating.
 ///
 /// Callers validate `additional` against a wire bound first, so a hostile

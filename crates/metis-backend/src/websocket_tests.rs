@@ -87,11 +87,20 @@ fn masked_binary(payload: &[u8]) -> Vec<u8> {
     masked_frame(0x2, payload)
 }
 
+/// A masked client binary message carrying one Metis request frame.
+fn masked_request(msg_type: MessageType, sequence: u64, payload: &[u8]) -> io::Result<Vec<u8>> {
+    let mut frame = Vec::new();
+    build_frame(msg_type, sequence, payload, &mut frame)
+        .map_err(|error| io::Error::new(ErrorKind::InvalidData, error.to_string()))?;
+    Ok(masked_binary(&frame))
+}
+
 fn masked_close() -> Vec<u8> {
     masked_control(0x8, &1000_u16.to_be_bytes())
 }
 
 fn handshake_frame(sequence: u64) -> Vec<u8> {
+    let mut wire = Vec::new();
     build_frame(
         MessageType::HandshakeReq,
         sequence,
@@ -101,8 +110,10 @@ fn handshake_frame(sequence: u64) -> Vec<u8> {
             principal_id: PRINCIPAL,
         }
         .encode(),
+        &mut wire,
     )
-    .expect("handshake frame")
+    .expect("handshake frame");
+    wire
 }
 
 fn masked_control(opcode: u8, payload: &[u8]) -> Vec<u8> {
@@ -231,41 +242,39 @@ async fn run_valid_exchange() -> io::Result<(Vec<u8>, Vec<u8>, Vec<u8>, Vec<u8>,
             .map_err(|error| io::Error::new(ErrorKind::InvalidData, error.to_string()))?
             .initial_token;
 
-        let target_request = build_frame(MessageType::TargetCapabilityReq, 2, &[])
-            .map_err(|error| io::Error::new(ErrorKind::InvalidData, error.to_string()))?;
-        client.write_all(&masked_binary(&target_request)).await?;
+        client
+            .write_all(&masked_request(MessageType::TargetCapabilityReq, 2, &[])?)
+            .await?;
         client.flush().await?;
         let target_response = read_server_binary(&mut client).await?;
 
-        let calculation = build_frame(
-            MessageType::ClinicalCalcReq,
-            3,
-            &ClinicalCalcRequestPayload {
-                token: token.clone(),
-                patient_id: "PT-9042-ALPHA".to_owned(),
-                weight_kg: 72.5,
-                concentration_mg_ml: 4.0,
-                target_dose_mcg_kg_min: 0.5,
-            }
-            .encode()
-            .map_err(|error| io::Error::new(ErrorKind::InvalidData, error.to_string()))?,
-        )
+        let calculation = ClinicalCalcRequestPayload {
+            token: token.clone(),
+            patient_id: "PT-9042-ALPHA".to_owned(),
+            weight_kg: 72.5,
+            concentration_mg_ml: 4.0,
+            target_dose_mcg_kg_min: 0.5,
+        }
+        .encode()
         .map_err(|error| io::Error::new(ErrorKind::InvalidData, error.to_string()))?;
-        client.write_all(&masked_binary(&calculation)).await?;
+        client
+            .write_all(&masked_request(
+                MessageType::ClinicalCalcReq,
+                3,
+                &calculation,
+            )?)
+            .await?;
         client.flush().await?;
         let calculation_response = read_server_binary(&mut client).await?;
         let event = read_server_binary(&mut client).await?;
         let plugin = PluginInvocationPayload::new(token, "websocket", "increment", [2, 5, 10])
             .map_err(|error| io::Error::new(ErrorKind::InvalidData, error.to_string()))?;
-        let plugin = build_frame(
-            MessageType::PluginInvokeReq,
-            4,
-            &plugin
-                .encode()
-                .map_err(|error| io::Error::new(ErrorKind::InvalidData, error.to_string()))?,
-        )
-        .map_err(|error| io::Error::new(ErrorKind::InvalidData, error.to_string()))?;
-        client.write_all(&masked_binary(&plugin)).await?;
+        let plugin = plugin
+            .encode()
+            .map_err(|error| io::Error::new(ErrorKind::InvalidData, error.to_string()))?;
+        client
+            .write_all(&masked_request(MessageType::PluginInvokeReq, 4, &plugin)?)
+            .await?;
         client.flush().await?;
         let plugin_response = read_server_binary(&mut client).await?;
         client.write_all(&masked_close()).await?;

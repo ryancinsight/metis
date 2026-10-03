@@ -8,7 +8,7 @@
 
 use metis_core::error::ErrorCode;
 use metis_core::protocol::{FrameHeader, HEADER_SIZE, MAX_PAYLOAD_SIZE, MessageType, build_frame};
-use metis_ipc::{IpcTransport, MemoryTransport, read_frame};
+use metis_ipc::{IpcTransport, MemoryTransport, StreamTransport, read_frame, write_frame};
 use std::alloc::{GlobalAlloc, Layout, System};
 use std::cell::Cell;
 
@@ -91,17 +91,118 @@ fn payload(length: usize) -> Vec<u8> {
 }
 
 #[test]
+fn a_reused_buffer_builds_frames_without_allocating() {
+    let largest = payload(MAX_PAYLOAD_SIZE);
+    let mut frame = Vec::new();
+    build_frame(MessageType::HeartbeatReq, 1, &largest, &mut frame).expect("largest frame");
+    assert_eq!(frame.len(), HEADER_SIZE + MAX_PAYLOAD_SIZE);
+
+    let lengths = [0, 1, 17, 4096, MAX_PAYLOAD_SIZE, 3];
+    let (sizes, allocations) = allocations_during(|| {
+        let mut sizes = [0; 6];
+        for ((sequence, length), size) in (2..).zip(lengths).zip(&mut sizes) {
+            build_frame(
+                MessageType::HeartbeatReq,
+                sequence,
+                &largest[..length],
+                &mut frame,
+            )
+            .expect("frame");
+            *size = frame.len();
+        }
+        sizes
+    });
+    assert_eq!(allocations, 0);
+    assert_eq!(sizes, lengths.map(|length| HEADER_SIZE + length));
+
+    // The final frame is the 3-byte payload: the previous, longer frames left
+    // no tail behind it.
+    let (header, decoded) = read_frame(&mut frame.as_slice()).expect("decodes");
+    assert_eq!(header.sequence_id, 7);
+    assert_eq!(decoded, &largest[..3]);
+
+    // A refused frame leaves the buffer empty rather than holding the previous
+    // frame, which a caller could otherwise resend.
+    let oversized = vec![0; MAX_PAYLOAD_SIZE + 1];
+    let error = build_frame(MessageType::HeartbeatReq, 9, &oversized, &mut frame)
+        .expect_err("oversized payload");
+    assert_eq!(error.code, ErrorCode::PayloadTooLarge);
+    assert!(frame.is_empty());
+}
+
+#[test]
+fn a_stream_transport_sends_without_allocating_and_preserves_every_frame() {
+    let payloads = [MAX_PAYLOAD_SIZE, 0, 5, 1024, 65_000, 2].map(payload);
+    let mut sink = Vec::with_capacity(payloads.iter().map(|body| HEADER_SIZE + body.len()).sum());
+    {
+        let mut transport = StreamTransport::new(std::io::empty(), &mut sink);
+        // The first frame is the largest, so it sizes the encode buffer.
+        transport
+            .send_message(MessageType::HeartbeatReq, 1, &payloads[0])
+            .expect("first frame");
+        let ((), allocations) = allocations_during(|| {
+            for (sequence, body) in (2..).zip(&payloads[1..]) {
+                transport
+                    .send_message(MessageType::HeartbeatReq, sequence, body)
+                    .expect("frame");
+            }
+        });
+        assert_eq!(allocations, 0);
+    }
+    let mut wire = sink.as_slice();
+    for (sequence, body) in (1..).zip(&payloads) {
+        let (header, decoded) = read_frame(&mut wire).expect("frame");
+        assert_eq!(header.sequence_id, sequence);
+        assert_eq!(header.msg_type, MessageType::HeartbeatReq);
+        assert_eq!(&decoded, body);
+    }
+    assert!(wire.is_empty());
+}
+
+#[test]
+fn write_frame_reuses_the_callers_buffer() {
+    let largest = payload(MAX_PAYLOAD_SIZE);
+    let mut output = Vec::with_capacity(2 * (HEADER_SIZE + MAX_PAYLOAD_SIZE));
+    let mut frame = Vec::new();
+    write_frame(
+        &mut output,
+        MessageType::HeartbeatResp,
+        1,
+        &largest,
+        &mut frame,
+    )
+    .expect("warm frame");
+    let (result, allocations) = allocations_during(|| {
+        write_frame(
+            &mut output,
+            MessageType::HeartbeatResp,
+            2,
+            b"second",
+            &mut frame,
+        )
+    });
+    result.expect("second frame");
+    assert_eq!(allocations, 0);
+    let mut wire = output.as_slice();
+    assert_eq!(read_frame(&mut wire).expect("first").1, largest);
+    let (header, body) = read_frame(&mut wire).expect("second");
+    assert_eq!((header.sequence_id, body.as_slice()), (2, &b"second"[..]));
+}
+
+#[test]
 fn receiving_a_frame_allocates_its_payload_once() {
     for length in [1, 17, 4096, MAX_PAYLOAD_SIZE] {
         let body = payload(length);
-        let wire = build_frame(MessageType::ClinicalCalcReq, 5, &body).expect("frame");
+        let mut wire = Vec::new();
+        build_frame(MessageType::ClinicalCalcReq, 5, &body, &mut wire).expect("frame");
         let (received, allocations) = allocations_during(|| read_frame(&mut wire.as_slice()));
         let (header, decoded) = received.expect("frame decodes");
         assert_eq!(allocations, 1, "payload of {length} bytes");
         assert_eq!(header.sequence_id, 5);
         assert_eq!(decoded, body);
     }
-    let empty = build_frame(MessageType::HeartbeatReq, 6, &[]).expect("empty frame");
+    let mut empty = Vec::new();
+    build_frame(MessageType::HeartbeatReq, 6, &[], &mut empty).expect("empty frame");
     let (received, allocations) = allocations_during(|| read_frame(&mut empty.as_slice()));
     assert_eq!(received.expect("empty payload").1, b"");
     assert_eq!(allocations, 0);

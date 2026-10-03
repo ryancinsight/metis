@@ -23,6 +23,7 @@ pub struct AsyncIpcServer<S> {
     last_sequence: u64,
     last_event_id: Option<u64>,
     clinical_response_delay: Option<Duration>,
+    frame: Vec<u8>,
 }
 
 impl<S> AsyncIpcServer<S> {
@@ -34,6 +35,7 @@ impl<S> AsyncIpcServer<S> {
             last_sequence: 0,
             last_event_id: None,
             clinical_response_delay: None,
+            frame: Vec::new(),
         }
     }
 
@@ -96,19 +98,16 @@ impl<S: AsyncRead + AsyncWrite + Unpin> AsyncIpcServer<S> {
             }
         };
         let dispatched = dispatch_request(&mut self.last_sequence, handler, header, &payload)?;
-        let wire = match build_frame(
+        if let Err(error) = build_frame(
             dispatched.message_type,
             dispatched.identity.sequence,
             &dispatched.payload,
+            &mut self.frame,
         ) {
-            Ok(wire) => wire,
-            Err(error) => {
-                handler
-                    .handle_failure(FailureContext::Response(dispatched.identity), error.code)?;
-                return Err(error);
-            }
-        };
-        if let Err(error) = check_wire_size(&wire) {
+            handler.handle_failure(FailureContext::Response(dispatched.identity), error.code)?;
+            return Err(error);
+        }
+        if let Err(error) = check_wire_size(&self.frame) {
             handler.handle_failure(FailureContext::Response(dispatched.identity), error.code)?;
             return Err(error);
         }
@@ -117,7 +116,7 @@ impl<S: AsyncRead + AsyncWrite + Unpin> AsyncIpcServer<S> {
         {
             moirai_async::timer::sleep(delay).await;
         }
-        if let Err(error) = self.stream.send_binary(&wire).await {
+        if let Err(error) = self.stream.send_binary(&self.frame).await {
             let error = websocket_error(&error);
             handler.handle_failure(FailureContext::Response(dispatched.identity), error.code)?;
             return Err(error);
@@ -161,15 +160,16 @@ impl<S: AsyncRead + AsyncWrite + Unpin> AsyncIpcServer<S> {
                 "Remote event identifiers must increase strictly",
             ));
         }
-        let wire = build_frame(
+        build_frame(
             MessageType::TelemetryStreamEvent,
             event_id,
             &event.encode()?,
+            &mut self.frame,
         )?;
-        check_wire_size(&wire)?;
+        check_wire_size(&self.frame)?;
         self.last_event_id = Some(event_id);
         self.stream
-            .send_binary(&wire)
+            .send_binary(&self.frame)
             .await
             .map_err(|error| websocket_error(&error))
     }

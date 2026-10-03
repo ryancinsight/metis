@@ -324,10 +324,16 @@ fn variable_encodings_enforce_frame_capacity_without_narrowing() {
         error.encode().expect_err("oversized diagnostic").code,
         ErrorCode::PayloadTooLarge
     );
+    let mut frame = Vec::new();
     assert_eq!(
-        build_frame(MessageType::HeartbeatReq, 1, &vec![0; MAX_PAYLOAD_SIZE + 1])
-            .expect_err("oversized frame")
-            .code,
+        build_frame(
+            MessageType::HeartbeatReq,
+            1,
+            &vec![0; MAX_PAYLOAD_SIZE + 1],
+            &mut frame
+        )
+        .expect_err("oversized frame")
+        .code,
         ErrorCode::PayloadTooLarge
     );
 }
