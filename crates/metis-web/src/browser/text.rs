@@ -246,7 +246,7 @@ fn selection_from_provider(
 }
 
 fn render(document: &WebDocument, state: &Rc<RefCell<BrowserState>>, status: &WebElement) {
-    if let Err(error) = view::render(document, &state.borrow()) {
+    if let Err(error) = view::render(document, &mut state.borrow_mut()) {
         view::set_status_error(document, status, "Text input", &error.to_string());
     }
 }

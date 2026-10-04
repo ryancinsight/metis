@@ -40,7 +40,7 @@ fn filter_listener(
         if let Err(error) = state.result_explorer.set_filter(&value) {
             state.result_explorer.fail(error);
         }
-        if let Err(error) = view::render(&listener_document, &state) {
+        if let Err(error) = view::render(&listener_document, &mut state) {
             view::set_mount_error(&listener_document, &error);
         }
     })
@@ -69,7 +69,7 @@ fn sort_listener(
                 ErrorCode::MalformedPayload,
                 "Result explorer sort control contains an unsupported value",
             ));
-            if let Err(error) = view::render(&listener_document, &state) {
+            if let Err(error) = view::render(&listener_document, &mut state) {
                 view::set_mount_error(&listener_document, &error);
             }
             return;
@@ -77,7 +77,7 @@ fn sort_listener(
         if let Err(error) = state.result_explorer.set_sort(order) {
             state.result_explorer.fail(error);
         }
-        if let Err(error) = view::render(&listener_document, &state) {
+        if let Err(error) = view::render(&listener_document, &mut state) {
             view::set_mount_error(&listener_document, &error);
         }
     })
@@ -110,7 +110,7 @@ fn entry_listener(
                 .and_then(|slot| slot.parse::<usize>().ok())
                 .is_some_and(|slot| state.result_explorer.activate_visible(slot)),
         };
-        if changed && let Err(error) = view::render(&listener_document, &state) {
+        if changed && let Err(error) = view::render(&listener_document, &mut state) {
             view::set_mount_error(&listener_document, &error);
         }
     })

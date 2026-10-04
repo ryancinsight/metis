@@ -30,11 +30,16 @@ mod submission;
 mod text;
 #[path = "view.rs"]
 mod view;
+#[path = "view_explorer.rs"]
+mod view_explorer;
+#[path = "view_panels.rs"]
+mod view_panels;
 #[path = "browser/wheel.rs"]
 mod wheel;
 
 use crate::FileDropBatch;
 use crate::controls;
+use crate::dom_cache::DomWriteCache;
 use crate::epoch::{Epoch, Generation};
 use crate::fragment;
 use crate::session::connect_failure_state;
@@ -60,6 +65,7 @@ struct BrowserState {
     result_explorer: metis_frontend::ResultExplorer,
     controls: controls::ControlState,
     commands: commands::CommandState,
+    dom_cache: DomWriteCache,
 }
 
 impl Default for BrowserState {
@@ -79,6 +85,7 @@ impl Default for BrowserState {
             result_explorer: metis_frontend::ResultExplorer::new(),
             controls: controls::ControlState::default(),
             commands: commands::CommandState::default(),
+            dom_cache: DomWriteCache::default(),
         }
     }
 }

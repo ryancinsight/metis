@@ -29,7 +29,7 @@ pub(super) fn submit(
         let mut state = state.borrow_mut();
         state.state = FormState::Pending;
         state.result_explorer.begin_loading();
-        if let Err(error) = view::render(document, &state) {
+        if let Err(error) = view::render(document, &mut state) {
             view::set_mount_error(document, &error);
         }
         return;
@@ -46,7 +46,7 @@ pub(super) fn submit(
             ErrorCode::ConnectionClosed,
             "No authorized browser backend bridge is configured",
         ));
-        if let Err(error) = view::render(document, &state) {
+        if let Err(error) = view::render(document, &mut state) {
             view::set_mount_error(document, &error);
         }
         return;
@@ -62,7 +62,7 @@ pub(super) fn submit(
         let mut state = state.borrow_mut();
         state.state = FormState::Pending;
         state.result_explorer.begin_loading();
-        if let Err(error) = view::render(document, &state) {
+        if let Err(error) = view::render(document, &mut state) {
             view::set_mount_error(document, &error);
         }
     }
@@ -116,7 +116,7 @@ pub(super) fn submit(
                 &result,
                 event_error.as_ref(),
             );
-            if let Err(error) = view::render(&result_document, &state) {
+            if let Err(error) = view::render(&result_document, &mut state) {
                 view::set_mount_error(&result_document, &error);
             }
         }

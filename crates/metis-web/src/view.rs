@@ -1,17 +1,32 @@
+use super::view_panels::{render_clipboard, render_drop, render_result, render_text};
 use super::{BridgeStatus, BrowserState};
-use crate::controls::{DisplayUnit, ResultDetail};
-use crate::text_policy::CompositionState;
+use crate::dom_cache::{DOCUMENT_BODY_TARGET, DomWriteCache};
 use metis_core::CapabilityScope;
 use metis_core::protocol::{
     CapabilityCatalogPayload, MAX_PLUGINS, Plugin, PluginDescriptor, PluginOperation,
     PluginRegistry, TargetCapabilityPayload,
 };
-use metis_frontend::{ExplorerStatus, FormState, RESULT_PAGE_SIZE, VisibleEntry};
+use metis_frontend::{ExplorerStatus, FormState};
 use metis_ipc::client::HandshakeError;
 use moirai_pal::wasm::{WebDocument, WebElement};
 use std::io;
 
-pub(super) fn render(document: &WebDocument, state: &BrowserState) -> io::Result<()> {
+/// Renders the current state, writing only DOM state that changed.
+///
+/// Every text, attribute, and disabled write passes through the state's
+/// [`DomWriteCache`](crate::dom_cache::DomWriteCache): a repeated render with
+/// unchanged state performs no provider writes, so idle keystrokes produce no
+/// mutations. A failed pass discards the cache because error reporting writes
+/// outside it and the recorded values may no longer describe the document.
+pub(super) fn render(document: &WebDocument, state: &mut BrowserState) -> io::Result<()> {
+    let result = render_dom(document, state);
+    if result.is_err() {
+        state.dom_cache.invalidate();
+    }
+    result
+}
+
+fn render_dom(document: &WebDocument, state: &mut BrowserState) -> io::Result<()> {
     let message = status_message(state);
     render_theme_and_inputs(document, state)?;
     render_commands(document, state)?;
@@ -43,25 +58,33 @@ pub(super) fn render_lifecycle(
     Ok(())
 }
 
-fn render_theme_and_inputs(document: &WebDocument, state: &BrowserState) -> io::Result<()> {
-    let inputs = &state.inputs;
-    document
-        .body()?
-        .set_attribute("data-metis-theme", state.controls.theme().css_value())?;
-    element(document, "metis-app")?
-        .set_attribute("data-metis-theme", state.controls.theme().css_value())?;
-    set_text(document, "result-patient", &inputs.patient_id)?;
+fn render_theme_and_inputs(document: &WebDocument, state: &mut BrowserState) -> io::Result<()> {
+    let BrowserState {
+        inputs,
+        controls,
+        dom_cache,
+        ..
+    } = &mut *state;
+    let theme = controls.theme().css_value();
+    if dom_cache.write_attribute(DOCUMENT_BODY_TARGET, "data-metis-theme", theme) {
+        document.body()?.set_attribute("data-metis-theme", theme)?;
+    }
+    set_attribute(dom_cache, document, "metis-app", "data-metis-theme", theme)?;
+    set_text(dom_cache, document, "result-patient", &inputs.patient_id)?;
     set_text(
+        dom_cache,
         document,
         "result-weight",
         &format!("{:.2} kg", inputs.weight_kg),
     )?;
     set_text(
+        dom_cache,
         document,
         "result-concentration",
         &format!("{:.2} mg/mL", inputs.concentration_mg_ml),
     )?;
     set_text(
+        dom_cache,
         document,
         "result-dose",
         &format!("{:.3} mcg/kg/min", inputs.target_dose_mcg_kg_min),
@@ -99,105 +122,119 @@ fn status_message(state: &BrowserState) -> String {
     }
 }
 
-fn render_status(document: &WebDocument, state: &BrowserState, message: &str) -> io::Result<()> {
+fn render_status(
+    document: &WebDocument,
+    state: &mut BrowserState,
+    message: &str,
+) -> io::Result<()> {
     set_request_busy_attributes(document, state)?;
-    set_text(document, "metis-status", message)?;
-    set_text(document, "session-dialog-status", message)?;
-    set_text(document, "metis-capabilities", &state.capabilities)?;
-    set_text(document, "session-dialog-capabilities", &state.capabilities)?;
-    set_text(document, "metis-plugins", &state.plugins)?;
-    let event_status = if state.controls.show_events() {
-        state.event_status.as_str()
+    let BrowserState {
+        controls,
+        event_status,
+        capabilities,
+        plugins,
+        dom_cache,
+        ..
+    } = &mut *state;
+    set_text(dom_cache, document, "metis-status", message)?;
+    set_text(dom_cache, document, "session-dialog-status", message)?;
+    set_text(dom_cache, document, "metis-capabilities", capabilities)?;
+    set_text(
+        dom_cache,
+        document,
+        "session-dialog-capabilities",
+        capabilities,
+    )?;
+    set_text(dom_cache, document, "metis-plugins", plugins)?;
+    let event_status = if controls.show_events() {
+        event_status.as_str()
     } else {
         "Remote events: hidden by preference"
     };
-    set_text(document, "metis-events", event_status)?;
-    set_text(document, "options-state", &state.controls.summary())?;
+    set_text(dom_cache, document, "metis-events", event_status)?;
+    set_text(dom_cache, document, "options-state", &controls.summary())?;
     render_drop(document, state)?;
     render_text(document, state)?;
     render_clipboard(document, state)?;
+    let BrowserState {
+        bridge,
+        state: form_state,
+        dom_cache,
+        ..
+    } = &mut *state;
     let submit_disabled =
-        !matches!(state.bridge, BridgeStatus::Ready) || matches!(state.state, FormState::Pending);
-    element(document, "submit-calculation")?.set_disabled(submit_disabled)?;
+        !matches!(bridge, BridgeStatus::Ready) || matches!(form_state, FormState::Pending);
+    set_disabled(dom_cache, document, "submit-calculation", submit_disabled)?;
     Ok(())
 }
 
-fn render_commands(document: &WebDocument, state: &BrowserState) -> io::Result<()> {
-    let expanded = state.commands.menu_open;
+fn render_commands(document: &WebDocument, state: &mut BrowserState) -> io::Result<()> {
+    let BrowserState {
+        commands,
+        dom_cache,
+        ..
+    } = &mut *state;
+    let expanded = commands.menu_open;
     let expanded_value = if expanded { "true" } else { "false" };
     let hidden_value = if expanded { "false" } else { "true" };
-    element(document, "command-menu-toggle")?.set_attribute("aria-expanded", expanded_value)?;
-    let menu = element(document, "command-menu")?;
-    menu.set_attribute("aria-hidden", hidden_value)?;
-    menu.set_attribute(
-        "data-command-menu-open",
-        if expanded { "true" } else { "false" },
+    set_attribute(
+        dom_cache,
+        document,
+        "command-menu-toggle",
+        "aria-expanded",
+        expanded_value,
     )?;
-    set_text(document, "command-status", &state.commands.status)
+    set_attribute(
+        dom_cache,
+        document,
+        "command-menu",
+        "aria-hidden",
+        hidden_value,
+    )?;
+    set_attribute(
+        dom_cache,
+        document,
+        "command-menu",
+        "data-command-menu-open",
+        expanded_value,
+    )?;
+    set_text(dom_cache, document, "command-status", &commands.status)
 }
 
-fn set_request_busy_attributes(document: &WebDocument, state: &BrowserState) -> io::Result<()> {
+fn set_request_busy_attributes(document: &WebDocument, state: &mut BrowserState) -> io::Result<()> {
     let request_busy = matches!(state.state, FormState::Pending);
     let busy_value = if request_busy { "true" } else { "false" };
+    let BrowserState { dom_cache, .. } = &mut *state;
     for id in [
         "metis-status",
         "session-dialog-status",
         "metis-form",
         "result-state",
     ] {
-        element(document, id)?.set_attribute("aria-busy", busy_value)?;
+        // The provider call keeps the historical method-call form pinned by
+        // the accessibility presentation contract; the cache guard around it
+        // is what elides the redundant write.
+        if dom_cache.write_attribute(id, "aria-busy", busy_value) {
+            element(document, id)?.set_attribute("aria-busy", busy_value)?;
+        }
     }
     Ok(())
 }
 
-fn render_result(document: &WebDocument, state: &BrowserState, message: &str) -> io::Result<()> {
-    let metrics = match &state.state {
-        FormState::Success(response) => match state.controls.display_unit() {
-            DisplayUnit::Volume => format!("Volume rate: {:.6} mL/hr", response.rate_ml_hr),
-            DisplayUnit::DrugMass => {
-                format!("Drug mass rate: {:.6} mg/hr", response.drug_rate_mg_hr)
-            }
-        },
-        _ => match state.controls.display_unit() {
-            DisplayUnit::Volume => "Volume rate: unavailable",
-            DisplayUnit::DrugMass => "Drug mass rate: unavailable",
-        }
-        .to_owned(),
-    };
-    set_text(document, "result-metrics", &metrics)?;
-    let detail = match (&state.state, state.controls.result_detail()) {
-        (FormState::Success(response), ResultDetail::Summary) => {
-            format!(
-                "Clinical summary for response {}",
-                response.audit_sequence_id
-            )
-        }
-        (FormState::Success(response), ResultDetail::Audit) => {
-            format!("Audit detail: sequence {}", response.audit_sequence_id)
-        }
-        (_, ResultDetail::Summary) => "Clinical summary awaiting backend response".to_owned(),
-        (_, ResultDetail::Audit) => "Audit detail unavailable until backend response".to_owned(),
-    };
-    set_text(document, "result-detail", &detail)?;
-    element(document, "view-options")?.set_attribute(
-        "data-result-scale-percent",
-        &state.controls.scale().value().to_string(),
-    )?;
-    set_text(document, "result-state", message)?;
-    render_explorer(document, state)
-}
-
-fn render_explorer(document: &WebDocument, state: &BrowserState) -> io::Result<()> {
-    let explorer = &state.result_explorer;
-    render_explorer_summary(document, explorer)?;
-    render_explorer_entries(document, explorer)?;
-    render_explorer_pagination(document, explorer)
-}
-
-fn render_explorer_summary(
+/// Renders the explorer status surface: status text, caption, and table state.
+///
+/// The row widget itself lives in [`view_explorer`](super::view_explorer);
+/// this summary stays beside the other status surfaces so the accessibility
+/// presentation contract keeps one home for status derivations.
+pub(super) fn render_explorer_summary(
     document: &WebDocument,
-    explorer: &metis_frontend::ResultExplorer,
+    state: &mut BrowserState,
 ) -> io::Result<()> {
+    let BrowserState {
+        result_explorer: explorer,
+        dom_cache,
+        ..
+    } = &mut *state;
     let status = match explorer.status() {
         ExplorerStatus::Empty => "Explorer: no backend results".to_owned(),
         ExplorerStatus::Loading => "Explorer: loading backend result".to_owned(),
@@ -211,8 +248,9 @@ fn render_explorer_summary(
         }
         _ => "Explorer: unsupported state".to_owned(),
     };
-    set_text(document, "explorer-status", &status)?;
+    set_text(dom_cache, document, "explorer-status", &status)?;
     set_text(
+        dom_cache,
         document,
         "explorer-caption",
         &format!(
@@ -222,12 +260,17 @@ fn render_explorer_summary(
             explorer.sort().direction().value(),
         ),
     )?;
-    let table = element(document, "explorer-table")?;
-    table.set_attribute(
+    set_attribute(
+        dom_cache,
+        document,
+        "explorer-table",
         "data-result-status",
         explorer_status_name(explorer.status()),
     )?;
-    table.set_attribute(
+    set_attribute(
+        dom_cache,
+        document,
+        "explorer-table",
         "aria-busy",
         if matches!(explorer.status(), ExplorerStatus::Loading) {
             "true"
@@ -235,109 +278,13 @@ fn render_explorer_summary(
             "false"
         },
     )?;
-    table.set_attribute("data-window-start", &explorer.window_start().to_string())?;
-    Ok(())
-}
-
-fn render_explorer_entries(
-    document: &WebDocument,
-    explorer: &metis_frontend::ResultExplorer,
-) -> io::Result<()> {
-    for slot in 0..RESULT_PAGE_SIZE {
-        let button = element(document, &format!("explorer-entry-{slot}"))?;
-        let entry = explorer.visible_entry(slot);
-        render_explorer_entry(&button, entry.as_ref(), explorer.selected_id())?;
-    }
-    Ok(())
-}
-
-fn render_explorer_entry(
-    button: &WebElement,
-    entry: Option<&VisibleEntry<'_>>,
-    selected_id: Option<metis_frontend::ResultId>,
-) -> io::Result<()> {
-    match entry {
-        Some(VisibleEntry::Group {
-            id,
-            label,
-            expanded,
-            row_count,
-        }) => {
-            let disclosure = if *expanded { "expanded" } else { "collapsed" };
-            let text = format!("{label} — {row_count} result(s) — {disclosure}");
-            button.set_text(&text);
-            button.set_attribute("class", "explorer-entry explorer-group")?;
-            button.set_attribute("aria-label", &text)?;
-            button.set_attribute("aria-hidden", "false")?;
-            button.set_attribute("aria-expanded", if *expanded { "true" } else { "false" })?;
-            button.set_attribute("aria-level", "1")?;
-            button.set_attribute("data-entry-kind", "group")?;
-            button.set_attribute("data-group-id", &id.get().to_string())?;
-            button.set_disabled(false)?;
-        }
-        Some(VisibleEntry::Row(row)) => {
-            let selected = selected_id == Some(row.id());
-            let selection = if selected { " — selected" } else { "" };
-            let text = format!(
-                "{} — sequence {} — {:.3} mL/hr — {:.3} mg/hr{selection}",
-                row.patient_id(),
-                row.id().get(),
-                row.rate_ml_hr(),
-                row.drug_rate_mg_hr(),
-            );
-            button.set_text(&text);
-            button.set_attribute(
-                "class",
-                if selected {
-                    "explorer-entry explorer-row explorer-row-selected"
-                } else {
-                    "explorer-entry explorer-row"
-                },
-            )?;
-            button.set_attribute("aria-label", &text)?;
-            button.set_attribute("aria-hidden", "false")?;
-            button.set_attribute("aria-expanded", "false")?;
-            button.set_attribute("aria-level", "2")?;
-            button.set_attribute("aria-pressed", if selected { "true" } else { "false" })?;
-            button.set_attribute("data-entry-kind", "row")?;
-            button.set_attribute("data-result-id", &row.id().get().to_string())?;
-            button.set_disabled(false)?;
-        }
-        None => {
-            button.set_text("No visible result");
-            button.set_attribute("class", "explorer-entry explorer-entry-empty")?;
-            button.set_attribute("aria-label", "No visible result")?;
-            button.set_attribute("aria-hidden", "true")?;
-            button.set_attribute("aria-expanded", "false")?;
-            button.set_attribute("aria-level", "1")?;
-            button.set_attribute("aria-pressed", "false")?;
-            button.set_attribute("data-entry-kind", "empty")?;
-            button.set_attribute("data-group-id", "")?;
-            button.set_attribute("data-result-id", "")?;
-            button.set_disabled(true)?;
-        }
-    }
-    Ok(())
-}
-
-fn render_explorer_pagination(
-    document: &WebDocument,
-    explorer: &metis_frontend::ResultExplorer,
-) -> io::Result<()> {
-    let window_status = if explorer.visible_count() == 0 {
-        "Entries 0 of 0".to_owned()
-    } else {
-        let first = explorer.window_start() + 1;
-        let last = (explorer.window_start() + RESULT_PAGE_SIZE).min(explorer.visible_count());
-        format!(
-            "Entries {first}–{last} of {}; {} retained",
-            explorer.visible_count(),
-            explorer.row_count()
-        )
-    };
-    set_text(document, "explorer-window-status", &window_status)?;
-    element(document, "explorer-previous")?.set_disabled(!explorer.can_previous())?;
-    element(document, "explorer-next")?.set_disabled(!explorer.can_next())?;
+    set_attribute(
+        dom_cache,
+        document,
+        "explorer-table",
+        "data-window-start",
+        &explorer.window_start().to_string(),
+    )?;
     Ok(())
 }
 
@@ -349,22 +296,6 @@ fn explorer_status_name(status: &ExplorerStatus) -> &'static str {
         ExplorerStatus::Error(_) => "error",
         _ => "unknown",
     }
-}
-
-fn render_drop(document: &WebDocument, state: &BrowserState) -> io::Result<()> {
-    set_text(document, "drop-status", &state.drop_state.status_message())?;
-    set_text(
-        document,
-        "drop-byte-status",
-        &state.drop_read_state.status_message(),
-    )?;
-    let drop_zone = element(document, "drop-zone")?;
-    drop_zone.set_attribute("data-drop-state", state.drop_state.state_name())?;
-    drop_zone.set_attribute(
-        "data-drop-count",
-        &state.drop_state.file_count().to_string(),
-    )?;
-    drop_zone.set_attribute("data-byte-state", state.drop_read_state.state_name())
 }
 
 pub(super) fn capability_summary(
@@ -401,40 +332,6 @@ pub(super) fn capability_summary(
     )
 }
 
-fn render_text(document: &WebDocument, state: &BrowserState) -> io::Result<()> {
-    let text = &state.text_state;
-    set_text(document, "text-status", &text.text_status())?;
-    set_text(
-        document,
-        "text-preview",
-        &format!("Text value preview: {}", text.value_display()),
-    )?;
-    set_text(document, "composition-status", &text.composition_status())?;
-    set_text(document, "selection-status", &text.selection_status())?;
-    let control = element(document, "text-specimen")?;
-    let selection = text.selection();
-    control.set_attribute("data-text-state", text.state_name())?;
-    control.set_attribute("data-selection-start", &selection.start().to_string())?;
-    control.set_attribute("data-selection-end", &selection.end().to_string())?;
-    control.set_attribute("data-selection-direction", selection.direction().label())?;
-    control.set_attribute(
-        "data-composing",
-        if matches!(text.composition(), CompositionState::Active) {
-            "true"
-        } else {
-            "false"
-        },
-    )?;
-    control.set_attribute("data-input-type", text.input_type())
-}
-
-fn render_clipboard(document: &WebDocument, state: &BrowserState) -> io::Result<()> {
-    let status = &state.clipboard_status;
-    set_text(document, "clipboard-status", &status.message())?;
-    element(document, "clipboard-status")?
-        .set_attribute("data-clipboard-state", status.state_name())
-}
-
 static WORKBENCH_EVENTS: [PluginOperation; 1] = [PluginOperation::new(
     "form.state",
     CapabilityScope::UI_RENDER,
@@ -461,8 +358,48 @@ pub(super) fn plugin_summary() -> String {
     format!("Registered frontend extensions: {}", entries.join(", "))
 }
 
-pub(super) fn set_text(document: &WebDocument, id: &str, text: &str) -> io::Result<()> {
-    element(document, id)?.set_text(text);
+/// Writes `text` to the element `id` unless the cache already holds it.
+///
+/// A cache hit skips both the element lookup and the provider write, so
+/// repeated renders with unchanged state produce no mutations. A miss records
+/// the value before writing; if the write then fails, [`render`] discards the
+/// whole cache.
+pub(super) fn set_text(
+    cache: &mut DomWriteCache,
+    document: &WebDocument,
+    id: &str,
+    text: &str,
+) -> io::Result<()> {
+    if cache.write_text(id, text) {
+        element(document, id)?.set_text(text);
+    }
+    Ok(())
+}
+
+/// Writes attribute `name` on the element `id` unless the cache already holds it.
+pub(super) fn set_attribute(
+    cache: &mut DomWriteCache,
+    document: &WebDocument,
+    id: &str,
+    name: &str,
+    value: &str,
+) -> io::Result<()> {
+    if cache.write_attribute(id, name, value) {
+        element(document, id)?.set_attribute(name, value)?;
+    }
+    Ok(())
+}
+
+/// Writes the disabled state of the element `id` unless the cache already holds it.
+pub(super) fn set_disabled(
+    cache: &mut DomWriteCache,
+    document: &WebDocument,
+    id: &str,
+    disabled: bool,
+) -> io::Result<()> {
+    if cache.write_disabled(id, disabled) {
+        element(document, id)?.set_disabled(disabled)?;
+    }
     Ok(())
 }
 
