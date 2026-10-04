@@ -357,7 +357,7 @@ fn read_drop_batch<B: BrowserFileBatch + 'static>(
                 }
             }
         }
-        if let Err(error) = view::render(&document, &state.borrow()) {
+        if let Err(error) = view::render(&document, &mut state.borrow_mut()) {
             view::set_status_error(&document, &status, "File bytes", &error.to_string());
         }
         let _ = task_slot_for_task.borrow_mut().take();
@@ -441,7 +441,7 @@ fn update_state(
     source: FileInputSource,
 ) {
     state.borrow_mut().drop_state = next_state;
-    if let Err(error) = view::render(document, &state.borrow()) {
+    if let Err(error) = view::render(document, &mut state.borrow_mut()) {
         view::set_status_error(document, zone, source.label(), &error.to_string());
     }
 }
@@ -453,7 +453,7 @@ fn update_read_state(
     next_state: DropReadState,
 ) {
     state.borrow_mut().drop_read_state = next_state;
-    if let Err(error) = view::render(document, &state.borrow()) {
+    if let Err(error) = view::render(document, &mut state.borrow_mut()) {
         view::set_status_error(document, status, "File bytes", &error.to_string());
     }
 }
@@ -471,7 +471,7 @@ fn update_rejection(
     current.drop_read_state = DropReadState::Failed(error.to_string());
     current.drop_batch = None;
     drop(current);
-    if let Err(render_error) = view::render(document, &state.borrow()) {
+    if let Err(render_error) = view::render(document, &mut state.borrow_mut()) {
         view::set_status_error(document, status, source.label(), &render_error.to_string());
         return;
     }

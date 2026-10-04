@@ -30,6 +30,9 @@ mod session;
 mod controls;
 
 #[cfg(any(target_arch = "wasm32", test))]
+mod dom_cache;
+
+#[cfg(any(target_arch = "wasm32", test))]
 #[path = "browser/gesture_policy.rs"]
 mod gesture_policy;
 

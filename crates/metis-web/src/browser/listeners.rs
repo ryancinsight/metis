@@ -104,7 +104,7 @@ pub(super) fn input_listener(
                     inputs.target_dose_mcg_kg_min,
                 );
             }
-            if let Err(error) = view::render(&listener_document, &state) {
+            if let Err(error) = view::render(&listener_document, &mut state) {
                 view::set_mount_error(&listener_document, &error);
             }
             return;
@@ -150,7 +150,7 @@ pub(super) fn apply_control_event(
         ..
     } = &mut *state;
     controls::update_control(controls, form_state, field, checked, value.as_deref());
-    if let Err(error) = view::render(document, &state) {
+    if let Err(error) = view::render(document, &mut state) {
         view::set_mount_error(document, &error);
     }
 }

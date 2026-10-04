@@ -22,7 +22,7 @@ impl BrowserApplication {
         let root = view::element(document, "metis-app")?;
         root.set_inner_html(controls::BROWSER_MARKUP);
         let state = Rc::new(RefCell::new(BrowserState::default()));
-        view::render(document, &state.borrow())?;
+        view::render(document, &mut state.borrow_mut())?;
         let app = Rc::new(RefCell::new(None));
         let task = Rc::new(RefCell::new(None));
         let drop_task = Rc::new(RefCell::new(None));
@@ -88,7 +88,7 @@ impl BrowserApplication {
         let task_cleanup = Rc::clone(&self.task);
         let listener_document = document.clone();
         state.borrow_mut().bridge = BridgeStatus::Connecting;
-        if let Err(error) = view::render(document, &state.borrow()) {
+        if let Err(error) = view::render(document, &mut state.borrow_mut()) {
             view::set_mount_error(document, &error);
         }
         let task = spawn_local_with_handle(async move {
@@ -142,7 +142,7 @@ impl BrowserApplication {
                 let _ = task_cleanup.borrow_mut().take();
                 return;
             }
-            if let Err(error) = view::render(&listener_document, &state.borrow()) {
+            if let Err(error) = view::render(&listener_document, &mut state.borrow_mut()) {
                 view::set_mount_error(&listener_document, &error);
             }
             let _ = task_cleanup.borrow_mut().take();

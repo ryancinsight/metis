@@ -64,7 +64,7 @@ fn toggle_listener(
         } else {
             "Commands menu closed".clone_into(&mut state.commands.status);
         }
-        if let Err(error) = view::render(&listener_document, &state) {
+        if let Err(error) = view::render(&listener_document, &mut state) {
             view::set_mount_error(&listener_document, &error);
         }
     })
@@ -161,7 +161,7 @@ fn apply(
         }
         state.commands.menu_open = false;
         command.status().clone_into(&mut state.commands.status);
-        view::render(document, &state)?;
+        view::render(document, &mut state)?;
     }
     if command == ApplicationCommand::FocusPatient {
         view::element(document, "patient-id")?.focus()?;
@@ -195,7 +195,7 @@ fn escape_listener(
             let mut state = listener_state.borrow_mut();
             state.commands.menu_open = false;
             "Commands menu closed".clone_into(&mut state.commands.status);
-            view::render(&listener_document, &state)
+            view::render(&listener_document, &mut state)
         };
         if let Err(error) = result {
             view::set_mount_error(&listener_document, &error);

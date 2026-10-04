@@ -71,7 +71,7 @@ pub(super) fn listeners(
     let read_button = view::element(document, "clipboard-read")?;
     let write_button = view::element(document, "clipboard-write")?;
     if provider.is_none() {
-        view::render(document, &state.borrow())?;
+        view::render(document, &mut state.borrow_mut())?;
     }
 
     Ok(vec![
@@ -166,7 +166,7 @@ fn read_button_listener(
                     };
                 }
             }
-            if let Err(error) = view::render(&task_document, &task_state.borrow()) {
+            if let Err(error) = view::render(&task_document, &mut task_state.borrow_mut()) {
                 view::set_mount_error(&task_document, &error);
             }
             let _ = task_cleanup.borrow_mut().take();
@@ -257,7 +257,7 @@ fn write_button_listener(
             };
             if generation_is_current(generation) {
                 task_state.borrow_mut().clipboard_status = status;
-                if let Err(error) = view::render(&task_document, &task_state.borrow()) {
+                if let Err(error) = view::render(&task_document, &mut task_state.borrow_mut()) {
                     view::set_mount_error(&task_document, &error);
                 }
             }
@@ -269,7 +269,7 @@ fn write_button_listener(
 
 fn set_status(document: &WebDocument, state: &Rc<RefCell<BrowserState>>, status: ClipboardStatus) {
     state.borrow_mut().clipboard_status = status;
-    if let Err(error) = view::render(document, &state.borrow()) {
+    if let Err(error) = view::render(document, &mut state.borrow_mut()) {
         view::set_mount_error(document, &error);
     }
 }
