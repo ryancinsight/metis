@@ -86,7 +86,7 @@ jobs:
   semver:
     name: SemVer gate (release)
     needs: identify
-    uses: ryancinsight/atlas/.github/workflows/semver-gate.yml@848e6649c52e8226a9abf7bc336f8cbf0e39ba08
+    uses: ryancinsight/atlas/.github/workflows/semver-gate.yml@50802ef4c975bdb1e668b94a700d8310f0348e9c
     with:
       release-gate: true
       package: ${{ needs.identify.outputs.package }}
@@ -127,7 +127,7 @@ jobs:
   publish-pending:
     name: Publish pending versions
     if: github.event_name == 'push' || github.event_name == 'schedule'
-    uses: ryancinsight/atlas/.github/workflows/crates-publish-pending.yml@ee2b7200c4781e39b5ea3e379d2aa97947758099
+    uses: ryancinsight/atlas/.github/workflows/crates-publish-pending.yml@50802ef4c975bdb1e668b94a700d8310f0348e9c
     permissions:
       contents: write # release tags for the published versions
       id-token: write # OIDC trusted publishing; no stored registry token
