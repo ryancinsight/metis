@@ -8,6 +8,7 @@ pub use grow::FlexGrow;
 use metis_core::error::{ErrorCode, MetisError, Result};
 pub use metis_platform::framebuffer::Color;
 pub use metis_platform::rasterizer::LinearGradient;
+use std::sync::Arc;
 
 /// Display flow mode.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -172,7 +173,7 @@ pub struct ComputedStyle {
     pub background_color: Option<Color>,
     /// Optional linear gradient painted over the background color, across
     /// the border box.
-    pub background_gradient: Option<LinearGradient>,
+    pub background_gradient: Option<Arc<LinearGradient>>,
     /// Straight RGBA text color.
     pub text_color: Color,
     /// Authored font size in CSS pixels per em; layout multiplies it by the

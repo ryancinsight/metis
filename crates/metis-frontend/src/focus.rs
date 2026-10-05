@@ -10,7 +10,7 @@
 use crate::app::FrontendApp;
 use metis_core::{ErrorCode, MetisError, Result};
 use metis_ipc::IpcTransport;
-use metis_ui_lang::{DomElement, DomNode, SemanticNode, SemanticTree};
+use metis_ui_lang::{DomDocument, DomElement, DomNode, SemanticNode, SemanticTree};
 
 /// Control focused when the form opens: the patient reference, so typing
 /// edits it without a prior focus move.
@@ -49,6 +49,26 @@ impl Focus {
             control: INITIAL_FOCUS.to_owned(),
             origin: FocusOrigin::Pointer,
         }
+    }
+
+    /// Moves focus off a control that stopped being focusable, before the
+    /// frame that no longer shows it is painted.
+    ///
+    /// `order` lists the focusable controls of `doc`. Focus inside a
+    /// popover returns to the control its `popover-anchor` names, as it
+    /// returns to a menu button when its menu closes; any other control
+    /// yields to the initial focus.
+    pub(crate) fn reconcile(&mut self, doc: &DomDocument, order: &[String]) -> Result<()> {
+        if order.contains(&self.control) {
+            return Ok(());
+        }
+        let anchor =
+            popover_anchor(&doc.root, &self.control).filter(|anchor| order.contains(anchor));
+        self.control = anchor
+            .or_else(|| order.iter().find(|id| *id == INITIAL_FOCUS).cloned())
+            .or_else(|| order.first().cloned())
+            .ok_or_else(no_focusable_control)?;
+        Ok(())
     }
 }
 
@@ -126,29 +146,9 @@ impl<T: IpcTransport> FrontendApp<T> {
         }
         Ok(())
     }
-
-    /// Moves focus off a control that stopped being focusable, before the
-    /// frame that no longer shows it is painted.
-    ///
-    /// Focus inside a popover returns to the control its `popover-anchor`
-    /// names, as it returns to a menu button when its menu closes; any other
-    /// control yields to the initial focus.
-    pub(crate) fn reconcile_focus(&mut self, semantics: &SemanticTree) -> Result<()> {
-        let order = focusable_ids(semantics);
-        if order.contains(&self.focus.control) {
-            return Ok(());
-        }
-        let anchor = popover_anchor(&self.doc.root, &self.focus.control)
-            .filter(|anchor| order.contains(anchor));
-        self.focus.control = anchor
-            .or_else(|| order.iter().find(|id| *id == INITIAL_FOCUS).cloned())
-            .or_else(|| order.first().cloned())
-            .ok_or_else(no_focusable_control)?;
-        Ok(())
-    }
 }
 
-fn focusable_ids(semantics: &SemanticTree) -> Vec<String> {
+pub(crate) fn focusable_ids(semantics: &SemanticTree) -> Vec<String> {
     let mut order = Vec::new();
     collect_focusable(&semantics.root, &mut order);
     order

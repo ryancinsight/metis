@@ -8,15 +8,21 @@ use metis_platform::rasterizer::{
     draw_line, draw_polyline, draw_rect_outline, fill_gradient, fill_rect,
 };
 use metis_platform::typeface::{TextStyle, draw_text};
+use std::sync::Arc;
 
 /// Primitive command in painter order.
+///
+/// Identifiers, text, gradients, polylines and image placements are shared
+/// handles, so cloning a command copies a fixed-size value and requests no
+/// heap memory; a display list is cloned to reuse a layout that did not
+/// change. A const assertion bounds the size of the command.
 #[derive(Debug, Clone, PartialEq)]
 #[non_exhaustive]
 pub enum DisplayCommand {
     /// Element rectangle metadata used by host hit testing.
     ElementRect {
         /// Authored element identifier.
-        id: String,
+        id: Arc<str>,
         /// Laid-out border rectangle in framebuffer coordinates.
         rect: Rect,
     },
@@ -45,7 +51,7 @@ pub enum DisplayCommand {
         /// Corner rounding; [`CornerRadius::SQUARE`] keeps square corners.
         radius: CornerRadius,
         /// Direction and color stops.
-        gradient: LinearGradient,
+        gradient: Arc<LinearGradient>,
     },
     /// Uniform inward border following the fill it encloses.
     DrawBorder {
@@ -70,7 +76,7 @@ pub enum DisplayCommand {
     /// Bounded multi-segment stroke with explicit width, caps and joins.
     DrawPolyline {
         /// Integer-coordinate path vertices in painter order.
-        points: Vec<(i32, i32)>,
+        points: Arc<[(i32, i32)]>,
         /// Positive device-space stroke width.
         width: StrokeWidth,
         /// Endpoint treatment.
@@ -84,7 +90,7 @@ pub enum DisplayCommand {
     DrawText {
         /// Unicode text; characters the face lacks display as its
         /// missing-glyph box.
-        text: String,
+        text: Arc<str>,
         /// Left edge of the line box.
         x: i32,
         /// Top edge of the line box.
@@ -95,9 +101,11 @@ pub enum DisplayCommand {
     /// Raster image crop composited with source-over alpha.
     DrawImage {
         /// Validated source and destination placement.
-        placement: ImagePlacement,
+        placement: Arc<ImagePlacement>,
     },
 }
+
+const _: () = assert!(size_of::<DisplayCommand>() <= 56);
 
 impl DisplayCommand {
     /// Moves every coordinate this command carries.
@@ -133,9 +141,10 @@ impl DisplayCommand {
                 Ok(())
             }
             Self::DrawPolyline { points, .. } => {
-                for point in points.iter_mut() {
-                    *point = (shift(point.0, dx)?, shift(point.1, dy)?);
-                }
+                *points = points
+                    .iter()
+                    .map(|point| Ok((shift(point.0, dx)?, shift(point.1, dy)?)))
+                    .collect::<Result<_>>()?;
                 Ok(())
             }
             Self::DrawText { x, y, .. } => {
@@ -143,7 +152,7 @@ impl DisplayCommand {
                 *y = shift(*y, dy)?;
                 Ok(())
             }
-            Self::DrawImage { placement } => placement.translate(dx, dy),
+            Self::DrawImage { placement } => Arc::make_mut(placement).translate(dx, dy),
         }
     }
 }
@@ -216,7 +225,7 @@ impl DisplayList {
                 DisplayCommand::ElementRect {
                     id: candidate,
                     rect,
-                } if candidate == id => Some(*rect),
+                } if &**candidate == id => Some(*rect),
                 _ => None,
             })
     }
@@ -227,7 +236,9 @@ impl DisplayList {
     /// Returns [`metis_core::error::ErrorCode::LayoutOverflow`] when the
     /// display command storage cannot grow.
     pub fn append_image(&mut self, placement: ImagePlacement) -> Result<()> {
-        self.push(DisplayCommand::DrawImage { placement })
+        self.push(DisplayCommand::DrawImage {
+            placement: Arc::new(placement),
+        })
     }
 
     /// Appends a clipped one-pixel line command in painter order.
@@ -276,8 +287,9 @@ impl DisplayList {
     /// # Errors
     ///
     /// Returns [`metis_core::error::ErrorCode::LayoutOverflow`] for an empty
-    /// or oversized path or a failed bounded allocation. Construct the
-    /// [`StrokeWidth`] before calling this method to reject zero.
+    /// or oversized path or when the display command storage cannot grow.
+    /// Construct the [`StrokeWidth`] before calling this method to reject
+    /// zero.
     pub fn append_polyline(
         &mut self,
         points: &[(i32, i32)],
@@ -289,13 +301,8 @@ impl DisplayList {
         if points.is_empty() || points.len() > MAX_STROKE_POINTS {
             return Err(limit_error("Polyline point limit exceeded"));
         }
-        let mut owned = Vec::new();
-        owned
-            .try_reserve_exact(points.len())
-            .map_err(|_| limit_error("Polyline point allocation failed"))?;
-        owned.extend_from_slice(points);
         self.push(DisplayCommand::DrawPolyline {
-            points: owned,
+            points: Arc::from(points),
             width,
             cap,
             join,

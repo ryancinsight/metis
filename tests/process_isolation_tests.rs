@@ -301,12 +301,14 @@ fn closed_peer_replaces_success_and_new_session_recovers() {
         .commands
         .iter()
         .find_map(|command| match command {
-            DisplayCommand::DrawText { text, x, y, style } if text == "SESSION CLOSED" => Some((
-                *x,
-                *y,
-                whole(style.advance(text)),
-                whole(style.line_height()),
-            )),
+            DisplayCommand::DrawText { text, x, y, style } if &**text == "SESSION CLOSED" => {
+                Some((
+                    *x,
+                    *y,
+                    whole(style.advance(text)),
+                    whole(style.line_height()),
+                ))
+            }
             _ => None,
         })
         .expect("status run");

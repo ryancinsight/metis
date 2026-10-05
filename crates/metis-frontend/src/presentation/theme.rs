@@ -1,11 +1,13 @@
 //! Theme palette projection for the authored software-rendered surface.
 
+use super::found;
 use crate::app::FrontendApp;
 use crate::commands::ApplicationTheme;
-use metis_core::{ErrorCode, MetisError, Result};
+use metis_core::Result;
 use metis_ipc::IpcTransport;
 use metis_platform::rasterizer::GradientStop;
-use metis_ui_lang::{Color, LinearGradient};
+use metis_ui_lang::{Color, ComputedStyle, LinearGradient};
+use std::sync::Arc;
 
 impl<T: IpcTransport> FrontendApp<T> {
     /// Styles the document with the current theme's palette.
@@ -60,63 +62,35 @@ impl<T: IpcTransport> FrontendApp<T> {
     }
 
     fn set_background(&mut self, id: &str, color: Color) -> Result<()> {
-        self.doc
-            .find_element_by_id_mut(id)
-            .ok_or_else(|| {
-                MetisError::ui(
-                    ErrorCode::MalformedMarkup,
-                    format!("Authored form is missing styled element {id}"),
-                )
-            })?
-            .computed_style
-            .background_color = Some(color);
-        Ok(())
+        self.restyle(id, "styled", |style| style.background_color = Some(color))
     }
 
     /// Replaces the element's background with `gradient`, as the
     /// `background` shorthand does.
     fn set_gradient(&mut self, id: &str, gradient: &LinearGradient) -> Result<()> {
-        let style = &mut self
-            .doc
-            .find_element_by_id_mut(id)
-            .ok_or_else(|| {
-                MetisError::ui(
-                    ErrorCode::MalformedMarkup,
-                    format!("Authored form is missing styled element {id}"),
-                )
-            })?
-            .computed_style;
-        style.background_color = None;
-        style.background_gradient = Some(gradient.clone());
-        Ok(())
+        self.restyle(id, "styled", |style| {
+            style.background_color = None;
+            style.background_gradient = Some(Arc::new(gradient.clone()));
+        })
     }
 
     fn set_border(&mut self, id: &str, color: Color) -> Result<()> {
-        self.doc
-            .find_element_by_id_mut(id)
-            .ok_or_else(|| {
-                MetisError::ui(
-                    ErrorCode::MalformedMarkup,
-                    format!("Authored form is missing bordered element {id}"),
-                )
-            })?
-            .computed_style
-            .border_color = color;
-        Ok(())
+        self.restyle(id, "bordered", |style| style.border_color = color)
     }
 
     fn set_text_color(&mut self, id: &str, color: Color) -> Result<()> {
-        self.doc
-            .find_element_by_id_mut(id)
-            .ok_or_else(|| {
-                MetisError::ui(
-                    ErrorCode::MalformedMarkup,
-                    format!("Authored form is missing colored element {id}"),
-                )
-            })?
-            .computed_style
-            .text_color = color;
-        Ok(())
+        self.restyle(id, "colored", |style| style.text_color = color)
+    }
+
+    fn restyle(
+        &mut self,
+        id: &str,
+        role: &str,
+        update: impl FnOnce(&mut ComputedStyle),
+    ) -> Result<()> {
+        found(self.doc.restyle(id, update), || {
+            format!("Authored form is missing {role} element {id}")
+        })
     }
 }
 
@@ -143,15 +117,24 @@ pub(super) struct ThemePalette {
     panel: Color,
     /// Rate readout color.
     accent: Color,
-    /// Keyboard focus ring; at least 3:1 against every fill it can border
-    /// (WCAG 2.2 criterion 1.4.11).
-    pub(super) focus: Color,
     /// Command control fill; every stop keeps white labels at a 4.5:1
     /// contrast or better (WCAG 2.2 criterion 1.4.3).
     control: LinearGradient,
 }
 
 impl ThemePalette {
+    /// Keyboard focus ring color; at least 3:1 against every fill it can
+    /// border (WCAG 2.2 criterion 1.4.11).
+    ///
+    /// A color alone, so painting a ring does not build the gradients of the
+    /// whole palette.
+    pub(super) const fn focus_color(theme: ApplicationTheme) -> Color {
+        match theme {
+            ApplicationTheme::System => Color::rgb(43, 108, 176),
+            ApplicationTheme::Dark => Color::rgb(56, 189, 248),
+        }
+    }
+
     pub(super) fn for_theme(theme: ApplicationTheme) -> Self {
         match theme {
             ApplicationTheme::System => ThemePalette {
@@ -163,7 +146,6 @@ impl ThemePalette {
                 border: Color::rgb(226, 232, 240),
                 panel: Color::rgb(226, 232, 240),
                 accent: Color::rgb(43, 108, 176),
-                focus: Color::rgb(43, 108, 176),
                 control: ramp(180.0, Color::rgb(44, 120, 196), Color::rgb(38, 98, 168)),
             },
             ApplicationTheme::Dark => ThemePalette {
@@ -175,7 +157,6 @@ impl ThemePalette {
                 border: Color::rgb(100, 116, 139),
                 panel: Color::rgb(39, 52, 72),
                 accent: Color::rgb(56, 189, 248),
-                focus: Color::rgb(56, 189, 248),
                 control: ramp(180.0, Color::rgb(14, 116, 144), Color::rgb(21, 94, 117)),
             },
         }

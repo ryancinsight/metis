@@ -1,11 +1,12 @@
 use super::display::{DisplayCommand, DisplayList};
 use crate::dom::{DomDocument, DomElement, DomNode};
-use crate::parser::{copy_text, limit_error};
+use crate::parser::limit_error;
 use crate::style::{AlignItems, ComputedStyle, Display, FlexDirection, JustifyContent};
 use metis_core::error::Result;
 use metis_platform::DisplayScale;
 use metis_platform::framebuffer::Rect;
 use metis_platform::rasterizer::CornerRadius;
+use std::sync::Arc;
 
 use super::device::{add, dimension, minimum, scaled_geometry, sub, text_style, whole_pixels};
 use super::grow::{self, GrowContainer, Grown};
@@ -104,7 +105,7 @@ impl DisplayList {
         let text_width = whole_pixels(text_style.advance(text))?;
         let text_height = whole_pixels(text_style.line_height())?;
         self.push(DisplayCommand::DrawText {
-            text: copy_text(text)?,
+            text: Arc::from(text),
             x,
             y,
             style: text_style,
@@ -310,7 +311,7 @@ impl DisplayList {
         let element_rect = if let Some(id) = element.id() {
             let index = self.commands.len();
             self.push(DisplayCommand::ElementRect {
-                id: copy_text(id)?,
+                id: Arc::from(id),
                 rect: Rect::new(x, y, width, 0),
             })?;
             Some(index)
