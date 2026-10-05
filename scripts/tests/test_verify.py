@@ -358,9 +358,9 @@ class ReleaseWorkflowContractTests(unittest.TestCase):
             "package: ${{ needs.identify.outputs.package }}",
             "metis-ui|metis-backend|metis-core|metis-frontend|metis-ipc|metis-platform|metis-ui-lang|metis-app|metis-web|metis-python",
             "id-token: write",
-            "ryancinsight/atlas/.github/workflows/semver-gate.yml@848e6649c52e8226a9abf7bc336f8cbf0e39ba08",
+            "ryancinsight/atlas/.github/workflows/semver-gate.yml@50802ef4c975bdb1e668b94a700d8310f0348e9c",
             "ryancinsight/atlas/.github/workflows/crates-publish.yml@848e6649c52e8226a9abf7bc336f8cbf0e39ba08",
-            "ryancinsight/atlas/.github/workflows/crates-publish-pending.yml@ee2b7200c4781e39b5ea3e379d2aa97947758099",
+            "ryancinsight/atlas/.github/workflows/crates-publish-pending.yml@50802ef4c975bdb1e668b94a700d8310f0348e9c",
         )
         for fragment in required:
             with self.subTest(fragment=fragment):
