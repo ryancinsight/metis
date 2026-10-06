@@ -1,7 +1,7 @@
 {
   "schema": 1,
   "source": "examples/browser/styles.css",
-  "source_sha256": "828dc2f7c1501844cbf3ae39830ea9eeda281a7c073db450cee20ea5315dc065",
+  "source_sha256": "e0055fceb4feacb8d7f2c8234b498650ae4140c305ad8a2ff1cabe17b27e2bf2",
   "engine": "Chromium (Playwright 1.56.1)",
   "engine_version": "141.0.7390.37",
   "captures": {
