@@ -6,7 +6,26 @@ Date: 2026-09-05
 
 Drivers: `METIS-GAPS-001`,
 `METIS-VISUAL-001`,
-`METIS-SVELTE-001`.
+`METIS-SVELTE-001`,
+`METIS-SLINT-001`.
+
+Revision 2026-10-09 (Slint comparator and comparator refresh): Slint 1.18.1
+is added as a source-pinned comparator for declarative markup, observable row
+models and embedded-grade rendering. Its `Model`/`ModelNotify` contract —
+typed row changes (`row_changed`, `row_added`, `row_removed`, `reset`) shared
+through one model handle [SL1] [SL2] — is now matched by
+`metis_frontend::reactive::ListModel`, which delivers one typed `RowChange` per
+mutation to drop-to-unsubscribe peers, begins each subscription with `Reset`,
+refuses equal replacements, bounds rows at `MAX_MODEL_ROWS` (the `VirtualList`
+bound) and cuts off runaway change cascades at `MAX_CASCADE` rounds. The same
+re-inspection re-pins the other named comparators: Tauri core 2.12.0
+(2026-09-26) exposes the wry permission-handler API and fixes origin-scoped
+ACL denials, egui 0.36.2 (2026-09-08) adds `TextEdit::event_filter`, Axum is
+unchanged at 0.8.9, and htmx 4.0.0 (2026-08-28) is a new major surface that
+reopens the hypermedia attribute, header and extension inventory. No
+comparator behavior is adopted without a Metis implementation and test;
+virtualized widgets, the Slint tooling loop, gettext translation flow and
+mobile/embedded targets remain open in their linked items.
 
 Revision 2026-09-24: three comparator rows move. Shortcuts: `metis_core::input`
 parses Tauri/Electron accelerator text, resolves browser `KeyboardEvent` codes
@@ -463,7 +482,8 @@ lifecycle are still open under `METIS-SERVICES-001`. DICOM remains RITK-owned.
 
 Use Tauri as the application-framework migration reference, egui/GPUI/Iced as
 interaction, text, rendering and test-tooling references, Svelte/SvelteKit as
-compiled DOM and web-deployment references, Axum as a server and router
+compiled DOM and web-deployment references, Slint as a declarative-markup,
+row-model and embedded-renderer reference, Axum as a server and router
 boundary reference, and htmx as a hypermedia boundary reference. Resolve all
 gaps in
 the audited capability matrix below through the linked development items.
@@ -477,7 +497,7 @@ application behavior. Custom rendering has its own contract through Iris.
 Moirai owns execution/transport; Metis owns application state, host integration
 and permission policy. A GPU renderer is not a prerequisite for a DOM form.
 
-egui, GPUI, Iced, Tauri, Svelte, SvelteKit, Axum and htmx are comparison
+egui, GPUI, Iced, Tauri, Svelte, SvelteKit, Slint, Axum and htmx are comparison
 subjects, not newly
 adopted dependencies. The conditional Axum boundary is specified in [ADR
 0025](0025-axum-server-boundary.md); the admitted loopback demonstration is
@@ -499,13 +519,15 @@ initial comparison limits.
 
 | Reference | Inspected baseline | Qualification |
 | --- | --- | --- |
-| egui ecosystem | [0.36.1 release][E0], [commit](https://github.com/emilk/egui/commit/4c1f2fae95475a40e524884ebb298bcb1714b08e), 2026-08-07 | Versioned crate docs where available; IME/extras `latest` resolved to 0.36.1; accessibility/template `main` pages are dated observations. |
+| egui ecosystem | [0.36.1 release][E0], [commit](https://github.com/emilk/egui/commit/4c1f2fae95475a40e524884ebb298bcb1714b08e), 2026-08-07; re-inspected 2026-10-09 at [0.36.2][E8], 2026-09-08 | Versioned crate docs where available; IME/extras `latest` resolved to 0.36.1; accessibility/template `main` pages are dated observations. The 0.36.2 delta is `TextEdit::event_filter` and hit-test/text-layout bugfixes, which reopen the text-editing row without closing it. |
 | GPUI / Zed | Official `main` sources read on the inspection date; observed head [commit](https://github.com/zed-industries/zed/commit/5a9b9558db01a6b906cec2fb70a797affdc58cdd) | Source inventory, not a checked-out build or proof every API is in the published GPUI crate. |
-| Tauri | [tauri-v2.11.5 release][T0], 2026-07-01; v2 documentation read on inspection date | Documentation can describe newer integrations than a release; pin application/driver revisions when building comparison fixtures. |
+| Tauri | [tauri-v2.11.5 release][T0], 2026-07-01; v2 documentation read on inspection date; core re-inspected 2026-10-09 at [2.12.0][T8], 2026-09-26 | Documentation can describe newer integrations than a release; pin application/driver revisions when building comparison fixtures. The 2.12.0 delta exposes the wry permission-handler API (`PermissionResponse::{Allow, Deny, Default}`), app-bound navigation limits and an origin-scoped ACL denial fix; these reopen the authority and migration inventory without inheriting support claims. |
 | Iced | [0.14.0 crate and API docs][I0], released 2025-12-07; official examples and release notes [I1] [I2] | Versioned docs describe Windows/macOS/Linux/Web, Elm-style state/messages/view/update, async tasks, native rendering and wgpu/tiny-skia paths. The former DOM runtime is archived [I3]; DOM reuse is not inferred from current Iced. |
 | Svelte / SvelteKit | Official Svelte 5 [overview][S0], [runes][S1] and [custom-elements][S2] docs, plus SvelteKit [introduction][S3] and [project types][S4], inspected 2026-09-18 | Current documentation describes compiler-generated JavaScript/CSS components, rune-based reactivity, custom-element output and configurable SSR/CSR/prerendering. It is a web-component/deployment reference, not evidence for Rust/WASM memory, native-window, permission or installer parity. |
 | Dioxus | [0.7.10 crates][D0] (`dioxus`, `dioxus-desktop`, `-signals`, `-stores`, `-hooks`, `-router`, `-fullstack`, `-native`, `blitz-*` 0.2) fetched from crates.io and read on 2026-09-24 | Published crate sources and READMEs, not the website (unreachable from the inspection host) or an executed application. Dioxus renders one `rsx!` component tree to web (`web-sys`), desktop and mobile WebViews (`wry`/`tao`), server-side HTML, liveview and the experimental wgpu `dioxus-native`/Blitz renderer. |
-| Axum | [0.8.9 API documentation][A0], inspected 2026-09-10 | Server/router reference for typed routes, state, extraction, middleware and response conversion. Metis keeps Moirai as the transport owner and implements the admitted loopback boundary without an Axum dependency. |
+| Axum | [0.8.9 API documentation][A0], inspected 2026-09-10; re-inspected 2026-10-09 with no newer release | Server/router reference for typed routes, state, extraction, middleware and response conversion. Metis keeps Moirai as the transport owner and implements the admitted loopback boundary without an Axum dependency. |
+| Slint | `slint` 1.18.1 crate API [SL0] [SL1] [SL2], released 2026-09-21 [SL3]; repository architecture, tooling and licensing [SL4]; translation guide [SL5]; all inspected 2026-10-09 | Published crate API, release artifacts and repository documentation, not a checked-out build or an executed Slint application. docs.rs `latest` resolved to 1.18.1 on the inspection date. |
+| htmx | [htmx 4.0.0 release][H3], 2026-08-28; docs [H0]–[H2] re-read 2026-10-09 | Hypermedia attribute/request/swap reference. The major release reopens the attribute, response-header and extension inventory; none of it is a Metis contract until a typed dispatcher test covers it. |
 
 “Provided” below means documented or present in inspected source, not
 independently executed in the initial comparison. “Host” means the browser/OS or
@@ -528,13 +550,13 @@ Each row names its closing items; acceptance belongs in the
 | Accessibility | AccessKit integration; custom widget semantics required [E5] | AccessKit roles/identity/actions in current source [G3] | Semantic frontend plus WebView/OS accessibility | Browser markup now exposes named groups, polite atomic live regions, dynamic `aria-busy` state and a bounded Chromium/Edge native accessibility-tree trace; the Windows custom-renderer path now projects the validated tree through Moirai AccessKit and routes focus/activation actions. Screen-reader speech, host preference enablement, WebView/OS traversal and non-Windows bridges remain open. [A11Y](../../backlog.md#METIS-A11Y-001). |
 | Pointer, keyboard, touch, focus | Backend input, sensitivity and viewports [E1] | Platform events and actions [G1] | Web frontend and native window events [T1] | Browser text, checkbox, radio, range and pointer surface use semantic keyboard/pointer targets; Moirai owns browser pointer ID/capture/release, pointer metadata, bounded file-drop metadata and bounded browser file access, while Metis applies bounded single-pointer drag pan, two-pointer centroid/distance pinch pan/zoom, wheel pan, Ctrl+wheel zoom and format-neutral file-drop state. The Windows `NativeSurface` now returns provider pointer, key, focus, text, bounded IME composition and accessibility-action events; configured chooser runs pass Chromium and Firefox with trusted keyboard/cine traces, while trusted physical-drop evidence, installed IME journeys, screen-reader traversal, Safari/WebKit read authorization and OS pump integration remain open. RITK owns DICOM format decisions after the byte handoff. [INPUT](../../backlog.md#METIS-INPUT-001), desktop items. |
 | Browser/WASM execution | eframe canvas host with WASM bindings [E2] | Current `gpui_web`: canvas, WebGPU/WebGL2 [G2] | Web frontend can target browser; native APIs need a host [T1] | `metis-web` loads generated WASM into an HTML5/CSS DOM host and connects through a bounded Moirai WebSocket service; target-surface discovery, lifecycle generation guards, semantic checkbox/radio/range controls and loopback success/rejection/recovery pass. Its borrowed canvas seam accepts RITK-owned `PresentationFrame` pixels and bounded input through Moirai, with explicit asynchronous WebGPU constructors and provider recovery now available beside the raster path; RITK's hosted chooser run passes exact three-plane canvas and file-transfer oracles on Chromium 152 and Firefox 155, while Safari 26.6.2 rejects the first bounded read. Trusted physical input, real GPU output/recovered pixels and full-window capture remain open. BROWSER (`METIS-BROWSER-001`), ASYNC (`METIS-ASYNC-001`), [GRAPHICS](../../backlog.md#METIS-GRAPHICS-001). |
-| Hypermedia actions and fragments | No native HTML request/target/swap contract | WebView/browser concern; response markup and script policy remain application-owned | HTML forms and links run in the system WebView; fragment behavior depends on the frontend/runtime | The htmx event→request→target→swap model [H0] [H1] [H2] informs Metis's generation-bound typed Rust/WASM action. Metis invokes the scoped `ui` plugin over the authenticated binary transport and preflights bounded text/attribute patches against an allowlisted target set. Its loopback `metis-app --metis-http-service` role carries the same authenticated, allowlisted fragment contract over Moirai; it does not ship htmx, arbitrary markup or DICOM behavior. [ADR 0022](0022-typed-browser-actions.md), BROWSER (`METIS-BROWSER-001`), FRAGMENT (`METIS-FRAGMENT-001`), AXUM (`METIS-AXUM-001`). |
+| Hypermedia actions and fragments | No native HTML request/target/swap contract | WebView/browser concern; response markup and script policy remain application-owned | HTML forms and links run in the system WebView; fragment behavior depends on the frontend/runtime | The htmx event→request→target→swap model [H0] [H1] [H2] informs Metis's generation-bound typed Rust/WASM action. Metis invokes the scoped `ui` plugin over the authenticated binary transport and preflights bounded text/attribute patches against an allowlisted target set. Its loopback `metis-app --metis-http-service` role carries the same authenticated, allowlisted fragment contract over Moirai; it does not ship htmx, arbitrary markup or DICOM behavior. [ADR 0022](0022-typed-browser-actions.md), BROWSER (`METIS-BROWSER-001`), FRAGMENT (`METIS-FRAGMENT-001`), AXUM (`METIS-AXUM-001`). htmx 4.0.0 [H3] reopens the attribute and response-header inventory (htmx comparison below). |
 | Existing HTML5/CSS frontend reuse | Canvas UI is not DOM compatibility [E2] | Canvas UI is not DOM compatibility [G2] | WebView presentation is the core model [T1] | Custom markup does not preserve DOM/CSS applications. BROWSER (`METIS-BROWSER-001`), [MIGRATION](../../backlog.md#METIS-MIGRATION-001). |
 | Native windows and platform lifecycle | eframe/backend-dependent viewports [E1] [E2] | macOS, Windows, Wayland/X11 platform code [G1] | Desktop system WebViews [T1] | Moirai's Windows PAL plus `metis-platform::native::NativeSurface` create a real thread-owned HWND, present the Metis framebuffer, return bounded pointer/key/text/IME events and install/update the validated AccessKit tree before visibility; the generic `NativeApplication` loop owns finite waiting, initial presentation, accessibility updates and terminal cleanup while `metis-app --metis-native-window` composes the software-rendered frontend and private IPC. `metis-app --metis-webview` composes a packaged HTML/CSS form through `WebViewSurface` and the same supervised pipe. The installed WebView2 navigation/bridge smoke and Windows initial/submit captures pass, and RITK's pathless native session now consumes the folder picker and renders a real saved MRI study. Installed IME journey, WebView2 composition, screen-reader traversal, permission probes, physical resize/DPI and macOS/Linux hosts remain open. [WINDOWS](../../backlog.md#METIS-DESKTOP-001), [MACOS](../../backlog.md#METIS-MACOS-001), [LINUX](../../backlog.md#METIS-LINUX-001). |
 | Async commands, events, cancellation | Application/host concern | Executor and action facilities [G1] | Commands, events and channels [T2] [T3] | Async client/server, bounded correlation, request cancellation, browser task handle and pre-response Origin validation exist. A versioned capability catalog, target-surface descriptor, bounded local event hub, versioned remote event envelope, typed plugin invocation and host-local plugin registry now cover command discovery and delivery metadata; lifecycle generation guards and the delayed-response stop/remount trace prevent stale browser completions, and the hosted typed fragment matrix passes on Chromium, Firefox and WebKit. COMMANDS (`METIS-COMMANDS-001`), BROWSER (`METIS-BROWSER-001`), FRAGMENT (`METIS-FRAGMENT-001`). |
 | Scoped native authority | Tauri-like broker not established by toolkit docs | Tauri-like broker not established by toolkit docs | Capability scopes and host boundaries [T4] | `HostPolicy` enforces exact origin/window/session binding and host-bound HMAC associated data; the live service validates Origin before `101`; OS permission enforcement remains open. AUTHORITY (`METIS-AUTHORITY-001`), desktop items. |
 | Images, vector content and media | Extras loaders; renderer integrations [E6] | Image/list examples and GPU elements [G1] | Browser assets/media and host permissions | Validated raster image crops, discrete pixel-grid orientation transforms, normalized affine image placement, clipped one-pixel line segments and bounded width/cap/join polylines now render through the software display list with one painter order and source-over alpha; the browser has an explicit opt-in WebGPU RGBA surface and provider recovery, while arbitrary affine vector paths, font, media, browser decode and GPU visual/resource evidence remain open. [ASSETS](../../backlog.md#METIS-ASSETS-001), [GRAPHICS](../../backlog.md#METIS-GRAPHICS-001). |
-| Large lists, tables and reactive updates | Extras tables [E6] | Elements support large list views [G1] | Frontend framework/browser concern | `VirtualList` windows uniform and variable-extent lists (constant-time and Fenwick-tree logarithmic queries, overscan, scroll-to alignment); the result explorer regroups and orders rows in linear passes. No virtualized widget is built on the primitive yet; `metis_frontend::reactive` supplies Svelte-style writable and derived stores with drop-to-unsubscribe handles and bounded re-entrant delivery, plus two-source `derived2`, field `project`ions and stale-safe async `resource`s (the Dioxus memo, store and resource counterparts). DATA (`METIS-DATA-001`), STATE (`METIS-STATE-001`). |
+| Large lists, tables and reactive updates | Extras tables [E6] | Elements support large list views [G1] | Frontend framework/browser concern | `VirtualList` windows uniform and variable-extent lists (constant-time and Fenwick-tree logarithmic queries, overscan, scroll-to alignment); the result explorer regroups and orders rows in linear passes. No virtualized widget is built on the primitive yet; `metis_frontend::reactive` supplies Svelte-style writable and derived stores with drop-to-unsubscribe handles and bounded re-entrant delivery, plus two-source `derived2`, field `project`ions and stale-safe async `resource`s (the Dioxus memo, store and resource counterparts). `ListModel` peers hear typed `RowChange` values for the rows that moved, the Slint `Model`/`ModelNotify` counterpart. DATA (`METIS-DATA-001`), STATE (`METIS-STATE-001`). |
 | Files, persistence and dialogs | Host/application concern | Platform services; browser restrictions [G5] | Official plugin surfaces [T5] | Browser drops now have bounded provider-owned handles and a named-byte batch handoff. Windows exposes a bounded native folder-selection adapter consumed by RITK's saved-study and Ctrl+O workflows; the real 94-file MRI selection, decode, cancellation and prior-frame preservation are recorded in the RITK provenance. Native `ScopedFileProvider` reads now require `CapabilityScope::READ_FILE`, remain below a trusted root and enforce a 64 MiB bound; RITK owns DICOM scanning/decoding. Persistent stores, broader native permission policy, non-Windows providers and audit persistence remain open. [FILES](../../backlog.md#METIS-FILES-001), AUDIT (`METIS-AUDIT-001`), [INPUT](../../backlog.md#METIS-INPUT-001). |
 | Clipboard, menus, tray, shortcuts, deep links | Host/integration concern | Platform APIs; web limits differ [G5] | Core/plugin APIs [T5] | Browser clipboard read/write and a Rust-owned command menu exist on the browser, WebView2 and native hosts. Application-scoped keyboard accelerators parse Tauri's `CmdOrCtrl` syntax, resolve browser and Windows key events through one vocabulary and are announced through `aria-keyshortcuts`; `ScopedOpener` is the capability-witnessed counterpart of Tauri's opener plugin for allowlisted http(s) URLs; manifest `url_schemes` are registered by the Linux, macOS and Windows installers and parsed by `metis_core::deep_link`, like Tauri's deep-link plugin. `metis_core::window_state` with `WindowStateFile` saves and restores window geometry and the maximized state, like Tauri's window-state plugin; the Windows surfaces apply it before first show. `native::GlobalShortcuts` registers accelerators as system-wide hotkeys, like Tauri's global-shortcut plugin, and `native::TrayHost` shows a tray icon, its native context menu and toast notifications, like its tray and notification plugins, and `claim_or_forward` forwards a later launch's arguments to the running instance, like its single-instance plugin; manifest `file_associations` register document types with every installer, like its bundler's `fileAssociations`; `Autostart` registers per-user login items, like its autostart plugin. Installed-OS click-through evidence remains open. [INTEGRATION](../../backlog.md#METIS-INTEGRATION-001). |
 | Network, shell and sidecars | Application/host concern | Host APIs do not establish a capability broker | Scoped plugins and sidecar support [T5] | `ScopedProcessProvider` is a capability-scoped, direct-argument host boundary with bounded stdout, private stderr draining and finite cleanup; it does not parse shell strings or expose browser-selected executables. Network providers, OS sandboxing and broader sidecar lifecycle remain open. [SERVICES](../../backlog.md#METIS-SERVICES-001). |
@@ -614,6 +636,36 @@ new framework dependencies. This keeps the Tauri replacement path compatible
 with ordinary HTML5/CSS applications without moving DICOM or application state
 into Metis.
 
+## Slint comparison
+
+Slint is the closest declarative-markup comparator: one `.slint` document
+declares components, properties, bindings and repeated elements, compiled
+ahead of time to Rust or loaded through the interpreter, and rendered by
+selectable backends that include a dependency-free software renderer for
+microcontrollers [SL0] [SL4]. It is a comparator, not a dependency; the rows
+separate its published 1.18.x contract from what Metis owns or still lacks.
+
+| Capability | Slint 1.18 evidence | Metis consequence and closing work |
+| --- | --- | --- |
+| Declarative markup and bindings | The `.slint` language declares components, properties, expressions and property bindings; `slint-build` compiles files in a build script, the `slint!` macro embeds them and the interpreter loads them at run time [SL0] [SL4] | `metis-ui-lang` keeps its bounded markup subset with typed rejection of unsupported declarations. A compiled binding language, run-time loading and custom expressions remain outside the admitted contract. LAYOUT (`METIS-LAYOUT-001`), [MIGRATION](../../backlog.md#METIS-MIGRATION-001) |
+| Row models and large lists | `Model`/`ModelNotify` deliver `row_changed`, `row_added`, `row_removed` and `reset` to attached peers through shared `ModelRc`/`VecModel` handles, and `for` repetitions bind to models [SL1] [SL2] | `metis_frontend::reactive::ListModel` now delivers the same row vocabulary as typed `RowChange` values to drop-to-unsubscribe peers, begins each subscription with `Reset`, refuses equal replacements and bounds rows and cascades. Dependencies stay explicit as in the Dioxus decision: nothing tracks which row a listener read. A virtualized widget over `VirtualList` remains open. DATA (`METIS-DATA-001`), STATE (`METIS-STATE-001`) |
+| Widgets and layout | Standard widget set, box/grid layouts and list views are documented toolkit surfaces [SL0] [SL4] | Metis's reusable controls live in the DOM hosts and the semantic tree; the general component lifecycle and the virtualized list widget remain open. [INPUT](../../backlog.md#METIS-INPUT-001), LAYOUT (`METIS-LAYOUT-001`) |
+| Text and accessibility | Text items and accessible role/label properties feed platform accessibility behind the `accessibility` feature [SL0] [SL3] | Keep DOM text, composition and selection and the projected `SemanticTree`/AccessKit contract in Metis's own items; a Slint runtime does not establish screen-reader or IME evidence for Metis. [TEXT](../../backlog.md#METIS-TEXT-001), [A11Y](../../backlog.md#METIS-A11Y-001) |
+| Rendering and resource bounds | Configurable renderers: femtovg (OpenGL ES 2.0), Skia and a dependency-free software renderer, with an optional Qt style [SL4] | Compare renderer correctness and bounds through Iris and the software display list; do not adopt a second renderer. Lightweight-memory claims are design goals, not matched measurements. [GRAPHICS](../../backlog.md#METIS-GRAPHICS-001), MEMORY (`METIS-MEMORY-001`), [PERF](../../backlog.md#METIS-PERF-001) |
+| Targets and platform APIs | Documented desktop, web (WASM), mobile and microcontroller targets, with Android backends and MCU board templates in the release artifacts [SL3] [SL4] | That breadth reopens the mobile inventory without closing any pair: Metis has no mobile or embedded host, and unsupported operations return explicit outcomes. [MOBILE](../../backlog.md#METIS-MOBILE-001), [WINDOWS](../../backlog.md#METIS-DESKTOP-001) |
+| Tooling loop | LSP with live preview, `slint-viewer` auto-reload, an online editor and a Figma import plugin [SL4] | `metis dev --watch` is the current developer loop; design-tool import and live preview remain unimplemented tooling, not application runtime gaps. DISTRIBUTION (`METIS-DISTRIBUTION-001`), [MIGRATION](../../backlog.md#METIS-MIGRATION-001) |
+| Translations | `@tr()` marks strings with formatting, plurals and contexts; `slint-tr-extractor` generates gettext templates, and runtime gettext or bundled catalogs select the locale [SL5] | `metis_ui_lang::catalog` compiles keys and named slots at build time and fails closed to the source string; routing consumer display text through it remains open. [I18N](../../backlog.md#METIS-I18N-001) |
+| Authority and licensing | Slint ships under GPL-3.0, royalty-free or commercial terms and documents no capability scopes or OS permission model [SL4] | Keep `HostPolicy`, capability witnesses and OS permission probes as Metis-owned contracts; a `.slint` document or generated component never grants file, network or process authority. AUTHORITY (`METIS-AUTHORITY-001`), [SERVICES](../../backlog.md#METIS-SERVICES-001) |
+| Evidence and performance | Documentation, demos and release artifacts, not matched Metis fixtures | Extend the equal-fixture protocol only with the same consumer workload, surface and process boundary; no memory, latency or framework ranking is claimed from toolkit descriptions. VISUAL (`METIS-VISUAL-001`), [PERF](../../backlog.md#METIS-PERF-001), [CONFORMANCE](../../backlog.md#METIS-CONFORMANCE-001) |
+
+The Slint-derived implementation order is therefore: keep the row-model
+notifications and explicit-dependency stores; close the virtualized widget and
+general component lifecycle on top of them; treat the `.slint` tooling loop and
+translation flow as migration references for their Metis counterparts; and
+measure any external Slint consumer only against the equal-fixture protocol.
+Slint's embedded and mobile targets re-open the mobile inventory without
+closing a single pair, and its license terms are not a Metis dependency.
+
 ## Axum server and router comparison
 
 Axum is evaluated as a server boundary, not as a GUI renderer or a replacement
@@ -637,6 +689,25 @@ would duplicate transport ownership and would make a third-party dependency
 look like a security boundary. This decision does not authorize public
 deployment and does not move DICOM parsing, metadata, geometry or viewer state
 out of RITK.
+
+## htmx and HTML5 hypermedia comparison
+
+htmx is the hypermedia comparator: HTML attributes trigger a request, choose a
+target and select a swap, and the response is markup the browser applies
+[H0]–[H2]. Its 4.0.0 release [H3] is a new major surface, so the attribute,
+response-header and extension inventory reopens; none of it is a Metis
+contract without a typed test. Metis keeps the model's shape and rejects its
+authority: an event becomes a generation-bound typed action over the
+authenticated transport, and the response is an allowlisted text/attribute
+patch, never arbitrary markup.
+
+| Concern | htmx/HTML5 reference | Metis consequence and closing work |
+| --- | --- | --- |
+| Event→request→target→swap | Trigger, target and swap attributes route DOM events to requests and apply the response [H0] [H1] [H2] | The browser workbench delegates ordinary input and control events at the mounted root and dispatches generation-bound typed actions through the scoped `ui` plugin; every patch is preflighted against an allowlisted target set before it applies. FRAGMENT (`METIS-FRAGMENT-001`), [ADR 0022](0022-typed-browser-actions.md) |
+| Response content | Any HTML fragment can be swapped into the target, and extensions add behaviors | Metis admits bounded text and attribute patches only. Arbitrary markup, scripts, extension code and DICOM data stay outside the admitted contract. FRAGMENT (`METIS-FRAGMENT-001`), BROWSER (`METIS-BROWSER-001`) |
+| Headers and history | Response headers drive redirects, out-of-band swaps and event triggers [H0] | The versioned typed envelope and the bounded unsolicited event surface carry the same information; header-driven commands are not parsed from HTTP responses. COMMANDS (`METIS-COMMANDS-001`), [ADR 0012](0012-command-event-contract.md) |
+| Server surface | A hypermedia application needs only HTML responses from any server | The loopback `metis-app --metis-http-service` role serves the same authenticated, allowlisted fragment contract over Moirai; it is not a public deployment, a template engine or a DICOM service. AXUM (`METIS-AXUM-001`), [ADR 0025](0025-axum-server-boundary.md) |
+| HTML5 form semantics | Native form validation, file inputs and submission semantics belong to the host document | `metis-web` keeps bounded Rust-owned controls with typed invalid-input rejection over the host's native text and IME behavior; migrating an existing htmx frontend remains a mapped task, not an implied compatibility. [MIGRATION](../../backlog.md#METIS-MIGRATION-001), BROWSER (`METIS-BROWSER-001`) |
 
 ## Concrete findings driving priority
 
@@ -759,6 +830,7 @@ observations; future implementation fixtures must pin the actual dependencies.
 [E5]: https://github.com/emilk/egui/blob/main/docs/accessibility.md
 [E6]: https://docs.rs/egui_extras/latest/egui_extras/
 [E7]: https://github.com/emilk/eframe_template
+[E8]: https://github.com/emilk/egui/releases/tag/0.36.2
 [G1]: https://raw.githubusercontent.com/zed-industries/zed/main/crates/gpui/README.md
 [G2]: https://raw.githubusercontent.com/zed-industries/zed/main/crates/gpui_web/src/gpui_web.rs
 [G3]: https://raw.githubusercontent.com/zed-industries/zed/main/crates/gpui/src/_accessibility.rs
@@ -772,6 +844,7 @@ observations; future implementation fixtures must pin the actual dependencies.
 [T5]: https://v2.tauri.app/plugin/
 [T6]: https://v2.tauri.app/distribute/
 [T7]: https://v2.tauri.app/develop/tests/webdriver/
+[T8]: https://v2.tauri.app/release/tauri/
 [I0]: https://docs.rs/crate/iced/0.14.0
 [I1]: https://docs.rs/crate/iced/0.14.0/source/examples/README.md
 [I2]: https://github.com/iced-rs/iced/releases
@@ -780,6 +853,13 @@ observations; future implementation fixtures must pin the actual dependencies.
 [H0]: https://htmx.org/docs/
 [H1]: https://htmx.org/attributes/hx-target/
 [H2]: https://htmx.org/attributes/hx-swap/
+[H3]: https://github.com/bigskysoftware/htmx/releases/tag/v4.0.0
+[SL0]: https://docs.rs/slint/latest/slint/
+[SL1]: https://docs.rs/slint/latest/slint/trait.Model.html
+[SL2]: https://docs.rs/slint/latest/slint/struct.ModelNotify.html
+[SL3]: https://github.com/slint-ui/slint/releases
+[SL4]: https://raw.githubusercontent.com/slint-ui/slint/master/README.md
+[SL5]: https://docs.slint.dev/latest/docs/slint/guide/development/translations/
 [S0]: https://svelte.dev/docs/svelte/overview
 [S1]: https://svelte.dev/docs/svelte/what-are-runes
 [S2]: https://svelte.dev/docs/svelte/custom-elements

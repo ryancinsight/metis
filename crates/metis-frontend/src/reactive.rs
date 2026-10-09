@@ -9,7 +9,10 @@
 //! from two sources, [`Writable::project`] gives a writable view of one
 //! field that notifies only when that field changes, and [`resource`] holds
 //! the outcome of asynchronous work started for each source value, ignoring
-//! results that arrive after the source moved on.
+//! results that arrive after the source moved on. [`ListModel`] is the row
+//! model of Slint's `Model`/`ModelNotify` contract: peers subscribe and hear
+//! typed [`RowChange`] values for the rows that moved instead of re-reading
+//! every row on every edit.
 //!
 //! Stores are single-threaded (`Rc`), matching the one presentation thread
 //! each host runs. A listener may set other stores, or the store notifying
@@ -19,6 +22,7 @@
 
 mod combine;
 mod derived;
+mod model;
 mod projection;
 mod resource;
 mod store;
@@ -26,6 +30,7 @@ mod subscription;
 
 pub use combine::derived2;
 pub use derived::{Readable, derived};
+pub use model::{ListModel, MAX_MODEL_ROWS, ModelError, RowChange};
 pub use projection::{Field, Projection};
 pub use resource::{Completion, Resource, ResourceState, resource};
 pub use store::{CascadeLimit, MAX_CASCADE, MAX_SUBSCRIBERS, Writable};

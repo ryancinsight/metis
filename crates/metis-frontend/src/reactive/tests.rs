@@ -199,3 +199,155 @@ mod composition {
         assert_eq!(query.subscriber_count(), 0);
     }
 }
+
+mod list_model {
+    use super::super::{
+        CascadeLimit, ListModel, MAX_CASCADE, MAX_MODEL_ROWS, ModelError, RowChange,
+    };
+    use std::cell::{Cell, RefCell};
+    use std::rc::Rc;
+
+    #[test]
+    fn peers_hear_each_typed_row_change_in_order() {
+        let model = ListModel::from_rows(vec!["a", "b"]).expect("bounded rows");
+        let seen = Rc::new(RefCell::new(Vec::new()));
+        let sink = Rc::clone(&seen);
+        let subscription = model.subscribe(move |change| sink.borrow_mut().push(*change));
+        model.push_row("c").expect("push");
+        model.insert_row(0, "d").expect("insert");
+        assert_eq!(model.set_row_data(2, "e"), Ok(true));
+        assert_eq!(model.remove_row(0).expect("remove"), "d");
+        assert_eq!(
+            *seen.borrow(),
+            [
+                RowChange::Reset,
+                RowChange::Added { index: 2, count: 1 },
+                RowChange::Added { index: 0, count: 1 },
+                RowChange::Changed(2),
+                RowChange::Removed { index: 0, count: 1 },
+            ],
+            "subscribe begins with Reset so loading and reloading share one path"
+        );
+        assert_eq!(model.row_count(), 3);
+        assert_eq!(model.row_data(0), Some("a"));
+        assert_eq!(model.row_data(2), Some("c"));
+        assert_eq!(model.row_data(3), None);
+        drop(subscription);
+    }
+
+    #[test]
+    fn equal_replacements_and_out_of_bounds_rows_deliver_nothing() {
+        let model = ListModel::from_rows(vec!["a", "b"]).expect("bounded rows");
+        let seen = Rc::new(RefCell::new(Vec::new()));
+        let sink = Rc::clone(&seen);
+        let subscription = model.subscribe(move |change| sink.borrow_mut().push(*change));
+        assert_eq!(
+            model.set_row_data(1, "b"),
+            Ok(false),
+            "an equal value is not a change"
+        );
+        assert_eq!(model.set_row_data(2, "c"), Err(ModelError::OutOfBounds));
+        assert_eq!(model.remove_row(2), Err(ModelError::OutOfBounds));
+        assert_eq!(model.insert_row(3, "c"), Err(ModelError::OutOfBounds));
+        assert_eq!(
+            *seen.borrow(),
+            [RowChange::Reset],
+            "refused and equal mutations deliver nothing"
+        );
+        drop(subscription);
+    }
+
+    #[test]
+    fn the_row_bound_refuses_the_next_row() {
+        let model = ListModel::from_rows(vec![0_u8; MAX_MODEL_ROWS]).expect("bound rows");
+        assert_eq!(model.push_row(1), Err(ModelError::RowBound));
+        assert_eq!(model.insert_row(0, 1), Err(ModelError::RowBound));
+        assert!(matches!(
+            ListModel::from_rows(vec![0_u8; MAX_MODEL_ROWS + 1]),
+            Err(ModelError::RowBound)
+        ));
+    }
+
+    #[test]
+    fn replace_rows_reloads_every_peer() {
+        let model = ListModel::from_rows(vec![1_u32, 2]).expect("bounded rows");
+        let seen = Rc::new(RefCell::new(Vec::new()));
+        let sink = Rc::clone(&seen);
+        let subscription = model.subscribe(move |change| sink.borrow_mut().push(*change));
+        model.replace_rows(vec![3]).expect("replace");
+        assert_eq!(*seen.borrow(), [RowChange::Reset, RowChange::Reset]);
+        assert_eq!(model.row_data(0), Some(3));
+        assert_eq!(model.row_count(), 1);
+        drop(subscription);
+    }
+
+    #[test]
+    fn peers_may_change_rows_while_notified() {
+        let model = ListModel::new();
+        let seen = Rc::new(RefCell::new(Vec::new()));
+        let sink = Rc::clone(&seen);
+        let mutator = model.clone();
+        let grown = Rc::new(Cell::new(false));
+        let flag = Rc::clone(&grown);
+        let _subscription = model.subscribe(move |change| {
+            sink.borrow_mut().push(*change);
+            if *change == (RowChange::Added { index: 0, count: 1 }) && !flag.replace(true) {
+                mutator.push_row(2).expect("nested push");
+            }
+        });
+        model.push_row(1).expect("push");
+        assert_eq!(
+            *seen.borrow(),
+            [
+                RowChange::Reset,
+                RowChange::Added { index: 0, count: 1 },
+                RowChange::Added { index: 1, count: 1 },
+            ],
+            "a change raised during delivery arrives in a later round"
+        );
+        assert_eq!(model.row_count(), 2);
+    }
+
+    #[test]
+    fn a_runaway_row_cascade_is_cut_off_and_reported() {
+        let model = ListModel::new();
+        let calls = Rc::new(Cell::new(0_usize));
+        let counter = Rc::clone(&calls);
+        let mutator = model.clone();
+        let _subscription = model.subscribe(move |change| {
+            counter.set(counter.get() + 1);
+            if *change != RowChange::Reset {
+                let _ = mutator.push_row(1);
+            }
+        });
+        calls.set(0);
+        assert_eq!(model.push_row(0), Err(ModelError::Cascade(CascadeLimit)));
+        assert_eq!(
+            calls.get(),
+            MAX_CASCADE,
+            "one delivery round per cascade step"
+        );
+        assert_eq!(
+            model.row_count(),
+            1 + MAX_CASCADE,
+            "rows already changed stay"
+        );
+    }
+
+    #[test]
+    fn dropped_peers_hear_nothing() {
+        let model = ListModel::from_rows(vec![1_u32]).expect("bounded rows");
+        let seen = Rc::new(RefCell::new(Vec::new()));
+        let sink = Rc::clone(&seen);
+        let subscription = model.subscribe(move |change| sink.borrow_mut().push(*change));
+        assert_eq!(model.subscriber_count(), 1);
+        drop(subscription);
+        assert_eq!(model.subscriber_count(), 0);
+        model.push_row(2).expect("push");
+        assert_eq!(
+            *seen.borrow(),
+            [RowChange::Reset],
+            "a dropped peer hears nothing"
+        );
+    }
+}
