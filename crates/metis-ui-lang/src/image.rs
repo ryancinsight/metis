@@ -164,7 +164,11 @@ pub enum ImageSampling {
 }
 
 /// A validated source crop and destination rectangle for one image command.
-#[derive(Debug, Clone, PartialEq, Eq)]
+///
+/// Equality is by value, but two placements sharing one image allocation
+/// compare without walking its pixels, so a display list that repaints a
+/// decoded asset does not re-compare the whole image every frame.
+#[derive(Debug, Clone)]
 pub struct ImagePlacement {
     image: Arc<RasterImage>,
     source: Rect,
@@ -172,6 +176,18 @@ pub struct ImagePlacement {
     sampling: ImageSampling,
     transform: ImageTransform,
 }
+
+impl PartialEq for ImagePlacement {
+    fn eq(&self, other: &Self) -> bool {
+        (Arc::ptr_eq(&self.image, &other.image) || self.image == other.image)
+            && self.source == other.source
+            && self.destination == other.destination
+            && self.sampling == other.sampling
+            && self.transform == other.transform
+    }
+}
+
+impl Eq for ImagePlacement {}
 
 impl ImagePlacement {
     /// Creates a nearest-neighbor image placement.
