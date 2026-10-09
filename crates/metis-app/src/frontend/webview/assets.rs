@@ -1,17 +1,24 @@
 //! Script and markup assets for the packaged `WebView2` pages.
 
+/// The committed Metis mark the packaged header shows.
+pub(super) const APP_MARK_PNG: &[u8] =
+    include_bytes!("../../../../../examples/browser/assets/metis-mark.png");
+
 pub(super) const INDEX_HTML: &str = r#"<!doctype html>
 <html lang="en">
 <head>
   <meta charset="utf-8">
-  <meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'self'; style-src 'self'; img-src 'none'; font-src 'none'; media-src 'none'; connect-src 'none'; object-src 'none'; frame-src 'none'; child-src 'none'; worker-src 'none'; manifest-src 'none'; form-action 'none'; base-uri 'none'">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'self'; style-src 'self'; img-src 'self'; font-src 'none'; media-src 'none'; connect-src 'none'; object-src 'none'; frame-src 'none'; child-src 'none'; worker-src 'none'; manifest-src 'none'; form-action 'none'; base-uri 'none'">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>Metis WebView2 form</title>
   <link rel="stylesheet" href="./styles.css">
 </head>
 <body data-metis-theme="system">
   <main>
-    <h1>Metis clinical calculation</h1>
+    <header class="app-header">
+      <img class="app-mark" src="./metis-mark.png" width="24" height="24" alt="">
+      <h1>Metis clinical calculation</h1>
+    </header>
     <p id="host-status" role="status" aria-live="polite">Waiting for the host bridge.</p>
     <nav id="application-navigation" aria-label="Application navigation">
       <div id="application-toolbar" role="toolbar" aria-label="Application commands">
@@ -91,6 +98,9 @@ main { box-sizing: border-box; width: min(100% - 2rem, 52rem); margin: 0 auto; p
 #command-menu button { width: 100%; text-align: left; }
 #command-status { min-height: 1.5rem; margin: 0; color: var(--muted); }
 fieldset { display: grid; gap: 0.5rem; margin: 1rem 0; padding: 1rem; border: 1px solid var(--border); border-radius: 0.75rem; background: var(--surface); }
+.app-header { display: flex; align-items: center; gap: 0.6rem; }
+.app-header h1 { margin: 0; }
+.app-mark { display: block; width: 1.5rem; height: 1.5rem; object-fit: contain; }
 h1 { color: var(--accent-heading); }
 form { display: grid; gap: 1rem; padding: 1.25rem; border: 1px solid var(--border); border-radius: 0.75rem; background: var(--surface); }
 label { display: grid; gap: 0.35rem; color: var(--muted); }

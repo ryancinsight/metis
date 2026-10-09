@@ -15,6 +15,8 @@ pub use app::{FormInputs, FormState, FrontendApp, MAX_COMPOSITION_BYTES};
 pub use async_app::AsyncFrontendApp;
 pub use commands::{ApplicationCommand, ApplicationTheme, CommandMenuState};
 pub use focus::{FocusDirection, FocusOrigin};
+#[cfg(not(target_arch = "wasm32"))]
+pub use presentation::{APP_MARK_ID, append_app_mark};
 pub use presentation::{BADGE_CLOSED, BADGE_READY, CLINICAL_SCREEN_XML};
 pub use result_explorer::{
     ExplorerStatus, GroupId, MAX_PATIENT_LABEL_BYTES, MAX_RESULT_FILTER_BYTES, MAX_RESULT_GROUPS,

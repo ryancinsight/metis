@@ -232,12 +232,15 @@ impl DisplayList {
 
     /// Appends a validated image command in painter order.
     ///
+    /// A caller that paints the same placement every frame passes the shared
+    /// [`Arc`] it kept, so the repaint requests no placement memory.
+    ///
     /// # Errors
     /// Returns [`metis_core::error::ErrorCode::LayoutOverflow`] when the
     /// display command storage cannot grow.
-    pub fn append_image(&mut self, placement: ImagePlacement) -> Result<()> {
+    pub fn append_image(&mut self, placement: impl Into<Arc<ImagePlacement>>) -> Result<()> {
         self.push(DisplayCommand::DrawImage {
-            placement: Arc::new(placement),
+            placement: placement.into(),
         })
     }
 

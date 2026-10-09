@@ -62,11 +62,21 @@ fn every_edit_paints_the_layout_a_fresh_computation_gives() {
         edit(&mut app);
         let fresh = fresh_layout(&app);
         let painted = &app.painted.as_ref().expect("a rendered frame").commands;
-        // A focus ring is the one command a frame adds to the layout.
+        // The application mark and the focus ring are the only commands a
+        // frame adds to the fresh layout.
         assert!(
-            painted.starts_with(&fresh) && painted.len() - fresh.len() <= 1,
+            painted.starts_with(&fresh) && painted.len() - fresh.len() <= 2,
             "{name}: the painted frame is not the fresh layout"
         );
+        for overlay in &painted[fresh.len()..] {
+            assert!(
+                matches!(
+                    overlay,
+                    DisplayCommand::DrawImage { .. } | DisplayCommand::DrawBorder { .. }
+                ),
+                "{name}: a frame added an unexpected overlay command"
+            );
+        }
     }
 }
 

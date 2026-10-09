@@ -122,9 +122,13 @@ fn label(app: &FrontendApp<MemoryTransport>, id: &str) -> String {
 fn assert_current_pixels(app: &FrontendApp<MemoryTransport>) {
     let mut expected = Framebuffer::new(800, 600).expect("reference surface");
     expected.clear(Color::rgb(240, 244, 248));
-    compute_layout(app.document(), LayoutViewport::new(800, 600))
-        .expect("current document layout")
-        .render_to(&mut expected);
+    let mut display = compute_layout(app.document(), LayoutViewport::new(800, 600))
+        .expect("current document layout");
+    // The presented frame carries the application mark over its authored
+    // anchor box; the reference surface derives that anchor fresh and fills
+    // it the same way.
+    metis_frontend::append_app_mark(&mut display).expect("application mark");
+    display.render_to(&mut expected);
     // This checks state-to-frame synchronization, not rasterizer correctness.
     assert_eq!(app.framebuffer().pixels(), expected.pixels());
 }

@@ -49,6 +49,7 @@ impl Package {
                         fs::write(root.join("index.html"), index.as_bytes())?;
                         fs::write(root.join("styles.css"), assets::STYLES_CSS)?;
                         fs::write(root.join("app.js"), script)?;
+                        fs::write(root.join("metis-mark.png"), assets::APP_MARK_PNG)?;
                         Ok(())
                     })();
                     return match result {
