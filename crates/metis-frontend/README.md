@@ -147,6 +147,32 @@ let lookup = resource(&dose, |value: &f64, done| {
 assert_eq!(lookup.get(), ResourceState::Ready("40 mcg/min".to_owned()));
 ```
 
+`ListModel` is the row model of Slint's `Model`/`ModelNotify` contract. Peers
+subscribe and hear typed `RowChange` values — one row replaced, rows added,
+rows removed, or a `Reset` reload — instead of re-reading every row on every
+edit. A subscription begins with `Reset`, so the first load and a reload share
+one code path; an equal replacement is not a change and delivers nothing.
+
+```rust
+use metis_frontend::reactive::{ListModel, RowChange};
+
+let rows = ListModel::from_rows(vec!["a", "b"]).expect("bounded rows");
+let seen = std::rc::Rc::new(std::cell::RefCell::new(Vec::new()));
+let sink = seen.clone();
+let subscription = rows.subscribe(move |change| sink.borrow_mut().push(*change));
+rows.set_row_data(1, "c").expect("no runaway cascade");
+assert_eq!(rows.remove_row(0).expect("in range"), "a");
+assert_eq!(
+    *seen.borrow(),
+    [
+        RowChange::Reset,
+        RowChange::Changed(1),
+        RowChange::Removed { index: 0, count: 1 },
+    ]
+);
+drop(subscription);
+```
+
 ## Navigation
 
 `metis_frontend::navigation::Navigator` pairs a `metis_core::route::Router`
