@@ -173,6 +173,30 @@ assert_eq!(
 drop(subscription);
 ```
 
+## Virtualized lists
+
+`metis_frontend::list::VirtualListView` windows a `ListModel` by scroll
+position. It measures each row with a pure function, builds only the rows the
+viewport shows, and projects them as DOM between two spacers that reserve the
+rest of the content. A row change re-measures that row alone. The host owns the
+scroll offset and the viewport extent. See [ADR 0062](../../docs/adr/0062-virtualized-list-projection.md).
+
+```rust
+use metis_frontend::list::VirtualListView;
+use metis_frontend::reactive::ListModel;
+use metis_ui_lang::DomElement;
+
+let rows = ListModel::from_rows(vec![20_u32, 40, 30, 10]).expect("bounded rows");
+let mut list = VirtualListView::new(rows.clone(), |height: &u32| *height).expect("subscriber slot");
+assert_eq!(list.total_extent().expect("total extent"), 100);
+let window = list.window(25, 35).expect("window");
+assert_eq!((window.items.start, window.start), (1, 20));
+let dom = list.dom(25, 35, |_, _| DomElement::new("span")).expect("dom");
+assert_eq!(dom.children.len(), window.items.len() + 2);
+rows.set_row_data(1, 50).expect("no runaway cascade");
+assert_eq!(list.total_extent().expect("total extent"), 110);
+```
+
 ## Navigation
 
 `metis_frontend::navigation::Navigator` pairs a `metis_core::route::Router`
