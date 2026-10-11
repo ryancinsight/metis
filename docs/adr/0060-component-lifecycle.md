@@ -5,45 +5,53 @@ Status: Proposed
 Date: 2026-10-11
 
 Driver: METIS-COMPONENT-001. ADR 0003 records the general component lifecycle
-as open.
+as open (its application-state row).
 
 ## Context
 
 The host seam exists. `metis_platform::native::NativeApplication` supplies the
 framebuffer, damage, the optional accessibility tree and one event batch that
-returns a host action. Two host wrappers implement it: `NativeForm<T>`
-(`crates/metis-app/src/frontend/native.rs`) and `BrowserApplication`
-(`crates/metis-web/src/browser/application.rs`), each around the frontend app.
+returns a host action. `NativeForm<T>` implements it
+(`crates/metis-app/src/frontend/native.rs:70`). The browser host,
+`BrowserApplication` (`crates/metis-web/src/browser.rs:100`), implements no such
+trait. It wraps `AsyncFrontendApp` (`browser.rs:103`) behind its own entry
+points.
 
 The application model is not shared. `FrontendApp<T>`
-(`crates/metis-frontend/src/app.rs`) owns a fixed `FormInputs` clinical record,
-a `FormState` and a tracked document. No reusable declaration names an
-application's state, messages and view. The reactive stores (`Writable`,
-`derived`, `resource`, `ListModel`) are the state primitives, and
-`TrackedDocument` (`crates/metis-frontend/src/document.rs:13`) already advances
-a revision only when the content changes.
+(`crates/metis-frontend/src/app.rs`) owns a fixed `FormInputs` clinical record
+and a `FormState`. No reusable declaration names an application's state,
+messages and view. The reactive stores (`Writable`, `derived`, `resource`,
+`ListModel`) are the state primitives. `TrackedDocument`
+(`crates/metis-frontend/src/document.rs:13`) changes through edit methods such
+as `restyle` (`document.rs:52`).
 
-Comparators, source-pinned in ADR 0003 and ADR 0055 (PR #484):
+Comparators:
 
 - Iced 0.14: Elm-style state, messages, `update` and `view`, with `Task` and
   `Subscription` for asynchronous work (ADR 0003, Iced section).
 - Freya 0.5.0-rc.10: hooks (`use_state`, `use_memo`, `use_hook`). `use_hook`
-  stores values in per-scope positional storage
-  (`freya-core/src/lifecycle/base.rs`). A later run whose hook sequence differs
-  panics with `HOOKS_ERROR`, a runtime check.
-- egui: immediate mode; widgets return responses each frame (ADR 0003).
-- GPUI: entities and views; models are handles to shared state (ADR 0003).
-- Slint: declared properties and bindings compiled ahead (ADR 0003).
-- Tauri: the frontend framework owns component state; Rust exposes commands
-  and events (ADR 0002, ADR 0012).
+  keeps values in per-scope positional storage
+  (`freya-core/src/lifecycle/base.rs:76-101`). A run that calls more hooks than
+  the first run, or a hook whose stored type differs, panics with
+  `HOOKS_ERROR` (`base.rs:80-89`). Fewer hooks, or reordered hooks of one type,
+  pass unchecked.
+- egui: immediate mode; widgets return responses each frame (ADR 0003,
+  application-state row).
+- GPUI: entities, views and actions (ADR 0003, application-state row).
+- Tauri: the frontend framework supplies widgets and state; Rust exposes
+  commands and events (ADR 0003, application-state row; ADR 0012).
 - htmx and HTML5: hypermedia; the document holds state and the server returns
   fragments (ADR 0022 admits the typed-patch subset).
+
+Slint is not compared here. Its comparison row is in the ADR 0003 text on the
+peer branch (PR #488), which is not on main.
 
 ## Decision
 
 Adopt a host-neutral, monomorphized component contract in `metis-frontend`.
 State is the component's own fields. Input is a closed, typed message set.
-Output is a host-neutral DOM projection (the `DomElement` model of ADR 0055, PR #484).
+Output is a host-neutral projection to the existing `DomElement`
+(`crates/metis-ui-lang/src/dom.rs:8`).
 
 ```rust
 pub trait Component {
@@ -56,59 +64,74 @@ pub trait Component {
 }
 ```
 
-- Effects are a closed enum (an IPC request, a timer, or a message to self),
-  not a boxed future. The host performs them and feeds results back as
-  messages. An effect that completes after its component is dropped is
-  discarded by generation, as `resource` already discards superseded results.
-- The host wrappers stay thin. `NativeForm<T>` and `BrowserApplication` route
-  events into `update` and render `view`. Neither owns UI state.
-- Revision: `TrackedDocument` advances when the projected content changes, so
-  repaint and layout caches keep their present behavior.
-- Bounds: the message queue is bounded at the store cascade limit
-  (`MAX_CASCADE`). A message that re-enters `update` past the bound is refused
-  with a typed error.
+- `Effects` is a closed enum with two variants: an IPC request and a message to
+  self. It is not a boxed future. The host performs each effect and feeds its
+  result back as a message. A timer is not a variant here (open question 1).
+- An effect that completes after its component is dropped is discarded by
+  generation, as `resource` discards superseded results
+  (`crates/metis-frontend/src/reactive/resource.rs`, `Completion::is_current`).
+- Hosts stay thin: `NativeForm<T>` and the browser host route events into
+  `update` and render `view`. The browser host implements no trait today, so
+  its route is part of its migration slice.
+- Re-entry: a message sent while `update` runs waits in the host dispatch
+  queue. A dispatch that would exceed `MAX_CASCADE` rounds is reported as the
+  store's `CascadeLimit` error (`crates/metis-frontend/src/reactive/model.rs`).
+- Revision: the host applies each projected view to `TrackedDocument`. How a
+  projection maps onto those edits is open question 2.
 - No `dyn Component`. A shell that selects components at run time enumerates a
-  closed set, and each component stays monomorphized (the generic projection of ADR 0055).
+  closed set, and each component stays monomorphized, as `VirtualListView<T, F>`
+  is (ADR 0055).
 
-Rejected alternatives:
+## Rejected alternatives
 
-- Hooks (Freya). Positional hook storage makes call order the identity of
-  state. The type system does not check it, and a changed sequence fails at run
-  time with `HOOKS_ERROR`.
-- Immediate mode (egui). It rebuilds the tree every frame, but focus, IME and
-  the DOM accessibility tree need a retained document (ADR 0014, ADR 0041).
+- Hooks (Freya). Positional storage makes call order the identity of state. The
+  check at `base.rs:80-89` catches a longer sequence and a type change at run
+  time, but not a shorter or reordered sequence of one type. The type system
+  does not carry the invariant.
+- Immediate mode (egui). It rebuilds the tree every frame. Metis hosts render a
+  retained document, and a widget renderer duplicated beside the browser's own
+  would lose browser-native focus and keyboard handling (ADR 0014:163).
 - Entity and view handles (GPUI). They add a second ownership graph beside the
-  reactive stores, which already give single-thread notification through `Rc`.
-- Status quo. `FrontendApp` cannot host a second application, and the starter
-  would duplicate the clinical wiring.
+  reactive stores, which already deliver single-thread notification through
+  `Rc` (`reactive/model.rs`, `reactive/resource.rs`).
+- Status quo. `FrontendApp<T>` owns the fixed `FormInputs` record and
+  `FormState`. Any second application with other state repeats that wiring.
 - The archived `iced_web` DOM runtime. It is read-only upstream (ADR 0003).
 
 ## Consequences
 
-- Migration proceeds in dependency order: the contract and its generic tests,
-  then the clinical form (`FormInputs` and `FormState` become that component's
-  model), then the starter application.
-- One generic test set, `<C: Component>`, runs on the software host and the
-  DOM host. Each monomorphization that ships is tested.
-- Messages are typed. Invalid transitions are unrepresentable in the closed
-  message enum, and a rejected transition returns a typed error.
-- The component contract is a new seam with one present role (the clinical
-  form) and one planned role (the starter). Its surface stays minimal until a
-  second implementor exists in the tree.
+- Migration proceeds in dependency order: the contract and its generic tests;
+  then the clinical form, whose `FormInputs` and `FormState` become that
+  component's model; then the starter page (`crates/metis-starter`), which binds
+  its form in Rust without `FrontendApp`.
+- One generic test set, `<C: Component>`, runs on the software host and the DOM
+  host. Each monomorphization that ships is tested.
+- Messages are a closed enum, so an invalid transition has no variant. `update`
+  is infallible. The one refusal, a dispatch past `MAX_CASCADE`, is a typed error
+  from host dispatch.
+- The contract is a new seam with one present role (the clinical form) and one
+  planned role (the starter). Its surface stays minimal until a second
+  implementor exists.
 
 ## Overturning evidence
 
 - A component family that needs keyed child identity across updates beyond
-  `ListModel` (ADR 0055, PR #484). The `view` return shape then changes by revision.
+  `ListModel` (ADR 0055, PR #484). The `view` return shape then changes by
+  revision.
 - Measured update and view cost on the clinical form above the frame budget.
   That would move damage tracking into the component.
 - A host that needs two UI threads. The `Rc`-based stores would then need a
   `Send` variant, and this ADR would be revised.
-- A measured reduction in starter boilerplate from a hook runtime that exceeds
-  its positional-state risk. That evidence would reopen the hooks alternative.
+- A slice in which the projection-to-`TrackedDocument` mapping (open question 2)
+  cannot be written with the existing edit methods. That would require a change
+  to `TrackedDocument`'s contract.
 
 ## Open questions
 
-- Whether `Effects` needs a timer variant, or whether the host's finite wait
-  (`run_native_application`) covers animation ticks alone.
-- Whether multi-window applications share one component tree or own one each.
+1. Whether `Effects` needs a timer variant, or whether the host's finite wait
+   (`run_native_application`, `crates/metis-platform/src/native/application.rs:146`)
+   covers animation ticks alone.
+2. How the host maps a projected `DomElement` onto `TrackedDocument` edits, so
+   that unchanged content keeps today's repaint and layout caches. The first
+   slice needs this answer.
+3. Whether multi-window applications share one component tree or own one each.
