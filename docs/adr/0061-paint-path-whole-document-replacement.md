@@ -54,12 +54,23 @@ A component's view is applied to the native paint document as a whole.
   existing edits stay. No insert or remove edit is added.
 - The candidate is laid out and its semantic projection is built before it is
   stored. A candidate that either refuses leaves the previous document in place.
+  A candidate whose focus order is empty is refused too: `reconcile` already
+  errors on that state (`focus.rs:70`), and the order is built from the document
+  alone (`cache.rs:39`), so this check needs no viewport.
 - Element identity is the authored `id`. Ids are never derived from tree
-  position. A focusable control stays in the tree while it may hold focus: a
-  view hides it through style or an attribute, as the command menu is hidden
-  (`presentation.rs:226-235`), and does not remove it. Removing the focused
-  control moves focus to the popover anchor when it names a focusable control,
-  and otherwise to the initial control (`focus.rs:61-70`).
+  position.
+- A view hides a focusable control with the `hidden` or `aria-hidden` attribute,
+  on the control or on an ancestor. Style alone does not hide it: `display: none`
+  leaves the control in the focus order (`semantics.rs:127-130,162-163`;
+  `focus.rs:157-161`). The command menu sets `aria-hidden` on its container, and
+  its descendants inherit the hidden state (`presentation.rs:226`;
+  `semantics.rs:129-130`).
+- A focused control that is removed or hidden loses focus to `reconcile`
+  (`focus.rs:61-70`), in this order: the `popover-anchor` of its nearest
+  enclosing popover, if that anchor is focusable; `label-patient`
+  (`INITIAL_FOCUS`, `focus.rs:17`); the first focusable control; otherwise a
+  typed error. A removed control has no ancestors in the new tree, so the anchor
+  step applies only to a hidden one (`focus.rs:173-177`).
 - Full replacement is the adopted path. The measurement below tests it, and can
   overturn it.
 - This decision covers the native paint path. The list projection (ADR 0056,
@@ -97,8 +108,9 @@ A component's view is applied to the native paint document as a whole.
   candidate check enforces them before the document is stored.
 - `TrackedDocument` gains one operation and its tests. An equal replacement leaves
   the revision unchanged. A different replacement advances it exactly once. A
-  refused candidate leaves the previous document in place. A replacement that
-  keeps the authored ids keeps focus.
+  refused candidate leaves the previous document in place. A replacement keeps
+  focus on a focusable control only when that control keeps its authored id and
+  is neither hidden nor removed.
 - `FrontendApp`'s edit path stays valid. Moving it to replacement is the component
   slice of ADR 0056.
 
@@ -125,8 +137,7 @@ criteria.
   them within the render contract.
 - A keystroke update in which building and comparing the view costs more than the
   layout pass that the revision change triggers anyway.
-- A focus or accessibility regression that stable authored ids and the removal
-  rule cannot prevent.
+- A focus regression that the hiding rule and the fallback order cannot prevent.
 
 ## Open questions
 
