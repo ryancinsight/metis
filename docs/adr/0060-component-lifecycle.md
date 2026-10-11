@@ -119,7 +119,7 @@ pub trait Component {
   The set is not written yet.
 - Migration order: the contract and its generic tests, then the clinical form,
   then the starter. Slice 1 does not start until open question 2 is answered
-  in ADR 0057.
+  by the follow-up ADR.
 
 ## Overturning evidence
 
