@@ -510,3 +510,66 @@ an owner. “Unsupported” cannot replace delivery of a required mobile/native 
 - mechanism analysis (2026-09-30, measured): binary size does not discriminate (10 locales compile-timed cost 275 KiB against a multi-MB binary; a 28 KiB runtime parse is microseconds). Both safety and workflow favor a compile-time macro table: keys type-check (a misspelled key is a compile error, eliminating missing-translation runtime bugs as a class), lookup is zero-cost with zero startup, and no locale file crosses the trust boundary. Runtime bundles win only if locales must ship independently of releases, which the release train gates.
 - API sketch (delivered as code in metis#444, not just directive): `Locale` as validated BCP-47 newtype; `Catalog<L: LocaleSpec>` mapping `&'static str` keys to `&'static str` values; `resolve(key)` returning the source string plus a logged miss when absent; message patterns as `MessageFormat` with named (never positional) slots. No `dyn`, no heap at lookup, no I/O on the render path.
 - next: migrate the first consumer display-text call sites (RITK viewer strings via the shared-text surface, then asset strings) — NOT the first-party Rust literals surveyed, which are ids, roles, errors, and fixtures that must stay put. Coordinate with RITK-SNAP-METIS-SHARED-TEXT-001, which moves the same text to `Arc<str>`: the catalog resolves borrowed text and the call site wraps in `Arc`, so the two changes compose without conflict.
+
+<a id="METIS-LIST-002"></a>
+## METIS-LIST-002 — Scroll and project the virtualized window in both hosts [minor]
+- Status: todo; priority: feature; needs: none; ADR: 0055 (PR #484, not yet on main)
+- Outcome: a user scrolls a long list with the wheel and keyboard, and each host builds only the rows the window shows.
+- Scope: a scroll container and offset policy in the DOM projection (`metis-frontend::list`), the software host's list paint, and its visual capture. The overflow declaration needs its admitted-style decision in [ADR 0013](docs/adr/0013-strict-style-contract.md) first.
+- Acceptance: at each offset the built rows and spacers equal the fresh-list oracle; one wheel step moves the window by the scrolled extent; a 10,000-row capture is inspected before it enters the manual.
+- basis: ce47b2b2ebc11c09b0d6f67d7c2e60487fe71cc6
+- next: decide whether `overflow` enters the admitted CSS subset, then add the scroll container with its offset tests.
+
+<a id="METIS-LIST-003"></a>
+## METIS-LIST-003 — Measure the changed-row rebuild before adding per-row updates [tightening]
+- Status: todo; priority: tightening; needs: none
+- Outcome: the `VirtualList` rebuild after a change is replaced by per-row Fenwick updates only if it measurably costs more than a frame.
+- Scope: `metis-ui-lang` layout `virtual_list` and `metis-frontend::list`; no production change before the measurement.
+- Acceptance: a controlled local benchmark (median with confidence interval, pinned 10⁵-row model, one change per query) records the rebuild cost; per-row updates land only when that cost exceeds the frame budget, and match the rebuild oracle.
+- basis: ce47b2b2ebc11c09b0d6f67d7c2e60487fe71cc6
+- next: write the benchmark harness and run it on the controlled host.
+
+<a id="METIS-COMPONENT-001"></a>
+## METIS-COMPONENT-001 — General component lifecycle for application state and views [arch] [minor]
+- Status: todo; priority: architecture; needs: none
+- Outcome: an application defines state, messages, update and view once; the clinical form and the starter page use that model instead of `FrontendApp`'s bespoke `FormInputs` path.
+- Scope: `metis-frontend` (`app`, `reactive`), `metis-platform::native::NativeApplication` and the browser host in `metis-web`.
+- Acceptance: an ADR chooses the seam (Iced 0.14's update/view model and Freya's hook state as comparators) and rejects the alternatives; the clinical form and the starter pass one shared component test set on the software and DOM hosts.
+- basis: ce47b2b2ebc11c09b0d6f67d7c2e60487fe71cc6
+- next: claim the ADR number in the claim PR, then draft the ADR before the lifecycle slice.
+
+<a id="METIS-DOCS-ADR-001"></a>
+## METIS-DOCS-ADR-001 — Compact the ADRs over their 150-line budget [patch]
+- Status: todo; priority: verification; needs: none
+- Outcome: each ADR records one decision in about 150 lines; the comparator matrices of ADR 0003 move to a gap register, with the Freya row from ADR 0055 added there.
+- Scope: `docs/adr/0003` (802 lines), `0014` (235), `0012` (222), `0002` (204), `0005` (194), `0015` (192), `0021` (179), `0029` (168), `0046` (153), measured at basis.
+- Acceptance: every ADR is at most 150 lines; each decision, rejected alternative and evidence survives; the index keeps exact statuses; a line census reports zero over-budget ADRs.
+- basis: ce47b2b2ebc11c09b0d6f67d7c2e60487fe71cc6
+- next: compact ADR 0003 first, since its dated revision paragraphs repeat git and PR history.
+
+<a id="METIS-BOARD-001"></a>
+## METIS-BOARD-001 — Closed priority set and item-block budget [patch]
+- Status: todo; priority: verification; needs: none
+- Outcome: every open item uses the closed set (correctness, architecture, verification, tightening, feature), and no item block exceeds 15 lines.
+- Scope: `backlog.md`. At basis, 19 items carry `P0`–`P3` (P0 1, P1 8, P2 7, P3 3). Six blocks exceed 15 lines (measured heading to heading): METIS-MIGRATION-001 68, METIS-INTEGRATION-001 50, METIS-A11Y-001 42, METIS-INPUT-001 41, METIS-TEXT-001 40, METIS-BROWSER-READ-001 32.
+- Acceptance: a board lint reports zero off-set priorities and zero blocks over 15 lines; the board stays under 1,000 lines.
+- basis: ce47b2b2ebc11c09b0d6f67d7c2e60487fe71cc6
+- next: map each `P`-code to the closed set in one commit, then compact the six blocks to their DoR fields.
+
+<a id="METIS-RESIDUAL-001"></a>
+## METIS-RESIDUAL-001 — Give each residual that ADR 0003 cites a live owner [patch]
+- Status: todo; priority: verification; needs: none
+- Outcome: each open residual stated by ADR 0003 has a board item or a gap-register risk with a re-open trigger.
+- Scope: `docs/adr/0003-framework-conformance.md` cites 19 item IDs with no board entry. Each has `Item:` commits on `origin/main`: METIS-BROWSER-001 96, METIS-FRAGMENT-001 37, METIS-COMMANDS-001 21, METIS-ASYNC-001 11, METIS-QUALITY-001 10, METIS-AUTHORITY-001 8, METIS-LAYOUT-001 8, and 12 more with 1–9 commits each. Also `gap_audit.md`.
+- Acceptance: a scan finds no ADR reference to an ID without a board item, unless the sentence cites a gap-register risk and its re-open trigger.
+- basis: ce47b2b2ebc11c09b0d6f67d7c2e60487fe71cc6
+- next: list each residual sentence per ID, assign it, and delete the closed ones.
+
+<a id="METIS-INTEG-DEBT-001"></a>
+## METIS-INTEG-DEBT-001 — Unlanded peer commits and stale main-tree dirt [patch]
+- Status: todo; priority: correctness; needs: none
+- Outcome: no metis work exists only on a peer branch, and the main tree returns to `origin/main`.
+- Scope: branch `build/metis-deps-20261007`: the commits `feat(presentation): Head every application surface with the mark` (25 files) and `build(deps): Follow hermes-simd` have no PR; its PR #482 is merged; the commit `feat(reactive): Add a Slint comparison and close its row-model gaps` is absorbed by PR #485. Three uncommitted script edits in `repos/metis` dated 2026-10-09. The empty directory `D:/atlas/worktrees/metis-metis-frontend-theme-001`, which is not a git worktree.
+- Acceptance: each unlanded commit has a PR or a merge-base proof of landing; the dirty scripts are committed to a PR branch or proven superseded; the empty directory is removed; the main tree sits at `origin/main`.
+- basis: ce47b2b2ebc11c09b0d6f67d7c2e60487fe71cc6
+- next: open a PR for those two commits from a private-index branch, then return the main tree home.
