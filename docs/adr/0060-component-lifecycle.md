@@ -23,7 +23,7 @@ application's state, messages and view. The reactive stores (`Writable`,
 `TrackedDocument` (`crates/metis-frontend/src/document.rs:13`) already advances
 a revision only when the content changes.
 
-Comparators, source-pinned in ADR 0003 and PR #484's ADR 0055:
+Comparators, source-pinned in ADR 0003 and ADR 0055 (PR #484):
 
 - Iced 0.14: Elm-style state, messages, `update` and `view`, with `Task` and
   `Subscription` for asynchronous work (ADR 0003, Iced section).
@@ -43,7 +43,7 @@ Comparators, source-pinned in ADR 0003 and PR #484's ADR 0055:
 
 Adopt a host-neutral, monomorphized component contract in `metis-frontend`.
 State is the component's own fields. Input is a closed, typed message set.
-Output is a host-neutral DOM projection (PR #484's PR #484's ADR 0055 `DomElement` model).
+Output is a host-neutral DOM projection (the `DomElement` model of ADR 0055, PR #484).
 
 ```rust
 pub trait Component {
@@ -68,8 +68,7 @@ pub trait Component {
   (`MAX_CASCADE`). A message that re-enters `update` past the bound is refused
   with a typed error.
 - No `dyn Component`. A shell that selects components at run time enumerates a
-  closed set, and each component stays monomorphized (PR #484's PR #484's ADR 0055 generic
-  projection).
+  closed set, and each component stays monomorphized (the generic projection of ADR 0055).
 
 Rejected alternatives:
 
@@ -100,7 +99,7 @@ Rejected alternatives:
 ## Overturning evidence
 
 - A component family that needs keyed child identity across updates beyond
-  `ListModel` (PR #484's ADR 0055). The `view` return shape then changes by revision.
+  `ListModel` (ADR 0055, PR #484). The `view` return shape then changes by revision.
 - Measured update and view cost on the clinical form above the frame budget.
   That would move damage tracking into the component.
 - A host that needs two UI threads. The `Rc`-based stores would then need a
