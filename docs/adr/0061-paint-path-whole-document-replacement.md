@@ -26,7 +26,8 @@ revision:
 Repaint does not key on the revision. It is the damage between the new display
 list and the painted one (`presentation.rs:147-149`), as ADR 0051 requires.
 
-The three edits cannot insert element children. `set_text_content` removes every
+The three edits cannot insert element children, and cannot remove one child while
+keeping its siblings. `set_text_content` removes every
 child of an element and leaves one text node (`crates/metis-ui-lang/src/dom.rs:110-115`).
 
 `DomElement`, `DomNode` and `DomDocument` derive `PartialEq`
