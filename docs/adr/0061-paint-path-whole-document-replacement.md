@@ -40,46 +40,47 @@ requests no memory beyond the new display list's command storage
 
 Recorded baseline (ADR 0051, revised 2026-09-24): pinned to one performance core,
 with alternating before and after binaries, a keystroke repaint of the authored
-form takes 0.40 ms at 800×600 and 0.49 ms at 1600×1200 (200% scale). Those are
-the repaint costs the new path must not regress. The 2.8 ms and 8.2 ms figures
-are the pre-change history. They do not measure this decision. ADR 0051's
-figures predate ADRs 0053 and 0054 (dated 2026-09-25 and 2026-09-27), so the
-baseline is re-measured in the same run. The frame budget is 60 Hz, 16.7 ms
+form takes 0.40 ms at 800×600 and 0.49 ms at 1600×1200 (200% scale). The 2.8 ms
+and 8.2 ms figures are the pre-change history. ADRs 0052–0054 change rendering
+code and are dated 2026-09-24 to 2026-09-27, on or after the baseline's revision,
+so the baseline is re-measured in the same run. The frame budget is 60 Hz, 16.7 ms
 (1/60 s; ADR 0043:80 names the budget).
 
 ## Decision
 
 A component's view is applied to the native paint document as a whole.
 
-- `TrackedDocument` gains `replace(document: DomDocument) -> Edit`. It stores the
-  document and advances the revision once when the document differs from the
-  stored one, and returns `Changed`. When the two are equal it returns `Unchanged`
-  and keeps the revision. It never returns `Edit::Missing`, since replacement
-  addresses no element id. The three existing edits stay. No insert or remove
-  edit is added.
+- `TrackedDocument` gains `differs(&self, document: &DomDocument) -> bool`, which
+  compares with the stored document, and `replace(document: DomDocument)`, which
+  stores a document the caller has checked with `differs`, advances the revision
+  once, and returns nothing. `replace` debug-asserts that the document differs.
+  It never produces `Edit::Missing`, since replacement addresses no element id.
+  The three existing edits stay. No insert or remove edit is added.
 - A host that applies a component's view runs these steps in order:
-  1. Compare the candidate with the stored document. An equal candidate ends
-     here, with no layout and no focus work.
+  1. If `differs` is false, stop. An equal candidate costs one comparison and no
+     layout or focus work.
   2. Validate the candidate with the viewport the render uses
      (`presentation.rs:139-142`). Lay it out with `compute_layout`, and build its
      semantic projection and focus order. A candidate with an empty focus order is
-     refused, since `reconcile` already errors on that state (`focus.rs:70`), and
-     the order is built from the document alone (`cache.rs:39`).
+     refused, since `reconcile` already errors on that state (`focus.rs:70`). The
+     order is built from the document alone (`cache.rs:39`).
   3. Store the candidate with `replace`, and install the validated layout and
-     focus order in `RenderCache` under the new revision, so a changed document
-     lays out once.
+     focus order in `RenderCache` under the new revision.
   A refused candidate leaves the previous document and cache in place.
-- The view is built only after a message has changed the component. A render with
-  no pending change reuses the stored document, so it allocates no view tree and
-  keeps the render contract (`presentation.rs:100-102`).
+- The host builds a view only after it has applied a message to the component. A
+  render with no applied message allocates no view tree, which keeps the render
+  contract (`presentation.rs:100-102`). An applied message whose candidate equals
+  the stored document stops at step 1.
 - Element identity is the authored `id`. Ids are never derived from tree
   position.
-- A view hides a focusable control with the `hidden` or `aria-hidden` attribute,
-  on the control or on an ancestor. Style alone does not hide it: `display: none`
-  leaves the control in the focus order (`semantics.rs:127-130,162-163`;
-  `focus.rs:157-161`). The command menu sets `aria-hidden` on its container, and
-  its descendants inherit the hidden state (`presentation.rs:226`;
-  `semantics.rs:129-130`).
+- A view hides a focusable control with the `hidden` attribute, which hides it
+  whenever it is present, or with `aria-hidden` set to `true`, `1` or empty
+  (`semantics.rs:127-128`; `boolean_attribute` at `semantics.rs:352-367`). The
+  attribute applies to the control or to an ancestor. Style alone does not hide
+  it: `display: none` leaves the control in the focus order
+  (`semantics.rs:162-163`; `focus.rs:157-161`). The command menu sets
+  `aria-hidden` on its container, and its descendants inherit the hidden state
+  (`presentation.rs:226`; `semantics.rs:129-130`).
 - A focused control that is removed or hidden loses focus to `reconcile`
   (`focus.rs:61-70`), in this order: the `popover-anchor` of its nearest
   enclosing popover, if that anchor is focusable; `label-patient`
@@ -104,7 +105,7 @@ A component's view is applied to the native paint document as a whole.
   states.
 - Unconditional replacement, which advances the revision on every update even
   when the view is unchanged. It invalidates the focusable order and the layout
-  (`cache.rs:38,61`). The equality check in step 1 prevents this.
+  (`cache.rs:38,61`). Step 1 prevents this.
 - Painting a `DomElement` directly, without a `DomDocument`. It bypasses
   `RenderCache`, which holds the focusable order and the revision-keyed layout
   (`cache.rs:37-39,56-63`). It would also skip the focus reconcile that runs
@@ -113,50 +114,64 @@ A component's view is applied to the native paint document as a whole.
 ## Consequences
 
 - Allocation: a changed update builds the view as an owned tree, which is new
-  cost. A render with no pending change builds none. The measurement counts
+  cost. A render with no applied message builds none. The measurement counts
   allocations for both.
-- Comparison: a changed update compares the new tree with the current one, which
-  is linear in the node count. The clinical form's node count is not measured yet.
-- Layout: a changed document lays out once, during validation, and `RenderCache`
-  installs that layout. An unchanged document runs no layout.
+- Comparison: a changed update compares the new tree with the stored one once,
+  in step 1. The comparison is linear in the node count. The clinical form's node
+  count is not measured yet.
+- Layout: a changed document lays out once, in step 2, and step 3 installs that
+  layout in `RenderCache`. An unchanged document runs no layout.
 - Limits: a programmatic document has the same depth and node limits as a parsed
   one, and the relevant content-byte limits
-  (`crates/metis-ui-lang/src/layout/geometry.rs:63`). Validation enforces them,
-  since it runs `compute_layout` before the document is stored.
-- `TrackedDocument` gains `replace` and its equality check, and `RenderCache`
-  gains an install operation for a validated layout and focus order. Each has
-  tests. An equal replacement leaves the revision unchanged. A different
-  replacement advances it exactly once. A refused candidate leaves the previous
-  document and cache in place. A replacement keeps focus on a focusable control
-  only when that control keeps its authored id and is neither hidden nor removed.
+  (`crates/metis-ui-lang/src/layout/geometry.rs:63`). Step 2 enforces them, since
+  it runs `compute_layout` before the document is stored.
+- `TrackedDocument` gains `differs` and `replace`, and `RenderCache` gains an
+  install operation for a validated layout and focus order. Tests cover four
+  cases. A differing replacement advances the revision exactly once. An equal
+  candidate never reaches `replace`. A refused candidate leaves the previous
+  document and cache in place. Focus stays on a focusable control only when that
+  control keeps its authored id and is neither hidden nor removed.
 - `FrontendApp`'s current edit path stays valid. Whether its edits migrate to
-  replacement is open question 3.
+  replacement is this ADR's open question 3.
 
 ## Measurement
 
 The decision is accepted on the analysis above. The measurement tests it, and its
 results decide whether the overturning items hold.
 
-- Extend `frame.rs` with separate cases, at both surfaces the benchmark already
-  uses: (a) building and comparing the clinical form's view after a message;
-  (b) validating the changed candidate, meaning layout and focus order; (c)
-  replace and repaint, end to end; (d) a render with no pending change.
-- Record wall time and allocations per case on the controlled host, with pinned
-  inputs, `black_box`, and a median with a confidence interval, under the
-  repository's benchmark methodology.
-- Re-measure the ADR 0051 keystroke baseline in the same run, with alternating
-  binaries. Compare case (c) and case (d) against that pair.
+Cases, at both surfaces the benchmark already uses:
+
+- (a) Build and compare the clinical form's view after a keystroke message. The
+  comparison in step 1 is part of (a).
+- (b) Validate the changed candidate: layout and focus order (step 2).
+- (c) Message to presented framebuffer, in two forms. The span starts when the
+  message is applied and ends when the framebuffer is presented. It contains (a),
+  (b), the install in step 3, and the paint stage. The keystroke form (c-key)
+  repaints one label through damage limiting. The theme form (c-theme) recolors
+  every command and repaints in full (ADR 0051:94-96).
+- (p) The paint stage alone, for both forms, timed from the display list the host
+  receives. This is the figure comparable with the baseline.
+- (d) A render with no applied message.
+
+Each case records wall time and allocations, with pinned inputs, `black_box`, and
+a median with a confidence interval, under the repository's benchmark methodology.
+The ADR 0051 keystroke baseline is re-measured in the same run, with alternating
+binaries, and compared with (p-key).
 
 ## Overturning evidence
 
-- The median of case (c) exceeds 16.7 ms. ADR 0056 then rules this path out. The
-  case breakdown decides the follow-up: when case (a) dominates, incremental edits
-  are reconsidered in a follow-up ADR; when case (b) dominates, the follow-up
-  targets layout.
-- The keystroke repaint in case (c) is slower than the same-run baseline by more
-  than the confidence interval of that difference.
-- Case (d) allocates beyond the display list's command storage. The dirty rule
-  then does not hold for unchanged renders, and the decision is revised.
+- The median of (c-theme) exceeds 16.7 ms. This is the rule ADR 0056 states, a
+  measured cost above 16.7 ms to paint the clinical form's `DomElement` tree
+  through this path. The full repaint form is used because damage limiting paints
+  one label in the keystroke form. The case breakdown then decides the follow-up:
+  when (a) dominates, incremental edits are reconsidered in a follow-up ADR; when
+  (b) dominates, the follow-up targets layout.
+- The paint stage of the keystroke form (p-key) is slower than the same-run
+  baseline by more than the confidence interval of that difference. This rule
+  covers repaint cost only. The added update cost in (a) and (b) is budgeted by
+  the first item against 16.7 ms, not against the repaint baseline.
+- Case (d) allocates beyond the display list's command storage. The applied-message
+  rule then does not hold for unchanged renders, and the decision is revised.
 - A focus regression that the hiding rule and the fallback order cannot prevent.
 
 ## Open questions
