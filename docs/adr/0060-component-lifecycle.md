@@ -20,7 +20,8 @@ record and a `FormState`, and renders into a `TrackedDocument`
 The browser host is separate. `AsyncFrontendApp`
 (`crates/metis-frontend/src/async_app.rs:18-24`) owns the same `FormInputs` and
 `FormState` with no document. `metis-web` uses neither `DomElement` nor
-`TrackedDocument`. The starter (`crates/metis-starter`) is a wasm32-only cdylib.
+`TrackedDocument`. The starter (`crates/metis-starter`) has a native `greet`
+and a browser module that is wasm32-only (`src/lib.rs:9`).
 
 No reusable declaration names an application's state, messages and view. The
 reactive stores (`Writable`, `derived`, `resource`, `ListModel`) are the state
@@ -68,8 +69,9 @@ pub trait Component {
 - `update` is infallible. A refusal of domain input is recorded in state and
   rendered by `view`. `set_composition` returns `PayloadTooLarge` today
   (`app.rs:238-246`); under this contract that rejection is state.
-- `Effects` has two variants: an IPC request and a message to self. Whether a
-  timer variant exists is open question 1.
+- `Effects` starts with two variants, an IPC request and a message to self.
+  Adding a variant is open question 1 and does not change the rest of this
+  decision.
 - An effect that completes after its component is dropped, or after its source
   value changed, is discarded, as `resource`'s `Completion::is_current` does
   (`crates/metis-frontend/src/reactive/resource.rs:43`).
@@ -79,8 +81,9 @@ pub trait Component {
   holds a list (open question 3), or the browser host (open question 4).
   `NativeForm<T>` and `FrontendApp<T>` keep their current paths until those
   questions are answered.
-- Re-entrant dispatch needs a bound. This ADR does not name one; slice 1 names
-  it and its typed refusal.
+- Re-entrant dispatch needs a bound. Slice 1 names it and its typed refusal;
+  the store's `MAX_CASCADE` and `CascadeLimit` (`reactive/store.rs:10,15`) are
+  the candidate.
 - No `dyn Component`. A shell that selects components at run time enumerates a
   closed set, and each component stays monomorphized.
 
@@ -91,14 +94,11 @@ pub trait Component {
   sequence of one type passes unchecked. A component names its state in fields,
   so no call order is involved.
 - Immediate mode (egui). Its widgets return responses from per-frame calls
-  (ADR 0003:525). A response is not a value a test can compare. A `DomElement` is
-  such a value, so the contract trades the per-frame model for testability.
+  (ADR 0003:525). This contract's view is a `DomElement` that tests compare
+  directly; egui's response API is unverified here.
 - Entity and view handles (GPUI). `update` takes `&mut self`, so one owner
   already serializes changes. Handles would add shared ownership the contract
   does not need. This is a design argument; GPUI's own design is unverified here.
-- Status quo. `FrontendApp<T>` and `AsyncFrontendApp<T>` each own the fixed
-  `FormInputs` record and `FormState`. The decision leaves both in place until
-  open questions 2 and 4 are answered, so the duplicate remains meanwhile.
 - The archived `iced_web` DOM runtime. It is read-only upstream (ADR 0003).
 
 ## Consequences
@@ -110,9 +110,11 @@ pub trait Component {
   admits any type. Closure comes from each component declaring an enum and
   `update`'s `match` covering every variant. The type system does not forbid a
   non-enum message.
-- Slice 1 is the trait, the two-variant `Effects`, and the generic test set
-  `<C: Component>` run on the software host, which paints `DomElement` through
-  `metis-ui-lang`, with a test component. Slice 1 does not need open question 2.
+- Slice 1 is the trait, the `Effects` enum, and a generic test set
+  `<C: Component>` over a test component. Its tests assert the `DomElement`
+  values that `view` returns. Painting is open question 2, so slice 1 does not
+  paint and does not need that answer. `FrontendApp<T>` keeps its current path
+  until open question 2 is answered.
 - The clinical form migration needs open question 2 and is a later slice.
 - Each monomorphization that ships is tested. The test set is not written yet.
 
@@ -123,9 +125,8 @@ pub trait Component {
   changes by revision.
 - Measured update-plus-view time for the clinical form above 16.7 ms, one 60 Hz
   frame (ADR 0043:80). That would move damage tracking into the component.
-- A measured full replacement of the clinical form's `DomElement` tree into the
-  native paint path above 16.7 ms. That would require an incremental edit set and
-  reopen open question 2.
+- A measured cost above 16.7 ms to paint the clinical form's `DomElement` tree
+  through any path that open question 2 considers. That would rule that path out.
 - A host that needs two UI threads. The `Rc`-based stores would then need a
   `Send` variant, and this ADR would be revised.
 
