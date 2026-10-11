@@ -23,9 +23,13 @@ documentation alone:
   callback for each index. Freya's latest stable release is 0.4.3 (2026-08-30);
   the 0.5 line is still a release candidate. Its layout is the `torin` engine,
   its renderer Skia (`freya-engine`), and its tests run headlessly through
-  `freya-testing` (`launch_test`, `commit_accessibility`). The inspected
-  manifests and README name no WebAssembly or web target; the README credits
-  Android contributions without an Android target in the inspected crates.
+  `freya-testing` (`launch_test`, `commit_accessibility`). Freya also has
+  experimental Android and Web support. `freya/Cargo.toml:338` gates
+  `freya-android` on `target_os = "android"`; `freya-core/src/platform.rs:58-83`
+  defines an `Android` platform variant; `freya/src/_docs/platforms.rs:3,14-15,72`
+  documents Web as WebAssembly built with Emscripten and rendered through a
+  WebGL 2 backend (`platforms.rs:41-44`). The top `freya` crate in these sources
+  is 0.5.0-rc.9; `freya-core`, `freya-components` and `freya-testing` are rc.10.
 - egui's `ScrollArea::show_rows`, GPUI's `uniform_list`/`list` and Slint's
   `Model`/`ModelNotify` (ADR 0003) supply the same shape: the host builds only
   the rows a scroll position shows.
