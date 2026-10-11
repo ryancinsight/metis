@@ -35,7 +35,7 @@ directly. `DomDocument::new` validates nothing (`dom.rs:83-85`).
 
 The render path's documented contract is that a render of unchanged state
 requests no memory beyond the new display list's command storage
-(`presentation.rs:98-101`).
+(`presentation.rs:100-102`).
 
 Recorded baseline (ADR 0051, revised 2026-09-24): a keystroke repaint of the
 authored form takes 0.40 ms at 800×600 and 0.49 ms at 1600×1200 on a pinned
@@ -57,7 +57,8 @@ A component's view is applied to the native paint document as a whole.
   position. A focusable control stays in the tree while it may hold focus: a
   view hides it through style or an attribute, as the command menu is hidden
   (`presentation.rs:226-235`), and does not remove it. Removing the focused
-  control moves focus to the initial control (`focus.rs:65-66`).
+  control moves focus to the popover anchor when it names a focusable control,
+  and otherwise to the initial control (`focus.rs:61-70`).
 - Full replacement is the adopted path. The measurement below tests it, and can
   overturn it.
 - This decision covers the native paint path. The list projection (ADR 0056,
@@ -65,8 +66,8 @@ A component's view is applied to the native paint document as a whole.
 
 ## Rejected alternatives
 
-- Child insert and remove edits. Layout is keyed by the whole-document revision
-  (`cache.rs:61-63`), so any edit recomputes the display list. Child-level edits
+- Child insert and remove edits. Layout is keyed by the revision and the viewport
+  (`cache.rs:61-63`), so any revision change recomputes the display list. Child-level edits
   therefore save only building the view and comparing it. Neither cost is measured
   yet, so this rejection is analytical. The edit set would also have to agree
   with the view's tree at every step.
@@ -85,13 +86,13 @@ A component's view is applied to the native paint document as a whole.
 
 - Allocation: each update builds the view as an owned tree. That is new cost
   against the render contract of requesting no memory for unchanged state
-  (`presentation.rs:98-101`). The measurement below counts allocations per update.
+  (`presentation.rs:100-102`). The measurement below counts allocations per update.
 - Comparison: each update compares the new tree with the current one, which is
   linear in the node count. The clinical form's node count is not measured yet.
 - Layout: a changed document runs the layout pass that the revision already
   triggers. An unchanged document runs none.
-- Limits: a programmatic document has the same depth, node and content-byte
-  limits as a parsed one (`crates/metis-ui-lang/src/layout/geometry.rs:63`). The
+- Limits: a programmatic document has the same depth and node limits as a parsed
+  one, and the same relevant content-byte limits (`crates/metis-ui-lang/src/layout/geometry.rs:63`). The
   candidate check enforces them before the document is stored.
 - `TrackedDocument` gains one operation and its tests. An equal replacement leaves
   the revision unchanged. A different replacement advances it exactly once. A
