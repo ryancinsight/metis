@@ -4,8 +4,8 @@ Status: Accepted
 
 Date: 2026-10-11
 
-Driver: METIS-LIST-001 (virtualized widget named by ADR 0003's Slint-derived
-implementation order).
+Driver: METIS-LIST-001 (virtualized widget named by ADR 0003's large-lists row:
+"No virtualized widget is built on the primitive yet").
 
 ## Context
 
@@ -31,8 +31,8 @@ documentation alone:
   WebGL 2 backend (`platforms.rs:41-44`). The top `freya` crate in these sources
   is 0.5.0-rc.9; `freya-core`, `freya-components` and `freya-testing` are rc.10.
 - egui's `ScrollArea::show_rows`, GPUI's `uniform_list`/`list` and Slint's
-  `Model`/`ModelNotify` (ADR 0003) supply the same shape: the host builds only
-  the rows a scroll position shows.
+  `Model`/`ModelNotify` supply the same shape: the host builds only the rows a
+  scroll position shows. The Slint comparison is in PR #488, not on main.
 
 Metis differs in one place that matters: its DOM and software hosts both render
 one `DomDocument`, so a list must project to DOM, not to a toolkit widget.
