@@ -68,3 +68,4 @@
 | [0057](0057-native-external-links.md) | Native external link authority | Accepted |
 | [0059](0059-windows-rust-pages.md) | Rust pages in the Windows WebView2 host | Accepted |
 | [0060](0060-component-lifecycle.md) | General component lifecycle for application state and views | Proposed |
+| [0061](0061-paint-path-whole-document-replacement.md) | Whole-document replacement for the native paint path | Proposed |
