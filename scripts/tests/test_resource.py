@@ -59,7 +59,7 @@ class ResourceSummaryTests(unittest.TestCase):
 
     def test_capture_digest_records_bytes_without_path(self):
         with tempfile.TemporaryDirectory(prefix="metis-resource-capture-") as directory:
-            capture = pathlib.Path(directory) / "patient-image.png"
+            capture = pathlib.Path(directory).resolve() / "patient-image.png"
             capture.write_bytes(b"real capture bytes")
             result = self.resource["capture_digest"](capture)
             self.assertEqual(result["bytes"], len(b"real capture bytes"))
@@ -69,8 +69,8 @@ class ResourceSummaryTests(unittest.TestCase):
     def test_report_rejects_hardlinked_destination(self):
         resource = self.resource
         with tempfile.TemporaryDirectory(prefix="metis-resource-link-") as directory:
-            original = pathlib.Path(directory) / "original.json"
-            alias = pathlib.Path(directory) / "alias.json"
+            original = pathlib.Path(directory).resolve() / "original.json"
+            alias = pathlib.Path(directory).resolve() / "alias.json"
             original.write_text("{}", encoding="utf-8")
             try:
                 os.link(original, alias)
@@ -82,8 +82,8 @@ class ResourceSummaryTests(unittest.TestCase):
     def test_capture_digest_rejects_redirected_artifact(self):
         resource = self.resource
         with tempfile.TemporaryDirectory(prefix="metis-resource-capture-link-") as directory:
-            original = pathlib.Path(directory) / "original.png"
-            alias = pathlib.Path(directory) / "alias.png"
+            original = pathlib.Path(directory).resolve() / "original.png"
+            alias = pathlib.Path(directory).resolve() / "alias.png"
             original.write_bytes(b"capture")
             try:
                 os.link(original, alias)
@@ -99,7 +99,7 @@ class ResourceProcessTests(unittest.TestCase):
     def test_short_lifecycle_records_real_process_observations(self):
         resource = runpy.run_path(str(SCRIPTS / "resource.py"))
         with tempfile.TemporaryDirectory(prefix="metis-resource-test-") as directory:
-            output = pathlib.Path(directory) / "report.json"
+            output = pathlib.Path(directory).resolve() / "report.json"
             result = resource["main"]([
                 "--output", str(output), "--label", "test child", "--sample-ms", "20",
                 "--timeout-seconds", "5", "--", sys.executable, "-c",
@@ -118,7 +118,7 @@ class ResourceProcessTests(unittest.TestCase):
     def test_timeout_terminates_only_the_launched_process(self):
         resource = runpy.run_path(str(SCRIPTS / "resource.py"))
         with tempfile.TemporaryDirectory(prefix="metis-resource-timeout-") as directory:
-            output = pathlib.Path(directory) / "report.json"
+            output = pathlib.Path(directory).resolve() / "report.json"
             result = resource["main"]([
                 "--output", str(output), "--label", "timeout child", "--sample-ms", "20",
                 "--timeout-seconds", "0.1", "--", sys.executable, "-c",
@@ -134,7 +134,7 @@ class ResourceProcessTests(unittest.TestCase):
     def test_repeat_records_baseline_spread(self):
         resource = runpy.run_path(str(SCRIPTS / "resource.py"))
         with tempfile.TemporaryDirectory(prefix="metis-resource-repeat-") as directory:
-            output = pathlib.Path(directory) / "report.json"
+            output = pathlib.Path(directory).resolve() / "report.json"
             result = resource["main"]([
                 "--output", str(output), "--label", "repeated child", "--sample-ms", "20",
                 "--timeout-seconds", "5", "--repeat", "3", "--", sys.executable, "-c",
@@ -150,8 +150,8 @@ class ResourceProcessTests(unittest.TestCase):
     def test_capture_artifact_is_required_when_requested(self):
         resource = runpy.run_path(str(SCRIPTS / "resource.py"))
         with tempfile.TemporaryDirectory(prefix="metis-resource-missing-capture-") as directory:
-            output = pathlib.Path(directory) / "report.json"
-            capture = pathlib.Path(directory) / "missing.png"
+            output = pathlib.Path(directory).resolve() / "report.json"
+            capture = pathlib.Path(directory).resolve() / "missing.png"
             result = resource["main"]([
                 "--output", str(output), "--label", "missing capture", "--sample-ms", "20",
                 "--timeout-seconds", "5", "--capture", str(capture), "--", sys.executable, "-c",
@@ -165,8 +165,8 @@ class ResourceProcessTests(unittest.TestCase):
     def test_repeat_capture_digest_matches_real_artifact(self):
         resource = runpy.run_path(str(SCRIPTS / "resource.py"))
         with tempfile.TemporaryDirectory(prefix="metis-resource-capture-repeat-") as directory:
-            output = pathlib.Path(directory) / "report.json"
-            capture = pathlib.Path(directory) / "capture.bin"
+            output = pathlib.Path(directory).resolve() / "report.json"
+            capture = pathlib.Path(directory).resolve() / "capture.bin"
             script = (
                 "from pathlib import Path; "
                 f"Path({str(capture)!r}).write_bytes(b'real image artifact')"

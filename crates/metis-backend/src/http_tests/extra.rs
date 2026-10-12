@@ -234,7 +234,7 @@ fn session_expires_one_lifetime_after_its_handshake() {
 }
 
 #[test]
-fn live_session_conflicts_until_its_expiry_then_is_replaced() {
+fn identical_handshake_retains_original_expiry_then_is_replaced() {
     let opened = Duration::from_secs(5);
     let expiry = opened + SESSION_LIFETIME;
     let sequence = run_handshakes(
@@ -252,7 +252,7 @@ fn live_session_conflicts_until_its_expiry_then_is_replaced() {
     );
     // Contract: a session is live strictly before `expires_at` and expired at
     // exactly `expires_at`, so the handshake at that instant replaces it.
-    assert_eq!(sequence.statuses, [200, 409, 200]);
+    assert_eq!(sequence.statuses, [200, 200, 200]);
     assert_eq!(sequence.session_counts, [1, 1, 1]);
     assert_eq!(
         sequence.expiries,

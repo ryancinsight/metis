@@ -20,7 +20,7 @@ from browser_trace import (
 FRAGMENT_BRIDGE = "http-fragment"
 FRAGMENT_INPUT = "session"
 FRAGMENT_SUCCESS = "Authenticated fragment boundary ready"
-FRAGMENT_NEGATIVE = "malformed 400 · unauthorized 401 · target rejected · stale unchanged"
+FRAGMENT_NEGATIVE = "malformed 400 · unauthorized 401 · changed grant 403 · target rejected · stale unchanged"
 FRAGMENT_IDS = (
     "metis-status",
     "fragment-input",
@@ -182,7 +182,7 @@ def run_fragment_scenario(
             "session_closed": False,
             "request_state": recovered["request_state"],
             "stale_generation": "unchanged",
-            "negative_probes": "malformed 400; unauthorized 401; target rejected; stale unchanged",
+            "negative_probes": "malformed 400; unauthorized 401; changed grant 403; target rejected; stale unchanged",
             "mounted_page": "http-health.html",
         }
         return trace

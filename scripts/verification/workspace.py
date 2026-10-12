@@ -7,6 +7,10 @@ REGISTRY_BOUNDARIES = {
     # Native entry logging and test span capture use the canonical tracing
     # crates; no Atlas provider supplies a tracing subscriber implementation.
     ("metis-host", "tracing-subscriber"),
+    ("metis-core", "tracing"),
+    ("metis-core", "tracing-subscriber"),
+    ("metis-web", "tracing"),
+    ("metis-web", "tracing-subscriber"),
     ("metis-cli", "tracing"),
     ("metis-cli", "tracing-subscriber"),
     ("metis-backend", "tracing"),

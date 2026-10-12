@@ -23,9 +23,17 @@ name = "metis_web"
 path = "src/lib.rs"
 crate-type = ["cdylib", "rlib"]
 
+[dev-dependencies]
+tracing.workspace = true
+tracing-subscriber.workspace = true
+
 [lints]
 workspace = true
 
 [[example]]
 name = "canvas_recovery"
+crate-type = ["cdylib"]
+
+[[example]]
+name = "http_transport"
 crate-type = ["cdylib"]

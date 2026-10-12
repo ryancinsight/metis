@@ -1,4 +1,5 @@
 use super::*;
+mod handshake_replay;
 use crate::service::SESSION_LIFETIME;
 use metis_core::capability::{CapabilityScope, CapabilityToken};
 use metis_core::host::{HostOrigin, WindowId};
