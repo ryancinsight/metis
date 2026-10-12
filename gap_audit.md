@@ -55,3 +55,13 @@ standalone locks resolve their exact Git revision without an Atlas overlay.
 Path-overlay locks remain derived development artifacts
 before a release. Recheck through [backlog.md](backlog.md) and the
 [Apple manual](docs/manual/apple.md).
+
+## Rust browser delivery — 2026-10-12
+
+[Metis PR 493](https://github.com/ryancinsight/metis/pull/493) merges after all
+Windows, Apple, parser fuzz, API, lock and artifact checks pass. The Rust
+shell/HTTP increment is complete and removed from the active backlog.
+Moirai PRs 611/612/613 and Gaia PR 169 are merged providers. Current local
+macOS Greet also passes after closing and reopening the final 0.3.0 bundle.
+The native inventory still has 78 open admitted pairs and 46 bounded pairs
+with remaining acceptance; this delivery does not close those owning items.
