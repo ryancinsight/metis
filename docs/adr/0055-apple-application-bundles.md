@@ -3,7 +3,7 @@
 - Status: Accepted
 - Date: 2026-10-11
 - Change class: [minor]
-- Target version: 0.2.0
+- Target version: 0.2.1
 
 ## Decision and contract
 

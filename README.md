@@ -82,7 +82,7 @@ cargo build --workspace --bins
 cargo run -p metis-app -- 60 2 0.2
 cargo run -p metis-app -- --help
 cargo install cargo-nextest --version 0.9.143 --locked
-cargo install wasm-bindgen-cli --version 0.2.128 --locked --root output/wasm-bindgen-cli
+cargo install wasm-bindgen-cli --version 0.2.129 --locked --root output/wasm-bindgen-cli
 python scripts/verify.py
 ```
 
@@ -119,6 +119,10 @@ the [Python binding manual](docs/manual/python.md).
 
 ## Apple frontend applications
 
+Metis 0.2.1 requires moirai-webview 0.1.1 so packaged WASM loads with a Fetch
+success status and the native form binds its Rust handler. Native macOS Greet
+returns the exact greeting for normal, Unicode and empty names.
+
 The starter's Rust/WASM frontend runs in a browser or packages with Moirai's
 native macOS/iPhone/iPad WebKit host. In Atlas, `python3 scripts/atlas-metis.py
 apple run --target macos` builds and opens the starter; `serve` selects the
@@ -152,8 +156,8 @@ describing it as dependency-free. The Atlas development overlay resolves first-p
 trees. Standalone builds use the corresponding pushed provider revisions recorded
 in Cargo.lock. Metis consumes Moirai through git-plus-version requirements;
 the current standalone lock records merged Moirai revision
-`8d41265747660660525735546ae5ef7615093301`, which adds the Apple WKWebView
-host, Darwin process cleanup and closed-peer instance reception. It includes the Windows
+`ea79bdc583ff8e18e76eaa6dda6ebd20d14441cd`, which includes the Apple WebView
+Fetch-status correction, Darwin process cleanup and closed-peer instance reception. It includes the Windows
 AccessKit accessibility provider, the UI Automation value-action mapping,
 WebView2 0.39.1 bindings, POSIX process-group tree containment,
 `<select>` values through `WebElement::set_value`, keyboard shortcuts on
