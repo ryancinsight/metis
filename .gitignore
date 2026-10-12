@@ -6,3 +6,6 @@
 /fuzz/corpus/
 /fuzz/target/
 __pycache__/
+
+# Per-application Apple bundles and their derived inventories.
+**/output/

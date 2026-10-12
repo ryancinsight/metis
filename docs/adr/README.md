@@ -63,3 +63,4 @@
 | [0052](0052-memoized-box-shadow-masks.md) | Memoized box-shadow masks | Accepted |
 | [0053](0053-runtime-isa-dispatch-for-raster-kernels.md) | Runtime instruction-set dispatch for raster kernels | Accepted |
 | [0054](0054-flex-grow-planned-before-layout.md) | Flex growth planned before layout | Accepted |
+| [0055](0055-apple-application-bundles.md) | Shared browser and installed Apple applications | Accepted |

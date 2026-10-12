@@ -65,7 +65,12 @@ pub(crate) fn spawn(
         .map_err(|error| start_error(program, &error))
 }
 
-pub(crate) fn capture(program: &Path, args: &[OsString], timeout: Duration) -> Result<Vec<u8>> {
+pub(crate) fn capture(
+    program: &Path,
+    args: &[OsString],
+    timeout: Duration,
+    environment: &[(&str, OsString)],
+) -> Result<Vec<u8>> {
     let mut executor = ExecutorBuilder::new()
         .worker_threads(1)
         .async_threads(1)
@@ -73,8 +78,12 @@ pub(crate) fn capture(program: &Path, args: &[OsString], timeout: Duration) -> R
     let result = (|| {
         let mut child = ProcessSupervisor::new()
             .spawn(
-                ProcessSpec::new(program)
-                    .args(args)
+                environment
+                    .iter()
+                    .fold(
+                        ProcessSpec::new(program).args(args),
+                        |spec, (key, value)| spec.env(*key, value),
+                    )
                     .piped_stdio()
                     .tree_containment(),
                 ProcessDropPolicy::TerminateOnDrop,

@@ -2,6 +2,7 @@
   "schema": 1,
   "name": "Metis Starter",
   "cargo_manifest": "Cargo.toml",
+  "icon": "icons/application.icns",
   "frontend": {
     "package": "metis-starter",
     "directory": "frontend"

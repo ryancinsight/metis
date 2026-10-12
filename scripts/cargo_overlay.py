@@ -63,6 +63,16 @@ def isolated_cargo(root: pathlib.Path) -> Iterator[tuple[pathlib.Path, dict[str,
     the workspace is no longer discovered from the working directory.
     """
     environment = os.environ.copy()
+    # Neutralizing Cargo's directory also removes Rustup's file discovery.
+    # Carry the repository pin while preserving an explicit caller override.
+    pin = next((directory / "rust-toolchain.toml"
+                for directory in (root, *root.parents)
+                if (directory / "rust-toolchain.toml").is_file()), None)
+    if pin is not None and "RUSTUP_TOOLCHAIN" not in environment:
+        channel = tomllib.loads(pin.read_text(encoding="utf-8"))["toolchain"]["channel"]
+        if not isinstance(channel, str) or not channel:
+            raise ValueError(f"Rust toolchain pin has no channel: {pin}")
+        environment["RUSTUP_TOOLCHAIN"] = channel
     target = inherited_target_directory(root)
     if target is not None:
         environment["CARGO_TARGET_DIR"] = str(target)

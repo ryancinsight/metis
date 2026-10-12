@@ -194,10 +194,13 @@ mod tests {
             .duration_since(UNIX_EPOCH)
             .expect("test clock")
             .as_nanos();
-        std::env::temp_dir().join(format!(
-            "metis-init-{label}-{}-{timestamp}",
-            std::process::id()
-        ))
+        std::env::temp_dir()
+            .canonicalize()
+            .expect("canonical temporary directory")
+            .join(format!(
+                "metis-init-{label}-{}-{timestamp}",
+                std::process::id()
+            ))
     }
 
     #[test]

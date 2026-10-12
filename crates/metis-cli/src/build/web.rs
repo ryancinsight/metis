@@ -71,6 +71,7 @@ pub(crate) fn application(
             &manifest_path,
         ),
         METADATA_DEADLINE,
+        &[],
     )?;
     let target = artifacts::module_target(&metadata, &application.frontend.package)?;
     let bindgen = wasm_bindgen(&target.bindgen_version)?;
@@ -93,7 +94,7 @@ pub(crate) fn application(
         ]
         .map(OsString::from),
     );
-    let messages = process::capture(&cargo, &build, CARGO_BUILD_DEADLINE)?;
+    let messages = process::capture(&cargo, &build, CARGO_BUILD_DEADLINE, &[])?;
     let module = artifacts::module(&messages, &target)?;
     clear(&output)?;
     fs::create_dir(&output)?;
@@ -201,7 +202,7 @@ fn wasm_bindgen(version: &str) -> Result<PathBuf> {
         Some(path) => PathBuf::from(path),
         None => process::tool("wasm-bindgen")?,
     };
-    let reported = process::capture(&program, &["--version".into()], VERSION_DEADLINE)?;
+    let reported = process::capture(&program, &["--version".into()], VERSION_DEADLINE, &[])?;
     let reported = String::from_utf8(reported)?;
     if reported.trim() != format!("wasm-bindgen {version}") {
         return Err(format!(

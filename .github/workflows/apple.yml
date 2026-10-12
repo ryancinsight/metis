@@ -1,0 +1,102 @@
+name: Apple applications
+
+on:
+  workflow_call:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  bundles:
+    name: Apple bundle and icon contracts
+    runs-on: macos-latest
+    timeout-minutes: 20
+    steps:
+      - name: Checkout
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - name: Setup Rust
+        uses: dtolnay/rust-toolchain@4cda84d5c5c54efe2404f9d843567869ab1699d4
+        with:
+          toolchain: 1.97.0
+          components: clippy,rustfmt
+          targets: wasm32-unknown-unknown,aarch64-apple-ios,aarch64-apple-ios-sim,x86_64-apple-ios
+      - name: Restore Rust cache
+        uses: Swatinem/rust-cache@6323deb102c322ba6fcbdcafc7e3dddab59af2b6 # v2.9.2
+        with:
+          shared-key: metis-apple
+          save-if: ${{ github.ref == 'refs/heads/main' }}
+      - name: Install the locked WASM loader
+        uses: taiki-e/install-action@a6b2e2dcd845ddd7f509ce4f3ed3d922b80cc5d9 # v2.84.0
+        with:
+          tool: |
+            wasm-bindgen@0.2.129
+            cargo-nextest@0.9.143
+          checksum: true
+      - name: Check formatting and Apple CLI diagnostics
+        run: |
+          cargo fmt --all --check
+          cargo clippy --locked --workspace --all-targets -- -D warnings
+      - name: Compile actual workspace tests
+        run: cargo nextest run --locked --workspace --no-run
+      - name: Verify computed values and native icon decoding
+        run: |
+          python3 - <<'PY'
+          import subprocess
+          subprocess.run(["cargo", "nextest", "run", "--locked", "--workspace"], check=True, timeout=60)
+          subprocess.run(["cargo", "test", "--locked", "--workspace", "--doc"], check=True, timeout=60)
+          for pattern in ("test_starter.py", "test_apple_icon.py"):
+              subprocess.run(["python3", "-m", "unittest", "discover", "-s", "scripts/tests", "-p", pattern, "-v"], check=True, timeout=60)
+          PY
+      - name: Build the shared frontend for every Apple target
+        run: |
+          cargo build --locked -p metis-cli
+          for target in macos ios ios-simulator; do
+            target/debug/metis apple build crates/metis-starter/metis.json --target "$target"
+          done
+      - name: Verify final inventories, signatures, deployment metadata and asset identity
+        run: |
+          python3 - <<'PY'
+          import hashlib
+          import json
+          import plistlib
+          import subprocess
+          from pathlib import Path
+
+          starter = Path("crates/metis-starter")
+          source = starter / "dist/app"
+          assets = {p.relative_to(source): p.read_bytes() for p in source.rglob("*") if p.is_file()}
+          assert assets and any(p.suffix == ".wasm" for p in assets)
+          for target in ("macos", "ios", "ios-simulator"):
+              output = starter / "output/apple" / target
+              inventory = json.loads((output / "inventory.json").read_text())
+              assert (inventory["schema"], inventory["kind"], inventory["target"]) == (1, "apple", target)
+              recorded = {row["destination"]: row for row in inventory["files"]}
+              actual = {p.relative_to(output).as_posix(): p for p in output.rglob("*") if p.is_file() and p.name != "inventory.json"}
+              assert actual.keys() == recorded.keys()
+              for name, path in actual.items():
+                  data = path.read_bytes()
+                  assert (len(data), hashlib.sha256(data).hexdigest()) == (recorded[name]["bytes"], recorded[name]["sha256"])
+              bundle = output / "metis-starter.app"
+              contents = bundle / "Contents" if target == "macos" else bundle
+              resources = contents / "Resources" if target == "macos" else bundle
+              packaged = {p.relative_to(resources / "app"): p.read_bytes() for p in (resources / "app").rglob("*") if p.is_file()}
+              assert packaged == assets
+              info = plistlib.loads((contents / "Info.plist").read_bytes())
+              assert (info["CFBundleIdentifier"], info["CFBundleExecutable"]) == ("com.metis.metis-starter", "metis-host")
+              program = contents / "MacOS/metis-host" if target == "macos" else bundle / "metis-host"
+              deployment = subprocess.check_output(["vtool", "-show-build", str(program)], text=True, timeout=30)
+              minimum = "13.0" if target == "macos" else "16.0"
+              assert f"minos {minimum}" in deployment
+              if target == "macos":
+                  assert info["LSMinimumSystemVersion"] == minimum
+                  assert info["CFBundleIconFile"] == "application.icns"
+                  assert (resources / info["CFBundleIconFile"]).read_bytes() == (starter / "icons/application.icns").read_bytes()
+              else:
+                  assert info["MinimumOSVersion"] == minimum
+                  assert info["UIDeviceFamily"] == [1, 2]
+              if target != "ios":
+                  subprocess.run(["codesign", "--verify", "--strict", str(bundle)], check=True, timeout=30)
+          PY

@@ -5,7 +5,7 @@ pinned `cargo-nextest` runner and the browser loader tool:
 
 ```text
 cargo install cargo-nextest --version 0.9.143 --locked
-cargo install wasm-bindgen-cli --version 0.2.128 --locked --root output/wasm-bindgen-cli
+cargo install wasm-bindgen-cli --version 0.2.129 --locked --root output/wasm-bindgen-cli
 git clone https://github.com/ryancinsight/metis
 cd metis
 cargo fetch --locked

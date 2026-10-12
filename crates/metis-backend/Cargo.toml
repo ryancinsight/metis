@@ -20,6 +20,10 @@ metis-ipc = { workspace = true }
 moirai-async.workspace = true
 moirai-http.workspace = true
 
+[dev-dependencies]
+tracing.workspace = true
+tracing-subscriber.workspace = true
+
 [lib]
 name = "metis_backend"
 path = "src/lib.rs"

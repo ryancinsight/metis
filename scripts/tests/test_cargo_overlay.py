@@ -3,6 +3,7 @@ from __future__ import annotations
 
 import os
 import pathlib
+import subprocess
 import sys
 import tempfile
 import unittest
@@ -31,6 +32,24 @@ def _require_clean_root(test: unittest.TestCase, directory: pathlib.Path) -> Non
 
 
 class CargoOverlayTests(unittest.TestCase):
+    def test_neutral_build_preserves_the_real_pinned_compiler(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = pathlib.Path(directory)
+            (root / "rust-toolchain.toml").write_text('[toolchain]\nchannel = "1.97.0"\n')
+            (root / ".cargo").mkdir()
+            (root / ".cargo/config.toml").write_text('[build]\ntarget-dir = "shared"\n')
+            with mock.patch.dict(os.environ, {}, clear=False):
+                os.environ.pop("RUSTUP_TOOLCHAIN", None)
+                with isolated_cargo(root) as (working, environment):
+                    self.assertNotEqual(working, root)
+                    self.assertEqual(environment["RUSTUP_TOOLCHAIN"], "1.97.0")
+                    actual = subprocess.check_output(["rustc", "-Vv"], cwd=working, env=environment,
+                                                     text=True, timeout=30)
+                    self.assertIn("release: 1.97.0\n", actual)
+                os.environ["RUSTUP_TOOLCHAIN"] = "stable"
+                with isolated_cargo(root) as (_, environment):
+                    self.assertEqual(environment["RUSTUP_TOOLCHAIN"], "stable")
+
     def test_environment_target_directory_wins(self):
         with tempfile.TemporaryDirectory() as directory:
             root = pathlib.Path(directory)

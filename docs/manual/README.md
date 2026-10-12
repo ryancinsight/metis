@@ -84,6 +84,7 @@ The browser manual also includes an `http-health.html` probe for the bounded
 Moirai loopback service; it demonstrates CORS and readiness only, not DICOM.
 
 - [Build and run](getting-started.md): requirements, the demonstration and verification.
+- [Run Apple and browser applications](apple.md): shared frontend, macOS window, iPhone/iPad bundles and signing boundary.
 - [Run the Windows native surface](native.md): present a framebuffer and inspect real Win32 events.
 - [Build executables and installers](distribution.md): configure an application, create a portable bundle, install and remove it.
 - [Use the Python binding](python.md): build and test the typed `metis-ui` PyO3 package.

@@ -45,7 +45,8 @@ struct Inventory {
     platform_package: Option<platform::PlatformPackageRecord>,
 }
 
-#[derive(Serialize)]
+#[derive(Serialize, serde::Deserialize)]
+#[serde(deny_unknown_fields)]
 pub(crate) struct FileRecord {
     pub(crate) destination: String,
     pub(crate) bytes: u64,
@@ -279,7 +280,7 @@ fn compile(
         OsString::from("--manifest-path"),
         cargo_manifest.as_os_str().to_owned(),
     ];
-    let metadata = process::capture(&cargo, &metadata_args, Duration::from_mins(1))?;
+    let metadata = process::capture(&cargo, &metadata_args, Duration::from_mins(1), &[])?;
     let selected = targets(&metadata, application)?;
     let mut args: Vec<OsString> = [
         "build",
@@ -303,7 +304,7 @@ fn compile(
             OsString::from(&binary.bin),
         ]);
     }
-    let messages = process::capture(&cargo, &args, CARGO_BUILD_DEADLINE)?;
+    let messages = process::capture(&cargo, &args, CARGO_BUILD_DEADLINE, &[])?;
     artifacts(&messages, &selected)
 }
 
@@ -377,7 +378,7 @@ pub(super) fn copy(
     })
 }
 
-fn digest_file(path: &Path) -> Result<String> {
+pub(crate) fn digest_file(path: &Path) -> Result<String> {
     let mut source = fs::File::open(path)?;
     let mut hash = moirai_crypto::Sha256::new();
     let mut buffer = [0; 16 * 1024];

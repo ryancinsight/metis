@@ -20,9 +20,9 @@ pub(crate) const MANIFEST_LIMIT: u64 = 1024 * 1024;
 pub(crate) const FILE_LIMIT: usize = 4096;
 pub(crate) use file_associations::FileAssociation;
 #[cfg(windows)]
-pub(crate) use icon::ICON_LIMIT;
-#[cfg(windows)]
 pub(crate) use icon::{source as icon_source, validate_file as validate_icon_file};
+/// Shared byte budget for explicitly declared native shell artwork.
+pub(crate) const ICON_LIMIT: u64 = 1024 * 1024;
 pub(crate) use payload_path::{PAYLOAD_LIMIT, relative};
 pub(crate) use web::WebApplication;
 
