@@ -144,7 +144,7 @@ semantic status elements and data attributes.
 Build the WASM artifact and generated browser glue with:
 
 ```text
-cargo install wasm-bindgen-cli --version 0.2.128 --locked --root output/wasm-bindgen-cli
+cargo install wasm-bindgen-cli --version 0.2.129 --locked --root output/wasm-bindgen-cli
 python scripts/browser.py build
 ```
 

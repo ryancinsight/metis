@@ -28,6 +28,10 @@
   system `/var` symlink through an input path that the contract rejects.
 - Starter setup names the actual locked wasm-bindgen CLI version, 0.2.129.
 - Windows and Apple CI install the same 0.2.129 loader as the committed lock.
+- Browser tooling reads its required loader ABI from the committed lock rather
+  than retaining a separate version constant.
+- Neutral Cargo execution carries the repository's Rustup pin, preserving
+  compiler identity when directory isolation removes Rustup file discovery.
 - Bundling rejects assets above the shared provider limit before replacing an
   existing owned output, then validates copied sizes against the same limit.
 - Audit persistence tests reserve distinct real directories atomically. macOS

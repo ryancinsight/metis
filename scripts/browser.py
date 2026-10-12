@@ -9,13 +9,13 @@ import shutil
 import subprocess
 
 from cargo_overlay import isolated_cargo
+from verification import workspace
 
 PHYSICAL_ROOT = pathlib.Path(__file__).resolve().parents[1]
 ROOT = pathlib.Path(os.environ.get("METIS_NEUTRAL_ROOT", PHYSICAL_ROOT))
 OUTPUT = ROOT / "output" / "browser"
 SOURCE = ROOT / "examples" / "browser"
 CONTENT_SECURITY_POLICY = ROOT / "crates" / "metis-core" / "src" / "content_security_policy.txt"
-WASM_BINDGEN_VERSION = "0.2.128"
 # Keep externally supplied browser assets bounded before they enter the output.
 MAX_CONSUMER_MODULE_BYTES = 64 * 1024 * 1024
 MAX_CONSUMER_PAGE_BYTES = 512 * 1024
@@ -45,6 +45,7 @@ def cargo(arguments: list[str], *, timeout: int = 300, **options) -> subprocess.
 
 
 def wasm_bindgen() -> str:
+    required = workspace.package_version(ROOT / "Cargo.lock", "wasm-bindgen")
     configured = os.environ.get("WASM_BINDGEN")
     candidates = (
         pathlib.Path(configured) if configured else None,
@@ -61,13 +62,13 @@ def wasm_bindgen() -> str:
                 text=True,
                 timeout=30,
             )
-            if result.stdout.strip() == f"wasm-bindgen {WASM_BINDGEN_VERSION}":
+            if result.stdout.strip() == f"wasm-bindgen {required}":
                 return str(candidate)
             raise SystemExit(
-                f"wasm-bindgen {WASM_BINDGEN_VERSION} is required; found {result.stdout.strip()}"
+                f"wasm-bindgen {required} is required; found {result.stdout.strip()}"
             )
     raise SystemExit(
-        "wasm-bindgen CLI is required; install version 0.2.128 or set WASM_BINDGEN to its path"
+        f"wasm-bindgen CLI is required; install version {required} or set WASM_BINDGEN to its path"
     )
 
 

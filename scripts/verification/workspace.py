@@ -1,5 +1,8 @@
 """Workspace executable ownership and direct dependency contracts."""
 
+import pathlib
+import tomllib
+
 REGISTRY_BOUNDARIES = {
     # Native entry logging and test span capture use the canonical tracing
     # crates; no Atlas provider supplies a tracing subscriber implementation.
@@ -31,6 +34,16 @@ REGISTRY_BOUNDARIES = {
 }
 
 
+def package_version(lock: pathlib.Path, name: str) -> str:
+    """Return the one locked package version required by an external ABI tool."""
+    with lock.open("rb") as source:
+        packages = [entry for entry in tomllib.load(source).get("package", ())
+                    if entry.get("name") == name]
+    if len(packages) != 1 or not isinstance(packages[0].get("version"), str):
+        raise ValueError(f"Cargo lock must contain exactly one versioned package named {name}")
+    return packages[0]["version"]
+
+
 def application_targets(metadata):
     """Pin executable ownership independently of the application manifest."""
     members = [package for package in metadata["packages"] if package["id"] in metadata["workspace_members"]]
@@ -60,4 +73,3 @@ def format_neutral_workspace(metadata):
     if violations:
         joined = ", ".join(sorted(set(violations)))
         raise ValueError(f"Metis must remain format-neutral; DICOM belongs in RITK: {joined}")
-
