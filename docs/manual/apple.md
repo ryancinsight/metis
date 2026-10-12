@@ -3,6 +3,12 @@
 The same `frontend` manifest and HTML/CSS/Rust-WASM assets feed a browser or an
 installed Apple application. `metis-host` uses Moirai's AppKit/UIKit lifecycle
 and WKWebView resource provider. Apple hosts do not start a loopback server.
+
+Metis 0.2.1 requires moirai-webview 0.1.1. Its packaged resource responses carry
+status 200 plus exact MIME/length headers, which the WASM loader requires before
+it binds the application. Delivering a WASM file alone does not establish that
+the application starts. Native macOS Greet is verified for normal, Unicode and
+empty names against the corrected provider.
 This increment adds frontend hosting and bundling; the capability and isolation
 requirements in METIS-MACOS-001 and METIS-MOBILE-001 remain independently tracked.
 
@@ -172,7 +178,8 @@ metadata follows [Apple's icon-file contract](https://developer.apple.com/librar
 | iOS device bundle | Compiles; physical device is unavailable and no valid signing identity exists |
 | Native development watch lifecycle | Signed-bundle identity/icon, WASM load, source reload, compiler/icon-error preservation, source restoration and child-exit cleanup pass |
 | macOS application icon | Exact packaged ICNS, ten decoded resolutions, transparent/solid-color pixel oracles and inventory/signature checks pass; visible Dock observation requires Mac unlock |
-| Native interaction, Safari-specific input, rotation and suspend/resume | Pending: the Mac is locked to the computer-use tool |
+| Native macOS Greet | Actual clicks return exact Rust results for Ryan, Δ Ryan and empty input after the response-status fix |
+| Native mobile input, Safari-specific input, rotation and suspend/resume | Pending; the installed Xcode tree supplies the CoreSimulator backend without a Simulator UI application |
 
 Build and launch evidence do not establish native input, native plugin parity,
 OS permission denial or physical device execution. See the current

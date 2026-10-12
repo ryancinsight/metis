@@ -1,5 +1,15 @@
 # Changelog
 
+## [0.2.1] - Unreleased
+
+### Fixed
+
+- Require moirai-webview 0.1.1, whose Apple resource responses include Fetch
+  status 200 and exact MIME/length headers. The previous native host delivers
+  WASM bytes with status zero; the loader rejects before binding Greet.
+- Native macOS Greet returns exact Rust results for normal, Unicode and empty
+  names through the packaged application.
+
 ## [0.2.0] - Unreleased
 
 ### Added
