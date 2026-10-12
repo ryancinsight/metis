@@ -9,7 +9,10 @@ replay is a separately pinned evidence record: its standalone lock uses Metis
 `ab239d70bb561cbe665f852cc55ecbe4275be349` and Moirai
 `2a54e010532f76c88027fec8a468620c92fe66b3`. Implementation status
 belongs in [backlog.md](backlog.md); this register contains unresolved risks
-only.
+only. The 2026-10-12 Tauri review is [the pinned native inventory](docs/conformance/tauri.json):
+32 surfaces, 124 comparator-admitted pairs, 46 bounded implementation pairs
+and 78 open pairs. A bounded pair still has unmet acceptance. The validator
+rejects missing owners/boundaries and restrictions on admitted targets.
 
 | Risk | Current evidence | Closure / recheck trigger |
 | --- | --- | --- |
@@ -40,14 +43,15 @@ The macOS icon packaging gap is corrected: declared ICNS bytes and metadata
 reach both normal and development bundles. Visible Dock branding remains part
 of the pending unlocked-desktop verification.
 
-Native form interaction, Safari-specific browser input, rotation and
-suspend/reconnect evidence remain unavailable while the Mac is locked to the
-computer-use tool. The physical iPhone is unavailable; the Mac has no valid
+The Mac is unlocked. Native macOS Greet returns exact normal, Unicode and
+empty-name results through the packaged Rust application. Safari-specific
+browser input, rotation and suspend/reconnect evidence remain open. The
+physical iPhone is unavailable; the Mac has no valid
 device-signing identity. Apple's iPad simulator reports duplicate accessibility
 classes, which require interactive validation. Android native hosting, Apple capability/permission denial
 and the full Tauri plugin matrix remain open. This does not close
 METIS-MACOS-001 or METIS-MOBILE-001. The new provider sources are pushed;
 standalone locks resolve their exact Git revision without an Atlas overlay.
 Path-overlay locks remain derived development artifacts
-before a release. Recheck through [checklist.md](checklist.md) and the
+before a release. Recheck through [backlog.md](backlog.md) and the
 [Apple manual](docs/manual/apple.md).

@@ -5,6 +5,9 @@
 
 pub mod theme;
 
+#[cfg(any(target_arch = "wasm32", test))]
+mod http;
+
 mod canvas;
 
 pub use canvas::{
@@ -62,7 +65,10 @@ mod navigation;
 pub use navigation::BrowserNavigator;
 
 #[cfg(target_arch = "wasm32")]
-pub use browser::{metis_start, metis_stop};
+pub use browser::{metis_browser_start, metis_browser_stop, metis_start, metis_stop};
+
+#[cfg(target_arch = "wasm32")]
+pub use http::{metis_http_start, metis_http_stop};
 
 /// Takes the latest completed browser file batch, if one is waiting.
 ///

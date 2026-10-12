@@ -7,7 +7,6 @@ use std::num::NonZeroU64;
 pub(crate) struct Generation(NonZeroU64);
 
 impl Generation {
-    #[cfg(target_arch = "wasm32")]
     pub(crate) const fn value(self) -> u64 {
         self.0.get()
     }
@@ -26,9 +25,16 @@ impl Epoch {
         }
     }
 
-    #[cfg(test)]
     pub(crate) const fn current(&self) -> Generation {
         Generation(self.generation)
+    }
+
+    #[cfg(test)]
+    pub(crate) fn at(value: u64) -> Self {
+        Self {
+            generation: NonZeroU64::new(value).expect("test epoch is nonzero"),
+            exhausted: false,
+        }
     }
 
     pub(crate) fn advance(&mut self) -> io::Result<Generation> {

@@ -180,7 +180,7 @@ class ResourceComparisonTests(unittest.TestCase):
 
     def test_cli_writes_bounded_output_without_input_paths(self):
         with tempfile.TemporaryDirectory(prefix="metis-resource-compare-") as directory:
-            root = pathlib.Path(directory)
+            root = pathlib.Path(directory).resolve()
             left_path = root / "left.json"
             right_path = root / "right.json"
             output_path = root / "comparison.json"
@@ -209,7 +209,7 @@ class ResourceComparisonTests(unittest.TestCase):
 
     def test_input_symlink_is_rejected(self):
         with tempfile.TemporaryDirectory(prefix="metis-resource-compare-link-") as directory:
-            root = pathlib.Path(directory)
+            root = pathlib.Path(directory).resolve()
             source = root / "source.json"
             link = root / "link.json"
             source.write_text(json.dumps(_record()), encoding="utf-8")
@@ -222,7 +222,7 @@ class ResourceComparisonTests(unittest.TestCase):
 
     def test_output_hardlink_is_rejected(self):
         with tempfile.TemporaryDirectory(prefix="metis-resource-compare-hardlink-") as directory:
-            root = pathlib.Path(directory)
+            root = pathlib.Path(directory).resolve()
             original = root / "original.json"
             alias = root / "alias.json"
             original.write_text("{}", encoding="utf-8")

@@ -11,5 +11,9 @@ description = "Shared wire types, integrity primitives, capability tokens, and e
 [dependencies]
 moirai-crypto.workspace = true
 
+[dev-dependencies]
+tracing.workspace = true
+tracing-subscriber.workspace = true
+
 [lints]
 workspace = true

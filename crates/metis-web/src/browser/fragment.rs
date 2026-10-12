@@ -45,6 +45,48 @@ pub(crate) fn target_allowed(target: &str) -> bool {
     TARGET_IDS.contains(&target)
 }
 
+pub(crate) trait TargetPolicy {
+    fn allows(target: &str) -> bool;
+}
+
+pub(crate) struct WorkbenchTargets;
+impl TargetPolicy for WorkbenchTargets {
+    fn allows(target: &str) -> bool {
+        target_allowed(target)
+    }
+}
+
+pub(crate) fn preflight<P: TargetPolicy>(
+    generation: u64,
+    patch_set: &FragmentPatchSet,
+) -> std::io::Result<()> {
+    use std::io::{Error, ErrorKind};
+    if patch_set.generation() != generation {
+        return Err(Error::new(
+            ErrorKind::InvalidInput,
+            "Fragment response generation is stale",
+        ));
+    }
+    for patch in patch_set.patches() {
+        if !P::allows(patch.target()) {
+            return Err(Error::new(
+                ErrorKind::PermissionDenied,
+                "Fragment target is outside the mounted target policy",
+            ));
+        }
+        if patch
+            .attribute()
+            .is_some_and(|(name, _)| !attribute_allowed(name))
+        {
+            return Err(Error::new(
+                ErrorKind::PermissionDenied,
+                "Fragment attribute is outside the presentation policy",
+            ));
+        }
+    }
+    Ok(())
+}
+
 /// Returns whether a fragment may change one DOM attribute.
 ///
 /// Dynamic updates are limited to accessibility/data attributes and the
@@ -119,7 +161,12 @@ pub(crate) fn listeners(
             }
             match result {
                 Ok(patch_set) => {
-                    if apply_patch_set(&result_document, generation.value(), &patch_set).is_err()
+                    if apply_patch_set::<WorkbenchTargets>(
+                        &result_document,
+                        generation.value(),
+                        &patch_set,
+                    )
+                    .is_err()
                         && let Some(status) = result_document.get_element_by_id("metis-events")
                     {
                         status.set_text("Fragment response rejected by the browser target policy");
@@ -140,42 +187,23 @@ pub(crate) fn listeners(
 }
 
 #[cfg(target_arch = "wasm32")]
-pub(crate) fn apply_patch_set(
+pub(crate) fn apply_patch_set<P: TargetPolicy>(
     document: &moirai_pal::wasm::WebDocument,
     expected_generation: u64,
     patch_set: &FragmentPatchSet,
 ) -> std::io::Result<()> {
     use std::io::{Error, ErrorKind};
 
-    if patch_set.generation() != expected_generation {
-        return Err(Error::new(
-            ErrorKind::InvalidInput,
-            "Fragment response generation is stale",
-        ));
-    }
+    preflight::<P>(expected_generation, patch_set)?;
 
     // Preflight every target and attribute before mutating the DOM. The
     // synchronous function cannot interleave browser script between passes,
     // so an invalid patch leaves the mounted tree unchanged.
     for patch in patch_set.patches() {
-        if !target_allowed(patch.target()) {
-            return Err(Error::new(
-                ErrorKind::PermissionDenied,
-                "Fragment target is outside the mounted target policy",
-            ));
-        }
         if document.get_element_by_id(patch.target()).is_none() {
             return Err(Error::new(
                 ErrorKind::NotFound,
                 "Fragment target is not mounted",
-            ));
-        }
-        if let Some((name, _)) = patch.attribute()
-            && !attribute_allowed(name)
-        {
-            return Err(Error::new(
-                ErrorKind::PermissionDenied,
-                "Fragment attribute is outside the presentation policy",
             ));
         }
     }
@@ -235,5 +263,57 @@ mod tests {
             Some("<script>ignored</script>")
         );
         assert!(target_allowed(response.patches()[0].target()));
+    }
+
+    #[test]
+    fn mounted_target_policies_share_preflight_and_preserve_decoded_values() {
+        use std::io::ErrorKind;
+        let _trace =
+            tracing::subscriber::set_default(tracing_subscriber::fmt().with_test_writer().finish());
+        let _span = tracing::info_span!("fragment_preflight").entered();
+        let value = "Δ <script>text only</script>";
+        let patches = FragmentPatchSet::new(
+            7,
+            vec![
+                FragmentPatch::set_text("metis-events", value).expect("text"),
+                FragmentPatch::set_attribute("metis-status", "aria-busy", "false")
+                    .expect("attribute"),
+            ],
+        )
+        .expect("patches");
+        preflight::<WorkbenchTargets>(7, &patches).expect("workbench policy");
+        preflight::<crate::http::HttpTargets>(7, &patches).expect("HTTP policy");
+        assert_eq!(patches.patches()[0].text(), Some(value));
+        assert_eq!(
+            patches.patches()[1].attribute(),
+            Some(("aria-busy", "false"))
+        );
+        assert_eq!(
+            preflight::<crate::http::HttpTargets>(8, &patches)
+                .expect_err("stale")
+                .kind(),
+            ErrorKind::InvalidInput
+        );
+        for (target, attribute) in [
+            ("metis-forbidden", "aria-busy"),
+            ("metis-status", "onclick"),
+            ("metis-events", "src"),
+        ] {
+            let patches = FragmentPatchSet::new(
+                7,
+                vec![
+                    FragmentPatch::set_text("metis-events", value).expect("first valid patch"),
+                    FragmentPatch::set_attribute(target, attribute, "denied")
+                        .expect("second patch"),
+                ],
+            )
+            .expect("patches");
+            assert_eq!(
+                preflight::<crate::http::HttpTargets>(7, &patches)
+                    .expect_err("policy denial")
+                    .kind(),
+                ErrorKind::PermissionDenied
+            );
+        }
     }
 }

@@ -72,9 +72,15 @@ theme, pointer and teardown observations.
 The infusion arithmetic is a synthetic engineering example; its configurable
 limits are not treatment guidance.
 
+Metis 0.3.0 moves browser shell, protocol and HTTP lifecycle behavior into Rust.
+The three authored application modules contain nine initialization lines;
+generated wasm-bindgen bindings remain. [ADR 0056](docs/adr/0056-rust-browser-shell.md)
+records the contracts and [the Tauri review](docs/manual/tauri.md) records
+the required native pairs and their remaining acceptance.
+
 ## Build and run
 
-Use the pinned Rust toolchain, cargo-nextest 0.9.143 and wasm-bindgen-cli 0.2.128.
+Use the pinned Rust toolchain, cargo-nextest 0.9.143 and wasm-bindgen-cli 0.2.129.
 From this directory:
 
 ```text

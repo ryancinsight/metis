@@ -1,5 +1,48 @@
 # Changelog
 
+## [0.3.0] - Unreleased
+
+### Added
+
+- Rust entry points own workbench configuration/navigation and HTTP host
+  start/stop, session, request cancellation and DOM updates (ADR 0056).
+- The pinned Tauri inventory reviews 30 official plugins plus two built-in
+  surfaces across five native targets: 124 admitted pairs, each with a live
+  owner and explicit remaining acceptance. Bounded implementations are not
+  complete parity; unsupported comparator pairs alone receive restrictions.
+- Real Fetch acceptance checks every streamed byte at the exact body limit,
+  excess declared/streamed lengths, Unicode POST, redirect refusal, header/body
+  deadlines and peer-observed task cancellation.
+
+### Changed
+
+- Authored application JavaScript falls from 505 to nine lines across the
+  workbench, HTTP page and starter. Each module only initializes generated
+  wasm-bindgen interop and calls Rust; generated browser bindings remain.
+- Both fragment presentations use one Rust preflight/apply implementation
+  with a statically selected target policy and authoritative binary codecs.
+- Require Moirai PAL 0.8.2 for bounded Fetch and actual Web IDL stream
+  dictionaries; Gaia 0.5.2 admits the resulting shared provider graph.
+- Browser manuals separate current contracts from historical capture records.
+
+### Fixed
+
+- Reload and remount recover the original live HTTP grant without issuing
+  another capability, extending its expiry or changing the command sequence.
+- Python extensions use PyO3's build-mode selection. Ordinary Cargo tests link
+  the interpreter; maturin 1.14.1 selects extension linking during wheel builds.
+- Setup documents use the locked wasm-bindgen CLI version, 0.2.129.
+- Resource measurement fixtures resolve their real macOS temporary parent;
+  redirected paths and hardlinked output rejection remain unchanged.
+
+### Breaking
+
+- An exact repeated active HTTP handshake returns the original 200 response
+  instead of 409. Clients may retry the same admitted principal, process and
+  version until the original expiry. A changed active handshake remains 409;
+  principal and Origin denials retain their prior rules. No migration changes
+  protocol bytes or the underlying one-handshake backend session contract.
+
 ## [0.2.1] - Unreleased
 
 ### Fixed

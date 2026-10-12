@@ -478,3 +478,7 @@ impl ErrorResponsePayload {
 #[path = "payload/codec.rs"]
 mod codec;
 use codec::{decode_string, decode_token, encode_token, string_length};
+
+#[cfg(test)]
+#[path = "payload/error_tests.rs"]
+mod error_tests;

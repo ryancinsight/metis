@@ -22,6 +22,8 @@ pub(super) struct HttpSession<C> {
     pub(super) next_sequence: u64,
     /// Expiry on the monotonic axis of the service clock.
     pub(super) expires_at: Duration,
+    handshake: HandshakeRequestPayload,
+    handshake_response: Vec<u8>,
 }
 
 impl<C: Clock + Clone> BrowserHttpService<C> {
@@ -49,7 +51,12 @@ impl<C: Clock + Clone> BrowserHttpService<C> {
             Err(error) => return self.error_response(500, &error),
         };
         self.drop_expired_session(opened);
-        if self.session.is_some() {
+        if let Some(session) = &self.session {
+            // Exact retry returns the same grant; it neither extends the
+            // monotonic lifetime nor advances the backend command sequence.
+            if session.handshake == request {
+                return self.binary_response(200, session.handshake_response.clone());
+            }
             return self.error_response(
                 409,
                 &MetisError::capability(
@@ -109,6 +116,8 @@ impl<C: Clock + Clone> BrowserHttpService<C> {
                     service,
                     next_sequence: 2,
                     expires_at,
+                    handshake: request,
+                    handshake_response: response.clone(),
                 });
                 self.binary_response(200, response)
             }

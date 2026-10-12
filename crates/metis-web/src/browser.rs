@@ -24,6 +24,7 @@ mod listeners;
 mod pointer;
 #[path = "browser/result.rs"]
 mod result;
+mod shell;
 #[path = "browser/submission.rs"]
 mod submission;
 #[path = "browser/text.rs"]
@@ -49,6 +50,8 @@ use moirai_pal::wasm::{LocalTaskHandle, WebDocument, WebEventListener};
 use std::cell::RefCell;
 use std::io;
 use std::rc::Rc;
+
+pub use shell::{metis_browser_start, metis_browser_stop};
 
 struct BrowserState {
     inputs: FormInputs,
