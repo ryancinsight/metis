@@ -10,7 +10,7 @@ use crate::manifest;
 #[cfg(windows)]
 use std::path::{Path, PathBuf};
 
-pub(crate) const ICON_LIMIT: u64 = 1024 * 1024;
+use super::ICON_LIMIT;
 
 const HEADER_SIZE: usize = 6;
 const ENTRY_SIZE: usize = 16;

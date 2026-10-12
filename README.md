@@ -117,6 +117,14 @@ trusted publishers to be registered by the release authority; the empty
 The Python binding workflow and the runnable clinical example are documented in
 the [Python binding manual](docs/manual/python.md).
 
+## Apple frontend applications
+
+The starter's Rust/WASM frontend runs in a browser or packages with Moirai's
+native macOS/iPhone/iPad WebKit host. In Atlas, `python3 scripts/atlas-metis.py
+apple run --target macos` builds and opens the starter; `serve` selects the
+browser path. The [Apple manual](docs/manual/apple.md) records simulator
+commands, device-signing requirements and the current verification boundary.
+
 ## Atlas ownership
 
 Moirai owns worker scheduling, process lifecycle and browser DOM/event handles.
@@ -144,7 +152,8 @@ describing it as dependency-free. The Atlas development overlay resolves first-p
 trees. Standalone builds use the corresponding pushed provider revisions recorded
 in Cargo.lock. Metis consumes Moirai through git-plus-version requirements;
 the current standalone lock records merged Moirai revision
-`93cf5f6e8b5c5d1028c20a812f2e88abd5edba4c`, which includes the Windows
+`8d41265747660660525735546ae5ef7615093301`, which adds the Apple WKWebView
+host, Darwin process cleanup and closed-peer instance reception. It includes the Windows
 AccessKit accessibility provider, the UI Automation value-action mapping,
 WebView2 0.39.1 bindings, POSIX process-group tree containment,
 `<select>` values through `WebElement::set_value`, keyboard shortcuts on

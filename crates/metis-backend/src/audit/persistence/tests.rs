@@ -7,18 +7,97 @@ use metis_ipc::IpcHandler;
 use metis_ipc::server::{FailureContext, RequestIdentity};
 use std::fs;
 use std::path::PathBuf;
-use std::time::{SystemTime, UNIX_EPOCH};
+use std::sync::atomic::{AtomicUsize, Ordering};
 
 use crate::audit::persistence::{HEADER_SIZE, SLOT_NAMES};
 
 const KEY: AuditCheckpointKey = AuditCheckpointKey::new([0x5a; 32]);
 
 fn temporary_directory() -> PathBuf {
-    let stamp = SystemTime::now()
-        .duration_since(UNIX_EPOCH)
-        .expect("clock after epoch")
-        .as_nanos();
-    std::env::temp_dir().join(format!("metis-audit-{stamp}"))
+    static NEXT: AtomicUsize = AtomicUsize::new(0);
+    // (process, sequence) is injective within this test process. Atomic
+    // create_dir reserves the path against stale fixtures from reused PIDs;
+    // clock resolution is not an ownership or uniqueness guarantee.
+    loop {
+        let sequence = NEXT
+            .fetch_update(Ordering::Relaxed, Ordering::Relaxed, |value| {
+                value.checked_add(1)
+            })
+            .expect("test directory sequence exhausted");
+        let directory =
+            std::env::temp_dir().join(format!("metis-audit-{}-{sequence}", std::process::id()));
+        match fs::create_dir(&directory) {
+            Ok(()) => return directory,
+            Err(error) if error.kind() == std::io::ErrorKind::AlreadyExists => {}
+            Err(error) => panic!("reserve audit test directory: {error}"),
+        }
+    }
+}
+
+#[test]
+fn concurrent_stores_keep_distinct_authenticated_snapshots() {
+    let _trace = tracing::subscriber::set_default(
+        tracing_subscriber::fmt()
+            .with_test_writer()
+            .with_span_events(tracing_subscriber::fmt::format::FmtSpan::FULL)
+            .finish(),
+    );
+    let _test = tracing::info_span!("audit_fixture_isolation").entered();
+    let dispatch = tracing::dispatcher::get_default(Clone::clone);
+    let parent = tracing::Span::current();
+    let barrier = std::sync::Barrier::new(SLOT_NAMES.len());
+    let snapshots = std::thread::scope(|scope| {
+        let handles: Vec<_> = SLOT_NAMES
+            .iter()
+            .enumerate()
+            .map(|(index, _)| {
+                let barrier = &barrier;
+                let dispatch = &dispatch;
+                let parent = &parent;
+                scope.spawn(move || {
+                    let _trace = tracing::dispatcher::set_default(dispatch);
+                    let _parent = parent.enter();
+                    let (directory, mut store, mut ledger) = tracing::info_span!("arrange", index)
+                        .in_scope(|| {
+                            let directory = temporary_directory();
+                            let store =
+                                FileAuditStore::open(&directory, KEY.clone()).expect("open");
+                            (directory, store, sample_ledger())
+                        });
+                    if index == 1 {
+                        ledger
+                            .record(
+                                44,
+                                [3; 16],
+                                AuditEvent::Failure(FailureContext::Receive),
+                                Some(ErrorCode::TransportBroken),
+                            )
+                            .expect("distinct snapshot");
+                    }
+                    tracing::info_span!("act", index).in_scope(|| {
+                        store.persist(&ledger).expect("persist");
+                        barrier.wait();
+                        let mut reopened =
+                            FileAuditStore::open(&directory, KEY.clone()).expect("reopen");
+                        let recovered = reopened.load().expect("load");
+                        tracing::info_span!("assert", index).in_scope(|| {
+                            assert_eq!(recovered.records(), ledger.records());
+                            assert_eq!(reopened.generation(), 1);
+                        });
+                    });
+                    directory
+                })
+            })
+            .collect();
+        handles
+            .into_iter()
+            .map(|handle| handle.join().expect("snapshot worker"))
+            .collect::<Vec<_>>()
+    });
+    assert_ne!(snapshots[0], snapshots[1]);
+    for directory in snapshots {
+        fs::remove_dir_all(directory).expect("cleanup");
+    }
 }
 
 fn sample_ledger() -> AuditLedger {

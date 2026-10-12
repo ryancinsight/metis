@@ -27,3 +27,27 @@ only.
 A closed risk is removed after its regression oracle or owning decision records
 the durable lesson. Compile-only, simulated interaction, real host execution,
 visual inspection and measurements are distinct evidence categories.
+
+## Apple local increment — 2026-10-11
+
+The shared Rust/WASM bundle compiles for macOS, device iOS and simulator iOS;
+ad-hoc macOS/simulator signing, plist validation and iPhone/iPad installation
+and launch succeed; each native host delivers the real WASM resource. The browser computes exact normal, Unicode and empty-name
+greetings. CPU calculation and process cleanup pass with the Moirai fix.
+Native development reload, compiler-error preservation and terminal-child
+cleanup pass against real source changes with exact source restoration.
+The macOS icon packaging gap is corrected: declared ICNS bytes and metadata
+reach both normal and development bundles. Visible Dock branding remains part
+of the pending unlocked-desktop verification.
+
+Native form interaction, Safari-specific browser input, rotation and
+suspend/reconnect evidence remain unavailable while the Mac is locked to the
+computer-use tool. The physical iPhone is unavailable; the Mac has no valid
+device-signing identity. Apple's iPad simulator reports duplicate accessibility
+classes, which require interactive validation. Android native hosting, Apple capability/permission denial
+and the full Tauri plugin matrix remain open. This does not close
+METIS-MACOS-001 or METIS-MOBILE-001. The new provider sources are pushed;
+standalone locks resolve their exact Git revision without an Atlas overlay.
+Path-overlay locks remain derived development artifacts
+before a release. Recheck through [checklist.md](checklist.md) and the
+[Apple manual](docs/manual/apple.md).

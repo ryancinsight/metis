@@ -201,6 +201,10 @@ an owner. “Unsupported” cannot replace delivery of a required mobile/native 
 - Scope: native window/WebView events, accessibility/IME integration, process containment, sandbox restrictions and teardown; share broker semantics, not Windows implementation details.
 - Acceptance: host-native [V05](docs/VERIFICATION.md#V05) plus unauthorized file/network/process denial, child drain and positive IPC; cross compilation alone cannot close this item.
 - Demonstration: actual macOS window/permission captures and manual setup/troubleshooting from the tested revision.
+- Local increment (2026-10-11) [minor]: shared frontend packages in a Moirai AppKit/WKWebView host; `apple build|run` and macOS `dev --watch` exist. Ad-hoc bundle validation and process calculation/cleanup pass. Native interaction and OS-denial evidence remain open; [manual](docs/manual/apple.md), [ADR 0055](docs/adr/0055-apple-application-bundles.md).
+- macOS identity correction (2026-10-11) [patch]: the starter declares its vector-derived ICNS; packaging copies it and declares `CFBundleIconFile`. Development uses the same signed bundle path. All ten decoded dimensions and exact interior colors pass; malformed, oversized, linked and missing icons preserve every owned output byte. Dock observation requires an unlocked desktop.
+- Verification (2026-10-11) [patch]: 678 isolated workspace tests, lint and documentation pass outside Atlas's overlay; 125 provider and 34 configuration/index/page/icon tests pass. Actual resource budgets, unchanged-output ownership, real-source reload and compiler/icon-error preservation are verified. Audit fixtures reserve distinct real directories; source hashes and final bundle inventories are checked.
+- Delivery (2026-10-11) [minor]: target Metis 0.2.0; merged Moirai provider pinned in standalone workspace/fuzz locks; the main lock preserves unrelated provider revisions. Required Apple CI repeats tests, native icon decoding and all three bundle/signature/deployment checks. Default-branch delivery and release compatibility gates remain pending.
 
 <a id="METIS-LINUX-001"></a>
 ## METIS-LINUX-001 — Linux restricted desktop [arch] [minor]
@@ -431,6 +435,8 @@ an owner. “Unsupported” cannot replace delivery of a required mobile/native 
 - Scope: Android/iOS WebView host, touch/keyboard/rotation/suspend/resume, platform plugin boundary; enumerate geolocation, biometric, barcode, NFC and haptics requirements from the Tauri inventory.
 - Acceptance: real device/emulator journeys and permission prompts, restore/cancel across suspension; pin required Android/iOS capability pairs from Tauri's inventory and implement/test each. Restriction closes only comparator-unsupported/out-of-scope pairs; unmet admitted pairs remain open.
 - Demonstration: [V11](docs/VERIFICATION.md#V11), actual phone/tablet screenshots and target-specific manual instructions; app-store release remains separately authorized.
+- Local increment (2026-10-11) [minor]: one iOS/iPadOS scene-based WebKit host packages the browser assets. iOS device/simulator compilation and iPhone 17/iPad Air simulator installation/launch pass. Native input/rotation/suspend, physical provisioning, Android hosting and admitted plugin pairs remain open. Browser input is verified separately and does not stand in for native execution.
+- Local verification (2026-10-11) [patch]: native macOS development reload and compiler-error preservation pass with real source edits and exact restoration. A terminated child ends supervision without retaining a process. Bundle budget rejection preserves the previous output; all three final inventories match packaged bytes and deployment minima.
 
 <a id="METIS-PERF-001"></a>
 ## METIS-PERF-001 — Comparative resource and latency evidence [patch]

@@ -1,8 +1,7 @@
 //! `metis dev` for a browser application: the built page in a native window.
 //!
-//! The page is served from its build directory under a reserved `https`
-//! host, so ES modules and WebAssembly load as they do from `metis serve`,
-//! which a `file:///` page does not allow. With `--watch`, a source change
+//! Windows maps a reserved HTTPS host; macOS uses the constrained packaged
+//! resource scheme from Moirai. Both run the same staged Rust-WASM frontend. With `--watch`, a source change
 //! rebuilds the page and reloads the window; a failed compile keeps the
 //! previous page and reports the error.
 use super::DevMode;
@@ -14,13 +13,21 @@ pub(super) fn run(application: &WebApplication, root: &Path, mode: DevMode) -> R
     window::run(application, root, mode)
 }
 
-#[cfg(not(windows))]
+#[cfg(not(any(windows, target_os = "macos")))]
 pub(super) fn run(_application: &WebApplication, _root: &Path, _mode: DevMode) -> Result<()> {
     Err(
-        "metis dev hosts a browser application in WebView2, which requires Windows; \
+        "metis dev hosts a browser application on Windows and macOS; \
          use metis serve"
             .into(),
     )
+}
+
+#[cfg(target_os = "macos")]
+mod apple;
+
+#[cfg(target_os = "macos")]
+pub(super) fn run(application: &WebApplication, root: &Path, mode: DevMode) -> Result<()> {
+    apple::run(application, root, mode)
 }
 
 #[cfg(windows)]

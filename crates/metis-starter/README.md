@@ -29,7 +29,7 @@ Install the `metis` command and the WebAssembly prerequisites once:
 ```bash
 cargo install --path crates/metis-cli --locked
 rustup target add wasm32-unknown-unknown
-cargo install wasm-bindgen-cli --version 0.2.128 --locked
+cargo install wasm-bindgen-cli --version 0.2.129 --locked
 ```
 
 Then, in this directory:
@@ -40,8 +40,8 @@ metis serve
 
 `metis serve` builds the page and serves it on `http://127.0.0.1:1420/`, the
 port a Tauri development server uses, until interrupted; `--port` selects
-another. On Windows, `metis dev --watch` opens the same page in a native
-window, as `tauri dev` does, and reloads it after each change. `metis build`
+another. On Windows and macOS, `metis dev --watch` opens the same page in a native
+window and rebuilds after each change; macOS reopens the window on success. `metis build`
 only builds. Both read `metis.json` here, whose
 `frontend` names the page directory and this package. The build compiles the
 package for `wasm32-unknown-unknown`, generates the loader with the
@@ -50,6 +50,20 @@ package for `wasm32-unknown-unknown`, generates the loader with the
 file inventory in `dist/inventory.json`. See
 [the application manual](../../docs/manual/applications.md) for the browser
 check that greets a name and captures the page.
+
+## Installed Apple apps
+
+The same frontend also packages as a native macOS, iPhone or iPad app.
+In an Atlas checkout, run `python3 scripts/atlas-metis.py apple run --target macos`
+from the Atlas root; use `--target ios-simulator --device ID` for a booted
+simulator. `serve` retains the browser option. See the
+[Apple application manual](../../docs/manual/apple.md) for prerequisites,
+output ownership and the separate device-signing requirements.
+
+The manifest's `icon` selects `icons/application.icns` for the macOS Dock.
+The installed and development apps both use a signed bundle with that artwork.
+Regenerate it from the canonical vector with `python3 scripts/apple_icon.py`
+at the Metis repository root.
 
 ## Assets
 

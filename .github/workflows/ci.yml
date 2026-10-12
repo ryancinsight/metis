@@ -175,7 +175,7 @@ jobs:
           tool: |
             cargo-nextest@0.9.143
             cargo-deny@0.20.2
-            wasm-bindgen@0.2.128
+            wasm-bindgen@0.2.129
           checksum: true
       - name: Prime advisory database
         shell: pwsh
@@ -198,6 +198,13 @@ jobs:
             output/browser/**
           if-no-files-found: ignore
           retention-days: 7
+
+  apple:
+    name: Apple applications
+    if: github.event_name != 'pull_request' || github.event.pull_request.draft == false
+    uses: ./.github/workflows/apple.yml
+    permissions:
+      contents: read
 
   workflow-lint:
     name: Workflows are valid
@@ -364,7 +371,7 @@ jobs:
       - name: Install wasm-bindgen
         uses: taiki-e/install-action@a6b2e2dcd845ddd7f509ce4f3ed3d922b80cc5d9 # v2.84.0
         with:
-          tool: wasm-bindgen@0.2.128
+          tool: wasm-bindgen@0.2.129
           checksum: true
       - name: Build browser assets
         shell: bash
@@ -645,7 +652,7 @@ jobs:
   gate:
     name: Metis gate
     if: always()
-    needs: [changes, verify, workflow-lint, lockfile, adr-index, conformance, semver, artifact-budget, fuzz, browser-assets, browser-runtime, browser-text-cross-engine]
+    needs: [changes, verify, apple, workflow-lint, lockfile, adr-index, conformance, semver, artifact-budget, fuzz, browser-assets, browser-runtime, browser-text-cross-engine]
     runs-on: ubuntu-24.04
     timeout-minutes: 5
     permissions: {}
@@ -653,7 +660,7 @@ jobs:
       - name: Check required job results
         env:
           METIS_GATE_NEEDS: ${{ toJSON(needs) }}
-          METIS_GATE_EXPECTED_JOBS: '["changes","verify","workflow-lint","lockfile","adr-index","conformance","semver","artifact-budget","fuzz","browser-assets","browser-runtime","browser-text-cross-engine"]'
+          METIS_GATE_EXPECTED_JOBS: '["changes","verify","apple","workflow-lint","lockfile","adr-index","conformance","semver","artifact-budget","fuzz","browser-assets","browser-runtime","browser-text-cross-engine"]'
           METIS_GATE_DRAFT: ${{ github.event_name == 'pull_request' && github.event.pull_request.draft || false }}
         run: |
           python3 - <<'PY'

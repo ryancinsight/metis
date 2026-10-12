@@ -13,6 +13,9 @@ pub(crate) struct WebApplication {
     pub(crate) schema: u32,
     pub(crate) name: String,
     pub(crate) cargo_manifest: String,
+    /// Optional macOS shell icon, relative to the application manifest.
+    #[serde(default)]
+    pub(crate) icon: Option<String>,
     pub(crate) frontend: Frontend,
 }
 
@@ -34,6 +37,15 @@ impl WebApplication {
         label(&self.name)?;
         relative(&self.cargo_manifest)?;
         identifier(&self.frontend.package)?;
+        if let Some(icon) = &self.icon {
+            relative(icon)?;
+            if !std::path::Path::new(icon)
+                .extension()
+                .is_some_and(|extension| extension.eq_ignore_ascii_case("icns"))
+            {
+                return Err("frontend application icon must be an ICNS file".into());
+            }
+        }
         relative(&self.frontend.directory)
     }
 }

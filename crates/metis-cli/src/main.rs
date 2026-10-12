@@ -1,4 +1,5 @@
 //! Build and distribute applications from a single validated manifest.
+mod apple;
 mod bounded_read;
 mod build;
 mod commands;
@@ -35,6 +36,7 @@ fn main() -> Result<()> {
             init::create(Path::new(&args[1]))
         }
         Some("dev") => dev::run(&args),
+        Some("apple") => apple::run(&args[1..]),
         Some("completions") => {
             if args.len() != 2 {
                 return Err(usage_error("completions requires exactly one SHELL"));

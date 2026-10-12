@@ -55,6 +55,12 @@ class StarterPageTests(unittest.TestCase):
     def test_the_mark_matches_the_canonical_mark(self):
         self.assertEqual((FRONTEND / "assets" / "metis-mark.svg").read_bytes(), CANONICAL_MARK.read_bytes())
 
+    def test_the_macos_shell_icon_is_declared(self):
+        self.assertEqual(_manifest()["icon"], "icons/application.icns")
+        icon = (CRATE / _manifest()["icon"]).read_bytes()
+        self.assertEqual(icon[:4], b"icns")
+        self.assertEqual(int.from_bytes(icon[4:8], "big"), len(icon))
+
     def test_the_page_runs_only_the_module_loader(self):
         page = _page()
         self.assertEqual(page.scripts, [{"type": "module", "src": "main.js"}])
