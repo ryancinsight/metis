@@ -14,6 +14,7 @@ import zipfile
 
 
 SCRIPTS = pathlib.Path(__file__).resolve().parents[1]
+sys.path.insert(0, str(SCRIPTS))
 
 
 class NeutralWorkspaceTests(unittest.TestCase):
@@ -52,7 +53,7 @@ class FormatNeutralWorkspaceTests(unittest.TestCase):
             ],
             "workspace_members": ["core", "web"],
         }
-        self.verify["format_neutral_workspace"](metadata)
+        self.verify["workspace"].format_neutral_workspace(metadata)
 
     def test_format_neutral_workspace_rejects_dicom_dependency(self):
         metadata = {
@@ -62,10 +63,10 @@ class FormatNeutralWorkspaceTests(unittest.TestCase):
             "workspace_members": ["host"],
         }
         with self.assertRaisesRegex(ValueError, "DICOM belongs in RITK"):
-            self.verify["format_neutral_workspace"](metadata)
+            self.verify["workspace"].format_neutral_workspace(metadata)
 
     def test_registry_boundary_allows_only_the_owned_grapheme_policy_dependency(self):
-        boundaries = self.verify["REGISTRY_BOUNDARIES"]
+        boundaries = self.verify["workspace"].REGISTRY_BOUNDARIES
         self.assertIn(("metis-web", "unicode-segmentation"), boundaries)
         self.assertNotIn(("metis-core", "unicode-segmentation"), boundaries)
 
@@ -81,6 +82,7 @@ class BootstrapEvidenceTests(unittest.TestCase):
         scripts.mkdir()
         for name in ("verify.py", "visual.py"):
             shutil.copyfile(SCRIPTS / name, scripts / name)
+        shutil.copytree(SCRIPTS / "verification", scripts / "verification")
         (self.root / "Cargo.lock").write_text("version = 4\n", encoding="utf-8")
         (self.root / "rust-toolchain.toml").write_text(
             '[toolchain]\nchannel = "1.97.0"\n', encoding="utf-8"
@@ -221,7 +223,7 @@ class WorkflowContractTests(unittest.TestCase):
             "taiki-e/install-action@a6b2e2dcd845ddd7f509ce4f3ed3d922b80cc5d9",
             "cargo-nextest@0.9.143",
             "cargo-deny@0.20.2",
-            "wasm-bindgen@0.2.128",
+            "wasm-bindgen@0.2.129",
             "checksum: true",
             "cargo fetch --locked --manifest-path Cargo.toml",
             "cargo-deny fetch db",
@@ -274,8 +276,13 @@ class WorkflowContractTests(unittest.TestCase):
 
     def test_draft_pull_requests_and_unsupported_hosts_are_excluded(self):
         draft_guard = "if: github.event_name != 'pull_request' || github.event.pull_request.draft == false"
-        self.assertEqual(self.source.count(draft_guard), 4)
-        verify = self.source.split("\n  verify:\n", 1)[1].split("\n  workflow-lint:\n", 1)[0]
+        guarded_jobs = ("apple", "workflow-lint", "lockfile", "adr-index", "conformance")
+        self.assertEqual(self.source.count(draft_guard), len(guarded_jobs))
+        for job in guarded_jobs:
+            block = re.search(rf"^  {re.escape(job)}:\n.*?(?=^  [\w-]+:|\Z)", self.source, re.MULTILINE | re.DOTALL)
+            self.assertIsNotNone(block, job)
+            self.assertIn(draft_guard, block.group(), job)
+        verify = self.source.split("\n  verify:\n", 1)[1].split("\n  apple:\n", 1)[0]
         self.assertIn("github.event_name != 'schedule'", verify)
         self.assertIn("github.event_name == 'merge_group'", verify)
         self.assertIn("needs.changes.outputs.code == 'true'", verify)

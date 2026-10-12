@@ -14,6 +14,8 @@ import tomllib
 import tempfile
 from urllib.parse import unquote, urlsplit
 
+from verification import workspace
+
 PHYSICAL_ROOT = pathlib.Path(__file__).resolve().parents[1]
 ROOT = PHYSICAL_ROOT
 OUTPUT = ROOT / "output"
@@ -26,60 +28,6 @@ BUILD_LINK_PACKAGES = {
     "pyo3-ffi": "PyO3 interpreter FFI build contract",
     "wasm-bindgen-shared": "wasm-bindgen browser ABI build contract",
 }
-REGISTRY_BOUNDARIES = {
-    # PNG admission uses the strict bounded host contract in ADR 0029.
-    ("metis-ui-lang", "png"),
-    # Independent Rust encoder manufactures small JPEG test inputs.
-    ("metis-ui-lang", "jpeg-encoder"),
-    # png tolerates a missing zlib trailer after producing all pixels; the
-    # inflater separately requires stream end and the exact scanline extent.
-    ("metis-ui-lang", "flate2"),
-    ("metis-cli", "serde"),
-    ("metis-cli", "serde_json"),
-    ("metis-app", "serde"),
-    ("metis-app", "serde_json"),
-    ("metis-python", "pyo3"),
-    # No Atlas provider exposes Unicode extended grapheme segmentation; this
-    # pure-Rust dependency is the bounded browser text-policy boundary.
-    ("metis-web", "unicode-segmentation"),
-    # Development-only measurement instrument for the software rasterizer and
-    # the whole-frame repaint; no Atlas provider supplies statistical benchmark
-    # sampling, and the crate never enters a shipped artifact.
-    ("metis-platform", "criterion"),
-    ("metis-frontend", "criterion"),
-}
-
-
-def application_targets(metadata):
-    """Pin executable ownership independently of the application manifest."""
-    members = [package for package in metadata["packages"] if package["id"] in metadata["workspace_members"]]
-    binaries = sorted((package["name"], target["name"])
-                      for package in members for target in package["targets"] if "bin" in target["kind"])
-    if binaries != [("metis-app", "metis-app"), ("metis-cli", "metis")]:
-        raise ValueError(f"Workspace must expose only the application and distribution executables: {binaries}")
-    for name in ("metis-backend", "metis-frontend"):
-        libraries = [package for package in members if package["name"] == name]
-        if len(libraries) != 1 or not any("lib" in target["kind"] for target in libraries[0]["targets"]):
-            raise ValueError(f"Process role must remain a library: {name}")
-    return binaries
-
-
-def format_neutral_workspace(metadata):
-    """Keep medical-format dependencies in RITK rather than the Metis host."""
-    members = [package for package in metadata["packages"] if package["id"] in metadata["workspace_members"]]
-    violations = []
-    for package in members:
-        if "dicom" in package["name"].casefold():
-            violations.append(package["name"])
-        violations.extend(
-            f"{package['name']} -> {dependency['name']}"
-            for dependency in package.get("dependencies", ())
-            if "dicom" in dependency["name"].casefold()
-        )
-    if violations:
-        joined = ", ".join(sorted(set(violations)))
-        raise ValueError(f"Metis must remain format-neutral; DICOM belongs in RITK: {joined}")
-
 
 def resolution():
     """Preserve every byte of the standalone lock, rejecting overlay residue."""
@@ -350,8 +298,8 @@ def run_gate():
                 raise SystemExit(f"Standalone resolution contains a non-workspace path package: {package['name']}")
         if target is not None and pathlib.Path(metadata["target_directory"]).resolve() != target:
             raise SystemExit("Cargo target directory differs from the inherited shared target")
-        application_targets(metadata)
-        format_neutral_workspace(metadata)
+        workspace.application_targets(metadata)
+        workspace.format_neutral_workspace(metadata)
         source = source_state(metadata, configs)
         revision = execute("revision", ["git", "rev-parse", "HEAD"], seconds=30, cwd=ROOT).strip()
         provenance = {"mode": "standalone", "host": host, "sources": source, "run_nonce": run_nonce,
@@ -372,7 +320,7 @@ def run_gate():
                     # stay on the binary IPC contract.
                     registry_boundary = provider.startswith("registry+") and (
                         package["name"], dependency["name"]
-                    ) in REGISTRY_BOUNDARIES
+                    ) in workspace.REGISTRY_BOUNDARIES
                     if provider and not provider.startswith("git+https://github.com/ryancinsight/") and not registry_boundary:
                         raise SystemExit(f"Non-Atlas direct dependency: {dependency}")
         output_path("provider-dependencies.json").write_text(json.dumps(external, indent=2), encoding="utf-8")

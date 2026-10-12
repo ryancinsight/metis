@@ -35,6 +35,9 @@
   authenticated-snapshot test checks independent records and generations.
 - The fuzz lock resolves the same provider revisions as the main workspace;
   stale source/version pairs are corrected. The main lock advances only Moirai.
+- Verification recognizes the Apple executable role and its tracing boundary,
+  while rejecting extra/split targets. Workspace contracts move into their
+  own module; all gate/test callers use that authoritative implementation.
 
 ### Release gates
 

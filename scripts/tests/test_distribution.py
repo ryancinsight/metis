@@ -11,13 +11,13 @@ from unittest import mock
 
 sys.path.insert(0, str(pathlib.Path(__file__).resolve().parents[1]))
 import distribution
-import verify
+from verification import workspace
 
 
 class DistributionTests(unittest.TestCase):
     def test_demonstration_has_one_executable_with_exact_entry(self):
         with tempfile.TemporaryDirectory() as temporary:
-            root = pathlib.Path(temporary)
+            root = pathlib.Path(temporary).resolve()
             entry = "metis-app" + (".exe" if os.name == "nt" else "")
             content = b"Executable inventory acceptance fixture"
             (root / entry).write_bytes(content)
@@ -55,26 +55,32 @@ class DistributionTests(unittest.TestCase):
         packages = [
             {"id": "app", "name": "metis-app", "targets": [{"name": "metis-app", "kind": ["bin"]}]},
             {"id": "cli", "name": "metis-cli", "targets": [{"name": "metis", "kind": ["bin"]}]},
+            {"id": "host", "name": "metis-host", "targets": [{"name": "metis-host", "kind": ["bin"]}]},
             {"id": "backend", "name": "metis-backend", "targets": [{"name": "metis_backend", "kind": ["lib"]}]},
             {"id": "frontend", "name": "metis-frontend", "targets": [{"name": "metis_frontend", "kind": ["lib"]}]}]
         metadata = {"packages": packages, "workspace_members": [package["id"] for package in packages]}
-        self.assertEqual(verify.application_targets(metadata), [("metis-app", "metis-app"), ("metis-cli", "metis")])
-        for index in (2, 3):
+        self.assertEqual(workspace.application_targets(metadata), [("metis-app", "metis-app"), ("metis-cli", "metis"), ("metis-host", "metis-host")])
+        for index in (3, 4):
             changed = copy.deepcopy(metadata)
             changed["packages"][index]["targets"].append({"name": packages[index]["name"], "kind": ["bin"]})
             with self.subTest(role=packages[index]["name"]), self.assertRaisesRegex(ValueError, "only the application"):
-                verify.application_targets(changed)
+                workspace.application_targets(changed)
             changed["packages"][index]["targets"] = [{"name": packages[index]["name"], "kind": ["test"]}]
             with self.subTest(missing_library=packages[index]["name"]), self.assertRaisesRegex(ValueError, "remain a library"):
-                verify.application_targets(changed)
+                workspace.application_targets(changed)
+        for targets in ([], [{"name": "metis-host-helper", "kind": ["bin"]}], packages[2]["targets"] * 2):
+            changed = copy.deepcopy(metadata)
+            changed["packages"][2]["targets"] = targets
+            with self.subTest(apple_targets=targets), self.assertRaisesRegex(ValueError, "only the application"):
+                workspace.application_targets(changed)
         changed = copy.deepcopy(metadata)
         changed["packages"][0]["targets"][0]["name"] = "metis-backend"
         with self.assertRaisesRegex(ValueError, "only the application"):
-            verify.application_targets(changed)
+            workspace.application_targets(changed)
         changed = copy.deepcopy(metadata)
         changed["packages"][1]["targets"][0]["name"] = "metis-app"
         with self.assertRaisesRegex(ValueError, "only the application"):
-            verify.application_targets(changed)
+            workspace.application_targets(changed)
 
     def test_input_sensitive_unit_conversion_and_process_separation(self):
         first = distribution.calculation(
@@ -101,7 +107,7 @@ class DistributionTests(unittest.TestCase):
 
     def test_inventory_matches_bytes_and_rejects_mutation_or_extra_files(self):
         with tempfile.TemporaryDirectory() as temporary:
-            root = pathlib.Path(temporary)
+            root = pathlib.Path(temporary).resolve()
             content = b"Input-sensitive payload bytes\x00\xff"
             (root / "assets").mkdir()
             path = root / "assets" / "source.dat"
@@ -119,7 +125,7 @@ class DistributionTests(unittest.TestCase):
 
     def test_inventory_rejects_missing_duplicate_and_wrong_length(self):
         with tempfile.TemporaryDirectory() as temporary:
-            root = pathlib.Path(temporary)
+            root = pathlib.Path(temporary).resolve()
             (root / "entry.exe").write_bytes(b"payload")
             record = {"destination": "entry.exe", "bytes": 7, "sha256": hashlib.sha256(b"payload").hexdigest()}
             for records in ([], [record, record], [{**record, "bytes": 6}], [{**record, "destination": "absent.exe"}]):
@@ -128,7 +134,7 @@ class DistributionTests(unittest.TestCase):
 
     def test_artifact_sizes_bind_actual_payload_and_installer(self):
         with tempfile.TemporaryDirectory() as temporary:
-            package = pathlib.Path(temporary)
+            package = pathlib.Path(temporary).resolve()
             portable = package / "app" / "assets"
             portable.mkdir(parents=True)
             entry = package / "app" / "metis-app.exe"
@@ -165,7 +171,7 @@ class DistributionTests(unittest.TestCase):
 
     def test_inventory_rejects_path_escape(self):
         with tempfile.TemporaryDirectory() as temporary:
-            root = pathlib.Path(temporary)
+            root = pathlib.Path(temporary).resolve()
             for name in ("", "../escape", "/absolute", "a//b", "a/./b", "C:/Windows", "a\\b", "entry.exe:stream"):
                 with self.subTest(name=name), self.assertRaises(ValueError):
                     distribution.destination(root, name)
@@ -173,7 +179,7 @@ class DistributionTests(unittest.TestCase):
 
     def test_installer_path_resolves_neutral_drive_for_service(self):
         with tempfile.TemporaryDirectory() as temporary:
-            physical = pathlib.Path(temporary)
+            physical = pathlib.Path(temporary).resolve()
             mapped_root = pathlib.Path("Z:/")
             mapped_output = mapped_root / "output" / "distribution" / "latest"
             with mock.patch.object(distribution, "ROOT", mapped_root), \
@@ -185,7 +191,7 @@ class DistributionTests(unittest.TestCase):
 
     def test_registry_records_actual_uninstall_directory_and_component_versions(self):
         with tempfile.TemporaryDirectory() as temporary:
-            root = pathlib.Path(temporary)
+            root = pathlib.Path(temporary).resolve()
             inventory = {"application": {"version": "0.1.0"}, "files": [{}, {}]}
             values = {"F0": "0.1.0", "F1": "0.1.0", "InstallLocation": str(root / "installed")}
             distribution.verify_registration(values, inventory, root / "installed")
@@ -197,7 +203,7 @@ class DistributionTests(unittest.TestCase):
 
     def test_retention_refuses_other_directories(self):
         with tempfile.TemporaryDirectory() as temporary:
-            root = pathlib.Path(temporary)
+            root = pathlib.Path(temporary).resolve()
             preserved = root / "user.txt"
             preserved.write_bytes(b"unique")
             with self.assertRaisesRegex(ValueError, "output must be"):
@@ -206,7 +212,7 @@ class DistributionTests(unittest.TestCase):
 
     def test_hardlink_inventory_cannot_alias_user_files(self):
         with tempfile.TemporaryDirectory() as temporary:
-            root = pathlib.Path(temporary)
+            root = pathlib.Path(temporary).resolve()
             source = root / "user.txt"
             source.write_bytes(b"unique")
             alias = root / "alias.txt"
@@ -217,7 +223,7 @@ class DistributionTests(unittest.TestCase):
 
     def test_read_only_tool_accepts_cargo_hardlinks_but_retention_rejects_them(self):
         with tempfile.TemporaryDirectory() as temporary:
-            root = pathlib.Path(temporary)
+            root = pathlib.Path(temporary).resolve()
             compiler_artifact = root / "compiler.exe"
             compiler_artifact.write_bytes(b"compiler-produced executable bytes")
             exported_tool = root / "metis.exe"
@@ -232,7 +238,7 @@ class DistributionTests(unittest.TestCase):
 
     def test_json_size_and_workflow_report(self):
         with tempfile.TemporaryDirectory() as temporary:
-            root = pathlib.Path(temporary)
+            root = pathlib.Path(temporary).resolve()
             workflow = distribution.Workflow(root)
             report = distribution.read_json(root / "workflow.json")
             self.assertEqual(report, {"schema": 1, "status": "running", "commands": [], "calculations": []})

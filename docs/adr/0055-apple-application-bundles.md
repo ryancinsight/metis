@@ -40,6 +40,13 @@ regular-file metadata before opening and on the opened descriptor.
 
 ## Failure modes and acceptance
 
+The workspace has three canonical executable roles: `metis-app` for the
+existing application, `metis` for distribution tooling, and `metis-host` for
+the Apple entry. Backend/frontend roles remain libraries. Windows distribution
+inventories its one declared application executable. Workspace target and
+direct-dependency contracts live in `scripts/verification/workspace.py`; the
+gate and tests call that module after the internal contract split.
+
 Missing SDK/toolchain, stale loader version, compiler failure, invalid manifest,
 unexpected output contents and mismatched simulator platform fail with context.
 The same Rust greeting must compute from typed input on macOS, iPhone and iPad
