@@ -1,12 +1,4 @@
-Active target: Metis 0.3.0. Phase: Closure.
-
-<a id="METIS-RUST-BROWSER-001"></a>
-## METIS-RUST-BROWSER-001 — Rust browser shell and HTTP presentation [minor]
-- Status: todo; priority: P0; owner: Metis + Moirai; last-update: 2026-10-12; target: 0.3.0; dependencies: Moirai 0.8.2, Gaia 0.5.2.
-- Scope: [ADR 0056](docs/adr/0056-rust-browser-shell.md), canonical Rust codecs, owned cancellable Fetch, navigation/query policy and Tauri native admission review.
-- Acceptance: real Unicode/empty results, original HTTP status/code denials, exact/excess streamed bodies, deadlines, peer-observed cancellation, reset/stop counts; clean native/WASM diagnostics and protected delivery.
-- Evidence: current local browser journeys pass; the 32-row [Tauri inventory](docs/conformance/tauri.json) has 124 admitted pairs and checked live owners. Provider protected delivery passes; consumer gates and default-branch delivery remain.
-- Residual: 78 open native capability pairs, installed permission/input journeys and a matched Tauri fixture remain owned by their existing items.
+Current framework version: Metis 0.3.0. Remaining capability work follows.
 
 <a id="METIS-BROWSER-READ-001"></a>
 ## METIS-BROWSER-READ-001 — Diagnose selected-file reads
