@@ -41,6 +41,29 @@ copies the command, theme or form algorithm. Measure generated artifact size
 and compile/runtime cost; remove unreachable work through normal release
 optimization without weakening the behavior or acceptance scenarios.
 
+### Application configuration root
+
+The browser configuration is `.config/browser/metis.json`, outside the served
+frontend. Its explicit `application_root` is `../..`. Both closed application
+shapes share the same root resolver. Omission means the canonical manifest
+directory; an explicit locator has at most the canonical 240-byte path budget,
+portable forward-slash components and explicit parent components. `.` is valid
+only as the whole locator. Absolute paths, drive prefixes, empty components,
+backslashes and linked directory traversal are rejected. Resolution must produce
+an existing directory that contains the canonical manifest; the manifest cannot
+select an unrelated sibling tree. Every Cargo, frontend, icon and resource path
+still uses its existing strict relative-path contract against the selected root.
+There is no implicit discovery or alternate-root retry. Real filesystem tests
+cover omitted/explicit roots, containment, links and malformed locators, followed
+by a real browser build from the relocated manifest.
+
+A development session owns one root `R`: its watcher, snapshot and every launched
+build use `R`. Native watch reloads reject a manifest resolving to `R' != R`
+before compiling or launching it, and continue observing `R`. Selecting another
+root requires restarting the command. The browser session likewise retains its
+initial parsed configuration. A root transition cannot leave a live watcher
+bound to a different application tree.
+
 ## PAL mechanisms
 
 PAL keeps its existing public WASM entry module: `WebDocument` and related DOM

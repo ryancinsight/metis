@@ -16,6 +16,7 @@ pub(crate) fn create(directory: &Path) -> Result<()> {
     let root = destination(directory)?;
     let application = Application {
         schema: 1,
+        root: None,
         id: "metis-app".to_owned(),
         name: "Métis Application".to_owned(),
         version: "0.1.0".to_owned(),

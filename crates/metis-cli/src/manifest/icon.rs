@@ -6,8 +6,6 @@
 //! images before Windows Installer persistence.
 use crate::Result;
 #[cfg(windows)]
-use crate::manifest;
-#[cfg(windows)]
 use std::path::{Path, PathBuf};
 
 use super::ICON_LIMIT;

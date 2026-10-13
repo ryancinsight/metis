@@ -8,7 +8,7 @@ use std::{
     path::{Path, PathBuf},
 };
 
-/// Output directory beside the manifest when none is named, as in Trunk.
+/// Output directory beneath the selected application root when none is named.
 const DEFAULT_OUTPUT: &str = "dist";
 /// The served tree, parallel to a native build's `app/`.
 const SERVED: &str = "app";
@@ -31,7 +31,7 @@ struct Marker {
 
 /// Builds `application` and returns the directory to serve.
 ///
-/// `output` defaults to `dist` beside the manifest. An existing output is
+/// `output` defaults to `dist` beneath the selected application root. An existing output is
 /// replaced only when its inventory records a previous browser build, so a
 /// build never erases a directory it did not create.
 pub(crate) fn application(

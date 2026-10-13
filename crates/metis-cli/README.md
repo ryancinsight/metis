@@ -4,13 +4,25 @@ Build an application and its explicit executable/resource inventory using the
 Rust `metis` command. Portable output and Windows MSI packages use the same
 validated application manifest. Moirai owns bounded build-tool processes.
 
+Native and browser manifests may declare `application_root`, a locator relative
+to the manifest directory and bounded by the core portable-path limit. Normal
+portable components and explicit `..` ancestors select an existing unlinked
+directory that contains the canonical manifest; `.` is valid only as the complete
+locator. Omission selects the manifest directory. Cargo and payload paths retain
+the core canonical relative-path rule within that root. Default browser output
+and source watching use the same root. The workbench's
+[configuration](../../.config/browser/metis.json) selects `../..`.
+Explicit locators reject linked manifest files and ancestor components; omitted
+locators retain the existing canonical-parent resolution of manifest aliases.
+A native watch session rejects a changed application root before compilation.
+
 ```text
 metis init path/to/new-app
 metis dev path/to/new-app/metis.json --once
 metis dev path/to/new-app/metis.json --watch
 metis build path/to/metis.json path/to/new-output
 metis package path/to/metis.json path/to/new-output
-metis build            # browser manifest in this directory, into dist/
+metis build            # browser manifest in this directory, root-owned dist/
 metis serve            # build it, then serve http://127.0.0.1:1420/
 metis completions powershell > metis-completion.ps1
 metis --help

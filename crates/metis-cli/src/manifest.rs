@@ -2,6 +2,7 @@
 mod file_associations;
 #[cfg(any(windows, test))]
 mod icon;
+mod root;
 mod svg;
 mod url_schemes;
 mod web;
@@ -32,7 +33,7 @@ pub(crate) enum Manifest {
 }
 
 impl Manifest {
-    /// Reads and validates the manifest; returns it with its canonical directory.
+    /// Reads and validates the manifest; returns its canonical application owner.
     ///
     /// A document with a `frontend` member is a browser application; any
     /// other is native. Each shape rejects the other's fields.
@@ -52,11 +53,11 @@ impl Manifest {
             application.validate()?;
             Self::Native(Box::new(application))
         };
-        let absolute = path.canonicalize()?;
-        let root = absolute
-            .parent()
-            .ok_or("manifest has no parent")?
-            .to_path_buf();
+        let locator = match &manifest {
+            Self::Native(application) => application.root.as_deref(),
+            Self::Web(application) => application.root.as_deref(),
+        };
+        let root = root::resolve(path, locator)?;
         Ok((manifest, root))
     }
 }
@@ -75,6 +76,13 @@ pub(crate) fn validate_resource_file(path: &Path) -> Result<()> {
 #[serde(deny_unknown_fields)]
 pub(crate) struct Application {
     pub(crate) schema: u32,
+    /// Explicit owner relative to the manifest directory; omission owns that directory.
+    #[serde(
+        default,
+        rename = "application_root",
+        skip_serializing_if = "Option::is_none"
+    )]
+    pub(crate) root: Option<String>,
     pub(crate) id: String,
     pub(crate) name: String,
     pub(crate) version: String,
@@ -144,6 +152,7 @@ impl Application {
         if self.schema != 1 {
             return Err("unsupported application manifest schema".into());
         }
+        root::validate(self.root.as_deref())?;
         identifier(&self.id)?;
         if let Some(module) = &self.embedded_module {
             identifier(&module.package)?;

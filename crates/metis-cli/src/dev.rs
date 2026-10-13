@@ -16,6 +16,7 @@ use std::{
 };
 
 mod browser;
+mod ownership;
 #[cfg(windows)]
 #[expect(
     unsafe_code,
@@ -58,7 +59,7 @@ pub(crate) fn run(args: &[OsString]) -> Result<()> {
         eprintln!("metis dev: watching for source or resource changes");
     }
     loop {
-        let (application, root) = match Application::read(&manifest_path) {
+        let application = match ownership::read(&manifest_path, &root) {
             Ok(value) => value,
             Err(error) if matches!(mode, DevMode::Watch) => {
                 eprintln!("metis dev: build not started: {error}");

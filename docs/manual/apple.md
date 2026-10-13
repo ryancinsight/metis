@@ -164,7 +164,7 @@ requires the owner's Apple signing identity, provisioning profile and a
 connected device. `apple run --target ios` rejects before building because it
 cannot supply those decisions. App Store publication remains separate.
 
-Default bundles live under the application manifest's `output/apple/<target>`;
+Default bundles live under the selected application root's `output/apple/<target>`;
 `--output` selects another directory. Browser output remains in `dist`. Both
 macOS and simulator builds receive ad-hoc signatures without a private identity.
 The compiler uses Xcode's target SDK and deployment minima of macOS 13/iOS 16.
@@ -195,7 +195,7 @@ or an owner-reviewed cleanup; the CLI does not erase unowned data.
 
 ## macOS Dock icon
 
-The optional frontend manifest `icon` names an ICNS file relative to `metis.json`:
+The optional frontend manifest `icon` names an ICNS file relative to the application root:
 
 ```json
 "icon": "icons/application.icns"

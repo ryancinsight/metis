@@ -13,6 +13,10 @@
   source/configuration/tool/provider identities and retain the verified bytes.
   Sealed producer/native contexts separate WASM compiler configuration from
   native Cargo's derived flags and wrappers through one admission API.
+- [minor] Native and browser manifests accept optional `application_root`.
+  Its bounded locator selects an existing unlinked root containing the manifest;
+  Cargo and payload paths retain canonical relative-path admission.
+  Native watch sessions reject a reloaded manifest selecting a different root.
 - [minor] Native JSON lifecycle evidence reports actual page requests, backend
   terminal replies, permission outcomes, resource release and destruction.
   Explicit Windows fixtures exercise real remount and hostile command paths;
@@ -31,6 +35,8 @@
   during backend-in-flight exchange remains a separate transport increment.
 - Partition the native manual into linked domains below 500 lines, preserving
   every historical source byte through reversible local-link rebasing.
+- Move the workbench configuration to `.config/browser/metis.json`, selecting
+  the workspace through `application_root` while retaining its served assets.
 
 ### Breaking
 

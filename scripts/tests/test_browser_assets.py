@@ -130,7 +130,10 @@ class BrowserAssetContractTests(unittest.TestCase):
             },
             manifest["resources"],
         )
-        browser_manifest = json.loads((ROOT / "metis-browser.json").read_text(encoding="utf-8"))
+        browser_manifest_path = ROOT / ".config" / "browser" / "metis.json"
+        browser_manifest = json.loads(browser_manifest_path.read_text(encoding="utf-8"))
+        self.assertEqual(browser_manifest["application_root"], "../..")
+        self.assertEqual((browser_manifest_path.parent / browser_manifest["application_root"]).resolve(), ROOT.resolve())
         self.assertEqual(browser_manifest["frontend"], {
             "package": "metis-web", "directory": "examples/browser",
         })

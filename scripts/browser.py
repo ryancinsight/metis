@@ -128,7 +128,7 @@ def build() -> None:
     distribution = OUTPUT.parent / "browser-distribution"
     with isolated_cargo(ROOT) as (directory, environment):
         environment["WASM_BINDGEN"] = wasm_bindgen()
-        result = subprocess.run([str(metis_command()), "build", str(ROOT / "metis-browser.json"),
+        result = subprocess.run([str(metis_command()), "build", str(ROOT / ".config" / "browser" / "metis.json"),
                                  str(distribution)], cwd=directory, env=environment,
                                 check=True, text=True, capture_output=True, timeout=300)
     served = pathlib.Path(result.stdout.strip())

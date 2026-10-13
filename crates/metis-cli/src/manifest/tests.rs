@@ -1,5 +1,6 @@
 use super::*;
 mod embedded;
+mod ownership;
 use metis_core::embedded_assets::relative;
 
 pub(crate) fn fixture() -> Application {

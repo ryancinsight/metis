@@ -1,5 +1,14 @@
 # Open capability and evidence risks
 
+## Test output ownership — 2026-10-13 [patch]
+
+One candidate core/CLI run passes 161 computed tests but reports one leaky
+process. The complete output is not retained, so its test/process owner is
+unknown. A retained complete replay passes all 161 values without a leak flag;
+it does not establish a source correction. Canonical verification keeps its
+existing deadlines and workloads. [METIS-NEXTEST-PIPE](backlog.md#METIS-NEXTEST-PIPE)
+owns attribution and real cleanup if the observation recurs.
+
 ## Rust Windows page acceptance — 2026-10-13 [minor]
 
 Target: Metis 0.5.0 and Moirai 0.9.0. Rust source replaces the 213 authored Windows

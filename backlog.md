@@ -1,5 +1,14 @@
 Current framework version: Metis 0.5.0. Remaining capability work follows.
 
+<a id="METIS-NEXTEST-PIPE"></a>
+## METIS-NEXTEST-PIPE — Attribute retained test output pipes [patch]
+- Status: todo; priority: correctness; owner: Metis verification.
+- Outcome: every test descendant releases its inherited output before the unchanged nextest leak deadline.
+- Scope: attribute the reported candidate-run output retention to its real process owner before changing source.
+- Acceptance: retain complete runner output and process evidence, reproduce the named failure, then verify actual owner cleanup without timeout or test-domain changes.
+- Basis: one 161-test candidate run reports one leaky process; its full output is not retained. A complete replay passes all 161 values without a leak flag, which establishes no root-cause correction.
+- Next: retain complete output for subsequent canonical runs and investigate the named owner if the diagnostic recurs.
+
 <a id="METIS-WEBVIEW-RUST-001"></a>
 ## METIS-WEBVIEW-RUST-001 — Rust-owned Windows page lifecycle [minor]
 

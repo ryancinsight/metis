@@ -46,6 +46,13 @@ build reports derive from that contract. The build script verifies and embeds
 the prepared module; it never launches Cargo. Installed applications need no
 compiler, Node process or local web server.
 
+The browser build manifest lives under `.config/browser/`. An explicit optional
+`application_root` selects one canonical root for every CLI operation; omission
+retains the manifest directory. The bounded locator must resolve an unlinked
+directory containing the manifest. Cargo, frontend and resource paths retain
+their existing portable relative-path admission. No ancestor search or command-
+specific root override changes ownership.
+
 The native host uses the existing PAL `WebViewConfig::folder` with
 `https://metis.invalid/`. It admits only packaged resources. Rust mount readiness
 gates capture; actual browser outcomes and native permission events gate denial
