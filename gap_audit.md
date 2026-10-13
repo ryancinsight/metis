@@ -16,7 +16,9 @@ native audit-ID precision: Rust emits decimal JSON strings while retaining
 backend `u64` values; six private protocol tests reproduce two baseline failures
 and verify full-range identifiers with actual adult/pediatric calculations.
 The 213 authored Windows controller lines remain unchanged.
-Implementation is complete; [PR 499](https://github.com/ryancinsight/metis/pull/499) owns protected delivery.
+Implementation is complete; [PR 502](https://github.com/ryancinsight/metis/pull/502) owns protected delivery.
+It retains PR 499 commits; the old remote head has a stale fuzz lock that
+prevents baseline compilation. The normal gate verifies current main instead.
 The intended graph retains every recorded provider except verified Moirai
 17a680ff. All 713 Rust tests pass in 6.314 seconds; native, Windows and WASM
 Clippy deny warnings. Three real Apple bundles preserve version, exact URL
