@@ -207,6 +207,13 @@ class WorkflowContractTests(unittest.TestCase):
     def setUpClass(cls):
         cls.workflow = SCRIPTS.parent / ".github" / "workflows" / "ci.yml"
         cls.source = cls.workflow.read_text(encoding="utf-8")
+        caller = cls.source.split("\n  browser-runtime:\n", 1)[1].split(
+            "\n  browser-text-cross-engine:\n", 1
+        )[0]
+        reference = re.search(r"(?m)^    uses: (\./\.github/workflows/[^\s]+)$", caller)
+        if reference is None:
+            raise AssertionError("browser runtime must reference its canonical local workflow")
+        cls.runtime = (SCRIPTS.parent / reference.group(1)).read_text(encoding="utf-8")
 
     def test_one_pinned_pipeline_covers_supported_targets(self):
         required = (
@@ -253,7 +260,7 @@ class WorkflowContractTests(unittest.TestCase):
         self.assertIn("checksum: true", self.source)
 
     def test_external_actions_and_guards_are_revision_pinned(self):
-        references = re.findall(r"^\s*(?:-\s+)?uses:\s+([^@\s]+)@([^\s#]+)", self.source, re.MULTILINE)
+        references = re.findall(r"^\s*(?:-\s+)?uses:\s+([^@\s]+)@([^\s#]+)", self.source + self.runtime, re.MULTILINE)
         self.assertGreaterEqual(len(references), 4)
         for action, revision in references:
             with self.subTest(action=action):
@@ -325,15 +332,15 @@ class WorkflowContractTests(unittest.TestCase):
             "--metis-http-service \"$origin\" 8766",
             "http://127.0.0.1:8766/health",
             "output/browser/runtime/$ENGINE-fragment.json",
-            "matrix.engine == 'webkit'",
+            "inputs.engine == 'webkit'",
         ):
             with self.subTest(fragment=fragment):
-                self.assertIn(fragment, self.source)
+                self.assertIn(fragment, self.runtime)
         self.assertIn("needs: browser-assets", self.source)
-        self.assertIn("--text-geometry-probe", self.source)
-        self.assertIn("name: metis-browser-runtime-${{ matrix.engine }}-${{ github.run_id }}", self.source)
-        self.assertIn("path: output/browser/runtime", self.source)
-        self.assertIn("--asset-probe", self.source)
+        self.assertIn("--text-geometry-probe", self.runtime)
+        self.assertIn("name: metis-browser-runtime-${{ inputs.engine }}-${{ github.run_id }}", self.runtime)
+        self.assertIn("path: output/browser/runtime", self.runtime)
+        self.assertIn("--asset-probe", self.runtime)
         for fragment in (
             "name: Cross-engine text geometry",
             "needs: browser-runtime",

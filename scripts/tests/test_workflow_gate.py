@@ -12,6 +12,8 @@ import unittest
 
 REPOSITORY = pathlib.Path(__file__).resolve().parents[2]
 WORKFLOW = REPOSITORY / ".github" / "workflows" / "ci.yml"
+sys.path.insert(0, str(REPOSITORY / "scripts"))
+import workflow_gate
 
 
 class RequiredGateTests(unittest.TestCase):
@@ -44,15 +46,6 @@ class RequiredGateTests(unittest.TestCase):
             raise AssertionError("the Metis gate result check is missing")
         cls.script = "\n".join(
             line[10:] for line in script.group("script").splitlines()
-        )
-        classifier = re.search(
-            r"(?ms)^          python3 - <<'PY'\n(?P<script>.*?)^          PY$",
-            cls.source,
-        )
-        if classifier is None:
-            raise AssertionError("the changed-path classifier is missing")
-        cls.classifier = "\n".join(
-            line[10:] for line in classifier.group("script").splitlines()
         )
         diff = re.search(
             r'(?m)^          git diff (?P<options>.*?) "\$range" > ',
@@ -102,32 +95,6 @@ class RequiredGateTests(unittest.TestCase):
             text=True,
             timeout=10,
         )
-
-    def outputs(self, changed_paths):
-        with tempfile.TemporaryDirectory() as directory:
-            changed = pathlib.Path(directory) / "metis-changed-files"
-            output = pathlib.Path(directory) / "github-output"
-            changed.write_bytes(changed_paths)
-            output.write_text("", encoding="utf-8")
-            environment = os.environ.copy()
-            environment["RUNNER_TEMP"] = directory
-            environment["GITHUB_OUTPUT"] = str(output)
-            result = subprocess.run(
-                [sys.executable, "-c", self.classifier],
-                check=False,
-                capture_output=True,
-                env=environment,
-                text=True,
-                timeout=10,
-            )
-            self.assertEqual(result.returncode, 0, result.stderr)
-            return dict(
-                line.split("=", 1)
-                for line in output.read_text(encoding="utf-8").splitlines()
-            )
-
-    def classify(self, changed_paths):
-        return "code=" + self.outputs(changed_paths)["code"]
 
     def test_success_and_skipped_dependencies_pass(self):
         results = {job: {"result": "success"} for job in self.dependencies}
@@ -203,8 +170,8 @@ class RequiredGateTests(unittest.TestCase):
             with self.subTest(paths=paths):
                 data = b"\0".join(paths) + (b"\0" if paths else b"")
                 self.assertEqual(
-                    self.classify(data),
-                    "code=" + str(expected).lower(),
+                    workflow_gate.classify(data),
+                    {"code": expected, "fuzz": False},
                 )
 
     def test_push_looks_up_a_verified_tree_and_the_windows_gate_honors_it(self):
@@ -244,17 +211,17 @@ class RequiredGateTests(unittest.TestCase):
 
     def test_fuzz_campaign_follows_the_harness_for_pull_requests(self):
         cases = (
-            ((b"fuzz/Cargo.toml",), True),
-            ((b"fuzz/seeds/typeface/one-rectangle.ttf",), True),
-            ((b"README.md", b"fuzz/fuzz_targets/archive.rs"), True),
-            ((b"crates/metis-core/src/lib.rs",), False),
-            ((b"docs/fuzz/notes.md",), False),
-            ((), False),
+            ((b"fuzz/Cargo.toml",), True, True),
+            ((b"fuzz/seeds/typeface/one-rectangle.ttf",), True, True),
+            ((b"README.md", b"fuzz/fuzz_targets/archive.rs"), True, True),
+            ((b"crates/metis-core/src/lib.rs",), True, False),
+            ((b"docs/fuzz/notes.md",), False, False),
+            ((), False, False),
         )
-        for paths, expected in cases:
+        for paths, code, fuzz in cases:
             with self.subTest(paths=paths):
                 data = b"\0".join(paths) + (b"\0" if paths else b"")
-                self.assertEqual(self.outputs(data)["fuzz"], str(expected).lower())
+                self.assertEqual(workflow_gate.classify(data), {"code": code, "fuzz": fuzz})
         fuzz = self.source.split("\n  fuzz:\n", 1)[1].split("\n  browser-assets:\n", 1)[0]
         self.assertIn("needs: changes", fuzz)
         self.assertIn("needs.changes.outputs.fuzz == 'true'", fuzz)
@@ -308,7 +275,7 @@ class RequiredGateTests(unittest.TestCase):
             changed = git("diff", *self.diff_options, source_tree, report_tree)
             paths = set(path for path in changed.split(b"\0") if path)
             self.assertEqual(paths, {b"README.md", b"source.rs"})
-            self.assertEqual(self.classify(changed), "code=true")
+            self.assertEqual(workflow_gate.classify(changed), {"code": True, "fuzz": False})
 
 
 if __name__ == "__main__":

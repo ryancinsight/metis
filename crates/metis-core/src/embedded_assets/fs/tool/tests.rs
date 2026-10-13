@@ -1,6 +1,9 @@
 use super::*;
 use crate::embedded_assets::{tests::traced, verify_compiler_pin};
 
+#[cfg(unix)]
+mod multicall;
+
 #[test]
 fn actual_rustup_short_and_host_qualified_selectors_have_one_compiler_identity() {
     traced(|| {

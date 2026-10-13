@@ -38,6 +38,13 @@ and backpressure while it is in flight remain a separate transport increment.
 [METIS-WEBVIEW-RUST-001](backlog.md#METIS-WEBVIEW-RUST-001) owns remaining acceptance.
 [Preparation manual](crates/metis-app/src/frontend/webview/manual.md) documents
 the current inventory/environment and canonical `metis asset-budgets` output.
+The first [PR 504 run](https://github.com/ryancinsight/metis/actions/runs/38485530984)
+fails before native acceptance. Apple tool discovery invokes Homebrew's
+canonical `rustup-init` image with manager arguments; two real compiler tests
+fail. Windows reports the script-suite 60-second deadline after 423 completion
+markers. Retained output lacks per-test clocks, so it does not establish an
+individual Windows test duration. Rustup alias preservation and canonical
+workflow classifier ownership require a new protected run before closure.
 The prior 0.4.1 source/lock evidence is retained in
 [historical records](docs/backlog/evidence.md#METIS-STANDALONE-0.4.1).
 

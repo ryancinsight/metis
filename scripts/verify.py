@@ -375,7 +375,7 @@ def run_gate():
                                   "check", "advisories", "bans", "licenses", "sources"],
                 seconds=180, cwd=ROOT)
         cargo("format", ["fmt", "--all", "--check"], resolve=False)
-        execute("visual-tests", [sys.executable, "-m", "unittest", "discover", "-s", "scripts/tests"], seconds=60, cwd=ROOT)
+        execute("visual-tests", [sys.executable, "-m", "unittest", "discover", "-s", "scripts/tests", "-v"], seconds=60, cwd=ROOT)
         execute("plan", [sys.executable, str(ROOT / "scripts" / "plan.py"), "check"], seconds=60, cwd=ROOT)
         # Compile the browser host in the same locked gate; runtime evidence is
         # collected by scripts/browser.py and the manual browser trace.

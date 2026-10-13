@@ -40,6 +40,15 @@
   every historical source byte through reversible local-link rebasing.
 - Move the workbench configuration to `.config/browser/metis.json`, selecting
   the workspace through `application_root` while retaining its served assets.
+- Give changed-path classification one script owner and move browser runtime
+  steps into a reusable workflow leaf. Required jobs, permissions, case inputs
+  and the 60-second script-suite limit retain their existing contracts.
+
+### Fixed
+
+- Preserve Rustup's invocation alias during tool discovery. Canonical image
+  hashes still establish proxy identity and selected compiler/Cargo bindings;
+  Homebrew's `rustup-init` image no longer receives Rustup-manager arguments.
 
 ### Breaking
 

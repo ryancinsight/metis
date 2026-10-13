@@ -472,6 +472,9 @@ and unsupported legacy configuration include origins fail with context. They do
 not select an alternative tool or ignore an admitted input. Short and
 host-qualified Rustup channel spellings identify the same tool only after actual
 resolved executable/version verification against the repository pin.
+Rustup discovery preserves its absolute invocation alias: a multicall image
+dispatches by that name. Proxy recognition hashes the canonical image; returned
+Cargo/rustc bindings still identify the canonical selected tool executable.
 
 The coherence contract assumes exclusive ownership of trusted source and
 generated output during preparation and compilation. Endpoint fingerprints
