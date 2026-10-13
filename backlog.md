@@ -1,12 +1,13 @@
-Current framework version: Metis 0.4.0. Remaining capability work follows.
+Current framework version: Metis 0.4.1. Remaining capability work follows.
 
 <a id="METIS-WEBVIEW-RUST-001"></a>
-## METIS-WEBVIEW-RUST-001 — Rust-owned Windows page lifecycle [patch]
+## METIS-WEBVIEW-RUST-001 — Rust-owned Windows page lifecycle [minor]
 
 - Status: todo; priority: P1; owner: Metis presentation; last-update: 2026-10-12; risk: application behavior lost during script removal.
 - Scope: replace the form's 125 and permission probe's 88 embedded JavaScript lines with Rust/WASM presentation and typed WebView2 bridge bindings; retain generated browser interoperability.
 - Acceptance: real Windows journeys preserve theme/command focus, shortcuts, input-sensitive calculation replies, malformed/error replies, request admission and all four capability denials; listeners and permission work detach on teardown.
 - Verification: build the packaged pages from the canonical Git lock and compare exact model, reply, focus and capability outcomes before/after; count raw-string scripts as well as standalone modules.
+- Design: [ADR 0059](docs/adr/0059-windows-rust-pages.md) defines PAL mechanisms, Rust page ownership and generated-asset coherence for Metis 0.5.0 and Moirai 0.9.0. Implementation and real Windows acceptance remain open.
 
 <a id="METIS-BROWSER-READ-001"></a>
 ## METIS-BROWSER-READ-001 — Diagnose selected-file reads
