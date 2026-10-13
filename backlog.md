@@ -1,19 +1,5 @@
 Current framework version: Metis 0.3.2. Remaining capability work follows.
 
-<a id="METIS-CONSUS-RESOLUTION-001"></a>
-## METIS-CONSUS-RESOLUTION-001 — Admit Consus 0.2 [patch]
-- Status: delivered; target: 0.3.2; owner: Metis dependencies; last-update: 2026-10-13.
-- Contract: both Consus package requirements admit inherited version 0.2.0;
-  the canonical lock uses Git sources and resolves without path patches.
-- API evidence: compression and raster sources are unchanged between locked
-  Consus `6b7544f5` and current `cf30dc29`; existing codec tests verify values.
-- Additional requirement: Moirai `81656cc6` provides WebView 0.2.0; the
-  consumed run/resource APIs remain compatible and empty grants remain denied.
-- Acceptance: standalone locked metadata, codec-consumer compilation, existing
-  value-semantic tests and diagnostics pass; RITK #827 records separate evidence.
-- Verification: standalone locked metadata and fresh update dry-run resolve;
-  workspace/all-target Clippy with denied warnings and all 686 nextest tests pass.
-
 <a id="METIS-WEBVIEW-RUST-001"></a>
 ## METIS-WEBVIEW-RUST-001 — Rust-owned Windows page lifecycle [patch]
 
