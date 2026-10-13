@@ -163,7 +163,8 @@ image assets, `metis-web` uses `unicode-segmentation` for browser text policy,
 and `metis-python` uses PyO3. Atlas providers
 have transitive dependencies; the gate records the actual graph instead of
 describing it as dependency-free. The Atlas development overlay resolves first-party code to local
-trees. Standalone builds use the corresponding pushed provider revisions recorded
+trees. The Metis launcher omits dependency patches and retains the canonical Git
+lock through metadata and compilation. Standalone builds use the corresponding pushed provider revisions recorded
 in Cargo.lock. Metis consumes Moirai through git-plus-version requirements;
 the current standalone lock records merged Moirai revision
 `10a828f7e0a8cace10dd30e88e47ce2e64aec6e0`, which includes Rust-owned AppKit menus, bounded Fetch and bodyless response

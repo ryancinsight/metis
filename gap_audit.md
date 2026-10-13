@@ -86,6 +86,12 @@ against that Git source. Both canonical dependency locks remain byte-identical
 through the locked test run. The Tauri inventory counts retain their previous
 admitted scope.
 
+The Atlas launcher's unlocked metadata step reproduces lock source flattening.
+Its corrected source contract removes dependency patches and locks metadata as
+well as compilation. Real Atlas macOS bundling preserves both canonical locks,
+verifies the ad-hoc signature and packages exact frontend resource bytes. The
+shared cache, root build settings and live frontend paths remain intact.
+
 ## Authored JavaScript inventory — 2026-10-12
 
 The nine-line count covers the workbench, HTTP page and starter initialization

@@ -64,12 +64,13 @@ macOS development runs from a signed bundle under `output/apple/dev-macos`.
 It uses the same application metadata and shell icon as the installed build.
 Failed icon validation also retains the running development app.
 
-The Atlas runner selects dependency patches from Metis's graph and declared
-first-party dependencies, preserves the root profiles and shared `target`, and
-runs Cargo from an isolated configuration directory. Cargo reconciles the local
-development lock before compilation; every compiler invocation uses `--locked`.
-Unrelated root patches otherwise produce unused-record lock churn with Cargo
-1.97. The runner removes its temporary configuration after exit.
+The Atlas runner preserves root build settings and the shared `target`, and
+runs Cargo from an isolated configuration directory without dependency patches.
+Metadata and compilation use `--locked`; provider sources come from the canonical
+Git lock, while current Metis frontend sources remain editable. Both dependency
+locks remain unchanged through real Apple bundling. The former unlocked metadata
+step rewrites Git sources to local paths; the runner removes that mutation path
+and deletes its temporary configuration after exit.
 
 Choose another frontend with the runner's `--manifest` option, before the command:
 
@@ -79,11 +80,12 @@ python3 scripts/atlas-metis.py --manifest /absolute/path/metis.json apple build 
 
 Apple compilation requires the Metis source workspace. The committed lock
 resolves `moirai-webview` and the native fixes from the merged Moirai provider;
-one Git source identity serves its crates. Working-tree Cargo locks produced by
-the Atlas runner are development overlays under
-[Atlas ADR 0044](https://github.com/ryancinsight/atlas/blob/main/docs/adr/0044-committed-cargo-lock-form.md).
-Keep the standalone committed lock when delivering changes. Native interaction
-and physical-device signing remain release acceptance work.
+one Git source identity serves its crates. Provider changes require their
+published revisions and an explicit canonical lock update; the Atlas runner
+retains the committed lock under
+[Atlas ADR 0044](https://github.com/ryancinsight/atlas/blob/main/docs/adr/0044-committed-cargo-lock-form.md)
+and [ADR 0069 in Atlas PR 530](https://github.com/ryancinsight/atlas/pull/530).
+Remaining native interaction and physical-device signing are release acceptance.
 
 ## iPhone and iPad simulators
 
