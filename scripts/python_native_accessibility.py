@@ -11,8 +11,10 @@ import subprocess
 import sys
 from typing import Any
 
-import python_native_capture as capture
-import python_native_input_capture as native_input
+from native_capture import limits, model
+from native_capture.images import files
+from native_capture.windows import gdi, processes, window
+from native_input.windows import focus, keyboard, queue
 
 
 MAX_VALUE_BYTES = 128
@@ -235,11 +237,11 @@ def _prepare_surface(handle: int, surface: str) -> int:
         return 0
     if surface != "webview2":
         raise ValueError(f"unsupported accessibility surface: {surface!r}")
-    native_input._focus_window(handle)
+    focus.focus_window(handle)
     for _ in range(WEBVIEW2_FOCUS_PRIMER_TABS):
-        native_input._send_virtual_key(0x09, key_up=False)
-        native_input._send_virtual_key(0x09, key_up=True)
-        native_input._flush_window(handle)
+        keyboard.send_virtual_key(0x09, key_up=False)
+        keyboard.send_virtual_key(0x09, key_up=True)
+        queue.flush_window(handle)
     return WEBVIEW2_FOCUS_PRIMER_TABS
 
 
@@ -302,21 +304,21 @@ def _capture(
         stdout=subprocess.DEVNULL,
         stderr=subprocess.DEVNULL,
     )
-    bounds: capture._WindowBounds | None = None
+    bounds: model.WindowBounds | None = None
     try:
-        bounds = capture._wait_for_process_window(process)
-        initial_observation = capture._window_observation(bounds.handle)
-        initial_pixels = capture._capture_window(initial_observation.bounds)
-        initial_digest = capture._write_capture(
+        bounds = processes.wait_for_process_window(process)
+        initial_observation = window.window_observation(bounds.handle)
+        initial_pixels = gdi.capture_window(initial_observation.bounds)
+        initial_digest = files.write_capture(
             initial_output, initial_observation.bounds, initial_pixels
         )
         focus_primer_tabs = _prepare_surface(bounds.handle, surface)
         trace = _run_uia(bounds.handle, value, surface)
-        after_observation = capture._window_observation(bounds.handle)
-        after_pixels = capture._capture_window(after_observation.bounds)
-        after_digest = capture._write_capture(output, after_observation.bounds, after_pixels)
-        capture._close_window(bounds.handle)
-        return_code = process.wait(timeout=capture.PROCESS_EXIT_TIMEOUT_SECONDS)
+        after_observation = window.window_observation(bounds.handle)
+        after_pixels = gdi.capture_window(after_observation.bounds)
+        after_digest = files.write_capture(output, after_observation.bounds, after_pixels)
+        window.close_window(bounds.handle)
+        return_code = process.wait(timeout=limits.PROCESS_EXIT_TIMEOUT_SECONDS)
         if return_code != 0:
             raise RuntimeError(f"native process exited with status {return_code}")
         result: dict[str, Any] = {
@@ -342,12 +344,12 @@ def _capture(
     finally:
         if bounds is not None and process.poll() is None:
             try:
-                capture._close_window(bounds.handle)
+                window.close_window(bounds.handle)
             except OSError:
                 pass
         if process.poll() is None:
             process.terminate()
-            process.wait(timeout=capture.PROCESS_EXIT_TIMEOUT_SECONDS)
+            process.wait(timeout=limits.PROCESS_EXIT_TIMEOUT_SECONDS)
 
 
 def main() -> None:

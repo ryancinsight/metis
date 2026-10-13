@@ -8,6 +8,7 @@ import unittest
 
 sys.path.insert(0, str(pathlib.Path(__file__).resolve().parents[1]))
 import python_native_ime_capture as capture
+from native_input.windows import keyboard
 
 
 class NativeImeCaptureTests(unittest.TestCase):
@@ -41,8 +42,8 @@ class NativeImeCaptureTests(unittest.TestCase):
         self.assertIn("\u200d", capture.UNICODE_FIXTURES["emoji"])
         self.assertIn("\u05d0", capture.UNICODE_FIXTURES["mixed-direction"])
         for text in capture.UNICODE_FIXTURES.values():
-            encoded, units = capture.unicode_capture._validate_text(text)
-            self.assertLessEqual(len(encoded), capture.unicode_capture.MAX_TEXT_BYTES)
+            encoded, units = keyboard.validate_text(text)
+            self.assertLessEqual(len(encoded), keyboard.MAX_TEXT_BYTES)
             self.assertGreater(len(units), 0)
 
 

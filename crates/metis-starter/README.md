@@ -60,6 +60,14 @@ simulator. `serve` retains the browser option. See the
 [Apple application manual](../../docs/manual/apple.md) for prerequisites,
 output ownership and the separate device-signing requirements.
 
+`external_links` declares the logo links as exact HTTPS destinations. Native
+Apple hosts hand eligible popup links to the system browser and retain this
+page; omitted declarations grant no external destinations. The manifest and
+anchor values must match, including the WebAssembly website's trailing slash.
+This policy lives in Rust and adds no JavaScript behavior. The
+[native link contract](../../docs/adr/0057-native-external-links.md) distinguishes
+navigation classification from trusted-gesture evidence.
+
 The manifest's `icon` selects `icons/application.icns` for the macOS Dock.
 The installed and development apps both use a signed bundle with that artwork.
 Regenerate it from the canonical vector with `python3 scripts/apple_icon.py`

@@ -445,8 +445,8 @@ command valid with Atlas's shared build cache and with a standalone checkout.
 
 ### Capture real Unicode input
 
-`python_native_input_capture.py` launches the production executable, captures
-its first visible frame, focuses that HWND and sends bounded UTF-16 code units
+`python_native_input_capture.py` composes the [native input domains](../../scripts/native_input/design.md).
+It launches the executable, captures its first frame, focuses its HWND and sends bounded UTF-16 units
 through Win32 `SendInput` with `KEYEVENTF_UNICODE`. The optional
 `--shortcut control-enter` argument then sends a real Control+Enter key
 sequence through the same queue, exercising the production submission policy.

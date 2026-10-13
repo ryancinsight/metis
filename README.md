@@ -84,6 +84,11 @@ the required native pairs and their remaining acceptance.
 ## Build and run
 
 Use the pinned Rust toolchain, cargo-nextest 0.9.143 and wasm-bindgen-cli 0.2.129.
+Metis 0.4.1 requires Consus compression and raster 0.2, matching the provider's
+workspace versions. The canonical Git locks record the consumed provider graph.
+The Windows private bridge encodes audit identifiers as decimal JSON strings in
+Rust, retaining every backend `u64` through WebView2's JavaScript object parsing.
+The controller scripts remain tracked in the [Rust migration](docs/adr/0059-windows-rust-pages.md).
 From this directory:
 
 ```text
@@ -128,10 +133,13 @@ the [Python binding manual](docs/manual/python.md).
 
 ## Apple frontend applications
 
-Metis 0.3.2 requires moirai-webview 0.2.0. Packaged WASM loads with a Fetch
+Metis 0.4.1 requires moirai-webview 0.2.0. Packaged WASM loads with a Fetch
 success status and the native form binds its Rust handler. Rust-owned native
 menus supply Quit (⌘Q), Close Window (⌘W), Minimize (⌘M), Zoom and full screen
 (⌃⌘F). Native macOS Greet returns exact normal, Unicode and empty-name results.
+The starter's logo links open host-declared exact HTTPS destinations in the
+system browser through Rust, preserving the app and its greeting. Optional
+`external_links` authority lives in the signed bundle (ADR 0057).
 
 The starter's Rust/WASM frontend runs in a browser or packages with Moirai's
 native macOS/iPhone/iPad WebKit host. In Atlas, `python3 scripts/atlas-metis.py
@@ -167,7 +175,7 @@ trees. The Metis launcher omits dependency patches and retains the canonical Git
 lock through metadata and compilation. Standalone builds use the corresponding pushed provider revisions recorded
 in Cargo.lock. Metis consumes Moirai through git-plus-version requirements;
 the current standalone lock records merged Moirai revision
-`10a828f7e0a8cace10dd30e88e47ce2e64aec6e0`, which includes Rust-owned AppKit menus, bounded Fetch and bodyless response
+`17a680ffebda11bf344fd06138dfc58c73c745be`, which includes exact host-authorized HTTPS popup links, Rust-owned AppKit menus, bounded Fetch and bodyless response
 semantics, the Apple Fetch-status correction and Darwin process cleanup. It includes the Windows
 AccessKit accessibility provider, the UI Automation value-action mapping,
 WebView2 0.39.1 bindings, POSIX process-group tree containment,

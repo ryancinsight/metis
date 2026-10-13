@@ -16,6 +16,9 @@ mod native;
 mod native_accessibility;
 #[cfg(windows)]
 mod webview;
+#[cfg(any(windows, test))]
+#[path = "frontend/webview/protocol.rs"]
+mod webview_protocol;
 
 /// Runs the visible native host on supported desktop targets.
 pub(crate) fn run_native(inputs: [String; 3]) -> Result<(), Box<dyn std::error::Error>> {

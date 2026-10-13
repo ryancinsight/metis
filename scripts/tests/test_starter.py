@@ -27,6 +27,7 @@ class _Page(html.parser.HTMLParser):
         self.scripts = []
         self.policy = None
         self.ids = set()
+        self.links = []
 
     def handle_starttag(self, tag, attrs):
         attributes = dict(attrs)
@@ -34,6 +35,8 @@ class _Page(html.parser.HTMLParser):
             self.ids.add(attributes["id"])
         if tag == "script":
             self.scripts.append(attributes)
+        if tag == "a":
+            self.links.append(attributes)
         if tag == "meta" and attributes.get("http-equiv") == "Content-Security-Policy":
             self.policy = attributes["content"]
 
@@ -54,6 +57,16 @@ class StarterPageTests(unittest.TestCase):
 
     def test_the_mark_matches_the_canonical_mark(self):
         self.assertEqual((FRONTEND / "assets" / "metis-mark.svg").read_bytes(), CANONICAL_MARK.read_bytes())
+
+    def test_logo_links_match_the_native_exact_destination_authority(self):
+        links = _page().links
+        self.assertEqual([link["href"] for link in links], _manifest()["external_links"])
+        self.assertEqual(_manifest()["external_links"], [
+            "https://github.com/ryancinsight/metis", "https://webassembly.org/",
+        ])
+        for link in links:
+            self.assertEqual(link["target"], "_blank")
+            self.assertEqual(set(link["rel"].split()), {"noopener", "noreferrer"})
 
     def test_the_macos_shell_icon_is_declared(self):
         self.assertEqual(_manifest()["icon"], "icons/application.icns")

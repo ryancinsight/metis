@@ -1,10 +1,33 @@
 # Open capability and evidence risks
 
+## Standalone Consus adoption [patch]
+
+Target: Metis 0.4.1, Consus compression/raster 0.2 and the delivered Moirai
+WebView 0.2 contract. The Consus provider's consumed source trees match the
+previous locked codec sources; dependency features and transitive requirements
+remain standalone verification inputs. Both locks now select the normally
+merged Moirai 0.8.3 provider from [PR 617](https://github.com/ryancinsight/Moirai/pull/617).
+Historical evidence: [PR 499 CI](https://github.com/ryancinsight/metis/actions/runs/38412617056)
+passes against its earlier consumer base. [PR 499](https://github.com/ryancinsight/metis/pull/499)
+also records standalone workspace Clippy and 686 tests against Consus
+`cf30dc29` and Moirai `81656cc6`. Those checks do not validate the combined
+native-logo and capture/input module changes. The combined tree also corrects
+native audit-ID precision: Rust emits decimal JSON strings while retaining
+backend `u64` values; six private protocol tests reproduce two baseline failures
+and verify full-range identifiers with actual adult/pediatric calculations.
+The 213 authored Windows controller lines remain unchanged.
+Owner: [METIS-CONSUS-RESOLUTION-001](backlog.md#METIS-CONSUS-RESOLUTION-001).
+The intended graph retains every recorded provider except verified Moirai
+17a680ff. All 713 Rust tests pass in 6.314 seconds; native, Windows and WASM
+Clippy deny warnings. Three real Apple bundles preserve version, exact URL
+authority and both lock bytes. Registry identities remain 272 root/209 fuzz.
+Closure: branch script/CI checks and the normal protected consumer merge.
+
 ## RITK consumer verification boundary [patch]
 
 Risk: Metis's passing suite does not validate RITK's independent dependency graph.
-Evidence: the Consus/WebView requirements and canonical Metis lock resolve;
-workspace Clippy and 686 tests pass against Consus `cf30dc29` and Moirai `81656cc6`.
+Evidence: the earlier [PR 499 CI](https://github.com/ryancinsight/metis/actions/runs/38412617056)
+passes; combined Metis 0.4.1 checks above do not validate its independent graph.
 Owner: RITK #827. Recheck: regenerate its standalone lock and run consumer gates.
 
 Source baseline and full comparison: [ADR 0003](docs/adr/0003-framework-conformance.md).
@@ -110,3 +133,42 @@ lines within the raw-string bodies; generated wasm-bindgen output and test-only
 script snippets are separate. METIS-WEBVIEW-RUST-001 owns migration of their
 theme, command, form/bridge and capability-probe lifecycle into Rust, with real
 Windows acceptance required before retiring the scripts.
+
+## Native logo navigation — 2026-10-13
+
+The starter's logo anchors request `_blank`, while the prior native provider
+has no popup handler and rejects external destinations. Metis now declares
+optional exact `external_links`, validates them through the owning Moirai
+contract and serializes the array into signed Apple bundle metadata. Both logo
+destinations match the HTML bytes; no JavaScript behavior is added.
+Manifest rejection/bound tests and all-target plist serialization/escaping tests
+pass against the delivered provider. The starter suite checks real-page
+destination identity. Installed macOS opens the exact Metis URL in Safari and
+retains the Unicode Rust greeting. Unlisted/existing-frame/subframe requests
+and two executed onload popup attempts produce zero native handoffs; the real
+logo control produces one. The portable decision matrix rejects download=true;
+cross-origin HTML download attributes do not prove that WebKit flag.
+`LinkActivated` is a navigation classification, not trusted-gesture proof.
+The full admission contract and expected failures live in
+[ADR 0057](docs/adr/0057-native-external-links.md). Physical iPhone execution,
+capability denial and remaining native services retain their existing gaps.
+
+## Portable native verification ABI — 2026-10-13
+
+Concurrent default-branch reconciliation exposes two input-layout failures on
+macOS: host C `long` is 64-bit, while Windows `LONG` is 32-bit. The canonical
+ABI module now defines the documented scalar widths, three real `INPUT` union
+arms and naturally aligned pointer fields. Virtual-desktop movement uses
+`MOUSEEVENTF_VIRTUALDESK` 0x4000; 0x0100 denotes a different mouse event.
+Computed record sizes, offsets, negative coordinates, boundary field values
+and composed movement flags pass unchanged prior assertions plus new tests.
+Capture/input implementations move into 27 acyclic domains; the largest leaf
+has 249 lines, and the two public CLI scripts each have six. Importers use
+canonical owners, and the wheel child retains the public entrypoint path.
+Compiler binding checks reject local shadowing of real module/helper owners.
+Evidence formatting checks eight input combinations, exact labels, hashes,
+encoded lengths and observed click/scroll values without substituting Win32
+delivery. The full suite passes 424 tests without skips in 15.311 seconds.
+This verifies portable record construction and retained tool behavior;
+physical Windows delivery and monitor transitions retain their existing
+acceptance requirements. [Design](scripts/native_input/design.md).

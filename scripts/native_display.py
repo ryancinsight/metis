@@ -6,6 +6,7 @@ import ctypes
 from contextlib import contextmanager
 import sys
 from dataclasses import dataclass
+from native_input.windows import abi
 
 
 @dataclass(frozen=True)
@@ -31,20 +32,11 @@ class MonitorBounds:
         return self.work_bottom - self.work_top
 
 
-class _Rect(ctypes.Structure):
-    _fields_ = [
-        ("left", ctypes.c_long),
-        ("top", ctypes.c_long),
-        ("right", ctypes.c_long),
-        ("bottom", ctypes.c_long),
-    ]
-
-
 class _MonitorInfo(ctypes.Structure):
     _fields_ = [
         ("size", ctypes.c_uint32),
-        ("monitor", _Rect),
-        ("work", _Rect),
+        ("monitor", abi.Rect),
+        ("work", abi.Rect),
         ("flags", ctypes.c_uint32),
     ]
 
@@ -77,10 +69,10 @@ def enumerate_monitors() -> tuple[MonitorBounds, ...]:
 
     user32 = ctypes.windll.user32
     callback_type = getattr(ctypes, "WINFUNCTYPE", ctypes.CFUNCTYPE)(
-        ctypes.c_bool,
+        ctypes.c_int32,
         ctypes.c_void_p,
         ctypes.c_void_p,
-        ctypes.POINTER(_Rect),
+        ctypes.POINTER(abi.Rect),
         ctypes.c_ssize_t,
     )
     user32.EnumDisplayMonitors.argtypes = [
@@ -89,9 +81,9 @@ def enumerate_monitors() -> tuple[MonitorBounds, ...]:
         callback_type,
         ctypes.c_ssize_t,
     ]
-    user32.EnumDisplayMonitors.restype = ctypes.c_bool
+    user32.EnumDisplayMonitors.restype = ctypes.c_int32
     user32.GetMonitorInfoW.argtypes = [ctypes.c_void_p, ctypes.POINTER(_MonitorInfo)]
-    user32.GetMonitorInfoW.restype = ctypes.c_bool
+    user32.GetMonitorInfoW.restype = ctypes.c_int32
     handles: list[int] = []
 
     @callback_type
@@ -162,7 +154,7 @@ def move_window_to_monitor(
         ctypes.c_int,
         ctypes.c_uint32,
     ]
-    user32.SetWindowPos.restype = ctypes.c_bool
+    user32.SetWindowPos.restype = ctypes.c_int32
     flags = 0x0001 | 0x0004 | 0x0010  # SWP_NOSIZE | SWP_NOZORDER | SWP_NOACTIVATE
     if not user32.SetWindowPos(handle, None, left, top, 0, 0, flags):
         raise ctypes.WinError()
@@ -172,7 +164,7 @@ def move_window_to_monitor(
         ctypes.c_void_p,
         ctypes.c_uint32,
     ]
-    user32.RedrawWindow.restype = ctypes.c_bool
+    user32.RedrawWindow.restype = ctypes.c_int32
     redraw_flags = 0x0001 | 0x0100 | 0x0080  # RDW_INVALIDATE | RDW_UPDATENOW | RDW_ALLCHILDREN
     if not user32.RedrawWindow(handle, None, None, redraw_flags):
         raise ctypes.WinError()

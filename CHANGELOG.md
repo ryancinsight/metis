@@ -1,15 +1,39 @@
 # Changelog
 
-## [0.3.2] - Unreleased
+## [0.4.1] - Unreleased
 
 ### Fixed
 
 - [patch] Require Consus compression and raster 0.2, matching their inherited
   workspace version. The consumed codec APIs and feature selections remain
-  unchanged; the standalone lock records the Consus revision.
-- [patch] Admit Moirai WebView 0.2.0 after verifying the consumed `run`,
-  `ResourceRoot` and resource-limit APIs remain compatible. Bundles without
-  external-link metadata retain the provider's empty navigation grant.
+  unchanged; both standalone dependency locks retain Git provider sources.
+- Preserve every native audit identifier through the WebView2 JSON object
+  boundary by encoding canonical decimal strings in Rust. Actual backend
+  calculations and exact integer/rate/error values validate the private wire
+  contract; presentation JavaScript remains unchanged.
+
+## [0.4.0] - Unreleased
+
+### Added
+
+- Apple frontend manifests declare optional exact HTTPS `external_links`.
+  Moirai 0.2.0 validates their bounds and the signed bundle metadata, then
+  hands admitted popup links to the OS browser without replacing the app.
+  Both starter logos declare their destinations; no authored JavaScript is
+  added. Link activation is a navigation classification, not proof of a
+  trusted gesture (ADR 0057).
+
+### Fixed
+
+- Capture/input verification uses the Windows-defined integer widths and real
+  `INPUT` union arms on every host. Virtual-desktop movement uses flag 0x4000;
+  pointer-sized results and 32-bit `BOOL` returns retain their ABI contracts.
+- Capture and input tools have one implementation per domain in acyclic leaf
+  modules below 500 lines. All importers target those modules; public CLI
+  arguments, wheel-child execution and image/manifest budgets remain intact.
+  Compiler binding checks reject shadowed native dependencies; computed
+  evidence preserves the original labels and Unicode values. The complete
+  dependency-free suite passes 424 tests without skips.
 
 ## [0.3.1] - Unreleased
 

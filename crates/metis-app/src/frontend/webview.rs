@@ -1,5 +1,8 @@
 //! Windows `WebView2` host for the supervised form workflow.
 
+use super::webview_protocol::{
+    PageMessage, WebViewAction, WebViewRequest, is_permission_probe_complete,
+};
 use crate::invocation::WebViewTheme;
 use metis_core::error::{ErrorCode, MetisError, Result};
 use metis_frontend::{FormState, FrontendApp};
@@ -8,7 +11,6 @@ use metis_platform::native::{
     WebViewConfig, WebViewEvent, WebViewHostEvent, WebViewSurface, WindowConfig, WindowEvent,
     WindowVisibility,
 };
-use serde::{Deserialize, Serialize};
 use std::io::{stdin, stdout};
 use std::{fs, path::Path, time::Duration};
 
@@ -23,58 +25,6 @@ const EVENT_WAIT: Duration = Duration::from_millis(250);
 const MAX_PATIENT_ID_BYTES: usize = 128;
 const MAX_PACKAGE_ATTEMPTS: u32 = 8;
 const ESCAPE_KEY: u32 = 0x1b;
-
-#[derive(Debug, Deserialize, PartialEq)]
-#[serde(deny_unknown_fields)]
-struct WebViewRequest {
-    action: WebViewAction,
-    patient_id: String,
-    weight_kg: f64,
-    concentration_mg_ml: f64,
-    target_dose_mcg_kg_min: f64,
-}
-
-#[derive(Debug, Deserialize, PartialEq, Eq)]
-#[serde(rename_all = "snake_case")]
-enum WebViewAction {
-    Submit,
-}
-
-#[derive(Debug, Deserialize, PartialEq, Eq)]
-#[serde(deny_unknown_fields)]
-struct PermissionProbeComplete {
-    action: PermissionProbeAction,
-}
-
-#[derive(Debug, Deserialize, PartialEq, Eq)]
-enum PermissionProbeAction {
-    #[serde(rename = "permission_probe_complete")]
-    Complete,
-}
-
-#[derive(Debug, Serialize)]
-#[serde(tag = "type", rename_all = "snake_case")]
-enum PageMessage {
-    Result {
-        status: &'static str,
-        audit_sequence_id: u64,
-        rate_ml_hr: f64,
-        drug_rate_mg_hr: f64,
-        is_pediatric: bool,
-    },
-    Error {
-        status: &'static str,
-        error_code: u16,
-        message: String,
-    },
-    PermissionDenied {
-        status: &'static str,
-        error_code: u16,
-        permission: String,
-        message: String,
-        user_initiated: bool,
-    },
-}
 
 /// Runs the visible `WebView2` form over the supervised private pipe.
 pub(crate) fn run(inputs: [String; 3]) -> Result<(), Box<dyn std::error::Error>> {
@@ -331,10 +281,6 @@ fn run_event_loop<T: IpcTransport>(
             return Ok(());
         }
     }
-}
-
-fn is_permission_probe_complete(json: &str) -> bool {
-    serde_json::from_str::<PermissionProbeComplete>(json).is_ok()
 }
 
 fn permission_denied_message(
