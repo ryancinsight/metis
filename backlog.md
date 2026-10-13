@@ -1,4 +1,12 @@
-Current framework version: Metis 0.3.0. Remaining capability work follows.
+Current framework version: Metis 0.3.1. Remaining capability work follows.
+
+<a id="METIS-WEBVIEW-RUST-001"></a>
+## METIS-WEBVIEW-RUST-001 — Rust-owned Windows page lifecycle [patch]
+
+- Status: todo; priority: P1; owner: Metis presentation; last-update: 2026-10-12; risk: application behavior lost during script removal.
+- Scope: replace the form's 125 and permission probe's 88 embedded JavaScript lines with Rust/WASM presentation and typed WebView2 bridge bindings; retain generated browser interoperability.
+- Acceptance: real Windows journeys preserve theme/command focus, shortcuts, input-sensitive calculation replies, malformed/error replies, request admission and all four capability denials; listeners and permission work detach on teardown.
+- Verification: build the packaged pages from the canonical Git lock and compare exact model, reply, focus and capability outcomes before/after; count raw-string scripts as well as standalone modules.
 
 <a id="METIS-BROWSER-READ-001"></a>
 ## METIS-BROWSER-READ-001 — Diagnose selected-file reads
@@ -108,6 +116,7 @@ an owner. “Unsupported” cannot replace delivery of a required mobile/native 
 - Status: todo; priority: P1; owner: Metis macOS host + Moirai; dependencies: METIS-DESKTOP-001; risk: OS boundary
 - Scope: native window/WebView events, accessibility/IME integration, process containment, sandbox restrictions and teardown; share broker semantics, not Windows implementation details.
 - Acceptance: host-native [V05](docs/VERIFICATION.md#V05) plus unauthorized file/network/process denial, child drain and positive IPC; cross compilation alone cannot close this item.
+- [x] [patch] Native application/window menus: moirai-webview 0.1.2 handles Quit, Close, Minimize, Zoom and full screen in Rust. Focused ⌘Q/⌘W exit, exact Unicode output and actual geometry/state pass; capture-obscured glyphs remain separate visual evidence.
 - Demonstration: actual macOS window/permission captures and manual setup/troubleshooting from the tested revision.
 - Local increment (2026-10-11) [minor]: shared frontend packages in a Moirai AppKit/WKWebView host; `apple build|run` and macOS `dev --watch` exist. Ad-hoc bundle validation and process calculation/cleanup pass. Native interaction and OS-denial evidence remain open; [manual](docs/manual/apple.md), [ADR 0055](docs/adr/0055-apple-application-bundles.md).
 - macOS identity correction (2026-10-11) [patch]: the starter declares its vector-derived ICNS; packaging copies it and declares `CFBundleIconFile`. Development uses the same signed bundle path. All ten decoded dimensions and exact interior colors pass; malformed, oversized, linked and missing icons preserve every owned output byte. Dock observation requires an unlocked desktop.

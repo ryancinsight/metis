@@ -73,8 +73,11 @@ The infusion arithmetic is a synthetic engineering example; its configurable
 limits are not treatment guidance.
 
 Metis 0.3.0 moves browser shell, protocol and HTTP lifecycle behavior into Rust.
-The three authored application modules contain nine initialization lines;
-generated wasm-bindgen bindings remain. [ADR 0056](docs/adr/0056-rust-browser-shell.md)
+The workbench, HTTP page and starter modules contain nine initialization lines.
+The Windows WebView2 form and permission probe still embed 213 authored
+JavaScript lines in `crates/metis-app/src/frontend/webview/assets.rs`;
+their Rust migration remains open in METIS-WEBVIEW-RUST-001. Generated
+wasm-bindgen bindings remain. [ADR 0056](docs/adr/0056-rust-browser-shell.md)
 records the contracts and [the Tauri review](docs/manual/tauri.md) records
 the required native pairs and their remaining acceptance.
 
@@ -125,9 +128,10 @@ the [Python binding manual](docs/manual/python.md).
 
 ## Apple frontend applications
 
-Metis 0.2.1 requires moirai-webview 0.1.1 so packaged WASM loads with a Fetch
-success status and the native form binds its Rust handler. Native macOS Greet
-returns the exact greeting for normal, Unicode and empty names.
+Metis 0.3.1 requires moirai-webview 0.1.2. Packaged WASM loads with a Fetch
+success status and the native form binds its Rust handler. Rust-owned native
+menus supply Quit (⌘Q), Close Window (⌘W), Minimize (⌘M), Zoom and full screen
+(⌃⌘F). Native macOS Greet returns exact normal, Unicode and empty-name results.
 
 The starter's Rust/WASM frontend runs in a browser or packages with Moirai's
 native macOS/iPhone/iPad WebKit host. In Atlas, `python3 scripts/atlas-metis.py
@@ -162,8 +166,8 @@ describing it as dependency-free. The Atlas development overlay resolves first-p
 trees. Standalone builds use the corresponding pushed provider revisions recorded
 in Cargo.lock. Metis consumes Moirai through git-plus-version requirements;
 the current standalone lock records merged Moirai revision
-`ea79bdc583ff8e18e76eaa6dda6ebd20d14441cd`, which includes the Apple WebView
-Fetch-status correction, Darwin process cleanup and closed-peer instance reception. It includes the Windows
+`10a828f7e0a8cace10dd30e88e47ce2e64aec6e0`, which includes Rust-owned AppKit menus, bounded Fetch and bodyless response
+semantics, the Apple Fetch-status correction and Darwin process cleanup. It includes the Windows
 AccessKit accessibility provider, the UI Automation value-action mapping,
 WebView2 0.39.1 bindings, POSIX process-group tree containment,
 `<select>` values through `WebElement::set_value`, keyboard shortcuts on

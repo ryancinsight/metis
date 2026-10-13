@@ -1,5 +1,19 @@
 # Changelog
 
+## [0.3.1] - Unreleased
+
+### Fixed
+
+- Require moirai-webview 0.1.2 for Rust-owned native AppKit application, Edit
+  and Window menus. Focused Command-Q quits and Command-W closes the last
+  window; Minimize, Zoom and full-screen actions use native AppKit behavior.
+- Document native geometry/state verification and the capture badge that
+  obscures title-bar controls in recordings. No authored JavaScript is added;
+  the three WASM initialization modules retain nine lines in total.
+- Correct the JavaScript inventory scope: Windows WebView2 still embeds 213
+  authored lines for its form and permission probe; their Rust migration is
+  tracked separately from the three initialization modules.
+
 ## [0.3.0] - Unreleased
 
 ### Added

@@ -4,7 +4,7 @@ The same `frontend` manifest and HTML/CSS/Rust-WASM assets feed a browser or an
 installed Apple application. `metis-host` uses Moirai's AppKit/UIKit lifecycle
 and WKWebView resource provider. Apple hosts do not start a loopback server.
 
-Metis 0.2.1 requires moirai-webview 0.1.1. Its packaged resource responses carry
+Metis 0.3.1 requires moirai-webview 0.1.2. Its packaged resource responses carry
 status 200 plus exact MIME/length headers, which the WASM loader requires before
 it binds the application. Delivering a WASM file alone does not establish that
 the application starts. Native macOS Greet is verified for normal, Unicode and
@@ -39,6 +39,26 @@ browser. `dev` opens a native macOS window; `--watch` rebuilds changed frontend
 sources and reopens the window after a successful compile. Failed builds retain
 the running page and report the error. `apple run` builds and opens the installed
 `.app` bundle. Closing the last macOS window ends its application process.
+
+## macOS window controls and exit
+
+The native **Metis Starter** menu supplies **Quit Metis Starter** (⌘Q).
+The **Window** menu supplies **Close** (⌘W), **Minimize** (⌘M), **Zoom** and
+full screen (⌃⌘F). These actions run in Rust's AppKit adapter, including when
+the WebView name field has focus. Native close, minimize and zoom/full-screen
+buttons belong to AppKit; the page does not draw replacements.
+
+Native tests observe minimize/restore, Zoom from 800×632 to 1728×1034 and back,
+full-screen transitions and process exit on ⌘Q/⌘W. The exact Unicode greeting
+survives window transitions. Native traces report nonzero, enabled, unhidden
+standard buttons in normal mode. Recordings show a purple capture badge over
+their title-bar area; a recording alone cannot prove unobscured button glyphs.
+
+Application, Edit and Window menus come from [Moirai ADR 0073](https://github.com/ryancinsight/Moirai/blob/main/docs/adr/0073-apple-native-window-commands.md).
+The general programmable window API, OS permission denial and remaining mobile
+lifecycle journeys stay in their owning Tauri capability items.
+
+## Development and locked sources
 
 macOS development runs from a signed bundle under `output/apple/dev-macos`.
 It uses the same application metadata and shell icon as the installed build.

@@ -65,3 +65,34 @@ Moirai PRs 611/612/613 and Gaia PR 169 are merged providers. Current local
 macOS Greet also passes after closing and reopening the final 0.3.0 bundle.
 The native inventory still has 78 open admitted pairs and 46 bounded pairs
 with remaining acceptance; this delivery does not close those owning items.
+
+## Native application/window commands — 2026-10-12
+
+The missing native exit path is reproduced: the AppKit host has standard window
+style flags but no application main menu, and focused ⌘Q leaves it running.
+Moirai's 0.1.2 adapter installs application, Edit and Window menus in Rust.
+Local real-source journeys terminate on ⌘Q and ⌘W, preserve the exact Unicode
+greeting through minimize/restore, zoom 800×632 to 1728×1034 and back, and
+enter/exit full screen. Actual AppKit notifications provide the state/geometry
+oracle; capturing the minimized window re-raises it, and captures may retain
+their initial dimensions. Standard buttons have nonzero frames and are enabled
+and unhidden in normal mode, while recordings place a purple capture badge over
+their area. Unobscured glyph evidence remains separate. The native controls add
+no JavaScript; the three initialization modules retain nine authored lines.
+General programmable native window APIs and the remaining permission/mobile
+capability pairs stay open. Moirai PR 615 merges at
+`10a828f7e0a8cace10dd30e88e47ce2e64aec6e0`; all 701 consumer Rust tests pass
+against that Git source. Both canonical dependency locks remain byte-identical
+through the locked test run. The Tauri inventory counts retain their previous
+admitted scope.
+
+## Authored JavaScript inventory — 2026-10-12
+
+The nine-line count covers the workbench, HTTP page and starter initialization
+modules only. `metis-app` also embeds the Windows WebView2 form (125 lines) and
+permission probe (88 lines) in `frontend/webview/assets.rs`: 213 authored
+JavaScript lines remain outside those loaders. Counts include blank/comment
+lines within the raw-string bodies; generated wasm-bindgen output and test-only
+script snippets are separate. METIS-WEBVIEW-RUST-001 owns migration of their
+theme, command, form/bridge and capability-probe lifecycle into Rust, with real
+Windows acceptance required before retiring the scripts.
