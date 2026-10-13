@@ -11,6 +11,9 @@ Active target: Metis 0.5.0 over Moirai 0.9.0/moirai-quic 0.1.0. Phase: Closure.
 - [x] [major] Document the pre-1.0 generic server/Send migration in CHANGELOG.md; remove the old concrete transport coupling.
 - [x] [patch] Execute the two-process mutual TLS CLI over IPv4 and IPv6; verify the exact calculation, audited event and acknowledged/drained shutdown. Warning-denying diagnostics and formatting pass.
 - [x] [minor] Pin the published provider and verify the canonical Git lock while retaining unrelated dependency revisions. All 588 applicable default-API compatibility checks pass under the stronger minor override; the generic/Send migration remains documented as a pre-1.0 break.
-- [ ] [minor] Review/promote provider and consumer changes and collect Windows/Linux native transport evidence before release.
+- [x] [patch] Reconcile current main, preserving Consus/provider coherence, lossless audit identifiers, Windows page work and historical artifacts.
+- [x] [patch] Verify the reconciled canonical tree: 703 native tests, strict transport diagnostics, full native workspace compilation and synchronized main/fuzz locks.
+- [ ] [patch] Collect Linux/Windows native session evidence from the committed review revision.
+- [ ] [minor] Complete protected provider/consumer promotion before release.
 
 Next increment: review [provider PR 618](https://github.com/ryancinsight/Moirai/pull/618) and [consumer PR 503](https://github.com/ryancinsight/metis/pull/503), then collect Windows/Linux native transport evidence before release.

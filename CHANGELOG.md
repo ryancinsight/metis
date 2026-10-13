@@ -14,6 +14,10 @@
 
 ### Changed
 
+- [patch] Reconcile current main and add Linux/Windows native transport checks
+  using the canonical main/fuzz provider locks. Preserve Consus/provider coherence
+  and lossless native audit-ID encoding.
+
 - WebSocket and QUIC use one asynchronous IPC server dispatcher through
   `NativeSessionTransport`; the existing frame decoder remains authoritative.
   Validated typed peer-close causes distinguish clean closure from truncation.
@@ -31,6 +35,18 @@
 - Native WebSocket service streams require `Send`, matching the native transport
   future contract. Custom native transports implement asynchronous `send_frame`,
   `recv_frame` and `finish`; no legacy aliases or forwarding API remains.
+
+## [0.4.1] - Unreleased
+
+### Fixed
+
+- [patch] Require Consus compression and raster 0.2, matching their inherited
+  workspace version. The consumed codec APIs and feature selections remain
+  unchanged; both standalone dependency locks retain Git provider sources.
+- Preserve every native audit identifier through the WebView2 JSON object
+  boundary by encoding canonical decimal strings in Rust. Actual backend
+  calculations and exact integer/rate/error values validate the private wire
+  contract; presentation JavaScript remains unchanged.
 
 ## [0.4.0] - Unreleased
 

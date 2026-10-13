@@ -1,9 +1,8 @@
 use super::{
-    MAX_PATIENT_ID_BYTES, WebViewAction, WebViewRequest,
+    MAX_PATIENT_ID_BYTES,
     assets::{
         APP_JS, INDEX_HTML, PERMISSION_PROBE_APP_JS, PERMISSION_PROBE_INDEX_HTML, STYLES_CSS,
     },
-    is_permission_probe_complete,
     package::file_uri,
     permission_denied_message,
 };
@@ -156,21 +155,6 @@ fn permission_probe_is_separate_from_the_calculation_page() {
 }
 
 #[test]
-fn request_parser_rejects_unknown_fields_and_preserves_inputs() {
-    let request: WebViewRequest = serde_json::from_str(
-        r#"{"action":"submit","patient_id":"PT-1","weight_kg":72.5,"concentration_mg_ml":4.0,"target_dose_mcg_kg_min":0.5}"#,
-    )
-    .expect("bounded request");
-    assert_eq!(request.action, WebViewAction::Submit);
-    assert_eq!(request.patient_id, "PT-1");
-    assert!((request.weight_kg - 72.5).abs() <= f64::EPSILON);
-    assert!(serde_json::from_str::<WebViewRequest>(
-        r#"{"action":"submit","patient_id":"PT-1","weight_kg":72.5,"concentration_mg_ml":4.0,"target_dose_mcg_kg_min":0.5,"extra":true}"#,
-    )
-    .is_err());
-}
-
-#[test]
 fn file_uri_percent_encodes_package_path_without_separators() {
     let uri = file_uri(std::path::Path::new(r"C:\Metis App\index.html")).expect("file URI");
     assert_eq!(uri, "file:///C:/Metis%20App/index.html");
@@ -207,15 +191,4 @@ fn permission_denial_message_preserves_user_initiation() {
         json,
         r#"{"type":"permission_denied","status":"permission_denied","error_code":8207,"permission":"camera","message":"WebView2 denied camera access request","user_initiated":true}"#
     );
-}
-
-#[test]
-fn permission_capture_waits_for_typed_completion_message() {
-    assert!(is_permission_probe_complete(
-        r#"{"action":"permission_probe_complete"}"#
-    ));
-    assert!(!is_permission_probe_complete(
-        r#"{"action":"permission_probe_complete","extra":true}"#
-    ));
-    assert!(!is_permission_probe_complete(r#"{"action":"submit"}"#));
 }

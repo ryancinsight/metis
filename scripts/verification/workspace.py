@@ -14,6 +14,9 @@ REGISTRY_BOUNDARIES = {
     ("metis-cli", "tracing"),
     ("metis-cli", "tracing-subscriber"),
     ("metis-backend", "tracing"),
+    # Development-only private WebView protocol tests capture scoped spans.
+    ("metis-app", "tracing"),
+    ("metis-app", "tracing-subscriber"),
     ("metis-backend", "tracing-subscriber"),
     # PNG admission uses the strict bounded host contract in ADR 0029.
     ("metis-ui-lang", "png"),

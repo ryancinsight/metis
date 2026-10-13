@@ -20,10 +20,44 @@ computed result, audited event and FIN/drain lifecycle. All 588 applicable
 default-API compatibility checks pass under the stronger minor override. These
 checks do not prove generic-bound compatibility: the pre-1.0 explicit server
 annotation/Send migration remains documented in CHANGELOG.md. Existing Iris/Gaia
-provider lag retains Moirai 0.8.2, following Atlas overlay policy; no stack-wide
+provider lag retains Moirai 0.8.3, following Atlas overlay policy; no stack-wide
 version migration is claimed. Default-branch promotion and Windows/Linux
-execution remain release gates. HTTP/3/WebTransport application mapping is
+execution remain active gates. Current-main reconciliation retains its provider/Consus
+contracts and lossless native audit identifiers; 703 native tests and synchronized
+main/fuzz locks pass. Dedicated native transport jobs validate both hosted platforms. HTTP/3/WebTransport application mapping is
 separate; loopback correctness does not establish wide-area performance.
+
+## Standalone Consus adoption [patch]
+
+Target: Metis 0.4.1, Consus compression/raster 0.2 and the delivered Moirai
+WebView 0.2 contract. The Consus provider's consumed source trees match the
+previous locked codec sources; dependency features and transitive requirements
+remain standalone verification inputs. Both locks now select the normally
+merged Moirai 0.8.3 provider from [PR 617](https://github.com/ryancinsight/Moirai/pull/617).
+Historical evidence: [PR 499 CI](https://github.com/ryancinsight/metis/actions/runs/38412617056)
+passes against its earlier consumer base. [PR 499](https://github.com/ryancinsight/metis/pull/499)
+also records standalone workspace Clippy and 686 tests against Consus
+`cf30dc29` and Moirai `81656cc6`. Those checks do not validate the combined
+native-logo and capture/input module changes. The combined tree also corrects
+native audit-ID precision: Rust emits decimal JSON strings while retaining
+backend `u64` values; six private protocol tests reproduce two baseline failures
+and verify full-range identifiers with actual adult/pediatric calculations.
+The 213 authored Windows controller lines remain unchanged.
+Implementation is complete; [PR 502](https://github.com/ryancinsight/metis/pull/502) owns protected delivery.
+It retains PR 499 commits; the old remote head has a stale fuzz lock that
+prevents baseline compilation. The normal gate verifies current main instead.
+The intended graph retains every recorded provider except verified Moirai
+17a680ff. All 713 Rust tests pass in 6.314 seconds; native, Windows and WASM
+Clippy deny warnings. Three real Apple bundles preserve version, exact URL
+authority and both lock bytes. Registry identities remain 272 root/209 fuzz.
+Closure: branch script/CI checks and the normal protected consumer merge.
+
+## RITK consumer verification boundary [patch]
+
+Risk: Metis's passing suite does not validate RITK's independent dependency graph.
+Evidence: the earlier [PR 499 CI](https://github.com/ryancinsight/metis/actions/runs/38412617056)
+passes; combined Metis 0.4.1 checks above do not validate its independent graph.
+Owner: RITK #827. Recheck: regenerate its standalone lock and run consumer gates.
 
 Source baseline and full comparison: [ADR 0003](docs/adr/0003-framework-conformance.md).
 Scope: current Metis host, browser bridge, target discovery and the RITK consumer

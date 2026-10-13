@@ -7,15 +7,16 @@ Current framework version: Metis 0.5.0. Remaining capability work follows.
 - Scope: native reliable multiplexed sessions through the shared asynchronous server and existing frame/capability/clinical/audit contracts.
 - Current increment: required native QUIC transport, actual ALPN/full frame-domain admission, independent fresh-key services for the same authenticated principal, protocol rejection and graceful FIN are implemented. The canonical provider pin passes 176 default tests and 113 minimal IPC/backend tests without a QUIC feature flag. Full native workspace/all-target compilation, warning-denying native/browser diagnostics, 588 applicable default-API compatibility checks and the default-built IPv4/IPv6 mutual TLS CLI pass. Browser application graphs exclude native QUIC; CI checks minimal native sessions.
 - Acceptance: published Moirai 0.9.0/moirai-quic 0.1.0 revision resolves one canonical Git lock; strict diagnostics, real mutual TLS CLI computation/event/teardown and compatibility classification pass. Browser HTTP/3 is a separate mapping.
-- Next step: review/promote [provider PR 618](https://github.com/ryancinsight/Moirai/pull/618) and [consumer PR 503](https://github.com/ryancinsight/metis/pull/503); collect Windows/Linux transport evidence before release.
+- Next step: run Linux/Windows native session gates on the reconciled provider and consumer revisions, then promote [provider PR 618](https://github.com/ryancinsight/Moirai/pull/618) and [consumer PR 503](https://github.com/ryancinsight/metis/pull/503) after required review/checks. Controlled latency/loss measurement follows Moirai ADR 0075; it does not assert wide-area or TCP equivalence.
 
 <a id="METIS-WEBVIEW-RUST-001"></a>
-## METIS-WEBVIEW-RUST-001 — Rust-owned Windows page lifecycle [patch]
+## METIS-WEBVIEW-RUST-001 — Rust-owned Windows page lifecycle [minor]
 
 - Status: todo; priority: P1; owner: Metis presentation; last-update: 2026-10-12; risk: application behavior lost during script removal.
 - Scope: replace the form's 125 and permission probe's 88 embedded JavaScript lines with Rust/WASM presentation and typed WebView2 bridge bindings; retain generated browser interoperability.
 - Acceptance: real Windows journeys preserve theme/command focus, shortcuts, input-sensitive calculation replies, malformed/error replies, request admission and all four capability denials; listeners and permission work detach on teardown.
 - Verification: build the packaged pages from the canonical Git lock and compare exact model, reply, focus and capability outcomes before/after; count raw-string scripts as well as standalone modules.
+- Design: [ADR 0059](docs/adr/0059-windows-rust-pages.md) defines PAL mechanisms, Rust page ownership and generated-asset coherence for Metis 0.5.0 and Moirai 0.9.0. Implementation and real Windows acceptance remain open.
 
 <a id="METIS-BROWSER-READ-001"></a>
 ## METIS-BROWSER-READ-001 — Diagnose selected-file reads

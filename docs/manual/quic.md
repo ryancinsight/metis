@@ -76,4 +76,4 @@ HTTP/3/WebTransport needs a browser application mapping and is not supplied by
 this native binary session protocol.
 
 See [ADR 0058](../adr/0058-native-quic-sessions.md) and
-[Moirai ADR 0075](https://github.com/ryancinsight/Moirai/blob/0f9e115302d5f71547dd4cae76bf6cc753cf32ba/docs/adr/0075-quic-multiplexed-sessions.md).
+[Moirai ADR 0075](https://github.com/ryancinsight/Moirai/blob/9d9bd799099e23bbd02de7d2cf620cbf731c2d10/docs/adr/0075-quic-multiplexed-sessions.md).
