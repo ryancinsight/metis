@@ -10,8 +10,9 @@ import subprocess
 import sys
 from typing import Any
 
-import python_native_capture as native_capture
-import python_native_input_capture as unicode_capture
+from native_capture import limits, model
+from native_capture.windows import processes, window
+from native_input.windows import keyboard, queue
 from python_native_ime_host import (
     ENGLISH_KLID,
     IME_LAYOUTS,
@@ -88,7 +89,7 @@ def _launch(
     executable: pathlib.Path,
     command_arguments: list[str],
     cwd: pathlib.Path | None,
-) -> tuple[subprocess.Popen[bytes], native_capture._WindowBounds]:
+) -> tuple[subprocess.Popen[bytes], model.WindowBounds]:
     process = subprocess.Popen(
         [str(executable), *command_arguments],
         cwd=cwd,
@@ -97,18 +98,18 @@ def _launch(
         stderr=subprocess.DEVNULL,
     )
     try:
-        return process, native_capture._wait_for_process_window(process)
+        return process, processes.wait_for_process_window(process)
     except BaseException:
         if process.poll() is None:
             process.terminate()
-            process.wait(timeout=native_capture.PROCESS_EXIT_TIMEOUT_SECONDS)
+            process.wait(timeout=limits.PROCESS_EXIT_TIMEOUT_SECONDS)
         raise
 
 
 def _close(process: subprocess.Popen[bytes], handle: int) -> None:
     if process.poll() is None:
-        native_capture._close_window(handle)
-        process.wait(timeout=native_capture.PROCESS_EXIT_TIMEOUT_SECONDS)
+        window.close_window(handle)
+        process.wait(timeout=limits.PROCESS_EXIT_TIMEOUT_SECONDS)
     if process.returncode != 0:
         raise RuntimeError(f"native process exited with status {process.returncode}")
 
@@ -132,12 +133,12 @@ def _capture_ime_journey(
         activated = activate_layout(bounds.handle, layout_spec["klid"])
         ime_before = ime_state(bounds.handle)
         send_physical_keys((VK_IME_ON,))
-        unicode_capture._flush_window(bounds.handle)
+        queue.flush_window(bounds.handle)
         ime_after_on = ime_state(bounds.handle)
         toggle = ("VK_IME_ON",)
         if not ime_after_on["open"]:
             send_physical_keys((VK_KANJI,))
-            unicode_capture._flush_window(bounds.handle)
+            queue.flush_window(bounds.handle)
             ime_after_on = ime_state(bounds.handle)
             toggle = ("VK_IME_ON", "VK_KANJI")
         if not ime_after_on["context"] or not ime_after_on["open"]:
@@ -198,10 +199,10 @@ def _capture_ime_journey(
     finally:
         if process.poll() is None:
             try:
-                native_capture._close_window(bounds.handle)
+                window.close_window(bounds.handle)
             except OSError:
                 process.terminate()
-            process.wait(timeout=native_capture.PROCESS_EXIT_TIMEOUT_SECONDS)
+            process.wait(timeout=limits.PROCESS_EXIT_TIMEOUT_SECONDS)
 
 
 def _capture_unicode_fixture(
@@ -214,7 +215,7 @@ def _capture_unicode_fixture(
 ) -> dict[str, Any]:
     fixture_dir = output_dir / name
     fixture_dir.mkdir(parents=True, exist_ok=True)
-    encoded, units = unicode_capture._validate_text(text)
+    encoded, units = keyboard.validate_text(text)
     process, bounds = _launch(executable, command_arguments, cwd)
     try:
         before = capture_state(bounds.handle, "before", fixture_dir)
@@ -225,7 +226,7 @@ def _capture_unicode_fixture(
         _, foreground_set = focus_native_window(bounds.handle)
         if not foreground_set:
             raise RuntimeError(f"Windows denied foreground activation after layout setup for {name}")
-        unicode_capture._send_unicode_text(units)
+        keyboard.send_unicode_text(units)
         after = capture_state(bounds.handle, "after", fixture_dir)
         checks = {
             "value_exact": after["value"]["text"] == before["value"]["text"] + text,
@@ -248,10 +249,10 @@ def _capture_unicode_fixture(
     finally:
         if process.poll() is None:
             try:
-                native_capture._close_window(bounds.handle)
+                window.close_window(bounds.handle)
             except OSError:
                 process.terminate()
-            process.wait(timeout=native_capture.PROCESS_EXIT_TIMEOUT_SECONDS)
+            process.wait(timeout=limits.PROCESS_EXIT_TIMEOUT_SECONDS)
 
 
 def _capture(

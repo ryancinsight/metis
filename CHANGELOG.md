@@ -11,6 +11,18 @@
   added. Link activation is a navigation classification, not proof of a
   trusted gesture (ADR 0057).
 
+### Fixed
+
+- Capture/input verification uses the Windows-defined integer widths and real
+  `INPUT` union arms on every host. Virtual-desktop movement uses flag 0x4000;
+  pointer-sized results and 32-bit `BOOL` returns retain their ABI contracts.
+- Capture and input tools have one implementation per domain in acyclic leaf
+  modules below 500 lines. All importers target those modules; public CLI
+  arguments, wheel-child execution and image/manifest budgets remain intact.
+  Compiler binding checks reject shadowed native dependencies; computed
+  evidence preserves the original labels and Unicode values. The complete
+  dependency-free suite passes 424 tests without skips.
+
 ## [0.3.1] - Unreleased
 
 ### Fixed

@@ -10,8 +10,9 @@ import pathlib
 import subprocess
 from typing import Any
 
-import python_native_capture as capture
-import python_native_input_capture as unicode_capture
+from native_capture.images import files
+from native_capture.windows import gdi, window
+from native_input.windows import abi, keyboard, queue
 
 
 MAX_KEYS = 32
@@ -254,8 +255,8 @@ def send_physical_keys(keys: tuple[int, ...]) -> None:
     for virtual_key in keys:
         if not 0 < virtual_key <= 0xFF:
             raise ValueError(f"virtual key is outside the Win32 byte range: {virtual_key}")
-        unicode_capture._send_virtual_key(virtual_key, key_up=False)
-        unicode_capture._send_virtual_key(virtual_key, key_up=True)
+        keyboard.send_virtual_key(virtual_key, key_up=False)
+        keyboard.send_virtual_key(virtual_key, key_up=True)
 
 
 def release_foreground_lock() -> None:
@@ -268,7 +269,7 @@ def release_foreground_lock() -> None:
     ]
     user32.keybd_event.restype = None
     user32.keybd_event(VK_MENU, 0, 0, 0)
-    user32.keybd_event(VK_MENU, 0, unicode_capture.KEYEVENTF_KEYUP, 0)
+    user32.keybd_event(VK_MENU, 0, abi.KEYEVENTF_KEYUP, 0)
 
 
 def focus_native_window(handle: int) -> tuple[int, bool]:
@@ -312,8 +313,8 @@ def focus_native_window(handle: int) -> tuple[int, bool]:
         # The Alt tap releases the foreground lock, but Windows can leave the
         # target queue's menu modifier logically down across the attachment.
         # Repeat a complete tap on the target queue before delivering text.
-        unicode_capture._send_virtual_key(VK_MENU, key_up=False)
-        unicode_capture._send_virtual_key(VK_MENU, key_up=True)
+        keyboard.send_virtual_key(VK_MENU, key_up=False)
+        keyboard.send_virtual_key(VK_MENU, key_up=True)
     finally:
         if attached and not user32.AttachThreadInput(current_thread, foreground_thread, False):
             raise ctypes.WinError()
@@ -338,11 +339,11 @@ def value_record(value: str) -> dict[str, Any]:
 
 
 def capture_state(handle: int, name: str, output_dir: pathlib.Path) -> dict[str, Any]:
-    unicode_capture._flush_window(handle)
-    observation = capture._window_observation(handle)
-    pixels = capture._capture_window(observation.bounds)
+    queue.flush_window(handle)
+    observation = window.window_observation(handle)
+    pixels = gdi.capture_window(observation.bounds)
     image = output_dir / f"{name}.png"
-    digest = capture._write_capture(image, observation.bounds, pixels)
+    digest = files.write_capture(image, observation.bounds, pixels)
     value = _read_patient_value(handle)
     return {
         "image": image.as_posix(),

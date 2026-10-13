@@ -94,8 +94,9 @@ remains covered by the portable matrix; a cross-origin HTML download attribute
 can be ignored by WebKit and does not prove that native action flag.
 
 The provider's 20 real resource/policy/Foundation tests pass. The consumer's
-707 Rust tests and 396 script tests pass before concurrent default-branch
-reconciliation. Ten library surfaces pass all 196 applicable minor-class
+707 Rust tests and 424 script tests pass after concurrent default-branch
+reconciliation and the portable native-verification ABI correction. No script
+test is skipped. Ten library surfaces pass all 196 applicable minor-class
 compatibility checks each. Four comparisons use compiler-produced rustdoc
 JSON from each canonical locked graph because the automatic fresh-resolution
 helper cannot resolve the upstream consus-raster 0.1 requirement at its new

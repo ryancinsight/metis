@@ -14,7 +14,8 @@ import zlib
 from unittest import mock
 
 sys.path.insert(0, str(pathlib.Path(__file__).resolve().parents[1]))
-import python_native_capture as capture
+from native_capture import cli, commands, limits, model
+from native_capture.images import files, png
 import native_display
 from native_display import MonitorBounds, display_scale_milli
 
@@ -92,6 +93,12 @@ def encoded_png(width: int, rows: list[tuple[int, bytes]]) -> bytes:
 
 
 class NativeCaptureTests(unittest.TestCase):
+    def test_wheel_child_reexecutes_the_public_capture_entrypoint(self) -> None:
+        expected = pathlib.Path(__file__).resolve().parents[1] / "python_native_capture.py"
+        self.assertEqual(cli.ENTRY_SCRIPT, expected)
+        self.assertEqual(cli.ENTRY_SCRIPT.name, "python_native_capture.py")
+        self.assertTrue(cli.ENTRY_SCRIPT.is_file())
+
     def test_physical_coordinates_restore_pointer_context_on_each_thread(self) -> None:
         previous = 0x123456789ABC
         setter = mock.Mock(side_effect=[previous, -4, previous, -4])
@@ -129,7 +136,7 @@ class NativeCaptureTests(unittest.TestCase):
             self.assertEqual(setter.call_count, 1)
 
     def test_read_png_round_trip_preserves_rgba_and_source_digest(self) -> None:
-        bounds = capture._WindowBounds(handle=0, width=2, height=2)
+        bounds = model.WindowBounds(handle=0, width=2, height=2)
         source_bgra = bytes(
             (
                 3,
@@ -152,8 +159,8 @@ class NativeCaptureTests(unittest.TestCase):
         )
         with tempfile.TemporaryDirectory() as temporary:
             path = pathlib.Path(temporary) / "source.png"
-            capture._write_capture(path, bounds, source_bgra)
-            frame = capture._read_png(path)
+            files.write_capture(path, bounds, source_bgra)
+            frame = png.read_png(path)
             self.assertEqual((frame.width, frame.height), (2, 2))
             self.assertEqual(
                 frame.rgba,
@@ -206,7 +213,7 @@ class NativeCaptureTests(unittest.TestCase):
                 elif filter_type == 3:
                     prediction = (left + above) // 2
                 else:
-                    prediction = capture._paeth(left, above, upper_left)
+                    prediction = png.paeth(left, above, upper_left)
                 filtered[index] = (value - prediction) & 0xFF
             encoded_rows.append((filter_type, bytes(filtered)))
             previous = current
@@ -214,22 +221,22 @@ class NativeCaptureTests(unittest.TestCase):
         with tempfile.TemporaryDirectory() as temporary:
             path = pathlib.Path(temporary) / "filtered.png"
             path.write_bytes(encoded_png(width, encoded_rows))
-            frame = capture._read_png(path)
+            frame = png.read_png(path)
             self.assertEqual(frame.rgba, b"".join(source_rows))
 
     def test_read_png_rejects_corrupt_checksum(self) -> None:
-        bounds = capture._WindowBounds(handle=0, width=1, height=1)
+        bounds = model.WindowBounds(handle=0, width=1, height=1)
         with tempfile.TemporaryDirectory() as temporary:
             path = pathlib.Path(temporary) / "corrupt.png"
-            capture._write_capture(path, bounds, bytes((3, 2, 1, 0)))
+            files.write_capture(path, bounds, bytes((3, 2, 1, 0)))
             content = bytearray(path.read_bytes())
             content[29] ^= 1
             path.write_bytes(content)
             with self.assertRaisesRegex(ValueError, "checksum"):
-                capture._read_png(path)
+                png.read_png(path)
 
     def test_png_round_trip_preserves_dimensions_and_channels(self) -> None:
-        bounds = capture._WindowBounds(handle=0, width=2, height=2)
+        bounds = model.WindowBounds(handle=0, width=2, height=2)
         source_bgra = bytes(
             (
                 3,
@@ -252,7 +259,7 @@ class NativeCaptureTests(unittest.TestCase):
         )
         with tempfile.TemporaryDirectory() as temporary:
             path = pathlib.Path(temporary) / "capture.png"
-            digest = capture._write_capture(path, bounds, source_bgra)
+            digest = files.write_capture(path, bounds, source_bgra)
             self.assertEqual(
                 decode_png(path),
                 (
@@ -283,16 +290,16 @@ class NativeCaptureTests(unittest.TestCase):
             self.assertEqual(digest, hashlib.sha256(path.read_bytes()).hexdigest())
 
     def test_capture_rejects_wrong_storage_and_extension(self) -> None:
-        bounds = capture._WindowBounds(handle=0, width=1, height=1)
+        bounds = model.WindowBounds(handle=0, width=1, height=1)
         with tempfile.TemporaryDirectory() as temporary:
             root = pathlib.Path(temporary)
             with self.assertRaisesRegex(ValueError, "pixel storage"):
-                capture._write_capture(root / "capture.png", bounds, b"\0" * 3)
+                files.write_capture(root / "capture.png", bounds, b"\0" * 3)
             with self.assertRaisesRegex(ValueError, r"\.bmp or \.png"):
-                capture._write_capture(root / "capture.gif", bounds, b"\0" * 4)
+                files.write_capture(root / "capture.gif", bounds, b"\0" * 4)
 
     def test_command_arguments_are_repeated_and_not_recombined(self) -> None:
-        parsed = capture._parser().parse_args(
+        parsed = cli.parser().parse_args(
             [
                 "--command",
                 "metis-app.exe",
@@ -312,7 +319,7 @@ class NativeCaptureTests(unittest.TestCase):
         self.assertEqual(parsed.cwd, pathlib.Path("work dir"))
 
     def test_resize_arguments_are_explicit_and_client_sized(self) -> None:
-        parsed = capture._parser().parse_args(
+        parsed = cli.parser().parse_args(
             [
                 "--command",
                 "metis-app.exe",
@@ -330,13 +337,13 @@ class NativeCaptureTests(unittest.TestCase):
 
     def test_resize_requires_command_and_distinct_output(self) -> None:
         with self.assertRaisesRegex(ValueError, "requires --command"):
-            capture._validate_resize_options(None, (1024, 720), pathlib.Path("resized.png"))
+            commands.validate_resize_options(None, (1024, 720), pathlib.Path("resized.png"))
         with self.assertRaisesRegex(ValueError, "requires --resize"):
-            capture._validate_resize_options(
+            commands.validate_resize_options(
                 pathlib.Path("metis-app.exe"), None, pathlib.Path("resized.png")
             )
         with self.assertRaisesRegex(ValueError, "must differ"):
-            capture._validate_resize_options(
+            commands.validate_resize_options(
                 pathlib.Path("metis-app.exe"),
                 (1024, 720),
                 pathlib.Path("initial.png"),
@@ -345,14 +352,14 @@ class NativeCaptureTests(unittest.TestCase):
 
     def test_resize_dimensions_are_bounded(self) -> None:
         with self.assertRaisesRegex(ValueError, "bounded capture limit"):
-            capture._validate_resize_options(
+            commands.validate_resize_options(
                 pathlib.Path("metis-app.exe"),
-                (capture.MAX_FRAME_DIMENSION + 1, 720),
+                (limits.MAX_FRAME_DIMENSION + 1, 720),
                 pathlib.Path("resized.png"),
             )
 
     def test_monitor_probe_arguments_are_explicit_and_bounded(self) -> None:
-        parsed = capture._parser().parse_args(
+        parsed = cli.parser().parse_args(
             [
                 "--command",
                 "metis-app.exe",
@@ -368,7 +375,7 @@ class NativeCaptureTests(unittest.TestCase):
         self.assertEqual(parsed.move_monitor, 1)
         self.assertEqual(parsed.monitor_output, pathlib.Path("moved.png"))
         self.assertTrue(parsed.require_dpi_change)
-        capture._validate_monitor_options(
+        commands.validate_monitor_options(
             pathlib.Path("metis-app.exe"),
             parsed.move_monitor,
             parsed.monitor_output,
@@ -378,11 +385,11 @@ class NativeCaptureTests(unittest.TestCase):
 
     def test_monitor_probe_rejects_missing_command_and_duplicate_output(self) -> None:
         with self.assertRaisesRegex(ValueError, "requires --command"):
-            capture._validate_monitor_options(
+            commands.validate_monitor_options(
                 None, 0, pathlib.Path("moved.png"), False
             )
         with self.assertRaisesRegex(ValueError, "must differ"):
-            capture._validate_monitor_options(
+            commands.validate_monitor_options(
                 pathlib.Path("metis-app.exe"),
                 0,
                 pathlib.Path("initial.png"),
@@ -404,7 +411,7 @@ class NativeCaptureTests(unittest.TestCase):
 
     def test_command_only_options_are_rejected_for_wheel_capture(self) -> None:
         with mock.patch.object(
-            capture.sys,
+            cli.sys,
             "argv",
             [
                 "python_native_capture.py",
@@ -416,10 +423,10 @@ class NativeCaptureTests(unittest.TestCase):
                 "capture.png",
             ],
         ), self.assertRaisesRegex(SystemExit, "require --command"):
-            capture.main()
+            cli.main()
 
     def test_frame_option_is_parsed_without_synthetic_dimensions(self) -> None:
-        parsed = capture._parser().parse_args(
+        parsed = cli.parser().parse_args(
             [
                 "--wheel",
                 "application.whl",

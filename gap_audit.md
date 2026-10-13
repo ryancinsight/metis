@@ -122,3 +122,23 @@ cross-origin HTML download attributes do not prove that WebKit flag.
 The full admission contract and expected failures live in
 [ADR 0057](docs/adr/0057-native-external-links.md). Physical iPhone execution,
 capability denial and remaining native services retain their existing gaps.
+
+## Portable native verification ABI — 2026-10-13
+
+Concurrent default-branch reconciliation exposes two input-layout failures on
+macOS: host C `long` is 64-bit, while Windows `LONG` is 32-bit. The canonical
+ABI module now defines the documented scalar widths, three real `INPUT` union
+arms and naturally aligned pointer fields. Virtual-desktop movement uses
+`MOUSEEVENTF_VIRTUALDESK` 0x4000; 0x0100 denotes a different mouse event.
+Computed record sizes, offsets, negative coordinates, boundary field values
+and composed movement flags pass unchanged prior assertions plus new tests.
+Capture/input implementations move into 27 acyclic domains; the largest leaf
+has 249 lines, and the two public CLI scripts each have six. Importers use
+canonical owners, and the wheel child retains the public entrypoint path.
+Compiler binding checks reject local shadowing of real module/helper owners.
+Evidence formatting checks eight input combinations, exact labels, hashes,
+encoded lengths and observed click/scroll values without substituting Win32
+delivery. The full suite passes 424 tests without skips in 15.311 seconds.
+This verifies portable record construction and retained tool behavior;
+physical Windows delivery and monitor transitions retain their existing
+acceptance requirements. [Design](scripts/native_input/design.md).
