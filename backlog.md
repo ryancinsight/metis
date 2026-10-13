@@ -7,7 +7,7 @@ Current framework version: Metis 0.5.0. Remaining capability work follows.
 - Scope: native reliable multiplexed sessions through the shared asynchronous server and existing frame/capability/clinical/audit contracts.
 - Current increment: optional QUIC transport, actual ALPN/full frame-domain admission, independent fresh-key services for the same authenticated principal, protocol rejection and graceful FIN are implemented. The complete backend/IPC/core suite passes 176 tests against the canonical Git provider; full native workspace/all-target compilation, strict diagnostics, 588 applicable default-API compatibility checks and the IPv4/IPv6 mutual TLS CLI pass.
 - Acceptance: published Moirai 0.9.0/moirai-quic 0.1.0 revision resolves one canonical Git lock; strict diagnostics, real mutual TLS CLI computation/event/teardown and compatibility classification pass. Browser HTTP/3 is a separate mapping.
-- Next step: review/promote [provider PR 618](https://github.com/ryancinsight/Moirai/pull/618) and the dependent consumer change; collect Windows/Linux transport evidence before release.
+- Next step: review/promote [provider PR 618](https://github.com/ryancinsight/Moirai/pull/618) and [consumer PR 503](https://github.com/ryancinsight/metis/pull/503); collect Windows/Linux transport evidence before release.
 
 <a id="METIS-WEBVIEW-RUST-001"></a>
 ## METIS-WEBVIEW-RUST-001 — Rust-owned Windows page lifecycle [patch]

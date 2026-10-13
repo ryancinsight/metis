@@ -12,4 +12,4 @@ Active target: Metis 0.5.0 over Moirai 0.9.0/moirai-quic 0.1.0. Phase: Closure.
 - [x] [minor] Pin the published provider and verify the canonical Git lock while retaining unrelated dependency revisions. All 588 applicable default-API compatibility checks pass under the stronger minor override; the generic/Send migration remains documented as a pre-1.0 break.
 - [ ] [minor] Review/promote provider and consumer changes and collect Windows/Linux native transport evidence before release.
 
-Next increment: review provider and dependent consumer changes, then collect Windows/Linux native transport evidence before release.
+Next increment: review [provider PR 618](https://github.com/ryancinsight/Moirai/pull/618) and [consumer PR 503](https://github.com/ryancinsight/metis/pull/503), then collect Windows/Linux native transport evidence before release.
