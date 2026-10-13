@@ -1,13 +1,5 @@
 Current framework version: Metis 0.4.1. Remaining capability work follows.
 
-<a id="METIS-CONSUS-RESOLUTION-001"></a>
-## METIS-CONSUS-RESOLUTION-001 — Standalone dependency and native wire integrity [patch]
-
-- Status: review; priority: P0; owner: Metis dependency and private wire integrity; last-update: 2026-10-13; risk: stale provider APIs or altered native bundle behavior.
-- Scope: require Consus compression/raster 0.2 and regenerate both canonical Git locks at target Metis 0.4.1; adopt verified Moirai 0.8.3 while preserving WebView 0.2/native logo contracts; serialize full-width native audit identifiers as Rust decimal strings.
-- Acceptance: standalone locked native/WASM checks and the full consumer suites pass; both locks retain Git sources without unused path patches; packaged Apple metadata and frontend bytes retain their contracts. RITK verifies its independent consumer graph.
-- Evidence: [prior PR 499 CI](https://github.com/ryancinsight/metis/actions/runs/38412617056) verifies the earlier consumer base. The combined 0.4.1 head adopts [Moirai PR 617](https://github.com/ryancinsight/Moirai/pull/617). All 713 Rust tests, native/Windows/WASM warning-denying checks and three Apple bundles pass. Both locks preserve registry identities and bytes through bundling; branch script/CI and protected merge remain the delivery gate.
-
 <a id="METIS-WEBVIEW-RUST-001"></a>
 ## METIS-WEBVIEW-RUST-001 — Rust-owned Windows page lifecycle [minor]
 
