@@ -14,7 +14,8 @@ Active target: Metis 0.5.0 over Moirai 0.9.0/moirai-quic 0.1.0. Phase: Closure.
 - [x] [patch] Reconcile current main, preserving Consus/provider coherence, lossless audit identifiers, Windows page work and historical artifacts.
 - [x] [patch] Verify the reconciled canonical tree: 703 native tests, strict transport diagnostics, full native workspace compilation and synchronized main/fuzz locks.
 - [x] [patch] Preserve direct-provider ownership: real concurrent handshakes use the existing Moirai executor; canonical metadata and all 20 verifier tests pass.
-- [ ] [patch] Collect Linux/Windows native session evidence from the committed review revision.
+- [x] [patch] Verify native sessions on Linux and Windows at published revision ed72092: both 176-test default suites and 113-test minimal suites pass with strict diagnostics.
+- [x] [patch] Complete the full hosted Windows/browser consumer gate at ed72092; the unchanged Firefox retry passes after one startup timeout. Record the provider's 108-pair measurement and sustained-loss limit.
 - [ ] [minor] Complete protected provider/consumer promotion before release.
 
-Next increment: review [provider PR 618](https://github.com/ryancinsight/Moirai/pull/618) and [consumer PR 503](https://github.com/ryancinsight/metis/pull/503), then collect Windows/Linux native transport evidence before release.
+Next increment: complete required review/checks for [provider PR 618](https://github.com/ryancinsight/Moirai/pull/618) and [consumer PR 503](https://github.com/ryancinsight/metis/pull/503) before protected release promotion.

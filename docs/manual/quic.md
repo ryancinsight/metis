@@ -4,8 +4,9 @@ Metis 0.5.0 includes QUIC in every native `metis-ipc` and `metis-backend` build,
 including with default features disabled. No QUIC feature flag is needed.
 It consumes Moirai 0.9.0 and `moirai-quic` 0.1.0 from the exact published provider
 revision recorded in Cargo.toml and Cargo.lock. Canonical native verification
-uses that Git source without development path patches. Default-branch promotion
-and Windows/Linux execution remain release gates.
+uses that Git source without development path patches. Both hosted Linux and
+Windows pass the default and minimal native session suites at consumer revision
+`ed72092`. Required review/checks and default-branch promotion remain release gates.
 
 One TLS-authenticated UDP connection supports bounded independent bidirectional
 streams. Each stream carries one ordered Metis session, with its own handler,
@@ -72,8 +73,14 @@ framing, while sibling streams retain their state.
 Perpetual loss can discard every retransmission of the same byte interval.
 The contract returns complete bytes or a finite error; loss rate alone supplies
 no delivery bound. Transport selection remains explicit when UDP is blocked.
+The provider's controlled 108-pair CI matrix records 105 exact-byte successes;
+three 16-stream, maximum-frame trials at symmetric 10 ms/1% loss/100 Mbit/s
+reach the unchanged 60-second workload deadline. Kernel UDP errors remain zero
+while verified progress continues and CUBIC recovery windows contract. The
+provider archives full samples, traces and source provenance; this limit remains
+a performance and promotion gate.
 HTTP/3/WebTransport needs a browser application mapping and is not supplied by
 this native binary session protocol.
 
 See [ADR 0058](../adr/0058-native-quic-sessions.md) and
-[Moirai ADR 0075](https://github.com/ryancinsight/Moirai/blob/545685574acb385f08e1c6fa875f0ccf6cf4cca3/docs/adr/0075-quic-multiplexed-sessions.md).
+[Moirai ADR 0075](https://github.com/ryancinsight/Moirai/blob/8d6897f404f50429d1f1fb33424405fc71139c61/docs/adr/0075-quic-multiplexed-sessions.md).

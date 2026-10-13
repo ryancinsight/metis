@@ -21,13 +21,23 @@ default-API compatibility checks pass under the stronger minor override. These
 checks do not prove generic-bound compatibility: the pre-1.0 explicit server
 annotation/Send migration remains documented in CHANGELOG.md. Existing Iris/Gaia
 provider lag retains Moirai 0.8.3, following Atlas overlay policy; no stack-wide
-version migration is claimed. Default-branch promotion and Windows/Linux
-execution remain active gates. Current-main reconciliation retains its provider/Consus
+version migration is claimed. Default-branch promotion remains an active gate.
+Both hosted Linux and Windows pass 176 default and 113 minimal transport tests,
+with strict diagnostics at published consumer revision ed72092. Current-main reconciliation retains its provider/Consus
 contracts and lossless native audit identifiers; 703 native tests and synchronized
 main/fuzz locks pass. Concurrent test handshakes use the existing Moirai executor;
 canonical metadata passes the unchanged direct-provider gate. Dedicated native
 transport jobs validate both hosted platforms. HTTP/3/WebTransport application mapping is
 separate; loopback correctness does not establish wide-area performance.
+
+The [full consumer gate](https://github.com/ryancinsight/metis/actions/runs/38460334046)
+passes at ed72092, including Windows and the three browser engines. The first
+Firefox fragment-startup attempt times out; its unchanged retry passes. Provider
+measurement executes all 108 controlled pairs, with 105 exact-byte successes
+and three 60-second deadlines in the maximum-frame/16-stream 1% loss case.
+Kernel UDP errors remain zero; recovery-policy evaluation and provider
+promotion remain open. The canonical consumer pin adopts the published
+provider evidence and passive metrics API without changing session behavior.
 
 ## Standalone Consus adoption [patch]
 

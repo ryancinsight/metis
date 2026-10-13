@@ -19,6 +19,10 @@
   and lossless native audit-ID encoding.
 - [patch] Schedule real QUIC test handshakes through the existing Moirai executor;
   remove the test-only registry dependency rejected by the direct-provider gate.
+- [patch] Record successful Linux/Windows native and full Windows/browser gates,
+  and pin the published provider's complete controlled-profile evidence and
+  passive recovery metrics. Preserve its sustained-loss performance limit as
+  an open promotion gate; no workload or deadline change establishes a pass.
 
 - WebSocket and QUIC use one asynchronous IPC server dispatcher through
   `NativeSessionTransport`; the existing frame decoder remains authoritative.
