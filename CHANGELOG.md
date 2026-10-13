@@ -17,6 +17,8 @@
 - [patch] Reconcile current main and add Linux/Windows native transport checks
   using the canonical main/fuzz provider locks. Preserve Consus/provider coherence
   and lossless native audit-ID encoding.
+- [patch] Schedule real QUIC test handshakes through the existing Moirai executor;
+  remove the test-only registry dependency rejected by the direct-provider gate.
 
 - WebSocket and QUIC use one asynchronous IPC server dispatcher through
   `NativeSessionTransport`; the existing frame decoder remains authoritative.

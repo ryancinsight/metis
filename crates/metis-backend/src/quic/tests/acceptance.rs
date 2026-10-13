@@ -6,7 +6,7 @@ fn native_client_runs_real_handshake_clinical_results_capabilities_and_events() 
     let arrange = tracing::info_span!("arrange").entered();
     let executor = executor();
     let (server, client) = endpoints(&executor);
-    let (server_connection, client_connection) = connections(&server, &client);
+    let (server_connection, client_connection) = connections(&executor, &server, &client);
     let connection = server_connection.clone();
     let task = executor
         .spawn_async(
@@ -74,7 +74,7 @@ fn two_sessions_share_udp_connection_with_independent_tokens_and_sequences() {
     let _trace = trace();
     let executor = executor();
     let (server, client) = endpoints(&executor);
-    let (server_connection, client_connection) = connections(&server, &client);
+    let (server_connection, client_connection) = connections(&executor, &server, &client);
     let connection = server_connection.clone();
     let first = executor
         .spawn_async(

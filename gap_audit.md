@@ -24,7 +24,9 @@ provider lag retains Moirai 0.8.3, following Atlas overlay policy; no stack-wide
 version migration is claimed. Default-branch promotion and Windows/Linux
 execution remain active gates. Current-main reconciliation retains its provider/Consus
 contracts and lossless native audit identifiers; 703 native tests and synchronized
-main/fuzz locks pass. Dedicated native transport jobs validate both hosted platforms. HTTP/3/WebTransport application mapping is
+main/fuzz locks pass. Concurrent test handshakes use the existing Moirai executor;
+canonical metadata passes the unchanged direct-provider gate. Dedicated native
+transport jobs validate both hosted platforms. HTTP/3/WebTransport application mapping is
 separate; loopback correctness does not establish wide-area performance.
 
 ## Standalone Consus adoption [patch]

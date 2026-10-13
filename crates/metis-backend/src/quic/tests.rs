@@ -29,7 +29,7 @@ fn executor() -> Arc<HybridExecutor> {
     )
 }
 
-fn endpoints(executor: &Arc<HybridExecutor>) -> (QuicEndpoint, QuicEndpoint) {
+fn endpoints(executor: &Arc<HybridExecutor>) -> (Arc<QuicEndpoint>, QuicEndpoint) {
     let certificates = CertificateDer::pem_slice_iter(include_bytes!(
         "../../../../tests/fixtures/localhost-cert.pem"
     ))
@@ -61,16 +61,31 @@ fn endpoints(executor: &Arc<HybridExecutor>) -> (QuicEndpoint, QuicEndpoint) {
         config,
     )
     .expect("client");
-    (server, client)
+    (Arc::new(server), client)
 }
 
-fn connections(server: &QuicEndpoint, client: &QuicEndpoint) -> (QuicConnection, QuicConnection) {
-    let (server, client) = moirai_executor::block_on(futures::future::join(
-        server.accept(),
-        client.connect(server.local_addr().expect("server address"), "localhost"),
-    ));
+// The server handshake runs on the same Moirai executor as both endpoints;
+// client admission progresses concurrently without a second async runtime.
+fn connections(
+    executor: &Arc<HybridExecutor>,
+    server: &Arc<QuicEndpoint>,
+    client: &QuicEndpoint,
+) -> (QuicConnection, QuicConnection) {
+    let address = server.local_addr().expect("server address");
+    let endpoint = Arc::clone(server);
+    let server = executor
+        .spawn_async(
+            async move { endpoint.accept().await }
+                .instrument(tracing::info_span!("act", role = "server_handshake")),
+        )
+        .expect("server admission task");
+    let client = moirai_executor::block_on(client.connect(address, "localhost"));
     (
-        server.expect("server handshake"),
+        server
+            .join()
+            .expect("server admission attached")
+            .expect("server admission completed")
+            .expect("server handshake"),
         client.expect("client handshake"),
     )
 }

@@ -9,7 +9,7 @@ fn wrong_principal_and_replayed_request_retain_protocol_rejections() {
     let _trace = trace();
     let executor = executor();
     let (server, client) = endpoints(&executor);
-    let (server_connection, client_connection) = connections(&server, &client);
+    let (server_connection, client_connection) = connections(&executor, &server, &client);
     let connection = server_connection.clone();
     let task = executor
         .spawn_async(
@@ -87,7 +87,7 @@ fn service_without_trusted_context_rejects_before_reading_application_bytes() {
     let _trace = trace();
     let executor = executor();
     let (server, client) = endpoints(&executor);
-    let (server_connection, client_connection) = connections(&server, &client);
+    let (server_connection, client_connection) = connections(&executor, &server, &client);
     moirai_executor::block_on(async {
         let mut stream = client_connection
             .open_stream()
@@ -137,7 +137,7 @@ fn actual_quic_frames_retain_truncation_checksum_size_and_trailing_byte_errors()
     ] {
         let executor = executor();
         let (server, client) = endpoints(&executor);
-        let (server_connection, client_connection) = connections(&server, &client);
+        let (server_connection, client_connection) = connections(&executor, &server, &client);
         let connection = server_connection.clone();
         let task = executor
             .spawn_async(

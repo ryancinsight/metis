@@ -13,6 +13,7 @@ Active target: Metis 0.5.0 over Moirai 0.9.0/moirai-quic 0.1.0. Phase: Closure.
 - [x] [minor] Pin the published provider and verify the canonical Git lock while retaining unrelated dependency revisions. All 588 applicable default-API compatibility checks pass under the stronger minor override; the generic/Send migration remains documented as a pre-1.0 break.
 - [x] [patch] Reconcile current main, preserving Consus/provider coherence, lossless audit identifiers, Windows page work and historical artifacts.
 - [x] [patch] Verify the reconciled canonical tree: 703 native tests, strict transport diagnostics, full native workspace compilation and synchronized main/fuzz locks.
+- [x] [patch] Preserve direct-provider ownership: real concurrent handshakes use the existing Moirai executor; canonical metadata and all 20 verifier tests pass.
 - [ ] [patch] Collect Linux/Windows native session evidence from the committed review revision.
 - [ ] [minor] Complete protected provider/consumer promotion before release.
 
