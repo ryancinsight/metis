@@ -482,6 +482,35 @@ both be true and both images are inspected; with `--shortcut control-enter`,
 the after image must also show the submitted result. Foreground activation
 denial is a failed capture, and a process exit alone is not a pass.
 
+The same runner records trusted pointer evidence with `--click-client X Y`
+and `--scroll-client X Y NOTCHES`. Coordinates are 96-dpi logical client
+pixels: the runner is DPI-unaware, so the manifest geometry, both captured
+frames and the CLI coordinates share one coordinate space and can be
+compared directly at any display scale, and the manifest's `window.dpi`
+records the effective scale for consumers that need physical pixels. A pointer claim is refused before delivery when another top-level window owns
+the input point or covers the capture surface, naming the covering window
+class and handle, and the scroll record reports `frame_changed` alongside
+the bounded settle rounds its observation ran.
+
+Since the 2026-10-12 display-scale fix, `metis-app` launches the packaged
+WebView2 form with a forced browser device scale factor
+(`WEBVIEW2_ADDITIONAL_BROWSER_ARGUMENTS` =
+`--force-device-scale-factor=<dpi/96>`, probed under a per-monitor-aware
+thread context), so the browser's pointer-to-layout mapping matches its
+rasterization over the rendered page and the uncompensated button point
+(505, 613) submits at 120 effective DPI without compensation. The factor is
+fixed when the browser environment is created: a live monitor-scale
+transition requires a relaunch, and physical-mouse evidence at a scaled
+display remains registered in [gap_audit.md](../../gap_audit.md) and
+[backlog.md](../../backlog.md).
+
+Wheel delivery was measured on the Metis WebView2 form at 120 effective DPI
+through single-notch steps: three consecutive notches shifted the page 125,
+125 and 125 logical pixels until the page's 440-pixel scroll range clamped
+the fourth step at 65. Notch-to-shift is therefore proportional per notch
+and boundary-limited, and the runner's one-record-per-notch pacing (rather
+than a coalesced wheel burst) is what the page receives.
+
 ### Exercise the installed Windows IME
 
 `python_native_ime_capture.py` is the separate installed-IME journey. It
