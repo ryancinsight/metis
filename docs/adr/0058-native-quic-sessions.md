@@ -6,9 +6,16 @@ Status: Accepted
 Decision scope: the user-requested native transport increment.
 Change class: [minor]. Target: Metis 0.5.0.
 
+Native-build contract: `metis-ipc` and `metis-backend` require the QUIC provider
+without a Cargo feature. Their default and `--no-default-features` native
+builds expose the same authenticated remote-session API. The runnable session
+requires no feature argument. TLS trust, client authorization, fresh session
+keys and finite transport budgets remain admission requirements in either
+build. Browser builds retain their platform-owned transports.
+
 ## Intent and selection
 
-Native remote hosts use Moirai's optional QUIC provider for independent ordered
+Native remote hosts use Moirai's required QUIC provider for independent ordered
 sessions over one authenticated UDP connection. Each bidirectional stream owns
 one session's handler, replay sequence and capability token. Application commands
 remain reliable and ordered within that stream. The remote transport does not

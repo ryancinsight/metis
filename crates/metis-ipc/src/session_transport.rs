@@ -63,7 +63,6 @@ impl<S: AsyncRead + AsyncWrite + Unpin + Send> NativeSessionTransport for WebSoc
     }
 }
 
-#[cfg(feature = "quic")]
 impl NativeSessionTransport for moirai_quic::QuicStream {
     async fn send_frame(&mut self, frame: &[u8]) -> Result<()> {
         crate::quic::validate_stream(self)?;

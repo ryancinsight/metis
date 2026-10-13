@@ -222,8 +222,9 @@ Licensed under [MIT](LICENSE-MIT) or [Apache-2.0](LICENSE-APACHE), at your optio
 
 ## Native remote QUIC
 
-Metis 0.5.0 adds optional native remote sessions through `metis-ipc/quic` and
-`metis-backend/quic`. Moirai 0.9.0 and `moirai-quic` 0.1.0 own TLS 1.3, bounded
+Metis 0.5.0 includes QUIC remote sessions in native `metis-ipc` and
+`metis-backend` builds, including `--no-default-features`; no QUIC feature flag
+is needed. Moirai 0.9.0 and `moirai-quic` 0.1.0 own TLS 1.3, bounded
 UDP multiplexing, timers, readiness and cancellation. Each reliable stream owns
 an independent authorized session and uses the existing frame decoder,
 capability/replay checks, backend computation and audited events. The

@@ -32,7 +32,8 @@ remove its correlation entries; late responses are rejected by sequence
 validation instead of being delivered to a later request.
 
 Native service callers use `AsyncIpcServer` over Moirai's message-oriented
-`WebSocketStream` or, with the optional `quic` feature, `QuicStream`. One
+`WebSocketStream` or `QuicStream`. QUIC is included in every native build,
+including with default features disabled. One
 native message carries exactly one Metis wire
 frame; the server applies the same sequence, replay, payload and handler
 contracts as the private-pipe server and sends one bounded response message.
@@ -81,7 +82,7 @@ bounds, queue backpressure, response correlation, replay, event delivery and
 wire corruption.
 These are behavioral tests, not a certification or a formal protocol proof.
 
-The optional native `QuicIpcTransport` uses the existing synchronous client and
+The native `QuicIpcTransport` uses the existing synchronous client and
 frame decoder. `NativeSessionTransport` keeps one asynchronous server dispatcher
 for WebSocket and QUIC. [The QUIC manual](../../docs/manual/quic.md) gives the
 mutual TLS example, full frame-domain budgets and session ownership contract.

@@ -7,7 +7,7 @@ mod fragment;
 #[cfg(not(target_arch = "wasm32"))]
 mod http;
 mod plugins;
-#[cfg(all(feature = "quic", not(target_arch = "wasm32")))]
+#[cfg(not(target_arch = "wasm32"))]
 pub mod quic;
 pub mod service;
 pub mod supervisor;

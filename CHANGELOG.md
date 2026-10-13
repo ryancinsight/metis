@@ -4,7 +4,7 @@
 
 ### Added
 
-- Optional `metis-ipc/quic` and `metis-backend/quic` native sessions over Moirai
+- Required native QUIC sessions in `metis-ipc` and `metis-backend` over Moirai
   0.9.0 and moirai-quic 0.1.0, with `metis-ipc/1` ALPN and full frame-domain
   admission. Independent streams preserve trusted context, fresh MAC key,
   capability, replay, clinical computation, audit and event contracts (ADR 0058).
@@ -17,9 +17,14 @@
 - WebSocket and QUIC use one asynchronous IPC server dispatcher through
   `NativeSessionTransport`; the existing frame decoder remains authoritative.
   Validated typed peer-close causes distinguish clean closure from truncation.
+- Native session admission helpers share their callers' platform gates, keeping
+  browser backend library compilation warning-free.
 
 ### Breaking
 
+- Native IPC/backend builds include QUIC and ring's native build requirements
+  even with default features disabled. Remove `--features quic` from
+  draft-increment commands; native remote-session APIs require no feature flag.
 - `AsyncIpcServer<T>` now takes a native message transport as its generic
   parameter. Explicit WebSocket annotations migrate from `AsyncIpcServer<S>` to
   `AsyncIpcServer<WebSocketStream<S>>`; inferred construction remains unchanged.

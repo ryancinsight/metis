@@ -1,6 +1,7 @@
 # Native remote sessions over QUIC
 
-Metis 0.5.0 adds the optional `quic` feature to `metis-ipc` and `metis-backend`.
+Metis 0.5.0 includes QUIC in every native `metis-ipc` and `metis-backend` build,
+including with default features disabled. No QUIC feature flag is needed.
 It consumes Moirai 0.9.0 and `moirai-quic` 0.1.0 from the exact published provider
 revision recorded in Cargo.toml and Cargo.lock. Canonical native verification
 uses that Git source without development path patches. Default-branch promotion
@@ -12,7 +13,7 @@ trusted host context, fresh session MAC key, token, replay sequence and audit.
 Commands and events use reliable streams. TLS ALPN is `metis-ipc/1`; one Moirai
 message contains exactly one bounded Metis frame. Early data and unreliable
 datagrams are disabled. Existing private pipes and browser transports remain
-appropriate for those hosts; this feature supplies native remote sessions.
+appropriate for those hosts; QUIC supplies native remote sessions.
 
 ## Runnable authenticated session
 
@@ -32,7 +33,7 @@ that lock; keep the shared target directory and non-patch build settings.
 Run the server in one terminal, replacing the paths with the actual files:
 
 ```sh
-cargo run --locked -p metis-backend --features quic --example quic_session -- \
+cargo run --locked -p metis-backend --example quic_session -- \
   server 127.0.0.1:4433 localhost server-chain.pem server-key.pem \
   client-ca.pem authorized-client.pem session-mac.key
 ```
@@ -41,7 +42,7 @@ Run the client in another terminal. The server certificate must cover
 `localhost`, and its trust root must appear in `server-ca.pem`:
 
 ```sh
-cargo run --locked -p metis-backend --features quic --example quic_session -- \
+cargo run --locked -p metis-backend --example quic_session -- \
   client 127.0.0.1:4433 localhost client-chain.pem client-key.pem \
   server-ca.pem 72.5 4.0 0.5
 ```
@@ -75,4 +76,4 @@ HTTP/3/WebTransport needs a browser application mapping and is not supplied by
 this native binary session protocol.
 
 See [ADR 0058](../adr/0058-native-quic-sessions.md) and
-[Moirai ADR 0075](https://github.com/ryancinsight/Moirai/blob/7c54b34c6d2b89ef69ebd0a058683f1fca01584e/docs/adr/0075-quic-multiplexed-sessions.md).
+[Moirai ADR 0075](https://github.com/ryancinsight/Moirai/blob/0f9e115302d5f71547dd4cae76bf6cc753cf32ba/docs/adr/0075-quic-multiplexed-sessions.md).

@@ -9,7 +9,7 @@ pub mod client;
 pub mod events;
 pub mod fault;
 pub mod frame;
-#[cfg(all(feature = "quic", not(target_arch = "wasm32")))]
+#[cfg(not(target_arch = "wasm32"))]
 pub mod quic;
 pub mod server;
 #[cfg(not(target_arch = "wasm32"))]
@@ -29,7 +29,7 @@ pub use client::{
 pub use events::{EventHub, MAX_SUBSCRIPTIONS, Subscription, SubscriptionId};
 pub use fault::{FaultConfig, FaultInjectingTransport};
 pub use frame::{read_frame, write_frame};
-#[cfg(all(feature = "quic", not(target_arch = "wasm32")))]
+#[cfg(not(target_arch = "wasm32"))]
 pub use quic::{MAX_QUIC_FRAME_BYTES, METIS_QUIC_ALPN, QuicIpcTransport, quic_config};
 pub use server::{IpcHandler, IpcServer};
 #[cfg(not(target_arch = "wasm32"))]
