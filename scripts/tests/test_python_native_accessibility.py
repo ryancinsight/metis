@@ -66,9 +66,9 @@ class NativeAccessibilityTests(unittest.TestCase):
         self.assertIn("surface = $surface", script)
 
     def test_surface_preparation_primes_only_webview2_focus(self) -> None:
-        with patch.object(capture.native_input, "_focus_window") as focus:
-            with patch.object(capture.native_input, "_send_virtual_key") as key:
-                with patch.object(capture.native_input, "_flush_window") as flush:
+        with patch.object(capture.focus, "focus_window") as focus:
+            with patch.object(capture.keyboard, "send_virtual_key") as key:
+                with patch.object(capture.queue, "flush_window") as flush:
                     self.assertEqual(capture._prepare_surface(42, "native"), 0)
                     focus.assert_not_called()
                     self.assertEqual(

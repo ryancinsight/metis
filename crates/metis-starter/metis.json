@@ -3,6 +3,10 @@
   "name": "Metis Starter",
   "cargo_manifest": "Cargo.toml",
   "icon": "icons/application.icns",
+  "external_links": [
+    "https://github.com/ryancinsight/metis",
+    "https://webassembly.org/"
+  ],
   "frontend": {
     "package": "metis-starter",
     "directory": "frontend"
