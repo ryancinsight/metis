@@ -1,5 +1,16 @@
 # Changelog
 
+## [0.3.2] - Unreleased
+
+### Fixed
+
+- [patch] Require Consus compression and raster 0.2, matching their inherited
+  workspace version. The consumed codec APIs and feature selections remain
+  unchanged; the standalone lock records the Consus revision.
+- [patch] Admit Moirai WebView 0.2.0 after verifying the consumed `run`,
+  `ResourceRoot` and resource-limit APIs remain compatible. Bundles without
+  external-link metadata retain the provider's empty navigation grant.
+
 ## [0.3.1] - Unreleased
 
 ### Fixed

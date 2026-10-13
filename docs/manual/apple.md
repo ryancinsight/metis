@@ -4,7 +4,7 @@ The same `frontend` manifest and HTML/CSS/Rust-WASM assets feed a browser or an
 installed Apple application. `metis-host` uses Moirai's AppKit/UIKit lifecycle
 and WKWebView resource provider. Apple hosts do not start a loopback server.
 
-Metis 0.3.1 requires moirai-webview 0.1.2. Its packaged resource responses carry
+Metis 0.3.2 requires moirai-webview 0.2.0. Its packaged resource responses carry
 status 200 plus exact MIME/length headers, which the WASM loader requires before
 it binds the application. Delivering a WASM file alone does not establish that
 the application starts. Native macOS Greet is verified for normal, Unicode and
