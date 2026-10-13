@@ -66,3 +66,4 @@
 | [0055](0055-apple-application-bundles.md) | Shared browser and installed Apple applications | Accepted |
 | [0056](0056-rust-browser-shell.md) | Rust browser shell and authenticated HTTP presentation | Accepted |
 | [0057](0057-native-external-links.md) | Native external link authority | Accepted |
+| [0058](0058-native-quic-sessions.md) | Native remote Metis sessions over QUIC | Accepted |

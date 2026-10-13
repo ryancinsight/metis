@@ -219,3 +219,14 @@ restrictions and non-Windows hosts.
 - [egui, GPUI, Iced, Tauri, Svelte/SvelteKit and Axum gap analysis](docs/adr/0003-framework-conformance.md)
 
 Licensed under [MIT](LICENSE-MIT) or [Apache-2.0](LICENSE-APACHE), at your option.
+
+## Native remote QUIC
+
+Metis 0.5.0 adds optional native remote sessions through `metis-ipc/quic` and
+`metis-backend/quic`. Moirai 0.9.0 and `moirai-quic` 0.1.0 own TLS 1.3, bounded
+UDP multiplexing, timers, readiness and cancellation. Each reliable stream owns
+an independent authorized session and uses the existing frame decoder,
+capability/replay checks, backend computation and audited events. The
+[QUIC manual](docs/manual/quic.md) includes a runnable mutual TLS example and the
+trust, fresh-key, frame-domain and graceful-teardown contracts. Browser HTTP/3
+requires a separate application mapping.

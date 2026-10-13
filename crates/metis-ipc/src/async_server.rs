@@ -1,35 +1,33 @@
-//! Asynchronous request dispatch over a bounded Moirai WebSocket stream.
+//! Canonical asynchronous request dispatch over a bounded native message stream.
 
 use crate::frame::split_frame;
 use crate::server::{FailureContext, IpcHandler, dispatch_request};
+use crate::session_transport::NativeSessionTransport;
 use crate::transport::check_wire_size;
 use metis_core::error::{ErrorCode, MetisError, Result};
 use metis_core::protocol::{MessageType, RemoteEventPayload, build_frame};
-use moirai_async::io::{AsyncRead, AsyncWrite};
-use moirai_http::WebSocketStream;
-use std::io;
 use std::time::Duration;
 
 /// Largest response delay admitted by the browser conformance probe.
 pub const MAX_CLINICAL_RESPONSE_DELAY: Duration = Duration::from_secs(30);
 
-/// One ordered Metis IPC session carried by a message-oriented WebSocket.
+/// One ordered Metis IPC session carried by a bounded native message transport.
 ///
 /// The server owns one receive/send stream and consumes each request sequence
 /// before invoking the handler. A connection is therefore single-consumer and
 /// replay-safe just like the synchronous pipe server.
-pub struct AsyncIpcServer<S> {
-    stream: WebSocketStream<S>,
+pub struct AsyncIpcServer<T> {
+    stream: T,
     last_sequence: u64,
     last_event_id: Option<u64>,
     clinical_response_delay: Option<Duration>,
     frame: Vec<u8>,
 }
 
-impl<S> AsyncIpcServer<S> {
-    /// Starts a session over an already-authenticated WebSocket upgrade.
+impl<T> AsyncIpcServer<T> {
+    /// Takes ownership of an admitted native transport; callers establish peer trust.
     #[must_use]
-    pub const fn new(stream: WebSocketStream<S>) -> Self {
+    pub const fn new(stream: T) -> Self {
         Self {
             stream,
             last_sequence: 0,
@@ -69,23 +67,22 @@ fn validate_clinical_response_delay(delay: Duration) -> Result<Option<Duration>>
     Ok((!delay.is_zero()).then_some(delay))
 }
 
-impl<S: AsyncRead + AsyncWrite + Unpin> AsyncIpcServer<S> {
+impl<T: NativeSessionTransport> AsyncIpcServer<T> {
     /// Processes one request, or returns `false` for a peer close frame.
     ///
-    /// The WebSocket layer enforces masking, message bounds, control-frame
-    /// rules, and frame deadlines. This layer decodes exactly one Metis wire
-    /// frame per WebSocket message and applies the same sequence and response
+    /// The transport owns message bounds, framing cancellation and deadlines.
+    /// This layer decodes exactly one Metis wire frame per message and applies
+    /// the same sequence and response
     /// contracts as [`crate::IpcServer`].
     ///
     /// # Errors
     /// Returns malformed-frame, replay, handler, response, transport, or
-    /// deadline failures. A clean WebSocket close is reported as `Ok(false)`.
+    /// deadline failures. Clean peer closure is reported as `Ok(false)`.
     pub async fn step<H: IpcHandler>(&mut self, handler: &mut H) -> Result<bool> {
-        let bytes = match self.stream.recv_message().await {
-            Ok(bytes) => bytes,
-            Err(error) if is_peer_close(&error) => return Ok(false),
+        let bytes = match self.stream.recv_frame().await {
+            Ok(Some(bytes)) => bytes,
+            Ok(None) => return Ok(false),
             Err(error) => {
-                let error = websocket_error(&error);
                 handler.handle_failure(FailureContext::Receive, error.code)?;
                 return Err(error);
             }
@@ -116,8 +113,7 @@ impl<S: AsyncRead + AsyncWrite + Unpin> AsyncIpcServer<S> {
         {
             moirai_async::timer::sleep(delay).await;
         }
-        if let Err(error) = self.stream.send_binary(&self.frame).await {
-            let error = websocket_error(&error);
+        if let Err(error) = self.stream.send_frame(&self.frame).await {
             handler.handle_failure(FailureContext::Response(dispatched.identity), error.code)?;
             return Err(error);
         }
@@ -133,7 +129,7 @@ impl<S: AsyncRead + AsyncWrite + Unpin> AsyncIpcServer<S> {
     /// Services requests until the peer closes the session.
     ///
     /// The handler remains synchronous by contract. It runs only after one
-    /// bounded WebSocket message has been received, so browser/event-loop
+    /// bounded native message has been received, so browser/event-loop
     /// callers use this API only on a native service task.
     ///
     /// # Errors
@@ -141,7 +137,7 @@ impl<S: AsyncRead + AsyncWrite + Unpin> AsyncIpcServer<S> {
     /// failure reported by [`Self::step`].
     pub async fn run<H: IpcHandler>(&mut self, handler: &mut H) -> Result<()> {
         while self.step(handler).await? {}
-        Ok(())
+        self.stream.finish().await
     }
 
     /// Sends one unsolicited event with a strictly increasing identifier.
@@ -151,7 +147,7 @@ impl<S: AsyncRead + AsyncWrite + Unpin> AsyncIpcServer<S> {
     /// transmission cannot be retried as the same event.
     ///
     /// # Errors
-    /// Returns payload, replay, frame-size, or WebSocket transport failures.
+    /// Returns payload, replay, frame-size, or native transport failures.
     pub async fn send_event(&mut self, event: &RemoteEventPayload) -> Result<()> {
         let event_id = event.event_id().get();
         if self.last_event_id.is_some_and(|last| event_id <= last) {
@@ -168,37 +164,7 @@ impl<S: AsyncRead + AsyncWrite + Unpin> AsyncIpcServer<S> {
         )?;
         check_wire_size(&self.frame)?;
         self.last_event_id = Some(event_id);
-        self.stream
-            .send_binary(&self.frame)
-            .await
-            .map_err(|error| websocket_error(&error))
-    }
-}
-
-fn is_peer_close(error: &io::Error) -> bool {
-    error.kind() == io::ErrorKind::UnexpectedEof
-        && error.to_string() == "WebSocket peer closed the connection"
-}
-
-fn websocket_error(error: &io::Error) -> MetisError {
-    let message = error.to_string();
-    let code = match error.kind() {
-        io::ErrorKind::InvalidData if message.contains("exceeds configured byte bound") => {
-            ErrorCode::PayloadTooLarge
-        }
-        io::ErrorKind::InvalidData | io::ErrorKind::InvalidInput => ErrorCode::MalformedPayload,
-        io::ErrorKind::TimedOut | io::ErrorKind::WouldBlock => ErrorCode::Timeout,
-        io::ErrorKind::UnexpectedEof => ErrorCode::FrameTruncated,
-        io::ErrorKind::BrokenPipe => ErrorCode::ConnectionClosed,
-        _ => ErrorCode::TransportBroken,
-    };
-    if matches!(
-        code,
-        ErrorCode::MalformedPayload | ErrorCode::PayloadTooLarge
-    ) {
-        MetisError::protocol(code, message)
-    } else {
-        MetisError::transport(code, message)
+        self.stream.send_frame(&self.frame).await
     }
 }
 

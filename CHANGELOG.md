@@ -1,5 +1,32 @@
 # Changelog
 
+## [0.5.0] - Unreleased
+
+### Added
+
+- Optional `metis-ipc/quic` and `metis-backend/quic` native sessions over Moirai
+  0.9.0 and moirai-quic 0.1.0, with `metis-ipc/1` ALPN and full frame-domain
+  admission. Independent streams preserve trusted context, fresh MAC key,
+  capability, replay, clinical computation, audit and event contracts (ADR 0058).
+- `NativeQuic` target capability, synchronous `QuicIpcTransport`, consumed-client
+  transport recovery and graceful FIN teardown. A runnable mutual TLS example
+  accepts caller-owned certificates/roots and one authorized client identity.
+
+### Changed
+
+- WebSocket and QUIC use one asynchronous IPC server dispatcher through
+  `NativeSessionTransport`; the existing frame decoder remains authoritative.
+  Validated typed peer-close causes distinguish clean closure from truncation.
+
+### Breaking
+
+- `AsyncIpcServer<T>` now takes a native message transport as its generic
+  parameter. Explicit WebSocket annotations migrate from `AsyncIpcServer<S>` to
+  `AsyncIpcServer<WebSocketStream<S>>`; inferred construction remains unchanged.
+- Native WebSocket service streams require `Send`, matching the native transport
+  future contract. Custom native transports implement asynchronous `send_frame`,
+  `recv_frame` and `finish`; no legacy aliases or forwarding API remains.
+
 ## [0.4.0] - Unreleased
 
 ### Added

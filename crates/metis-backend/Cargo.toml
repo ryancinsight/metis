@@ -19,8 +19,10 @@ metis-ipc = { workspace = true }
 [target.'cfg(not(target_arch = "wasm32"))'.dependencies]
 moirai-async.workspace = true
 moirai-http.workspace = true
+moirai-quic = { workspace = true, optional = true }
 
 [dev-dependencies]
+futures = "0.3"
 tracing.workspace = true
 tracing-subscriber.workspace = true
 
@@ -30,3 +32,10 @@ path = "src/lib.rs"
 
 [lints]
 workspace = true
+
+[features]
+quic = ["dep:moirai-quic", "metis-ipc/quic"]
+
+[[example]]
+name = "quic_session"
+required-features = ["quic"]

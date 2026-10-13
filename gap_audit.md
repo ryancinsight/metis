@@ -1,5 +1,26 @@
 # Open capability and evidence risks
 
+## Native QUIC integration — 2026-10-13 [minor]
+
+Metis 0.5.0 consumes Moirai's native QUIC provider through one generic
+asynchronous IPC server. Real backend/IPC/core verification passes 176 tests;
+full native workspace/all-target compilation and warning-denying diagnostics
+pass against the published provider Git revision without path patches. Independent sessions of one principal require separate fresh MAC
+keys, retaining foreign-token rejection as well as sequence isolation. TLS
+server trust does not authenticate a client; the runnable example requires
+mutual TLS plus exact client-certificate authorization.
+
+The canonical lock pins published provider review source and preserves unrelated
+locked dependencies. The IPv4/IPv6 two-process mutual TLS CLI verifies the exact
+computed result, audited event and FIN/drain lifecycle. All 588 applicable
+default-API compatibility checks pass under the stronger minor override. These
+checks do not prove generic-bound compatibility: the pre-1.0 explicit server
+annotation/Send migration remains documented in CHANGELOG.md. Existing Iris/Gaia
+provider lag retains Moirai 0.8.2, following Atlas overlay policy; no stack-wide
+version migration is claimed. Default-branch promotion and Windows/Linux
+execution remain release gates. HTTP/3/WebTransport application mapping is
+separate.
+
 Source baseline and full comparison: [ADR 0003](docs/adr/0003-framework-conformance.md).
 Scope: current Metis host, browser bridge, target discovery and the RITK consumer
 boundary, inspected 2026-09-20 at Metis `f4b0e35`,

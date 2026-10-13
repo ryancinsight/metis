@@ -27,7 +27,7 @@ pub async fn serve_browser_websocket<S, C>(
     service: BackendService<C>,
 ) -> Result<()>
 where
-    S: AsyncRead + AsyncWrite + Unpin,
+    S: AsyncRead + AsyncWrite + Unpin + Send,
     C: Clock,
 {
     serve_browser_websocket_with_policy(stream, config, service, None).await
@@ -50,7 +50,7 @@ pub async fn serve_browser_websocket_with_response_delay<S, C>(
     response_delay: Duration,
 ) -> Result<()>
 where
-    S: AsyncRead + AsyncWrite + Unpin,
+    S: AsyncRead + AsyncWrite + Unpin + Send,
     C: Clock,
 {
     serve_browser_websocket_with_policy(stream, config, service, Some(response_delay)).await
@@ -63,7 +63,7 @@ async fn serve_browser_websocket_with_policy<S, C>(
     response_delay: Option<Duration>,
 ) -> Result<()>
 where
-    S: AsyncRead + AsyncWrite + Unpin,
+    S: AsyncRead + AsyncWrite + Unpin + Send,
     C: Clock,
 {
     if !service.has_trusted_context() {
