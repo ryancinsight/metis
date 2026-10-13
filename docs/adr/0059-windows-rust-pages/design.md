@@ -134,6 +134,14 @@ stale DOM writes; actual watch/track/Promise ownership performs resource cleanup
 
 ## Page behavior and protocol
 
+`ErrorCode` retains its established fieldless `repr(u16)` representation.
+Derived `bytemuck::NoUninit` proves that valid enum values contain no padding or
+uninitialized bytes. Const `must_cast` proves source/target size equality;
+`u16` admits every target bit pattern. The native representation therefore maps
+to the identical discriminant without a numeric cast, lookup, allocation or
+runtime layout check. The inverse decoder retains its unknown-code rejection.
+Exhaustive wire-domain tests and optimized-code comparison verify this contract.
+
 The private `metis-web::embedded::wire` domain owns serialized request and
 response DTOs. Public codec operations expose typed page-domain messages to
 the native consumer, rather than exposing Serde DTOs or introducing a second

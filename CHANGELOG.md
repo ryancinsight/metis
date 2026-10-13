@@ -17,6 +17,9 @@
   Its bounded locator selects an existing unlinked root containing the manifest;
   Cargo and payload paths retain canonical relative-path admission.
   Native watch sessions reject a reloaded manifest selecting a different root.
+- [minor] `ErrorCode` implements `bytemuck::NoUninit`; its constant wire
+  conversion uses compile-checked `must_cast` over the existing `repr(u16)`
+  layout. Discriminants and unknown-wire rejection retain their existing values.
 - [minor] Native JSON lifecycle evidence reports actual page requests, backend
   terminal replies, permission outcomes, resource release and destruction.
   Explicit Windows fixtures exercise real remount and hostile command paths;

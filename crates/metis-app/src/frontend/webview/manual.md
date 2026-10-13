@@ -119,6 +119,12 @@ elements, listeners, theme and native bridge exist. Backend submission preserves
 the existing synchronous supervised IPC transaction; owner-thread pumping
 during an in-flight backend exchange remains a separate transport increment.
 
+[`ErrorCode`](../../../../metis-core/src/error.rs) retains its `repr(u16)` wire
+layout. Its derived `NoUninit` contract admits initialized enum bytes, and
+`bytemuck::must_cast` checks equal source/destination size at compilation.
+The constant conversion preserves every discriminant; `from_wire` continues
+to reject unknown words rather than treating every bit pattern as an enum.
+
 Native permission admission uses the separately derived configured origin;
 page-message admission retains the exact full document URL. The SDK
 [permission Uri](https://learn.microsoft.com/en-us/microsoft-edge/webview2/reference/win32/icorewebview2permissionrequestedeventargs#get_uri)

@@ -2,10 +2,11 @@
 
 ## Test output ownership — 2026-10-13 [patch]
 
-One candidate core/CLI run passes 161 computed tests but reports one leaky
-process. The complete output is not retained, so its test/process owner is
-unknown. A retained complete replay passes all 161 values without a leak flag;
-it does not establish a source correction. Canonical verification keeps its
+One core/CLI candidate passes 161 values but reports one leaky process; an
+initial clean-export gate also reports a test failure. Neither complete failure
+output is retained, so their test/process owners are unknown. Retained complete
+161/162/750-test replays pass without leak flags; they establish no correction.
+Canonical verification keeps its
 existing deadlines and workloads. [METIS-NEXTEST-PIPE](backlog.md#METIS-NEXTEST-PIPE)
 owns attribution and real cleanup if the observation recurs.
 
@@ -42,9 +43,11 @@ The prior 0.4.1 source/lock evidence is retained in
 
 ## Library target comparison boundaries — 2026-10-13 [patch]
 
-Thirty supported library/target comparisons execute 5,880 minor-release checks
-against the actual baseline Rustdoc graphs. This covers nine libraries on macOS
-and Windows, eight on WASM, and `metis-ui`/`metis-starter` on each iOS target.
+Thirty supported library/target comparisons execute 5,880 minor-release queries
+against actual baseline/current Rustdoc graphs. Twenty-five nonempty public
+graphs execute 4,900 checks. Five empty `metis-ui` root graphs execute 980
+queries, which establish no substantive public API coverage. The supported
+targets are macOS, Windows, WASM and the two recorded iOS library surfaces.
 It does not verify the whole matrix; the following failures occur in both the
 baseline and current graphs:
 

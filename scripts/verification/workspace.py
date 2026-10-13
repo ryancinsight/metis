@@ -4,6 +4,9 @@ import pathlib
 import tomllib
 
 REGISTRY_BOUNDARIES = {
+    # Only the core wire-layout owner uses mechanically derived initialization
+    # and compile-time size proofs; no Atlas provider exposes this contract.
+    ("metis-core", "bytemuck"),
     # Prepared assets parse the actual Cargo lock with the complete TOML parser;
     # the private embedded page JSON codec is a presentation/host wire boundary.
     ("metis-core", "serde"),

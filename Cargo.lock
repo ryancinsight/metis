@@ -1222,6 +1222,7 @@ dependencies = [
 name = "metis-core"
 version = "0.5.0"
 dependencies = [
+ "bytemuck",
  "moirai-core",
  "moirai-crypto",
  "moirai-executor",
