@@ -4,6 +4,8 @@
 
 ### Fixed
 
+- Correct the Atlas setup documentation: metadata and compilation retain the
+  canonical Git locks; local path patches no longer rewrite those sources.
 - Require moirai-webview 0.1.2 for Rust-owned native AppKit application, Edit
   and Window menus. Focused Command-Q quits and Command-W closes the last
   window; Minimize, Zoom and full-screen actions use native AppKit behavior.
