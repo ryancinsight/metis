@@ -1,5 +1,12 @@
 # Open capability and evidence risks
 
+## RITK consumer verification boundary [patch]
+
+Risk: Metis's passing suite does not validate RITK's independent dependency graph.
+Evidence: the Consus/WebView requirements and canonical Metis lock resolve;
+workspace Clippy and 686 tests pass against Consus `cf30dc29` and Moirai `81656cc6`.
+Owner: RITK #827. Recheck: regenerate its standalone lock and run consumer gates.
+
 Source baseline and full comparison: [ADR 0003](docs/adr/0003-framework-conformance.md).
 Scope: current Metis host, browser bridge, target discovery and the RITK consumer
 boundary, inspected 2026-09-20 at Metis `f4b0e35`,

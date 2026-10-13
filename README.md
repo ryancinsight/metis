@@ -128,7 +128,7 @@ the [Python binding manual](docs/manual/python.md).
 
 ## Apple frontend applications
 
-Metis 0.3.1 requires moirai-webview 0.1.2. Packaged WASM loads with a Fetch
+Metis 0.3.2 requires moirai-webview 0.2.0. Packaged WASM loads with a Fetch
 success status and the native form binds its Rust handler. Rust-owned native
 menus supply Quit (⌘Q), Close Window (⌘W), Minimize (⌘M), Zoom and full screen
 (⌃⌘F). Native macOS Greet returns exact normal, Unicode and empty-name results.
