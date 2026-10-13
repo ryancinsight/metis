@@ -10,10 +10,22 @@ description = "Shared wire types, integrity primitives, capability tokens, and e
 
 [dependencies]
 moirai-crypto.workspace = true
+serde.workspace = true
+toml.workspace = true
+
+[target.'cfg(not(target_arch = "wasm32"))'.dependencies]
+# Prepared-module tool verification uses the provider's bounded child supervisor.
+moirai-transport.workspace = true
+moirai-executor.workspace = true
+moirai-core.workspace = true
+tracing.workspace = true
 
 [dev-dependencies]
-tracing.workspace = true
 tracing-subscriber.workspace = true
+
+[target.'cfg(target_arch = "wasm32")'.dev-dependencies]
+# Portable inventory tests have tracing; native production tracing is target-scoped.
+tracing.workspace = true
 
 [lints]
 workspace = true

@@ -130,11 +130,11 @@ class BrowserAssetContractTests(unittest.TestCase):
             },
             manifest["resources"],
         )
-        browser_script = (ROOT / "scripts" / "browser.py").read_text(encoding="utf-8")
-        self.assertIn("SOURCE.rglob(\"*\")", browser_script)
-        self.assertIn('OUTPUT / "assets" / "metis-mark.png"', browser_script)
-        self.assertIn('OUTPUT / "assets" / "metis-mark.ico"', browser_script)
-        self.assertIn('OUTPUT / "assets" / "metis-mark.svg"', browser_script)
+        browser_manifest = json.loads((ROOT / "metis-browser.json").read_text(encoding="utf-8"))
+        self.assertEqual(browser_manifest["frontend"], {
+            "package": "metis-web", "directory": "examples/browser",
+        })
+        self.assertEqual(browser_manifest["cargo_manifest"], "Cargo.toml")
 
     def test_consumer_gallery_is_explicit_and_bounded(self):
         spec = importlib.util.spec_from_file_location("metis_browser_packager", SCRIPTS / "browser.py")

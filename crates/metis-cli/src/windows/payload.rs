@@ -1,6 +1,7 @@
 //! Cabinet input validation and bounded, shell-free invocation of the OS tool.
 use super::InstallerSpec;
-use crate::manifest::{self, FILE_LIMIT, ICON_LIMIT, PAYLOAD_LIMIT};
+use crate::manifest::{self, ICON_LIMIT};
+use metis_core::embedded_assets::{FILE_LIMIT, PAYLOAD_LIMIT};
 use std::{
     collections::BTreeSet, error::Error, ffi::OsString, fmt::Write as _, path::Path, time::Duration,
 };
@@ -26,8 +27,8 @@ pub(super) fn validate(spec: &InstallerSpec<'_>, output: &Path) -> Result<(), Bo
             );
         }
     }
-    manifest::relative(spec.id)?;
-    manifest::relative(spec.name)?;
+    metis_core::embedded_assets::relative(spec.id)?;
+    metis_core::embedded_assets::relative(spec.name)?;
     if spec.name.contains('/') {
         return Err("MSI display name must be one filename component".into());
     }
@@ -57,7 +58,7 @@ pub(super) fn validate(spec: &InstallerSpec<'_>, output: &Path) -> Result<(), Bo
             return Err("MSI icon source must be an absolute path".into());
         }
         let metadata = icon.symlink_metadata()?;
-        if !metadata.is_file() || manifest::linked(&metadata) {
+        if !metadata.is_file() || metis_core::embedded_assets::linked(&metadata) {
             return Err("MSI icon source must be a regular file, not a reparse point".into());
         }
         if metadata.len() > ICON_LIMIT {
@@ -73,7 +74,7 @@ pub(super) fn validate(spec: &InstallerSpec<'_>, output: &Path) -> Result<(), Bo
             return Err("MSI source must be an absolute path".into());
         }
         let metadata = source.symlink_metadata()?;
-        if !metadata.is_file() || manifest::linked(&metadata) {
+        if !metadata.is_file() || metis_core::embedded_assets::linked(&metadata) {
             return Err("MSI source must be a regular file, not a reparse point".into());
         }
         bytes = bytes
@@ -82,7 +83,7 @@ pub(super) fn validate(spec: &InstallerSpec<'_>, output: &Path) -> Result<(), Bo
         if bytes > PAYLOAD_LIMIT {
             return Err("MSI payload exceeds the 1 GiB cabinet budget".into());
         }
-        manifest::relative(destination)?;
+        metis_core::embedded_assets::relative(destination)?;
         let mut partial = String::new();
         for component in destination.split('/') {
             if !partial.is_empty() {
@@ -178,7 +179,7 @@ pub(super) fn cabinet(
     let cabinet = staging.join("payload.cab");
     let metadata = cabinet.symlink_metadata()?;
     if !metadata.is_file()
-        || manifest::linked(&metadata)
+        || metis_core::embedded_assets::linked(&metadata)
         || metadata.len() > PAYLOAD_LIMIT + (1 << 20)
     {
         return Err("Cabinet output violates the regular-file or size budget".into());

@@ -1,13 +1,13 @@
 //! Bounded USTAR reading for Linux package installation.
 
-use crate::{Result, bounded_read, manifest};
+use crate::{Result, bounded_read};
 use std::path::{Component, Path};
 
 const BLOCK_BYTES: usize = 512;
 const MAX_FILES: usize = 4096;
 // The package payload is capped at 1 GiB; this additional bound covers USTAR
 // headers and the two end blocks without permitting an unbounded read.
-const MAX_ARCHIVE_BYTES: u64 = manifest::PAYLOAD_LIMIT + 8 * 1024 * 1024;
+const MAX_ARCHIVE_BYTES: u64 = metis_core::embedded_assets::PAYLOAD_LIMIT + 8 * 1024 * 1024;
 
 /// One regular file of an archive, its contents borrowed from the archive bytes.
 pub(super) struct ArchiveEntry<'archive> {
@@ -65,7 +65,7 @@ pub(super) fn parse(bytes: &[u8]) -> Result<Vec<ArchiveEntry<'_>>> {
         total_payload = total_payload
             .checked_add(size)
             .ok_or("Linux archive payload size overflow")?;
-        if total_payload > manifest::PAYLOAD_LIMIT {
+        if total_payload > metis_core::embedded_assets::PAYLOAD_LIMIT {
             return Err("Linux archive payload exceeds the bounded installation size".into());
         }
         let payload_size = usize::try_from(size).map_err(|_| "archive entry is too large")?;
@@ -155,7 +155,7 @@ fn parse_octal(field: &[u8]) -> Result<u64> {
 }
 
 pub(super) fn safe_relative(value: &str) -> Result<&str> {
-    manifest::relative(value)?;
+    metis_core::embedded_assets::relative(value)?;
     if Path::new(value)
         .components()
         .any(|component| !matches!(component, Component::Normal(_)))

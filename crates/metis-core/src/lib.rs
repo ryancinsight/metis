@@ -6,6 +6,7 @@ pub mod capability;
 pub mod command_line;
 pub mod crypto;
 pub mod deep_link;
+pub mod embedded_assets;
 pub mod error;
 pub mod host;
 pub mod input;

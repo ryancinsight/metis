@@ -112,6 +112,14 @@ pub enum ErrorCode {
 }
 
 impl ErrorCode {
+    /// Returns the exact protocol discriminant guaranteed by `repr(u16)`.
+    /// No precision changes: every declared variant belongs to the wire domain.
+    #[must_use]
+    #[inline]
+    pub const fn to_wire(self) -> u16 {
+        self as u16
+    }
+
     /// Resolves a known wire or persistence discriminant.
     #[must_use]
     pub const fn from_wire(value: u16) -> Option<Self> {
@@ -303,7 +311,7 @@ impl fmt::Display for MetisError {
             f,
             "[{}:0x{:04X} | {}] {}",
             self.code.as_str(),
-            self.code as u16,
+            self.code.to_wire(),
             self.trace_id,
             self.message
         )

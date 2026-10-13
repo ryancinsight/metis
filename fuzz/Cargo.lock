@@ -916,9 +916,15 @@ checksum = "cf8baf1c55e62ffcace7a9f06f4bd9cd3f0c4beb022d3b367256b91b87513d98"
 
 [[package]]
 name = "metis-core"
-version = "0.4.1"
+version = "0.5.0"
 dependencies = [
+ "moirai-core",
  "moirai-crypto",
+ "moirai-executor",
+ "moirai-transport",
+ "serde",
+ "toml",
+ "tracing",
 ]
 
 [[package]]
@@ -934,7 +940,7 @@ dependencies = [
 
 [[package]]
 name = "metis-ipc"
-version = "0.4.1"
+version = "0.5.0"
 dependencies = [
  "metis-core",
  "moirai-async",
@@ -944,7 +950,7 @@ dependencies = [
 
 [[package]]
 name = "metis-platform"
-version = "0.4.1"
+version = "0.5.0"
 dependencies = [
  "eunomia",
  "hermes-simd",
@@ -957,7 +963,7 @@ dependencies = [
 
 [[package]]
 name = "metis-ui-lang"
-version = "0.4.1"
+version = "0.5.0"
 dependencies = [
  "consus-raster",
  "eunomia",
@@ -1071,8 +1077,8 @@ dependencies = [
 
 [[package]]
 name = "moirai-async"
-version = "0.8.3"
-source = "git+https://github.com/ryancinsight/Moirai.git#17a680ffebda11bf344fd06138dfc58c73c745be"
+version = "0.9.0"
+source = "git+https://github.com/ryancinsight/Moirai.git#7828f5df7cf76b7fdec68695ee8b2a49da8e5ba7"
 dependencies = [
  "futures",
  "libc",
@@ -1086,8 +1092,8 @@ dependencies = [
 
 [[package]]
 name = "moirai-async-macros"
-version = "0.8.3"
-source = "git+https://github.com/ryancinsight/Moirai.git#17a680ffebda11bf344fd06138dfc58c73c745be"
+version = "0.9.0"
+source = "git+https://github.com/ryancinsight/Moirai.git#7828f5df7cf76b7fdec68695ee8b2a49da8e5ba7"
 dependencies = [
  "proc-macro2",
  "quote",
@@ -1096,8 +1102,8 @@ dependencies = [
 
 [[package]]
 name = "moirai-core"
-version = "0.8.3"
-source = "git+https://github.com/ryancinsight/Moirai.git#17a680ffebda11bf344fd06138dfc58c73c745be"
+version = "0.9.0"
+source = "git+https://github.com/ryancinsight/Moirai.git#7828f5df7cf76b7fdec68695ee8b2a49da8e5ba7"
 dependencies = [
  "bytemuck",
  "libc",
@@ -1108,8 +1114,8 @@ dependencies = [
 
 [[package]]
 name = "moirai-crypto"
-version = "0.8.3"
-source = "git+https://github.com/ryancinsight/Moirai.git#17a680ffebda11bf344fd06138dfc58c73c745be"
+version = "0.9.0"
+source = "git+https://github.com/ryancinsight/Moirai.git#7828f5df7cf76b7fdec68695ee8b2a49da8e5ba7"
 dependencies = [
  "aes-gcm",
  "chacha20poly1305",
@@ -1132,8 +1138,8 @@ dependencies = [
 
 [[package]]
 name = "moirai-executor"
-version = "0.8.3"
-source = "git+https://github.com/ryancinsight/Moirai.git#17a680ffebda11bf344fd06138dfc58c73c745be"
+version = "0.9.0"
+source = "git+https://github.com/ryancinsight/Moirai.git#7828f5df7cf76b7fdec68695ee8b2a49da8e5ba7"
 dependencies = [
  "melinoe",
  "mnemosyne-memory",
@@ -1146,8 +1152,8 @@ dependencies = [
 
 [[package]]
 name = "moirai-http"
-version = "0.8.3"
-source = "git+https://github.com/ryancinsight/Moirai.git#17a680ffebda11bf344fd06138dfc58c73c745be"
+version = "0.9.0"
+source = "git+https://github.com/ryancinsight/Moirai.git#7828f5df7cf76b7fdec68695ee8b2a49da8e5ba7"
 dependencies = [
  "http",
  "httparse",
@@ -1158,8 +1164,8 @@ dependencies = [
 
 [[package]]
 name = "moirai-pal"
-version = "0.8.3"
-source = "git+https://github.com/ryancinsight/Moirai.git#17a680ffebda11bf344fd06138dfc58c73c745be"
+version = "0.9.0"
+source = "git+https://github.com/ryancinsight/Moirai.git#7828f5df7cf76b7fdec68695ee8b2a49da8e5ba7"
 dependencies = [
  "accesskit",
  "accesskit_windows",
@@ -1170,6 +1176,7 @@ dependencies = [
  "png",
  "serde_json",
  "socket2",
+ "tracing",
  "wasm-bindgen",
  "wasm-bindgen-futures",
  "web-sys",
@@ -1179,8 +1186,8 @@ dependencies = [
 
 [[package]]
 name = "moirai-scheduler"
-version = "0.8.3"
-source = "git+https://github.com/ryancinsight/Moirai.git#17a680ffebda11bf344fd06138dfc58c73c745be"
+version = "0.9.0"
+source = "git+https://github.com/ryancinsight/Moirai.git#7828f5df7cf76b7fdec68695ee8b2a49da8e5ba7"
 dependencies = [
  "loom",
  "mnemosyne-memory",
@@ -1191,8 +1198,8 @@ dependencies = [
 
 [[package]]
 name = "moirai-tls"
-version = "0.8.3"
-source = "git+https://github.com/ryancinsight/Moirai.git#17a680ffebda11bf344fd06138dfc58c73c745be"
+version = "0.9.0"
+source = "git+https://github.com/ryancinsight/Moirai.git#7828f5df7cf76b7fdec68695ee8b2a49da8e5ba7"
 dependencies = [
  "futures-io",
  "futures-rustls",
@@ -1204,8 +1211,8 @@ dependencies = [
 
 [[package]]
 name = "moirai-transport"
-version = "0.8.3"
-source = "git+https://github.com/ryancinsight/Moirai.git#17a680ffebda11bf344fd06138dfc58c73c745be"
+version = "0.9.0"
+source = "git+https://github.com/ryancinsight/Moirai.git#7828f5df7cf76b7fdec68695ee8b2a49da8e5ba7"
 dependencies = [
  "bytemuck",
  "libc",
@@ -1216,8 +1223,8 @@ dependencies = [
 
 [[package]]
 name = "moirai-utils"
-version = "0.8.3"
-source = "git+https://github.com/ryancinsight/Moirai.git#17a680ffebda11bf344fd06138dfc58c73c745be"
+version = "0.9.0"
+source = "git+https://github.com/ryancinsight/Moirai.git#7828f5df7cf76b7fdec68695ee8b2a49da8e5ba7"
 
 [[package]]
 name = "munge"
@@ -1700,6 +1707,7 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "4148590afebada386688f18773da617792bf2ef03ffc1e4cbd2b1d45b023e0ba"
 dependencies = [
  "serde_core",
+ "serde_derive",
 ]
 
 [[package]]
@@ -1733,6 +1741,15 @@ dependencies = [
  "serde",
  "serde_core",
  "zmij",
+]
+
+[[package]]
+name = "serde_spanned"
+version = "1.1.2"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "4e7523beb55eece201a2356bee0bbca0d1ab466c14c07703b2e0ee6d42cb0c2c"
+dependencies = [
+ "serde_core",
 ]
 
 [[package]]
@@ -1898,6 +1915,45 @@ name = "tinyvec"
 version = "1.13.3"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "fd3ca314f692efd6c868f8408f53fe444634a845f96c028b97d35f6a1f79f0ee"
+
+[[package]]
+name = "toml"
+version = "1.1.8+spec-1.1.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "20489e00e4d8741d6be680764cc12e270655e375a20d1011e844a9c3379e678d"
+dependencies = [
+ "indexmap",
+ "serde_core",
+ "serde_spanned",
+ "toml_datetime",
+ "toml_parser",
+ "toml_writer",
+ "winnow",
+]
+
+[[package]]
+name = "toml_datetime"
+version = "1.1.2+spec-1.1.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "2b86d767906c6c42421dcba507eb9d203e779497710a47782a224bb871653053"
+dependencies = [
+ "serde_core",
+]
+
+[[package]]
+name = "toml_parser"
+version = "1.1.5+spec-1.1.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "baa693a8032d7e1cada7d0041e96126df243179ff061456783ac7f12bda4744c"
+dependencies = [
+ "winnow",
+]
+
+[[package]]
+name = "toml_writer"
+version = "1.1.3+spec-1.1.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "06bdbd8cfc056b8d2e2e85f29b56a3bdbecb527cef81eb39e3e7b98af4652770"
 
 [[package]]
 name = "tracing"
@@ -2312,6 +2368,12 @@ name = "windows_x86_64_msvc"
 version = "0.52.6"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "589f6da84c646204747d1270a2a5661ea66ed1cced2631d546fdfb155959f9ec"
+
+[[package]]
+name = "winnow"
+version = "1.0.4"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "23b97319f7b8343df12cc98938e5c3eb436064524c8d2b4e30a1d3a36eecdf81"
 
 [[package]]
 name = "x25519-dalek"

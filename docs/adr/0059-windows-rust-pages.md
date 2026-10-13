@@ -90,8 +90,11 @@ the implementation. No retired checklist is recreated.
 
 ## Verification status
 
-Source review establishes the available DOM/folder-host APIs and the absent
-page bridge and capability bindings. Implementation and real Windows evidence
-are pending. The existing framebuffer `native_host_capture` gate does not
-exercise WebView2. No macOS build, screenshot or four-row completion message
-substitutes for the Windows gate specified in the domain design.
+The provider mechanisms pass their real Chrome resource/decimal contracts and
+Windows WebView2 capture, repeated-denial and profile-exit acceptance in
+[Moirai PR 619](https://github.com/ryancinsight/Moirai/pull/619). The consumer's
+Rust controllers, shared codec and preparation pipeline are implemented;
+Metis's compiled-page Windows acceptance remains pending. The existing
+framebuffer `native_host_capture` gate does not exercise WebView2. No macOS
+build, screenshot or four-row completion message substitutes for the Windows
+gate specified in the domain design.

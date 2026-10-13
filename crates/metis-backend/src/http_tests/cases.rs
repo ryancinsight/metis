@@ -88,13 +88,13 @@ fn origin_and_route_policy_fail_with_typed_errors() {
         .expect("denial response");
     assert_eq!(status(&response), 403);
     let error = ErrorResponsePayload::decode(response_body(&response)).expect("typed denial");
-    assert_eq!(error.error_code, ErrorCode::NavigationDenied as u16);
+    assert_eq!(error.error_code, ErrorCode::NavigationDenied.to_wire());
     let response = runtime
         .block_on(request(address, &[], "/v1/unknown", ORIGIN))
         .expect("route response");
     assert_eq!(status(&response), 404);
     let error = ErrorResponsePayload::decode(response_body(&response)).expect("typed route error");
-    assert_eq!(error.error_code, ErrorCode::MalformedPayload as u16);
+    assert_eq!(error.error_code, ErrorCode::MalformedPayload.to_wire());
     task.join()
         .expect("server task join")
         .expect("server task result")
@@ -146,14 +146,14 @@ fn method_and_missing_session_policy_fail_with_typed_errors() {
         .expect("missing-session response");
     assert_eq!(status(&response), 401);
     let error = ErrorResponsePayload::decode(response_body(&response)).expect("typed error");
-    assert_eq!(error.error_code, ErrorCode::MissingCapability as u16);
+    assert_eq!(error.error_code, ErrorCode::MissingCapability.to_wire());
 
     let response = runtime
         .block_on(request_method(address, "GET", &[], SESSION_ROUTE, ORIGIN))
         .expect("method response");
     assert_eq!(status(&response), 405);
     let error = ErrorResponsePayload::decode(response_body(&response)).expect("typed error");
-    assert_eq!(error.error_code, ErrorCode::UnexpectedMessageType as u16);
+    assert_eq!(error.error_code, ErrorCode::UnexpectedMessageType.to_wire());
     task.join()
         .expect("server task join")
         .expect("server task result")

@@ -5,6 +5,10 @@ resources. The CLI emits a portable `app/` directory, an inventory of SHA-256
 hashes and, with `package`, a package for the matching host. Application versions
 are independent of the Métis framework version.
 
+On Windows, a declared `embedded_module` is prepared before native Cargo
+compilation. See the [Rust page preparation contract](../../crates/metis-app/src/frontend/webview/manual.md)
+for `metis prepare`, direct Cargo prerequisites and canonical asset-budget JSON.
+
 ## Configure and build
 
 The repository [metis.json](../../metis.json) is a runnable configuration for the

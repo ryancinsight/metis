@@ -2,7 +2,7 @@
 
 use crate::{
     Result,
-    manifest::{self, Application, DEFAULT_MANIFEST, Manifest},
+    manifest::{Application, DEFAULT_MANIFEST, Manifest},
     process::{self, Containment},
     tree,
 };
@@ -50,7 +50,6 @@ pub(crate) fn run(args: &[OsString]) -> Result<()> {
         (Manifest::Web(application), root) => return browser::run(&application, &root, mode),
         (Manifest::Native(_), root) => root,
     };
-    let cargo = process::tool("cargo")?;
     let mut baseline = snapshot(&root)?;
     let watcher = matches!(mode, DevMode::Watch)
         .then(|| watcher::Watcher::new(&root))
@@ -72,10 +71,30 @@ pub(crate) fn run(args: &[OsString]) -> Result<()> {
             }
             Err(error) => return Err(error),
         };
-        let cargo_manifest = match manifest::source(&root, &application.cargo_manifest) {
-            Ok(path) => path,
+        let cargo_manifest =
+            match metis_core::embedded_assets::source(&root, &application.cargo_manifest) {
+                Ok(path) => path,
+                Err(error) if matches!(mode, DevMode::Watch) => {
+                    eprintln!("metis dev: build not started: {error}");
+                    wait_for_source_change(
+                        watcher.as_ref().ok_or("watcher unavailable")?,
+                        &root,
+                        &mut baseline,
+                    )?;
+                    continue;
+                }
+                Err(error) => return Err(error.into()),
+            };
+        let outcome = match launch(
+            &cargo_manifest,
+            &application,
+            watcher.as_ref(),
+            &root,
+            &mut baseline,
+        ) {
+            Ok(outcome) => outcome,
             Err(error) if matches!(mode, DevMode::Watch) => {
-                eprintln!("metis dev: build not started: {error}");
+                eprintln!("metis dev: build or launch failed: {error}");
                 wait_for_source_change(
                     watcher.as_ref().ok_or("watcher unavailable")?,
                     &root,
@@ -85,14 +104,6 @@ pub(crate) fn run(args: &[OsString]) -> Result<()> {
             }
             Err(error) => return Err(error),
         };
-        let outcome = launch(
-            &cargo,
-            &cargo_manifest,
-            &application,
-            watcher.as_ref(),
-            &root,
-            &mut baseline,
-        )?;
         match outcome {
             RunOutcome::Exited(ProcessOutcome::Succeeded) if matches!(mode, DevMode::Once) => {
                 return Ok(());
@@ -140,7 +151,6 @@ fn arguments(args: &[OsString]) -> Result<(PathBuf, DevMode)> {
 }
 
 fn launch(
-    cargo: &Path,
     manifest: &Path,
     application: &Application,
     watcher: Option<&watcher::Watcher>,
@@ -152,37 +162,45 @@ fn launch(
         .iter()
         .find(|binary| binary.bin == application.entry)
         .ok_or("entry binary is not declared")?;
-    let mut arguments = vec![
-        OsString::from("run"),
-        OsString::from("--locked"),
-        OsString::from("--manifest-path"),
-        manifest.as_os_str().to_owned(),
-        OsString::from("--package"),
-        OsString::from(&binary.package),
-        OsString::from("--bin"),
-        OsString::from(&binary.bin),
-        OsString::from("--"),
-    ];
-    arguments.extend(application.arguments.iter().map(OsString::from));
+    let artifacts = crate::build::compile(
+        manifest.to_path_buf(),
+        application,
+        root,
+        crate::build::BuildProfile::Debug,
+    )?;
+    let executable = artifacts
+        .get(&binary.bin)
+        .ok_or("compiler omitted declared dev executable")?;
+    let arguments = application
+        .arguments
+        .iter()
+        .map(OsString::from)
+        .collect::<Vec<_>>();
     let containment = if cfg!(windows) {
         Containment::Required
     } else {
         Containment::Uncontained
     };
-    let mut child = process::spawn(cargo, &arguments, containment)?;
+    let mut child = process::spawn(executable, &arguments, containment, &[], None)?;
     if watcher.is_none() {
         let status = child
             .wait_timeout(SINGLE_RUN_DEADLINE)?
             .ok_or("dev application exceeded its 300-second deadline")?;
         if status.outcome == ProcessOutcome::Failed {
-            eprintln!("metis dev: cargo run exited with status {:?}", status.code);
+            eprintln!(
+                "metis dev: application exited with status {:?}",
+                status.code
+            );
         }
         return Ok(RunOutcome::Exited(status.outcome));
     }
     loop {
         if let Some(status) = child.wait_timeout(PROCESS_OBSERVATION)? {
             if status.outcome == ProcessOutcome::Failed {
-                eprintln!("metis dev: cargo run exited with status {:?}", status.code);
+                eprintln!(
+                    "metis dev: application exited with status {:?}",
+                    status.code
+                );
             }
             return Ok(RunOutcome::Exited(status.outcome));
         }

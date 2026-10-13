@@ -1,6 +1,7 @@
 //! A browser application: a static page and the package compiled for it.
-use super::{identifier, label, relative};
+use super::{identifier, label};
 use crate::Result;
+use metis_core::embedded_assets::relative;
 use serde::Deserialize;
 
 /// A `metis.json` for a page served to a browser.
@@ -53,7 +54,7 @@ impl WebApplication {
                 return Err("frontend application icon must be an ICNS file".into());
             }
         }
-        relative(&self.frontend.directory)
+        relative(&self.frontend.directory).map_err(Into::into)
     }
 }
 

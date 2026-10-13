@@ -193,7 +193,7 @@ pub(super) fn module_target(metadata: &[u8], package: &str) -> Result<ModuleTarg
 }
 
 /// Package ids reachable from `root` through the resolved dependency graph.
-fn closure<'document>(
+pub(super) fn closure<'document>(
     document: &'document serde_json::Value,
     root: &str,
 ) -> Result<Vec<&'document serde_json::Value>> {

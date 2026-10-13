@@ -1,5 +1,8 @@
 //! Command descriptions shared by help and shell completion output.
 
+pub(crate) mod arguments;
+pub(crate) mod asset_budgets;
+
 use crate::Result;
 
 struct Command {
@@ -10,6 +13,12 @@ struct Command {
 }
 
 const COMMANDS: &[Command] = &[
+    Command {
+        name: "asset-budgets",
+        usage: "asset-budgets",
+        summary: "Report the canonical embedded asset admission budgets as JSON",
+        options: &[],
+    },
     Command {
         name: "apple",
         usage: "apple build|run [MANIFEST] [--target macos|ios|ios-simulator] [--output DIR] [--device ID]",
@@ -39,6 +48,12 @@ const COMMANDS: &[Command] = &[
         usage: "serve [MANIFEST] [--port PORT]",
         summary: "Build a browser application and serve it locally",
         options: &["--port"],
+    },
+    Command {
+        name: "prepare",
+        usage: "prepare [MANIFEST] [OUTPUT]",
+        summary: "Prepare and verify a native application's declared embedded Rust module",
+        options: &[],
     },
     Command {
         name: "package",

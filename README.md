@@ -46,9 +46,11 @@ markup subset is
 not the intended limit of web support. Windows now exposes a bounded WebView2
 consumer through `metis_platform::native::WebViewSurface`; the `metis-app`
 demonstration composes that host through `--metis-webview`. The provider and
-adapter installed-runtime navigation/bridge smoke passes, and the committed
+adapter's earlier installed-runtime navigation/bridge smoke passes, and the committed
 visible native/WebView2 application captures are recorded in the [native capture
-manifest](docs/manual/images/native-captures.json). Metis does not yet provide
+manifest](docs/manual/images/native-captures.json). Those revision-bound captures
+precede the 0.5 Rust page controller; its installed Windows acceptance remains
+pending. Metis does not yet provide
 Tauri feature parity, a system WebView host on all targets, an OS privilege
 sandbox or regulatory certification. The backend has a bounded authenticated
 `FileAuditStore`; its recovery contract is documented in [ADR 0038](docs/adr/0038-durable-audit-recovery.md).
@@ -74,21 +76,30 @@ limits are not treatment guidance.
 
 Metis 0.3.0 moves browser shell, protocol and HTTP lifecycle behavior into Rust.
 The workbench, HTTP page and starter modules contain nine initialization lines.
-The Windows WebView2 form and permission probe still embed 213 authored
-JavaScript lines in `crates/metis-app/src/frontend/webview/assets.rs`;
-their Rust migration remains open in METIS-WEBVIEW-RUST-001. Generated
-wasm-bindgen bindings remain. [ADR 0056](docs/adr/0056-rust-browser-shell.md)
+Metis 0.5.0 replaces the Windows form's 125 and permission probe's 88 authored
+JavaScript lines with Rust page controllers and one three-line ABI bootstrap.
+The other three initialization modules retain nine lines, for twelve authored
+initialization lines across these four owners. Generated wasm-bindgen bindings
+remain. Real Windows behavior and packaging acceptance remain open in
+METIS-WEBVIEW-RUST-001. [ADR 0056](docs/adr/0056-rust-browser-shell.md)
 records the contracts and [the Tauri review](docs/manual/tauri.md) records
 the required native pairs and their remaining acceptance.
 
 ## Build and run
 
 Use the pinned Rust toolchain, cargo-nextest 0.9.143 and wasm-bindgen-cli 0.2.129.
-Metis 0.4.1 requires Consus compression and raster 0.2, matching the provider's
+Metis 0.5.0 requires Consus compression and raster 0.2, matching the provider's
 workspace versions. The canonical Git locks record the consumed provider graph.
 The Windows private bridge encodes audit identifiers as decimal JSON strings in
 Rust, retaining every backend `u64` through WebView2's JavaScript object parsing.
-The controller scripts remain tracked in the [Rust migration](docs/adr/0059-windows-rust-pages.md).
+Rust owns the page protocol and lifecycle under the
+[accepted design](docs/adr/0059-windows-rust-pages.md). Windows app compilation
+requires an independently prepared Rust module. Build `metis-cli`, run
+`metis prepare metis.json` and retain its absolute inventory path in
+`METIS_WEBVIEW_ASSET_INVENTORY` before the Windows Cargo commands below; the
+[source-adjacent manual](crates/metis-app/src/frontend/webview/manual.md)
+records the complete commands, canonical `metis asset-budgets` JSON and failure
+contract. `metis build`, `package` and `dev` perform preparation on Windows.
 From this directory:
 
 ```text
@@ -133,7 +144,7 @@ the [Python binding manual](docs/manual/python.md).
 
 ## Apple frontend applications
 
-Metis 0.4.1 requires moirai-webview 0.2.0. Packaged WASM loads with a Fetch
+Metis 0.5.0 requires moirai-webview 0.2.0. Packaged WASM loads with a Fetch
 success status and the native form binds its Rust handler. Rust-owned native
 menus supply Quit (⌘Q), Close Window (⌘W), Minimize (⌘M), Zoom and full screen
 (⌃⌘F). Native macOS Greet returns exact normal, Unicode and empty-name results.

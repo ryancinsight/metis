@@ -348,7 +348,7 @@ impl<C: Clock> IpcHandler for BackendService<C> {
             Err(error) => Ok((
                 MessageType::ErrorResp,
                 ErrorResponsePayload {
-                    error_code: error.code as u16,
+                    error_code: error.code.to_wire(),
                     message: error.code.as_str().to_owned(),
                 }
                 .encode()?,

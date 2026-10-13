@@ -4,6 +4,12 @@ import pathlib
 import tomllib
 
 REGISTRY_BOUNDARIES = {
+    # Prepared assets parse the actual Cargo lock with the complete TOML parser;
+    # the private embedded page JSON codec is a presentation/host wire boundary.
+    ("metis-core", "serde"),
+    ("metis-core", "toml"),
+    ("metis-web", "serde"),
+    ("metis-web", "serde_json"),
     # Native entry logging and test span capture use the canonical tracing
     # crates; no Atlas provider supplies a tracing subscriber implementation.
     ("metis-host", "tracing-subscriber"),
@@ -14,7 +20,8 @@ REGISTRY_BOUNDARIES = {
     ("metis-cli", "tracing"),
     ("metis-cli", "tracing-subscriber"),
     ("metis-backend", "tracing"),
-    # Development-only private WebView protocol tests capture scoped spans.
+    # The Windows native page emits structured lifecycle events and captures
+    # scoped test spans through the same canonical tracing implementation.
     ("metis-app", "tracing"),
     ("metis-app", "tracing-subscriber"),
     ("metis-backend", "tracing-subscriber"),
@@ -27,6 +34,7 @@ REGISTRY_BOUNDARIES = {
     ("metis-ui-lang", "flate2"),
     ("metis-cli", "serde"),
     ("metis-cli", "serde_json"),
+    ("metis-cli", "toml"),
     ("metis-app", "serde"),
     ("metis-app", "serde_json"),
     ("metis-python", "pyo3"),

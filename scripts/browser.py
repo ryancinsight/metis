@@ -2,6 +2,7 @@
 from __future__ import annotations
 
 import argparse
+import functools
 import json
 import os
 import pathlib
@@ -16,8 +17,7 @@ ROOT = pathlib.Path(os.environ.get("METIS_NEUTRAL_ROOT", PHYSICAL_ROOT))
 OUTPUT = ROOT / "output" / "browser"
 SOURCE = ROOT / "examples" / "browser"
 CONTENT_SECURITY_POLICY = ROOT / "crates" / "metis-core" / "src" / "content_security_policy.txt"
-# Keep externally supplied browser assets bounded before they enter the output.
-MAX_CONSUMER_MODULE_BYTES = 64 * 1024 * 1024
+# Consumer module admission reads the canonical compiled Rust budget.
 MAX_CONSUMER_PAGE_BYTES = 512 * 1024
 
 
@@ -72,15 +72,36 @@ def wasm_bindgen() -> str:
     )
 
 
-def wasm_artifact() -> pathlib.Path:
-    metadata = cargo(
-        ["metadata", "--no-deps", "--format-version", "1", "--locked"],
-        timeout=30,
-        capture_output=True,
-        text=True,
-    )
-    target_directory = pathlib.Path(json.loads(metadata.stdout)["target_directory"])
-    return target_directory / "wasm32-unknown-unknown" / "release" / "metis_web.wasm"
+@functools.lru_cache(maxsize=1)
+def metis_command() -> pathlib.Path:
+    """Return Cargo's actual compiled CLI artifact from its structured output."""
+    result = cargo(["build", "--locked", "--package", "metis-cli", "--bin", "metis",
+                    "--message-format=json-render-diagnostics"], capture_output=True, text=True)
+    artifacts = []
+    for line in result.stdout.splitlines():
+        record = json.loads(line)
+        if (record.get("reason") == "compiler-artifact"
+                and record.get("target", {}).get("name") == "metis"
+                and record.get("target", {}).get("kind") == ["bin"]
+                and record.get("executable")):
+            artifacts.append(pathlib.Path(record["executable"]))
+    if len(artifacts) != 1 or not artifacts[0].is_file():
+        raise SystemExit("Cargo must report one existing Metis CLI executable")
+    return artifacts[0]
+
+
+@functools.lru_cache(maxsize=1)
+def asset_budgets() -> dict[str, int]:
+    """Read actual core-owned limits through its canonical Rust CLI command."""
+    result = subprocess.run([str(metis_command()), "asset-budgets"], check=True,
+                            capture_output=True, text=True, cwd=ROOT, timeout=30)
+    value = json.loads(result.stdout)
+    expected = {"schema", "portable_path_bytes", "records", "manifest_bytes", "module_bytes", "payload_bytes"}
+    if set(value) != expected or value["schema"] != 1:
+        raise SystemExit("Rust asset budget report has an unknown schema")
+    if any(type(item) is not int or item <= 0 for item in value.values()):
+        raise SystemExit("Rust asset budget report has an invalid domain value")
+    return value
 
 
 def content_security_policy() -> str:
@@ -102,33 +123,26 @@ def validate_index_policy(index: pathlib.Path) -> None:
 
 
 def build() -> None:
-    cargo(["build", "--locked", "-p", "metis-web", "--target", "wasm32-unknown-unknown", "--release"])
+    """The Rust CLI owns compilation, generation, staging and its inventory."""
+    validate_index_policy(SOURCE / "index.html")
+    distribution = OUTPUT.parent / "browser-distribution"
+    with isolated_cargo(ROOT) as (directory, environment):
+        environment["WASM_BINDGEN"] = wasm_bindgen()
+        result = subprocess.run([str(metis_command()), "build", str(ROOT / "metis-browser.json"),
+                                 str(distribution)], cwd=directory, env=environment,
+                                check=True, text=True, capture_output=True, timeout=300)
+    served = pathlib.Path(result.stdout.strip())
+    if served != distribution / "app" or not served.is_dir():
+        raise SystemExit("Rust browser build does not report its exact served directory")
     OUTPUT.mkdir(parents=True, exist_ok=True)
-    run([wasm_bindgen(), str(wasm_artifact()), "--target", "web", "--out-dir", str(OUTPUT)])
-    index = SOURCE / "index.html"
-    validate_index_policy(index)
-    shutil.copy2(index, OUTPUT / "index.html")
-    for asset in ("styles.css", "bootstrap.js"):
-        shutil.copy2(SOURCE / asset, OUTPUT / asset)
-    for source in sorted(SOURCE.rglob("*")):
-        if not source.is_file() or source.name in {"index.html", "styles.css", "bootstrap.js"}:
-            continue
-        destination = OUTPUT / source.relative_to(SOURCE)
-        destination.parent.mkdir(parents=True, exist_ok=True)
-        shutil.copy2(source, destination)
-    required = (
-        OUTPUT / "index.html",
-        OUTPUT / "styles.css",
-        OUTPUT / "bootstrap.js",
-        OUTPUT / "metis_web.js",
-        OUTPUT / "metis_web_bg.wasm",
-        OUTPUT / "assets" / "metis-mark.png",
-        OUTPUT / "assets" / "metis-mark.ico",
-        OUTPUT / "assets" / "metis-mark.svg",
-    )
-    missing = [str(path) for path in required if not path.is_file()]
+    # Preserve the diagnostic server's public output path. Admission and the
+    # build inventory belong to the Rust producer; diagnostics copy its bytes.
+    shutil.copytree(served, OUTPUT, dirs_exist_ok=True)
+    required = ("index.html", "styles.css", "bootstrap.js", "metis_web.js", "metis_web_bg.wasm",
+                "assets/metis-mark.png", "assets/metis-mark.ico", "assets/metis-mark.svg")
+    missing = [name for name in required if not (OUTPUT / name).is_file()]
     if missing:
-        raise SystemExit(f"browser build did not produce required artifacts: {', '.join(missing)}")
+        raise SystemExit(f"Rust browser build omits required artifacts: {missing}")
 
 
 def main() -> None:
@@ -162,7 +176,7 @@ def package_consumer(package: pathlib.Path, gallery: pathlib.Path) -> None:
     if len(package_entries) != 2 or len(modules) != 2 or {path.suffix for path in modules} != {".js", ".wasm"}:
         raise SystemExit("consumer package must contain exactly one JavaScript and one WebAssembly module")
     for source in modules:
-        if source.is_symlink() or source.stat().st_size > MAX_CONSUMER_MODULE_BYTES:
+        if source.is_symlink() or source.stat().st_size > asset_budgets()["module_bytes"]:
             raise SystemExit(f"consumer package contains an invalid or oversized file: {source}")
     wasm = next(source for source in modules if source.suffix == ".wasm")
     with wasm.open("rb") as module:

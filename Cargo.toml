@@ -32,7 +32,7 @@ members = [
 ]
 
 [workspace.package]
-version = "0.4.1"
+version = "0.5.0"
 edition = "2024"
 rust-version = "1.97"
 authors = ["Ryan Clanton <ryanclanton@outlook.com>"]
@@ -42,6 +42,7 @@ repository = "https://github.com/ryancinsight/metis"
 [workspace.dependencies]
 serde = { version = "1.0.229", features = ["derive"] }
 serde_json = "1.0.151"
+toml = { version = "1.1.8", default-features = false, features = ["parse", "serde", "std"] }
 tracing = { version = "0.1", default-features = false, features = ["std"] }
 tracing-subscriber = { version = "0.3", default-features = false, features = ["fmt"] }
 unicode-segmentation = "1.13.3"
@@ -57,24 +58,24 @@ hermes-simd = { git = "https://github.com/ryancinsight/hermes.git", version = "0
 # Git plus version, matching the sibling entries below: the package is named
 # `gaia-mesh` but its import path is `gaia`. The mesh viewer renders with gaia's
 # software rasteriser rather than a second one here.
-gaia = { package = "gaia-mesh", git = "https://github.com/ryancinsight/gaia", version = "0.5.2", default-features = false }
+gaia = { package = "gaia-mesh", git = "https://github.com/ryancinsight/gaia", version = "0.5.3", default-features = false }
 # Git plus version keeps the consumer on the public Moirai default branch
 # during development; Cargo.lock records the exact audited revision.
-moirai-core = { git = "https://github.com/ryancinsight/Moirai.git", version = "0.8.3", default-features = false, features = ["std"] }
-moirai-executor = { git = "https://github.com/ryancinsight/Moirai.git", version = "0.8.3", default-features = false }
-moirai-transport = { git = "https://github.com/ryancinsight/Moirai.git", version = "0.8.3", default-features = false }
-moirai-pal = { git = "https://github.com/ryancinsight/Moirai.git", version = "0.8.3", default-features = false }
-moirai-crypto = { git = "https://github.com/ryancinsight/Moirai.git", version = "0.8.3", default-features = false }
-moirai-async = { git = "https://github.com/ryancinsight/Moirai.git", version = "0.8.3", default-features = false }
-moirai-http = { git = "https://github.com/ryancinsight/Moirai.git", version = "0.8.3", default-features = false }
+moirai-core = { git = "https://github.com/ryancinsight/Moirai.git", version = "0.9.0", default-features = false, features = ["std"] }
+moirai-executor = { git = "https://github.com/ryancinsight/Moirai.git", version = "0.9.0", default-features = false }
+moirai-transport = { git = "https://github.com/ryancinsight/Moirai.git", version = "0.9.0", default-features = false }
+moirai-pal = { git = "https://github.com/ryancinsight/Moirai.git", version = "0.9.0", default-features = false }
+moirai-crypto = { git = "https://github.com/ryancinsight/Moirai.git", version = "0.9.0", default-features = false }
+moirai-async = { git = "https://github.com/ryancinsight/Moirai.git", version = "0.9.0", default-features = false }
+moirai-http = { git = "https://github.com/ryancinsight/Moirai.git", version = "0.9.0", default-features = false }
 moirai-webview = { git = "https://github.com/ryancinsight/Moirai.git", version = "0.2.0" }
-metis-core = { path = "crates/metis-core", version = "0.4.1" }
-metis-ipc = { path = "crates/metis-ipc", version = "0.4.1" }
-metis-ui-lang = { path = "crates/metis-ui-lang", version = "0.4.1" }
-metis-platform = { path = "crates/metis-platform", version = "0.4.1" }
-metis-backend = { path = "crates/metis-backend", version = "0.4.1" }
-metis-frontend = { path = "crates/metis-frontend", version = "0.4.1" }
-metis-web = { path = "crates/metis-web", version = "0.4.1" }
+metis-core = { path = "crates/metis-core", version = "0.5.0" }
+metis-ipc = { path = "crates/metis-ipc", version = "0.5.0" }
+metis-ui-lang = { path = "crates/metis-ui-lang", version = "0.5.0" }
+metis-platform = { path = "crates/metis-platform", version = "0.5.0" }
+metis-backend = { path = "crates/metis-backend", version = "0.5.0" }
+metis-frontend = { path = "crates/metis-frontend", version = "0.5.0" }
+metis-web = { path = "crates/metis-web", version = "0.5.0" }
 pyo3 = { version = "0.29.2", default-features = false }
 criterion = { version = "0.8.2", default-features = false, features = ["cargo_bench_support"] }
 

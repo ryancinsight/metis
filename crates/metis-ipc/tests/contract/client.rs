@@ -7,7 +7,7 @@ use metis_ipc::{IpcClient, IpcTransport, MemoryTransport};
 
 #[test]
 fn correlated_handshake_rejections_preserve_known_and_unknown_codes() {
-    for error_code in [ErrorCode::InvalidPrincipal as u16, 0xffff] {
+    for error_code in [ErrorCode::InvalidPrincipal.to_wire(), 0xffff] {
         let (transport, mut peer) = MemoryTransport::pair();
         let mut client = IpcClient::new(transport);
         client.set_active_token(CapabilityToken::issue(
@@ -43,7 +43,7 @@ fn correlated_handshake_rejections_preserve_known_and_unknown_codes() {
 #[test]
 fn malformed_handshake_rejections_preserve_decoder_failures() {
     let wire = ErrorResponsePayload {
-        error_code: ErrorCode::InvalidPrincipal as u16,
+        error_code: ErrorCode::InvalidPrincipal.to_wire(),
         message: "rejected".to_owned(),
     }
     .encode()
@@ -71,7 +71,7 @@ fn malformed_handshake_rejections_preserve_decoder_failures() {
 fn uncorrelated_rejection_is_not_reported_as_peer_decision() {
     let (transport, mut peer) = MemoryTransport::pair();
     let rejection = ErrorResponsePayload {
-        error_code: ErrorCode::InvalidPrincipal as u16,
+        error_code: ErrorCode::InvalidPrincipal.to_wire(),
         message: "wrong request".to_owned(),
     };
     peer.send_message(

@@ -2,7 +2,7 @@
 
 use crate::{
     Result,
-    manifest::{self, Application, Binary},
+    manifest::{Application, Binary},
 };
 use std::{
     fs,
@@ -23,6 +23,7 @@ pub(crate) fn create(directory: &Path) -> Result<()> {
         upgrade_code: new_upgrade_code(&root)?,
         cargo_manifest: "Cargo.toml".to_owned(),
         entry: "metis-app".to_owned(),
+        embedded_module: None,
         icon: None,
         arguments: Vec::new(),
         url_schemes: Vec::new(),
@@ -121,7 +122,7 @@ fn destination(directory: &Path) -> Result<PathBuf> {
     let mut cursor = parent.to_path_buf();
     loop {
         let metadata = fs::symlink_metadata(&cursor)?;
-        if manifest::linked(&metadata) {
+        if metis_core::embedded_assets::linked(&metadata) {
             return Err("linked init parent is not admitted".into());
         }
         let Some(next) = cursor.parent() else {

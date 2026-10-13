@@ -1,194 +1,152 @@
+//! Static admission and extraction use the actual compiler-produced module.
+
 use super::{
     MAX_PATIENT_ID_BYTES,
-    assets::{
-        APP_JS, INDEX_HTML, PERMISSION_PROBE_APP_JS, PERMISSION_PROBE_INDEX_HTML, STYLES_CSS,
-    },
-    package::file_uri,
-    permission_denied_message,
+    assets::{BOOTSTRAP_JS, INDEX_HTML, PERMISSION_PROBE_INDEX_HTML, STYLES_CSS},
+    package::Package,
 };
-use metis_platform::native::WebViewPermission;
+use metis_core::embedded_assets::{Digest, EmbeddedModuleInventory};
+use metis_web::embedded::PageRole;
+use tracing_subscriber::fmt::format::FmtSpan;
 
-#[test]
-fn package_assets_are_script_scoped_and_bridge_bound() {
-    assert!(INDEX_HTML.contains("script-src 'self'"));
-    assert!(INDEX_HTML.contains("default-src 'none'"));
-    for directive in [
-        "img-src 'none'",
-        "font-src 'none'",
-        "media-src 'none'",
-        "connect-src 'none'",
-        "object-src 'none'",
-        "frame-src 'none'",
-        "child-src 'none'",
-        "worker-src 'none'",
-        "manifest-src 'none'",
-        "form-action 'none'",
-        "base-uri 'none'",
-    ] {
-        assert!(
-            INDEX_HTML.contains(directive),
-            "missing CSP directive: {directive}"
-        );
-    }
-    assert!(STYLES_CSS.contains("#0f172a"));
-    assert!(INDEX_HTML.contains("data-metis-theme=\"system\""));
-    assert!(INDEX_HTML.contains("id=\"theme-mode\" name=\"theme-mode\""));
-    for theme in ["system", "light", "dark", "high-contrast"] {
-        assert!(
-            INDEX_HTML.contains(&format!("<option value=\"{theme}\"")),
-            "missing WebView2 theme option: {theme}"
-        );
-        assert!(
-            STYLES_CSS.contains(&format!("body[data-metis-theme=\"{theme}\"]")),
-            "missing WebView2 theme selector: {theme}"
-        );
-        assert!(
-            APP_JS.contains(&format!("['{theme}'")),
-            "missing theme value: {theme}"
-        );
-    }
-    assert!(APP_JS.contains("applyTheme"));
-    assert!(APP_JS.contains("URLSearchParams"));
-    assert!(APP_JS.contains("themes.has(requestedTheme)"));
-    assert!(APP_JS.contains("if (!label) return;"));
-    assert!(APP_JS.contains("chrome.webview"));
+fn trace() -> tracing::subscriber::DefaultGuard {
+    tracing::subscriber::set_default(
+        tracing_subscriber::fmt()
+            .with_test_writer()
+            .with_span_events(FmtSpan::FULL)
+            .finish(),
+    )
 }
 
 #[test]
-fn packaged_command_surface_is_local_and_keyboard_closable() {
+fn package_assets_admit_only_local_module_execution() {
+    let _trace = trace();
+    let _span = tracing::info_span!("assert", contract = "local module CSP").entered();
+    for page in [INDEX_HTML, PERMISSION_PROBE_INDEX_HTML] {
+        for directive in [
+            "default-src 'none'",
+            "script-src 'self' 'wasm-unsafe-eval'",
+            "style-src 'self'",
+            "connect-src 'self'",
+            "img-src 'none'",
+            "font-src 'none'",
+            "media-src 'none'",
+            "object-src 'none'",
+            "frame-src 'none'",
+            "child-src 'none'",
+            "worker-src 'none'",
+            "manifest-src 'none'",
+            "form-action 'none'",
+            "base-uri 'none'",
+        ] {
+            assert!(
+                page.contains(directive),
+                "missing CSP directive: {directive}"
+            );
+        }
+        assert_eq!(page.matches("{{mount-command}}").count(), 1);
+        assert_eq!(page.matches("<script ").count(), 1);
+        assert!(page.contains("<script src=\"./bootstrap.js\" type=\"module\"></script>"));
+        assert!(!page.contains("unsafe-inline"));
+    }
+    // The authored JavaScript is only the standard module initialization ABI.
+    assert_eq!(BOOTSTRAP_JS.lines().count(), 3);
+    assert_eq!(
+        BOOTSTRAP_JS,
+        "import init from './metis_web.js';\nconst module = await init({ module_or_path: './metis_web_bg.wasm' });\nmodule.metis_embedded_start();\n"
+    );
+}
+
+#[test]
+fn packaged_command_surface_announces_the_canonical_shortcuts() {
+    let _trace = trace();
+    let _span = tracing::info_span!("assert", contract = "command metadata").entered();
     for fragment in [
         "id=\"application-navigation\"",
         "role=\"toolbar\"",
         "id=\"command-menu-toggle\"",
         "aria-haspopup=\"menu\"",
         "id=\"command-menu\" role=\"menu\"",
-        "id=\"command-theme-dark\" role=\"menuitem\"",
-        "id=\"command-theme-system\" role=\"menuitem\"",
+        "aria-expanded=\"false\"",
+        "aria-hidden=\"true\"",
         "id=\"command-status\" role=\"status\"",
+        "id=\"calculation-submit\" type=\"submit\"",
     ] {
         assert!(
             INDEX_HTML.contains(fragment),
-            "missing WebView2 command-surface fragment: {fragment}"
-        );
-    }
-    for fragment in [
-        "setCommandMenu",
-        "aria-expanded",
-        "aria-hidden",
-        "commandMenu.dataset.commandMenuOpen",
-        "event.key !== 'Escape'",
-        "Patient reference focused",
-        "themeMode.value = 'dark'",
-        "themeMode.value = 'system'",
-    ] {
-        assert!(
-            APP_JS.contains(fragment),
-            "missing local command behavior: {fragment}"
+            "missing command metadata: {fragment}"
         );
     }
     for command in metis_frontend::ApplicationCommand::ALL {
         let start = INDEX_HTML
             .find(&format!("id=\"{}\"", command.id()))
-            .expect("packaged command button");
-        let tag = INDEX_HTML[start..].split('>').next().unwrap_or_default();
-        let announced = format!(
+            .expect("command button");
+        let tag = INDEX_HTML[start..].split('>').next().expect("button tag");
+        let shortcut = format!(
             "aria-keyshortcuts=\"{}\"",
             command.accelerator().aria_keyshortcuts()
         );
-        assert!(
-            tag.contains(&announced),
-            "{} must announce its declared accelerator",
-            command.id()
-        );
-    }
-    for fragment in [
-        "button[aria-keyshortcuts]",
-        "event.repeat",
-        "command.click()",
-    ] {
-        assert!(
-            APP_JS.contains(fragment),
-            "missing shortcut dispatch: {fragment}"
-        );
+        assert!(tag.contains(&shortcut), "{} shortcut", command.id());
     }
     assert!(STYLES_CSS.contains("#command-menu[data-command-menu-open=\"false\"]"));
     assert!(STYLES_CSS.contains("@media (forced-colors: active)"));
-    assert!(!APP_JS.contains("postMessage({\n      action: 'command"));
-}
-
-#[test]
-fn page_script_has_no_unscoped_authority_bridge() {
-    for forbidden in [
-        "hostObjects",
-        "fetch(",
-        "XMLHttpRequest",
-        "WebSocket",
-        "window.open",
-        "navigator.geolocation",
-    ] {
-        assert!(
-            !APP_JS.contains(forbidden),
-            "page script must not acquire unscoped authority: {forbidden}"
-        );
+    assert!(!STYLES_CSS.contains("{{mount-command}}"));
+    for theme in ["system", "light", "dark", "high-contrast"] {
+        assert!(INDEX_HTML.contains(&format!("<option value=\"{theme}\"")));
+        assert!(STYLES_CSS.contains(&format!("body[data-metis-theme=\"{theme}\"]")));
     }
 }
 
 #[test]
-fn permission_probe_is_separate_from_the_calculation_page() {
-    assert!(!APP_JS.contains("navigator.geolocation"));
-    assert!(PERMISSION_PROBE_INDEX_HTML.contains("Metis permission probe"));
+fn permission_markup_is_separate_and_uses_the_same_rust_entry_point() {
+    let _trace = trace();
+    let _span = tracing::info_span!("assert", contract = "capability role").entered();
     for permission in ["geolocation", "camera", "microphone", "notifications"] {
-        assert!(
-            PERMISSION_PROBE_INDEX_HTML.contains(&format!("permission-{permission}")),
-            "missing permission result row: {permission}"
-        );
-        assert!(
-            PERMISSION_PROBE_APP_JS.contains(&format!("'{permission}'")),
-            "missing permission probe: {permission}"
-        );
+        let row = format!("id=\"permission-{permission}\"");
+        assert!(PERMISSION_PROBE_INDEX_HTML.contains(&row));
+        assert!(!INDEX_HTML.contains(&row));
     }
-    assert!(PERMISSION_PROBE_APP_JS.contains("navigator.geolocation"));
-    assert!(PERMISSION_PROBE_APP_JS.contains("navigator.mediaDevices"));
-    assert!(PERMISSION_PROBE_APP_JS.contains("Notification.requestPermission"));
-    assert!(PERMISSION_PROBE_APP_JS.contains("message.status"));
-    assert!(PERMISSION_PROBE_APP_JS.contains("permission_probe_complete"));
-}
-
-#[test]
-fn file_uri_percent_encodes_package_path_without_separators() {
-    let uri = file_uri(std::path::Path::new(r"C:\Metis App\index.html")).expect("file URI");
-    assert_eq!(uri, "file:///C:/Metis%20App/index.html");
-    assert!(!uri.contains("%2F"));
-}
-
-#[test]
-fn file_uri_removes_windows_extended_drive_prefix() {
-    let uri =
-        file_uri(std::path::Path::new(r"\\?\C:\Metis App\index.html")).expect("extended file URI");
-    assert_eq!(uri, "file:///C:/Metis%20App/index.html");
-}
-
-#[test]
-fn patient_limit_matches_the_page_contract() {
+    assert!(!PERMISSION_PROBE_INDEX_HTML.contains("id=\"calculation\""));
     assert_eq!(MAX_PATIENT_ID_BYTES, 128);
 }
 
 #[test]
-fn permission_denial_message_is_typed_for_the_page() {
-    let message = permission_denied_message(WebViewPermission::Geolocation, false);
-    let json = serde_json::to_string(&message).expect("permission error payload");
-    assert_eq!(
-        json,
-        r#"{"type":"permission_denied","status":"permission_denied","error_code":8207,"permission":"geolocation","message":"WebView2 denied geolocation access request","user_initiated":false}"#
-    );
-}
-
-#[test]
-fn permission_denial_message_preserves_user_initiation() {
-    let message = permission_denied_message(WebViewPermission::Camera, true);
-    let json = serde_json::to_string(&message).expect("permission error payload");
-    assert_eq!(
-        json,
-        r#"{"type":"permission_denied","status":"permission_denied","error_code":8207,"permission":"camera","message":"WebView2 denied camera access request","user_initiated":true}"#
-    );
+fn package_extraction_matches_the_compiled_inventory_and_cleans_owned_directories() {
+    let _trace = trace();
+    for role in [PageRole::Form, PageRole::PermissionProbe] {
+        let package = {
+            let _span = tracing::info_span!("arrange", ?role).entered();
+            Package::create(role, None).expect("actual prepared module package")
+        };
+        let _span = tracing::info_span!("act", ?role).entered();
+        let root = package.root.clone();
+        assert_eq!(package.profile.parent(), package.content.parent());
+        assert_ne!(package.profile, package.content);
+        let inventory_bytes =
+            std::fs::read(package.content.join("inventory.bin")).expect("inventory");
+        let inventory = EmbeddedModuleInventory::decode(&inventory_bytes).expect("typed inventory");
+        assert_eq!(
+            Digest::hash(&inventory_bytes),
+            package.identity().module_digest()
+        );
+        for asset in &inventory.spec().assets {
+            let bytes =
+                std::fs::read(package.content.join(&asset.destination)).expect("extracted asset");
+            assert_eq!(Digest::hash(&bytes), asset.identity.digest);
+            assert_eq!(
+                u64::try_from(bytes.len()).expect("asset byte length"),
+                asset.identity.bytes
+            );
+        }
+        let index = std::fs::read_to_string(package.content.join("index.html")).expect("index");
+        assert!(!index.contains("{{mount-command}}"));
+        assert!(index.contains("&quot;schema&quot;:1"));
+        assert_eq!(
+            std::fs::read_to_string(package.content.join("bootstrap.js")).expect("bootstrap"),
+            BOOTSTRAP_JS
+        );
+        package.cleanup().expect("owned package cleanup");
+        let _span = tracing::info_span!("assert", contract = "closed package absence").entered();
+        assert!(!root.exists());
+    }
 }

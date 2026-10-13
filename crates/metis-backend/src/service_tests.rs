@@ -78,7 +78,7 @@ fn capability_catalog_requires_handshake_and_advertises_supported_commands() {
         .expect("typed missing-session response");
     assert_eq!(empty.0, MessageType::ErrorResp);
     let rejection = ErrorResponsePayload::decode(&empty.1).expect("error payload");
-    assert_eq!(rejection.error_code, ErrorCode::MissingCapability as u16);
+    assert_eq!(rejection.error_code, ErrorCode::MissingCapability.to_wire());
 
     let handshake = HandshakeRequestPayload {
         client_version: PROTOCOL_VERSION,
@@ -127,7 +127,7 @@ fn known_but_unadvertised_command_returns_a_typed_protocol_error() {
         .expect("typed unsupported response");
     assert_eq!(response.0, MessageType::ErrorResp);
     let error = ErrorResponsePayload::decode(&response.1).expect("error payload");
-    assert_eq!(error.error_code, ErrorCode::UnexpectedMessageType as u16);
+    assert_eq!(error.error_code, ErrorCode::UnexpectedMessageType.to_wire());
 }
 
 #[test]
@@ -214,7 +214,7 @@ fn plugin_invocation_authorizes_scope_and_returns_typed_response() {
         ErrorResponsePayload::decode(&response.1)
             .expect("scope error payload")
             .error_code,
-        ErrorCode::InsufficientScope as u16
+        ErrorCode::InsufficientScope.to_wire()
     );
 
     let request = PluginInvocationPayload::new(token.clone(), "echo", "missing", [])
@@ -228,7 +228,7 @@ fn plugin_invocation_authorizes_scope_and_returns_typed_response() {
         ErrorResponsePayload::decode(&response.1)
             .expect("unknown operation error payload")
             .error_code,
-        ErrorCode::PluginOperationNotFound as u16
+        ErrorCode::PluginOperationNotFound.to_wire()
     );
 
     let request = PluginInvocationPayload::new(token, "missing", "increment", [])
@@ -242,7 +242,7 @@ fn plugin_invocation_authorizes_scope_and_returns_typed_response() {
         ErrorResponsePayload::decode(&response.1)
             .expect("unknown plugin error payload")
             .error_code,
-        ErrorCode::PluginNotFound as u16
+        ErrorCode::PluginNotFound.to_wire()
     );
 }
 

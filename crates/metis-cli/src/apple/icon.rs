@@ -28,7 +28,7 @@ pub(super) fn read(
     let Some(relative) = &application.icon else {
         return Ok(None);
     };
-    let source = manifest::source(root, relative)?;
+    let source = metis_core::embedded_assets::source(root, relative)?;
     let bytes = bounded_read::read_file(
         &source,
         manifest::ICON_LIMIT,

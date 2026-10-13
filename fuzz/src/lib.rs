@@ -25,16 +25,9 @@ mod archive;
     reason = "the parsers under test take bytes, not files or readers"
 )]
 mod bounded_read;
-#[path = "../../crates/metis-cli/src/manifest/payload_path.rs"]
-mod payload_path;
 #[path = "../../crates/metis-cli/src/manifest/svg.rs"]
 #[expect(
     dead_code,
     reason = "fuzz input calls byte validation, not file loading"
 )]
 mod svg;
-
-/// The path rules the included archive sources read through `manifest::`.
-mod manifest {
-    pub(crate) use crate::payload_path::{PAYLOAD_LIMIT, relative};
-}

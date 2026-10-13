@@ -44,7 +44,7 @@ fn origin_parser_canonicalizes_allowed_network_origins() {
 
 #[test]
 fn permission_denial_has_a_stable_security_code() {
-    assert_eq!(ErrorCode::PermissionDenied as u16, 0x200f);
+    assert_eq!(ErrorCode::PermissionDenied.to_wire(), 0x200f);
     assert_eq!(
         ErrorCode::PermissionDenied.as_str(),
         "ERR_PERMISSION_DENIED"

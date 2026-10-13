@@ -1,5 +1,53 @@
 # Changelog
 
+## [0.5.0] - Unreleased
+
+### Added
+
+- [minor] `metis-web::embedded` owns the typed form/probe messages, exact mount
+  and request correlation, Rust page controller and explicit stop/resource law.
+  Moirai 0.9.0 supplies the actual WebIDL/native mechanisms (ADR 0059).
+- [minor] `metis prepare` creates a bounded locked Rust module inventory and
+  local owner bindings before native compilation. `metis asset-budgets` reports
+  the canonical core limits as JSON. Native build scripts independently verify
+  source/configuration/tool/provider identities and retain the verified bytes.
+  Sealed producer/native contexts separate WASM compiler configuration from
+  native Cargo's derived flags and wrappers through one admission API.
+- [minor] Native JSON lifecycle evidence reports actual page requests, backend
+  terminal replies, permission outcomes, resource release and destruction.
+  Explicit Windows fixtures exercise real remount and hostile command paths;
+  calculation and remount consume genuine OS input through one real backend
+  transaction helper.
+
+### Changed
+
+- Replace 213 authored Windows form/probe JavaScript lines with Rust and one
+  three-line ABI bootstrap. The workbench, HTTP and starter loaders retain nine
+  lines; generated wasm-bindgen JavaScript remains browser interoperability.
+- Capture requires the exact Ready mount or all four actual native denials plus
+  reconciled browser outcomes. Publish the image only after Stopped, actual
+  native destruction, fresh-profile browser exit, native owner drop and cleanup.
+- Preserve the existing synchronous supervised backend transaction. Pumping
+  during backend-in-flight exchange remains a separate transport increment.
+- Partition the native manual into linked domains below 500 lines, preserving
+  every historical source byte through reversible local-link rebasing.
+
+### Breaking
+
+- The private Windows page schema replaces retired action strings and the
+  private native DTO owner. All current callers use `metis-web::embedded`;
+  mount/request/audit identifiers use canonical decimal JSON strings.
+  Finite input/rate values use bounded round-trip decimal strings, preserving
+  their binary64 values across the native object serialization boundary.
+- Direct Windows Cargo app builds require `METIS_WEBVIEW_ASSET_INVENTORY` from
+  a current `metis prepare` invocation. Build the CLI first. Native manifest
+  `embedded_module` is optional; Windows CLI build/package/dev prepare it before
+  compiling the declared executable. Missing/stale preparation fails the build.
+
+Actual Windows Rust-page and installed-package acceptance, consented positive
+permission/late-acquisition cleanup and final consumer compatibility checks
+remain pending. Earlier native captures and portable checks do not close them.
+
 ## [0.4.1] - Unreleased
 
 ### Fixed

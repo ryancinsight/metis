@@ -1,4 +1,6 @@
 use super::*;
+mod embedded;
+use metis_core::embedded_assets::relative;
 
 pub(crate) fn fixture() -> Application {
     serde_json::from_str(include_str!("../../../../metis.json")).expect("fixture manifest")

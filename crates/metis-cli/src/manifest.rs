@@ -2,7 +2,6 @@
 mod file_associations;
 #[cfg(any(windows, test))]
 mod icon;
-mod payload_path;
 mod svg;
 mod url_schemes;
 mod web;
@@ -11,19 +10,15 @@ use crate::Result;
 use serde::{Deserialize, Serialize};
 use std::{
     collections::{BTreeMap, BTreeSet},
-    fs,
     path::{Path, PathBuf},
 };
 
-/// Committed tool resource budgets: the manifest is small and the file count bounded.
-pub(crate) const MANIFEST_LIMIT: u64 = 1024 * 1024;
-pub(crate) const FILE_LIMIT: usize = 4096;
 pub(crate) use file_associations::FileAssociation;
 #[cfg(windows)]
 pub(crate) use icon::{source as icon_source, validate_file as validate_icon_file};
+use metis_core::embedded_assets::{FILE_LIMIT, MANIFEST_LIMIT, relative};
 /// Shared byte budget for explicitly declared native shell artwork.
 pub(crate) const ICON_LIMIT: u64 = 1024 * 1024;
-pub(crate) use payload_path::{PAYLOAD_LIMIT, relative};
 pub(crate) use web::WebApplication;
 
 /// The manifest `metis build` and `metis serve` read when none is named.
@@ -87,6 +82,8 @@ pub(crate) struct Application {
     pub(crate) upgrade_code: String,
     pub(crate) cargo_manifest: String,
     pub(crate) entry: String,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub(crate) embedded_module: Option<EmbeddedModule>,
     #[serde(default)]
     pub(crate) icon: Option<String>,
     #[serde(default)]
@@ -101,6 +98,20 @@ pub(crate) struct Application {
     pub(crate) binaries: Vec<Binary>,
     #[serde(default)]
     pub(crate) resources: Vec<Resource>,
+}
+
+/// Explicit native page declaration; browser manifests retain their own shape.
+#[derive(Debug, Deserialize, Serialize)]
+#[serde(deny_unknown_fields)]
+pub(crate) struct EmbeddedModule {
+    pub(crate) package: String,
+    pub(crate) platform: EmbeddedPlatform,
+}
+
+#[derive(Debug, Deserialize, Serialize)]
+#[serde(rename_all = "lowercase")]
+pub(crate) enum EmbeddedPlatform {
+    Windows,
 }
 
 #[derive(Debug, Deserialize, Serialize)]
@@ -134,6 +145,9 @@ impl Application {
             return Err("unsupported application manifest schema".into());
         }
         identifier(&self.id)?;
+        if let Some(module) = &self.embedded_module {
+            identifier(&module.package)?;
+        }
         label(&self.name)?;
         label(&self.manufacturer)?;
         let version: Vec<_> = self
@@ -256,36 +270,7 @@ fn identifier(value: &str) -> Result<()> {
     {
         return Err("identity/target must be a bounded ASCII identifier".into());
     }
-    relative(value)
-}
-
-pub(crate) fn source(root: &Path, relative_path: &str) -> Result<PathBuf> {
-    relative(relative_path)?;
-    let mut current = root.to_path_buf();
-    for part in Path::new(relative_path).components() {
-        current.push(part);
-        let metadata = fs::symlink_metadata(&current)?;
-        if linked(&metadata) {
-            return Err("linked application input is not admitted".into());
-        }
-    }
-    if !current.is_file() {
-        return Err("application input must be a regular file".into());
-    }
-    Ok(current)
-}
-
-pub(crate) fn linked(metadata: &fs::Metadata) -> bool {
-    #[cfg(windows)]
-    {
-        use std::os::windows::fs::MetadataExt;
-        // FILE_ATTRIBUTE_REPARSE_POINT covers junctions as well as symlinks.
-        metadata.file_attributes() & 0x400 != 0
-    }
-    #[cfg(not(windows))]
-    {
-        metadata.file_type().is_symlink()
-    }
+    relative(value).map_err(Into::into)
 }
 
 #[cfg(test)]

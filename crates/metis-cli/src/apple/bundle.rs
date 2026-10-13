@@ -3,7 +3,7 @@ use super::Target;
 use crate::{
     Result,
     build::{copy, digest_file},
-    manifest::{self, WebApplication},
+    manifest::WebApplication,
     tree,
 };
 use serde::{Deserialize, Serialize};
@@ -140,7 +140,7 @@ fn clear(output: &Path, application: &WebApplication, target: Target) -> Result<
         Err(error) if error.kind() == std::io::ErrorKind::NotFound => return Ok(()),
         Err(error) => return Err(error.into()),
     };
-    if manifest::linked(&metadata) || !metadata.is_dir() {
+    if metis_core::embedded_assets::linked(&metadata) || !metadata.is_dir() {
         return Err("Apple output is not an unlinked directory".into());
     }
     let mut bytes = Vec::new();
@@ -185,7 +185,7 @@ fn output_path(output: &Path) -> Result<PathBuf> {
     // Validate existing ancestors before creating any output directories.
     for path in absolute.ancestors() {
         match fs::symlink_metadata(path) {
-            Ok(meta) if manifest::linked(&meta) => {
+            Ok(meta) if metis_core::embedded_assets::linked(&meta) => {
                 return Err("linked Apple output parent is not admitted".into());
             }
             Ok(_) => {}
