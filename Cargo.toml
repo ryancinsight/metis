@@ -48,8 +48,8 @@ unicode-segmentation = "1.13.3"
 png = "0.18.1"
 flate2 = "1.1.10"
 jpeg-encoder = "0.7.1"
-consus-compression = { git = "https://github.com/ryancinsight/consus.git", version = "0.1" }
-consus-raster = { git = "https://github.com/ryancinsight/consus.git", version = "0.1" }
+consus-compression = { git = "https://github.com/ryancinsight/consus.git", version = "0.2" }
+consus-raster = { git = "https://github.com/ryancinsight/consus.git", version = "0.2" }
 iris = { package = "iris-viz", git = "https://github.com/ryancinsight/iris", version = "0.1" }
 eunomia = { git = "https://github.com/ryancinsight/eunomia", version = "0.9.0", default-features = false }
 # Runtime ISA dispatch for rasterizer kernels (ADR 0053).
