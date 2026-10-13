@@ -1,5 +1,16 @@
 # Changelog
 
+## [0.4.0] - Unreleased
+
+### Added
+
+- Apple frontend manifests declare optional exact HTTPS `external_links`.
+  Moirai 0.2.0 validates their bounds and the signed bundle metadata, then
+  hands admitted popup links to the OS browser without replacing the app.
+  Both starter logos declare their destinations; no authored JavaScript is
+  added. Link activation is a navigation classification, not proof of a
+  trusted gesture (ADR 0057).
+
 ## [0.3.1] - Unreleased
 
 ### Fixed

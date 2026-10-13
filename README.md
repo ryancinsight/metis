@@ -128,10 +128,13 @@ the [Python binding manual](docs/manual/python.md).
 
 ## Apple frontend applications
 
-Metis 0.3.1 requires moirai-webview 0.1.2. Packaged WASM loads with a Fetch
+Metis 0.4.0 requires moirai-webview 0.2.0. Packaged WASM loads with a Fetch
 success status and the native form binds its Rust handler. Rust-owned native
 menus supply Quit (⌘Q), Close Window (⌘W), Minimize (⌘M), Zoom and full screen
 (⌃⌘F). Native macOS Greet returns exact normal, Unicode and empty-name results.
+The starter's logo links open host-declared exact HTTPS destinations in the
+system browser through Rust, preserving the app and its greeting. Optional
+`external_links` authority lives in the signed bundle (ADR 0057).
 
 The starter's Rust/WASM frontend runs in a browser or packages with Moirai's
 native macOS/iPhone/iPad WebKit host. In Atlas, `python3 scripts/atlas-metis.py
@@ -167,7 +170,7 @@ trees. The Metis launcher omits dependency patches and retains the canonical Git
 lock through metadata and compilation. Standalone builds use the corresponding pushed provider revisions recorded
 in Cargo.lock. Metis consumes Moirai through git-plus-version requirements;
 the current standalone lock records merged Moirai revision
-`10a828f7e0a8cace10dd30e88e47ce2e64aec6e0`, which includes Rust-owned AppKit menus, bounded Fetch and bodyless response
+`81656cc6465edff88e1f4158b3be00721aef3118`, which includes exact host-authorized HTTPS popup links, Rust-owned AppKit menus, bounded Fetch and bodyless response
 semantics, the Apple Fetch-status correction and Darwin process cleanup. It includes the Windows
 AccessKit accessibility provider, the UI Automation value-action mapping,
 WebView2 0.39.1 bindings, POSIX process-group tree containment,

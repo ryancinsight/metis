@@ -1,5 +1,7 @@
 use super::*;
 
+mod external_links;
+
 #[cfg(target_os = "macos")]
 mod icon;
 

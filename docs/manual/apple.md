@@ -4,7 +4,7 @@ The same `frontend` manifest and HTML/CSS/Rust-WASM assets feed a browser or an
 installed Apple application. `metis-host` uses Moirai's AppKit/UIKit lifecycle
 and WKWebView resource provider. Apple hosts do not start a loopback server.
 
-Metis 0.3.1 requires moirai-webview 0.1.2. Its packaged resource responses carry
+Metis 0.4.0 requires moirai-webview 0.2.0. Its packaged resource responses carry
 status 200 plus exact MIME/length headers, which the WASM loader requires before
 it binds the application. Delivering a WASM file alone does not establish that
 the application starts. Native macOS Greet is verified for normal, Unicode and
@@ -39,6 +39,44 @@ browser. `dev` opens a native macOS window; `--watch` rebuilds changed frontend
 sources and reopens the window after a successful compile. Failed builds retain
 the running page and report the error. `apple run` builds and opens the installed
 `.app` bundle. Closing the last macOS window ends its application process.
+
+## Native logo links
+
+The optional frontend manifest `external_links` declares the exact HTTPS links
+the native shell may hand to the system browser:
+
+```json
+"external_links": [
+  "https://github.com/ryancinsight/metis",
+  "https://webassembly.org/"
+]
+```
+
+These are the starter's two logo destinations. The signed bundle carries that
+array under Moirai's metadata key. Omission produces an empty array and grants
+no external links. The provider validates the array before host startup; the
+CLI validates it before build or owned-output replacement. Its limits are 64
+input entries and 2048 URI bytes per entry. Only absolute HTTPS links without
+credentials or malformed URI bytes are accepted. Matching includes the exact
+path, query, fragment, port and spelling; declaring one path grants no sibling
+path or whole origin.
+
+A native handoff requires a popup link from the packaged main page, with the
+`LinkActivated` action kind and no download. The UI delegate opens the system
+browser and returns no remote WebView, preserving the packaged Greet page.
+Existing-frame external navigation and unlisted targets remain blocked.
+`LinkActivated` describes the navigation kind; it is not proof of a trusted
+gesture. Automatic JavaScript popups are disabled. The existing capability
+broker, CSP and OS isolation contracts retain their separate authority.
+System refusal emits a structured error; iOS reports its
+asynchronous completion. [ADR 0057](../adr/0057-native-external-links.md) records
+the policy, failure modes and required runtime checks. The installed macOS
+bundle opens the exact Metis repository URL in Safari and retains the Unicode
+name and Rust greeting. A real WebKit fixture rejects an undeclared popup,
+existing-frame external navigation and a subframe popup. Its two executed
+onload popup attempts produce no handoff; the real logo control produces one.
+These observations do not establish trusted-event provenance for every script
+context or physical iPhone browser handoff acceptance.
 
 ## macOS window controls and exit
 

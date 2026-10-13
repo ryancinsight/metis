@@ -102,3 +102,22 @@ lines within the raw-string bodies; generated wasm-bindgen output and test-only
 script snippets are separate. METIS-WEBVIEW-RUST-001 owns migration of their
 theme, command, form/bridge and capability-probe lifecycle into Rust, with real
 Windows acceptance required before retiring the scripts.
+
+## Native logo navigation — 2026-10-13
+
+The starter's logo anchors request `_blank`, while the prior native provider
+has no popup handler and rejects external destinations. Metis now declares
+optional exact `external_links`, validates them through the owning Moirai
+contract and serializes the array into signed Apple bundle metadata. Both logo
+destinations match the HTML bytes; no JavaScript behavior is added.
+Manifest rejection/bound tests and all-target plist serialization/escaping tests
+pass against the delivered provider. The starter suite checks real-page
+destination identity. Installed macOS opens the exact Metis URL in Safari and
+retains the Unicode Rust greeting. Unlisted/existing-frame/subframe requests
+and two executed onload popup attempts produce zero native handoffs; the real
+logo control produces one. The portable decision matrix rejects download=true;
+cross-origin HTML download attributes do not prove that WebKit flag.
+`LinkActivated` is a navigation classification, not trusted-gesture proof.
+The full admission contract and expected failures live in
+[ADR 0057](docs/adr/0057-native-external-links.md). Physical iPhone execution,
+capability denial and remaining native services retain their existing gaps.

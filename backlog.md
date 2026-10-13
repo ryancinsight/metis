@@ -1,4 +1,4 @@
-Current framework version: Metis 0.3.1. Remaining capability work follows.
+Current framework version: Metis 0.4.0. Remaining capability work follows.
 
 <a id="METIS-WEBVIEW-RUST-001"></a>
 ## METIS-WEBVIEW-RUST-001 — Rust-owned Windows page lifecycle [patch]
@@ -117,6 +117,7 @@ an owner. “Unsupported” cannot replace delivery of a required mobile/native 
 - Scope: native window/WebView events, accessibility/IME integration, process containment, sandbox restrictions and teardown; share broker semantics, not Windows implementation details.
 - Acceptance: host-native [V05](docs/VERIFICATION.md#V05) plus unauthorized file/network/process denial, child drain and positive IPC; cross compilation alone cannot close this item.
 - [x] [patch] Native application/window menus: moirai-webview 0.1.2 handles Quit, Close, Minimize, Zoom and full screen in Rust. Focused ⌘Q/⌘W exit, exact Unicode output and actual geometry/state pass; capture-obscured glyphs remain separate visual evidence.
+- [x] [minor] Native external logo links: Metis 0.4.0/moirai-webview 0.2.0 validate signed exact HTTPS authority and hand popup links to the OS in Rust. Manifest/plist/page tests pass; installed macOS opens the exact Metis URL and retains Unicode Greet. Real unlisted/existing-frame/subframe links and two onload popup attempts produce zero handoffs; the permitted control produces one. [ADR 0057](docs/adr/0057-native-external-links.md).
 - Demonstration: actual macOS window/permission captures and manual setup/troubleshooting from the tested revision.
 - Local increment (2026-10-11) [minor]: shared frontend packages in a Moirai AppKit/WKWebView host; `apple build|run` and macOS `dev --watch` exist. Ad-hoc bundle validation and process calculation/cleanup pass. Native interaction and OS-denial evidence remain open; [manual](docs/manual/apple.md), [ADR 0055](docs/adr/0055-apple-application-bundles.md).
 - macOS identity correction (2026-10-11) [patch]: the starter declares its vector-derived ICNS; packaging copies it and declares `CFBundleIconFile`. Development uses the same signed bundle path. All ten decoded dimensions and exact interior colors pass; malformed, oversized, linked and missing icons preserve every owned output byte. Dock observation requires an unlocked desktop.

@@ -229,8 +229,23 @@ pub(super) fn info(application: &WebApplication, target: Target) -> String {
     } else {
         String::new()
     };
+    // Manifest preflight uses the provider's validator. The signed array keeps
+    // exact destination identity; the provider revalidates it on host startup.
+    let external_links = format!(
+        "<key>{}</key><array>{}</array>",
+        moirai_webview::EXTERNAL_LINKS_INFO_KEY,
+        application
+            .external_links
+            .iter()
+            .fold(String::new(), |mut xml, destination| {
+                xml.push_str("<string>");
+                xml.push_str(&escape(destination));
+                xml.push_str("</string>");
+                xml
+            })
+    );
     format!(
-        "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n<!DOCTYPE plist PUBLIC \"-//Apple//DTD PLIST 1.0//EN\" \"http://www.apple.com/DTDs/PropertyList-1.0.dtd\">\n<plist version=\"1.0\"><dict><key>CFBundleIdentifier</key><string>{}</string><key>CFBundleName</key><string>{}</string><key>CFBundleDisplayName</key><string>{}</string><key>CFBundleExecutable</key><string>metis-host</string><key>CFBundlePackageType</key><string>APPL</string><key>CFBundleShortVersionString</key><string>{}</string><key>CFBundleVersion</key><string>1</string>{platform}{icon}</dict></plist>\n",
+        "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n<!DOCTYPE plist PUBLIC \"-//Apple//DTD PLIST 1.0//EN\" \"http://www.apple.com/DTDs/PropertyList-1.0.dtd\">\n<plist version=\"1.0\"><dict><key>CFBundleIdentifier</key><string>{}</string><key>CFBundleName</key><string>{}</string><key>CFBundleDisplayName</key><string>{}</string><key>CFBundleExecutable</key><string>metis-host</string><key>CFBundlePackageType</key><string>APPL</string><key>CFBundleShortVersionString</key><string>{}</string><key>CFBundleVersion</key><string>1</string>{platform}{icon}{external_links}</dict></plist>\n",
         identifier(application),
         escape(&application.name),
         escape(&application.name),
