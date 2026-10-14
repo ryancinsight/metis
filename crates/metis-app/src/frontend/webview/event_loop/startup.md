@@ -99,6 +99,22 @@ This provider result does not establish Metis Ready/Submit/Stop or permission
 acceptance. Both standalone locks consume that protected revision while every
 unrelated dependency identity remains unchanged.
 
+The adopted [Metis Windows replay](https://github.com/ryancinsight/metis/actions/runs/38545004083)
+loads all five resources with status 200 and observes the exact form Ready and
+module identity. DOM reports `Host bridge connected; backend authority remains
+outside the page.` The subsequent OS focus operation fails before the UIA actor
+or form input begins. Its error reports a requested child handle and foreground
+success, but no actual focused handle, window class or input-queue identity.
+Those native observations are required before selecting a focus correction.
+Ordinary form, later native cases, archive execution and MSI remain unexecuted.
+
+The independent native input helper now records the original failed criterion
+handles and its bounded actual SetFocus samples, followed by read-only class,
+owner and GUI-queue observations before detachment. Raw LastError may be stale;
+the snapshot is non-atomic. Every activation/attachment/retry/success rule stays
+unchanged. ASCII JSON exception notes reach complete retained worker stderr.
+Portable validation cannot supply the missing Windows focus state.
+
 ## Failure and verification
 
 Early document/mount/bridge acquisition can fail before a coordinator exists;

@@ -112,6 +112,10 @@
   Unicode values, original error identities, cases and execution deadlines.
   All twenty focused US-ASCII cases and the same complete 480-case suite pass;
   native Windows replay remains required.
+- [patch] Retain bounded actual focus/window/input-queue observations on native
+  activation failure before detaching queues. Preserve the original activation
+  operations, retries, exact focus criterion and error precedence; diagnostics
+  do not establish or repair focus.
 - Adopt the protected Moirai 0.9.2 private Rust bridge correction from
   [PR 621](https://github.com/ryancinsight/Moirai/pull/621). Seven requirements and
   both locks update the selected family while preserving every unrelated package

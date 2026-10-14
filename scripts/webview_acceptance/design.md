@@ -176,3 +176,22 @@ The corrected readers use the persisted UTF-8 contract and exact represented
 paths. All twenty focused cases pass under actual US-ASCII in 1.913s; the same
 480 full-suite cases pass in 17.335s without skips. Values, case ordering and
 all execution bounds remain unchanged. Native Windows replay remains required.
+
+The corrected [Windows replay](https://github.com/ryancinsight/metis/actions/runs/38545004083)
+passes 479 cases with the existing Apple-only skip in 32.495s. The actual form
+emits exact-identity Ready and DOM reports the connected bridge. Focus acquisition
+then fails before UIA input. The requested child and foreground success alone
+do not identify actual focus, class or input queues; native observations must
+precede a correction. No ordinary form, later native case, archive execution or
+MSI acceptance occurs. Listed or compiled archive cases do not count as execution.
+
+Focus failures now retain their original criterion handles separately from a
+later non-atomic read-only snapshot. At most 22 existing SetFocus attempts and
+26 failure-only native reads retain raw return/error data, window ownership,
+classes, GUI-thread state and child relationships before detachment. Native
+LastError can be stale and grants no success. Original exceptions and ASCII JSON
+notes survive complete worker stderr into the always-uploaded native artifacts.
+All 27 focused and 484 full script cases pass; eleven independent AST/control
+comparisons preserve activation, queue attachment, retries, exact success and
+cleanup. The 777-value Rust replay reports one unattributed output leak; its
+complete output is retained. Strict Clippy/Rustdoc and 42 doctests pass.

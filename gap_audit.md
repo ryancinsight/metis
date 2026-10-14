@@ -2,15 +2,14 @@
 
 ## Test output ownership — 2026-10-13 [patch]
 
-One core/CLI candidate passes 161 values but reports one leaky process; an
-initial clean-export gate also reports a test failure. Neither complete failure
-output is retained, so their test/process owners are unknown. A retained
-759-test run reports LEAK at `embedded_assets::fs::process::tests::actual_child_role`;
-the ordinary branch creates no child or executor. The retaining process is
-unknown. The final 759-test replay has no leak flag; it establishes no correction.
-Canonical verification keeps its
-existing deadlines and workloads. [METIS-NEXTEST-PIPE](backlog.md#METIS-NEXTEST-PIPE)
-owns attribution and real cleanup if the observation recurs.
+The latest 777-test replay passes every value but reports LEAK at
+`backend::tests::http_application_admits_only_the_launcher_principal`.
+Complete runner output is retained. The test creates no child and joins its
+HTTP server thread; the retaining process remains unknown. Earlier 161/759
+observations also remain unattributed; later clean runs prove no correction.
+Verification preserves all workloads and leak deadlines.
+[METIS-NEXTEST-PIPE](backlog.md#METIS-NEXTEST-PIPE) requires scoped actual pipe
+holder evidence before selecting an ownership correction.
 
 ## Rust Windows page acceptance — 2026-10-13 [minor]
 
@@ -313,15 +312,16 @@ orchestration and calculations, not Windows form acceptance. The
 [case and budget contract](scripts/webview_acceptance/design.md#selected-and-ordinary-production-form-execution)
 requires both real form journeys and all original native scenarios before closure.
 
-The adopted [Windows run 38543226555](https://github.com/ryancinsight/metis/actions/runs/38543226555)
-completes 480 cases in 37.016s: 475 pass, four persistence assertions fail and
-one existing Apple-only case skips. Three readers omit the writer's explicit
-UTF-8 encoding; one path assertion omits the diagnostic's representation escaping.
-Native preparation, journeys, archive execution and packaging do not run.
-Apple passes 777 Rust tests, 42 doctests and all three bundle contracts.
-Explicit UTF-8 readers and represented-path assertions pass all twenty focused
-cases under actual US-ASCII in 1.913s; the same full 480 cases pass in 17.335s
-with zero skips. Windows replay remains required.
+The corrected [Windows run 38545004083](https://github.com/ryancinsight/metis/actions/runs/38545004083)
+completes 480 cases in 32.495s: 479 pass and one existing Apple-only case skips.
+All four prepared originals match; all five resources return 200. The actual
+form emits exact-identity Ready and DOM reports the connected host bridge.
+Three supervised model calculations match the rational oracle. OS keyboard
+focus then fails before UIA input: the requested child differs from the
+unrecorded actual focus. Window/thread/queue observations are required before
+selecting a correction. Ordinary form, later native cases, all 847 listed debug
+archive tests and MSI remain unexecuted. Apple passes 777 tests, 42 doctests and
+three bundle contracts; all fourteen fuzz targets pass 107,220,402 executions.
 
 ## Library target comparison boundaries — 2026-10-13 [patch]
 
