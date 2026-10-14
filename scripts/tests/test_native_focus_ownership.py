@@ -7,8 +7,11 @@ https://learn.microsoft.com/en-us/windows/win32/winmsg/window-styles
 
 import ctypes
 import itertools
+import json
 from pathlib import Path
 import sys
+import tempfile
+import time
 import unittest
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
@@ -17,6 +20,31 @@ from native_input.windows import focus
 
 @unittest.skipUnless(sys.platform == "win32", "real Win32 window/focus ownership requires Windows")
 class NativeFocusOwnership(unittest.TestCase):
+    def snapshot(self, actor):
+        from concurrent.futures import ThreadPoolExecutor
+        from python_native_accessibility import UIA_POLL_MILLISECONDS
+        from native_input.windows import abi
+
+        self.user.PeekMessageW.argtypes = [ctypes.POINTER(abi.WindowMessage), ctypes.c_void_p,
+                                          ctypes.c_uint32, ctypes.c_uint32, ctypes.c_uint32]
+        self.user.PeekMessageW.restype = ctypes.c_int32
+        self.user.TranslateMessage.argtypes = [ctypes.POINTER(abi.WindowMessage)]
+        self.user.TranslateMessage.restype = ctypes.c_int32
+        self.user.DispatchMessageW.argtypes = [ctypes.POINTER(abi.WindowMessage)]
+        self.user.DispatchMessageW.restype = ctypes.c_ssize_t
+        message = abi.WindowMessage()
+        with ThreadPoolExecutor(max_workers=1) as executor:
+            result = executor.submit(actor.request, "snapshot")
+            while not result.done():
+                actor.remaining()
+                # PM_REMOVE=1; retrieving messages also delivers cross-thread
+                # WM_GETOBJECT requests for these real owned native controls.
+                while self.user.PeekMessageW(ctypes.byref(message), None, 0, 0, 1):
+                    self.user.TranslateMessage(ctypes.byref(message))
+                    self.user.DispatchMessageW(ctypes.byref(message))
+                time.sleep(min(actor.remaining(), UIA_POLL_MILLISECONDS / 1000))
+            return result.result()
+
     def setUp(self):
         self.user, _ = focus._focus_api()
         self.child_ids = itertools.count(1)
@@ -97,6 +125,55 @@ class NativeFocusOwnership(unittest.TestCase):
         self.assertFalse(focus._activation_matches(self.user, self.top, 0, ledger))
         self.assertFalse(ledger["criterion"]["focus_within_target"])
         self.assertEqual(ledger["criterion"]["focus_hwnd"], self.grandchild)
+
+    def test_real_uia_actor_retains_exact_reply_and_native_call_progress(self):
+        from webview_acceptance.uia import Uia
+
+        self.user.SetWindowTextW.argtypes = [ctypes.c_void_p, ctypes.c_wchar_p]
+        self.user.SetWindowTextW.restype = ctypes.c_int32
+        value = "患者-🦀-" + str(256 * 257 // 2)
+        if not self.user.SetWindowTextW(self.grandchild, value):
+            raise ctypes.WinError()
+        with tempfile.TemporaryDirectory(prefix="metis-uia-患者-🦀-'‘’‚‛-$()`") as directory:
+            output = Path(directory)
+            actor = Uia(self.top, time.monotonic() + 60, output)
+            primary = None
+            try:
+                nodes = self.snapshot(actor)
+                matches = [node for node in nodes if node["value"] == value]
+                self.assertEqual(len(matches), 1)
+                self.assertEqual(matches[0]["value"], value)
+                raw = (output / "uia-response.json").read_bytes()
+                self.assertEqual(json.loads(raw), {"schema": 1, "nodes": nodes})
+                progress = json.loads((output / "uia-progress.json").read_bytes())
+                self.assertEqual(progress["phase"], "response_admitted")
+                self.assertEqual(progress["sequence"], "1")
+                self.assertEqual(progress["last_response"]["bytes"], len(raw))
+            except BaseException as error:
+                primary = error
+                raise
+            finally:
+                try:
+                    actor.close()
+                except BaseException as cleanup:
+                    if primary is None:
+                        raise
+                    primary.add_note(f"actual UIA test cleanup: {type(cleanup).__name__}: {cleanup}")
+            final = json.loads((output / "uia-progress.json").read_bytes())
+            self.assertEqual(final["phase"], "actor_collected")
+            self.assertEqual(final["details"]["returncode"], 0)
+            # Actor exit closes both slots after its final stdin marker;
+            # observing them earlier would race the last post-response write.
+            slots = [json.loads(path.read_bytes()) for path in actor.progress.actor_paths]
+            latest = max(slots, key=lambda record: int(record["step"]))
+            self.assertEqual(latest["request_sequence"], "1")
+            self.assertEqual(latest["phase"], "stdin_read")
+            self.assertGreater(int(latest["stopwatch_ticks"]), 0)
+            self.assertGreater(int(latest["stopwatch_frequency"]), 0)
+            self.assertGreater(latest["process_id"], 0)
+            self.assertGreater(latest["managed_thread_id"], 0)
+            self.assertIn(latest["apartment"], ("STA", "MTA", "Unknown"))
+            self.assertEqual(latest["node_index"], -1)
 
 
 if __name__ == "__main__":

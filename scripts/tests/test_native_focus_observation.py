@@ -25,6 +25,16 @@ class NativeFocusObservation(unittest.TestCase):
         self.assertEqual(record.caret_rect.offset, 8 + 6 * pointer)
         self.assertEqual(ctypes.sizeof(record), 8 + 6 * pointer + 16)
         self.assertEqual(ctypes.alignment(record), ctypes.alignment(ctypes.c_void_p))
+        message = abi.WindowMessage
+        self.assertEqual(message.window.offset, 0)
+        self.assertEqual(message.message.offset, pointer)
+        self.assertEqual(message.word_parameter.offset, 2 * pointer)
+        self.assertEqual(message.long_parameter.offset, 3 * pointer)
+        self.assertEqual(message.time.offset, 4 * pointer)
+        self.assertEqual(message.point.offset, 4 * pointer + 4)
+        self.assertEqual(message.private.offset, 4 * pointer + 12)
+        self.assertEqual(ctypes.sizeof(message), 4 * pointer + 16)
+        self.assertEqual(ctypes.alignment(message), ctypes.alignment(ctypes.c_void_p))
 
     def test_native_error_fields_survive_ascii_json_without_losing_unicode(self):
         with tempfile.TemporaryDirectory() as directory:

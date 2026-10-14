@@ -122,8 +122,9 @@
   and deadlines; PID/class rules cannot grant focus. The canonical check applies
   in both retry and final admission, including callers that ignore its tuple.
   All 484 local cases pass; the added real-Win32 hierarchy case skips on Darwin
-  (485 total, 16.889s; all 990 source identities unchanged). Actual Windows
-  hierarchy and complete native journeys remain required.
+  (485 total, 16.889s; all 990 source identities unchanged). Run 38552896154
+  passes the real-Win32 hierarchy regression and reaches genuine Unicode input;
+  both complete native form journeys remain required.
 - Adopt the protected Moirai 0.9.2 private Rust bridge correction from
   [PR 621](https://github.com/ryancinsight/Moirai/pull/621). Seven requirements and
   both locks update the selected family while preserving every unrelated package
@@ -144,14 +145,28 @@
   `embedded_module` is optional; Windows CLI build/package/dev prepare it before
   compiling the declared executable. Missing/stale preparation fails the build.
 
-[Run 38549695922](https://github.com/ryancinsight/metis/actions/runs/38549695922)
-runs 484 Windows script cases in 28.076s: 483 pass and one existing Apple-only
-case skips. All four prepared originals, five resources and exact page Ready
-pass; focus rejects before input. Both full form journeys, later native cases,
-all 847 listed debug archive executions, release and MSI remain unexecuted.
-Apple passes 777 tests in 39.835s, 42 doctests and three bundle contracts; five
-guards and all fourteen fuzz targets pass 108,683,277 executions in 704 reported
-seconds. Advisory API wrapper success does not establish compatibility coverage.
+[Run 38552896154](https://github.com/ryancinsight/metis/actions/runs/38552896154)
+runs 485 Windows script cases in 32.241s: 484 pass and one existing Apple-only
+case skips. The real-Win32 focus regression, four prepared originals, five
+resources with status 200/declared MIME types and page Ready pass. Actual Unicode `患者-🦀-one`, weight 64,
+concentration 2 and dose 0.25 yields request 1/native Result 0.48 mL/hour,
+0.96 mg/hour, audit 2 and exact CDP DOM text. The worker then times out at
+60.0879668s without retained UIA raw replies/progress or primary error before
+cleanup. The blocked query/predicate/cumulative-cost/cleanup interval remains
+unattributed. Ordinary form, later native cases, all 847 listed debug archive
+executions, release and MSI remain unreached.
+Apple passes 777 tests in 42.809s, 42 doctests and three bundle contracts; five
+guards and all fourteen fuzz targets pass 104,188,289 executions in 704 reported
+seconds. Advisory API checker exit 101/root zero pass and 260 skip is excluded.
+
+Native diagnostics retain bounded last Python operation/request/raw
+reply, two alternating fixed PowerShell native-call-stage slots, actual apartment
+state and primary error/cleanup stage before waits. All 493 local cases complete
+in 14.520s: 491 pass and two Windows-only cases skip; all 993 source identities
+remain exact. Official PowerShell 7.6.7 verifies actual marker storage/bounds,
+Unicode/quote paths and complete-program parsing. Windows actor execution remains
+required. Input, query order, predicates, deadlines and COM model stay unchanged;
+no timeout cause, fix or full-form pass is established.
 
 An earlier retained 777-pass LEAK remains unattributed. One corrected-permission
 sampler replay passes 777 without LEAK in 8.052s, retaining 718 samples, 419

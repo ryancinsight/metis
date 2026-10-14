@@ -242,3 +242,51 @@ native predicate/test ABI and all four changed source/design identities. All
 373 supported API-graph inputs remain exact; the existing partial comparison
 result retains its scope. This source review and portable pass cannot replace
 execution of the native hierarchy and complete selected/ordinary journeys.
+
+## Retained UI Automation boundary
+
+The [focus-corrected replay](https://github.com/ryancinsight/metis/actions/runs/38552896154)
+passes the real Win32 hierarchy test and 484 other Windows cases with one
+existing Apple-only skip: 485 total in 32.241s. The actual Rust form submits
+Unicode patient input with 64/2/0.25 and posts request 1, audit 2, rates 0.48/0.96.
+Native CDP then observes that exact result in the document. The worker reaches
+its unchanged 60-second deadline before its final report. No retained UIA reply,
+wait boundary or primary exception identifies the remaining operation. This
+cannot establish that UIA consumes the result or reenables submission, nor
+distinguish a native query, nonmatching predicate, cumulative cost or cleanup.
+
+One Python progress owner persists the current operation and request identity
+before sending, and exact bounded response bytes before parsing/admission. Its
+last state and last response each retain the existing inclusive 256 KiB bound.
+Same-directory pending files and replacement preserve the prior complete file
+when killed before publication. Native persistence failures keep their actual
+context; an existing primary exception remains primary. Sequence, monotonic
+time, last-response digest and predicate outcome distinguish an unreturned
+request from completed nonmatching observations. No response or value truncates.
+
+The PowerShell actor retains entered-call markers in two alternating, already
+open bounded slots. Each candidate serializes and admits its byte count before
+overwriting one slot; an interrupted write can invalidate that slot, while the
+other retains the prior complete marker after initialization. Marker sequence,
+node index, Stopwatch ticks/frequency, process/thread and actual apartment state
+locate existing native calls without adding UIA queries. Flush publishes process
+buffers; it does not establish power-loss durability. A marker records entry
+intent, not proof that a preempted thread enters or completes the following call.
+The original COM apartment, native getter order, response protocol and input
+remain unchanged. Source-derived threading risks are not timeout attribution.
+
+The Python state/response, their two pending files and the two actor slots give
+six independently bounded files: at most `6 * 262144 = 1572864` bytes. This is
+separate from the unchanged per-response and native JSON trace admission limits.
+Primary exceptions and each cleanup wait boundary publish before cleanup, so
+outer process collection cannot erase the only observed failure in memory.
+Local storage/value/boundary tests pass within the complete 493-case replay:
+491 pass and two Windows-only cases skip in 14.520s, with all 993 source identities
+unchanged. Official PowerShell 7.6.7 executes actual marker writes, inclusive
+byte bounds and Unicode/quote path round trips, and parses the complete actor
+program without errors. This portable result does not establish Windows UIA or
+Windows PowerShell 5.1 execution. The real Windows actor case pumps its creating
+thread's native message queue while a worker queries the owned controls; it must
+verify exact Unicode values, raw response bytes and completed actor cleanup.
+The next complete journey must still satisfy every original numeric, Unicode,
+error, theme, focus, permission, remount, close and cleanup assertion.

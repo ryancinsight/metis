@@ -238,7 +238,8 @@ class RealProcessWaves(unittest.TestCase):
             with self.assertRaises(type(native)) as write_error:
                 retention.report(report_path, report, None)
             self.assertEqual(write_error.exception.errno, native.errno)
-            self.assertEqual(Path(write_error.exception.filename), report_path)
+            self.assertEqual(Path(write_error.exception.filename),
+                             report_path.with_name(report_path.name + ".pending"))
 
     def test_real_parallel_owners_compute_in_reverse_order_and_return_declared_values(self):
         program = """

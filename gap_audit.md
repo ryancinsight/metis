@@ -310,18 +310,17 @@ and compiled rate/drug pairs 0.48/0.96, 0.6/2.4 and 0.09/0.72 prove portable cal
 [case and budget contract](scripts/webview_acceptance/design.md#selected-and-ordinary-production-form-execution)
 requires both real form journeys and all original native scenarios before closure.
 
-The latest [Windows run 38549695922](https://github.com/ryancinsight/metis/actions/runs/38549695922)
-runs 484 cases in 28.076s: 483 pass and one existing Apple-only case skips.
-All four prepared originals match; all five resources return 200 with exact content types; exact-identity Ready and all three rational model outputs pass.
-The original criterion records foreground equal to the requested top and actual
-focus in an installed WebView runtime descendant of both target and top.
-Exact-HWND equality rejects that focus before UIA input. The selected correction
-requires nonzero target-or-`IsChild(target, actual)` focus plus actual foreground top.
-Requested-target output/layout and activation/retry/deadline bounds remain; PID/class rules cannot grant focus. The correction passes all 484 local cases;
-the new Windows-only case skips on Darwin (485 total, 16.889s; 990 source identities unchanged). Windows hierarchy, full journeys, 847 debug archive executions, release and
-MSI remain unexecuted. Exact-tree Apple passes 777 tests in 39.835s, 42 doctests
-and three bundle contracts; five guards and fourteen fuzz targets pass 108,683,277 executions in 704 reported seconds.
-Advisory API wrapper success remains excluded from compatibility proof.
+The latest [Windows run 38552896154](https://github.com/ryancinsight/metis/actions/runs/38552896154)
+runs 485 cases in 32.241s: 484 pass and one existing Apple-only case skips; the real-Win32 focus hierarchy case passes.
+The implemented nonzero target-or-descendant focus/foreground-top law is verified on Windows; requested-target layout, activation, retries and deadlines remain unchanged.
+All four prepared originals, five resources with status 200/declared MIME types and Ready pass. Actual Unicode `患者-🦀-one` input 64/2/0.25 submits request 1; native Result and CDP DOM show 0.48 mL/hour, 0.96 mg/hour and audit 2.
+The worker then reaches 60.0879668s. No UIA raw reply/progress or primary error before cleanup survives; query, predicate, cumulative cost and cleanup remain unattributed possibilities.
+The selected diagnostic patch retains bounded last Python operation/request/raw reply, two alternating fixed PowerShell native-call-stage slots and actual apartment state, plus primary error/cleanup stage before waits.
+Local replay completes all 493 cases in 14.520s: 491 pass and two Windows-only cases skip; all 993 source identities remain exact. Official PowerShell 7.6.7 verifies real marker storage/bounds, Unicode/quote paths and complete-program parsing. Windows actor execution remains required; input, query order, predicates, deadlines and COM model stay unchanged. No timeout cause or fix is established.
+Ordinary form, remaining native journeys, all 847 listed debug archive executions, release and MSI remain unreached.
+Exact-tree Apple passes 777 tests in 42.809s, 42 doctests and three bundle contracts; five guards pass.
+All fourteen actual fuzz campaigns complete 104,188,289 executions in 704 reported seconds.
+Advisory API checker exit 101/root zero pass and 260 skip remains excluded from compatibility proof.
 
 ## Library target comparison boundaries — 2026-10-13 [patch]
 

@@ -6,6 +6,7 @@ import os
 from pathlib import Path
 import subprocess
 import time
+import traceback
 
 from native_capture.windows import processes
 from native_input.windows import focus, keyboard, queue
@@ -75,7 +76,20 @@ def _journey(name, uia, actual, process, trace, deadline, output) -> dict:
 def _collect(process, uia, observation, deadline, output, report, caught) -> None:
     """Collect every owned native component without replacing its original error."""
     cleanup_errors = []
+    completed_journey = report.get("status") == "passed"
+    if completed_journey:
+        report["status"] = "collecting"
+    def checkpoint(stage):
+        report["cleanup_stage"] = stage
+        try:
+            retention.report(output / "evidence.json", report, caught)
+        except BaseException as error:
+            error.add_note(f"retaining cleanup boundary: {stage}")
+            cleanup_errors.append(error)
+
+    checkpoint("entered")
     if observation is not None:
+        checkpoint("startup_observer_finish")
         try:
             observation.finish()
         except BaseException as error:
@@ -83,6 +97,7 @@ def _collect(process, uia, observation, deadline, output, report, caught) -> Non
             cleanup_errors.append(error)
     if uia is not None:
         report["partial_uia"] = {"actions": uia.actions, "last_nodes": uia.latest}
+        checkpoint("uia_terminate_and_wait")
         try:
             uia.process.terminate()
             uia.process.wait(timeout=max(0, deadline - time.monotonic()))
@@ -90,6 +105,7 @@ def _collect(process, uia, observation, deadline, output, report, caught) -> Non
             error.add_note("owned UIA actor collection")
             cleanup_errors.append(error)
         try:
+            checkpoint("uia_error_stream_close")
             uia.error.close()
         except BaseException as error:
             error.add_note("closing actual UIA actor error stream")
@@ -98,6 +114,7 @@ def _collect(process, uia, observation, deadline, output, report, caught) -> Non
         # Only the owned worker's failed process is terminated here. The
         # outer held-bootstrap Job Object collects all remaining descendants.
         try:
+            checkpoint("native_process_poll_terminate_and_wait")
             if process.poll() is None:
                 report["forced_parent_termination"] = True
                 process.terminate()
@@ -109,12 +126,15 @@ def _collect(process, uia, observation, deadline, output, report, caught) -> Non
         report["status"] = "failed"
         report["cleanup_errors"] = [f"{type(error).__name__}: {error}; {'; '.join(error.__notes__)}"
                                     for error in cleanup_errors]
+    elif completed_journey:
+        report["status"] = "passed"
     primary = caught if caught is not None else cleanup_errors[0] if cleanup_errors else None
     if primary is not None:
         for error in cleanup_errors:
             if error is not primary:
                 primary.add_note(f"additional actual cleanup failure: {type(error).__name__}: {error}; "
                                  f"{'; '.join(error.__notes__)}")
+    report["cleanup_stage"] = "attempts_finished" if cleanup_errors else "complete"
     retention.report(output / "evidence.json", report, primary)
     if caught is None and primary is not None:
         raise primary
@@ -170,6 +190,8 @@ def run(name: str, executable: Path, fixture_executable: Path, root: Path,
                     report["journey"] = _journey(name, uia, actual, process, trace, deadline, output)
                     uia.close()
                     uia = None
+            report["stage"] = "native_exit_wait"
+            retention.report(output / "evidence.json", report, None)
             remaining = deadline - time.monotonic()
             if remaining <= 0:
                 raise TimeoutError("actual native fixture exceeds its strict deadline")
@@ -197,6 +219,7 @@ def run(name: str, executable: Path, fixture_executable: Path, root: Path,
         caught = error
         report["status"] = "failed"
         report["error"] = f"{type(error).__name__}: {error}"
+        report["error_traceback"] = traceback.format_exception(error)
         try:
             if trace.exists() and trace.stat().st_size <= MAX_TRACE_BYTES:
                 report["partial_native_trace"] = evidence.records(trace, complete=False)
@@ -205,6 +228,8 @@ def run(name: str, executable: Path, fixture_executable: Path, root: Path,
         except BaseException as parse_error:
             report["trace_parse_error"] = f"{type(parse_error).__name__}: {parse_error}"
             error.add_note(f"retaining partial actual native trace: {type(parse_error).__name__}: {parse_error}")
+        report["stage"] = "primary_failure_before_cleanup"
+        retention.report(output / "evidence.json", report, error)
         raise
     finally:
         _collect(process, uia, observation, deadline, output, report, caught)

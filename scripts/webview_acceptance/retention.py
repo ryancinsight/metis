@@ -55,10 +55,24 @@ def processes(outcomes: tuple[Outcome, ...], output: Path, names: tuple[str, ...
     return Retention(tuple(records), tuple(errors))
 
 
+def publish(path: Path, payload: bytes) -> None:
+    """Replace one owned file after closing its complete same-directory candidate.
+
+    An interruption leaves the previous publication or an independently
+    inspectable pending file. This does not claim power-loss durability or a
+    transaction across files. Admission belongs to the domain before this IO.
+    Exclusive creation preserves an earlier failed candidate as native evidence.
+    """
+    pending = path.with_name(path.name + ".pending")
+    with pending.open("xb") as stream:
+        stream.write(payload)
+    pending.replace(path)
+
+
 def report(path: Path, value: dict, primary: BaseException | None) -> None:
     """The caller continues unwinding primary after any secondary write failure."""
     try:
-        path.write_text(json.dumps(value, indent=2, ensure_ascii=False), encoding="utf-8")
+        publish(path, json.dumps(value, indent=2, ensure_ascii=False).encode("utf-8"))
     except BaseException as error:
         if primary is None:
             raise

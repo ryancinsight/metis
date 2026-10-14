@@ -120,6 +120,17 @@ that ignore the returned tuple. Selected-container identity and thread layout,
 queue attachments and retry/deadline bounds remain unchanged. Real Win32
 hierarchy regression and both complete Metis journeys require Windows replay.
 
+The [focus-corrected replay](https://github.com/ryancinsight/metis/actions/runs/38552896154)
+passes the native hierarchy regression and submits the first Unicode input.
+Request 1 produces audit 2, rates 0.48/0.96, and that exact document result.
+The worker then reaches 60 seconds without retaining UIA progress or its
+primary exception before cleanup. Native DOM success cannot establish that
+UIA reads the result, submission reenables or the remaining journey runs.
+The [acceptance progress contract](../../../../../../scripts/webview_acceptance/design.md#retained-ui-automation-boundary)
+retains bounded actual replies and entered-call markers independently of final
+cleanup. Query order, COM model, predicates, input and deadlines stay unchanged;
+the timeout remains unattributed until those native records exist.
+
 ## Failure and verification
 
 Early document/mount/bridge acquisition can fail before a coordinator exists;

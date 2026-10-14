@@ -134,6 +134,18 @@ class Rect(ctypes.Structure):
     ]
 
 
+class WindowMessage(ctypes.Structure):
+    """MSG includes its reserved DWORD after POINT on both pointer widths.
+
+    https://learn.microsoft.com/en-us/windows/win32/api/winuser/ns-winuser-msg
+    """
+    _fields_ = [
+        ("window", ctypes.c_void_p), ("message", ctypes.c_uint32),
+        ("word_parameter", ctypes.c_size_t), ("long_parameter", ctypes.c_ssize_t),
+        ("time", ctypes.c_uint32), ("point", Point), ("private", ctypes.c_uint32),
+    ]
+
+
 class InputUnion(ctypes.Union):
     """INPUT payload, aligned and sized by its three Windows-defined arms."""
     _fields_ = [
