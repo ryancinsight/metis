@@ -34,6 +34,6 @@ jobs:
       - name: Check the actual IPC and backend transports
         run: cargo clippy --locked -p metis-core -p metis-ipc -p metis-backend --all-targets -- -D warnings
       - name: Verify actual TLS, session authority, replay, computation and events
-        run: cargo nextest run --locked -p metis-core -p metis-ipc -p metis-backend --tests
+        run: cargo nextest run --locked -p metis-core -p metis-ipc -p metis-backend --tests --example quic_session
       - name: Verify required QUIC in minimal builds
-        run: cargo nextest run --locked -p metis-ipc -p metis-backend --no-default-features --tests
+        run: cargo nextest run --locked -p metis-ipc -p metis-backend --no-default-features --tests --example quic_session

@@ -2,6 +2,17 @@
 
 ## Native QUIC integration — 2026-10-13 [minor]
 
+The native QUIC example consumes provider 8f8fd753's shared PAL queue contract,
+accepts independent positive receive/send requests and logs effective native
+sizes. Invalid and overflowing inputs fail startup. All 178 default and 115
+minimal transport/example tests and strict diagnostics pass locally; 23 verifier
+tests and actual dependency-ownership checks pass. Both locks change only the
+explicit provider revision, preserving unrelated source identities. Four real
+IPv4/IPv6 process pairs retain mutual TLS, exact clinical/audited values and
+acknowledged/drained shutdown. Socket queues do not resolve the recorded CUBIC
+recovery limit. Provider 52c9063's hosted Linux/Windows native gates pass; the
+following 8f8fd753 change partitions unchanged tests into bounded leaf modules.
+
 Metis 0.5.0 consumes Moirai's native QUIC provider through one generic
 asynchronous IPC server. QUIC is required in native builds, including with
 default features disabled; no QUIC feature flag exists. Real backend/IPC/core

@@ -6,6 +6,13 @@ Status: Accepted
 Decision scope: the user-requested native transport increment.
 Change class: [minor]. Target: Metis 0.5.0.
 
+UDP queue configuration follows provider ADR 0077. The native example uses
+validated independent optional receive/send requests and reports effective
+kernel sizes. Absent requests retain kernel defaults; invalid input stops
+startup before binding. Socket queues do not change TLS authority, frame/stream
+bounds, replay policy or finite deadlines. Multicast remains a raw UDP concern;
+Metis command sessions retain authenticated QUIC streams.
+
 Native-build contract: `metis-ipc` and `metis-backend` require the QUIC provider
 without a Cargo feature. Their default and `--no-default-features` native
 builds expose the same authenticated remote-session API. The runnable session

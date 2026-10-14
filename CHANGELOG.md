@@ -4,6 +4,10 @@
 
 ### Added
 
+- [minor] The native QUIC example accepts validated independent receive/send
+  queue requests and logs effective kernel sizes through the shared Moirai UDP
+  configuration. Kernel defaults remain in effect when requests are absent.
+
 - Required native QUIC sessions in `metis-ipc` and `metis-backend` over Moirai
   0.9.0 and moirai-quic 0.1.0, with `metis-ipc/1` ALPN and full frame-domain
   admission. Independent streams preserve trusted context, fresh MAC key,

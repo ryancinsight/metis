@@ -1,5 +1,8 @@
 //! One mutually authenticated native Metis session using caller-owned TLS files.
 
+#[path = "quic_session/udp.rs"]
+mod udp;
+
 use metis_backend::{
     BackendService, clinical::SafetyEnvelope, quic::serve_quic_session, service::SystemClock,
 };
@@ -90,7 +93,7 @@ fn run_server(
         Some(parameters.roots),
         parameters.config,
     )?;
-    tracing::info!(address = %endpoint.local_addr()?, "QUIC listener bound");
+    tracing::info!(address = %endpoint.local_addr()?, udp_receive_bytes = endpoint.udp_buffer_sizes().receive, udp_send_bytes = endpoint.udp_buffer_sizes().send, "QUIC listener bound");
     let connection = moirai_executor::block_on(endpoint.accept())?;
     let peer = connection.peer_certificates().ok_or_else(|| {
         io::Error::new(
@@ -147,6 +150,11 @@ fn run_client(
         Some(parameters.identity),
         parameters.config,
     )?;
+    tracing::info!(
+        udp_receive_bytes = endpoint.udp_buffer_sizes().receive,
+        udp_send_bytes = endpoint.udp_buffer_sizes().send,
+        "QUIC client bound"
+    );
     let connection =
         moirai_executor::block_on(endpoint.connect(parameters.address, parameters.name))?;
     let stream = moirai_executor::block_on(connection.open_stream())?;
@@ -236,7 +244,8 @@ fn main() -> ExampleResult<()> {
             65_536,
             Duration::from_secs(30),
             Duration::from_mins(1),
-        )?,
+        )?
+        .with_udp_buffers(udp::buffers()?)?,
     };
     let endpoint = if arguments[0] == "server" {
         run_server(

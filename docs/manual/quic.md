@@ -63,6 +63,28 @@ identity against application policy before constructing each independent
 `BackendService::with_trusted_context`; provide a fresh MAC key per service.
 Pass an admitted stream and that service to `serve_quic_session`.
 
+Native queue requests use `QuicConfig::with_udp_buffers(UdpBufferConfig)` and
+positive `NonZeroUsize` receive/send sizes. `None` retains kernel defaults;
+requests above the native signed integer range return an error. Inspect
+`QuicEndpoint::udp_buffer_sizes()` after binding: kernels may cap or round
+requests and include bookkeeping, so requested sizes are not payload capacity.
+Socket queues remain independent of frame/stream bounds and deadlines.
+
+The runnable example accepts optional `METIS_QUIC_RECEIVE_BUFFER_BYTES` and
+`METIS_QUIC_SEND_BUFFER_BYTES` environment variables, each a positive decimal
+byte count. Invalid values stop startup before binding. Both peers log their
+effective native queue sizes. Select queue requests from measured local drop
+and memory/latency requirements; the recorded CUBIC loss case has zero kernel
+UDP errors and supplies no evidence for increasing these defaults.
+
+The applied-queue increment verifies four local process pairs against provider
+8f8fd753: IPv4 and IPv6, each with kernel defaults and explicit receive/send
+requests. On the measured macOS host, both peers report 65,536/32,768 bytes for
+explicit requests, matching separately configured native sockets. All pairs
+produce 0.54375 ml/hr and 2.175 mg/hr, verify the same audited result and exit
+after FIN/drain. These are integration and option-value checks, with no WAN
+throughput inference. The provider's Linux/Windows native option gates also pass.
+
 Native blocking hosts use `IpcClient<QuicIpcTransport>`. Native servers await
 backpressure through `AsyncIpcServer<T: NativeSessionTransport>`, shared with
 the existing WebSocket path. `IpcClient::into_transport().close()` completes a
@@ -83,4 +105,4 @@ HTTP/3/WebTransport needs a browser application mapping and is not supplied by
 this native binary session protocol.
 
 See [ADR 0058](../adr/0058-native-quic-sessions.md) and
-[Moirai ADR 0075](https://github.com/ryancinsight/Moirai/blob/8d6897f404f50429d1f1fb33424405fc71139c61/docs/adr/0075-quic-multiplexed-sessions.md).
+[Moirai ADR 0075](https://github.com/ryancinsight/Moirai/blob/8f8fd753fd716d33061434cdfb1a1b08f64d4cfb/docs/adr/0075-quic-multiplexed-sessions.md).
