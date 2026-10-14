@@ -213,6 +213,23 @@ retain the inclusive progress-state bound; later mutation cannot alter earlier
 published facts. The input sequence, predicates and deadlines remain unchanged.
 Failure cleanup no longer refers to the retired parent stderr handle.
 
+[Run 38583102750](https://github.com/ryancinsight/metis/actions/runs/38583102750)
+stops before scripts or native input: cargo-deny 0.20.2 rejects rustls 0.23.45
+for RUSTSEC-2026-0346, -0347, -0348 and -0349. All 827 reported source identities
+and nine artifact members bind; this run supplies no new native input evidence.
+The root and fuzz locks now select rustls 0.23.46, preserving all 331 and 250
+unrelated complete package records. The root four-class audit passes with
+unchanged policy. The additional fuzz audit passes advisories, bans and sources,
+but exits 4 because NCSA is not admitted for libfuzzer-sys and metis-fuzz lacks
+license metadata. Canonical policy and the fuzz manifest remain unchanged;
+the standalone license gap remains open.
+
+The corrected locks pass all 777 Rust cases, 42 doctests and strict Clippy.
+All 494 script cases complete in 18.447s: 492 pass and two Windows-only cases
+skip. Fresh thirty supported API comparisons pass 4,900 checks over twenty-five
+nonempty graphs; five empty graphs and fifteen unsupported boundaries do not
+establish the whole target matrix. Windows input/form acceptance remains open.
+
 An earlier retained 777-pass LEAK remains unattributed. One corrected-permission
 sampler replay passes 777 without LEAK in 8.052s, retaining 718 samples, 419
 process-start identities and 14,128 PIPE rows with maximum 40.146ms sample gap;
