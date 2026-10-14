@@ -17,6 +17,9 @@ Active target: Metis 0.5.0 over Moirai 0.9.0/moirai-quic 0.1.0. Phase: Closure.
 - [x] [patch] Verify native sessions on Linux and Windows at published revision ed72092: both 176-test default suites and 113-test minimal suites pass with strict diagnostics.
 - [x] [patch] Complete the full hosted Windows/browser consumer gate at ed72092; the unchanged Firefox retry passes after one startup timeout. Record the provider's 108-pair measurement and sustained-loss limit.
 - [x] [minor] Adopt the published applied-UDP provider; validate independent queue inputs and effective-size logging. All 178 default and 115 minimal transport/example tests, strict diagnostics, exact provider-only lock changes and 23 verifier tests pass. Four real IPv4/IPv6 process pairs preserve clinical values, audited events and drained shutdown with default/configured queues.
+- [x] [patch] Preserve latest consumer e8dd4c9 and main 1ef9409; advance all nine existing direct Moirai pins and both canonical locks to published provider ed039a6ed5fcc454a572fd7ab840b4c1919a2c9d. Retain all 423 consumer source/TLS fixture paths and every unrelated dependency identity.
+- [x] [patch] Verify final provider integration with the native workspace, default/minimal transport suites, strict diagnostics and real IPv4/IPv6 process pairs; retain exact clinical results, correlated audited events, queue readback and FIN/drain teardown.
+- [x] [patch] Compare all three native public APIs with complete Rustdoc metadata generated from current main and its unchanged canonical lock; all 588 applicable checks pass. The existing generic/Send migration remains documented.
 - [ ] [minor] Complete protected provider/consumer promotion before release.
 
 Next increment: complete required review/checks for [provider PR 618](https://github.com/ryancinsight/Moirai/pull/618) and [consumer PR 503](https://github.com/ryancinsight/metis/pull/503) before protected release promotion.

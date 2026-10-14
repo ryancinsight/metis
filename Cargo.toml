@@ -60,15 +60,15 @@ hermes-simd = { git = "https://github.com/ryancinsight/hermes.git", version = "0
 gaia = { package = "gaia-mesh", git = "https://github.com/ryancinsight/gaia", version = "0.5.2", default-features = false }
 # ADR 0058 pins the published native QUIC provider review revision.
 # Cargo.lock retains this source; advance the pin after provider promotion.
-moirai-core = { git = "https://github.com/ryancinsight/Moirai.git", rev = "8f8fd753fd716d33061434cdfb1a1b08f64d4cfb", version = "0.9.0", default-features = false, features = ["std"] }
-moirai-executor = { git = "https://github.com/ryancinsight/Moirai.git", rev = "8f8fd753fd716d33061434cdfb1a1b08f64d4cfb", version = "0.9.0", default-features = false }
-moirai-transport = { git = "https://github.com/ryancinsight/Moirai.git", rev = "8f8fd753fd716d33061434cdfb1a1b08f64d4cfb", version = "0.9.0", default-features = false }
-moirai-pal = { git = "https://github.com/ryancinsight/Moirai.git", rev = "8f8fd753fd716d33061434cdfb1a1b08f64d4cfb", version = "0.9.0", default-features = false }
-moirai-crypto = { git = "https://github.com/ryancinsight/Moirai.git", rev = "8f8fd753fd716d33061434cdfb1a1b08f64d4cfb", version = "0.9.0", default-features = false }
-moirai-async = { git = "https://github.com/ryancinsight/Moirai.git", rev = "8f8fd753fd716d33061434cdfb1a1b08f64d4cfb", version = "0.9.0", default-features = false }
-moirai-http = { git = "https://github.com/ryancinsight/Moirai.git", rev = "8f8fd753fd716d33061434cdfb1a1b08f64d4cfb", version = "0.9.0", default-features = false }
-moirai-quic = { git = "https://github.com/ryancinsight/Moirai.git", rev = "8f8fd753fd716d33061434cdfb1a1b08f64d4cfb", version = "0.1.0" }
-moirai-webview = { git = "https://github.com/ryancinsight/Moirai.git", rev = "8f8fd753fd716d33061434cdfb1a1b08f64d4cfb", version = "0.2.0" }
+moirai-core = { git = "https://github.com/ryancinsight/Moirai.git", rev = "ed039a6ed5fcc454a572fd7ab840b4c1919a2c9d", version = "0.9.0", default-features = false, features = ["std"] }
+moirai-executor = { git = "https://github.com/ryancinsight/Moirai.git", rev = "ed039a6ed5fcc454a572fd7ab840b4c1919a2c9d", version = "0.9.0", default-features = false }
+moirai-transport = { git = "https://github.com/ryancinsight/Moirai.git", rev = "ed039a6ed5fcc454a572fd7ab840b4c1919a2c9d", version = "0.9.0", default-features = false }
+moirai-pal = { git = "https://github.com/ryancinsight/Moirai.git", rev = "ed039a6ed5fcc454a572fd7ab840b4c1919a2c9d", version = "0.9.0", default-features = false }
+moirai-crypto = { git = "https://github.com/ryancinsight/Moirai.git", rev = "ed039a6ed5fcc454a572fd7ab840b4c1919a2c9d", version = "0.9.0", default-features = false }
+moirai-async = { git = "https://github.com/ryancinsight/Moirai.git", rev = "ed039a6ed5fcc454a572fd7ab840b4c1919a2c9d", version = "0.9.0", default-features = false }
+moirai-http = { git = "https://github.com/ryancinsight/Moirai.git", rev = "ed039a6ed5fcc454a572fd7ab840b4c1919a2c9d", version = "0.9.0", default-features = false }
+moirai-quic = { git = "https://github.com/ryancinsight/Moirai.git", rev = "ed039a6ed5fcc454a572fd7ab840b4c1919a2c9d", version = "0.1.0" }
+moirai-webview = { git = "https://github.com/ryancinsight/Moirai.git", rev = "ed039a6ed5fcc454a572fd7ab840b4c1919a2c9d", version = "0.2.0" }
 metis-core = { path = "crates/metis-core", version = "0.5.0" }
 metis-ipc = { path = "crates/metis-ipc", version = "0.5.0" }
 metis-ui-lang = { path = "crates/metis-ui-lang", version = "0.5.0" }

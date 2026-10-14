@@ -8,6 +8,13 @@ uses that Git source without development path patches. Both hosted Linux and
 Windows pass the default and minimal native session suites at consumer revision
 `ed72092`. Required review/checks and default-branch promotion remain release gates.
 
+Current-main reconciliation pins provider `ed039a6ed5fcc454a572fd7ab840b4c1919a2c9d` in both
+canonical locks and retains the previous QUIC/UDP implementation. Source,
+audit identifiers and unrelated provider revisions remain unchanged. Local
+macOS integration passes; final hosted Windows/Linux runtime evidence and
+protected promotion remain release gates. Provider ADR 0078 owns the applied
+UDP queue contract.
+
 One TLS-authenticated UDP connection supports bounded independent bidirectional
 streams. Each stream carries one ordered Metis session, with its own handler,
 trusted host context, fresh session MAC key, token, replay sequence and audit.
@@ -105,4 +112,4 @@ HTTP/3/WebTransport needs a browser application mapping and is not supplied by
 this native binary session protocol.
 
 See [ADR 0058](../adr/0058-native-quic-sessions.md) and
-[Moirai ADR 0075](https://github.com/ryancinsight/Moirai/blob/8f8fd753fd716d33061434cdfb1a1b08f64d4cfb/docs/adr/0075-quic-multiplexed-sessions.md).
+[Moirai ADR 0075](https://github.com/ryancinsight/Moirai/blob/ed039a6ed5fcc454a572fd7ab840b4c1919a2c9d/docs/adr/0075-quic-multiplexed-sessions.md).

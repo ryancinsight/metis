@@ -2,7 +2,29 @@
 
 ## Native QUIC integration — 2026-10-13 [minor]
 
-The native QUIC example consumes provider 8f8fd753's shared PAL queue contract,
+Current integration preserves consumer e8dd4c9 and main 1ef9409, including
+PR 502 provider coherence and lossless audit identifiers. All 423 consumer Rust
+and TLS-fixture paths retain exact bytes. Nine existing direct provider pins
+and both canonical locks resolve Moirai `ed039a6ed5fcc454a572fd7ab840b4c1919a2c9d`; unrelated
+identities and the intentional 0.8.3 provider lag remain. The full native
+workspace passes 703 tests; default/minimal transport verification passes
+178/115 tests. Four real mutually authenticated process pairs cover IPv4/IPv6
+and default/explicit queues. Dyadic-input analytical results are 0.54375/2.175
+and 0.360703125/2.885625; each matches its audited event and all processes finish
+with acknowledged/drained teardown. Direct dependency ownership, all 23 verifier
+tests and native diagnostics pass.
+
+The fresh compatibility baseline fails resolution because main's unpinned
+Moirai ^0.8.3 requirement sees the provider's newer main. Complete private/hidden
+Rustdoc metadata generated from unchanged baseline source and its canonical
+lock passes all 588 applicable native API checks. This does not prove generic
+Send-bound compatibility; the existing pre-1.0 migration remains documented.
+Provider Windows optional-module diagnostics are corrected at their source;
+installed Windows default/minimal/WebView2 cross-compilation passes. Fresh
+hosted consumer/provider runtime and protected default-branch promotion remain
+gates, and the measured controlled-loss performance limit remains open.
+
+Historical consumer e8dd4c9 consumes provider 8f8fd753's shared PAL queue contract,
 accepts independent positive receive/send requests and logs effective native
 sizes. Invalid and overflowing inputs fail startup. All 178 default and 115
 minimal transport/example tests and strict diagnostics pass locally; 23 verifier
