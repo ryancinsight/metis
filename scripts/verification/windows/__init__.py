@@ -6,7 +6,7 @@ import sys
 
 from webview_acceptance.compiler import executable
 from ..native_paths import contained_file
-from . import archive
+from . import archive, prepared
 
 
 def prepare(execute, command, root: Path, output: Path, nonce: str) -> Path:
@@ -16,7 +16,8 @@ def prepare(execute, command, root: Path, output: Path, nonce: str) -> Path:
         "--message-format=json-render-diagnostics",
     ]))
     tool = executable(compiled, "metis-cli", "metis")
-    directory = output / f"webview-prepared-{nonce}"
+    directory = output / "browser" / "windows-webview-prepared" / nonce
+    directory.parent.mkdir(parents=True, exist_ok=True)
     if directory.exists():
         raise ValueError("Windows asset preparation requires a fresh nonexistent directory")
     result = execute("windows-webview-prepare",
@@ -24,7 +25,11 @@ def prepare(execute, command, root: Path, output: Path, nonce: str) -> Path:
     lines = result.splitlines()
     if len(lines) != 1:
         raise ValueError("canonical metis prepare must return only one inventory path")
-    return contained_file(Path(lines[0]), directory)
+    inventory = contained_file(Path(lines[0]), directory)
+    budgets = json.loads(execute("windows-webview-budgets",
+                                [str(tool), "asset-budgets"], seconds=30, cwd=root))
+    prepared.record(inventory, directory, budgets)
+    return inventory
 
 
 def acceptance(execute, root: Path, output: Path, metadata: dict,

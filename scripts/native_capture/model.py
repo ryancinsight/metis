@@ -19,6 +19,17 @@ class WindowObservation:
 
 
 @dataclass(frozen=True)
+class DesktopFrame:
+    """Actual desktop-copy origin, requested extent and top-down BGRA bytes."""
+
+    left: int
+    top: int
+    width: int
+    height: int
+    pixels: bytes
+
+
+@dataclass(frozen=True)
 class Frame:
     """Bounded row-major RGBA pixels ready for the Rust host."""
 

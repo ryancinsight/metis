@@ -113,6 +113,11 @@ do not claim bounds for private compiler or browser parser allocations.
 
 ## Native lifecycle and evidence
 
+The [startup evidence contract](event_loop/startup.md) distinguishes actual
+document navigation, pre-Ready diagnostic observations and native producer
+assets from Ready admission. Diagnostic observations cannot establish a
+successful application journey or extend its deadline.
+
 The packaged form/probe contains HTML/CSS and one three-line ABI bootstrap.
 Rust owns theme/command state, focus, numeric editing, Unicode submission,
 backend replies, permissions and callback teardown. Generated wasm-bindgen

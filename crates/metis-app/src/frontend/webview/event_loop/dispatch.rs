@@ -46,13 +46,29 @@ impl State {
                 permission,
                 user_initiated,
             }) => self.permission_denied(surface, &uri, permission, user_initiated)?,
-            WebViewHostEvent::WebView(WebViewEvent::NavigationCompleted {
-                success: false, ..
-            }) => {
-                return Err(MetisError::protocol(
-                    ErrorCode::NavigationDenied,
-                    "Packaged page navigation failed",
-                ));
+            WebViewHostEvent::WebView(WebViewEvent::NavigationStarting { uri, allowed }) => {
+                tracing::info!(
+                    event = "page_navigation_starting",
+                    uri,
+                    allowed,
+                    mount = self.page.session.identity().mount().get(),
+                    "Actual packaged page navigation policy observed"
+                );
+            }
+            WebViewHostEvent::WebView(WebViewEvent::NavigationCompleted { uri, success }) => {
+                tracing::info!(
+                    event = "page_navigation_completed",
+                    uri,
+                    success,
+                    mount = self.page.session.identity().mount().get(),
+                    "Actual packaged page document navigation completed"
+                );
+                if !success {
+                    return Err(MetisError::protocol(
+                        ErrorCode::NavigationDenied,
+                        format!("Packaged page navigation failed: {uri}"),
+                    ));
+                }
             }
             WebViewHostEvent::WebView(WebViewEvent::MessageRejected { source }) => {
                 return Err(MetisError::protocol(

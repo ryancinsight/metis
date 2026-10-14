@@ -83,6 +83,10 @@
   Ordinary browser compilation retains its cache; explicit native root emission
   recompiles that root. Uplifted-only nonroot dylibs without reported raw
   metadata remain an explicit unsupported source shape.
+- Retain actual native preparation outputs and their bounded opaque byte
+  identities in Windows verification artifacts. Native navigation traces and
+  read-only pre-Ready observations diagnose startup without admitting readiness,
+  sending application input, or extending fixture deadlines.
 
 ### Breaking
 

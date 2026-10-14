@@ -12,10 +12,11 @@ from python_native_accessibility import UIA_POLL_MILLISECONDS, WEBVIEW2_FOCUS_PR
 
 from . import evidence, fixtures, journey, runtime
 from .contract import CALCULATIONS, FIXTURE_SECONDS, MAX_TRACE_BYTES
-from .uia import Uia
+from .startup import StartupObservation
 
 
-def wait_event(process, trace: Path, name: str, deadline: float, predicate=None) -> dict:
+def wait_event(process, trace: Path, name: str, deadline: float, predicate=None,
+               *, observation: StartupObservation | None = None) -> dict:
     while time.monotonic() < deadline:
         selected = evidence.events(evidence.records(trace, complete=False), name)
         if predicate is not None:
@@ -26,12 +27,18 @@ def wait_event(process, trace: Path, name: str, deadline: float, predicate=None)
             return selected[0]
         if process.poll() is not None:
             raise RuntimeError(f"actual native process exits before {name}")
-        time.sleep(min(deadline - time.monotonic(), UIA_POLL_MILLISECONDS / 1000))
+        if observation is not None:
+            observation.sample()
+        remaining = deadline - time.monotonic()
+        if remaining > 0:
+            time.sleep(min(remaining, UIA_POLL_MILLISECONDS / 1000))
     raise TimeoutError(f"actual native process does not emit {name} within its strict fixture deadline")
 
 
 def run(name: str, executable: Path, fixture_executable: Path, root: Path,
         output: Path, module_digest: str) -> dict:
+    from .uia import Uia
+
     deadline = time.monotonic() + FIXTURE_SECONDS
     output.mkdir(parents=True, exist_ok=False)
     trace = output / "native.jsonl"
@@ -53,14 +60,20 @@ def run(name: str, executable: Path, fixture_executable: Path, root: Path,
         raise ValueError(f"unknown actual native scenario: {name}")
     process = None
     uia = None
+    observation = None
     caught = None
     try:
         with stdout_path.open("wb") as stdout, trace.open("wb") as stderr:
             process = subprocess.Popen(arguments, cwd=root, env=environment,
                                        stdin=subprocess.DEVNULL, stdout=stdout, stderr=stderr)
+            observation = StartupObservation(process.pid, deadline, output)
+            report["startup_observation"] = observation.report
+            interactive = name in ("form", "permissions", "correlated_terminal_rejections",
+                                   "stop_remount_destruction")
+            expected = "fixture_input_required" if interactive and name in fixtures.FIXTURES else "page_ready"
+            actual = wait_event(process, trace, expected, deadline, observation=observation)
+            observation.finish()
             if name in ("form", "permissions", "correlated_terminal_rejections", "stop_remount_destruction"):
-                expected = "fixture_input_required" if name in fixtures.FIXTURES else "page_ready"
-                actual = wait_event(process, trace, expected, deadline)
                 bounds = processes.wait_for_process_window(process)
                 report["runtime"] = runtime.version(process.pid, deadline)
                 if name in ("form", "permissions", "correlated_terminal_rejections", "stop_remount_destruction"):
@@ -129,6 +142,8 @@ def run(name: str, executable: Path, fixture_executable: Path, root: Path,
         raise
     finally:
         cleanup_errors = []
+        if observation is not None:
+            observation.finish()
         if uia is not None:
             report["partial_uia"] = {"actions": uia.actions, "last_nodes": uia.latest}
             try:

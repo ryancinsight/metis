@@ -147,9 +147,42 @@ All 973 source files retain exact membership and bytes during both runs.
 Explicit root emission recompiles the native-preparation root; ordinary browser
 builds retain Cargo caching. An uplifted-only nonroot dylib without reported raw
 metadata rejects, owned by [METIS-COMPILER-RAW-001](backlog.md#METIS-COMPILER-RAW-001).
-These local checks do not establish actual Windows execution or resolve the
-unobserved first failing path of run 38504191516. Installed page/package
-acceptance remains [METIS-WEBVIEW-RUST-001](backlog.md#METIS-WEBVIEW-RUST-001).
+The subsequent exact-tree Windows run 38511644468 completes preparation in
+83.58s with the same input/directory/provider counts. All five containment
+cases, including native namespace/junction dimensions, pass. The earlier first
+failing path in run 38504191516 remains unknown; successful preparation does
+not identify that historical error retrospectively.
+
+## Native Rust page startup evidence — 2026-10-14 [patch]
+
+[Run 38511644468](https://github.com/ryancinsight/metis/actions/runs/38511644468)
+tests merge `31dd458a` with the exact published `5a733af8` tree. Apple passes
+773 tests, 42 doctests and three bundles; all five guards and fourteen fuzz
+targets pass with 99,906,875 actual executions. Windows runs 460 script cases
+in 21.647s: 459 pass and one existing Apple-only case skips. Browser resources,
+native preparation, strict native compilation, build and archive discovery pass.
+The archive's 773 tests have not executed when the native acceptance step fails.
+
+The actual form emits no page message before its 30-second readiness deadline.
+Its retained trace observes browser-resource release and browser shutdown, then
+the readiness timeout; it does not observe form input, remount or permissions.
+Three headless model transactions pass separately and do not validate that UI.
+The generated native module bytes, page text, console/resource errors and image
+are absent, so the precise startup cause remains unobserved. Static review finds
+no bootstrap ABI, markup, shortcut or default-theme mismatch.
+
+The [startup contract](crates/metis-app/src/frontend/webview/event_loop/startup.md)
+requires actual navigation records, read-only pre-Ready observations and original
+producer-byte retention. Navigation success and diagnostic pixels cannot grant
+Ready, change input ordering or extend the existing fixture deadline. Final
+local diagnostics pass 773 Rust tests in 8.193s, 469 script tests in 14.051s,
+42 doctests and strict checks. All 979 source files retain exact membership and
+bytes. Actual canonical preparation retains all four original files with
+independently rehashed receipts; fresh producer/native admission, all fourteen
+mutations, twelve browser assets and selected CLI/app MSVC strict checks pass.
+The pending Windows replay must attribute the actual failure and then pass the
+existing computed native journeys. Installed page/package acceptance remains
+[METIS-WEBVIEW-RUST-001](backlog.md#METIS-WEBVIEW-RUST-001).
 
 ## Library target comparison boundaries — 2026-10-13 [patch]
 

@@ -2,7 +2,7 @@
 from __future__ import annotations
 import ctypes
 import sys
-from native_capture import model
+from native_capture import limits, model
 from native_input.windows import abi
 from native_capture.windows import records
 from native_display import physical_coordinates
@@ -103,17 +103,20 @@ def capture_window(bounds: model.WindowBounds) -> bytes:
         user32.ReleaseDC(bounds.handle, window_dc)
 
 
-def capture_screen_window(bounds: model.WindowBounds) -> bytes:
+@physical_coordinates()
+def capture_screen_window(bounds: model.WindowBounds) -> model.DesktopFrame:
     """Capture the visible screen pixels under a window rect through GDI.
 
-    The window must be shown, focused and unobstructed; the caller owns focus
-    and stacking. Composition surfaces such as the WebView2 host render no
+    The function does not focus the window or establish absence of occlusion.
+    A caller claiming application rendering owns those visibility conditions.
+    Composition surfaces such as the WebView2 host render no
     GDI content into a `WM_PRINT` context, so their captures read the pixels
-    the desktop actually presents. The returned bytes keep the same top-down
-    BGRA row format as [`capture_window`].
+    the desktop actually presents. The immutable result retains the exact
+    origin and extent passed to BitBlt and the top-down BGRA pixel bytes.
     """
     if sys.platform != "win32":
         raise RuntimeError("visible native capture requires Windows")
+    limits.validate_dimensions(bounds.width, bounds.height, "screen capture")
 
     user32 = ctypes.windll.user32
     gdi32 = ctypes.windll.gdi32
@@ -212,7 +215,9 @@ def capture_screen_window(bounds: model.WindowBounds) -> bytes:
         )
         if lines != bounds.height:
             raise ctypes.WinError()
-        return bytes(pixels)
+        return model.DesktopFrame(
+            rect.left, rect.top, bounds.width, bounds.height, bytes(pixels),
+        )
     finally:
         gdi32.SelectObject(memory_dc, previous)
         gdi32.DeleteObject(bitmap)

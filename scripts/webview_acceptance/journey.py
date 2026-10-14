@@ -13,10 +13,11 @@ from .contract import CALCULATIONS, Calculation, parse_result
 def captured(uia, destination) -> dict:
     pointer.guard_surface_visible(uia.handle)
     observation = window.window_observation(uia.handle)
-    pixels = gdi.capture_screen_window(observation.bounds)
-    sha = files.write_capture(destination, observation.bounds, pixels)
+    frame = gdi.capture_screen_window(observation.bounds)
+    sha = files.write_capture(destination, observation.bounds, frame.pixels)
     return {"path": str(destination), "sha256": sha,
-            "width": observation.bounds.width, "height": observation.bounds.height,
+            "left": frame.left, "top": frame.top,
+            "width": frame.width, "height": frame.height,
             "dpi": observation.dpi}
 
 
