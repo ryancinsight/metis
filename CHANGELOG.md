@@ -53,8 +53,10 @@
   Explicit system activation mapping has no focus prerequisite; scoped key
   lifetimes preserve original failures through release. Shortcut progress retains
   its own focus/modifier boundary and admitted scans. Portable verification
-  completes 496 cases in 17.015s with three Windows-only skips; native execution
-  is pending.
+  completes 496 cases in 17.015s with three Windows-only skips. Actual Windows
+  executes all 496: 495 pass and one Apple-only case skips; the complete native
+  key regression passes in 69.0491ms. Full form acceptance remains open after
+  a second-patient value wait times out; renderer consumption is unattributed.
 - Preserve SDK-selected Right-arrow scan identity and test E0 independently with
   right-Control. The real native case verifies its side-distinguishing reverse
   mapping, generic legacy message and modifier transitions; raw layout/mapping
