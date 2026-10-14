@@ -68,6 +68,7 @@ def run(execute, archive: NativeArchive, toolchain: str, *, release: bool) -> No
     # receives or propagates the inventory variable to the actual test children.
     execute("release-tests" if release else "tests", [
         "rustup", "run", toolchain, "cargo", "nextest", "run", *archive.arguments(),
-        "--profile", "ci", "--no-tests", "fail",
+        # Retain actual native filesystem observations from passing tests too.
+        "--profile", "ci", "--no-tests", "fail", "--success-output", "immediate",
         "--config-file", str(archive.root / ".config" / "nextest.toml"),
     ])

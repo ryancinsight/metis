@@ -56,6 +56,10 @@
 - Failed build tools retain their bounded captured output with executable and
   exit-status context. The browser verification owner publishes both captured
   child streams and preserves the child's nonzero exit status.
+- Assemble a Windows namespace prefix and following root separator before
+  querying filesystem ancestors. Prefix-only paths retain native behavior and
+  linked ancestors still reject before parent components can erase them.
+  Metadata failures retain the operation, native path and original OS cause.
 
 ### Breaking
 

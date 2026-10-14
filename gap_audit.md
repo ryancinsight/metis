@@ -59,9 +59,17 @@ passes all 444 Windows script tests in 37.528 seconds under the unchanged
 asset build: the actual Rust CLI exits 1, but the capturing Python boundary
 omits both child streams. Current source preserves both browser child streams,
 native exit/signal status and Rust's bounded failed-tool stdout/cleanup context.
-All 759 local Rust and 447 script tests, strict diagnostics and 42 doctests pass.
-A new Windows run must identify the actual cause; native preparation, runtime
-and package acceptance do not run in the failed revision.
+The [diagnostic run](https://github.com/ryancinsight/metis/actions/runs/38494216094)
+runs 447 Windows script tests: 446 pass and one existing Apple-only case skips,
+in 50.149 seconds. The Rust browser build reports Windows error 1, Incorrect
+function, without an operation/path. Apple passes 759 tests, 42 doctests and
+all three bundles. Current source assembles Prefix+RootDir before filesystem
+metadata; prefix-only native behavior and every linked-ancestor check remain.
+Metadata errors retain exact native path, operation, kind and original OS cause.
+All 763 local Rust and 447 script tests, strict diagnostics and 42 doctests pass.
+Actual Windows prefix/junction observations must bind the error-1 cause; full
+native archive output is retained without changing cases or deadlines. Native
+preparation, runtime and package acceptance do not run in the failed revision.
 The prior 0.4.1 source/lock evidence is retained in
 [historical records](docs/backlog/evidence.md#METIS-STANDALONE-0.4.1).
 

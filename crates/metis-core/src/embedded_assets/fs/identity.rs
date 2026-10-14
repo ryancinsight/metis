@@ -1,11 +1,15 @@
 //! Real files are admitted without links and hashed with bounded streaming reads.
+mod metadata;
 use super::super::inventory::invalid;
 use super::super::{Digest, FileIdentity, relative};
 use std::{
     fs,
     io::{self, Read},
-    path::{Path, PathBuf},
+    path::{Component, Path, PathBuf},
 };
+
+#[cfg(test)]
+mod tests;
 
 impl FileIdentity {
     /// Streams a regular file after rejecting links and excessive size.
@@ -14,7 +18,7 @@ impl FileIdentity {
     /// Returns contextual filesystem, bound or concurrent-change errors.
     pub fn read(path: &Path, limit: u64) -> io::Result<Self> {
         unlinked_components(path)?;
-        let metadata = fs::symlink_metadata(path)?;
+        let metadata = metadata::read(path)?;
         if !metadata.is_file() || linked(&metadata) || metadata.len() > limit {
             return Err(invalid(format!(
                 "input is linked, nonregular or oversized: {}",
@@ -84,7 +88,7 @@ impl FileIdentity {
 /// Rejects linked ancestors, absent files and nonregular files before resolving.
 pub fn canonical_file(path: &Path) -> io::Result<PathBuf> {
     unlinked_components(path)?;
-    if !fs::symlink_metadata(path)?.is_file() {
+    if !metadata::read(path)?.is_file() {
         return Err(invalid("canonical input is not a regular file"));
     }
     path.canonicalize()
@@ -95,16 +99,27 @@ pub fn canonical_file(path: &Path) -> io::Result<PathBuf> {
 /// Rejects absent, linked or non-directory components before canonicalization.
 pub fn canonical_directory(path: &Path) -> io::Result<PathBuf> {
     unlinked_components(path)?;
-    if !fs::symlink_metadata(path)?.is_dir() {
+    if !metadata::read(path)?.is_dir() {
         return Err(invalid("canonical input is not a directory"));
     }
     path.canonicalize()
 }
 fn unlinked_components(path: &Path) -> io::Result<()> {
     let mut component_path = PathBuf::new();
-    for component in path.components() {
+    let mut components = path.components().peekable();
+    while let Some(component) = components.next() {
         component_path.push(component);
-        if linked(&fs::symlink_metadata(&component_path)?) {
+        // A namespace prefix followed by RootDir is only part of the root;
+        // querying it alone admits no filesystem ancestor. Check the assembled
+        // root on the next iteration. A prefix without RootDir retains its
+        // native query: drive-relative and complete prefix-only forms differ.
+        // Never normalize '..' first: the preceding linked node must reject.
+        if matches!(component, Component::Prefix(_))
+            && matches!(components.peek(), Some(Component::RootDir))
+        {
+            continue;
+        }
+        if linked(&metadata::read(&component_path)?) {
             return Err(invalid(format!(
                 "linked input component: {}",
                 component_path.display()
@@ -121,13 +136,13 @@ fn unlinked_components(path: &Path) -> io::Result<()> {
 pub fn source(root: &Path, relative_path: &str) -> io::Result<PathBuf> {
     relative(relative_path)?;
     let mut current = root.to_path_buf();
-    let root_metadata = fs::symlink_metadata(root)?;
+    let root_metadata = metadata::read(root)?;
     if !root_metadata.is_dir() || linked(&root_metadata) {
         return Err(invalid("source owner root is not an unlinked directory"));
     }
     for part in Path::new(relative_path).components() {
         current.push(part);
-        if linked(&fs::symlink_metadata(&current)?) {
+        if linked(&metadata::read(&current)?) {
             return Err(invalid("linked application input is not admitted"));
         }
     }
