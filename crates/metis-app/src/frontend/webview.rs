@@ -54,18 +54,9 @@ fn run_with_page(
     capture: Option<&Path>,
     theme: Option<WebViewTheme>,
 ) -> Result<(), Box<dyn std::error::Error>> {
-    tracing_subscriber::fmt()
-        .json()
-        .without_time()
-        .with_ansi(false)
-        .with_writer(std::io::stderr)
-        .with_span_events(tracing_subscriber::fmt::format::FmtSpan::FULL)
-        .try_init()
-        .map_err(|error| -> Box<dyn std::error::Error> {
-            // Condition 1: the subscriber's concrete runtime error is unknown;
-            // this reporting boundary erases auto traits without reallocating.
-            error
-        })?;
+    use tracing_subscriber::util::SubscriberInitExt;
+
+    super::webview_logging::subscriber().try_init()?;
     let [weight, concentration, dose] = inputs;
     let transport = StreamTransport::new(stdin(), stdout());
     let mut app = FrontendApp::new(transport, INITIAL_WIDTH, INITIAL_HEIGHT)?;

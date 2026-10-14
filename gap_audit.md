@@ -14,7 +14,7 @@ owns attribution and real cleanup if the observation recurs.
 
 ## Rust Windows page acceptance — 2026-10-13 [minor]
 
-Target: Metis 0.5.0 and Moirai 0.9.0. Rust source replaces the 213 authored Windows
+Target: Metis 0.5.0 and Moirai 0.9.1. Rust source replaces the 213 authored Windows
 form/probe controller lines with one three-line ABI bootstrap. The shared page
 codec, native lifecycle, actual permission mechanisms and independently verified
 asset preparation are implemented. Canonical desktop diagnostics and supported
@@ -191,9 +191,47 @@ All six filesystem cases and the full 470-case local script suite pass;
 canonical preparation retains and independently rehashes all four original
 files. All 979 source identities remain unchanged during that replay. Rust
 implementation and test bytes retain their prior passing gate identities.
-A corrected Windows replay must attribute the original
-startup failure and pass the computed native journeys. Installed acceptance remains
+The corrected [Windows replay](https://github.com/ryancinsight/metis/actions/runs/38516491259)
+passes all six receipt cases: 470 script cases run in 28.547s, with 469 passes
+and one existing Apple-only skip. Its four original native files match the
+receipt and acceptance inventory. All 221 module imports match the generated
+glue; every referenced export exists and the raw start has signature `() -> ()`.
+Actual navigation succeeds, but Ready still times out after 30 seconds. The
+retained desktop image shows a white client with no readable Rust failure.
+Neither those pixels nor a coherent ABI identifies the failing startup stage.
+Native resource/runtime and document observations remain required before a
+product correction. Apple passes 773 tests, 42 doctests and three bundles;
+all fourteen fuzz targets pass with 102,728,525 executions. Installed acceptance remains
 [METIS-WEBVIEW-RUST-001](backlog.md#METIS-WEBVIEW-RUST-001).
+
+The selected diagnostic increment in [Moirai PR 620](https://github.com/ryancinsight/Moirai/pull/620)
+uses private Rust-native observations rather
+than injected page code. Form-only child selection, a dedicated JSON formatter,
+one generation-bound asynchronous DOM chain and receiver cleanup preserve the
+existing protocol and deadlines. The exact formatter envelope is 133 bytes
+including LF; the aggregate selected-diagnostic bound is 427,530 bytes. The
+[protected provider run](https://github.com/ryancinsight/Moirai/actions/runs/38526145575)
+passes 31 Windows policy/frame cases, including six new COM/state regressions,
+and six installed-runtime fixtures. The selected DOM/shutdown fixture passes
+in 1.747s on runtime 153.0.4234.48 and SDK 0.39.1. Metis adopts the merged
+0.9.1 source in seven requirements and both locks, preserving all 317 unrelated
+root identities, 240 unrelated fuzz identities and 978 other physical inputs.
+Fresh API comparison passes 30 supported boundaries and 4,900 substantive
+queries against 25 nonempty graphs; five empty roots, skipped queries and the
+15 unsupported boundaries remain excluded. A fresh
+working-tree audit scans 497 product code files and reparses all five entry
+documents: the same four required initializers retain 359 UTF-8 bytes, twelve
+physical lines and nine nonblank lines. All eighteen independent browser
+observer owners retain exact bytes; no application-policy JavaScript is added.
+
+The final provider-adoption replay passes 776 Rust tests in 8.050s, 471 script
+tests in 13.737s, 42 doctests and strict diagnostics. All 981 physical input
+identities remain unchanged through verification. Fresh preparation, independent
+producer/native admission, all fourteen rejection mutations and twelve browser
+assets pass. Strict Windows CLI/app compilation passes after the binary caller
+propagates the concrete subscriber initialization error through its existing
+error boundary. Canonical preparation retains and rehashes all four original
+files. These checks do not establish actual Metis Windows startup.
 
 ## Library target comparison boundaries — 2026-10-13 [patch]
 

@@ -8,15 +8,7 @@ use metis_core::error::ErrorCode;
 use metis_web::embedded::{PageCommand, PageIdentity, PageStage, SequenceId};
 
 fn tracing() -> tracing::subscriber::DefaultGuard {
-    tracing::subscriber::set_default(
-        tracing_subscriber::fmt()
-            .json()
-            .without_time()
-            .with_ansi(false)
-            .with_writer(std::io::stderr)
-            .with_span_events(tracing_subscriber::fmt::format::FmtSpan::FULL)
-            .finish(),
-    )
+    tracing::subscriber::set_default(super::super::webview_logging::subscriber())
 }
 
 #[test]

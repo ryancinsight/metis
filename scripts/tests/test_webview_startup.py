@@ -3,6 +3,7 @@
 import ast
 from contextlib import contextmanager
 import json
+import os
 from pathlib import Path
 import subprocess
 import sys
@@ -15,6 +16,38 @@ sys.path.insert(0, str(SCRIPTS))
 
 from webview_acceptance import scenario, startup
 from webview_acceptance.contract import FIXTURE_SECONDS
+
+
+class NativeObservationSelection(unittest.TestCase):
+    def test_only_form_children_receive_the_exact_private_selection(self):
+        selection = "MOIRAI_WEBVIEW_STARTUP_OBSERVATION"
+        controlled = {selection: "inherited selection must not propagate",
+                      "METIS_WEBVIEW_ASSET_INVENTORY": "outside producer ownership",
+                      "PRESERVED": "λ🦀"}
+        expected = {"start_uri": "https://metis.invalid/index.html",
+                    "selectors": ["#host-status", "#result"]}
+        program = """
+import json, os
+value = os.environ.get('MOIRAI_WEBVIEW_STARTUP_OBSERVATION')
+print(json.dumps({'selection': json.loads(value) if value is not None else None,
+                 'inventory': 'METIS_WEBVIEW_ASSET_INVENTORY' in os.environ,
+                 'preserved': os.environ['PRESERVED']}))
+"""
+        names = ("form", "permissions", "permissions_capture", *scenario.fixtures.FIXTURES)
+        for name in names:
+            with self.subTest(scenario=name):
+                projected = scenario.observation_environment(name, controlled)
+                self.assertEqual(projected.get("PRESERVED"), controlled["PRESERVED"])
+                self.assertNotIn("METIS_WEBVIEW_ASSET_INVENTORY", projected)
+                self.assertEqual(json.loads(projected[selection]) if name == "form" else
+                                 projected.get(selection), expected if name == "form" else None)
+                self.assertEqual(controlled[selection], "inherited selection must not propagate")
+                environment = scenario.observation_environment(name, {**os.environ, **controlled})
+                observed = subprocess.run([sys.executable, "-c", program], env=environment,
+                                          capture_output=True, check=True, timeout=FIXTURE_SECONDS)
+                self.assertEqual(json.loads(observed.stdout), {
+                    "selection": expected if name == "form" else None,
+                    "inventory": False, "preserved": controlled["PRESERVED"]})
 
 
 CHILD = """

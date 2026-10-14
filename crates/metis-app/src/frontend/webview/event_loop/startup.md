@@ -29,6 +29,43 @@ for its native module. Browser-build assets cannot substitute for those bytes.
 Core's native inventory admission remains authoritative; a Python evidence
 receipt does not decode or independently admit that inventory.
 
+## Private Rust observation selection
+
+The protected Moirai 0.9.1 provider owns this private fixture mechanism. Its
+[installed Windows verification](https://github.com/ryancinsight/Moirai/actions/runs/38526145575)
+establishes callback/DOM/shutdown behavior, not Metis controller readiness.
+
+The form verification child selects `MOIRAI_WEBVIEW_STARTUP_OBSERVATION` with
+its exact configured entry URI and the selectors `#host-status` and `#result`.
+Every other scenario removes inherited selection. This private fixture input
+grants neither application input nor page-protocol authority. The Rust logging
+owner enables DEBUG only for `moirai_pal::windows::webview::startup`; ordinary
+INFO records retain full span context. Without both an explicit selection and
+the dedicated target, the provider installs no diagnostic observers.
+
+The provider owns native resource MIME/status, content/navigation/process
+events, actual CDP exception/log events and one sequential read-only DOM chain.
+Runtime/Log activation and navigation share the original navigation deadline.
+An asynchronous DOM completion holds only Weak state. Navigation invalidates
+node identities; close cancels admission and removes every receiver before
+controller close. No script evaluation or document mutation supplies evidence.
+
+The diagnostic formatter omits time and span context. Its exact physical JSON
+envelope, including LF, occupies 133 bytes. Compact provider JSON contains no
+raw control bytes, so its second JSON-string layer expands at most twofold.
+With aggregate encoded bytes `B = 65,536`, event count `N = 256` and two
+separately bounded terminal records, the output bound is
+`6 * B + 133 * (N + 2) = 427,530` bytes, below the unchanged 1 MiB trace limit.
+This bounds Rust-retained copies and emitted observations; Chromium allocations
+before a callback remain outside that guarantee. Exhaustion and incomplete
+observations remain explicit failures of evidence completeness.
+
+The consumer's real formatter tests verify the physical envelope, Unicode and
+control-character round trips, the compact-JSON escape bound and target
+selection. Real child-process tests verify scenario selection and inherited
+environment removal. These portable checks do not establish native callback
+execution or identify the current Windows startup cause.
+
 ## Failure and verification
 
 Early document/mount/bridge acquisition can fail before a coordinator exists;

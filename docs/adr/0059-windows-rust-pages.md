@@ -6,7 +6,8 @@ Date: 2026-10-13
 
 Change class: [minor]; internal module restructuring is [arch].
 
-Target: Metis 0.5.0 and Moirai PAL/workspace 0.9.0.
+Target: Metis 0.5.0; Moirai PAL/workspace 0.9.0 mechanisms and 0.9.1 private
+startup observations.
 
 ## Intent and scope
 
@@ -87,6 +88,13 @@ the delivery baseline. Uncommitted QUIC version edits do not establish a release
 If 0.9.0 lands first, subsequent additive PAL APIs require the next minor
 increment. No version change is required in the independent Apple package.
 
+The private startup observation increment adds no supported public Rust API.
+Moirai 0.9.1 owns that [patch] under
+[provider ADR 0078](https://github.com/ryancinsight/Moirai/blob/main/docs/adr/0078-private-webview-startup-observation.md).
+Metis consumes its protected default revision; the
+[co-located startup contract](../../crates/metis-app/src/frontend/webview/event_loop/startup.md)
+owns fixture selection, output bounds and the separation from page authority.
+
 Run canonical `cargo-semver-checks` for changed public libraries. Record the
 private page schema migration, build preparation requirement and retired scripts
 in CHANGELOG's Breaking subsection for the pre-1.0 release. Update every caller
@@ -105,3 +113,9 @@ Metis's compiled-page Windows acceptance remains pending. The existing
 framebuffer `native_host_capture` gate does not exercise WebView2. No macOS
 build, screenshot or four-row completion message substitutes for the Windows
 gate specified in the domain design.
+
+[Moirai PR 620](https://github.com/ryancinsight/Moirai/pull/620) passes the actual
+31-case Windows policy/frame suite and six installed-runtime fixtures, including
+selected Unicode DOM values, a computed value, a missing selector and pending
+request shutdown. Metis's own startup and subsequent journeys still require
+their independent Windows acceptance.

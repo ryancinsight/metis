@@ -1,5 +1,6 @@
 """One bounded owned application or real Rust fixture per worker process."""
 
+from collections.abc import Mapping
 import json
 import os
 from pathlib import Path
@@ -13,6 +14,20 @@ from python_native_accessibility import UIA_POLL_MILLISECONDS, WEBVIEW2_FOCUS_PR
 from . import evidence, fixtures, journey, runtime
 from .contract import CALCULATIONS, FIXTURE_SECONDS, MAX_TRACE_BYTES
 from .startup import StartupObservation
+
+
+def observation_environment(name: str, source: Mapping[str, str]) -> dict[str, str]:
+    """Select bounded native diagnostics for the failing form fixture only."""
+    environment = dict(source)
+    environment.pop("METIS_WEBVIEW_ASSET_INVENTORY", None)
+    selection = "MOIRAI_WEBVIEW_STARTUP_OBSERVATION"
+    environment.pop(selection, None)
+    if name == "form":
+        environment[selection] = json.dumps({
+            "start_uri": "https://metis.invalid/index.html",
+            "selectors": ["#host-status", "#result"],
+        }, separators=(",", ":"))
+    return environment
 
 
 def wait_event(process, trace: Path, name: str, deadline: float, predicate=None,
@@ -44,8 +59,7 @@ def run(name: str, executable: Path, fixture_executable: Path, root: Path,
     trace = output / "native.jsonl"
     stdout_path = output / "native.stdout"
     report = {"schema": 1, "scenario": name, "status": "running", "timeout_seconds": FIXTURE_SECONDS}
-    environment = os.environ.copy()
-    environment.pop("METIS_WEBVIEW_ASSET_INVENTORY", None)
+    environment = observation_environment(name, os.environ)
     if name in fixtures.FIXTURES:
         arguments = [str(fixture_executable), "--exact", fixtures.FIXTURES[name],
                      "--ignored", "--nocapture", "--test-threads=1"]

@@ -22,6 +22,9 @@ mod webview_admission;
 #[cfg(test)]
 #[path = "frontend/webview/codec_tests.rs"]
 mod webview_codec_tests;
+#[cfg(any(windows, test))]
+#[path = "frontend/webview/logging.rs"]
+mod webview_logging;
 
 /// Runs the visible native host on supported desktop targets.
 pub(crate) fn run_native(inputs: [String; 3]) -> Result<(), Box<dyn std::error::Error>> {

@@ -89,6 +89,12 @@
   sending application input, or extending fixture deadlines.
 - Read producer-file identity from native path metadata. Windows directory-entry
   caches omit the identity fields required to match the retained inventory.
+- Consume Moirai 0.9.1 private Rust-native startup observations only for the failing form
+  verification child. A dedicated bounded JSON trace layer preserves ordinary
+  INFO context; resource, runtime and selected document evidence retain their
+  diagnostic role without admitting Ready or extending existing deadlines.
+- Propagate the concrete subscriber initialization error through the existing
+  native frontend error boundary after selecting its layered Rust subscriber.
 
 ### Breaking
 

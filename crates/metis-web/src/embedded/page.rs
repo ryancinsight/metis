@@ -17,7 +17,8 @@ thread_local! {
 }
 
 /// Installs the exact packaged Rust page and its real native-message bridge.
-/// Initialization failure remains visible in the document and native bridge.
+/// Initialization failure attempts document rendering. Failures after coordinator
+/// acquisition also attempt correlated native publication.
 #[expect(unsafe_code, reason = "stable raw WASM export ABI")]
 #[unsafe(no_mangle)]
 pub extern "C" fn metis_embedded_start() {
