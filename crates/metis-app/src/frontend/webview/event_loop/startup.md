@@ -2,11 +2,13 @@
 
 Status: Accepted; diagnostic contract for ADR 0059, Metis 0.5.0.
 
-The current Windows run completes actual Rust module preparation, native
-compilation and archive discovery, then observes no page message before the
-unchanged readiness deadline. This does not identify a module, browser bridge
-or Rust initialization failure. Successful document navigation does not imply
-that its JavaScript module or Rust controller starts.
+The earlier Windows run completes Rust module preparation, native compilation
+and archive discovery, then receives no page message before the unchanged
+readiness deadline. That result alone does not identify a module or bridge
+failure. The subsequent [observed run](https://github.com/ryancinsight/metis/actions/runs/38531378051)
+loads all five resources with correct MIME types and records the Rust-handled
+DOM error `WebView2 bridge is not an EventTarget`. The observer supplies the
+rejected operation without evaluating page code or manufacturing Ready.
 
 ## Observation and authority
 
@@ -31,13 +33,14 @@ receipt does not decode or independently admit that inventory.
 
 ## Private Rust observation selection
 
-The protected Moirai 0.9.1 provider owns this private fixture mechanism. Its
+The private mechanism introduced in protected Moirai 0.9.1 remains in 0.9.2. Its
 [installed Windows verification](https://github.com/ryancinsight/Moirai/actions/runs/38526145575)
 establishes callback/DOM/shutdown behavior, not Metis controller readiness.
 
-The form verification child selects `MOIRAI_WEBVIEW_STARTUP_OBSERVATION` with
-its exact configured entry URI and the selectors `#host-status` and `#result`.
-Every other scenario removes inherited selection. This private fixture input
+Only the explicitly observed form worker selects
+`MOIRAI_WEBVIEW_STARTUP_OBSERVATION` with its configured entry URI and selectors
+`#host-status` and `#result`. The complete ordinary form and every other scenario
+remove inherited selection. This private fixture input
 grants neither application input nor page-protocol authority. The Rust logging
 owner enables DEBUG only for `moirai_pal::windows::webview::startup`; ordinary
 INFO records retain full span context. Without both an explicit selection and
@@ -57,9 +60,11 @@ hop is covered: the supervisor clears the selector at the frontend boundary.
 That revision therefore runs the ordinary form without the intended native
 diagnostics. The contained Rust regression first reproduces the dropped value,
 then passes all five native-value dimensions under both environment policies
-after the one-key correction. Windows execution of those vectors and actual
-observation activation remain required. Diagnostic activation does not establish
-that the unselected form starts.
+after the one-key correction. The observed consumer run above activates the
+actual diagnostic, then stops before archive execution on the identified bridge
+error. Windows execution of the environment vectors and both complete form
+journeys remain required. Diagnostic activation does not establish ordinary
+startup.
 
 The provider owns native resource MIME/status, content/navigation/process
 events, actual CDP exception/log events and one sequential read-only DOM chain.
@@ -81,8 +86,18 @@ observations remain explicit failures of evidence completeness.
 The consumer's real formatter tests verify the physical envelope, Unicode and
 control-character round trips, the compact-JSON escape bound and target
 selection. Real child-process tests verify scenario selection and inherited
-environment removal. These portable checks do not establish native callback
-execution or identify the current Windows startup cause.
+environment removal. These portable checks establish their own transport
+contracts; the separate native DOM evidence above identifies the bridge cast.
+
+Moirai 0.9.2 replaces that nominal DOM cast with checked native callable methods
+and preserves the original receiver/callback through removal. Protected merge
+`2b189f0a8aaf4a45aab1f2085c2ec748e483b8b3` owns the adopted implementation.
+Its [installed Rust fixture](https://github.com/ryancinsight/Moirai/actions/runs/38540325048/job/115773188924)
+passes Unicode/string identities, computed replies, inclusive 65,536-byte bounds,
+65,537-byte rejection, close/remount, actual Destroyed and profile cleanup.
+This provider result does not establish Metis Ready/Submit/Stop or permission
+acceptance. Both standalone locks consume that protected revision while every
+unrelated dependency identity remains unchanged.
 
 ## Failure and verification
 

@@ -142,18 +142,27 @@ run checks the three original computed outputs; process-orchestration fixtures
 cannot substitute for those application values. Installed Windows execution
 must still verify the added ordinary form and the noninteractive wave.
 
-The final portable replay passes 480/480 cases in 17.666 seconds under the
+The adopted Moirai 0.9.2 replay passes 480/480 cases in 14.470 seconds under the
 unchanged 60-second process-tree bound with no skips. All 987 physical source
 members retain exact membership and bytes before/after, and 960 timing records
 pair all 480 ordered cases. Twenty focused process/acceptance cases include
 native file/descriptor failures, inclusive UTF-8 stream bounds, child environments,
 concurrent calculations and failure identity. Three actual compiled Metis
-headless transactions separately reproduce rate/drug pairs 0.48/0.96, 0.6/2.4
+headless transactions from the freshly built adopted app reproduce rate/drug
+pairs 0.48/0.96, 0.6/2.4
 and 0.09/0.72; arithmetic process fixtures do not substitute for these values.
 
 The preceding selected [Windows run](https://github.com/ryancinsight/metis/actions/runs/38531378051)
 loads all five resources with status 200 and enables CDP observations, then
 records actual Rust-handled DOM text `WebView2 bridge is not an EventTarget`.
-No Ready occurs. The private Moirai 0.9.2 Rust bridge correction awaits protected
-publication, Metis adoption and runtime verification. Neither these diagnostics
-nor the portable replay establishes ordinary or selected full-form acceptance.
+No Ready occurs in that historical consumer run. The private Moirai 0.9.2 Rust
+bridge correction is protected-merged in
+[PR 621](https://github.com/ryancinsight/Moirai/pull/621) and adopted by seven Metis
+requirements and both locks with all unrelated package identities preserved.
+The [provider Windows run](https://github.com/ryancinsight/Moirai/actions/runs/38540325048)
+passes 31 policy cases and seven installed-runtime fixtures, including its full
+Rust page fixture. The adopted graph passes 777 Rust tests, 480 script cases,
+42 doctests, strict diagnostics, twelve browser assets and fourteen native asset
+rejection cases. CLI/app/backend selected Windows compilation passes. Both Metis
+form journeys remain pending; portable and provider results cannot establish
+ordinary or selected Metis full-form acceptance.

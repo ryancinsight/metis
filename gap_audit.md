@@ -270,8 +270,18 @@ both CDP observation domains enable. Actual selected DOM reports
 This is a handled Rust initialization failure at the provider bridge admission
 boundary, not inferred resource or bootstrap failure. No Ready, form input,
 permission/remount journey or native archive execution occurs. The owning
-Moirai 0.9.2 private Rust correction awaits publication, Metis adoption and
-actual Windows acceptance.
+Moirai 0.9.2 private Rust correction is now protected-merged in
+[PR 621](https://github.com/ryancinsight/Moirai/pull/621). Its
+[Windows run](https://github.com/ryancinsight/Moirai/actions/runs/38540325048)
+passes 31 policy cases and seven installed-runtime fixtures, including the full
+Rust page fixture in 1.946s; all sixteen active checks and 446 patch compatibility
+queries pass. Metis updates seven requirements and both locks to the merged
+revision: fifteen root and eleven fuzz family records change; all 317 root and
+240 fuzz unrelated identities remain exact. Gaia 0.5.3 and independent
+moirai-webview 0.2.0 remain unchanged. The adopted graph passes 777 Rust tests,
+480 script cases, 42 doctests, strict diagnostics, twelve browser assets and
+fourteen native asset rejection cases. CLI/app/backend selected Windows
+compilation passes; actual Metis Windows acceptance remains pending.
 
 The acceptance source now requires two complete form runs through the same
 worker/journey: selected observation and ordinary production startup. Both
@@ -294,7 +304,7 @@ an observed timeout remains primary before cleanup and capture. Unavailable
 capture remains distinct from successfully read empty text. Constructor tests
 use real child streams/native errors without claiming induced OS cleanup failure.
 
-Final local verification passes 480/480 script tests in 17.666s with zero skips
+Adopted-Moirai-0.9.2 local verification passes 480/480 tests in 14.470s with zero skips
 under the unchanged 60s bound. All 987 physical source members retain exact
 membership and bytes; 960 timing records pair all 480 ordered cases. Twenty
 focused process/acceptance cases pass, and the actual compiled Metis model yields

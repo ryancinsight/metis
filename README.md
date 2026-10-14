@@ -93,7 +93,11 @@ workspace versions. The canonical Git locks record the consumed provider graph.
 The Windows private bridge encodes audit identifiers as decimal JSON strings in
 Rust, retaining every backend `u64` through WebView2's JavaScript object parsing.
 Rust owns the page protocol and lifecycle under the
-[accepted design](docs/adr/0059-windows-rust-pages.md). Windows app compilation
+[accepted design](docs/adr/0059-windows-rust-pages.md). Both standalone locks now
+consume protected Moirai 0.9.2, whose installed Rust bridge fixture verifies
+native method admission, bidirectional message bounds, callback retirement and
+profile cleanup. Metis's complete native journeys remain a separate acceptance
+gate. Windows app compilation
 requires an independently prepared Rust module. Build `metis-cli`, run
 `metis prepare metis.json` and retain its absolute inventory path in
 `METIS_WEBVIEW_ASSET_INVENTORY` before the Windows Cargo commands below; the

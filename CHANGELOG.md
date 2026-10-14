@@ -89,7 +89,7 @@
   sending application input, or extending fixture deadlines.
 - Read producer-file identity from native path metadata. Windows directory-entry
   caches omit the identity fields required to match the retained inventory.
-- Consume Moirai 0.9.1 private Rust-native startup observations only for the failing form
+- Consume private Rust-native startup observations introduced by Moirai 0.9.1 for the failing form
   verification child. A dedicated bounded JSON trace layer preserves ordinary
   INFO context; resource, runtime and selected document evidence retain their
   diagnostic role without admitting Ready or extending existing deadlines.
@@ -106,7 +106,14 @@
   later streams retain, and original errors survive persistence/cleanup failures.
   The canonical process owner attaches available captured text/child status to
   original errors and preserves observed timeout precedence before cleanup.
-  The 480-case local replay passes; actual Windows full-form acceptance remains open.
+  The adopted Moirai 0.9.2 graph passes all 480 local cases; Windows acceptance remains open.
+- Adopt the protected Moirai 0.9.2 private Rust bridge correction from
+  [PR 621](https://github.com/ryancinsight/Moirai/pull/621). Seven requirements and
+  both locks update the selected family while preserving every unrelated package
+  identity, including Gaia 0.5.3 and independent moirai-webview 0.2.0. The provider
+  passes its real Windows Rust page fixture. Metis passes 777 Rust tests, 480
+  script cases, 42 doctests, strict diagnostics and selected Windows compilation;
+  both complete native form journeys remain pending.
 
 ### Breaking
 
