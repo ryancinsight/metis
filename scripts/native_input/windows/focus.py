@@ -168,8 +168,9 @@ def _activate(user32, handle: int, focus_target: int, ledger: dict) -> bool:
     previous = user32.SetFocus(focus_target)
     focus_observation.record_attempt(ledger, previous)
     if not foreground_set:
-        keyboard.send_virtual_key(abi.VK_MENU, key_up=False)
-        keyboard.send_virtual_key(abi.VK_MENU, key_up=True)
+        (alt,) = keyboard.physical_keys((abi.VK_MENU,), recipient=keyboard.Recipient.FOREGROUND_QUEUE)
+        with alt.held():
+            pass
         foreground_set = bool(user32.SetForegroundWindow(handle))
         previous = user32.SetFocus(focus_target)
         focus_observation.record_attempt(ledger, previous)
@@ -183,8 +184,9 @@ def _activate(user32, handle: int, focus_target: int, ledger: dict) -> bool:
         # The activation right is consumed by whichever window moves
         # first, so one ALT tap can lose the race; repeat the trusted
         # tap with each bounded retry.
-        keyboard.send_virtual_key(abi.VK_MENU, key_up=False)
-        keyboard.send_virtual_key(abi.VK_MENU, key_up=True)
+        (alt,) = keyboard.physical_keys((abi.VK_MENU,), recipient=keyboard.Recipient.FOREGROUND_QUEUE)
+        with alt.held():
+            pass
         foreground_set = bool(user32.SetForegroundWindow(handle))
         previous = user32.SetFocus(focus_target)
         focus_observation.record_attempt(ledger, previous)

@@ -134,6 +134,17 @@ class Rect(ctypes.Structure):
     ]
 
 
+class GuiThreadInfo(ctypes.Structure):
+    """DWORD×2 + HWND×6 + RECT: 72 bytes on Win64; 48 bytes on Win32."""
+    _fields_ = [
+        ("byte_size", ctypes.c_uint32), ("flags", ctypes.c_uint32),
+        ("active", ctypes.c_void_p), ("focus", ctypes.c_void_p),
+        ("capture", ctypes.c_void_p), ("menu_owner", ctypes.c_void_p),
+        ("move_size", ctypes.c_void_p), ("caret", ctypes.c_void_p),
+        ("caret_rect", Rect),
+    ]
+
+
 class WindowMessage(ctypes.Structure):
     """MSG includes its reserved DWORD after POINT on both pointer widths.
 

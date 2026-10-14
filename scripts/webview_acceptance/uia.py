@@ -1,6 +1,7 @@
 """One real UI Automation actor, bounded by the scenario's process-tree deadline."""
 
 import ctypes
+from contextlib import ExitStack
 import json
 import math
 import msvcrt
@@ -147,11 +148,11 @@ class Uia:
         observation["focus_sequence"] = str(self.progress.sequence)
         observation["focus_nodes"] = [node for node in nodes if node["id"] == identifier]
         observed("before_select")
-        keyboard.send_virtual_key(0x11, key_up=False)
-        try:
-            self.key(0x41)
-        finally:
-            keyboard.send_virtual_key(0x11, key_up=True)
+        control, select = keyboard.physical_keys((0x11, 0x41))
+        with control.held():
+            with select.held():
+                pass
+            queue.flush_window(self.handle)
         _, units = keyboard.validate_text(value)
         observation["unicode_units"] = list(units)
         observed("before_unicode")
@@ -164,22 +165,39 @@ class Uia:
 
     def key(self, key: int) -> None:
         self.progress.operation("key", (str(key),))
-        keyboard.send_virtual_key(key, key_up=False)
-        keyboard.send_virtual_key(key, key_up=True)
+        stroke, = keyboard.physical_keys((key,))
+        with stroke.held():
+            pass
         queue.flush_window(self.handle)
         self.progress.mark("key_completed")
 
     def shortcut(self, letter: str) -> None:
         self.progress.operation("shortcut", (letter,))
+        observation = {"kind": "shortcut", "keys": ["Alt", "Shift", letter],
+                       "strokes": [], "stages": {}}
+        def observed(phase):
+            observation["phase"] = phase
+            observation["stages"][phase] = focus_observation.input_state(self.handle)
+            self.progress.input(observation)
+
+        observed("before_focus")
         focus.focus_window(self.handle)
-        held = (0x12, 0x10)
-        try:
-            for key in held:
-                keyboard.send_virtual_key(key, key_up=False)
-            self.key(ord(letter))
-        finally:
-            for key in reversed(held):
-                keyboard.send_virtual_key(key, key_up=True)
+        observed("before_mapping")
+        *modifiers, stroke = keyboard.physical_keys((0x12, 0x10, ord(letter)))
+        observation["strokes"] = [
+            {"virtual_key": key.virtual_key, "scan_code": key.scan_code,
+             "extended": key.extended} for key in (*modifiers, stroke)]
+        observed("before_modifiers")
+        with ExitStack() as held:
+            for key in modifiers:
+                held.enter_context(key.held())
+            observed("modifiers_inserted")
+            with stroke.held():
+                pass
+            observed("letter_inserted")
+            queue.flush_window(self.handle)
+            observed("after_sent_message_returned")
+        observed("modifiers_released")
         self.actions.append({"action": "SendInput shortcut", "keys": ["Alt", "Shift", letter]})
 
     @physical_coordinates()

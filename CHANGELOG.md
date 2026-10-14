@@ -46,6 +46,14 @@
 
 ### Fixed
 
+- Map Windows physical keys through the foreground recipient's actual layout
+  once per chord. Immutable scan records preserve E0 and release flags; absent
+  mappings and unsupported prefixes reject before input. All native callers
+  use the canonical owner; Unicode committed-text input remains unchanged.
+  Explicit system activation mapping has no focus prerequisite; scoped key
+  lifetimes preserve original failures through release. Shortcut progress retains
+  its own focus/modifier boundary and admitted scans. Portable verification
+  completes 496 cases with three Windows-only skips; native execution is pending.
 - Preserve Rustup's invocation alias during tool discovery. Canonical image
   hashes still establish proxy identity and selected compiler/Cargo bindings;
   Homebrew's `rustup-init` image no longer receives Rustup-manager arguments.

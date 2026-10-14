@@ -176,9 +176,10 @@ def run(name: str, executable: Path, fixture_executable: Path, root: Path,
                 report["runtime"] = runtime.version(process.pid, deadline)
                 if interactive:
                     focus.focus_window(bounds.handle)
+                    tab, = keyboard.physical_keys((0x09,))
                     for _ in range(WEBVIEW2_FOCUS_PRIMER_TABS):
-                        keyboard.send_virtual_key(0x09, key_up=False)
-                        keyboard.send_virtual_key(0x09, key_up=True)
+                        with tab.held():
+                            pass
                         queue.flush_window(bounds.handle)
                     uia = Uia(bounds.handle, deadline, output)
                     report["journey"] = _journey(name, uia, actual, process, trace, deadline, output)

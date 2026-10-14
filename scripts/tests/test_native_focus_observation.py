@@ -13,7 +13,7 @@ from native_input.windows import abi, focus_observation
 
 class NativeFocusObservation(unittest.TestCase):
     def test_gui_thread_record_uses_windows_scalar_widths_and_native_pointer_alignment(self):
-        record = focus_observation.GuiThreadInfo
+        record = abi.GuiThreadInfo
         pointer = ctypes.sizeof(ctypes.c_void_p)
         self.assertIn(pointer, (4, 8))
         self.assertEqual(ctypes.sizeof(abi.Rect), 16)

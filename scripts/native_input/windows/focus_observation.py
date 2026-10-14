@@ -24,17 +24,6 @@ import json
 from native_input.windows import abi
 
 
-class GuiThreadInfo(ctypes.Structure):
-    """DWORD×2 + HWND×6 + RECT: 72 bytes on Win64; 48 bytes on Win32."""
-    _fields_ = [
-        ("byte_size", ctypes.c_uint32), ("flags", ctypes.c_uint32),
-        ("active", ctypes.c_void_p), ("focus", ctypes.c_void_p),
-        ("capture", ctypes.c_void_p), ("menu_owner", ctypes.c_void_p),
-        ("move_size", ctypes.c_void_p), ("caret", ctypes.c_void_p),
-        ("caret_rect", abi.Rect),
-    ]
-
-
 def error_value(operation: str, error: BaseException) -> dict:
     return {"operation": operation, "type": type(error).__name__,
             "message": str(error), "errno": getattr(error, "errno", None),
@@ -75,7 +64,7 @@ def _api():
         function = getattr(user, name)
         function.argtypes, function.restype = [ctypes.c_void_p], ctypes.c_int32
     user.IsChild.argtypes, user.IsChild.restype = [ctypes.c_void_p, ctypes.c_void_p], ctypes.c_int32
-    user.GetGUIThreadInfo.argtypes = [ctypes.c_uint32, ctypes.POINTER(GuiThreadInfo)]
+    user.GetGUIThreadInfo.argtypes = [ctypes.c_uint32, ctypes.POINTER(abi.GuiThreadInfo)]
     user.GetGUIThreadInfo.restype = ctypes.c_int32
     kernel.GetCurrentThreadId.argtypes, kernel.GetCurrentThreadId.restype = [], ctypes.c_uint32
     return user, kernel
@@ -122,7 +111,7 @@ def _gui_thread(user, thread, errors: list, role: str) -> dict:
     result = {"thread_id": thread, "value": None}
     if not thread:
         return result
-    info = GuiThreadInfo(byte_size=ctypes.sizeof(GuiThreadInfo))
+    info = abi.GuiThreadInfo(byte_size=ctypes.sizeof(abi.GuiThreadInfo))
     success = _read(errors, role + ".GetGUIThreadInfo", user.GetGUIThreadInfo, thread, ctypes.byref(info))
     if success:
         result["value"] = {name: int(getattr(info, name) or 0)

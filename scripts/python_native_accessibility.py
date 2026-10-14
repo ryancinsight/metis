@@ -239,9 +239,10 @@ def _prepare_surface(handle: int, surface: str) -> int:
     if surface != "webview2":
         raise ValueError(f"unsupported accessibility surface: {surface!r}")
     focus.focus_window(handle)
+    (tab,) = keyboard.physical_keys((0x09,))
     for _ in range(WEBVIEW2_FOCUS_PRIMER_TABS):
-        keyboard.send_virtual_key(0x09, key_up=False)
-        keyboard.send_virtual_key(0x09, key_up=True)
+        with tab.held():
+            pass
         queue.flush_window(handle)
     return WEBVIEW2_FOCUS_PRIMER_TABS
 

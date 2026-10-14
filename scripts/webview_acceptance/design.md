@@ -360,3 +360,16 @@ call waits for its sent WM_NULL, not for queued keyboard or renderer work.
 No observation grants focus, supplies a value, retries delivery or extends a
 deadline. The scenario does not close the retired parent stderr handle after
 launch; the child and canonical stream owner retain their existing lifetimes.
+
+The patched-lock [Windows run](https://github.com/ryancinsight/metis/actions/runs/38586243542)
+passes 493 of 494 scripts with the existing Apple-only skip, all three actual
+calculations, invalid concentration rejection and Light/High Contrast selection.
+It reaches the unchanged deadline waiting for the first Dark shortcut. The last
+text-input snapshot predates that shortcut by 34.96 seconds; it does not establish
+the shortcut recipient or modifier state. Scan-code construction is nevertheless
+a source-established defect: the old injected records carry zero scans while
+Rust binds browser physical codes. The [native input contract](../native_input/design.md#physical-key-contract)
+owns its repair and real native regression. The shortcut now retains its own
+before/after focus/modifier observations and exact admitted scans, independently
+of later polling. Only another complete native journey establishes command
+delivery or closes this remaining application gate.

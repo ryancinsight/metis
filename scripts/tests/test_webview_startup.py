@@ -429,7 +429,7 @@ class StartupObservation(unittest.TestCase):
         tree = ast.parse(source)
         calls = {node.func.attr for node in ast.walk(tree)
                  if isinstance(node, ast.Call) and isinstance(node.func, ast.Attribute)}
-        self.assertEqual(calls & {"focus_window", "send_virtual_key", "send_unicode_text",
+        self.assertEqual(calls & {"focus_window", "physical_keys", "held", "send", "send_unicode_text",
                                   "send_pointer_click", "SetFocus", "PrintWindow"}, set())
         self.assertIn("capture_screen_window", calls)
         self.assertIn("window_for_processes", calls)
