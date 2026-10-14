@@ -298,3 +298,17 @@ response, progress and actor slots under `output/browser/windows-uia-regression`
 Its unchanged assertion also reports the decoded observed nodes on mismatch.
 Directory collisions preserve the platform's native exception: Windows reports
 PermissionError/errno 13 where POSIX reports FileExistsError/errno 17.
+
+The retained next Windows reply includes the nested EDIT and exact Unicode in
+its name, but reports only Pane/value-null for all four native controls. Original
+Win32 text, response bytes and successful actor cleanup agree. The missing
+standard-control projection remains distinct from the earlier form timeout.
+The actor requires the real built-in client-side provider table before its first
+query through the documented [provider registration API](https://learn.microsoft.com/en-us/dotnet/api/system.windows.automation.clientsettings.registerclientsideproviderassembly?view=netframework-4.8.1).
+A fresh assembly identity takes the loaded UIAutomationClient's version,
+culture and public-key token; actual loading must return that exact full name.
+Registration or identity failures propagate through the existing actor failure
+boundary. No substitute provider, query retry or changed value predicate applies.
+The framework may prepend its real default table during explicit registration;
+its lookup stops at the first successful factory. Installed Windows execution
+must verify the same EDIT/Unicode value before full form acceptance resumes.

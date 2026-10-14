@@ -160,6 +160,7 @@ class NativeFocusOwnership(unittest.TestCase):
             matches = [node for node in nodes if node["value"] == value]
             self.assertEqual(len(matches), 1, json.dumps(nodes, ensure_ascii=True))
             self.assertEqual(matches[0]["value"], value)
+            self.assertEqual(matches[0]["role"], "ControlType.Edit")
             raw = (output / "uia-response.json").read_bytes()
             self.assertEqual(json.loads(raw), {"schema": 1, "nodes": nodes})
             progress = json.loads((output / "uia-progress.json").read_bytes())

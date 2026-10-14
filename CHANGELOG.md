@@ -176,6 +176,15 @@ the expected Unicode value, but temporary cleanup removes its original payload.
 The regression now retains native text and complete actor evidence under the
 existing browser artifact root; the value mismatch remains unattributed.
 
+Retained Windows run 38560940328 passes both collision corrections and 491 of
+493 cases in 40.533s, with one failure and the existing Apple-only skip. Actual
+native text and UIA name/text preserve the exact eleven-unit Unicode value;
+all four UIA nodes expose Pane/value-null. Raw/progress digests agree and the
+actor exits 0. Startup now explicitly registers the real built-in client-side
+provider table with a checked assembly identity derived from the loaded client.
+Its original EDIT/value assertion and added Edit-role assertion remain Windows
+gates; no cause or correction of the earlier form timeout is established.
+
 An earlier retained 777-pass LEAK remains unattributed. One corrected-permission
 sampler replay passes 777 without LEAK in 8.052s, retaining 718 samples, 419
 process-start identities and 14,128 PIPE rows with maximum 40.146ms sample gap;

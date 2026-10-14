@@ -8,6 +8,19 @@ try {
     Add-Type -AssemblyName UIAutomationClient
     Set-UiaProgress 'assembly_types' $sequence
     Add-Type -AssemblyName UIAutomationTypes
+    $client = [System.Windows.Automation.AutomationElement].Assembly.GetName()
+    $providers = [Reflection.AssemblyName]::new()
+    $providers.Name = 'UIAutomationClientsideProviders'
+    $providers.Version = $client.Version
+    $providers.CultureInfo = $client.CultureInfo
+    $providers.SetPublicKeyToken($client.GetPublicKeyToken())
+    Set-UiaProgress 'provider_load' $sequence
+    $loaded = [Reflection.Assembly]::Load($providers)
+    if ($loaded.FullName -cne $providers.FullName) {
+        throw "UIA providers: $($loaded.FullName) != $($providers.FullName)"
+    }
+    Set-UiaProgress 'provider_register' $sequence
+    [System.Windows.Automation.ClientSettings]::RegisterClientSideProviderAssembly($providers)
     $scope = [System.Windows.Automation.TreeScope]::Descendants
     $condition = [System.Windows.Automation.Condition]::TrueCondition
     Set-UiaProgress 'stdin_read' $sequence
