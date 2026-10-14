@@ -67,6 +67,10 @@
   artifact identity and full streams retain their provenance; gallery checks
   still perform normal Cargo freshness validation. Starter uses the same
   compiler-selected executable, and general Cargo callers share one owner.
+- Admit the reported browser directory by absolute native filesystem identity
+  rather than path spelling. Relative, missing, non-directory and distinct
+  trees reject; successful child streams remain visible on report failure.
+  Admission receipts retain the actual reported and expected paths.
 
 ### Breaking
 

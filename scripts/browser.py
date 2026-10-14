@@ -16,6 +16,7 @@ import os
 import pathlib
 import shutil
 import signal
+import stat
 import subprocess
 import sys
 from typing import NamedTuple
@@ -32,6 +33,19 @@ CONTENT_SECURITY_POLICY = ROOT / "crates" / "metis-core" / "src" / "content_secu
 MAX_CONSUMER_PAGE_BYTES = 512 * 1024
 
 
+def _subprocess_diagnostics(label, command, cwd, returncode, stdout, stderr, **details) -> None:
+    """Retain complete captured bytes and the actual process/admission context."""
+    stream = sys.stderr.buffer
+    context = {"command": command, "cwd": str(cwd), "returncode": returncode, **details}
+    stream.write((label + ": " + json.dumps(context, ensure_ascii=False) + "\n").encode("utf-8"))
+    for name, data in (("stdout", stdout), ("stderr", stderr)):
+        stream.write((name + ":\n").encode("utf-8"))
+        if data is not None:
+            stream.write(data.encode("utf-8") if isinstance(data, str) else data)
+        stream.write(b"\n")
+    stream.flush()
+
+
 def run(command: list[str], *, cwd=ROOT, timeout=300, **options) -> subprocess.CompletedProcess:
     """Preserve checked-tool failure status, context, and both captured streams.
 
@@ -44,15 +58,8 @@ def run(command: list[str], *, cwd=ROOT, timeout=300, **options) -> subprocess.C
     try:
         return subprocess.run(command, cwd=cwd, check=True, timeout=timeout, **options)
     except subprocess.CalledProcessError as error:
-        stream = sys.stderr.buffer
-        context = {"command": error.cmd, "cwd": str(cwd), "returncode": error.returncode}
-        stream.write(("browser subprocess failed: " + json.dumps(context, ensure_ascii=False) + "\n").encode("utf-8"))
-        for name, data in (("stdout", error.stdout), ("stderr", error.stderr)):
-            stream.write((name + ":\n").encode("utf-8"))
-            if data is not None:
-                stream.write(data.encode("utf-8") if isinstance(data, str) else data)
-            stream.write(b"\n")
-        stream.flush()
+        _subprocess_diagnostics("browser subprocess failed", error.cmd, cwd, error.returncode,
+                                error.stdout, error.stderr)
         raise
 
 
@@ -211,6 +218,42 @@ def validate_index_policy(index: pathlib.Path) -> None:
         raise SystemExit("browser index content-security policy differs from HostPolicy source")
 
 
+def served_directory(result: subprocess.CompletedProcess[str], expected: pathlib.Path, *,
+                     cwd: pathlib.Path) -> pathlib.Path:
+    """Admit one absolute directory report with the expected filesystem identity.
+
+    Rust canonicalization and Python paths can name the same Windows directory
+    with different namespace spelling. Native stat proves the directory type;
+    samefile compares actual filesystem identity, including every alias, rather
+    than text or equal contents. No relative report or distinct tree admits.
+    Native stat errors retain their original type, path and cause. Rejections
+    retain the successful child's full streams before propagating that error.
+    """
+    try:
+        reports = result.stdout.splitlines()
+        if len(reports) != 1 or not reports[0]:
+            raise ValueError("Rust browser build must report exactly one directory")
+        served = pathlib.Path(reports[0])
+        if not served.is_absolute():
+            raise ValueError("Rust browser build reports a relative directory")
+        is_directory = stat.S_ISDIR(served.stat().st_mode)
+        if not is_directory:
+            raise ValueError("Rust browser build reports a non-directory")
+        samefile = served.samefile(expected)
+        if not samefile:
+            raise ValueError("Rust browser build reports a different served directory")
+    except (OSError, ValueError):
+        _subprocess_diagnostics("browser build report rejected", result.args, cwd, result.returncode,
+                                result.stdout, result.stderr, expected=str(expected))
+        raise
+    receipt = {"reported": str(served), "expected": str(expected),
+               "is_directory": is_directory, "samefile": samefile}
+    stream = sys.stderr.buffer
+    stream.write(("browser served directory: " + json.dumps(receipt, ensure_ascii=False) + "\n").encode("utf-8"))
+    stream.flush()
+    return served
+
+
 def build() -> None:
     """The Rust CLI owns compilation, generation, staging and its inventory."""
     validate_index_policy(SOURCE / "index.html")
@@ -220,9 +263,7 @@ def build() -> None:
         result = run([str(compile_tool().executable), "build", str(ROOT / ".config" / "browser" / "metis.json"),
                                  str(distribution)], cwd=directory, env=environment,
                                 text=True, capture_output=True, timeout=300)
-    served = pathlib.Path(result.stdout.strip())
-    if served != distribution / "app" or not served.is_dir():
-        raise SystemExit("Rust browser build does not report its exact served directory")
+        served = served_directory(result, distribution / "app", cwd=directory)
     OUTPUT.mkdir(parents=True, exist_ok=True)
     # Preserve the diagnostic server's public output path. Admission and the
     # build inventory belong to the Rust producer; diagnostics copy its bytes.

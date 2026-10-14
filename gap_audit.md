@@ -66,7 +66,7 @@ function, without an operation/path. Apple passes 759 tests, 42 doctests and
 all three bundles. Current source assembles Prefix+RootDir before filesystem
 metadata; prefix-only native behavior and every linked-ancestor check remain.
 Metadata errors retain exact native path, operation, kind and original OS cause.
-All 763 local Rust and 452 script tests, strict diagnostics and 42 doctests pass.
+All 763 local Rust and 455 script tests, strict diagnostics and 42 doctests pass.
 Actual Windows prefix/junction observations must bind the error-1 cause; full
 native archive output is retained without changing cases or deadlines. Native
 preparation, runtime and package acceptance do not run in the failed revision.
@@ -89,6 +89,16 @@ One Cargo owner retains immutable invocation/output provenance; starter uses
 its actual compiler-selected CLI. Real producer/gallery identities match and
 all 187 consumer artifact records are fresh; 452 script cases and actual
 starter/GPU-WASM/HTTP-WASM build boundaries pass. Native acceptance remains open.
+[Run 38502658016](https://github.com/ryancinsight/metis/actions/runs/38502658016)
+passes the explicit CLI producer and runs 452 Windows script cases in 21.499s:
+451 pass and one existing Apple-only case skips. The Rust browser CLI exits zero, then Python's
+lexical served-directory comparison rejects; its successful stdout is lost, so
+the actual spelling is unknown. Admission now requires an absolute existing
+directory with the expected native filesystem identity, without prefix
+rewriting. Rejection retains complete child context/streams and original OS
+errors; success records both paths and actual identity. A real browser build,
+all 12 copied inventory byte/hash records and all 455 local script cases pass.
+Actual Windows extended-path identity and subsequent native acceptance remain.
 The prior 0.4.1 source/lock evidence is retained in
 [historical records](docs/backlog/evidence.md#METIS-STANDALONE-0.4.1).
 
