@@ -71,6 +71,10 @@
   rather than path spelling. Relative, missing, non-directory and distinct
   trees reject; successful child streams remain visible on report failure.
   Admission receipts retain the actual reported and expected paths.
+- Admit preparation inventories and extracted nextest fixtures through one
+  resolved ancestor-directory identity contract. Outside hardlinks and resolved
+  link escapes reject; native errors retain their original values and gain
+  operation/path notes. No filename or Windows prefix rewrite grants ownership.
 
 ### Breaking
 

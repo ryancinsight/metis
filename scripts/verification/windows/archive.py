@@ -6,6 +6,7 @@ import json
 from pathlib import Path
 
 from webview_acceptance.fixtures import FIXTURES
+from ..native_paths import contained_file
 
 
 @dataclass(frozen=True)
@@ -47,9 +48,7 @@ def create(cargo, execute, root: Path, temporary: Path, output: Path,
               if suite.get("package-name") == "metis-app" and suite.get("binary-name") == "metis-app"]
     if len(suites) != 1:
         raise ValueError("actual nextest archive has no unique Metis application test binary")
-    fixture = Path(suites[0]["binary-path"]).resolve(strict=True)
-    if not fixture.is_file() or not fixture.is_relative_to(extracted.resolve(strict=True)):
-        raise ValueError("actual nextest fixture executable is outside its extracted archive")
+    fixture = contained_file(Path(suites[0]["binary-path"]), extracted)
     tests = suites[0].get("testcases", {})
     if any(tests.get(name, {}).get("ignored") is not True for name in FIXTURES.values()):
         raise ValueError("actual nextest archive omits a required explicit installed-runtime fixture")

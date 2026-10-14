@@ -5,6 +5,7 @@ from pathlib import Path
 import sys
 
 from webview_acceptance.compiler import executable
+from ..native_paths import contained_file
 from . import archive
 
 
@@ -23,13 +24,7 @@ def prepare(execute, command, root: Path, output: Path, nonce: str) -> Path:
     lines = result.splitlines()
     if len(lines) != 1:
         raise ValueError("canonical metis prepare must return only one inventory path")
-    inventory = Path(lines[0])
-    if not inventory.is_absolute():
-        raise ValueError("canonical metis prepare returns a nonabsolute inventory")
-    inventory = inventory.resolve(strict=True)
-    if not inventory.is_file() or not inventory.is_relative_to(directory.resolve(strict=True)):
-        raise ValueError("canonical prepared inventory is outside its owned output directory")
-    return inventory
+    return contained_file(Path(lines[0]), directory)
 
 
 def acceptance(execute, root: Path, output: Path, metadata: dict,

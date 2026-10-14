@@ -66,7 +66,7 @@ function, without an operation/path. Apple passes 759 tests, 42 doctests and
 all three bundles. Current source assembles Prefix+RootDir before filesystem
 metadata; prefix-only native behavior and every linked-ancestor check remain.
 Metadata errors retain exact native path, operation, kind and original OS cause.
-All 763 local Rust and 455 script tests, strict diagnostics and 42 doctests pass.
+All 763 local Rust and 460 script tests, strict diagnostics and 42 doctests pass.
 Actual Windows prefix/junction observations must bind the error-1 cause; full
 native archive output is retained without changing cases or deadlines. Native
 preparation, runtime and package acceptance do not run in the failed revision.
@@ -98,7 +98,28 @@ directory with the expected native filesystem identity, without prefix
 rewriting. Rejection retains complete child context/streams and original OS
 errors; success records both paths and actual identity. A real browser build,
 all 12 copied inventory byte/hash records and all 455 local script cases pass.
-Actual Windows extended-path identity and subsequent native acceptance remain.
+[Run 38504191516](https://github.com/ryancinsight/metis/actions/runs/38504191516)
+runs 455 Windows cases in 29.842s: 454 pass and one existing Apple-only case
+skips. The browser directory receipt retains actual extended and ordinary
+Windows paths with matching native identity; all 12 asset records pass.
+Apple passes 763 tests, 42 doctests and three bundles; five guards and all 14
+fuzz targets pass (113,649,656 executions). Rust preparation then fails with
+native NotFound after successful release check. Its exact failed operation/path
+is absent; native page, destruction and packaged acceptance do not run.
+
+Preparation inventories and extracted fixtures now share one strict resolved
+file-containment owner. A regular file belongs only when an actual ancestor's
+native identity matches its owned directory. An outside hardlink's file identity
+cannot grant ancestry, and resolved symlink/junction escapes reject. Native
+errors retain exact values with operation/path notes. Five real filesystem
+cases and the full 460-case local suite pass in 15.848s with zero skips; all 455
+prior cases retain their order and all 964 source hashes remain unchanged during
+verification. Actual Windows alias/junction dimensions await CI. The co-located
+[contract](scripts/verification/native_paths.py) records the observation model.
+Pinned Cargo source and actual Windows events independently prove the current
+per-filename dep-info assumption invalid for auxiliary/debug companions. A repair
+must retain every primary file and environment input; it cannot omit companion
+errors by treating missing files as successful input discovery.
 The prior 0.4.1 source/lock evidence is retained in
 [historical records](docs/backlog/evidence.md#METIS-STANDALONE-0.4.1).
 
