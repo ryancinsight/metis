@@ -66,10 +66,19 @@ function, without an operation/path. Apple passes 759 tests, 42 doctests and
 all three bundles. Current source assembles Prefix+RootDir before filesystem
 metadata; prefix-only native behavior and every linked-ancestor check remain.
 Metadata errors retain exact native path, operation, kind and original OS cause.
-All 763 local Rust and 447 script tests, strict diagnostics and 42 doctests pass.
+All 763 local Rust and 450 script tests, strict diagnostics and 42 doctests pass.
 Actual Windows prefix/junction observations must bind the error-1 cause; full
 native archive output is retained without changing cases or deadlines. Native
 preparation, runtime and package acceptance do not run in the failed revision.
+[Run 38497592686](https://github.com/ryancinsight/metis/actions/runs/38497592686)
+passes Apple 763/42/three bundles, five guards and all 14 fuzz targets
+(135,306,079 executions). Windows reaches the unchanged global 60-second script
+bound after 61 passes and one Apple-only skip, with the 63rd case active.
+No browser/native stage runs. The active cleanup case is not established as the
+cause. Standard and final timed local suites pass the same 450 ordered cases;
+all 447 prior cases remain. Verbose-only monotonic records preserve stdlib
+results, human output, compact modes, exit status and the outer process bound.
+[METIS-SCRIPT-BUDGET](backlog.md#METIS-SCRIPT-BUDGET) owns actual Windows attribution.
 The prior 0.4.1 source/lock evidence is retained in
 [historical records](docs/backlog/evidence.md#METIS-STANDALONE-0.4.1).
 

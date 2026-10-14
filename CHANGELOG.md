@@ -60,6 +60,9 @@
   querying filesystem ancestors. Prefix-only paths retain native behavior and
   linked ancestors still reject before parent components can erase them.
   Metadata failures retain the operation, native path and original OS cause.
+- Verbose script verification retains flushed per-case monotonic timing and
+  cumulative standard results. Standard discovery, outcomes, compact output
+  modes, exit status and the 60-second process-group bound remain unchanged.
 
 ### Breaking
 
