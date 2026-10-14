@@ -185,6 +185,16 @@ provider table with a checked assembly identity derived from the loaded client.
 Its original EDIT/value assertion and added Edit-role assertion remain Windows
 gates; no cause or correction of the earlier form timeout is established.
 
+Equivalent-runtime Windows run 38563038128 admits the matching assembly, then
+direct registration throws NullReferenceException before any query. Its 493
+cases yield 491 passes, one error and the existing Apple-only skip in 39.354s.
+Registration now invokes the same public static SDK method through its typed
+MethodInfo and retains the complete original exception. The complete actor
+program persists with a UTF-16LE BOM and launches through -File; canonical
+stream ownership transfers stderr to the child. Native execution must verify
+registration and the unchanged EDIT/value assertion; the prior inner framework
+site and original form-timeout cause remain unobserved.
+
 An earlier retained 777-pass LEAK remains unattributed. One corrected-permission
 sampler replay passes 777 without LEAK in 8.052s, retaining 718 samples, 419
 process-start identities and 14,128 PIPE rows with maximum 40.146ms sample gap;

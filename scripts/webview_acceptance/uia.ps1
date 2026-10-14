@@ -20,7 +20,12 @@ try {
         throw "UIA providers: $($loaded.FullName) != $($providers.FullName)"
     }
     Set-UiaProgress 'provider_register' $sequence
-    [System.Windows.Automation.ClientSettings]::RegisterClientSideProviderAssembly($providers)
+    $register = [System.Windows.Automation.ClientSettings].GetMethod(
+        'RegisterClientSideProviderAssembly', [type[]]@([Reflection.AssemblyName]))
+    if ($null -eq $register -or -not $register.IsStatic) {
+        throw [MissingMethodException]::new('Public static UIA provider assembly registration is unavailable')
+    }
+    $null = $register.Invoke($null, [object[]]@($providers))
     $scope = [System.Windows.Automation.TreeScope]::Descendants
     $condition = [System.Windows.Automation.Condition]::TrueCondition
     Set-UiaProgress 'stdin_read' $sequence
@@ -125,6 +130,8 @@ try {
     }
 } catch {
     $primary = $_
+    try { [Console]::Error.WriteLine($primary.Exception.ToString()) }
+    catch { $primary.Exception.Data['uia_stderr_write'] = $_.Exception }
     throw
 } finally {
     Close-UiaProgress $primary

@@ -1,7 +1,6 @@
 """One real UI Automation actor, bounded by the scenario's process-tree deadline."""
 
 import ctypes
-import base64
 import json
 import math
 import msvcrt
@@ -16,6 +15,7 @@ from python_native_accessibility import MAX_UIA_NODES, UIA_POLL_MILLISECONDS
 
 from .contract import MAX_UIA_BYTES
 from .progress import Progress
+from .retention import publish, streams
 
 
 class Uia:
@@ -23,23 +23,26 @@ class Uia:
         self.handle = handle
         self.deadline = deadline
         self.progress = Progress(output)
-        self.error = (output / "uia.log").open("wb")
         # PowerShell's lexer recognizes five single-quote code points. Each
         # literal occurrence doubles, including curly quotes in native paths.
         # https://github.com/PowerShell/PowerShell/blob/master/src/System.Management.Automation/engine/parser/CharTraits.cs
-        # Paths remain data; avoiding a second base64/JSON layer also retains
-        # command-line space for native Unicode paths under CreateProcessW.
+        # Paths remain data in the complete owned UTF-16 script. CreateProcessW
+        # receives its path instead of the expanding encoded program body.
         quotes = {ord(quote): quote * 2 for quote in "'‘’‚‛"}
         paths = ",".join("'" + str(path).translate(quotes) + "'"
                          for path in self.progress.actor_paths)
         helper = Path(__file__).with_name("uia_progress.ps1").read_text(encoding="utf-8")
         initialize = f"Initialize-UiaProgress @{{paths=@({paths});maximum_bytes={MAX_UIA_BYTES}}}\n"
         program = helper + "\n" + initialize + Path(__file__).with_suffix(".ps1").read_text(encoding="utf-8")
-        self.process = subprocess.Popen(
-            ["powershell.exe", "-NoProfile", "-NonInteractive", "-EncodedCommand",
-             base64.b64encode(program.encode("utf-16-le")).decode("ascii")],
-            stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=self.error,
-        )
+        path = self.progress.actor_paths[0].with_name("uia-program.ps1")
+        publish(path, b"\xff\xfe" + program.encode("utf-16-le"))
+        # Popen duplicates the redirected native handle for the child. Closing
+        # the parent's log after successful launch leaves that child owner live.
+        with streams((path.with_name("uia.log"),)) as (error,):
+            self.process = subprocess.Popen(
+                ["powershell.exe", "-NoProfile", "-NonInteractive", "-File", str(path)],
+                stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=error,
+            )
         self.actions = []
         self.latest = []
 
@@ -188,7 +191,6 @@ class Uia:
         self.progress.mark("actor_exit_wait")
         status = self.process.wait(timeout=self.remaining())
         self.process.stdout.close()
-        self.error.close()
         self.progress.mark("actor_collected", returncode=status)
         if status != 0:
             raise RuntimeError(f"actual UIA actor exits with {status}")

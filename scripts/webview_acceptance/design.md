@@ -312,3 +312,20 @@ boundary. No substitute provider, query retry or changed value predicate applies
 The framework may prepend its real default table during explicit registration;
 its lookup stops at the first successful factory. Installed Windows execution
 must verify the same EDIT/Unicode value before full form acceptance resumes.
+
+An equivalent-runtime Windows run loads the matching provider assembly, then
+the direct PowerShell registration call throws NullReferenceException before
+any query. The retained message does not identify its inner framework stack.
+Registration now invokes the same public static method through its typed
+MethodInfo; failure retains the original exception, the stored error record for
+cleanup and its complete stderr context. No alternate provider or retry follows.
+
+The complete helper, literal paths and actor persist as one atomic UTF-16LE
+source file with a BOM before launch. PowerShell receives that owned path through
+`-File`; program growth no longer expands its CreateProcess command line.
+This source file remains in the original browser artifact root beside the
+bounded progress and response files. The canonical stream owner closes the
+parent's stderr descriptor after Popen transfers its duplicated native handle
+to the child. The child owns that handle until exit; a failed launch retains its
+original exception and any actual parent-stream closure error. The UTF-8 request
+protocol, actor apartment, native query/getter order and deadlines remain intact.
