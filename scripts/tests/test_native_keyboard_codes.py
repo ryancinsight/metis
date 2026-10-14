@@ -26,7 +26,8 @@ from native_input.windows import abi, focus, keyboard
 
 @unittest.skipUnless(sys.platform == "win32", "real keyboard scan delivery requires Windows")
 class NativeKeyboardCodes(unittest.TestCase):
-    SIMPLE = (0x44, 0x0D, 0x27)  # D, Return, extended Right.
+    SIMPLE = (0x44, 0x0D, 0x27)  # D, Return, logical Right.
+    EXTENDED = (0xA3,)  # Side-specific Right Control has the E0 1D scan.
     CHORD = (0x12, 0x10, 0x44)  # Alt, Shift, D.
     DOMAIN = (0x11, 0x0D)  # Named Control+Enter input operation.
     BODY = (0x44,)  # One held D whose real filesystem body fails.
@@ -38,8 +39,8 @@ class NativeKeyboardCodes(unittest.TestCase):
         self.events, self.callback_errors = [], []
         self.prepare_surface = _prepare_surface
         self.primer_tabs = WEBVIEW2_FOCUS_PRIMER_TABS
-        self.maximum_events = 2 * (len(self.SIMPLE) + len(self.CHORD) + len(self.DOMAIN)
-                                   + len(self.BODY) + self.primer_tabs)
+        self.maximum_events = 2 * (len(self.SIMPLE) + len(self.EXTENDED) + len(self.CHORD)
+                                   + len(self.DOMAIN) + len(self.BODY) + self.primer_tabs)
         self.user = ctypes.WinDLL("user32", use_last_error=True)
         self.bind()
         previous = int(self.user.GetForegroundWindow() or 0)
@@ -238,6 +239,28 @@ class NativeKeyboardCodes(unittest.TestCase):
             self.assertTrue(event["alt_context"])
             self.assertEqual(event["modifiers"], {"alt": True, "shift": True, "control": False})
 
+    def check_extended_control(self, strokes, native, layout):
+        key = self.EXTENDED[0]
+        mapping = native[key]
+        roundtrip = self.user.MapVirtualKeyExW(mapping, 3, layout)
+        with self.subTest(requested_virtual_key=key, native_map4=mapping, native_map3=roundtrip,
+                          stroke=strokes[key], actual_events=self.events):
+            self.assertEqual(mapping, 0xE01D)
+            self.assertEqual(roundtrip, key)
+            before = len(self.events)
+            self.deliver((strokes[key],))
+            self.collect(before + 2 * len(self.EXTENDED))
+            down, up = self.events[before:]
+            expected = {"window": self.edit, "virtual_key": 0x11, "scan": 0x1D, "extended": True}
+            for event in (down, up):
+                self.assertEqual({name: event[name] for name in expected}, expected)
+            self.assertEqual((down["message"], up["message"]), (0x100, 0x101))
+            self.assertEqual((down["released"], up["released"]), (False, True))
+            self.assertEqual((down["previously_down"], up["previously_down"]), (False, True))
+            self.assertEqual([event["modifiers"] for event in (down, up)],
+                             [{"alt": False, "shift": False, "control": True},
+                              {"alt": False, "shift": False, "control": False}])
+
     def check_named_shortcut(self, layout):
         before = len(self.events)
         keyboard.send_shortcut("control-enter")
@@ -318,34 +341,36 @@ class NativeKeyboardCodes(unittest.TestCase):
         self.assertGreater(thread, 0)
         layout = self.user.GetKeyboardLayout(thread)
         self.assertNotEqual(layout, None)
-        virtuals = tuple(dict.fromkeys(self.CHORD + self.SIMPLE))
+        virtuals = tuple(dict.fromkeys(self.CHORD + self.SIMPLE + self.EXTENDED))
         native = {key: self.user.MapVirtualKeyExW(key, 4, layout) for key in virtuals}
-        strokes = dict(zip(virtuals, keyboard.physical_keys(virtuals), strict=True))
-        repeated = keyboard.physical_keys((0x44, 0x44))
-        self.assertIs(repeated[0], repeated[1])
-        self.assertEqual((repeated[0].virtual_key, repeated[0].scan_code, repeated[0].extended),
-                         (0x44, native[0x44] & 0xFF, native[0x44] >> 8 == 0xE0))
-        for key in self.SIMPLE:
-            with self.subTest(virtual_key=key):
-                before = len(self.events)
-                self.deliver((strokes[key],))
-                self.collect(before + 2)
-                self.assert_pair(self.events[before:], key, native[key])
-        right = [event for event in self.events if event["virtual_key"] == 0x27]
-        self.assertEqual([event["extended"] for event in right], [True, True])
-        self.check_chord(strokes, native)
-        self.check_named_shortcut(layout)
-        self.check_surface_primer(layout)
-        self.check_held_failure(strokes, native)
-        # VK_LBUTTON is a real SDK virtual key without a keyboard scan mapping.
-        self.assertEqual(self.user.MapVirtualKeyExW(0x01, 4, layout), 0)
-        with self.assertRaises(ValueError):
-            keyboard.physical_keys((0x01,))
-        self.check_unfocused_mapping()
-        self.pump()
-        self.assertEqual(len(self.events), self.maximum_events)
-        self.assertEqual(self.callback_errors, [])
-        self.remaining()
+        strokes = {}
+        with self.subTest(hkl=int(layout), requested_virtual_keys=virtuals,
+                          native_map4=native, strokes=strokes, actual_events=self.events):
+            strokes.update(zip(virtuals, keyboard.physical_keys(virtuals), strict=True))
+            repeated = keyboard.physical_keys((0x44, 0x44))
+            self.assertIs(repeated[0], repeated[1])
+            self.assertEqual((repeated[0].virtual_key, repeated[0].scan_code, repeated[0].extended),
+                             (0x44, native[0x44] & 0xFF, native[0x44] >> 8 == 0xE0))
+            for key in self.SIMPLE:
+                with self.subTest(virtual_key=key):
+                    before = len(self.events)
+                    self.deliver((strokes[key],))
+                    self.collect(before + 2)
+                    self.assert_pair(self.events[before:], key, native[key])
+            self.check_extended_control(strokes, native, layout)
+            self.check_chord(strokes, native)
+            self.check_named_shortcut(layout)
+            self.check_surface_primer(layout)
+            self.check_held_failure(strokes, native)
+            # VK_LBUTTON is a real SDK virtual key without a keyboard scan mapping.
+            self.assertEqual(self.user.MapVirtualKeyExW(0x01, 4, layout), 0)
+            with self.assertRaises(ValueError):
+                keyboard.physical_keys((0x01,))
+            self.check_unfocused_mapping()
+            self.pump()
+            self.assertEqual(len(self.events), self.maximum_events)
+            self.assertEqual(self.callback_errors, [])
+            self.remaining()
 
 
 if __name__ == "__main__":

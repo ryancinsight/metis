@@ -53,7 +53,12 @@
   Explicit system activation mapping has no focus prerequisite; scoped key
   lifetimes preserve original failures through release. Shortcut progress retains
   its own focus/modifier boundary and admitted scans. Portable verification
-  completes 496 cases with three Windows-only skips; native execution is pending.
+  completes 496 cases in 17.015s with three Windows-only skips; native execution
+  is pending.
+- Preserve SDK-selected Right-arrow scan identity and test E0 independently with
+  right-Control. The real native case verifies its side-distinguishing reverse
+  mapping, generic legacy message and modifier transitions; raw layout/mapping
+  and delivered events accompany failures. Both Right scan forms remain tested.
 - Preserve Rustup's invocation alias during tool discovery. Canonical image
   hashes still establish proxy identity and selected compiler/Cargo bindings;
   Homebrew's `rustup-init` image no longer receives Rustup-manager arguments.

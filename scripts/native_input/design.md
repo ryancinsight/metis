@@ -69,10 +69,19 @@ executed host/layout only; arbitrary-layout shortcut parity remains unverified.
 Portable tests inspect exact scan/flag fields and reject zero/E1/unknown-prefix
 records. A visible real Windows EDIT subclass observes actual SendInput
 WM_KEYDOWN/UP and WM_SYSKEYDOWN/UP scan, extended, transition and modifier bits,
-including a letter, Alt+Shift+D, E0 navigation, control-enter and the real
+including a letter, Alt+Shift+D, SDK-mapped navigation, E0 right-Control,
+control-enter and the real
 WebView2 focus primer. A single five-second message-pump deadline covers the
 fixture. The complete unchanged sixty-second application journey must still
 verify browser delivery, commands, calculations and closure.
+The Windows key table distinguishes dedicated RightArrow E04D from keypad
+Right 004D. Logical VK_RIGHT does not identify that cluster: its delivered
+scan/prefix must match the actual layout mapping, rather than a forced E0
+expectation. Side-distinguishing VK_RCONTROL supplies the separate E0 oracle:
+scan E01D, reverse mapping to VK_RCONTROL, legacy message VK_CONTROL, and actual
+control state set on down and clear on up. Both Right forms retain portable
+record tests; the native test preserves its Right case and adds right-Control.
+Failures retain the actual HKL, full SDK mappings, strokes and native messages.
 Shortcut evidence retains its own bounded before/after native focus/modifier
 reads and admitted strokes across later UIA polling. They are observations,
 not delivery acknowledgements. Existing query order, predicates and budgets
@@ -81,6 +90,7 @@ remain authoritative; timeout causes require actual native execution.
 Sources: [scan record](https://learn.microsoft.com/en-us/windows/win32/api/winuser/ns-winuser-keybdinput),
 [layout mapping](https://learn.microsoft.com/en-us/windows/win32/api/winuser/nf-winuser-mapvirtualkeyexw),
 [recipient layout](https://learn.microsoft.com/en-us/windows/win32/api/winuser/nf-winuser-getkeyboardlayout),
+[physical key table](https://learn.microsoft.com/en-us/windows/win32/inputdev/about-keyboard-input),
 [Chromium input owner](https://chromium.googlesource.com/chromium/src/+/main/ui/base/test/ui_controls_internal_win.cc).
 
 The absolute move record uses MOVE (0x0001), VIRTUALDESK (0x4000) and ABSOLUTE
