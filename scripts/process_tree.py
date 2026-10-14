@@ -12,6 +12,8 @@ import time
 from collections.abc import Mapping, Sequence
 from dataclasses import dataclass
 
+from process_tools import windows_job
+
 
 PROCESS_TREE_CLEANUP_SECONDS = 10.0
 _WINDOWS_PROCESS_BOOTSTRAP = """
@@ -50,8 +52,8 @@ class ProcessTreeTimeout(subprocess.TimeoutExpired):
         self,
         command: Sequence[str],
         timeout: float,
-        stdout: str,
-        stderr: str,
+        stdout: str | None,
+        stderr: str | None,
         cleanup_error: str | None,
     ) -> None:
         super().__init__(command, timeout, output=stdout, stderr=stderr)
@@ -67,135 +69,25 @@ class _CleanupState:
     deadline: float | None = None
 
 
+@dataclass
+class _ProcessState:
+    """Track only resources actually acquired by the current command."""
+
+    process: subprocess.Popen[bytes] | None = None
+    job: int | None = None
+    status_read: int | None = None
+    status_write: int | None = None
+
+
 def _merge_errors(*errors: str | None) -> str | None:
     messages = [error for error in errors if error]
     return "; ".join(messages) if messages else None
 
 
-def _create_windows_kill_job(process: subprocess.Popen[bytes]) -> int:
-    """Assign a held bootstrap to a kill-on-close Windows Job Object.
-
-    This follows the established Atlas runner in
-    ``kwavers/scripts/integration_tests.py``. The bootstrap does not create the
-    requested command until assignment succeeds, closing the descendant race
-    between process creation and Job Object ownership.
-    """
-    import ctypes
-    from ctypes import wintypes
-
-    class LargeInteger(ctypes.Structure):
-        _fields_ = [("quad_part", ctypes.c_longlong)]
-
-    class BasicLimitInformation(ctypes.Structure):
-        _fields_ = [
-            ("per_process_user_time_limit", LargeInteger),
-            ("per_job_user_time_limit", LargeInteger),
-            ("limit_flags", wintypes.DWORD),
-            ("minimum_working_set_size", ctypes.c_size_t),
-            ("maximum_working_set_size", ctypes.c_size_t),
-            ("active_process_limit", wintypes.DWORD),
-            ("affinity", ctypes.c_size_t),
-            ("priority_class", wintypes.DWORD),
-            ("scheduling_class", wintypes.DWORD),
-        ]
-
-    class IoCounters(ctypes.Structure):
-        _fields_ = [
-            ("read_operation_count", ctypes.c_ulonglong),
-            ("write_operation_count", ctypes.c_ulonglong),
-            ("other_operation_count", ctypes.c_ulonglong),
-            ("read_transfer_count", ctypes.c_ulonglong),
-            ("write_transfer_count", ctypes.c_ulonglong),
-            ("other_transfer_count", ctypes.c_ulonglong),
-        ]
-
-    class ExtendedLimitInformation(ctypes.Structure):
-        _fields_ = [
-            ("basic_limit_information", BasicLimitInformation),
-            ("io_info", IoCounters),
-            ("process_memory_limit", ctypes.c_size_t),
-            ("job_memory_limit", ctypes.c_size_t),
-            ("peak_process_memory_used", ctypes.c_size_t),
-            ("peak_job_memory_used", ctypes.c_size_t),
-        ]
-
-    kernel32 = ctypes.WinDLL("kernel32", use_last_error=True)
-    kernel32.CreateJobObjectW.argtypes = [ctypes.c_void_p, wintypes.LPCWSTR]
-    kernel32.CreateJobObjectW.restype = wintypes.HANDLE
-    kernel32.SetInformationJobObject.argtypes = [
-        wintypes.HANDLE,
-        ctypes.c_int,
-        ctypes.c_void_p,
-        wintypes.DWORD,
-    ]
-    kernel32.SetInformationJobObject.restype = wintypes.BOOL
-    kernel32.AssignProcessToJobObject.argtypes = [wintypes.HANDLE, wintypes.HANDLE]
-    kernel32.AssignProcessToJobObject.restype = wintypes.BOOL
-    kernel32.CloseHandle.argtypes = [wintypes.HANDLE]
-    kernel32.CloseHandle.restype = wintypes.BOOL
-
-    job = kernel32.CreateJobObjectW(None, None)
-    if not job:
-        raise ctypes.WinError(ctypes.get_last_error())
-    information = ExtendedLimitInformation()
-    information.basic_limit_information.limit_flags = 0x00002000
-    if not kernel32.SetInformationJobObject(
-        job, 9, ctypes.byref(information), ctypes.sizeof(information)
-    ):
-        error = ctypes.WinError(ctypes.get_last_error())
-        if kernel32.CloseHandle(job):
-            raise error
-        close_error = ctypes.WinError(ctypes.get_last_error())
-        raise OSError(f"{error}; job handle close failed: {close_error}") from error
-
-    process_handle = getattr(process, "_handle", None)
-    if process_handle is None or not kernel32.AssignProcessToJobObject(
-        job, wintypes.HANDLE(int(process_handle))
-    ):
-        error = ctypes.WinError(ctypes.get_last_error())
-        if kernel32.CloseHandle(job):
-            raise error
-        close_error = ctypes.WinError(ctypes.get_last_error())
-        raise OSError(f"{error}; job handle close failed: {close_error}") from error
-    return int(job)
-
-
-def _close_windows_job(job: int) -> str | None:
-    import ctypes
-    from ctypes import wintypes
-
-    kernel32 = ctypes.WinDLL("kernel32", use_last_error=True)
-    kernel32.CloseHandle.argtypes = [wintypes.HANDLE]
-    kernel32.CloseHandle.restype = wintypes.BOOL
-    if kernel32.CloseHandle(wintypes.HANDLE(job)):
-        return None
-    return f"job handle close failed: {ctypes.WinError(ctypes.get_last_error())}"
-
-
-def _terminate_windows_job(job: int, timeout_seconds: float) -> str | None:
-    import ctypes
-    from ctypes import wintypes
-
-    kernel32 = ctypes.WinDLL("kernel32", use_last_error=True)
-    kernel32.TerminateJobObject.argtypes = [wintypes.HANDLE, wintypes.UINT]
-    kernel32.TerminateJobObject.restype = wintypes.BOOL
-    kernel32.WaitForSingleObject.argtypes = [wintypes.HANDLE, wintypes.DWORD]
-    kernel32.WaitForSingleObject.restype = wintypes.DWORD
-    if not kernel32.TerminateJobObject(wintypes.HANDLE(job), 1):
-        return f"job termination failed: {ctypes.WinError(ctypes.get_last_error())}"
-    milliseconds = max(0, min(round(timeout_seconds * 1000), 0xFFFFFFFE))
-    wait_status = kernel32.WaitForSingleObject(wintypes.HANDLE(job), milliseconds)
-    if wait_status == 0:
-        return None
-    if wait_status == 0x00000102:
-        return f"process tree did not exit within {timeout_seconds:g} seconds"
-    if wait_status == 0xFFFFFFFF:
-        return f"job wait failed: {ctypes.WinError(ctypes.get_last_error())}"
-    return f"job wait returned unexpected status {wait_status}"
 
 
 def _terminate_process_tree(
-    process: subprocess.Popen[bytes], windows_job: int | None, state: _CleanupState
+    process: subprocess.Popen[bytes], job: int | None, state: _CleanupState
 ) -> str | None:
     """Stop the owned tree and bound collection of its launcher."""
     if state.deadline is None:
@@ -207,11 +99,11 @@ def _terminate_process_tree(
         # interrupted syscall may therefore retry safely; confirmation is
         # recorded only after the destructive request returns.
         if sys.platform == "win32":
-            if windows_job is None:
+            if job is None:
                 error = "process was not assigned to a Windows kill-on-close job"
             else:
                 remaining = max(0.0, cleanup_deadline - time.monotonic())
-                error = _terminate_windows_job(windows_job, remaining)
+                error = windows_job.terminate(job, remaining)
         else:
             try:
                 os.killpg(process.pid, signal.SIGKILL)
@@ -308,6 +200,100 @@ def _read_posix_status(status: int, timeout: float) -> int | None:
     raise RuntimeError(f"process supervisor returned invalid status: {message!r}")
 
 
+def _launch(arguments, cwd, environment, stdout, stderr, state: _ProcessState) -> None:
+    if sys.platform == "win32":
+        command = [sys.executable, "-c", _WINDOWS_PROCESS_BOOTSTRAP, *arguments]
+        options = {"creationflags": subprocess.CREATE_NEW_PROCESS_GROUP, "stdin": subprocess.PIPE}
+    else:
+        state.status_read, state.status_write = os.pipe()
+        command = [sys.executable, "-c", _POSIX_PROCESS_SUPERVISOR, str(state.status_write), *arguments]
+        options = {"pass_fds": (state.status_write,), "start_new_session": True}
+    state.process = subprocess.Popen(command, cwd=cwd, env=environment, stdout=stdout, stderr=stderr, **options)
+    if state.status_write is not None:
+        os.close(state.status_write)
+        state.status_write = None
+    if sys.platform == "win32":
+        try:
+            state.job = windows_job.create(state.process)
+        except OSError as error:
+            raise RuntimeError(f"failed to establish process-tree ownership: {error}") from error
+
+
+def _wait_command(state: _ProcessState, deadline: float) -> tuple[int | None, bool]:
+    process = state.process
+    if process is None:
+        raise RuntimeError("process-tree command has no acquired launcher")
+    if sys.platform == "win32":
+        remaining = deadline - time.monotonic()
+        if remaining <= 0:
+            return None, True
+        if process.stdin is None:
+            raise RuntimeError("Windows process-tree bootstrap has no control pipe")
+        process.stdin.write(b"1")
+        process.stdin.close()
+    remaining = deadline - time.monotonic()
+    if remaining <= 0:
+        return None, True
+    if sys.platform != "win32":
+        if state.status_read is None:
+            raise RuntimeError("process-tree command has no acquired status pipe")
+        status = _read_posix_status(state.status_read, remaining)
+        return status, status is None
+    try:
+        process.wait(timeout=remaining)
+    except subprocess.TimeoutExpired:
+        return None, True
+    return process.returncode, False
+
+
+def _close_controls(state: _ProcessState) -> tuple[list[BaseException], str | None]:
+    failures = []
+    if state.process is not None and state.process.stdin is not None and not state.process.stdin.closed:
+        try:
+            state.process.stdin.close()
+        except BaseException as error:
+            error.add_note("closing actual process-tree bootstrap input")
+            failures.append(error)
+    for descriptor in (state.status_write, state.status_read):
+        if descriptor is not None:
+            try:
+                os.close(descriptor)
+            except BaseException as error:
+                error.add_note(f"closing actual process-tree status descriptor {descriptor}")
+                failures.append(error)
+    close_error = None
+    if state.job is not None:
+        try:
+            close_error = windows_job.close(state.job)
+        except BaseException as error:
+            error.add_note("closing actual Windows kill-on-close Job Object")
+            failures.append(error)
+    return failures, close_error
+
+
+def _outcome(arguments, returncode, stdout, stderr, cleanup_error, primary):
+    """Publish available canonical text on the original failure object.
+
+    None denotes unavailable capture after an actual allocation/read failure.
+    Empty text denotes a successful read that observes no output. The real child
+    status remains None when no status was observed; no launcher status replaces it.
+    """
+    if primary is None and cleanup_error is not None:
+        primary = RuntimeError(f"process-tree cleanup failed: {cleanup_error}")
+    if primary is not None:
+        primary.cmd = arguments
+        primary.returncode = returncode
+        primary.stdout = stdout
+        primary.stderr = stderr
+        primary.cleanup_error = cleanup_error
+        if cleanup_error is not None:
+            primary.add_note(f"process-tree cleanup failed: {cleanup_error}")
+        raise primary
+    if stdout is None or stderr is None:
+        raise RuntimeError("process-tree outcome has unavailable capture without a failure")
+    return subprocess.CompletedProcess(arguments, returncode, stdout, stderr)
+
+
 def run(
     command: Sequence[str],
     *,
@@ -315,126 +301,69 @@ def run(
     env: Mapping[str, str] | None = None,
     timeout: float,
 ) -> subprocess.CompletedProcess[str]:
-    """Run ``command`` and retire its owned process tree within finite bounds."""
+    """Run one owned tree; failures retain available text, status and native cause."""
     if timeout <= 0:
         raise ValueError("process timeout must be greater than zero")
     arguments = list(command)
-    started = time.monotonic()
-    deadline = started + timeout
-    windows_job: int | None = None
-    process: subprocess.Popen[bytes] | None = None
-    command_returncode: int | None = None
-    status_read: int | None = None
-    status_write: int | None = None
-    timed_out = False
-    cleanup_error: str | None = None
-    caught_error: BaseException | None = None
-    cleanup_state = _CleanupState()
-    with tempfile.TemporaryFile(mode="w+b") as stdout, tempfile.TemporaryFile(
-        mode="w+b"
-    ) as stderr:
-        if sys.platform == "win32":
-            launch_command = [sys.executable, "-c", _WINDOWS_PROCESS_BOOTSTRAP, *arguments]
-            process_options = {
-                "creationflags": subprocess.CREATE_NEW_PROCESS_GROUP,
-                "stdin": subprocess.PIPE,
-            }
-        else:
-            status_read, status_write = os.pipe()
-            launch_command = [
-                sys.executable,
-                "-c",
-                _POSIX_PROCESS_SUPERVISOR,
-                str(status_write),
-                *arguments,
-            ]
-            process_options = {
-                "pass_fds": (status_write,),
-                "start_new_session": True,
-            }
+    deadline = time.monotonic() + timeout
+    state, cleanup_state = _ProcessState(), _CleanupState()
+    primary = None
+    failures = []
+    cleanup_error = None
+    returncode, timed_out = None, False
+    captures = []
+    texts = [None, None]
+    try:
+        captures.append(tempfile.TemporaryFile(mode="w+b"))
+        captures.append(tempfile.TemporaryFile(mode="w+b"))
         try:
-            process = subprocess.Popen(
-                launch_command,
-                cwd=cwd,
-                env=env,
-                stdout=stdout,
-                stderr=stderr,
-                **process_options,
-            )
-            if status_write is not None:
-                os.close(status_write)
-                status_write = None
-            if sys.platform == "win32":
+            _launch(arguments, cwd, env, *captures, state)
+            returncode, timed_out = _wait_command(state, deadline)
+            if timed_out:
+                # The observed deadline precedes every collection/capture error.
+                primary = ProcessTreeTimeout(arguments, timeout, None, None, None)
+            cleanup_error = _terminate_process_tree(state.process, state.job, cleanup_state)
+        except BaseException as error:
+            if primary is None:
+                primary = error
+            else:
+                failures.append(error)
+                cleanup_error = _merge_errors(cleanup_error, str(error))
+            if state.process is not None:
                 try:
-                    windows_job = _create_windows_kill_job(process)
-                except OSError as caught:
-                    raise RuntimeError(
-                        f"failed to establish process-tree ownership: {caught}"
-                    ) from caught
-                remaining = deadline - time.monotonic()
-                if remaining > 0:
-                    if process.stdin is None:
-                        raise RuntimeError("Windows process-tree bootstrap has no control pipe")
-                    process.stdin.write(b"1")
-                    process.stdin.close()
-                else:
-                    timed_out = True
-            if sys.platform != "win32" and not timed_out:
-                remaining = deadline - time.monotonic()
-                if remaining <= 0:
-                    timed_out = True
-                else:
-                    command_returncode = _read_posix_status(status_read, remaining)
-                    timed_out = command_returncode is None
-            elif not timed_out:
-                remaining = deadline - time.monotonic()
-                if remaining <= 0:
-                    timed_out = True
-                else:
-                    try:
-                        process.wait(timeout=remaining)
-                    except subprocess.TimeoutExpired:
-                        timed_out = True
-                if not timed_out:
-                    command_returncode = process.returncode
-            cleanup_error = _terminate_process_tree(process, windows_job, cleanup_state)
-        except BaseException as caught:
-            caught_error = caught
-            if process is not None:
-                cleanup_error = _terminate_process_tree(
-                    process, windows_job, cleanup_state
-                )
-            if cleanup_error is not None:
-                caught.add_note(f"process-tree cleanup failed: {cleanup_error}")
-            raise
+                    cleanup_error = _merge_errors(
+                        cleanup_error, _terminate_process_tree(state.process, state.job, cleanup_state))
+                except BaseException as cleanup:
+                    cleanup.add_note("collecting the actual process tree after its original failure")
+                    failures.append(cleanup)
+                    cleanup_error = _merge_errors(cleanup_error, str(cleanup))
         finally:
-            if process is not None and process.stdin is not None and not process.stdin.closed:
-                process.stdin.close()
-            if status_write is not None:
-                os.close(status_write)
-            if status_read is not None:
-                os.close(status_read)
-            if windows_job is not None:
-                close_error = _close_windows_job(windows_job)
-                cleanup_error = _merge_errors(cleanup_error, close_error)
-                if close_error is not None and caught_error is not None:
-                    caught_error.add_note(f"process-tree cleanup failed: {close_error}")
-
-        captured_stdout = _read_output(stdout)
-        captured_stderr = _read_output(stderr)
-        if timed_out:
-            raise ProcessTreeTimeout(
-                arguments,
-                timeout,
-                captured_stdout,
-                captured_stderr,
-                cleanup_error,
-            )
-        if cleanup_error is not None:
-            raise RuntimeError(f"process-tree cleanup failed: {cleanup_error}")
-        return subprocess.CompletedProcess(
-            arguments,
-            command_returncode,
-            captured_stdout,
-            captured_stderr,
-        )
+            control_errors, close_error = _close_controls(state)
+            failures.extend(control_errors)
+            cleanup_error = _merge_errors(cleanup_error, close_error)
+        for index, capture in enumerate(captures):
+            try:
+                texts[index] = _read_output(capture)
+            except BaseException as error:
+                error.add_note(f"reading actual process-tree captured {('stdout', 'stderr')[index]}")
+                failures.append(error)
+    except BaseException as error:
+        if primary is None:
+            primary = error
+        else:
+            failures.append(error)
+    finally:
+        for capture in reversed(captures):
+            try:
+                capture.close()
+            except BaseException as error:
+                error.add_note("closing actual process-tree capture")
+                failures.append(error)
+                cleanup_error = _merge_errors(cleanup_error, str(error))
+    for error in failures:
+        if primary is None:
+            primary = error
+        else:
+            primary.add_note(f"additional actual process-tree failure: {type(error).__name__}: {error}; "
+                             f"{'; '.join(getattr(error, '__notes__', []))}")
+    return _outcome(arguments, returncode, *texts, cleanup_error, primary)

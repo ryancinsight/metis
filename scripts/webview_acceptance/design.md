@@ -75,3 +75,85 @@ retain admitted settlement guards and realm dispatchers as distinct owners.
 Screenshots supplement computed/UIA evidence and do not prove input, permission
 delivery or lifecycle acceptance. IME, multimonitor and framebuffer scopes remain
 separate existing evidence domains.
+
+## Selected and ordinary production-form execution
+
+Startup observation is an explicit fixture input, disabled by default. Only the
+form worker admits it; every worker removes inherited selection and compile-only
+inventory values before constructing its application environment. The selected
+and ordinary cases invoke the same production form worker and full journey,
+including all three rational calculations and the invalid-input rejection.
+Success requires both cases. Selected readiness cannot establish ordinary
+readiness. Worker identity and observation selection must match the coordinator's
+declared case before the coordinator accepts its result.
+`provider_startup_observation` records that explicit provider configuration;
+`startup_observation` records passive GDI evidence and cannot establish the
+provider selection or lifecycle. Ordinary execution cannot reuse a selected
+report because the role and exact selection metadata are admitted together.
+
+The immutable plan preserves interactive ownership in this order: observed form,
+ordinary form, permissions, remount, correlated rejection. No two focus/input
+owners overlap. Permission capture and malformed-command execution share one
+noninteractive wave before remount: capture uses the native preview surface;
+the malformed-command fixture creates a hidden window and sends only native
+bridge commands. Their exclusive package roots include their actual process
+IDs, and their profile, content and evidence directories remain separate.
+
+The three independent headless calculations share one wave, retaining every
+original input, actual process, analytical comparison and output. One dispatch
+owner collects every owned future and every available original failure stream, and
+returns outcomes in declared order rather than completion order. Native workers
+use that same dispatch owner; no parallel copy of a journey or cleanup algorithm
+is introduced. A failed or incomplete case fails the complete gate.
+
+The canonical retention owner attempts each admitted stdout, stderr and combined
+write independently for every drained outcome. Model evidence keeps its original
+inclusive byte bound and rejects excess before persistence. Real persistence
+errors accumulate after original child failures, so a failed first destination
+does not prevent later stream retention. Worker native-log closure, partial
+trace reads, observer/actor/native cleanup and final JSON writes preserve an
+in-flight original error, retaining secondary native context in notes. A cleanup
+failure without an earlier error remains its actual failure; it cannot count
+as a successful worker.
+
+The canonical process owner attaches actual captured text and observed child
+status to the original exception. Its text decoder retains its existing UTF-8
+replacement/newline normalization contract. Unavailable capture after an actual
+allocation/read failure remains `None`; successful empty capture remains `""`.
+Retention writes each available stream and combines them only when both reads
+succeed. An observed deadline creates the primary timeout before native cleanup,
+control closure or capture collection; secondary failures retain native context
+without replacing that timeout. The POSIX supervisor remains unreaped until
+the original group termination, and Windows Job bodies retain their semantics.
+Real child/native-error constructor tests verify propagation and availability;
+they do not claim to induce an OS tree-termination or Job-close failure.
+
+Each command retains 60 seconds and its existing process-tree owner retains the
+separate 10-second cleanup bound. The model wave plus six native waves therefore
+declare `7 * (60 + 10) = 490` seconds. The unchanged 540-second coordinator limit
+leaves 50 seconds for dispatch and collection; its existing outer owner rejects
+any actual overrun. Neither per-fixture work nor cleanup deadlines are reduced.
+This budget accounts for the cleanup interval that a command-only sum omits.
+
+Portable verification inspects exact case coverage, ordering, isolation and
+option rejection. Real child processes verify concurrent ownership, canonical
+result ordering and failure-stream collection. A separate actual Metis headless
+run checks the three original computed outputs; process-orchestration fixtures
+cannot substitute for those application values. Installed Windows execution
+must still verify the added ordinary form and the noninteractive wave.
+
+The final portable replay passes 480/480 cases in 17.666 seconds under the
+unchanged 60-second process-tree bound with no skips. All 987 physical source
+members retain exact membership and bytes before/after, and 960 timing records
+pair all 480 ordered cases. Twenty focused process/acceptance cases include
+native file/descriptor failures, inclusive UTF-8 stream bounds, child environments,
+concurrent calculations and failure identity. Three actual compiled Metis
+headless transactions separately reproduce rate/drug pairs 0.48/0.96, 0.6/2.4
+and 0.09/0.72; arithmetic process fixtures do not substitute for these values.
+
+The preceding selected [Windows run](https://github.com/ryancinsight/metis/actions/runs/38531378051)
+loads all five resources with status 200 and enables CDP observations, then
+records actual Rust-handled DOM text `WebView2 bridge is not an EventTarget`.
+No Ready occurs. The private Moirai 0.9.2 Rust bridge correction awaits protected
+publication, Metis adoption and runtime verification. Neither these diagnostics
+nor the portable replay establishes ordinary or selected full-form acceptance.

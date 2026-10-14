@@ -11,22 +11,20 @@ from native_capture.windows import processes
 from native_input.windows import focus, keyboard, queue
 from python_native_accessibility import UIA_POLL_MILLISECONDS, WEBVIEW2_FOCUS_PRIMER_TABS
 
-from . import evidence, fixtures, journey, runtime
+from . import cases, evidence, fixtures, journey, retention, runtime
 from .contract import CALCULATIONS, FIXTURE_SECONDS, MAX_TRACE_BYTES
 from .startup import StartupObservation
 
 
-def observation_environment(name: str, source: Mapping[str, str]) -> dict[str, str]:
-    """Select bounded native diagnostics for the failing form backend only."""
+def observation_environment(name: str, source: Mapping[str, str], *,
+                            observe_startup: bool = False) -> dict[str, str]:
+    """Strip inherited selection; only explicit form input enables diagnostics."""
+    selection = cases.provider_selection(name, observe_startup)
     environment = dict(source)
     environment.pop("METIS_WEBVIEW_ASSET_INVENTORY", None)
-    selection = "MOIRAI_WEBVIEW_STARTUP_OBSERVATION"
-    environment.pop(selection, None)
-    if name == "form":
-        environment[selection] = json.dumps({
-            "start_uri": "https://metis.invalid/index.html",
-            "selectors": ["#host-status", "#result"],
-        }, separators=(",", ":"))
+    environment.pop(cases.SELECTION_ENV, None)
+    if selection["selected"]:
+        environment[cases.SELECTION_ENV] = json.dumps(selection["configuration"], separators=(",", ":"))
     return environment
 
 
@@ -50,16 +48,89 @@ def wait_event(process, trace: Path, name: str, deadline: float, predicate=None,
     raise TimeoutError(f"actual native process does not emit {name} within its strict fixture deadline")
 
 
+def _journey(name, uia, actual, process, trace, deadline, output) -> dict:
+    """Execute the existing role's full native-input journey exactly once."""
+    if name == "form":
+        return journey.form(uia, output)
+    if name == "permissions":
+        wait_event(process, trace, "page_probe_completed", deadline,
+                   lambda value: value.get("reconciled") is True)
+        uia.wait("result", lambda node: node["text"] == "Completed 4 bounded capability probes.")
+        observed = {"capture": journey.captured(uia, output / "permissions.png")}
+        uia.key(0x1B)
+        observed["actions"] = uia.actions
+        return observed
+    if name == "stop_remount_destruction":
+        if actual.get("mount_id") != "1":
+            raise ValueError("actual visible remount fixture begins at the wrong mount")
+        mounts = [journey.remount(uia, actual)]
+        for mount in ("2", "3"):
+            requested = wait_event(process, trace, "fixture_input_required", deadline,
+                                   lambda value: value.get("mount_id") == mount)
+            mounts.append(journey.remount(uia, requested))
+        return {"mounts": mounts, "actions": uia.actions}
+    return journey.correlated(uia, actual)
+
+
+def _collect(process, uia, observation, deadline, output, report, caught) -> None:
+    """Collect every owned native component without replacing its original error."""
+    cleanup_errors = []
+    if observation is not None:
+        try:
+            observation.finish()
+        except BaseException as error:
+            error.add_note("finalizing actual startup observation")
+            cleanup_errors.append(error)
+    if uia is not None:
+        report["partial_uia"] = {"actions": uia.actions, "last_nodes": uia.latest}
+        try:
+            uia.process.terminate()
+            uia.process.wait(timeout=max(0, deadline - time.monotonic()))
+        except BaseException as error:
+            error.add_note("owned UIA actor collection")
+            cleanup_errors.append(error)
+        try:
+            uia.error.close()
+        except BaseException as error:
+            error.add_note("closing actual UIA actor error stream")
+            cleanup_errors.append(error)
+    if process is not None:
+        # Only the owned worker's failed process is terminated here. The
+        # outer held-bootstrap Job Object collects all remaining descendants.
+        try:
+            if process.poll() is None:
+                report["forced_parent_termination"] = True
+                process.terminate()
+                process.wait(timeout=max(0, deadline - time.monotonic()))
+        except BaseException as error:
+            error.add_note("owned native process collection")
+            cleanup_errors.append(error)
+    if cleanup_errors:
+        report["status"] = "failed"
+        report["cleanup_errors"] = [f"{type(error).__name__}: {error}; {'; '.join(error.__notes__)}"
+                                    for error in cleanup_errors]
+    primary = caught if caught is not None else cleanup_errors[0] if cleanup_errors else None
+    if primary is not None:
+        for error in cleanup_errors:
+            if error is not primary:
+                primary.add_note(f"additional actual cleanup failure: {type(error).__name__}: {error}; "
+                                 f"{'; '.join(error.__notes__)}")
+    retention.report(output / "evidence.json", report, primary)
+    if caught is None and primary is not None:
+        raise primary
+
+
 def run(name: str, executable: Path, fixture_executable: Path, root: Path,
-        output: Path, module_digest: str) -> dict:
+        output: Path, module_digest: str, *, observe_startup: bool = False) -> dict:
     from .uia import Uia
 
     deadline = time.monotonic() + FIXTURE_SECONDS
     output.mkdir(parents=True, exist_ok=False)
     trace = output / "native.jsonl"
     stdout_path = output / "native.stdout"
-    report = {"schema": 1, "scenario": name, "status": "running", "timeout_seconds": FIXTURE_SECONDS}
-    environment = observation_environment(name, os.environ)
+    report = {"schema": 1, "scenario": name, "status": "running", "timeout_seconds": FIXTURE_SECONDS,
+              "provider_startup_observation": cases.provider_selection(name, observe_startup)}
+    environment = observation_environment(name, os.environ, observe_startup=observe_startup)
     if name in fixtures.FIXTURES:
         arguments = [str(fixture_executable), "--exact", fixtures.FIXTURES[name],
                      "--ignored", "--nocapture", "--test-threads=1"]
@@ -77,46 +148,26 @@ def run(name: str, executable: Path, fixture_executable: Path, root: Path,
     observation = None
     caught = None
     try:
-        with stdout_path.open("wb") as stdout, trace.open("wb") as stderr:
+        with retention.streams((stdout_path, trace)) as (stdout, stderr):
             process = subprocess.Popen(arguments, cwd=root, env=environment,
                                        stdin=subprocess.DEVNULL, stdout=stdout, stderr=stderr)
             observation = StartupObservation(process.pid, deadline, output)
             report["startup_observation"] = observation.report
-            interactive = name in ("form", "permissions", "correlated_terminal_rejections",
-                                   "stop_remount_destruction")
+            interactive = name in cases.INPUT_ROLES
             expected = "fixture_input_required" if interactive and name in fixtures.FIXTURES else "page_ready"
             actual = wait_event(process, trace, expected, deadline, observation=observation)
             observation.finish()
-            if name in ("form", "permissions", "correlated_terminal_rejections", "stop_remount_destruction"):
+            if interactive:
                 bounds = processes.wait_for_process_window(process)
                 report["runtime"] = runtime.version(process.pid, deadline)
-                if name in ("form", "permissions", "correlated_terminal_rejections", "stop_remount_destruction"):
+                if interactive:
                     focus.focus_window(bounds.handle)
                     for _ in range(WEBVIEW2_FOCUS_PRIMER_TABS):
                         keyboard.send_virtual_key(0x09, key_up=False)
                         keyboard.send_virtual_key(0x09, key_up=True)
                         queue.flush_window(bounds.handle)
                     uia = Uia(bounds.handle, deadline, output)
-                    if name == "form":
-                        report["journey"] = journey.form(uia, output)
-                    elif name == "permissions":
-                        wait_event(process, trace, "page_probe_completed", deadline,
-                                   lambda value: value.get("reconciled") is True)
-                        uia.wait("result", lambda node: node["text"] == "Completed 4 bounded capability probes.")
-                        report["journey"] = {"capture": journey.captured(uia, output / "permissions.png")}
-                        uia.key(0x1B)
-                        report["journey"]["actions"] = uia.actions
-                    elif name == "stop_remount_destruction":
-                        if actual.get("mount_id") != "1":
-                            raise ValueError("actual visible remount fixture begins at the wrong mount")
-                        mounts = [journey.remount(uia, actual)]
-                        for mount in ("2", "3"):
-                            requested = wait_event(process, trace, "fixture_input_required", deadline,
-                                                   lambda value: value.get("mount_id") == mount)
-                            mounts.append(journey.remount(uia, requested))
-                        report["journey"] = {"mounts": mounts, "actions": uia.actions}
-                    else:
-                        report["journey"] = journey.correlated(uia, actual)
+                    report["journey"] = _journey(name, uia, actual, process, trace, deadline, output)
                     uia.close()
                     uia = None
             remaining = deadline - time.monotonic()
@@ -139,47 +190,21 @@ def run(name: str, executable: Path, fixture_executable: Path, root: Path,
             else:
                 actual_results = [value for value in report["journey"]["values"] if "dom" in value]
                 report["calculations"] = [evidence.calculation(values, case, observed["dom"])
-                                          for case, observed in zip(CALCULATIONS, actual_results)]
+                                          for case, observed in zip(CALCULATIONS, actual_results, strict=True)]
         report["status"] = "passed"
         return report
     except BaseException as error:
         caught = error
         report["status"] = "failed"
         report["error"] = f"{type(error).__name__}: {error}"
-        if trace.exists() and trace.stat().st_size <= MAX_TRACE_BYTES:
-            try:
+        try:
+            if trace.exists() and trace.stat().st_size <= MAX_TRACE_BYTES:
                 report["partial_native_trace"] = evidence.records(trace, complete=False)
                 if name in ("permissions", "permissions_capture"):
                     report["permission_diagnostics"] = evidence.permission_diagnostics(report["partial_native_trace"])
-            except (ValueError, UnicodeError) as parse_error:
-                report["trace_parse_error"] = str(parse_error)
+        except BaseException as parse_error:
+            report["trace_parse_error"] = f"{type(parse_error).__name__}: {parse_error}"
+            error.add_note(f"retaining partial actual native trace: {type(parse_error).__name__}: {parse_error}")
         raise
     finally:
-        cleanup_errors = []
-        if observation is not None:
-            observation.finish()
-        if uia is not None:
-            report["partial_uia"] = {"actions": uia.actions, "last_nodes": uia.latest}
-            try:
-                uia.process.terminate()
-                uia.process.wait(timeout=max(0, deadline - time.monotonic()))
-            except (OSError, subprocess.TimeoutExpired) as error:
-                cleanup_errors.append(f"owned UIA actor collection: {error}")
-            uia.error.close()
-        if process is not None and process.poll() is None:
-            # Only the owned worker's failed process is terminated here. The
-            # outer held-bootstrap Job Object collects all remaining descendants.
-            try:
-                process.terminate()
-                process.wait(timeout=max(0, deadline - time.monotonic()))
-            except (OSError, subprocess.TimeoutExpired) as error:
-                cleanup_errors.append(f"owned native process collection: {error}")
-            report["forced_parent_termination"] = True
-        if cleanup_errors:
-            report["status"] = "failed"
-            report["cleanup_errors"] = cleanup_errors
-            if caught is not None:
-                caught.add_note("; ".join(cleanup_errors))
-        (output / "evidence.json").write_text(json.dumps(report, indent=2, ensure_ascii=False), encoding="utf-8")
-        if cleanup_errors and caught is None:
-            raise RuntimeError("; ".join(cleanup_errors))
+        _collect(process, uia, observation, deadline, output, report, caught)

@@ -99,6 +99,14 @@
   frontend launch. The supervisor previously cleared it after verification set
   the backend environment. Isolated children and unrelated application values
   retain their existing exclusion policy.
+- [patch] Require the same complete native form journey with and without explicit
+  startup observation. Worker role/selection must match; default and non-form
+  children discard inherited selection. Independent model and noninteractive
+  waves retain every original case within existing deadlines. All outcomes drain,
+  later streams retain, and original errors survive persistence/cleanup failures.
+  The canonical process owner attaches available captured text/child status to
+  original errors and preserves observed timeout precedence before cleanup.
+  The 480-case local replay passes; actual Windows full-form acceptance remains open.
 
 ### Breaking
 

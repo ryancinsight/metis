@@ -255,11 +255,53 @@ one-key Runtime correction and passes all ten real-process combinations after
 it. The final replay passes 777 Rust tests, 471 script tests, 42 doctests and
 strict workspace diagnostics. The two ignored child-entry tests execute through
 their active owner across those combinations; they are not independent runtime
-acceptance. Windows execution and selected native startup observations remain
-pending. The preceding published revision also passes all fourteen fuzz targets
+acceptance. Windows execution and selected native startup observations are pending
+at that revision. The preceding published revision also passes all fourteen fuzz targets
 with 133,569,653 actual executions; its aggregate remains failed at native Ready.
 The current audit scans 498 product code files and all five entry documents;
 the four initializer bodies still contain 359 bytes of authored JavaScript.
+
+The selector-corrected [run 38531378051](https://github.com/ryancinsight/metis/actions/runs/38531378051)
+runs 471 Windows script cases in 30.123s: 470 pass and the existing Apple-only
+case skips. All four prepared originals match their receipts. HTML, CSS,
+bootstrap, generated glue and WASM return 200 with their declared content types;
+both CDP observation domains enable. Actual selected DOM reports
+`Rust page operation failed` and `WebView2 bridge is not an EventTarget`.
+This is a handled Rust initialization failure at the provider bridge admission
+boundary, not inferred resource or bootstrap failure. No Ready, form input,
+permission/remount journey or native archive execution occurs. The owning
+Moirai 0.9.2 private Rust correction awaits publication, Metis adoption and
+actual Windows acceptance.
+
+The acceptance source now requires two complete form runs through the same
+worker/journey: selected observation and ordinary production startup. Both
+retain all three calculations, invalid-input rejection, themes, commands,
+shortcuts, focus and closure. Selection defaults off, rejects other roles and
+removes inherited selector/compile-only inventory values. Worker role and
+explicit provider configuration must match the requested case; GDI screenshot
+observations remain a distinct field and cannot grant Ready.
+
+Three headless owners share one wave; only the independent permission-capture
+and hidden malformed-command cases share a native wave. All focus/input cases
+remain sequential. Seven total waves retain 60s execution plus 10s cleanup each:
+490s within the unchanged 540s coordinator bound. Every owned outcome drains
+before propagation. Original child/body errors precede actual stream, report
+and cleanup failures; later streams still retain, and oversized model evidence
+rejects before persistence. Real native filesystem/descriptor failures verify
+these rules without replacing application or OS input. The canonical process
+owner preserves original exceptions and available captured text/child status;
+an observed timeout remains primary before cleanup and capture. Unavailable
+capture remains distinct from successfully read empty text. Constructor tests
+use real child streams/native errors without claiming induced OS cleanup failure.
+
+Final local verification passes 480/480 script tests in 17.666s with zero skips
+under the unchanged 60s bound. All 987 physical source members retain exact
+membership and bytes; 960 timing records pair all 480 ordered cases. Twenty
+focused process/acceptance cases pass, and the actual compiled Metis model yields
+rate/drug pairs 0.48/0.96, 0.6/2.4 and 0.09/0.72. These results establish portable
+orchestration and calculations, not Windows form acceptance. The
+[case and budget contract](scripts/webview_acceptance/design.md#selected-and-ordinary-production-form-execution)
+requires both real form journeys and all original native scenarios before closure.
 
 ## Library target comparison boundaries — 2026-10-13 [patch]
 

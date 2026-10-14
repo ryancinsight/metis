@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import json
+import errno
 import os
 import pathlib
 import socket
@@ -20,6 +21,7 @@ SCRIPTS = pathlib.Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(SCRIPTS))
 import process_tree  # noqa: E402
 import verify  # noqa: E402
+from webview_acceptance import dispatch, retention
 
 
 CHILD = textwrap.dedent(
@@ -201,6 +203,95 @@ class ProcessTreeTests(unittest.TestCase):
         self.assertEqual(result.stdout, "rejected\n")
         self.assertEqual(result.stderr, "")
 
+    def test_failure_outcome_keeps_real_child_streams_status_and_native_error_identity(self):
+        """Exercise outcome construction, without simulating OS tree cleanup."""
+        command = [sys.executable, "-c", "import sys; value=sum(range(257)); "
+                   "print(f'computed={value} λ🦀'); print(f'modulus={value%29} Ω',file=sys.stderr); "
+                   "raise SystemExit(value%29)"]
+        started = time.monotonic()
+        actual = process_tree.run(command, timeout=READY_SECONDS,
+                                  env={**os.environ, "PYTHONUTF8": "1"})
+        elapsed = time.monotonic() - started
+        expected = 256 * 257 // 2
+        self.assertEqual(actual.returncode, expected % 29)
+        self.assertEqual(actual.stdout, f"computed={expected} λ🦀\n")
+        self.assertEqual(actual.stderr, f"modulus={expected % 29} Ω\n")
+        temporary = tempfile.TemporaryFile()
+        os.close(temporary.fileno())
+        try:
+            temporary.close()
+        except OSError as error:
+            native = error
+        else:
+            self.fail("native close unexpectedly admits an already closed descriptor")
+        self.assertEqual(native.errno, errno.EBADF)
+        with self.assertRaises(type(native)) as preserved:
+            process_tree._outcome(command, actual.returncode, actual.stdout, actual.stderr,
+                                  None, native)
+        self.assertIs(preserved.exception, native)
+        self.assertEqual(preserved.exception.stdout, actual.stdout)
+        self.assertEqual(preserved.exception.stderr, actual.stderr)
+        self.assertEqual(preserved.exception.cmd, command)
+        self.assertEqual(preserved.exception.returncode, actual.returncode)
+        self.assertIsNone(preserved.exception.cleanup_error)
+        details = f"{type(native).__name__}: {native}"
+        with self.assertRaisesRegex(RuntimeError, "process-tree cleanup failed") as cleanup:
+            process_tree._outcome(command, actual.returncode, actual.stdout, actual.stderr,
+                                  details, None)
+        self.assertEqual(cleanup.exception.stdout, actual.stdout)
+        self.assertEqual(cleanup.exception.stderr, actual.stderr)
+        self.assertEqual(cleanup.exception.cmd, command)
+        self.assertEqual(cleanup.exception.returncode, expected % 29)
+        self.assertEqual(cleanup.exception.cleanup_error, details)
+        self.assertIn(str(native), str(cleanup.exception))
+        try:
+            process_tree._read_output(temporary)
+        except ValueError as error:
+            unavailable = error
+        else:
+            self.fail("closed native capture unexpectedly remains readable")
+        with self.assertRaises(ValueError) as missing:
+            process_tree._outcome(command, actual.returncode, None, actual.stderr,
+                                  None, unavailable)
+        self.assertIs(missing.exception, unavailable)
+        self.assertIsNone(missing.exception.stdout)
+        self.assertEqual(missing.exception.stderr, actual.stderr)
+        with self.assertRaisesRegex(RuntimeError, "unavailable capture without a failure"):
+            process_tree._outcome(command, actual.returncode, None, actual.stderr, None, None)
+        with tempfile.TemporaryDirectory() as directory:
+            output = pathlib.Path(directory)
+            observed = dispatch.Outcome(tuple(command), unavailable.returncode, unavailable.stdout,
+                                        unavailable.stderr, elapsed, unavailable)
+            retained = retention.processes((observed,), output, ("unavailable",))
+            self.assertFalse(retained.records[0]["stdout_available"])
+            self.assertTrue(retained.records[0]["stderr_available"])
+            self.assertEqual(retained.records[0]["seconds"], elapsed)
+            self.assertFalse((output / "unavailable.stdout").exists())
+            self.assertFalse((output / "unavailable.log").exists())
+            self.assertEqual((output / "unavailable.stderr").read_text(), actual.stderr)
+
+    def test_real_early_launch_error_preserves_native_cause_and_available_streams(self):
+        with tempfile.TemporaryDirectory() as directory:
+            missing = pathlib.Path(directory) / "missing"
+            command = [sys.executable, "-c", "print(sum(range(257)))"]
+            try:
+                subprocess.run(command, cwd=missing, capture_output=True, timeout=READY_SECONDS, check=True)
+            except OSError as error:
+                native = error
+            else:
+                self.fail("native launch unexpectedly admits a nonexistent working directory")
+            with self.assertRaises(type(native)) as caught:
+                process_tree.run(command, cwd=missing, timeout=READY_SECONDS)
+            self.assertEqual(caught.exception.errno, native.errno)
+            self.assertEqual(caught.exception.filename, native.filename)
+            self.assertEqual(getattr(caught.exception, "winerror", None), getattr(native, "winerror", None))
+            self.assertEqual(str(caught.exception), str(native))
+            self.assertEqual(caught.exception.cmd, command)
+            self.assertIsNone(caught.exception.returncode)
+            self.assertEqual(caught.exception.stdout, "")
+            self.assertEqual(caught.exception.stderr, "")
+            self.assertIsNone(caught.exception.cleanup_error)
+
     def test_cleanup_never_reissues_posix_group_signal_after_reap(self):
         class ReapedLauncher:
             pid = 2_147_483_000
@@ -304,7 +395,7 @@ class ProcessTreeTests(unittest.TestCase):
                 patch.object(verify, "OUTPUT", output),
                 patch.object(verify, "EVIDENCE", evidence),
             ):
-                with self.assertRaisesRegex(SystemExit, "exceeded 1-second budget"):
+                with self.assertRaisesRegex(SystemExit, "exceeded 1-second budget") as stopped:
                     verify.run(
                         "descendant-timeout",
                         [sys.executable, "-c", PARENT, str(lock), CHILD],
@@ -313,8 +404,16 @@ class ProcessTreeTests(unittest.TestCase):
                         seconds=1,
                     )
 
+            actual_timeout = stopped.exception.__cause__
+            self.assertIsInstance(actual_timeout, process_tree.ProcessTreeTimeout)
+            self.assertEqual(actual_timeout.timeout, 1)
+            self.assertEqual(actual_timeout.cmd, [sys.executable, "-c", PARENT, str(lock), CHILD])
+            self.assertIsNone(actual_timeout.returncode)
+            self.assertIsNone(actual_timeout.cleanup_error)
+            self.assertEqual(actual_timeout.stderr, "")
             log = (output / "descendant-timeout.log").read_text(encoding="utf-8")
             self.assertIn("child-ready ", log)
+            self.assertIn(actual_timeout.stdout, log)
             self.assertIn("descendant-timeout: exceeded 1-second budget", log)
             process_id = int(log.split("child-ready ", 1)[1].splitlines()[0])
             _assert_lock_released(self, lock)
