@@ -43,6 +43,24 @@ owner enables DEBUG only for `moirai_pal::windows::webview::startup`; ordinary
 INFO records retain full span context. Without both an explicit selection and
 the dedicated target, the provider installs no diagnostic observers.
 
+The selector crosses both process boundaries: verifier to backend, then backend
+to the contained frontend. For inherited environment `E`, the Runtime policy
+projects exactly the nine existing OS-location keys and this one private key;
+Isolated projects the empty set. Values remain opaque and byte-preserved at
+this transport boundary. The provider validates their closed schema, URI and
+budgets; malformed or empty selection must reach that rejection rather than
+silently disabling observation. Asset inventories and unrelated application
+values remain excluded. An absent selector remains absent.
+
+Review of the first consumer increment finds that only the verifier-to-backend
+hop is covered: the supervisor clears the selector at the frontend boundary.
+That revision therefore runs the ordinary form without the intended native
+diagnostics. The contained Rust regression first reproduces the dropped value,
+then passes all five native-value dimensions under both environment policies
+after the one-key correction. Windows execution of those vectors and actual
+observation activation remain required. Diagnostic activation does not establish
+that the unselected form starts.
+
 The provider owns native resource MIME/status, content/navigation/process
 events, actual CDP exception/log events and one sequential read-only DOM chain.
 Runtime/Log activation and navigation share the original navigation deadline.

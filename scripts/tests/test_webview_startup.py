@@ -19,7 +19,7 @@ from webview_acceptance.contract import FIXTURE_SECONDS
 
 
 class NativeObservationSelection(unittest.TestCase):
-    def test_only_form_children_receive_the_exact_private_selection(self):
+    def test_only_form_backend_parents_receive_the_exact_private_selection(self):
         selection = "MOIRAI_WEBVIEW_STARTUP_OBSERVATION"
         controlled = {selection: "inherited selection must not propagate",
                       "METIS_WEBVIEW_ASSET_INVENTORY": "outside producer ownership",

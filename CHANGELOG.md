@@ -95,6 +95,10 @@
   diagnostic role without admitting Ready or extending existing deadlines.
 - Propagate the concrete subscriber initialization error through the existing
   native frontend error boundary after selecting its layered Rust subscriber.
+- Preserve the explicit private startup selector across the contained Runtime
+  frontend launch. The supervisor previously cleared it after verification set
+  the backend environment. Isolated children and unrelated application values
+  retain their existing exclusion policy.
 
 ### Breaking
 

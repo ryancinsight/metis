@@ -17,7 +17,7 @@ from .startup import StartupObservation
 
 
 def observation_environment(name: str, source: Mapping[str, str]) -> dict[str, str]:
-    """Select bounded native diagnostics for the failing form fixture only."""
+    """Select bounded native diagnostics for the failing form backend only."""
     environment = dict(source)
     environment.pop("METIS_WEBVIEW_ASSET_INVENTORY", None)
     selection = "MOIRAI_WEBVIEW_STARTUP_OBSERVATION"

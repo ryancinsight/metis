@@ -94,6 +94,12 @@ Moirai 0.9.1 owns that [patch] under
 Metis consumes its protected default revision; the
 [co-located startup contract](../../crates/metis-app/src/frontend/webview/event_loop/startup.md)
 owns fixture selection, output bounds and the separation from page authority.
+The backend supervisor transports that one private selection through its
+Runtime environment projection without interpreting it. Its Isolated policy
+and exclusion of asset inventories and unrelated application variables remain
+intact. The provider remains the schema/budget owner; the frontend logging
+owner selects only the dedicated trace target. Real two-hop process tests
+verify this boundary. No supported API or production feature is added.
 
 Run canonical `cargo-semver-checks` for changed public libraries. Record the
 private page schema migration, build preparation requirement and retired scripts

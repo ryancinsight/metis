@@ -26,18 +26,19 @@ const CLEANUP_DEADLINE: Duration = Duration::from_secs(1);
 /// Environment policy applied to a supervised presentation process.
 ///
 /// `Isolated` is the default and starts the child with no inherited values.
-/// `Runtime` admits only operating-system path variables required by a desktop
-/// runtime such as `WebView2`; application variables and credentials remain out
-/// of the child environment.
+/// `Runtime` admits nine operating-system location variables and the explicitly
+/// selected private `MOIRAI_WEBVIEW_STARTUP_OBSERVATION` diagnostic input. Its
+/// value is opaque transport to the provider's bounded validation. All other
+/// application variables and credentials remain out of the child environment.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum ProcessEnvironment {
     /// Start the child with an empty environment block.
     Isolated,
-    /// Admit the bounded operating-system runtime environment allowlist.
+    /// Admit OS locations and the explicit private startup-observation input.
     Runtime,
 }
 
-const RUNTIME_ENVIRONMENT_KEYS: [&str; 9] = [
+const RUNTIME_ENVIRONMENT_KEYS: [&str; 10] = [
     "APPDATA",
     "LOCALAPPDATA",
     "PROGRAMDATA",
@@ -47,6 +48,7 @@ const RUNTIME_ENVIRONMENT_KEYS: [&str; 9] = [
     "TEMP",
     "TMP",
     "USERPROFILE",
+    "MOIRAI_WEBVIEW_STARTUP_OBSERVATION",
 ];
 enum Completion {
     Closed,
@@ -102,8 +104,10 @@ pub fn run_session_with_deadline<H: IpcHandler>(
 /// bounded environment policy.
 ///
 /// The runtime policy is intentionally an allowlist. It supplies only the
-/// operating-system locations needed by desktop `WebView` creation while keeping
-/// application settings, tokens and credentials outside the child process.
+/// operating-system locations needed by desktop `WebView` creation and the
+/// explicit private startup-observation input. The provider owns validation of
+/// that opaque value; absent selection stays absent. All other application
+/// settings, tokens and credentials remain outside the child process.
 ///
 /// # Errors
 /// Returns spawn, task admission, protocol, process, cleanup, or deadline errors.
@@ -256,3 +260,14 @@ fn task_error(error: &impl std::fmt::Display) -> MetisError {
 
 #[cfg(all(test, windows))]
 mod tests;
+
+#[cfg(all(
+    test,
+    any(
+        windows,
+        target_os = "linux",
+        target_os = "android",
+        target_vendor = "apple"
+    )
+))]
+mod environment_tests;

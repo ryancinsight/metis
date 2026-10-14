@@ -233,6 +233,34 @@ propagates the concrete subscriber initialization error through its existing
 error boundary. Canonical preparation retains and rehashes all four original
 files. These checks do not establish actual Metis Windows startup.
 
+Subsequent source review finds that the selected form environment reaches only
+the backend. The Rust supervisor clears it before the contained frontend;
+the direct Python-child test does not exercise that boundary. Consequently
+[run 38528638420](https://github.com/ryancinsight/metis/actions/runs/38528638420)
+executes the ordinary form without the intended native observation selection.
+Its Windows suite runs 471 cases in 26.833s: 470 pass and one existing
+Apple-only case skips. All four original preparation files match their retained
+identities. Actual form navigation succeeds, then Ready times out with no
+startup-observation records. Apple passes 776 Rust tests, 42 doctests and three
+bundles. The later form/input/permission/package journeys remain unexecuted.
+The correction transports exactly the private selector through Runtime while
+keeping Isolated empty and all unrelated application values excluded. Real
+two-hop contained-process tests must verify selection, absence, Unicode and
+opaque malformed values. Native startup attribution still requires the actual
+selected Windows run; diagnostic activation cannot establish an unselected
+form correction.
+
+The launch-boundary regression reproduces exact selection loss before the
+one-key Runtime correction and passes all ten real-process combinations after
+it. The final replay passes 777 Rust tests, 471 script tests, 42 doctests and
+strict workspace diagnostics. The two ignored child-entry tests execute through
+their active owner across those combinations; they are not independent runtime
+acceptance. Windows execution and selected native startup observations remain
+pending. The preceding published revision also passes all fourteen fuzz targets
+with 133,569,653 actual executions; its aggregate remains failed at native Ready.
+The current audit scans 498 product code files and all five entry documents;
+the four initializer bodies still contain 359 bytes of authored JavaScript.
+
 ## Library target comparison boundaries — 2026-10-13 [patch]
 
 Thirty supported library/target comparisons execute 5,880 minor-release queries
