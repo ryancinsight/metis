@@ -156,7 +156,7 @@ not identify that historical error retrospectively.
 ## Native Rust page startup evidence — 2026-10-14 [patch]
 
 [Run 38511644468](https://github.com/ryancinsight/metis/actions/runs/38511644468)
-tests merge `31dd458a` with the exact published `5a733af8` tree. Apple passes
+tests the preceding preparation repair in [PR 504](https://github.com/ryancinsight/metis/pull/504). Apple passes
 773 tests, 42 doctests and three bundles; all five guards and fourteen fuzz
 targets pass with 99,906,875 actual executions. Windows runs 460 script cases
 in 21.647s: 459 pass and one existing Apple-only case skips. Browser resources,
