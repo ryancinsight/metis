@@ -66,7 +66,7 @@ function, without an operation/path. Apple passes 759 tests, 42 doctests and
 all three bundles. Current source assembles Prefix+RootDir before filesystem
 metadata; prefix-only native behavior and every linked-ancestor check remain.
 Metadata errors retain exact native path, operation, kind and original OS cause.
-All 763 local Rust and 450 script tests, strict diagnostics and 42 doctests pass.
+All 763 local Rust and 452 script tests, strict diagnostics and 42 doctests pass.
 Actual Windows prefix/junction observations must bind the error-1 cause; full
 native archive output is retained without changing cases or deadlines. Native
 preparation, runtime and package acceptance do not run in the failed revision.
@@ -79,6 +79,16 @@ cause. Standard and final timed local suites pass the same 450 ordered cases;
 all 447 prior cases remain. Verbose-only monotonic records preserve stdlib
 results, human output, compact modes, exit status and the outer process bound.
 [METIS-SCRIPT-BUDGET](backlog.md#METIS-SCRIPT-BUDGET) owns actual Windows attribution.
+[Run 38499707335](https://github.com/ryancinsight/metis/actions/runs/38499707335)
+completes 416 cases before the same bound. Its measured gallery case takes
+25.307s, citation fixture 7.313s and normally completed cleanup 5.257s. Gallery
+requires an actual Rust CLI that was built lazily inside consumer validation.
+The explicit producer now precedes consumers under the existing 300s build
+bound; every original gallery call/assertion and the consumer 60s bound remain.
+One Cargo owner retains immutable invocation/output provenance; starter uses
+its actual compiler-selected CLI. Real producer/gallery identities match and
+all 187 consumer artifact records are fresh; 452 script cases and actual
+starter/GPU-WASM/HTTP-WASM build boundaries pass. Native acceptance remains open.
 The prior 0.4.1 source/lock evidence is retained in
 [historical records](docs/backlog/evidence.md#METIS-STANDALONE-0.4.1).
 

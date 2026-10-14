@@ -63,6 +63,10 @@
 - Verbose script verification retains flushed per-case monotonic timing and
   cumulative standard results. Standard discovery, outcomes, compact output
   modes, exit status and the 60-second process-group bound remain unchanged.
+- Construct the actual Rust CLI producer before script consumers. Compiler
+  artifact identity and full streams retain their provenance; gallery checks
+  still perform normal Cargo freshness validation. Starter uses the same
+  compiler-selected executable, and general Cargo callers share one owner.
 
 ### Breaking
 

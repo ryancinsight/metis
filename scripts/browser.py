@@ -1,8 +1,16 @@
-"""Build the browser WASM host and generated wasm-bindgen loader."""
+"""Build the browser WASM host and generated wasm-bindgen loader.
+
+The dependency order is CLI compilation -> Rust asset budgets -> gallery
+admission. The explicit tool producer and every consumer resolve the same
+locked Cargo artifact through one owner. Verification bounds compilation
+separately from consumer execution; consumers still perform normal Cargo
+freshness validation. No guessed executable path or injected tool skips it.
+"""
 from __future__ import annotations
 
 import argparse
 import functools
+import hashlib
 import json
 import os
 import pathlib
@@ -10,6 +18,7 @@ import shutil
 import signal
 import subprocess
 import sys
+from typing import NamedTuple
 
 from cargo_overlay import isolated_cargo
 from verification import workspace
@@ -64,22 +73,28 @@ def terminate(returncode: int) -> None:
     os.kill(os.getpid(), number)
 
 
-def cargo(arguments: list[str], *, timeout: int = 300, **options) -> subprocess.CompletedProcess:
-    """Run Cargo against the committed lock, outside an inherited stack configuration.
+class CargoExecution(NamedTuple):
+    """Immutable actual process output and the selected Cargo execution context."""
+    argv: tuple[str, ...]
+    cwd: pathlib.Path
+    rustup_toolchain: str
+    returncode: int
+    stdout: str | bytes | None
+    stderr: str | bytes | None
 
-    The stack overlay patches first-party providers to local trees, which cannot
-    agree with the locked revisions, so an in-place `--locked` build fails before
-    it compiles. `isolated_cargo` supplies a directory outside that configuration
-    chain; the manifest is therefore passed explicitly.
+
+def cargo(arguments: list[str], *, timeout: int = 300, **options) -> CargoExecution:
+    """Run the one lock-authoritative Cargo owner outside incompatible patches.
+
+    General browser fixtures and the CLI producer use this actual context and
+    process owner. Capture options preserve their native text/byte contracts;
+    every retained field is immutable, including argv and captured streams.
     """
     with isolated_cargo(ROOT) as (directory, environment):
-        return run(
-            ["cargo", *arguments, "--manifest-path", str(ROOT / "Cargo.toml")],
-            cwd=directory,
-            env=environment,
-            timeout=timeout,
-            **options,
-        )
+        command = ("cargo", *arguments, "--manifest-path", str(ROOT / "Cargo.toml"))
+        result = run(list(command), cwd=directory, env=environment, timeout=timeout, **options)
+        return CargoExecution(command, directory, environment.get("RUSTUP_TOOLCHAIN", ""),
+                              result.returncode, result.stdout, result.stderr)
 
 
 def wasm_bindgen() -> str:
@@ -109,28 +124,65 @@ def wasm_bindgen() -> str:
     )
 
 
+class CompiledTool(NamedTuple):
+    """Immutable executable identity and original compiler production evidence."""
+    executable: pathlib.Path
+    executable_sha256: str
+    artifact_json: str
+    cargo_argv: tuple[str, ...]
+    cargo_cwd: pathlib.Path
+    rustup_toolchain: str
+    lock_sha256: str
+    compiler_stdout: str
+    compiler_stderr: str
+
+
+def _digest(path: pathlib.Path) -> str:
+    with path.open("rb") as source:
+        return hashlib.file_digest(source, "sha256").hexdigest()
+
+
+def _compiler_streams(stdout: str, stderr: str) -> None:
+    stream = sys.stderr.buffer
+    stream.write(b"Cargo compiler stdout:\n" + stdout.encode("utf-8")
+                 + b"\nCargo compiler stderr:\n" + stderr.encode("utf-8"))
+    stream.flush()
+
+
 @functools.lru_cache(maxsize=1)
-def metis_command() -> pathlib.Path:
-    """Return Cargo's actual compiled CLI artifact from its structured output."""
+def compile_tool() -> CompiledTool:
+    """Compile and retain the one actual CLI artifact under the committed lock.
+
+    The original JSON line, strings and tuple fields cannot be mutated through
+    the cached value. isolated_cargo preserves the caller's established Rustup
+    selector and target while avoiding incompatible ancestor source patches.
+    """
     result = cargo(["build", "--locked", "--package", "metis-cli", "--bin", "metis",
                     "--message-format=json-render-diagnostics"], capture_output=True, text=True)
     artifacts = []
-    for line in result.stdout.splitlines():
-        record = json.loads(line)
-        if (record.get("reason") == "compiler-artifact"
-                and record.get("target", {}).get("name") == "metis"
-                and record.get("target", {}).get("kind") == ["bin"]
-                and record.get("executable")):
-            artifacts.append(pathlib.Path(record["executable"]))
-    if len(artifacts) != 1 or not artifacts[0].is_file():
+    try:
+        for line in result.stdout.splitlines():
+            record = json.loads(line)
+            if (record.get("reason") == "compiler-artifact"
+                    and record.get("target", {}).get("name") == "metis"
+                    and record.get("target", {}).get("kind") == ["bin"]
+                    and record.get("executable")):
+                artifacts.append((pathlib.Path(record["executable"]), line))
+    except (ValueError, TypeError):
+        _compiler_streams(result.stdout, result.stderr)
+        raise
+    if len(artifacts) != 1 or not artifacts[0][0].is_file():
+        _compiler_streams(result.stdout, result.stderr)
         raise SystemExit("Cargo must report one existing Metis CLI executable")
-    return artifacts[0]
+    executable, artifact = artifacts[0]
+    return CompiledTool(executable, _digest(executable), artifact, result.argv, result.cwd,
+                        result.rustup_toolchain, _digest(ROOT / "Cargo.lock"), result.stdout, result.stderr)
 
 
 @functools.lru_cache(maxsize=1)
 def asset_budgets() -> dict[str, int]:
     """Read actual core-owned limits through its canonical Rust CLI command."""
-    result = run([str(metis_command()), "asset-budgets"],
+    result = run([str(compile_tool().executable), "asset-budgets"],
                             capture_output=True, text=True, cwd=ROOT, timeout=30)
     value = json.loads(result.stdout)
     expected = {"schema", "portable_path_bytes", "records", "manifest_bytes", "module_bytes", "payload_bytes"}
@@ -165,7 +217,7 @@ def build() -> None:
     distribution = OUTPUT.parent / "browser-distribution"
     with isolated_cargo(ROOT) as (directory, environment):
         environment["WASM_BINDGEN"] = wasm_bindgen()
-        result = run([str(metis_command()), "build", str(ROOT / ".config" / "browser" / "metis.json"),
+        result = run([str(compile_tool().executable), "build", str(ROOT / ".config" / "browser" / "metis.json"),
                                  str(distribution)], cwd=directory, env=environment,
                                 text=True, capture_output=True, timeout=300)
     served = pathlib.Path(result.stdout.strip())
@@ -184,18 +236,30 @@ def build() -> None:
 
 def main() -> None:
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("command", choices=("build",))
-    parser.add_argument(
+    commands = parser.add_subparsers(dest="command", required=True)
+    commands.add_parser("tool", help="Compile the CLI prerequisite and retain its artifact evidence")
+    build_command = commands.add_parser("build", help="Build the browser application")
+    build_command.add_argument(
         "--consumer-package",
         type=pathlib.Path,
         help="Include a bounded wasm-bindgen consumer package for the supplied gallery",
     )
-    parser.add_argument(
+    build_command.add_argument(
         "--consumer-gallery",
         type=pathlib.Path,
         help="Include a consumer gallery directory containing gallery.html, gallery.js and gallery.css",
     )
     args = parser.parse_args()
+    if args.command == "tool":
+        tool = compile_tool()
+        _compiler_streams(tool.compiler_stdout, tool.compiler_stderr)
+        print(json.dumps({"schema": 1, "executable": str(tool.executable),
+                          "executable_sha256": tool.executable_sha256,
+                          "compiler_artifact": json.loads(tool.artifact_json),
+                          "cargo_argv": tool.cargo_argv, "cargo_cwd": str(tool.cargo_cwd),
+                          "rustup_toolchain": tool.rustup_toolchain, "lock_sha256": tool.lock_sha256,
+                          "source_root": str(ROOT.resolve())}))
+        return
     if args.command == "build":
         build()
         if (args.consumer_package is None) != (args.consumer_gallery is None):

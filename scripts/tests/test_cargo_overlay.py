@@ -2,6 +2,7 @@
 from __future__ import annotations
 
 import os
+import json
 import pathlib
 import subprocess
 import sys
@@ -118,12 +119,23 @@ class CargoOverlayTests(unittest.TestCase):
             self.assertEqual(found[-2:], expected, "lower configurations must follow the member's own")
 
     def test_browser_build_routes_cargo_through_the_redirect(self):
-        script = (ROOT / "scripts" / "browser.py").read_text(encoding="utf-8")
-        self.assertIn("from cargo_overlay import isolated_cargo", script)
-        self.assertIn('"cargo", *arguments, "--manifest-path"', script)
-        # Exactly one Cargo invocation may exist, and it must be the redirected
-        # one: an inherited stack overlay cannot satisfy `--locked`.
-        self.assertEqual(script.count('["cargo"'), 1)
+        result = subprocess.run([sys.executable, str(ROOT / "scripts/browser.py"), "tool"],
+                                cwd=ROOT, check=True, capture_output=True, text=True,
+                                encoding="utf-8", timeout=60)
+        value = json.loads(result.stdout)
+        self.assertEqual(value["cargo_argv"][-2:], ["--manifest-path", str(ROOT / "Cargo.toml")])
+        self.assertIn("--locked", value["cargo_argv"])
+        directory = pathlib.Path(value["cargo_cwd"])
+        if configuration_directories(ROOT):
+            self.assertEqual(configuration_directories(directory), [])
+            self.assertFalse(directory.is_relative_to(ROOT))
+        else:
+            self.assertEqual(directory, ROOT)
+        target = inherited_target_directory(ROOT)
+        if target is not None:
+            self.assertTrue(pathlib.Path(value["executable"]).resolve().is_relative_to(target.resolve()))
+        self.assertEqual(pathlib.Path(value["compiler_artifact"]["manifest_path"]),
+                         ROOT / "crates/metis-cli/Cargo.toml")
 
 
 if __name__ == "__main__":

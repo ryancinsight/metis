@@ -375,6 +375,9 @@ def run_gate():
                                   "check", "advisories", "bans", "licenses", "sources"],
                 seconds=180, cwd=ROOT)
         cargo("format", ["fmt", "--all", "--check"], resolve=False)
+        # The compiled CLI produces the Rust limits consumed by gallery tests.
+        # Keep producer construction before consumers, with its own build bound.
+        execute("browser-tool", [sys.executable, str(ROOT / "scripts" / "browser.py"), "tool"], seconds=300, cwd=ROOT)
         execute("visual-tests", [sys.executable, "-m", "scripts.verification.suite", "discover", "-s", "scripts/tests", "-v"], seconds=60, cwd=ROOT)
         execute("plan", [sys.executable, str(ROOT / "scripts" / "plan.py"), "check"], seconds=60, cwd=ROOT)
         # Compile the browser host in the same locked gate; runtime evidence is
