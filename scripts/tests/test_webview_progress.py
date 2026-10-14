@@ -35,6 +35,37 @@ class WebviewProgress(unittest.TestCase):
         self.assertEqual(len(raw), length)
         return raw
 
+    def test_input_observation_survives_later_requests_and_rejects_oversize(self):
+        with tempfile.TemporaryDirectory() as directory:
+            output = Path(directory)
+            progress = Progress(output)
+            value = {"identifier": "weight", "requested": str(256 * 257 // 2),
+                     "phase": "before_unicode", "native": {"foreground": 257},
+                     "focus": {"id": "weight", "focused": True, "value": "60"}}
+            progress.input(value)
+            before = self.state(output)["input"]
+            self.assertEqual(before["observation"], value)
+            self.assertGreater(int(before["monotonic_ns"]), 0)
+            value["native"]["foreground"] = 32896
+            progress.operation("wait", ("weight",))
+            for sequence in range(1, 4):
+                self.assertEqual(progress.begin("snapshot", "weight"), sequence)
+                progress.received(self.response(257))
+                progress.mark("wait_observed", matches=1, accepted=False)
+                self.assertEqual(self.state(output)["input"], before)
+            files = {path.name: path.read_bytes() for path in output.iterdir()}
+            with self.assertRaisesRegex(ValueError, "state exceeds its byte budget"):
+                progress.input(value | {"requested": "患者" * MAX_UIA_BYTES})
+            self.assertEqual({path.name: path.read_bytes() for path in output.iterdir()}, files)
+            with self.assertRaises(TypeError):
+                progress.input([value])
+            self.assertEqual({path.name: path.read_bytes() for path in output.iterdir()}, files)
+            progress.input(value | {"phase": "after_unicode", "requested": "患者-🦀"})
+            after = self.state(output)["input"]
+            self.assertEqual(after["observation"]["requested"], "患者-🦀")
+            self.assertEqual(after["observation"]["phase"], "after_unicode")
+            self.assertGreaterEqual(int(after["monotonic_ns"]), int(before["monotonic_ns"]))
+
     def test_sequence_context_and_computed_unicode_response_remain_exact(self):
         with tempfile.TemporaryDirectory() as directory:
             output = Path(directory)
@@ -197,6 +228,7 @@ class WebviewProgress(unittest.TestCase):
                 "from webview_acceptance.progress import Progress; p=Progress(Path(sys.argv[2])); "
                 "p.operation('real child wait',('result',)); p.begin('snapshot','result'); "
                 "p.received('actual response 患者-🦀\\n'.encode()); "
+                "p.input({'identifier':'weight','requested':str(sum(range(257))),'phase':'before_unicode'}); "
                 "p.mark('before_provider_call',computed=sum(range(257))); "
                 "Path(sys.argv[2],'ready').mkdir(); os.read(0,1)"
             )
@@ -220,6 +252,9 @@ class WebviewProgress(unittest.TestCase):
                 self.assertEqual((child.returncode, stdout, stderr), (expected, b"", b""))
                 self.assertEqual({path.name: path.read_bytes() for path in output.iterdir() if path.is_file()}, before)
                 self.assertEqual(self.state(output)["details"]["computed"], 256 * 257 // 2)
+                self.assertEqual(self.state(output)["input"]["observation"],
+                                 {"identifier": "weight", "requested": str(256 * 257 // 2),
+                                  "phase": "before_unicode"})
                 self.assertEqual((output / "uia-response.json").read_bytes(), "actual response 患者-🦀\n".encode())
             finally:
                 if child.poll() is None:

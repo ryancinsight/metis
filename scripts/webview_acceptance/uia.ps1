@@ -56,6 +56,7 @@ try {
                 Set-UiaProgress 'node_current' $sequence $nodeIndex
                 $current = $_.Current
                 $value = $null
+                $valueSource = 'none'
                 $pattern = $null
                 Set-UiaProgress 'value_pattern' $sequence $nodeIndex
                 if ($_.TryGetCurrentPattern([System.Windows.Automation.ValuePattern]::Pattern, [ref]$pattern)) {
@@ -63,6 +64,7 @@ try {
                     $information = $pattern.Current
                     Set-UiaProgress 'value_read' $sequence $nodeIndex
                     $value = $information.Value
+                    $valueSource = 'ValuePattern'
                 } else {
                     Set-UiaProgress 'range_pattern' $sequence $nodeIndex
                     if ($_.TryGetCurrentPattern([System.Windows.Automation.RangeValuePattern]::Pattern, [ref]$pattern)) {
@@ -70,6 +72,7 @@ try {
                         $information = $pattern.Current
                         Set-UiaProgress 'range_read' $sequence $nodeIndex
                         $value = $information.Value.ToString([Globalization.CultureInfo]::InvariantCulture)
+                        $valueSource = 'RangeValuePattern'
                     }
                 }
                 Set-UiaProgress 'text_name' $sequence $nodeIndex
@@ -111,6 +114,7 @@ try {
                     focused = $focused
                     offscreen = $offscreen
                     value = $value
+                    value_source = $valueSource
                     text = $text
                     rect = @($rectangle.Left, $rectangle.Top, $rectangle.Width, $rectangle.Height)
                 }

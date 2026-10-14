@@ -104,12 +104,6 @@ def _collect(process, uia, observation, deadline, output, report, caught) -> Non
         except BaseException as error:
             error.add_note("owned UIA actor collection")
             cleanup_errors.append(error)
-        try:
-            checkpoint("uia_error_stream_close")
-            uia.error.close()
-        except BaseException as error:
-            error.add_note("closing actual UIA actor error stream")
-            cleanup_errors.append(error)
     if process is not None:
         # Only the owned worker's failed process is terminated here. The
         # outer held-bootstrap Job Object collects all remaining descendants.

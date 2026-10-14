@@ -10,7 +10,7 @@ import subprocess
 import time
 
 from native_display import physical_coordinates
-from native_input.windows import abi, focus, keyboard, pointer, queue
+from native_input.windows import abi, focus, focus_observation, keyboard, pointer, queue
 from python_native_accessibility import MAX_UIA_NODES, UIA_POLL_MILLISECONDS
 
 from .contract import MAX_UIA_BYTES
@@ -134,15 +134,31 @@ class Uia:
 
     def replace(self, identifier: str, value: str) -> dict:
         self.progress.operation("replace", (identifier,))
-        self.request("focus", identifier)
+        observation = {"identifier": identifier, "requested": value,
+                       "focus_sequence": None, "focus_nodes": [],
+                       "stages": {}}
+        def observed(phase):
+            observation["phase"] = phase
+            observation["stages"][phase] = focus_observation.input_state(self.handle)
+            self.progress.input(observation)
+
+        observed("before_focus")
+        nodes = self.request("focus", identifier)
+        observation["focus_sequence"] = str(self.progress.sequence)
+        observation["focus_nodes"] = [node for node in nodes if node["id"] == identifier]
+        observed("before_select")
         keyboard.send_virtual_key(0x11, key_up=False)
         try:
             self.key(0x41)
         finally:
             keyboard.send_virtual_key(0x11, key_up=True)
         _, units = keyboard.validate_text(value)
+        observation["unicode_units"] = list(units)
+        observed("before_unicode")
         keyboard.send_unicode_text(units)
+        observed("after_unicode_inserted")
         queue.flush_window(self.handle)
+        observed("after_sent_message_returned")
         self.actions.append({"action": "SendInput Unicode", "id": identifier, "value": value})
         return self.wait(identifier, lambda node: node["value"] == value)
 

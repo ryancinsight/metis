@@ -16,7 +16,7 @@ import time
 import unittest
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
-from native_input.windows import focus
+from native_input.windows import focus, focus_observation
 
 
 @unittest.skipUnless(sys.platform == "win32", "real Win32 window/focus ownership requires Windows")
@@ -123,6 +123,15 @@ class NativeFocusOwnership(unittest.TestCase):
         self.assertTrue(ledger["criterion"]["focus_within_target"])
         self.assertNotEqual(ledger["criterion"]["foreground_hwnd"], self.outside)
         self.assertEqual(ledger["criterion"]["focus_hwnd"], self.grandchild)
+        observed = focus_observation.input_state(self.top)
+        self.assertEqual(observed["read_errors"], [])
+        self.assertEqual(observed["windows"]["foreground"]["hwnd"], self.top)
+        self.assertEqual(observed["foreground_recipient"]["hwnd"], self.grandchild)
+        self.assertEqual(observed["foreground_recipient"]["class_name"], "Edit")
+        self.assertTrue(observed["recipient_within_top"])
+        self.assertEqual(set(observed["modifiers"]), {"control", "shift", "alt"})
+        for state in observed["modifiers"].values():
+            self.assertEqual(state["high_bit_set"], bool(state["raw"] & 0x8000))
         self.assertFalse(focus._activation_matches(self.user, self.top, 0, ledger))
         self.assertFalse(ledger["criterion"]["focus_within_target"])
         self.assertEqual(ledger["criterion"]["focus_hwnd"], self.grandchild)
@@ -161,6 +170,7 @@ class NativeFocusOwnership(unittest.TestCase):
             self.assertEqual(len(matches), 1, json.dumps(nodes, ensure_ascii=True))
             self.assertEqual(matches[0]["value"], value)
             self.assertEqual(matches[0]["role"], "ControlType.Edit")
+            self.assertEqual(matches[0]["value_source"], "ValuePattern")
             raw = (output / "uia-response.json").read_bytes()
             self.assertEqual(json.loads(raw), {"schema": 1, "nodes": nodes})
             progress = json.loads((output / "uia-progress.json").read_bytes())

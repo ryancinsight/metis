@@ -329,3 +329,34 @@ parent's stderr descriptor after Popen transfers its duplicated native handle
 to the child. The child owns that handle until exit; a failed launch retains its
 original exception and any actual parent-stream closure error. The UTF-8 request
 protocol, actor apartment, native query/getter order and deadlines remain intact.
+
+The [next Windows run](https://github.com/ryancinsight/metis/actions/runs/38565495242)
+passes registration and the unchanged real Unicode EDIT/value/role regression.
+The form reaches Ready, but repeated UIA snapshots report weight `60` after the
+journey requests `64`. Request 103 still progresses near the unchanged deadline;
+no single blocked getter or input-loss mechanism is established. The last reply
+overwrites the earlier focus reply, while in-memory actions do not survive the
+outer process collection. These are evidence gaps, not input failure diagnoses.
+
+Before focus, selection and Unicode insertion, and after insertion and the sent
+WM_NULL returns, the same bounded progress state now preserves the last input
+transaction independently of later polling. It contains exact requested text,
+UTF-16 units, matched focus-reply nodes and sequence, foreground HWND, the
+foreground thread's GUI focus recipient, ownership, and native modifier states.
+Each stage contains separate read-only native observations; they are non-atomic.
+Modifier fields retain raw GetAsyncKeyState values and their high-bit predicates;
+zero permits a released key or a desktop/access failure, so it cannot prove release.
+The complete encoded state retains the inclusive 256 KiB bound and an independent
+JSON snapshot before publication, so later caller mutation cannot rewrite prior
+facts. Failure rejects before replacing the previous complete state. Actual child
+termination verifies that the last complete input boundary remains inspectable.
+
+The actor names the actual ValuePattern or RangeValuePattern that supplies each
+value; it preserves existing pattern precedence and all native getter calls.
+Input records still use genuine SendInput. Microsoft specifies insertion, not
+application consumption, for [SendInput](https://learn.microsoft.com/en-us/windows/win32/api/winuser/nf-winuser-sendinput).
+The existing [SendMessageTimeout](https://learn.microsoft.com/en-us/windows/win32/api/winuser/nf-winuser-sendmessagetimeoutw)
+call waits for its sent WM_NULL, not for queued keyboard or renderer work.
+No observation grants focus, supplies a value, retries delivery or extends a
+deadline. The scenario does not close the retired parent stderr handle after
+launch; the child and canonical stream owner retain their existing lifetimes.

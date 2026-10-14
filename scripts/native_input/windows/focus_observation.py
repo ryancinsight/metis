@@ -154,6 +154,37 @@ def _snapshot(report: dict, top, target) -> None:
                                  *((key, row["thread_id"]) for key, row in windows.items()))}
 
 
+def input_state(top: int) -> dict:
+    """Observe the foreground queue's recipient without attaching input queues.
+
+    GetFocus observes only this caller's queue. GetGUIThreadInfo observes the
+    actual foreground window's thread; neither reading a recipient nor the
+    asynchronous key-state high bit proves that queued input was consumed.
+    GetAsyncKeyState zero also permits desktop/access failure, so its observed
+    high-bit predicate does not prove that a modifier was released.
+    Separate native calls remain non-atomic and never grant input admission.
+    """
+    report = {"schema": 1, "timing": "non_atomic_read_only", "read_errors": []}
+    _snapshot(report, top, top)
+    user, _ = _api()
+    foreground = report["gui_threads"]["foreground"]["value"]
+    recipient = foreground["focus"] if foreground is not None else None
+    report["foreground_recipient"] = _window(user, recipient, report["read_errors"], "foreground_recipient")
+    relation = (_read(report["read_errors"], "IsChild(top,foreground_recipient)",
+                      user.IsChild, top, recipient) if top and recipient else None)
+    report["recipient_within_top"] = None
+    if recipient == top and recipient:
+        report["recipient_within_top"] = True
+    elif relation is not None:
+        report["recipient_within_top"] = bool(relation)
+    user.GetAsyncKeyState.argtypes, user.GetAsyncKeyState.restype = [ctypes.c_int], ctypes.c_int16
+    report["modifiers"] = {}
+    for name, key in (("control", 0x11), ("shift", 0x10), ("alt", 0x12)):
+        raw = _read(report["read_errors"], f"GetAsyncKeyState({name})", user.GetAsyncKeyState, key)
+        report["modifiers"][name] = {"raw": raw, "high_bit_set": bool(raw & 0x8000) if raw is not None else None}
+    return report
+
+
 def observe_failure(error: BaseException, top, target, ledger: dict) -> None:
     """Attach actual observations; telemetry failures never replace the primary."""
     report = {"schema": 1, "timing": "before_input_queue_detach; non_atomic",

@@ -164,8 +164,8 @@ reply, two alternating fixed PowerShell native-call-stage slots, actual apartmen
 state and primary error/cleanup stage before waits. All 493 local cases complete
 in 14.520s: 491 pass and two Windows-only cases skip; all 993 source identities
 remain exact. Official PowerShell 7.6.7 verifies actual marker storage/bounds,
-Unicode/quote paths and complete-program parsing. Windows actor execution remains
-required. Input, query order, predicates, deadlines and COM model stay unchanged;
+Unicode/quote paths and complete-program parsing. This local replay predates
+the native actor verification below. Input, query order, predicates, deadlines and COM model stay unchanged;
 no timeout cause, fix or full-form pass is established.
 
 Diagnostic Windows run 38559577365 completes all 493 script cases in 27.423s:
@@ -182,8 +182,8 @@ native text and UIA name/text preserve the exact eleven-unit Unicode value;
 all four UIA nodes expose Pane/value-null. Raw/progress digests agree and the
 actor exits 0. Startup now explicitly registers the real built-in client-side
 provider table with a checked assembly identity derived from the loaded client.
-Its original EDIT/value assertion and added Edit-role assertion remain Windows
-gates; no cause or correction of the earlier form timeout is established.
+Its original EDIT/value assertion and added Edit-role assertion pass in the later
+Windows replay below; no cause or correction of the earlier form timeout is established.
 
 Equivalent-runtime Windows run 38563038128 admits the matching assembly, then
 direct registration throws NullReferenceException before any query. Its 493
@@ -191,9 +191,27 @@ cases yield 491 passes, one error and the existing Apple-only skip in 39.354s.
 Registration now invokes the same public static SDK method through its typed
 MethodInfo and retains the complete original exception. The complete actor
 program persists with a UTF-16LE BOM and launches through -File; canonical
-stream ownership transfers stderr to the child. Native execution must verify
-registration and the unchanged EDIT/value assertion; the prior inner framework
+stream ownership transfers stderr to the child. The prior inner framework
 site and original form-timeout cause remain unobserved.
+
+[Run 38565495242](https://github.com/ryancinsight/metis/actions/runs/38565495242)
+completes 493 Windows cases in 37.921s: 492 pass and one existing Apple-only case
+skips. Actual registration and the unchanged Unicode EDIT/value/Edit-role
+regression pass in 6.312691s. All 827 reported source identities, 73 artifact
+members, two retained actor programs and four prepared originals bind; Ready and
+five resource responses pass. The selected form times out at 60.0935128s while
+polling weight: request 103 follows admitted request 102 with focused value `60`
+against required `64`, exact patient text and no submitted calculation. Native
+stages continue at node 41; no single blocked getter or input-loss mechanism is
+established. All three headless outputs pass. Ordinary form, later native cases,
+all 847 listed debug archive executions, release and MSI remain unreached.
+
+The input boundary now retains exact requested text/UTF-16 units, matched focus
+reply, actual foreground queue recipient and modifiers across later polling.
+Each UIA value names its existing supplying pattern. Immutable JSON snapshots
+retain the inclusive progress-state bound; later mutation cannot alter earlier
+published facts. The input sequence, predicates and deadlines remain unchanged.
+Failure cleanup no longer refers to the retired parent stderr handle.
 
 An earlier retained 777-pass LEAK remains unattributed. One corrected-permission
 sampler replay passes 777 without LEAK in 8.052s, retaining 718 samples, 419

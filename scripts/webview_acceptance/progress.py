@@ -62,13 +62,14 @@ class Progress:
 
     def _commit(self, value: dict) -> None:
         encoded = _encoded(value)
+        committed = json.loads(encoded)
         try:
             publish(self._path, encoded)
         except OSError as error:
             error.add_note(f"publishing actual UIA progress {self._path!r} through "
                            f"{self._path.with_name(self._path.name + '.pending')!r}")
             raise
-        self._state = value
+        self._state = committed
 
     def operation(self, kind: str, identifiers: tuple[str, ...] = ()) -> None:
         if not isinstance(kind, str) or not isinstance(identifiers, tuple) or any(
@@ -76,6 +77,19 @@ class Progress:
             raise TypeError("actual UIA operation requires text and a tuple of text identifiers")
         self._commit(self._candidate("operation", {}, operation=kind,
                                      identifiers=list(identifiers)))
+
+    def input(self, observation: dict) -> None:
+        """Keep the last real input boundary independent of later UIA polling.
+
+        The complete state retains the existing inclusive byte bound. Neither
+        native facts nor requested text change after a failed publication.
+        An observation records separate non-atomic reads; it grants no focus
+        or delivery success and does not retry an input operation.
+        """
+        if not isinstance(observation, dict):
+            raise TypeError("actual UIA input observation must be a mapping")
+        value = {"monotonic_ns": str(time.monotonic_ns()), "observation": observation}
+        self._commit(self._candidate("input_observed", {}, input=value))
 
     def begin(self, action: str, identifier: str | None) -> int:
         if not isinstance(action, str) or (identifier is not None and not isinstance(identifier, str)):
