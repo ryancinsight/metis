@@ -5,6 +5,7 @@ import json
 import os
 from pathlib import Path
 import shutil
+import stat
 import subprocess
 import sys
 import tempfile
@@ -33,6 +34,25 @@ def fixture(root):
 
 
 class OriginalPreparationContracts(unittest.TestCase):
+    def test_every_enumerated_node_retains_actual_native_stat_identity_and_kind(self):
+        with tempfile.TemporaryDirectory() as temporary:
+            directory, inventory = fixture(Path(temporary).resolve())
+            actual = {name: (path, metadata)
+                      for path, name, metadata in prepared._nodes(directory, limits())}
+            self.assertEqual(set(actual), {inventory.name, "nested λ/arbitrary bytes.dat"})
+            for name, (path, metadata) in actual.items():
+                with self.subTest(path=name):
+                    native = path.stat(follow_symlinks=False)
+                    self.assertEqual((metadata.st_dev, metadata.st_ino, metadata.st_nlink),
+                                     (native.st_dev, native.st_ino, native.st_nlink))
+                    self.assertTrue(os.path.samestat(metadata, native))
+                    self.assertTrue(stat.S_ISREG(metadata.st_mode))
+                    self.assertEqual(getattr(metadata, "st_file_attributes", None),
+                                     getattr(native, "st_file_attributes", None))
+                    self.assertEqual(getattr(metadata, "st_reparse_tag", None),
+                                     getattr(native, "st_reparse_tag", None))
+            self.assertTrue(os.path.samestat(actual[inventory.name][1], inventory.stat()))
+
     def test_original_bytes_and_actual_inventory_identity_survive_recording(self):
         with tempfile.TemporaryDirectory() as temporary:
             directory, inventory = fixture(Path(temporary).resolve())
@@ -111,6 +131,15 @@ class OriginalPreparationContracts(unittest.TestCase):
             self.assertEqual((error.errno, error.filename, getattr(error, "winerror", None), str(error)),
                              (native.errno, native.filename, getattr(native, "winerror", None), str(native)))
             self.assertIn("resolve candidate", error.__notes__[0])
+            with self.assertRaises(OSError) as stat_observed:
+                missing.stat(follow_symlinks=False)
+            stat_native = stat_observed.exception
+            with self.assertRaises(type(stat_native)) as metadata_failure:
+                prepared._metadata(missing)
+            actual = metadata_failure.exception
+            self.assertEqual((actual.errno, actual.filename, getattr(actual, "winerror", None), str(actual)),
+                             (stat_native.errno, stat_native.filename, getattr(stat_native, "winerror", None), str(stat_native)))
+            self.assertEqual(actual.__notes__, [f"prepared evidence stat without following links: {missing!r}"])
             outside = root / "same bytes.bin"
             outside.write_bytes(inventory.read_bytes())
             self.assertFalse(outside.samefile(inventory))

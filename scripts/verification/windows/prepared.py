@@ -19,6 +19,15 @@ def _limits(value: dict) -> dict:
     return value
 
 
+def _metadata(path: Path) -> os.stat_result:
+    """Read native identity and reparse metadata; directory-entry caches omit identity."""
+    try:
+        return path.stat(follow_symlinks=False)
+    except OSError as error:
+        error.add_note(f"prepared evidence stat without following links: {path!r}")
+        raise
+
+
 def _nodes(directory: Path, limits: dict):
     pending, count = [directory], 0
     while pending:
@@ -33,7 +42,7 @@ def _nodes(directory: Path, limits: dict):
                     relative = path.relative_to(directory).as_posix()
                     if len(relative.encode("utf-8")) > limits["portable_path_bytes"]:
                         raise ValueError(f"prepared evidence exceeds the Rust path budget: {relative!r}")
-                    mode = entry.stat(follow_symlinks=False)
+                    mode = _metadata(path)
                     if (stat.S_ISLNK(mode.st_mode)
                             or getattr(mode, "st_file_attributes", 0) & stat.FILE_ATTRIBUTE_REPARSE_POINT):
                         raise ValueError(f"prepared evidence rejects linked nodes: {path!r}")
@@ -67,12 +76,12 @@ def record(inventory: Path, directory: Path, budgets: dict) -> Path:
     """Retain a receipt beside the original producer tree without changing it."""
     limits = _limits(budgets)
     admitted = contained_file(inventory, directory)
-    root = directory.resolve(strict=True)
     try:
-        inventory_stat = admitted.stat()
+        root = directory.resolve(strict=True)
     except OSError as error:
-        error.add_note(f"prepared evidence stat inventory: {admitted!r}")
+        error.add_note(f"prepared evidence resolve producer directory: {directory!r}")
         raise
+    inventory_stat = _metadata(admitted)
     files, matches, total = [], [], 0
     for path, relative, native in _nodes(root, limits):
         size, digest = _identity(path, limits)

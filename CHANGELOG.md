@@ -87,6 +87,8 @@
   identities in Windows verification artifacts. Native navigation traces and
   read-only pre-Ready observations diagnose startup without admitting readiness,
   sending application input, or extending fixture deadlines.
+- Read producer-file identity from native path metadata. Windows directory-entry
+  caches omit the identity fields required to match the retained inventory.
 
 ### Breaking
 

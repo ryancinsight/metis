@@ -15,8 +15,9 @@ Given the CLI-reported inventory `I`, its exclusively owned output directory
 
 1. `I` is an actual regular file contained by directory identity in `D`.
 2. Every enumerated node in `D` is an unlinked regular file or directory.
-3. The complete node count is at most `B.records`. Each relative UTF-8 name
-   has at most `B.portable_path_bytes` bytes. Each file has at most
+3. The complete enumerated descendant-node count, excluding `D` itself, is at
+   most `B.records`. Each relative UTF-8 name has at most
+   `B.portable_path_bytes` bytes. Each file has at most
    `B.module_bytes` actual bytes, and their sum is at most `B.payload_bytes`.
 4. Exactly one enumerated file has `I`'s actual native file identity.
 5. The receipt records each relative filename, actual byte count and SHA-256,
@@ -28,6 +29,16 @@ and depth cannot evade the canonical record bound. A streaming hash counts
 the bytes it reads and stops on a bound violation; it does not rely on the
 initial file length. Its buffer is bounded by the canonical manifest/module
 limits. Sorting the bounded final file records gives deterministic ordering.
+
+Directory entries supply names only. Each descendant's identity, type and
+reparse attributes come from a fresh `Path.stat(follow_symlinks=False)` call.
+That is the non-following native stat operation on every supported host;
+`os.path.samestat` compares its actual device/file identifiers with the
+inventory's same native metadata domain. CPython's Windows `DirEntry.stat`
+cache omits identity fields, so enumeration metadata cannot establish this
+equality. The [pinned CPython contract](https://github.com/python/cpython/blob/v3.13.15/Doc/library/os.rst)
+requires `os.stat` to obtain those fields; the [implementation](https://github.com/python/cpython/blob/v3.13.15/Modules/posixmodule.c)
+uses cached `win32_lstat` for `DirEntry.stat(follow_symlinks=False)`.
 
 The receipt is created exclusively beside `D`, never inside it. Thus recording
 evidence does not modify the producer's membership or bytes, and a repeated

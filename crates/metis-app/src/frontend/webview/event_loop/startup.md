@@ -16,12 +16,13 @@ its URI in the error. These observations neither advance `PageSession` nor
 manufacture a Ready event. Only the existing exact-identity `PageEvent::Ready`
 can advance Loading to Ready.
 
-Before that event, the independent acceptance observer may read the actual
-owned window's accessible status and rendered image. It sends no input before
-Ready and uses the existing fixture deadline. Observer failures remain evidence;
-they cannot replace the native failure, establish readiness or skip a journey.
-The observer distinguishes an unchanged loader document from an actual Rust
-error rendered before the coordinator can publish a correlated failure.
+During the initial required-event wait, the independent observer samples the
+desktop rectangle of a window in the owned process tree. It retains the latest
+changed BMP, physical origin/extent, digest and observer-error context. It reads
+no UIA or DOM text and sends no input or focus operation. Focus and occlusion
+remain unknown. A readable image may aid diagnosis; it does not identify a
+loader failure versus Rust initialization failure, establish readiness, replace
+the native wait failure or skip a journey. The fixture deadline stays unchanged.
 
 The verification owner retains the actual producer directory and byte identities
 for its native module. Browser-build assets cannot substitute for those bytes.

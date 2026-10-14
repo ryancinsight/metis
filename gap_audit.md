@@ -180,8 +180,19 @@ local diagnostics pass 773 Rust tests in 8.193s, 469 script tests in 14.051s,
 bytes. Actual canonical preparation retains all four original files with
 independently rehashed receipts; fresh producer/native admission, all fourteen
 mutations, twelve browser assets and selected CLI/app MSVC strict checks pass.
-The pending Windows replay must attribute the actual failure and then pass the
-existing computed native journeys. Installed page/package acceptance remains
+The diagnostic replay in [run 38515576891](https://github.com/ryancinsight/metis/actions/runs/38515576891)
+stops earlier: 469 Windows script cases in 22.356s report four errors, one
+failure and one existing Apple-only skip. The new producer-receipt tests cannot
+match the inventory identity. Windows `DirEntry.stat()` omits native identity
+fields; this owner must use actual path metadata. That failure supplies no
+native startup observation. The correction reads fresh non-following path
+metadata on every host and retains native errors with operation/path context.
+All six filesystem cases and the full 470-case local script suite pass;
+canonical preparation retains and independently rehashes all four original
+files. All 979 source identities remain unchanged during that replay. Rust
+implementation and test bytes retain their prior passing gate identities.
+A corrected Windows replay must attribute the original
+startup failure and pass the computed native journeys. Installed acceptance remains
 [METIS-WEBVIEW-RUST-001](backlog.md#METIS-WEBVIEW-RUST-001).
 
 ## Library target comparison boundaries — 2026-10-13 [patch]
