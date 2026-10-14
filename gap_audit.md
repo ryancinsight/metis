@@ -45,6 +45,12 @@ fail. Windows reports the script-suite 60-second deadline after 423 completion
 markers. Retained output lacks per-test clocks, so it does not establish an
 individual Windows test duration. Rustup alias preservation and canonical
 workflow classifier ownership require a new protected run before closure.
+The [corrected run](https://github.com/ryancinsight/metis/actions/runs/38487516306)
+passes Apple tests and all three bundle contracts. Windows again reaches the
+unchanged script-suite bound, now during the named full visual comparison test.
+Profiling the unchanged 22-test visual suite records 114 production difference
+calls consuming 67.2% of its runtime. Exact row comparison and canonical image
+owners address that measured work; new Windows execution remains required.
 The prior 0.4.1 source/lock evidence is retained in
 [historical records](docs/backlog/evidence.md#METIS-STANDALONE-0.4.1).
 

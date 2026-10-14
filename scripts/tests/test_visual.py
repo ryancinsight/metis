@@ -14,6 +14,7 @@ import zlib
 
 sys.path.insert(0, str(pathlib.Path(__file__).resolve().parents[1]))
 import visual
+from visual_tools import codec, contract, difference
 
 
 def png_fixture(width, height, pixels, *, filters=None, idat_parts=1, extra=(), header=None,
@@ -92,18 +93,18 @@ class CodecTests(unittest.TestCase):
         self.image = (2, 2, self.pixels)
 
     def test_independent_bitmap_and_png_values(self):
-        self.assertEqual(visual.decode_bitmap(bmp_fixture(2, 2, self.pixels)), self.image)
-        self.assertEqual(visual.decode_png(png_fixture(2, 2, self.pixels)), self.image)
-        self.assertEqual(visual.decode_png(png_fixture(2, 2, self.pixels, idat_parts=3)), self.image)
-        self.assertEqual(visual.decode_png(visual.encode_png(self.image)), self.image)
+        self.assertEqual(codec.decode_bitmap(bmp_fixture(2, 2, self.pixels)), self.image)
+        self.assertEqual(codec.decode_png(png_fixture(2, 2, self.pixels)), self.image)
+        self.assertEqual(codec.decode_png(png_fixture(2, 2, self.pixels, idat_parts=3)), self.image)
+        self.assertEqual(codec.decode_png(codec.encode_png(self.image)), self.image)
 
     def test_bitmap_header_and_truncation_are_rejected_before_pixels(self):
         valid = bmp_fixture(2, 2, self.pixels)
         altered = bytearray(valid)
         struct.pack_into("<i", altered, 18, 801)
         for malformed in (b"", valid[:53], valid[:-1], valid + b"x", bytes(altered), b"xx" + valid[2:]):
-            with self.subTest(length=len(malformed)), self.assertRaises(visual.VisualError):
-                visual.decode_bitmap(malformed)
+            with self.subTest(length=len(malformed)), self.assertRaises(contract.VisualError):
+                codec.decode_bitmap(malformed)
 
     def test_png_admits_only_the_writer_encoding(self):
         valid = png_fixture(2, 2, self.pixels)
@@ -124,29 +125,29 @@ class CodecTests(unittest.TestCase):
             "width": png_fixture(2, 2, self.pixels, header=struct.pack(">II", 801, 2) + header[8:]),
             "short data": png_fixture(2, 2, self.pixels, header=struct.pack(">II", 2, 3) + header[8:]),
             "long data": png_fixture(2, 2, self.pixels, header=struct.pack(">II", 2, 1) + header[8:]),
-            "oversized": b"x" * (visual.MAX_BYTES + 1),
+            "oversized": b"x" * (contract.MAX_BYTES + 1),
         }
         for name, content in malformed.items():
-            with self.subTest(name), self.assertRaises(visual.VisualError):
-                visual.decode_png(content)
+            with self.subTest(name), self.assertRaises(contract.VisualError):
+                codec.decode_png(content)
 
     def test_difference_has_exact_count_bounds_and_colors(self):
         actual = bytearray(self.pixels)
         actual[4:8] = bytes((0, 0, 0, 255))
         actual[8:12] = bytes((0, 0, 0, 255))
-        stats, image = visual.difference(self.image, (2, 2, bytes(actual)))
+        stats, image = difference.compare(self.image, (2, 2, bytes(actual)))
         self.assertEqual(stats, {"changed_pixels": 2, "bounds": [0, 0, 2, 2]})
         self.assertEqual(image[2], bytes((0, 0, 0, 255, 0, 0, 255, 255, 0, 0, 255, 255, 0, 0, 0, 255)))
-        unchanged, _ = visual.difference(self.image, self.image)
+        unchanged, _ = difference.compare(self.image, self.image)
         self.assertEqual(unchanged, {"changed_pixels": 0, "bounds": None})
-        with self.assertRaises(visual.VisualError):
-            visual.difference(self.image, (2, 2, b""))
+        with self.assertRaises(contract.VisualError):
+            difference.compare(self.image, (2, 2, b""))
 
     def test_semantics_quotes_duplicate_fields_missing_labels_and_geometry(self):
         values = semantics_fixture("form")
         encoded = encode_semantics(values)
         self.assertEqual(visual.read_semantics(encoded, "form"), values)
-        with self.assertRaises(visual.VisualError):
+        with self.assertRaises(contract.VisualError):
             visual.read_semantics(encoded + b"observed,state,idle\r\n", "form")
         for category, key, replacement in (("geometry", "0", "799 0 14 90 18"), ("meta", "width", "801"),
                                             ("input", "weight_kg", "NaN"), ("label", "output-rate", None)):
@@ -155,7 +156,7 @@ class CodecTests(unittest.TestCase):
                 del changed[category][key]
             else:
                 changed[category][key] = replacement
-            with self.subTest(category=category), self.assertRaises(visual.VisualError):
+            with self.subTest(category=category), self.assertRaises(contract.VisualError):
                 visual.read_semantics(encode_semantics(changed), "form")
 
     def test_oracle_preserves_numeric_bound_and_rejects_fake_integer(self):
@@ -168,11 +169,11 @@ class CodecTests(unittest.TestCase):
                                ("audit_sequence_id", str(2**64))):
             values = semantics_fixture("form-success")
             values["observed"][field] = values["expected"][field] = invalid
-            with self.assertRaises(visual.VisualError):
+            with self.assertRaises(contract.VisualError):
                 visual._oracle(values)
         values = semantics_fixture("form-rejected")
         values["observed"]["error_code"] = values["expected"]["error_code"] = "65536"
-        with self.assertRaises(visual.VisualError):
+        with self.assertRaises(contract.VisualError):
             visual._oracle(values)
 
 
@@ -212,7 +213,7 @@ class EvidenceTests(unittest.TestCase):
         (self.output / "image-placement.png").write_bytes(png_fixture(2, 2, self.asset_pixels))
 
     def report_failure(self, update=False):
-        with self.assertRaises(visual.VisualError) as failure:
+        with self.assertRaises(contract.VisualError) as failure:
             visual.compare(self.root, self.output, self.provenance, update)
         self.assertEqual(failure.exception.report_path, self.output / "visual/latest/report.json")
         return json.loads(failure.exception.report_path.read_text(encoding="utf-8"))
@@ -250,7 +251,7 @@ class EvidenceTests(unittest.TestCase):
         values = semantics_fixture("form-corrected")
         values["geometry"]["0"] = "799 0 14 90 18"
         (self.output / "form-corrected.csv").write_bytes(encode_semantics(values))
-        (self.output / "form-disconnected.png").write_bytes(b"x" * (visual.MAX_BYTES + 1))
+        (self.output / "form-disconnected.png").write_bytes(b"x" * (contract.MAX_BYTES + 1))
         values = semantics_fixture("form-recovered")
         values["action"]["0"] = "different input trace"
         (self.output / "form-recovered.csv").write_bytes(encode_semantics(values))
@@ -352,12 +353,12 @@ class EvidenceTests(unittest.TestCase):
             self.assertEqual(visual._fixture(other_root, other_provenance), digest)
         path = self.root / "examples/presentation/capture.rs"
         path.write_text("// Changed trace\n", encoding="utf-8")
-        with self.assertRaisesRegex(visual.VisualError, "Stale source"):
+        with self.assertRaisesRegex(contract.VisualError, "Stale source"):
             visual._fixture(self.root, self.provenance)
         self.provenance["sources"][str(path.resolve())] = visual.source_digest(path)
         self.assertNotEqual(visual._fixture(self.root, self.provenance), digest)
         del self.provenance["sources"][str(path.resolve())]
-        with self.assertRaisesRegex(visual.VisualError, "Missing fixture source"):
+        with self.assertRaisesRegex(contract.VisualError, "Missing fixture source"):
             visual._fixture(self.root, self.provenance)
 
     def test_fixture_digest_uses_canonical_lf_source_bytes(self):
@@ -375,7 +376,7 @@ class EvidenceTests(unittest.TestCase):
     def test_source_provenance_rejects_stale_lock_and_missing_host(self):
         for changed, message in (({"lock_sha256": "a" * 64}, "Stale lock provenance"),
                                  ({"host": ""}, "Missing source provenance")):
-            with self.subTest(changed=changed), self.assertRaisesRegex(visual.VisualError, message):
+            with self.subTest(changed=changed), self.assertRaisesRegex(contract.VisualError, message):
                 visual._fixture(self.root, {**self.provenance, **changed})
 
     def test_json_rejects_duplicate_fields_and_nonfinite_constants(self):
@@ -383,13 +384,13 @@ class EvidenceTests(unittest.TestCase):
         for content in ('{"schema":1,"schema":2}', '{"sources":{"path":"a","path":"b"}}',
                         '{"value":NaN}', '{"value":Infinity}', '[incomplete'):
             path.write_text(content, encoding="utf-8")
-            with self.subTest(content=content), self.assertRaises(visual.VisualError):
+            with self.subTest(content=content), self.assertRaises(contract.VisualError):
                 visual._load_json(path)
         path.write_text('{"schema":1}', encoding="utf-8")
         self.assertEqual(visual._load_json(path), {"schema": 1})
 
     def test_owned_paths_reject_resolved_escape(self):
-        with self.assertRaises(visual.VisualError):
+        with self.assertRaises(contract.VisualError):
             visual._owned(self.root / ".." / "outside.png", self.root)
         self.assertEqual(visual._owned(self.output / "form.png", self.root), self.output / "form.png")
 
@@ -399,11 +400,11 @@ class EvidenceTests(unittest.TestCase):
         original.write_text("unique work", encoding="utf-8")
         link = self.output / "visual/latest/manifest.json"
         os.link(original, link)
-        with self.assertRaisesRegex(visual.VisualError, "Hardlinked"):
+        with self.assertRaisesRegex(contract.VisualError, "Hardlinked"):
             visual._owned(link, self.output)
-        with self.assertRaisesRegex(visual.VisualError, "Hardlinked"):
+        with self.assertRaisesRegex(contract.VisualError, "Hardlinked"):
             visual._json(link, {"status": "running"})
-        with self.assertRaisesRegex(visual.VisualError, "Hardlinked"):
+        with self.assertRaisesRegex(contract.VisualError, "Hardlinked"):
             visual.begin_run(self.output)
         self.assertEqual(original.read_text(encoding="utf-8"), "unique work")
         self.assertEqual(link.stat().st_nlink, 2)
@@ -421,9 +422,9 @@ class EvidenceTests(unittest.TestCase):
             link.symlink_to(target, target_is_directory=True)
         try:
             # The redirect remains within output, so a containment-only check is insufficient.
-            with self.assertRaisesRegex(visual.VisualError, "redirected"):
+            with self.assertRaisesRegex(contract.VisualError, "redirected"):
                 visual.begin_run(self.output)
-            with self.assertRaisesRegex(visual.VisualError, "redirected"):
+            with self.assertRaisesRegex(contract.VisualError, "redirected"):
                 visual._json(link / "latest/report.json", {"status": "running"})
             self.assertEqual(original.read_text(encoding="utf-8"), "unique work")
         finally:
@@ -460,13 +461,13 @@ class EvidenceTests(unittest.TestCase):
         original = self.root / "unique-report.txt"
         original.write_text("unique work", encoding="utf-8")
         os.link(original, latest / "report.json")
-        with self.assertRaises(visual.VisualError) as failure:
+        with self.assertRaises(contract.VisualError) as failure:
             visual._record(latest, {"schema": 1, "status": "passed"}, publish=True)
         self.assertEqual(failure.exception.report_path, latest / "report.json")
         self.assertFalse((latest / "manifest.json").exists())
         self.assertEqual(original.read_text(encoding="utf-8"), "unique work")
         (latest / "manifest.json").write_text('{"status":"passed"}', encoding="utf-8")
-        with self.assertRaises(visual.VisualError):
+        with self.assertRaises(contract.VisualError):
             visual.compare(self.root, self.output, self.provenance)
         self.assertFalse((latest / "manifest.json").exists())
         self.assertEqual(original.read_text(encoding="utf-8"), "unique work")

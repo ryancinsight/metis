@@ -83,6 +83,8 @@ class BootstrapEvidenceTests(unittest.TestCase):
         for name in ("verify.py", "visual.py"):
             shutil.copyfile(SCRIPTS / name, scripts / name)
         shutil.copytree(SCRIPTS / "verification", scripts / "verification")
+        shutil.copytree(SCRIPTS / "visual_tools", scripts / "visual_tools",
+                        ignore=shutil.ignore_patterns("__pycache__"))
         (self.root / "Cargo.lock").write_text("version = 4\n", encoding="utf-8")
         (self.root / "rust-toolchain.toml").write_text(
             '[toolchain]\nchannel = "1.97.0"\n', encoding="utf-8"

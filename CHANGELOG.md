@@ -49,6 +49,10 @@
 - Preserve Rustup's invocation alias during tool discovery. Canonical image
   hashes still establish proxy identity and selected compiler/Cargo bindings;
   Homebrew's `rustup-init` image no longer receives Rustup-manager arguments.
+- Visual comparison discharges exactly equal rows before inspecting changed
+  pixels. Counts, minimal half-open bounds and every mask byte retain their
+  contract. Codec, bounds and comparison have canonical image owners; callers
+  use those owners directly without the retired root APIs.
 
 ### Breaking
 
