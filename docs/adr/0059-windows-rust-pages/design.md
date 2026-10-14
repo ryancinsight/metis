@@ -428,6 +428,10 @@ on macOS, a completion count or historical native captures cannot close it.
   compilation independently verifies the resulting inventory.
   All effective Cargo codegen/configuration environment settings enter the
   configuration identity, with unset and empty values distinguished.
+  The [typed root receipt](../../../crates/metis-cli/src/build/module/receipt.md)
+  retains actual raw code-generation inputs; exported dependency lists omit
+  environment declarations. Explicit root emission recompiles that preparation
+  root, while ordinary browser builds retain normal Cargo caching.
 - Tool execution uses `ProcessSpec::working_directory` for child-only neutral
   configuration discovery. It never mutates the parent's directory. Direct
   Cargo tool resolution verifies the actual selected rustup compiler, including

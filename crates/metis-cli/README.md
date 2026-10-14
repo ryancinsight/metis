@@ -43,6 +43,12 @@ loader, and `serve` builds it and serves it on loopback, as the
 [starter](../metis-starter/README.md) shows. `completions` generates bash, fish,
 PowerShell or zsh output from the same command table as `--help`.
 
+Native Rust-page preparation requires each compiler unit's actual raw dependency
+evidence. Its [typed root receipt](src/build/module/receipt.md) retains
+code-generation environment inputs and recompiles the selected root; ordinary
+browser builds retain Cargo caching. Unsupported raw-evidence shapes reject
+before publishing an inventory.
+
 See the [distribution manual](../../docs/manual/distribution.md) for the manifest,
 developer lifecycle, host prerequisites, installation verification and current
 target limits. Command documentation lives in that manual and `metis --help`. The binary does

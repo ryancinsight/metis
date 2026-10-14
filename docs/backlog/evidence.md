@@ -261,11 +261,11 @@ Closure: branch script/CI checks and the normal protected consumer merge.
 
 ## Authored JavaScript inventory — 2026-10-12
 
-The nine-line count covers the workbench, HTTP page and starter initialization
-modules only. `metis-app` also embeds the Windows WebView2 form (125 lines) and
-permission probe (88 lines) in `frontend/webview/assets.rs`: 213 authored
-JavaScript lines remain outside those loaders. Counts include blank/comment
-lines within the raw-string bodies; generated wasm-bindgen output and test-only
-script snippets are separate. METIS-WEBVIEW-RUST-001 owns migration of their
-theme, command, form/bridge and capability-probe lifecycle into Rust, with real
-Windows acceptance required before retiring the scripts.
+Historical 0.4 inventory, superseded by 0.5 and ADR 0059: the nine-line count
+covered only the workbench, HTTP page and starter initializers. `metis-app`
+embedded a 125-line Windows form and an 88-line permission probe: 213 authored
+controller lines outside those loaders. Counts included blank/comment lines;
+generated bindings and test-only scripts were separate. Metis 0.5 replaces those
+controllers with Rust. The current four initializers total 359 UTF-8 bytes,
+twelve physical lines and nine nonblank lines. Source retirement is complete;
+METIS-WEBVIEW-RUST-001 still requires actual Windows page/package acceptance.

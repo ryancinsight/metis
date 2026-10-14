@@ -4,8 +4,9 @@ use super::{dep_info, metadata::Graph};
 use crate::{Result, tree};
 use metis_core::embedded_assets::{
     DirectoryPolicy, DirectoryRecord, DirectorySnapshot, FILE_LIMIT, FileIdentity, InputRecord,
-    OwnerBinding, PAYLOAD_LIMIT, linked,
+    OwnerBinding, PAYLOAD_LIMIT,
 };
+mod artifact;
 mod events;
 #[cfg(test)]
 mod tests;
@@ -18,7 +19,6 @@ struct InputSet {
 }
 use std::{
     collections::{BTreeMap, BTreeSet},
-    fs,
     path::{Path, PathBuf},
 };
 
@@ -36,6 +36,7 @@ pub(super) fn collect<State: CompilerOutput>(
 ) -> Result<Inputs> {
     collect_inner(
         compilation.state.messages(),
+        compilation.state.root_dep_info(),
         &compilation.target,
         &compilation.context,
         graph,
@@ -44,6 +45,7 @@ pub(super) fn collect<State: CompilerOutput>(
 }
 fn collect_inner(
     messages: &[u8],
+    root_dep_info: Option<&Path>,
     target: &super::super::artifacts::ModuleTarget,
     context: &super::super::module::Context,
     graph: &Graph,
@@ -66,7 +68,7 @@ fn collect_inner(
     ]);
     input.files.extend(context.configurations.iter().cloned());
     package_manifests(graph, cargo_home, &mut input)?;
-    events::collect(messages, target, graph, &mut input)?;
+    events::collect(messages, target, root_dep_info, graph, &mut input)?;
     let directories =
         declared_directories(input.declared_directories, &input.owners, &mut input.files)?;
     let records = source_records(input.files, &input.owners)?;
@@ -201,43 +203,6 @@ fn owner_for<'a>(path: &Path, owners: &'a [OwnerBinding]) -> Option<&'a OwnerBin
                 .cmp(&right.root.components().count())
                 .then_with(|| right.owner_id.cmp(&left.owner_id))
         })
-}
-fn dep_info_file(artifact: &Path) -> Result<PathBuf> {
-    let parent = artifact
-        .parent()
-        .ok_or("compiler artifact has no directory")?;
-    let stem = artifact
-        .file_stem()
-        .and_then(|name| name.to_str())
-        .ok_or("compiler artifact stem is not UTF-8")?;
-    if stem == "build-script-build" {
-        let infos = fs::read_dir(parent)?
-            .map(|entry| entry.map(|entry| entry.path()))
-            .collect::<std::io::Result<Vec<_>>>()?
-            .into_iter()
-            .filter(|path| path.extension().is_some_and(|extension| extension == "d"))
-            .collect::<Vec<_>>();
-        let [info] = infos.as_slice() else {
-            return Err("build-script artifact has missing or ambiguous dep-info".into());
-        };
-        return Ok(info.clone());
-    }
-    let stem = if matches!(
-        artifact
-            .extension()
-            .and_then(|extension| extension.to_str()),
-        Some("rlib" | "rmeta" | "so" | "dylib" | "dll")
-    ) {
-        stem.strip_prefix("lib").unwrap_or(stem)
-    } else {
-        stem
-    };
-    let path = parent.join(format!("{stem}.d"));
-    let metadata = fs::symlink_metadata(&path)?;
-    if !metadata.is_file() || linked(&metadata) {
-        return Err("compiler dep-info is not an unlinked regular file".into());
-    }
-    Ok(path)
 }
 fn cargo_generated_environment(key: &str) -> bool {
     key.starts_with("CARGO_PKG_")

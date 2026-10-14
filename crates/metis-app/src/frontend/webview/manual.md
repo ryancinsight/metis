@@ -64,6 +64,13 @@ final code generation. Source inputs, generated inputs, declared directories,
 effective Cargo environment and tool identities must remain coherent through
 compilation and module generation.
 
+Cargo's primary outputs share dependency ownership with their debug/import
+companions. Preparation retains actual raw compiler records and an explicit
+[typed root receipt](../../../../metis-cli/src/build/module/receipt.md);
+exported dependency lists omit environment keys and cannot replace that receipt.
+Explicit emission recompiles the preparation root. Ordinary browser builds keep
+Cargo caching; uplifted-only nonroot dylibs without reported raw metadata reject.
+
 `inventory.bin` records the module/export/schema, provider identities, complete
 lock digest, source/configuration identities and the two generated assets.
 `bindings.bin` maps those semantic owners to current local roots and tool paths;

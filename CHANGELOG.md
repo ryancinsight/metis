@@ -75,6 +75,14 @@
   resolved ancestor-directory identity contract. Outside hardlinks and resolved
   link escapes reject; native errors retain their original values and gain
   operation/path notes. No filename or Windows prefix rewrite grants ownership.
+- Collect raw dependency evidence by Cargo compiler unit, separating primary
+  outputs from debug/import companions. Native preparation owns an explicit
+  root dep-info receipt; exported lists and check-phase environment keys cannot
+  substitute for actual code-generation inputs. Missing evidence and unknown
+  package identities reject with their original native causes and context.
+  Ordinary browser compilation retains its cache; explicit native root emission
+  recompiles that root. Uplifted-only nonroot dylibs without reported raw
+  metadata remain an explicit unsupported source shape.
 
 ### Breaking
 

@@ -56,10 +56,13 @@ live owners, Rust boundaries and the admission/restriction invariant. The
 regressions exercise missing sources, owners, files, platforms and forbidden
 completion claims against the actual inventory.
 
-Rust browser policy and HTTP migration are specified in [ADR 0056](../adr/0056-rust-browser-shell.md).
-The nine authored application JavaScript lines only initialize generated WASM
-interop and call Rust. Generated browser bindings and verification tooling
-remain; this count does not measure total shipped JavaScript bytes.
+Rust browser policy and HTTP migration are specified in [ADR 0056](../adr/0056-rust-browser-shell.md);
+[ADR 0059](../adr/0059-windows-rust-pages.md) covers the native Rust pages.
+The four production initializers total 359 UTF-8 bytes across twelve physical
+lines (nine nonblank). They initialize generated WASM interop and call Rust.
+Generated browser bindings and verification tooling remain separate; these
+counts do not measure total shipped JavaScript bytes. Actual Windows page and
+package acceptance remain open in METIS-WEBVIEW-RUST-001.
 
 Sources: [Tauri plugin inventory](https://v2.tauri.app/plugin/),
 [pinned plugin metadata](https://github.com/tauri-apps/plugins-workspace/tree/c91a9e6af5e51d75d03ae289eb69534ef22fb923/plugins),

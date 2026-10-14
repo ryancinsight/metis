@@ -109,7 +109,7 @@ pub(crate) fn application(
     result
 }
 fn produce(
-    compilation: &module::ModuleBuild<module::Compiled>,
+    compilation: &module::ModuleBuild<module::Compiled<module::RootInputs>>,
     graph: metadata::Graph,
     after: inputs::Inputs,
     tools: [ToolIdentity; 3],

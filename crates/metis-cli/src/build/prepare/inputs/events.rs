@@ -1,19 +1,18 @@
 //! Cargo compiler/build-script events extend their canonical input domains.
-use super::{Graph, InputSet, cargo_generated_environment, dep_info, dep_info_file};
+use super::{Graph, InputSet, artifact, cargo_generated_environment, dep_info};
 use crate::{Result, tree};
 use metis_core::embedded_assets::{DirectoryPolicy, FILE_LIMIT, OwnerBinding};
 use serde_json::Value;
-use std::{
-    collections::BTreeSet,
-    path::{Path, PathBuf},
-};
+use std::path::{Path, PathBuf};
 
 pub(super) fn collect(
     messages: &[u8],
     target: &super::super::super::artifacts::ModuleTarget,
+    root_dep_info: Option<&Path>,
     graph: &Graph,
     input: &mut InputSet,
 ) -> Result<()> {
+    let mut root_records = 0;
     for line in messages
         .split(|byte| *byte == b'\n')
         .filter(|line| !line.is_empty())
@@ -22,16 +21,33 @@ pub(super) fn collect(
         let Some(reason) = message.get("reason").and_then(Value::as_str) else {
             continue;
         };
-        let package_id = message.get("package_id").and_then(Value::as_str);
-        let Some((_, owner, root)) = graph
+        if !matches!(reason, "compiler-artifact" | "build-script-executed") {
+            continue;
+        }
+        let package_id = message
+            .get("package_id")
+            .and_then(Value::as_str)
+            .ok_or("compiler/build-script event omits its package identity")?;
+        let (_, owner, root) = graph
             .packages
             .iter()
-            .find(|(id, _, _)| Some(id.as_str()) == package_id)
-        else {
-            continue;
-        };
+            .find(|(id, _, _)| id == package_id)
+            .ok_or_else(|| {
+                format!(
+                    "compiler/build-script package is absent from the admitted graph: {package_id}"
+                )
+            })?;
         match reason {
-            "compiler-artifact" => compiler(&message, package_id, target, graph, input)?,
+            "compiler-artifact" => {
+                root_records += usize::from(compiler(
+                    &message,
+                    package_id,
+                    target,
+                    root_dep_info,
+                    graph,
+                    input,
+                )?);
+            }
             "build-script-executed" => script(&message, owner, root, input)?,
             _ => {}
         }
@@ -39,29 +55,32 @@ pub(super) fn collect(
             return Err("compiler input file count exceeds the canonical budget".into());
         }
     }
+    if root_dep_info.is_some() && root_records != 1 {
+        return Err(
+            "prepared root raw dep-info requires exactly one matching compiler unit".into(),
+        );
+    }
     Ok(())
 }
 fn compiler(
     message: &Value,
-    package_id: Option<&str>,
+    package_id: &str,
     target: &super::super::super::artifacts::ModuleTarget,
+    root_dep_info: Option<&Path>,
     graph: &Graph,
     input: &mut InputSet,
-) -> Result<()> {
-    let paths = message
-        .get("filenames")
-        .and_then(Value::as_array)
-        .ok_or("compiler artifact omitted filenames")?;
-    let mut infos = BTreeSet::new();
-    for file in paths.iter().filter_map(Value::as_str) {
-        infos.insert(dep_info_file(Path::new(file))?);
-    }
-    for path in infos {
-        let bytes = crate::bounded_read::read_file(
-            &path,
-            metis_core::embedded_assets::MANIFEST_LIMIT,
-            "compiler dep-info exceeds 1 MiB",
-        )?;
+) -> Result<bool> {
+    let unit = artifact::Unit::parse(message)?;
+    tracing::debug!(target = %unit.target, custom_build = unit.custom_build,
+                    primary_outputs = unit.primary.len(), companions = unit.companions.len(),
+                    "admitted compiler unit output roles");
+    let selected = package_id == target.package_id
+        && unit.target == target.target
+        && !unit.custom_build
+        && unit.cdylib;
+    let root = root_dep_info.filter(|_| selected);
+    for record in artifact::records::collect(&unit, package_id, root)? {
+        let bytes = artifact::records::read(&unit, package_id, &record)?;
         input
             .files
             .extend(dep_info::paths(&bytes, &graph.workspace)?);
@@ -77,7 +96,7 @@ fn compiler(
             }
         }
     }
-    if package_id == Some(target.package_id.as_str()) {
+    if package_id == target.package_id {
         for feature in message
             .get("features")
             .and_then(Value::as_array)
@@ -89,7 +108,7 @@ fn compiler(
         }
     }
 
-    Ok(())
+    Ok(root.is_some())
 }
 fn script(message: &Value, owner: &str, root: &Path, input: &mut InputSet) -> Result<()> {
     let output = PathBuf::from(

@@ -116,12 +116,40 @@ cases and the full 460-case local suite pass in 15.848s with zero skips; all 455
 prior cases retain their order and all 964 source hashes remain unchanged during
 verification. Actual Windows alias/junction dimensions await CI. The co-located
 [contract](scripts/verification/native_paths.py) records the observation model.
-Pinned Cargo source and actual Windows events independently prove the current
+Pinned Cargo source and actual Windows events independently prove the former
 per-filename dep-info assumption invalid for auxiliary/debug companions. A repair
-must retain every primary file and environment input; it cannot omit companion
-errors by treating missing files as successful input discovery.
+now retains compiler-unit primary raw evidence and native failure context;
+the verification and remaining source-shape boundary follow below.
 The prior 0.4.1 source/lock evidence is retained in
 [historical records](docs/backlog/evidence.md#METIS-STANDALONE-0.4.1).
+
+## Compiler-unit input evidence — 2026-10-14 [patch]
+
+Cargo companions share their primary compiler unit's input set. The collector
+admits every relevant event through the package graph and retains complete raw
+file/directory/environment evidence. Native preparation owns an explicit raw
+root receipt because exported dependency lists omit environment declarations;
+checked-phase keys cannot establish code-generation evidence. The
+[accepted receipt contract](crates/metis-cli/src/build/module/receipt.md) and
+[event ownership proof](crates/metis-cli/src/build/prepare/inputs/artifact/design.md)
+state the cache cost, admission law and failure contexts.
+
+All 773 Rust tests pass in 8.101s; all 460 script tests pass in 13.550s without
+skips. Workspace strict Clippy, 42 doctests, strict Rustdoc, formatting and plan
+checks pass. The ten new component cases retain all 68 computed assertions and
+their real generated sources. Fresh release preparation passes in 5.535s with
+2,419 compiler inputs, two directory records and 213 providers. Independent
+producer/native contexts retain identical inventory and asset bytes; all
+fourteen actual mutation/restoration cases and twelve independently rehashed
+browser assets pass. Selected CLI/app MSVC all-target strict checks pass.
+All 973 source files retain exact membership and bytes during both runs.
+
+Explicit root emission recompiles the native-preparation root; ordinary browser
+builds retain Cargo caching. An uplifted-only nonroot dylib without reported raw
+metadata rejects, owned by [METIS-COMPILER-RAW-001](backlog.md#METIS-COMPILER-RAW-001).
+These local checks do not establish actual Windows execution or resolve the
+unobserved first failing path of run 38504191516. Installed page/package
+acceptance remains [METIS-WEBVIEW-RUST-001](backlog.md#METIS-WEBVIEW-RUST-001).
 
 ## Library target comparison boundaries — 2026-10-13 [patch]
 

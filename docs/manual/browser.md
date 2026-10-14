@@ -15,7 +15,7 @@ actions are same-origin. The development policy also admits the explicit
 loopback WebSocket endpoint used by the service command; production hosts must
 replace that source with their authenticated endpoint. The generated WASM
 loader is permitted by `'wasm-unsafe-eval'`, and plugins are disabled. The
-bootstrap also cancels cross-origin anchor navigation as a defense-in-depth
+Rust browser shell also cancels cross-origin anchor navigation as a defense-in-depth
 check.
 
 The `frame-ancestors 'none'` directive is present for a host that delivers the
@@ -96,8 +96,10 @@ empty reset state after the four-second response window.
 ## Manual chapters
 
 Current Rust shell/HTTP ownership: [ADR 0056](../adr/0056-rust-browser-shell.md).
-Authored application JavaScript contains nine initialization lines; generated
-interop remains. Native admission and remaining work: [Tauri review](tauri.md).
+The workbench, HTTP and starter initializers contain nine physical lines; the
+packaged Windows initializer adds three. These four bodies total 359 UTF-8 bytes
+and nine nonblank lines. Generated interop remains. Native admission and
+remaining work: [Tauri review](tauri.md).
 
 ### Current live fragment capture — 2026-09-14
 
