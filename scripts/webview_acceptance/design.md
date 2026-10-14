@@ -290,3 +290,11 @@ thread's native message queue while a worker queries the owned controls; it must
 verify exact Unicode values, raw response bytes and completed actor cleanup.
 The next complete journey must still satisfy every original numeric, Unicode,
 error, theme, focus, permission, remount, close and cleanup assertion.
+
+The first Windows actor regression returns an admitted tree but finds no exact
+Unicode value; its former temporary-directory cleanup loses the raw payload.
+The regression retains the original Win32 text/UTF-16-unit count, complete raw
+response, progress and actor slots under `output/browser/windows-uia-regression`.
+Its unchanged assertion also reports the decoded observed nodes on mismatch.
+Directory collisions preserve the platform's native exception: Windows reports
+PermissionError/errno 13 where POSIX reports FileExistsError/errno 17.

@@ -168,6 +168,14 @@ Unicode/quote paths and complete-program parsing. Windows actor execution remain
 required. Input, query order, predicates, deadlines and COM model stay unchanged;
 no timeout cause, fix or full-form pass is established.
 
+Diagnostic Windows run 38559577365 completes all 493 script cases in 27.423s:
+489 pass, one assertion fails, two error and one existing Apple-only case skips.
+The two collision assertions expect POSIX errors; Windows retains native
+PermissionError/errno 13. The native UIA actor returns an admitted tree without
+the expected Unicode value, but temporary cleanup removes its original payload.
+The regression now retains native text and complete actor evidence under the
+existing browser artifact root; the value mismatch remains unattributed.
+
 An earlier retained 777-pass LEAK remains unattributed. One corrected-permission
 sampler replay passes 777 without LEAK in 8.052s, retaining 718 samples, 419
 process-start identities and 14,128 PIPE rows with maximum 40.146ms sample gap;

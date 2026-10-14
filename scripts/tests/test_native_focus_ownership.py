@@ -6,6 +6,7 @@ https://learn.microsoft.com/en-us/windows/win32/winmsg/window-styles
 """
 
 import ctypes
+import hashlib
 import itertools
 import json
 from pathlib import Path
@@ -129,51 +130,69 @@ class NativeFocusOwnership(unittest.TestCase):
     def test_real_uia_actor_retains_exact_reply_and_native_call_progress(self):
         from webview_acceptance.uia import Uia
 
+        retained = Path(__file__).resolve().parents[2] / "output/browser/windows-uia-regression"
+        retained.mkdir(parents=True, exist_ok=True)
+        output = Path(tempfile.mkdtemp(prefix="metis-uia-患者-🦀-'‘’‚‛-$()`", dir=retained))
         self.user.SetWindowTextW.argtypes = [ctypes.c_void_p, ctypes.c_wchar_p]
         self.user.SetWindowTextW.restype = ctypes.c_int32
+        self.user.GetWindowTextLengthW.argtypes = [ctypes.c_void_p]
+        self.user.GetWindowTextLengthW.restype = ctypes.c_int32
+        self.user.GetWindowTextW.argtypes = [ctypes.c_void_p, ctypes.c_wchar_p, ctypes.c_int]
+        self.user.GetWindowTextW.restype = ctypes.c_int
         value = "患者-🦀-" + str(256 * 257 // 2)
         if not self.user.SetWindowTextW(self.grandchild, value):
             raise ctypes.WinError()
-        with tempfile.TemporaryDirectory(prefix="metis-uia-患者-🦀-'‘’‚‛-$()`") as directory:
-            output = Path(directory)
-            actor = Uia(self.top, time.monotonic() + 60, output)
-            primary = None
+        length = self.user.GetWindowTextLengthW(self.grandchild)
+        buffer = ctypes.create_unicode_buffer(length + 1)
+        copied = self.user.GetWindowTextW(self.grandchild, buffer, length + 1)
+        (output / "fixture.json").write_text(json.dumps({
+            "schema": 1, "top": self.top, "target": self.grandchild,
+            "expected": value, "native_value": buffer.value,
+            "native_units": length, "copied_units": copied,
+        }, ensure_ascii=False), encoding="utf-8")
+        self.assertEqual(length, len(value.encode("utf-16-le")) // 2)
+        self.assertEqual(copied, length)
+        self.assertEqual(buffer.value, value)
+        actor = Uia(self.top, time.monotonic() + 60, output)
+        primary = None
+        try:
+            nodes = self.snapshot(actor)
+            matches = [node for node in nodes if node["value"] == value]
+            self.assertEqual(len(matches), 1, json.dumps(nodes, ensure_ascii=True))
+            self.assertEqual(matches[0]["value"], value)
+            raw = (output / "uia-response.json").read_bytes()
+            self.assertEqual(json.loads(raw), {"schema": 1, "nodes": nodes})
+            progress = json.loads((output / "uia-progress.json").read_bytes())
+            self.assertEqual(progress["phase"], "response_admitted")
+            self.assertEqual(progress["sequence"], "1")
+            self.assertEqual(progress["last_response"]["bytes"], len(raw))
+            self.assertEqual(progress["last_response"]["sha256"], hashlib.sha256(raw).hexdigest())
+        except BaseException as error:
+            primary = error
+            error.add_note(f"actual UIA regression evidence: {output!r}")
+            raise
+        finally:
             try:
-                nodes = self.snapshot(actor)
-                matches = [node for node in nodes if node["value"] == value]
-                self.assertEqual(len(matches), 1)
-                self.assertEqual(matches[0]["value"], value)
-                raw = (output / "uia-response.json").read_bytes()
-                self.assertEqual(json.loads(raw), {"schema": 1, "nodes": nodes})
-                progress = json.loads((output / "uia-progress.json").read_bytes())
-                self.assertEqual(progress["phase"], "response_admitted")
-                self.assertEqual(progress["sequence"], "1")
-                self.assertEqual(progress["last_response"]["bytes"], len(raw))
-            except BaseException as error:
-                primary = error
-                raise
-            finally:
-                try:
-                    actor.close()
-                except BaseException as cleanup:
-                    if primary is None:
-                        raise
-                    primary.add_note(f"actual UIA test cleanup: {type(cleanup).__name__}: {cleanup}")
-            final = json.loads((output / "uia-progress.json").read_bytes())
-            self.assertEqual(final["phase"], "actor_collected")
-            self.assertEqual(final["details"]["returncode"], 0)
-            # Actor exit closes both slots after its final stdin marker;
-            # observing them earlier would race the last post-response write.
-            slots = [json.loads(path.read_bytes()) for path in actor.progress.actor_paths]
-            latest = max(slots, key=lambda record: int(record["step"]))
-            self.assertEqual(latest["request_sequence"], "1")
-            self.assertEqual(latest["phase"], "stdin_read")
-            self.assertGreater(int(latest["stopwatch_ticks"]), 0)
-            self.assertGreater(int(latest["stopwatch_frequency"]), 0)
-            self.assertGreater(latest["process_id"], 0)
-            self.assertGreater(latest["managed_thread_id"], 0)
-            self.assertIn(latest["apartment"], ("STA", "MTA", "Unknown"))
-            self.assertEqual(latest["node_index"], -1)
+                actor.close()
+            except BaseException as cleanup:
+                if primary is None:
+                    raise
+                primary.add_note(f"actual UIA test cleanup: {type(cleanup).__name__}: {cleanup}")
+        final = json.loads((output / "uia-progress.json").read_bytes())
+        self.assertEqual(final["phase"], "actor_collected")
+        self.assertEqual(final["details"]["returncode"], 0)
+        # Actor exit closes both slots after its final stdin marker;
+        # observing them earlier would race the last post-response write.
+        slots = [json.loads(path.read_bytes()) for path in actor.progress.actor_paths]
+        latest = max(slots, key=lambda record: int(record["step"]))
+        self.assertEqual(latest["request_sequence"], "1")
+        self.assertEqual(latest["phase"], "stdin_read")
+        self.assertGreater(int(latest["stopwatch_ticks"]), 0)
+        self.assertGreater(int(latest["stopwatch_frequency"]), 0)
+        self.assertGreater(latest["process_id"], 0)
+        self.assertGreater(latest["managed_thread_id"], 0)
+        self.assertIn(latest["apartment"], ("STA", "MTA", "Unknown"))
+        self.assertEqual(latest["node_index"], -1)
 
 
 if __name__ == "__main__":

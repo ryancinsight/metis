@@ -1,5 +1,6 @@
 """Real filesystem and computed-value laws for bounded UIA progress storage."""
 
+import errno
 import hashlib
 import json
 import os
@@ -15,6 +16,11 @@ SCRIPTS = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(SCRIPTS))
 from webview_acceptance.contract import MAX_UIA_BYTES
 from webview_acceptance.progress import Progress, _encoded
+
+# Exclusive opening of an existing directory returns EACCES through Windows
+# _wopen and EEXIST through POSIX open; retain each native class and error code.
+COLLISION_ERROR, COLLISION_ERRNO = ((PermissionError, errno.EACCES) if os.name == "nt"
+                                    else (FileExistsError, errno.EEXIST))
 
 
 class WebviewProgress(unittest.TestCase):
@@ -133,8 +139,10 @@ class WebviewProgress(unittest.TestCase):
             pending = output.resolve() / "uia-progress.json.pending"
             pending.mkdir()
             before = (output / "uia-progress.json").read_bytes()
-            with self.assertRaises(FileExistsError) as caught:
+            with self.assertRaises(COLLISION_ERROR) as caught:
                 progress.mark("native collision")
+            self.assertEqual((type(caught.exception), caught.exception.errno),
+                             (COLLISION_ERROR, COLLISION_ERRNO))
             self.assertEqual(Path(caught.exception.filename), pending)
             self.assertIn(f"{pending!r}", caught.exception.__notes__[0])
             computed = sum(range(257))
@@ -146,7 +154,7 @@ class WebviewProgress(unittest.TestCase):
                 progress.mark("retain primary", primary=primary, computed=computed)
                 self.assertIs(primary, original)
                 self.assertEqual((str(primary), primary.args), (original_message, original_arguments))
-                self.assertIn("FileExistsError", primary.__notes__[0])
+                self.assertIn(f"{COLLISION_ERROR.__name__}: {caught.exception}", primary.__notes__[0])
                 self.assertIn(f"{pending!r}", primary.__notes__[0])
             self.assertEqual((output / "uia-progress.json").read_bytes(), before)
             self.assertTrue(pending.is_dir())
@@ -162,13 +170,20 @@ class WebviewProgress(unittest.TestCase):
             pending = output.resolve() / "uia-progress.json.pending"
             pending.mkdir()
             raw = self.response(257)
-            with self.assertRaises(FileExistsError) as caught:
+            with self.assertRaises(COLLISION_ERROR) as caught:
                 progress.received(raw)
+            self.assertEqual((type(caught.exception), caught.exception.errno),
+                             (COLLISION_ERROR, COLLISION_ERRNO))
             self.assertEqual((output / "uia-response.json").read_bytes(), raw)
             self.assertEqual((output / "uia-progress.json").read_bytes(), old)
             self.assertEqual(Path(caught.exception.filename), pending)
+            self.assertIn(f"{pending!r}", caught.exception.__notes__[0])
+            original = caught.exception
+            original_values = (original.args, str(original), original.__notes__.copy())
             pending.rmdir()
             progress.mark("record primary", primary=caught.exception)
+            self.assertIs(caught.exception, original)
+            self.assertEqual((original.args, str(original), original.__notes__), original_values)
             self.assertEqual(self.state(output)["last_response"], {"sequence": "1", "bytes": len(raw),
                                                                   "sha256": hashlib.sha256(raw).hexdigest()})
             self.assertEqual(sorted(path.name for path in output.iterdir()),
