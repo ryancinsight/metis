@@ -185,7 +185,7 @@ do not identify actual focus, class or input queues; native observations must
 precede a correction. No ordinary form, later native case, archive execution or
 MSI acceptance occurs. Listed or compiled archive cases do not count as execution.
 
-Focus failures now retain their original criterion handles separately from a
+The diagnostic increment retains its original criterion handles separately from a
 later non-atomic read-only snapshot. At most 22 existing SetFocus attempts and
 26 failure-only native reads retain raw return/error data, window ownership,
 classes, GUI-thread state and child relationships before detachment. Native
@@ -195,3 +195,50 @@ All 27 focused and 484 full script cases pass; eleven independent AST/control
 comparisons preserve activation, queue attachment, retries, exact success and
 cleanup. The 777-value Rust replay reports one unattributed output leak; its
 complete output is retained. Strict Clippy/Rustdoc and 42 doctests pass.
+
+## Native keyboard ownership
+
+The [instrumented replay](https://github.com/ryancinsight/metis/actions/runs/38549695922)
+passes 483 script cases with one existing Apple-only skip in 28.076s. Exact
+Rust Ready and all five resources succeed. Its selected target is a visible,
+enabled `Chrome_WidgetWin_0` in the frontend thread. Actual focus is a visible,
+enabled `Chrome_WidgetWin_1` in a WebView runtime process, and native `IsChild`
+reports it as a descendant of both the target and the foreground Metis window.
+The first SetFocus return identifies the previous top-level focus; the later
+twenty returns identify the previous delegated recipient. The final criterion
+and separate queue snapshot establish actual focus. Exact HWND equality rejects
+this real ownership relation before any UIA input.
+
+For selected target T, actual focus F and expected top-level H, admission is
+`GetForegroundWindow() == H && T != 0 && F != 0 && (F == T || IsChild(T, F))`. Equality
+is necessary because IsChild excludes the window itself; its descendant
+relation is transitive. An ancestor, sibling, unrelated window or absent focus
+rejects. PID, class and thread equality cannot replace native parent ownership:
+the observed WebView recipient lives in another process.
+[Microsoft specifies the descendant relation](https://learn.microsoft.com/en-us/windows/win32/api/winuser/nf-winuser-ischild).
+
+One canonical read observes foreground and focus once per criterion before
+queue detachment, retains those exact values, and applies this predicate in
+both bounded retries and final admission. A mismatched foreground rejects in
+the canonical owner because accessibility callers do not inspect its tuple.
+The tuple still identifies the selected container and its thread's keyboard
+layout; the capture workflow compares that container with asynchronously
+created content. It must not substitute the delegated recipient.
+
+The native regression creates real Win32 windows and exercises target, child,
+grandchild, sibling, ancestor, unrelated and absent focus, plus mismatched
+foreground. It uses real GetFocus/IsChild and destroys every owned window;
+non-Windows execution cannot establish these cases. The unchanged selected
+and ordinary production journeys remain the cross-process WebView/input proof.
+Retries, sleep intervals, queue attachments, input methods and deadlines retain
+their existing bounds. No class/PID allowlist, synthetic browser, injected
+script, replacement result or input bypass supplies acceptance.
+
+Local verification preserves all 484 original ordered cases and adds one
+real-Windows hierarchy case: 485 total, 484 pass and the Windows-only case skips
+on Darwin in 16.889s. All 990 physical source members retain exact bytes during
+the suite; 970 timing records pair every case. Independent review binds the
+native predicate/test ABI and all four changed source/design identities. All
+373 supported API-graph inputs remain exact; the existing partial comparison
+result retains its scope. This source review and portable pass cannot replace
+execution of the native hierarchy and complete selected/ordinary journeys.

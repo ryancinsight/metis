@@ -99,7 +99,10 @@ def _focus_api():
     user32.SetForegroundWindow.restype = ctypes.c_int32
     user32.SetFocus.argtypes = [ctypes.c_void_p]
     user32.SetFocus.restype = ctypes.c_void_p
+    user32.GetFocus.argtypes = []
     user32.GetFocus.restype = ctypes.c_void_p
+    user32.IsChild.argtypes = [ctypes.c_void_p, ctypes.c_void_p]
+    user32.IsChild.restype = ctypes.c_int32
     user32.GetForegroundWindow.argtypes = []
     user32.GetForegroundWindow.restype = ctypes.c_void_p
     user32.SetWindowPos.argtypes = [
@@ -117,6 +120,28 @@ def _focus_api():
     user32.GetKeyboardLayout.restype = ctypes.c_void_p
 
     return user32, kernel32
+
+
+def _activation_matches(user32, handle: int, focus_target: int, ledger: dict) -> bool:
+    """Observe native ownership once, before the caller detaches input queues.
+
+    The selected WebView container can delegate focus to a descendant in a
+    runtime process. IsChild follows that native parent chain; PID, class and
+    thread equality do not express keyboard ownership. A target is not its
+    own child, so equality is a separate accepted case. Zero is never focus.
+    https://learn.microsoft.com/en-us/windows/win32/api/winuser/nf-winuser-ischild
+    """
+    actual_foreground = int(user32.GetForegroundWindow() or 0)
+    actual_focus = int(user32.GetFocus() or 0)
+    within_target = bool(
+        focus_target and actual_focus
+        and (actual_focus == focus_target or user32.IsChild(focus_target, actual_focus))
+    )
+    ledger["criterion"] = {
+        "foreground_hwnd": actual_foreground, "focus_hwnd": actual_focus,
+        "focus_within_target": within_target,
+    }
+    return actual_foreground == handle and within_target
 
 
 def _activate(user32, handle: int, focus_target: int, ledger: dict) -> bool:
@@ -151,9 +176,7 @@ def _activate(user32, handle: int, focus_target: int, ledger: dict) -> bool:
     focus_rounds = 0
     while (
         focus_rounds < FOCUS_ROUNDS
-        and not (
-            foreground_set and int(user32.GetFocus() or 0) == focus_target
-        )
+        and not _activation_matches(user32, handle, focus_target, ledger)
     ):
         focus_rounds += 1
         time.sleep(FOCUS_WAIT_SECONDS)
@@ -165,32 +188,31 @@ def _activate(user32, handle: int, focus_target: int, ledger: dict) -> bool:
         foreground_set = bool(user32.SetForegroundWindow(handle))
         previous = user32.SetFocus(focus_target)
         focus_observation.record_attempt(ledger, previous)
-    # Judge activation by the actual foreground window; the
-    # SetForegroundWindow return value alone is not authoritative.
-    actual_foreground = int(user32.GetForegroundWindow() or 0)
-    foreground_set = actual_foreground == handle
-    actual_focus = int(user32.GetFocus() or 0)
-    ledger["criterion"] = {"foreground_hwnd": actual_foreground, "focus_hwnd": actual_focus}
-    if actual_focus != focus_target:
+    # All callers receive the same admission contract, including callers that
+    # use focus_window only for its verified side effect and ignore its tuple.
+    if not _activation_matches(user32, handle, focus_target, ledger):
+        foreground_set = ledger["criterion"]["foreground_hwnd"] == handle
         raise RuntimeError(
-            f"the window {hex(focus_target)} could not receive keyboard focus "
+            f"the window {hex(focus_target)} could not own keyboard focus "
             f"(foreground_set={foreground_set})"
         )
-    return foreground_set
+    return ledger["criterion"]["foreground_hwnd"] == handle
 
 
 def focus_window(handle: int) -> tuple[int, bool, int]:
     """Give `handle`'s keyboard target focus and verify the activation.
 
-    Returns the keyboard layout of the target thread, whether the window is
-    the foreground window, and the window that received keyboard focus. A
-    hosted content child (a browser render surface) owns the keyboard, so
-    focusing only the top-level window leaves typed text and navigation
-    keys in the host's own focus chain instead of the page.
+    Returns the keyboard layout of the target thread, verified foreground
+    activation, and the selected keyboard container. A hosted content child
+    (a browser render surface) owns the keyboard and may delegate focus to
+    its native descendant, including a WebView runtime process. The returned
+    container remains the identity used for asynchronous content selection;
+    the actual recipient remains a separate criterion observation.
 
     # Errors
-    Raises `RuntimeError` when the keyboard focus cannot be placed on the
-    target or a window state read fails.
+    Raises `RuntimeError` when the actual foreground differs from `handle`,
+    focus belongs to neither the container nor its descendants, or a window
+    state read fails.
     """
     user32, kernel32 = _focus_api()
     ledger = {"attempts": [], "criterion": None}

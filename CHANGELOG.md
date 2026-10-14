@@ -113,9 +113,17 @@
   All twenty focused US-ASCII cases and the same complete 480-case suite pass;
   native Windows replay remains required.
 - [patch] Retain bounded actual focus/window/input-queue observations on native
-  activation failure before detaching queues. Preserve the original activation
-  operations, retries, exact focus criterion and error precedence; diagnostics
-  do not establish or repair focus.
+  activation failure before detaching queues. Preserve original activation,
+  retries, exact focus criterion and error precedence. Run 38549695922 records
+  foreground at the requested top and actual focus in a WebView runtime
+  descendant of target and top; exact-HWND equality rejects it before UIA input.
+  The selected target-or-descendant correction requires nonzero focus and actual
+  foreground top and retains requested-target output/layout, activation, retries
+  and deadlines; PID/class rules cannot grant focus. The canonical check applies
+  in both retry and final admission, including callers that ignore its tuple.
+  All 484 local cases pass; the added real-Win32 hierarchy case skips on Darwin
+  (485 total, 16.889s; all 990 source identities unchanged). Actual Windows
+  hierarchy and complete native journeys remain required.
 - Adopt the protected Moirai 0.9.2 private Rust bridge correction from
   [PR 621](https://github.com/ryancinsight/Moirai/pull/621). Seven requirements and
   both locks update the selected family while preserving every unrelated package
@@ -136,9 +144,22 @@
   `embedded_module` is optional; Windows CLI build/package/dev prepare it before
   compiling the declared executable. Missing/stale preparation fails the build.
 
-Actual Windows Rust-page and installed-package acceptance, consented positive
-permission/late-acquisition cleanup and final consumer compatibility checks
-remain pending. Earlier native captures and portable checks do not close them.
+[Run 38549695922](https://github.com/ryancinsight/metis/actions/runs/38549695922)
+runs 484 Windows script cases in 28.076s: 483 pass and one existing Apple-only
+case skips. All four prepared originals, five resources and exact page Ready
+pass; focus rejects before input. Both full form journeys, later native cases,
+all 847 listed debug archive executions, release and MSI remain unexecuted.
+Apple passes 777 tests in 39.835s, 42 doctests and three bundle contracts; five
+guards and all fourteen fuzz targets pass 108,683,277 executions in 704 reported
+seconds. Advisory API wrapper success does not establish compatibility coverage.
+
+An earlier retained 777-pass LEAK remains unattributed. One corrected-permission
+sampler replay passes 777 without LEAK in 8.052s, retaining 718 samples, 419
+process-start identities and 14,128 PIPE rows with maximum 40.146ms sample gap;
+all 989 source identities match. The original permission-denied sampler is
+noncomparable, not a product regression; the clean replay does not close attribution.
+Actual Windows Rust-page/package acceptance, consented positive permissions and
+late-acquisition cleanup, and fifteen library target boundaries remain open.
 
 ## [0.4.1] - Unreleased
 

@@ -2,18 +2,19 @@
 
 ## Test output ownership — 2026-10-13 [patch]
 
-The latest 777-test replay passes every value but reports LEAK at
-`backend::tests::http_application_admits_only_the_launcher_principal`.
-Complete runner output is retained. The test creates no child and joins its
-HTTP server thread; the retaining process remains unknown. Earlier 161/759
-observations also remain unattributed; later clean runs prove no correction.
-Verification preserves all workloads and leak deadlines.
-[METIS-NEXTEST-PIPE](backlog.md#METIS-NEXTEST-PIPE) requires scoped actual pipe
-holder evidence before selecting an ownership correction.
+An earlier retained 777-test replay passes every value but reports LEAK at
+`backend::tests::http_application_admits_only_the_launcher_principal`; it creates
+no child and joins its server thread. That pipe holder and earlier 161/759
+observations remain unattributed. One corrected-permission sampler replay passes
+777 tests without LEAK in 8.052s: 718 samples, 419 process-start identities,
+14,128 PIPE rows and maximum 40.146ms sample gap; all 989 source identities match.
+The original permission-denied sampler is noncomparable, not a product regression.
+The clean replay does not close attribution or change workloads/leak deadlines.
+[METIS-NEXTEST-PIPE](backlog.md#METIS-NEXTEST-PIPE) requires actual pipe-holder evidence.
 
 ## Rust Windows page acceptance — 2026-10-13 [minor]
 
-Target: Metis 0.5.0 and Moirai 0.9.1. Rust source replaces the 213 authored Windows
+Target: Metis 0.5.0 and Moirai 0.9.2. Rust source replaces the 213 authored Windows
 form/probe controller lines with one three-line ABI bootstrap. The shared page
 codec, native lifecycle, actual permission mechanisms and independently verified
 asset preparation are implemented. Canonical desktop diagnostics and supported
@@ -303,25 +304,24 @@ an observed timeout remains primary before cleanup and capture. Unavailable
 capture remains distinct from successfully read empty text. Constructor tests
 use real child streams/native errors without claiming induced OS cleanup failure.
 
-Adopted-Moirai-0.9.2 local verification passes 480/480 tests in 14.470s with zero skips
-under the unchanged 60s bound. All 987 physical source members retain exact
-membership and bytes; 960 timing records pair all 480 ordered cases. Twenty
-focused process/acceptance cases pass, and the actual compiled Metis model yields
-rate/drug pairs 0.48/0.96, 0.6/2.4 and 0.09/0.72. These results establish portable
-orchestration and calculations, not Windows form acceptance. The
+The earlier Moirai-0.9.2 local replay passes 480/480 in 14.470s with zero skips under 60s;
+987 source identities match and 960 timing records pair all cases. Twenty focused cases
+and compiled rate/drug pairs 0.48/0.96, 0.6/2.4 and 0.09/0.72 prove portable calculations, not Windows acceptance. The
 [case and budget contract](scripts/webview_acceptance/design.md#selected-and-ordinary-production-form-execution)
 requires both real form journeys and all original native scenarios before closure.
 
-The corrected [Windows run 38545004083](https://github.com/ryancinsight/metis/actions/runs/38545004083)
-completes 480 cases in 32.495s: 479 pass and one existing Apple-only case skips.
-All four prepared originals match; all five resources return 200. The actual
-form emits exact-identity Ready and DOM reports the connected host bridge.
-Three supervised model calculations match the rational oracle. OS keyboard
-focus then fails before UIA input: the requested child differs from the
-unrecorded actual focus. Window/thread/queue observations are required before
-selecting a correction. Ordinary form, later native cases, all 847 listed debug
-archive tests and MSI remain unexecuted. Apple passes 777 tests, 42 doctests and
-three bundle contracts; all fourteen fuzz targets pass 107,220,402 executions.
+The latest [Windows run 38549695922](https://github.com/ryancinsight/metis/actions/runs/38549695922)
+runs 484 cases in 28.076s: 483 pass and one existing Apple-only case skips.
+All four prepared originals match; all five resources return 200 with exact content types; exact-identity Ready and all three rational model outputs pass.
+The original criterion records foreground equal to the requested top and actual
+focus in an installed WebView runtime descendant of both target and top.
+Exact-HWND equality rejects that focus before UIA input. The selected correction
+requires nonzero target-or-`IsChild(target, actual)` focus plus actual foreground top.
+Requested-target output/layout and activation/retry/deadline bounds remain; PID/class rules cannot grant focus. The correction passes all 484 local cases;
+the new Windows-only case skips on Darwin (485 total, 16.889s; 990 source identities unchanged). Windows hierarchy, full journeys, 847 debug archive executions, release and
+MSI remain unexecuted. Exact-tree Apple passes 777 tests in 39.835s, 42 doctests
+and three bundle contracts; five guards and fourteen fuzz targets pass 108,683,277 executions in 704 reported seconds.
+Advisory API wrapper success remains excluded from compatibility proof.
 
 ## Library target comparison boundaries — 2026-10-13 [patch]
 
