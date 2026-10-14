@@ -53,6 +53,9 @@
   pixels. Counts, minimal half-open bounds and every mask byte retain their
   contract. Codec, bounds and comparison have canonical image owners; callers
   use those owners directly without the retired root APIs.
+- Failed build tools retain their bounded captured output with executable and
+  exit-status context. The browser verification owner publishes both captured
+  child streams and preserves the child's nonzero exit status.
 
 ### Breaking
 

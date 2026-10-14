@@ -4,8 +4,10 @@
 
 One core/CLI candidate passes 161 values but reports one leaky process; an
 initial clean-export gate also reports a test failure. Neither complete failure
-output is retained, so their test/process owners are unknown. Retained complete
-161/162/750-test replays pass without leak flags; they establish no correction.
+output is retained, so their test/process owners are unknown. A retained
+759-test run reports LEAK at `embedded_assets::fs::process::tests::actual_child_role`;
+the ordinary branch creates no child or executor. The retaining process is
+unknown. The final 759-test replay has no leak flag; it establishes no correction.
 Canonical verification keeps its
 existing deadlines and workloads. [METIS-NEXTEST-PIPE](backlog.md#METIS-NEXTEST-PIPE)
 owns attribution and real cleanup if the observation recurs.
@@ -50,7 +52,16 @@ passes Apple tests and all three bundle contracts. Windows again reaches the
 unchanged script-suite bound, now during the named full visual comparison test.
 Profiling the unchanged 22-test visual suite records 114 production difference
 calls consuming 67.2% of its runtime. Exact row comparison and canonical image
-owners address that measured work; new Windows execution remains required.
+owners preserve every output byte. The [subsequent run](https://github.com/ryancinsight/metis/actions/runs/38490513996)
+passes all 444 Windows script tests in 37.528 seconds under the unchanged
+60-second limit, with one existing Apple-only skip. Apple passes 754 Rust tests,
+42 doctests and all three bundle contracts. Windows then fails the browser
+asset build: the actual Rust CLI exits 1, but the capturing Python boundary
+omits both child streams. Current source preserves both browser child streams,
+native exit/signal status and Rust's bounded failed-tool stdout/cleanup context.
+All 759 local Rust and 447 script tests, strict diagnostics and 42 doctests pass.
+A new Windows run must identify the actual cause; native preparation, runtime
+and package acceptance do not run in the failed revision.
 The prior 0.4.1 source/lock evidence is retained in
 [historical records](docs/backlog/evidence.md#METIS-STANDALONE-0.4.1).
 

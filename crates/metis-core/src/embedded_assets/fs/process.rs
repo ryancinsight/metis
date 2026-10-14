@@ -1,4 +1,5 @@
 //! One provider-owned bounded subprocess capture for preparation and tool identity.
+mod failure;
 use super::super::inventory::invalid;
 use moirai_core::executor::{ExecutorConfig, TaskSpawner};
 use moirai_executor::HybridExecutor;
@@ -10,6 +11,9 @@ use std::{
     time::Duration,
 };
 
+#[cfg(test)]
+mod tests;
+
 /// Existing Cargo/tool stdout admission bound, independent of manifest size.
 pub const TOOL_OUTPUT_LIMIT: u64 = 16 * 1024 * 1024;
 /// Existing bounded identity-query deadline.
@@ -20,6 +24,11 @@ pub const TOOL_IDENTITY_DEADLINE: Duration = Duration::from_secs(30);
 /// # Errors
 /// Preserves OS/process/executor failures, timeout, unsuccessful exit and output
 /// overflow. A failed tool does not produce an accepted partial stdout value.
+/// Nonzero exits retain the exact program, native status and bounded stdout.
+/// Valid UTF-8 renders verbatim; other bytes use tagged, reversible ASCII
+/// escaping, including escape of literal backslashes. No replacement character
+/// or truncated prefix substitutes for the collected bytes. Stderr remains
+/// inherited. A simultaneous shutdown failure retains the primary error.
 pub fn capture_command(
     program: &Path,
     args: &[OsString],
@@ -91,10 +100,11 @@ pub fn capture_command(
             return Err(invalid("build output exceeds the 16 MiB capture budget"));
         }
         if !status.exit_status().success() {
-            return Err(io::Error::other(format!(
-                "build tool failed: {}",
-                status.exit_status()
-            )));
+            return Err(io::Error::other(failure::ToolFailure {
+                program: program.to_path_buf(),
+                status: status.exit_status(),
+                stdout: bytes,
+            }));
         }
         Ok(bytes)
     })();
@@ -107,8 +117,9 @@ pub fn capture_command(
     match (result, cleanup) {
         (Ok(bytes), Ok(())) => Ok(bytes),
         (Err(error), Ok(())) | (Ok(_), Err(error)) => Err(error),
-        (Err(error), Err(cleanup)) => Err(io::Error::other(format!(
-            "{error}; executor shutdown also failed: {cleanup}"
-        ))),
+        (Err(primary), Err(cleanup)) => Err(io::Error::other(failure::CleanupFailure {
+            primary,
+            cleanup,
+        })),
     }
 }

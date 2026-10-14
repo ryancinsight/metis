@@ -6,8 +6,8 @@ Current framework version: Metis 0.5.0. Remaining capability work follows.
 - Outcome: every test descendant releases its inherited output before the unchanged nextest leak deadline.
 - Scope: attribute the reported candidate-run output retention to its real process owner before changing source.
 - Acceptance: retain complete runner output and process evidence, reproduce the named failure, then verify actual owner cleanup without timeout or test-domain changes.
-- Basis: one 161-test candidate reports one leaky process and an initial clean-export gate reports a test failure; both lack retained complete failure output. Retained 161/162/750-test replays pass without leak flags, which establishes no root-cause correction.
-- Next: retain complete output for subsequent canonical runs and investigate the named owner if the diagnostic recurs.
+- Basis: one 161-test candidate reports one leaky process and an initial clean-export gate reports a test failure; both lack retained complete failure output. A retained 759-test run reports LEAK at `embedded_assets::fs::process::tests::actual_child_role`; that branch creates no child or executor, so the retaining process remains unknown. The final 759-test replay passes without leak flags, which establishes no root-cause correction.
+- Next: retain complete output and capture the actual pipe holder if the named diagnostic recurs, without changing the fixture, workload or leak deadline.
 
 <a id="METIS-WEBVIEW-RUST-001"></a>
 ## METIS-WEBVIEW-RUST-001 — Rust-owned Windows page lifecycle [minor]
@@ -16,6 +16,8 @@ Current framework version: Metis 0.5.0. Remaining capability work follows.
 - Scope: Rust/WASM owns the former 125-line form and 88-line permission controller; one three-line ABI bootstrap retains generated browser interoperability. The shared page protocol, native lifecycle and canonical prepared-asset inventory are implemented in source.
 - Acceptance: real Windows journeys preserve theme/command focus, shortcuts, input-sensitive calculation replies, malformed/error replies, request admission and all four capability denials; listeners and permission work detach on teardown.
 - Verification: run actual Windows Ready/Stop/remount/Destroyed, four-kind native denial plus browser outcomes, genuine OS submission and malformed/duplicate/stale command fixtures under strict 60-second bounds; then validate the packaged executable. Compare exact computed values, focus and resources. Static checks and prior captures do not close this item.
+- Current gate: [run 38490513996](https://github.com/ryancinsight/metis/actions/runs/38490513996) passes 444 Windows script tests in 37.528 seconds and Apple Rust/bundle checks. Browser build exits 1 before native acceptance; its captured child diagnostics require publication before root-cause attribution.
+- Current source: Rust retains bounded failed-tool stdout and cleanup context; the browser owner publishes both streams and preserves child exit/signal status. All 759 Rust and 447 script tests pass; strict diagnostics and 42 doctests pass. A new Windows run must identify and resolve the browser build failure before native acceptance.
 - Design: [ADR 0059](docs/adr/0059-windows-rust-pages.md) defines PAL mechanisms, Rust page ownership and generated-asset coherence for Metis 0.5.0 and Moirai 0.9.0; [current preparation manual](crates/metis-app/src/frontend/webview/manual.md) documents `metis prepare`, direct Cargo requirements and canonical asset budgets. Supported library comparisons pass; [remaining target boundaries](gap_audit.md#library-target-comparison-boundaries-2026-10-13-patch) and real Windows acceptance remain open.
 - Remaining execution boundary: frontend/backend exchanges preserve their synchronous contract; cancellable owner-thread pumping and backpressure while backend work is in flight require a separate transport increment.
 

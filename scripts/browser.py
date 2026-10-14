@@ -7,7 +7,9 @@ import json
 import os
 import pathlib
 import shutil
+import signal
 import subprocess
+import sys
 
 from cargo_overlay import isolated_cargo
 from verification import workspace
@@ -21,8 +23,45 @@ CONTENT_SECURITY_POLICY = ROOT / "crates" / "metis-core" / "src" / "content_secu
 MAX_CONSUMER_PAGE_BYTES = 512 * 1024
 
 
-def run(command: list[str]) -> None:
-    subprocess.run(command, cwd=ROOT, check=True, timeout=300)
+def run(command: list[str], *, cwd=ROOT, timeout=300, **options) -> subprocess.CompletedProcess:
+    """Preserve checked-tool failure status, context, and both captured streams.
+
+    Captured Rust tool text uses UTF-8 independently of the Windows console
+    code page. Raw capture remains raw. Emit both streams before propagating
+    the original CalledProcessError; callers retain its argv/status/payloads.
+    """
+    if options.get("text"):
+        options.setdefault("encoding", "utf-8")
+    try:
+        return subprocess.run(command, cwd=cwd, check=True, timeout=timeout, **options)
+    except subprocess.CalledProcessError as error:
+        stream = sys.stderr.buffer
+        context = {"command": error.cmd, "cwd": str(cwd), "returncode": error.returncode}
+        stream.write(("browser subprocess failed: " + json.dumps(context, ensure_ascii=False) + "\n").encode("utf-8"))
+        for name, data in (("stdout", error.stdout), ("stderr", error.stderr)):
+            stream.write((name + ":\n").encode("utf-8"))
+            if data is not None:
+                stream.write(data.encode("utf-8") if isinstance(data, str) else data)
+            stream.write(b"\n")
+        stream.flush()
+        raise
+
+
+def terminate(returncode: int) -> None:
+    """Preserve the checked child's process exit or POSIX termination signal.
+
+    POSIX subprocess returncode -s means termination by signal s, not an
+    integer exit status. Default disposition, an unblocked signal and delivery
+    to this process reproduce that wait status; SystemExit(-s) would truncate
+    it to an unrelated unsigned exit byte. Nonnegative exits stay unchanged.
+    """
+    if os.name != "posix" or returncode >= 0:
+        raise SystemExit(returncode)
+    number = -returncode
+    if number not in (signal.SIGKILL, signal.SIGSTOP):
+        signal.signal(number, signal.SIG_DFL)
+    signal.pthread_sigmask(signal.SIG_UNBLOCK, {number})
+    os.kill(os.getpid(), number)
 
 
 def cargo(arguments: list[str], *, timeout: int = 300, **options) -> subprocess.CompletedProcess:
@@ -34,11 +73,10 @@ def cargo(arguments: list[str], *, timeout: int = 300, **options) -> subprocess.
     chain; the manifest is therefore passed explicitly.
     """
     with isolated_cargo(ROOT) as (directory, environment):
-        return subprocess.run(
+        return run(
             ["cargo", *arguments, "--manifest-path", str(ROOT / "Cargo.toml")],
             cwd=directory,
             env=environment,
-            check=True,
             timeout=timeout,
             **options,
         )
@@ -54,10 +92,9 @@ def wasm_bindgen() -> str:
     )
     for candidate in candidates:
         if candidate and candidate.is_file():
-            result = subprocess.run(
+            result = run(
                 [str(candidate), "--version"],
                 cwd=ROOT,
-                check=True,
                 capture_output=True,
                 text=True,
                 timeout=30,
@@ -93,7 +130,7 @@ def metis_command() -> pathlib.Path:
 @functools.lru_cache(maxsize=1)
 def asset_budgets() -> dict[str, int]:
     """Read actual core-owned limits through its canonical Rust CLI command."""
-    result = subprocess.run([str(metis_command()), "asset-budgets"], check=True,
+    result = run([str(metis_command()), "asset-budgets"],
                             capture_output=True, text=True, cwd=ROOT, timeout=30)
     value = json.loads(result.stdout)
     expected = {"schema", "portable_path_bytes", "records", "manifest_bytes", "module_bytes", "payload_bytes"}
@@ -128,9 +165,9 @@ def build() -> None:
     distribution = OUTPUT.parent / "browser-distribution"
     with isolated_cargo(ROOT) as (directory, environment):
         environment["WASM_BINDGEN"] = wasm_bindgen()
-        result = subprocess.run([str(metis_command()), "build", str(ROOT / ".config" / "browser" / "metis.json"),
+        result = run([str(metis_command()), "build", str(ROOT / ".config" / "browser" / "metis.json"),
                                  str(distribution)], cwd=directory, env=environment,
-                                check=True, text=True, capture_output=True, timeout=300)
+                                text=True, capture_output=True, timeout=300)
     served = pathlib.Path(result.stdout.strip())
     if served != distribution / "app" or not served.is_dir():
         raise SystemExit("Rust browser build does not report its exact served directory")
@@ -204,4 +241,7 @@ def package_consumer(package: pathlib.Path, gallery: pathlib.Path) -> None:
 
 
 if __name__ == "__main__":
-    main()
+    try:
+        main()
+    except subprocess.CalledProcessError as error:
+        terminate(error.returncode)
