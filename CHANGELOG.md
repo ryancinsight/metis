@@ -107,6 +107,11 @@
   The canonical process owner attaches available captured text/child status to
   original errors and preserves observed timeout precedence before cleanup.
   The adopted Moirai 0.9.2 graph passes all 480 local cases; Windows acceptance remains open.
+- [patch] Read persisted process evidence as UTF-8 in the acceptance regressions
+  and compare the exact represented path in native error notes. Preserve all
+  Unicode values, original error identities, cases and execution deadlines.
+  All twenty focused US-ASCII cases and the same complete 480-case suite pass;
+  native Windows replay remains required.
 - Adopt the protected Moirai 0.9.2 private Rust bridge correction from
   [PR 621](https://github.com/ryancinsight/Moirai/pull/621). Seven requirements and
   both locks update the selected family while preserving every unrelated package

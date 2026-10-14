@@ -166,3 +166,13 @@ Rust page fixture. The adopted graph passes 777 Rust tests, 480 script cases,
 rejection cases. CLI/app/backend selected Windows compilation passes. Both Metis
 form journeys remain pending; portable and provider results cannot establish
 ordinary or selected Metis full-form acceptance.
+
+The first adopted Windows replay completes all 480 script cases in 37.016s,
+with four new persistence-assertion failures and the existing Apple-only skip.
+Three readers use platform-default decoding for UTF-8 evidence; one compares
+a raw Windows path with its escaped diagnostic representation. No native
+journey, archive execution or package acceptance runs in that replay.
+The corrected readers use the persisted UTF-8 contract and exact represented
+paths. All twenty focused cases pass under actual US-ASCII in 1.913s; the same
+480 full-suite cases pass in 17.335s without skips. Values, case ordering and
+all execution bounds remain unchanged. Native Windows replay remains required.

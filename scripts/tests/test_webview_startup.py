@@ -75,7 +75,7 @@ print(json.dumps({'selection': json.loads(value) if value is not None else None,
         ])
         self.assertEqual(len({case.identifier for wave in cases.WAVES for case in wave}), 7)
         self.assertEqual(cases.SCHEDULE_SECONDS, 490)
-        caller = ast.parse((SCRIPTS / "verification/windows/__init__.py").read_text())
+        caller = ast.parse((SCRIPTS / "verification/windows/__init__.py").read_text(encoding="utf-8"))
         command = next(node for node in ast.walk(caller) if isinstance(node, ast.Call)
                        and isinstance(node.func, ast.Name) and node.func.id == "execute"
                        and node.args and isinstance(node.args[0], ast.Constant)
@@ -157,13 +157,14 @@ class RealProcessWaves(unittest.TestCase):
                                     original = error
                                     raise
                     self.assertEqual([stream.closed for stream in actual], [True, True])
-                    self.assertEqual(paths[1].read_text(), str(256 * 257 // 2))
+                    self.assertEqual(paths[1].read_text(encoding="utf-8"), str(256 * 257 // 2))
                     if fails_in_body:
                         self.assertIs(caught.exception, original)
                         self.assertIn("actual native log close failure", caught.exception.__notes__[0])
                     else:
                         self.assertEqual(caught.exception.errno, errno.EBADF)
-                        self.assertIn(str(paths[0]), caught.exception.__notes__[0])
+                        self.assertEqual(caught.exception.__notes__[0],
+                                         f"closing actual native log: {str(paths[0])!r}")
 
     def test_real_stream_budget_is_inclusive_and_rejects_excess_before_persistence(self):
         program = ("import sys; size=int(sys.argv[1])-2; "
@@ -203,7 +204,7 @@ class RealProcessWaves(unittest.TestCase):
             original, completed = wave.outcomes
             self.assertIsInstance(original.error, ValueError)
             self.assertEqual(completed.returncode, 0)
-            self.assertEqual((root / "complete").read_text(), str(256 * 257 // 2))
+            self.assertEqual((root / "complete").read_text(encoding="utf-8"), str(256 * 257 // 2))
             blocked = root / "blocked"
             blocked.write_text("actual regular file")
             try:
@@ -220,10 +221,10 @@ class RealProcessWaves(unittest.TestCase):
                 self.assertEqual(error.errno, native.errno)
                 self.assertEqual(Path(error.filename), blocked / f"first.{extension}")
                 self.assertIn("retaining actual owned process stream", error.__notes__[0])
-            self.assertEqual(blocked.read_text(), "actual regular file")
-            self.assertEqual((root / "later.stdout").read_text(), completed.stdout)
-            self.assertEqual((root / "later.stderr").read_text(), completed.stderr)
-            self.assertEqual((root / "later.log").read_text(), completed.stdout + completed.stderr)
+            self.assertEqual(blocked.read_text(encoding="utf-8"), "actual regular file")
+            self.assertEqual((root / "later.stdout").read_text(encoding="utf-8"), completed.stdout)
+            self.assertEqual((root / "later.stderr").read_text(encoding="utf-8"), completed.stderr)
+            self.assertEqual((root / "later.log").read_text(encoding="utf-8"), completed.stdout + completed.stderr)
             self.assertEqual(int(completed.stdout), 256 * 257 // 2)
             with self.assertRaises(ValueError) as caught:
                 wave.require_success(retained.errors)
@@ -232,8 +233,8 @@ class RealProcessWaves(unittest.TestCase):
             report = {"value": int(completed.stdout)}
             report_path = blocked / "evidence.json"
             retention.report(report_path, report, original.error)
-            self.assertIn("retaining actual evidence report", original.error.__notes__[-1])
-            self.assertIn(str(report_path), original.error.__notes__[-1])
+            context = f"retaining actual evidence report {report_path!r}: "
+            self.assertEqual(original.error.__notes__[-1][:len(context)], context)
             with self.assertRaises(type(native)) as write_error:
                 retention.report(report_path, report, None)
             self.assertEqual(write_error.exception.errno, native.errno)
@@ -270,13 +271,14 @@ print(f'actual stderr {index} λ', file=sys.stderr)
                 value = (index + 1) * 17
                 expected = value * (value - 1) // 2
                 computed = json.loads(actual.stdout)
-                self.assertEqual(computed, {"index": index, "pid": int((root / f"{index}.ready").read_text()),
+                self.assertEqual(computed, {"index": index, "pid": int((root / f"{index}.ready").read_text(encoding="utf-8")),
                                             "value": expected})
-                completion = json.loads((root / f"{index}.done").read_text())
+                completion = json.loads((root / f"{index}.done").read_text(encoding="utf-8"))
                 self.assertEqual(completion["value"], expected)
                 computations.append(completion["completed"])
                 self.assertEqual(actual.command, commands[index])
-                self.assertEqual((root / f"case-{index}.stderr").read_text(), f"actual stderr {index} λ\n")
+                self.assertEqual((root / f"case-{index}.stderr").read_text(encoding="utf-8"),
+                                 f"actual stderr {index} λ\n")
                 self.assertEqual(retained.records[index]["returncode"], 0)
                 pids.add(computed["pid"])
             self.assertEqual(len(pids), 3)
@@ -303,7 +305,7 @@ print(f'actual stderr {index} λ', file=sys.stderr)
             self.assertEqual(retained.records[1]["error"], f"ValueError: {invalid.error}")
             self.assertEqual(completed.returncode, 0)
             self.assertEqual(int(completed.stdout), 256 * 257 // 2)
-            self.assertEqual((root / "complete").read_text(), str(256 * 257 // 2))
+            self.assertEqual((root / "complete").read_text(encoding="utf-8"), str(256 * 257 // 2))
             with self.assertRaises(subprocess.CalledProcessError) as caught:
                 wave.require_success()
             self.assertEqual(caught.exception.output, failed.stdout)
@@ -362,12 +364,12 @@ class StartupObservation(unittest.TestCase):
                 observation.finish()
                 self.assertEqual(actual, {"event": "calculated", "pid": process.pid,
                                           "value": 256 * 257 // 2})
-                saved = json.loads((root / "startup.json").read_text())
+                saved = json.loads((root / "startup.json").read_text(encoding="utf-8"))
                 self.assertEqual(saved, observation.report)
                 self.assertEqual(saved["native_process_id"], process.pid)
                 self.assertEqual(saved["deadline_monotonic"], deadline)
                 self.assertGreaterEqual(saved["attempts"], 1)
-                self.assertNotIn("page_ready", trace.read_text())
+                self.assertNotIn("page_ready", trace.read_text(encoding="utf-8"))
                 self.assertEqual(saved["changed_frames"], 0)
                 self.assertIsNone(saved["latest_capture"])
                 self.assertFalse((root / "startup.bmp").exists())
@@ -396,9 +398,9 @@ class StartupObservation(unittest.TestCase):
                                         observation=observation)
                 observation.finish()
                 self.assertEqual(process.returncode, 1)
-                self.assertIn("ZeroDivisionError", (root / "child.stderr").read_text())
+                self.assertIn("ZeroDivisionError", (root / "child.stderr").read_text(encoding="utf-8"))
                 self.assertEqual(trace.read_bytes(), b"")
-                self.assertEqual(json.loads((root / "startup.json").read_text()),
+                self.assertEqual(json.loads((root / "startup.json").read_text(encoding="utf-8")),
                                  observation.report)
                 self.assertGreaterEqual(sum(v["count"] for v in
                                             observation.report["observer_errors"].values()), 1)
@@ -421,7 +423,7 @@ class StartupObservation(unittest.TestCase):
 
     def test_compiled_observer_has_no_input_focus_or_readiness_authority(self):
         path = SCRIPTS / "webview_acceptance/startup.py"
-        source = path.read_text()
+        source = path.read_text(encoding="utf-8")
         compile(source, str(path), "exec")
         tree = ast.parse(source)
         calls = {node.func.attr for node in ast.walk(tree)
@@ -432,7 +434,7 @@ class StartupObservation(unittest.TestCase):
         self.assertIn("window_for_processes", calls)
         self.assertNotIn("page_ready", source)
         gdi_path = SCRIPTS / "native_capture/windows/gdi.py"
-        gdi_source = gdi_path.read_text()
+        gdi_source = gdi_path.read_text(encoding="utf-8")
         compile(gdi_source, str(gdi_path), "exec")
         capture = next(node for node in ast.parse(gdi_source).body
                        if isinstance(node, ast.FunctionDef)

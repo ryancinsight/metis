@@ -313,6 +313,16 @@ orchestration and calculations, not Windows form acceptance. The
 [case and budget contract](scripts/webview_acceptance/design.md#selected-and-ordinary-production-form-execution)
 requires both real form journeys and all original native scenarios before closure.
 
+The adopted [Windows run 38543226555](https://github.com/ryancinsight/metis/actions/runs/38543226555)
+completes 480 cases in 37.016s: 475 pass, four persistence assertions fail and
+one existing Apple-only case skips. Three readers omit the writer's explicit
+UTF-8 encoding; one path assertion omits the diagnostic's representation escaping.
+Native preparation, journeys, archive execution and packaging do not run.
+Apple passes 777 Rust tests, 42 doctests and all three bundle contracts.
+Explicit UTF-8 readers and represented-path assertions pass all twenty focused
+cases under actual US-ASCII in 1.913s; the same full 480 cases pass in 17.335s
+with zero skips. Windows replay remains required.
+
 ## Library target comparison boundaries — 2026-10-13 [patch]
 
 Thirty supported library/target comparisons execute 5,880 minor-release queries

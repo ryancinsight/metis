@@ -268,7 +268,7 @@ class ProcessTreeTests(unittest.TestCase):
             self.assertEqual(retained.records[0]["seconds"], elapsed)
             self.assertFalse((output / "unavailable.stdout").exists())
             self.assertFalse((output / "unavailable.log").exists())
-            self.assertEqual((output / "unavailable.stderr").read_text(), actual.stderr)
+            self.assertEqual((output / "unavailable.stderr").read_text(encoding="utf-8"), actual.stderr)
 
     def test_real_early_launch_error_preserves_native_cause_and_available_streams(self):
         with tempfile.TemporaryDirectory() as directory:
