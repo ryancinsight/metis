@@ -49,11 +49,14 @@
 - Retain read-only, target-owned UIA selection ranges around native text input,
   with exact request sequences and signed endpoint comparisons. Unsupported
   patterns and absent ranges remain explicit. A real RichEdit regression covers
-  two successive Unicode replacements through the canonical input path; native
-  execution remains required before closing the diagnostic increment. All 502
-  corrected local cases complete in 21.314s with four Windows-only skips; 1,003 source
-  identities remain exact. Direct public accessors preserve TextPattern getter
-  exceptions, and actor errors retain their exception type and full detail.
+  two successive Unicode replacements through the canonical input path. Actual
+  Windows executes 502 cases: 501 pass and one Apple-only case skips in 57.119s;
+  the two native replacements pass in 17.357s. Final local verification runs
+  502 cases in 14.948s with four Windows-only skips and 1,003 unchanged sources.
+  Direct public accessors preserve TextPattern getter exceptions; actor errors
+  retain their full type and detail.
+  The form still stalls on its first patient edit with collapsed selection and
+  unchanged `demo` value; renderer consumption remains unattributed.
 - Require explicit native text-value representation in the verification input
   owner. RichEdit ValuePattern includes TOM's final CR; native window text and
   WebView values retain their literal contracts. The real initial replay exposes
@@ -64,11 +67,9 @@
   use the canonical owner; Unicode committed-text input remains unchanged.
   Explicit system activation mapping has no focus prerequisite; scoped key
   lifetimes preserve original failures through release. Shortcut progress retains
-  its own focus/modifier boundary and admitted scans. Portable verification
-  completes 496 cases in 17.015s with three Windows-only skips. Actual Windows
-  executes all 496: 495 pass and one Apple-only case skips; the complete native
-  key regression passes in 69.0491ms. Full form acceptance remains open after
-  a second-patient value wait times out; renderer consumption is unattributed.
+  its own focus/modifier boundary and admitted scans. The current real Windows
+  key regression verifies SDK mappings, modifier transitions and scope ownership
+  in 69.246ms.
 - Preserve SDK-selected Right-arrow scan identity and test E0 independently with
   right-Control. The real native case verifies its side-distinguishing reverse
   mapping, generic legacy message and modifier transitions; raw layout/mapping
