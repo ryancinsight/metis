@@ -97,7 +97,7 @@ dependencies = [
 [[package]]
 name = "apollo-dctdst-core"
 version = "0.17.0"
-source = "git+https://github.com/ryancinsight/apollo#f266bb0b319cda8dccde6090936967130f5af7da"
+source = "git+https://github.com/ryancinsight/apollo#0eab90e337ffa1c9b2bce688b3e1aa51f2942f98"
 dependencies = [
  "eunomia",
 ]
@@ -272,8 +272,8 @@ checksum = "c2459377285ad874054d797f3ccebf984978aa39129f6eafde5cdc8315b612f8"
 
 [[package]]
 name = "consus-raster"
-version = "0.2.1"
-source = "git+https://github.com/ryancinsight/consus.git#f69ca65d582a2e9740105f66ecd12f310bfe9895"
+version = "0.3.0"
+source = "git+https://github.com/ryancinsight/consus.git#beae4ce7e876d558d844c95541a55ffe71ccea97"
 dependencies = [
  "apollo-dctdst-core",
  "jpeg-encoder",

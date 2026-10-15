@@ -1,112 +1,40 @@
-Prepared framework target: Metis 0.5.0; unpublished review in existing draft505.
+Prepared framework target: Metis0.5.0; unpublished review in existing draft505.
 
-## Latest current-provider validation — 2026-10-15
+## Current provider checkpoint — 2026-10-15
 
-Consus PR172 merges at `f69ca65d` (0.2.1), repairing Apollo core 0.17
-admission. A targeted canonical root update now succeeds, preserving every
-registry tuple. It selects Eunomia `15fbb94c` (0.10), Hermes `ac60146a` (0.9),
-Moirai `44a962f0` (0.9.3), memory `481c7452` (0.10), Gaia `c0db650e` (0.6),
-Leto `8b4ab407` (0.46), and Apollo `f266bb0b` (core 0.17). The separate fuzz
-lock uses the same providers; its only registry update is the Moirai-required
-rustls 0.23.45 to 0.23.46 security repair.
+Consus0.3 is merged at beae4ce7. Its executed published-baseline consumer
+requires a pre-1.0 minor release for the Moirai0.7 to0.9 public async identity;
+the earlier0.2.1 claim is withdrawn and its publisher is cancelled before
+publishing steps execute. Both earlier raster upload commands are obsolete.
+The new0.3 source/archive handoff keeps first-upload authentication separate.
 
-The unchanged full workspace passes 698 Nextest tests with zero skips,
-42 doctests, strict all-feature/all-target Clippy, strict documentation and
-formatting on Rust 1.97. All native suites retain the 60-second outer bound;
-Nextest configuration and existing tests are unchanged. All fuzz harnesses
-check on nightly; its existing protected output-reader site emits one
-`fetch_update` deprecation warning and is not edited.
-
-Version0.5.0 and ADR0060 retain the real public Eunomia-owned Pod/Zeroable
-identity boundary. Existing draft505 remains the review target. Final API,
-Windows/browser, release, normalized-package and exact-head gates remain
-open; no full delivery is claimed. Consus raster's first registry upload still
-requires separate human authentication. No credentials, publisher registration,
-permissions, protected503/504 branches or production Rust are changed.
-
-Earlier provider observations below are historical.
-
-## Current resolver result after Gaia 0.6 delivery — 2026-10-15
-
-Gaia175 is merged at c0db650e and Gaia0.6.0 is source/checksum-verified in the
-registry. Its PR/default CI, Pages and publication all pass. A targeted update
-of this owned Metis draft now stops at a different provider requirement:
-Consus raster0.2, source3510db09, requires Apollo DCT/DST core^0.16.0 while
-Apollo's shipped730f6262 default provides0.17.0. The update exits101 in5.47s
-without changing Cargo.lock. Preserve the existing199 component-test evidence;
-full workspace/package acceptance remains pending this actual source admission.
-The Consus owner must reconcile and test the DCT dependency before current-
-cohort claims; authentication for its first upload remains a separate handoff.
-No old revision pin, source substitution, credential change or protected503/504
-source edit occurs. Earlier Gaia-owner/publication blockers below are history.
-
-## Latest independent current-provider validation — 2026-10-15
-
-Byte-identical metis-core/metis-platform members pass 199 native tests with
-zero skips on canonical current Git providers: Eunomia0.10 `15fbb94c`,
-Hermes0.9 `ac60146a`, Moirai0.9.3 `44a962f0`. The temporary component workspace
-keeps member source/manifests, provider requirements/features, workspace
-package/lints/profiles and test budgets unchanged. The two real loopback tests
-initially hit sandbox bind denial; the identical full suite passes with
-loopback permission. No test or production setting changes.
-
-This is component evidence, not complete Metis workspace/platform/API/package
-acceptance. Gaia175 remains owned by GitHub author `ryancinsight` at `273eb814`,
-branch `build/deps-eunomia-0-10`. Its package fails with 149 errors from mixing
-Eunomia0.10 with Leto0.45's Eunomia0.9. An external generic consumer proves the
-public trait break; Gaia0.6/Leto^0.46 remains required. The isolated Gaia review
-commit `497546bb` passes local native/docs/diagnostic/package gates, with an
-owner-applicable patch and no duplicate PR. Preserve protected503/504 source.
-Gaia default integration and final full-cohort gates remain pending. Consus
-first-upload authentication stays with its separate handoff.
-
-Earlier provider-state observations below are historical.
-
-## Current checkpoint — reconciled Leto merged
-
-Leto PR363 reviewed head `5b6eb6a8` merges at `8b4ab407`, version 0.46.0,
-with exactly equal trees and successful exact-head CI. Independent refreshed
-validation passes all 1,181 normalized registry-package tests (zero skips),
-standard publish dry-runs for both packages, and an unseeded Git-default consumer
-with exact arithmetic, LU/residual and real storage-error oracles. Previous
-conflict/default-0.45.2 observations are historical. Both published 0.46
-archives match their registry checksums and source `8b4ab407`, byte-identical
-to the verified dry-runs. Final downstream gates remain pending; no downstream
-acceptance is inferred from these provider checks.
-
-New overlapping Gaia PR175 `273eb814` still declares Gaia 0.5.3 and Leto
-^0.45.0 while admitting the new numeric providers. Preserve that branch and
-this task's isolated Gaia 0.6 / Leto ^0.46 proposal pending ownership/version
-reconciliation. This task changes no owner branch, limits, tests or settings.
-The exact proof and replay fixture are saved in the task's
-`evidence/current-provider-release/leto-363-reconciled-independent-validation.json`.
-
-Earlier provider-state paragraphs below are historical checkpoints.
+This owned Metis0.5 preparation resolves root/fuzz locks against Consusbeae4ce7,
+Apollo0eab90e3 (core0.17 unchanged from published730f6262), Eunomia15fbb94c,
+Hermesac60146a, Moirai44a962f0, memory481c7452, Gaia c0db650e and Leto8b4ab407.
+The actual full graph passes698 native tests (zero skips),42 doctests, strict
+all-feature/all-target Clippy, strict docs and formatting. Root registry tuples
+are preserved; fuzz updates only the Moirai-required rustls0.23.45 to0.23.46.
+All fuzz harnesses check, with the existing protected nightly output-reader
+deprecation warning left untouched. No production Rust, feature, gate or
+native budget changes occur; protected503/504 source remains separate.
 
 <a id="METIS-CURRENT-PROVIDERS-001"></a>
 ## METIS-CURRENT-PROVIDERS-001 — Admit current provider defaults [major]
 
-- Status: in progress; owner: existing draft505; target: 0.5.0; updated: 2026-10-15.
-- Public contract: Color derives Eunomia-owned Pod/Zeroable and is re-exported
-  by UI-lang. Moving 0.9 to 0.10 requires the pre-1.0 minor boundary in
-  ADR0060; all 13 packages and 31 internal requirements use 0.5.0.
-- Root/fuzz canonical locks now resolve the current published/default cohort
-  listed above. Root registry tuples are preserved; fuzz changes only rustls
-  0.23.45 to 0.23.46 required by the approved Moirai cohort.
-- Verified: full698 native tests, zero skips;42 doctests; strict all-feature
-  Clippy/docs; formatting; all fuzz harnesses check. Historical199 component
-  checks and older0.9.2 results do not replace these current full-workspace runs.
-- Remaining: API classification execution, Windows/browser and full release
-  gates, normalized packages and exact-head hosted verification before merge
-  or publication. No source override or old-provider workaround is used.
-- External prerequisite: first registry upload of consus-raster0.2.1 from
-  verified Consus mergef69ca65d uses the separate human-authentication handoff.
-  Source3510db09/raster0.2.0 is obsolete. Credential creation/configuration,
-  publisher-registration and permission changes are not authorized here.
-- Preserve every production Rust file, feature/default, test, gate and budget;
-  leave protected PR503/504 and allocation work untouched. Coeus0.13 remains
-  with its owner and separately blocks the six prepared RITK cases. Miri stays
-  deferred. Incoming RITK requirements already admit Metis0.5.
+- Status: in progress; owner: existing draft505; target:0.5.0; updated:2026-10-15.
+- Public contract: exported Color's Eunomia-owned Pod/Zeroable traits change
+  0.9 to0.10; AssetError's public From<Consus DecodeError> follows Consus0.3.
+  ADR0060 records the0.5 boundary for all13 packages/31 internal requirements.
+- Canonical root/fuzz graphs and actual verification are recorded above.
+  No old provider/source substitution or compatibility adapter is used.
+- Remaining: executable external API/classification checks, full Windows,
+  browser and release gates, normalized packages and exact-head hosted
+  verification before merge/publication. Draft status does not imply these pass.
+- External prerequisite: first consus-raster0.3 upload from verified source
+  beae4ce7 uses the separate human-authentication handoff. Credentials,
+  publisher registration and permission changes remain outside this repair.
+- Coeus0.13 remains with its owner and separately blocks the prepared RITK
+  cases. Miri stays deferred. Incoming RITK requirements already admit Metis0.5.
 
 <a id="METIS-WEBVIEW-RUST-001"></a>
 ## METIS-WEBVIEW-RUST-001 — Rust-owned Windows page lifecycle [minor]

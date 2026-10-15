@@ -15,7 +15,7 @@
 
 - [patch] Reconcile the canonical root and fuzz locks with approved provider
   defaults: Eunomia0.10, Hermes0.9, memory0.10, Moirai0.9.3, Leto0.46,
-  Gaia0.6 (example dev dependency) and Consus0.2.1/Apollo core0.17.
+  Gaia0.6 (example dev dependency) and Consus0.3/Apollo core0.17.
   Root registry tuples remain unchanged; fuzz updates only the Moirai-required
   rustls0.23.45 to0.23.46 security repair. No production source, feature,
   default, test budget, permission or protected owner branch changes.
@@ -24,7 +24,7 @@
   checks. Final API/platform/browser/release/package and exact-head hosted
   gates remain required before delivery. Consus raster's initial registry
   upload remains a separate human-authentication handoff; the old source
-  3510db09/raster0.2.0 instruction is obsolete. No credentials or publisher
+  3510db09/raster0.2.0 and f69ca65d/raster0.2.1 instructions are obsolete. No credentials or publisher
   registration are configured. Miri remains deferred.
 
 ## [0.4.1] - Unreleased

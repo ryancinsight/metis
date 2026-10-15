@@ -65,6 +65,12 @@ this public version increment. The public Eunomia marker implementations do.
 - Changing pixel storage or adding a consumer-owned layout trait would duplicate
   provider ownership and alter a numerical/layout contract without need.
 
+- Admit Consus0.3 after PR175's executed public async provider regression.
+  AssetError's public From<consus_raster::DecodeError> implementation also
+  follows the new provider identity; the existing0.5 release boundary covers
+  this alongside the Eunomia marker migration. Both older raster upload
+  commands are retired; await the verified0.3 human-authentication handoff.
+
 ## Verification
 
 The source review checks both canonical trait definitions and both public
