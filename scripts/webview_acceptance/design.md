@@ -440,7 +440,7 @@ Sources: [RichEdit shortcuts](https://learn.microsoft.com/en-us/windows/win32/co
 
 The HWND owner must dispatch synchronous UIA requests while its worker runs the
 real actor. A fixed sleep after draining PeekMessage can delay every subsequent
-cross-thread request by the polling interval. Final-head run 38681175478 exceeds
+cross-thread request by the polling interval. Run 38681175478 exceeds
 the unchanged sixty-second suite limit after 435 completed cases. Its plain EDIT
 actor case rises from 6.521s to 16.696s; RichEdit falls from 17.357s to 16.830s.
 Those case measurements identify the expensive boundary, not a blocked getter.
@@ -466,3 +466,7 @@ and suite timings establish any improvement without a new timing tolerance.
 
 Sources: [message-aware wait](https://learn.microsoft.com/en-us/windows/win32/api/winuser/nf-winuser-msgwaitformultipleobjectsex),
 [queue flags](https://learn.microsoft.com/en-us/windows/win32/api/winuser/nf-winuser-getqueuestatus).
+
+Source-bound run 38682223774 completes all 502 cases in 50.180s; both real
+replacements pass in 2.361s. This verifies the current bound and values, without
+attributing earlier startup/getter costs or application input consumption.
