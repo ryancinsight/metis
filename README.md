@@ -103,7 +103,7 @@ but dose remains `0.2` instead of requested `0.25` until the sixty-second deadli
 The diagnostic replay completes the first Unicode calculation, then loses
 controller focus before the second patient edit. Its Windows script suite
 executes 502 cases in 34.004s: 501 pass and one existing Apple-only case skips.
-Both locks now select Moirai PR 622 candidate `2fcef45d140a`, retaining the
+Both locks now select Moirai PR 622 candidate `6343610de52c`, retaining the
 synchronous native-parent focus correction introduced in `bd88d2c56f9d`.
 That provider regression passes, but Metis b7ad7405/run38750658426 still retains
 second dose 0.25 after requested 0.5. Its 502 Windows scripts finish in 44.777s
@@ -133,6 +133,17 @@ provider candidate corrects independently reproduced SDK event/deadline
 admission. Only15/11 provider SHA records advance from aa532 in the two locks;
 every other lock byte and all Metis input/protocol/acceptance source remain.
 Corrected provider execution and both full consumer journeys remain required.
+
+The2fcef admission-only consumer replay ad328f61/run38799513267 again completes
+all four submissions, then retains Dark after Alt+Shift+S;502 scripts pass
+in55.690s. The independent provider probe narrows failed input to an owned
+native recipient with no subsequent controller key receipt, despite UIA focus.
+The correction declares one native-parent entry after UIA selection and verifies
+the same selected field before the original physical input. It bypasses child
+geometry guesses and adds no focus/input retry, ALT tap, sleep or deadline.
+The [entry contract](scripts/native_input/design.md) keeps native control actors
+on their existing policy. Local504 cases pass with six Windows-only skips;
+the actual corrected Windows journeys remain required.
 
 Windows app compilation
 requires an independently prepared Rust module. Build `metis-cli`, run

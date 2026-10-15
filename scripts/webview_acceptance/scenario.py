@@ -181,7 +181,8 @@ def run(name: str, executable: Path, fixture_executable: Path, root: Path,
                         with tab.held():
                             pass
                         queue.flush_window(bounds.handle)
-                    uia = Uia(bounds.handle, deadline, output)
+                    uia = Uia(bounds.handle, deadline, output,
+                              focus_entry=focus.FocusEntry.NATIVE_PARENT)
                     report["journey"] = _journey(name, uia, actual, process, trace, deadline, output)
                     uia.close()
                     uia = None

@@ -52,6 +52,16 @@
 
 ### Fixed
 
+- [patch] Actual WebView journeys explicitly enter the known native parent
+  after their original UIA field selection and before physical input. One
+  SetFocus request uses the existing programmatic controller entry; the same
+  field must remain focused and native focus must delegate to an owned
+  descendant. Native EDIT/RichEdit policy, Unicode, chords, selections,
+  assertions and time limits remain. Capture queue-detachment errors at their
+  actual failing call and retain them alongside an existing primary error.
+  Two added real Win32 cases cover delegation and rejection. The exact
+  provider6343610d and corrected complete Windows journeys remain gates.
+
 - [patch] Pin diagnostic provider2fcef45d in both locks for the independently
   reproduced ready-event/deadline admission correction; only15/11 Moirai
   source hashes advance, with all other lock bytes exact. Metis source5e5c4e2

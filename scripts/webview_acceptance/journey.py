@@ -33,6 +33,7 @@ def submitted(uia, action: str, previous: str) -> str:
         uia.click("calculation-submit")
     elif action == "return":
         uia.request("focus", "dose")
+        uia.enter_host("dose")
         uia.key(0x0D)
         uia.actions.append({"action": "SendInput Return", "id": "dose"})
     else:
@@ -62,6 +63,7 @@ def form(uia, output) -> dict:
     themes = []
     for offset, label in ((1, "light"), (3, "high contrast")):
         uia.request("focus", "theme-mode")
+        uia.enter_host("theme-mode")
         uia.key(0x24)
         for _ in range(offset):
             uia.key(0x28)

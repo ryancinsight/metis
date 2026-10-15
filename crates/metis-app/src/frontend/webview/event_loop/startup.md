@@ -134,7 +134,7 @@ the timeout remains unattributed until those native records exist.
 ## Failure and verification
 
 The initial input replay selects Moirai PR622 source `bd88d2c56f9d`; both
-canonical locks now pin candidate `2fcef45d140a`. This is an explicitly recorded diagnostic candidate, not an
+canonical locks now pin candidate `6343610de52c`. This is an explicitly recorded diagnostic candidate, not an
 adoption of a protected provider default. The same private selection observes
 actual controller GotFocus/LostFocus/MoveFocusRequested and eligible
 AcceleratorKeyPressed callbacks. Fixed callback storage retains native arguments
@@ -186,6 +186,44 @@ Nextest reports one leaky process capture and two direct environment-helper
 entries skipped; this does not establish native Windows behavior. The first
 sandboxed attempt refuses28 loopback listeners; an identical replay with
 loopback access passes. All original per-test60-second limits remain.
+
+The admission-only Metis replay ad328f61/run38799513267 again completes all
+four submissions and exact native results, but Alt+Shift+S leaves UIA Dark and
+the worker exceeds60s. Its502 Windows scripts pass55.690s. Actualmergefb14678
+has tree6e33d4f5, identical to ad328;1003 Git blobs and837 normalized run-source
+digests bind. Module identityaba3e58f is the original prepared inventory hash;
+the separately retained native-preparation WASM hash is8c14b070. Query165 still
+reports Dark; query166 is sent without a final response. The controller quota
+exhausts before submit4, so no late-shortcut receipt follows.
+
+Provider2fcef/run38798617700 supplies a different, complete failed-scope
+boundary: controller keys for prior values use one owned child, then the final
+LostFocus leaves another owned native recipient. All4+18 failed input records
+admit there, but the unexhausted controller collector observes no later keys.
+UIA and timely live DOM retain patient-one after patient-two. The same browser
+process/thread/layout therefore does not establish the controller endpoint.
+
+The correction declares native-parent entry for actual WebView scenarios. After
+one original UIA field selection, one native SetFocus(parent) invokes the
+existing WM_SETFOCUS/MoveFocus(PROGRAMMATIC) route. Native focus must delegate
+to an owned non-root descendant; the same selected field must remain focused
+before the original physical records. The original selections and Unicode remain
+observed. No activation ALT tap, retry, sleep, child-class guess or new deadline
+enters this policy; native EDIT/RichEdit callers retain their previous policy.
+Two real Win32 cases distinguish delegation from ownership and reject a parent
+without a delegate. Provider6343610d applies the same entry contract to its
+original16/64 matrix, with16 actual entries/12 non-first entries checked.
+Both full Metis journeys, the complete Windows scripts and packaging remain
+required on this exact candidate.
+
+The6343610d consumer graph passes strict workspace Clippy,777 active Rust tests
+in16.949s, canonical module preparation and strict Windows app cross-compilation.
+The committed browser-tool producer runs before the separate script suite;
+all504 local cases complete in15.140s with498 passes and six Windows-only skips.
+All1003 tracked file hashes remain stable through that run. All515 Rust files,
+original PowerShell UIA/selection actors, physical key/Unicode delivery and time
+limits remain byte-identical to ad328. Syntax-tree comparison preserves every
+original journey/assertion operation, adding only the declared native entries.
 
 Source checks preserve the closed page protocol, actual Ready admission and all
 existing deadlines. The actual Windows run must retain the navigation records,

@@ -66,6 +66,65 @@ class NativeFocusOwnership(unittest.TestCase):
             raise ctypes.WinError()
         self.assertEqual(self.user.IsWindow(handle), 0)
 
+    def delegate_parent_focus(self, target):
+        """Install a real native host route; this does not emulate WebView2."""
+        procedure = ctypes.WINFUNCTYPE(
+            ctypes.c_ssize_t, ctypes.c_void_p, ctypes.c_uint32,
+            ctypes.c_size_t, ctypes.c_ssize_t)
+        self.user.SetWindowLongPtrW.argtypes = [ctypes.c_void_p, ctypes.c_int, ctypes.c_void_p]
+        self.user.SetWindowLongPtrW.restype = ctypes.c_void_p
+        self.user.CallWindowProcW.argtypes = [
+            ctypes.c_void_p, ctypes.c_void_p, ctypes.c_uint32,
+            ctypes.c_size_t, ctypes.c_ssize_t]
+        self.user.CallWindowProcW.restype = ctypes.c_ssize_t
+        self.delegations = []
+
+        @procedure
+        def dispatch(handle, message, word, parameter):
+            if message == 0x0007:  # Actual WM_SETFOCUS, produced by SetFocus.
+                self.user.SetFocus(target)
+                self.delegations.append(int(self.user.GetFocus() or 0))
+            return self.user.CallWindowProcW(previous, handle, message, word, parameter)
+
+        self.parent_procedure = dispatch  # Own callback storage through removal.
+        previous = self.user.SetWindowLongPtrW(self.top, -4, dispatch)
+        if not previous:
+            error = ctypes.WinError()
+            raise RuntimeError(f"actual native focus procedure installation failed: {error}") from error
+        installed = ctypes.cast(dispatch, ctypes.c_void_p).value
+
+        def restore():
+            removed = self.user.SetWindowLongPtrW(self.top, -4, previous)
+            if not removed:
+                error = ctypes.WinError()
+                raise RuntimeError(f"actual native focus procedure restoration failed: {error}") from error
+            self.assertEqual(removed, installed, "restore removes the exact owned callback")
+
+        self.addCleanup(restore)
+
+    def test_real_parent_entry_follows_delegation_instead_of_an_owned_child_guess(self):
+        self.delegate_parent_focus(self.grandchild)
+        _, _, guessed = focus.focus_window(self.top)
+        prior = int(self.user.GetFocus() or 0)
+        self.assertTrue(prior == guessed or self.user.IsChild(guessed, prior))
+        self.assertNotEqual(prior, self.grandchild)
+        self.assertEqual(self.delegations, [])
+        _, foreground, selected = focus.focus_window(
+            self.top, entry=focus.FocusEntry.NATIVE_PARENT)
+        self.assertTrue(foreground)
+        self.assertEqual(selected, self.top)
+        self.assertEqual(self.delegations, [self.grandchild])
+        self.assertEqual(int(self.user.GetFocus() or 0), self.grandchild)
+        self.assertEqual(int(self.user.GetForegroundWindow() or 0), self.top)
+
+    def test_real_parent_entry_rejects_a_host_that_does_not_delegate(self):
+        with self.assertRaisesRegex(RuntimeError, "did not delegate") as caught:
+            focus.focus_window(self.top, entry=focus.FocusEntry.NATIVE_PARENT)
+        self.assertEqual(int(self.user.GetFocus() or 0), self.top)
+        report = caught.exception.focus_observation
+        self.assertEqual(len(report["activation"]["attempts"]), 1)
+        self.assertEqual(report["activation"]["criterion"]["focus_hwnd"], self.top)
+
     def test_real_recipient_parent_chain_and_foreground_define_admission(self):
         self.assertEqual(self.user.IsChild(self.target, self.target), 0)
         cases = (

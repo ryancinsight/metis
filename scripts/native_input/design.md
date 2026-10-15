@@ -151,3 +151,31 @@ Sources: [Windows data types](https://learn.microsoft.com/en-us/windows/win32/wi
 [RECT](https://learn.microsoft.com/en-us/windows/win32/api/windef/ns-windef-rect),
 [aggregate alignment](https://learn.microsoft.com/en-us/cpp/build/x64-software-conventions),
 [message signature](https://learn.microsoft.com/en-us/windows/win32/api/winuser/nf-winuser-sendmessagetimeoutw).
+## Explicit delegated native focus entry
+
+The WebView host owns a documented native-parent focus route. An arbitrary
+owned child HWND and UIA HasKeyboardFocus do not prove that route has entered
+the WebView controller. Provider2fcef45d/run38798617700 retains successful keys
+on child0x1009ae, followed by Lost/Got/LostFocus on child0x13059c. The next
+replacement admits4 select-all and18 exact Unicode records to0x13059c, but the
+unexhausted independent controller collector retains no later keys and a timely
+live snapshot retains the previous patient. Both children share process/thread
+and layout; those identities cannot select the keyboard endpoint.
+
+Actual Metis WebView journeys therefore declare delegated native-parent entry.
+After the existing single UIA field-focus request, one real SetFocus(parent)
+enters the existing WM_SETFOCUS -> MoveFocus(PROGRAMMATIC) route. Programmatic
+entry restores the previously focused page element according to the
+[SDK contract](https://learn.microsoft.com/en-us/microsoft-edge/webview2/reference/win32/icorewebview2controller?view=webview2-1.0.4258.31#movefocus).
+The foreground must already be the owned host. Successful native admission
+requires a focused descendant, not the parent itself; a read-only UIA query
+must still identify the selected field. No second UIA SetFocus, ALT tap, focus
+retry, sleep, input retry, inferred child/class endpoint or extra deadline is
+introduced. All original selection/value observations and physical records
+remain. Ordinary native EDIT/RichEdit actors retain their existing focus policy.
+
+Native tests distinguish real parent delegation from an owned sibling and
+reject a parent that does not delegate. They exercise actual Win32 focus;
+only the full installed WebView journeys establish renderer/form acceptance.
+The previous failure receipts remain baseline evidence. Existing60-second
+suite/worker limits and every form assertion remain unchanged.

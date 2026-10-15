@@ -22,9 +22,13 @@ from .text import TextValueRepresentation
 
 
 class Uia:
-    def __init__(self, handle: int, deadline: float, output: Path):
+    def __init__(self, handle: int, deadline: float, output: Path, *,
+                 focus_entry: focus.FocusEntry = focus.FocusEntry.CONTENT_CHILD):
+        if not isinstance(focus_entry, focus.FocusEntry):
+            raise TypeError("actual UIA actor requires an explicit native focus policy")
         self.handle = handle
         self.deadline = deadline
+        self.focus_entry = focus_entry
         self.progress = Progress(output)
         # PowerShell's lexer recognizes five single-quote code points. Each
         # literal occurrence doubles, including curly quotes in native paths.
@@ -129,6 +133,24 @@ class Uia:
     def text(self, identifier: str) -> str:
         return self.node(identifier)["text"]
 
+    def enter_host(self, identifier: str | None = None, *, observed=None) -> None:
+        """Use the declared native entry once; observe the selected field again."""
+        self.remaining()
+        focus.focus_window(self.handle, entry=self.focus_entry)
+        self.progress.mark("native_focus_entered", policy=self.focus_entry.name)
+        self.actions.append({"action": "native focus entry", "policy": self.focus_entry.name,
+                             "parent": self.handle, "selected_field": identifier})
+        if observed is not None:
+            observed("after_native_entry")
+        else:
+            self.progress.input({"kind": "native_focus_entry", "policy": self.focus_entry.name,
+                                 "selected_field": identifier,
+                                 "native": focus_observation.input_state(self.handle)})
+        if identifier is not None:
+            actual = self.node(identifier)
+            if actual["focused"] is not True:
+                raise RuntimeError(f"native parent entry does not preserve selected field {identifier}")
+
     def wait_hidden(self, *identifiers: str) -> list[dict]:
         self.progress.operation("wait_hidden", identifiers)
         while True:
@@ -167,6 +189,8 @@ class Uia:
         nodes = self.request("focus", identifier)
         observation["focus_sequence"] = str(self.progress.sequence)
         observation["focus_nodes"] = [node for node in nodes if node["id"] == identifier]
+        if self.focus_entry is focus.FocusEntry.NATIVE_PARENT:
+            self.enter_host(identifier, observed=observed)
         selection_observed("before_select")
         observed("before_select")
         control, select = keyboard.physical_keys((0x11, 0x41))
@@ -204,7 +228,7 @@ class Uia:
             self.progress.input(observation)
 
         observed("before_focus")
-        focus.focus_window(self.handle)
+        self.enter_host()
         observed("before_mapping")
         *modifiers, stroke = keyboard.physical_keys((0x12, 0x10, ord(letter)))
         observation["strokes"] = [

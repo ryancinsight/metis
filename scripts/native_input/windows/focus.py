@@ -1,6 +1,7 @@
 """Win32 content selection, foreground activation and input-queue focus."""
 from __future__ import annotations
 import ctypes
+from enum import Enum, auto
 import time
 from native_input.windows import abi, focus_observation, keyboard
 
@@ -9,6 +10,11 @@ FOCUS_ROUNDS = 20
 
 
 FOCUS_WAIT_SECONDS = 0.1
+
+
+class FocusEntry(Enum):
+    CONTENT_CHILD = auto()
+    NATIVE_PARENT = auto()
 
 
 def window_class(handle: int) -> str:
@@ -201,7 +207,21 @@ def _activate(user32, handle: int, focus_target: int, ledger: dict) -> bool:
     return ledger["criterion"]["foreground_hwnd"] == handle
 
 
-def focus_window(handle: int) -> tuple[int, bool, int]:
+def _enter_native_parent(user32, handle: int, ledger: dict) -> bool:
+    """Enter one declared host route without activation input or retries."""
+    if int(user32.GetForegroundWindow() or 0) != handle:
+        raise RuntimeError("native parent entry requires the owned host in the foreground")
+    previous = user32.SetFocus(handle)
+    focus_observation.record_attempt(ledger, previous)
+    matches = _activation_matches(user32, handle, handle, ledger)
+    if not matches or ledger["criterion"]["focus_hwnd"] == handle:
+        raise RuntimeError("native parent did not delegate keyboard focus to its owned content")
+    return True
+
+
+def focus_window(
+    handle: int, *, entry: FocusEntry = FocusEntry.CONTENT_CHILD
+) -> tuple[int, bool, int]:
     """Give `handle`'s keyboard target focus and verify the activation.
 
     Returns the keyboard layout of the target thread, verified foreground
@@ -209,20 +229,25 @@ def focus_window(handle: int) -> tuple[int, bool, int]:
     (a browser render surface) owns the keyboard and may delegate focus to
     its native descendant, including a WebView runtime process. The returned
     container remains the identity used for asynchronous content selection;
-    the actual recipient remains a separate criterion observation.
+    the actual recipient remains a separate criterion observation. A declared
+    NATIVE_PARENT route instead performs one SetFocus(parent), with foreground
+    ownership already required, and admits only actual descendant delegation.
+    It does not guess a child endpoint, activate, retry or insert ALT input.
 
     # Errors
     Raises `RuntimeError` when the actual foreground differs from `handle`,
     focus belongs to neither the container nor its descendants, or a window
     state read fails.
     """
+    if not isinstance(entry, FocusEntry):
+        raise TypeError("native focus requires an explicit FocusEntry policy")
     user32, kernel32 = _focus_api()
-    ledger = {"attempts": [], "criterion": None}
+    ledger = {"attempts": [], "criterion": None, "entry": entry.name}
     focus_target = None
     try:
-        # A hosted content child (a browser render surface) owns the keyboard;
-        # keyboard input must target it instead of the top-level host window.
-        focus_target = content_child(handle) or handle
+        focus_target = (
+            handle if entry is FocusEntry.NATIVE_PARENT else content_child(handle) or handle
+        )
         process_id = ctypes.c_uint32()
         target_thread = user32.GetWindowThreadProcessId(handle, ctypes.byref(process_id))
         if target_thread == 0:
@@ -247,24 +272,33 @@ def focus_window(handle: int) -> tuple[int, bool, int]:
     except BaseException as error:
         focus_observation.observe_failure(error, handle, focus_target, ledger)
         raise
-    detach_failed = False
+    primary_error = None
     try:
-        foreground_set = _activate(user32, handle, focus_target, ledger)
+        foreground_set = (
+            _enter_native_parent(user32, handle, ledger)
+            if entry is FocusEntry.NATIVE_PARENT
+            else _activate(user32, handle, focus_target, ledger)
+        )
     except BaseException as error:
+        primary_error = error
         focus_observation.observe_failure(error, handle, focus_target, ledger)
         raise
     finally:
-        # A detach failure must not mask an error the try block is
-        # already raising, so record it and surface it only on a clean
-        # exit.
+        # Copy each native error before another detach can overwrite it.
+        # Cleanup evidence supplements an existing primary failure.
+        detach_errors = []
         if foreground_attached and not user32.AttachThreadInput(
             current_thread, foreground_thread, False
         ):
-            detach_failed = True
+            detach_errors.append(("foreground input queue", ctypes.WinError()))
         if attached and not user32.AttachThreadInput(current_thread, target_thread, False):
-            detach_failed = True
-    if detach_failed:
-        raise ctypes.WinError()
+            detach_errors.append(("target input queue", ctypes.WinError()))
+        if detach_errors:
+            reported = primary_error if primary_error is not None else detach_errors[0][1]
+            for operation, error in detach_errors:
+                reported.add_note(f"detach {operation}: {type(error).__name__}: {error}")
+            if primary_error is None:
+                raise reported
     return (
         int(user32.GetKeyboardLayout(target_thread)),
         foreground_set,

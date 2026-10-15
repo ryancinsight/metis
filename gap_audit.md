@@ -333,6 +333,28 @@ and no other lock bytes. All Metis input, protocol and acceptance source stay
 exact. Corrected provider native execution, both complete form journeys and
 package execution remain required.
 
+Admission-only sourcead328/run38799513267 again reaches all four submissions
+and exact results/rejection, then retains Dark on Alt+Shift+S;502 Windows
+scripts pass55.690s. Its actualmergefb14678/tree6e33d4f5 binds all1003 Git blobs
+and837 normalized run-source digests. The observed page module identity is the
+original inventory SHA256, distinct from the separately retained WASM-file SHA.
+The latest UIA query166 is sent without a final response; query165 retains Dark.
+The exhausted controller quota cannot attribute the late shortcut.
+
+Provider2fcef's separate failed probe has a complete unexhausted controller
+history: successful keys use one owned HWND, then Lost/Got/LostFocus ends at
+another owned HWND, where4 select-all and18 Unicode records are admitted with
+no later controller key receipt. Both targets share browser process, thread
+and layout. A timely live snapshot and UIA retain the previous patient. The
+new explicit native-parent entry policy addresses that setup gap through the
+existing programmatic controller route. It performs one real SetFocus, verifies
+an owned non-root descendant and preserves the selected UIA field; it does not
+repair LostFocus asynchronously or retry input. Local504 scripts pass with six
+Windows-only skips; corrected native forms remain unverified. Provider6343610d
+adds the matching real fixture entry and16/12 computed entry checks while
+preserving its16 replacements/64 field checks. Both consumer locks change only
+15/11 provider SHA records from2fcef; full Windows and package gates remain.
+
 Budget baseline [run 38681175478](https://github.com/ryancinsight/metis/actions/runs/38681175478) stops at the unchanged 60-second script limit after 435/502 cases: 434 pass and one skips; its active visual case is not an attributed hang. Plain EDIT/UIA costs 16.696s versus 6.521s previously, while RichEdit passes in 16.830s. All 837 sources and 26 artifact members bind; preparation and native form do not run. The message-aware fixture wait now removes avoidable per-message sleep without extending the existing 25ms completion poll or dropping observations. Source-bound 53af replay completes all 502 cases in 50.180s, with plain EDIT/UIA 8.781s and RichEdit 2.361s; the earlier startup/getter cost split and application failure mechanism remain unproven. Closure commit 3d4103f exposes one board-schema regression: completed status is outside the canonical todo/blocked set. Restoring todo preserves the genuinely open startup/provider/query attribution scope and the checked native-wait subtask; neither the checker nor its baseline changes.
 Portable 777 Rust cases, 42 doctests and strict Clippy pass with the patched locks; the pre-input-correction script replay passes 492 of 494 with two Windows-only skips in 18.447s. These local values do not establish real Windows key delivery.
 Advisory API checker exit 101/root zero pass and 260 skip remains excluded from compatibility proof.

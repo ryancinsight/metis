@@ -470,3 +470,18 @@ Sources: [message-aware wait](https://learn.microsoft.com/en-us/windows/win32/ap
 Source-bound run 38682223774 completes all 502 cases in 50.180s; both real
 replacements pass in 2.361s. This verifies the current bound and values, without
 attributing earlier startup/getter costs or application input consumption.
+## Declared native-parent entry
+
+Actual WebView scenarios explicitly select the native-parent policy documented
+in [native input](../native_input/design.md#explicit-delegated-native-focus-entry).
+After the original single UIA field-focus request, one real SetFocus(parent)
+enters the existing synchronous controller route. The foreground must already
+belong to the host; native focus must delegate to an owned non-root descendant.
+A read-only query requires the same selected field to remain focused. Entry
+evidence persists before this query, including when field preservation fails.
+The original replacement focus sequence, all three native selection records,
+exact Unicode, physical chords and value predicates remain. Native control
+actors retain their previous policy. No new ALT tap, focus/input retry, sleep
+or deadline participates. Both complete forms and the original60-second Windows
+script gate remain acceptance requirements; local skipped cases do not prove
+native execution.
