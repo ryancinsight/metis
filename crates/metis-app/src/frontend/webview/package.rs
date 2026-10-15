@@ -16,13 +16,10 @@ pub(super) enum Page {
 }
 
 impl Page {
-    pub(super) fn assets(self) -> (&'static str, &'static str) {
+    pub(super) fn assets(self) -> &'static str {
         match self {
-            Self::Form => (assets::INDEX_HTML, assets::APP_JS),
-            Self::PermissionProbe => (
-                assets::PERMISSION_PROBE_INDEX_HTML,
-                assets::PERMISSION_PROBE_APP_JS,
-            ),
+            Self::Form => assets::INDEX_HTML,
+            Self::PermissionProbe => assets::PERMISSION_PROBE_INDEX_HTML,
         }
     }
 }
@@ -31,11 +28,10 @@ impl Package {
     pub(super) fn create(page: Page, initial_theme: Option<WebViewTheme>) -> io::Result<Self> {
         let base = std::env::temp_dir();
         let process = std::process::id();
-        let (index, script) = page.assets();
         let index = initial_theme.map_or_else(
-            || index.to_owned(),
+            || page.assets().to_owned(),
             |theme| {
-                index.replace(
+                page.assets().replace(
                     "data-metis-theme=\"system\"",
                     &format!("data-metis-theme=\"{}\"", theme.query_value()),
                 )
@@ -46,9 +42,11 @@ impl Package {
             match fs::create_dir(&root) {
                 Ok(()) => {
                     let result = (|| {
-                        fs::write(root.join("index.html"), index.as_bytes())?;
+                        fs::write(root.join("index.html"), &index)?;
                         fs::write(root.join("styles.css"), assets::STYLES_CSS)?;
-                        fs::write(root.join("app.js"), script)?;
+                        // Both packaged pages share one generated WebAssembly
+                        // loader; the page behavior itself is Rust-owned.
+                        fs::write(root.join("page.js"), assets::PAGE_JS)?;
                         Ok(())
                     })();
                     return match result {

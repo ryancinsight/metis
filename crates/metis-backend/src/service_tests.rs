@@ -5,10 +5,11 @@ use metis_core::capability::CapabilityScope;
 use metis_core::crc32;
 use metis_core::error::{ErrorCode, MetisError, Result};
 use metis_core::protocol::{
-    CapabilityCatalogPayload, ErrorResponsePayload, FragmentAction, FragmentPatchSet, FrameHeader,
-    HandshakeRequestPayload, HandshakeResponsePayload, MessageType, PROTOCOL_VERSION, Plugin,
-    PluginDescriptor, PluginInvocationPayload, PluginInvocationResponsePayload, PluginOperation,
-    TargetCapability, TargetCapabilityPayload, TargetPlatform,
+    CapabilityCatalogPayload, ClipboardWritePayload, ErrorResponsePayload, FragmentAction,
+    FragmentPatchSet, FrameHeader, HandshakeRequestPayload, HandshakeResponsePayload, MessageType,
+    PROTOCOL_VERSION, Plugin, PluginDescriptor, PluginInvocationPayload,
+    PluginInvocationResponsePayload, PluginOperation, TargetCapability, TargetCapabilityPayload,
+    TargetPlatform,
 };
 use metis_ipc::IpcHandler;
 
@@ -286,4 +287,146 @@ fn browser_ui_plugin_returns_a_scoped_typed_fragment() {
     let patches = FragmentPatchSet::decode(&body).expect("typed patch set");
     assert_eq!(patches.generation(), 2);
     assert_eq!(patches.patches().len(), 1);
+}
+
+#[test]
+fn the_clipboard_plugin_is_absent_until_registered() {
+    let mut service = BackendService::new(KEY, SafetyEnvelope::default());
+    let handshake = HandshakeRequestPayload {
+        client_version: PROTOCOL_VERSION,
+        client_process_id: 42,
+        principal_id: PRINCIPAL,
+    }
+    .encode();
+    let accepted = service
+        .handle_request(
+            &header(MessageType::HandshakeReq, 1, &handshake),
+            &handshake,
+        )
+        .expect("handshake");
+    let token = HandshakeResponsePayload::decode(&accepted.1)
+        .expect("handshake payload")
+        .initial_token;
+    let request = PluginInvocationPayload::new(
+        token,
+        "clipboard",
+        "write",
+        ClipboardWritePayload::new("M\u{e9}tis clipboard")
+            .expect("bounded text")
+            .encode()
+            .expect("body"),
+    )
+    .expect("invocation");
+    let encoded = request.encode().expect("invocation body");
+    let response = service
+        .handle_request(&header(MessageType::PluginInvokeReq, 2, &encoded), &encoded)
+        .expect("typed plugin response");
+    assert_eq!(response.0, MessageType::ErrorResp);
+    let rejection = ErrorResponsePayload::decode(&response.1).expect("error payload");
+    assert_eq!(
+        ErrorCode::from_wire(rejection.error_code),
+        Some(ErrorCode::PluginNotFound)
+    );
+}
+
+#[cfg(all(windows, feature = "clipboard"))]
+#[test]
+#[ignore = "replaces the real system clipboard; run explicitly with -p metis-backend --features clipboard on an owned host"]
+fn the_clipboard_plugin_round_trips_the_rate_sentence() {
+    use metis_core::capability::CapabilityGrantSpec;
+    use metis_core::host::{
+        HostOrigin, HostPolicy, HostSessionId, VerifiedHostCapability, WindowId,
+    };
+    use metis_core::protocol::{ClipboardWritePayload, ClipboardWriteResponse};
+    use metis_platform::{MAX_CLIPBOARD_TEXT_BYTES, ScopedClipboard};
+
+    const WITNESS_KEY: &[u8] = b"metis-clipboard-journey-key";
+    fn clipboard_witness() -> VerifiedHostCapability<{ CapabilityScope::CLIPBOARD.0 }> {
+        let policy = HostPolicy::new(
+            HostOrigin::parse("http://127.0.0.1:8080").expect("test origin"),
+            WindowId::new(1).expect("test window"),
+        );
+        let session_id = HostSessionId::new([6; 16]).expect("test session");
+        let context = policy.context_for(session_id);
+        let token = context
+            .issue_capability(
+                CapabilityGrantSpec {
+                    token_id: 1,
+                    principal_id: session_id.as_bytes(),
+                    scope: CapabilityScope::CLIPBOARD,
+                    issued_at_secs: 10,
+                    duration_secs: 100,
+                    nonce: 1,
+                },
+                WITNESS_KEY,
+            )
+            .expect("test token");
+        policy
+            .authorize::<{ CapabilityScope::CLIPBOARD.0 }>(&token, &context, 11, WITNESS_KEY)
+            .expect("clipboard capability")
+    }
+
+    let provider = ScopedClipboard;
+    let restoration_witness = clipboard_witness();
+    let original = provider
+        .read_text(&restoration_witness, MAX_CLIPBOARD_TEXT_BYTES)
+        .expect("read original")
+        .unwrap_or_default();
+
+    let mut service = BackendService::new(KEY, SafetyEnvelope::default());
+    service
+        .register_plugin(crate::ClipboardPlugin)
+        .expect("register clipboard plugin");
+    let handshake = HandshakeRequestPayload {
+        client_version: PROTOCOL_VERSION,
+        client_process_id: 42,
+        principal_id: PRINCIPAL,
+    }
+    .encode();
+    let accepted = service
+        .handle_request(
+            &header(MessageType::HandshakeReq, 1, &handshake),
+            &handshake,
+        )
+        .expect("handshake");
+    let token = HandshakeResponsePayload::decode(&accepted.1)
+        .expect("handshake payload")
+        .initial_token;
+    assert!(token.scope.contains(CapabilityScope::CLIPBOARD));
+
+    let text = "M\u{e9}tis \u{1f9e9} clipboard plugin journey";
+    let request = PluginInvocationPayload::new(
+        token,
+        "clipboard",
+        "write",
+        ClipboardWritePayload::new(text)
+            .expect("bounded text")
+            .encode()
+            .expect("body"),
+    )
+    .expect("invocation");
+    let encoded = request.encode().expect("invocation body");
+    let response = service
+        .handle_request(&header(MessageType::PluginInvokeReq, 2, &encoded), &encoded)
+        .expect("clipboard response");
+    assert_eq!(response.0, MessageType::PluginInvokeResp);
+    let body = PluginInvocationResponsePayload::decode(&response.1)
+        .expect("response envelope")
+        .body()
+        .to_vec();
+    assert_eq!(
+        ClipboardWriteResponse::decode(&body)
+            .expect("typed response")
+            .bytes(),
+        u32::try_from(text.len()).expect("bounded text fits u32")
+    );
+
+    if original.is_empty() {
+        let _ = provider.write_text(
+            &restoration_witness,
+            "M\u{e9}tis clipboard journey sentinel",
+        );
+    } else {
+        let _ = provider.write_text(&restoration_witness, &original);
+    }
 }

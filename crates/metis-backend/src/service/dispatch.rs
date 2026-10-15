@@ -5,7 +5,7 @@ use crate::clinical::{
 };
 use metis_core::capability::{CapabilityGrantSpec, CapabilityScope, CapabilityToken};
 use metis_core::error::{ErrorCode, MetisError, Result};
-use metis_core::host::HostSessionId;
+use metis_core::host::{HostSessionId, VerifiedHostCapability};
 use metis_core::protocol::{
     CapabilityCatalogPayload, ClinicalCalcRequestPayload, ClinicalCalcResponsePayload,
     ErrorResponsePayload, FrameHeader, HandshakeRequestPayload, HandshakeResponsePayload,
@@ -109,7 +109,9 @@ impl<C: Clock> BackendService<C> {
             CapabilityGrantSpec {
                 token_id,
                 principal_id: request.principal_id,
-                scope: CapabilityScope::SUBMIT_CALCULATION.union(CapabilityScope::UI_RENDER),
+                scope: CapabilityScope::SUBMIT_CALCULATION
+                    .union(CapabilityScope::UI_RENDER)
+                    .union(CapabilityScope::CLIPBOARD),
                 issued_at_secs: reading.unix_time.as_secs(),
                 duration_secs: SESSION_LIFETIME.as_secs(),
                 nonce: token_id,
@@ -237,6 +239,34 @@ impl<C: Clock> BackendService<C> {
         self.target_capabilities.encode()
     }
 
+    /// Mints the scoped clipboard witness after `authorize_scope` verified
+    /// the session, so [`crate::plugins::PluginExecutor::invoke_authorized`]
+    /// receives a typed value the trust boundary produced.
+    fn mint_clipboard_witness(
+        &self,
+        token: &CapabilityToken,
+        reading: ClockReading,
+        required_scope: CapabilityScope,
+    ) -> Result<Option<VerifiedHostCapability<{ CapabilityScope::CLIPBOARD.0 }>>> {
+        if required_scope != CapabilityScope::CLIPBOARD {
+            return Ok(None);
+        }
+        let session = self.session.as_ref().ok_or_else(|| {
+            MetisError::capability(
+                ErrorCode::MissingCapability,
+                "Handshake required before the clipboard witness",
+            )
+        })?;
+        self.host_policy
+            .authorize::<{ CapabilityScope::CLIPBOARD.0 }>(
+                token,
+                &session.context,
+                reading.unix_time.as_secs(),
+                &self.master_key,
+            )
+            .map(Some)
+    }
+
     fn invoke_plugin(&mut self, payload: &[u8], reading: ClockReading) -> Result<Vec<u8>> {
         let request = PluginInvocationPayload::decode(payload)?;
         if !self.plugins.contains(request.plugin_name()) {
@@ -255,7 +285,11 @@ impl<C: Clock> BackendService<C> {
                 )
             })?;
         self.authorize_scope(request.token(), reading, operation.required_scope())?;
-        self.plugins.invoke(&request)?.encode()
+        let clipboard_witness =
+            self.mint_clipboard_witness(request.token(), reading, operation.required_scope())?;
+        self.plugins
+            .invoke(&request, clipboard_witness.as_ref())?
+            .encode()
     }
 
     fn result_signature(

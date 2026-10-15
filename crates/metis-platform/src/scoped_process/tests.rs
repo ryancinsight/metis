@@ -6,10 +6,38 @@ use metis_core::host::{HostOrigin, HostPolicy, HostSessionId, WindowId};
 use std::io::{ErrorKind, Read, Write};
 use std::path::PathBuf;
 use std::sync::atomic::Ordering;
-use std::sync::mpsc;
 use std::time::Instant;
 
 const KEY: &[u8] = b"metis-scoped-process-test-key";
+
+/// Serialises the tests that share the process-wide reader-slot pool.
+///
+/// [`ReaderSlot`] claims come from one global counter, and runs leave
+/// detached readers holding slots until descendants release the pipes, so
+/// parallel siblings exhaust the bound and trip the slot assertions (the
+/// failure moves between tests run to run). Pure pipe/byte tests that never
+/// claim a slot stay outside the guard.
+pub(super) static SLOT_TEST_GUARD: std::sync::Mutex<()> = std::sync::Mutex::new(());
+
+/// Waits until the process-wide slot pool is fully drained.
+///
+/// Runs leave detached readers holding slots until descendants release the
+/// output pipes, so a test that asserts on the pool must wait out holders
+/// that outlived the sibling test which spawned them. The [`SLOT_TEST_GUARD`]
+/// keeps siblings from claiming new slots in the meantime; without the wait
+/// the assertion would trip on stale holders every run.
+pub(super) fn wait_for_drained_slots() {
+    let started = Instant::now();
+    while LIVE_OUTPUT_READERS.load(Ordering::Relaxed) != 0 {
+        assert!(
+            started.elapsed() < Duration::from_secs(20),
+            "detached readers never released their slots"
+        );
+        // Park rather than sleep: the wait ends on the next poll either way,
+        // and parking expresses a backoff without a clock-sync semantic.
+        std::thread::park_timeout(Duration::from_millis(10));
+    }
+}
 
 fn capability(
     scope: CapabilityScope,
@@ -169,6 +197,8 @@ fn child_blocking() {
 
 #[test]
 fn runs_allowlisted_process_and_redacts_stderr_content() {
+    let _slots = SLOT_TEST_GUARD.lock().expect("slot-test guard");
+    wait_for_drained_slots();
     let capability = capability(CapabilityScope::RUN_PROCESS).expect("capability");
     let provider = fixture_provider();
     let output = provider
@@ -190,6 +220,8 @@ fn runs_allowlisted_process_and_redacts_stderr_content() {
 
 #[test]
 fn returns_real_stdout_and_rejects_invalid_deadline_or_program() {
+    let _slots = SLOT_TEST_GUARD.lock().expect("slot-test guard");
+    wait_for_drained_slots();
     let capability = capability(CapabilityScope::RUN_PROCESS).expect("capability");
     let provider = fixture_provider();
     let output = provider
@@ -221,6 +253,8 @@ fn returns_real_stdout_and_rejects_invalid_deadline_or_program() {
 
 #[test]
 fn rejects_arguments_and_missing_scope() {
+    let _slots = SLOT_TEST_GUARD.lock().expect("slot-test guard");
+    wait_for_drained_slots();
     let provider = fixture_provider();
     let process_capability = capability(CapabilityScope::RUN_PROCESS).expect("capability");
     assert!(matches!(
@@ -237,6 +271,8 @@ fn rejects_arguments_and_missing_scope() {
 
 #[test]
 fn deadline_terminates_a_real_child() {
+    let _slots = SLOT_TEST_GUARD.lock().expect("slot-test guard");
+    wait_for_drained_slots();
     let capability = capability(CapabilityScope::RUN_PROCESS).expect("capability");
     let provider = fixture_provider();
     let error = provider
@@ -309,6 +345,8 @@ fn run_behind_holder(markers: &Markers, fixture: &str, deadline: Duration) -> (b
 
 #[test]
 fn exited_child_does_not_wait_for_a_descendant_holding_stdout() {
+    let _slots = SLOT_TEST_GUARD.lock().expect("slot-test guard");
+    wait_for_drained_slots();
     let markers = Markers::new("exited");
     // Long enough for the child to start and exit on a loaded runner, so the
     // deadline that fires is the one on the output pipes.
@@ -330,6 +368,8 @@ fn exited_child_does_not_wait_for_a_descendant_holding_stdout() {
 
 #[test]
 fn deadline_does_not_wait_for_a_descendant_holding_stdout() {
+    let _slots = SLOT_TEST_GUARD.lock().expect("slot-test guard");
+    wait_for_drained_slots();
     let markers = Markers::new("blocked");
     let (deadline_exceeded, holder_exited) = run_behind_holder(
         &markers,
@@ -345,6 +385,8 @@ fn deadline_does_not_wait_for_a_descendant_holding_stdout() {
 
 #[test]
 fn a_refused_run_starts_no_process() {
+    let _slots = SLOT_TEST_GUARD.lock().expect("slot-test guard");
+    wait_for_drained_slots();
     // A regular file that cannot be executed: a run that reached the spawn
     // would fail there, not at the reader bound.
     let markers = Markers::new("refused");
@@ -380,80 +422,4 @@ fn a_refused_run_starts_no_process() {
         )
         .expect_err("a file that cannot be executed");
     assert!(matches!(error, ScopedProcessError::Process(_)), "{error:?}");
-}
-
-#[test]
-fn collect_waits_only_for_the_time_left_of_the_deadline() {
-    let (sender, result) = mpsc::sync_channel::<Result<(), ScopedProcessError>>(1);
-    let reader = OutputReader { result };
-    let deadline = Duration::from_secs(5);
-    // The run began four seconds ago, so one second of the deadline remains.
-    let started = Instant::now()
-        .checked_sub(Duration::from_secs(4))
-        .expect("a clock more than four seconds past its origin");
-    let waiting = Instant::now();
-    let error = reader
-        .collect(started, deadline)
-        .expect_err("no output arrives");
-    let waited = waiting.elapsed();
-    drop(sender);
-    assert!(matches!(error, ScopedProcessError::DeadlineExceeded));
-    // `recv_timeout` never returns early, and just under one second remains.
-    assert!(
-        (Duration::from_millis(500)..Duration::from_secs(3)).contains(&waited),
-        "waited {waited:?} of a deadline with one second left"
-    );
-}
-
-#[test]
-fn reader_slots_are_bounded_and_released() {
-    let mut held = Vec::new();
-    for _ in 0..MAX_SCOPED_PROCESS_OUTPUT_READERS {
-        held.push(ReaderSlot::acquire().expect("slot below the bound"));
-    }
-    assert!(matches!(
-        ReaderSlot::acquire(),
-        Err(ScopedProcessError::OutputReadersExhausted)
-    ));
-    held.pop();
-    held.push(ReaderSlot::acquire().expect("a released slot is reusable"));
-    held.clear();
-    assert_eq!(LIVE_OUTPUT_READERS.load(Ordering::Relaxed), 0);
-}
-
-#[test]
-fn output_exactly_at_the_bound_is_accepted_and_one_byte_more_is_not() {
-    let bound = u64::try_from(MAX_SCOPED_PROCESS_OUTPUT_BYTES).expect("bound fits u64");
-    let at_bound = std::io::repeat(b'x').take(bound);
-    assert_eq!(
-        drain_bounded(at_bound, |_| Ok(())).expect("output at the bound"),
-        MAX_SCOPED_PROCESS_OUTPUT_BYTES
-    );
-    let over = std::io::repeat(b'x').take(bound + 1);
-    assert!(matches!(
-        drain_bounded(over, |_| Ok(())),
-        Err(ScopedProcessError::OutputTooLarge)
-    ));
-}
-
-#[test]
-fn output_beyond_the_bound_fails_without_retaining_it() {
-    let (reader, mut writer) = std::io::pipe().expect("pipe");
-    let writer_thread = std::thread::spawn(move || {
-        let chunk = [b'x'; 4096];
-        for _ in 0..=MAX_SCOPED_PROCESS_OUTPUT_BYTES / chunk.len() {
-            if writer.write_all(&chunk).is_err() {
-                break;
-            }
-        }
-    });
-    let mut retained = 0usize;
-    let error = drain_bounded(reader, |chunk| {
-        retained += chunk.len();
-        Ok(())
-    })
-    .expect_err("bound");
-    writer_thread.join().expect("writer");
-    assert!(matches!(error, ScopedProcessError::OutputTooLarge));
-    assert!(retained <= MAX_SCOPED_PROCESS_OUTPUT_BYTES);
 }

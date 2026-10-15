@@ -28,5 +28,11 @@ metis-platform.workspace = true
 tracing.workspace = true
 tracing-subscriber.workspace = true
 
+# Off by default: forward the backend's feature so the local clipboard
+# journey can exercise the Windows mechanism before its Moirai release.
+[features]
+clipboard = ["metis-backend/clipboard"]
+default = []
+
 [lints]
 workspace = true

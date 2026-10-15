@@ -10,8 +10,11 @@ from typing import Any
 from native_capture import limits
 from native_capture.images import files
 from native_capture.windows import gdi, processes, window
-from native_input import evidence, frames
+from native_input import clipboard, evidence, frames
 from native_input.windows import focus, geometry, keyboard, pointer, queue
+
+
+FOLLOW_WAIT_BOUNDS = (0.05, 10.0)
 
 
 def validate_paths(
@@ -49,9 +52,21 @@ def capture_input(
     output: pathlib.Path,
     manifest: pathlib.Path,
     screen: bool = False,
+    follow_shortcut: str | None = None,
+    follow_wait_seconds: float = 1.0,
+    expected_clipboard: str | None = None,
 ) -> dict[str, Any]:
-    if text is None and shortcut is None and click is None and scroll is None:
-        raise ValueError("provide --text, --shortcut, --click-client, or --scroll-client")
+    if (
+        text is None
+        and shortcut is None
+        and click is None
+        and scroll is None
+        and follow_shortcut is None
+    ):
+        raise ValueError(
+            "provide --text, --shortcut, --follow-shortcut, --click-client, "
+            "or --scroll-client"
+        )
     if sys.platform != "win32":
         raise RuntimeError("native Unicode capture requires Windows")
     encoded, units = keyboard.validate_text(text) if text is not None else (b"", ())
@@ -59,6 +74,13 @@ def capture_input(
         geometry.validate_click(*click)
     if scroll is not None:
         geometry.validate_scroll(*scroll)
+    if follow_shortcut is not None and not (
+        FOLLOW_WAIT_BOUNDS[0] <= follow_wait_seconds <= FOLLOW_WAIT_BOUNDS[1]
+    ):
+        raise ValueError(
+            "the shortcut-phase wait must be inside "
+            f"{FOLLOW_WAIT_BOUNDS!r} seconds"
+        )
     executable = validate_paths(command, initial_output, output, manifest)
     if cwd is not None:
         cwd = cwd.resolve(strict=True)
@@ -182,6 +204,13 @@ def capture_input(
             keyboard.send_unicode_text(units)
         if shortcut is not None:
             keyboard.send_shortcut(shortcut)
+        if follow_shortcut is not None:
+            # The first phase's outcome must land before the follow input,
+            # so the second real shortcut acts on the settled result state
+            # and the terminal observation records the combined effect.
+            time.sleep(follow_wait_seconds)
+            focus.require_foreground(bounds.handle)
+            keyboard.send_shortcut(follow_shortcut)
         queue.flush_window(bounds.handle)
         after = window.window_observation(bounds.handle)
         after_pixels = window_capturer(after.bounds)
@@ -215,6 +244,7 @@ def capture_input(
         return_code = process.wait(timeout=limits.PROCESS_EXIT_TIMEOUT_SECONDS)
         if return_code != 0:
             raise RuntimeError(f"native process exited with status {return_code}")
+        clipboard_record = clipboard.verify_expected_clipboard(expected_clipboard)
         result: dict[str, Any] = {
             "process_returncode": return_code,
             "capture": {
@@ -226,6 +256,13 @@ def capture_input(
             "initial": frames.record(initial, initial_output, initial_digest),
             "after": frames.record(after, output, after_digest),
             "pixels_changed": initial_pixels != after_pixels,
+            "follow": {
+                "shortcut": follow_shortcut,
+                "wait_seconds": (
+                    follow_wait_seconds if follow_shortcut is not None else None
+                ),
+            },
+            "clipboard": clipboard_record,
         }
         result.update(evidence.record(evidence.InputObservation(
             encoded, units, text is not None, shortcut, layout,

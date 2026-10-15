@@ -26,6 +26,7 @@ members = [
     "crates/metis-cli",
     "crates/metis-app",
     "crates/metis-web",
+    "crates/metis-webview-page",
     "crates/metis-starter",
     "crates/metis-host",
     "crates/metis-python",
@@ -45,6 +46,13 @@ serde_json = "1.0.151"
 tracing = { version = "0.1", default-features = false, features = ["std"] }
 tracing-subscriber = { version = "0.3", default-features = false, features = ["fmt"] }
 unicode-segmentation = "1.13.3"
+# The packaged `WebView2` page presentation (METIS-WEBVIEW-RUST-001) compiles
+# to WebAssembly against the exact browser-interop versions the audited lock
+# already records, so a caret range cannot drift the locked graph.
+wasm-bindgen = { version = "=0.2.129", default-features = false }
+js-sys = "=0.3.106"
+web-sys = { version = "=0.3.106", default-features = false }
+wasm-bindgen-futures = "=0.4.79"
 png = "0.18.1"
 flate2 = "1.1.10"
 jpeg-encoder = "0.7.1"

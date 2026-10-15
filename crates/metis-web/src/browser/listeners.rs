@@ -41,7 +41,12 @@ pub(super) fn control_listeners(
     let mut listeners = Vec::new();
     listeners.push(input_listener(document, state, app, &root)?);
     listeners.push(change_listener(document, state, &root)?);
-    listeners.extend(commands::listeners(document, state)?);
+    listeners.extend(commands::listeners(
+        document,
+        state,
+        clipboard_task,
+        *generation,
+    )?);
     listeners.extend(dialog::listeners(document)?);
     listeners.extend(fragment::listeners(
         document,

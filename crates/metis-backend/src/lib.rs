@@ -3,6 +3,7 @@
 
 pub mod audit;
 pub mod clinical;
+pub mod clipboard;
 mod fragment;
 #[cfg(not(target_arch = "wasm32"))]
 mod http;
@@ -12,6 +13,7 @@ pub mod supervisor;
 #[cfg(not(target_arch = "wasm32"))]
 pub mod websocket;
 
+pub use clipboard::ClipboardPlugin;
 pub use fragment::UiFragmentPlugin;
 #[cfg(not(target_arch = "wasm32"))]
 pub use http::{

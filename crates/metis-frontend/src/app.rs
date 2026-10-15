@@ -347,7 +347,7 @@ impl<T: IpcTransport> FrontendApp<T> {
         result
     }
 
-    fn closed() -> MetisError {
+    pub(crate) fn closed() -> MetisError {
         MetisError::transport(
             ErrorCode::ConnectionClosed,
             "Create a new app with a new transport to reconnect",

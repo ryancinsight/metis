@@ -3,6 +3,7 @@
 #![forbid(unsafe_code)]
 pub mod app;
 pub mod async_app;
+mod clipboard;
 mod commands;
 mod document;
 mod focus;
