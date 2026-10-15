@@ -60,15 +60,16 @@ hermes-simd = { git = "https://github.com/ryancinsight/hermes.git", version = "0
 # `gaia-mesh` but its import path is `gaia`. The mesh viewer renders with gaia's
 # software rasteriser rather than a second one here.
 gaia = { package = "gaia-mesh", git = "https://github.com/ryancinsight/gaia", version = "0.5.3", default-features = false }
-# Git plus version keeps the consumer on the public Moirai default branch
-# during development; Cargo.lock records the exact audited revision.
-moirai-core = { git = "https://github.com/ryancinsight/Moirai.git", version = "0.9.2", default-features = false, features = ["std"] }
-moirai-executor = { git = "https://github.com/ryancinsight/Moirai.git", version = "0.9.2", default-features = false }
-moirai-transport = { git = "https://github.com/ryancinsight/Moirai.git", version = "0.9.2", default-features = false }
-moirai-pal = { git = "https://github.com/ryancinsight/Moirai.git", version = "0.9.2", default-features = false }
-moirai-crypto = { git = "https://github.com/ryancinsight/Moirai.git", version = "0.9.2", default-features = false }
-moirai-async = { git = "https://github.com/ryancinsight/Moirai.git", version = "0.9.2", default-features = false }
-moirai-http = { git = "https://github.com/ryancinsight/Moirai.git", version = "0.9.2", default-features = false }
+# Git plus version records the provider contract. The two locks currently
+# select Moirai PR 622 for bounded native input diagnosis; it is not a
+# protected-default adoption or release claim.
+moirai-core = { git = "https://github.com/ryancinsight/Moirai.git", version = "0.9.3", default-features = false, features = ["std"] }
+moirai-executor = { git = "https://github.com/ryancinsight/Moirai.git", version = "0.9.3", default-features = false }
+moirai-transport = { git = "https://github.com/ryancinsight/Moirai.git", version = "0.9.3", default-features = false }
+moirai-pal = { git = "https://github.com/ryancinsight/Moirai.git", version = "0.9.3", default-features = false }
+moirai-crypto = { git = "https://github.com/ryancinsight/Moirai.git", version = "0.9.3", default-features = false }
+moirai-async = { git = "https://github.com/ryancinsight/Moirai.git", version = "0.9.3", default-features = false }
+moirai-http = { git = "https://github.com/ryancinsight/Moirai.git", version = "0.9.3", default-features = false }
 moirai-webview = { git = "https://github.com/ryancinsight/Moirai.git", version = "0.2.0" }
 metis-core = { path = "crates/metis-core", version = "0.5.0" }
 metis-ipc = { path = "crates/metis-ipc", version = "0.5.0" }

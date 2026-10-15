@@ -80,8 +80,9 @@ Metis 0.5.0 replaces the Windows form's 125 and permission probe's 88 authored
 JavaScript lines with Rust page controllers and one three-line ABI bootstrap.
 The other three initialization modules retain nine lines, for twelve authored
 initialization lines across these four owners. Generated wasm-bindgen bindings
-remain. Real Windows behavior and packaging acceptance remain open in
-METIS-WEBVIEW-RUST-001. [ADR 0056](docs/adr/0056-rust-browser-shell.md)
+remain; the authored ABI totals 359 UTF-8 bytes, and eighteen independent
+browser observer owners retain their roles. Real Windows behavior and packaging
+acceptance remain open in METIS-WEBVIEW-RUST-001. [ADR 0056](docs/adr/0056-rust-browser-shell.md)
 records the contracts and [the Tauri review](docs/manual/tauri.md) records
 the required native pairs and their remaining acceptance.
 
@@ -93,13 +94,16 @@ workspace versions. The canonical Git locks record the consumed provider graph.
 The Windows private bridge encodes audit identifiers as decimal JSON strings in
 Rust, retaining every backend `u64` through WebView2's JavaScript object parsing.
 Rust owns the page protocol and lifecycle under the
-[accepted design](docs/adr/0059-windows-rust-pages.md). Both standalone locks now
-consume protected Moirai 0.9.2, whose installed Rust bridge fixture verifies
+[accepted design](docs/adr/0059-windows-rust-pages.md). The previously adopted protected Moirai 0.9.2 installed Rust bridge fixture verifies
 native method admission, bidirectional message bounds, callback retirement and
-profile cleanup. The [Windows replay](https://github.com/ryancinsight/metis/actions/runs/38678882731)
+profile cleanup. The [Windows replay](https://github.com/ryancinsight/metis/actions/runs/38685234146)
 verifies real physical-key delivery and two Unicode replacements in RichEdit.
-The Rust page reaches Ready, but its first patient edit remains `demo` in UIA
-until the sixty-second deadline; renderer consumption remains unattributed.
+The Rust page reaches Ready and UIA observes the exact patient and weight `64`,
+but dose remains `0.2` instead of requested `0.25` until the sixty-second deadline.
+The input mechanism remains unattributed. Both locks now select Moirai PR 622 source `924dd8ac70d6` for bounded, default-off
+controller focus/accelerator diagnosis. Its real Ctrl+A/Escape and cleanup
+fixture passes on Windows; the Metis replay remains pending. This candidate is
+not an adoption of a protected provider default.
 Complete native journeys remain a separate acceptance gate.
 Windows app compilation
 requires an independently prepared Rust module. Build `metis-cli`, run

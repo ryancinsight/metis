@@ -38,6 +38,16 @@ impl State {
                     surface.resize(width, height)?;
                 }
             }
+            WebViewHostEvent::Window(
+                event @ (WindowEvent::FocusGained | WindowEvent::FocusLost),
+            ) => {
+                tracing::info!(
+                    event = "page_window_focus",
+                    gained = matches!(event, WindowEvent::FocusGained),
+                    mount = self.page.session.identity().mount().get(),
+                    "Actual native top-level focus event"
+                );
+            }
             WebViewHostEvent::WebView(WebViewEvent::Message { source, json }) => {
                 return self.message(app, surface, &source, &json);
             }

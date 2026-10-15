@@ -133,6 +133,18 @@ the timeout remains unattributed until those native records exist.
 
 ## Failure and verification
 
+The input investigation selects Moirai PR 622 source `924dd8ac70d6` through both
+canonical locks. This is an explicitly recorded diagnostic candidate, not an
+adoption of a protected provider default. The same private selection observes
+actual controller GotFocus/LostFocus/MoveFocusRequested and eligible
+AcceleratorKeyPressed callbacks. Fixed callback storage retains native arguments
+and raw focus/key state; the owner pump serializes records after callback return.
+Neither Handled nor focus/input is modified. Native top-level focus events have
+their own Metis trace event. A controller key observation is receipt evidence,
+not proof of renderer default action, UIA value change or Rust submission.
+Real Ctrl+A/Escape and cleanup pass in the provider's Windows run 38743789587;
+the unchanged Metis form journey must establish its own consumption boundary.
+
 Early document/mount/bridge acquisition can fail before a coordinator exists;
 the raw Rust entry point can then render a document error but cannot promise a
 correlated native failure. Loader rejection or a WASM trap can precede Rust

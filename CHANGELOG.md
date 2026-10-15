@@ -4,6 +4,12 @@
 
 ### Added
 
+- [patch] Native input diagnosis logs actual top-level focus events and selects
+  Moirai PR 622's private bounded controller focus/accelerator observations.
+  Both locks retain the exact diagnostic candidate, with unrelated records
+  unchanged. This adds receipt evidence; it changes no input, assertion,
+  Handled value, lifecycle or deadline and claims no functional repair.
+
 - [minor] `metis-web::embedded` owns the typed form/probe messages, exact mount
   and request correlation, Rust page controller and explicit stop/resource law.
   Moirai 0.9.0 supplies the actual WebIDL/native mechanisms (ADR 0059).
@@ -47,20 +53,22 @@
 ### Fixed
 
 - Wake the native fixture owner for pending UIA/window messages within its
-  existing twenty-five-millisecond completion poll. The full 502-case Windows
-  suite passes in 50.180s under sixty seconds with every observation preserved.
-  Both real Unicode replacements pass in 2.361s versus the preceding 16.830s.
+  existing twenty-five-millisecond completion poll. Source 53afc6b completes
+  502 Windows cases in 50.180s under sixty seconds, retaining every
+  observation; both replacements take 2.361s versus the preceding 16.830s.
 - Retain read-only, target-owned UIA selection ranges around native text input,
   with exact request sequences and signed endpoint comparisons. Unsupported
   patterns and absent ranges remain explicit. A real RichEdit regression covers
   two successive Unicode replacements through the canonical input path. Actual
-  Windows executes 502 cases: 501 pass and one Apple-only case skips in 50.180s.
+  Windows run 38685234146 executes 502 cases: 501 pass and the Apple-only case
+  skips in 40.796s; both replacements pass in 1.740s.
   Local verification runs 502 cases with four Windows-only skips and 1,003
   unchanged source identities.
   Direct public accessors preserve TextPattern getter exceptions; actor errors
   retain their full type and detail.
-  The form accepts the first patient value, then weight remains `60` instead
-  of requested `64` with collapsed selection; consumption remains unattributed.
+  UIA observes the exact first patient value and weight `64`, then dose remains
+  `0.2` instead of requested `0.25` with collapsed selection until timeout.
+  The changed failing field establishes no input fix; consumption remains unattributed.
 - Require explicit native text-value representation in the verification input
   owner. RichEdit ValuePattern includes TOM's final CR; native window text and
   WebView values retain their literal contracts. The real initial replay exposes
@@ -73,7 +81,7 @@
   lifetimes preserve original failures through release. Shortcut progress retains
   its own focus/modifier boundary and admitted scans. The current real Windows
   key regression verifies SDK mappings, modifier transitions and scope ownership
-  in 86.679ms.
+  in 80.134ms.
 - Preserve SDK-selected Right-arrow scan identity and test E0 independently with
   right-Control. The real native case verifies its side-distinguishing reverse
   mapping, generic legacy message and modifier transitions; raw layout/mapping
