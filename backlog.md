@@ -1,4 +1,36 @@
-Current framework version: Metis 0.4.1. Remaining capability work follows.
+Current framework version: Metis 0.4.2. Remaining capability work follows.
+
+<a id="METIS-CURRENT-PROVIDERS-001"></a>
+## METIS-CURRENT-PROVIDERS-001 — Admit current provider defaults [patch]
+
+- Status: in progress; owner: RITK dependency integration; last-update: 2026-10-15.
+- Scope: advance the seven canonical Moirai requirements to 0.9.2 and Gaia to
+  0.5.3, refresh the exact Git lock, and validate the unchanged consumer source.
+  Preserve peer-owned #503 QUIC and #504 Rust-page branches and all existing
+  tests, feature sets, limits, permissions and platform contracts.
+- Evidence: isolated current-default reconciliation at base `1ef9409b` passes
+  Rust 1.97.0 locked, offline, all-target/all-feature workspace checking.
+  The lock selects Moirai `2b189f0a`, Gaia `4987e7d4`, Consus `3510db09`,
+  Apollo DCT `5950e1b5`, Leto `248fe4f6`, Hermes `b4d73c94`, Mnemosyne
+  `87f80379`, Aequitas `d57e4c42` and Iris `3d321099`. The root lock selects
+  reviewed published Eunomia/derive 0.9.2 at `06848422`: 698 native tests pass
+  with zero skips, strict all-target/all-feature Clippy passes, warning-denied
+  Rustdoc passes and all 42 doctests pass. Eunomia default `0f4898f8` declares
+  0.9.1 and has different public API; maintenance `91e28261` is on
+  `release/eunomia-0.9`, not default. Its existing owner handles reconciliation.
+- Open gates: cargo-semver-checks 0.49.0 stops before API comparison because
+  fresh resolution cannot satisfy Eunomia ^0.9.2 from default. A later Apollo
+  default `97236f7d` also needs lock adoption; its update is blocked by the same
+  fresh resolution. Fuzz-lock regeneration remains pending. No source alias,
+  provider downgrade or gate bypass is introduced.
+- Acceptance: full bounded native tests, strict lint/docs and SemVer/API gates;
+  exact-head hosted Windows/Apple verification and review before normal merge.
+  First `consus-raster` 0.2.0 publication remains blocked externally: Consus
+  release run `38679610138` explicitly requires an API token before trusted
+  publishing can apply, and none is configured in the checked local environment
+  or standard Cargo credential files. No credential expansion is authorized.
+  No registry release, signing, deployment or physical-platform acceptance is
+  claimed by this dependency-only checkpoint. Miri remains deferred.
 
 <a id="METIS-WEBVIEW-RUST-001"></a>
 ## METIS-WEBVIEW-RUST-001 — Rust-owned Windows page lifecycle [minor]

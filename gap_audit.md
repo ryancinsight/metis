@@ -1,5 +1,19 @@
 # Open capability and evidence risks
 
+## Current-provider reconciliation remains gated [patch]
+
+The isolated 0.4.2 proposal preserves all default-branch implementation and the
+protected page/QUIC branches. Its root graph passes 698 native tests, all-target
+all-feature strict Clippy, warning-denied docs and 42 doctests using reviewed
+published Eunomia/derive 0.9.2 (`06848422`). This does not close API or release
+acceptance: fresh API resolution and further root/fuzz lock updates fail because
+Eunomia default `0f4898f8` declares 0.9.1 and exposes a distinct public API.
+Maintenance `91e28261` is on `release/eunomia-0.9`; the release owner retains that
+reconciliation. Apollo default advances to `97236f7d` after the measured root
+lock and remains a required adoption. Consus raster 0.2.0 first publication
+requires human-owned bootstrap authentication; no credential/access change or
+publication is performed here. See [the board](backlog.md#METIS-CURRENT-PROVIDERS-001).
+
 ## Standalone Consus adoption [patch]
 
 Target: Metis 0.4.1, Consus compression/raster 0.2 and the delivered Moirai

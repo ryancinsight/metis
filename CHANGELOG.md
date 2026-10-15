@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.4.2] - Unreleased
+
+### Fixed
+
+- [patch] Admit Moirai 0.9.2, Gaia 0.5.3 and published Eunomia 0.9.2 through
+  their canonical Git sources. Refresh the lock from provider defaults, including merged Consus
+  #174, while retaining existing API, feature and native-page contracts.
+
 ## [0.4.1] - Unreleased
 
 ### Fixed
