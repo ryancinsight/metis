@@ -1,12 +1,31 @@
 # Changelog
 
-## [0.4.2] - Unreleased
+## [0.5.0] - Unreleased
+
+### Breaking
+
+- [major] `metis-platform::Color` and its `metis-ui-lang` re-export implement
+  Eunomia 0.10's `Pod`/`Zeroable` traits. These are Eunomia-owned nominal traits;
+  callers using the former 0.9 bounds must select the same 0.10 provider identity.
+  Pixel layout and values are unchanged. ADR0060 records the public contract and
+  uniformly versioned workspace/internal requirements at 0.5.0. RITK consumers
+  advance their Metis requirements to 0.5.
 
 ### Fixed
 
-- [patch] Admit Moirai 0.9.2, Gaia 0.5.3 and published Eunomia 0.9.2 through
-  their canonical Git sources. Refresh the lock from provider defaults, including merged Consus
-  #174, while retaining existing API, feature and native-page contracts.
+- [patch] Reconcile the canonical root and fuzz locks with approved provider
+  defaults: Eunomia0.10, Hermes0.9, memory0.10, Moirai0.9.3, Leto0.46,
+  Gaia0.6 (example dev dependency) and Consus0.2.1/Apollo core0.17.
+  Root registry tuples remain unchanged; fuzz updates only the Moirai-required
+  rustls0.23.45 to0.23.46 security repair. No production source, feature,
+  default, test budget, permission or protected owner branch changes.
+- [patch] The current full workspace passes698 native tests with zero skips,
+  42 doctests, strict all-feature Clippy/docs, formatting and fuzz-target
+  checks. Final API/platform/browser/release/package and exact-head hosted
+  gates remain required before delivery. Consus raster's initial registry
+  upload remains a separate human-authentication handoff; the old source
+  3510db09/raster0.2.0 instruction is obsolete. No credentials or publisher
+  registration are configured. Miri remains deferred.
 
 ## [0.4.1] - Unreleased
 

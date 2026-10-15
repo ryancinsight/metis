@@ -32,7 +32,7 @@ members = [
 ]
 
 [workspace.package]
-version = "0.4.2"
+version = "0.5.0"
 edition = "2024"
 rust-version = "1.97"
 authors = ["Ryan Clanton <ryanclanton@outlook.com>"]
@@ -51,30 +51,30 @@ jpeg-encoder = "0.7.1"
 consus-compression = { git = "https://github.com/ryancinsight/consus.git", version = "0.2.0" }
 consus-raster = { git = "https://github.com/ryancinsight/consus.git", version = "0.2.0" }
 iris = { package = "iris-viz", git = "https://github.com/ryancinsight/iris", version = "0.1.1" }
-eunomia = { git = "https://github.com/ryancinsight/eunomia", version = "0.9.2", default-features = false }
+eunomia = { git = "https://github.com/ryancinsight/eunomia", version = "0.10.0", default-features = false }
 # Runtime ISA dispatch for rasterizer kernels (ADR 0053).
-hermes-simd = { git = "https://github.com/ryancinsight/hermes.git", version = "0.8.1", default-features = false, features = ["std"] }
+hermes-simd = { git = "https://github.com/ryancinsight/hermes.git", version = "0.9.0", default-features = false, features = ["std"] }
 # Git plus version, matching the sibling entries below: the package is named
 # `gaia-mesh` but its import path is `gaia`. The mesh viewer renders with gaia's
 # software rasteriser rather than a second one here.
-gaia = { package = "gaia-mesh", git = "https://github.com/ryancinsight/gaia", version = "0.5.3", default-features = false }
+gaia = { package = "gaia-mesh", git = "https://github.com/ryancinsight/gaia", version = "0.6.0", default-features = false }
 # Git plus version keeps the consumer on the public Moirai default branch
 # during development; Cargo.lock records the exact audited revision.
-moirai-core = { git = "https://github.com/ryancinsight/Moirai.git", version = "0.9.2", default-features = false, features = ["std"] }
-moirai-executor = { git = "https://github.com/ryancinsight/Moirai.git", version = "0.9.2", default-features = false }
-moirai-transport = { git = "https://github.com/ryancinsight/Moirai.git", version = "0.9.2", default-features = false }
-moirai-pal = { git = "https://github.com/ryancinsight/Moirai.git", version = "0.9.2", default-features = false }
-moirai-crypto = { git = "https://github.com/ryancinsight/Moirai.git", version = "0.9.2", default-features = false }
-moirai-async = { git = "https://github.com/ryancinsight/Moirai.git", version = "0.9.2", default-features = false }
-moirai-http = { git = "https://github.com/ryancinsight/Moirai.git", version = "0.9.2", default-features = false }
+moirai-core = { git = "https://github.com/ryancinsight/Moirai.git", version = "0.9.3", default-features = false, features = ["std"] }
+moirai-executor = { git = "https://github.com/ryancinsight/Moirai.git", version = "0.9.3", default-features = false }
+moirai-transport = { git = "https://github.com/ryancinsight/Moirai.git", version = "0.9.3", default-features = false }
+moirai-pal = { git = "https://github.com/ryancinsight/Moirai.git", version = "0.9.3", default-features = false }
+moirai-crypto = { git = "https://github.com/ryancinsight/Moirai.git", version = "0.9.3", default-features = false }
+moirai-async = { git = "https://github.com/ryancinsight/Moirai.git", version = "0.9.3", default-features = false }
+moirai-http = { git = "https://github.com/ryancinsight/Moirai.git", version = "0.9.3", default-features = false }
 moirai-webview = { git = "https://github.com/ryancinsight/Moirai.git", version = "0.2.0" }
-metis-core = { path = "crates/metis-core", version = "0.4.2" }
-metis-ipc = { path = "crates/metis-ipc", version = "0.4.2" }
-metis-ui-lang = { path = "crates/metis-ui-lang", version = "0.4.2" }
-metis-platform = { path = "crates/metis-platform", version = "0.4.2" }
-metis-backend = { path = "crates/metis-backend", version = "0.4.2" }
-metis-frontend = { path = "crates/metis-frontend", version = "0.4.2" }
-metis-web = { path = "crates/metis-web", version = "0.4.2" }
+metis-core = { path = "crates/metis-core", version = "0.5.0" }
+metis-ipc = { path = "crates/metis-ipc", version = "0.5.0" }
+metis-ui-lang = { path = "crates/metis-ui-lang", version = "0.5.0" }
+metis-platform = { path = "crates/metis-platform", version = "0.5.0" }
+metis-backend = { path = "crates/metis-backend", version = "0.5.0" }
+metis-frontend = { path = "crates/metis-frontend", version = "0.5.0" }
+metis-web = { path = "crates/metis-web", version = "0.5.0" }
 pyo3 = { version = "0.29.2", default-features = false }
 criterion = { version = "0.8.2", default-features = false, features = ["cargo_bench_support"] }
 
