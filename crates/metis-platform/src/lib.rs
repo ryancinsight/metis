@@ -12,6 +12,8 @@ pub mod framebuffer;
 mod memo;
 pub mod rasterizer;
 #[cfg(not(target_arch = "wasm32"))]
+pub mod scoped_clipboard;
+#[cfg(not(target_arch = "wasm32"))]
 pub mod scoped_file;
 #[cfg(not(target_arch = "wasm32"))]
 pub mod scoped_network;
@@ -38,6 +40,8 @@ pub use rasterizer::{
     LineCap, LineJoin, MAX_STROKE_POINTS, StrokeWidth, draw_line, draw_polyline, draw_rect_outline,
     fill_rect,
 };
+#[cfg(not(target_arch = "wasm32"))]
+pub use scoped_clipboard::{MAX_CLIPBOARD_TEXT_BYTES, ScopedClipboard};
 #[cfg(not(target_arch = "wasm32"))]
 pub use scoped_file::{MAX_SCOPED_FILE_BYTES, ScopedFileProvider};
 #[cfg(not(target_arch = "wasm32"))]

@@ -86,4 +86,14 @@ def send_shortcut(shortcut: str) -> None:
         finally:
             send_virtual_key(abi.VK_CONTROL, key_up=True)
         return
+    if shortcut == "alt-shift-c":
+        send_virtual_key(abi.VK_MENU, key_up=False)
+        try:
+            send_virtual_key(abi.VK_SHIFT, key_up=False)
+            send_virtual_key(ord("C"), key_up=False)
+            send_virtual_key(ord("C"), key_up=True)
+        finally:
+            send_virtual_key(abi.VK_SHIFT, key_up=True)
+            send_virtual_key(abi.VK_MENU, key_up=True)
+        return
     raise ValueError(f"unsupported native shortcut: {shortcut!r}")

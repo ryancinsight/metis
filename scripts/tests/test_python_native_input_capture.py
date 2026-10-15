@@ -9,7 +9,7 @@ import unittest
 from unittest.mock import patch
 
 sys.path.insert(0, str(pathlib.Path(__file__).resolve().parents[1]))
-from native_input import cli, frames, workflow
+from native_input import cli, clipboard, frames, workflow
 from native_input.windows import abi, focus, geometry, keyboard, pointer
 
 
@@ -83,6 +83,80 @@ class NativeInputCaptureTests(unittest.TestCase):
             ],
         )
 
+    def test_alt_shift_c_releases_its_modifiers_after_the_letter(self) -> None:
+        events: list[tuple[int, bool]] = []
+        with patch.object(
+            keyboard,
+            "send_virtual_key",
+            side_effect=lambda virtual_key, *, key_up: events.append((virtual_key, key_up)),
+        ):
+            keyboard.send_shortcut("alt-shift-c")
+        self.assertEqual(
+            events,
+            [
+                (abi.VK_MENU, False),
+                (abi.VK_SHIFT, False),
+                (ord("C"), False),
+                (ord("C"), True),
+                (abi.VK_SHIFT, True),
+                (abi.VK_MENU, True),
+            ],
+        )
+
+    def test_follow_wait_is_bounded_and_follow_args_flow_through(self) -> None:
+        parsed = cli.parser().parse_args(
+            [
+                "--command",
+                "metis-app.exe",
+                "--follow-shortcut",
+                "alt-shift-c",
+                "--follow-wait-seconds",
+                "2.5",
+                "--expected-clipboard",
+                "Rate: 0.360 mL/hr (0.72 mg/hr)",
+                "--initial-output",
+                "before.png",
+                "--output",
+                "after.png",
+                "--manifest",
+                "trace.json",
+            ]
+        )
+        self.assertEqual(parsed.follow_shortcut, "alt-shift-c")
+        self.assertEqual(parsed.follow_wait_seconds, 2.5)
+        self.assertEqual(
+            parsed.expected_clipboard,
+            "Rate: 0.360 mL/hr (0.72 mg/hr)",
+        )
+        with self.assertRaises(ValueError):
+            workflow.capture_input(
+                pathlib.Path("metis-app.exe"),
+                [],
+                None,
+                None,
+                None,
+                None,
+                None,
+                pathlib.Path("before.png"),
+                pathlib.Path("after.png"),
+                pathlib.Path("trace.json"),
+                follow_shortcut="alt-shift-c",
+                follow_wait_seconds=0.01,
+                expected_clipboard=None,
+            )
+
+    def test_expected_clipboard_verification_fails_closed(self) -> None:
+        self.assertIsNone(clipboard.verify_expected_clipboard(None))
+        with patch.object(
+            clipboard,
+            "read_clipboard_text",
+            side_effect=lambda: "Rate: 0.544 mL/hr (2.18 mg/hr)",
+        ):
+            record = clipboard.verify_expected_clipboard("Rate: 0.544 mL/hr (2.18 mg/hr)")
+            self.assertTrue(record["matches"])
+            with self.assertRaises(RuntimeError):
+                clipboard.verify_expected_clipboard("Rate: 0.544 mL/hr (2.17 mg/hr)")
+
     def test_mouse_input_keeps_the_64_bit_windows_abi_width(self) -> None:
         # LONG dx, LONG dy, DWORD mouseData, DWORD dwFlags, DWORD time, then
         # four alignment bytes before the 64-bit ULONG_PTR dwExtraInfo.
@@ -123,7 +197,9 @@ class NativeInputCaptureTests(unittest.TestCase):
 
     def test_capture_requires_at_least_one_trusted_input(self) -> None:
         with self.assertRaisesRegex(
-            ValueError, "provide --text, --shortcut, --click-client, or --scroll-client"
+            ValueError,
+            "provide --text, --shortcut, --follow-shortcut, --click-client, "
+            "or --scroll-client",
         ):
             workflow.capture_input(
                 pathlib.Path(sys.executable),

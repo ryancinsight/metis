@@ -2,7 +2,7 @@ use super::{BrowserState, view};
 use crate::controls::{self, ControlField};
 use metis_core::input::{Accelerator, Key, Modifiers};
 use metis_frontend::ApplicationCommand;
-use moirai_pal::wasm::{KeyboardMetadata, WebDocument, WebEventListener};
+use moirai_pal::wasm::{KeyboardMetadata, LocalTaskHandle, WebDocument, WebEventListener};
 use std::{cell::RefCell, io, rc::Rc};
 
 /// Rust-owned state for the browser command surface.
@@ -23,28 +23,44 @@ impl Default for CommandState {
 pub(super) fn listeners(
     document: &WebDocument,
     state: &Rc<RefCell<BrowserState>>,
+    clipboard_task: &Rc<RefCell<Option<LocalTaskHandle>>>,
+    generation: crate::epoch::Generation,
 ) -> io::Result<Vec<WebEventListener>> {
     let toggle = view::element(document, "command-menu-toggle")?;
     let menu = view::element(document, "command-menu")?;
     Ok(vec![
         toggle_listener(document, state, &toggle)?,
+        // The copy-result command closes below via its own async flow.,
         action_listener(
             document,
             state,
+            clipboard_task,
+            generation,
             &view::element(document, "command-focus-patient")?,
         )?,
         action_listener(
             document,
             state,
+            clipboard_task,
+            generation,
             &view::element(document, "command-theme-dark")?,
         )?,
         action_listener(
             document,
             state,
+            clipboard_task,
+            generation,
             &view::element(document, "command-theme-system")?,
         )?,
+        action_listener(
+            document,
+            state,
+            clipboard_task,
+            generation,
+            &view::element(document, "command-copy-result")?,
+        )?,
         escape_listener(document, state, &menu, &toggle)?,
-        shortcut_listener(document, state)?,
+        shortcut_listener(document, state, clipboard_task, generation)?,
     ])
 }
 
@@ -73,10 +89,14 @@ fn toggle_listener(
 fn action_listener(
     document: &WebDocument,
     state: &Rc<RefCell<BrowserState>>,
+    clipboard_task: &Rc<RefCell<Option<LocalTaskHandle>>>,
+    generation: crate::epoch::Generation,
     control: &moirai_pal::wasm::WebElement,
 ) -> io::Result<WebEventListener> {
     let listener_document = document.clone();
     let listener_state = Rc::clone(state);
+    let listener_task = Rc::clone(clipboard_task);
+    let listener_generation = generation;
     control.add_event_listener("click", move |event| {
         event.prevent_default();
         let Some(command) = event
@@ -85,7 +105,13 @@ fn action_listener(
         else {
             return;
         };
-        if let Err(error) = apply(&listener_document, &listener_state, command) {
+        if let Err(error) = apply(
+            &listener_document,
+            &listener_state,
+            command,
+            &listener_task,
+            listener_generation,
+        ) {
             view::set_mount_error(&listener_document, &error);
         }
     })
@@ -97,9 +123,13 @@ fn action_listener(
 fn shortcut_listener(
     document: &WebDocument,
     state: &Rc<RefCell<BrowserState>>,
+    clipboard_task: &Rc<RefCell<Option<LocalTaskHandle>>>,
+    generation: crate::epoch::Generation,
 ) -> io::Result<WebEventListener> {
     let listener_document = document.clone();
     let listener_state = Rc::clone(state);
+    let listener_task = Rc::clone(clipboard_task);
+    let listener_generation = generation;
     document
         .body()?
         .add_event_listener("keydown", move |event| {
@@ -120,7 +150,13 @@ fn shortcut_listener(
                 return;
             };
             event.prevent_default();
-            if let Err(error) = apply(&listener_document, &listener_state, command) {
+            if let Err(error) = apply(
+                &listener_document,
+                &listener_state,
+                command,
+                &listener_task,
+                listener_generation,
+            ) {
                 view::set_mount_error(&listener_document, &error);
             }
         })
@@ -147,7 +183,15 @@ fn apply(
     document: &WebDocument,
     state: &Rc<RefCell<BrowserState>>,
     command: ApplicationCommand,
+    clipboard_task: &Rc<RefCell<Option<LocalTaskHandle>>>,
+    generation: crate::epoch::Generation,
 ) -> io::Result<()> {
+    if command == ApplicationCommand::CopyResult {
+        state.borrow_mut().commands.menu_open = false;
+        // The async copy flow owns the command status line; the sync path
+        // here never invents an outcome the clipboard has not reported yet.
+        return super::clipboard::copy_result_command(document, state, clipboard_task, generation);
+    }
     {
         let mut state = state.borrow_mut();
         if let Some(value) = command.theme_value() {

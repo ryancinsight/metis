@@ -1188,6 +1188,7 @@ version = "0.4.1"
 dependencies = [
  "metis-core",
  "metis-ipc",
+ "metis-platform",
  "moirai-async",
  "moirai-core",
  "moirai-crypto",
@@ -1331,6 +1332,18 @@ dependencies = [
  "tracing",
  "tracing-subscriber",
  "unicode-segmentation",
+]
+
+[[package]]
+name = "metis-webview-page"
+version = "0.4.1"
+dependencies = [
+ "js-sys",
+ "serde",
+ "serde_json",
+ "wasm-bindgen",
+ "wasm-bindgen-futures",
+ "web-sys",
 ]
 
 [[package]]

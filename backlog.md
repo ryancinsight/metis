@@ -180,7 +180,7 @@ an owner. “Unsupported” cannot replace delivery of a required mobile/native 
 
 <a id="METIS-INTEGRATION-001"></a>
 ## METIS-INTEGRATION-001 — Desktop integration services [minor]
-- Status: todo; priority: P2; owner: Metis host/broker; last-update: 2026-09-22; branch: feat/metis-native-command-menu-001; dependencies: METIS-DESKTOP-001; risk: OS interaction
+- Status: todo; priority: P2; owner: Metis host/broker; last-update: 2026-10-13; branch: feat/metis-native-command-menu-001; dependencies: METIS-DESKTOP-001; risk: OS interaction
 - Scope: menus/tray, clipboard, notifications, global shortcuts, deep links, file associations, opener, single-instance and window state; bind each exposed API to policy.
 - Acceptance: typed commands/events agree across supported hosts, denial/error paths remain explicit, clipboard/user-content permissions obey host rules and listeners unregister on shutdown.
 - Demonstration: [V08](docs/VERIFICATION.md#V08), actual OS interactions and permission failures; capture menus/dialogs where visible and assert nonvisual events.
@@ -225,6 +225,84 @@ an owner. “Unsupported” cannot replace delivery of a required mobile/native 
 - Autostart increment (2026-09-24): `metis_platform::Autostart` enables, checks and disables a per-user login item: an XDG autostart entry, a macOS launch agent, or a Windows `Run` value through Moirai `windows::startup` (Moirai PR #465), which reaches no other registry location. `metis_core::command_line` is now the single Windows CRT and desktop `Exec` quoting implementation shared by the MSI shortcut, the Linux package and login items, and `atomic_file::replace` is the shared write-and-rename save.
 
 - Dioxus comparison (2026-09-24): ADR 0003 adds Dioxus 0.7.10, inspected from its published crates, as the closest Rust comparator. Its signals, memos, store fields and `use_resource` are now matched by `metis_frontend::reactive::{derived2, Writable::project, resource}`, with explicit dependencies and stale-result rejection. `metis_core::route::Router` then closes its typed-routing gap (literal/parameter/rest patterns, order-independent precedence, conflict refusal, `href`, deep-link segments through one shared path decoder). Moirai PR #468 then adds native menu bars and same-origin browser history: `native::MenuBarHost` with `menu_label` shortcuts, and `navigation::Navigator` with `metis_web::BrowserNavigator` for reactive, history-backed routes. Nested layouts, SSR/hydration, code hot patching and mobile bundles remain open.
+- Clipboard provider increment (2026-10-13): `metis_platform::ScopedClipboard`
+  admits bounded text reads/writes of the system clipboard behind the new
+  `metis_core::capability::CapabilityScope::CLIPBOARD` witness (`1 << 9`), the
+  counterpart of Tauri's clipboard-manager plugin. The Windows mechanism is
+  Moirai `windows::clipboard` (local Moirai work pending its release): one
+  `OpenClipboard`/`CloseClipboard` region per call, bounded `CF_UNICODETEXT`
+  read/write through global-memory handles, sequence-number torn-read
+  detection, a 1 Mi UTF-16 unit bound, and `png` moved from a dev-dependency
+  into the optional `webview2` feature so external consumers compile. The
+  provider bounds text at `MAX_CLIPBOARD_TEXT_BYTES` (1 MiB UTF-8), refuses
+  reads over the budget and empty/oversized writes before the clipboard is
+  touched, and the host policy refuses a `UI_RENDER` witness with
+  `InsufficientScope`; no normalization, shell or command interpretation
+  exists between caller and clipboard bytes. The real Windows round-trip
+  journey (write, read back, restore the prior content) passes at the
+  mechanism layer (`cargo test -p moirai-pal clipboard -- --ignored`, 1
+  passed) and through the provider (`cargo test -p metis-platform --features
+  clipboard scoped_clipboard -- --ignored`, 1 passed); default gates stay
+  green without the feature. Linux/macOS hosts, app-surface wiring, non-text
+  formats and mobile journeys remain open; the pinned inventory moves the
+  clipboard-manager Windows pair to bounded (47 bounded, 77 open pairs).
+- Clipboard command-surface increment (2026-10-13): `ApplicationCommand::CopyResult`
+  (`Alt+Shift+C`) joins the shared command identity, so one declaration
+  serves every host's markup, `aria-keyshortcuts` announcement, AccessKit
+  node and the `ShortcutMap`. The trusted authority is the backend `clipboard`
+  plugin: `invoke_plugin` mints the typed `CLIPBOARD` witness
+  (`mint_clipboard_witness`) right after the session scope check, the
+  supervised desktop service registers the plugin, and the write crosses the
+  session as a bounded `ClipboardWritePayload` under the session grant that
+  now includes `CLIPBOARD`; an unregistered plugin is refused before scope
+  verification, a `UI_RENDER`-only session path still fails closed, and the
+  OS clipboard is never touched by the untrusted process. The native
+  workbench activates the command by pointer, `Alt+Shift+C` and the
+  AccessKit `Activate` action under the same menu contract (closed-menu
+  refusal included); the browser workbench carries the selected result row's
+  displayed sentence through the context clipboard with task-slot and
+  generation guards; the packaged WebView2 page uses
+  `navigator.clipboard.write_text` through its promise chain and the same
+  status vocabulary. Focused gates: metis-backend 47 default tests plus the
+  ignored real-clipboard journey under `--features clipboard`
+  (`the_clipboard_plugin_round_trips_the_rate_sentence`), metis-frontend 58,
+  metis-app 48+5, metis-web 65 and wasm check, metis-webview-page 5; the
+  command-identity asset contracts update through the shared `ALL`
+  iteration. committed journey evidence (2026-10-13): the trusted
+  input-capture runner gained a follow-shortcut phase and a byte-exact
+  clipboard verification (`Get-Clipboard -Raw` read with its console output
+  encoding pinned to UTF-8, `matches = true`,
+  SHA-256 `fa52fbda3bc875a8d8335c829e2d4dad2877e72a042d594c62280a1b9e6529a9`);
+  the real Windows journey (`output/rec/native-copy.json`, before
+  `fb12e0a92f6c7603d52652cb63867791903a3b40bc5209b6b2dcb9a0d08b3fd8`, after
+  `d94c9fe2b33c0d549bbe6e44bbb3bb33eeba752a86ce35cbc427a9e286ea0334` at 120
+  dpi) submits with real Enter, copies with the real Alt+Shift+C chord, and
+  the clipboard carries the exact rendered sentence
+  `Rate: 0.360 mL/hr (0.72 mg/hr)`; the capture-runner suite passes 26/26.
+  The journey build enabled the `metis-backend/clipboard` feature chain
+  under the temporary local Moirai patch, which was removed afterwards.
+  Remaining: Linux/macOS clipboard mechanisms (separate host
+  items), non-text formats, mobile journeys and the Moirai PR/release with
+  the Metis lock advance that activates the Windows mechanism by default.
+  Moirai-side increment (2026-10-13): the `windows::clipboard` provider is
+  committed on local Moirai main
+  (`feat(pal): add bounded Windows text clipboard provider`; clippy pedantic
+  clean after nesting the test's or-pattern as `Ok(None | Some(_))`, fmt
+  clean, 2 unit tests pass and the ignored real-clipboard journey passes
+  with restore) plus a companion commit wiring `png` into the `webview2`
+  feature so the `metis-platform`-enabled build compiles; `cargo check
+  --features webview2` is clean. A follow-up Moirai commit resolves the
+  pre-existing parallel-suite flake in the closed-socket tests (reproduced
+  on its parent without this change): Winsock recycles
+  process-global socket values across suite threads, so a just-closed value
+  can read live under a foreign owner or reject the poll with `WSAENOTSOCK`
+  mid-teardown. Observation loops with a 10 s deadline, `WSAENOTSOCK`
+  retries, a free-set-draining reuse scan and pre-pinning the global
+  reactor absorb the transient modes; the three tests needing a quiescent
+  namespace are explicit opt-ins per repo convention and all pass solo,
+  with deterministic generation coverage staying in-gate. In-gate suite:
+  173 passed, 0 failed (6 consecutive runs), fmt/clippy clean. No push:
+  the release and the Metis lock advance stay external.
 
 <a id="METIS-SERVICES-001"></a>
 ## METIS-SERVICES-001 — Scoped network, shell and sidecars [minor]

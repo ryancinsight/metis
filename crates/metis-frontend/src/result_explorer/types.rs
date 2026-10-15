@@ -108,6 +108,15 @@ impl ResultRow {
         self.response.drug_rate_mg_hr
     }
 
+    /// Returns the exact displayed rate sentence, so the copy command
+    /// carries the same characters every host renders for this row.
+    ///
+    /// # Errors
+    /// Returns the shared display-formatter error.
+    pub fn rate_sentence(&self) -> metis_core::Result<String> {
+        crate::clipboard::result_text(&self.response)
+    }
+
     /// Returns whether the pediatric interlock applies.
     #[must_use]
     pub const fn is_pediatric(&self) -> bool {

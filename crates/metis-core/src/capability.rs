@@ -34,6 +34,9 @@ impl CapabilityScope {
     pub const NETWORK: Self = Self(1 << 7);
     /// Permission to hand an allowlisted URL to the system's default handler.
     pub const OPEN_EXTERNAL: Self = Self(1 << 8);
+    /// Permission to read and write the system text clipboard through the
+    /// bounded provider.
+    pub const CLIPBOARD: Self = Self(1 << 9);
 
     /// Checks if this scope contains all flags of `other`.
     #[must_use]

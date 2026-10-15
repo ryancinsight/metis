@@ -73,6 +73,11 @@ pub(crate) fn theme_system_identity() -> u64 {
     explicit_identity(ApplicationCommand::ThemeSystem.id())
 }
 
+/// Returns the stable identity used for the copy-result command.
+pub(crate) fn copy_result_identity() -> u64 {
+    explicit_identity(ApplicationCommand::CopyResult.id())
+}
+
 fn append_node(
     source: &SemanticNode,
     path: &mut Vec<usize>,

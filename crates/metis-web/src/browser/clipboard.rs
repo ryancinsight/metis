@@ -267,9 +267,122 @@ fn write_button_listener(
     })
 }
 
+/// Runs the copy-result command: the selected result row's displayed rate
+/// sentence reaches the context clipboard through its own provider, and the
+/// command status line reports the typed outcome. The note-level clipboard
+/// status stays untouched, exactly like the theme commands.
+pub(super) fn copy_result_command(
+    document: &WebDocument,
+    state: &Rc<RefCell<BrowserState>>,
+    task_slot: &Rc<RefCell<Option<LocalTaskHandle>>>,
+    generation: crate::epoch::Generation,
+) -> io::Result<()> {
+    let Some(provider) = document.clipboard().ok() else {
+        return set_command_status(document, state, "Copy failed (clipboard unavailable)");
+    };
+    let sentence = match state.borrow().result_explorer.selected() {
+        Some(row) => row.rate_sentence(),
+        None => Ok(String::new()),
+    };
+    let sentence = match sentence {
+        Ok(sentence) if sentence.is_empty() => {
+            return set_command_status(document, state, "No result to copy");
+        }
+        Ok(sentence) => sentence,
+        Err(error) => {
+            return set_command_status(document, state, &format!("Copy failed ({error})"));
+        }
+    };
+    if task_slot.borrow().is_some() {
+        return Ok(());
+    }
+    let write = match provider.write_text(&sentence) {
+        Ok(write) => write,
+        Err(error) => {
+            return set_command_status(document, state, &format!("Copy failed ({error})"));
+        }
+    };
+    set_command_status(document, state, "Copy: submitting the selected result")?;
+    let task_cleanup = Rc::clone(task_slot);
+    let task_state = Rc::clone(state);
+    let task_document = document.clone();
+    let bytes = sentence.len();
+    let task = spawn_local_with_handle(async move {
+        let outcome = match write.await {
+            Ok(()) => format!("Result copied to clipboard ({bytes} bytes)"),
+            Err(error) => format!("Copy failed ({error})"),
+        };
+        if !crate::browser::generation_is_current(generation) {
+            let _ = task_cleanup.borrow_mut().take();
+            return;
+        }
+        task_state.borrow_mut().commands.status = outcome;
+        if let Err(error) = view::render(&task_document, &mut task_state.borrow_mut()) {
+            view::set_mount_error(&task_document, &error);
+        }
+        let _ = task_cleanup.borrow_mut().take();
+    });
+    *task_slot.borrow_mut() = Some(task);
+    Ok(())
+}
+
+/// Renders the command status line for the copy flow without touching the
+/// note control's clipboard state.
+fn set_command_status(
+    document: &WebDocument,
+    state: &Rc<RefCell<BrowserState>>,
+    message: &str,
+) -> io::Result<()> {
+    {
+        message.clone_into(&mut state.borrow_mut().commands.status);
+    }
+    view::render(document, &mut state.borrow_mut())
+}
+
 fn set_status(document: &WebDocument, state: &Rc<RefCell<BrowserState>>, status: ClipboardStatus) {
     state.borrow_mut().clipboard_status = status;
     if let Err(error) = view::render(document, &mut state.borrow_mut()) {
         view::set_mount_error(document, &error);
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::ClipboardStatus;
+
+    #[test]
+    fn state_names_cover_every_status() {
+        assert_eq!(ClipboardStatus::Ready.state_name(), "ready");
+        assert_eq!(ClipboardStatus::Unavailable.state_name(), "unavailable");
+        assert_eq!(ClipboardStatus::Reading.state_name(), "reading");
+        assert_eq!(ClipboardStatus::Writing.state_name(), "writing");
+        assert_eq!(ClipboardStatus::Read { bytes: 1 }.state_name(), "read");
+        assert_eq!(
+            ClipboardStatus::Written { bytes: 1 }.state_name(),
+            "written"
+        );
+        assert_eq!(
+            ClipboardStatus::Failed {
+                operation: "read",
+                message: String::new(),
+            }
+            .state_name(),
+            "failed"
+        );
+    }
+
+    #[test]
+    fn messages_render_byte_counts_and_failure_causes() {
+        let read = ClipboardStatus::Read { bytes: 12 }.message();
+        assert!(read.contains("12"), "{read}");
+        let written = ClipboardStatus::Written { bytes: 34 }.message();
+        assert!(written.contains("34"), "{written}");
+        let failed = ClipboardStatus::Failed {
+            operation: "write",
+            message: "denied".to_owned(),
+        }
+        .message();
+        assert!(failed.contains("write"), "{failed}");
+        assert!(failed.contains("denied"), "{failed}");
     }
 }

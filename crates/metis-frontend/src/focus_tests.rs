@@ -54,6 +54,7 @@ fn focus_order_follows_the_document_and_the_open_menu() {
             "command-focus-patient",
             "command-theme-dark",
             "command-theme-system",
+            "command-copy-result",
             "label-patient",
             "btn-calc",
         ]

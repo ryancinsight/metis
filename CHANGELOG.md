@@ -37,6 +37,19 @@
 
 ## [0.3.1] - Unreleased
 
+### Added
+
+- `metis_platform::ScopedClipboard` grants bounded text reads and writes of the
+  system clipboard behind the new `metis_core::capability::CapabilityScope::CLIPBOARD`
+  witness, with the Windows mechanism supplied by Moirai's bounded
+  `windows::clipboard` module (released separately); Linux/macOS hosts and
+  app-surface wiring remain open.
+- The shared `CopyResult` command (`Alt+Shift+C`) copies the displayed rate
+  sentence through a trusted backend `clipboard` plugin whose execute path
+  mints the typed `CLIPBOARD` witness after the session scope check; the
+  native workbench, browser workbench and packaged WebView2 page all expose
+  the command under one identity, accelerator and AccessKit node.
+
 ### Fixed
 
 - Correct the Atlas setup documentation: metadata and compilation retain the

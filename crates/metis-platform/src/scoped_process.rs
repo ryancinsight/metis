@@ -429,4 +429,6 @@ fn terminate(process: &mut ManagedProcess) -> Result<(), ScopedProcessError> {
 mod output_reader;
 
 #[cfg(test)]
+mod output_tests;
+#[cfg(test)]
 mod tests;
