@@ -414,7 +414,7 @@ an owner. “Unsupported” cannot replace delivery of a required mobile/native 
 ## METIS-INTEG-DEBT-001 — Unlanded peer commits and stale main-tree dirt [patch]
 - Status: todo; priority: correctness; needs: none
 - Outcome: no metis work exists only on a peer branch, and the main tree returns to `origin/main`.
-- Scope: branch `build/metis-deps-20261007`: the commits `feat(presentation): Head every application surface with the mark` (25 files) and `build(deps): Follow hermes-simd` have no PR; its PR #482 is merged; the commit `feat(reactive): Add a Slint comparison and close its row-model gaps` is absorbed by PR #485. Three uncommitted script edits in `repos/metis` dated 2026-10-09. The empty directory `D:/atlas/worktrees/metis-metis-frontend-theme-001`, which is not a git worktree.
+- Scope: branch `build/metis-deps-20261007`. Its commits after PR #482 merged are `feat(presentation): Head every application surface with the mark` (25 files), `build(deps): Follow hermes-simd`, and `feat(reactive): Add a Slint comparison and close its row-model gaps`. Draft PR #488 holds them, since no PR reached them before. PR #485 landed only the row-model code of the last commit; its ADR 0003 comparison table and its gap-register and backlog hunks are unlanded. Three uncommitted script edits in `repos/metis` dated 2026-10-09. The empty directory `D:/atlas/worktrees/metis-metis-frontend-theme-001`, which is not a git worktree.
 - Acceptance: each unlanded commit has a PR or a merge-base proof of landing; the dirty scripts are committed to a PR branch or proven superseded; the empty directory is removed; the main tree sits at `origin/main`.
-- basis: ce47b2b2ebc11c09b0d6f67d7c2e60487fe71cc6
-- next: open a PR for those two commits from a private-index branch, then return the main tree home.
+- basis: d952a4eb6b4ad9929211002b6c066cbfc556e2a9
+- next: reconcile the ADR 0003 hunks of #488 onto the compacted record (METIS-DOCS-ADR-001), resolve the regeneration source of the manual images, then return the main tree home.
