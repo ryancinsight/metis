@@ -23,6 +23,9 @@ mod webview_admission;
 #[path = "frontend/webview/codec_tests.rs"]
 mod webview_codec_tests;
 #[cfg(any(windows, test))]
+#[path = "frontend/webview/command_observation.rs"]
+mod webview_command_observation;
+#[cfg(any(windows, test))]
 #[path = "frontend/webview/logging.rs"]
 mod webview_logging;
 

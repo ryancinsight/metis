@@ -1,6 +1,7 @@
 //! Actual document messages drive one admitted native page state.
 use super::{Deadline, MAX_WEBVIEW_MESSAGE_BYTES, State, close_destroyed, post, protocol};
 use crate::frontend::webview::requests;
+use crate::frontend::webview_command_observation::{EVENT, Receipt, TARGET};
 use metis_core::error::{ErrorCode, MetisError, Result};
 use metis_frontend::FrontendApp;
 use metis_ipc::IpcTransport;
@@ -18,6 +19,9 @@ impl State {
         json: &str,
     ) -> Result<bool> {
         self.page.source(source).map_err(|error| protocol(&error))?;
+        if self.observe_command(json) {
+            return Ok(false);
+        }
         let event =
             decode_page_event(json, MAX_WEBVIEW_MESSAGE_BYTES).map_err(|error| protocol(&error))?;
         match event {
@@ -114,6 +118,21 @@ impl State {
             }
         }
         Ok(false)
+    }
+
+    fn observe_command(&mut self, json: &str) -> bool {
+        let Some(receiver) = self.command_observation.as_mut() else {
+            return false;
+        };
+        match receiver.receive(json, &self.page.session) {
+            Receipt::Functional => false,
+            Receipt::Record(observation) => {
+                tracing::info!(target: TARGET, parent: None,
+                    event = EVENT, observation = %observation);
+                true
+            }
+            Receipt::Censored => true,
+        }
     }
 
     fn probe(

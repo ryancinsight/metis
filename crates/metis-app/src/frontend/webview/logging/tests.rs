@@ -6,6 +6,8 @@ use std::{
 };
 
 const LATE_TARGET: &str = "moirai_pal::windows::webview::late_input";
+const COMMAND_TARGET: &str = "metis_app::webview::command_observation";
+const COMMAND_EVENT: &str = "page_command_observation";
 
 struct Capture(Arc<Mutex<Vec<u8>>>);
 
@@ -62,6 +64,9 @@ fn only_selected_native_diagnostics_gain_debug_without_losing_normal_context() {
                 tracing::info!(target: LATE_TARGET, parent: None,
                     event = "webview_late_input_observation", observation = %arranged);
                 tracing::debug!(target: LATE_TARGET, event = "late_unrelated_debug");
+                tracing::info!(target: COMMAND_TARGET, parent: None,
+                    event = COMMAND_EVENT, observation = %arranged);
+                tracing::debug!(target: COMMAND_TARGET, event = "command_unrelated_debug");
                 tracing::debug!(target: "metis_unrelated_debug", event = "unrelated");
             });
             tracing::info_span!("assert").in_scope(|| {
@@ -79,7 +84,7 @@ fn only_selected_native_diagnostics_gain_debug_without_losing_normal_context() {
                 assert_eq!(ordinary[0]["spans"][0]["name"], "act");
                 assert!(!values.iter().any(|value| matches!(
                     value["fields"]["event"].as_str(),
-                    Some("unrelated" | "late_unrelated_debug")
+                    Some("unrelated" | "late_unrelated_debug" | "command_unrelated_debug")
                 )));
                 let diagnostics: Vec<_> = values
                     .iter()
@@ -103,6 +108,19 @@ fn only_selected_native_diagnostics_gain_debug_without_losing_normal_context() {
                     assert_eq!(diagnostic["fields"]["observation"], arranged);
                     assert_eq!(diagnostic["level"], "INFO");
                     assert_eq!(diagnostic["target"], LATE_TARGET);
+                    assert_eq!(diagnostic.get("span"), None);
+                    assert_eq!(diagnostic.get("spans"), None);
+                    assert_eq!(diagnostic.get("timestamp"), None);
+                }
+                let commands: Vec<_> = values
+                    .iter()
+                    .filter(|value| value["fields"]["event"] == COMMAND_EVENT)
+                    .collect();
+                assert_eq!(commands.len(), usize::from(selected));
+                for diagnostic in commands {
+                    assert_eq!(diagnostic["fields"]["observation"], arranged);
+                    assert_eq!(diagnostic["level"], "INFO");
+                    assert_eq!(diagnostic["target"], COMMAND_TARGET);
                     assert_eq!(diagnostic.get("span"), None);
                     assert_eq!(diagnostic.get("spans"), None);
                     assert_eq!(diagnostic.get("timestamp"), None);
@@ -254,6 +272,95 @@ fn late_controller_wire_preserves_compact_json_with_a_fixed_parentless_info_enve
                 let escaped = serde_json::to_string(&encoded).expect("actual second JSON layer");
                 assert_eq!(*physical_bytes, envelope + escaped.len() - 2);
             }
+        });
+    });
+}
+
+#[test]
+fn document_observation_preserves_valid_json_and_all_three_streams_fit_the_cap() {
+    use metis_core::embedded_assets::Digest;
+    use metis_web::embedded::command_observation::{
+        Event, MAX_BYTES, MAX_RECORDS, Record, encode_observation,
+    };
+    use metis_web::embedded::{PageIdentity, PageRole, SequenceId};
+    let output = Arc::new(Mutex::new(Vec::new()));
+    let writer = Arc::clone(&output);
+    let subscriber = with_writer(move || Capture(Arc::clone(&writer)), true);
+    tracing::subscriber::with_default(subscriber, || {
+        let inputs = tracing::info_span!("arrange").in_scope(|| {
+            let identity = PageIdentity::new(
+                PageRole::Form,
+                SequenceId::new(7).expect("mount"),
+                Digest::hash(b"real formatter observation module"),
+            );
+            let compact = encode_observation(
+                &Record::new(
+                    identity,
+                    SequenceId::new(1).expect("record"),
+                    None,
+                    Event::Selected,
+                )
+                .expect("valid record"),
+                MAX_BYTES,
+            )
+            .expect("actual closed codec");
+            let object: Value = serde_json::from_str(&compact).expect("record JSON");
+            let formatted = format!(
+                "\t{}\r\n",
+                serde_json::to_string_pretty(&object).expect("equivalent JSON formatting")
+            );
+            let unicode = serde_json::json!({"key":"患者-🦀\r\n\t\"\\", "code":"KeyS"}).to_string();
+            [compact, formatted, unicode]
+        });
+        tracing::info_span!(
+            "act",
+            context = "ordinary context stays outside this envelope"
+        )
+        .in_scope(|| {
+            for observation in &inputs {
+                tracing::info!(target: COMMAND_TARGET, parent: None,
+                        event=COMMAND_EVENT, observation=%observation);
+            }
+        });
+        tracing::info_span!("assert").in_scope(|| {
+            let envelope = serde_json::to_vec(&serde_json::json!({
+                "level":"INFO", "fields":{"event":COMMAND_EVENT,"observation":""},
+                "target":COMMAND_TARGET,
+            }))
+            .expect("actual empty envelope")
+            .len()
+                + 1;
+            let actual: Vec<_> = records(&output)
+                .into_iter()
+                .filter(|(record, _)| record["fields"]["event"] == COMMAND_EVENT)
+                .collect();
+            assert_eq!(actual.len(), inputs.len());
+            for ((record, physical), input) in actual.iter().zip(&inputs) {
+                assert_eq!(record["fields"]["observation"], *input);
+                assert_eq!(record.get("span"), None);
+                assert_eq!(record.get("spans"), None);
+                assert_eq!(record.get("timestamp"), None);
+                let escaped = serde_json::to_string(input).expect("actual string encoding");
+                assert_eq!(*physical, envelope + escaped.len() - 2);
+                // Valid JSON permits raw C0 only as tab/LF/CR whitespace;
+                // those and quote/backslash all expand by at most twofold.
+                assert!(
+                    input
+                        .bytes()
+                        .filter(|byte| *byte < b' ')
+                        .all(|byte| matches!(byte, b'\t' | b'\n' | b'\r'))
+                );
+                assert!(*physical <= envelope + 2 * input.len());
+            }
+            let added = 2 * MAX_BYTES + MAX_RECORDS * envelope;
+            let combined = 596_342 + added;
+            assert!(combined < 1024 * 1024);
+            tracing::info!(
+                envelope,
+                added,
+                combined,
+                "Actual three-stream formatter bound"
+            );
         });
     });
 }

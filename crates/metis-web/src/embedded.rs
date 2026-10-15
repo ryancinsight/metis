@@ -4,6 +4,8 @@
 //! remain private. Page readiness and resource observations do not confer
 //! backend authority or prove trusted input.
 
+#[doc(hidden)]
+pub mod command_observation;
 mod identity;
 mod lifecycle;
 mod message;

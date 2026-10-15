@@ -43,6 +43,10 @@ impl Package {
             ));
         }
         let index = index.replace("{{mount-command}}", &attribute(&command));
+        let index = crate::frontend::webview_command_observation::mark_document(
+            index,
+            crate::frontend::webview_command_observation::selected(page),
+        )?;
         let index = match initial_theme {
             Some(theme) => index.replace(
                 "data-metis-theme=\"system\"",

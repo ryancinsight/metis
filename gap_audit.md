@@ -395,6 +395,41 @@ the unchanged replay with loopback access passes, without a leak report.
 Two direct environment-helper entries remain ignored; the real two-hop tests
 exercise their workflow. None of these portable checks proves Windows receipt.
 
+The actual 561189 replay/run38812113624 binds merge4f7142a5/treeadee45b9,
+1,003 raw Git blobs and837 normalized run-source digests. Its original ZIP
+12010865923 hashes3d708059… and log hashesf75cd52c…. All504 Windows scripts
+finish46.278s (503 pass, Apple-only skip), and all four exact Unicode submissions
+produce their expected results/rejection. Native late records329–337 contain
+S down335/up336, scan31, Alt+Shift high bits set, Ctrl clear and Handled=false.
+Both use focus197106/foreground1114418; the down/up interval is0.5073ms on
+the same native clock. The collector retains19 records/5,868 encoded bytes,
+zero observed loss/error through337 and no closing record. Positive S receipt
+is established; complete-history or S-absence claims are not.
+
+The latest complete UIA response153 reports Dark; request154 is sent and its
+full-tree traversal remains incomplete at collection. Response153's receipt
+time is not retained, so its placement relative to S is unknown. Adjacent actor
+call markers are0.5234ms apart on that actor's clock; they identify no blocked
+theme getter. Four correct submits do not close either complete form journey.
+The next selected observation records actual Rust key entry, metadata/admission,
+command decision and original handler return. Return success establishes that
+result only, without a post-mutation DOM or rendered-frame claim.
+
+The next document-observation candidate passes808 Rust tests in9.580s, retaining
+the two existing helper-entry ignores. All504 local script cases complete in
+14.759s (498 pass, six Windows-only skips). Strict workspace/MSVC diagnostics,
+workspace formatting, the actual release WASM build and canonical packaged
+preparation pass. A real414-byte ClosingIntent with valid JSON whitespace
+reproduces rejection under the old canonical-terminal hard limit, despite room
+under the total byte cap. The same codec/receiver assertions pass after treating
+413 bytes as reserved local-terminal capacity rather than a received-format
+limit. Both aggregate caps remain exact. Native source-first routing and the
+entire original functional dispatcher admit byte-exact inverse-diff proofs.
+The first script attempt retains three sandbox PermissionErrors (socket/ps);
+the unchanged unrestricted replay passes under the original60s. The first
+MSVC lint failure is resolved by extracting only the diagnostic routing helper.
+These checks do not establish native document delivery or complete acceptance.
+
 Budget baseline [run 38681175478](https://github.com/ryancinsight/metis/actions/runs/38681175478) stops at the unchanged 60-second script limit after 435/502 cases: 434 pass and one skips; its active visual case is not an attributed hang. Plain EDIT/UIA costs 16.696s versus 6.521s previously, while RichEdit passes in 16.830s. All 837 sources and 26 artifact members bind; preparation and native form do not run. The message-aware fixture wait now removes avoidable per-message sleep without extending the existing 25ms completion poll or dropping observations. Source-bound 53af replay completes all 502 cases in 50.180s, with plain EDIT/UIA 8.781s and RichEdit 2.361s; the earlier startup/getter cost split and application failure mechanism remain unproven. Closure commit 3d4103f exposes one board-schema regression: completed status is outside the canonical todo/blocked set. Restoring todo preserves the genuinely open startup/provider/query attribution scope and the checked native-wait subtask; neither the checker nor its baseline changes.
 Portable 777 Rust cases, 42 doctests and strict Clippy pass with the patched locks; the pre-input-correction script replay passes 492 of 494 with two Windows-only skips in 18.447s. These local values do not establish real Windows key delivery.
 Advisory API checker exit 101/root zero pass and 260 skip remains excluded from compatibility proof.

@@ -32,7 +32,7 @@ impl Application {
             probe_completed: false,
             final_completion_published: false,
         }));
-        let mut listeners = commands::close_listener(page, &state)?;
+        let mut listeners = commands::keyboard::listeners(page, &state)?;
         if page.identity().role() == PageRole::Form {
             view::configure_theme(&page.document)?;
             commands::initialize(page, &state)?;

@@ -6,6 +6,7 @@
 //! giving the provider a fixed envelope for its
 //! aggregate escaped-output bound. Neither layer changes page admission.
 
+use super::webview_command_observation;
 use tracing::{Level, Subscriber};
 use tracing_subscriber::{
     Layer,
@@ -37,6 +38,7 @@ where
             metadata.level() <= &Level::INFO
                 && metadata.target() != TARGET
                 && metadata.target() != LATE_TARGET
+                && metadata.target() != webview_command_observation::TARGET
         }));
     let diagnostic = tracing_subscriber::fmt::layer()
         .json()
@@ -49,7 +51,9 @@ where
         .with_filter(filter_fn(move |metadata| {
             selected
                 && ((metadata.level() <= &Level::DEBUG && metadata.target() == TARGET)
-                    || (metadata.level() <= &Level::INFO && metadata.target() == LATE_TARGET))
+                    || (metadata.level() <= &Level::INFO
+                        && (metadata.target() == LATE_TARGET
+                            || metadata.target() == webview_command_observation::TARGET)))
         }));
     tracing_subscriber::registry()
         .with(ordinary)

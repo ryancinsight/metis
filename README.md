@@ -158,6 +158,23 @@ script cases in 15.629s (498 pass, six Windows-only skips). Strict Windows-app
 diagnostics and fresh external Git-consumer resolution/compilation pass.
 These checks do not establish native shortcut delivery.
 
+The [561189 Windows replay](https://github.com/ryancinsight/metis/actions/runs/38812113624)
+completes four exact Unicode submissions and all 504 script cases in 46.278s
+(503 pass, one Apple-only skip). The new native suffix records System S down/up
+at scan 31 with Alt+Shift held, Ctrl clear and Handled=false. The last complete
+UIA response reports Dark, and the worker still reaches its original deadline.
+That response has no retained receipt time; it does not prove post-S DOM state.
+The selected Rust document observation now records actual handler entry,
+metadata/decision and original return outcome through a separate bounded codec.
+Ordinary markup and the public page-event schema remain unchanged. Both full
+form journeys and the actual new document observations remain Windows gates.
+The document-observation candidate passes 808 Rust tests in 9.580s (two existing
+helper entries ignored), all 504 local script cases in 14.759s (498 pass, six
+Windows-only skips), workspace formatting and strict host/MSVC diagnostics.
+Its actual release WASM build and canonical packaged preparation pass. These
+portable results establish codec/routing/accounting behavior; the next native
+replay must establish actual document observations and both complete journeys.
+
 Windows app compilation
 requires an independently prepared Rust module. Build `metis-cli`, run
 `metis prepare metis.json` and retain its absolute inventory path in

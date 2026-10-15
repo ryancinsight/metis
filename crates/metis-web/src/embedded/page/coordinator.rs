@@ -1,6 +1,7 @@
 //! Exact admission and real bridge dispatch; callbacks borrow a weak coordinator.
 
-use super::{application::Application, form, permissions, resources, view};
+use super::{application::Application, command_observation, form, permissions, resources, view};
+use crate::embedded::command_observation::{MARKER_NAME, producer::Producer};
 use crate::embedded::{
     PageCommand, PageEvent, PageIdentity, PageSession, PageStage, decode_page_command,
     encode_page_event,
@@ -25,13 +26,14 @@ pub(super) struct Coordinator {
     pub(super) listener: RefCell<Option<WebViewMessageListener>>,
     pub(super) tasks: Rc<Cell<u32>>,
     pub(super) stop_task: RefCell<Option<LocalTaskHandle>>,
+    pub(super) command_observation: Option<RefCell<Producer>>,
 }
 
 impl Coordinator {
     pub(super) fn start() -> io::Result<Rc<Self>> {
         let document = WebDocument::current()?;
-        let initial = document
-            .body()?
+        let body = document.body()?;
+        let initial = body
             .attribute("data-metis-mount")
             .ok_or_else(|| invalid("Packaged document has no mount command"))?;
         let PageCommand::Mount { identity } =
@@ -39,6 +41,12 @@ impl Coordinator {
         else {
             return Err(invalid("Packaged document configuration is not a mount"));
         };
+        // One mount-time marker lookup selects the private Form-only owner.
+        // An absent marker creates no owner or per-key diagnostic reads.
+        let marker = (identity.role() == crate::embedded::PageRole::Form)
+            .then(|| body.attribute(MARKER_NAME))
+            .flatten();
+        let command_observation = command_observation::configured(identity, marker.as_deref());
         let bridge = WebViewBridge::current()?;
         let page = Rc::new(Self {
             document,
@@ -49,6 +57,7 @@ impl Coordinator {
             listener: RefCell::new(None),
             tasks: Rc::new(Cell::new(0)),
             stop_task: RefCell::new(None),
+            command_observation,
         });
         let weak = Rc::downgrade(&page);
         let listener = page.bridge.listen(move |message| {
@@ -109,6 +118,7 @@ impl Coordinator {
         view::element(&self.document, "host-status")?
             .set_text("Host bridge connected; backend authority remains outside the page.");
         self.post(&PageEvent::Ready { identity })?;
+        command_observation::selected(self);
         permissions::start_if_probe(self)
     }
 

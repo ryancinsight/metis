@@ -8,7 +8,7 @@ use std::io;
 
 #[derive(Serialize, Deserialize)]
 #[serde(deny_unknown_fields)]
-pub(super) struct WireIdentity {
+pub(in crate::embedded) struct WireIdentity {
     schema: u16,
     role: String,
     mount_id: String,

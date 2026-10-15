@@ -4,6 +4,13 @@
 
 ### Added
 
+- [minor] Add an explicitly selected Rust command-observation codec and sender
+  under the current 0.5.0 target. Actual listener entry, the original keyboard
+  metadata/decision and handler return remain distinct observations. Native
+  admission retains source-first checking, current Ready form identity, strict
+  sequence and independent reserved-terminal accounting. Public page events,
+  input, lifecycle, permissions and every time limit remain unchanged.
+
 - [patch] Native input diagnosis logs actual top-level focus events and selects
   Moirai PR 622's private bounded controller focus/accelerator observations.
   Both locks retain the exact diagnostic candidate, with unrelated records

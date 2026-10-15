@@ -1,17 +1,15 @@
 //! Authored command identities and physical shortcuts share one bounded catalogue.
 
+pub(super) mod keyboard;
+
 use super::{
     application::State,
     coordinator::{Coordinator, invalid},
     view,
 };
-use crate::{
-    Theme,
-    embedded::{PageEvent, PageRole},
-};
-use metis_core::input::{Accelerator, Key, Modifiers};
+use crate::Theme;
 use metis_frontend::{ApplicationCommand, CommandMenuState};
-use moirai_pal::wasm::{KeyboardMetadata, WebEventListener};
+use moirai_pal::wasm::WebEventListener;
 use std::{cell::RefCell, io, rc::Rc};
 
 /// A remount owns new state while retaining the document and patient draft.
@@ -23,58 +21,6 @@ pub(super) fn initialize(page: &Coordinator, state: &Rc<RefCell<State>>) -> io::
         "Commands ready",
         false,
     )
-}
-
-pub(super) fn close_listener(
-    page: &Rc<Coordinator>,
-    state: &Rc<RefCell<State>>,
-) -> io::Result<Vec<WebEventListener>> {
-    let weak = Rc::downgrade(page);
-    let state = Rc::clone(state);
-    Ok(vec![page.document.add_event_listener(
-        "keydown",
-        move |event| {
-            let Some(page) = weak.upgrade() else {
-                return;
-            };
-            let result = (|| {
-                page.require_ready(page.identity())?;
-                let Some(keyboard) = event.keyboard_metadata()? else {
-                    return Ok(());
-                };
-                if keyboard.is_repeat() {
-                    return Ok(());
-                }
-                if keyboard.key() == "Escape" {
-                    event.prevent_default();
-                    if state.borrow().menu.is_open() {
-                        menu(
-                            &page,
-                            &state,
-                            CommandMenuState::Closed,
-                            "Commands closed",
-                            true,
-                        )
-                    } else {
-                        page.post(&PageEvent::CloseRequested {
-                            identity: page.identity(),
-                        })
-                    }
-                } else if page.identity().role() == PageRole::Form
-                    && let Some(command) =
-                        accelerator(&keyboard).and_then(ApplicationCommand::from_accelerator)
-                {
-                    event.prevent_default();
-                    activate(&page, &state, command)
-                } else {
-                    Ok(())
-                }
-            })();
-            if let Err(error) = result {
-                page.failure(&error);
-            }
-        },
-    )?])
 }
 
 pub(super) fn listeners(
@@ -151,18 +97,6 @@ pub(super) fn listeners(
         )?,
     );
     Ok(listeners)
-}
-
-fn accelerator(metadata: &KeyboardMetadata) -> Option<Accelerator> {
-    // Physical codes preserve the authored shortcut across keyboard layouts.
-    let key = Key::from_browser_code(metadata.code())?;
-    let held = metadata.modifiers();
-    let modifiers = Modifiers::NONE
-        .with(Modifiers::CTRL, held.ctrl())
-        .with(Modifiers::ALT, held.alt())
-        .with(Modifiers::SHIFT, held.shift())
-        .with(Modifiers::META, held.meta());
-    Some(Accelerator::new(modifiers, key))
 }
 
 fn activate(

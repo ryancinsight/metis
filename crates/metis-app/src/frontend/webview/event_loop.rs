@@ -4,6 +4,7 @@ mod dispatch;
 mod messages;
 
 use crate::frontend::webview_admission::NativePage;
+use crate::frontend::webview_command_observation::{self, Receiver};
 use metis_core::error::{ErrorCode, MetisError, Result};
 use metis_frontend::FrontendApp;
 use metis_ipc::IpcTransport;
@@ -44,6 +45,7 @@ struct State {
     page: NativePage,
     deadline: Option<Deadline>,
     captured: Option<Vec<u8>>,
+    command_observation: Option<Receiver>,
 }
 impl State {
     fn begin_stop(&mut self, surface: &mut WebViewSurface) -> Result<()> {
@@ -78,6 +80,8 @@ pub(super) fn run<T: IpcTransport>(
         page: NativePage::new(identity, source).map_err(|error| protocol(&error))?,
         deadline: Some(Deadline::new("Rust page readiness")),
         captured: None,
+        command_observation: webview_command_observation::selected(identity.role())
+            .then(Receiver::new),
     };
     loop {
         let wait = state

@@ -276,6 +276,58 @@ Rust tests in 9.242s, canonical preparation and 504 local script cases in
 resolves and compiles the exact provider for MSVC without local path/patch
 overrides. Its registry/default-branch publication is not established.
 
+## Selected Rust command observations
+
+Run38812113624 on561189 completes four exact submissions and504 Windows script
+cases in46.278s. Native suffix329–337 includes S down/up335/336 at scan31,
+Alt+Shift held, Ctrl clear and Handled=false, with no observed loss/error.
+Its missing close record forbids a complete-history claim. Last complete UIA
+response153 reports Dark; its receipt time is absent, and pending154 scans the
+full tree. Neither that value nor its last getter marker proves S reached the
+Rust listener or identifies a blocked theme getter.
+
+Only the exact existing selected-form environment adds the private document
+marker. Ordinary markup remains byte-identical and permission pages stay off.
+The Rust coordinator reads that marker once at mount. Its optional producer
+arms on the existing resolved Dark command, retaining actual metadata/decision
+and return. Later keys additionally record entry before the existing Ready and
+single metadata read. No new per-key DOM getter, listener, timer, input, focus,
+permission or authored JavaScript supplies observations. A successful return
+describes the original Result only. It does not assert actual post-mutation
+DOM values, UIA refresh or rendered pixels.
+
+Private records use their own versioned closed codec and exact identity fields;
+the public PageEvent and command codecs retain their existing behavior. The
+native owner applies the original source check first, then the selected channel,
+current Ready form, identity and sequence checks. Malformed private input and
+quota exhaustion produce a finite native rejection record without mutating
+PageSession, a request or a deadline. All other messages use the original
+functional decoder. Semantic JSON ordering/whitespace/escapes are accepted;
+original received JSON bytes are retained and charged independently of producer
+bytes. Environment selection remains an exact opaque transport contract.
+
+One shared budget reserves its final record and413 bytes inside128 records and
+32,768 total encoded bytes. ClosingIntent precedes the unchanged functional
+CloseRequested and claims intent only; no diagnostic reply follows into
+Stopping. External stop or missing terminal leaves observation completeness
+unknown. Original Stopped, native destruction and cleanup remain acceptance.
+The selected context-free INFO envelope is131 bytes including LF. Valid JSON
+permits raw C0 only as tab/LF/CR whitespace; those, quote and backslash expand
+at most twice when logged as a JSON string. The new physical bound is
+`2 * 32,768 + 131 * 128 = 82,304` bytes. All three diagnostic streams total
+678,646 bytes, below the unchanged1 MiB cap. Native rejection metadata spends
+the same reserved space and has a separately derived finite bound.
+
+The413-byte reserve bounds a locally encoded terminal. A received terminal with
+equivalent JSON formatting may spend any remaining bytes within the unchanged
+32,768-byte aggregate cap; producer and receiver byte counts stay independent.
+The actual414-byte whitespace case fails before this correction and passes
+afterward in both the shared codec/budget and native receiver tests. Portable
+verification passes808 Rust tests, all504 local script cases in14.759s (six
+Windows-only skips), strict host/MSVC diagnostics, formatting, actual release
+WASM compilation and canonical preparation. Real selected/ordinary form
+completion and subsequent native/package acceptance remain Windows gates.
+
 Source checks preserve the closed page protocol, actual Ready admission and all
 existing deadlines. The actual Windows run must retain the navigation records,
 pre-Ready observation and exact native producer bytes. It must then satisfy the

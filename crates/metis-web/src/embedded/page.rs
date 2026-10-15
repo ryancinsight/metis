@@ -1,6 +1,7 @@
 //! The Rust controller retains one native coordinator across application mounts.
 
 mod application;
+mod command_observation;
 mod commands;
 mod coordinator;
 mod form;

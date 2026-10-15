@@ -8,7 +8,7 @@ mod events;
 mod number;
 mod permission;
 mod resources;
-mod shape;
+pub(in crate::embedded) mod shape;
 
 use super::identity::invalid;
 use super::{PageCommand, PageEvent};
@@ -40,7 +40,7 @@ pub fn decode_page_command(json: &str, byte_budget: usize) -> io::Result<PageCom
     PageCommand::try_from(decode::<commands::WireCommand>(json, byte_budget)?)
 }
 
-fn decode<T: DeserializeOwned>(json: &str, budget: usize) -> io::Result<T> {
+pub(in crate::embedded) fn decode<T: DeserializeOwned>(json: &str, budget: usize) -> io::Result<T> {
     if json.len() > budget {
         return Err(invalid("Page JSON exceeds the bridge byte budget"));
     }
@@ -48,7 +48,7 @@ fn decode<T: DeserializeOwned>(json: &str, budget: usize) -> io::Result<T> {
         .map_err(|error| invalid(format!("Page JSON decoding failed: {error}")))
 }
 
-fn encode(value: &impl Serialize, budget: usize) -> io::Result<String> {
+pub(in crate::embedded) fn encode(value: &impl Serialize, budget: usize) -> io::Result<String> {
     let mut writer = BoundedWriter {
         bytes: Vec::new(),
         budget,
