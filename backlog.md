@@ -1,4 +1,4 @@
-Prepared framework target: Metis0.5.0; unpublished review in existing draft505.
+Prepared framework target: Metis0.5.0; unpublished review in existing PR505.
 
 ## Current provider checkpoint — 2026-10-15
 
@@ -29,11 +29,15 @@ native budget changes occur; protected503/504 source remains separate.
   numeric summary now has an unambiguous module owner. All424 Python tests
   and the unchanged pinned conformance gate pass locally; full exact-head
   hosted verification remains required.
+- Hosted follow-up: Windows passes on6bead6fc; Firefox's authenticated
+  fragment wait times out after60 seconds. Retain observed page state on
+  failure before closing the session so the next bounded run can identify
+  the failing transport, authentication, probe or lifecycle contract.
 - Canonical root/fuzz graphs and actual verification are recorded above.
   No old provider/source substitution or compatibility adapter is used.
 - Remaining: executable external API/classification checks, full Windows,
   browser and release gates, normalized packages and exact-head hosted
-  verification before merge/publication. Draft status does not imply these pass.
+  verification before merge/publication. Review readiness does not imply these pass.
 - External prerequisite: first consus-raster0.3 upload from verified source
   beae4ce7 uses the separate human-authentication handoff. Credentials,
   publisher registration and permission changes remain outside this repair.

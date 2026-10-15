@@ -13,6 +13,9 @@
 
 ### Fixed
 
+- [patch] Preserve the authenticated fragment page's observed state and failing
+  phase before closing a failed browser session. Driver timeouts retain their
+  failure result and deadline; diagnostics expose the application response.
 - [patch] Use the canonical blocked/P1 board fields required by the existing
   plan/conformance gates. Initial full Windows verification identifies the
   malformed status; no validator or baseline changes.

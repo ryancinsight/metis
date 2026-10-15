@@ -35,6 +35,13 @@ analytical-value assertions. Its60-second outer bound is unchanged. Files
 changed for this import repair are absent from the protected504 changed-file
 list; that branch is neither edited nor incorporated.
 
+The next full run38797531486 at6bead6fc passes Windows, Chromium and WebKit.
+Firefox's authenticated fragment scenario fails with a60-second asynchronous
+script timeout; its old failure artifact omits the application response.
+Capture the failing phase and bounded page state before session teardown.
+This diagnostic repair preserves the failure and deadline; it does not claim
+the Firefox contract passes or change any acceptance check.
+
 The original run's final fuzz campaign and the repaired exact-head full gates
 remain to be observed before merge/publication.
 
