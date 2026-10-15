@@ -21,10 +21,14 @@ native budget changes occur; protected503/504 source remains separate.
 <a id="METIS-CURRENT-PROVIDERS-001"></a>
 ## METIS-CURRENT-PROVIDERS-001 — Admit current provider defaults [major]
 
-- Status: in progress; owner: existing draft505; target:0.5.0; updated:2026-10-15.
+- Status: blocked; priority: P1; owner: current-provider integration; target: 0.5.0; last-update: 2026-10-15.
 - Public contract: exported Color's Eunomia-owned Pod/Zeroable traits change
   0.9 to0.10; AssetError's public From<Consus DecodeError> follows Consus0.3.
   ADR0060 records the0.5 boundary for all13 packages/31 internal requirements.
+- Verification repairs: canonical blocked/P1 metadata; the unchanged shared
+  numeric summary now has an unambiguous module owner. All424 Python tests
+  and the unchanged pinned conformance gate pass locally; full exact-head
+  hosted verification remains required.
 - Canonical root/fuzz graphs and actual verification are recorded above.
   No old provider/source substitution or compatibility adapter is used.
 - Remaining: executable external API/classification checks, full Windows,

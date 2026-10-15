@@ -18,6 +18,26 @@ All fuzz harnesses check, with the existing protected nightly output-reader
 deprecation warning left untouched. No production Rust, feature, gate or
 native budget changes occur; protected503/504 source remains separate.
 
+## Full verification repairs [patch] — 2026-10-15
+
+Run38794411669 at a7c08ac passes the real Apple bundle, Chromium, Firefox,
+WebKit and cross-engine text jobs. Windows and conformance reject this task's
+malformed board status/missing priority. The canonical blocked/P1 metadata
+fix passes the existing plan tests and the exact pinned Atlas4cb1fe2
+conformance instrument with zero regressions; no baseline is edited.
+
+Local full Python verification also exposes a real import collision when Unix
+stdlib `resource` is already loaded. The one numeric-summary implementation
+moves unchanged to `measurement_statistics`; the resource CLI and browser
+lifecycle call that owner directly, with no wrapper or alias. All424 existing
+Python tests pass in14.477s after the repair, including loopback/process and
+analytical-value assertions. Its60-second outer bound is unchanged. Files
+changed for this import repair are absent from the protected504 changed-file
+list; that branch is neither edited nor incorporated.
+
+The original run's final fuzz campaign and the repaired exact-head full gates
+remain to be observed before merge/publication.
+
 ## Remaining current-provider acceptance [major]
 
 The current0.5 graph passes the local native/strict/doc gates above, including

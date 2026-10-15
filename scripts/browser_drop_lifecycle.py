@@ -13,7 +13,7 @@ from browser_canvas import KeyboardTraceKind, capture_canvas_trace, validate_can
 from browser_protocol import BrowserRuntimeError, WebDriverClient
 from browser_runtime import _wait_for_selector, _wait_for_text
 from browser_trace import Trace, browser_heap_sample, browser_memory_sample
-from resource import summarize_numeric_samples
+import measurement_statistics
 
 
 # Fourteen post-warmup observations fit inside the existing five-minute suite bound.
@@ -344,7 +344,7 @@ def summarize_lifecycle_resources(records: object) -> dict:
         })
         if len(reasons) != len({value.get("reason") for value in unavailable}):
             raise BrowserRuntimeError("gallery lifecycle returned an invalid heap-unavailable reason")
-        statistics = dict(summarize_numeric_samples(used_bytes))
+        statistics = dict(measurement_statistics.summarize_numeric_samples(used_bytes))
         if used_bytes:
             statistics.update(
                 {

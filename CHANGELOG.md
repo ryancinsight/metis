@@ -13,6 +13,15 @@
 
 ### Fixed
 
+- [patch] Use the canonical blocked/P1 board fields required by the existing
+  plan/conformance gates. Initial full Windows verification identifies the
+  malformed status; no validator or baseline changes.
+- [patch] Move the unchanged numeric-summary implementation to
+  `measurement_statistics.py`, shared by the resource CLI and browser drop
+  lifecycle. This removes collision with Unix's preloaded stdlib `resource`
+  module. The CLI, statistical formula, assertions and time budgets remain
+  unchanged; browser provenance fingerprints the actual shared owner.
+
 - [patch] Reconcile the canonical root and fuzz locks with approved provider
   defaults: Eunomia0.10, Hermes0.9, memory0.10, Moirai0.9.3, Leto0.46,
   Gaia0.6 (example dev dependency) and Consus0.3/Apollo core0.17.
