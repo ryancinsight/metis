@@ -435,3 +435,34 @@ Sources: [RichEdit shortcuts](https://learn.microsoft.com/en-us/windows/win32/co
 [GetSelection](https://learn.microsoft.com/en-us/dotnet/api/system.windows.automation.textpattern.getselection),
 [CompareEndpoints](https://learn.microsoft.com/en-us/dotnet/api/system.windows.automation.text.textpatternrange.compareendpoints),
 [TOM story invariant](https://learn.microsoft.com/en-us/windows/win32/api/tom/nn-tom-itextrange).
+
+## Native fixture message wake contract
+
+The HWND owner must dispatch synchronous UIA requests while its worker runs the
+real actor. A fixed sleep after draining PeekMessage can delay every subsequent
+cross-thread request by the polling interval. Final-head run 38681175478 exceeds
+the unchanged sixty-second suite limit after 435 completed cases. Its plain EDIT
+actor case rises from 6.521s to 16.696s; RichEdit falls from 17.357s to 16.830s.
+Those case measurements identify the expensive boundary, not a blocked getter.
+
+Given an empty drained queue, when new sent/posted input arrives, the fixture
+wait wakes for that input and returns to the original PeekMessage/dispatch loop.
+MsgWaitForMultipleObjectsEx uses QS_ALLINPUT and MWMO_INPUTAVAILABLE, including
+already observed input and system events. With no kernel object handles, its
+only accepted successful outcomes are queue input and timeout. A native failure
+or an unexpected return propagates; it never substitutes for actor completion.
+Given worker completion without input, the existing twenty-five-millisecond
+poll still bounds observation. No completion event or extra handle is needed.
+
+Every wait is bounded by the lesser of the existing poll and the floored
+remaining absolute-deadline milliseconds. The owner rechecks that same deadline
+on the next loop; a sub-millisecond remainder uses a zero-time wait. A timeout
+does not acknowledge input or alter any observation. Future completion, message
+draining, native ownership, worker count, input and cleanup retain their existing
+contracts. The real plain EDIT case and both RichEdit replacements retain all
+requests, native messages, values and selection assertions; the complete script
+suite must finish under its original sixty seconds. Before/after native case
+and suite timings establish any improvement without a new timing tolerance.
+
+Sources: [message-aware wait](https://learn.microsoft.com/en-us/windows/win32/api/winuser/nf-winuser-msgwaitformultipleobjectsex),
+[queue flags](https://learn.microsoft.com/en-us/windows/win32/api/winuser/nf-winuser-getqueuestatus).

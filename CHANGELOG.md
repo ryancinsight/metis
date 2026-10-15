@@ -46,6 +46,10 @@
 
 ### Fixed
 
+- Wake the native fixture owner for pending UIA/window messages within its
+  existing twenty-five-millisecond completion poll. The full 502-case Windows
+  suite remains bounded by sixty seconds with every observation preserved;
+  actual timing verification follows the retained final-head budget failure.
 - Retain read-only, target-owned UIA selection ranges around native text input,
   with exact request sequences and signed endpoint comparisons. Unsupported
   patterns and absent ranges remain explicit. A real RichEdit regression covers
