@@ -100,11 +100,14 @@ profile cleanup. The [Windows replay](https://github.com/ryancinsight/metis/acti
 verifies real physical-key delivery and two Unicode replacements in RichEdit.
 The Rust page reaches Ready and UIA observes the exact patient and weight `64`,
 but dose remains `0.2` instead of requested `0.25` until the sixty-second deadline.
-The input mechanism remains unattributed. Both locks now select Moirai PR 622 source `924dd8ac70d6` for bounded, default-off
-controller focus/accelerator diagnosis. Its real Ctrl+A/Escape and cleanup
-fixture passes on Windows; the Metis replay remains pending. This candidate is
-not an adoption of a protected provider default.
-Complete native journeys remain a separate acceptance gate.
+The diagnostic replay completes the first Unicode calculation, then loses
+controller focus before the second patient edit. Its Windows script suite
+executes 502 cases in 34.004s: 501 pass and one existing Apple-only case skips.
+Both locks now select Moirai PR 622 source `bd88d2c56f9d` for synchronous native
+parent-focus forwarding and the same bounded controller observations. The real
+unchanged-host regression leaves focus at the parent HWND. Corrected provider
+and full Metis form Windows acceptance remain pending; this candidate is not
+an adoption of a protected provider default.
 Windows app compilation
 requires an independently prepared Rust module. Build `metis-cli`, run
 `metis prepare metis.json` and retain its absolute inventory path in

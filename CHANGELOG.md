@@ -52,6 +52,14 @@
 
 ### Fixed
 
+- [patch] Both consumer locks select the synchronous native-parent focus
+  correction in Moirai PR 622 source `bd88d2c56f9d`. A real provider baseline
+  regression leaves focus at the parent HWND. The correction restores the
+  previous page element before later input, releases state before native
+  reentrancy and clears the weak binding before controller shutdown. Exact
+  Unicode, native observations, existing assertions and time limits stay
+  unchanged; corrected Windows form acceptance remains pending.
+
 - Wake the native fixture owner for pending UIA/window messages within its
   existing twenty-five-millisecond completion poll. Source 53afc6b completes
   502 Windows cases in 50.180s under sixty seconds, retaining every

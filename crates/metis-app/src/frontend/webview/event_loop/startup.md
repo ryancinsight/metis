@@ -96,8 +96,8 @@ Its [installed Rust fixture](https://github.com/ryancinsight/Moirai/actions/runs
 passes Unicode/string identities, computed replies, inclusive 65,536-byte bounds,
 65,537-byte rejection, close/remount, actual Destroyed and profile cleanup.
 This provider result does not establish Metis Ready/Submit/Stop or permission
-acceptance. Both standalone locks consume that protected revision while every
-unrelated dependency identity remains unchanged.
+acceptance. That adopted base consumes the protected revision; the current diagnostic and
+focus-correction candidates are recorded below with every unrelated identity unchanged.
 
 The adopted [Metis Windows replay](https://github.com/ryancinsight/metis/actions/runs/38549695922)
 loads all five resources with status 200 and observes the exact form Ready and
@@ -133,13 +133,13 @@ the timeout remains unattributed until those native records exist.
 
 ## Failure and verification
 
-The input investigation selects Moirai PR 622 source `924dd8ac70d6` through both
+The input investigation selects Moirai PR 622 source `bd88d2c56f9d` through both
 canonical locks. This is an explicitly recorded diagnostic candidate, not an
 adoption of a protected provider default. The same private selection observes
 actual controller GotFocus/LostFocus/MoveFocusRequested and eligible
 AcceleratorKeyPressed callbacks. Fixed callback storage retains native arguments
 and raw focus/key state; the owner pump serializes records after callback return.
-Neither Handled nor focus/input is modified. Native top-level focus events have
+The observer changes neither Handled nor focus/input. Native top-level focus events have
 their own Metis trace event. A controller key observation is receipt evidence,
 not proof of renderer default action, UIA value change or Rust submission.
 Real Ctrl+A/Escape and cleanup pass in the provider's Windows run 38743789587;
@@ -157,3 +157,15 @@ existing deadlines. The actual Windows run must retain the navigation records,
 pre-Ready observation and exact native producer bytes. It must then satisfy the
 existing computed form, permission, remount, destruction and package acceptance;
 diagnostic output alone does not close native acceptance.
+
+The diagnostic consumer run 38745314161 completes the first exact Unicode
+calculation, then reports controller LostFocus before patient two while UIA
+still claims focus and retains the previous value. No later eligible key
+callbacks appear. Its 502 scripts execute in 34.004s (501 pass, Apple-only skip),
+separating this functional defect from the earlier script budget failure.
+Provider baseline run 38748681812 reproduces a missing parent-focus route:
+SetFocus(parent) leaves its HWND as the keyboard recipient. The selected
+correction synchronously calls controller MoveFocus(PROGRAMMATIC) outside any
+window-state borrow; Weak window ownership and clear-before-Close preserve
+reentrancy and lifecycle. The provider regression and both unchanged full
+consumer journeys remain required before attributing complete form success.
