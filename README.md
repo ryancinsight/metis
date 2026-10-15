@@ -103,7 +103,7 @@ but dose remains `0.2` instead of requested `0.25` until the sixty-second deadli
 The diagnostic replay completes the first Unicode calculation, then loses
 controller focus before the second patient edit. Its Windows script suite
 executes 502 cases in 34.004s: 501 pass and one existing Apple-only case skips.
-Both locks now select Moirai PR 622 candidate `6343610de52c`, retaining the
+Both locks now select Moirai PR 622 candidate `d1658acc9b3c`, retaining the
 synchronous native-parent focus correction introduced in `bd88d2c56f9d`.
 That provider regression passes, but Metis b7ad7405/run38750658426 still retains
 second dose 0.25 after requested 0.5. Its 502 Windows scripts finish in 44.777s
@@ -118,7 +118,7 @@ with Metis's PowerShell STA actor.
 The compatible candidate graph requires Gaia0.6, Eunomia0.10, Hermes0.9 and
 Consus0.2.1 with their allocator cohort. Root/fuzz locks change 37/28 related
 Git records; all 295/223 other records retain exact values. Strict workspace
-Clippy, 777 actual Rust tests and canonical module preparation pass locally.
+Clippy, 778 actual Rust tests and canonical module preparation pass locally.
 The two ignored Rust tests are environment helper entry points. Real Windows
 app/form/script/package execution remains required; this candidate is not a
 protected-default adoption or release.
@@ -142,8 +142,21 @@ The correction declares one native-parent entry after UIA selection and verifies
 the same selected field before the original physical input. It bypasses child
 geometry guesses and adds no focus/input retry, ALT tap, sleep or deadline.
 The [entry contract](scripts/native_input/design.md) keeps native control actors
-on their existing policy. Local504 cases pass with six Windows-only skips;
-the actual corrected Windows journeys remain required.
+on their existing policy. Provider 6343610d/run38803044085 passes all 69 actual
+Windows cases, including every original 16/64 replacement mode and the Rust
+bridge fixture. Metis add41427/run38804568395 completes all 504 Windows scripts
+in 40.426s (503 pass, one existing Apple-only skip) and all four exact form
+submissions, then still retains Dark after Alt+Shift+S. Controller quota
+exhaustion prevents a late-key attribution. Only the observed form now selects
+bounded native suffix retention starting at the existing Dark shortcut;
+ordinary execution stays unobserved. Both complete forms and package acceptance
+remain required; no time limit or acceptance assertion changes.
+The diagnostic pin advances only 15/11 provider hashes from 6343610d;
+every other lock byte remains exact.
+The diagnostic consumer passes 778 Rust tests in 9.242s and all 504 local
+script cases in 15.629s (498 pass, six Windows-only skips). Strict Windows-app
+diagnostics and fresh external Git-consumer resolution/compilation pass.
+These checks do not establish native shortcut delivery.
 
 Windows app compilation
 requires an independently prepared Rust module. Build `metis-cli`, run

@@ -90,6 +90,11 @@ declared case before the coordinator accepts its result.
 `startup_observation` records passive GDI evidence and cannot establish the
 provider selection or lifecycle. Ordinary execution cannot reuse a selected
 report because the role and exact selection metadata are admitted together.
+The observed form additionally selects `late_input_after_key: 68` (VK_D).
+The provider retains a bounded suffix of its existing native observations from
+the real Dark key-down onward. Ordinary form supplies no selector. Retention
+does not supply input or change assertions; incomplete evidence cannot prove
+that a later System key is absent. [Diagnostic contract](../../crates/metis-app/src/frontend/webview/event_loop/startup.md).
 
 The immutable plan preserves interactive ownership in this order: observed form,
 ordinary form, permissions, remount, correlated rejection. No two focus/input

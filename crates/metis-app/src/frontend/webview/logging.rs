@@ -1,8 +1,9 @@
 //! Preserve ordinary tracing while selecting private native startup observations.
 //!
 //! Normal records retain their INFO filter and full span context. Only the
-//! dedicated fixture target gains DEBUG admission. Its separate JSON formatter
-//! omits time and span context, giving the provider a fixed envelope for its
+//! startup fixture target gains DEBUG admission. The late-input target keeps
+//! INFO admission. Their separate JSON formatter omits time and span context,
+//! giving the provider a fixed envelope for its
 //! aggregate escaped-output bound. Neither layer changes page admission.
 
 use tracing::{Level, Subscriber};
@@ -14,6 +15,7 @@ use tracing_subscriber::{
 };
 
 const TARGET: &str = "moirai_pal::windows::webview::startup";
+const LATE_TARGET: &str = "moirai_pal::windows::webview::late_input";
 
 #[cfg(windows)]
 pub(super) fn subscriber() -> impl Subscriber + Send + Sync {
@@ -32,7 +34,9 @@ where
         .with_writer(writer.clone())
         .with_span_events(FmtSpan::FULL)
         .with_filter(filter_fn(|metadata| {
-            metadata.level() <= &Level::INFO && metadata.target() != TARGET
+            metadata.level() <= &Level::INFO
+                && metadata.target() != TARGET
+                && metadata.target() != LATE_TARGET
         }));
     let diagnostic = tracing_subscriber::fmt::layer()
         .json()
@@ -43,7 +47,9 @@ where
         .with_span_list(false)
         .with_span_events(FmtSpan::NONE)
         .with_filter(filter_fn(move |metadata| {
-            selected && metadata.level() <= &Level::DEBUG && metadata.target() == TARGET
+            selected
+                && ((metadata.level() <= &Level::DEBUG && metadata.target() == TARGET)
+                    || (metadata.level() <= &Level::INFO && metadata.target() == LATE_TARGET))
         }));
     tracing_subscriber::registry()
         .with(ordinary)

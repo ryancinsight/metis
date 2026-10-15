@@ -9,6 +9,19 @@
   Both locks retain the exact diagnostic candidate, with unrelated records
   unchanged. This adds receipt evidence; it changes no input, assertion,
   Handled value, lifecycle or deadline and claims no functional repair.
+- [patch] The observed form explicitly selects native key suffix retention at
+  the existing Dark shortcut. Ordinary form and all other scenario selections
+  remain absent. Retain every subsequent native observation rather than
+  filtering for System; loss, quota exhaustion and missing closure prevent
+  claims of complete key absence. This diagnostic requires its matching
+  provider d1658acc candidate, pinned with only 15/11 source-hash substitutions
+  and every other lock byte exact. Its dedicated context-free INFO formatter
+  preserves the combined 596,342-byte diagnostic bound. The actual logger
+  regression fails against the original formatter and passes with target
+  routing; ordinary log context and startup DEBUG admission remain unchanged.
+  Strict workspace/Windows-app diagnostics, 778 active Rust tests, canonical
+  preparation and 504 local script cases pass. Six Windows-only script cases
+  remain unexecuted locally; actual native delivery remains a Windows gate.
 
 - [minor] `metis-web::embedded` owns the typed form/probe messages, exact mount
   and request correlation, Rust page controller and explicit stop/resource law.
@@ -60,7 +73,10 @@
   assertions and time limits remain. Capture queue-detachment errors at their
   actual failing call and retain them alongside an existing primary error.
   Two added real Win32 cases cover delegation and rejection. The exact
-  provider6343610d and corrected complete Windows journeys remain gates.
+  provider 6343610d Windows run38803044085 passes all 69 actual cases. Consumer
+  add41427/run38804568395 completes 504 Windows scripts in 40.426s and four exact
+  Unicode submissions, then still times out on Alt+Shift+S with UIA Dark.
+  Both complete consumer journeys and package execution remain gates.
 
 - [patch] Pin diagnostic provider2fcef45d in both locks for the independently
   reproduced ready-event/deadline admission correction; only15/11 Moirai

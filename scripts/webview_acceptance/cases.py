@@ -30,6 +30,8 @@ def provider_selection(role: str, observed: bool) -> dict:
     return {"selected": observed, "configuration": {
         "start_uri": "https://metis.invalid/index.html",
         "selectors": ["#host-status", "#result"],
+        # VK_D starts suffix retention at the existing Dark-theme shortcut.
+        "late_input_after_key": 68,
     } if observed else None}
 
 

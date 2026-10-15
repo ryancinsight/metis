@@ -5,6 +5,8 @@ use std::{
     sync::{Arc, Mutex},
 };
 
+const LATE_TARGET: &str = "moirai_pal::windows::webview::late_input";
+
 struct Capture(Arc<Mutex<Vec<u8>>>);
 
 impl Write for Capture {
@@ -57,6 +59,9 @@ fn only_selected_native_diagnostics_gain_debug_without_losing_normal_context() {
                 tracing::info!(event = "ordinary", value = %arranged);
                 tracing::debug!(target: TARGET, parent: None,
                     event = "webview_startup_observation", observation = %arranged);
+                tracing::info!(target: LATE_TARGET, parent: None,
+                    event = "webview_late_input_observation", observation = %arranged);
+                tracing::debug!(target: LATE_TARGET, event = "late_unrelated_debug");
                 tracing::debug!(target: "metis_unrelated_debug", event = "unrelated");
             });
             tracing::info_span!("assert").in_scope(|| {
@@ -72,11 +77,10 @@ fn only_selected_native_diagnostics_gain_debug_without_losing_normal_context() {
                 assert_eq!(ordinary[0]["fields"]["value"], arranged);
                 assert_eq!(ordinary[0]["span"]["name"], "act");
                 assert_eq!(ordinary[0]["spans"][0]["name"], "act");
-                assert!(
-                    !values
-                        .iter()
-                        .any(|value| value["fields"]["event"] == "unrelated")
-                );
+                assert!(!values.iter().any(|value| matches!(
+                    value["fields"]["event"].as_str(),
+                    Some("unrelated" | "late_unrelated_debug")
+                )));
                 let diagnostics: Vec<_> = values
                     .iter()
                     .filter(|value| value["fields"]["event"] == "webview_startup_observation")
@@ -86,6 +90,19 @@ fn only_selected_native_diagnostics_gain_debug_without_losing_normal_context() {
                     assert_eq!(diagnostic["fields"]["observation"], arranged);
                     assert_eq!(diagnostic["level"], "DEBUG");
                     assert_eq!(diagnostic["target"], TARGET);
+                    assert_eq!(diagnostic.get("span"), None);
+                    assert_eq!(diagnostic.get("spans"), None);
+                    assert_eq!(diagnostic.get("timestamp"), None);
+                }
+                let late: Vec<_> = values
+                    .iter()
+                    .filter(|value| value["fields"]["event"] == "webview_late_input_observation")
+                    .collect();
+                assert_eq!(late.len(), usize::from(selected));
+                for diagnostic in late {
+                    assert_eq!(diagnostic["fields"]["observation"], arranged);
+                    assert_eq!(diagnostic["level"], "INFO");
+                    assert_eq!(diagnostic["target"], LATE_TARGET);
                     assert_eq!(diagnostic.get("span"), None);
                     assert_eq!(diagnostic.get("spans"), None);
                     assert_eq!(diagnostic.get("timestamp"), None);
@@ -178,6 +195,64 @@ fn compact_provider_json_obeys_the_aggregate_double_escape_bound() {
                 // including its LF, has the separately verified 133 bytes.
                 assert!(!encoded.bytes().any(|byte| byte < b' '));
                 assert!(*physical_bytes <= 133 + 2 * encoded.len());
+            }
+        });
+    });
+}
+
+#[test]
+fn late_controller_wire_preserves_compact_json_with_a_fixed_parentless_info_envelope() {
+    const EVENT: &str = "webview_late_input_observation";
+    let output = Arc::new(Mutex::new(Vec::new()));
+    let writer = Arc::clone(&output);
+    let subscriber = with_writer(move || Capture(Arc::clone(&writer)), true);
+    tracing::subscriber::with_default(subscriber, || {
+        let encoded = tracing::info_span!("arrange").in_scope(|| {
+            let controls: String = ('\u{0}'..='\u{1f}').collect();
+            [String::new(), "\"\\".into(), controls, "Native λ🦀".into()].map(|value| {
+                serde_json::json!({"kind":"controller_input", "value":value}).to_string()
+            })
+        });
+        tracing::info_span!("act", context = "ordinary span remains outside the wire").in_scope(
+            || {
+                for observation in &encoded {
+                    tracing::info!(target: LATE_TARGET, parent: None,
+                        event = EVENT, observation = %observation);
+                }
+            },
+        );
+        tracing::info_span!("assert").in_scope(|| {
+            let observations: Vec<_> = records(&output)
+                .into_iter()
+                .filter(|(value, _)| value["fields"]["event"] == EVENT)
+                .collect();
+            assert_eq!(observations.len(), encoded.len());
+            let envelope = concat!(
+                r#"{"level":"INFO","fields":{"event":"webview_late_input_observation","observation":""},"target":"moirai_pal::windows::webview::late_input"}"#,
+                "\n"
+            )
+            .len();
+            assert_eq!(envelope, 138);
+            // The provider separately bounds compact bodies at 65,536 bytes
+            // and 256 records; its two terminal bodies are at most 534 bytes.
+            // The second JSON layer expands each compact byte at most twice.
+            let suffix_bound = 2 * 65_536 + 4 * 534 + envelope * (256 + 2);
+            assert_eq!(suffix_bound, 168_812);
+            assert_eq!(427_530 + suffix_bound, 596_342);
+            assert!(427_530 + suffix_bound < 1024 * 1024);
+            for ((record, physical_bytes), encoded) in observations.iter().zip(encoded) {
+                assert_eq!(record["fields"]["observation"], encoded);
+                assert_eq!(record["level"], "INFO");
+                assert_eq!(record["target"], LATE_TARGET);
+                assert_eq!(record.get("span"), None);
+                assert_eq!(record.get("spans"), None);
+                assert_eq!(record.get("timestamp"), None);
+                // Compact JSON has no raw C0 controls; only quotes and
+                // backslashes expand in the second string encoding.
+                assert!(!encoded.bytes().any(|byte| byte < b' '));
+                assert!(*physical_bytes <= envelope + 2 * encoded.len());
+                let escaped = serde_json::to_string(&encoded).expect("actual second JSON layer");
+                assert_eq!(*physical_bytes, envelope + escaped.len() - 2);
             }
         });
     });

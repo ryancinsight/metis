@@ -355,6 +355,46 @@ adds the matching real fixture entry and16/12 computed entry checks while
 preserving its16 replacements/64 field checks. Both consumer locks change only
 15/11 provider SHA records from2fcef; full Windows and package gates remain.
 
+Provider6343610d [run38803044085](https://github.com/ryancinsight/Moirai/actions/runs/38803044085)
+passes 69 actual Windows cases, including all eight original replacement modes,
+the separate probe and actual Rust bridge. Each replacement invocation checks
+16 native entries, 12 non-first entries, 16 replacements and 64 field-preservation
+checks. The separate probe does not trigger a new DOM snapshot; exhausted
+startup/controller histories remain incomplete.
+
+Consumer add41427 [run38804568395](https://github.com/ryancinsight/metis/actions/runs/38804568395)
+completes 504 Windows scripts in 40.426s (503 pass, Apple-only skip) and all four
+exact Unicode submissions, then retains Dark after Alt+Shift+S at the unchanged
+60-second worker deadline. Actual merge c1dadecf/tree91d14f7d binds 1,003 raw Git
+blobs and 837 normalized run-source digests; the normalized digests alone do not
+establish raw Windows filesystem identity. Latest UIA request 241 is sent after
+reply 240 still reports Dark. Command status confirms the Dark command executes;
+owned recipient and released modifiers do not prove System renderer receipt.
+Controller quota exhausts before submit4, so absent late records are censored.
+The coordinator remains strongly owned in the document's thread-local PAGE;
+JavaScript handle collection is not its lifetime mechanism. The next diagnostic
+retains existing native observations from actual VK_D down onward only for the
+observed form, with independent loss/quota/closure evidence. No input, assertion,
+selection observation or time bound changes. Ordinary form and later native,
+archive, release and MSI gates remain unreached.
+Both locks now select provider d1658acc with exactly 15/11 source-hash
+substitutions from 6343610d and all other bytes exact. Its private configured
+anchor adds no native callback work. The consumer's actual logger regression
+fails on retained span fields in the original INFO formatter, then passes with
+selected target routing through the existing context-free layer. All four
+logger tests and twelve startup/process tests pass. Windows late-key execution
+and both complete forms remain required; this is evidence retention, not an
+established correction for System.
+The exact diagnostic consumer passes strict workspace and Windows-app Clippy,
+778 active Rust tests in 9.242s, canonical preparation and all 504 local script
+cases in 15.629s (498 pass, six Windows-only skips). All 1,003 tracked hashes
+remain stable during the script run. A fresh external Git consumer resolves
+the exact d1658acc package graph and compiles for MSVC without path/patch
+overrides. The first sandboxed Rust attempt denies 28 real loopback listeners;
+the unchanged replay with loopback access passes, without a leak report.
+Two direct environment-helper entries remain ignored; the real two-hop tests
+exercise their workflow. None of these portable checks proves Windows receipt.
+
 Budget baseline [run 38681175478](https://github.com/ryancinsight/metis/actions/runs/38681175478) stops at the unchanged 60-second script limit after 435/502 cases: 434 pass and one skips; its active visual case is not an attributed hang. Plain EDIT/UIA costs 16.696s versus 6.521s previously, while RichEdit passes in 16.830s. All 837 sources and 26 artifact members bind; preparation and native form do not run. The message-aware fixture wait now removes avoidable per-message sleep without extending the existing 25ms completion poll or dropping observations. Source-bound 53af replay completes all 502 cases in 50.180s, with plain EDIT/UIA 8.781s and RichEdit 2.361s; the earlier startup/getter cost split and application failure mechanism remain unproven. Closure commit 3d4103f exposes one board-schema regression: completed status is outside the canonical todo/blocked set. Restoring todo preserves the genuinely open startup/provider/query attribution scope and the checked native-wait subtask; neither the checker nor its baseline changes.
 Portable 777 Rust cases, 42 doctests and strict Clippy pass with the patched locks; the pre-input-correction script replay passes 492 of 494 with two Windows-only skips in 18.447s. These local values do not establish real Windows key delivery.
 Advisory API checker exit 101/root zero pass and 260 skip remains excluded from compatibility proof.

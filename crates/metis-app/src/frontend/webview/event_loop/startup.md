@@ -46,6 +46,26 @@ owner enables DEBUG only for `moirai_pal::windows::webview::startup`; ordinary
 INFO records retain full span context. Without both an explicit selection and
 the dedicated target, the provider installs no diagnostic observers.
 
+The observed form also supplies `late_input_after_key: 68` (VK_D), anchoring
+independent suffix retention at its existing Dark shortcut. The provider uses
+the same copied callback records, with no extra receiver or native read. It
+retains every later key, focus, move and read error. Only that private target,
+`moirai_pal::windows::webview::late_input`, gains context-free INFO formatting;
+startup alone retains DEBUG admission. An actual formatter regression shows
+that `parent: None` does not suppress the ordinary formatter's current span.
+Target routing removes those fields without changing ordinary log context.
+
+The late stream retains at most 65,536 compact JSON bytes in 256 records;
+initial and progress checkpoints spend that same quota. Its two terminal
+bodies each occupy at most 534 bytes. The actual formatter's 138-byte envelope
+and twofold compact-JSON string escape bound give
+`2 * 65,536 + 4 * 534 + 138 * (256 + 2) = 168,812` bytes. Together with the
+existing startup bound, diagnostic output is at most 596,342 bytes, below
+the unchanged 1 MiB limit. These are diagnostic-stream bounds, not a bound on
+all ordinary application output. Shared queue loss, callback/read/cleanup
+errors, quota exhaustion, an absent real anchor or missing closure invalidate
+a complete absence claim. A retained key remains positive receipt evidence.
+
 The selector crosses both process boundaries: verifier to backend, then backend
 to the contained frontend. For inherited environment `E`, the Runtime policy
 projects exactly the nine existing OS-location keys and this one private key;
@@ -134,7 +154,7 @@ the timeout remains unattributed until those native records exist.
 ## Failure and verification
 
 The initial input replay selects Moirai PR622 source `bd88d2c56f9d`; both
-canonical locks now pin candidate `6343610de52c`. This is an explicitly recorded diagnostic candidate, not an
+canonical locks now pin candidate `d1658acc9b3c`. This is an explicitly recorded diagnostic candidate, not an
 adoption of a protected provider default. The same private selection observes
 actual controller GotFocus/LostFocus/MoveFocusRequested and eligible
 AcceleratorKeyPressed callbacks. Fixed callback storage retains native arguments
@@ -224,6 +244,37 @@ All1003 tracked file hashes remain stable through that run. All515 Rust files,
 original PowerShell UIA/selection actors, physical key/Unicode delivery and time
 limits remain byte-identical to ad328. Syntax-tree comparison preserves every
 original journey/assertion operation, adding only the declared native entries.
+
+Provider 6343610d/run38803044085 passes 69 actual Windows cases: 50 policy,
+nine preceding installed cases, eight original replacement modes, one separate
+probe and the Rust bridge. Each replacement run checks 16 entries/12 non-first
+entries and the original 16 replacements/64 field checks. Its separate probe
+never triggers a DOM snapshot; exhausted controller observations cannot prove
+a complete key history.
+
+The actual consumer add41427/run38804568395 binds merge c1dadecf/tree91d14f7d
+to 1,003 raw Git blobs and 837 normalized run-source digests. All 504 Windows
+scripts complete in 40.426s with the existing Apple-only skip. The selected form
+completes all four exact submissions and the Dark command, then stalls on
+System at 60s. Query 240 retains Dark and query 241 is sent without a final reply.
+Its native recipient is owned and modifiers release; the exhausted controller
+quota cannot establish late renderer receipt. Source retains a strong Rust
+coordinator in thread-local PAGE, so JavaScript handle collection does not
+explain that lifetime. Only the observed form selects native suffix retention
+from actual VK_D down onward. It preserves every later native key, focus, move
+and read-error observation; independent quota, loss and closure metadata prevent
+an incomplete suffix from asserting key absence. Ordinary form and all original
+inputs, assertions and time limits remain. Both complete form journeys and
+later native/package execution remain required.
+The new diagnostic pin changes only 15/11 provider hashes from 6343610d in
+the two locks. All other lock bytes remain exact. The Metis production Rust
+delta is the private target's formatter routing; page controllers, protocols,
+physical input and every time limit remain unchanged from add41427.
+The diagnostic consumer passes strict workspace/Windows-app Clippy, 778 active
+Rust tests in 9.242s, canonical preparation and 504 local script cases in
+15.629s (498 pass, six Windows-only skips). A fresh external Git consumer
+resolves and compiles the exact provider for MSVC without local path/patch
+overrides. Its registry/default-branch publication is not established.
 
 Source checks preserve the closed page protocol, actual Ready admission and all
 existing deadlines. The actual Windows run must retain the navigation records,

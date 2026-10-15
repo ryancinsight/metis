@@ -27,7 +27,8 @@ class NativeObservationSelection(unittest.TestCase):
                       "METIS_WEBVIEW_ASSET_INVENTORY": "outside producer ownership",
                       "PRESERVED": "λ🦀"}
         expected = {"start_uri": "https://metis.invalid/index.html",
-                    "selectors": ["#host-status", "#result"]}
+                    "selectors": ["#host-status", "#result"],
+                    "late_input_after_key": 68}
         program = """
 import json, os
 value = os.environ.get('MOIRAI_WEBVIEW_STARTUP_OBSERVATION')
@@ -107,6 +108,16 @@ print(json.dumps({'selection': json.loads(value) if value is not None else None,
         selected, ordinary = cases.WAVES[0][0], cases.WAVES[1][0]
         self.assertEqual(selected.arguments(), ("--worker", "form", "--observe-startup"))
         self.assertEqual(ordinary.arguments(), ("--worker", "form"))
+        original = cases.provider_selection("form", True)["configuration"]
+        for configuration in (
+            {key: value for key, value in original.items() if key != "late_input_after_key"},
+            {**original, "late_input_after_key": 83},
+            {**original, "late_input_after_key": None},
+        ):
+            with self.subTest(configuration=configuration):
+                with self.assertRaisesRegex(ValueError, "role/observation"):
+                    selected.admit({"scenario": "form", "provider_startup_observation": {
+                        "selected": True, "configuration": configuration}})
         with self.assertRaisesRegex(ValueError, "boolean"):
             scenario.observation_environment("form", {}, observe_startup="true")
 
