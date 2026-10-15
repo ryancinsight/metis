@@ -39,14 +39,20 @@ try {
             Set-UiaProgress 'root_find_all' $sequence
             $nodes = @($root.FindAll($scope, $condition))
             if ($nodes.Count -eq 0 -or $nodes.Count -gt $command.maximum_nodes) { throw 'Actual UIA tree is empty or exceeds its canonical node contract' }
-            if ($command.action -eq 'focus') {
+            if ($command.action -in @('focus', 'selection')) {
                 $matched = @($nodes | Where-Object {
                     Set-UiaProgress 'focus_filter_id' $sequence
                     $_.Current.AutomationId -eq $command.id
                 })
-                if ($matched.Count -ne 1) { throw 'Requested UIA focus control is absent or ambiguous' }
-                Set-UiaProgress 'control_set_focus' $sequence
-                $matched[0].SetFocus()
+                if ($matched.Count -ne 1) { throw 'Requested UIA control is absent or ambiguous' }
+                if ($command.action -eq 'focus') {
+                    Set-UiaProgress 'control_set_focus' $sequence
+                    $matched[0].SetFocus()
+                } else {
+                    # Selection evidence belongs only to the unique target.
+                    # Existing focus/snapshot responses retain the full tree.
+                    $nodes = $matched
+                }
             } elseif ($command.action -ne 'snapshot') {
                 throw 'Unknown UIA acceptance action'
             }
@@ -106,7 +112,7 @@ try {
                 $focused = $current.HasKeyboardFocus
                 Set-UiaProgress 'record_offscreen' $sequence $nodeIndex
                 $offscreen = $current.IsOffscreen
-                [pscustomobject]@{
+                $record = [pscustomobject]@{
                     id = $id
                     name = $name
                     role = $role
@@ -118,6 +124,11 @@ try {
                     text = $text
                     rect = @($rectangle.Left, $rectangle.Top, $rectangle.Width, $rectangle.Height)
                 }
+                if ($command.action -eq 'selection' -and $id -eq $command.id) {
+                    $observedSelection = Read-UiaSelection $_ $sequence
+                    $record | Add-Member -NotePropertyName selection -NotePropertyValue $observedSelection
+                }
+                $record
             })
             Set-UiaProgress 'response_serialize' $sequence
             $response = [pscustomobject]@{ schema = 1; nodes = $records } | ConvertTo-Json -Depth 6 -Compress
@@ -128,7 +139,11 @@ try {
             $actual = $_
             $diagnosticError = $null
             try { Set-UiaProgress 'actor_error' $sequence } catch { $diagnosticError = $_.Exception.ToString() }
-            [pscustomobject]@{ schema = 1; error = $actual.Exception.Message; progress_error = $diagnosticError } | ConvertTo-Json -Compress
+            [pscustomobject]@{
+                schema = 1; error = $actual.Exception.Message
+                error_type = $actual.Exception.GetType().FullName
+                error_detail = $actual.Exception.ToString(); progress_error = $diagnosticError
+            } | ConvertTo-Json -Compress
         }
         Set-UiaProgress 'stdin_read' $sequence
     }

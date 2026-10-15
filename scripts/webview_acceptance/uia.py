@@ -17,6 +17,7 @@ from python_native_accessibility import MAX_UIA_NODES, UIA_POLL_MILLISECONDS
 from .contract import MAX_UIA_BYTES
 from .progress import Progress
 from .retention import publish, streams
+from .selection import admit
 
 
 class Uia:
@@ -33,8 +34,9 @@ class Uia:
         paths = ",".join("'" + str(path).translate(quotes) + "'"
                          for path in self.progress.actor_paths)
         helper = Path(__file__).with_name("uia_progress.ps1").read_text(encoding="utf-8")
+        selection = Path(__file__).with_name("uia_selection.ps1").read_text(encoding="utf-8")
         initialize = f"Initialize-UiaProgress @{{paths=@({paths});maximum_bytes={MAX_UIA_BYTES}}}\n"
-        program = helper + "\n" + initialize + Path(__file__).with_suffix(".ps1").read_text(encoding="utf-8")
+        program = helper + "\n" + selection + "\n" + initialize + Path(__file__).with_suffix(".ps1").read_text(encoding="utf-8")
         path = self.progress.actor_paths[0].with_name("uia-program.ps1")
         publish(path, b"\xff\xfe" + program.encode("utf-16-le"))
         # Popen duplicates the redirected native handle for the child. Closing
@@ -114,6 +116,15 @@ class Uia:
                 return node
             time.sleep(min(self.remaining(), UIA_POLL_MILLISECONDS / 1000))
 
+    def selection(self, identifier: str) -> dict:
+        """Observe only the uniquely named control, without changing its ranges."""
+        nodes = self.request("selection", identifier)
+        matched = [node for node in nodes if node["id"] == identifier]
+        if len(matched) != 1:
+            raise RuntimeError(f"actual UIA selection control is missing or ambiguous: {identifier}")
+        admit(matched[0].get("selection"))
+        return matched[0]
+
     def text(self, identifier: str) -> str:
         return self.node(identifier)["text"]
 
@@ -137,28 +148,35 @@ class Uia:
         self.progress.operation("replace", (identifier,))
         observation = {"identifier": identifier, "requested": value,
                        "focus_sequence": None, "focus_nodes": [],
-                       "stages": {}}
+                       "stages": {}, "selections": {}, "selection_sequences": {}}
         def observed(phase):
             observation["phase"] = phase
             observation["stages"][phase] = focus_observation.input_state(self.handle)
             self.progress.input(observation)
 
+        def selection_observed(phase):
+            observation["selections"][phase] = self.selection(identifier)
+            observation["selection_sequences"][phase] = str(self.progress.sequence)
+
         observed("before_focus")
         nodes = self.request("focus", identifier)
         observation["focus_sequence"] = str(self.progress.sequence)
         observation["focus_nodes"] = [node for node in nodes if node["id"] == identifier]
+        selection_observed("before_select")
         observed("before_select")
         control, select = keyboard.physical_keys((0x11, 0x41))
         with control.held():
             with select.held():
                 pass
             queue.flush_window(self.handle)
+        selection_observed("after_select")
         _, units = keyboard.validate_text(value)
         observation["unicode_units"] = list(units)
         observed("before_unicode")
         keyboard.send_unicode_text(units)
         observed("after_unicode_inserted")
         queue.flush_window(self.handle)
+        selection_observed("after_unicode")
         observed("after_sent_message_returned")
         self.actions.append({"action": "SendInput Unicode", "id": identifier, "value": value})
         return self.wait(identifier, lambda node: node["value"] == value)

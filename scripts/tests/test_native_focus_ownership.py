@@ -17,35 +17,11 @@ import unittest
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 from native_input.windows import focus, focus_observation
+from native.pump import run_with_pump
 
 
 @unittest.skipUnless(sys.platform == "win32", "real Win32 window/focus ownership requires Windows")
 class NativeFocusOwnership(unittest.TestCase):
-    def snapshot(self, actor):
-        from concurrent.futures import ThreadPoolExecutor
-        from python_native_accessibility import UIA_POLL_MILLISECONDS
-        from native_input.windows import abi
-
-        self.user.PeekMessageW.argtypes = [ctypes.POINTER(abi.WindowMessage), ctypes.c_void_p,
-                                          ctypes.c_uint32, ctypes.c_uint32, ctypes.c_uint32]
-        self.user.PeekMessageW.restype = ctypes.c_int32
-        self.user.TranslateMessage.argtypes = [ctypes.POINTER(abi.WindowMessage)]
-        self.user.TranslateMessage.restype = ctypes.c_int32
-        self.user.DispatchMessageW.argtypes = [ctypes.POINTER(abi.WindowMessage)]
-        self.user.DispatchMessageW.restype = ctypes.c_ssize_t
-        message = abi.WindowMessage()
-        with ThreadPoolExecutor(max_workers=1) as executor:
-            result = executor.submit(actor.request, "snapshot")
-            while not result.done():
-                actor.remaining()
-                # PM_REMOVE=1; retrieving messages also delivers cross-thread
-                # WM_GETOBJECT requests for these real owned native controls.
-                while self.user.PeekMessageW(ctypes.byref(message), None, 0, 0, 1):
-                    self.user.TranslateMessage(ctypes.byref(message))
-                    self.user.DispatchMessageW(ctypes.byref(message))
-                time.sleep(min(actor.remaining(), UIA_POLL_MILLISECONDS / 1000))
-            return result.result()
-
     def setUp(self):
         self.user, _ = focus._focus_api()
         self.child_ids = itertools.count(1)
@@ -165,7 +141,7 @@ class NativeFocusOwnership(unittest.TestCase):
         actor = Uia(self.top, time.monotonic() + 60, output)
         primary = None
         try:
-            nodes = self.snapshot(actor)
+            nodes = run_with_pump(self.user, actor, actor.request, "snapshot")
             matches = [node for node in nodes if node["value"] == value]
             self.assertEqual(len(matches), 1, json.dumps(nodes, ensure_ascii=True))
             self.assertEqual(matches[0]["value"], value)

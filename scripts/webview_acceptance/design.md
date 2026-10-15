@@ -373,3 +373,43 @@ owns its repair and real native regression. The shortcut now retains its own
 before/after focus/modifier observations and exact admitted scans, independently
 of later polling. Only another complete native journey establishes command
 delivery or closes this remaining application gate.
+
+## Read-only text-selection evidence
+
+An input replacement retains three selection observations on the uniquely
+named control: after focus/before Ctrl+A, after the physical chord releases,
+and after Unicode insertion and the existing sent-message flush. Each records
+its actual UIA request sequence. The actor reacquires that control's TextPattern,
+DocumentRange and GetSelection on every observation. No ancestor, cached range,
+TextPatternRange.Select, ValuePattern.SetValue or replacement input supplies
+missing evidence. Unavailable TextPattern, SupportedTextSelection.None and
+an absent range remain distinct records. GetSelection is not called for None.
+An absent range is never treated as a degenerate caret.
+
+For exactly one selected range S and the same provider's document range D,
+retain four signed Int32 CompareEndpoints results: S.start versus D.start,
+S.end versus D.end, S.start versus S.end and D.start versus D.end. Only sign
+and zero have ordering meaning; their magnitude is not a character count.
+Whole-document selection requires the first two comparisons to equal zero;
+a caret requires the third comparison to equal zero. These are diagnostic
+interpretations, not added acceptance predicates. Multiple or absent ranges
+carry their actual count without invented unique-range endpoints. ValuePattern
+remains the independent value observation; no text normalization or assumption
+that TextPattern text equals ValuePattern.Value bridges their representations.
+
+The existing response/progress byte bound and scenario deadline cover these
+non-atomic reads. Original COM errors propagate with the native-call progress
+stage. No read retries the physical input, changes selection, acknowledges
+renderer delivery or increases the deadline. An observed successful replay
+with the additional reads does not by itself attribute an earlier failure.
+
+The regression uses a real single-line RichEdit control whose documented Ctrl+A
+behavior selects all. Two successive canonical Uia.replace calls must replace
+the initialized text, then the first Unicode value with the second. Actual
+UTF-16 window text, UIA ValuePattern replies, selection observations and native
+EM_EXGETSEL records remain evidence. The original plain EDIT focus/value and
+keyboard metadata cases remain active; no fixture handler implements SelectAll.
+
+Sources: [RichEdit shortcuts](https://learn.microsoft.com/en-us/windows/win32/controls/about-rich-edit-controls),
+[GetSelection](https://learn.microsoft.com/en-us/dotnet/api/system.windows.automation.textpattern.getselection),
+[CompareEndpoints](https://learn.microsoft.com/en-us/dotnet/api/system.windows.automation.text.textpatternrange.compareendpoints).

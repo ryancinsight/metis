@@ -46,6 +46,14 @@
 
 ### Fixed
 
+- Retain read-only, target-owned UIA selection ranges around native text input,
+  with exact request sequences and signed endpoint comparisons. Unsupported
+  patterns and absent ranges remain explicit. A real RichEdit regression covers
+  two successive Unicode replacements through the canonical input path; native
+  execution remains required before closing the diagnostic increment. All 500
+  local cases complete in 15.075s with four Windows-only skips; 1,001 source
+  identities remain exact. Direct public accessors preserve TextPattern getter
+  exceptions, and actor errors retain their exception type and full detail.
 - Map Windows physical keys through the foreground recipient's actual layout
   once per chord. Immutable scan records preserve E0 and release flags; absent
   mappings and unsupported prefixes reject before input. All native callers
