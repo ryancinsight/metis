@@ -18,6 +18,7 @@ from .contract import MAX_UIA_BYTES
 from .progress import Progress
 from .retention import publish, streams
 from .selection import admit
+from .text import TextValueRepresentation
 
 
 class Uia:
@@ -144,9 +145,13 @@ class Uia:
                 return matched
             time.sleep(min(self.remaining(), UIA_POLL_MILLISECONDS / 1000))
 
-    def replace(self, identifier: str, value: str) -> dict:
+    def replace(self, identifier: str, value: str, representation: TextValueRepresentation) -> dict:
+        if not isinstance(representation, TextValueRepresentation):
+            raise TypeError("actual UIA replacement requires an explicit text representation")
+        expected = representation.observed(value)
         self.progress.operation("replace", (identifier,))
         observation = {"identifier": identifier, "requested": value,
+                       "value_representation": representation.name, "expected_value": expected,
                        "focus_sequence": None, "focus_nodes": [],
                        "stages": {}, "selections": {}, "selection_sequences": {}}
         def observed(phase):
@@ -179,7 +184,7 @@ class Uia:
         selection_observed("after_unicode")
         observed("after_sent_message_returned")
         self.actions.append({"action": "SendInput Unicode", "id": identifier, "value": value})
-        return self.wait(identifier, lambda node: node["value"] == value)
+        return self.wait(identifier, lambda node: node["value"] == expected)
 
     def key(self, key: int) -> None:
         self.progress.operation("key", (str(key),))

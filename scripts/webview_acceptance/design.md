@@ -397,6 +397,20 @@ carry their actual count without invented unique-range endpoints. ValuePattern
 remains the independent value observation; no text normalization or assumption
 that TextPattern text equals ValuePattern.Value bridges their representations.
 
+The canonical replacement operation requires an explicit value representation
+from every caller. WebView input controls select CONTROL: observed value equals
+the requested OS text. The single-paragraph RichEdit fixture selects
+RICH_EDIT_STORY: observed ValuePattern value equals the requested text followed
+by TOM's undeletable final CR. Actual WM_GETTEXT still equals the requested text.
+The first native replay establishes this distinction before any replacement:
+seed window text has twelve UTF-16 units while its ValuePattern has thirteen.
+The expected observed value and selected representation accompany the original
+input in progress. The input encoder admits only the original text; the provider
+marker cannot be injected as committed input. No trimming, normalization,
+detected-value fallback or alternate success predicate applies to WebView.
+This policy models these two control contracts, not arbitrary RichEdit
+multiline/newline conversions or universal equality between native APIs.
+
 The existing response/progress byte bound and scenario deadline cover these
 non-atomic reads. Original COM errors propagate with the native-call progress
 stage. No read retries the physical input, changes selection, acknowledges
@@ -409,7 +423,15 @@ the initialized text, then the first Unicode value with the second. Actual
 UTF-16 window text, UIA ValuePattern replies, selection observations and native
 EM_EXGETSEL records remain evidence. The original plain EDIT focus/value and
 keyboard metadata cases remain active; no fixture handler implements SelectAll.
+For a plain paragraph with N editable UTF-16 units, TOM's single final CR gives
+a complete story of N+1 units. Native selection must start at zero and end at
+N or N+1: every editable unit is selected, and only the final undeletable CR
+can additionally belong to the selection. The fixture retains the actual
+endpoint, all Unicode messages and exact final window text. This two-element
+representation domain follows the selectable final CR; it is not an error
+tolerance or permission to omit any editable character.
 
 Sources: [RichEdit shortcuts](https://learn.microsoft.com/en-us/windows/win32/controls/about-rich-edit-controls),
 [GetSelection](https://learn.microsoft.com/en-us/dotnet/api/system.windows.automation.textpattern.getselection),
-[CompareEndpoints](https://learn.microsoft.com/en-us/dotnet/api/system.windows.automation.text.textpatternrange.compareendpoints).
+[CompareEndpoints](https://learn.microsoft.com/en-us/dotnet/api/system.windows.automation.text.textpatternrange.compareendpoints),
+[TOM story invariant](https://learn.microsoft.com/en-us/windows/win32/api/tom/nn-tom-itextrange).

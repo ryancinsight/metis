@@ -7,6 +7,8 @@ No SetValue, selection setter, synthetic input handler, or retyping is present.
 One original 60-second deadline covers the actor's complete operation sequence.
 
 https://learn.microsoft.com/en-us/windows/win32/controls/about-rich-edit-controls
+https://learn.microsoft.com/en-us/windows/win32/api/tom/nn-tom-itextrange
+https://learn.microsoft.com/en-us/windows/win32/controls/em-getsel
 """
 
 import ctypes
@@ -21,6 +23,7 @@ import unittest
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 from native.pump import run_with_pump
 from native.rich_edit import CharacterRange, RichEdit
+from webview_acceptance.text import TextValueRepresentation
 
 
 @unittest.skipUnless(sys.platform == "win32", "real Rich Edit Unicode replacement requires Windows")
@@ -47,6 +50,8 @@ class NativeTextReplacement(unittest.TestCase):
         progress = json.loads((output / "uia-progress.json").read_bytes())
         observed = progress["input"]["observation"]
         self.assertEqual(observed["requested"], expected)
+        self.assertEqual(observed["value_representation"], TextValueRepresentation.RICH_EDIT_STORY.name)
+        self.assertEqual(observed["expected_value"], TextValueRepresentation.RICH_EDIT_STORY.observed(expected))
         self.assertEqual(observed["phase"], "after_sent_message_returned")
         self.assertEqual(observed["identifier"], states["identifier"])
         self.assertEqual(len(observed["focus_nodes"]), 1)
@@ -84,8 +89,15 @@ class NativeTextReplacement(unittest.TestCase):
         characters = [event for event in events if event["message"] == 0x102 and event["word"] != 1]
         units = list(memoryview(expected.encode("utf-16-le")).cast("H"))
         self.assertEqual([event["word"] for event in characters], units)
-        self.assertEqual(characters[0]["before"]["selection"], {
-            "start": 0, "end": len(prior.encode("utf-16-le")) // 2})
+        selected_range = characters[0]["before"]["selection"]
+        text_end = len(prior.encode("utf-16-le")) // 2
+        story_end = len(TextValueRepresentation.RICH_EDIT_STORY.observed(prior).encode("utf-16-le")) // 2
+        self.assertEqual(story_end, text_end + 1)
+        # TOM permits selecting its one undeletable final CR. Either endpoint
+        # covers every editable TCHAR [0,text_end), without exceeding the full
+        # story [0,story_end). Partial selection or extra content cannot pass.
+        self.assertEqual(selected_range["start"], 0)
+        self.assertIn(selected_range["end"], (text_end, story_end))
         self.assertFalse(characters[0]["before"]["control_high_bit_set"])
         self.assert_text(characters[-1]["after"]["text"], expected)
         return events
@@ -109,7 +121,9 @@ class NativeTextReplacement(unittest.TestCase):
             self.assert_text(states["initial_native"], fixture.seed)
             actor = Uia(fixture.top, deadline, output)
             nodes = run_with_pump(fixture.user, actor, actor.request, "snapshot")
-            matches = [node for node in nodes if node["value"] == fixture.seed]
+            expected_story = TextValueRepresentation.RICH_EDIT_STORY.observed(fixture.seed)
+            states["initial_uia"] = nodes
+            matches = [node for node in nodes if node["value"] == expected_story]
             self.assertEqual(len(matches), 1, json.dumps(nodes, ensure_ascii=True))
             self.assertEqual(matches[0]["role"], "ControlType.Edit")
             self.assertEqual(matches[0]["value_source"], "ValuePattern")
@@ -118,8 +132,9 @@ class NativeTextReplacement(unittest.TestCase):
             prior = fixture.seed
             for expected in self.VALUES:
                 start = len(fixture.events)
-                actual = run_with_pump(fixture.user, actor, actor.replace, identifier, expected)
-                self.assertEqual(actual["value"], expected)
+                actual = run_with_pump(fixture.user, actor, actor.replace, identifier, expected,
+                                       TextValueRepresentation.RICH_EDIT_STORY)
+                self.assertEqual(actual["value"], TextValueRepresentation.RICH_EDIT_STORY.observed(expected))
                 self.assertTrue(actual["focused"])
                 native = fixture.text()
                 self.assert_text(native, expected)

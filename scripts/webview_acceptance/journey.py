@@ -8,6 +8,7 @@ from native_input.windows import pointer
 from python_native_accessibility import UIA_POLL_MILLISECONDS
 
 from .contract import CALCULATIONS, Calculation, parse_result
+from .text import TextValueRepresentation
 
 
 def captured(uia, destination) -> dict:
@@ -24,7 +25,7 @@ def captured(uia, destination) -> dict:
 def edited(uia, patient: str, weight: str, concentration: str, dose: str) -> None:
     for identifier, value in (("patient-id", patient), ("weight", weight),
                               ("concentration", concentration), ("dose", dose)):
-        uia.replace(identifier, value)
+        uia.replace(identifier, value, TextValueRepresentation.CONTROL)
 
 
 def submitted(uia, action: str, previous: str) -> str:
