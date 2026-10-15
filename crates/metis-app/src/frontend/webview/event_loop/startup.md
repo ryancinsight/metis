@@ -133,8 +133,8 @@ the timeout remains unattributed until those native records exist.
 
 ## Failure and verification
 
-The input investigation selects Moirai PR 622 source `bd88d2c56f9d` through both
-canonical locks. This is an explicitly recorded diagnostic candidate, not an
+The initial input replay selects Moirai PR622 source `bd88d2c56f9d`; both
+canonical locks now pin candidate `aa532b88ee77`. This is an explicitly recorded diagnostic candidate, not an
 adoption of a protected provider default. The same private selection observes
 actual controller GotFocus/LostFocus/MoveFocusRequested and eligible
 AcceleratorKeyPressed callbacks. Fixed callback storage retains native arguments
@@ -169,3 +169,46 @@ correction synchronously calls controller MoveFocus(PROGRAMMATIC) outside any
 window-state borrow; Weak window ownership and clear-before-Close preserve
 reentrancy and lifecycle. The provider regression and both unchanged full
 consumer journeys remain required before attributing complete form success.
+
+Metis source b7ad7405 / run 38750658426 refutes full-form closure from that
+parent-entry correction: the second dose remains 0.25 after requested 0.5.
+The native controller ends with Lost/Got/Lost, while native renderer ownership
+and UIA focused=true persist; no later eligible key callbacks or second submit
+appear. Scripts complete in 44.777s (501 pass, one Apple-only skip); the form
+still reaches its original 60-second deadline. Selection ordering remains
+(1,1,0,-1); physical input admits requested UTF-16 [48,46,53],
+which does not prove renderer consumption. The actor
+records STA. Moirai's native MTA isolation exercises actual field focus/input
+and all-field preservation, but differs from this actor's selection/native
+reads and WM_NULL interleaving. Neither its compilation nor a future component
+pass establishes this complete form journey or the renderer's consumption.
+
+Provider source 23561b59 / Windows run 38763941253 now completes the isolated
+ordinary mode's sixteen exact replacements and sixty-four preservation checks
+in 5.683s. Selected mode completes the first reference, observes weight focus,
+and admits all requested Ctrl+A and Unicode records for 64, but the last
+changed ValuePattern remains 60. Its fixture log quota ends after query 99;
+the final active native call is unavailable. The same controller emits no
+later eligible keys after Lost/Got/Lost. Selected DOM observation completes
+8,672 chains (at least 52,032 CDP calls); this establishes additional work,
+not input-loss or starvation causality. Private-parent experiment 27cd682d
+also passes ordinary 16/64 but still fails selected delivery after 6 edits;
+it is withdrawn. Four-mode source 4e7b1968 passes ordinary and controller-only,
+while startup-only and full selected retain prior values after actual focus
+and admitted input. Controller callbacks are unnecessary to reproduce. The later domain/single-snapshot controls pass16/64. Coalescing source9cf4d47a /
+run38779895376 bounds recurring work but still fails active startup-only final
+dose0.125 (UIA0.5), after15/60 checks. Full selected16/64 exhausts its shared
+observer quota and cannot establish active observation for all edits.
+The one-shot provider9aca/run38785314523 captures live concentration2 after
+requested4, matching returned UIA2 with admitted input, owned focus and active
+sampler. The renderer responds to CDP while the requested value is absent.
+This point excludes stale UIA alone; it does not establish earlier transient
+assignment or identify the input-routing cause. Sourceaa532/run38788877397
+still fails original startup-only concentration0/UIA4 after10/40. Its separate
+controller recorder passes16/64 without triggering a snapshot, so no joint
+failed-edit receipt follows from that run.
+Both locks now selectaa532 plus the compatible Gaia/Eunomia/Hermes/Consus
+allocator cohort; no Metis input, protocol or acceptance implementation changes.
+Strict Clippy,777 local Rust cases and canonical preparation pass. The native
+Windows full forms and complete script/package suite remain required. None of
+these component results establishes equivalence with the PowerShell STA actor.

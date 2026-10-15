@@ -52,13 +52,25 @@
 
 ### Fixed
 
-- [patch] Both consumer locks select the synchronous native-parent focus
-  correction in Moirai PR 622 source `bd88d2c56f9d`. A real provider baseline
+- [patch] Both consumer locks retain the synchronous native-parent focus
+  correction introduced in Moirai PR 622 source `bd88d2c56f9d`. A real provider baseline
   regression leaves focus at the parent HWND. The correction restores the
   previous page element before later input, releases state before native
   reentrancy and clears the weak binding before controller shutdown. Exact
   Unicode, native observations, existing assertions and time limits stay
-  unchanged; corrected Windows form acceptance remains pending.
+  unchanged. Provider parent entry passes; full Metis replay 38750658426
+  still stalls replacing second dose 0.5 while UIA retains 0.25. Both full form
+  journeys remain open; no complete text-delivery repair is claimed.
+  Provider9aca records timely liveDOM2/UIA2 after concentration4; the exact
+  input-routing cause remains unresolved. Sourceaa532's original startup-only
+  mode still fails; its separately instrumented run never triggers a snapshot.
+- [patch] Select exact diagnostic Moirai0.9.4 sourceaa532 and its necessary
+  Gaia0.6/Eunomia0.10/Hermes0.9/Consus0.2.1 allocator cohort. Root/fuzz change
+  37/28 related Git records and preserve all295/223 other complete records,
+  including every registry record. No Metis input/protocol/acceptance source
+  changes. Strict workspace Clippy,777 actual Rust tests and canonical module
+  preparation pass; Windows native acceptance remains pending.
+
 
 - Wake the native fixture owner for pending UIA/window messages within its
   existing twenty-five-millisecond completion poll. Source 53afc6b completes

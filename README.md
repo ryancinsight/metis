@@ -89,7 +89,7 @@ the required native pairs and their remaining acceptance.
 ## Build and run
 
 Use the pinned Rust toolchain, cargo-nextest 0.9.143 and wasm-bindgen-cli 0.2.129.
-Metis 0.5.0 requires Consus compression and raster 0.2, matching the provider's
+Metis 0.5.0 requires Consus compression and raster 0.2.1, matching the provider's
 workspace versions. The canonical Git locks record the consumed provider graph.
 The Windows private bridge encodes audit identifiers as decimal JSON strings in
 Rust, retaining every backend `u64` through WebView2's JavaScript object parsing.
@@ -103,11 +103,26 @@ but dose remains `0.2` instead of requested `0.25` until the sixty-second deadli
 The diagnostic replay completes the first Unicode calculation, then loses
 controller focus before the second patient edit. Its Windows script suite
 executes 502 cases in 34.004s: 501 pass and one existing Apple-only case skips.
-Both locks now select Moirai PR 622 source `bd88d2c56f9d` for synchronous native
-parent-focus forwarding and the same bounded controller observations. The real
-unchanged-host regression leaves focus at the parent HWND. Corrected provider
-and full Metis form Windows acceptance remain pending; this candidate is not
-an adoption of a protected provider default.
+Both locks now select Moirai PR 622 candidate `aa532b88ee77`, retaining the
+synchronous native-parent focus correction introduced in `bd88d2c56f9d`.
+That provider regression passes, but Metis b7ad7405/run38750658426 still retains
+second dose 0.25 after requested 0.5. Its 502 Windows scripts finish in 44.777s
+(501 pass, Apple-only skip); both complete form journeys remain open.
+Provider9aca/run38785314523 records a timely live renderer concentration2
+after requested4, matching UIA2, while the sampler stays active. The field
+failure also occurs without a Rust form handler. Sourceaa532/run38788877397
+still fails startup-only concentration0 after 10/40 checks; its separately
+instrumented controller run passes without triggering a snapshot. These are
+point/component observations, not a complete delivery repair or equivalence
+with Metis's PowerShell STA actor.
+The compatible candidate graph requires Gaia0.6, Eunomia0.10, Hermes0.9 and
+Consus0.2.1 with their allocator cohort. Root/fuzz locks change 37/28 related
+Git records; all 295/223 other records retain exact values. Strict workspace
+Clippy, 777 actual Rust tests and canonical module preparation pass locally.
+The two ignored Rust tests are environment helper entry points. Real Windows
+app/form/script/package execution remains required; this candidate is not a
+protected-default adoption or release.
+
 Windows app compilation
 requires an independently prepared Rust module. Build `metis-cli`, run
 `metis prepare metis.json` and retain its absolute inventory path in
