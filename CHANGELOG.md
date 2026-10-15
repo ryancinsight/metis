@@ -52,6 +52,14 @@
 
 ### Fixed
 
+- [patch] Pin diagnostic provider2fcef45d in both locks for the independently
+  reproduced ready-event/deadline admission correction; only15/11 Moirai
+  source hashes advance, with all other lock bytes exact. Metis source5e5c4e2
+  completes four exact Unicode form submissions and502 Windows scripts
+  in37.299s, then times out on Alt+Shift+S while UIA retains Dark. The later
+  shortcut and both complete form journeys remain unverified; native input,
+  protocol, observations, assertions and all time limits remain unchanged.
+
 - [patch] Both consumer locks retain the synchronous native-parent focus
   correction introduced in Moirai PR 622 source `bd88d2c56f9d`. A real provider baseline
   regression leaves focus at the parent HWND. The correction restores the

@@ -134,7 +134,7 @@ the timeout remains unattributed until those native records exist.
 ## Failure and verification
 
 The initial input replay selects Moirai PR622 source `bd88d2c56f9d`; both
-canonical locks now pin candidate `aa532b88ee77`. This is an explicitly recorded diagnostic candidate, not an
+canonical locks now pin candidate `2fcef45d140a`. This is an explicitly recorded diagnostic candidate, not an
 adoption of a protected provider default. The same private selection observes
 actual controller GotFocus/LostFocus/MoveFocusRequested and eligible
 AcceleratorKeyPressed callbacks. Fixed callback storage retains native arguments
@@ -151,6 +151,41 @@ correlated native failure. Loader rejection or a WASM trap can precede Rust
 entirely. Neither absence of a Failed message nor successful document navigation
 identifies which case occurs. These diagnostic boundaries require actual
 Windows observations before a startup correction is selected.
+
+## Current native replay and admission candidate
+
+Source5e5c4e2/run38792889172 binds to synthetic mergef602c98b/treeeb82dea2.
+It passes502 Windows scripts in37.299s (501 pass, one Apple-only skip) and
+produces four exact form requests/native replies. The successful rate/drug
+pairs are0.48/0.96,0.6/2.4 and0.09/0.72, with audit values2,3 and5.
+The intervening zero-concentration request returns0x3002. No independent
+runtime ledger4 value is retained. The final UIA fields retain患者-🦀-three,
+96,8,0.125 and the exact final result. Rust submit therefore consumes the
+requested field values on this execution.
+
+Light/high-contrast selection and Alt+Shift+D complete. Alt+Shift+S returns
+from physical injection with owned native recipient and released modifiers,
+but later UIA queries retain Theme: dark until the60-second worker expires.
+The shared diagnostic quota exhausts before submit4, so absence of late
+controller/DOM records does not prove absence of keyboard delivery. Source
+inspection finds both physical codes dispatched through the same Rust
+accelerator catalogue; no missing System branch is established.
+
+Provider2fcef45d corrects a separate, real ready-event admission regression:
+baseline44184f40/run38795557575 returns a resize after issuing another DOM
+request. Positive selected waits now check their original deadline and ready
+public events after preparation, before SDK entry. Deferred commands retain
+their request identity and parameters. Both consumer locks advance only15/11
+provider SHA records from aa532, with every other byte exact. No Metis Rust,
+input, protocol, assertion, observation or timeout changes accompany this pin.
+Corrected provider native execution and both complete forms remain gates.
+
+Local validation of the2fcef pin passes strict workspace diagnostics,777 active
+Rust tests, canonical preparation and strict Windows app cross-compilation.
+Nextest reports one leaky process capture and two direct environment-helper
+entries skipped; this does not establish native Windows behavior. The first
+sandboxed attempt refuses28 loopback listeners; an identical replay with
+loopback access passes. All original per-test60-second limits remain.
 
 Source checks preserve the closed page protocol, actual Ready admission and all
 existing deadlines. The actual Windows run must retain the navigation records,

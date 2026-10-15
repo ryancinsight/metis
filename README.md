@@ -103,7 +103,7 @@ but dose remains `0.2` instead of requested `0.25` until the sixty-second deadli
 The diagnostic replay completes the first Unicode calculation, then loses
 controller focus before the second patient edit. Its Windows script suite
 executes 502 cases in 34.004s: 501 pass and one existing Apple-only case skips.
-Both locks now select Moirai PR 622 candidate `aa532b88ee77`, retaining the
+Both locks now select Moirai PR 622 candidate `2fcef45d140a`, retaining the
 synchronous native-parent focus correction introduced in `bd88d2c56f9d`.
 That provider regression passes, but Metis b7ad7405/run38750658426 still retains
 second dose 0.25 after requested 0.5. Its 502 Windows scripts finish in 44.777s
@@ -122,6 +122,17 @@ Clippy, 777 actual Rust tests and canonical module preparation pass locally.
 The two ignored Rust tests are environment helper entry points. Real Windows
 app/form/script/package execution remains required; this candidate is not a
 protected-default adoption or release.
+
+Metis source5e5c4e2/run38792889172 completes all four exact Unicode form
+submissions, including the expected zero-concentration rejection. Its502
+Windows scripts finish in37.299s (501 pass, one existing Apple-only skip).
+The selected form later stalls on Alt+Shift+S with UIA still showing Dark;
+the60-second worker bound remains. Controller observation exhausts its quota
+before the fourth submit, so it cannot attribute that late shortcut. The new
+provider candidate corrects independently reproduced SDK event/deadline
+admission. Only15/11 provider SHA records advance from aa532 in the two locks;
+every other lock byte and all Metis input/protocol/acceptance source remain.
+Corrected provider execution and both full consumer journeys remain required.
 
 Windows app compilation
 requires an independently prepared Rust module. Build `metis-cli`, run
