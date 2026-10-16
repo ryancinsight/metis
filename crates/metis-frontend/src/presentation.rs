@@ -287,7 +287,7 @@ fn write_outcome(
         }
         FormState::Failed(error) => {
             rate.push_str(NO_RESULT);
-            write!(status, "Request not sent [0x{:04X}]", error.code as u16)?;
+            write!(status, "Request not sent [0x{:04X}]", error.code.to_wire())?;
             Ok(NO_SIGNATURE)
         }
         FormState::Disconnected(error) => {
@@ -295,7 +295,7 @@ fn write_outcome(
             write!(
                 status,
                 "Connection failed [0x{:04X}] - reconnect",
-                error.code as u16
+                error.code.to_wire()
             )?;
             Ok(NO_SIGNATURE)
         }
@@ -303,7 +303,7 @@ fn write_outcome(
             rate.push_str(NO_RESULT);
             status.push_str("Session failed [");
             match error {
-                HandshakeError::Local(error) => write!(status, "0x{:04X}", error.code as u16)?,
+                HandshakeError::Local(error) => write!(status, "0x{:04X}", error.code.to_wire())?,
                 HandshakeError::Remote(error) => write!(status, "0x{:04X}", error.error_code)?,
                 _ => status.push_str("unrecognized"),
             }

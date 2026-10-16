@@ -228,3 +228,44 @@ Active status, scope and acceptance remain in [the backlog](../../backlog.md).
 ## METIS-WORKBENCH-DESIGN-001
 
 - Evidence: [Windows run 35877828557](https://github.com/ryancinsight/metis/actions/runs/35877828557) passed visual-tests (342 tests/30.051s under 60s), browser build, presentation and comparator (9/9 captures, 1/1 asset). Local focused suites: browser 15/0.205s; capture 22/18.217s. Citation reachability scan: 22.905s before batching; full command: 0.490s after 5e3ed7e. Local WASM compile: 108s.
+
+<a id="METIS-STANDALONE-0.4.1"></a>
+## METIS-STANDALONE-0.4.1
+
+Historical delivery record from Metis 0.4.1. PR502 merges at `1ef9409b567458c50a547ba3c9257d8ca35b3cf5`; its recorded checks precede the Rust page implementation.
+
+## Standalone Consus adoption [patch]
+
+Target: Metis 0.4.1, Consus compression/raster 0.2 and the delivered Moirai
+WebView 0.2 contract. The Consus provider's consumed source trees match the
+previous locked codec sources; dependency features and transitive requirements
+remain standalone verification inputs. Both locks now select the normally
+merged Moirai 0.8.3 provider from [PR 617](https://github.com/ryancinsight/Moirai/pull/617).
+Historical evidence: [PR 499 CI](https://github.com/ryancinsight/metis/actions/runs/38412617056)
+passes against its earlier consumer base. [PR 499](https://github.com/ryancinsight/metis/pull/499)
+also records standalone workspace Clippy and 686 tests against Consus
+`cf30dc29` and Moirai `81656cc6`. Those checks do not validate the combined
+native-logo and capture/input module changes. The combined tree also corrects
+native audit-ID precision: Rust emits decimal JSON strings while retaining
+backend `u64` values; six private protocol tests reproduce two baseline failures
+and verify full-range identifiers with actual adult/pediatric calculations.
+The 213 authored Windows controller lines remain unchanged.
+Implementation is complete; [PR 502](https://github.com/ryancinsight/metis/pull/502) owns protected delivery.
+It retains PR 499 commits; the old remote head has a stale fuzz lock that
+prevents baseline compilation. The normal gate verifies current main instead.
+The intended graph retains every recorded provider except verified Moirai
+17a680ff. All 713 Rust tests pass in 6.314 seconds; native, Windows and WASM
+Clippy deny warnings. Three real Apple bundles preserve version, exact URL
+authority and both lock bytes. Registry identities remain 272 root/209 fuzz.
+Closure: branch script/CI checks and the normal protected consumer merge.
+
+## Authored JavaScript inventory — 2026-10-12
+
+Historical 0.4 inventory, superseded by 0.5 and ADR 0059: the nine-line count
+covered only the workbench, HTTP page and starter initializers. `metis-app`
+embedded a 125-line Windows form and an 88-line permission probe: 213 authored
+controller lines outside those loaders. Counts included blank/comment lines;
+generated bindings and test-only scripts were separate. Metis 0.5 replaces those
+controllers with Rust. The current four initializers total 359 UTF-8 bytes,
+twelve physical lines and nine nonblank lines. Source retirement is complete;
+METIS-WEBVIEW-RUST-001 still requires actual Windows page/package acceptance.

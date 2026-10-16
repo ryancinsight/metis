@@ -1,7 +1,7 @@
 //! Safe installation and removal of Linux USTAR application packages.
 
 use super::{desktop_icon, desktop_word};
-use crate::{Result, bounded_read, manifest};
+use crate::{Result, bounded_read};
 use moirai_crypto::Sha256;
 use serde::{Deserialize, Serialize};
 use std::{
@@ -221,7 +221,7 @@ fn rewrite_desktop(
             let relative = program
                 .strip_prefix("/usr/bin/")
                 .ok_or("desktop entry executable is not in the package bin directory")?;
-            manifest::relative(relative)?;
+            metis_core::embedded_assets::relative(relative)?;
             let package_path = format!("usr/bin/{relative}");
             if !entries.iter().any(|entry| entry.path == package_path) {
                 return Err("desktop entry executable is absent from the package".into());
@@ -233,7 +233,7 @@ fn rewrite_desktop(
             let relative = value
                 .strip_prefix(&format!("/usr/share/{application_id}/"))
                 .ok_or("desktop icon is outside the package resource directory")?;
-            manifest::relative(relative)?;
+            metis_core::embedded_assets::relative(relative)?;
             let package_path = format!("usr/share/{application_id}/{relative}");
             if !entries.iter().any(|entry| entry.path == package_path) {
                 return Err("desktop icon is absent from the package".into());
@@ -309,7 +309,7 @@ fn validate_application_id(value: &str) -> Result<()> {
     if value.contains('/') || value.contains('\\') {
         return Err("installation identity must be a single path component".into());
     }
-    manifest::relative(value)
+    metis_core::embedded_assets::relative(value).map_err(Into::into)
 }
 
 #[cfg(any(not(windows), test))]

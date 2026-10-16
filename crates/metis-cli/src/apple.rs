@@ -92,7 +92,7 @@ pub(crate) fn executable(target: Target) -> Result<PathBuf> {
     if !manifest.is_file() {
         return Err("Apple host compilation requires the Metis source workspace".into());
     }
-    let sdk = process::capture(
+    let sdk = metis_core::embedded_assets::capture_command(
         &process::tool("xcrun")?,
         &[
             "--sdk".into(),
@@ -101,6 +101,7 @@ pub(crate) fn executable(target: Target) -> Result<PathBuf> {
         ],
         Duration::from_secs(30),
         &[],
+        None,
     )?;
     let sdk = String::from_utf8(sdk)?;
     let sdk = Path::new(sdk.trim());
@@ -112,7 +113,7 @@ pub(crate) fn executable(target: Target) -> Result<PathBuf> {
         ("SDKROOT", sdk.as_os_str().to_owned()),
         (deployment, version.into()),
     ];
-    let messages = process::capture(
+    let messages = metis_core::embedded_assets::capture_command(
         &process::tool("cargo")?,
         &[
             "build".into(),
@@ -130,6 +131,7 @@ pub(crate) fn executable(target: Target) -> Result<PathBuf> {
         ],
         Duration::from_mins(15),
         &environment,
+        None,
     )?;
     let mut found = None;
     for line in messages

@@ -93,7 +93,7 @@ fn http_application_admits_only_the_launcher_principal() {
         .expect("other principal response");
     assert_eq!(status(&other), 403);
     let error = ErrorResponsePayload::decode(body(&other)).expect("typed error");
-    assert_eq!(error.error_code, ErrorCode::InvalidPrincipal as u16);
+    assert_eq!(error.error_code, ErrorCode::InvalidPrincipal.to_wire());
     let launcher = moirai_executor::block_on(post_handshake(address, LAUNCHER_PRINCIPAL))
         .expect("launcher principal response");
     assert_eq!(status(&launcher), 200);

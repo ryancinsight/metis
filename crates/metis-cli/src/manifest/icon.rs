@@ -6,8 +6,6 @@
 //! images before Windows Installer persistence.
 use crate::Result;
 #[cfg(windows)]
-use crate::manifest;
-#[cfg(windows)]
 use std::path::{Path, PathBuf};
 
 use super::ICON_LIMIT;
@@ -20,7 +18,7 @@ const PNG_SIGNATURE: &[u8; 8] = b"\x89PNG\r\n\x1a\n";
 /// Resolves and validates the manifest icon the Windows installer embeds.
 #[cfg(windows)]
 pub(crate) fn source(root: &Path, relative_path: &str) -> Result<PathBuf> {
-    let path = manifest::source(root, relative_path)?;
+    let path = metis_core::embedded_assets::source(root, relative_path)?;
     validate_file(&path)?;
     Ok(path)
 }

@@ -1,5 +1,5 @@
 //! Bounded enumeration of the regular files below a directory.
-use crate::{Result, manifest};
+use crate::Result;
 use std::{
     collections::VecDeque,
     ffi::OsStr,
@@ -7,7 +7,7 @@ use std::{
     path::{Path, PathBuf},
 };
 
-const FILE_LIMIT: usize = 4096;
+use metis_core::embedded_assets::FILE_LIMIT;
 const DEPTH_LIMIT: usize = 64;
 
 /// Returns every regular file below `root` in sorted order, skipping the
@@ -25,7 +25,7 @@ pub(crate) fn regular_files(root: &Path, ignored: impl Fn(&OsStr) -> bool) -> Re
         for entry in entries {
             let path = entry.path();
             let metadata = fs::symlink_metadata(&path)?;
-            if manifest::linked(&metadata) {
+            if metis_core::embedded_assets::linked(&metadata) {
                 return Err(format!("{} is a link", path.display()).into());
             }
             if metadata.is_dir() {

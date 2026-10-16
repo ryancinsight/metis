@@ -46,8 +46,8 @@ path lies under `usr/`.
 
 `metis-cli` is a binary crate, so `src/lib.rs` includes the exact source
 files of its archive and SVG parsers (`#[path]`) and exposes one entry point
-for each; the included `manifest/payload_path.rs` carries the path rule they
-share.
+for each. Archive parsing imports its canonical path admission and payload
+budget from `metis_core::embedded_assets`; no parallel path-rule source remains.
 
 The single Metis verification workflow runs every target on Ubuntu, where the
 nightly sanitizer runtime is available, during its scheduled weekly run, an

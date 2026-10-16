@@ -13,6 +13,8 @@ readme = "README.md"
 metis-core = { workspace = true }
 metis-frontend = { workspace = true }
 metis-ipc = { workspace = true }
+serde.workspace = true
+serde_json = { workspace = true, features = ["float_roundtrip"] }
 unicode-segmentation.workspace = true
 
 [target.'cfg(target_arch = "wasm32")'.dependencies]

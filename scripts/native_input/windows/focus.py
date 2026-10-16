@@ -1,14 +1,20 @@
 """Win32 content selection, foreground activation and input-queue focus."""
 from __future__ import annotations
 import ctypes
+from enum import Enum, auto
 import time
-from native_input.windows import abi, keyboard
+from native_input.windows import abi, focus_observation, keyboard
 
 
 FOCUS_ROUNDS = 20
 
 
 FOCUS_WAIT_SECONDS = 0.1
+
+
+class FocusEntry(Enum):
+    CONTENT_CHILD = auto()
+    NATIVE_PARENT = auto()
 
 
 def window_class(handle: int) -> str:
@@ -83,19 +89,7 @@ def content_child(handle: int) -> int | None:
     return pick_content_child(tuple(candidates), client_area)
 
 
-def focus_window(handle: int) -> tuple[int, bool, int]:
-    """Give `handle`'s keyboard target focus and verify the activation.
-
-    Returns the keyboard layout of the target thread, whether the window is
-    the foreground window, and the window that received keyboard focus. A
-    hosted content child (a browser render surface) owns the keyboard, so
-    focusing only the top-level window leaves typed text and navigation
-    keys in the host's own focus chain instead of the page.
-
-    # Errors
-    Raises `RuntimeError` when the keyboard focus cannot be placed on the
-    target or a window state read fails.
-    """
+def _focus_api():
     user32 = ctypes.windll.user32
     kernel32 = ctypes.windll.kernel32
     user32.BringWindowToTop.argtypes = [ctypes.c_void_p]
@@ -111,7 +105,10 @@ def focus_window(handle: int) -> tuple[int, bool, int]:
     user32.SetForegroundWindow.restype = ctypes.c_int32
     user32.SetFocus.argtypes = [ctypes.c_void_p]
     user32.SetFocus.restype = ctypes.c_void_p
+    user32.GetFocus.argtypes = []
     user32.GetFocus.restype = ctypes.c_void_p
+    user32.IsChild.argtypes = [ctypes.c_void_p, ctypes.c_void_p]
+    user32.IsChild.restype = ctypes.c_int32
     user32.GetForegroundWindow.argtypes = []
     user32.GetForegroundWindow.restype = ctypes.c_void_p
     user32.SetWindowPos.argtypes = [
@@ -128,94 +125,180 @@ def focus_window(handle: int) -> tuple[int, bool, int]:
     user32.GetKeyboardLayout.argtypes = [ctypes.c_uint32]
     user32.GetKeyboardLayout.restype = ctypes.c_void_p
 
-    # A hosted content child (a browser render surface) owns the keyboard;
-    # keyboard input must target it instead of the top-level host window.
-    focus_target = content_child(handle) or handle
-    process_id = ctypes.c_uint32()
-    target_thread = user32.GetWindowThreadProcessId(handle, ctypes.byref(process_id))
-    if target_thread == 0:
-        raise ctypes.WinError()
-    current_thread = kernel32.GetCurrentThreadId()
-    attached = current_thread != target_thread
-    if attached and not user32.AttachThreadInput(current_thread, target_thread, True):
-        raise ctypes.WinError()
-    # The activation right lives with the current foreground thread, so
-    # attach to its queue as well; an attached thread may move the
-    # foreground where a plain request is refused.
-    foreground_handle = user32.GetForegroundWindow()
-    foreground_thread = (
-        user32.GetWindowThreadProcessId(foreground_handle, None)
-        if foreground_handle
-        else 0
+    return user32, kernel32
+
+
+def _activation_matches(user32, handle: int, focus_target: int, ledger: dict) -> bool:
+    """Observe native ownership once, before the caller detaches input queues.
+
+    The selected WebView container can delegate focus to a descendant in a
+    runtime process. IsChild follows that native parent chain; PID, class and
+    thread equality do not express keyboard ownership. A target is not its
+    own child, so equality is a separate accepted case. Zero is never focus.
+    https://learn.microsoft.com/en-us/windows/win32/api/winuser/nf-winuser-ischild
+    """
+    actual_foreground = int(user32.GetForegroundWindow() or 0)
+    actual_focus = int(user32.GetFocus() or 0)
+    within_target = bool(
+        focus_target and actual_focus
+        and (actual_focus == focus_target or user32.IsChild(focus_target, actual_focus))
     )
-    foreground_attached = (
-        foreground_thread not in (0, current_thread, target_thread)
-        and user32.AttachThreadInput(current_thread, foreground_thread, True)
+    ledger["criterion"] = {
+        "foreground_hwnd": actual_foreground, "focus_hwnd": actual_focus,
+        "focus_within_target": within_target,
+    }
+    return actual_foreground == handle and within_target
+
+
+def _activate(user32, handle: int, focus_target: int, ledger: dict) -> bool:
+    # Trusted input is delivered by hit test and foreground, and a
+    # topmost system overlay (for example the shell's screen dimmer)
+    # would keep both while a screen capture still shows the target
+    # through it; pin the target above such overlays for the recording.
+    user32.SetWindowPos(
+        handle,
+        abi.HWND_TOPMOST,
+        0,
+        0,
+        0,
+        0,
+        abi.SWP_NOMOVE | abi.SWP_NOSIZE | abi.SWP_NOACTIVATE,
     )
-    detach_failed = False
-    try:
-        # Trusted input is delivered by hit test and foreground, and a
-        # topmost system overlay (for example the shell's screen dimmer)
-        # would keep both while a screen capture still shows the target
-        # through it; pin the target above such overlays for the recording.
-        user32.SetWindowPos(
-            handle,
-            abi.HWND_TOPMOST,
-            0,
-            0,
-            0,
-            0,
-            abi.SWP_NOMOVE | abi.SWP_NOSIZE | abi.SWP_NOACTIVATE,
-        )
-        user32.BringWindowToTop(handle)
-        # Foreground activation can lose the race with the window's own
-        # creation, and a denied activation makes Windows consume the next
-        # click on the window instead of delivering it. A bare ALT tap
-        # through the trusted input queue grants the activation right
-        # without changing any application state.
+    user32.BringWindowToTop(handle)
+    # Foreground activation can lose the race with the window's own
+    # creation, and a denied activation makes Windows consume the next
+    # click on the window instead of delivering it. A bare ALT tap
+    # through the trusted input queue grants the activation right
+    # without changing any application state.
+    foreground_set = bool(user32.SetForegroundWindow(handle))
+    previous = user32.SetFocus(focus_target)
+    focus_observation.record_attempt(ledger, previous)
+    if not foreground_set:
+        (alt,) = keyboard.physical_keys((abi.VK_MENU,), recipient=keyboard.Recipient.FOREGROUND_QUEUE)
+        with alt.held():
+            pass
         foreground_set = bool(user32.SetForegroundWindow(handle))
-        user32.SetFocus(focus_target)
-        if not foreground_set:
-            keyboard.send_virtual_key(abi.VK_MENU, key_up=False)
-            keyboard.send_virtual_key(abi.VK_MENU, key_up=True)
-            foreground_set = bool(user32.SetForegroundWindow(handle))
-            user32.SetFocus(focus_target)
-        focus_rounds = 0
-        while (
-            focus_rounds < FOCUS_ROUNDS
-            and not (
-                foreground_set and int(user32.GetFocus() or 0) == focus_target
-            )
-        ):
-            focus_rounds += 1
-            time.sleep(FOCUS_WAIT_SECONDS)
-            # The activation right is consumed by whichever window moves
-            # first, so one ALT tap can lose the race; repeat the trusted
-            # tap with each bounded retry.
-            keyboard.send_virtual_key(abi.VK_MENU, key_up=False)
-            keyboard.send_virtual_key(abi.VK_MENU, key_up=True)
-            foreground_set = bool(user32.SetForegroundWindow(handle))
-            user32.SetFocus(focus_target)
-        # Judge activation by the actual foreground window; the
-        # SetForegroundWindow return value alone is not authoritative.
-        foreground_set = int(user32.GetForegroundWindow() or 0) == handle
-        if int(user32.GetFocus() or 0) != focus_target:
-            raise RuntimeError(
-                f"the window {hex(focus_target)} could not receive keyboard focus "
-                f"(foreground_set={foreground_set})"
-            )
+        previous = user32.SetFocus(focus_target)
+        focus_observation.record_attempt(ledger, previous)
+    focus_rounds = 0
+    while (
+        focus_rounds < FOCUS_ROUNDS
+        and not _activation_matches(user32, handle, focus_target, ledger)
+    ):
+        focus_rounds += 1
+        time.sleep(FOCUS_WAIT_SECONDS)
+        # The activation right is consumed by whichever window moves
+        # first, so one ALT tap can lose the race; repeat the trusted
+        # tap with each bounded retry.
+        (alt,) = keyboard.physical_keys((abi.VK_MENU,), recipient=keyboard.Recipient.FOREGROUND_QUEUE)
+        with alt.held():
+            pass
+        foreground_set = bool(user32.SetForegroundWindow(handle))
+        previous = user32.SetFocus(focus_target)
+        focus_observation.record_attempt(ledger, previous)
+    # All callers receive the same admission contract, including callers that
+    # use focus_window only for its verified side effect and ignore its tuple.
+    if not _activation_matches(user32, handle, focus_target, ledger):
+        foreground_set = ledger["criterion"]["foreground_hwnd"] == handle
+        raise RuntimeError(
+            f"the window {hex(focus_target)} could not own keyboard focus "
+            f"(foreground_set={foreground_set})"
+        )
+    return ledger["criterion"]["foreground_hwnd"] == handle
+
+
+def _enter_native_parent(user32, handle: int, ledger: dict) -> bool:
+    """Enter one declared host route without activation input or retries."""
+    if int(user32.GetForegroundWindow() or 0) != handle:
+        raise RuntimeError("native parent entry requires the owned host in the foreground")
+    previous = user32.SetFocus(handle)
+    focus_observation.record_attempt(ledger, previous)
+    matches = _activation_matches(user32, handle, handle, ledger)
+    if not matches or ledger["criterion"]["focus_hwnd"] == handle:
+        raise RuntimeError("native parent did not delegate keyboard focus to its owned content")
+    return True
+
+
+def focus_window(
+    handle: int, *, entry: FocusEntry = FocusEntry.CONTENT_CHILD
+) -> tuple[int, bool, int]:
+    """Give `handle`'s keyboard target focus and verify the activation.
+
+    Returns the keyboard layout of the target thread, verified foreground
+    activation, and the selected keyboard container. A hosted content child
+    (a browser render surface) owns the keyboard and may delegate focus to
+    its native descendant, including a WebView runtime process. The returned
+    container remains the identity used for asynchronous content selection;
+    the actual recipient remains a separate criterion observation. A declared
+    NATIVE_PARENT route instead performs one SetFocus(parent), with foreground
+    ownership already required, and admits only actual descendant delegation.
+    It does not guess a child endpoint, activate, retry or insert ALT input.
+
+    # Errors
+    Raises `RuntimeError` when the actual foreground differs from `handle`,
+    focus belongs to neither the container nor its descendants, or a window
+    state read fails.
+    """
+    if not isinstance(entry, FocusEntry):
+        raise TypeError("native focus requires an explicit FocusEntry policy")
+    user32, kernel32 = _focus_api()
+    ledger = {"attempts": [], "criterion": None, "entry": entry.name}
+    focus_target = None
+    try:
+        focus_target = (
+            handle if entry is FocusEntry.NATIVE_PARENT else content_child(handle) or handle
+        )
+        process_id = ctypes.c_uint32()
+        target_thread = user32.GetWindowThreadProcessId(handle, ctypes.byref(process_id))
+        if target_thread == 0:
+            raise ctypes.WinError()
+        current_thread = kernel32.GetCurrentThreadId()
+        attached = current_thread != target_thread
+        if attached and not user32.AttachThreadInput(current_thread, target_thread, True):
+            raise ctypes.WinError()
+        # The activation right lives with the current foreground thread, so
+        # attach to its queue as well; an attached thread may move the
+        # foreground where a plain request is refused.
+        foreground_handle = user32.GetForegroundWindow()
+        foreground_thread = (
+            user32.GetWindowThreadProcessId(foreground_handle, None)
+            if foreground_handle
+            else 0
+        )
+        foreground_attached = (
+            foreground_thread not in (0, current_thread, target_thread)
+            and user32.AttachThreadInput(current_thread, foreground_thread, True)
+        )
+    except BaseException as error:
+        focus_observation.observe_failure(error, handle, focus_target, ledger)
+        raise
+    primary_error = None
+    try:
+        foreground_set = (
+            _enter_native_parent(user32, handle, ledger)
+            if entry is FocusEntry.NATIVE_PARENT
+            else _activate(user32, handle, focus_target, ledger)
+        )
+    except BaseException as error:
+        primary_error = error
+        focus_observation.observe_failure(error, handle, focus_target, ledger)
+        raise
     finally:
-        # A detach failure must not mask an error the try block is
-        # already raising, so record it and surface it only on a clean
-        # exit.
+        # Copy each native error before another detach can overwrite it.
+        # Cleanup evidence supplements an existing primary failure.
+        detach_errors = []
         if foreground_attached and not user32.AttachThreadInput(
             current_thread, foreground_thread, False
         ):
-            detach_failed = True
+            detach_errors.append(("foreground input queue", ctypes.WinError()))
         if attached and not user32.AttachThreadInput(current_thread, target_thread, False):
-            detach_failed = True
-    if detach_failed:
-        raise ctypes.WinError()
+            detach_errors.append(("target input queue", ctypes.WinError()))
+        if detach_errors:
+            reported = primary_error if primary_error is not None else detach_errors[0][1]
+            for operation, error in detach_errors:
+                reported.add_note(f"detach {operation}: {type(error).__name__}: {error}")
+            if primary_error is None:
+                raise reported
     return (
         int(user32.GetKeyboardLayout(target_thread)),
         foreground_set,

@@ -252,24 +252,15 @@ def activate_layout(handle: int, klid: str) -> dict[str, Any]:
 def send_physical_keys(keys: tuple[int, ...]) -> None:
     if not keys or len(keys) > MAX_KEYS:
         raise ValueError(f"physical key sequence must contain 1..{MAX_KEYS} keys")
-    for virtual_key in keys:
-        if not 0 < virtual_key <= 0xFF:
-            raise ValueError(f"virtual key is outside the Win32 byte range: {virtual_key}")
-        keyboard.send_virtual_key(virtual_key, key_up=False)
-        keyboard.send_virtual_key(virtual_key, key_up=True)
+    for stroke in keyboard.physical_keys(keys):
+        with stroke.held():
+            pass
 
 
 def release_foreground_lock() -> None:
-    user32 = ctypes.windll.user32
-    user32.keybd_event.argtypes = [
-        ctypes.c_ubyte,
-        ctypes.c_ubyte,
-        ctypes.c_uint32,
-        ctypes.c_size_t,
-    ]
-    user32.keybd_event.restype = None
-    user32.keybd_event(VK_MENU, 0, 0, 0)
-    user32.keybd_event(VK_MENU, 0, abi.KEYEVENTF_KEYUP, 0)
+    (alt,) = keyboard.physical_keys((VK_MENU,), recipient=keyboard.Recipient.FOREGROUND_QUEUE)
+    with alt.held():
+        pass
 
 
 def focus_native_window(handle: int) -> tuple[int, bool]:
@@ -313,8 +304,9 @@ def focus_native_window(handle: int) -> tuple[int, bool]:
         # The Alt tap releases the foreground lock, but Windows can leave the
         # target queue's menu modifier logically down across the attachment.
         # Repeat a complete tap on the target queue before delivering text.
-        keyboard.send_virtual_key(VK_MENU, key_up=False)
-        keyboard.send_virtual_key(VK_MENU, key_up=True)
+        (alt,) = keyboard.physical_keys((VK_MENU,))
+        with alt.held():
+            pass
     finally:
         if attached and not user32.AttachThreadInput(current_thread, foreground_thread, False):
             raise ctypes.WinError()

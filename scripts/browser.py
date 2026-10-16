@@ -1,12 +1,25 @@
-"""Build the browser WASM host and generated wasm-bindgen loader."""
+"""Build the browser WASM host and generated wasm-bindgen loader.
+
+The dependency order is CLI compilation -> Rust asset budgets -> gallery
+admission. The explicit tool producer and every consumer resolve the same
+locked Cargo artifact through one owner. Verification bounds compilation
+separately from consumer execution; consumers still perform normal Cargo
+freshness validation. No guessed executable path or injected tool skips it.
+"""
 from __future__ import annotations
 
 import argparse
+import functools
+import hashlib
 import json
 import os
 import pathlib
 import shutil
+import signal
+import stat
 import subprocess
+import sys
+from typing import NamedTuple
 
 from cargo_overlay import isolated_cargo
 from verification import workspace
@@ -16,32 +29,79 @@ ROOT = pathlib.Path(os.environ.get("METIS_NEUTRAL_ROOT", PHYSICAL_ROOT))
 OUTPUT = ROOT / "output" / "browser"
 SOURCE = ROOT / "examples" / "browser"
 CONTENT_SECURITY_POLICY = ROOT / "crates" / "metis-core" / "src" / "content_security_policy.txt"
-# Keep externally supplied browser assets bounded before they enter the output.
-MAX_CONSUMER_MODULE_BYTES = 64 * 1024 * 1024
+# Consumer module admission reads the canonical compiled Rust budget.
 MAX_CONSUMER_PAGE_BYTES = 512 * 1024
 
 
-def run(command: list[str]) -> None:
-    subprocess.run(command, cwd=ROOT, check=True, timeout=300)
+def _subprocess_diagnostics(label, command, cwd, returncode, stdout, stderr, **details) -> None:
+    """Retain complete captured bytes and the actual process/admission context."""
+    stream = sys.stderr.buffer
+    context = {"command": command, "cwd": str(cwd), "returncode": returncode, **details}
+    stream.write((label + ": " + json.dumps(context, ensure_ascii=False) + "\n").encode("utf-8"))
+    for name, data in (("stdout", stdout), ("stderr", stderr)):
+        stream.write((name + ":\n").encode("utf-8"))
+        if data is not None:
+            stream.write(data.encode("utf-8") if isinstance(data, str) else data)
+        stream.write(b"\n")
+    stream.flush()
 
 
-def cargo(arguments: list[str], *, timeout: int = 300, **options) -> subprocess.CompletedProcess:
-    """Run Cargo against the committed lock, outside an inherited stack configuration.
+def run(command: list[str], *, cwd=ROOT, timeout=300, **options) -> subprocess.CompletedProcess:
+    """Preserve checked-tool failure status, context, and both captured streams.
 
-    The stack overlay patches first-party providers to local trees, which cannot
-    agree with the locked revisions, so an in-place `--locked` build fails before
-    it compiles. `isolated_cargo` supplies a directory outside that configuration
-    chain; the manifest is therefore passed explicitly.
+    Captured Rust tool text uses UTF-8 independently of the Windows console
+    code page. Raw capture remains raw. Emit both streams before propagating
+    the original CalledProcessError; callers retain its argv/status/payloads.
+    """
+    if options.get("text"):
+        options.setdefault("encoding", "utf-8")
+    try:
+        return subprocess.run(command, cwd=cwd, check=True, timeout=timeout, **options)
+    except subprocess.CalledProcessError as error:
+        _subprocess_diagnostics("browser subprocess failed", error.cmd, cwd, error.returncode,
+                                error.stdout, error.stderr)
+        raise
+
+
+def terminate(returncode: int) -> None:
+    """Preserve the checked child's process exit or POSIX termination signal.
+
+    POSIX subprocess returncode -s means termination by signal s, not an
+    integer exit status. Default disposition, an unblocked signal and delivery
+    to this process reproduce that wait status; SystemExit(-s) would truncate
+    it to an unrelated unsigned exit byte. Nonnegative exits stay unchanged.
+    """
+    if os.name != "posix" or returncode >= 0:
+        raise SystemExit(returncode)
+    number = -returncode
+    if number not in (signal.SIGKILL, signal.SIGSTOP):
+        signal.signal(number, signal.SIG_DFL)
+    signal.pthread_sigmask(signal.SIG_UNBLOCK, {number})
+    os.kill(os.getpid(), number)
+
+
+class CargoExecution(NamedTuple):
+    """Immutable actual process output and the selected Cargo execution context."""
+    argv: tuple[str, ...]
+    cwd: pathlib.Path
+    rustup_toolchain: str
+    returncode: int
+    stdout: str | bytes | None
+    stderr: str | bytes | None
+
+
+def cargo(arguments: list[str], *, timeout: int = 300, **options) -> CargoExecution:
+    """Run the one lock-authoritative Cargo owner outside incompatible patches.
+
+    General browser fixtures and the CLI producer use this actual context and
+    process owner. Capture options preserve their native text/byte contracts;
+    every retained field is immutable, including argv and captured streams.
     """
     with isolated_cargo(ROOT) as (directory, environment):
-        return subprocess.run(
-            ["cargo", *arguments, "--manifest-path", str(ROOT / "Cargo.toml")],
-            cwd=directory,
-            env=environment,
-            check=True,
-            timeout=timeout,
-            **options,
-        )
+        command = ("cargo", *arguments, "--manifest-path", str(ROOT / "Cargo.toml"))
+        result = run(list(command), cwd=directory, env=environment, timeout=timeout, **options)
+        return CargoExecution(command, directory, environment.get("RUSTUP_TOOLCHAIN", ""),
+                              result.returncode, result.stdout, result.stderr)
 
 
 def wasm_bindgen() -> str:
@@ -54,10 +114,9 @@ def wasm_bindgen() -> str:
     )
     for candidate in candidates:
         if candidate and candidate.is_file():
-            result = subprocess.run(
+            result = run(
                 [str(candidate), "--version"],
                 cwd=ROOT,
-                check=True,
                 capture_output=True,
                 text=True,
                 timeout=30,
@@ -72,15 +131,73 @@ def wasm_bindgen() -> str:
     )
 
 
-def wasm_artifact() -> pathlib.Path:
-    metadata = cargo(
-        ["metadata", "--no-deps", "--format-version", "1", "--locked"],
-        timeout=30,
-        capture_output=True,
-        text=True,
-    )
-    target_directory = pathlib.Path(json.loads(metadata.stdout)["target_directory"])
-    return target_directory / "wasm32-unknown-unknown" / "release" / "metis_web.wasm"
+class CompiledTool(NamedTuple):
+    """Immutable executable identity and original compiler production evidence."""
+    executable: pathlib.Path
+    executable_sha256: str
+    artifact_json: str
+    cargo_argv: tuple[str, ...]
+    cargo_cwd: pathlib.Path
+    rustup_toolchain: str
+    lock_sha256: str
+    compiler_stdout: str
+    compiler_stderr: str
+
+
+def _digest(path: pathlib.Path) -> str:
+    with path.open("rb") as source:
+        return hashlib.file_digest(source, "sha256").hexdigest()
+
+
+def _compiler_streams(stdout: str, stderr: str) -> None:
+    stream = sys.stderr.buffer
+    stream.write(b"Cargo compiler stdout:\n" + stdout.encode("utf-8")
+                 + b"\nCargo compiler stderr:\n" + stderr.encode("utf-8"))
+    stream.flush()
+
+
+@functools.lru_cache(maxsize=1)
+def compile_tool() -> CompiledTool:
+    """Compile and retain the one actual CLI artifact under the committed lock.
+
+    The original JSON line, strings and tuple fields cannot be mutated through
+    the cached value. isolated_cargo preserves the caller's established Rustup
+    selector and target while avoiding incompatible ancestor source patches.
+    """
+    result = cargo(["build", "--locked", "--package", "metis-cli", "--bin", "metis",
+                    "--message-format=json-render-diagnostics"], capture_output=True, text=True)
+    artifacts = []
+    try:
+        for line in result.stdout.splitlines():
+            record = json.loads(line)
+            if (record.get("reason") == "compiler-artifact"
+                    and record.get("target", {}).get("name") == "metis"
+                    and record.get("target", {}).get("kind") == ["bin"]
+                    and record.get("executable")):
+                artifacts.append((pathlib.Path(record["executable"]), line))
+    except (ValueError, TypeError):
+        _compiler_streams(result.stdout, result.stderr)
+        raise
+    if len(artifacts) != 1 or not artifacts[0][0].is_file():
+        _compiler_streams(result.stdout, result.stderr)
+        raise SystemExit("Cargo must report one existing Metis CLI executable")
+    executable, artifact = artifacts[0]
+    return CompiledTool(executable, _digest(executable), artifact, result.argv, result.cwd,
+                        result.rustup_toolchain, _digest(ROOT / "Cargo.lock"), result.stdout, result.stderr)
+
+
+@functools.lru_cache(maxsize=1)
+def asset_budgets() -> dict[str, int]:
+    """Read actual core-owned limits through its canonical Rust CLI command."""
+    result = run([str(compile_tool().executable), "asset-budgets"],
+                            capture_output=True, text=True, cwd=ROOT, timeout=30)
+    value = json.loads(result.stdout)
+    expected = {"schema", "portable_path_bytes", "records", "manifest_bytes", "module_bytes", "payload_bytes"}
+    if set(value) != expected or value["schema"] != 1:
+        raise SystemExit("Rust asset budget report has an unknown schema")
+    if any(type(item) is not int or item <= 0 for item in value.values()):
+        raise SystemExit("Rust asset budget report has an invalid domain value")
+    return value
 
 
 def content_security_policy() -> str:
@@ -101,50 +218,89 @@ def validate_index_policy(index: pathlib.Path) -> None:
         raise SystemExit("browser index content-security policy differs from HostPolicy source")
 
 
+def served_directory(result: subprocess.CompletedProcess[str], expected: pathlib.Path, *,
+                     cwd: pathlib.Path) -> pathlib.Path:
+    """Admit one absolute directory report with the expected filesystem identity.
+
+    Rust canonicalization and Python paths can name the same Windows directory
+    with different namespace spelling. Native stat proves the directory type;
+    samefile compares actual filesystem identity, including every alias, rather
+    than text or equal contents. No relative report or distinct tree admits.
+    Native stat errors retain their original type, path and cause. Rejections
+    retain the successful child's full streams before propagating that error.
+    """
+    try:
+        reports = result.stdout.splitlines()
+        if len(reports) != 1 or not reports[0]:
+            raise ValueError("Rust browser build must report exactly one directory")
+        served = pathlib.Path(reports[0])
+        if not served.is_absolute():
+            raise ValueError("Rust browser build reports a relative directory")
+        is_directory = stat.S_ISDIR(served.stat().st_mode)
+        if not is_directory:
+            raise ValueError("Rust browser build reports a non-directory")
+        samefile = served.samefile(expected)
+        if not samefile:
+            raise ValueError("Rust browser build reports a different served directory")
+    except (OSError, ValueError):
+        _subprocess_diagnostics("browser build report rejected", result.args, cwd, result.returncode,
+                                result.stdout, result.stderr, expected=str(expected))
+        raise
+    receipt = {"reported": str(served), "expected": str(expected),
+               "is_directory": is_directory, "samefile": samefile}
+    stream = sys.stderr.buffer
+    stream.write(("browser served directory: " + json.dumps(receipt, ensure_ascii=False) + "\n").encode("utf-8"))
+    stream.flush()
+    return served
+
+
 def build() -> None:
-    cargo(["build", "--locked", "-p", "metis-web", "--target", "wasm32-unknown-unknown", "--release"])
+    """The Rust CLI owns compilation, generation, staging and its inventory."""
+    validate_index_policy(SOURCE / "index.html")
+    distribution = OUTPUT.parent / "browser-distribution"
+    with isolated_cargo(ROOT) as (directory, environment):
+        environment["WASM_BINDGEN"] = wasm_bindgen()
+        result = run([str(compile_tool().executable), "build", str(ROOT / ".config" / "browser" / "metis.json"),
+                                 str(distribution)], cwd=directory, env=environment,
+                                text=True, capture_output=True, timeout=300)
+        served = served_directory(result, distribution / "app", cwd=directory)
     OUTPUT.mkdir(parents=True, exist_ok=True)
-    run([wasm_bindgen(), str(wasm_artifact()), "--target", "web", "--out-dir", str(OUTPUT)])
-    index = SOURCE / "index.html"
-    validate_index_policy(index)
-    shutil.copy2(index, OUTPUT / "index.html")
-    for asset in ("styles.css", "bootstrap.js"):
-        shutil.copy2(SOURCE / asset, OUTPUT / asset)
-    for source in sorted(SOURCE.rglob("*")):
-        if not source.is_file() or source.name in {"index.html", "styles.css", "bootstrap.js"}:
-            continue
-        destination = OUTPUT / source.relative_to(SOURCE)
-        destination.parent.mkdir(parents=True, exist_ok=True)
-        shutil.copy2(source, destination)
-    required = (
-        OUTPUT / "index.html",
-        OUTPUT / "styles.css",
-        OUTPUT / "bootstrap.js",
-        OUTPUT / "metis_web.js",
-        OUTPUT / "metis_web_bg.wasm",
-        OUTPUT / "assets" / "metis-mark.png",
-        OUTPUT / "assets" / "metis-mark.ico",
-        OUTPUT / "assets" / "metis-mark.svg",
-    )
-    missing = [str(path) for path in required if not path.is_file()]
+    # Preserve the diagnostic server's public output path. Admission and the
+    # build inventory belong to the Rust producer; diagnostics copy its bytes.
+    shutil.copytree(served, OUTPUT, dirs_exist_ok=True)
+    required = ("index.html", "styles.css", "bootstrap.js", "metis_web.js", "metis_web_bg.wasm",
+                "assets/metis-mark.png", "assets/metis-mark.ico", "assets/metis-mark.svg")
+    missing = [name for name in required if not (OUTPUT / name).is_file()]
     if missing:
-        raise SystemExit(f"browser build did not produce required artifacts: {', '.join(missing)}")
+        raise SystemExit(f"Rust browser build omits required artifacts: {missing}")
 
 
 def main() -> None:
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("command", choices=("build",))
-    parser.add_argument(
+    commands = parser.add_subparsers(dest="command", required=True)
+    commands.add_parser("tool", help="Compile the CLI prerequisite and retain its artifact evidence")
+    build_command = commands.add_parser("build", help="Build the browser application")
+    build_command.add_argument(
         "--consumer-package",
         type=pathlib.Path,
         help="Include a bounded wasm-bindgen consumer package for the supplied gallery",
     )
-    parser.add_argument(
+    build_command.add_argument(
         "--consumer-gallery",
         type=pathlib.Path,
         help="Include a consumer gallery directory containing gallery.html, gallery.js and gallery.css",
     )
     args = parser.parse_args()
+    if args.command == "tool":
+        tool = compile_tool()
+        _compiler_streams(tool.compiler_stdout, tool.compiler_stderr)
+        print(json.dumps({"schema": 1, "executable": str(tool.executable),
+                          "executable_sha256": tool.executable_sha256,
+                          "compiler_artifact": json.loads(tool.artifact_json),
+                          "cargo_argv": tool.cargo_argv, "cargo_cwd": str(tool.cargo_cwd),
+                          "rustup_toolchain": tool.rustup_toolchain, "lock_sha256": tool.lock_sha256,
+                          "source_root": str(ROOT.resolve())}))
+        return
     if args.command == "build":
         build()
         if (args.consumer_package is None) != (args.consumer_gallery is None):
@@ -162,7 +318,7 @@ def package_consumer(package: pathlib.Path, gallery: pathlib.Path) -> None:
     if len(package_entries) != 2 or len(modules) != 2 or {path.suffix for path in modules} != {".js", ".wasm"}:
         raise SystemExit("consumer package must contain exactly one JavaScript and one WebAssembly module")
     for source in modules:
-        if source.is_symlink() or source.stat().st_size > MAX_CONSUMER_MODULE_BYTES:
+        if source.is_symlink() or source.stat().st_size > asset_budgets()["module_bytes"]:
             raise SystemExit(f"consumer package contains an invalid or oversized file: {source}")
     wasm = next(source for source in modules if source.suffix == ".wasm")
     with wasm.open("rb") as module:
@@ -190,4 +346,7 @@ def package_consumer(package: pathlib.Path, gallery: pathlib.Path) -> None:
 
 
 if __name__ == "__main__":
-    main()
+    try:
+        main()
+    except subprocess.CalledProcessError as error:
+        terminate(error.returncode)

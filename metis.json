@@ -44,5 +44,9 @@
     "60",
     "2",
     "0.2"
-  ]
+  ],
+  "embedded_module": {
+    "package": "metis-web",
+    "platform": "windows"
+  }
 }

@@ -43,7 +43,7 @@ def record(observation: InputObservation) -> dict[str, Any]:
     if observation.text_supplied:
         mechanisms.append("Win32 SendInput KEYEVENTF_UNICODE")
     if observation.shortcut is not None:
-        mechanisms.append("Win32 SendInput virtual key")
+        mechanisms.append("Win32 SendInput KEYEVENTF_SCANCODE")
     if observation.click is not None:
         mechanisms.append("Win32 SendInput MOUSEEVENTF_ABSOLUTE")
     return {

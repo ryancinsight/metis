@@ -31,7 +31,7 @@ pub(super) fn run(application: &WebApplication, root: &Path, mode: DevMode) -> R
         .then(|| watcher::Watcher::new(root))
         .transpose()?;
     let mut baseline = snapshot(root)?;
-    let mut child = process::spawn(&program, &[], Containment::Required)?;
+    let mut child = process::spawn(&program, &[], Containment::Required, &[], None)?;
     eprintln!("metis dev: {} in a macOS WebKit window", application.name);
     loop {
         if let Some(status) = child.wait_timeout(OBSERVATION)? {
@@ -66,6 +66,8 @@ pub(super) fn run(application: &WebApplication, root: &Path, mode: DevMode) -> R
                     &apple::program(&bundle, Target::Desktop),
                     &[],
                     Containment::Required,
+                    &[],
+                    None,
                 )?;
                 eprintln!("metis dev: rebuilt; reopened the window");
             }

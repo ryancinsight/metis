@@ -1,30 +1,19 @@
 //! Browser applications: a WebAssembly module, its generated loader and the page.
-use super::{CARGO_BUILD_DEADLINE, FileRecord, absolute_output, artifacts, copy, digest_file};
-use crate::{
-    Result,
-    manifest::{self, WebApplication},
-    process, tree,
-};
+use super::{FileRecord, absolute_output, copy, digest_file};
+use crate::{Result, manifest::WebApplication, tree};
 use serde::{Deserialize, Serialize};
 use std::{
-    ffi::OsString,
     fs,
     io::Write,
     path::{Path, PathBuf},
-    time::Duration,
 };
 
-/// Output directory beside the manifest when none is named, as in Trunk.
+/// Output directory beneath the selected application root when none is named.
 const DEFAULT_OUTPUT: &str = "dist";
 /// The served tree, parallel to a native build's `app/`.
 const SERVED: &str = "app";
 const INVENTORY: &str = "inventory.json";
 const INVENTORY_KIND: &str = "browser";
-const WASM_TARGET: &str = "wasm32-unknown-unknown";
-const METADATA_DEADLINE: Duration = Duration::from_mins(1);
-const BINDGEN_DEADLINE: Duration = Duration::from_mins(5);
-const VERSION_DEADLINE: Duration = Duration::from_secs(30);
-
 #[derive(Serialize)]
 struct Inventory<'application> {
     schema: u32,
@@ -42,7 +31,7 @@ struct Marker {
 
 /// Builds `application` and returns the directory to serve.
 ///
-/// `output` defaults to `dist` beside the manifest. An existing output is
+/// `output` defaults to `dist` beneath the selected application root. An existing output is
 /// replaced only when its inventory records a previous browser build, so a
 /// build never erases a directory it did not create.
 pub(crate) fn application(
@@ -50,60 +39,19 @@ pub(crate) fn application(
     root: &Path,
     output: Option<&Path>,
 ) -> Result<PathBuf> {
-    let cargo_manifest = manifest::source(root, &application.cargo_manifest)?;
+    let cargo_manifest = metis_core::embedded_assets::source(root, &application.cargo_manifest)?;
     let pages = page_files(&root.join(&application.frontend.directory))?;
     let output = match output {
         Some(path) => absolute_output(path)?,
         None => root.join(DEFAULT_OUTPUT),
     };
-    let cargo = process::tool("cargo")?;
-    let manifest_path = cargo_manifest.into_os_string();
-    let metadata = process::capture(
-        &cargo,
-        &arguments(
-            &[
-                "metadata",
-                "--format-version=1",
-                "--locked",
-                "--filter-platform",
-                WASM_TARGET,
-            ],
-            &manifest_path,
-        ),
-        METADATA_DEADLINE,
-        &[],
-    )?;
-    let target = artifacts::module_target(&metadata, &application.frontend.package)?;
-    let bindgen = wasm_bindgen(&target.bindgen_version)?;
-    let mut build = arguments(
-        &[
-            "build",
-            "--release",
-            "--locked",
-            "--message-format=json-render-diagnostics",
-        ],
-        &manifest_path,
-    );
-    build.extend(
-        [
-            "--target",
-            WASM_TARGET,
-            "--package",
-            &application.frontend.package,
-            "--lib",
-        ]
-        .map(OsString::from),
-    );
-    let messages = process::capture(&cargo, &build, CARGO_BUILD_DEADLINE, &[])?;
-    let module = artifacts::module(&messages, &target)?;
+    let compilation = super::module::resolve(&cargo_manifest, &application.frontend.package)?
+        .compile(&cargo_manifest)?;
     clear(&output)?;
     fs::create_dir(&output)?;
     let served = output.join(SERVED);
     fs::create_dir(&served)?;
-    let mut generate = vec![module.into_os_string()];
-    generate.extend(["--target", "web", "--no-typescript", "--out-dir"].map(OsString::from));
-    generate.push(served.clone().into_os_string());
-    process::run(&bindgen, &generate, BINDGEN_DEADLINE)?;
+    compilation.generate(&served)?;
     let mut files = Vec::new();
     let mut total = 0_u64;
     for path in tree::regular_files(&served, |_| false)? {
@@ -144,23 +92,16 @@ pub(crate) fn application(
     Ok(served)
 }
 
-fn arguments(leading: &[&str], manifest_path: &OsString) -> Vec<OsString> {
-    let mut arguments: Vec<OsString> = leading.iter().map(OsString::from).collect();
-    arguments.push("--manifest-path".into());
-    arguments.push(manifest_path.clone());
-    arguments
-}
-
 /// The page's files with their served names; the page must have an `index.html`.
 fn page_files(directory: &Path) -> Result<Vec<(PathBuf, String)>> {
     let metadata = fs::symlink_metadata(directory)?;
-    if !metadata.is_dir() || manifest::linked(&metadata) {
+    if !metadata.is_dir() || metis_core::embedded_assets::linked(&metadata) {
         return Err("frontend directory must be a directory, not a link".into());
     }
     let mut pages = Vec::new();
     for path in tree::regular_files(directory, |_| false)? {
         let name = tree::relative_name(directory, &path)?;
-        manifest::relative(&name)?;
+        metis_core::embedded_assets::relative(&name)?;
         pages.push((path, name));
     }
     if !pages.iter().any(|(_, name)| name == "index.html") {
@@ -176,7 +117,7 @@ fn clear(output: &Path) -> Result<()> {
         Err(error) if error.kind() == std::io::ErrorKind::NotFound => return Ok(()),
         Err(error) => return Err(error.into()),
     };
-    let previous = metadata.is_dir() && !manifest::linked(&metadata) && {
+    let previous = metadata.is_dir() && !metis_core::embedded_assets::linked(&metadata) && {
         let inventory = fs::read(output.join(INVENTORY)).ok();
         inventory
             .and_then(|bytes| serde_json::from_slice::<Marker>(&bytes).ok())
@@ -191,28 +132,4 @@ fn clear(output: &Path) -> Result<()> {
     }
     fs::remove_dir_all(output)?;
     Ok(())
-}
-
-/// The `wasm-bindgen` CLI: `WASM_BINDGEN` when set, else the one on `PATH`.
-///
-/// Its version must equal the locked `wasm-bindgen` crate's, because the
-/// generated loader and the crate's embedded schema change together.
-fn wasm_bindgen(version: &str) -> Result<PathBuf> {
-    let program = match std::env::var_os("WASM_BINDGEN") {
-        Some(path) => PathBuf::from(path),
-        None => process::tool("wasm-bindgen")?,
-    };
-    let reported = process::capture(&program, &["--version".into()], VERSION_DEADLINE, &[])?;
-    let reported = String::from_utf8(reported)?;
-    if reported.trim() != format!("wasm-bindgen {version}") {
-        return Err(format!(
-            "the locked wasm-bindgen crate needs wasm-bindgen {version}, but {} reports {:?}; \
-             install it with `cargo install wasm-bindgen-cli --version {version} --locked` \
-             or set WASM_BINDGEN to its path",
-            program.display(),
-            reported.trim()
-        )
-        .into());
-    }
-    Ok(program)
 }

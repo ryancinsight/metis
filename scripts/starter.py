@@ -9,7 +9,6 @@ from __future__ import annotations
 
 import argparse
 import contextlib
-import json
 import pathlib
 import queue
 import subprocess
@@ -40,20 +39,6 @@ COLOR_SCHEMES = {"light": "--blink-settings=preferredColorScheme=1",
 def expected_greeting(name: str) -> str:
     """The reply `metis_starter::greet` returns; its doctest pins the wording."""
     return f"Hello, {name}! You've been greeted from Rust!"
-
-
-def metis_command() -> pathlib.Path:
-    """Build the `metis` command against the committed lock and return its path."""
-    browser.cargo(["build", "--locked", "-p", "metis-cli"])
-    metadata = browser.cargo(
-        ["metadata", "--no-deps", "--format-version", "1", "--locked"],
-        timeout=30, capture_output=True, text=True,
-    )
-    target = pathlib.Path(json.loads(metadata.stdout)["target_directory"])
-    command = target / "debug" / ("metis.exe" if sys.platform == "win32" else "metis")
-    if not command.is_file():
-        raise BrowserRuntimeError(f"Cargo did not produce the metis command: {command}")
-    return command
 
 
 @contextlib.contextmanager
@@ -117,7 +102,7 @@ def check(driver_url: str, capture: pathlib.Path | None, browser_name: str,
     `color_scheme` pins light or dark rendering so a capture does not follow
     the host's theme; unset, the browser uses the operating system's.
     """
-    with served(metis_command()) as url:
+    with served(browser.compile_tool().executable) as url:
         client = WebDriverClient(driver_url, 30)
         switches = (COLOR_SCHEMES[color_scheme],) if color_scheme else ()
         client.create_session(browser_name, 1000, headless=True, chromium_arguments=switches)

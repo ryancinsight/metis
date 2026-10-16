@@ -96,7 +96,7 @@ fn nine_forged_principals_do_not_occupy_launcher_session() {
             .expect("session response");
         assert_eq!(status(&response), 403);
         let error = ErrorResponsePayload::decode(response_body(&response)).expect("typed error");
-        assert_eq!(error.error_code, ErrorCode::InvalidPrincipal as u16);
+        assert_eq!(error.error_code, ErrorCode::InvalidPrincipal.to_wire());
     }
     let response = runtime
         .block_on(request(
@@ -353,7 +353,7 @@ fn session_binds_to_the_supplied_principal_not_a_constant() {
     };
     assert_eq!(status(constant), 403);
     let error = ErrorResponsePayload::decode(response_body(constant)).expect("typed error");
-    assert_eq!(error.error_code, ErrorCode::InvalidPrincipal as u16);
+    assert_eq!(error.error_code, ErrorCode::InvalidPrincipal.to_wire());
     assert_eq!(status(bound), 200);
     let token = HandshakeResponsePayload::decode(response_body(bound))
         .expect("typed handshake")
@@ -387,7 +387,7 @@ fn fragment_with_foreign_principal_is_unauthenticated_despite_a_live_session() {
     assert_eq!(status(session), 200);
     assert_eq!(status(fragment), 401);
     let error = ErrorResponsePayload::decode(response_body(fragment)).expect("typed error");
-    assert_eq!(error.error_code, ErrorCode::MissingCapability as u16);
+    assert_eq!(error.error_code, ErrorCode::MissingCapability.to_wire());
 }
 
 #[test]

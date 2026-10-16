@@ -3,6 +3,7 @@
 #![deny(unsafe_code)]
 #![doc = include_str!("../README.md")]
 
+pub mod embedded;
 pub mod theme;
 
 #[cfg(any(target_arch = "wasm32", test))]

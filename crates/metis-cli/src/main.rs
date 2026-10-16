@@ -8,6 +8,8 @@ mod init;
 mod manifest;
 mod process;
 mod serve;
+#[cfg(test)]
+mod test_support;
 mod tree;
 #[cfg(windows)]
 #[expect(
@@ -23,12 +25,26 @@ use std::{ffi::OsString, path::Path};
 type Result<T> = std::result::Result<T, Box<dyn std::error::Error>>;
 
 fn main() -> Result<()> {
+    // This process owns its subscriber; command data stays on stdout.
+    tracing_subscriber::fmt()
+        .with_writer(std::io::stderr)
+        .without_time()
+        .try_init()
+        // Condition 1: the provider returns an erased error whose concrete
+        // type is unknown at this cold process reporting boundary.
+        .map_err(|error| -> Box<dyn std::error::Error> { error })?;
     let args: Vec<_> = std::env::args_os().skip(1).collect();
     if args.is_empty() || args.as_slice() == ["--help"] || args.as_slice() == ["-h"] {
         print!("{}", commands::help());
         return Ok(());
     }
     match args.first().and_then(|value| value.to_str()) {
+        Some("asset-budgets") => {
+            if args.len() != 1 {
+                return Err(usage_error("asset-budgets takes no arguments"));
+            }
+            commands::asset_budgets::write(std::io::stdout().lock())
+        }
         Some("init") => {
             if args.len() != 2 {
                 return Err(usage_error("init requires exactly one DIRECTORY"));
@@ -63,12 +79,7 @@ fn main() -> Result<()> {
             build::uninstall(application_id, Path::new(prefix))
         }
         Some("build") => {
-            let (manifest, output) = match &args[1..] {
-                [] => (Path::new(DEFAULT_MANIFEST), None),
-                [manifest] => (Path::new(manifest), None),
-                [manifest, output] => (Path::new(manifest), Some(Path::new(output))),
-                _ => return Err(usage_error("build takes at most MANIFEST and OUTPUT")),
-            };
+            let (manifest, output) = commands::arguments::manifest_output(&args[1..], "build")?;
             match Manifest::read(manifest)? {
                 (Manifest::Native(application), root) => {
                     let output = output.ok_or_else(|| {
@@ -82,6 +93,14 @@ fn main() -> Result<()> {
                     Ok(())
                 }
             }
+        }
+        Some("prepare") => {
+            let (manifest, output) = commands::arguments::manifest_output(&args[1..], "prepare")?;
+            let (application, root) = Application::read(manifest)?;
+            let preparation = build::prepare::application(&application, &root, output)?
+                .ok_or("native manifest omits embedded_module")?;
+            println!("{}", preparation.inventory_path.display());
+            Ok(())
         }
         Some("package") => {
             let [_, input, output] = args.as_slice() else {

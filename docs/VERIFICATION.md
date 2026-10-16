@@ -359,8 +359,11 @@ The four PNGs are committed beside the manual:
 [`webview-form.png`](manual/images/webview-form.png) and
 [`webview-form-success.png`](manual/images/webview-form-success.png). The
 supervisor's runtime environment policy clears the child environment and admits
-only nine operating-system path variables needed by WebView2; application
-settings, registry tokens and the `github-cli` environment name are not passed.
+the nine operating-system path variables needed by WebView2 and the one
+explicit private startup-observation selector. The latter is opaque transport
+to the provider's bounded validation; an absent selector remains absent.
+Application settings, registry tokens and the `github-cli` environment name are
+not passed. Isolated children receive no inherited values.
 The focused regression test verifies that a runtime child has no `PATH` and that
 the allowlist does not contain `github-cli`. The capture parent and child were
 closed after each workflow. This evidence does not establish physical

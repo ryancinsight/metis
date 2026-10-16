@@ -5,6 +5,10 @@ resources. The CLI emits a portable `app/` directory, an inventory of SHA-256
 hashes and, with `package`, a package for the matching host. Application versions
 are independent of the Métis framework version.
 
+On Windows, a declared `embedded_module` is prepared before native Cargo
+compilation. See the [Rust page preparation contract](../../crates/metis-app/src/frontend/webview/manual.md)
+for `metis prepare`, direct Cargo prerequisites and canonical asset-budget JSON.
+
 ## Configure and build
 
 The repository [metis.json](../../metis.json) is a runnable configuration for the
@@ -13,7 +17,10 @@ manufacturer and version for your own application. Generate one uppercase braced
 upgrade GUID for that identity and retain it. Declare every binary and resource;
 the demonstration declares only `metis-app`. Additional declared binaries are
 optional sidecars, not mandatory frontend/backend components. There is no
-recursive asset scan. Paths are relative to the manifest directory.
+recursive asset scan. Optional `application_root` selects a bounded portable locator
+relative to the manifest directory, with explicit `..` ancestors; omission retains
+canonical-parent resolution. Explicit roots must exist, be unlinked and contain
+the unlinked manifest. Cargo and payload paths stay canonical within that root.
 
 On Windows x64, use the pinned Rust toolchain and an ordinary Cargo workspace:
 
@@ -151,7 +158,7 @@ Start a live development session on any host:
 metis dev .\sample-app\metis.json --watch
 ```
 
-On Windows the watcher observes the manifest directory through a bounded
+On Windows the watcher observes the application root through a bounded
 native change-notification handle. Other hosts poll a metadata fingerprint —
 relative path, size and modification time — of the same bounded file tree
 every 250 ms. Either signal only prompts a check: the loop then hashes regular
@@ -164,9 +171,9 @@ trigger a reload loop. If the manifest or source does not parse, or Cargo
 returns a failure status, the diagnostic is shown and no previously built
 executable is launched. Fix the input and save it again to retry. `--once` has
 a 300-second process deadline. The Windows child runs in a contained job;
-other hosts run it uncontained until Moirai provides their containment. Watch
-mode prints a
-readiness line before the first build, an idle line after each generation and a
+other hosts run it uncontained until Moirai provides their containment.
+A native watch session rejects a changed application root before compilation.
+Watch mode prints a readiness line before the first build, an idle line after each generation and a
 reload line for every accepted source or resource change.
 
 Generate completions from the same command descriptions used by `--help`:
@@ -221,7 +228,7 @@ Either command reads `./metis.json` unless a manifest path is given. `build`
 compiles the package with `--release --locked --target wasm32-unknown-unknown`,
 runs the `wasm-bindgen` CLI with `--target web --no-typescript`, copies the page
 beside the generated loader, and writes `dist/app` and `dist/inventory.json`
-beside the manifest; `metis build MANIFEST OUTPUT` chooses another output. A
+under the application root; `metis build MANIFEST OUTPUT` chooses another output. A
 page file named like a generated file is an error. The CLI's version must equal
 the `wasm-bindgen` crate the package's locked dependency graph resolves, because
 the loader and the crate's embedded schema change together: `WASM_BINDGEN`
@@ -253,9 +260,11 @@ domain reserved by RFC 2606, so it cannot shadow a real site), so the page
 loads as a secure origin: its modules, WebAssembly and `default-src 'self'`
 policy behave as they do under `metis serve`, which a `file:///` page does not
 allow. Navigation is confined to that host. With `--watch`, a change under the
-manifest directory, `dist/` excluded, rebuilds the page and reloads the window;
+application root, `dist/` excluded, rebuilds the page and reloads the window;
 a failed compile is reported and the previous page stays. Closing the window
 ends the command. Without `--watch` the window runs until closed.
+
+The [workbench configuration](../../.config/browser/metis.json) selects its workspace with `"application_root": "../.."`.
 
 ## Run the portable application
 

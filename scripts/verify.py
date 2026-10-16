@@ -282,12 +282,15 @@ def run_gate():
             for path, value in sorted(profiles.items())
         ) + "\n", encoding="utf-8")
 
-        def execute(name, args, seconds=300, *, cwd=cargo_directory, expected_exit=0, required_diagnostic=None):
-            return run(name, args, cwd=cwd, environment=environment, seconds=seconds,
+        native_inventory = None
+        def execute(name, args, seconds=300, *, cwd=cargo_directory, expected_exit=0, required_diagnostic=None, command_environment=None):
+            return run(name, args, cwd=cwd, environment=command_environment or environment, seconds=seconds,
                        expected_exit=expected_exit, required_diagnostic=required_diagnostic)
 
         def cargo(name, args, *, resolve=True, tail=()):
-            return execute(name, command(args, resolve=resolve, tail=tail))
+            compiles = args[0] in ("build", "check", "clippy", "doc") or args[:2] == ["nextest", "archive"]
+            scoped = environment | {"METIS_WEBVIEW_ASSET_INVENTORY": str(native_inventory)} if native_inventory and compiles and "wasm32-unknown-unknown" not in args else environment
+            return execute(name, command(args, resolve=resolve, tail=tail), command_environment=scoped)
 
         host = next(line.split(": ", 1)[1] for line in execute(
             "compiler", ["rustup", "run", TOOLCHAIN, "rustc", "-vV"]
@@ -372,7 +375,10 @@ def run_gate():
                                   "check", "advisories", "bans", "licenses", "sources"],
                 seconds=180, cwd=ROOT)
         cargo("format", ["fmt", "--all", "--check"], resolve=False)
-        execute("visual-tests", [sys.executable, "-m", "unittest", "discover", "-s", "scripts/tests"], seconds=60, cwd=ROOT)
+        # The compiled CLI produces the Rust limits consumed by gallery tests.
+        # Keep producer construction before consumers, with its own build bound.
+        execute("browser-tool", [sys.executable, str(ROOT / "scripts" / "browser.py"), "tool"], seconds=300, cwd=ROOT)
+        execute("visual-tests", [sys.executable, "-m", "scripts.verification.suite", "discover", "-s", "scripts/tests", "-v"], seconds=60, cwd=ROOT)
         execute("plan", [sys.executable, str(ROOT / "scripts" / "plan.py"), "check"], seconds=60, cwd=ROOT)
         # Compile the browser host in the same locked gate; runtime evidence is
         # collected by scripts/browser.py and the manual browser trace.
@@ -381,46 +387,39 @@ def run_gate():
                                  "-p", "metis-web", "-p", "metis-starter"])
         execute("browser-assets", [sys.executable, str(ROOT / "scripts" / "browser.py"), "build"],
                 seconds=300, cwd=ROOT)
+        if sys.platform == "win32":
+            from verification import windows
+            native_inventory = windows.prepare(execute, command, ROOT, OUTPUT, run_nonce)
         cargo("clippy", ["clippy", "--workspace", "--all-targets"], tail=["--", "-D", "warnings"])
-        cargo("build", ["build", "--workspace", "--bins", "--examples"])
+        native_build = cargo("build", ["build", "--workspace", "--bins", "--examples", "--message-format=json-render-diagnostics"])
         native_image = pathlib.Path(metadata["target_directory"]) / "debug" / "examples" / (
             "native_image" + (".exe" if sys.platform == "win32" else "")
         )
         execute("native-image", [str(native_image)], seconds=60, cwd=ROOT)
-        native_capture = pathlib.Path(metadata["target_directory"]) / "debug" / "examples" / (
-            "native_host_capture" + (".exe" if sys.platform == "win32" else "")
-        )
         if sys.platform == "win32":
-            native_output = output_path("native-host")
-            execute(
-                "native-host-capture",
-                [
-                    str(native_capture),
-                    "--output",
-                    str(native_output),
-                    "--source-revision",
-                    revision,
-                ],
-                seconds=60,
-                cwd=ROOT,
-            )
-            native_trace_path = native_output / "native-host-trace.json"
-            if not native_trace_path.is_file():
-                raise SystemExit("native-host-capture did not emit its execution trace")
-            native_trace = json.loads(native_trace_path.read_text(encoding="utf-8"))
-            if native_trace.get("source_revision") != revision or native_trace.get("host_result") != "ok":
-                raise SystemExit("native-host-capture trace is not tied to the verified revision")
-            EVIDENCE["native_host"] = native_trace
+            native_archive = windows.archive.create(cargo, execute, ROOT, cargo_directory / "native-tests", OUTPUT, TOOLCHAIN, release=False)
+            EVIDENCE["test_archives"] = {"debug": native_archive.identity}
+            EVIDENCE.update(windows.acceptance(execute, ROOT, OUTPUT, metadata, revision,
+                                             run_nonce, native_build, native_inventory, native_archive.fixture))
+            EVIDENCE["host_capabilities"].update(focus_order="observed OS/UIA", accessibility_tree="observed UIA", pointer_dispatch="observed SendInput")
         else:
             EVIDENCE["stages"]["native-host-capture"] = "skipped: Windows-only host"
-        cargo("tests", ["nextest", "run", "--workspace", "--profile", "ci"])
+        if sys.platform == "win32":
+            windows.archive.run(execute, native_archive, TOOLCHAIN, release=False)
+        else:
+            cargo("tests", ["nextest", "run", "--workspace", "--profile", "ci"])
         execute("python-binding", [sys.executable, str(ROOT / "scripts" / "python_binding.py")], seconds=720, cwd=ROOT)
         cargo("release-build", ["build", "--workspace", "--bins", "--release"])
         distribution_tool = pathlib.Path(metadata["target_directory"]) / "release" / "metis.exe"
         execute("distribution", [sys.executable, str(ROOT / "scripts" / "distribution.py"),
                                  "--tool", str(distribution_tool), "--output", str(OUTPUT / "distribution"),
                                  *(["--install"] if arguments.install else [])], seconds=720)
-        cargo("release-tests", ["nextest", "run", "--workspace", "--release", "--profile", "ci"])
+        if sys.platform == "win32":
+            release_archive = windows.archive.create(cargo, execute, ROOT, cargo_directory / "native-tests", OUTPUT, TOOLCHAIN, release=True)
+            EVIDENCE["test_archives"]["release"] = release_archive.identity
+            windows.archive.run(execute, release_archive, TOOLCHAIN, release=True)
+        else:
+            cargo("release-tests", ["nextest", "run", "--workspace", "--release", "--profile", "ci"])
         # Benchmarks are local measurement instruments, so the gate proves only
         # that every bench builds and executes one iteration. Timing runs and
         # their stored baselines stay on the controlled local machine class.

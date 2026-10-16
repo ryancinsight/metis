@@ -6,7 +6,7 @@ use std::fmt;
 ///
 /// The set is non-exhaustive so future releases can add typed failures without
 /// requiring downstream match arms.
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, bytemuck::NoUninit)]
 #[repr(u16)]
 #[non_exhaustive]
 pub enum ErrorCode {
@@ -112,6 +112,20 @@ pub enum ErrorCode {
 }
 
 impl ErrorCode {
+    /// Returns the exact protocol discriminant guaranteed by `repr(u16)`.
+    ///
+    /// The fieldless representation has exactly two initialized bytes. Derived
+    /// [`bytemuck::NoUninit`] verifies that source contract, and the destination
+    /// permits every bit pattern. [`bytemuck::must_cast`] proves equal sizes at
+    /// compile time and copies the native representation without runtime checks,
+    /// allocation or precision changes. Only valid enum values flow outward;
+    /// [`Self::from_wire`] still rejects every undeclared incoming discriminant.
+    #[must_use]
+    #[inline]
+    pub const fn to_wire(self) -> u16 {
+        bytemuck::must_cast(self)
+    }
+
     /// Resolves a known wire or persistence discriminant.
     #[must_use]
     pub const fn from_wire(value: u16) -> Option<Self> {
@@ -303,7 +317,7 @@ impl fmt::Display for MetisError {
             f,
             "[{}:0x{:04X} | {}] {}",
             self.code.as_str(),
-            self.code as u16,
+            self.code.to_wire(),
             self.trace_id,
             self.message
         )
@@ -322,81 +336,4 @@ impl From<std::io::Error> for MetisError {
 pub type Result<T, E = MetisError> = std::result::Result<T, E>;
 
 #[cfg(test)]
-mod tests {
-    use super::{ErrorCode, MetisError, RedactedDiagnostic};
-
-    #[test]
-    fn debug_diagnostic_omits_untrusted_message_text() {
-        let error = MetisError::transport(
-            ErrorCode::TransportBroken,
-            "private path C:\\patients\\scan.bin",
-        );
-        assert_eq!(
-            error.redacted(),
-            RedactedDiagnostic {
-                code: ErrorCode::TransportBroken,
-                trace_id: "REQ-METIS-IPC-005",
-            }
-        );
-        let debug = format!("{error:?}");
-        assert!(debug.contains("TransportBroken"));
-        assert!(debug.contains("REQ-METIS-IPC-005"));
-        assert!(!debug.contains("scan.bin"));
-        assert!(format!("{error}").contains("scan.bin"));
-    }
-
-    #[test]
-    fn wire_codes_round_trip_and_reject_unknown_values() {
-        let codes = [
-            ErrorCode::MagicMismatch,
-            ErrorCode::VersionMismatch,
-            ErrorCode::ChecksumMismatch,
-            ErrorCode::PayloadTooLarge,
-            ErrorCode::FrameTruncated,
-            ErrorCode::UnexpectedMessageType,
-            ErrorCode::MalformedPayload,
-            ErrorCode::SequenceMismatch,
-            ErrorCode::ReplayDetected,
-            ErrorCode::MissingCapability,
-            ErrorCode::InvalidCapabilitySignature,
-            ErrorCode::CapabilityExpired,
-            ErrorCode::InsufficientScope,
-            ErrorCode::PrivilegeEscalationAttempt,
-            ErrorCode::InvalidPrincipal,
-            ErrorCode::InvalidOrigin,
-            ErrorCode::InvalidWindow,
-            ErrorCode::NavigationDenied,
-            ErrorCode::InvalidPluginDescriptor,
-            ErrorCode::PluginAlreadyRegistered,
-            ErrorCode::PluginRegistryFull,
-            ErrorCode::PluginNotFound,
-            ErrorCode::PluginOperationNotFound,
-            ErrorCode::PermissionDenied,
-            ErrorCode::InvalidPatientWeight,
-            ErrorCode::InvalidDrugConcentration,
-            ErrorCode::InvalidTargetDose,
-            ErrorCode::RateExceedsSafetyEnvelope,
-            ErrorCode::PediatricRateExceeded,
-            ErrorCode::NumericInstability,
-            ErrorCode::ClinicalInterlockBlocked,
-            ErrorCode::TransportBroken,
-            ErrorCode::ConnectionClosed,
-            ErrorCode::Timeout,
-            ErrorCode::IoError,
-            ErrorCode::QueueFull,
-            ErrorCode::MalformedMarkup,
-            ErrorCode::UnclosedTag,
-            ErrorCode::TagMismatch,
-            ErrorCode::InvalidCssStyle,
-            ErrorCode::LayoutOverflow,
-            ErrorCode::RenderFailure,
-            ErrorCode::SurfaceAllocationError,
-            ErrorCode::UnsupportedPlatformEvent,
-        ];
-        for code in codes {
-            assert_eq!(ErrorCode::from_wire(code as u16), Some(code));
-        }
-        assert_eq!(ErrorCode::from_wire(0), None);
-        assert_eq!(ErrorCode::from_wire(u16::MAX), None);
-    }
-}
+mod tests;

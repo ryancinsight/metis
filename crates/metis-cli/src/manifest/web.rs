@@ -1,6 +1,7 @@
 //! A browser application: a static page and the package compiled for it.
-use super::{identifier, label, relative};
+use super::{identifier, label};
 use crate::Result;
+use metis_core::embedded_assets::relative;
 use serde::Deserialize;
 
 /// A `metis.json` for a page served to a browser.
@@ -11,9 +12,12 @@ use serde::Deserialize;
 #[serde(deny_unknown_fields)]
 pub(crate) struct WebApplication {
     pub(crate) schema: u32,
+    /// Explicit owner relative to the manifest directory; omission owns that directory.
+    #[serde(default, rename = "application_root")]
+    pub(crate) root: Option<String>,
     pub(crate) name: String,
     pub(crate) cargo_manifest: String,
-    /// Optional macOS shell icon, relative to the application manifest.
+    /// Optional macOS shell icon, relative to the application owner.
     #[serde(default)]
     pub(crate) icon: Option<String>,
     /// Exact HTTPS popup destinations granted by the signed Apple bundle.
@@ -40,6 +44,7 @@ impl WebApplication {
         if self.schema != 1 {
             return Err("unsupported application manifest schema".into());
         }
+        super::root::validate(self.root.as_deref())?;
         label(&self.name)?;
         relative(&self.cargo_manifest)?;
         identifier(&self.frontend.package)?;
@@ -53,7 +58,7 @@ impl WebApplication {
                 return Err("frontend application icon must be an ICNS file".into());
             }
         }
-        relative(&self.frontend.directory)
+        relative(&self.frontend.directory).map_err(Into::into)
     }
 }
 

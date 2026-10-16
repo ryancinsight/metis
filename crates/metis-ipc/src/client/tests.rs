@@ -89,7 +89,7 @@ fn target_capability_discovery_rejects_a_descriptor_version_mismatch() {
 #[test]
 fn target_capability_discovery_preserves_a_peer_rejection() {
     let rejection = ErrorResponsePayload {
-        error_code: ErrorCode::MissingCapability as u16,
+        error_code: ErrorCode::MissingCapability.to_wire(),
         message: ErrorCode::MissingCapability.as_str().to_owned(),
     };
     let error = decode_target_capability_response(
@@ -105,7 +105,7 @@ fn capability_discovery_rejects_an_unadvertised_host_operation() {
     let error = decode_capability_response(
         MessageType::ErrorResp,
         &ErrorResponsePayload {
-            error_code: ErrorCode::UnexpectedMessageType as u16,
+            error_code: ErrorCode::UnexpectedMessageType.to_wire(),
             message: ErrorCode::UnexpectedMessageType.as_str().to_owned(),
         }
         .encode()
@@ -115,7 +115,7 @@ fn capability_discovery_rejects_an_unadvertised_host_operation() {
     assert_eq!(
         error,
         CapabilityError::Remote(ErrorResponsePayload {
-            error_code: ErrorCode::UnexpectedMessageType as u16,
+            error_code: ErrorCode::UnexpectedMessageType.to_wire(),
             message: ErrorCode::UnexpectedMessageType.as_str().to_owned(),
         })
     );
@@ -178,7 +178,7 @@ fn plugin_invocation_preserves_a_typed_remote_rejection() {
     let request =
         PluginInvocationPayload::new(token, "viewer", "open", []).expect("plugin invocation");
     let rejection = ErrorResponsePayload {
-        error_code: ErrorCode::PluginNotFound as u16,
+        error_code: ErrorCode::PluginNotFound.to_wire(),
         message: ErrorCode::PluginNotFound.as_str().to_owned(),
     };
     peer.send_message(

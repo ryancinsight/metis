@@ -57,7 +57,7 @@ pub(crate) fn bmp_bytes(framebuffer: &Framebuffer) -> io::Result<Vec<u8>> {
 const PNG_SIGNATURE: [u8; 8] = [0x89, b'P', b'N', b'G', b'\r', b'\n', 0x1a, b'\n'];
 /// Bit depth, color type (6, RGBA), compression, filter and interlace methods
 /// of the header chunk: 8-bit straight RGBA, deflate, standard filters, no
-/// interlace. `scripts/visual.py` admits exactly this header.
+/// interlace. `scripts/visual_tools/codec.py` admits exactly this header.
 const PNG_LAYOUT: [u8; 5] = [8, 6, 0, 0, 0];
 /// DEFLATE level: the smallest output, for committed evidence.
 const PNG_DEFLATE_LEVEL: CompressionLevel = CompressionLevel(9);
@@ -67,7 +67,7 @@ const PNG_DEFLATE_LEVEL: CompressionLevel = CompressionLevel(9);
 /// Every row is written unfiltered (filter type 0): the renderer's flat fills
 /// and ramps compress best that way under DEFLATE (about 50 KB per 800 x 600
 /// form capture, against about 64 KB with adaptive filters), and the review
-/// decoder in `scripts/visual.py` admits exactly this encoding. The zlib
+/// decoder in `scripts/visual_tools/codec.py` admits exactly this encoding. The zlib
 /// stream and chunk CRCs come from Consus.
 pub(crate) fn png_bytes(framebuffer: &Framebuffer) -> io::Result<Vec<u8>> {
     let row_width =

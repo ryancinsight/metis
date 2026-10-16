@@ -20,13 +20,20 @@ serde_json.workspace = true
 moirai-async.workspace = true
 moirai-executor.workspace = true
 moirai-http.workspace = true
+tracing.workspace = true
 
 [target.'cfg(windows)'.dependencies]
 metis-platform.workspace = true
+metis-web.workspace = true
+tracing-subscriber = { workspace = true, features = ["json"] }
 
 [dev-dependencies]
+metis-web.workspace = true
 tracing.workspace = true
-tracing-subscriber.workspace = true
+tracing-subscriber = { workspace = true, features = ["json"] }
+
+[build-dependencies]
+metis-core.workspace = true
 
 [lints]
 workspace = true

@@ -65,23 +65,44 @@ class NativeInputCaptureTests(unittest.TestCase):
         self.assertEqual(parsed.shortcut, "control-enter")
         self.assertEqual(parsed.manifest, pathlib.Path("trace.json"))
 
-    def test_control_enter_shortcut_releases_modifier_after_enter(self) -> None:
-        events: list[tuple[int, bool]] = []
-        with patch.object(
-            keyboard,
-            "send_virtual_key",
-            side_effect=lambda virtual_key, *, key_up: events.append((virtual_key, key_up)),
+    def test_physical_records_preserve_scan_prefix_and_release_bits(self) -> None:
+        # MAPVK_VK_TO_VSC_EX encodes E0 in the high byte. KEYBDINPUT uses
+        # SCANCODE=8, EXTENDEDKEY=1 and KEYUP=2; wVk is ignored and stays zero.
+        for virtual_key, mapped, scan, flags in (
+            (0x41, 0x001E, 0x1E, 0x08),
+            (0x27, 0xE04D, 0x4D, 0x09),
+            (0x27, 0x004D, 0x4D, 0x08),
+            (0x11, 0x001D, 0x1D, 0x08),
+            (0x0D, 0x001C, 0x1C, 0x08),
         ):
-            keyboard.send_shortcut("control-enter")
-        self.assertEqual(
-            events,
-            [
-                (abi.VK_CONTROL, False),
-                (abi.VK_RETURN, False),
-                (abi.VK_RETURN, True),
-                (abi.VK_CONTROL, True),
-            ],
-        )
+            with self.subTest(virtual_key=virtual_key, mapped=mapped):
+                stroke = keyboard.PhysicalKey.from_mapping(virtual_key, mapped)
+                self.assertEqual((stroke.virtual_key, stroke.scan_code, stroke.extended),
+                                 (virtual_key, scan, flags == 0x09))
+                for key_up in (False, True):
+                    record = stroke.record(key_up=key_up)
+                    self.assertEqual((record.kind, record.keyboard.virtual_key,
+                                      record.keyboard.scan_code, record.keyboard.flags,
+                                      record.keyboard.time, record.keyboard.extra_info),
+                                     (1, 0, scan, flags | (2 if key_up else 0), 0, 0))
+
+    def test_physical_mapping_rejects_absent_scan_and_unsupported_prefix(self) -> None:
+        for mapped in (0, 0xE000, 0xE11D, 0xE21D, 0x1001E, -1):
+            with self.subTest(mapped=mapped), self.assertRaises(ValueError):
+                keyboard.PhysicalKey.from_mapping(0x41, mapped)
+
+    def test_physical_key_rejects_out_of_domain_record_fields(self) -> None:
+        for virtual_key, scan, extended in (
+            (0, 0x1E, False), (256, 0x1E, False), (True, 0x1E, False),
+            (0x41, 0, False), (0x41, 256, False), (0x41, True, False),
+            (0x41, 0x1E, 1),
+        ):
+            with self.subTest(fields=(virtual_key, scan, extended)), self.assertRaises((TypeError, ValueError)):
+                keyboard.PhysicalKey(virtual_key, scan, extended)
+        with self.assertRaises(TypeError):
+            keyboard.physical_keys((0x41,), recipient="focused")
+        with self.assertRaises(ValueError):
+            keyboard.physical_keys(())
 
     def test_mouse_input_keeps_the_64_bit_windows_abi_width(self) -> None:
         # LONG dx, LONG dy, DWORD mouseData, DWORD dwFlags, DWORD time, then

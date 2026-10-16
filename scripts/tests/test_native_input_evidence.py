@@ -21,12 +21,12 @@ class NativeInputEvidenceTests(unittest.TestCase):
         expected = {
             (False, False, False): "",
             (False, False, True): "Win32 SendInput MOUSEEVENTF_ABSOLUTE",
-            (False, True, False): "Win32 SendInput virtual key",
-            (False, True, True): "Win32 SendInput virtual key + Win32 SendInput MOUSEEVENTF_ABSOLUTE",
+            (False, True, False): "Win32 SendInput KEYEVENTF_SCANCODE",
+            (False, True, True): "Win32 SendInput KEYEVENTF_SCANCODE + Win32 SendInput MOUSEEVENTF_ABSOLUTE",
             (True, False, False): "Win32 SendInput KEYEVENTF_UNICODE",
             (True, False, True): "Win32 SendInput KEYEVENTF_UNICODE + Win32 SendInput MOUSEEVENTF_ABSOLUTE",
-            (True, True, False): "Win32 SendInput KEYEVENTF_UNICODE + Win32 SendInput virtual key",
-            (True, True, True): "Win32 SendInput KEYEVENTF_UNICODE + Win32 SendInput virtual key + Win32 SendInput MOUSEEVENTF_ABSOLUTE",
+            (True, True, False): "Win32 SendInput KEYEVENTF_UNICODE + Win32 SendInput KEYEVENTF_SCANCODE",
+            (True, True, True): "Win32 SendInput KEYEVENTF_UNICODE + Win32 SendInput KEYEVENTF_SCANCODE + Win32 SendInput MOUSEEVENTF_ABSOLUTE",
         }
         for text, shortcut, click in itertools.product((False, True), repeat=3):
             with self.subTest(text=text, shortcut=shortcut, click=click):

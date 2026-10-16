@@ -1,0 +1,10 @@
+{
+  "schema": 1,
+  "application_root": "../..",
+  "name": "Metis Browser",
+  "cargo_manifest": "Cargo.toml",
+  "frontend": {
+    "package": "metis-web",
+    "directory": "examples/browser"
+  }
+}

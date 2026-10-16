@@ -19,6 +19,7 @@ from native_input.windows import focus, keyboard, queue
 
 MAX_VALUE_BYTES = 128
 MAX_UIA_OUTPUT_BYTES = 256 * 1024
+MAX_UIA_NODES = 256
 UIA_TIMEOUT_SECONDS = 15
 UIA_POLL_MILLISECONDS = 25
 WEBVIEW2_FOCUS_PRIMER_TABS = 2
@@ -157,7 +158,7 @@ function Get-TreeRecord([System.Windows.Automation.AutomationElement] $root) {{
             keyboard_focusable = $_.Current.IsKeyboardFocusable
         }}
     }})
-    if ($records.Count -eq 0 -or $records.Count -gt 256) {{ throw 'bounded UI Automation tree is empty or oversized' }}
+    if ($records.Count -eq 0 -or $records.Count -gt {MAX_UIA_NODES}) {{ throw 'bounded UI Automation tree is empty or oversized' }}
     $records
 }}
 
@@ -238,9 +239,10 @@ def _prepare_surface(handle: int, surface: str) -> int:
     if surface != "webview2":
         raise ValueError(f"unsupported accessibility surface: {surface!r}")
     focus.focus_window(handle)
+    (tab,) = keyboard.physical_keys((0x09,))
     for _ in range(WEBVIEW2_FOCUS_PRIMER_TABS):
-        keyboard.send_virtual_key(0x09, key_up=False)
-        keyboard.send_virtual_key(0x09, key_up=True)
+        with tab.held():
+            pass
         queue.flush_window(handle)
     return WEBVIEW2_FOCUS_PRIMER_TABS
 

@@ -1,18 +1,13 @@
 //! Bounded build-tool lifecycle uses Moirai, including its Windows job ownership.
 use crate::Result;
-use moirai_core::executor::TaskSpawner;
-use moirai_executor::ExecutorBuilder;
 use moirai_transport::process::{
     ManagedProcess, ProcessDropPolicy, ProcessSpec, ProcessSupervisor,
 };
 use std::{
     ffi::OsString,
-    io::Read,
     path::{Path, PathBuf},
     time::Duration,
 };
-
-const CAPTURE_LIMIT: u64 = 16 * 1024 * 1024;
 
 #[derive(Clone, Copy)]
 pub(crate) enum Containment {
@@ -29,7 +24,7 @@ pub(crate) fn tool(name: &str) -> Result<PathBuf> {
 }
 
 pub(crate) fn run(program: &Path, args: &[OsString], timeout: Duration) -> Result<()> {
-    let mut child = spawn(program, args, Containment::Required)?;
+    let mut child = spawn(program, args, Containment::Required, &[], None)?;
     let Some(status) = child.wait_timeout(timeout)? else {
         child.terminate_timeout(Duration::from_secs(1))?;
         return Err(format!(
@@ -54,8 +49,17 @@ pub(crate) fn spawn(
     program: &Path,
     args: &[OsString],
     containment: Containment,
+    environment: &[(&str, OsString)],
+    working_directory: Option<&Path>,
 ) -> Result<ManagedProcess> {
-    let spec = ProcessSpec::new(program).args(args);
+    let spec = environment.iter().fold(
+        ProcessSpec::new(program).args(args),
+        |spec, (key, value)| spec.env(*key, value),
+    );
+    let spec = match working_directory {
+        Some(directory) => spec.working_directory(directory),
+        None => spec,
+    };
     let spec = match containment {
         Containment::Required => spec.tree_containment(),
         Containment::Uncontained => spec,
@@ -63,61 +67,6 @@ pub(crate) fn spawn(
     ProcessSupervisor::new()
         .spawn(spec, ProcessDropPolicy::TerminateOnDrop)
         .map_err(|error| start_error(program, &error))
-}
-
-pub(crate) fn capture(
-    program: &Path,
-    args: &[OsString],
-    timeout: Duration,
-    environment: &[(&str, OsString)],
-) -> Result<Vec<u8>> {
-    let mut executor = ExecutorBuilder::new()
-        .worker_threads(1)
-        .async_threads(1)
-        .build()?;
-    let result = (|| {
-        let mut child = ProcessSupervisor::new()
-            .spawn(
-                environment
-                    .iter()
-                    .fold(
-                        ProcessSpec::new(program).args(args),
-                        |spec, (key, value)| spec.env(*key, value),
-                    )
-                    .piped_stdio()
-                    .tree_containment(),
-                ProcessDropPolicy::TerminateOnDrop,
-            )
-            .map_err(|error| start_error(program, &error))?;
-        drop(child.take_stdin());
-        let stdout = child
-            .take_stdout()
-            .ok_or("process provider omitted stdout")?;
-        let reader = executor.spawn_blocking(move || {
-            let mut bytes = Vec::new();
-            stdout.take(CAPTURE_LIMIT + 1).read_to_end(&mut bytes)?;
-            Ok::<_, std::io::Error>(bytes)
-        })?;
-        let status = child.wait_timeout(timeout)?;
-        if status.is_none() {
-            child.terminate_timeout(Duration::from_secs(1))?;
-        }
-        // Closing the job before joining closes inherited descendant pipe ends.
-        drop(child);
-        let bytes = reader
-            .join()
-            .ok_or("build output reader lost its result")???;
-        let status = status.ok_or("build tool exceeded its finite deadline")?;
-        if bytes.len() as u64 > CAPTURE_LIMIT {
-            return Err("build output exceeds the 16 MiB capture budget".into());
-        }
-        if !status.exit_status().success() {
-            return Err(format!("build tool failed: {}", status.exit_status()).into());
-        }
-        Ok(bytes)
-    })();
-    executor.shutdown()?;
-    result
 }
 
 /// A spawn failure carries the OS error but not the program; name it.

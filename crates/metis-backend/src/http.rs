@@ -212,7 +212,7 @@ impl<C: Clock + Clone> BrowserHttpService<C> {
 
     fn error_response(&self, status: u16, error: &MetisError) -> io::Result<HttpResponse> {
         let payload = ErrorResponsePayload {
-            error_code: error.code as u16,
+            error_code: error.code.to_wire(),
             message: error.code.as_str().to_owned(),
         }
         .encode()
@@ -376,9 +376,9 @@ fn status_for_code(code: ErrorCode) -> u16 {
 }
 
 fn status_for_wire_code(code: u16) -> u16 {
-    if code == ErrorCode::PayloadTooLarge as u16 {
+    if code == ErrorCode::PayloadTooLarge.to_wire() {
         413
-    } else if code == ErrorCode::Timeout as u16 {
+    } else if code == ErrorCode::Timeout.to_wire() {
         408
     } else if (0x2000..=0x2fff).contains(&code) {
         403

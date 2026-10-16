@@ -46,9 +46,11 @@ markup subset is
 not the intended limit of web support. Windows now exposes a bounded WebView2
 consumer through `metis_platform::native::WebViewSurface`; the `metis-app`
 demonstration composes that host through `--metis-webview`. The provider and
-adapter installed-runtime navigation/bridge smoke passes, and the committed
+adapter's earlier installed-runtime navigation/bridge smoke passes, and the committed
 visible native/WebView2 application captures are recorded in the [native capture
-manifest](docs/manual/images/native-captures.json). Metis does not yet provide
+manifest](docs/manual/images/native-captures.json). Those revision-bound captures
+precede the 0.5 Rust page controller; its installed Windows acceptance remains
+pending. Metis does not yet provide
 Tauri feature parity, a system WebView host on all targets, an OS privilege
 sandbox or regulatory certification. The backend has a bounded authenticated
 `FileAuditStore`; its recovery contract is documented in [ADR 0038](docs/adr/0038-durable-audit-recovery.md).
@@ -74,21 +76,145 @@ limits are not treatment guidance.
 
 Metis 0.3.0 moves browser shell, protocol and HTTP lifecycle behavior into Rust.
 The workbench, HTTP page and starter modules contain nine initialization lines.
-The Windows WebView2 form and permission probe still embed 213 authored
-JavaScript lines in `crates/metis-app/src/frontend/webview/assets.rs`;
-their Rust migration remains open in METIS-WEBVIEW-RUST-001. Generated
-wasm-bindgen bindings remain. [ADR 0056](docs/adr/0056-rust-browser-shell.md)
+Metis 0.5.0 replaces the Windows form's 125 and permission probe's 88 authored
+JavaScript lines with Rust page controllers and one three-line ABI bootstrap.
+The other three initialization modules retain nine lines, for twelve authored
+initialization lines across these four owners. Generated wasm-bindgen bindings
+remain; the authored ABI totals 359 UTF-8 bytes, and eighteen independent
+browser observer owners retain their roles. Real Windows behavior and packaging
+acceptance remain open in METIS-WEBVIEW-RUST-001. [ADR 0056](docs/adr/0056-rust-browser-shell.md)
 records the contracts and [the Tauri review](docs/manual/tauri.md) records
 the required native pairs and their remaining acceptance.
 
 ## Build and run
 
 Use the pinned Rust toolchain, cargo-nextest 0.9.143 and wasm-bindgen-cli 0.2.129.
-Metis 0.4.1 requires Consus compression and raster 0.2, matching the provider's
+Metis 0.5.0 requires Consus compression and raster 0.2.1, matching the provider's
 workspace versions. The canonical Git locks record the consumed provider graph.
 The Windows private bridge encodes audit identifiers as decimal JSON strings in
 Rust, retaining every backend `u64` through WebView2's JavaScript object parsing.
-The controller scripts remain tracked in the [Rust migration](docs/adr/0059-windows-rust-pages.md).
+Rust owns the page protocol and lifecycle under the
+[accepted design](docs/adr/0059-windows-rust-pages.md). The previously adopted protected Moirai 0.9.2 installed Rust bridge fixture verifies
+native method admission, bidirectional message bounds, callback retirement and
+profile cleanup. The [Windows replay](https://github.com/ryancinsight/metis/actions/runs/38685234146)
+verifies real physical-key delivery and two Unicode replacements in RichEdit.
+The Rust page reaches Ready and UIA observes the exact patient and weight `64`,
+but dose remains `0.2` instead of requested `0.25` until the sixty-second deadline.
+The diagnostic replay completes the first Unicode calculation, then loses
+controller focus before the second patient edit. Its Windows script suite
+executes 502 cases in 34.004s: 501 pass and one existing Apple-only case skips.
+Both locks now select Moirai PR 622 candidate `d1658acc9b3c`, retaining the
+synchronous native-parent focus correction introduced in `bd88d2c56f9d`.
+That provider regression passes, but Metis b7ad7405/run38750658426 still retains
+second dose 0.25 after requested 0.5. Its 502 Windows scripts finish in 44.777s
+(501 pass, Apple-only skip); both complete form journeys remain open.
+Provider9aca/run38785314523 records a timely live renderer concentration2
+after requested4, matching UIA2, while the sampler stays active. The field
+failure also occurs without a Rust form handler. Sourceaa532/run38788877397
+still fails startup-only concentration0 after 10/40 checks; its separately
+instrumented controller run passes without triggering a snapshot. These are
+point/component observations, not a complete delivery repair or equivalence
+with Metis's PowerShell STA actor.
+The compatible candidate graph requires Gaia0.6, Eunomia0.10, Hermes0.9 and
+Consus0.2.1 with their allocator cohort. Root/fuzz locks change 37/28 related
+Git records; all 295/223 other records retain exact values. Strict workspace
+Clippy, 778 actual Rust tests and canonical module preparation pass locally.
+The two ignored Rust tests are environment helper entry points. Real Windows
+app/form/script/package execution remains required; this candidate is not a
+protected-default adoption or release.
+
+Metis source5e5c4e2/run38792889172 completes all four exact Unicode form
+submissions, including the expected zero-concentration rejection. Its502
+Windows scripts finish in37.299s (501 pass, one existing Apple-only skip).
+The selected form later stalls on Alt+Shift+S with UIA still showing Dark;
+the60-second worker bound remains. Controller observation exhausts its quota
+before the fourth submit, so it cannot attribute that late shortcut. The new
+provider candidate corrects independently reproduced SDK event/deadline
+admission. Only15/11 provider SHA records advance from aa532 in the two locks;
+every other lock byte and all Metis input/protocol/acceptance source remain.
+Corrected provider execution and both full consumer journeys remain required.
+
+The2fcef admission-only consumer replay ad328f61/run38799513267 again completes
+all four submissions, then retains Dark after Alt+Shift+S;502 scripts pass
+in55.690s. The independent provider probe narrows failed input to an owned
+native recipient with no subsequent controller key receipt, despite UIA focus.
+The correction declares one native-parent entry after UIA selection and verifies
+the same selected field before the original physical input. It bypasses child
+geometry guesses and adds no focus/input retry, ALT tap, sleep or deadline.
+The [entry contract](scripts/native_input/design.md) keeps native control actors
+on their existing policy. Provider 6343610d/run38803044085 passes all 69 actual
+Windows cases, including every original 16/64 replacement mode and the Rust
+bridge fixture. Metis add41427/run38804568395 completes all 504 Windows scripts
+in 40.426s (503 pass, one existing Apple-only skip) and all four exact form
+submissions, then still retains Dark after Alt+Shift+S. Controller quota
+exhaustion prevents a late-key attribution. Only the observed form now selects
+bounded native suffix retention starting at the existing Dark shortcut;
+ordinary execution stays unobserved. Both complete forms and package acceptance
+remain required; no time limit or acceptance assertion changes.
+The diagnostic pin advances only 15/11 provider hashes from 6343610d;
+every other lock byte remains exact.
+The diagnostic consumer passes 778 Rust tests in 9.242s and all 504 local
+script cases in 15.629s (498 pass, six Windows-only skips). Strict Windows-app
+diagnostics and fresh external Git-consumer resolution/compilation pass.
+These checks do not establish native shortcut delivery.
+
+The [561189 Windows replay](https://github.com/ryancinsight/metis/actions/runs/38812113624)
+completes four exact Unicode submissions and all 504 script cases in 46.278s
+(503 pass, one Apple-only skip). The new native suffix records System S down/up
+at scan 31 with Alt+Shift held, Ctrl clear and Handled=false. The last complete
+UIA response reports Dark, and the worker still reaches its original deadline.
+That response has no retained receipt time; it does not prove post-S DOM state.
+The selected Rust document observation now records actual handler entry,
+metadata/decision and original return outcome through a separate bounded codec.
+Ordinary markup and the public page-event schema remain unchanged. Both full
+form journeys and the actual new document observations remain Windows gates.
+The document-observation candidate passes 808 Rust tests in 9.580s (two existing
+helper entries ignored), all 504 local script cases in 14.759s (498 pass, six
+Windows-only skips), workspace formatting and strict host/MSVC diagnostics.
+Its actual release WASM build and canonical packaged preparation pass. These
+portable results establish codec/routing/accounting behavior; the next native
+replay must establish actual document observations and both complete journeys.
+
+The [f1523a4 Windows replay](https://github.com/ryancinsight/metis/actions/runs/38821192294)
+completes 504 script cases in 43.301s (503 pass, one Apple-only skip) and four
+exact submissions. Its native
+suffix again contains S down/up. Nine actual Rust records retain Selected,
+D/KeyD selecting Dark and returning Ok, followed by Alt and Shift being ignored
+and returning Ok. The retained document prefix has no S record or terminal;
+missing closure leaves completeness unknown. UIA response193 reports Dark
+without a retained receipt time; request194 remains incomplete. The form still
+reaches its original 60-second limit. A controlled browser-accelerator
+comparison follows below; both complete forms remain required.
+
+The [provider 2efcc148 experiment](https://github.com/ryancinsight/Moirai/actions/runs/38829030763)
+passes all 91 original executions and four new portable checks, but its three
+native controls fail shutdown validation. Runtime154.0.4258.62 delivers D/P
+and eight Rust key records per control; S is unobserved even after the per-event
+browser property successfully changes to false. This supports no production
+correction. The [a0467cfe observer controls](https://github.com/ryancinsight/Moirai/actions/runs/38831422438)
+pass the same91 original executions and four portable additions; all six native
+controls fail shutdown before final assertions. Selected and observer-free
+controls retain the same eight D/P key records without S, matched browser PIDs
+and SDK exit kind1/non-normal, with no getter failures. The startup collector
+is not necessary for either reproduced failure. A related [upstream report](https://github.com/MicrosoftEdge/WebView2Feedback/issues/5549)
+describes the same property failure on a different runtime; it is not a fix or
+maintainer confirmation. The [14cb3fdf setting comparison](https://github.com/ryancinsight/Moirai/actions/runs/38835227528)
+passes all91 original executions and six portable additions; all eight native
+controls fail. The false setting applies before/after navigation and to actual
+S down/up, and its browser/profile close succeeds. Its document still retains
+eight D/P key records without S and fails the required S assertion. Later
+Closed-owner/stroke assertions and all comparisons remain unexecuted. Normal
+shutdown therefore does not establish S delivery. This is not a time-limit
+failure or a supported shortcut correction. Metis remains pinned to d1658acc;
+both unchanged complete form journeys remain open.
+
+Windows app compilation
+requires an independently prepared Rust module. Build `metis-cli`, run
+`metis prepare metis.json` and retain its absolute inventory path in
+`METIS_WEBVIEW_ASSET_INVENTORY` before the Windows Cargo commands below; the
+[source-adjacent manual](crates/metis-app/src/frontend/webview/manual.md)
+records the complete commands, canonical `metis asset-budgets` JSON and failure
+contract. `metis build`, `package` and `dev` perform preparation on Windows.
 From this directory:
 
 ```text
@@ -133,7 +259,7 @@ the [Python binding manual](docs/manual/python.md).
 
 ## Apple frontend applications
 
-Metis 0.4.1 requires moirai-webview 0.2.0. Packaged WASM loads with a Fetch
+Metis 0.5.0 requires moirai-webview 0.2.0. Packaged WASM loads with a Fetch
 success status and the native form binds its Rust handler. Rust-owned native
 menus supply Quit (⌘Q), Close Window (⌘W), Minimize (⌘M), Zoom and full screen
 (⌃⌘F). Native macOS Greet returns exact normal, Unicode and empty-name results.

@@ -15,8 +15,8 @@ pub use moirai_pal::windows::webview::{
 /// A Metis desktop `WebView2` surface with a Moirai-owned parent window.
 ///
 /// The surface keeps the `WebView2` controller, its parent HWND and all callback
-/// state on the creating thread. Navigation is restricted by [`WebViewConfig`]
-/// to packaged `file:///` resources; the host does not grant filesystem,
+/// state on the creating thread. [`WebViewConfig`] restricts navigation to its
+/// configured packaged resources; the host does not grant filesystem,
 /// network or process authority to page code. Application state and command
 /// authorization stay above this platform boundary.
 pub struct WebViewSurface {

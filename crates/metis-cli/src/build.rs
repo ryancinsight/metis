@@ -1,10 +1,10 @@
 //! One compiler-produced inventory feeds portable directories and installers.
 use crate::{
     Result,
-    manifest::{self, Application, PAYLOAD_LIMIT},
-    process,
+    manifest::{self, Application},
 };
 use artifacts::{artifacts, targets};
+use metis_core::embedded_assets::PAYLOAD_LIMIT;
 use serde::Serialize;
 use std::{
     collections::BTreeMap,
@@ -18,7 +18,9 @@ use std::{
 mod artifacts;
 #[cfg(any(not(windows), test))]
 mod install;
+mod module;
 mod platform;
+pub(crate) mod prepare;
 pub(crate) mod web;
 
 #[cfg(any(not(windows), test))]
@@ -28,6 +30,12 @@ pub(crate) use platform::{desktop_icon, desktop_word};
 // fifteen minutes leaves the packaging workflow's remaining budget for MSI
 // authoring and inventory verification while keeping compiler ownership finite.
 const CARGO_BUILD_DEADLINE: Duration = Duration::from_mins(15);
+
+#[derive(Clone, Copy)]
+pub(crate) enum BuildProfile {
+    Debug,
+    Release,
+}
 
 #[derive(Clone, Copy)]
 pub(crate) enum OutputKind {
@@ -73,7 +81,7 @@ pub(crate) fn application(
     if matches!(kind, OutputKind::Installer) && !supports_host_package() {
         return Err("package requires an x86-64 Windows, macOS or Linux host".into());
     }
-    let cargo_manifest = manifest::source(root, &application.cargo_manifest)?;
+    let cargo_manifest = metis_core::embedded_assets::source(root, &application.cargo_manifest)?;
     #[cfg(windows)]
     let icon = icon(&application, root)?;
     let output = absolute_output(output)?;
@@ -82,11 +90,11 @@ pub(crate) fn application(
     }
     let mut resources = Vec::new();
     for resource in &application.resources {
-        let source = manifest::source(root, &resource.source)?;
+        let source = metis_core::embedded_assets::source(root, &resource.source)?;
         manifest::validate_resource_file(&source)?;
         resources.push((source, resource.destination.clone()));
     }
-    let artifacts = compile(cargo_manifest, &application)?;
+    let artifacts = compile(cargo_manifest, &application, root, BuildProfile::Release)?;
     let entry = format!("{}{}", application.entry, std::env::consts::EXE_SUFFIX);
     let payload = artifacts
         .into_iter()
@@ -254,7 +262,7 @@ fn validate_payload(payload: &[(PathBuf, String)]) -> Result<()> {
     let mut total = 0_u64;
     for (path, _) in payload {
         let meta = fs::symlink_metadata(path)?;
-        if !meta.is_file() || manifest::linked(&meta) {
+        if !meta.is_file() || metis_core::embedded_assets::linked(&meta) {
             return Err("artifact is not a regular, unlinked file".into());
         }
         total = total
@@ -267,12 +275,33 @@ fn validate_payload(payload: &[(PathBuf, String)]) -> Result<()> {
     Ok(())
 }
 
-fn compile(
+pub(crate) fn compile(
     cargo_manifest: PathBuf,
     application: &Application,
+    root: &Path,
+    profile: BuildProfile,
 ) -> Result<BTreeMap<String, PathBuf>> {
-    let cargo = process::tool("cargo")?;
-    let metadata_args = [
+    let preparation = if cfg!(windows) {
+        prepare::application(application, root, None)?
+    } else {
+        None
+    };
+    let mut context = module::Context::new(&cargo_manifest)?;
+    let rustc = metis_core::embedded_assets::resolve_tool(
+        metis_core::embedded_assets::ToolKind::Rustc,
+        Path::new(&metis_core::embedded_assets::compiler_command(
+            &context.workspace,
+            &module::cargo_home(&context.workspace)?,
+        )?),
+        &context.workspace,
+    )?;
+    context.environment.push(("RUSTC", rustc.into_os_string()));
+    let cargo = metis_core::embedded_assets::resolve_tool(
+        metis_core::embedded_assets::ToolKind::Cargo,
+        Path::new(&std::env::var_os("CARGO").unwrap_or_else(|| "cargo".into())),
+        &context.workspace,
+    )?;
+    let metadata_args = vec![
         OsString::from("metadata"),
         OsString::from("--no-deps"),
         OsString::from("--format-version=1"),
@@ -280,11 +309,16 @@ fn compile(
         OsString::from("--manifest-path"),
         cargo_manifest.as_os_str().to_owned(),
     ];
-    let metadata = process::capture(&cargo, &metadata_args, Duration::from_mins(1), &[])?;
+    let metadata = metis_core::embedded_assets::capture_command(
+        &cargo,
+        &metadata_args,
+        Duration::from_mins(1),
+        &context.environment,
+        Some(&context.directory),
+    )?;
     let selected = targets(&metadata, application)?;
     let mut args: Vec<OsString> = [
         "build",
-        "--release",
         "--locked",
         "--message-format=json-render-diagnostics",
         "--manifest-path",
@@ -292,6 +326,9 @@ fn compile(
     .into_iter()
     .map(Into::into)
     .collect();
+    if matches!(profile, BuildProfile::Release) {
+        args.push("--release".into());
+    }
     if let Some(target) = cargo_target(std::env::consts::OS, std::env::consts::ARCH) {
         args.insert(2, format!("--target={target}").into());
     }
@@ -304,7 +341,20 @@ fn compile(
             OsString::from(&binary.bin),
         ]);
     }
-    let messages = process::capture(&cargo, &args, CARGO_BUILD_DEADLINE, &[])?;
+    let mut environment = context.environment.clone();
+    if let Some(preparation) = &preparation {
+        environment.extend(preparation.environment());
+    }
+    let messages = metis_core::embedded_assets::capture_command(
+        &cargo,
+        &args,
+        CARGO_BUILD_DEADLINE,
+        &environment,
+        Some(&context.directory),
+    )?;
+    if let Some(preparation) = preparation {
+        preparation.verify()?;
+    }
     artifacts(&messages, &selected)
 }
 
@@ -323,7 +373,7 @@ fn absolute_output(path: &Path) -> Result<PathBuf> {
     let parent = std::env::current_dir()?.join(parent);
     let mut cursor = parent.as_path();
     loop {
-        if manifest::linked(&fs::symlink_metadata(cursor)?) {
+        if metis_core::embedded_assets::linked(&fs::symlink_metadata(cursor)?) {
             return Err("linked output parent is not admitted".into());
         }
         let Some(next) = cursor.parent() else {

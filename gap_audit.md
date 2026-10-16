@@ -1,29 +1,198 @@
 # Open capability and evidence risks
 
-## Standalone Consus adoption [patch]
+## Test output ownership — 2026-10-13 [patch]
 
-Target: Metis 0.4.1, Consus compression/raster 0.2 and the delivered Moirai
-WebView 0.2 contract. The Consus provider's consumed source trees match the
-previous locked codec sources; dependency features and transitive requirements
-remain standalone verification inputs. Both locks now select the normally
-merged Moirai 0.8.3 provider from [PR 617](https://github.com/ryancinsight/Moirai/pull/617).
-Historical evidence: [PR 499 CI](https://github.com/ryancinsight/metis/actions/runs/38412617056)
-passes against its earlier consumer base. [PR 499](https://github.com/ryancinsight/metis/pull/499)
-also records standalone workspace Clippy and 686 tests against Consus
-`cf30dc29` and Moirai `81656cc6`. Those checks do not validate the combined
-native-logo and capture/input module changes. The combined tree also corrects
-native audit-ID precision: Rust emits decimal JSON strings while retaining
-backend `u64` values; six private protocol tests reproduce two baseline failures
-and verify full-range identifiers with actual adult/pediatric calculations.
-The 213 authored Windows controller lines remain unchanged.
-Implementation is complete; [PR 502](https://github.com/ryancinsight/metis/pull/502) owns protected delivery.
-It retains PR 499 commits; the old remote head has a stale fuzz lock that
-prevents baseline compilation. The normal gate verifies current main instead.
-The intended graph retains every recorded provider except verified Moirai
-17a680ff. All 713 Rust tests pass in 6.314 seconds; native, Windows and WASM
-Clippy deny warnings. Three real Apple bundles preserve version, exact URL
-authority and both lock bytes. Registry identities remain 272 root/209 fuzz.
-Closure: branch script/CI checks and the normal protected consumer merge.
+An earlier retained 777-test replay passes every value but reports LEAK at
+`backend::tests::http_application_admits_only_the_launcher_principal`; it creates
+no child and joins its server thread. That pipe holder and earlier 161/759
+observations remain unattributed. One corrected-permission sampler replay passes
+777 tests without LEAK in 8.052s: 718 samples, 419 process-start identities,
+14,128 PIPE rows and maximum 40.146ms sample gap; all 989 source identities match.
+The original permission-denied sampler is noncomparable, not a product regression.
+The clean replay does not close attribution or change workloads/leak deadlines.
+[METIS-NEXTEST-PIPE](backlog.md#METIS-NEXTEST-PIPE) requires actual pipe-holder evidence.
+
+## Rust Windows page acceptance — 2026-10-13 [minor]
+
+Target: Metis0.5.0 and diagnostic Moirai0.9.4. Rust source replaces the 213 authored Windows
+form/probe controller lines with one three-line ABI bootstrap. The shared page
+codec, native lifecycle, actual permission mechanisms and independently verified
+asset preparation are implemented. Canonical desktop diagnostics and supported
+library compatibility checks pass; the broad target matrix and installed Windows
+acceptance remain open.
+
+Capture publication requires exact Ready or real four-kind denial/browser
+reconciliation, then Stopped, actual native destruction and fresh-profile
+browser exit, native owner drop and actual package/profile removal. Computed
+resource observations retain unsettled guards and realm dispatchers. Grant,
+Unavailable, native callback omission, malformed/stale replies and deadline are
+explicit failure records, not accepted denial or cleanup evidence.
+
+The installed Windows gate must exercise actual OS input, computed backend DOM
+values, theme/menu/focus/shortcuts, remount, hostile production commands and the
+packaged executable under strict 60-second fixture bounds. Portable source tests,
+Chrome PAL interop tests and historical screenshots do not close this item.
+Ordinary-browser positive grants and late acquired track cleanup require an
+explicitly consented real fixture. Backend exchange remains synchronous; pumping
+and backpressure while it is in flight remain a separate transport increment.
+
+[ADR 0059](docs/adr/0059-windows-rust-pages.md) owns the contract;
+[METIS-WEBVIEW-RUST-001](backlog.md#METIS-WEBVIEW-RUST-001) owns remaining acceptance.
+[Preparation manual](crates/metis-app/src/frontend/webview/manual.md) documents
+the current inventory/environment and canonical `metis asset-budgets` output.
+The first [PR 504 run](https://github.com/ryancinsight/metis/actions/runs/38485530984)
+fails before native acceptance. Apple tool discovery invokes Homebrew's
+canonical `rustup-init` image with manager arguments; two real compiler tests
+fail. Windows reports the script-suite 60-second deadline after 423 completion
+markers. Retained output lacks per-test clocks, so it does not establish an
+individual Windows test duration. Rustup alias preservation and canonical
+workflow classifier ownership require a new protected run before closure.
+The [corrected run](https://github.com/ryancinsight/metis/actions/runs/38487516306)
+passes Apple tests and all three bundle contracts. Windows again reaches the
+unchanged script-suite bound, now during the named full visual comparison test.
+Profiling the unchanged 22-test visual suite records 114 production difference
+calls consuming 67.2% of its runtime. Exact row comparison and canonical image
+owners preserve every output byte. The [subsequent run](https://github.com/ryancinsight/metis/actions/runs/38490513996)
+passes all 444 Windows script tests in 37.528 seconds under the unchanged
+60-second limit, with one existing Apple-only skip. Apple passes 754 Rust tests,
+42 doctests and all three bundle contracts. Windows then fails the browser
+asset build: the actual Rust CLI exits 1, but the capturing Python boundary
+omits both child streams. Current source preserves both browser child streams,
+native exit/signal status and Rust's bounded failed-tool stdout/cleanup context.
+The [diagnostic run](https://github.com/ryancinsight/metis/actions/runs/38494216094)
+runs 447 Windows script tests: 446 pass and one existing Apple-only case skips,
+in 50.149 seconds. The Rust browser build reports Windows error 1, Incorrect
+function, without an operation/path. Apple passes 759 tests, 42 doctests and
+all three bundles. Current source assembles Prefix+RootDir before filesystem
+metadata; prefix-only native behavior and every linked-ancestor check remain.
+Metadata errors retain exact native path, operation, kind and original OS cause.
+All 763 local Rust and 460 script tests, strict diagnostics and 42 doctests pass.
+Actual Windows prefix/junction observations must bind the error-1 cause; full
+native archive output is retained without changing cases or deadlines. Native
+preparation, runtime and package acceptance do not run in the failed revision.
+[Run 38497592686](https://github.com/ryancinsight/metis/actions/runs/38497592686)
+passes Apple 763/42/three bundles, five guards and all 14 fuzz targets
+(135,306,079 executions). Windows reaches the unchanged global 60-second script
+bound after 61 passes and one Apple-only skip, with the 63rd case active.
+No browser/native stage runs. The active cleanup case is not established as the
+cause. Standard and final timed local suites pass the same 450 ordered cases;
+all 447 prior cases remain. Verbose-only monotonic records preserve stdlib
+results, human output, compact modes, exit status and the outer process bound.
+[METIS-SCRIPT-BUDGET](backlog.md#METIS-SCRIPT-BUDGET) owns actual Windows attribution.
+[Run 38499707335](https://github.com/ryancinsight/metis/actions/runs/38499707335)
+completes 416 cases before the same bound. Its measured gallery case takes
+25.307s, citation fixture 7.313s and normally completed cleanup 5.257s. Gallery
+requires an actual Rust CLI that was built lazily inside consumer validation.
+The explicit producer now precedes consumers under the existing 300s build
+bound; every original gallery call/assertion and the consumer 60s bound remain.
+One Cargo owner retains immutable invocation/output provenance; starter uses
+its actual compiler-selected CLI. Real producer/gallery identities match and
+all 187 consumer artifact records are fresh; 452 script cases and actual
+starter/GPU-WASM/HTTP-WASM build boundaries pass. Native acceptance remains open.
+[Run 38502658016](https://github.com/ryancinsight/metis/actions/runs/38502658016)
+passes the explicit CLI producer and runs 452 Windows script cases in 21.499s:
+451 pass and one existing Apple-only case skips. The Rust browser CLI exits zero, then Python's
+lexical served-directory comparison rejects; its successful stdout is lost, so
+the actual spelling is unknown. Admission now requires an absolute existing
+directory with the expected native filesystem identity, without prefix
+rewriting. Rejection retains complete child context/streams and original OS
+errors; success records both paths and actual identity. A real browser build,
+all 12 copied inventory byte/hash records and all 455 local script cases pass.
+[Run 38504191516](https://github.com/ryancinsight/metis/actions/runs/38504191516)
+runs 455 Windows cases in 29.842s: 454 pass and one existing Apple-only case
+skips. The browser directory receipt retains actual extended and ordinary
+Windows paths with matching native identity; all 12 asset records pass.
+Apple passes 763 tests, 42 doctests and three bundles; five guards and all 14
+fuzz targets pass (113,649,656 executions). Rust preparation then fails with
+native NotFound after successful release check. Its exact failed operation/path
+is absent; native page, destruction and packaged acceptance do not run.
+
+Preparation inventories and extracted fixtures now share one strict resolved
+file-containment owner. A regular file belongs only when an actual ancestor's
+native identity matches its owned directory. An outside hardlink's file identity
+cannot grant ancestry, and resolved symlink/junction escapes reject. Native
+errors retain exact values with operation/path notes. Five real filesystem
+cases and the full 460-case local suite pass in 15.848s with zero skips; all 455
+prior cases retain their order and all 964 source hashes remain unchanged during
+verification. Actual Windows alias/junction dimensions await CI. The co-located
+[contract](scripts/verification/native_paths.py) records the observation model.
+Pinned Cargo source and actual Windows events independently prove the former
+per-filename dep-info assumption invalid for auxiliary/debug companions. A repair
+now retains compiler-unit primary raw evidence and native failure context;
+the verification and remaining source-shape boundary follow below.
+The prior 0.4.1 source/lock evidence is retained in
+[historical records](docs/backlog/evidence.md#METIS-STANDALONE-0.4.1).
+
+## Compiler-unit input evidence — 2026-10-14 [patch]
+
+Cargo companions share their primary compiler unit's input set. The collector
+admits every relevant event through the package graph and retains complete raw
+file/directory/environment evidence. Native preparation owns an explicit raw
+root receipt because exported dependency lists omit environment declarations;
+checked-phase keys cannot establish code-generation evidence. The
+[accepted receipt contract](crates/metis-cli/src/build/module/receipt.md) and
+[event ownership proof](crates/metis-cli/src/build/prepare/inputs/artifact/design.md)
+state the cache cost, admission law and failure contexts.
+
+All 773 Rust tests pass in 8.101s; all 460 script tests pass in 13.550s without
+skips. Workspace strict Clippy, 42 doctests, strict Rustdoc, formatting and plan
+checks pass. The ten new component cases retain all 68 computed assertions and
+their real generated sources. Fresh release preparation passes in 5.535s with
+2,419 compiler inputs, two directory records and 213 providers. Independent
+producer/native contexts retain identical inventory and asset bytes; all
+fourteen actual mutation/restoration cases and twelve independently rehashed
+browser assets pass. Selected CLI/app MSVC all-target strict checks pass.
+All 973 source files retain exact membership and bytes during both runs.
+
+Explicit root emission recompiles the native-preparation root; ordinary browser
+builds retain Cargo caching. An uplifted-only nonroot dylib without reported raw
+metadata rejects, owned by [METIS-COMPILER-RAW-001](backlog.md#METIS-COMPILER-RAW-001).
+The subsequent exact-tree Windows run 38511644468 completes preparation in
+83.58s with the same input/directory/provider counts. All five containment
+cases, including native namespace/junction dimensions, pass. The earlier first
+failing path in run 38504191516 remains unknown; successful preparation does
+not identify that historical error retrospectively.
+
+## Native Rust page startup evidence — 2026-10-14 [patch]
+
+The native-parent focus correction delivers the exact Unicode field values and
+four calculated/error submissions in Metis f1523a4. Its504-case Windows script
+suite completes in43.301s (503 pass, Apple-only skip). The selected form fails
+at Alt+Shift+S; the ordinary form remains unrun. Both locks retain d1658acc.
+
+Provider14cb3fdf passes all91 original Windows executions and six portable
+additions; all eight new controls fail. Globalfalse verifies its actual setting
+and normal browser/profile shutdown, then still fails required S delivery.
+Native S receipt is positive, while eight retained Rust key notices contain
+D/P without S. No precise browser/Win32 cause or supported S correction follows.
+The [detailed evidence](crates/metis-app/src/frontend/webview/event_loop/startup/evidence.md)
+retains exact revisions, source/ZIP/log binding, observations, executed gates
+and unexecuted later assertions. Next: review a correction against the existing
+input, closed-protocol and lifecycle contracts, then pass both complete forms.
+
+## Library target comparison boundaries — 2026-10-13 [patch]
+
+Fresh supported library/target comparisons after the rustls lock update execute 5,880 minor-release queries
+against actual baseline/current Rustdoc graphs. Twenty-five nonempty public
+graphs execute 4,900 checks. Five empty `metis-ui` root graphs execute 980
+queries, which establish no substantive public API coverage. The supported
+targets are macOS, Windows, WASM and the two recorded iOS library surfaces.
+It does not verify the whole matrix; the following failures occur in both the
+baseline and current graphs:
+
+- `metis-backend` on `wasm32-unknown-unknown`: strict Rustdoc rejects the
+  native-only `FileAuditStore` link in `crates/metis-backend/src/audit.rs`.
+  Correct the target-dependent documentation at its owner, then compare that
+  actual library graph without weakening diagnostics.
+- `metis-backend`, `metis-core`, `metis-frontend`, `metis-ipc`, `metis-platform`,
+  `metis-ui-lang` and `metis-web` on both `aarch64-apple-ios` and
+  `aarch64-apple-ios-sim`: `backtrace 0.3.76` calls four unavailable libc dyld
+  functions. Fix the dependency's target boundary, then compile/document and
+  compare all seven actual graphs on both targets. Packaged WebKit host evidence
+  does not verify these Rust library boundaries.
+
+[CONFORMANCE](backlog.md#METIS-CONFORMANCE-001) owns the remaining full matrix;
+[MOBILE](backlog.md#METIS-MOBILE-001) retains native mobile execution acceptance.
 
 ## RITK consumer verification boundary [patch]
 
@@ -53,7 +222,7 @@ rejects missing owners/boundaries and restrictions on admitted targets.
 | Command capabilities mistaken for OS isolation | `HostPolicy` binds origin, window and session grants; the Windows process lifecycle and native window boundary are implemented. A positive bridge does not prove OS permission denial. | AUTHORITY (`METIS-AUTHORITY-001`) and the per-OS desktop denial suites. |
 | Visual baselines preserve missing behavior | Software states and RITK-owned native/browser galleries have value-semantic and pixel oracles. Unsupported browser/OS events, assistive technology and GPU paths remain explicit rather than hidden by a baseline. | VISUAL (`METIS-VISUAL-001`), LAYOUT (`METIS-LAYOUT-001`) and the owning host items. |
 | WebView2 pointer input hit-tests at the display scale | Measured 2026-10-12 on the development host (single 3072×1728 monitor at 120 dpi, DPI-unaware process): a trusted `SendInput` click at client (404, 490) hit-tests the packaged page's DOM at (505, 613) — the client point multiplied by `dpi/96` (1.25). A click grid over the dose spinner (sent client y 395–425 → DOM y 494–531, matching the dose label/input at client 474–565 at full scroll) and the compensated pointer-journey submission confirm the mapping; keyboard Enter and the compensated click both produce the audited Rate sentence, while the uncompensated button point (505, 613) lands on page background and submits nothing. The published 96-DPI capture manifest is unaffected (`native-captures.json`, captured at 96 dpi where the factor is 1.0). **Fixed 2026-10-12:** `metis-app` now writes `WEBVIEW2_ADDITIONAL_BROWSER_ARGUMENTS` carrying `--force-device-scale-factor=<dpi/96>` (the scale probed under a per-monitor-aware thread context) before the WebView2 environment is created, so Chromium's input mapping and rasterization share one scale over the rendered layout. Verified live at 120 dpi: the uncompensated click at (505, 613) submits and produces the audited Rate sentence (`output/rec/webview-uncomp-*.png/.json`; its after frame differs from the compensated-click success frame by 5,018 pixels ≥32 of 849,230 and from the pre-submit form by 114,980). | METIS-DESKTOP-001 physical display-scale increment: measure the same uncompensated submission through a physical mouse and through a live monitor-scale transition (the forced factor is fixed at environment creation and a move to another scale requires a relaunch), then close the row only when the host maps input to the DOM 1:1 without changes that also relaunch the browser. Recheck on any Moirai WebView2 host, WebView2 loader or DPI-awareness change. |
-| DICOM ownership drifts into Metis | Metis exposes a generic file chooser and bounded byte handoff. RITK configures the DICOM label/filter after mounting and owns scanning, decoding, geometry, clinical display and the real study galleries. | DICOM-003 (`METIS-DICOM-003`), DICOM-005 (`METIS-DICOM-005`) and [RITK-SNAP-DICOM-SUBSTRATE-001](../ritk/backlog.md#RITK-SNAP-DICOM-SUBSTRATE-001): recheck on any format-specific Metis change. |
+| DICOM ownership drifts into Metis | Metis exposes a generic file chooser and bounded byte handoff. RITK configures the DICOM label/filter after mounting and owns scanning, decoding, geometry, clinical display and the real study galleries. | DICOM-003 (`METIS-DICOM-003`), DICOM-005 (`METIS-DICOM-005`) and [RITK-SNAP-DICOM-SUBSTRATE-001](https://github.com/ryancinsight/ritk/blob/main/docs/adr/0026-viewer-presentation-migration.md): recheck on any format-specific Metis change. |
 | Tauri compatibility or toolkit breadth overstated | Metis has a Rust/WASM DOM host, one-executable distribution path, Windows WebView2 adapter and typed capability broker. The desktop services Tauri ships as plugins now have bounded counterparts: opener, deep links, file associations, window state, global shortcuts, tray with notifications and menus, single instance and autostart ([INTEGRATION](backlog.md#METIS-INTEGRATION-001)). Tauri API migration, update recovery, installed-OS click-through evidence and non-Windows native hosts remain open. | ADR 0003 matrix rows close through their linked items; re-audit after upstream or API movement. |
 | Axum server capability inferred from documentation | Axum is a comparator only. Metis has no Axum dependency; the admitted loopback routes use the first-party Moirai transport with bounded authority, deadlines and typed fragments. | AXUM (`METIS-AXUM-001`) and [ADR 0025](docs/adr/0025-axum-server-boundary.md): public deployment and TLS require their own evidence. |
 | Comparative claims lack matched evidence | Three-run eframe and native Métis samples bind public CT/MRI captures, and RITK run [35512369724](https://github.com/ryancinsight/ritk/actions/runs/35512369724) adds four-cycle Chromium/Firefox real-study raster evidence plus viewport controls. The browser runners can record aggregate user-agent memory when the secure API exists. Surfaces and process boundaries differ; no matched GPUI/Tauri, WASM allocator, input-to-frame, compositor or security comparison exists. | [PERF](backlog.md#METIS-PERF-001) and QUALITY (`METIS-QUALITY-001`): provide matched fixtures, controlled hosts and remaining denial/allocation probes. |
@@ -125,16 +294,15 @@ well as compilation. Real Atlas macOS bundling preserves both canonical locks,
 verifies the ad-hoc signature and packages exact frontend resource bytes. The
 shared cache, root build settings and live frontend paths remain intact.
 
-## Authored JavaScript inventory — 2026-10-12
+## Authored JavaScript inventory — 2026-10-13
 
-The nine-line count covers the workbench, HTTP page and starter initialization
-modules only. `metis-app` also embeds the Windows WebView2 form (125 lines) and
-permission probe (88 lines) in `frontend/webview/assets.rs`: 213 authored
-JavaScript lines remain outside those loaders. Counts include blank/comment
-lines within the raw-string bodies; generated wasm-bindgen output and test-only
-script snippets are separate. METIS-WEBVIEW-RUST-001 owns migration of their
-theme, command, form/bridge and capability-probe lifecycle into Rust, with real
-Windows acceptance required before retiring the scripts.
+Metis 0.5 source retains nine initialization lines in the workbench, HTTP and
+starter modules, plus three ABI initialization lines shared by the Windows form
+and probe. Rust replaces the former 125-line form and 88-line probe policies.
+Counts include blank/comment lines within authored bodies; generated wasm-bindgen
+output and test-only scripts remain separate. These source counts do not prove
+installed Windows behavior. METIS-WEBVIEW-RUST-001 remains todo until real
+readiness, interaction, denial, teardown and packaged acceptance pass.
 
 ## Native logo navigation — 2026-10-13
 

@@ -2,7 +2,7 @@
 
 Owner: [ADR 0059](../0059-windows-rust-pages.md).
 
-State: selected design; implementation and native acceptance pending.
+State: implementation under verification; real Windows acceptance pending.
 
 ## Dependency graph
 
@@ -31,14 +31,38 @@ The WASM and frontend dependency closures contain no `metis-app`,
 `metis-backend` or `metis-cli`. The CLI and build script do not depend on one
 another. The core integrity module imports no presentation or distribution
 crate. Its SHA-256 implementation uses the existing Moirai crypto dependency.
-Serde belongs only to declared JSON boundaries in `metis-app`, `metis-web` and
-the CLI; update the registry-boundary gate with that scoped rationale.
+Serde belongs to declared JSON boundaries in `metis-app`, `metis-web` and
+the CLI, plus the core integrity boundary that parses complete Cargo lock/config
+TOML. Update the registry-boundary gate with that scoped rationale.
 
 Use the existing `metis-web` cdylib, with Rust start/stop exports for the embedded
 page. The HTML role selects form or permission probe in Rust. No parallel crate
 copies the command, theme or form algorithm. Measure generated artifact size
 and compile/runtime cost; remove unreachable work through normal release
 optimization without weakening the behavior or acceptance scenarios.
+
+### Application configuration root
+
+The browser configuration is `.config/browser/metis.json`, outside the served
+frontend. Its explicit `application_root` is `../..`. Both closed application
+shapes share the same root resolver. Omission means the canonical manifest
+directory; an explicit locator has at most the canonical 240-byte path budget,
+portable forward-slash components and explicit parent components. `.` is valid
+only as the whole locator. Absolute paths, drive prefixes, empty components,
+backslashes and linked directory traversal are rejected. Resolution must produce
+an existing directory that contains the canonical manifest; the manifest cannot
+select an unrelated sibling tree. Every Cargo, frontend, icon and resource path
+still uses its existing strict relative-path contract against the selected root.
+There is no implicit discovery or alternate-root retry. Real filesystem tests
+cover omitted/explicit roots, containment, links and malformed locators, followed
+by a real browser build from the relocated manifest.
+
+A development session owns one root `R`: its watcher, snapshot and every launched
+build use `R`. Native watch reloads reject a manifest resolving to `R' != R`
+before compiling or launching it, and continue observing `R`. Selecting another
+root requires restarting the command. The browser session likewise retains its
+initial parsed configuration. A root transition cannot leave a live watcher
+bound to a different application tree.
 
 ## PAL mechanisms
 
@@ -53,8 +77,8 @@ posting the serialization as a string changes `WebMessageAsJson` into a quoted
 string. Receiving accepts actual object data or a string containing JSON,
 returns bounded JSON to the consumer and preserves browser error context.
 Missing bridge, malformed data, byte overflow and browser exceptions remain
-distinct errors. Dropping the listener detaches it before releasing the Rust
-closure. The provider imports no Metis schema or permission policy.
+distinct errors. Explicit close detaches the listener before releasing the Rust
+closure. A removal exception retains its counted realm owner and reports failure. The provider imports no Metis schema or permission policy.
 [Microsoft defines the object and listener contract](https://learn.microsoft.com/en-us/microsoft-edge/webview2/reference/javascript/webview).
 
 The native and WASM bridge share one PAL limits definition, including the
@@ -76,7 +100,7 @@ No API returns a fabricated denial or changes the native host's deny policy.
 
 The geolocation mechanism owns a `watchPosition` registration and resolves on
 its first actual position or error. It calls `clearWatch` on completion,
-deadline and drop before releasing callbacks. This replaces the uncancellable
+deadline and drop while realm dispatchers retain queued callback validity. This replaces the uncancellable
 one-shot registration while preserving this probe's single-outcome behavior;
 the page neither stores nor publishes coordinates. Callback state must reject
 late delivery after cancellation. A browser position timeout alone does not
@@ -103,14 +127,22 @@ equate an ignored or default result with denial.
 [The Notifications standard specifies the returned permission](https://notifications.spec.whatwg.org/#dom-notification-requestpermission).
 
 All deadline waits use the minimum of the caller's remaining deadline and the
-existing provider 30-second operation bound. Page stop advances its mount
-generation before dropping listener/task handles. A completion publishes only
+existing provider 30-second operation bound. Page stop invalidates its current ready mount
+before dropping listener/task handles; remount advances the mount identity. A completion publishes only
 when its mount and request generations still match. Generation checks prevent
 stale DOM writes; actual watch/track/Promise ownership performs resource cleanup.
 
 ## Page behavior and protocol
 
-The private `metis-web::embedded::protocol` domain owns serialized request and
+`ErrorCode` retains its established fieldless `repr(u16)` representation.
+Derived `bytemuck::NoUninit` proves that valid enum values contain no padding or
+uninitialized bytes. Const `must_cast` proves source/target size equality;
+`u16` admits every target bit pattern. The native representation therefore maps
+to the identical discriminant without a numeric cast, lookup, allocation or
+runtime layout check. The inverse decoder retains its unknown-code rejection.
+Exhaustive wire-domain tests and optimized-code comparison verify this contract.
+
+The private `metis-web::embedded::wire` domain owns serialized request and
 response DTOs. Public codec operations expose typed page-domain messages to
 the native consumer, rather than exposing Serde DTOs or introducing a second
 schema definition. The new inventory and required WASM/codec entry points are
@@ -136,13 +168,13 @@ First-frame/theme capture waits for Ready. A missing/failed module, unavailable
 bridge, malformed ready message or deadline causes an explicit failed capture;
 it never emits an accepted blank-frame record.
 
-The native lifecycle is Loading -> Ready -> Stopping -> Closed. A Rust page
+The native lifecycle is Loading -> Ready -> Stopping -> Stopped -> Closed. A Rust page
 coordinator owns the bridge while the mounted form/probe owns DOM listeners and
 tasks. Native `StopPage` addresses the exact ready mount. Rust invalidates that
 mount before dropping its application handles, then sends `PageStopped` with
 the stopped mount, schema/role/module identity and computed resource counts.
-The coordinator retains only the bridge required to deliver that acknowledgement
-and a later native mount command. An acknowledgement does not hide unsettled
+The coordinator retains its bridge and the stop-publication future required
+to deliver that acknowledgement and a later native mount command. An acknowledgement does not hide unsettled
 Promise guards. The host accepts it once for that Stopping mount, closes the
 actual controller and observes native destruction before recording Closed.
 Deadline or teardown error closes the controller and marks the handshake failed.
@@ -169,6 +201,12 @@ Preserve these computed behaviors:
 | Reply | Show actual rate, drug rate and audit ID; preserve contextual error status and four-digit hexadecimal code |
 | Terminal failure | Release the current submit state after a typed matching error; malformed bridge data reports its cause |
 | Missing bridge | Explicit unavailable host/result text; no synthetic backend result |
+
+The query reader bounds decoded values by the longest declared theme name.
+PAL's only `InvalidInput` outcome for this operation means that value exceeds
+the bound; it therefore cannot belong to the finite theme domain. Treat that
+outcome as an unknown query and preserve the authored theme. Preserve every
+other observation error, including failure to obtain the current location.
 
 The existing browser controller's produced-key fallback and different menu/system
 labels do not replace the native contracts. Share the command catalog and state,
@@ -222,22 +260,29 @@ The binary format is versioned, documented and tested; it is not an opaque blob.
 
 Encoding order is: eight ASCII magic bytes `METISAS1`, big-endian schema `u16`,
 module package/target identity, locked-graph digest, tool identities, build
-configuration, source-input records and generated-asset records. Strings use
+configuration, directory-membership records, source-input records and generated-asset records. Strings use
 big-endian `u32` byte lengths followed by valid UTF-8; records use explicit
 counts, `u64` byte lengths and 32 SHA-256 bytes. Reject unknown schema, truncation,
 trailing bytes, integer overflow, duplicate/case-colliding paths and unsorted
-records. Semantic identity contains no host-absolute path or timestamp.
+records. Canonical owner and artifact identifiers omit host-absolute roots and
+timestamps. Effective compiler settings retain literal values, including paths
+when they are declared inputs. Local owner/tool bindings remain in the sidecar;
+rebinding roots alone preserves identity, while changed compiler settings may
+change it.
 
 Each sequence count is big-endian `u32`; each enum tag is one validated byte.
 After magic/schema, field order is fixed: package name, Cargo package ID, cdylib
 target, WASM target, export name, native platform tag, page schema, lock digest,
 provider identities, three tool records (Cargo/rustc/wasm-bindgen), build
-configuration, source-input records, then two asset records. A provider record
-contains package ID, version and source kind followed by its Git URL/revision
+configuration, directory records, source-input records, then two asset records. A provider record
+contains package ID, package name, version and source kind followed by its Git URL/revision
 or registry checksum; path owners must be workspace members. A tool record
 contains its version output and resolved executable digest. Configuration
 contains profile, sorted unique features, ordered compiler arguments and sorted
-unique environment key/value pairs. Input records contain owner ID, relative
+unique environment keys with optional values; one closed presence byte distinguishes
+unset from an explicitly empty value. Directory records precede input records
+and retain owner, optional relative directory, admission policy and exact sorted
+membership, including empty directories. Input records contain owner ID, relative
 path, length and digest; asset records contain JavaScript/WASM kind, relative
 destination, length and digest. Sort records by owner/path or destination, not
 compiler arguments. The core codec is the only encoder/decoder definition.
@@ -281,6 +326,16 @@ It declares rerun dependencies for the inventory, inputs, artifacts and relevant
 environment. The Rust compiler embeds that owned copy, not an independently
 re-read external pathname. Missing/stale/mismatched preparation fails with its
 specific cause and preparation command; no empty or older snapshot is selected.
+
+`PreparedModule::open` selects one sealed zero-sized context policy. Both
+`ProducerContext` and `NativeContext` admit the same current lock, input,
+configuration-file, directory, bound-tool and asset identities. The producer
+also compares its current effective WASM environment and tool selectors before
+and after compilation. Native Cargo's derived flags and Clippy wrapper describe
+the native compile; `NativeContext` consumes the recorded typed WASM settings
+instead of interpreting those native settings as new module inputs. Unset and
+empty producer values remain distinct. Neither policy bypasses source or asset
+admission, and both use the same non-generic IO implementation.
 
 The installed executable retains embedded bytes and their inventory identity.
 The runtime package writes index, CSS, the initialization-only bootstrap,
@@ -344,3 +399,94 @@ The selected increment is complete only when its real Windows stage passes.
 Unavailable media hardware, blocked interactive input, provider refusal, timeout
 or an unobserved permission kind remains a failed acceptance condition. Compilation
 on macOS, a completion count or historical native captures cannot close it.
+
+## Source-derived ownership refinements
+
+- The page preserves the backend's 32-byte result signature as well as its rates
+  and exact audit identifier. `CloseRequested` carries the admitted identity.
+  A valid stop acknowledgement advances to `Stopped`; only observed native
+  destruction advances to `Closed`. The coordinator's stop future remains
+  separate from application futures; counters observe actual child-future drop.
+- `clearWatch` can leave queued callbacks, and a cancelled cleared watch may
+  never settle. Two realm-owned geolocation dispatchers retain callback validity;
+  at most four unsettled guards retain one admission slot per actual kind.
+  Stop reports dispatchers and guards without claiming their destruction.
+- Application DOM listeners have explicit fallible close. Actual listener
+  removal failures retain counted callback owners, prevent further admission,
+  and reject successful stop acknowledgement. Native bridge cleanup follows
+  the corresponding one-owner law.
+- A bounded local `bindings.bin` sidecar maps semantic owner/tool identities to
+  actual canonical roots. Those binding paths remain outside inventory identity;
+  explicitly supplied compiler configuration preserves its literal path values.
+  Generated inputs use the locked provider's actual build-output namespace.
+  Declared directory scopes preserve every member; default source scopes omit
+  Cargo/Git-owned metadata according to their explicit admission policy.
+- Native preparation fingerprints the source closure before Cargo, runs locked
+  release checking to discover actual build-script/generated inputs, then
+  fingerprints the reported inputs before release code generation. Build and
+  generation must preserve those identities and directory memberships. Native
+  compilation independently verifies the resulting inventory.
+  All effective Cargo codegen/configuration environment settings enter the
+  configuration identity, with unset and empty values distinguished.
+  The [typed root receipt](../../../crates/metis-cli/src/build/module/receipt.md)
+  retains actual raw code-generation inputs; exported dependency lists omit
+  environment declarations. Explicit root emission recompiles that preparation
+  root, while ordinary browser builds retain normal Cargo caching.
+- Tool execution uses `ProcessSpec::working_directory` for child-only neutral
+  configuration discovery. It never mutates the parent's directory. Direct
+  Cargo tool resolution verifies the actual selected rustup compiler, including
+  executable hash/version; unresolvable wrappers fail with their context.
+- Native content and the empty owned browser profile are sibling directories.
+  WebView2's actual environment user-data folder must match the requested
+  canonical profile. Every real denial sets `DENY` and disables profile saving
+  before observation. Explicit profile close waits for the actual browser PID's
+  `BrowserProcessExited` event before the caller removes its directories.
+- Decimal UI formatting uses PAL's actual ECMAScript Number boundary. The JSON
+  codec enables exact float round trips; a finite IEEE-754 exponent/sign/mantissa
+  boundary matrix rejects parser rounding drift without a tolerance adjustment.
+
+The permission page publishes computed settled outcomes, then one final
+reconciliation when delayed actual host-denial commands fill every observation.
+Repeated callbacks do not produce further final-completion events. Native
+denial acceptance independently checks its real event set and the reconciled
+page observations. Synchronous native frontend/backend exchange retains its
+existing execution contract; continuous event pumping within that exchange
+requires a separately specified bounded/cancellable IPC increment.
+
+The canonical observation predicate accepts geolocation rejection only with
+the specified permission-denied code 1, media rejection only with the specified
+`NotAllowedError` name, and notification denied/default only in that domain.
+Reconciliation additionally requires the independently observed native denial.
+Unavailable devices, acquisition errors and timeouts cannot establish denial;
+native admission rejects them with their original browser context. A genuine
+native denial and permission error do not prove successful device acquisition.
+[Geolocation defines its error codes](https://www.w3.org/TR/geolocation/#position_error_interface);
+[Media Capture distinguishes permission and device failures](https://www.w3.org/TR/mediacapture-streams/#dom-mediadevices-getusermedia).
+
+Finite binary64 fields use canonical shortest decimal strings in the private
+schema. JSON object serialization erases numeric negative zero; text preserves
+its sign and the exact parser preserves every finite bit pattern. The bound is
+24 bytes from 17 significant digits and the binary64 exponent domain. Numeric
+JSON fields, noncanonical spellings and nonfinite values fail admission.
+
+Preparation records the effective Cargo configuration, including ordered include
+precedence and `[env]` force/relative semantics. Producer and consumer use one
+core computation. Unresolved relative executable paths, absent optional includes,
+and unsupported legacy configuration include origins fail with context. They do
+not select an alternative tool or ignore an admitted input. Short and
+host-qualified Rustup channel spellings identify the same tool only after actual
+resolved executable/version verification against the repository pin.
+Rustup discovery preserves its absolute invocation alias: a multicall image
+dispatches by that name. Proxy recognition hashes the canonical image; returned
+Cargo/rustc bindings still identify the canonical selected tool executable.
+
+The coherence contract assumes exclusive ownership of trusted source and
+generated output during preparation and compilation. Endpoint fingerprints
+detect changed inputs; they do not attest hostile change-and-restore activity.
+Tool provenance covers resolved executable bytes, version and declared compiler
+inputs. It does not attest precompiled sysroot libraries or compiler-driver
+dynamic libraries. No full-host or full-toolchain attestation is claimed.
+
+Remount initialization restores closed menu metadata, enables submission and
+clears the previous request presentation. Patient draft values and the selected
+theme survive because the document remains owned by the coordinator.

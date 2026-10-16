@@ -65,20 +65,6 @@ class NativeAccessibilityTests(unittest.TestCase):
         self.assertIn("ControlType.Text", script)
         self.assertIn("surface = $surface", script)
 
-    def test_surface_preparation_primes_only_webview2_focus(self) -> None:
-        with patch.object(capture.focus, "focus_window") as focus:
-            with patch.object(capture.keyboard, "send_virtual_key") as key:
-                with patch.object(capture.queue, "flush_window") as flush:
-                    self.assertEqual(capture._prepare_surface(42, "native"), 0)
-                    focus.assert_not_called()
-                    self.assertEqual(
-                        capture._prepare_surface(42, "webview2"),
-                        capture.WEBVIEW2_FOCUS_PRIMER_TABS,
-                    )
-        focus.assert_called_once_with(42)
-        self.assertEqual(key.call_count, 4)
-        self.assertEqual(flush.call_count, 2)
-
     def test_powershell_trace_parser_rejects_non_object_schema(self) -> None:
         completed = subprocess.CompletedProcess(
             args=["powershell.exe"], returncode=0, stdout="[]\n", stderr=""

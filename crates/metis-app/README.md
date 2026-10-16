@@ -5,6 +5,11 @@ The parent owns session keys, authorization and audit state; it relaunches its
 own executable through Moirai with a presentation role and private pipes.
 Both processes contain the same compiled code, but hold separate process state.
 
+On Windows, build the CLI and prepare the embedded Rust page before every direct
+Cargo application build/run. The [source-adjacent manual](src/frontend/webview/manual.md)
+records `metis prepare` and `METIS_WEBVIEW_ASSET_INVENTORY`; CLI build/package/dev
+performs preparation automatically for the declared Windows module.
+
 ```powershell
 cargo run --locked -p metis-app -- 60 2 0.2
 ```
@@ -29,7 +34,7 @@ finite five-minute supervisor budget; it does not grant file, network or device
 permissions.
 
 On Windows with the `WebView2` runtime installed, the same executable can host
-the packaged HTML5/CSS form. The page-to-host bridge forwards bounded typed
+the packaged HTML5/CSS form. The Rust page-to-host bridge forwards bounded typed
 JSON to the unprivileged presentation process, which submits through the same
 supervised private IPC and returns the backend result to the page:
 
@@ -41,7 +46,7 @@ The `WebView` host disables devtools and default context menus, denies new-windo
 navigation, restricts resources to its generated package directory and grants
 no filesystem, network or process authority to page code. Moirai also denies
 every `WebView2` permission request before profile or OS prompting and sends a
-typed `permission_denied` message back to the page. The separate permission
+typed native denial observation back to the Rust page. The separate permission
 probe requests geolocation, camera, microphone and notifications in sequence;
 each result row distinguishes host denial from browser-level rejection or an
 unavailable API. Close the window or press Escape to complete the bounded
@@ -54,11 +59,14 @@ capture, pass an absolute PNG path to the capture role:
 cargo run --locked -p metis-app -- --metis-webview-permission-probe-capture C:\captures\metis-permission-probe.png 60 2 0.2
 ```
 
-The `WebView2` host writes the page-owned `CapturePreview` PNG once, then keeps
-the same bounded interactive session until the window closes or Escape is
-pressed. The role does not grant the requested capabilities or move permission
-policy into application code; the page is a visual probe for the host policy,
-not an application permission broker.
+The capture role admits the exact Rust Ready mount, four actual native denial
+kinds and real reconciled browser outcomes. It requests Stop, validates reported
+resources, observes actual native destruction and fresh-profile browser exit,
+drops native owners and removes the package/profile before publishing the PNG.
+Unexpected grants, unavailable APIs, unobserved native kinds and deadlines fail
+the role. Actual Windows Rust-page acceptance remains pending; prior captures
+retain their recorded revisions. Consented ordinary-browser positive grants and
+late media cleanup remain separate pending evidence.
 
 The same executable can serve one authenticated browser session through the
 bounded loopback WebSocket role:
