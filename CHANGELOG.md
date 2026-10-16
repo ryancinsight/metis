@@ -72,6 +72,12 @@
 
 ### Fixed
 
+- [patch] Record native-parent input verification: f1523a4 completes four exact
+  Unicode submissions and504 scripts in43.301s (503 pass, Apple-only skip).
+  The selected form fails at Alt+Shift+S; the ordinary form remains unrun.
+  Provider14cb3fdf passes all91 original executions; globalfalse closes normally
+  but still fails required S delivery. Keep text, runtime and delivery evidence distinct.
+
 - [patch] Actual WebView journeys explicitly enter the known native parent
   after their original UIA field selection and before physical input. One
   SetFocus request uses the existing programmatic controller entry; the same

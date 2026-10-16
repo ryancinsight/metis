@@ -328,6 +328,28 @@ Windows-only skips), strict host/MSVC diagnostics, formatting, actual release
 WASM compilation and canonical preparation. Real selected/ordinary form
 completion and subsequent native/package acceptance remain Windows gates.
 
+Actual run38821192294/sourcef1523a4 produces nine valid contiguous command
+records/2,945 raw bytes. D resolves Dark and returns Ok; actual Alt and Shift
+callbacks enter Ready, resolve Ignored and return Ok. Native S335/336 is again
+positive with the expected scan/modifiers and Handled=false. The retained
+document prefix contains no S or terminal; missing closure leaves completeness
+unknown. The504-case Windows suite completes43.301s (503 pass, Apple-only skip)
+and four exact submissions pass,
+but the form worker reaches its original60s limit. Last response193's Dark
+value has no retained receipt time; pending194's node24 has no retained identity.
+This does not establish browser interception, stale UIA or a blocked getter.
+Provider a0467cfe controls retain the same missing S both with and without the
+startup collector, alongside matching browser PIDs and non-normal SDK exit
+kind1. All six fail shutdown before final assertions; the collector is not
+necessary for either reproduced failure. No production shortcut policy or
+Metis dependency changes follow from those negative controls.
+The subsequent14cb3fdf/run38835227528 global-false control verifies the setting
+before/after navigation and on actual S callbacks, then closes browser/profile
+normally. It still retains D/P/eight keys without S and fails the mandatory S
+assertion; later Closed-owner/stroke assertions and comparisons do not execute.
+This separates that shutdown outcome from observed S delivery. Neither setting
+experiment establishes a full-form correction or a precise interception cause.
+
 Source checks preserve the closed page protocol, actual Ready admission and all
 existing deadlines. The actual Windows run must retain the navigation records,
 pre-Ready observation and exact native producer bytes. It must then satisfy the
@@ -388,3 +410,6 @@ allocator cohort; no Metis input, protocol or acceptance implementation changes.
 Strict Clippy,777 local Rust cases and canonical preparation pass. The native
 Windows full forms and complete script/package suite remain required. None of
 these component results establishes equivalence with the PowerShell STA actor.
+
+The [native input evidence](startup/evidence.md) retains the source-bound
+acceptance history and current controller-to-Rust delivery boundary.

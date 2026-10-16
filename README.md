@@ -175,6 +175,39 @@ Its actual release WASM build and canonical packaged preparation pass. These
 portable results establish codec/routing/accounting behavior; the next native
 replay must establish actual document observations and both complete journeys.
 
+The [f1523a4 Windows replay](https://github.com/ryancinsight/metis/actions/runs/38821192294)
+completes 504 script cases in 43.301s (503 pass, one Apple-only skip) and four
+exact submissions. Its native
+suffix again contains S down/up. Nine actual Rust records retain Selected,
+D/KeyD selecting Dark and returning Ok, followed by Alt and Shift being ignored
+and returning Ok. The retained document prefix has no S record or terminal;
+missing closure leaves completeness unknown. UIA response193 reports Dark
+without a retained receipt time; request194 remains incomplete. The form still
+reaches its original 60-second limit. A controlled browser-accelerator
+comparison follows below; both complete forms remain required.
+
+The [provider 2efcc148 experiment](https://github.com/ryancinsight/Moirai/actions/runs/38829030763)
+passes all 91 original executions and four new portable checks, but its three
+native controls fail shutdown validation. Runtime154.0.4258.62 delivers D/P
+and eight Rust key records per control; S is unobserved even after the per-event
+browser property successfully changes to false. This supports no production
+correction. The [a0467cfe observer controls](https://github.com/ryancinsight/Moirai/actions/runs/38831422438)
+pass the same91 original executions and four portable additions; all six native
+controls fail shutdown before final assertions. Selected and observer-free
+controls retain the same eight D/P key records without S, matched browser PIDs
+and SDK exit kind1/non-normal, with no getter failures. The startup collector
+is not necessary for either reproduced failure. A related [upstream report](https://github.com/MicrosoftEdge/WebView2Feedback/issues/5549)
+describes the same property failure on a different runtime; it is not a fix or
+maintainer confirmation. The [14cb3fdf setting comparison](https://github.com/ryancinsight/Moirai/actions/runs/38835227528)
+passes all91 original executions and six portable additions; all eight native
+controls fail. The false setting applies before/after navigation and to actual
+S down/up, and its browser/profile close succeeds. Its document still retains
+eight D/P key records without S and fails the required S assertion. Later
+Closed-owner/stroke assertions and all comparisons remain unexecuted. Normal
+shutdown therefore does not establish S delivery. This is not a time-limit
+failure or a supported shortcut correction. Metis remains pinned to d1658acc;
+both unchanged complete form journeys remain open.
+
 Windows app compilation
 requires an independently prepared Rust module. Build `metis-cli`, run
 `metis prepare metis.json` and retain its absolute inventory path in
