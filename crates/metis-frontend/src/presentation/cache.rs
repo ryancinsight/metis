@@ -6,8 +6,9 @@ use crate::focus::focusable_ids;
 use metis_core::{ErrorCode, MetisError, Result};
 use metis_ui_lang::{DisplayList, LayoutViewport, SemanticTree, compute_layout};
 
-/// Room a frame keeps beyond the cached layout, for the focus ring.
-const OVERLAY_COMMANDS: usize = 1;
+/// Room a frame keeps beyond the cached layout, for the application mark
+/// and the focus ring.
+const OVERLAY_COMMANDS: usize = 2;
 
 /// Derived render state, each part valid for the document revision it was
 /// derived at.
@@ -26,6 +27,13 @@ pub(crate) struct RenderCache {
     /// Buffers the form's projected text is written into, so a render that
     /// leaves the text as it was requests no memory for it.
     pub(super) text: [String; 2],
+    /// The application mark placement for its anchor box, reused while the
+    /// box does not move, so a repaint requests no placement memory.
+    #[cfg(not(target_arch = "wasm32"))]
+    mark: Option<(
+        metis_platform::Rect,
+        std::sync::Arc<metis_ui_lang::image::ImagePlacement>,
+    )>,
 }
 
 impl RenderCache {
@@ -74,5 +82,30 @@ impl RenderCache {
             })?;
         commands.extend_from_slice(&self.layout.commands);
         Ok(DisplayList { commands })
+    }
+
+    /// The application mark placement for `destination`, derived only when
+    /// the anchor box moved or no placement was derived yet.
+    ///
+    /// # Errors
+    /// Rejects a mark that does not decode or a placement outside its
+    /// geometry contract.
+    #[cfg(not(target_arch = "wasm32"))]
+    pub(super) fn mark(
+        &mut self,
+        destination: metis_platform::Rect,
+    ) -> Result<std::sync::Arc<metis_ui_lang::image::ImagePlacement>> {
+        if self
+            .mark
+            .as_ref()
+            .is_none_or(|(anchor, _)| *anchor != destination)
+        {
+            self.mark = Some((
+                destination,
+                crate::presentation::mark::placement(destination)?,
+            ));
+        }
+        let (_, placement) = self.mark.as_ref().expect("placement derived above");
+        Ok(std::sync::Arc::clone(placement))
     }
 }

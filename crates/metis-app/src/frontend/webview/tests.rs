@@ -1,9 +1,10 @@
 use super::{
     MAX_PATIENT_ID_BYTES,
     assets::{
-        APP_JS, INDEX_HTML, PERMISSION_PROBE_APP_JS, PERMISSION_PROBE_INDEX_HTML, STYLES_CSS,
+        APP_JS, APP_MARK_PNG, INDEX_HTML, PERMISSION_PROBE_APP_JS, PERMISSION_PROBE_INDEX_HTML,
+        STYLES_CSS,
     },
-    package::file_uri,
+    package::{Package, Page, file_uri},
     permission_denied_message,
 };
 use metis_platform::native::WebViewPermission;
@@ -13,7 +14,7 @@ fn package_assets_are_script_scoped_and_bridge_bound() {
     assert!(INDEX_HTML.contains("script-src 'self'"));
     assert!(INDEX_HTML.contains("default-src 'none'"));
     for directive in [
-        "img-src 'none'",
+        "img-src 'self'",
         "font-src 'none'",
         "media-src 'none'",
         "connect-src 'none'",
@@ -30,6 +31,19 @@ fn package_assets_are_script_scoped_and_bridge_bound() {
             "missing CSP directive: {directive}"
         );
     }
+    assert!(
+        PERMISSION_PROBE_INDEX_HTML.contains("img-src 'none'"),
+        "the probe page keeps denying images"
+    );
+    assert!(
+        INDEX_HTML.contains("class=\"app-mark\" src=\"./metis-mark.png\""),
+        "the form header shows the application mark"
+    );
+    assert!(
+        APP_MARK_PNG.starts_with(b"\x89PNG\r\n\x1a\n"),
+        "the packaged mark is a PNG"
+    );
+    assert!(STYLES_CSS.contains(".app-mark"));
     assert!(STYLES_CSS.contains("#0f172a"));
     assert!(INDEX_HTML.contains("data-metis-theme=\"system\""));
     assert!(INDEX_HTML.contains("id=\"theme-mode\" name=\"theme-mode\""));
@@ -52,6 +66,14 @@ fn package_assets_are_script_scoped_and_bridge_bound() {
     assert!(APP_JS.contains("themes.has(requestedTheme)"));
     assert!(APP_JS.contains("if (!label) return;"));
     assert!(APP_JS.contains("chrome.webview"));
+}
+
+#[test]
+fn package_ships_the_application_mark() {
+    let package = Package::create(Page::Form, None).expect("packaged form");
+    let mark = std::fs::read(package.root.join("metis-mark.png")).expect("packaged mark");
+    assert_eq!(mark, APP_MARK_PNG, "the package carries the committed mark");
+    package.cleanup().expect("package cleanup");
 }
 
 #[test]
