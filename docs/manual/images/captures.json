@@ -397,7 +397,7 @@
       }
     },
     "form-menu": {
-      "image_sha256": "6faa0bcb494dfa1d55ea7cc439a4f6b548e92a18079ac514fe4b60cad821c9f7",
+      "image_sha256": "ce075f99fdb8b1f7b07b3817251f483c56b957dac4ed13d73f9454dfd473c464",
       "semantics": {
         "action": {
           "0": "create session: 800x600, bounded MemoryTransport, backend exchanges=4",
@@ -416,6 +416,7 @@
           "14": "37 548 12 108 15",
           "15": "58 186 14 77 18",
           "16": "49 236 14 96 18",
+          "17": "59 286 14 76 18",
           "2": "51 133 14 74 18",
           "3": "183 133 14 90 18",
           "4": "28 172 13 112 17",
@@ -463,6 +464,7 @@
           "14": "Backend MAC: None",
           "15": "Dark theme",
           "16": "System theme",
+          "17": "Copy result",
           "2": "Commands",
           "3": "Focus patient",
           "4": "Commands opened",
@@ -475,7 +477,7 @@
       }
     },
     "form-menu-dark": {
-      "image_sha256": "11c42cb411b372731e56eb0572c9c6f7b0537383b84922bbb8e81617b86fb4bb",
+      "image_sha256": "9809a92455ec54f35683f414f5fb992320ae30a02fc0d3ca376c2fcbb9e8b21f",
       "semantics": {
         "action": {
           "0": "create session: 800x600, bounded MemoryTransport, backend exchanges=4",
@@ -496,6 +498,7 @@
           "14": "37 548 12 108 15",
           "15": "58 186 14 77 18",
           "16": "49 236 14 96 18",
+          "17": "59 286 14 76 18",
           "2": "51 133 14 74 18",
           "3": "183 133 14 90 18",
           "4": "28 172 13 112 17",
@@ -543,6 +546,7 @@
           "14": "Backend MAC: None",
           "15": "Dark theme",
           "16": "System theme",
+          "17": "Copy result",
           "2": "Commands",
           "3": "Focus patient",
           "4": "Commands opened",
