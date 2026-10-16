@@ -511,6 +511,55 @@ the fourth step at 65. Notch-to-shift is therefore proportional per notch
 and boundary-limited, and the runner's one-record-per-notch pacing (rather
 than a coalesced wheel burst) is what the page receives.
 
+### Capture the copy-result clipboard journey
+
+The same runner records the native copy-result command end to end. Phase
+one submits with a real Enter key; after a bounded wait the follow phase
+delivers `Alt+Shift+C`, the command menu's announced accelerator, and the
+terminal observation records the frame whose status line carries the copy
+outcome. When `--expected-clipboard` is given, the runner reads the
+session clipboard through one bounded `Get-Clipboard -Raw` call with its
+console output encoding pinned to UTF-8, fails closed on any
+byte-level difference, and records both digests in the manifest:
+
+```powershell
+$target = (cargo metadata --format-version 1 --no-deps |
+  ConvertFrom-Json).target_directory
+# The `clipboard` feature stays off by default until a Moirai release
+# carries the `windows::clipboard` mechanism; see the METIS-INTEGRATION-001
+# clipboard increment for the feature chain and the temporary local lock
+# patch that a local verification build uses until then.
+python scripts/python_native_input_capture.py `
+  --command (Join-Path $target "debug\metis-app.exe") `
+  --argument=--metis-native-window `
+  --argument=60 `
+  --argument=2 `
+  --argument=0.2 `
+  --shortcut enter `
+  --follow-shortcut alt-shift-c `
+  --follow-wait-seconds 4 `
+  --expected-clipboard "Rate: 0.360 mL/hr (0.72 mg/hr)" `
+  --initial-output output\native-copy-before.png `
+  --output output\native-copy-after.png `
+  --manifest output\rec\native-copy.json
+```
+
+The expected sentence is pinned, not paraphrased: with demonstrate inputs
+`60` kilograms, `2` mg/mL and `0.2` mcg/kg/min, the clinical rule computes
+`rate = d*w*60/(c*1000) = 0.36` exactly and the formatted sentence is
+`Rate: 0.360 mL/hr (0.72 mg/hr)` — the same characters `metis-frontend`'s
+result renderer writes, so the clipboard carries the visible line byte for
+byte. On the recorded 2026-10-13 run at 120 effective dpi the manifest
+reports `clipboard.matches = true` with equal
+`fa52fbda3bc875a8d8335c829e2d4dad2877e72a042d594c62280a1b9e6529a9`
+digests, `foreground_window_set = true`, `pixels_changed = true`, before
+frame `fb12e0a92f6c7603d52652cb63867791903a3b40bc5209b6b2dcb9a0d08b3fd8`
+and after frame `d94c9fe2b33c0d549bbe6e44bbb3bb33eeba752a86ce35cbc427a9e286ea0334`,
+and a zero process return code; offline mismatch failures carry the read
+and expected text `repr`-quoted in the error. The journey is keyboard evidence: it
+cannot substitute for the pending Moirai release that makes the feature
+the default, and it mutates the real clipboard.
+
 ### Exercise the installed Windows IME
 
 `python_native_ime_capture.py` is the separate installed-IME journey. It

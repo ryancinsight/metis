@@ -1,6 +1,8 @@
 //! Bounded host-side dispatch for permission-scoped plugin operations.
 
+use metis_core::capability::CapabilityScope;
 use metis_core::error::{ErrorCode, MetisError, Result};
+use metis_core::host::VerifiedHostCapability;
 use metis_core::protocol::{
     MAX_PLUGINS, Plugin, PluginDescriptor, PluginInvocationPayload,
     PluginInvocationResponsePayload, PluginOperation, PluginRegistry,
@@ -17,6 +19,25 @@ pub trait PluginExecutor: Send {
     /// Returns a typed plugin or domain error when the body is invalid or the
     /// operation cannot complete.
     fn invoke(&mut self, operation_name: &str, body: &[u8]) -> Result<Vec<u8>>;
+
+    /// Dispatches one operation after the service verified its session scope.
+    ///
+    /// Operations whose required scope is [`CapabilityScope::CLIPBOARD`] carry
+    /// the minted [`VerifiedHostCapability`] witness; other operations carry
+    /// `None` and keep their unscoped body path. The default implementation
+    /// forwards to [`Self::invoke`], so existing executors keep working.
+    ///
+    /// # Errors
+    /// Returns the executor's typed error.
+    fn invoke_authorized(
+        &mut self,
+        operation_name: &str,
+        body: &[u8],
+        clipboard: Option<&VerifiedHostCapability<{ CapabilityScope::CLIPBOARD.0 }>>,
+    ) -> Result<Vec<u8>> {
+        let _ = clipboard;
+        self.invoke(operation_name, body)
+    }
 }
 
 struct RegisteredPlugin {
@@ -86,7 +107,8 @@ impl<const CAPACITY: usize> PluginRouter<CAPACITY> {
     ///
     /// The router does not inspect or reinterpret the plugin body. Callers
     /// must authorize [`PluginOperation::required_scope`] against the trusted
-    /// session token before calling this method.
+    /// session token before calling this method and pass the minted clipboard
+    /// witness for `CLIPBOARD`-scoped operations.
     ///
     /// # Errors
     /// Returns `PluginNotFound`, `PluginOperationNotFound`, a response-size
@@ -94,6 +116,7 @@ impl<const CAPACITY: usize> PluginRouter<CAPACITY> {
     pub(crate) fn invoke(
         &mut self,
         request: &PluginInvocationPayload,
+        clipboard_witness: Option<&VerifiedHostCapability<{ CapabilityScope::CLIPBOARD.0 }>>,
     ) -> Result<PluginInvocationResponsePayload> {
         if self.metadata.get(request.plugin_name()).is_none() {
             return Err(MetisError::capability(
@@ -118,9 +141,11 @@ impl<const CAPACITY: usize> PluginRouter<CAPACITY> {
                 "REQ-METIS-SEC-002",
             ));
         };
-        let response = registered
-            .executor
-            .invoke(operation.name(), request.body())?;
+        let response = registered.executor.invoke_authorized(
+            operation.name(),
+            request.body(),
+            clipboard_witness,
+        )?;
         PluginInvocationResponsePayload::new(response)
     }
 }
@@ -182,7 +207,7 @@ mod tests {
         router.register(EchoPlugin).expect("register");
         assert_eq!(
             router
-                .invoke(&request("echo", "echo", [1, 4, 9].as_slice()))
+                .invoke(&request("echo", "echo", [1, 4, 9].as_slice()), None)
                 .expect("invoke")
                 .body(),
             [2, 5, 10]
@@ -195,21 +220,21 @@ mod tests {
         router.register(EchoPlugin).expect("register");
         assert_eq!(
             router
-                .invoke(&request("missing", "echo", b"body"))
+                .invoke(&request("missing", "echo", b"body"), None)
                 .expect_err("unknown plugin")
                 .code,
             ErrorCode::PluginNotFound
         );
         assert_eq!(
             router
-                .invoke(&request("echo", "missing", b"body"))
+                .invoke(&request("echo", "missing", b"body"), None)
                 .expect_err("unknown operation")
                 .code,
             ErrorCode::PluginOperationNotFound
         );
         assert_eq!(
             router
-                .invoke(&request("echo", "changed", b"body"))
+                .invoke(&request("echo", "changed", b"body"), None)
                 .expect_err("event is not invokable")
                 .code,
             ErrorCode::PluginOperationNotFound

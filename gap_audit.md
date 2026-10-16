@@ -42,8 +42,8 @@ replay is a separately pinned evidence record: its standalone lock uses Metis
 `2a54e010532f76c88027fec8a468620c92fe66b3`. Implementation status
 belongs in [backlog.md](backlog.md); this register contains unresolved risks
 only. The 2026-10-12 Tauri review is [the pinned native inventory](docs/conformance/tauri.json):
-32 surfaces, 124 comparator-admitted pairs, 46 bounded implementation pairs
-and 78 open pairs. A bounded pair still has unmet acceptance. The validator
+32 surfaces, 124 comparator-admitted pairs, 47 bounded implementation pairs
+and 77 open pairs. A bounded pair still has unmet acceptance. The validator
 rejects missing owners/boundaries and restrictions on admitted targets.
 
 | Risk | Current evidence | Closure / recheck trigger |

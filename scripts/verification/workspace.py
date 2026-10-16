@@ -38,6 +38,17 @@ REGISTRY_BOUNDARIES = {
     # sampling, and the crate never enters a shipped artifact.
     ("metis-platform", "criterion"),
     ("metis-frontend", "criterion"),
+    # The packaged WebView2 page speaks JSON to the host bridge, like the CLI
+    # manifest and the application protocol above.
+    ("metis-webview-page", "serde"),
+    ("metis-webview-page", "serde_json"),
+    # No Atlas provider supplies the wasm-bindgen browser ABI; the page uses
+    # exact-pinned interop versions recorded in the audited lock, so a caret
+    # range cannot drift the locked graph.
+    ("metis-webview-page", "wasm-bindgen"),
+    ("metis-webview-page", "wasm-bindgen-futures"),
+    ("metis-webview-page", "js-sys"),
+    ("metis-webview-page", "web-sys"),
 }
 
 

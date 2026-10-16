@@ -4,7 +4,7 @@ pub(super) const INDEX_HTML: &str = r#"<!doctype html>
 <html lang="en">
 <head>
   <meta charset="utf-8">
-  <meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'self'; style-src 'self'; img-src 'none'; font-src 'none'; media-src 'none'; connect-src 'none'; object-src 'none'; frame-src 'none'; child-src 'none'; worker-src 'none'; manifest-src 'none'; form-action 'none'; base-uri 'none'">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'self' 'wasm-unsafe-eval'; style-src 'self'; img-src 'none'; font-src 'none'; media-src 'none'; connect-src 'none'; object-src 'none'; frame-src 'none'; child-src 'none'; worker-src 'none'; manifest-src 'none'; form-action 'none'; base-uri 'none'">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>Metis WebView2 form</title>
   <link rel="stylesheet" href="./styles.css">
@@ -21,6 +21,7 @@ pub(super) const INDEX_HTML: &str = r#"<!doctype html>
       <div id="command-menu" role="menu" aria-label="Application commands" aria-hidden="true" data-command-menu-open="false">
         <button id="command-theme-dark" role="menuitem" type="button" aria-keyshortcuts="Alt+Shift+D">Use dark theme</button>
         <button id="command-theme-system" role="menuitem" type="button" aria-keyshortcuts="Alt+Shift+S">Use system theme</button>
+        <button id="command-copy-result" role="menuitem" type="button" aria-keyshortcuts="Alt+Shift+C">Copy result to clipboard</button>
       </div>
       <p id="command-status" role="status" aria-live="polite">Commands ready</p>
     </nav>
@@ -44,7 +45,7 @@ pub(super) const INDEX_HTML: &str = r#"<!doctype html>
     </form>
     <p id="result" role="status" aria-live="polite">No calculation submitted.</p>
   </main>
-  <script src="./app.js" defer></script>
+  <script type="module" src="./page.js"></script>
 </body>
 </html>
 "#;
@@ -53,7 +54,7 @@ pub(super) const PERMISSION_PROBE_INDEX_HTML: &str = r#"<!doctype html>
 <html lang="en">
 <head>
   <meta charset="utf-8">
-  <meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'self'; style-src 'self'; img-src 'none'; font-src 'none'; media-src 'none'; connect-src 'none'; object-src 'none'; frame-src 'none'; child-src 'none'; worker-src 'none'; manifest-src 'none'; form-action 'none'; base-uri 'none'">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'self' 'wasm-unsafe-eval'; style-src 'self'; img-src 'none'; font-src 'none'; media-src 'none'; connect-src 'none'; object-src 'none'; frame-src 'none'; child-src 'none'; worker-src 'none'; manifest-src 'none'; form-action 'none'; base-uri 'none'">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>Metis WebView2 permission probe</title>
   <link rel="stylesheet" href="./styles.css">
@@ -70,7 +71,7 @@ pub(super) const PERMISSION_PROBE_INDEX_HTML: &str = r#"<!doctype html>
       <li id="permission-notifications">Notifications: pending</li>
     </ol>
   </main>
-  <script src="./app.js" defer></script>
+  <script type="module" src="./page.js"></script>
 </body>
 </html>
 "#;
@@ -108,219 +109,8 @@ input:focus-visible, select:focus-visible, button:focus-visible { outline: 3px s
 }
 "#;
 
-pub(super) const APP_JS: &str = r#"const form = document.getElementById('calculation');
-const themeMode = document.getElementById('theme-mode');
-const themeState = document.getElementById('theme-state');
-const status = document.getElementById('host-status');
-const result = document.getElementById('result');
-const menuToggle = document.getElementById('command-menu-toggle');
-const commandMenu = document.getElementById('command-menu');
-const commandStatus = document.getElementById('command-status');
-const patientReference = document.getElementById('patient-id');
-const bridge = window.chrome && window.chrome.webview;
-const themes = new Map([
-  ['system', 'system preference'],
-  ['light', 'light'],
-  ['dark', 'dark'],
-  ['high-contrast', 'high contrast'],
-]);
-
-function applyTheme(value) {
-  const label = themes.get(value);
-  if (!label) return;
-  document.body.dataset.metisTheme = value;
-  themeState.textContent = `Theme: ${label}`;
-}
-
-const requestedTheme = new URLSearchParams(window.location.search).get('theme')
-  || document.body.dataset.metisTheme;
-if (themes.has(requestedTheme)) themeMode.value = requestedTheme;
-applyTheme(themeMode.value);
-themeMode.addEventListener('change', () => applyTheme(themeMode.value));
-
-function setCommandMenu(open, message) {
-  // Focus returns to the toggle only when a visible menu closes; a shortcut
-  // applied with the menu closed leaves focus where the user was.
-  const wasOpen = menuToggle.getAttribute('aria-expanded') === 'true';
-  menuToggle.setAttribute('aria-expanded', String(open));
-  commandMenu.setAttribute('aria-hidden', String(!open));
-  commandMenu.dataset.commandMenuOpen = String(open);
-  commandStatus.textContent = message;
-  if (open) commandMenu.querySelector('[role="menuitem"]').focus();
-  else if (wasOpen) menuToggle.focus();
-}
-
-menuToggle.addEventListener('click', () => {
-  const open = menuToggle.getAttribute('aria-expanded') !== 'true';
-  setCommandMenu(open, open ? 'Commands opened' : 'Commands closed');
-});
-commandMenu.addEventListener('keydown', (event) => {
-  if (event.key !== 'Escape') return;
-  event.preventDefault();
-  setCommandMenu(false, 'Commands closed');
-});
-document.getElementById('command-focus-patient').addEventListener('click', () => {
-  setCommandMenu(false, 'Patient reference focused');
-  patientReference.focus();
-});
-document.getElementById('command-theme-dark').addEventListener('click', () => {
-  themeMode.value = 'dark';
-  applyTheme(themeMode.value);
-  setCommandMenu(false, 'Theme: dark');
-});
-document.getElementById('command-theme-system').addEventListener('click', () => {
-  themeMode.value = 'system';
-  applyTheme(themeMode.value);
-  setCommandMenu(false, 'Theme: system preference');
-});
-
-// Each command's shortcut is read from its aria-keyshortcuts, so the binding
-// announced to assistive technology is the one that runs. The spelling puts
-// modifiers in Control, Alt, Shift, Meta order before the physical letter key,
-// as metis_core::input formats it; the page binds only letter shortcuts.
-const shortcutCommands = [...document.querySelectorAll('button[aria-keyshortcuts]')];
-function pressedShortcut(event) {
-  if (!/^Key[A-Z]$/.test(event.code)) return null;
-  const held = [
-    ['Control', event.ctrlKey],
-    ['Alt', event.altKey],
-    ['Shift', event.shiftKey],
-    ['Meta', event.metaKey],
-  ].filter(([, down]) => down).map(([name]) => name);
-  return [...held, event.code.slice(3)].join('+');
-}
-document.addEventListener('keydown', (event) => {
-  if (event.repeat) return;
-  const pressed = pressedShortcut(event);
-  const command = shortcutCommands.find(
-    (candidate) => candidate.getAttribute('aria-keyshortcuts') === pressed,
-  );
-  if (!command) return;
-  event.preventDefault();
-  command.click();
-});
-
-function showError(message) {
-  result.textContent = message;
-  form.querySelector('button').disabled = false;
-}
-
-if (!bridge) {
-  showError('WebView2 bridge is unavailable.');
-  status.textContent = 'Host bridge unavailable';
-} else {
-  status.textContent = 'Host bridge connected; backend authority remains outside the page.';
-  bridge.addEventListener('message', (event) => {
-    const message = typeof event.data === 'string' ? JSON.parse(event.data) : event.data;
-    if (!message || !['result', 'error'].includes(message.type)) return;
-    if (message.type === 'result' && message.status === 'success') {
-      result.textContent = `Rate ${message.rate_ml_hr} mL/hour; drug ${message.drug_rate_mg_hr} mg/hour; audit ${message.audit_sequence_id}`;
-    } else {
-      showError(`${message.status}: ${message.message} [0x${message.error_code.toString(16).padStart(4, '0')}]`);
-    }
-    form.querySelector('button').disabled = false;
-  });
-  form.addEventListener('submit', (event) => {
-    event.preventDefault();
-    form.querySelector('button').disabled = true;
-    result.textContent = 'Submitting to the supervised backend…';
-    bridge.postMessage({
-      action: 'submit',
-      patient_id: document.getElementById('patient-id').value,
-      weight_kg: Number(document.getElementById('weight').value),
-      concentration_mg_ml: Number(document.getElementById('concentration').value),
-      target_dose_mcg_kg_min: Number(document.getElementById('dose').value),
-    });
-  });
-}
-"#;
-
-pub(super) const PERMISSION_PROBE_APP_JS: &str = r"const status = document.getElementById('host-status');
-const result = document.getElementById('result');
-const bridge = window.chrome && window.chrome.webview;
-const rows = new Map([
-  ['geolocation', document.getElementById('permission-geolocation')],
-  ['camera', document.getElementById('permission-camera')],
-  ['microphone', document.getElementById('permission-microphone')],
-  ['notifications', document.getElementById('permission-notifications')],
-]);
-const probes = [
-  {
-    permission: 'geolocation',
-    invoke: () => navigator.geolocation
-      ? new Promise((resolve) => navigator.geolocation.getCurrentPosition(
-          () => resolve('unexpected success'),
-          () => resolve('browser rejected the request'),
-        ))
-      : Promise.resolve('API unavailable'),
-  },
-  {
-    permission: 'camera',
-    invoke: () => navigator.mediaDevices
-      ? navigator.mediaDevices.getUserMedia({ video: true }).then((stream) => {
-          for (const track of stream.getTracks()) track.stop();
-          return 'unexpected success';
-        }, () => 'browser rejected the request')
-      : Promise.resolve('API unavailable'),
-  },
-  {
-    permission: 'microphone',
-    invoke: () => navigator.mediaDevices
-      ? navigator.mediaDevices.getUserMedia({ audio: true }).then((stream) => {
-          for (const track of stream.getTracks()) track.stop();
-          return 'unexpected success';
-        }, () => 'browser rejected the request')
-      : Promise.resolve('API unavailable'),
-  },
-  {
-    permission: 'notifications',
-    invoke: () => window.Notification
-      ? Notification.requestPermission().then((permission) => `browser result: ${permission}`)
-      : Promise.resolve('API unavailable'),
-  },
-];
-let active = 0;
-const recorded = new Set();
-
-function record(permission, text) {
-  const row = rows.get(permission);
-  if (row) row.textContent = `${permission}: ${text}`;
-  recorded.add(permission);
-}
-
-function runNext() {
-  if (active >= probes.length) {
-    result.textContent = `Completed ${recorded.size} bounded capability probes.`;
-    bridge.postMessage({ action: 'permission_probe_complete' });
-    return;
-  }
-  const probe = probes[active++];
-  result.textContent = `Requesting ${probe.permission} permission.`;
-  Promise.resolve().then(() => probe.invoke()).then((text) => {
-    if (!recorded.has(probe.permission)) record(probe.permission, text);
-    runNext();
-  }, () => {
-    if (!recorded.has(probe.permission)) record(probe.permission, 'browser rejected the request');
-    runNext();
-  });
-}
-
-if (!bridge) {
-  status.textContent = 'Host bridge unavailable';
-  result.textContent = 'Permission probe could not reach the host bridge.';
-} else {
-  status.textContent = 'Host bridge connected; every capability request is denied by policy.';
-  bridge.addEventListener('message', (event) => {
-    const message = typeof event.data === 'string' ? JSON.parse(event.data) : event.data;
-    if (!message) return;
-    if (message.type === 'permission_denied' && rows.has(message.permission)) {
-      record(message.permission, `host denied${message.user_initiated ? ' after user action' : ''}`);
-      result.textContent = `${message.status}: ${message.message} [0x${message.error_code.toString(16).padStart(4, '0')}]`;
-    }
-    if (message.type === 'error') {
-      result.textContent = `${message.status}: ${message.message} [0x${message.error_code.toString(16).padStart(4, '0')}]`;
-    }
-  });
-  runNext();
-}
-";
+/// The generated WebAssembly page loader: `scripts/webview_page.py` compiles
+/// the Rust presentation (the crate `metis-webview-page`) and appends one
+/// mechanical auto-init suffix embedding the module bytes for the file://
+/// packaged origin.
+pub(super) const PAGE_JS: &str = include_str!("generated/page.js");

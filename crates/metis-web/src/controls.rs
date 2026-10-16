@@ -29,6 +29,7 @@ pub(crate) const BROWSER_MARKUP: &str = r#"
       <button id="command-focus-patient" role="menuitem" type="button" aria-keyshortcuts="Alt+Shift+P">Focus patient reference</button>
       <button id="command-theme-dark" role="menuitem" type="button" aria-keyshortcuts="Alt+Shift+D">Use dark theme</button>
       <button id="command-theme-system" role="menuitem" type="button" aria-keyshortcuts="Alt+Shift+S">Use system theme</button>
+      <button id="command-copy-result" role="menuitem" type="button" aria-keyshortcuts="Alt+Shift+C">Copy result to clipboard</button>
     </div>
     <p id="command-status" role="status" aria-live="polite">Commands ready</p>
   </nav>

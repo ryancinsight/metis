@@ -169,3 +169,40 @@ fn command_accelerators_apply_once_and_leave_other_chords_alone() {
         ApplicationCommand::FocusPatient.status()
     );
 }
+
+#[test]
+fn copy_result_command_reports_typed_outcomes_without_a_session() {
+    let mut form = form();
+    // The copy-result command is a command: Alt+Shift+C activates it from
+    // anywhere, unlike the menu items that need a visible menu.
+    key(
+        &mut form,
+        u32::from(b'C'),
+        ModifierState::ALT | ModifierState::SHIFT,
+    );
+    assert_eq!(form.app.command_status(), "No result to copy");
+}
+
+#[test]
+fn copy_result_accessibility_activation_respects_the_menu_contract() {
+    let mut form = form();
+    let activate = |target_node| AccessibilityActionRequest {
+        target_node,
+        action: AccessibilityAction::Activate,
+        value: None,
+        delta: None,
+    };
+    // A closed menu's menu-item activation is refused.
+    assert!(
+        !form
+            .apply_accessibility_action(&activate(native_accessibility::copy_result_identity()))
+            .expect("closed-menu copy request")
+    );
+    form.app.toggle_command_menu().expect("open menu");
+    assert!(
+        form.apply_accessibility_action(&activate(native_accessibility::copy_result_identity()))
+            .expect("open-menu copy request")
+    );
+    assert_eq!(form.app.command_status(), "No result to copy");
+    assert!(!form.app.command_menu_open());
+}

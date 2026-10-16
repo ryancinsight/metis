@@ -15,6 +15,14 @@ moirai-executor.workspace = true
 moirai-transport.workspace = true
 metis-core = { workspace = true }
 metis-ipc = { workspace = true }
+metis-platform = { workspace = true }
+
+# Off by default: forward the platform feature that carries the Windows
+# clipboard mechanism until a Moirai release carries it upstream (see the
+# METIS-INTEGRATION-001 clipboard increment).
+[features]
+clipboard = ["metis-platform/clipboard"]
+default = []
 
 [target.'cfg(not(target_arch = "wasm32"))'.dependencies]
 moirai-async.workspace = true

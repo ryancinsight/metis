@@ -26,8 +26,23 @@ def parser() -> argparse.ArgumentParser:
     )
     parser.add_argument(
         "--shortcut",
-        choices=("enter", "control-enter"),
+        choices=("enter", "control-enter", "alt-shift-c"),
         help="optional submit shortcut delivered after the Unicode text",
+    )
+    parser.add_argument(
+        "--follow-shortcut",
+        choices=("enter", "control-enter", "alt-shift-c"),
+        help="optional second real shortcut, sent after the first settles",
+    )
+    parser.add_argument(
+        "--follow-wait-seconds",
+        type=float,
+        default=1.0,
+        help="bounded wait between the shortcut phases",
+    )
+    parser.add_argument(
+        "--expected-clipboard",
+        help="exact text the clipboard must carry after the journey closes",
     )
     parser.add_argument(
         "--click-client",
@@ -73,6 +88,9 @@ def main() -> None:
             arguments.output.resolve(),
             arguments.manifest.resolve(),
             screen=arguments.screen,
+            follow_shortcut=arguments.follow_shortcut,
+            follow_wait_seconds=arguments.follow_wait_seconds,
+            expected_clipboard=arguments.expected_clipboard,
         )
     except (OSError, RuntimeError, ValueError) as error:
         raise SystemExit(str(error)) from error

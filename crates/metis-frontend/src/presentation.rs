@@ -23,6 +23,9 @@ pub const CLINICAL_SCREEN_XML: &str = r#"<screen id="main-screen" style="display
       <button id="command-theme-system" role="menuitem" aria-keyshortcuts="Alt+Shift+S" style="background: linear-gradient(#2c78c4, #2662a8); color: #ffffff; padding: 8px 12px; border-radius: 6px; min-height: 44px; justify-content: center; align-items: center; box-shadow: 0 2px 4px #2c528240;">
         <text style="color: #ffffff; font-size: 14px; font-weight: bold;">System theme</text>
       </button>
+      <button id="command-copy-result" role="menuitem" aria-keyshortcuts="Alt+Shift+C" style="background: linear-gradient(#2c78c4, #2662a8); color: #ffffff; padding: 8px 12px; border-radius: 6px; min-height: 44px; justify-content: center; align-items: center; box-shadow: 0 2px 4px #2c528240;">
+        <text style="color: #ffffff; font-size: 14px; font-weight: bold;">Copy result</text>
+      </button>
     </div>
     <text id="command-status" role="status" aria-live="polite" style="color: #4a5568; font-size: 13px;">Commands ready</text>
   </nav>
@@ -342,7 +345,7 @@ fn bool_text(value: bool) -> &'static str {
 ///
 /// Writing into a `String` fails only when a `Display` implementation
 /// reports failure, which the integers and floats the form writes never do.
-fn written<V>(result: std::result::Result<V, fmt::Error>) -> Result<V> {
+pub(crate) fn written<V>(result: std::result::Result<V, fmt::Error>) -> Result<V> {
     result.map_err(|_| {
         MetisError::ui(
             ErrorCode::MalformedMarkup,
@@ -444,7 +447,7 @@ fn bounded_accessible_value(value: &str) -> Cow<'_, str> {
 const NUMBER_GLYPHS: usize = 24;
 
 /// Appends `value` rounded to `decimals` places.
-fn write_result_number(out: &mut String, value: f64, decimals: usize) -> fmt::Result {
+pub(crate) fn write_result_number(out: &mut String, value: f64, decimals: usize) -> fmt::Result {
     let start = out.len();
     write!(out, "{value:.decimals$}")?;
     let rounded = &out[start..];

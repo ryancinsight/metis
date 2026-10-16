@@ -24,6 +24,14 @@ moirai-executor = { workspace = true }
 name = "rasterizer"
 harness = false
 
+# Off by default because it requires a Moirai release carrying the
+# `windows::clipboard` mechanism (local work; see backlog
+# METIS-INTEGRATION-001's clipboard increment).
+[features]
+clipboard = []
+
+default = []
+
 [target.'cfg(not(target_arch = "wasm32"))'.dependencies]
 moirai-http = { workspace = true }
 

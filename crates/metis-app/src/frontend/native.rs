@@ -16,6 +16,7 @@ use std::time::Duration;
 use super::native_accessibility;
 use keyboard::PATIENT_INPUT;
 
+mod copy_result;
 mod keyboard;
 
 const INITIAL_WIDTH: u32 = 800;
@@ -195,6 +196,7 @@ impl<T: IpcTransport> NativeForm<T> {
             targets.extend([
                 ApplicationCommand::ThemeDark.id(),
                 ApplicationCommand::ThemeSystem.id(),
+                ApplicationCommand::CopyResult.id(),
             ]);
         } else {
             targets.extend([ApplicationCommand::FocusPatient.id(), "btn-calc"]);
@@ -287,6 +289,9 @@ impl<T: IpcTransport> NativeForm<T> {
                     }
                     _ => Ok(false),
                 }
+            }
+            target if target == native_accessibility::copy_result_identity() => {
+                copy_result::apply(self, request)
             }
             target if target == native_accessibility::patient_input_identity() => {
                 match request.action {

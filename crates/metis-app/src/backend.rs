@@ -7,7 +7,6 @@ use crate::{
         WEBVIEW_THEME_CAPTURE_FRONTEND_ROLE, WebViewTheme,
     },
 };
-use metis_backend::UiFragmentPlugin;
 use metis_backend::service::SystemClock;
 use metis_backend::{
     BackendService, INTERACTIVE_SESSION_DEADLINE, ProcessEnvironment, SESSION_DEADLINE,
@@ -17,6 +16,7 @@ use metis_backend::{
     BrowserHttpService, MAX_HTTP_REQUESTS, serve_browser_http_with_response_delay,
     serve_browser_websocket, serve_browser_websocket_with_response_delay,
 };
+use metis_backend::{ClipboardPlugin, UiFragmentPlugin};
 use metis_core::host::{HostContext, HostOrigin, HostPolicy, HostSessionId, WindowId};
 use metis_core::protocol::TargetCapability;
 use moirai_async::net::TcpListener;
@@ -127,6 +127,7 @@ fn run_with_mode(
     // Binary reporter boundary erases errors; no hot-path dispatch.
     let executable = std::env::current_exe()?;
     let mut service = BackendService::new(entropy::session_key()?, SafetyEnvelope::default());
+    service.register_plugin(ClipboardPlugin)?;
     service.add_target_capability(TargetCapability::PrivateProcessIpc)?;
     let (frontend_role, native_capability, deadline, capture_output) = match mode {
         FrontendMode::Headless => (FRONTEND_ROLE, None, SESSION_DEADLINE, None),
@@ -216,6 +217,7 @@ pub(crate) fn run_browser_service(
         context,
     )?;
     service.register_plugin(UiFragmentPlugin)?;
+    service.register_plugin(ClipboardPlugin)?;
     let listener = moirai_executor::block_on(TcpListener::bind(&format!("127.0.0.1:{port}")))?;
     let address = listener.local_addr()?;
     eprintln!("browser_service_endpoint=ws://{address}/socket");

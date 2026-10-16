@@ -47,6 +47,9 @@ pub enum ApplicationCommand {
     ThemeDark,
     /// Return to the system presentation palette.
     ThemeSystem,
+    /// Copy the current correlated rate sentence onto the system clipboard
+    /// through the trusted backend's clipboard authority.
+    CopyResult,
 }
 
 impl ApplicationCommand {
@@ -57,6 +60,7 @@ impl ApplicationCommand {
             Self::FocusPatient => "command-focus-patient",
             Self::ThemeDark => "command-theme-dark",
             Self::ThemeSystem => "command-theme-system",
+            Self::CopyResult => "command-copy-result",
         }
     }
 
@@ -67,6 +71,7 @@ impl ApplicationCommand {
             b"command-focus-patient" => Some(Self::FocusPatient),
             b"command-theme-dark" => Some(Self::ThemeDark),
             b"command-theme-system" => Some(Self::ThemeSystem),
+            b"command-copy-result" => Some(Self::CopyResult),
             _ => None,
         }
     }
@@ -78,6 +83,7 @@ impl ApplicationCommand {
             Self::FocusPatient => "Patient reference focused",
             Self::ThemeDark => "Theme: dark",
             Self::ThemeSystem => "Theme: system",
+            Self::CopyResult => "Result copied to clipboard",
         }
     }
 
@@ -85,7 +91,7 @@ impl ApplicationCommand {
     #[must_use]
     pub const fn theme(self) -> Option<ApplicationTheme> {
         match self {
-            Self::FocusPatient => None,
+            Self::FocusPatient | Self::CopyResult => None,
             Self::ThemeDark => Some(ApplicationTheme::Dark),
             Self::ThemeSystem => Some(ApplicationTheme::System),
         }
@@ -208,6 +214,9 @@ impl<T: IpcTransport> FrontendApp<T> {
         if command == ApplicationCommand::FocusPatient {
             INITIAL_FOCUS.clone_into(&mut self.focus.control);
         }
+        if command == ApplicationCommand::CopyResult {
+            return self.copy_result_to_clipboard();
+        }
         if let Err(error) = self.render() {
             self.command_menu = previous_menu;
             self.command_status = previous_status;
@@ -229,6 +238,12 @@ mod tests {
 
     #[test]
     fn command_actions_have_bounded_status_and_theme_semantics() {
+        assert_eq!(
+            ApplicationCommand::from_id("command-copy-result"),
+            Some(ApplicationCommand::CopyResult)
+        );
+        assert_eq!(ApplicationCommand::CopyResult.id(), "command-copy-result");
+        assert_eq!(ApplicationCommand::CopyResult.theme(), None);
         assert_eq!(
             ApplicationCommand::FocusPatient.status(),
             "Patient reference focused"

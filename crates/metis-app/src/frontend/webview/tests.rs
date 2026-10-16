@@ -1,16 +1,15 @@
 use super::{
-    MAX_PATIENT_ID_BYTES,
-    assets::{
-        APP_JS, INDEX_HTML, PERMISSION_PROBE_APP_JS, PERMISSION_PROBE_INDEX_HTML, STYLES_CSS,
-    },
+    MAX_PATIENT_ID_BYTES, WebViewAction, WebViewRequest,
+    assets::{INDEX_HTML, PAGE_JS, PERMISSION_PROBE_INDEX_HTML, STYLES_CSS},
+    is_permission_probe_complete,
     package::file_uri,
     permission_denied_message,
 };
 use metis_platform::native::WebViewPermission;
 
 #[test]
-fn package_assets_are_script_scoped_and_bridge_bound() {
-    assert!(INDEX_HTML.contains("script-src 'self'"));
+fn package_assets_are_script_scoped_and_wasm_capable() {
+    assert!(INDEX_HTML.contains("script-src 'self' 'wasm-unsafe-eval'"));
     assert!(INDEX_HTML.contains("default-src 'none'"));
     for directive in [
         "img-src 'none'",
@@ -42,16 +41,41 @@ fn package_assets_are_script_scoped_and_bridge_bound() {
             STYLES_CSS.contains(&format!("body[data-metis-theme=\"{theme}\"]")),
             "missing WebView2 theme selector: {theme}"
         );
-        assert!(
-            APP_JS.contains(&format!("['{theme}'")),
-            "missing theme value: {theme}"
-        );
     }
-    assert!(APP_JS.contains("applyTheme"));
-    assert!(APP_JS.contains("URLSearchParams"));
-    assert!(APP_JS.contains("themes.has(requestedTheme)"));
-    assert!(APP_JS.contains("if (!label) return;"));
-    assert!(APP_JS.contains("chrome.webview"));
+    for page in [INDEX_HTML, PERMISSION_PROBE_INDEX_HTML] {
+        assert!(
+            page.contains("script type=\"module\" src=\"./page.js\""),
+            "the packaged page must load only the generated page loader"
+        );
+        assert!(!page.contains("<script src=\"./app.js\""));
+        // No inline script bodies: the CSP admits same-origin modules only.
+        for tag in page.split("<script").skip(1) {
+            let body = tag.split("</script>").next().unwrap_or_default();
+            assert!(
+                !body.contains('>') || !body.contains('{'),
+                "the packaged page must not embed an inline script body"
+            );
+        }
+    }
+}
+
+#[test]
+fn page_loader_is_generated_and_mechanically_started() {
+    // The loader is wasm-bindgen output plus one mechanical auto-init suffix;
+    // authored page behavior lives in the metis-webview-page Rust module.
+    assert!(PAGE_JS.starts_with("/* @ts-self-types=\"./page.d.ts\" */"));
+    assert!(PAGE_JS.contains("export { initSync, __wbg_init as default };"));
+    let suffix = "Mechanical auto-init appended by scripts/webview_page.py";
+    let suffix_index = PAGE_JS.find(suffix).expect("mechanical auto-init suffix");
+    assert!(PAGE_JS[suffix_index..].contains("initSync({ module: new WebAssembly.Module("));
+    assert!(PAGE_JS[suffix_index..].contains("atob("));
+    // The suffix is the only place after the generated exports.
+    assert!(
+        PAGE_JS[suffix_index..].matches("append").count() == 1,
+        "the generator suffix must appear exactly once"
+    );
+    // The generated module is embedded once as one base64 payload.
+    assert_eq!(PAGE_JS.matches("atob(").count(), 1);
 }
 
 #[test]
@@ -71,21 +95,6 @@ fn packaged_command_surface_is_local_and_keyboard_closable() {
             "missing WebView2 command-surface fragment: {fragment}"
         );
     }
-    for fragment in [
-        "setCommandMenu",
-        "aria-expanded",
-        "aria-hidden",
-        "commandMenu.dataset.commandMenuOpen",
-        "event.key !== 'Escape'",
-        "Patient reference focused",
-        "themeMode.value = 'dark'",
-        "themeMode.value = 'system'",
-    ] {
-        assert!(
-            APP_JS.contains(fragment),
-            "missing local command behavior: {fragment}"
-        );
-    }
     for command in metis_frontend::ApplicationCommand::ALL {
         let start = INDEX_HTML
             .find(&format!("id=\"{}\"", command.id()))
@@ -101,57 +110,45 @@ fn packaged_command_surface_is_local_and_keyboard_closable() {
             command.id()
         );
     }
-    for fragment in [
-        "button[aria-keyshortcuts]",
-        "event.repeat",
-        "command.click()",
-    ] {
-        assert!(
-            APP_JS.contains(fragment),
-            "missing shortcut dispatch: {fragment}"
-        );
-    }
     assert!(STYLES_CSS.contains("#command-menu[data-command-menu-open=\"false\"]"));
     assert!(STYLES_CSS.contains("@media (forced-colors: active)"));
-    assert!(!APP_JS.contains("postMessage({\n      action: 'command"));
 }
 
 #[test]
-fn page_script_has_no_unscoped_authority_bridge() {
+fn page_loader_has_no_unscoped_authority_bridge() {
     for forbidden in [
         "hostObjects",
-        "fetch(",
         "XMLHttpRequest",
         "WebSocket",
         "window.open",
         "navigator.geolocation",
+        "coreWebView2",
     ] {
         assert!(
-            !APP_JS.contains(forbidden),
-            "page script must not acquire unscoped authority: {forbidden}"
+            !PAGE_JS.contains(forbidden),
+            "page loader must not acquire unscoped authority: {forbidden}"
         );
     }
+    // The generated glue retains an async fetch default path that the page
+    // never runs; the mechanical suffix embeds the module instead. Its one
+    // occurrence must be the unused `__wbg_init` default.
+    let fetch_count = PAGE_JS.matches("fetch(").count();
+    assert_eq!(fetch_count, 1, "only the unused generated fetch default");
 }
 
 #[test]
 fn permission_probe_is_separate_from_the_calculation_page() {
-    assert!(!APP_JS.contains("navigator.geolocation"));
+    assert!(!INDEX_HTML.contains("Metis permission probe"));
     assert!(PERMISSION_PROBE_INDEX_HTML.contains("Metis permission probe"));
     for permission in ["geolocation", "camera", "microphone", "notifications"] {
         assert!(
             PERMISSION_PROBE_INDEX_HTML.contains(&format!("permission-{permission}")),
             "missing permission result row: {permission}"
         );
-        assert!(
-            PERMISSION_PROBE_APP_JS.contains(&format!("'{permission}'")),
-            "missing permission probe: {permission}"
-        );
     }
-    assert!(PERMISSION_PROBE_APP_JS.contains("navigator.geolocation"));
-    assert!(PERMISSION_PROBE_APP_JS.contains("navigator.mediaDevices"));
-    assert!(PERMISSION_PROBE_APP_JS.contains("Notification.requestPermission"));
-    assert!(PERMISSION_PROBE_APP_JS.contains("message.status"));
-    assert!(PERMISSION_PROBE_APP_JS.contains("permission_probe_complete"));
+    // Both packaged pages share one generated loader; the probe behavior is
+    // dispatched inside the Rust module (see the owning crate's tests).
+    assert!(PAGE_JS.contains("initSync"));
 }
 
 #[test]
@@ -191,4 +188,30 @@ fn permission_denial_message_preserves_user_initiation() {
         json,
         r#"{"type":"permission_denied","status":"permission_denied","error_code":8207,"permission":"camera","message":"WebView2 denied camera access request","user_initiated":true}"#
     );
+}
+
+#[test]
+fn request_parser_rejects_unknown_fields_and_preserves_inputs() {
+    let request: WebViewRequest = serde_json::from_str(
+        r#"{"action":"submit","patient_id":"PT-1","weight_kg":72.5,"concentration_mg_ml":4.0,"target_dose_mcg_kg_min":0.5}"#,
+    )
+    .expect("bounded request");
+    assert_eq!(request.action, WebViewAction::Submit);
+    assert_eq!(request.patient_id, "PT-1");
+    assert!((request.weight_kg - 72.5).abs() <= f64::EPSILON);
+    assert!(serde_json::from_str::<WebViewRequest>(
+        r#"{"action":"submit","patient_id":"PT-1","weight_kg":72.5,"concentration_mg_ml":4.0,"target_dose_mcg_kg_min":0.5,"extra":true}"#,
+    )
+    .is_err());
+}
+
+#[test]
+fn permission_capture_waits_for_typed_completion_message() {
+    assert!(is_permission_probe_complete(
+        r#"{"action":"permission_probe_complete"}"#
+    ));
+    assert!(!is_permission_probe_complete(
+        r#"{"action":"permission_probe_complete","extra":true}"#
+    ));
+    assert!(!is_permission_probe_complete(r#"{"action":"submit"}"#));
 }

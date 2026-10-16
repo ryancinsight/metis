@@ -1,0 +1,55 @@
+[package]
+name = "metis-webview-page"
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+authors.workspace = true
+license.workspace = true
+repository.workspace = true
+description = "Rust presentation and typed bridge for the packaged WebView2 pages"
+readme = "README.md"
+
+# The crate is an ordinary rlib on every target, so its public contracts form
+# a normal API surface for the workspace-wide lint gates. Only the WebAssembly
+# build needs a loadable module; `scripts/webview_page.py` adds the cdylib
+# crate type through `cargo rustc` for that one artifact.
+[lib]
+name = "metis_webview_page"
+path = "src/lib.rs"
+crate-type = ["rlib"]
+
+# The presentation module runs only inside the packaged `WebView2` page, so the
+# browser interop dependencies are gated to the WebAssembly target; the native
+# target stays dependency-free for the workspace-wide builds and lint gates.
+[target.'cfg(target_arch = "wasm32")'.dependencies]
+wasm-bindgen = { workspace = true }
+js-sys = { workspace = true }
+web-sys = { workspace = true, features = [
+    "Document",
+    "Element",
+    "Clipboard",
+    "Event",
+    "EventTarget",
+    "Geolocation",
+    "HtmlButtonElement",
+    "HtmlElement",
+    "HtmlInputElement",
+    "HtmlSelectElement",
+    "KeyboardEvent",
+    "Location",
+    "MediaDevices",
+    "MediaStream",
+    "MediaStreamConstraints",
+    "MediaStreamTrack",
+    "Navigator",
+    "Node",
+    "NodeList",
+    "Notification",
+    "Window",
+] }
+serde.workspace = true
+serde_json.workspace = true
+wasm-bindgen-futures = { workspace = true }
+
+[lints]
+workspace = true

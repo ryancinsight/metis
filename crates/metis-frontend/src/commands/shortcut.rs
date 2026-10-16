@@ -23,7 +23,12 @@ const fn alt_shift(byte: u8) -> Accelerator {
 
 impl ApplicationCommand {
     /// Every local command, in menu order.
-    pub const ALL: [Self; 3] = [Self::FocusPatient, Self::ThemeDark, Self::ThemeSystem];
+    pub const ALL: [Self; 4] = [
+        Self::FocusPatient,
+        Self::ThemeDark,
+        Self::ThemeSystem,
+        Self::CopyResult,
+    ];
 
     /// The keyboard accelerator bound to this command.
     #[must_use]
@@ -32,6 +37,7 @@ impl ApplicationCommand {
             Self::FocusPatient => alt_shift(b'P'),
             Self::ThemeDark => alt_shift(b'D'),
             Self::ThemeSystem => alt_shift(b'S'),
+            Self::CopyResult => alt_shift(b'C'),
         }
     }
 
