@@ -80,9 +80,7 @@ mod tests {
     use metis_core::host::{
         HostOrigin, HostPolicy, HostSessionId, VerifiedHostCapability, WindowId,
     };
-    use metis_core::protocol::{
-        ClipboardWritePayload, ClipboardWriteResponse, MAX_CLIPBOARD_WRITE_BYTES,
-    };
+    use metis_core::protocol::{ClipboardWritePayload, MAX_CLIPBOARD_WRITE_BYTES};
     use metis_platform::MAX_CLIPBOARD_TEXT_BYTES;
 
     const KEY: &[u8] = b"metis-clipboard-plugin-test-key";
@@ -146,6 +144,8 @@ mod tests {
     #[cfg(windows)]
     #[ignore = "replaces the real system clipboard; run explicitly on an owned host"]
     fn witnessed_write_carries_the_declared_byte_count() {
+        use metis_core::protocol::ClipboardWriteResponse;
+
         let witness = witness();
         let text = "Métis 🧩 clipboard plugin round trip";
         let body = ClipboardWritePayload::new(text)
