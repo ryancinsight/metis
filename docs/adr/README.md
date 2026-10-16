@@ -67,3 +67,4 @@
 | [0056](0056-rust-browser-shell.md) | Rust browser shell and authenticated HTTP presentation | Accepted |
 | [0057](0057-native-external-links.md) | Native external link authority | Accepted |
 | [0059](0059-windows-rust-pages.md) | Rust pages in the Windows WebView2 host | Accepted |
+| [0060](0060-component-lifecycle.md) | General component lifecycle for application state and views | Proposed |
