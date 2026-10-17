@@ -1,6 +1,7 @@
 """Run the authenticated, typed HTTP fragment browser trace."""
 from __future__ import annotations
 
+import json
 import pathlib
 import re
 from typing import Any, Dict, Mapping, Optional
@@ -125,13 +126,16 @@ def run_fragment_scenario(
 ) -> Trace:
     """Exercise authenticated success, rejection, stale state and remount."""
     trace: Optional[Trace] = None
+    phase = "session setup"
     try:
         client.create_session(engine.resolve_webdriver_name(browser_name), device_scale_milli)
         client.set_timeouts(timeout_ms)
         trace = Trace(engine, url, FRAGMENT_BRIDGE, revision, client.capabilities)
         client.navigate(url)
         record_device_scale(client, trace, device_scale_milli)
+        phase = "initial authenticated response"
         _wait_for_text(client, "metis-status", FRAGMENT_SUCCESS, include=True, timeout_ms=timeout_ms)
+        phase = "negative probes"
         _wait_for_text(client, "metis-negative", FRAGMENT_NEGATIVE, include=False, timeout_ms=timeout_ms)
         ready = _snapshot(client, trace, "authenticated-success")
         _assert_ready(
@@ -154,6 +158,7 @@ def run_fragment_scenario(
 
         generation = ready["generation"]
         client.click(client.find("#metis-reset"))
+        phase = "reset"
         _wait_for_text(client, "metis-status", "Mount reset; the previous fragment generation is stale", include=True, timeout_ms=timeout_ms)
         reset = _snapshot(client, trace, "reset-stale-generation")
         if reset["generation"] != generation + 1 or any(
@@ -165,6 +170,7 @@ def run_fragment_scenario(
         trace.actions.append({"action": "reset", "stale_state": "cleared", "generation": reset["generation"]})
 
         client.click(client.find("#metis-fragment"))
+        phase = "remounted authenticated response"
         _wait_for_text(client, "metis-status", FRAGMENT_SUCCESS, include=True, timeout_ms=timeout_ms)
         recovered = _snapshot(client, trace, "remounted-success")
         _assert_ready(
@@ -186,6 +192,22 @@ def run_fragment_scenario(
             "mounted_page": "http-health.html",
         }
         return trace
+    except BrowserRuntimeError as error:
+        if trace is None:
+            raise
+        # Preserve the observed application error before closing the session.
+        # A driver timeout alone cannot distinguish transport, authentication,
+        # negative-probe, or lifecycle failures. The transport bounds this read.
+        try:
+            observed = client.execute(FRAGMENT_SNAPSHOT_SCRIPT, [list(FRAGMENT_IDS)])
+        except BrowserRuntimeError as observation_error:
+            raise BrowserRuntimeError(
+                f"fragment {phase}: {error}; state unavailable: {observation_error}"
+            ) from error
+        raise BrowserRuntimeError(
+            f"fragment {phase}: {error}; observed state: "
+            f"{json.dumps(observed, sort_keys=True)}"
+        ) from error
     finally:
         client.close()
         if trace is not None:

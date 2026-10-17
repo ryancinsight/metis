@@ -1,5 +1,63 @@
 # Open capability and evidence risks
 
+## Current provider checkpoint — 2026-10-15
+
+Consus0.3 is merged at beae4ce7. Its executed published-baseline consumer
+requires a pre-1.0 minor release for the Moirai0.7 to0.9 public async identity;
+the earlier0.2.1 claim is withdrawn and its publisher is cancelled before
+publishing steps execute. Both earlier raster upload commands are obsolete.
+The new0.3 source/archive handoff keeps first-upload authentication separate.
+
+This owned Metis0.5 preparation resolves root/fuzz locks against Consusbeae4ce7,
+Apollo0eab90e3 (core0.17 unchanged from published730f6262), Eunomia15fbb94c,
+Hermesac60146a, Moirai44a962f0, memory481c7452, Gaia c0db650e and Leto8b4ab407.
+The actual full graph passes698 native tests (zero skips),42 doctests, strict
+all-feature/all-target Clippy, strict docs and formatting. Root registry tuples
+are preserved; fuzz updates only the Moirai-required rustls0.23.45 to0.23.46.
+All fuzz harnesses check, with the existing protected nightly output-reader
+deprecation warning left untouched. No production Rust, feature, gate or
+native budget changes occur; protected503/504 source remains separate.
+
+## Full verification repairs [patch] — 2026-10-15
+
+Run38794411669 at a7c08ac passes the real Apple bundle, Chromium, Firefox,
+WebKit and cross-engine text jobs. Windows and conformance reject this task's
+malformed board status/missing priority. The canonical blocked/P1 metadata
+fix passes the existing plan tests and the exact pinned Atlas4cb1fe2
+conformance instrument with zero regressions; no baseline is edited.
+
+Local full Python verification also exposes a real import collision when Unix
+stdlib `resource` is already loaded. The one numeric-summary implementation
+moves unchanged to `measurement_statistics`; the resource CLI and browser
+lifecycle call that owner directly, with no wrapper or alias. All424 existing
+Python tests pass in14.477s after the repair, including loopback/process and
+analytical-value assertions. Its60-second outer bound is unchanged. Files
+changed for this import repair are absent from the protected504 changed-file
+list; that branch is neither edited nor incorporated.
+
+The next full run38797531486 at6bead6fc passes Windows, Chromium and WebKit.
+Firefox's authenticated fragment scenario fails with a60-second asynchronous
+script timeout; its old failure artifact omits the application response.
+Capture the failing phase and bounded page state before session teardown.
+This diagnostic repair preserves the failure and deadline; it does not claim
+the Firefox contract passes or change any acceptance check.
+
+The original run's final fuzz campaign and the repaired exact-head full gates
+remain to be observed before merge/publication.
+
+## Remaining current-provider acceptance [major]
+
+The current0.5 graph passes the local native/strict/doc gates above, including
+actual Consus0.3. External public-API proof and complete Windows/browser,
+release, normalized-package and exact-head hosted gates remain outstanding.
+The separate raster first-upload authentication is not granted by dependency
+repair authorization. No source, gate, budget, credential or permission
+workaround is supplied. The0.2.1 release claim and both earlier raster upload
+commands are retired; do not treat historical checkpoints as current readiness.
+
+Earlier unrelated capability evidence below is preserved; its historical
+provider versions do not override this current checkpoint.
+
 ## Standalone Consus adoption [patch]
 
 Target: Metis 0.4.1, Consus compression/raster 0.2 and the delivered Moirai

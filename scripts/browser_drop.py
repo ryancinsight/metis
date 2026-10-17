@@ -253,7 +253,7 @@ def _source_digests() -> dict[str, str]:
         "browser_drop_lifecycle.py",
         "browser_file_read.py",
         "browser_protocol.py",
-        "resource.py",
+        "measurement_statistics.py",
         "browser_runtime.py",
         "browser_trace.py",
     )
