@@ -1,5 +1,24 @@
 Current framework version: Metis 0.4.1. Remaining capability work follows.
 
+<a id="METIS-SELECTION-001"></a>
+## METIS-SELECTION-001 — Preserved shell selection recovery [minor]
+
+- Status: todo; priority: P1; owner: Metis presentation; last-update: 2026-10-13.
+- Scope: one opt-in Rust/WASM selection increment from preservation PR #498;
+  assign explicit demonstration series to an active viewport and restore each
+  viewport's assignment without importing DICOM workflow ownership.
+- Acceptance: selected series equals the active assignment; other assignments
+  persist; invalid input preserves state; mouse/keyboard and remount work.
+- Decision and specification: [ADR 0058](docs/adr/0058-series-selection-demonstration.md).
+- Verification: 4 new reducer tests (69 focused / 690 workspace tests pass),
+  Chrome 155 mouse/keyboard, 18 checked states, real listener detachment,
+  2×2/360px layout, native/WASM Clippy, locked packaging and 196 native API checks.
+- Broader diagnostics: 410/412 Python checks pass on macOS; both Windows ABI
+  failures reproduce on main. The candidate reports one nextest leak in unchanged
+  invocation code; the baseline suite does not reproduce it. Association remains open.
+- Residual: loading, decoding, geometry, image planes and reconstruction remain
+  consumer-owned; the preservation draft and all four original files remain intact.
+
 <a id="METIS-WEBVIEW-RUST-001"></a>
 ## METIS-WEBVIEW-RUST-001 — Rust-owned Windows page lifecycle [minor]
 

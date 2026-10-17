@@ -58,6 +58,10 @@ validated image and metadata result; the owning workflow and visual evidence
 live in the [RITK manual](https://github.com/ryancinsight/ritk/blob/main/docs/manual/dicom-workflow.md).
 The `METIS-DICOM-*` backlog entries record removal and boundary checks for that
 ownership decision; they do not add DICOM implementation to Metis.
+An opt-in [series selection demonstration](docs/manual/browser.md#series-selection-demonstration)
+recovers Rust-owned assignment behavior from preservation PR #498. Its study
+and series are explicit fixtures; viewport content reports assignments and
+does not display decoded images. The default workbench retains its current scope.
 The RITK manual now leads with the reviewed real MRI-DIR CT window capture,
 including axial, coronal, sagittal and axial-MIP panels through the Métis host;
 it also documents the copyable local command for opening a saved clinical study.
