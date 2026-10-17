@@ -38,6 +38,13 @@ impl<T: IpcTransport> IpcClient<T> {
             events: VecDeque::new(),
         }
     }
+
+    /// Consume the client and recover its owned transport for session teardown.
+    ///
+    /// Correlation, queued events and the active token end with this client.
+    pub fn into_transport(self) -> T {
+        self.transport
+    }
     /// Acquires a token whose principal and protocol version match the request.
     ///
     /// The transport establishes peer trust; principal matching does not prove

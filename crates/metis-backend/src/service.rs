@@ -274,10 +274,12 @@ impl<C> BackendService<C> {
         self.plugins.register(plugin)
     }
 
+    #[cfg(not(target_arch = "wasm32"))]
     pub(crate) fn browser_policy(&self) -> &HostPolicy {
         &self.host_policy
     }
 
+    #[cfg(not(target_arch = "wasm32"))]
     pub(crate) const fn has_trusted_context(&self) -> bool {
         self.trusted_context.is_some()
     }

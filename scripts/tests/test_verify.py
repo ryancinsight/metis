@@ -276,7 +276,7 @@ class WorkflowContractTests(unittest.TestCase):
 
     def test_draft_pull_requests_and_unsupported_hosts_are_excluded(self):
         draft_guard = "if: github.event_name != 'pull_request' || github.event.pull_request.draft == false"
-        guarded_jobs = ("apple", "workflow-lint", "lockfile", "adr-index", "conformance")
+        guarded_jobs = ("apple", "workflow-lint", "lockfile", "adr-index", "conformance", "native-transport")
         self.assertEqual(self.source.count(draft_guard), len(guarded_jobs))
         for job in guarded_jobs:
             block = re.search(rf"^  {re.escape(job)}:\n.*?(?=^  [\w-]+:|\Z)", self.source, re.MULTILINE | re.DOTALL)

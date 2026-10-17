@@ -1,0 +1,115 @@
+# Native remote sessions over QUIC
+
+Metis 0.5.0 includes QUIC in every native `metis-ipc` and `metis-backend` build,
+including with default features disabled. No QUIC feature flag is needed.
+It consumes Moirai 0.9.0 and `moirai-quic` 0.1.0 from the exact published provider
+revision recorded in Cargo.toml and Cargo.lock. Canonical native verification
+uses that Git source without development path patches. Both hosted Linux and
+Windows pass the default and minimal native session suites at consumer revision
+`ed72092`. Required review/checks and default-branch promotion remain release gates.
+
+Current-main reconciliation pins provider `ed039a6ed5fcc454a572fd7ab840b4c1919a2c9d` in both
+canonical locks and retains the previous QUIC/UDP implementation. Source,
+audit identifiers and unrelated provider revisions remain unchanged. Local
+macOS integration passes; final hosted Windows/Linux runtime evidence and
+protected promotion remain release gates. Provider ADR 0078 owns the applied
+UDP queue contract.
+
+One TLS-authenticated UDP connection supports bounded independent bidirectional
+streams. Each stream carries one ordered Metis session, with its own handler,
+trusted host context, fresh session MAC key, token, replay sequence and audit.
+Commands and events use reliable streams. TLS ALPN is `metis-ipc/1`; one Moirai
+message contains exactly one bounded Metis frame. Early data and unreliable
+datagrams are disabled. Existing private pipes and browser transports remain
+appropriate for those hosts; QUIC supplies native remote sessions.
+
+## Runnable authenticated session
+
+The `quic_session` example uses real UDP, mutual TLS, the production backend,
+capability handshake, target descriptor, clinical calculation and audited event.
+Supply your certificate chains, matching keys and CA roots. The server also
+requires the exact authorized client certificate and one fresh 32-byte binary
+session MAC key for this single service lifetime. No trust store is installed.
+Certificate equality authorizes the client; its SHA-256-derived principal is
+only a session label. Native QUIC builds require ring's C/assembly build tools;
+ring is linked statically, while OS socket/CRT libraries remain system libraries.
+
+The commands below use a standalone checkout and its canonical Git lock. In
+Atlas, a Cargo working directory outside the development path overlay preserves
+that lock; keep the shared target directory and non-patch build settings.
+
+Run the server in one terminal, replacing the paths with the actual files:
+
+```sh
+cargo run --locked -p metis-backend --example quic_session -- \
+  server 127.0.0.1:4433 localhost server-chain.pem server-key.pem \
+  client-ca.pem authorized-client.pem session-mac.key
+```
+
+Run the client in another terminal. The server certificate must cover
+`localhost`, and its trust root must appear in `server-ca.pem`:
+
+```sh
+cargo run --locked -p metis-backend --example quic_session -- \
+  client 127.0.0.1:4433 localhost client-chain.pem client-key.pem \
+  server-ca.pem 72.5 4.0 0.5
+```
+
+The demonstration inputs produce the existing backend law
+`(dose * weight * 60) / (concentration * 1000)`: 0.54375 ml/hr and 2.175 mg/hr.
+The client verifies that the audited event contains the same computed result.
+It then consumes peer FIN; the server awaits transport acknowledgement before
+both endpoints close and drain. The example supports IPv4 and IPv6 addresses.
+
+## Application integration
+
+Construct a `QuicConfig` with `metis_ipc::quic_config`, explicit stream/connection
+limits, a queued-handshake budget and finite operation/idle deadlines. Bind a
+`moirai_quic::QuicEndpoint` using your existing Moirai spawner. Verify client
+identity against application policy before constructing each independent
+`BackendService::with_trusted_context`; provide a fresh MAC key per service.
+Pass an admitted stream and that service to `serve_quic_session`.
+
+Native queue requests use `QuicConfig::with_udp_buffers(UdpBufferConfig)` and
+positive `NonZeroUsize` receive/send sizes. `None` retains kernel defaults;
+requests above the native signed integer range return an error. Inspect
+`QuicEndpoint::udp_buffer_sizes()` after binding: kernels may cap or round
+requests and include bookkeeping, so requested sizes are not payload capacity.
+Socket queues remain independent of frame/stream bounds and deadlines.
+
+The runnable example accepts optional `METIS_QUIC_RECEIVE_BUFFER_BYTES` and
+`METIS_QUIC_SEND_BUFFER_BYTES` environment variables, each a positive decimal
+byte count. Invalid values stop startup before binding. Both peers log their
+effective native queue sizes. Select queue requests from measured local drop
+and memory/latency requirements; the recorded CUBIC loss case has zero kernel
+UDP errors and supplies no evidence for increasing these defaults.
+
+The applied-queue increment verifies four local process pairs against provider
+8f8fd753: IPv4 and IPv6, each with kernel defaults and explicit receive/send
+requests. On the measured macOS host, both peers report 65,536/32,768 bytes for
+explicit requests, matching separately configured native sockets. All pairs
+produce 0.54375 ml/hr and 2.175 mg/hr, verify the same audited result and exit
+after FIN/drain. These are integration and option-value checks, with no WAN
+throughput inference. The provider's Linux/Windows native option gates also pass.
+
+Native blocking hosts use `IpcClient<QuicIpcTransport>`. Native servers await
+backpressure through `AsyncIpcServer<T: NativeSessionTransport>`, shared with
+the existing WebSocket path. `IpcClient::into_transport().close()` completes a
+consumed session; unexpected trailing messages return a protocol error. Reads
+and writes that fail, time out or are cancelled invalidate partial stream
+framing, while sibling streams retain their state.
+
+Perpetual loss can discard every retransmission of the same byte interval.
+The contract returns complete bytes or a finite error; loss rate alone supplies
+no delivery bound. Transport selection remains explicit when UDP is blocked.
+The provider's controlled 108-pair CI matrix records 105 exact-byte successes;
+three 16-stream, maximum-frame trials at symmetric 10 ms/1% loss/100 Mbit/s
+reach the unchanged 60-second workload deadline. Kernel UDP errors remain zero
+while verified progress continues and CUBIC recovery windows contract. The
+provider archives full samples, traces and source provenance; this limit remains
+a performance and promotion gate.
+HTTP/3/WebTransport needs a browser application mapping and is not supplied by
+this native binary session protocol.
+
+See [ADR 0058](../adr/0058-native-quic-sessions.md) and
+[Moirai ADR 0075](https://github.com/ryancinsight/Moirai/blob/ed039a6ed5fcc454a572fd7ab840b4c1919a2c9d/docs/adr/0075-quic-multiplexed-sessions.md).

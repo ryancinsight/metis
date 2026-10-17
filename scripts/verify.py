@@ -414,6 +414,8 @@ def run_gate():
         else:
             EVIDENCE["stages"]["native-host-capture"] = "skipped: Windows-only host"
         cargo("tests", ["nextest", "run", "--workspace", "--profile", "ci"])
+        cargo("quic-minimal", ["nextest", "run", "--no-default-features",
+                                "-p", "metis-backend", "-p", "metis-ipc", "--profile", "ci"])
         execute("python-binding", [sys.executable, str(ROOT / "scripts" / "python_binding.py")], seconds=720, cwd=ROOT)
         cargo("release-build", ["build", "--workspace", "--bins", "--release"])
         distribution_tool = pathlib.Path(metadata["target_directory"]) / "release" / "metis.exe"

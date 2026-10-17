@@ -77,7 +77,7 @@ checksum = "b169f7a6d4742236a0a00c541b845991d0ac43e546831af1249753ab4c3aa3a0"
 dependencies = [
  "cfg-if",
  "cipher",
- "cpufeatures",
+ "cpufeatures 0.2.17",
 ]
 
 [[package]]
@@ -288,6 +288,12 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "4e7648175b45a9a48536d676f68d918270699102aa8dab5496df06904c914600"
 
 [[package]]
+name = "cfg_aliases"
+version = "0.2.2"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "f079e83a288787bcd14a6aea84cee5c87a67c5a3e660c30f557a3d24761b3527"
+
+[[package]]
 name = "chacha20"
 version = "0.9.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -295,7 +301,18 @@ checksum = "c3613f74bd2eac03dad61bd53dbe620703d4371614fe0bc3b9f04dd36fe4e818"
 dependencies = [
  "cfg-if",
  "cipher",
- "cpufeatures",
+ "cpufeatures 0.2.17",
+]
+
+[[package]]
+name = "chacha20"
+version = "0.10.2"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "65c35e4b699c7e15ccbe7ee35c005e4fc0a278d22238a2857e6ce2dadeda1b06"
+dependencies = [
+ "cfg-if",
+ "cpufeatures 0.3.1",
+ "rand_core 0.10.1",
 ]
 
 [[package]]
@@ -305,7 +322,7 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "10cd79432192d1c0f4e1a0fef9527696cc039165d729fb41b3f4f4f354c2dc35"
 dependencies = [
  "aead",
- "chacha20",
+ "chacha20 0.9.1",
  "cipher",
  "poly1305",
  "zeroize",
@@ -419,6 +436,15 @@ dependencies = [
 ]
 
 [[package]]
+name = "cpufeatures"
+version = "0.3.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "5ca28b0ae3115b884660db4118d803791fd6756b6e88f39c0f3f7859060d7566"
+dependencies = [
+ "libc",
+]
+
+[[package]]
 name = "crc32fast"
 version = "1.5.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -479,7 +505,7 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "0dc92fb57ca44df6db8059111ab3af99a63d5d0f8375d9972e319a379c6bab76"
 dependencies = [
  "generic-array",
- "rand_core",
+ "rand_core 0.6.4",
  "subtle",
  "zeroize",
 ]
@@ -510,7 +536,7 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "97fb8b7c4503de7d6ae7b42ab72a5a59857b4c937ec27a3d4539dba95b5ab2be"
 dependencies = [
  "cfg-if",
- "cpufeatures",
+ "cpufeatures 0.2.17",
  "curve25519-dalek-derive",
  "digest",
  "fiat-crypto",
@@ -642,7 +668,7 @@ dependencies = [
  "group",
  "hkdf",
  "pkcs8",
- "rand_core",
+ "rand_core 0.6.4",
  "sec1",
  "subtle",
  "zeroize",
@@ -690,7 +716,7 @@ version = "0.13.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "c0b50bfb653653f9ca9095b427bed08ab8d75a137839d9ad64eb11810d5b6393"
 dependencies = [
- "rand_core",
+ "rand_core 0.6.4",
  "subtle",
 ]
 
@@ -835,7 +861,7 @@ dependencies = [
  "melinoe",
  "mnemosyne-memory",
  "moirai-runtime",
- "rand",
+ "rand 0.8.8",
  "serde",
  "serde_json",
  "slotmap",
@@ -883,8 +909,24 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "ff2abc00be7fca6ebc474524697ae276ad847ad0a6b3faa4bcb027e9a4614ad0"
 dependencies = [
  "cfg-if",
+ "js-sys",
  "libc",
  "wasi",
+ "wasm-bindgen",
+]
+
+[[package]]
+name = "getrandom"
+version = "0.4.3"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "300e883d756b2e4ec94e02791f39b04b522276138852cfc41d9fb7e904106099"
+dependencies = [
+ "cfg-if",
+ "js-sys",
+ "libc",
+ "r-efi",
+ "rand_core 0.10.1",
+ "wasm-bindgen",
 ]
 
 [[package]]
@@ -910,7 +952,7 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "f0f9ef7462f7c099f518d754361858f86d8a07af53ba9af0fe635bbccb151a63"
 dependencies = [
  "ff",
- "rand_core",
+ "rand_core 0.6.4",
  "subtle",
 ]
 
@@ -1144,6 +1186,12 @@ dependencies = [
 ]
 
 [[package]]
+name = "lru-slab"
+version = "0.1.3"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "4050469837a6ff301cd14c1f8f24f88549e6d548f24f64e2148eb0f72cebc51f"
+
+[[package]]
 name = "matchers"
 version = "0.2.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -1165,7 +1213,7 @@ checksum = "cf8baf1c55e62ffcace7a9f06f4bd9cd3f0c4beb022d3b367256b91b87513d98"
 
 [[package]]
 name = "metis-app"
-version = "0.4.1"
+version = "0.5.0"
 dependencies = [
  "metis-backend",
  "metis-core",
@@ -1174,7 +1222,7 @@ dependencies = [
  "metis-platform",
  "metis-ui-lang",
  "moirai-async",
- "moirai-executor",
+ "moirai-executor 0.9.0",
  "moirai-http",
  "serde",
  "serde_json",
@@ -1184,31 +1232,32 @@ dependencies = [
 
 [[package]]
 name = "metis-backend"
-version = "0.4.1"
+version = "0.5.0"
 dependencies = [
  "metis-core",
  "metis-ipc",
  "moirai-async",
- "moirai-core",
+ "moirai-core 0.9.0",
  "moirai-crypto",
- "moirai-executor",
+ "moirai-executor 0.9.0",
  "moirai-http",
- "moirai-transport",
+ "moirai-quic",
+ "moirai-transport 0.9.0",
  "tracing",
  "tracing-subscriber",
 ]
 
 [[package]]
 name = "metis-cli"
-version = "0.4.1"
+version = "0.5.0"
 dependencies = [
  "metis-core",
  "metis-platform",
- "moirai-core",
+ "moirai-core 0.9.0",
  "moirai-crypto",
- "moirai-executor",
+ "moirai-executor 0.9.0",
  "moirai-http",
- "moirai-transport",
+ "moirai-transport 0.9.0",
  "moirai-webview",
  "serde",
  "serde_json",
@@ -1218,7 +1267,7 @@ dependencies = [
 
 [[package]]
 name = "metis-core"
-version = "0.4.1"
+version = "0.5.0"
 dependencies = [
  "moirai-crypto",
  "tracing",
@@ -1227,7 +1276,7 @@ dependencies = [
 
 [[package]]
 name = "metis-frontend"
-version = "0.4.1"
+version = "0.5.0"
 dependencies = [
  "criterion",
  "iris-viz",
@@ -1239,7 +1288,7 @@ dependencies = [
 
 [[package]]
 name = "metis-host"
-version = "0.4.1"
+version = "0.5.0"
 dependencies = [
  "moirai-webview",
  "tracing-subscriber",
@@ -1247,32 +1296,34 @@ dependencies = [
 
 [[package]]
 name = "metis-ipc"
-version = "0.4.1"
+version = "0.5.0"
 dependencies = [
  "metis-core",
  "moirai-async",
+ "moirai-executor 0.9.0",
  "moirai-http",
- "moirai-pal",
+ "moirai-pal 0.9.0",
+ "moirai-quic",
 ]
 
 [[package]]
 name = "metis-platform"
-version = "0.4.1"
+version = "0.5.0"
 dependencies = [
  "criterion",
  "eunomia",
  "hermes-simd",
  "metis-core",
  "moirai-async",
- "moirai-executor",
+ "moirai-executor 0.9.0",
  "moirai-http",
- "moirai-pal",
- "moirai-transport",
+ "moirai-pal 0.9.0",
+ "moirai-transport 0.9.0",
 ]
 
 [[package]]
 name = "metis-python"
-version = "0.4.1"
+version = "0.5.0"
 dependencies = [
  "metis-backend",
  "metis-core",
@@ -1283,14 +1334,14 @@ dependencies = [
 
 [[package]]
 name = "metis-starter"
-version = "0.4.1"
+version = "0.5.0"
 dependencies = [
- "moirai-pal",
+ "moirai-pal 0.9.0",
 ]
 
 [[package]]
 name = "metis-ui"
-version = "0.4.1"
+version = "0.5.0"
 dependencies = [
  "consus-compression",
  "gaia-mesh",
@@ -1301,14 +1352,14 @@ dependencies = [
  "metis-ipc",
  "metis-platform",
  "metis-ui-lang",
- "moirai-core",
+ "moirai-core 0.9.0",
  "moirai-crypto",
- "moirai-executor",
+ "moirai-executor 0.9.0",
 ]
 
 [[package]]
 name = "metis-ui-lang"
-version = "0.4.1"
+version = "0.5.0"
 dependencies = [
  "consus-raster",
  "eunomia",
@@ -1322,12 +1373,12 @@ dependencies = [
 
 [[package]]
 name = "metis-web"
-version = "0.4.1"
+version = "0.5.0"
 dependencies = [
  "metis-core",
  "metis-frontend",
  "metis-ipc",
- "moirai-pal",
+ "moirai-pal 0.9.0",
  "tracing",
  "tracing-subscriber",
  "unicode-segmentation",
@@ -1436,23 +1487,23 @@ dependencies = [
 
 [[package]]
 name = "moirai-async"
-version = "0.8.3"
-source = "git+https://github.com/ryancinsight/Moirai.git#17a680ffebda11bf344fd06138dfc58c73c745be"
+version = "0.9.0"
+source = "git+https://github.com/ryancinsight/Moirai.git?rev=ed039a6ed5fcc454a572fd7ab840b4c1919a2c9d#ed039a6ed5fcc454a572fd7ab840b4c1919a2c9d"
 dependencies = [
  "futures",
  "libc",
  "moirai-async-macros",
- "moirai-core",
- "moirai-executor",
- "moirai-pal",
- "moirai-transport",
- "moirai-utils",
+ "moirai-core 0.9.0",
+ "moirai-executor 0.9.0",
+ "moirai-pal 0.9.0",
+ "moirai-transport 0.9.0",
+ "moirai-utils 0.9.0",
 ]
 
 [[package]]
 name = "moirai-async-macros"
-version = "0.8.3"
-source = "git+https://github.com/ryancinsight/Moirai.git#17a680ffebda11bf344fd06138dfc58c73c745be"
+version = "0.9.0"
+source = "git+https://github.com/ryancinsight/Moirai.git?rev=ed039a6ed5fcc454a572fd7ab840b4c1919a2c9d#ed039a6ed5fcc454a572fd7ab840b4c1919a2c9d"
 dependencies = [
  "proc-macro2",
  "quote",
@@ -1467,25 +1518,37 @@ dependencies = [
  "bytemuck",
  "libc",
  "mnemosyne-memory",
- "moirai-utils",
+ "moirai-utils 0.8.3",
+ "themis-topology",
+]
+
+[[package]]
+name = "moirai-core"
+version = "0.9.0"
+source = "git+https://github.com/ryancinsight/Moirai.git?rev=ed039a6ed5fcc454a572fd7ab840b4c1919a2c9d#ed039a6ed5fcc454a572fd7ab840b4c1919a2c9d"
+dependencies = [
+ "bytemuck",
+ "libc",
+ "mnemosyne-memory",
+ "moirai-utils 0.9.0",
  "themis-topology",
 ]
 
 [[package]]
 name = "moirai-crypto"
-version = "0.8.3"
-source = "git+https://github.com/ryancinsight/Moirai.git#17a680ffebda11bf344fd06138dfc58c73c745be"
+version = "0.9.0"
+source = "git+https://github.com/ryancinsight/Moirai.git?rev=ed039a6ed5fcc454a572fd7ab840b4c1919a2c9d#ed039a6ed5fcc454a572fd7ab840b4c1919a2c9d"
 dependencies = [
  "aes-gcm",
  "chacha20poly1305",
  "ed25519-dalek",
  "elliptic-curve",
- "getrandom",
+ "getrandom 0.2.17",
  "hkdf",
  "hmac",
  "p256",
  "p384",
- "rand_core",
+ "rand_core 0.6.4",
  "rsa",
  "rustls",
  "rustls-pki-types",
@@ -1502,17 +1565,31 @@ source = "git+https://github.com/ryancinsight/Moirai.git#17a680ffebda11bf344fd06
 dependencies = [
  "melinoe",
  "mnemosyne-memory",
- "moirai-core",
- "moirai-pal",
- "moirai-scheduler",
- "moirai-utils",
+ "moirai-core 0.8.3",
+ "moirai-pal 0.8.3",
+ "moirai-scheduler 0.8.3",
+ "moirai-utils 0.8.3",
+ "themis-topology",
+]
+
+[[package]]
+name = "moirai-executor"
+version = "0.9.0"
+source = "git+https://github.com/ryancinsight/Moirai.git?rev=ed039a6ed5fcc454a572fd7ab840b4c1919a2c9d#ed039a6ed5fcc454a572fd7ab840b4c1919a2c9d"
+dependencies = [
+ "melinoe",
+ "mnemosyne-memory",
+ "moirai-core 0.9.0",
+ "moirai-pal 0.9.0",
+ "moirai-scheduler 0.9.0",
+ "moirai-utils 0.9.0",
  "themis-topology",
 ]
 
 [[package]]
 name = "moirai-http"
-version = "0.8.3"
-source = "git+https://github.com/ryancinsight/Moirai.git#17a680ffebda11bf344fd06138dfc58c73c745be"
+version = "0.9.0"
+source = "git+https://github.com/ryancinsight/Moirai.git?rev=ed039a6ed5fcc454a572fd7ab840b4c1919a2c9d#ed039a6ed5fcc454a572fd7ab840b4c1919a2c9d"
 dependencies = [
  "http",
  "httparse",
@@ -1531,10 +1608,29 @@ dependencies = [
  "js-sys",
  "libc",
  "melinoe",
- "moirai-core",
+ "moirai-core 0.8.3",
+ "socket2",
+ "wasm-bindgen",
+ "wasm-bindgen-futures",
+ "web-sys",
+ "windows",
+]
+
+[[package]]
+name = "moirai-pal"
+version = "0.9.0"
+source = "git+https://github.com/ryancinsight/Moirai.git?rev=ed039a6ed5fcc454a572fd7ab840b4c1919a2c9d#ed039a6ed5fcc454a572fd7ab840b4c1919a2c9d"
+dependencies = [
+ "accesskit",
+ "accesskit_windows",
+ "js-sys",
+ "libc",
+ "melinoe",
+ "moirai-core 0.9.0",
  "png",
  "serde_json",
  "socket2",
+ "tracing",
  "wasm-bindgen",
  "wasm-bindgen-futures",
  "web-sys",
@@ -1548,9 +1644,21 @@ version = "0.8.3"
 source = "git+https://github.com/ryancinsight/Moirai.git#17a680ffebda11bf344fd06138dfc58c73c745be"
 dependencies = [
  "melinoe",
- "moirai-core",
- "moirai-executor",
+ "moirai-core 0.8.3",
+ "moirai-executor 0.8.3",
  "themis-topology",
+]
+
+[[package]]
+name = "moirai-quic"
+version = "0.1.0"
+source = "git+https://github.com/ryancinsight/Moirai.git?rev=ed039a6ed5fcc454a572fd7ab840b4c1919a2c9d#ed039a6ed5fcc454a572fd7ab840b4c1919a2c9d"
+dependencies = [
+ "moirai-async",
+ "moirai-core 0.9.0",
+ "moirai-pal 0.9.0",
+ "quinn",
+ "tracing",
 ]
 
 [[package]]
@@ -1558,13 +1666,13 @@ name = "moirai-runtime"
 version = "0.8.3"
 source = "git+https://github.com/ryancinsight/Moirai.git#17a680ffebda11bf344fd06138dfc58c73c745be"
 dependencies = [
- "moirai-core",
- "moirai-executor",
+ "moirai-core 0.8.3",
+ "moirai-executor 0.8.3",
  "moirai-parallel",
- "moirai-scheduler",
+ "moirai-scheduler 0.8.3",
  "moirai-sync",
- "moirai-transport",
- "moirai-utils",
+ "moirai-transport 0.8.3",
+ "moirai-utils 0.8.3",
 ]
 
 [[package]]
@@ -1574,8 +1682,20 @@ source = "git+https://github.com/ryancinsight/Moirai.git#17a680ffebda11bf344fd06
 dependencies = [
  "loom",
  "mnemosyne-memory",
- "moirai-core",
- "moirai-utils",
+ "moirai-core 0.8.3",
+ "moirai-utils 0.8.3",
+ "num_cpus",
+]
+
+[[package]]
+name = "moirai-scheduler"
+version = "0.9.0"
+source = "git+https://github.com/ryancinsight/Moirai.git?rev=ed039a6ed5fcc454a572fd7ab840b4c1919a2c9d#ed039a6ed5fcc454a572fd7ab840b4c1919a2c9d"
+dependencies = [
+ "loom",
+ "mnemosyne-memory",
+ "moirai-core 0.9.0",
+ "moirai-utils 0.9.0",
  "num_cpus",
 ]
 
@@ -1585,14 +1705,14 @@ version = "0.8.3"
 source = "git+https://github.com/ryancinsight/Moirai.git#17a680ffebda11bf344fd06138dfc58c73c745be"
 dependencies = [
  "libc",
- "moirai-core",
- "moirai-utils",
+ "moirai-core 0.8.3",
+ "moirai-utils 0.8.3",
 ]
 
 [[package]]
 name = "moirai-tls"
-version = "0.8.3"
-source = "git+https://github.com/ryancinsight/Moirai.git#17a680ffebda11bf344fd06138dfc58c73c745be"
+version = "0.9.0"
+source = "git+https://github.com/ryancinsight/Moirai.git?rev=ed039a6ed5fcc454a572fd7ab840b4c1919a2c9d#ed039a6ed5fcc454a572fd7ab840b4c1919a2c9d"
 dependencies = [
  "futures-io",
  "futures-rustls",
@@ -1609,9 +1729,21 @@ source = "git+https://github.com/ryancinsight/Moirai.git#17a680ffebda11bf344fd06
 dependencies = [
  "bytemuck",
  "libc",
- "moirai-core",
- "moirai-scheduler",
- "moirai-utils",
+ "moirai-core 0.8.3",
+ "moirai-scheduler 0.8.3",
+ "moirai-utils 0.8.3",
+]
+
+[[package]]
+name = "moirai-transport"
+version = "0.9.0"
+source = "git+https://github.com/ryancinsight/Moirai.git?rev=ed039a6ed5fcc454a572fd7ab840b4c1919a2c9d#ed039a6ed5fcc454a572fd7ab840b4c1919a2c9d"
+dependencies = [
+ "bytemuck",
+ "libc",
+ "moirai-core 0.9.0",
+ "moirai-scheduler 0.9.0",
+ "moirai-utils 0.9.0",
 ]
 
 [[package]]
@@ -1620,9 +1752,14 @@ version = "0.8.3"
 source = "git+https://github.com/ryancinsight/Moirai.git#17a680ffebda11bf344fd06138dfc58c73c745be"
 
 [[package]]
+name = "moirai-utils"
+version = "0.9.0"
+source = "git+https://github.com/ryancinsight/Moirai.git?rev=ed039a6ed5fcc454a572fd7ab840b4c1919a2c9d#ed039a6ed5fcc454a572fd7ab840b4c1919a2c9d"
+
+[[package]]
 name = "moirai-webview"
 version = "0.2.0"
-source = "git+https://github.com/ryancinsight/Moirai.git#17a680ffebda11bf344fd06138dfc58c73c745be"
+source = "git+https://github.com/ryancinsight/Moirai.git?rev=ed039a6ed5fcc454a572fd7ab840b4c1919a2c9d#ed039a6ed5fcc454a572fd7ab840b4c1919a2c9d"
 dependencies = [
  "block2",
  "http",
@@ -1675,7 +1812,7 @@ dependencies = [
  "num-integer",
  "num-iter",
  "num-traits",
- "rand",
+ "rand 0.8.8",
  "smallvec",
  "zeroize",
 ]
@@ -2057,7 +2194,7 @@ version = "0.8.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "8159bd90725d2df49889a078b54f4f79e87f1f8a8444194cdca81d38f5393abf"
 dependencies = [
- "cpufeatures",
+ "cpufeatures 0.2.17",
  "opaque-debug",
  "universal-hash",
 ]
@@ -2069,7 +2206,7 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "9d1fe60d06143b2430aa532c94cfe9e29783047f06c0d7fd359a9a51b729fa25"
 dependencies = [
  "cfg-if",
- "cpufeatures",
+ "cpufeatures 0.2.17",
  "opaque-debug",
  "universal-hash",
 ]
@@ -2185,6 +2322,62 @@ dependencies = [
 ]
 
 [[package]]
+name = "quinn"
+version = "0.11.12"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "4051e23e9185c255a7e33ef59cdbca87a22d359052eecd22fc6b901fb37d9d11"
+dependencies = [
+ "bytes",
+ "cfg_aliases",
+ "pin-project-lite",
+ "quinn-proto",
+ "quinn-udp",
+ "rustc-hash",
+ "rustls",
+ "socket2",
+ "thiserror",
+ "tokio",
+ "tracing",
+ "web-time",
+]
+
+[[package]]
+name = "quinn-proto"
+version = "0.11.19"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "0e750cca55fe4f0439a15d0bb529da9651e79993e8e72c61a899a36d462befbe"
+dependencies = [
+ "bytes",
+ "getrandom 0.4.3",
+ "lru-slab",
+ "rand 0.10.3",
+ "rand_pcg",
+ "ring",
+ "rustc-hash",
+ "rustls",
+ "rustls-pki-types",
+ "slab",
+ "thiserror",
+ "tinyvec",
+ "tracing",
+ "web-time",
+]
+
+[[package]]
+name = "quinn-udp"
+version = "0.5.16"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "af66907df18639dcf4db56ca65490cabc4b27a97dbadd96f2926cca73298f016"
+dependencies = [
+ "cfg_aliases",
+ "libc",
+ "once_cell",
+ "socket2",
+ "tracing",
+ "windows-sys 0.52.0",
+]
+
+[[package]]
 name = "quote"
 version = "1.0.47"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -2192,6 +2385,12 @@ checksum = "1fbf4db142a473a8d80c26bbf18454ed458bf8d26c8219c331daecfdbd079001"
 dependencies = [
  "proc-macro2",
 ]
+
+[[package]]
+name = "r-efi"
+version = "6.0.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "f8dcc9c7d52a811697d2151c701e0d08956f92b0e24136cf4cf27b57a6a0d9bf"
 
 [[package]]
 name = "rancor"
@@ -2210,7 +2409,18 @@ checksum = "e058c7de0b26af77780c769414d6257830bb240f3c38477dbc2c16e5f54d6d4c"
 dependencies = [
  "libc",
  "rand_chacha",
- "rand_core",
+ "rand_core 0.6.4",
+]
+
+[[package]]
+name = "rand"
+version = "0.10.3"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "65c9fb96cbc91e3478eaae79a69fcd3f1ae4ad052e471fe6732fff548984b4af"
+dependencies = [
+ "chacha20 0.10.2",
+ "getrandom 0.4.3",
+ "rand_core 0.10.1",
 ]
 
 [[package]]
@@ -2220,7 +2430,7 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "e6c10a63a0fa32252be49d21e7709d4d4baf8d231c2dbce1eaa8141b9b127d88"
 dependencies = [
  "ppv-lite86",
- "rand_core",
+ "rand_core 0.6.4",
 ]
 
 [[package]]
@@ -2229,7 +2439,22 @@ version = "0.6.4"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "ec0be4795e2f6a28069bec0b5ff3e2ac9bafc99e6a9a7dc3547996c5c816922c"
 dependencies = [
- "getrandom",
+ "getrandom 0.2.17",
+]
+
+[[package]]
+name = "rand_core"
+version = "0.10.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "63b8176103e19a2643978565ca18b50549f6101881c443590420e4dc998a3c69"
+
+[[package]]
+name = "rand_pcg"
+version = "0.10.2"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "caa0f4137e1c0a72f4c651489402276c8e8e1cf081f3b0ba156d2cbeef09e86a"
+dependencies = [
+ "rand_core 0.10.1",
 ]
 
 [[package]]
@@ -2288,7 +2513,7 @@ checksum = "a4689e6c2294d81e88dc6261c768b63bc4fcdb852be6d1352498b114f61383b7"
 dependencies = [
  "cc",
  "cfg-if",
- "getrandom",
+ "getrandom 0.2.17",
  "libc",
  "untrusted",
  "windows-sys 0.52.0",
@@ -2337,7 +2562,7 @@ dependencies = [
  "num-traits",
  "pkcs1",
  "pkcs8",
- "rand_core",
+ "rand_core 0.6.4",
  "sha2",
  "signature",
  "spki",
@@ -2350,6 +2575,12 @@ name = "rustc-demangle"
 version = "0.1.28"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "b74b56ffa8bb2830709a538c2cbcae9aa062db0d2a42563bfb09bdaae44020eb"
+
+[[package]]
+name = "rustc-hash"
+version = "2.1.3"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "6b1e7f9a428571be2dc5bc0505c13fb6bf936822b894ec87abf8a08a4e51742d"
 
 [[package]]
 name = "rustc_version"
@@ -2368,6 +2599,7 @@ checksum = "0d41d731c7d2f962d1ccc364cec258de3c0e93b38c2fb3ba97ac74513048d634"
 dependencies = [
  "log",
  "once_cell",
+ "ring",
  "rustls-pki-types",
  "rustls-webpki",
  "subtle",
@@ -2380,6 +2612,7 @@ version = "1.15.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "2f4925028c7eb5d1fcdaf196971378ed9d2c1c4efc7dc5d011256f76c99c0a96"
 dependencies = [
+ "web-time",
  "zeroize",
 ]
 
@@ -2485,7 +2718,7 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "a7507d819769d01a365ab707794a4084392c824f54a7a6a7862f8c3d0892b283"
 dependencies = [
  "cfg-if",
- "cpufeatures",
+ "cpufeatures 0.2.17",
  "digest",
 ]
 
@@ -2511,7 +2744,7 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "77549399552de45a898a580c1b41d445bf730df867cc44e6c0233bbc4b8329de"
 dependencies = [
  "digest",
- "rand_core",
+ "rand_core 0.6.4",
 ]
 
 [[package]]
@@ -2876,6 +3109,16 @@ dependencies = [
 ]
 
 [[package]]
+name = "web-time"
+version = "1.1.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "5a6580f308b1fad9207618087a65c04e7a10bc77e02c8e84e9b00dd4b12fa0bb"
+dependencies = [
+ "js-sys",
+ "wasm-bindgen",
+]
+
+[[package]]
 name = "webpki-roots"
 version = "0.26.11"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -3157,7 +3400,7 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "c7e468321c81fb07fa7f4c636c3972b9100f0346e5b6a9f2bd0603a52f7ed277"
 dependencies = [
  "curve25519-dalek",
- "rand_core",
+ "rand_core 0.6.4",
  "zeroize",
 ]
 

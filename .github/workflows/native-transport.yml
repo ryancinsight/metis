@@ -1,0 +1,39 @@
+name: Native Metis transport
+
+on:
+  workflow_call:
+
+permissions:
+  contents: read
+
+jobs:
+  native:
+    name: Metis QUIC ${{ matrix.runner }}
+    strategy:
+      fail-fast: false
+      matrix:
+        runner: [ubuntu-24.04, windows-latest]
+    runs-on: ${{ matrix.runner }}
+    timeout-minutes: 25
+    env:
+      CARGO_INCREMENTAL: '0'
+      CARGO_TERM_COLOR: always
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+        with:
+          persist-credentials: false
+      - uses: dtolnay/rust-toolchain@4cda84d5c5c54efe2404f9d843567869ab1699d4
+        with:
+          toolchain: 1.97.0
+          components: clippy,rustfmt
+      - uses: Swatinem/rust-cache@6323deb102c322ba6fcbdcafc7e3dddab59af2b6
+      - uses: taiki-e/install-action@a6b2e2dcd845ddd7f509ce4f3ed3d922b80cc5d9
+        with:
+          tool: nextest@0.9.143
+          checksum: true
+      - name: Check the actual IPC and backend transports
+        run: cargo clippy --locked -p metis-core -p metis-ipc -p metis-backend --all-targets -- -D warnings
+      - name: Verify actual TLS, session authority, replay, computation and events
+        run: cargo nextest run --locked -p metis-core -p metis-ipc -p metis-backend --tests --example quic_session
+      - name: Verify required QUIC in minimal builds
+        run: cargo nextest run --locked -p metis-ipc -p metis-backend --no-default-features --tests --example quic_session
