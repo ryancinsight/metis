@@ -461,4 +461,5 @@ an owner. “Unsupported” cannot replace delivery of a required mobile/native 
 - Scope: branch `build/metis-deps-20261007`: the commits `feat(presentation): Head every application surface with the mark` (25 files) and `build(deps): Follow hermes-simd` have no PR; its PR #482 is merged; the commit `feat(reactive): Add a Slint comparison and close its row-model gaps` is absorbed by PR #485. Three uncommitted script edits in `repos/metis` dated 2026-10-09. The empty directory `D:/atlas/worktrees/metis-metis-frontend-theme-001`, which is not a git worktree.
 - Acceptance: each unlanded commit has a PR or a merge-base proof of landing; the dirty scripts are committed to a PR branch or proven superseded; the empty directory is removed; the main tree sits at `origin/main`.
 - basis: ce47b2b2ebc11c09b0d6f67d7c2e60487fe71cc6
-- next: open a PR for those two commits from a private-index branch, then return the main tree home.
+- Recheck (2026-10-16): open PR #488 (`build/metis-deps-20261007`) carries the Slint and mark commits; the reactive code rides merged PR #485 (`d952a4e`, on `origin/main`); the stale rescue-branch hermes follow-up is superseded by `5771c45` (first-party re-pin, on main). The empty worktree directory is removed and no script dirt remains; the item closes when PR #488 merges.
+- next: land PR #488, then close.
