@@ -45,17 +45,21 @@ this public version increment. The public Eunomia marker implementations do.
   preserving URLs/features/defaults. Its merged PR623 `44a962f0` admits the
   published memory 0.10 facade. Leto 0.46 and Gaia 0.6 remain upstream gates;
   isolated provider validation does not establish Metis acceptance.
-- Security renewal (2026-10-19): consume published `gaia-mesh 0.6.9` only as
-  the root mesh-example dev dependency. Its archive VCS is current Gaia main
-  `ea7411df38a8d9794e236c9ced302ab0ef872756`; its ZIP^9.0.4 requirement
-  resolves to patched ZIP9.0.5 in the renewed root lock.
-  The previous Git Gaia0.6.0 locks vulnerable ZIP2.4.2 (RustSec2026-0367/8/9).
-  Updating Git Gaia alone fails because it requires Git Moirai0.10 while the
-  public Metis/Consus0.3 cohort admits0.9.3. The example exchanges geometry and
-  pixel primitives, never Moirai values, so registry Gaia's private Moirai0.10
-  identity does not change Metis's public Git identity. Keep all seven public
-  source declarations and all runtime features/defaults unchanged. No patch,
-  alternate URL, adapter, audit ignore or reduced feature/test scope is used.
+- Security renewal (2026-10-19) remains blocked: Git Gaia0.6.0 locks vulnerable
+  ZIP2.4.2 (RustSec2026-0367/8/9). Current Git Gaia0.6.9 at
+  `ea7411df38a8d9794e236c9ced302ab0ef872756` requires ZIP^9.0.4 and Git
+  Moirai0.10. Updating it fails normal Cargo resolution because the public
+  Metis/Consus0.3 cohort requires Moirai0.9.3. Coordinate that provider migration
+  before acceptance; retain the current Git declarations and existing locks
+  as a held preparation, never as release evidence.
+- Reject ebc13104's registry Gaia alternative. Its archive matches current Git
+  source, and the example exchanges primitive geometry/pixels, so the candidate
+  preserves public identities and removes the ZIP advisories. However, the
+  executable source policy in scripts/verify.py covers every direct dependency,
+  including dev dependencies; Gaia is not an admitted registry boundary.
+  Restore the existing Git graph. An ADR does not override that gate. No source
+  alias, older pin, registry allowlist change, advisory ignore, feature reduction
+  or reduced verification scope is authorized to make the candidate pass.
 - Consumers using Color with layout bounds select the same Eunomia 0.10
   provider identity. No duplicate marker implementations, old-line aliases,
   feature reductions or compatibility packages bridge the old trait identity.

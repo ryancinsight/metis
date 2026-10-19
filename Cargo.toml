@@ -54,11 +54,10 @@ iris = { package = "iris-viz", git = "https://github.com/ryancinsight/iris", ver
 eunomia = { git = "https://github.com/ryancinsight/eunomia", version = "0.10.0", default-features = false }
 # Runtime ISA dispatch for rasterizer kernels (ADR 0053).
 hermes-simd = { git = "https://github.com/ryancinsight/hermes.git", version = "0.9.0", default-features = false, features = ["std"] }
-# Gaia is private to the mesh example and crosses only geometry/pixel values.
-# Its current published source is also the current Git source (ADR0060).
-# Registry identity keeps Gaia's Moirai0.10 internals separate from Metis's
-# public Git Moirai0.9.3 contract and admits the ZIP9 security repair.
-gaia = { package = "gaia-mesh", version = "0.6.9", default-features = false }
+# Git plus version, matching the sibling entries below: the package is named
+# `gaia-mesh` but its import path is `gaia`. The mesh viewer renders with gaia's
+# software rasteriser rather than a second one here.
+gaia = { package = "gaia-mesh", git = "https://github.com/ryancinsight/gaia", version = "0.6.0", default-features = false }
 # Git plus version keeps the consumer on the public Moirai default branch
 # during development; Cargo.lock records the exact audited revision.
 moirai-core = { git = "https://github.com/ryancinsight/Moirai.git", version = "0.9.3", default-features = false, features = ["std"] }

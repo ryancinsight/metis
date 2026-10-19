@@ -11,11 +11,21 @@ be used without credential inspection or configuration. Pages is disabled;
 no app/service deployment or setting change is authorized by this repair.
 
 The fresh Windows gate rejects ZIP2.4.2 through the private Git Gaia0.6.0
-dev dependency (RustSec2026-0367/8/9). Current published Gaia0.6.9 matches
-current Git source ea7411df; the renewed lock uses ZIP9.0.5. Admit that registry identity
-at the mesh-example boundary, preserving all public Git provider identities;
-full graph/example/package/gate verification remains required. No audit rule,
-baseline, feature, oracle or time budget is relaxed.
+dev dependency (RustSec2026-0367/8/9). Current Git Gaia0.6.9 at ea7411df
+requires Git Moirai0.10; Metis/Consus0.3 require0.9.3. Targeted update and
+normal manifest-driven online resolution both fail. This coordinated provider
+migration is the remaining blocker, independent of the resolved raster upload.
+
+Candidate ebc13104 uses source-equivalent registry Gaia0.6.9 and ZIP9.0.5.
+It passes the fresh advisory audit, strict all-target Clippy,698 native tests
+(zero skips; two transient leak labels do not recur in focused reruns), and
+424 Python tests. Its unchanged mesh example preserves exact BMP bytes,
+decompressed PNG scanlines and raster statistics. Nevertheless, Windows jobs
+117881269863/117881344606 reject registry Gaia under the committed direct-source
+policy, which includes dev dependencies. Withdraw that candidate and restore
+the original Git graph. These diagnostic passes do not establish acceptance.
+No source-policy exception, advisory ignore, baseline, feature, oracle or time
+budget is changed. No merge or Metis publication occurs while this hold remains.
 
 ## Provider checkpoint — 2026-10-15 (historical)
 
