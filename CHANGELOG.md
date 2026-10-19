@@ -16,6 +16,10 @@
 
 ### Fixed
 
+- [patch] Admit current published Gaia0.6.9 at the private mesh-example
+  dev-dependency boundary to replace vulnerable ZIP2.4.2 with ZIP9.0.5.
+  The archive matches current Gaia Git source; Metis's public Git Moirai0.9.3
+  identity and runtime feature/default choices remain unchanged (ADR0060).
 - [patch] Preserve the authenticated fragment page's observed state and failing
   phase before closing a failed browser session. Driver timeouts retain their
   failure result and deadline; diagnostics expose the application response.
@@ -31,9 +35,10 @@
 - [patch] Reconcile the canonical root and fuzz locks with approved provider
   defaults: Eunomia0.10, Hermes0.9, memory0.10, Moirai0.9.3, Leto0.46,
   Gaia0.6 (example dev dependency) and Consus0.3/Apollo core0.17.
-  Root registry tuples remain unchanged relative to owner checkpoint
-  `a253d9165a124a6240b87a4ef1359c552ebb4f22`; this PR retains 17 earlier
-  registry-tuple updates against its main base. Fuzz updates only the Moirai-required
+  The earlier checkpoint preserved root registry tuples relative to owner
+  `a253d9165a124a6240b87a4ef1359c552ebb4f22`, with 17 earlier updates against
+  main. The security renewal changes only Gaia's private registry subtree;
+  fuzz retains only the earlier Moirai-required
   rustls0.23.45 to0.23.46 security repair. No production source, feature,
   default, test budget, permission or protected owner branch changes.
 - [patch] The current full workspace passes698 native tests with zero skips,

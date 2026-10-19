@@ -45,6 +45,17 @@ this public version increment. The public Eunomia marker implementations do.
   preserving URLs/features/defaults. Its merged PR623 `44a962f0` admits the
   published memory 0.10 facade. Leto 0.46 and Gaia 0.6 remain upstream gates;
   isolated provider validation does not establish Metis acceptance.
+- Security renewal (2026-10-19): consume published `gaia-mesh 0.6.9` only as
+  the root mesh-example dev dependency. Its archive VCS is current Gaia main
+  `ea7411df38a8d9794e236c9ced302ab0ef872756`; its ZIP^9.0.4 requirement
+  resolves to patched ZIP9.0.5 in the renewed root lock.
+  The previous Git Gaia0.6.0 locks vulnerable ZIP2.4.2 (RustSec2026-0367/8/9).
+  Updating Git Gaia alone fails because it requires Git Moirai0.10 while the
+  public Metis/Consus0.3 cohort admits0.9.3. The example exchanges geometry and
+  pixel primitives, never Moirai values, so registry Gaia's private Moirai0.10
+  identity does not change Metis's public Git identity. Keep all seven public
+  source declarations and all runtime features/defaults unchanged. No patch,
+  alternate URL, adapter, audit ignore or reduced feature/test scope is used.
 - Consumers using Color with layout bounds select the same Eunomia 0.10
   provider identity. No duplicate marker implementations, old-line aliases,
   feature reductions or compatibility packages bridge the old trait identity.

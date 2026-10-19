@@ -10,7 +10,14 @@ must pass before any Metis merge or initial upload. Existing Cargo login may
 be used without credential inspection or configuration. Pages is disabled;
 no app/service deployment or setting change is authorized by this repair.
 
-## Current provider checkpoint — 2026-10-15
+The fresh Windows gate rejects ZIP2.4.2 through the private Git Gaia0.6.0
+dev dependency (RustSec2026-0367/8/9). Current published Gaia0.6.9 matches
+current Git source ea7411df; the renewed lock uses ZIP9.0.5. Admit that registry identity
+at the mesh-example boundary, preserving all public Git provider identities;
+full graph/example/package/gate verification remains required. No audit rule,
+baseline, feature, oracle or time budget is relaxed.
+
+## Provider checkpoint — 2026-10-15 (historical)
 
 Consus0.3 is merged at beae4ce7. Its executed published-baseline consumer
 requires a pre-1.0 minor release for the Moirai0.7 to0.9 public async identity;

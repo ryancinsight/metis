@@ -1,6 +1,6 @@
 Prepared framework target: Metis0.5.0; unpublished review in existing PR505.
 
-## Current provider checkpoint — 2026-10-15
+## Provider checkpoint — 2026-10-15 (historical)
 
 Consus0.3 is merged at beae4ce7. Its executed published-baseline consumer
 requires a pre-1.0 minor release for the Moirai0.7 to0.9 public async identity;
@@ -21,7 +21,7 @@ native budget changes occur; protected503/504 source remains separate.
 <a id="METIS-CURRENT-PROVIDERS-001"></a>
 ## METIS-CURRENT-PROVIDERS-001 — Admit current provider defaults [major]
 
-- Status: in-progress; priority: P1; owner: current-provider integration; target: 0.5.0; last-update: 2026-10-19.
+- Status: blocked; priority: P1; owner: current-provider integration; target: 0.5.0; last-update: 2026-10-19.
 - Public contract: exported Color's Eunomia-owned Pod/Zeroable traits change
   0.9 to0.10; AssetError's public From<Consus DecodeError> follows Consus0.3.
   ADR0060 records the0.5 boundary for all13 packages/31 internal requirements.
@@ -42,6 +42,10 @@ native budget changes occur; protected503/504 source remains separate.
   with original archive SHA256 afd23ddad2b241d76bb9d1ee08dfb7002c3fe3fdf95aac9bc9aa33e86c54e7c9.
   Use only existing configured Cargo credentials after verification; never inspect
   or change credentials, publisher registration, permissions or deployment settings.
+- Gate renewal: RUSTSEC-2026-0367/0368/0369 rejects ZIP2.4.2 through Git Gaia0.6.0.
+  Admit source-equivalent published Gaia0.6.9 with ZIP9.0.5 only for the private
+  mesh example (ADR0060); public Git provider identities and fuzz lock stay fixed.
+  Reverify the changed root graph, normalized packages, example and hosted gates.
 - Coeus0.13 remains with its owner and separately blocks the prepared RITK
   cases. Miri stays deferred. Incoming RITK requirements already admit Metis0.5.
 
