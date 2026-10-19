@@ -10,6 +10,9 @@
   Pixel layout and values are unchanged. ADR0060 records the public contract and
   uniformly versioned workspace/internal requirements at 0.5.0. RITK consumers
   advance their Metis requirements to 0.5.
+- [major] `metis-ui-lang::AssetError` converts Consus 0.3's `DecodeError`.
+  Callers crossing that public conversion boundary must use the same Consus
+  provider identity; ADR0060 records this alongside the Eunomia migration.
 
 ### Fixed
 
@@ -28,14 +31,18 @@
 - [patch] Reconcile the canonical root and fuzz locks with approved provider
   defaults: Eunomia0.10, Hermes0.9, memory0.10, Moirai0.9.3, Leto0.46,
   Gaia0.6 (example dev dependency) and Consus0.3/Apollo core0.17.
-  Root registry tuples remain unchanged; fuzz updates only the Moirai-required
+  Root registry tuples remain unchanged relative to owner checkpoint
+  `a253d9165a124a6240b87a4ef1359c552ebb4f22`; this PR retains 17 earlier
+  registry-tuple updates against its main base. Fuzz updates only the Moirai-required
   rustls0.23.45 to0.23.46 security repair. No production source, feature,
   default, test budget, permission or protected owner branch changes.
 - [patch] The current full workspace passes698 native tests with zero skips,
   42 doctests, strict all-feature Clippy/docs, formatting and fuzz-target
   checks. Final API/platform/browser/release/package and exact-head hosted
-  gates remain required before delivery. Consus raster's initial registry
-  upload remains a separate human-authentication handoff; the old source
+  gates remain required before delivery. Consus raster 0.3.0 was published
+  from `beae4ce7` on 2026-10-19 with its original handoff archive checksum;
+  normalized Metis packages and exact-head gates are refreshed before release.
+  The old source
   3510db09/raster0.2.0 and f69ca65d/raster0.2.1 instructions are obsolete. No credentials or publisher
   registration are configured. Miri remains deferred.
 

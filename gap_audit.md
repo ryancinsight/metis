@@ -1,5 +1,15 @@
 # Open capability and evidence risks
 
+## Registry prerequisite renewed — 2026-10-19
+
+Consus raster0.3.0 is published from beae4ce7 with the original handoff archive
+checksum, verified against the downloaded registry archive. All11 publishable
+Metis names remain absent. PR505 preserves the landed PR507 board recheck;
+normalized workspace packages, affected consumers and fresh final-head gates
+must pass before any Metis merge or initial upload. Existing Cargo login may
+be used without credential inspection or configuration. Pages is disabled;
+no app/service deployment or setting change is authorized by this repair.
+
 ## Current provider checkpoint — 2026-10-15
 
 Consus0.3 is merged at beae4ce7. Its executed published-baseline consumer
