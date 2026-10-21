@@ -8,6 +8,8 @@ mod fragment;
 #[cfg(not(target_arch = "wasm32"))]
 mod http;
 mod plugins;
+#[cfg(not(target_arch = "wasm32"))]
+pub mod quic;
 pub mod service;
 pub mod supervisor;
 #[cfg(not(target_arch = "wasm32"))]

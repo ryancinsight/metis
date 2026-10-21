@@ -1,5 +1,57 @@
 # Changelog
 
+## [0.5.0] - Unreleased
+
+### Added
+
+- [minor] The native QUIC example accepts validated independent receive/send
+  queue requests and logs effective kernel sizes through the shared Moirai UDP
+  configuration. Kernel defaults remain in effect when requests are absent.
+
+- Required native QUIC sessions in `metis-ipc` and `metis-backend` over Moirai
+  0.9.0 and moirai-quic 0.1.0, with `metis-ipc/1` ALPN and full frame-domain
+  admission. Independent streams preserve trusted context, fresh MAC key,
+  capability, replay, clinical computation, audit and event contracts (ADR 0058).
+- `NativeQuic` target capability, synchronous `QuicIpcTransport`, consumed-client
+  transport recovery and graceful FIN teardown. A runnable mutual TLS example
+  accepts caller-owned certificates/roots and one authorized client identity.
+
+### Changed
+
+- [patch] Reconcile the exact Moirai provider pin to `ed039a6ed5fcc454a572fd7ab840b4c1919a2c9d` after
+  current-main integration, preserving the existing QUIC/UDP implementation,
+  PR 502 provider/audit contracts and unrelated lock identities. Both canonical
+  locks retain the intentional Iris/Gaia Moirai 0.8.3 graph. Provider ADR 0078
+  owns applied UDP configuration after its main-branch numbering reconciliation.
+
+- [patch] Reconcile current main and add Linux/Windows native transport checks
+  using the canonical main/fuzz provider locks. Preserve Consus/provider coherence
+  and lossless native audit-ID encoding.
+- [patch] Schedule real QUIC test handshakes through the existing Moirai executor;
+  remove the test-only registry dependency rejected by the direct-provider gate.
+- [patch] Record successful Linux/Windows native and full Windows/browser gates,
+  and pin the published provider's complete controlled-profile evidence and
+  passive recovery metrics. Preserve its sustained-loss performance limit as
+  an open promotion gate; no workload or deadline change establishes a pass.
+
+- WebSocket and QUIC use one asynchronous IPC server dispatcher through
+  `NativeSessionTransport`; the existing frame decoder remains authoritative.
+  Validated typed peer-close causes distinguish clean closure from truncation.
+- Native session admission helpers share their callers' platform gates, keeping
+  browser backend library compilation warning-free.
+
+### Breaking
+
+- Native IPC/backend builds include QUIC and ring's native build requirements
+  even with default features disabled. Remove `--features quic` from
+  draft-increment commands; native remote-session APIs require no feature flag.
+- `AsyncIpcServer<T>` now takes a native message transport as its generic
+  parameter. Explicit WebSocket annotations migrate from `AsyncIpcServer<S>` to
+  `AsyncIpcServer<WebSocketStream<S>>`; inferred construction remains unchanged.
+- Native WebSocket service streams require `Send`, matching the native transport
+  future contract. Custom native transports implement asynchronous `send_frame`,
+  `recv_frame` and `finish`; no legacy aliases or forwarding API remains.
+
 ## [0.4.1] - Unreleased
 
 ### Fixed

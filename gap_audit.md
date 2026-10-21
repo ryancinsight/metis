@@ -1,5 +1,77 @@
 # Open capability and evidence risks
 
+## Native QUIC integration — 2026-10-13 [minor]
+
+Current integration preserves consumer e8dd4c9 and main 1ef9409, including
+PR 502 provider coherence and lossless audit identifiers. All 423 consumer Rust
+and TLS-fixture paths retain exact bytes. Nine existing direct provider pins
+and both canonical locks resolve Moirai `ed039a6ed5fcc454a572fd7ab840b4c1919a2c9d`; unrelated
+identities and the intentional 0.8.3 provider lag remain. The full native
+workspace passes 703 tests; default/minimal transport verification passes
+178/115 tests. Four real mutually authenticated process pairs cover IPv4/IPv6
+and default/explicit queues. Dyadic-input analytical results are 0.54375/2.175
+and 0.360703125/2.885625; each matches its audited event and all processes finish
+with acknowledged/drained teardown. Direct dependency ownership, all 23 verifier
+tests and native diagnostics pass.
+
+The fresh compatibility baseline fails resolution because main's unpinned
+Moirai ^0.8.3 requirement sees the provider's newer main. Complete private/hidden
+Rustdoc metadata generated from unchanged baseline source and its canonical
+lock passes all 588 applicable native API checks. This does not prove generic
+Send-bound compatibility; the existing pre-1.0 migration remains documented.
+Provider Windows optional-module diagnostics are corrected at their source;
+installed Windows default/minimal/WebView2 cross-compilation passes. Fresh
+hosted consumer/provider runtime and protected default-branch promotion remain
+gates, and the measured controlled-loss performance limit remains open.
+
+Historical consumer e8dd4c9 consumes provider 8f8fd753's shared PAL queue contract,
+accepts independent positive receive/send requests and logs effective native
+sizes. Invalid and overflowing inputs fail startup. All 178 default and 115
+minimal transport/example tests and strict diagnostics pass locally; 23 verifier
+tests and actual dependency-ownership checks pass. Both locks change only the
+explicit provider revision, preserving unrelated source identities. Four real
+IPv4/IPv6 process pairs retain mutual TLS, exact clinical/audited values and
+acknowledged/drained shutdown. Socket queues do not resolve the recorded CUBIC
+recovery limit. Provider 52c9063's hosted Linux/Windows native gates pass; the
+following 8f8fd753 change partitions unchanged tests into bounded leaf modules.
+
+Metis 0.5.0 consumes Moirai's native QUIC provider through one generic
+asynchronous IPC server. QUIC is required in native builds, including with
+default features disabled; no QUIC feature flag exists. Real backend/IPC/core
+verification passes 176 default tests; minimal IPC/backend builds pass 113 tests.
+CI verifies minimal native sessions. Browser application graphs exclude native
+QUIC, and browser library diagnostics deny warnings. The
+full native workspace/all-target compilation and warning-denying diagnostics
+pass against the published provider Git revision without path patches. Independent sessions of one principal require separate fresh MAC
+keys, retaining foreign-token rejection as well as sequence isolation. TLS
+server trust does not authenticate a client; the runnable example requires
+mutual TLS plus exact client-certificate authorization.
+
+The canonical lock pins published provider review source and preserves unrelated
+locked dependencies. The default-built IPv4/IPv6 two-process mutual TLS CLI verifies the exact
+computed result, audited event and FIN/drain lifecycle. All 588 applicable
+default-API compatibility checks pass under the stronger minor override. These
+checks do not prove generic-bound compatibility: the pre-1.0 explicit server
+annotation/Send migration remains documented in CHANGELOG.md. Existing Iris/Gaia
+provider lag retains Moirai 0.8.3, following Atlas overlay policy; no stack-wide
+version migration is claimed. Default-branch promotion remains an active gate.
+Both hosted Linux and Windows pass 176 default and 113 minimal transport tests,
+with strict diagnostics at published consumer revision ed72092. Current-main reconciliation retains its provider/Consus
+contracts and lossless native audit identifiers; 703 native tests and synchronized
+main/fuzz locks pass. Concurrent test handshakes use the existing Moirai executor;
+canonical metadata passes the unchanged direct-provider gate. Dedicated native
+transport jobs validate both hosted platforms. HTTP/3/WebTransport application mapping is
+separate; loopback correctness does not establish wide-area performance.
+
+The [full consumer gate](https://github.com/ryancinsight/metis/actions/runs/38460334046)
+passes at ed72092, including Windows and the three browser engines. The first
+Firefox fragment-startup attempt times out; its unchanged retry passes. Provider
+measurement executes all 108 controlled pairs, with 105 exact-byte successes
+and three 60-second deadlines in the maximum-frame/16-stream 1% loss case.
+Kernel UDP errors remain zero; recovery-policy evaluation and provider
+promotion remain open. The canonical consumer pin adopts the published
+provider evidence and passive metrics API without changing session behavior.
+
 ## Standalone Consus adoption [patch]
 
 Target: Metis 0.4.1, Consus compression/raster 0.2 and the delivered Moirai

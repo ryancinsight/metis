@@ -105,6 +105,8 @@ pub enum TargetCapability {
     Accessibility = 9,
     /// The host exposes native text composition and IME integration.
     Ime = 10,
+    /// Independently authorized native sessions use reliable QUIC streams.
+    NativeQuic = 11,
 }
 
 impl TargetCapability {
@@ -122,6 +124,7 @@ impl TargetCapability {
             8 => Some(Self::OsPermissions),
             9 => Some(Self::Accessibility),
             10 => Some(Self::Ime),
+            11 => Some(Self::NativeQuic),
             _ => None,
         }
     }
@@ -140,6 +143,7 @@ impl TargetCapability {
             Self::OsPermissions => "os-permissions",
             Self::Accessibility => "accessibility",
             Self::Ime => "ime",
+            Self::NativeQuic => "native-quic",
         }
     }
 }

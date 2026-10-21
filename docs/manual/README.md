@@ -101,3 +101,6 @@ Public repository: [ryancinsight/metis](https://github.com/ryancinsight/metis).
 For individual Rust API contracts, build `cargo doc --workspace --no-deps`.
 Architectural alternatives and security boundaries live in the
 [decision records](../adr/README.md), outside this user manual.
+
+The [native QUIC session guide](quic.md) covers authenticated remote services,
+independent ordered streams and the runnable mutual TLS calculation example.

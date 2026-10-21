@@ -1,4 +1,16 @@
-Current framework version: Metis 0.4.1. Remaining capability work follows.
+Current framework version: Metis 0.5.0. Remaining capability work follows.
+
+<a id="METIS-QUIC-PROMOTION-001"></a>
+## METIS-QUIC-PROMOTION-001 — Publish canonical native QUIC integration [minor]
+
+- Status: todo; priority: P1; owner: Metis + Moirai transport; last-update: 2026-10-13; ADR: [0058](docs/adr/0058-native-quic-sessions.md).
+- Scope: native reliable multiplexed sessions through the shared asynchronous server and existing frame/capability/clinical/audit contracts.
+- Current increment: required native QUIC transport, actual ALPN/full frame-domain admission, independent fresh-key services for the same authenticated principal, protocol rejection and graceful FIN are implemented. The canonical provider pin passes 178 default tests and 115 minimal IPC/backend tests without a QUIC feature flag. Full native workspace/all-target compilation, warning-denying native/browser diagnostics, 588 applicable default-API compatibility checks and the default-built IPv4/IPv6 mutual TLS CLI pass. Browser application graphs exclude native QUIC; CI checks minimal native sessions.
+- Acceptance: published Moirai 0.9.0/moirai-quic 0.1.0 revision resolves one canonical Git lock; strict diagnostics, real mutual TLS CLI computation/event/teardown and compatibility classification pass. Browser HTTP/3 is a separate mapping.
+- [patch] Integration closure: latest consumer e8dd4c9 retains main 1ef9409 and all 423 Rust/TLS fixture paths. The nine direct Moirai pins and both canonical locks resolve published provider ed039a6ed5fcc454a572fd7ab840b4c1919a2c9d; unrelated revisions and the intentional 0.8.3 transitive graph remain. The full native workspace passes 703 tests; 178 default and 115 minimal transport tests, four real process pairs, strict diagnostics, direct-provider ownership and 23 verifier tests pass.
+- [patch] Compatibility: complete Rustdoc metadata from unchanged current-main source/lock passes all 588 applicable native API checks. The compatibility tool's fresh-baseline resolution cannot resolve unpinned Moirai ^0.8.3 against its newer main; locked-baseline generation preserves the actual baseline contract.
+- Historical UDP increment at e8dd4c9: provider 8f8fd753 applies the shared PAL queue contract; validated optional requests and effective-size logging pass 178 default/115 minimal tests, strict diagnostics and four real IPv4/IPv6 process pairs. Both locks change only the provider revision; 23 verifier tests and dependency ownership pass. The provider's Linux/Windows native gates pass at production-equivalent source 52c9063; its recovery-policy gate remains open.
+- Next step: complete required review/checks for [provider PR 618](https://github.com/ryancinsight/Moirai/pull/618) and [consumer PR 503](https://github.com/ryancinsight/metis/pull/503) before protected promotion. Both native platform gates and the full Windows/browser consumer gate pass at ed72092. The provider measures all 108 controlled pairs: 105 exact-byte successes and three maximum-frame/16-stream loss deadlines; its recovery-policy evaluation remains open. No wide-area or TCP equivalence is claimed.
 
 <a id="METIS-WEBVIEW-RUST-001"></a>
 ## METIS-WEBVIEW-RUST-001 — Rust-owned Windows page lifecycle [minor]

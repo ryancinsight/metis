@@ -18,6 +18,12 @@ concurrency:
   cancel-in-progress: ${{ github.event_name == 'pull_request' }}
 
 jobs:
+  native-transport:
+    name: Native transport validation
+    if: github.event_name != 'pull_request' || github.event.pull_request.draft == false
+    uses: ./.github/workflows/native-transport.yml
+    permissions:
+      contents: read
   changes:
     name: Changed paths
     if: github.event_name == 'pull_request' || github.event_name == 'push'
@@ -652,7 +658,7 @@ jobs:
   gate:
     name: Metis gate
     if: always()
-    needs: [changes, verify, apple, workflow-lint, lockfile, adr-index, conformance, semver, artifact-budget, fuzz, browser-assets, browser-runtime, browser-text-cross-engine]
+    needs: [changes, verify, apple, workflow-lint, lockfile, adr-index, conformance, semver, artifact-budget, fuzz, browser-assets, browser-runtime, browser-text-cross-engine, native-transport]
     runs-on: ubuntu-24.04
     timeout-minutes: 5
     permissions: {}
@@ -660,7 +666,7 @@ jobs:
       - name: Check required job results
         env:
           METIS_GATE_NEEDS: ${{ toJSON(needs) }}
-          METIS_GATE_EXPECTED_JOBS: '["changes","verify","apple","workflow-lint","lockfile","adr-index","conformance","semver","artifact-budget","fuzz","browser-assets","browser-runtime","browser-text-cross-engine"]'
+          METIS_GATE_EXPECTED_JOBS: '["changes","verify","apple","workflow-lint","lockfile","adr-index","conformance","semver","artifact-budget","fuzz","browser-assets","browser-runtime","browser-text-cross-engine","native-transport"]'
           METIS_GATE_DRAFT: ${{ github.event_name == 'pull_request' && github.event.pull_request.draft || false }}
         run: |
           python3 - <<'PY'
