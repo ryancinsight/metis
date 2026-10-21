@@ -5,6 +5,11 @@ Rust owns the captured form state and browser event transitions; the page owns
 ordinary CSS and the document shell. Moirai owns the DOM handles and callback
 lifetime so this crate does not import `web-sys` or a second browser runtime.
 
+The opt-in `series_selection` example recovers fixture series/viewport assignment
+from preservation PR #498. Its [co-located specification](examples/series_selection/README.md)
+defines the Rust reducer and its [browser commands](../../docs/manual/browser.md#series-selection-demonstration)
+build through the consumer seam. Assignment text is not DICOM image rendering.
+
 ## Format-neutral canvas
 
 `metis_web::CanvasSurface` presents a consumer-owned borrowed RGBA8 frame through

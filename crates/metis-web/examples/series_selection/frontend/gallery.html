@@ -1,0 +1,24 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'wasm-unsafe-eval'; style-src 'self'; connect-src 'self' blob: http://127.0.0.1:8766 ws://127.0.0.1:8765; img-src 'self'; object-src 'none'; base-uri 'none'; frame-ancestors 'none'; form-action 'self'">
+  <title>Metis series selection demonstration</title>
+  <link rel="stylesheet" href="./gallery.css">
+</head>
+<body>
+  <main class="viewer-shell">
+    <header>
+      <h1>Series selection demonstration</h1>
+      <p id="fixture-notice">Demonstration fixtures only. No clinical study is loaded.</p>
+      <p>Choose a viewport, then assign a series fixture. DICOM loading, decoding, image-plane rendering and multiplanar reconstruction are outside this demonstration.</p>
+    </header>
+    <p id="selection-host-error" role="alert"></p>
+    <section id="selection-app" aria-label="Series and viewport selection" data-selection-listener-count="0">
+      <p>Loading Rust selection controls…</p>
+    </section>
+  </main>
+  <script type="module" src="./gallery.js"></script>
+</body>
+</html>

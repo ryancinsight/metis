@@ -25,6 +25,43 @@ enforcement until its native or service host supplies that header. A host must
 also enforce origin, session and operating-system policy at its boundary;
 downloaded page code is not an authority source.
 
+## Series selection demonstration
+
+Preservation PR [#498](https://github.com/ryancinsight/metis/pull/498) retains
+the original interface commit. The opt-in example recovers one working
+interaction: selecting a demonstration series assigns it to the active viewport;
+activating another viewport restores that viewport's assigned series. Inactive
+assignments persist. No clinical study, decoded image plane or reconstruction
+is presented. The remaining preserved shell stays on its original draft branch.
+
+Use the pinned Rust toolchain and wasm-bindgen CLI from the build instructions:
+
+```text
+python scripts/browser_series_selection.py build
+python -m http.server 8080 --directory output/browser
+```
+
+Open `http://127.0.0.1:8080/gallery.html`. The default workbench remains at `/`.
+The build uses the existing explicit consumer-package/gallery validation and
+canonical content-security policy. Its two-line JavaScript module initializes
+WASM and calls Rust; no JavaScript selection state is added.
+
+Native acceptance runs as `cargo nextest run --locked -p metis-web --profile ci`.
+For real-browser acceptance, install Playwright as a local test prerequisite,
+then run `node --test scripts/browser_series_selection.mjs`. If Playwright lives
+outside the checkout, set `METIS_PLAYWRIGHT_MODULE` to its absolute package path.
+`METIS_TEST_BROWSER` selects `chromium` (default), `firefox` or `webkit`;
+`METIS_TEST_BROWSER_EXECUTABLE` optionally names the installed test browser.
+The runner serves generated assets on a temporary loopback port and closes the
+browser/server afterward. Screenshots, source/WASM digests and checked states
+are written under `output/series-selection-evidence/<engine>/`. Browser setup
+failure is a failed check; the runner does not substitute a simulation.
+Local Chrome 155.0.8059.40 acceptance passes on October 13, 2026. Other engine
+names are runner options, not claims of executed acceptance.
+
+See [ADR 0058](../adr/0058-series-selection-demonstration.md) and the
+[selection algebra](../../crates/metis-web/examples/series_selection/README.md).
+
 ## Build and serve
 
 Install the pinned `wasm-bindgen-cli` version matching the workspace's

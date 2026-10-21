@@ -37,3 +37,8 @@ crate-type = ["cdylib"]
 [[example]]
 name = "http_transport"
 crate-type = ["cdylib"]
+
+[[example]]
+name = "series_selection"
+crate-type = ["cdylib"]
+test = true

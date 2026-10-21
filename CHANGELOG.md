@@ -22,6 +22,13 @@
   Both starter logos declare their destinations; no authored JavaScript is
   added. Link activation is a navigation classification, not proof of a
   trusted gesture (ADR 0057).
+- Opt-in Rust/WASM series selection demonstration recovered from preservation
+  PR #498. Selecting a fixture updates the active viewport's assignment;
+  activating a viewport restores its selection. The remaining preserved shell
+  stays on its draft branch. Demonstration metadata does not establish DICOM
+  loading, decoding, independent image planes or reconstruction (ADR 0058).
+- Value-semantic reducer tests, real-browser mouse/keyboard, rejection and
+  lifecycle acceptance, and compilation of the example in the verification gate.
 
 ### Fixed
 
