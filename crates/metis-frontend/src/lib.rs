@@ -7,6 +7,7 @@ mod clipboard;
 mod commands;
 mod document;
 mod focus;
+pub mod list;
 pub mod navigation;
 mod presentation;
 pub mod reactive;
