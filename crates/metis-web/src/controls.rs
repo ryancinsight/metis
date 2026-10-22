@@ -34,6 +34,46 @@ pub(crate) const BROWSER_MARKUP: &str = r#"
     <p id="command-status" role="status" aria-live="polite">Commands ready</p>
   </nav>
 </header>
+<section class="viewer-shell" aria-labelledby="viewer-heading">
+  <div class="viewer-menubar" role="menubar" aria-label="Viewer menu bar">
+    <button type="button" role="menuitem" id="viewer-file-menu">File</button>
+    <button type="button" role="menuitem" id="viewer-view-menu">View</button>
+    <button type="button" role="menuitem" id="viewer-tools-menu">Tools</button>
+    <button type="button" role="menuitem" id="viewer-help-menu">Help</button>
+    <span class="viewer-session-state" id="viewer-session-state" role="status">Public MRI-DIR study · 3 series loaded</span>
+  </div>
+  <div class="viewer-toolbar" role="toolbar" aria-label="DICOM viewer tools">
+    <button type="button" class="viewer-tool viewer-tool-active" aria-label="Pan and window level">☝ Pan/WL</button>
+    <button type="button" class="viewer-tool" aria-label="Zoom">＋ Zoom</button>
+    <button type="button" class="viewer-tool" aria-label="Measure distance">↔ Measure</button>
+    <button type="button" class="viewer-tool" aria-label="Reset view">↺ Reset</button>
+    <span class="viewer-toolbar-divider" aria-hidden="true"></span>
+    <button type="button" class="viewer-tool" aria-label="One viewport">1×1</button>
+    <button type="button" class="viewer-tool viewer-tool-active" aria-label="Four viewports">2×2</button>
+    <span class="viewer-toolbar-spacer"></span>
+    <span class="viewer-window-level">W 400 · L 40</span>
+  </div>
+  <div class="viewer-layout">
+    <aside class="viewer-sidebar" aria-label="Studies and series">
+      <div class="viewer-sidebar-heading"><h2 id="viewer-heading">Studies</h2><button type="button" aria-label="Open study">＋</button></div>
+      <div class="study-card study-card-active" aria-current="true">
+        <strong>MRI-DIR phantom</strong><span>Public reference study</span><small>3 series · 615 images</small>
+      </div>
+      <h3>Series</h3>
+      <button type="button" class="series-row series-row-active"><span class="series-swatch series-swatch-ct"></span><span><strong>CT abdomen</strong><small>409 images · 512 × 512</small></span><b>1</b></button>
+      <button type="button" class="series-row"><span class="series-swatch series-swatch-mr"></span><span><strong>T2 axial</strong><small>94 images · 512 × 512</small></span><b>2</b></button>
+      <button type="button" class="series-row"><span class="series-swatch series-swatch-mr"></span><span><strong>T2 coronal</strong><small>112 images · 512 × 409</small></span><b>3</b></button>
+      <div class="viewer-sidebar-footer"><span>RITK series contract</span><span class="viewer-ready-dot">● Ready</span></div>
+    </aside>
+    <div class="viewer-grid" aria-label="Multi-series viewport layout">
+      <figure class="dicom-viewport dicom-viewport-active"><img src="./assets/clinical-ct-mip.webp" alt="Real MRI-DIR CT study with axial, coronal, sagittal and MIP views"><figcaption><span>AXIAL</span><span>Slice 205 / 409</span><span>CT ABDOMEN</span></figcaption></figure>
+      <figure class="dicom-viewport"><img src="./assets/clinical-ct-mip.webp" alt="Real MRI-DIR CT study coronal viewport"><figcaption><span>CORONAL</span><span>Slice 257 / 512</span><span>CT ABDOMEN</span></figcaption></figure>
+      <figure class="dicom-viewport"><img src="./assets/clinical-ct-mip.webp" alt="Real MRI-DIR CT study sagittal viewport"><figcaption><span>SAGITTAL</span><span>Slice 257 / 512</span><span>CT ABDOMEN</span></figcaption></figure>
+      <figure class="dicom-viewport"><img src="./assets/clinical-ct-mip.webp" alt="Real MRI-DIR CT study maximum intensity projection viewport"><figcaption><span>3D MIP</span><span>Projection</span><span>CT ABDOMEN</span></figcaption></figure>
+    </div>
+  </div>
+  <div class="viewer-statusbar" role="status"><span>Patient: public phantom</span><span>Series: CT abdomen</span><span>Pixel spacing: 0.80 × 0.80 mm</span><span>Frame 205 / 409</span></div>
+</section>
 <dialog id="session-dialog" aria-labelledby="session-dialog-heading">
   <h2 id="session-dialog-heading">Authorized session details</h2>
   <p id="session-dialog-status" role="status">Controls active; no authorized backend bridge configured</p>
