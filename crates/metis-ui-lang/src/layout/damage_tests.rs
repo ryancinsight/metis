@@ -135,14 +135,14 @@ fn repainting_the_damage_matches_a_full_repaint() {
     let mut regions = 0;
     for case in 0..160 {
         let length = sequence.in_range(1, 9);
-        let painted = DisplayList {
-            commands: (0..length)
+        let painted = DisplayList::from_commands(
+            (0..length)
                 .map(|_| {
                     let kind = sequence.next();
                     sequence.command(kind)
                 })
                 .collect(),
-        };
+        );
         let mut next = painted.clone();
         // Replace one or two commands, keeping or changing their kinds.
         for _ in 0..sequence.in_range(1, 2) {
@@ -190,16 +190,10 @@ fn metadata_only_changes_and_length_changes_are_classified() {
         id: id.into(),
         rect: Rect::new(0, 0, 4, 4),
     };
-    let painted = DisplayList {
-        commands: vec![element("a")],
-    };
-    let renamed = DisplayList {
-        commands: vec![element("b")],
-    };
+    let painted = DisplayList::from_commands(vec![element("a")]);
+    let renamed = DisplayList::from_commands(vec![element("b")]);
     let surface = Rect::new(0, 0, 8, 8);
     assert_eq!(renamed.damage_since(&painted, surface), Damage::Unchanged);
-    let longer = DisplayList {
-        commands: vec![element("a"), element("b")],
-    };
+    let longer = DisplayList::from_commands(vec![element("a"), element("b")]);
     assert_eq!(longer.damage_since(&painted, surface), Damage::Full);
 }

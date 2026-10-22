@@ -3,7 +3,7 @@
 
 use crate::document::TrackedDocument;
 use crate::focus::focusable_ids;
-use metis_core::{ErrorCode, MetisError, Result};
+use metis_core::Result;
 use metis_ui_lang::{DisplayList, LayoutViewport, SemanticTree, compute_layout};
 
 /// Room a frame keeps beyond the cached layout, for the focus ring.
@@ -47,8 +47,8 @@ impl RenderCache {
     ///
     /// The list is a copy that owns room for the overlays a host paints over
     /// it, so the caller may extend it without disturbing the cached layout.
-    /// The copy shares every id, text and payload with the cached commands,
-    /// so its command storage is the only memory it requests.
+    /// The copy shares every id, text and payload with the cached commands, so
+    /// its command and owner storage is the only memory it requests.
     ///
     /// # Errors
     /// Returns the layout error of [`compute_layout`], or a bounded error
@@ -63,16 +63,6 @@ impl RenderCache {
             self.layout = compute_layout(document, viewport)?;
             self.layout_key = key;
         }
-        let mut commands = Vec::new();
-        commands
-            .try_reserve_exact(self.layout.commands.len() + OVERLAY_COMMANDS)
-            .map_err(|_| {
-                MetisError::ui(
-                    ErrorCode::LayoutOverflow,
-                    "Display command allocation failed",
-                )
-            })?;
-        commands.extend_from_slice(&self.layout.commands);
-        Ok(DisplayList { commands })
+        self.layout.copy_with_room(OVERLAY_COMMANDS)
     }
 }

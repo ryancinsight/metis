@@ -22,7 +22,8 @@ fn fresh_layout(app: &App) -> Vec<DisplayCommand> {
     );
     compute_layout(app.document(), viewport)
         .expect("invariant: the authored form lays out")
-        .commands
+        .commands()
+        .to_vec()
 }
 
 #[test]
@@ -61,7 +62,7 @@ fn every_edit_paints_the_layout_a_fresh_computation_gives() {
     for (name, edit) in edits {
         edit(&mut app);
         let fresh = fresh_layout(&app);
-        let painted = &app.painted.as_ref().expect("a rendered frame").commands;
+        let painted = app.painted.as_ref().expect("a rendered frame").commands();
         // A focus ring is the one command a frame adds to the layout.
         assert!(
             painted.starts_with(&fresh) && painted.len() - fresh.len() <= 1,

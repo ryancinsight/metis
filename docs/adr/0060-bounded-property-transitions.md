@@ -1,14 +1,14 @@
 # 0060 — Bounded property transitions
 
-Status: Proposed
+Status: Accepted
 
 Date: 2026-10-22
 
 Driver: `METIS-ANIMATION-001`.
 
-Revision: 2026-10-22 — vocabulary, sampler and grammar admission are delivered
-(`metis_ui_lang::transition`, [ADR 0013](0013-strict-style-contract.md) revision);
-the overlay, `next_tick` clock and reduced-motion policy remain; decision 8's gate has cleared.
+Revision: 2026-10-22 — decisions 1–8 are delivered: vocabulary, sampler and
+grammar admission (`metis_ui_lang::transition`), the paint-boundary overlay with
+its owner index, the `next_tick` clock seam and `MotionPreference`.
 
 ## Context
 
@@ -19,10 +19,9 @@ the new value immediately with nothing between the two frames. Four constraints
 already in the tree shape any answer:
 
 - [ADR 0051](0051-damage-limited-repaint.md) repaints only the region whose
-  commands changed, comparing two display lists command by command, so a
-  recolored command damages its own extent and an animated frame is already
-  cheap to *paint*: a keystroke repaint measures 0.40 ms at 800×600 and 0.49 ms
-  at 1600×1200, and a 300×40 region costs 0.025–0.050 ms to present.
+  commands changed, comparing two display lists command by command, so an
+  animated frame is already cheap to *paint*: a keystroke repaint measures
+  0.40 ms at 800×600 and 0.49 ms at 1600×1200, a 300×40 region 0.025–0.050 ms.
 - `RenderCache::frame` lays out once per `(document revision, viewport)` and
   returns a copy whose command storage is the only memory it requests;
   `METIS-MEM-RENDER-002` measures 350 allocations for a one-character edit.
@@ -49,41 +48,40 @@ Animate at the paint boundary, not in the document.
    single `DrawBorder` — so a sample's paint result is unambiguous.
    `background-color` waits for the gradient-under-fill decision, `box-shadow`
    for its memoized mask interaction (ADR 0052) and `opacity` for group
-   compositing, which ADR 0051 rejected on memory grounds.
+   compositing, which ADR 0051 rejected.
 3. **Sampling seam.** A transition is sampled when the display list is built,
    after `RenderCache::frame` and before `damage_since`. The document revision
    does not change, so layout, the semantic projection and the accessibility
    tree are untouched for the whole transition.
-4. **Attribution.** Layout records the owning element for every command it
-   pushes. Commands are not contiguous per element — a parent's box is reserved
-   before its children and its border is pushed after them — so ownership
-   cannot be inferred from order; the single push funnel writes it, and a test
-   asserts one owner per command.
+4. **Attribution.** Layout records the owning element for every command an
+   animated element pushes, in a side index rather than a field of the command,
+   so a command stays a fixed-size value that clones without requesting memory.
+   Commands are not contiguous per element — a parent's box is reserved before
+   its children and its border is pushed after them — so ownership cannot be
+   inferred from order; the single push funnel writes it. The index is scoped to
+   elements that declare a transition, so a document that animates nothing
+   carries no attribution and an unchanged render still requests only its
+   command storage.
 5. **Sampler.** `fn sample(elapsed: Duration) -> Color` is pure: each channel is
    interpolated in the stored 8-bit sRGB encoding CSS interpolates legacy colors
    in, computed in `f64` from the eased fraction and rounded once, half away from
-   zero, with both endpoints pinned exactly. The named easings are CSS
-   cubic-bezier curves solved by a fixed iteration count, so the same input
-   yields the same output on every host. A second transition on the same element
-   and property starts from the current sampled value, so an interruption does
-   not jump.
+   zero, with both endpoints pinned exactly. Named easings are CSS cubic-bezier
+   curves solved by a fixed iteration count, so one input yields one output on
+   every host; a second transition on the same element and property starts from
+   the current sampled value, so an interruption does not jump.
 6. **Clock.** The host owns time. `NativeApplication` gains
-   `fn next_tick(&self) -> Option<Duration>` (default `None`); the host waits
-   `min(wait, next_tick)`. A tick is the empty event batch the host already
-   documents for timer work, so no second event loop is introduced, and an
-   idle surface reports `None` and is never woken.
+   `fn next_tick(&self) -> Option<Duration>` (default `None`) and waits
+   `min(wait, next_tick)`; a tick is the empty event batch the host already
+   documents for timer work, so no second event loop is introduced.
 7. **Policy.** A host-supplied `MotionPreference` of `Reduced` applies the
-   target immediately and schedules no tick; `Full` runs the transition. The
-   DOM host keeps its own stylesheet transition, authored in the same
-   vocabulary, and Rust writes no per-frame DOM state: the browser interpolates
-   without Rust frames, and the policy there is the `prefers-reduced-motion`
-   media query.
-8. **Prerequisite.** `METIS-PERF-IDLE-001`'s conditional accessibility push
-   lands first: the host pushes the tree on every batch today, so a 60 Hz tick
-   would multiply a measured 430-allocation rebuild by the frame rate. Until it
-   lands, `transition` is accepted and applied as an immediate change — the
-   reduced-motion outcome — and no tick is scheduled, so the declaration is
-   honoured in its outcome throughout and only the cadence is gated.
+   target immediately and schedules no tick; `Full` runs the transition. The DOM
+   host keeps its own stylesheet transition in the same vocabulary and Rust
+   writes no per-frame DOM state: the browser interpolates without Rust frames,
+   and its policy is the `prefers-reduced-motion` media query.
+8. **Prerequisite (met).** The conditional accessibility push of
+   `METIS-PERF-IDLE-001` gates a tick, because a 60 Hz tick would otherwise
+   multiply a measured 430-allocation tree rebuild by the frame rate. It landed
+   before the overlay, so a tick now rebuilds no tree.
 
 ## Alternatives
 
@@ -98,42 +96,44 @@ design is the last row.
 | Timeline and keyframe engine (Freya/Bevy class) | Powerful | Clip storage plus an evaluator | Fine | Large surface with no stated consumer; imports an asset model Metis does not have. Rejected |
 | **Paint-boundary sampling (chosen)** | One declaration, one clock, no new concepts for the caller | 4 bytes of owner per command, one reused scratch list; zero per-frame allocation after warmup | Region paint only; layout, semantics and accessibility are untouched for the transition | One pure sampler, one overlay pass, one owner invariant with a test. The cost is a new field on `DisplayList` and a `next_tick` seam |
 
-Each rejected row either moves the animation into the document and pays the
-rebuild or duplicates the paint contract and drifts from it; sampling at the
-paint boundary keeps ADR 0051's damage model the sole authority over repaint.
+Each rejected row either pays the document rebuild or duplicates the paint
+contract; paint-boundary sampling keeps ADR 0051 the sole authority on repaint.
 
 ## Verification
 
-- `samples_pin_both_endpoints`: for each easing, `t = 0` is the source color and
-  `t = 1` the target, exactly, not within an epsilon (**delivered**).
-- `samples_match_the_declared_curve`: for each named easing, ten sampled
-  fractions match a hand-computed reference table within one channel step, and
-  the DOM host's stylesheet fixture declares the same curve name. The browser's
+Each oracle is a committed test; the test name is the citation.
+
+- `samples_pin_both_endpoints`, `samples_match_the_declared_curve`: for each
+  easing `t = 0` is the source and `t = 1` the target, exactly, and ten sampled
+  fractions match a hand-computed table within one channel step. The browser's
   interpolation is not sampled, so the shared claim is the curve and the
   endpoints, not a pixel value.
-- `a_transition_damages_only_its_element`: an animating label's damage equals
-  the union of its old and new text extents; every other command compares equal.
-- `a_transition_allocates_nothing_per_frame`: a counting allocator sees zero
-  allocations across the ticks of one transition after the scratch list has
-  grown once.
-- `an_idle_surface_schedules_no_tick`: five seconds with no events calls
-  `next_tick` and observes `None`, and the host performs no wakeup.
-- `reduced_motion_applies_the_target_in_one_frame`: one render, no tick, and
-  the target color is painted.
-- `interruption_starts_from_the_sampled_value`: a second transition at t = 0.5
-  of the first starts at the first's sampled color, not at the old target.
-- A committed capture records a multi-step transition; the visual gate compares it.
+- `every_command_of_an_animated_element_is_attributed`,
+  `an_element_owns_the_commands_it_paints_and_no_others`,
+  `a_document_without_a_transition_carries_no_attribution`: the index is
+  complete for an animated element, exclusive, and absent when nothing animates.
+- `a_transition_damages_only_its_element`: a sample's damage equals the recolor
+  extent and is smaller than the surface.
+- `a_tick_reuses_the_frame_buffer_it_samples`,
+  `a_tick_without_a_live_transition_requests_nothing`: a tick keeps the command
+  storage it samples and requests no memory.
+- `a_moving_application_shortens_the_host_wait_to_its_tick`,
+  `an_idle_or_slower_application_keeps_the_whole_host_wait`: the host waits
+  `min(wait, tick)` and never lengthens a wait to a tick.
+- `reduced_motion_applies_the_target_in_one_frame`,
+  `a_host_without_a_clock_paints_the_target`: policy and no-clock fallback both
+  paint the declared target in one frame.
+- `interruption_starts_from_the_sampled_value`: a second transition at t = 0.5 of
+  the first starts at the first's sampled color.
+- Not delivered: a committed capture of a multi-step transition and its visual
+  gate, and a cross-host pixel comparison (see Limits).
 
 ## Migration
 
 `transition` is a new admitted declaration: no existing document changes meaning
-and no caller migrates, and a document that declares it is rejected today but
-parses after this decision. `DisplayList` gains an owner vector, which breaks
-the ten `DisplayList { commands }` literals in five files — `RenderCache::frame`,
-three test modules and the doctests in `layout/damage.rs` — and they migrate to
-a constructor enforcing one owner per command, so the type checks the invariant.
-The doctests are published API examples, so this is a documented construction
-change, not an internal refactor.
+and no caller migrates. `DisplayList`'s `commands` became private behind
+`commands()` and `from_commands`, which migrated the construction literals in
+five files, two of them published doctests.
 
 ## Limits
 
@@ -147,4 +147,4 @@ curve is the browser's, so a cross-host pixel comparison of a transition is not
 an oracle — only the endpoints and the declared curve are.
 
 This decision establishes no memory, latency or frame-rate advantage over Freya,
-and it does not close `METIS-PERF-IDLE-001`; it depends on it.
+and it depends on `METIS-PERF-IDLE-001`, which has landed.

@@ -108,7 +108,7 @@ fn command_count(app: &FrontendApp<MemoryTransport>, focus_ring: bool) -> usize 
     let viewport = metis_ui_lang::LayoutViewport::new(800, 600);
     let layout = metis_ui_lang::compute_layout(app.document(), viewport)
         .expect("invariant: the authored form lays out");
-    layout.commands.len() + usize::from(focus_ring)
+    layout.commands().len() + usize::from(focus_ring)
 }
 
 #[test]
@@ -128,4 +128,22 @@ fn an_unchanged_render_with_a_focus_ring_requests_only_the_display_list_storage(
     assert!(app.focus_visible());
     let commands = command_count(&app, true);
     assert_spine_only(&render_requests(&mut app), commands);
+}
+
+/// A host with a clock asks for a tick after every batch. A form that declares
+/// no transition has nothing to sample, so the tick must cost no memory and
+/// request no repaint.
+#[test]
+fn a_tick_without_a_live_transition_requests_nothing() {
+    let mut app = form();
+    app.set_now(std::time::Duration::from_millis(50));
+    assert_eq!(app.next_tick(), None);
+
+    COUNT.set(0);
+    RECORDING.set(true);
+    let repainted = app.advance_transitions();
+    RECORDING.set(false);
+
+    assert!(!repainted);
+    assert_eq!(COUNT.get(), 0, "a tick with no run must request no memory");
 }

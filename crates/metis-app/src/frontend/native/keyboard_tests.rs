@@ -19,6 +19,7 @@ fn form() -> NativeForm<MemoryTransport> {
         patient_id,
         focused: true,
         taken_accessibility: None,
+        started: std::time::Instant::now(),
     }
 }
 

@@ -10,7 +10,7 @@ use metis_platform::native::{
 };
 use metis_platform::{Damage, DisplayScale, Framebuffer, Rect};
 use std::io::{stdin, stdout};
-use std::time::Duration;
+use std::time::{Duration, Instant};
 
 use super::native_accessibility;
 use keyboard::PATIENT_INPUT;
@@ -60,6 +60,7 @@ pub(crate) fn run(inputs: [String; 3]) -> Result<(), Box<dyn std::error::Error>>
         patient_id,
         focused: true,
         taken_accessibility: None,
+        started: Instant::now(),
     };
     run_native_application(&config, application, EVENT_WAIT)?;
     Ok(())
@@ -73,6 +74,8 @@ struct NativeForm<T> {
     /// The accessibility revision the host last took, so a batch that changed
     /// no semantic state projects no tree.
     taken_accessibility: Option<(u64, u64)>,
+    /// The monotonic origin the application's transition clock counts from.
+    started: Instant,
 }
 
 impl<T: IpcTransport> NativeApplication for NativeForm<T> {
@@ -99,7 +102,15 @@ impl<T: IpcTransport> NativeApplication for NativeForm<T> {
         true
     }
 
+    fn next_tick(&self) -> Option<Duration> {
+        self.app.next_tick()
+    }
+
     fn handle_events(&mut self, events: &[WindowEvent]) -> Result<NativeFlow> {
+        // The host owns the clock: every transition this batch samples counts
+        // from here, and a batch that arrives mid-transition samples at the
+        // time it actually arrived.
+        self.app.set_now(self.started.elapsed());
         let mut repaint = false;
         for (index, event) in events.iter().enumerate() {
             if let WindowEvent::KeyDown {
@@ -172,38 +183,52 @@ impl<T: IpcTransport> NativeApplication for NativeForm<T> {
                 } if self.patient_has_focus() => {
                     repaint |= remove_patient_character(&mut self.app, &mut self.patient_id)?;
                 }
-                WindowEvent::TextInput { character } => {
-                    repaint |= self.patient_has_focus()
-                        && append_patient_character(
-                            &mut self.app,
-                            &mut self.patient_id,
-                            *character,
-                        )?;
-                }
-                WindowEvent::TextComposition { phase, text } if self.patient_has_focus() => {
-                    repaint = true;
-                    match phase {
-                        CompositionPhase::Started | CompositionPhase::Updated => {
-                            self.app.set_composition(Some(text.clone()))?;
-                        }
-                        CompositionPhase::Committed => {
-                            self.app.set_composition(None)?;
-                            append_patient_text(&mut self.app, &mut self.patient_id, text)?;
-                        }
-                        CompositionPhase::Canceled => self.app.set_composition(None)?,
-                    }
-                }
                 WindowEvent::AccessibilityAction { request } => {
                     repaint |= self.apply_accessibility_action(request)?;
                 }
-                _ => {}
+                // Typed text and composition belong to one editing concern.
+                _ => {
+                    if let Some(changed) = self.handle_text_edit(event)? {
+                        repaint |= changed;
+                    }
+                }
             }
         }
+        // A batch that repainted already sampled at this instant, so a second
+        // sample changes no pixel and reports nothing.
+        repaint |= self.app.advance_transitions();
         Ok(NativeFlow::Continue { repaint })
     }
 }
 
 impl<T: IpcTransport> NativeForm<T> {
+    /// Applies the events that edit the patient identifier field.
+    ///
+    /// `None` means the event is not text editing, so the caller's match has
+    /// already handled everything it accepts and this one changes nothing.
+    fn handle_text_edit(&mut self, event: &WindowEvent) -> Result<Option<bool>> {
+        match event {
+            WindowEvent::TextInput { character } => Ok(Some(
+                self.patient_has_focus()
+                    && append_patient_character(&mut self.app, &mut self.patient_id, *character)?,
+            )),
+            WindowEvent::TextComposition { phase, text } if self.patient_has_focus() => {
+                match phase {
+                    CompositionPhase::Started | CompositionPhase::Updated => {
+                        self.app.set_composition(Some(text.clone()))?;
+                    }
+                    CompositionPhase::Committed => {
+                        self.app.set_composition(None)?;
+                        append_patient_text(&mut self.app, &mut self.patient_id, text)?;
+                    }
+                    CompositionPhase::Canceled => self.app.set_composition(None)?,
+                }
+                Ok(Some(true))
+            }
+            _ => Ok(None),
+        }
+    }
+
     fn handle_pointer_up(&mut self, x: i32, y: i32) -> Result<bool> {
         self.focused = true;
         let menu_open = self.app.command_menu_open();

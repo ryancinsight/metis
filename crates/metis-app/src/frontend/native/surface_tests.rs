@@ -96,6 +96,7 @@ fn form(width: u32, height: u32) -> NativeForm<MemoryTransport> {
         patient_id: String::new(),
         focused: true,
         taken_accessibility: None,
+        started: std::time::Instant::now(),
     }
 }
 

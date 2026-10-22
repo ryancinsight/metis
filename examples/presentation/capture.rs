@@ -79,7 +79,7 @@ pub(super) fn capture(
     };
     write_oracle(&mut records, "observed", observed)?;
     write_oracle(&mut records, "expected", expected)?;
-    capture_details(app, name, actions, &display.commands, records)
+    capture_details(app, name, actions, display.commands(), records)
 }
 
 fn capture_details(

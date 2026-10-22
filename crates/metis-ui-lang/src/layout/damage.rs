@@ -14,7 +14,11 @@ use metis_platform::rasterizer::polyline_extent;
 impl DisplayCommand {
     /// A device rectangle holding every pixel this command can change, or
     /// `None` for a command that paints nothing.
-    fn paint_bounds(&self) -> Option<Rect> {
+    ///
+    /// This is the single definition of a command's paint extent: damage
+    /// classification and a paint-time recolor both report it, so a transition
+    /// claims exactly the area a full repaint would dirty.
+    pub(super) fn paint_bounds(&self) -> Option<Rect> {
         match self {
             Self::ElementRect { .. } => None,
             Self::DrawShadow { rect, shadow, .. } => Some(shadow.extent(*rect)),
@@ -61,11 +65,11 @@ impl DisplayList {
     ///     color,
     /// };
     /// let surface = Rect::new(0, 0, 40, 10);
-    /// let painted = DisplayList { commands: vec![fill(0, Color::BLACK), fill(20, Color::BLACK)] };
-    /// let next = DisplayList { commands: vec![fill(0, Color::BLACK), fill(20, Color::WHITE)] };
+    /// let painted = DisplayList::from_commands(vec![fill(0, Color::BLACK), fill(20, Color::BLACK)]);
+    /// let next = DisplayList::from_commands(vec![fill(0, Color::BLACK), fill(20, Color::WHITE)]);
     /// assert_eq!(next.damage_since(&painted, surface), Damage::Region(Rect::new(20, 0, 10, 10)));
     /// assert_eq!(painted.damage_since(&painted, surface), Damage::Unchanged);
-    /// let recolored = DisplayList { commands: vec![fill(0, Color::WHITE), fill(20, Color::WHITE)] };
+    /// let recolored = DisplayList::from_commands(vec![fill(0, Color::WHITE), fill(20, Color::WHITE)]);
     /// assert_eq!(recolored.damage_since(&painted, Rect::new(0, 0, 10, 10)), Damage::Full);
     /// ```
     #[must_use]

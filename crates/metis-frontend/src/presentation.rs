@@ -66,19 +66,24 @@ mod focus_ring;
 #[cfg(test)]
 mod repaint_tests;
 mod theme;
+mod transition;
+#[cfg(test)]
+mod transition_tests;
 use crate::document::TrackedDocument;
 use crate::{FormState, FrontendApp};
 use iris::render::RenderBackend;
 use metis_core::{ErrorCode, MetisError, Result};
 use metis_ipc::{IpcTransport, client::HandshakeError};
-use metis_platform::{Damage, Framebuffer};
+use metis_platform::{Damage, Framebuffer, MotionPreference};
 use metis_ui_lang::{
     Color, DisplayCommand, DisplayList, Edit, LayoutViewport, MAX_SEMANTIC_TEXT_BYTES,
 };
 use std::borrow::Cow;
 use std::fmt::{self, Write};
+use std::time::Duration;
 
 pub(crate) use cache::RenderCache;
+pub(crate) use transition::Transitions;
 
 /// Status badge color while a backend session is open.
 ///
@@ -144,6 +149,12 @@ impl<T: IpcTransport> FrontendApp<T> {
             LayoutViewport::with_scale(width, height, self.display_scale),
         )?;
         self.append_focus_ring(&mut display)?;
+        // A declared transition is sampled here, at the paint boundary: the
+        // document, its semantics and its layout are already final, so only
+        // the colors of the animated element's commands move.
+        self.transitions
+            .observe(&display, self.painted.as_ref(), self.motion, self.now);
+        self.transitions.apply(&mut display, self.now);
         // Repaint only what changed since the painted frame: a keystroke
         // changes one field, not the form.
         let surface = metis_ui_lang::Rect::new(0, 0, width, height);
@@ -159,6 +170,56 @@ impl<T: IpcTransport> FrontendApp<T> {
         self.unpresented = self.unpresented.merge(damage);
         self.painted = Some(display);
         Ok(())
+    }
+
+    /// Supplies the host clock a declared transition samples against.
+    ///
+    /// The clock is monotonic and host-owned: the software host reads it from
+    /// its platform timer before each batch. A host that never supplies one
+    /// paints every declared target in the frame the change lands in, which is
+    /// also the reduced-motion outcome, so a declaration is never left
+    /// part-way through an animation the host cannot time.
+    pub fn set_now(&mut self, now: Duration) {
+        self.now = Some(now);
+    }
+
+    /// Sets how much motion the host asks the presentation to show.
+    ///
+    /// [`MotionPreference::Reduced`] applies a declared transition's target in
+    /// the frame the change lands in and schedules no tick.
+    pub fn set_motion_preference(&mut self, preference: MotionPreference) {
+        self.motion = preference;
+    }
+
+    /// How long until a host must give this form another frame with no input.
+    ///
+    /// `None` when nothing is moving, so an idle surface schedules no frame.
+    #[must_use]
+    pub fn next_tick(&self) -> Option<Duration> {
+        self.transitions.next_tick()
+    }
+
+    /// Samples the transitions the painted frame is running and repaints only
+    /// the elements that moved.
+    ///
+    /// A host calls this when [`Self::next_tick`] elapses with no input. The
+    /// tick requests no memory: the frame the surface shows is recolored in
+    /// place, and a sample that changes no pixel repaints nothing.
+    ///
+    /// Returns whether any pixel changed.
+    #[must_use]
+    pub fn advance_transitions(&mut self) -> bool {
+        let now = self.now;
+        let Some(painted) = self.painted.as_mut() else {
+            return false;
+        };
+        let Some(region) = self.transitions.apply(painted, now) else {
+            return false;
+        };
+        self.framebuffer
+            .render_clipped(region, |framebuffer| paint(framebuffer, painted));
+        self.unpresented = self.unpresented.merge(Damage::Region(region));
+        true
     }
 
     /// Writes the labels that show the inputs and the outcome, each through
@@ -391,7 +452,7 @@ fn paint(framebuffer: &mut Framebuffer, display: &DisplayList) {
 /// runs. Every known variant is named, so a change to the list of them is a
 /// deliberate edit here.
 fn clear_is_redundant(framebuffer: &Framebuffer, display: &DisplayList) -> bool {
-    for command in &display.commands {
+    for command in display.commands() {
         match command {
             DisplayCommand::FillRect {
                 rect,

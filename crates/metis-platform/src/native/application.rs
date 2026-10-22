@@ -62,6 +62,16 @@ pub trait NativeApplication {
         true
     }
 
+    /// How long until this application needs another frame with no input.
+    ///
+    /// The host waits `min(wait, next_tick)` and hands the application the
+    /// batch that wait expires into, which is how a bounded animation advances
+    /// without a second event loop. `None`, the default, asks for no tick, so
+    /// an idle surface sleeps for the host's whole wait.
+    fn next_tick(&self) -> Option<Duration> {
+        None
+    }
+
     /// Applies one bounded native event batch and reports the next host action.
     ///
     /// The batch can be empty when the finite wait expires. Applications use
@@ -196,8 +206,11 @@ where
         .map_err(NativeHostError::Surface)?;
 
     loop {
+        // A moving application shortens the wait to its own tick, so it
+        // samples at its rate instead of the host's event-poll rate.
+        let timeout = application.next_tick().map_or(wait, |tick| wait.min(tick));
         let events = surface
-            .wait_events(wait)
+            .wait_events(timeout)
             .map_err(NativeHostError::Surface)?;
         let destroyed = events.iter().any(is_destroyed);
         let terminal = events.iter().any(is_terminal);

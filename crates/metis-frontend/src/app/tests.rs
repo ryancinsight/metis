@@ -57,7 +57,7 @@ fn display_scale_repaints_text_and_preserves_the_new_capability() {
         metis_ui_lang::LayoutViewport::with_scale(800, 600, scale),
     )
     .expect("scaled layout");
-    assert!(display.commands.iter().any(|command| matches!(
+    assert!(display.commands().iter().any(|command| matches!(
         command,
         // The default 14-pixel size at 150 percent is 21 device
         // pixels per em, exact in binary.

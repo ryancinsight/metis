@@ -245,7 +245,7 @@ fn the_clear_is_skipped_only_when_an_opaque_square_fill_covers_the_region() {
     let ink = Color::rgb(10, 20, 30);
     let square = CornerRadius::SQUARE;
     let rounded = CornerRadius::clamped(6, whole);
-    let list = |commands: Vec<DisplayCommand>| DisplayList { commands };
+    let list = DisplayList::from_commands;
     // (case, display list, redundant over the whole surface, over `inner`)
     let cases = [
         ("covering", list(vec![fill(whole, square, ink)]), true, true),

@@ -3993,12 +3993,79 @@ bounded curve, the CSS curve shape, alpha interpolation, repeatability, the
 declaration is metadata: a test compares an animated style against the same
 style with the transition cleared. These tests pin the vocabulary and the
 sampler, not a rendered transition, so they establish no frame-rate, latency
-or memory advantage over Freya. The owner index, the paint-boundary overlay,
-`next_tick` and `MotionPreference` remain open on METIS-ANIMATION-001.
+or memory advantage over Freya. Phase 2 is recorded below.
 
 Totals at that revision: 162 metis-platform, 56 metis-app, 60 metis-frontend
 and 146 metis-ui-lang unit tests, with their integration and doctest suites
 green and strict Clippy clean on every crate touched.
+
+### Transition overlay, owner index and tick seam — 2026-10-22
+
+At Metis revision `568efa2` plus the working-tree overlay, the same detached
+build was used: `git archive HEAD` into a scratch tree, the modified and
+untracked files copied over it, and `cargo test` and
+`cargo clippy -p metis-ui-lang -p metis-frontend -p metis-platform -p metis-app
+--all-targets -- -D warnings` run there, because the inherited `Cargo.toml`
+bumps every `moirai-*` dependency to a published `0.10.0` without
+`moirai-quic`. Both are green: 154 metis-ui-lang, 66 metis-frontend, 164
+metis-platform and 56 metis-app unit tests, 13 integration tests across
+`decode_allocation`, `render_allocations` and the app's `process` suite, and 29
+doctests, with zero Clippy findings.
+
+Owner index (`metis-ui-lang`): eight tests in `layout_display_tests` cover
+attribution. `every_command_of_an_animated_element_is_attributed` asserts
+exactly four commands carry the badge, and that a label inside it paints but is
+not addressable because it declares no transition.
+`an_element_owns_the_commands_it_paints_and_no_others` asserts exclusivity,
+`a_border_color_transition_addresses_the_border_command` the `DrawBorder` arm,
+and `a_document_without_a_transition_carries_no_attribution` that a static
+document carries none. `a_recolor_that_changes_no_pixel_reports_nothing` and
+`recolor_changes_only_the_element_it_names` pin the extent, and
+`a_copy_shares_its_payloads_and_keeps_its_owners` that the side index survives
+`copy_with_room`.
+
+Overlay (`metis-frontend`): eight tests in `presentation/transition_tests`.
+`a_transition_samples_from_the_shown_color_to_the_painted_one` and
+`a_sample_between_the_endpoints_moves_without_reaching_either` pin the sampling
+window; `an_interruption_starts_from_the_sampled_value` pins retargeting;
+`a_run_follows_its_element_when_a_relayout_renumbers_it` renumbers every element
+and asserts the run still addresses the badge, which is why runs are keyed on
+the authored identifier rather than the index.
+`reduced_motion_paints_the_target_in_one_frame` and
+`a_host_without_a_clock_paints_the_target` pin the two fallbacks.
+`a_transition_damages_only_its_element` compares the reported damage against a
+probe `recolor` extent for equality and asserts it is smaller than the surface,
+so a tick repaints its element and nothing else; the first version of this test
+asserted the damage lay inside the element's box and failed, because damage uses
+the glyph-accurate `TextStyle::extent`, which extends past the line box. The
+test was wrong, not the product.
+
+Memory: `a_tick_reuses_the_frame_buffer_it_samples` asserts the painted list's
+command-storage pointer is unchanged across a tick, and
+`a_tick_without_a_live_transition_requests_nothing` in `render_allocations`
+measures zero heap requests through a counting global allocator. The owner index
+was first written as a parallel `owners: Vec<u32>` per layout and per frame,
+which broke the landed invariant
+`an_unchanged_render_requests_only_the_display_list_storage` with
+`requests: [2736, 228, 696]`. The index is now sparse — `(command, element)`
+pairs plus one record per animated element — so a document that animates nothing
+carries no attribution and an unchanged render again requests exactly one
+vector. Both allocation tests pass at this revision.
+
+Clock and policy (`metis-platform`, `metis-app`):
+`a_moving_application_shortens_the_host_wait_to_its_tick` records every timeout
+the host asks its provider for and asserts it is the application's 16 ms tick
+rather than the 200 ms wait, and
+`an_idle_or_slower_application_keeps_the_whole_host_wait` asserts a `None` tick
+and a tick longer than the wait both leave the wait unchanged, so the seam can
+only shorten a wait. `NativeApplication::next_tick` defaults to `None`, so no
+existing application changed behaviour.
+
+Not established: no committed capture records a multi-step transition, so no
+visual gate runs, and no cross-host pixel comparison is an oracle — only the
+endpoints and the declared curve are shared with the DOM host. No frame-rate,
+latency or memory advantage over Freya is claimed; the only measured number here
+is that a tick with no live run requests zero memory.
 
 Input traces and workload sizes are fixed before comparison, chosen to exercise
 the relevant working-set regimes under the committed budget. Profile production

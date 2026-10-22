@@ -42,13 +42,14 @@ keywords, other angle units, color hints and length positions are rejected.
 names one property, one whole-millisecond duration up to 2000 ms and one easing
 keyword (`linear`, `ease`, `ease-in`, `ease-out`, `ease-in-out`), for example
 `transition: color 150ms ease-out`. It is layout metadata — a document that
-declares one lays out exactly as it would without it — and it is accepted so a
-document written against the vocabulary parses today; the software host applies
-the target value immediately until the paint-boundary sampler lands
-([ADR 0060](../adr/0060-bounded-property-transitions.md)). Comma lists,
-`cubic-bezier()`, other properties, other units and a longer duration are
-rejected. Use the browser HTML5/CSS path when selectors, inheritance or full
-CSS layout are required.
+declares one lays out exactly as it would without it — and it is sampled at the
+paint boundary, so the software host interpolates the property without laying
+the document out again ([ADR 0060](../adr/0060-bounded-property-transitions.md)).
+A host that supplies no clock, or that asks for `MotionPreference::Reduced`,
+paints the target value in one frame instead. Comma lists, `cubic-bezier()`,
+other properties, other units and a longer duration are rejected. Use the
+browser HTML5/CSS path when selectors, inheritance or full CSS layout are
+required.
 
 `parse_markup` already propagates the same error while constructing an element,
 so markup callers continue to use their existing `Result` boundary:

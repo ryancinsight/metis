@@ -51,6 +51,7 @@ fn native_composition_events_keep_preedit_transient_and_cancel_on_focus_loss() {
         patient_id: "patient".to_owned(),
         focused: true,
         taken_accessibility: None,
+        started: std::time::Instant::now(),
     };
 
     let flow = form
@@ -114,6 +115,7 @@ fn native_accessibility_focus_targets_the_authored_submit_control() {
         patient_id: "patient".to_owned(),
         focused: false,
         taken_accessibility: None,
+        started: std::time::Instant::now(),
     };
     let flow = form
         .handle_events(&[WindowEvent::AccessibilityAction {
@@ -141,6 +143,7 @@ fn native_accessibility_patient_input_accepts_focus_and_bounded_value() {
         patient_id: "patient".to_owned(),
         focused: false,
         taken_accessibility: None,
+        started: std::time::Instant::now(),
     };
     let flow = form
         .handle_events(&[WindowEvent::AccessibilityAction {
@@ -192,6 +195,7 @@ fn native_accessibility_patient_input_rejects_invalid_values() {
         patient_id: "patient".to_owned(),
         focused: true,
         taken_accessibility: None,
+        started: std::time::Instant::now(),
     };
     let oversized = form
         .handle_events(&[WindowEvent::AccessibilityAction {
@@ -231,6 +235,7 @@ fn dpi_event_repaints_and_scales_the_submit_hit_region() {
         patient_id: "patient".to_owned(),
         focused: true,
         taken_accessibility: None,
+        started: std::time::Instant::now(),
     };
     let flow = form
         .handle_events(&[WindowEvent::DpiChanged { dpi: 144 }])
@@ -280,6 +285,7 @@ fn native_command_menu_pointer_and_escape_follow_host_neutral_state() {
         patient_id: "patient".to_owned(),
         focused: true,
         taken_accessibility: None,
+        started: std::time::Instant::now(),
     };
     let toggle = painted_rect(&form.app, "command-menu-toggle").expect("command toggle surface");
     let flow = form
@@ -322,6 +328,7 @@ fn native_command_accessibility_action_applies_theme_only_when_menu_is_open() {
         patient_id: "patient".to_owned(),
         focused: true,
         taken_accessibility: None,
+        started: std::time::Instant::now(),
     };
     let closed = form
         .handle_events(&[WindowEvent::AccessibilityAction {
@@ -362,6 +369,7 @@ fn native_popover_dismisses_without_clicking_through_and_tracks_theme() {
         patient_id: "patient".to_owned(),
         focused: true,
         taken_accessibility: None,
+        started: std::time::Instant::now(),
     };
     let submit = painted_rect(&form.app, "btn-calc").expect("submit surface");
     form.app.toggle_command_menu().expect("open menu");

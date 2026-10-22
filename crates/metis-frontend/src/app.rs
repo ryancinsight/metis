@@ -2,7 +2,7 @@
 use crate::commands::{ApplicationTheme, CommandMenuState};
 use crate::document::TrackedDocument;
 use crate::focus::Focus;
-use crate::presentation::{CLINICAL_SCREEN_XML, RenderCache};
+use crate::presentation::{CLINICAL_SCREEN_XML, RenderCache, Transitions};
 use metis_core::error::{ErrorCode, MetisError, Result};
 use metis_core::protocol::{
     ClinicalCalcRequestPayload, ClinicalCalcResponsePayload, ErrorResponsePayload, MessageType,
@@ -10,8 +10,9 @@ use metis_core::protocol::{
 };
 use metis_ipc::client::{HandshakeError, IpcClient};
 use metis_ipc::transport::IpcTransport;
-use metis_platform::{Damage, DisplayScale, Framebuffer, Rect};
+use metis_platform::{Damage, DisplayScale, Framebuffer, MotionPreference, Rect};
 use metis_ui_lang::{DisplayList, DomDocument, SemanticTree, parse_markup};
+use std::time::Duration;
 
 /// Outcome for the current inputs. Only success carries a result.
 /// Pending is painted before synchronous IPC; it does not imply an async host.
@@ -94,6 +95,14 @@ pub struct FrontendApp<T> {
     /// Pixels repainted since the host last took the damage to present.
     pub(crate) unpresented: Damage,
     pub(crate) cache: RenderCache,
+    /// The transitions the painted frame is sampling.
+    pub(crate) transitions: Transitions,
+    /// The host clock a transition samples against; `None` until a host
+    /// supplies one, which paints every declared target in one frame rather
+    /// than sampling a transition the host cannot time.
+    pub(crate) now: Option<Duration>,
+    /// How much motion the host asks the presentation to show.
+    pub(crate) motion: MotionPreference,
 }
 
 impl<T: IpcTransport> FrontendApp<T> {
@@ -118,6 +127,9 @@ impl<T: IpcTransport> FrontendApp<T> {
             painted: None,
             unpresented: Damage::Unchanged,
             cache: RenderCache::default(),
+            transitions: Transitions::default(),
+            now: None,
+            motion: MotionPreference::default(),
         };
         app.render()?;
         Ok(app)

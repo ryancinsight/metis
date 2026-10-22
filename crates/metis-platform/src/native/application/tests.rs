@@ -89,6 +89,8 @@ struct PresentedFrame {
 #[derive(Clone)]
 struct RecordingTrace {
     presentations: Arc<Mutex<Vec<PresentedFrame>>>,
+    /// Every timeout the host asked the provider to wait, in call order.
+    waits: Arc<Mutex<Vec<Duration>>>,
     accessibility_updates: Arc<AtomicUsize>,
     close_calls: Arc<AtomicUsize>,
     destroyed: Arc<AtomicBool>,
@@ -104,6 +106,7 @@ impl RecordingSurface {
     fn new(events: impl IntoIterator<Item = Vec<WindowEvent>>) -> (Self, RecordingTrace) {
         let trace = RecordingTrace {
             presentations: Arc::new(Mutex::new(Vec::new())),
+            waits: Arc::new(Mutex::new(Vec::new())),
             accessibility_updates: Arc::new(AtomicUsize::new(0)),
             close_calls: Arc::new(AtomicUsize::new(0)),
             destroyed: Arc::new(AtomicBool::new(false)),
@@ -120,7 +123,12 @@ impl RecordingSurface {
 }
 
 impl NativeSurfaceDriver for RecordingSurface {
-    fn wait_events(&mut self, _timeout: Duration) -> io::Result<Vec<WindowEvent>> {
+    fn wait_events(&mut self, timeout: Duration) -> io::Result<Vec<WindowEvent>> {
+        self.trace
+            .waits
+            .lock()
+            .expect("wait trace lock remains healthy")
+            .push(timeout);
         Ok(self.events.pop_front().unwrap_or_default())
     }
 
@@ -456,6 +464,85 @@ fn host_preserves_provider_wait_error_typed() {
     )
     .expect_err("bounded wait error");
     assert!(matches!(error, NativeHostError::Surface(_)));
+}
+
+/// Reports a tick to the host and counts the batches the host delivers, so a
+/// wait the application did not ask for is visible.
+struct TickingApplication {
+    framebuffer: Framebuffer,
+    tick: Option<Duration>,
+    batches: Arc<AtomicUsize>,
+}
+
+impl NativeApplication for TickingApplication {
+    type Error = ProbeError;
+
+    fn framebuffer(&self) -> &Framebuffer {
+        &self.framebuffer
+    }
+
+    fn next_tick(&self) -> Option<Duration> {
+        self.tick
+    }
+
+    fn handle_events(&mut self, events: &[WindowEvent]) -> Result<NativeFlow, Self::Error> {
+        if events
+            .iter()
+            .any(|event| matches!(event, WindowEvent::CloseRequested))
+        {
+            return Ok(NativeFlow::Exit);
+        }
+        self.batches.fetch_add(1, Ordering::SeqCst);
+        Ok(NativeFlow::Continue { repaint: false })
+    }
+}
+
+/// Runs one host loop with the given tick and returns every wait it asked for.
+fn recorded_waits(wait: Duration, tick: Option<Duration>) -> (Vec<Duration>, usize) {
+    let batches = Arc::new(AtomicUsize::new(0));
+    let application = TickingApplication {
+        framebuffer: Framebuffer::new(2, 2).expect("bounded framebuffer"),
+        tick,
+        batches: Arc::clone(&batches),
+    };
+    let focus = || vec![WindowEvent::FocusGained];
+    let (surface, trace) =
+        RecordingSurface::new([focus(), focus(), vec![WindowEvent::CloseRequested]]);
+
+    run_application_loop(surface, application, wait).expect("recording host loop");
+
+    let waits = trace
+        .waits
+        .lock()
+        .expect("wait trace lock remains healthy")
+        .clone();
+    (waits, batches.load(Ordering::SeqCst))
+}
+
+#[test]
+fn a_moving_application_shortens_the_host_wait_to_its_tick() {
+    let wait = Duration::from_millis(200);
+    let tick = Duration::from_millis(16);
+
+    let (waits, batches) = recorded_waits(wait, Some(tick));
+
+    // Every batch, including the one that carries the close request, waits the
+    // application's tick rather than the host's whole wait.
+    assert_eq!(waits, [tick, tick, tick]);
+    assert_eq!(batches, 2);
+}
+
+#[test]
+fn an_idle_or_slower_application_keeps_the_whole_host_wait() {
+    let wait = Duration::from_millis(200);
+
+    // No tick: the surface sleeps for the host's wait.
+    assert_eq!(recorded_waits(wait, None).0, [wait, wait, wait]);
+    // A tick longer than the wait never lengthens it.
+    assert_eq!(
+        recorded_waits(wait, Some(Duration::from_secs(1))).0,
+        [wait, wait, wait]
+    );
 }
 
 #[test]

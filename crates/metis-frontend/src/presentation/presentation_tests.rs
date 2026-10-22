@@ -96,7 +96,7 @@ fn authored_form_text_and_status_fit_the_viewport() {
     let display =
         compute_layout(&document, LayoutViewport::new(800, 600)).expect("authored layout");
     let mut text_runs = Vec::new();
-    for command in &display.commands {
+    for command in display.commands() {
         if let DisplayCommand::DrawText { text, x, y, style } = command {
             let width = style.advance(text);
             let height = style.line_height();
@@ -126,7 +126,7 @@ fn authored_form_text_and_status_fit_the_viewport() {
     display.render_to(&mut framebuffer);
     // The status run paints in the ready color over the header.
     let status = display
-        .commands
+        .commands()
         .iter()
         .find_map(|command| match command {
             DisplayCommand::DrawText { text, x, y, style } if &**text == "SYSTEM READY" => {

@@ -9,7 +9,7 @@ let display = metis_ui_lang::compute_layout(
     &document,
     metis_ui_lang::LayoutViewport::new(320, 240),
 )?;
-assert_eq!(display.commands.len(), 1);
+assert_eq!(display.commands().len(), 1);
 # Ok::<(), metis_core::error::MetisError>(())
 ```
 

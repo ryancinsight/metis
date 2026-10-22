@@ -68,4 +68,4 @@
 | [0057](0057-native-external-links.md) | Native external link authority | Accepted |
 | [0058](0058-native-quic-sessions.md) | Native remote Metis sessions over QUIC | Accepted |
 | [0059](0059-windows-rust-pages.md) | Rust pages in the Windows WebView2 host | Accepted |
-| [0060](0060-bounded-property-transitions.md) | Bounded property transitions | Proposed |
+| [0060](0060-bounded-property-transitions.md) | Bounded property transitions | Accepted |

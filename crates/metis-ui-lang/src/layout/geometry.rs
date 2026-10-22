@@ -288,6 +288,10 @@ impl DisplayList {
         if style.display == Display::None {
             return Ok(Rect::new(available.x, available.y, 0, 0));
         }
+        // Everything this element paints — its reserved background slots, its
+        // own text runs, its descendants' boxes and its trailing border —
+        // belongs to it until the closing call restores the parent.
+        let enclosing = self.begin_element(element.id(), style.transition)?;
         let geometry = scaled_geometry(style, display_scale)?;
         let width = match grown {
             Grown::Width(width) => width,
@@ -374,6 +378,7 @@ impl DisplayList {
                 color: style.border_color,
             })?;
         }
+        self.end_element(enclosing);
         Ok(rect)
     }
 }

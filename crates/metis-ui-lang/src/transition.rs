@@ -201,7 +201,8 @@ impl Transition {
     }
 
     /// The declared duration.
-    fn duration(self) -> Duration {
+    #[must_use]
+    pub fn duration(self) -> Duration {
         Duration::from_millis(u64::from(self.millis))
     }
 }

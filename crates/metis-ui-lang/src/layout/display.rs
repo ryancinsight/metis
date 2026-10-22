@@ -1,6 +1,7 @@
 use crate::image::ImagePlacement;
 use crate::parser::limit_error;
 use crate::style::{Color, LinearGradient};
+use crate::transition::{Transition, TransitionProperty};
 use metis_core::error::Result;
 use metis_platform::framebuffer::{Framebuffer, Rect};
 use metis_platform::rasterizer::{
@@ -107,6 +108,32 @@ pub enum DisplayCommand {
 
 const _: () = assert!(size_of::<DisplayCommand>() <= 56);
 
+/// Position of an element in a display list's element table.
+///
+/// Layout numbers each element as it emits it, so the number is stable for the
+/// document revision and viewport the list was laid out at, which is exactly
+/// the lifetime a paint-time transition overlay spans.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash)]
+pub struct ElementIndex(u32);
+
+impl ElementIndex {
+    /// The element's position in emission order.
+    #[must_use]
+    pub const fn get(self) -> u32 {
+        self.0
+    }
+}
+
+/// An element whose style declares a transition.
+#[derive(Debug, Clone)]
+struct AnimatedElement {
+    /// Authored identifier; `None` for an element the document did not name,
+    /// which no run can follow across a relayout.
+    id: Option<Arc<str>>,
+    /// The transition the element's style declares.
+    transition: Transition,
+}
+
 impl DisplayCommand {
     /// Moves every coordinate this command carries.
     ///
@@ -155,16 +182,198 @@ impl DisplayCommand {
             Self::DrawImage { placement } => Arc::make_mut(placement).translate(dx, dy),
         }
     }
+
+    /// The color this command paints for `property`, when it paints one.
+    fn animated_color(&self, property: TransitionProperty) -> Option<Color> {
+        match (self, property) {
+            (Self::DrawText { style, .. }, TransitionProperty::Color) => Some(style.color),
+            (Self::DrawBorder { color, .. }, TransitionProperty::BorderColor) => Some(*color),
+            _ => None,
+        }
+    }
+
+    /// The same color as a write target.
+    fn animated_color_mut(&mut self, property: TransitionProperty) -> Option<&mut Color> {
+        match (self, property) {
+            (Self::DrawText { style, .. }, TransitionProperty::Color) => Some(&mut style.color),
+            (Self::DrawBorder { color, .. }, TransitionProperty::BorderColor) => Some(color),
+            _ => None,
+        }
+    }
 }
 
 /// Drawing commands emitted by bounded layout.
+///
+/// A command of an element whose style declares a transition names that
+/// element, so a host can change one element's paint without laying the
+/// document out again. The attribution is a side index rather than a field of
+/// the command: a command stays a fixed-size value that clones without
+/// requesting memory.
+///
+/// The index is scoped to the elements a transition can address. A document
+/// that declares none carries no attribution at all, so an unchanged render of
+/// such a form still requests only its command storage.
 #[derive(Debug, Clone, Default)]
 pub struct DisplayList {
-    /// Commands in painter order.
-    pub commands: Vec<DisplayCommand>,
+    /// Commands in painter order; public through [`Self::commands`], so a
+    /// caller outside layout cannot desynchronize the owner index.
+    pub(super) commands: Vec<DisplayCommand>,
+    /// `(command, element)` for every command an animated element paints, in
+    /// command order.
+    owned: Vec<(u32, u32)>,
+    /// The elements whose style declares a transition, in emission order.
+    animated: Vec<AnimatedElement>,
+    /// The element the next push belongs to, while layout is inside one that
+    /// declares a transition.
+    owner: Option<u32>,
 }
 
 impl DisplayList {
+    /// The commands in painter order.
+    #[must_use]
+    pub fn commands(&self) -> &[DisplayCommand] {
+        &self.commands
+    }
+
+    /// The animated element that paints a command, or `None` when the command
+    /// belongs to a host overlay or to an element that declares no transition.
+    #[must_use]
+    pub fn command_owner(&self, index: usize) -> Option<ElementIndex> {
+        let index = u32::try_from(index).ok()?;
+        self.owned
+            .binary_search_by_key(&index, |(command, _)| *command)
+            .ok()
+            .map(|slot| ElementIndex(self.owned[slot].1))
+    }
+
+    /// The animated elements, in emission order.
+    pub fn elements(&self) -> impl Iterator<Item = ElementIndex> + '_ {
+        (0..self.animated.len()).filter_map(|index| u32::try_from(index).ok().map(ElementIndex))
+    }
+
+    /// The authored identifier of an element, when the document named it.
+    #[must_use]
+    pub fn element_id(&self, element: ElementIndex) -> Option<&str> {
+        self.record(element)?.id.as_deref()
+    }
+
+    /// The transition the element's style declares.
+    #[must_use]
+    pub fn element_transition(&self, element: ElementIndex) -> Option<Transition> {
+        Some(self.record(element)?.transition)
+    }
+
+    /// The last animated element the document named `id`.
+    ///
+    /// Later entries take precedence, matching the popup stacking
+    /// [`Self::element_rect`] follows.
+    #[must_use]
+    pub fn element_index(&self, id: &str) -> Option<ElementIndex> {
+        self.animated
+            .iter()
+            .rposition(|record| record.id.as_deref() == Some(id))
+            .and_then(|index| u32::try_from(index).ok())
+            .map(ElementIndex)
+    }
+
+    /// The color an element paints for `property`, taken from the first
+    /// command that paints it.
+    #[must_use]
+    pub fn element_color(
+        &self,
+        element: ElementIndex,
+        property: TransitionProperty,
+    ) -> Option<Color> {
+        self.owned
+            .iter()
+            .filter(|(_, owner)| *owner == element.0)
+            .find_map(|(command, _)| {
+                let command = usize::try_from(*command).ok()?;
+                self.commands.get(command)?.animated_color(property)
+            })
+    }
+
+    /// Writes `color` into every command the element paints for `property`,
+    /// reporting the area those commands cover.
+    ///
+    /// A command that already holds `color` is left alone, so the report is
+    /// the area whose paint actually changes. `None` therefore means the call
+    /// changed no pixel, which is what a host needs to tell a moving frame
+    /// from a settled one.
+    pub fn recolor(
+        &mut self,
+        element: ElementIndex,
+        property: TransitionProperty,
+        color: Color,
+    ) -> Option<Rect> {
+        let mut covered: Option<Rect> = None;
+        for (command, owner) in &self.owned {
+            if *owner != element.0 {
+                continue;
+            }
+            let Some(slot) = usize::try_from(*command).ok() else {
+                continue;
+            };
+            let Some(target) = self.commands.get_mut(slot) else {
+                continue;
+            };
+            let Some(bounds) = target.paint_bounds() else {
+                continue;
+            };
+            let Some(paint) = target.animated_color_mut(property) else {
+                continue;
+            };
+            if *paint == color {
+                continue;
+            }
+            *paint = color;
+            covered = Some(covered.map_or(bounds, |area| area.union(bounds)));
+        }
+        covered
+    }
+
+    fn record(&self, element: ElementIndex) -> Option<&AnimatedElement> {
+        usize::try_from(element.0)
+            .ok()
+            .and_then(|index| self.animated.get(index))
+    }
+
+    /// Opens an element: later commands belong to it until [`Self::end_element`].
+    ///
+    /// Only an element that declares a transition is addressable, so only such
+    /// an element records itself and becomes the owner of what it paints.
+    /// Returns the owner to restore, so nesting restores the parent exactly
+    /// rather than by inference.
+    pub(super) fn begin_element(
+        &mut self,
+        id: Option<&str>,
+        transition: Option<Transition>,
+    ) -> Result<Option<u32>> {
+        let previous = self.owner;
+        self.owner = match transition {
+            Some(transition) => {
+                let index = u32::try_from(self.animated.len()).map_err(|_| {
+                    limit_error("Animated element count exceeds the display index range")
+                })?;
+                self.animated
+                    .try_reserve(1)
+                    .map_err(|_| limit_error("Display element allocation failed"))?;
+                self.animated.push(AnimatedElement {
+                    id: id.map(Arc::from),
+                    transition,
+                });
+                Some(index)
+            }
+            None => None,
+        };
+        Ok(previous)
+    }
+
+    /// Closes the element [`Self::begin_element`] opened.
+    pub(super) fn end_element(&mut self, previous: Option<u32>) {
+        self.owner = previous;
+    }
+
     /// Executes the display list with framebuffer clipping.
     pub fn render_to(&self, fb: &mut Framebuffer) {
         for command in &self.commands {
@@ -310,11 +519,66 @@ impl DisplayList {
         })
     }
 
+    /// A copy of this list with room for `extra` more commands.
+    ///
+    /// Every command and element is shared with `self`; only the command and
+    /// owner storage is new, so a frame requests no memory for the payloads it
+    /// repeats.
+    ///
+    /// # Errors
+    /// Returns [`metis_core::error::ErrorCode::LayoutOverflow`] when the
+    /// storage cannot be allocated or the counts exceed the addressable range.
+    pub fn copy_with_room(&self, extra: usize) -> Result<Self> {
+        let capacity =
+            self.commands.len().checked_add(extra).ok_or_else(|| {
+                limit_error("Display command count exceeds the addressable range")
+            })?;
+        let mut copy = Self::default();
+        copy.commands
+            .try_reserve_exact(capacity)
+            .map_err(|_| limit_error("Display command allocation failed"))?;
+        copy.owned
+            .try_reserve_exact(self.owned.len())
+            .map_err(|_| limit_error("Display command allocation failed"))?;
+        copy.animated
+            .try_reserve_exact(self.animated.len())
+            .map_err(|_| limit_error("Display element allocation failed"))?;
+        copy.commands.extend_from_slice(&self.commands);
+        copy.owned.extend_from_slice(&self.owned);
+        copy.animated.extend_from_slice(&self.animated);
+        Ok(copy)
+    }
+
+    /// A list of commands no element paints.
+    ///
+    /// Hosts and tests build presentation commands outside a layout; a
+    /// transition cannot address them, which is the intended treatment of an
+    /// overlay that belongs to no element.
+    #[must_use]
+    pub fn from_commands(commands: Vec<DisplayCommand>) -> Self {
+        Self {
+            commands,
+            ..Self::default()
+        }
+    }
+
+    /// Appends a command for the element layout is inside, or for no element
+    /// when a host appends one over the layout.
     pub(super) fn push(&mut self, command: DisplayCommand) -> Result<()> {
+        let index = self.commands.len();
         self.commands
             .try_reserve(1)
             .map_err(|_| limit_error("Display command allocation failed"))?;
         self.commands.push(command);
+        if let Some(owner) = self.owner {
+            let index = u32::try_from(index).map_err(|_| {
+                limit_error("Display command count exceeds the display index range")
+            })?;
+            self.owned
+                .try_reserve(1)
+                .map_err(|_| limit_error("Display command allocation failed"))?;
+            self.owned.push((index, owner));
+        }
         Ok(())
     }
 }

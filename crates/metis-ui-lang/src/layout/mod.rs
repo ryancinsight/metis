@@ -11,6 +11,9 @@
 mod damage;
 mod device;
 mod display;
+#[cfg(test)]
+#[path = "../layout_display_tests.rs"]
+mod display_tests;
 mod geometry;
 mod grow;
 #[cfg(test)]
@@ -31,7 +34,7 @@ mod slots;
 mod tests;
 mod virtual_list;
 
-pub use display::{DisplayCommand, DisplayList};
+pub use display::{DisplayCommand, DisplayList, ElementIndex};
 pub use geometry::{LayoutViewport, compute_layout};
 pub use metis_platform::framebuffer::Rect;
 pub use metis_platform::rasterizer::{LineCap, LineJoin, StrokeWidth};

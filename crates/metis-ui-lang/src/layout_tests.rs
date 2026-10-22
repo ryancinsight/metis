@@ -20,7 +20,7 @@ fn parent_background_precedes_child_and_gap_is_between_children() {
     assert_eq!(fb.get_pixel(0, 3), Color::rgb(255, 0, 0));
     assert_eq!(fb.get_pixel(0, 6), Color::rgb(0, 255, 0));
     assert_eq!(
-        list.commands[0],
+        list.commands()[0],
         DisplayCommand::FillRect {
             rect: Rect::new(0, 0, 4, 7),
             radius: CornerRadius::SQUARE,
@@ -285,7 +285,7 @@ fn display_line_command_renders_through_the_same_framebuffer() {
         .expect("line command");
     let mut framebuffer = Framebuffer::new(3, 3).expect("surface");
     display.render_to(&mut framebuffer);
-    assert_eq!(display.commands.len(), 1);
+    assert_eq!(display.commands().len(), 1);
     assert_eq!(framebuffer.get_pixel(0, 0), Color::RED);
     assert_eq!(framebuffer.get_pixel(1, 1), Color::RED);
     assert_eq!(framebuffer.get_pixel(2, 2), Color::RED);
@@ -302,10 +302,10 @@ fn display_polyline_command_preserves_style_and_bounds_points() {
         .expect("polyline command");
     let mut framebuffer = Framebuffer::new(5, 5).expect("surface");
     display.render_to(&mut framebuffer);
-    assert_eq!(display.commands.len(), 1);
+    assert_eq!(display.commands().len(), 1);
     assert_eq!(framebuffer.get_pixel(1, 1), Color::BLUE);
     assert!(matches!(
-        &display.commands[0],
+        &display.commands()[0],
         DisplayCommand::DrawPolyline {
             points: stored,
             width: stored_width,
@@ -335,7 +335,7 @@ fn empty_or_oversized_polylines_are_rejected_before_storage() {
             .code,
         ErrorCode::LayoutOverflow
     );
-    assert!(display.commands.is_empty());
+    assert!(display.commands().is_empty());
 }
 
 #[test]
@@ -348,7 +348,7 @@ fn box_shadow_is_painted_beneath_the_background_it_belongs_to() {
     let border_box = Rect::new(10, 10, 40, 20);
     let radius = CornerRadius::clamped(6, border_box);
     assert_eq!(
-        list.commands[..2],
+        list.commands()[..2],
         [
             DisplayCommand::DrawShadow {
                 rect: border_box,
@@ -393,7 +393,7 @@ fn box_shadow_follows_the_display_scale_and_its_blur_bound() {
         .expect("markup");
     let list = compute_layout(&doc, scaled).expect("layout");
     assert_eq!(
-        list.commands[0],
+        list.commands()[0],
         DisplayCommand::DrawShadow {
             rect: Rect::new(0, 0, 40, 20),
             radius: CornerRadius::SQUARE,
