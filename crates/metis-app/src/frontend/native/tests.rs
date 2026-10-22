@@ -1,7 +1,7 @@
-use super::{
-    MAX_PATIENT_ID_BYTES, NativeForm, append_patient_character, append_patient_text,
-    input_limit_error, painted_rect,
+use super::patient_field::{
+    MAX_PATIENT_ID_BYTES, append_patient_character, append_patient_text, input_limit_error,
 };
+use super::{NativeForm, painted_rect};
 use metis_core::ErrorCode;
 use metis_frontend::{ApplicationTheme, FrontendApp};
 use metis_ipc::MemoryTransport;
