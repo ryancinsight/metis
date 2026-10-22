@@ -18,7 +18,7 @@
 
 ### Changed
 
-- [patch] Reconcile the exact Moirai provider pin to `ed039a6ed5fcc454a572fd7ab840b4c1919a2c9d` after
+- [patch] Reconcile the exact Moirai provider pin to the published provider revision after
   current-main integration, preserving the existing QUIC/UDP implementation,
   PR 502 provider/audit contracts and unrelated lock identities. Both canonical
   locks retain the intentional Iris/Gaia Moirai 0.8.3 graph. Provider ADR 0078
