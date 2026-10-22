@@ -220,9 +220,13 @@ pub struct DisplayList {
     pub(super) commands: Vec<DisplayCommand>,
     /// `(command, element)` for every command an animated element paints, in
     /// command order.
-    owned: Vec<(u32, u32)>,
+    ///
+    /// Shared between copies: attribution is a fact of the layout, and a frame
+    /// only changes command colors, so a copy clones a pointer rather than the
+    /// table.
+    owned: Arc<Vec<(u32, u32)>>,
     /// The elements whose style declares a transition, in emission order.
-    animated: Vec<AnimatedElement>,
+    animated: Arc<Vec<AnimatedElement>>,
     /// The element the next push belongs to, while layout is inside one that
     /// declares a transition.
     owner: Option<u32>,
@@ -307,7 +311,7 @@ impl DisplayList {
         color: Color,
     ) -> Option<Rect> {
         let mut covered: Option<Rect> = None;
-        for (command, owner) in &self.owned {
+        for (command, owner) in self.owned.iter() {
             if *owner != element.0 {
                 continue;
             }
@@ -352,13 +356,14 @@ impl DisplayList {
         let previous = self.owner;
         self.owner = match transition {
             Some(transition) => {
-                let index = u32::try_from(self.animated.len()).map_err(|_| {
+                let animated = Arc::make_mut(&mut self.animated);
+                let index = u32::try_from(animated.len()).map_err(|_| {
                     limit_error("Animated element count exceeds the display index range")
                 })?;
-                self.animated
+                animated
                     .try_reserve(1)
                     .map_err(|_| limit_error("Display element allocation failed"))?;
-                self.animated.push(AnimatedElement {
+                animated.push(AnimatedElement {
                     id: id.map(Arc::from),
                     transition,
                 });
@@ -521,9 +526,9 @@ impl DisplayList {
 
     /// A copy of this list with room for `extra` more commands.
     ///
-    /// Every command and element is shared with `self`; only the command and
-    /// owner storage is new, so a frame requests no memory for the payloads it
-    /// repeats.
+    /// Every command and every attribution is shared with `self`; only the
+    /// command storage is new, so a frame requests no memory for the payloads
+    /// or the ownership table it repeats.
     ///
     /// # Errors
     /// Returns [`metis_core::error::ErrorCode::LayoutOverflow`] when the
@@ -533,19 +538,16 @@ impl DisplayList {
             self.commands.len().checked_add(extra).ok_or_else(|| {
                 limit_error("Display command count exceeds the addressable range")
             })?;
-        let mut copy = Self::default();
+        let mut copy = Self {
+            commands: Vec::new(),
+            owned: Arc::clone(&self.owned),
+            animated: Arc::clone(&self.animated),
+            owner: None,
+        };
         copy.commands
             .try_reserve_exact(capacity)
             .map_err(|_| limit_error("Display command allocation failed"))?;
-        copy.owned
-            .try_reserve_exact(self.owned.len())
-            .map_err(|_| limit_error("Display command allocation failed"))?;
-        copy.animated
-            .try_reserve_exact(self.animated.len())
-            .map_err(|_| limit_error("Display element allocation failed"))?;
         copy.commands.extend_from_slice(&self.commands);
-        copy.owned.extend_from_slice(&self.owned);
-        copy.animated.extend_from_slice(&self.animated);
         Ok(copy)
     }
 
@@ -574,10 +576,11 @@ impl DisplayList {
             let index = u32::try_from(index).map_err(|_| {
                 limit_error("Display command count exceeds the display index range")
             })?;
-            self.owned
+            let owned = Arc::make_mut(&mut self.owned);
+            owned
                 .try_reserve(1)
                 .map_err(|_| limit_error("Display command allocation failed"))?;
-            self.owned.push((index, owner));
+            owned.push((index, owner));
         }
         Ok(())
     }

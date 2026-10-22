@@ -4007,7 +4007,7 @@ untracked files copied over it, and `cargo test` and
 `cargo clippy -p metis-ui-lang -p metis-frontend -p metis-platform -p metis-app
 --all-targets -- -D warnings` run there, because the inherited `Cargo.toml`
 bumps every `moirai-*` dependency to a published `0.10.0` without
-`moirai-quic`. Both are green: 154 metis-ui-lang, 66 metis-frontend, 164
+`moirai-quic`. Both are green: 154 metis-ui-lang, 68 metis-frontend, 164
 metis-platform and 56 metis-app unit tests, 13 integration tests across
 `decode_allocation`, `render_allocations` and the app's `process` suite, and 29
 doctests, with zero Clippy findings.
@@ -4047,10 +4047,22 @@ measures zero heap requests through a counting global allocator. The owner index
 was first written as a parallel `owners: Vec<u32>` per layout and per frame,
 which broke the landed invariant
 `an_unchanged_render_requests_only_the_display_list_storage` with
-`requests: [2736, 228, 696]`. The index is now sparse — `(command, element)`
-pairs plus one record per animated element — so a document that animates nothing
-carries no attribution and an unchanged render again requests exactly one
-vector. Both allocation tests pass at this revision.
+`requests: [2736, 228, 696]`. It was then made sparse, and the attribution
+itself became two `Arc`s shared between a layout and the frames copied from it,
+because a copy that cloned the tables would have reintroduced the same defect as
+soon as a document declared a transition: `requests: [40, 40, 2736]` measured
+exactly the two `Arc` blocks a `Default` construction allocates. The copy now
+shares both pointers and allocates only the command storage, so both allocation
+tests pass for the authored form, which declares a transition on its badge.
+
+Adoption: `status-badge` declares `transition: color 150ms ease-out` in
+`CLINICAL_SCREEN_XML`. `the_authored_badge_declares_the_transition_it_is_sampled_with`
+reads the painted frame through `FrontendApp::painted_display`, asserts the
+declared property and 150 ms duration, and asserts the ready color paints in one
+frame when no clock is supplied. `a_palette_change_settles_instead_of_interpolating`
+supplies a clock, switches to the dark theme, and asserts `next_tick()` is
+`None`: a palette change recolors every command, so it settles rather than
+interpolating, which is the behaviour ADR 0060's Limits claim.
 
 Clock and policy (`metis-platform`, `metis-app`):
 `a_moving_application_shortens_the_host_wait_to_its_tick` records every timeout
@@ -4062,10 +4074,11 @@ only shorten a wait. `NativeApplication::next_tick` defaults to `None`, so no
 existing application changed behaviour.
 
 Not established: no committed capture records a multi-step transition, so no
-visual gate runs, and no cross-host pixel comparison is an oracle — only the
-endpoints and the declared curve are shared with the DOM host. No frame-rate,
-latency or memory advantage over Freya is claimed; the only measured number here
-is that a tick with no live run requests zero memory.
+visual gate compares one, and no cross-host pixel comparison is an oracle — only
+the endpoints and the declared curve are shared with the DOM host. No frame-rate,
+latency or memory advantage over Freya is claimed; the only measured numbers here
+are that a tick with no live run requests zero memory and that an unchanged
+render of the animated form still requests one allocation.
 
 Input traces and workload sizes are fixed before comparison, chosen to exercise
 the relevant working-set regimes under the committed budget. Profile production

@@ -59,9 +59,9 @@ Animate at the paint boundary, not in the document.
    Commands are not contiguous per element — a parent's box is reserved before
    its children and its border is pushed after them — so ownership cannot be
    inferred from order; the single push funnel writes it. The index is scoped to
-   elements that declare a transition, so a document that animates nothing
-   carries no attribution and an unchanged render still requests only its
-   command storage.
+   elements that declare a transition and is shared between a layout and the
+   frames copied from it, so an unchanged render requests only its command
+   storage whether or not the document animates.
 5. **Sampler.** `fn sample(elapsed: Duration) -> Color` is pure: each channel is
    interpolated in the stored 8-bit sRGB encoding CSS interpolates legacy colors
    in, computed in `f64` from the eased fraction and rounded once, half away from
@@ -125,15 +125,16 @@ Each oracle is a committed test; the test name is the citation.
   paint the declared target in one frame.
 - `interruption_starts_from_the_sampled_value`: a second transition at t = 0.5 of
   the first starts at the first's sampled color.
-- Not delivered: a committed capture of a multi-step transition and its visual
-  gate, and a cross-host pixel comparison (see Limits).
+- Not delivered: a committed capture of a multi-step transition and its gate.
 
 ## Migration
 
-`transition` is a new admitted declaration: no existing document changes meaning
-and no caller migrates. `DisplayList`'s `commands` became private behind
-`commands()` and `from_commands`, which migrated the construction literals in
-five files, two of them published doctests.
+`transition` is a new admitted declaration and no caller migrates. The authored
+clinical form now declares one on its status badge, so the software host
+interpolates that badge on a session change while the theme path settles.
+`DisplayList`'s `commands` became private behind `commands()` and
+`from_commands`, migrating the construction literals in five files, two of them
+published doctests.
 
 ## Limits
 
@@ -146,5 +147,4 @@ and never starts a transition. Only the native host samples; the DOM host's
 curve is the browser's, so a cross-host pixel comparison of a transition is not
 an oracle — only the endpoints and the declared curve are.
 
-This decision establishes no memory, latency or frame-rate advantage over Freya,
-and it depends on `METIS-PERF-IDLE-001`, which has landed.
+This decision establishes no memory, latency or frame-rate advantage over Freya.

@@ -1,8 +1,52 @@
 use super::{FrontendApp, MAX_COMPOSITION_BYTES};
+use crate::commands::ApplicationCommand;
 use metis_core::ErrorCode;
 use metis_ipc::MemoryTransport;
 use metis_platform::DisplayScale;
-use metis_ui_lang::DisplayCommand;
+use metis_ui_lang::{DisplayCommand, TransitionProperty};
+use std::time::Duration;
+
+/// The color the shown frame paints for the badge.
+fn painted_badge(app: &FrontendApp<MemoryTransport>) -> metis_ui_lang::Color {
+    let display = app.painted_display().expect("the form has painted a frame");
+    let badge = display
+        .element_index("status-badge")
+        .expect("the badge declares a transition");
+    display
+        .element_color(badge, TransitionProperty::Color)
+        .expect("the badge paints a text color")
+}
+
+#[test]
+fn the_authored_badge_declares_the_transition_it_is_sampled_with() {
+    let (transport, _peer) = MemoryTransport::pair();
+    let app = FrontendApp::new(transport, 800, 600).expect("initial form");
+    let display = app.painted_display().expect("initial frame");
+    let badge = display
+        .element_index("status-badge")
+        .expect("the badge is the authored animated element");
+    let transition = display
+        .element_transition(badge)
+        .expect("the badge declares a transition");
+    assert_eq!(transition.property(), TransitionProperty::Color);
+    assert_eq!(transition.duration(), Duration::from_millis(150));
+    // No clock was supplied, so the declared target paints in one frame.
+    assert_eq!(painted_badge(&app), super::super::BADGE_READY);
+    assert_eq!(app.next_tick(), None);
+}
+
+#[test]
+fn a_palette_change_settles_instead_of_interpolating() {
+    let (transport, _peer) = MemoryTransport::pair();
+    let mut app = FrontendApp::new(transport, 800, 600).expect("initial form");
+    app.set_now(Duration::ZERO);
+    app.activate_command(ApplicationCommand::ThemeDark)
+        .expect("dark theme");
+
+    // A palette change recolors every command, so it paints the new palette
+    // rather than interpolating towards it, and schedules no frame.
+    assert_eq!(app.next_tick(), None);
+}
 
 #[test]
 fn resize_replaces_surface_and_preserves_it_on_invalid_dimensions() {

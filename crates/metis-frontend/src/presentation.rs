@@ -4,7 +4,7 @@
 pub const CLINICAL_SCREEN_XML: &str = r#"<screen id="main-screen" style="display: flex; flex-direction: column; height: 100%; background-color: #f0f4f8; padding: 20px; gap: 15px;">
   <div id="header" style="display: flex; flex-direction: column; gap: 8px; background: linear-gradient(135deg, #1a365d, #2c5282); padding: 12px; border-radius: 12px; box-shadow: 0 4px 12px #1a365d40;">
     <text style="color: #ffffff; font-size: 22px; font-weight: bold;">METIS FORM DEMONSTRATION</text>
-    <text id="status-badge" style="color: #9ae6b4; font-size: 13px;">SYSTEM READY</text>
+    <text id="status-badge" style="color: #9ae6b4; font-size: 13px; transition: color 150ms ease-out;">SYSTEM READY</text>
   </div>
 
   <nav id="application-navigation" aria-label="Application navigation" style="display: flex; flex-direction: column; gap: 8px; background-color: #e2e8f0; padding: 8px; border-radius: 10px;">
@@ -111,7 +111,7 @@ impl<T: IpcTransport> FrontendApp<T> {
     /// # Errors
     /// Rejects invalid layout or a missing authored label before changing pixels.
     pub fn render(&mut self) -> Result<()> {
-        self.apply_theme()?;
+        let themed = self.apply_theme()?;
         let badge = if self.client.is_none() {
             "SESSION CLOSED"
         } else if self
@@ -151,9 +151,15 @@ impl<T: IpcTransport> FrontendApp<T> {
         self.append_focus_ring(&mut display)?;
         // A declared transition is sampled here, at the paint boundary: the
         // document, its semantics and its layout are already final, so only
-        // the colors of the animated element's commands move.
+        // the colors of the animated element's commands move. A palette change
+        // recolors every command, so it settles instead of interpolating.
+        let motion = if themed {
+            MotionPreference::Reduced
+        } else {
+            self.motion
+        };
         self.transitions
-            .observe(&display, self.painted.as_ref(), self.motion, self.now);
+            .observe(&display, self.painted.as_ref(), motion, self.now);
         self.transitions.apply(&mut display, self.now);
         // Repaint only what changed since the painted frame: a keystroke
         // changes one field, not the form.
@@ -170,6 +176,16 @@ impl<T: IpcTransport> FrontendApp<T> {
         self.unpresented = self.unpresented.merge(damage);
         self.painted = Some(display);
         Ok(())
+    }
+
+    /// The display list the surface shows.
+    ///
+    /// A host reads the frame it painted from here — the attribution and the
+    /// sampled colors — instead of laying the document out again. `None`
+    /// before the first frame.
+    #[must_use]
+    pub fn painted_display(&self) -> Option<&DisplayList> {
+        self.painted.as_ref()
     }
 
     /// Supplies the host clock a declared transition samples against.

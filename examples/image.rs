@@ -46,13 +46,11 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     .with_transform(ImageTransform::Affine(AffineTransform::new(
         1.0, 0.0, 0.25, 1.0, 0.0, 0.0,
     )?));
-    let mut display = DisplayList {
-        commands: vec![DisplayCommand::FillRect {
-            rect: Rect::new(0, 0, 240, 180),
-            radius: CornerRadius::SQUARE,
-            color: background,
-        }],
-    };
+    let mut display = DisplayList::from_commands(vec![DisplayCommand::FillRect {
+        rect: Rect::new(0, 0, 240, 180),
+        radius: CornerRadius::SQUARE,
+        color: background,
+    }]);
     display.append_image(placement)?;
     display.append_image(rotated)?;
     display.append_image(affine)?;

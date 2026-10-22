@@ -10,13 +10,16 @@ use metis_ui_lang::{Color, ComputedStyle, LinearGradient};
 use std::sync::Arc;
 
 impl<T: IpcTransport> FrontendApp<T> {
-    /// Styles the document with the current theme's palette.
+    /// Styles the document with the current theme's palette, reporting whether
+    /// the palette moved.
     ///
     /// The palette styles are written only here and the document is never
-    /// replaced, so once applied they stay until the theme changes.
-    pub(super) fn apply_theme(&mut self) -> Result<()> {
+    /// replaced, so once applied they stay until the theme changes. A caller
+    /// needs the report because a palette change recolors every command, so it
+    /// must paint the new palette rather than interpolate towards it.
+    pub(super) fn apply_theme(&mut self) -> Result<bool> {
         if self.applied_theme == Some(self.theme) {
-            return Ok(());
+            return Ok(false);
         }
         let palette = ThemePalette::for_theme(self.theme);
         self.set_background("main-screen", palette.page)?;
@@ -58,7 +61,7 @@ impl<T: IpcTransport> FrontendApp<T> {
             self.set_text_color(id, Color::WHITE)?;
         }
         self.applied_theme = Some(self.theme);
-        Ok(())
+        Ok(true)
     }
 
     fn set_background(&mut self, id: &str, color: Color) -> Result<()> {
