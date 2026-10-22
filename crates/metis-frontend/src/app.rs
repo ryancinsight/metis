@@ -10,7 +10,7 @@ use metis_core::protocol::{
 };
 use metis_ipc::client::{HandshakeError, IpcClient};
 use metis_ipc::transport::IpcTransport;
-use metis_platform::{Damage, DisplayScale, Framebuffer};
+use metis_platform::{Damage, DisplayScale, Framebuffer, Rect};
 use metis_ui_lang::{DisplayList, DomDocument, SemanticTree, parse_markup};
 
 /// Outcome for the current inputs. Only success carries a result.
@@ -85,6 +85,9 @@ pub struct FrontendApp<T> {
     /// keeps the theme does not restyle; `None` before the first render.
     pub(crate) applied_theme: Option<ApplicationTheme>,
     pub(crate) focus: Focus,
+    /// Moves whenever focus changes, so a host can tell whether the
+    /// accessibility projection it last pushed is still current.
+    pub(crate) focus_revision: u64,
     /// The display list the framebuffer shows, so the next render repaints
     /// only what changed; `None` when the surface holds no complete frame.
     pub(crate) painted: Option<DisplayList>,
@@ -111,6 +114,7 @@ impl<T: IpcTransport> FrontendApp<T> {
             theme: ApplicationTheme::default(),
             applied_theme: None,
             focus: Focus::initial(),
+            focus_revision: 0,
             painted: None,
             unpresented: Damage::Unchanged,
             cache: RenderCache::default(),
@@ -154,6 +158,30 @@ impl<T: IpcTransport> FrontendApp<T> {
     /// semantic values.
     pub fn semantic_tree(&self) -> Result<SemanticTree> {
         SemanticTree::from_document(&self.doc)
+    }
+
+    /// Identifies the state the accessibility projection reads, so a host
+    /// pushes a projection only when it can have changed.
+    ///
+    /// The pair is the document revision and the focus revision, which cover
+    /// every fact [`Self::semantic_tree`] and [`Self::focused_control`] expose
+    /// to a projection: two equal pairs project to equal trees. A projection
+    /// that starts reading another field must widen this pair, or it serves a
+    /// stale tree.
+    #[must_use]
+    pub const fn accessibility_revision(&self) -> (u64, u64) {
+        (self.doc.revision(), self.focus_revision)
+    }
+
+    /// The laid-out rectangle of an authored element in the frame the surface
+    /// shows, so hit testing reuses the painted layout instead of laying the
+    /// document out again.
+    ///
+    /// `None` before the first frame, or for an element the frame does not
+    /// paint.
+    #[must_use]
+    pub fn painted_rect(&self, id: &str) -> Option<Rect> {
+        self.painted.as_ref()?.element_rect(id)
     }
     /// Actual rendered pixels for host presentation or capture.
     #[must_use]

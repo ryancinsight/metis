@@ -415,10 +415,13 @@ an owner. “Unsupported” cannot replace delivery of a required mobile/native 
 
 <a id="METIS-PERF-IDLE-001"></a>
 ## METIS-PERF-IDLE-001 — Stop rebuilding accessibility and layout when nothing changed [patch]
-- Status: todo; priority: tightening; needs: none
+- Status: done; priority: tightening; needs: none
 - Outcome: an idle event batch allocates nothing and a click reuses the painted layout for hit-testing.
 - Scope: `crates/metis-platform/src/native/application.rs`, `native/window.rs`, `crates/metis-app/src/frontend/native.rs`, `native_accessibility.rs`, `crates/metis-frontend/src/app.rs`.
 - Acceptance: Every 250 ms batch, including empty ones, rebuilds and deep-clones the accessibility tree (about 430 allocations, application.rs:195-202, window.rs:143-146); a click recomputes the whole layout up to four times through `command_rect` (native.rs:189-217, :437-450, verified at basis) though `FrontendApp` holds the painted display list. Oracle: a counting allocator over the loop with empty batches sees zero allocations and zero provider updates after the first frame; `handle_pointer_up` on a miss allocates nothing.
+- Delivered (2026-10-22): `NativeApplication::take_accessibility_damage` is the host's push gate — the default reports `true`, so every application stays correct, and the host asks for the tree only when it reports a change, at startup and per batch alike. `FrontendApp::accessibility_revision` returns `(document revision, focus revision)`, the pair covering every fact the projection reads, and `focus_revision` moves only when focus actually changes. `command_rect` is deleted: `FrontendApp::painted_rect` reads the frame the surface shows, so a press tests the layout the user saw, and the press target lists are `const` arrays rather than a `Vec`.
+- Evidence (2026-10-22): `an_idle_batch_projects_no_accessibility_tree` (metis-platform) — one semantic change over three batches projects once and pushes one tree to the provider, down from one per batch. `an_idle_batch_projects_no_accessibility_tree_and_allocates_nothing` and `a_press_that_hits_no_control_allocates_nothing` (metis-app) — the thread-local counting allocator sees zero requests for an empty batch with its take, and zero for a press outside every control. 162 metis-platform, 56 metis-app and 60 metis-frontend tests pass; strict Clippy is clean on all three.
+- Limit (2026-10-22): the provider's own `wait_events` returns a `Vec<WindowEvent>` per batch, so a batch is not allocation-free end to end; that buffer belongs to Moirai's window provider and is outside this item.
 - basis: 7b50219
 
 <a id="METIS-MEM-RENDER-002"></a>
@@ -474,7 +477,7 @@ an owner. “Unsupported” cannot replace delivery of a required mobile/native 
 - Acceptance: per [ADR 0060](docs/adr/0060-bounded-property-transitions.md) — both endpoints are exact, sampling is deterministic, a transition damages only its element, a tick allocates nothing, an idle surface schedules no tick, reduced motion applies the target in one frame, an interruption starts from the sampled value, and a capture records a multi-step transition. The DOM host's browser curve is not a pixel oracle; only the endpoints and the declared curve are.
 - Rationale (2026-10-22): [Freya](docs/adr/0003-framework-conformance/freya.md) ships `freya-animation` as a first-class crate; `metis-ui-lang` declares no transition, animation or easing property at `13542f6`.
 - Delivered (2026-10-22): `metis_ui_lang::transition` carries the vocabulary and the pure sampler — `Transition::{new, sample}`, `Easing::{control_points, progress}` with a 32-step bisection on the CSS cubic-bezier control points and exact endpoints — and `ComputedStyle::parse` admits `transition: <property> <duration> <easing>` with `color` and `border-color` as the admitted properties. Eight sampler tests and three grammar tests pass; `cargo clippy -p metis-ui-lang --all-targets -- -D warnings` is clean at the delivered revision.
-- next: `METIS-PERF-IDLE-001` first — the conditional accessibility push is decision 8's gate, because a 60 Hz tick would multiply its measured 430-allocation rebuild. Then the owner index on `DisplayList`, the paint-boundary overlay for `color` and `border-color`, `next_tick`, and `MotionPreference`.
+- next: decision 8's gate is clear — `METIS-PERF-IDLE-001` landed the conditional push, so a tick no longer multiplies an accessibility rebuild. Next is the owner index on `DisplayList`, then the paint-boundary overlay for `color` and `border-color`, `next_tick` and `MotionPreference`.
 
 <a id="METIS-COMPONENT-001"></a>
 ## METIS-COMPONENT-001 — General component lifecycle for application state and views [arch] [minor]

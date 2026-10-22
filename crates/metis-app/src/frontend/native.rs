@@ -9,7 +9,6 @@ use metis_platform::native::{
     run_native_application,
 };
 use metis_platform::{Damage, DisplayScale, Framebuffer, Rect};
-use metis_ui_lang::{LayoutViewport, compute_layout};
 use std::io::{stdin, stdout};
 use std::time::Duration;
 
@@ -56,6 +55,7 @@ pub(crate) fn run(inputs: [String; 3]) -> Result<(), Box<dyn std::error::Error>>
         pid,
         patient_id,
         focused: true,
+        taken_accessibility: None,
     };
     run_native_application(&config, application, EVENT_WAIT)?;
     Ok(())
@@ -66,6 +66,9 @@ struct NativeForm<T> {
     pid: u32,
     patient_id: String,
     focused: bool,
+    /// The accessibility revision the host last took, so a batch that changed
+    /// no semantic state projects no tree.
+    taken_accessibility: Option<(u64, u64)>,
 }
 
 impl<T: IpcTransport> NativeApplication for NativeForm<T> {
@@ -81,6 +84,15 @@ impl<T: IpcTransport> NativeApplication for NativeForm<T> {
 
     fn accessibility_tree(&self) -> Result<Option<AccessibilityTree>> {
         native_accessibility::project(&self.app).map(Some)
+    }
+
+    fn take_accessibility_damage(&mut self) -> bool {
+        let revision = self.app.accessibility_revision();
+        if self.taken_accessibility == Some(revision) {
+            return false;
+        }
+        self.taken_accessibility = Some(revision);
+        true
     }
 
     fn handle_events(&mut self, events: &[WindowEvent]) -> Result<NativeFlow> {
@@ -191,30 +203,25 @@ impl<T: IpcTransport> NativeForm<T> {
     fn handle_pointer_up(&mut self, x: i32, y: i32) -> Result<bool> {
         self.focused = true;
         let menu_open = self.app.command_menu_open();
-        let mut targets = vec!["command-menu-toggle"];
-        if menu_open {
-            targets.extend([
-                ApplicationCommand::ThemeDark.id(),
-                ApplicationCommand::ThemeSystem.id(),
-                ApplicationCommand::CopyResult.id(),
-            ]);
+        let targets = if menu_open {
+            &OPEN_MENU_TARGETS[..]
         } else {
-            targets.extend([ApplicationCommand::FocusPatient.id(), "btn-calc"]);
-        }
+            &CLOSED_MENU_TARGETS[..]
+        };
         for target in targets {
-            if command_rect(&self.app, target)?.contains(x, y) {
+            if painted_rect(&self.app, target)?.contains(x, y) {
                 // A press focuses what it hits without a ring, then acts.
                 self.app.focus_control(target, FocusOrigin::Pointer)?;
                 return self.activate_control(target, FocusOrigin::Pointer);
             }
         }
         if menu_open {
-            if command_rect(&self.app, "command-menu")?.contains(x, y) {
+            if painted_rect(&self.app, "command-menu")?.contains(x, y) {
                 return Ok(false);
             }
             return self.app.close_command_menu();
         }
-        if command_rect(&self.app, PATIENT_INPUT)?.contains(x, y) {
+        if painted_rect(&self.app, PATIENT_INPUT)?.contains(x, y) {
             return self.app.focus_control(PATIENT_INPUT, FocusOrigin::Pointer);
         }
         Ok(false)
@@ -460,14 +467,25 @@ fn resize_superseded(following: &[WindowEvent]) -> bool {
         .any(|(width, height)| width > 0 && height > 0)
 }
 
-fn command_rect<T: IpcTransport>(app: &FrontendApp<T>, id: &str) -> Result<Rect> {
-    let width = i32::try_from(app.framebuffer().width()).map_err(|_| layout_error())?;
-    let height = i32::try_from(app.framebuffer().height()).map_err(|_| layout_error())?;
-    let display = compute_layout(
-        app.document(),
-        LayoutViewport::with_scale(width, height, app.display_scale()),
-    )?;
-    display.element_rect(id).ok_or_else(|| {
+/// The rectangle the painted frame gives an authored element, so a press hits
+/// what the user saw rather than a layout recomputed from later state.
+/// Controls a press tests while the command menu is open, in hit order.
+const OPEN_MENU_TARGETS: [&str; 4] = [
+    "command-menu-toggle",
+    ApplicationCommand::ThemeDark.id(),
+    ApplicationCommand::ThemeSystem.id(),
+    ApplicationCommand::CopyResult.id(),
+];
+
+/// Controls a press tests while the command menu is closed, in hit order.
+const CLOSED_MENU_TARGETS: [&str; 3] = [
+    "command-menu-toggle",
+    ApplicationCommand::FocusPatient.id(),
+    "btn-calc",
+];
+
+fn painted_rect<T: IpcTransport>(app: &FrontendApp<T>, id: &str) -> Result<Rect> {
+    app.painted_rect(id).ok_or_else(|| {
         MetisError::ui(
             ErrorCode::MalformedMarkup,
             format!("Authored form is missing command surface {id}"),
@@ -479,13 +497,6 @@ fn input_limit_error() -> MetisError {
     MetisError::protocol(
         ErrorCode::PayloadTooLarge,
         "Patient identifier exceeds the bounded native input limit",
-    )
-}
-
-fn layout_error() -> MetisError {
-    MetisError::ui(
-        ErrorCode::LayoutOverflow,
-        "Native surface dimensions exceed layout coordinates",
     )
 }
 
