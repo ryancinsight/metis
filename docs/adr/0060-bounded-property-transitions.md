@@ -8,7 +8,7 @@ Driver: `METIS-ANIMATION-001`.
 
 Revision: 2026-10-22 — vocabulary, sampler and grammar admission are delivered
 (`metis_ui_lang::transition`, [ADR 0013](0013-strict-style-contract.md) revision);
-the overlay, `next_tick` clock and reduced-motion policy remain (decision 8).
+the overlay, `next_tick` clock and reduced-motion policy remain; decision 8's gate has cleared.
 
 ## Context
 
@@ -26,9 +26,10 @@ already in the tree shape any answer:
 - `RenderCache::frame` lays out once per `(document revision, viewport)` and
   returns a copy whose command storage is the only memory it requests;
   `METIS-MEM-RENDER-002` measures 350 allocations for a one-character edit.
-- The native host pushes the accessibility tree on **every** event batch,
+- The native host pushed the accessibility tree on **every** event batch,
   before checking for a repaint (`application.rs:195-206`);
-  `METIS-PERF-IDLE-001` measures that rebuild at ~430 allocations per batch.
+  `METIS-PERF-IDLE-001` measured that rebuild at ~430 allocations per batch and
+  now gates the push on `take_accessibility_damage`.
 - [ADR 0013](0013-strict-style-contract.md) admits one property at a time, each
   with the paint evidence that earns it, and rejects unadmitted syntax with a
   typed error rather than dropping it silently.
