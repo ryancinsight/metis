@@ -466,6 +466,16 @@ an owner. “Unsupported” cannot replace delivery of a required mobile/native 
 - basis: ce47b2b2ebc11c09b0d6f67d7c2e60487fe71cc6
 - next: write the benchmark harness and run it on the controlled host.
 
+<a id="METIS-ANIMATION-001"></a>
+## METIS-ANIMATION-001 — Admit bounded transitions on presented properties [feature]
+- Status: in-progress; priority: feature; needs: METIS-PERF-IDLE-001; ADR: [0060](docs/adr/0060-bounded-property-transitions.md)
+- Outcome: a state change interpolates one admitted style property over a bounded duration on the software host, an idle surface schedules no frame, and the DOM host animates the same declaration through its own stylesheet.
+- Scope: `crates/metis-ui-lang/src/style.rs` declaration admission, the command owner index in `layout`, a paint-boundary sampler in `metis-frontend`, the `next_tick` seam in `metis-platform`'s native host and the reduced-motion preference. Interruption and teardown semantics are part of the decision, not implementation detail.
+- Acceptance: per [ADR 0060](docs/adr/0060-bounded-property-transitions.md) — both endpoints are exact, sampling is deterministic, a transition damages only its element, a tick allocates nothing, an idle surface schedules no tick, reduced motion applies the target in one frame, an interruption starts from the sampled value, and a capture records a multi-step transition. The DOM host's browser curve is not a pixel oracle; only the endpoints and the declared curve are.
+- Rationale (2026-10-22): [Freya](docs/adr/0003-framework-conformance/freya.md) ships `freya-animation` as a first-class crate; `metis-ui-lang` declares no transition, animation or easing property at `13542f6`.
+- Delivered (2026-10-22): `metis_ui_lang::transition` carries the vocabulary and the pure sampler — `Transition::{new, sample}`, `Easing::{control_points, progress}` with a 32-step bisection on the CSS cubic-bezier control points and exact endpoints — and `ComputedStyle::parse` admits `transition: <property> <duration> <easing>` with `color` and `border-color` as the admitted properties. Eight sampler tests and three grammar tests pass; `cargo clippy -p metis-ui-lang --all-targets -- -D warnings` is clean at the delivered revision.
+- next: `METIS-PERF-IDLE-001` first — the conditional accessibility push is decision 8's gate, because a 60 Hz tick would multiply its measured 430-allocation rebuild. Then the owner index on `DisplayList`, the paint-boundary overlay for `color` and `border-color`, `next_tick`, and `MotionPreference`.
+
 <a id="METIS-COMPONENT-001"></a>
 ## METIS-COMPONENT-001 — General component lifecycle for application state and views [arch] [minor]
 - Status: todo; priority: architecture; needs: none

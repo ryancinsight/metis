@@ -11,6 +11,7 @@ pub mod layout;
 pub mod parser;
 pub mod semantics;
 pub mod style;
+pub mod transition;
 
 pub use catalog::{
     Catalog, Locale, MAX_KEY_BYTES, MAX_LOCALE_TAG_BYTES, MAX_MESSAGE_SLOTS, MAX_VALUE_BYTES,

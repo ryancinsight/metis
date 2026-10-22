@@ -396,3 +396,76 @@ fn parses_flex_grow_as_a_nonnegative_number() {
         assert_eq!(error.code, ErrorCode::InvalidCssStyle, "{css}");
     }
 }
+
+#[test]
+fn transition_admits_one_property_one_duration_and_one_easing() {
+    use crate::transition::{Easing, Transition, TransitionProperty};
+
+    let admitted = |css: &str| {
+        ComputedStyle::parse(css)
+            .expect("admitted transition")
+            .transition
+    };
+    assert_eq!(
+        admitted("transition: color 150ms ease-in-out"),
+        Transition::new(TransitionProperty::Color, 150, Easing::EaseInOut)
+    );
+    assert_eq!(
+        admitted("TRANSITION:  border-color   0ms   linear"),
+        Transition::new(TransitionProperty::BorderColor, 0, Easing::Linear)
+    );
+    assert_eq!(
+        admitted("transition: color 2000ms ease"),
+        Transition::new(TransitionProperty::Color, 2000, Easing::Ease)
+    );
+    // The keyword is also how a declaration is withdrawn, and the default is
+    // no transition at all.
+    assert_eq!(admitted("transition: none"), None);
+    assert_eq!(ComputedStyle::default().transition, None);
+}
+
+#[test]
+fn transition_refuses_the_grammar_it_does_not_admit() {
+    for css in [
+        // Incomplete and over-long declarations.
+        "transition: color",
+        "transition: color 150ms",
+        "transition: color 150ms ease linear",
+        "transition: none 150ms",
+        // A duration must be whole milliseconds.
+        "transition: color 150 ease",
+        "transition: color 150s ease",
+        "transition: color 1.5ms ease",
+        "transition: color -1ms ease",
+        "transition: color ms ease",
+        "transition: color 2001ms ease",
+        "transition: color 99999999999999ms ease",
+        // Only the admitted properties, and only the keyword easings.
+        "transition: width 150ms ease",
+        "transition: opacity 150ms ease",
+        "transition: background-color 150ms ease",
+        "transition: color 150ms cubic-bezier(0.4, 0, 0.2, 1)",
+        "transition: color 150ms steps(4)",
+        // Comma lists are one transition per element (ADR 0060).
+        "transition: color 150ms ease, border-color 150ms linear",
+    ] {
+        let error = ComputedStyle::parse(css).expect_err("refused transition");
+        assert_eq!(error.code, ErrorCode::InvalidCssStyle, "{css}");
+        assert!(
+            error.message.contains("transition"),
+            "{css}: {}",
+            error.message
+        );
+    }
+}
+
+#[test]
+fn a_transition_is_metadata_and_never_changes_layout() {
+    let animated = ComputedStyle::parse("color: #fff; padding: 4px; transition: color 150ms ease")
+        .expect("admitted transition");
+    let plain = ComputedStyle::parse("color: #fff; padding: 4px").expect("plain style");
+    assert!(animated.transition.is_some());
+    let mut without = animated;
+    without.transition = None;
+    assert_eq!(without, plain);
+}
