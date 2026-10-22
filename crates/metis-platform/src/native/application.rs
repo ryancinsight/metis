@@ -49,6 +49,19 @@ pub trait NativeApplication {
         Ok(None)
     }
 
+    /// Takes whether the accessibility projection changed since the host last
+    /// pushed it.
+    ///
+    /// The host calls this once per event batch and asks for
+    /// [`Self::accessibility_tree`] only when it reports `true`, so a batch
+    /// that changed no semantic state costs no projection. The default
+    /// reports `true`, which keeps every application correct; an application
+    /// that tracks a revision reports the change instead and an idle batch
+    /// allocates nothing.
+    fn take_accessibility_damage(&mut self) -> bool {
+        true
+    }
+
     /// Applies one bounded native event batch and reports the next host action.
     ///
     /// The batch can be empty when the finite wait expires. Applications use
@@ -145,15 +158,22 @@ where
 /// batch.
 pub fn run_native_application<A>(
     config: &WindowConfig,
-    application: A,
+    mut application: A,
     wait: Duration,
 ) -> Result<(), NativeHostError<A::Error>>
 where
     A: NativeApplication,
 {
-    let initial_accessibility = application
-        .accessibility_tree()
-        .map_err(NativeHostError::Application)?;
+    // The first tree is taken through the same accounting as every later one,
+    // so an application that tracks a revision does not project the tree twice
+    // at startup and an idle first batch projects nothing.
+    let initial_accessibility = if application.take_accessibility_damage() {
+        application
+            .accessibility_tree()
+            .map_err(NativeHostError::Application)?
+    } else {
+        None
+    };
     let surface = NativeSurface::new_with_accessibility(config, initial_accessibility)
         .map_err(NativeHostError::Surface)?;
     run_application_loop(surface, application, wait)
@@ -192,9 +212,10 @@ where
             surface.close().map_err(NativeHostError::Surface)?;
             return Ok(());
         }
-        if let Some(tree) = application
-            .accessibility_tree()
-            .map_err(NativeHostError::Application)?
+        if application.take_accessibility_damage()
+            && let Some(tree) = application
+                .accessibility_tree()
+                .map_err(NativeHostError::Application)?
         {
             surface
                 .update_accessibility(tree)

@@ -10,6 +10,8 @@ pub use metis_platform::framebuffer::Color;
 pub use metis_platform::rasterizer::LinearGradient;
 use std::sync::Arc;
 
+use crate::transition::{Easing, Transition, TransitionProperty};
+
 /// Display flow mode.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum Display {
@@ -183,6 +185,12 @@ pub struct ComputedStyle {
     pub font_weight: FontWeight,
     /// Outer shadow painted beneath the background, if any.
     pub box_shadow: Option<Shadow>,
+    /// Transition applied when this element's animated property changes, if
+    /// any ([ADR 0060](../../docs/adr/0060-bounded-property-transitions.md)).
+    ///
+    /// Metadata only: a transition never changes layout, and a document that
+    /// declares none paints every change immediately.
+    pub transition: Option<Transition>,
 }
 
 impl Default for ComputedStyle {
@@ -209,6 +217,7 @@ impl Default for ComputedStyle {
             font_size: 14,
             font_weight: FontWeight::Normal,
             box_shadow: None,
+            transition: None,
         }
     }
 }
@@ -303,6 +312,7 @@ impl ComputedStyle {
                     style.apply_background(&key, val)?;
                 }
                 "color" => style.text_color = parse_color(&key, val)?,
+                "transition" => style.transition = parse_transition(&key, val)?,
                 "font-size" => {
                     let px = parse_nonnegative_px(&key, val)?.max(8);
                     style.font_size = u32::try_from(px).map_err(|_| invalid_value(&key, val))?;
@@ -328,6 +338,50 @@ fn invalid_value(property: &str, value: &str) -> MetisError {
         ErrorCode::InvalidCssStyle,
         format!("Invalid value for CSS property '{property}': '{value}'"),
     )
+}
+
+/// Parses `<property> <duration> <easing>` or `none` ([ADR 0060]).
+///
+/// The subset is one property, one whole-millisecond duration and one easing
+/// keyword, in that order. Comma lists, `cubic-bezier()`, other properties,
+/// other units and a duration past
+/// [`MAX_TRANSITION_MILLIS`](crate::transition::MAX_TRANSITION_MILLIS) are typed
+/// errors rather than a silent shortening.
+///
+/// [ADR 0060]: ../../docs/adr/0060-bounded-property-transitions.md
+fn parse_transition(property: &str, value: &str) -> Result<Option<Transition>> {
+    let mut parts = value.split_whitespace();
+    let name = parts.next().ok_or_else(|| invalid_value(property, value))?;
+    if name == "none" {
+        return match parts.next() {
+            None => Ok(None),
+            Some(_) => Err(invalid_value(property, value)),
+        };
+    }
+    let animated = TransitionProperty::parse(name).ok_or_else(|| invalid_value(property, value))?;
+    let duration = parts.next().ok_or_else(|| invalid_value(property, value))?;
+    let easing = parts.next().ok_or_else(|| invalid_value(property, value))?;
+    if parts.next().is_some() {
+        return Err(invalid_value(property, value));
+    }
+    let millis = parse_millis(property, duration)?;
+    let easing = Easing::parse(easing).ok_or_else(|| invalid_value(property, value))?;
+    Transition::new(animated, millis, easing)
+        .map(Some)
+        .ok_or_else(|| invalid_value(property, value))
+}
+
+/// Parses a whole-millisecond duration, refusing every other unit.
+fn parse_millis(property: &str, value: &str) -> Result<u32> {
+    let digits = value
+        .strip_suffix("ms")
+        .ok_or_else(|| invalid_value(property, value))?;
+    if digits.is_empty() || !digits.bytes().all(|byte| byte.is_ascii_digit()) {
+        return Err(invalid_value(property, value));
+    }
+    digits
+        .parse::<u32>()
+        .map_err(|_| invalid_value(property, value))
 }
 
 fn parse_px(s: &str) -> Option<i32> {

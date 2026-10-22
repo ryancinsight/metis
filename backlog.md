@@ -3,14 +3,26 @@ Current framework version: Metis 0.5.0. Remaining capability work follows.
 <a id="METIS-QUIC-PROMOTION-001"></a>
 ## METIS-QUIC-PROMOTION-001 — Publish canonical native QUIC integration [minor]
 
-- Status: todo; priority: P1; owner: Metis + Moirai transport; last-update: 2026-10-13; ADR: [0058](docs/adr/0058-native-quic-sessions.md).
+- Release promotion (folded from the retired checklist.md, 2026-10-21): the native QUIC provider/consumer pair is feature-complete; protected release promotion awaits explicit release authority and the required review/checks of the provider PR (Moirai#618) and consumer PR (metis#503).
+
+- [patch] Push blocker (2026-10-22): `atlas-build-identity` refuses both prepared branches with `dependency package name moirai-core has multiple non-registry sources`. `gaia-mesh` reaches `moirai-runtime` from `github.com/ryancinsight/Moirai.git` with no ref (main, 0.10.0) while this workspace pins nine `moirai-*` crates at the ADR 0058 quarantine revision (0.9.0); `metis-app` reaches both through `metis-frontend` and `metis-backend`, so no affected package has one source. The pin cannot move: `moirai-quic` is absent from Moirai main, and the quarantine's successor head re-resolves `mnemosyne-memory ^0.9.0`, which Mnemosyne main no longer offers. Re-open when [PR 618](https://github.com/ryancinsight/Moirai/pull/618) lands `moirai-quic` on main; then delete all nine pins for `version = "0.10.0"` and regenerate the lock.
+- Status: todo; priority: P1; owner: Metis + Moirai transport; last-update: 2026-10-22; ADR: [0058](docs/adr/0058-native-quic-sessions.md).
 - Scope: native reliable multiplexed sessions through the shared asynchronous server and existing frame/capability/clinical/audit contracts.
 - Current increment: required native QUIC transport, actual ALPN/full frame-domain admission, independent fresh-key services for the same authenticated principal, protocol rejection and graceful FIN are implemented. The canonical provider pin passes 178 default tests and 115 minimal IPC/backend tests without a QUIC feature flag. Full native workspace/all-target compilation, warning-denying native/browser diagnostics, 588 applicable default-API compatibility checks and the default-built IPv4/IPv6 mutual TLS CLI pass. Browser application graphs exclude native QUIC; CI checks minimal native sessions.
 - Acceptance: published Moirai 0.9.0/moirai-quic 0.1.0 revision resolves one canonical Git lock; strict diagnostics, real mutual TLS CLI computation/event/teardown and compatibility classification pass. Browser HTTP/3 is a separate mapping.
-- [patch] Integration closure: latest consumer e8dd4c9 retains main 1ef9409 and all 423 Rust/TLS fixture paths. The nine direct Moirai pins and both canonical locks resolve published provider ed039a6ed5fcc454a572fd7ab840b4c1919a2c9d; unrelated revisions and the intentional 0.8.3 transitive graph remain. The full native workspace passes 703 tests; 178 default and 115 minimal transport tests, four real process pairs, strict diagnostics, direct-provider ownership and 23 verifier tests pass.
+- [patch] Integration closure: latest consumer e8dd4c9 retains main 1ef9409 and all 423 Rust/TLS fixture paths. The nine direct Moirai pins and both canonical locks resolve the published provider revision recorded by metis PR #503; unrelated revisions and the intentional 0.8.3 transitive graph remain. The full native workspace passes 703 tests; 178 default and 115 minimal transport tests, four real process pairs, strict diagnostics, direct-provider ownership and 23 verifier tests pass.
 - [patch] Compatibility: complete Rustdoc metadata from unchanged current-main source/lock passes all 588 applicable native API checks. The compatibility tool's fresh-baseline resolution cannot resolve unpinned Moirai ^0.8.3 against its newer main; locked-baseline generation preserves the actual baseline contract.
-- Historical UDP increment at e8dd4c9: provider 8f8fd753 applies the shared PAL queue contract; validated optional requests and effective-size logging pass 178 default/115 minimal tests, strict diagnostics and four real IPv4/IPv6 process pairs. Both locks change only the provider revision; 23 verifier tests and dependency ownership pass. The provider's Linux/Windows native gates pass at production-equivalent source 52c9063; its recovery-policy gate remains open.
+- Historical UDP increment at e8dd4c9: the applied-UDP provider increment applies the shared PAL queue contract; validated optional requests and effective-size logging pass 178 default/115 minimal tests, strict diagnostics and four real IPv4/IPv6 process pairs. Both locks change only the provider revision; 23 verifier tests and dependency ownership pass. The provider's Linux/Windows native gates pass at its production-equivalent source; its recovery-policy gate remains open.
 - Next step: complete required review/checks for [provider PR 618](https://github.com/ryancinsight/Moirai/pull/618) and [consumer PR 503](https://github.com/ryancinsight/metis/pull/503) before protected promotion. Both native platform gates and the full Windows/browser consumer gate pass at ed72092. The provider measures all 108 controlled pairs: 105 exact-byte successes and three maximum-frame/16-stream loss deadlines; its recovery-policy evaluation remains open. No wide-area or TCP equivalence is claimed.
+
+<a id="METIS-PROVIDER-COHORT-001"></a>
+## METIS-PROVIDER-COHORT-001 — Advance the first-party provider cohort [patch]
+
+- Status: blocked; priority: P2; owner: Metis build; last-update: 2026-10-22; needs: METIS-QUIC-PROMOTION-001; basis: 13542f6.
+- Scope: advance `Cargo.toml` to consus-compression/consus-raster 0.4.0, eunomia 0.10.0, hermes-simd 0.9.2, gaia-mesh 0.6.10 and `moirai-*` 0.10.0, with the `Cargo.lock` regeneration that follows.
+- Acceptance: `cargo check --workspace --all-targets --locked`, the workspace clippy and nextest gates, and the pre-push source-identity gate pass at the recorded lock; no first-party requirement lags its provider.
+- Blocker: the advance cannot resolve while the nine `moirai-*` crates stay at the ADR 0058 quarantine revision. That revision's `moirai-core 0.9.0` requires `mnemosyne-memory ^0.9.0`; Mnemosyne main now offers only 0.10.1, and the stale 0.9.0 entry survives solely because no manifest edit reaches it. Any bump re-resolves that subtree and fails with `failed to select a version for the requirement mnemosyne-memory = "^0.9.0"`.
+- Re-open: [PR 618](https://github.com/ryancinsight/Moirai/pull/618) merges. Then pin `moirai-*` at `version = "0.10.0"` with no git ref and regenerate; the five non-Moirai bumps stand as prepared.
 
 <a id="METIS-WEBVIEW-RUST-001"></a>
 ## METIS-WEBVIEW-RUST-001 — Rust-owned Windows page lifecycle [minor]
@@ -411,14 +423,6 @@ an owner. “Unsupported” cannot replace delivery of a required mobile/native 
 - basis: 7ddca83.
 - Increment (2026-09-24): color tokens are declared once through `light-dark()` and themes choose only the color scheme; the status line leads with a state indicator, diagnostics read as a monospace log, cards are elevated on a darker page, section headings carry an accent rule, the primary action is taller and the command menu shows each item's shortcut from `aria-keyshortcuts`. The layout manifest and 360/800/1440 captures were re-recorded in Chromium 141 through Playwright 1.56.1 with classic scrollbars; 44px option targets hold and no viewport overflows. Firefox/WebKit captures and scale-2 evidence remain open.
 
-<a id="METIS-PERF-IDLE-001"></a>
-## METIS-PERF-IDLE-001 — Stop rebuilding accessibility and layout when nothing changed [patch]
-- Status: todo; priority: tightening; needs: none
-- Outcome: an idle event batch allocates nothing and a click reuses the painted layout for hit-testing.
-- Scope: `crates/metis-platform/src/native/application.rs`, `native/window.rs`, `crates/metis-app/src/frontend/native.rs`, `native_accessibility.rs`, `crates/metis-frontend/src/app.rs`.
-- Acceptance: Every 250 ms batch, including empty ones, rebuilds and deep-clones the accessibility tree (about 430 allocations, application.rs:195-202, window.rs:143-146); a click recomputes the whole layout up to four times through `command_rect` (native.rs:189-217, :437-450, verified at basis) though `FrontendApp` holds the painted display list. Oracle: a counting allocator over the loop with empty batches sees zero allocations and zero provider updates after the first frame; `handle_pointer_up` on a miss allocates nothing.
-- basis: 7b50219
-
 <a id="METIS-MEM-RENDER-002"></a>
 ## METIS-MEM-RENDER-002 — Rebuild only the changed elements' layout and semantics on an edit [patch]
 - Status: todo; priority: tightening; needs: none
@@ -463,6 +467,16 @@ an owner. “Unsupported” cannot replace delivery of a required mobile/native 
 - Acceptance: a controlled local benchmark (median with confidence interval, pinned 10⁵-row model, one change per query) records the rebuild cost; per-row updates land only when that cost exceeds the frame budget, and match the rebuild oracle.
 - basis: ce47b2b2ebc11c09b0d6f67d7c2e60487fe71cc6
 - next: write the benchmark harness and run it on the controlled host.
+
+<a id="METIS-ANIMATION-001"></a>
+## METIS-ANIMATION-001 — Admit bounded transitions on presented properties [feature]
+- Status: todo; priority: feature; needs: none; ADR: [0060](docs/adr/0060-bounded-property-transitions.md)
+- Outcome: a state change interpolates one admitted style property over a bounded duration on the software host, an idle surface schedules no frame, and the DOM host animates the same declaration through its own stylesheet.
+- Scope: `crates/metis-ui-lang/src/style.rs` declaration admission, the command owner index in `layout`, a paint-boundary sampler in `metis-frontend`, the `next_tick` seam in `metis-platform`'s native host and the reduced-motion preference. Interruption and teardown semantics are part of the decision, not implementation detail.
+- Acceptance: per [ADR 0060](docs/adr/0060-bounded-property-transitions.md) — both endpoints are exact, sampling is deterministic, a transition damages only its element, a tick allocates nothing, an idle surface schedules no tick, reduced motion applies the target in one frame, an interruption starts from the sampled value, and a capture records a multi-step transition. The DOM host's browser curve is not a pixel oracle; only the endpoints and the declared curve are.
+- Rationale (2026-10-22): [Freya](docs/adr/0003-framework-conformance/freya.md) ships `freya-animation` as a first-class crate; `metis-ui-lang` declares no transition, animation or easing property at `13542f6`.
+- Delivered (2026-10-22): `metis_ui_lang::transition` carries the vocabulary and the pure sampler — `Transition::{new, sample}`, `Easing::{control_points, progress}` with a 32-step bisection on the CSS cubic-bezier control points and exact endpoints — and `ComputedStyle::parse` admits `transition: <property> <duration> <easing>` with `color` and `border-color` as the admitted properties. Eight sampler tests and three grammar tests pass; `cargo clippy -p metis-ui-lang --all-targets -- -D warnings` is clean at the delivered revision.
+- next: the conditional accessibility push landed with this slice, so a tick no longer multiplies an accessibility rebuild. Next is the owner index on `DisplayList`, then the paint-boundary overlay for `color` and `border-color`, `next_tick` and `MotionPreference`.
 
 <a id="METIS-COMPONENT-001"></a>
 ## METIS-COMPONENT-001 — General component lifecycle for application state and views [arch] [minor]

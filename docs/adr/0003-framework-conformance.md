@@ -11,12 +11,15 @@ Drivers: `METIS-GAPS-001`,
 Current Tauri native admission is pinned in [the capability inventory](../conformance/tauri.json)
 and [the reviewed matrix](../manual/tauri.md). Rust browser ownership is
 specified in [ADR 0056](0056-rust-browser-shell.md). Historical revision
-evidence lives in [the history](0003-framework-conformance/history.md).
+evidence lives in [the history](0003-framework-conformance/history.md), and the
+Freya comparison in [its companion document](0003-framework-conformance/freya.md)
+so this ADR stays inside the length budget of METIS-DOCS-ADR-001.
 
 ## Decision and scope
 
 Use Tauri as the application-framework migration reference, egui/GPUI/Iced as
-interaction, text, rendering and test-tooling references, Svelte/SvelteKit as
+interaction, text, rendering and test-tooling references, Freya as a
+native-rendering, hook-state and headless-testing reference, Svelte/SvelteKit as
 compiled DOM and web-deployment references, Axum as a server and router
 boundary reference, and htmx as a hypermedia boundary reference. Resolve all
 gaps in
@@ -31,7 +34,7 @@ application behavior. Custom rendering has its own contract through Iris.
 Moirai owns execution/transport; Metis owns application state, host integration
 and permission policy. A GPU renderer is not a prerequisite for a DOM form.
 
-egui, GPUI, Iced, Tauri, Svelte, SvelteKit, Axum and htmx are comparison
+egui, GPUI, Iced, Freya, Tauri, Svelte, SvelteKit, Axum and htmx are comparison
 subjects, not newly
 adopted dependencies. The conditional Axum boundary is specified in [ADR
 0025](0025-axum-server-boundary.md); the admitted loopback demonstration is
@@ -59,6 +62,7 @@ initial comparison limits.
 | Iced | [0.14.0 crate and API docs][I0], released 2025-12-07; official examples and release notes [I1] [I2] | Versioned docs describe Windows/macOS/Linux/Web, Elm-style state/messages/view/update, async tasks, native rendering and wgpu/tiny-skia paths. The former DOM runtime is archived [I3]; DOM reuse is not inferred from current Iced. |
 | Svelte / SvelteKit | Official Svelte 5 [overview][S0], [runes][S1] and [custom-elements][S2] docs, plus SvelteKit [introduction][S3] and [project types][S4], inspected 2026-09-18 | Current documentation describes compiler-generated JavaScript/CSS components, rune-based reactivity, custom-element output and configurable SSR/CSR/prerendering. It is a web-component/deployment reference, not evidence for Rust/WASM memory, native-window, permission or installer parity. |
 | Dioxus | [0.7.10 crates][D0] (`dioxus`, `dioxus-desktop`, `-signals`, `-stores`, `-hooks`, `-router`, `-fullstack`, `-native`, `blitz-*` 0.2) fetched from crates.io and read on 2026-09-24 | Published crate sources and READMEs, not the website (unreachable from the inspection host) or an executed application. Dioxus renders one `rsx!` component tree to web (`web-sys`), desktop and mobile WebViews (`wry`/`tao`), server-side HTML, liveview and the experimental wgpu `dioxus-native`/Blitz renderer. |
+| Freya | [0.4.3 crate documentation][F0], released 2026-08-30, read 2026-10-22; the `0.5.0-rc.10` (2026-10-11) and `0.5.0-beta.12` (2026-10-18) pre-releases reopen the inventory without a support claim | Versioned documentation for the released line, not an executed application, matched fixture or source checkout. Freya renders one Rust element tree through Skia on desktop and experimental Android, with no web/WASM build target. The detailed rows are in [the companion comparison](0003-framework-conformance/freya.md). |
 | Axum | [0.8.9 API documentation][A0], inspected 2026-09-10 | Server/router reference for typed routes, state, extraction, middleware and response conversion. Metis keeps Moirai as the transport owner and implements the admitted loopback boundary without an Axum dependency. |
 
 “Provided” below means documented or present in inspected source, not
@@ -349,6 +353,7 @@ observations; future implementation fixtures must pin the actual dependencies.
 [D7]: https://crates.io/crates/dioxus-fullstack/0.7.10
 [D8]: https://crates.io/crates/dioxus-native/0.7.10
 [D9]: https://crates.io/crates/subsecond/0.7.10
+[F0]: https://crates.io/crates/freya/0.4.3
 [A0]: https://docs.rs/axum/0.8.9/axum/struct.Router.html
 [A1]: https://docs.rs/axum/0.8.9/axum/extract/struct.State.html
 [A2]: https://docs.rs/axum/0.8.9/axum/extract/index.html

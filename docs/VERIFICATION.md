@@ -3963,6 +3963,43 @@ violations. This evidence describes the page boundary only; browser-process
 launch, operating-system, compositor, GPU, native-window and matched-framework
 latencies remain separate requirements.
 
+<a id="native-idle-and-transition-vocabulary-evidence"></a>
+## Native idle batches and the transition vocabulary — 2026-10-22
+
+At Metis revision `fa666e9`, `cargo test` and
+`cargo clippy --all-targets -- -D warnings` ran per crate in a detached
+worktree built from `git archive HEAD`, because the inherited `Cargo.toml` in
+the working tree bumps every `moirai-*` dependency to a published `0.10.0`
+that does not carry `moirai-quic`.
+
+METIS-PERF-IDLE-001: `an_idle_batch_projects_no_accessibility_tree` drives the
+generic host loop with three `FocusGained` batches and one `CloseRequested`
+through a recording surface. An application that reports one semantic change
+is projected once and its tree pushed to the provider once, where the previous
+host projected and pushed on every batch.
+`an_idle_batch_projects_no_accessibility_tree_and_allocates_nothing` and
+`a_press_that_hits_no_control_allocates_nothing` run the application side of
+that loop under a counting global allocator scoped to the test thread: an
+empty batch together with its accessibility take makes zero allocation
+requests, and a press at `(-1, -1)` makes zero. The provider's own
+`wait_events` still returns a `Vec<WindowEvent>` per batch, so a batch is not
+allocation-free end to end; that buffer belongs to Moirai's window provider
+and is outside this item.
+
+METIS-ANIMATION-001 phase 1: eight sampler tests and three grammar tests cover
+`metis_ui_lang::transition` — exact endpoints for every easing, a monotonic
+bounded curve, the CSS curve shape, alpha interpolation, repeatability, the
+2000 ms bound, and the admitted and refused `transition` grammars. The
+declaration is metadata: a test compares an animated style against the same
+style with the transition cleared. These tests pin the vocabulary and the
+sampler, not a rendered transition, so they establish no frame-rate, latency
+or memory advantage over Freya. The owner index, the paint-boundary overlay,
+`next_tick` and `MotionPreference` remain open on METIS-ANIMATION-001.
+
+Totals at that revision: 162 metis-platform, 56 metis-app, 60 metis-frontend
+and 146 metis-ui-lang unit tests, with their integration and doctest suites
+green and strict Clippy clean on every crate touched.
+
 Input traces and workload sizes are fixed before comparison, chosen to exercise
 the relevant working-set regimes under the committed budget. Profile production
 paths before optimizing; preserve the instrument across comparisons. Inject

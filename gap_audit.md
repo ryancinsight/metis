@@ -5,7 +5,7 @@
 Current integration preserves consumer e8dd4c9 and main 1ef9409, including
 PR 502 provider coherence and lossless audit identifiers. All 423 consumer Rust
 and TLS-fixture paths retain exact bytes. Nine existing direct provider pins
-and both canonical locks resolve Moirai `ed039a6ed5fcc454a572fd7ab840b4c1919a2c9d`; unrelated
+and both canonical locks resolve the published Moirai provider revision recorded by metis PR #503; unrelated
 identities and the intentional 0.8.3 provider lag remain. The full native
 workspace passes 703 tests; default/minimal transport verification passes
 178/115 tests. Four real mutually authenticated process pairs cover IPv4/IPv6
@@ -24,7 +24,7 @@ installed Windows default/minimal/WebView2 cross-compilation passes. Fresh
 hosted consumer/provider runtime and protected default-branch promotion remain
 gates, and the measured controlled-loss performance limit remains open.
 
-Historical consumer e8dd4c9 consumes provider 8f8fd753's shared PAL queue contract,
+Historical consumer e8dd4c9 consumes the applied-UDP provider's shared PAL queue contract,
 accepts independent positive receive/send requests and logs effective native
 sizes. Invalid and overflowing inputs fail startup. All 178 default and 115
 minimal transport/example tests and strict diagnostics pass locally; 23 verifier
@@ -32,8 +32,8 @@ tests and actual dependency-ownership checks pass. Both locks change only the
 explicit provider revision, preserving unrelated source identities. Four real
 IPv4/IPv6 process pairs retain mutual TLS, exact clinical/audited values and
 acknowledged/drained shutdown. Socket queues do not resolve the recorded CUBIC
-recovery limit. Provider 52c9063's hosted Linux/Windows native gates pass; the
-following 8f8fd753 change partitions unchanged tests into bounded leaf modules.
+recovery limit. The provider's hosted Linux/Windows native gates pass; the
+following provider change partitions unchanged tests into bounded leaf modules.
 
 Metis 0.5.0 consumes Moirai's native QUIC provider through one generic
 asynchronous IPC server. QUIC is required in native builds, including with

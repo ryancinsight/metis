@@ -144,6 +144,9 @@ impl<T: IpcTransport> FrontendApp<T> {
             self.focus = previous;
             return Err(error);
         }
+        if self.focus != previous {
+            self.focus_revision += 1;
+        }
         Ok(())
     }
 }
