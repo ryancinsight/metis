@@ -5,7 +5,7 @@ not an HTML5 browser engine: browser DOM APIs, script execution, entity decoding
 Unicode text shaping and general CSS layout are not available.
 
 Start with the runnable [presentation example](../../examples/presentation.rs).
-It parses the form's [application markup](../../crates/metis-frontend/src/presentation.rs),
+It parses the form's [application markup](../../crates/metis-frontend/src/presentation/template.rs),
 computes a display list and renders through Iris into a `Framebuffer`. The same
 pixel buffer supplies both the BMP inspection artifact and the manual snapshot.
 
@@ -35,6 +35,35 @@ and the migration steps are in [Migrate presentation styles](style-migration.md)
 Parsing admits at most one MiB of markup, 4,096 nodes, 64 nesting levels and 64
 attributes per element. Framebuffers admit at most 16,777,216 pixels. These are
 failure boundaries, not recommendations to construct maximum-sized documents.
+
+## Animate a property
+
+A style may declare one bounded transition, for example
+`transition: color 150ms ease-out`: one property, a whole-millisecond duration
+of at most 2000 ms and one of `linear`, `ease`, `ease-in`, `ease-out` or
+`ease-in-out`. `color` and `border-color` are admitted. A comma list,
+`cubic-bezier()`, another property, another unit or a longer duration fails with
+`ERR_INVALID_CSS_STYLE`.
+
+The declaration paints nothing itself and changes no layout. Layout records
+which element owns each command it pushes — the commands of one element are not
+contiguous, because a parent's box is reserved before its children and its
+border is pushed after them — so the host can interpolate that element's colors
+at the paint boundary. `FrontendApp` samples against the clock the host supplies
+(`set_now`), repaints only the animated element's extent, and leaves
+[ADR 0051](../adr/0051-damage-limited-repaint.md)'s damage model the authority
+over repaint. `next_tick` reports a 16 ms cadence while a run is live and `None`
+when the surface is idle, so a still document is never woken. A host with no
+clock, or `MotionPreference::Reduced`, paints the target in one frame; an
+interruption restarts from the value currently shown; and a relayout that
+renumbers elements does not lose a run, because runs are keyed on the authored
+`id`. The [animated status color](applications.md#animated-status-color) figure
+is a recorded mid-run frame.
+
+The browser host is unaffected: the page owns its stylesheet, so CSS
+interpolates there and `prefers-reduced-motion` supplies the policy. The
+software vocabulary is narrower than CSS — one property per declaration and no
+comma list.
 
 ## Update application state
 

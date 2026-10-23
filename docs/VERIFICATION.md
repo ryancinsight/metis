@@ -4073,12 +4073,41 @@ and a tick longer than the wait both leave the wait unchanged, so the seam can
 only shorten a wait. `NativeApplication::next_tick` defaults to `None`, so no
 existing application changed behaviour.
 
-Not established: no committed capture records a multi-step transition, so no
-visual gate compares one, and no cross-host pixel comparison is an oracle — only
-the endpoints and the declared curve are shared with the DOM host. No frame-rate,
-latency or memory advantage over Freya is claimed; the only measured numbers here
-are that a tick with no live run requests zero memory and that an unchanged
-render of the animated form still requests one allocation.
+The figure is a recorded transition, not a description of one:
+`capture_transition` steps the clock through the declared 150 ms and writes the
+frame painted at 75 ms as `output/form-transition.png`, which the visual gate
+compares pixel for pixel against `docs/manual/images/form-transition.png`
+(`ASSETS` in `scripts/visual.py`). Its oracle is executable rather than a golden
+alone: the first step is the ready `#9ae6b4`, the last the closed `#feb2b2`,
+every interior step is a sample inside the endpoints and equal to neither, and
+no channel reverses or overshoots — so a run that jumped, stalled or overshot
+cannot be recorded. The samples are written to
+`output/form-transition-steps.json`: `0 → #9ae6b4` (no repaint, the shown frame
+already holds it), `50 → #cbcdb3`, `75 → #dec2b3`, `100 → #eebab2`,
+`150 → #feb2b2`. At this revision the gate reports `status: passed` for ten
+captures, three probes and both assets.
+
+Not established: no cross-host pixel comparison is an oracle — only the
+endpoints and the declared curve are shared with the DOM host, whose example
+stylesheet supplies its own CSS transitions and `prefers-reduced-motion` policy.
+No frame-rate, latency or memory advantage over Freya is claimed; the only
+measured numbers here are that a tick with no live run requests zero memory and
+that an unchanged render of the animated form still requests one allocation.
+
+The build gate was red between `387f65f` and `bbe0938`: that commit split
+`presentation.rs` into submodules but left the module boundaries unresolved, and
+`cargo check -p metis-frontend` reported seven errors (three unresolved
+re-exports at the presentation root, `crate::Inputs`, `crate::FormResponse`, a
+private `NUMBER_GLYPHS`, a private `ClinicalCalcResponsePayload` import) plus
+seventeen warnings and five files without a trailing newline. `bbe0938` renames
+each re-export to where the code went, drops the two dead preview constants and
+eleven unused imports the split left behind, and formats the tree. At `bbe0938`:
+`cargo check --workspace --all-targets` clean with no warnings,
+`cargo fmt --all --check` clean, strict Clippy clean on the four crates, 154
+metis-ui-lang, 68 metis-frontend, 164 metis-platform and 56 metis-app unit tests
+with their integration suites green, and the visual gate passing all fifteen
+comparisons. The capture figure and the transition samples are unchanged by the
+repair, which is what the passing gate demonstrates.
 
 Input traces and workload sizes are fixed before comparison, chosen to exercise
 the relevant working-set regimes under the committed budget. Profile production
