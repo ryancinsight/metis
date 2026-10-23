@@ -1,7 +1,7 @@
 //! A damage-limited repaint leaves the surface exactly as a full repaint of
 //! the same frame would.
 
-use super::{BACKDROP, clear_is_redundant, paint};
+use super::render::{BACKDROP, clear_is_redundant, paint};
 use crate::{ApplicationCommand, FocusDirection, FrontendApp};
 use iris::render::RenderBackend;
 use metis_ipc::MemoryTransport;

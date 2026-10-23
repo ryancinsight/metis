@@ -299,7 +299,8 @@ fn write_transition_steps(
             step.millis,
             hex(step.color),
             step.repainted
-        ).map_err(Box::<dyn std::error::Error>::from)?;
+        )
+        .map_err(Box::<dyn std::error::Error>::from)?;
     }
     json.push_str("  ]\n}\n");
     std::fs::write("output/form-transition-steps.json", json)?;

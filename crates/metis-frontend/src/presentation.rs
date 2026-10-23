@@ -4,33 +4,31 @@ pub mod cache;
 #[cfg(test)]
 mod cache_tests;
 pub mod command;
-pub mod format;
-pub mod form_text;
 mod focus_ring;
-#[cfg(test)]
-mod repaint_tests;
+pub mod form_text;
+pub mod format;
 pub mod outcome;
 pub mod render;
+#[cfg(test)]
+mod repaint_tests;
 pub mod template;
 mod theme;
 mod transition;
 #[cfg(test)]
 mod transition_tests;
 
-use crate::document::TrackedDocument;
-use crate::{FormState, FrontendApp};
+use crate::FrontendApp;
 use metis_core::{ErrorCode, MetisError, Result};
 use metis_ipc::IpcTransport;
 use metis_platform::{Damage, Framebuffer, MotionPreference};
-use metis_ui_lang::{
-    Color, DisplayCommand, DisplayList, Edit, LayoutViewport, MAX_SEMANTIC_TEXT_BYTES,
-};
-use std::borrow::Cow;
+use metis_ui_lang::{Color, DisplayList, LayoutViewport};
 use std::time::Duration;
 
 pub(crate) use cache::RenderCache;
-pub(crate) use transition::Transitions;
+pub(crate) use form_text::{found, written};
+pub(crate) use format::write_result_number;
 pub use template::CLINICAL_SCREEN_XML;
+pub(crate) use transition::Transitions;
 
 /// Status badge color while a backend session is open.
 ///
@@ -40,12 +38,6 @@ pub const BADGE_READY: Color = Color::rgb(154, 230, 180);
 /// Status badge color once the backend session has closed, legible over
 /// either theme's header like [`BADGE_READY`].
 pub const BADGE_CLOSED: Color = Color::rgb(254, 178, 178);
-/// Glyphs of the patient reference a label shows before it states the
-/// omission with an ellipsis; forty glyphs plus the label fit the 800-pixel
-/// form.
-const PATIENT_PREVIEW_GLYPHS: usize = 40;
-/// Glyphs of the uncommitted composition a label shows before the ellipsis.
-const COMPOSITION_PREVIEW_GLYPHS: usize = 24;
 
 impl<T: IpcTransport> FrontendApp<T> {
     /// Projects the owned state and renders the complete form.

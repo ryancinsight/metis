@@ -1,13 +1,13 @@
 //! Form text rendering for input labels and outcome display.
 
+use crate::FrontendApp;
 use crate::document::TrackedDocument;
-use crate::{FormState, FrontendApp, Inputs};
 use metis_core::{ErrorCode, MetisError, Result};
 use metis_ui_lang::MAX_SEMANTIC_TEXT_BYTES;
 use std::borrow::Cow;
 use std::fmt;
 
-use crate::presentation::format::{write_input_number, NUMBER_GLYPHS};
+use crate::presentation::format::write_input_number;
 use crate::presentation::outcome::write_outcome;
 
 const PATIENT_PREVIEW_GLYPHS: usize = 40;
@@ -19,7 +19,12 @@ pub(crate) fn set_text(doc: &mut TrackedDocument, id: &str, text: &str) -> Resul
     })
 }
 
-pub(crate) fn set_attribute(doc: &mut TrackedDocument, id: &str, key: &str, value: &str) -> Result<()> {
+pub(crate) fn set_attribute(
+    doc: &mut TrackedDocument,
+    id: &str,
+    key: &str,
+    value: &str,
+) -> Result<()> {
     found(doc.set_attribute(id, key, value), || {
         format!("Authored form is missing semantic field {id}")
     })
@@ -35,18 +40,22 @@ pub(crate) fn found(edit: metis_ui_lang::Edit, missing: impl FnOnce() -> String)
 
 /// Converts a formatting failure into the form's error.
 pub(crate) fn written(result: fmt::Result) -> Result<()> {
-    result.map_err(|_| MetisError::ui(
-        ErrorCode::MalformedMarkup,
-        "Authored form text could not be formatted",
-    ))
+    result.map_err(|_| {
+        MetisError::ui(
+            ErrorCode::MalformedMarkup,
+            "Authored form text could not be formatted",
+        )
+    })
 }
 
-/// Converts a write_outcome result into the form's error.
+/// Converts a `write_outcome` result into the form's error.
 pub(crate) fn written_outcome(result: Result<&'static str, fmt::Error>) -> Result<&'static str> {
-    result.map_err(|_| MetisError::ui(
-        ErrorCode::MalformedMarkup,
-        "Authored form text could not be formatted",
-    ))
+    result.map_err(|_| {
+        MetisError::ui(
+            ErrorCode::MalformedMarkup,
+            "Authored form text could not be formatted",
+        )
+    })
 }
 
 /// Appends the first `glyphs` characters of `value`, and an ellipsis when

@@ -1,6 +1,6 @@
 //! Outcome writing for the form's result display.
 
-use crate::{FormState, FormResponse};
+use crate::FormState;
 use crate::presentation::format::write_result_number;
 use metis_ipc::client::HandshakeError;
 use std::fmt;

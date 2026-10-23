@@ -26,7 +26,11 @@ pub(crate) fn write_result_number(out: &mut String, value: f64, decimals: usize)
 
 /// Appends `value` in shortest notation with at least `minimum_decimals`
 /// decimal places.
-pub(crate) fn write_input_number(out: &mut String, value: f64, minimum_decimals: usize) -> fmt::Result {
+pub(crate) fn write_input_number(
+    out: &mut String,
+    value: f64,
+    minimum_decimals: usize,
+) -> fmt::Result {
     // Shortest scientific f64 notation fits 24 glyphs: sign, 17 significant
     // digits, decimal point, exponent marker/sign and three exponent digits.
     // Preserve those digits instead of rounding accepted small inputs to zero.

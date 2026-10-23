@@ -1,6 +1,7 @@
 //! Value tests for the authored form's projection and paint.
 
-use super::{BADGE_CLOSED, BADGE_READY, CLINICAL_SCREEN_XML, bounded_accessible_value};
+use super::form_text::bounded_accessible_value;
+use super::{BADGE_CLOSED, BADGE_READY, CLINICAL_SCREEN_XML};
 use metis_platform::{Color, Framebuffer};
 use metis_ui_lang::{
     DisplayCommand, LayoutViewport, MAX_SEMANTIC_TEXT_BYTES, compute_layout, parse_markup,

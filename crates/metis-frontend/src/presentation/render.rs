@@ -1,19 +1,11 @@
 //! Frame rendering and damage tracking for the form surface.
 
-use crate::document::TrackedDocument;
-use crate::{FormState, FrontendApp};
 use iris::render::RenderBackend;
-use metis_core::{ErrorCode, MetisError, Result};
-use metis_platform::{Damage, Framebuffer, MotionPreference};
-use metis_ui_lang::{
-    Color, DisplayCommand, DisplayList, Edit, LayoutViewport, MAX_SEMANTIC_TEXT_BYTES,
-};
-use std::borrow::Cow;
-use std::fmt::{self, Write};
-use std::time::Duration;
+use metis_platform::Framebuffer;
+use metis_ui_lang::{Color, DisplayCommand, DisplayList};
 
 /// Surface color behind the authored form.
-const BACKDROP: Color = Color::rgb(240, 244, 248);
+pub(super) const BACKDROP: Color = Color::rgb(240, 244, 248);
 
 /// Paints `display` over the writable region, whatever the region held.
 ///

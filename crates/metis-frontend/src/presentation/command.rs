@@ -1,7 +1,7 @@
 //! Command surface rendering for the form's toolbar and menu.
 
+use crate::FrontendApp;
 use crate::document::TrackedDocument;
-use crate::{FormState, FrontendApp};
 use metis_core::{ErrorCode, MetisError, Result};
 use metis_ui_lang::Display;
 
