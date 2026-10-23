@@ -125,26 +125,26 @@ Each oracle is a committed test; the test name is the citation.
   paint the declared target in one frame.
 - `interruption_starts_from_the_sampled_value`: a second transition at t = 0.5 of
   the first starts at the first's sampled color.
-- Not delivered: a committed capture of a multi-step transition and its gate.
+- `capture_transition`: the 75 ms frame of a declared 150 ms run is compared
+  pixel for pixel, with endpoints, interior samples and monotonicity asserted.
 
 ## Migration
 
-`transition` is a new admitted declaration and no caller migrates. The authored
+`transition` is a new admitted declaration and no caller migrates; the authored
 clinical form now declares one on its status badge, so the software host
-interpolates that badge on a session change while the theme path settles.
+interpolates it on a session change while the theme path settles.
 `DisplayList`'s `commands` became private behind `commands()` and
-`from_commands`, migrating the construction literals in five files, two of them
-published doctests.
+`from_commands`, migrating ten construction literals, two of them doctests.
 
 ## Limits
 
 No group or subtree opacity, no gradient-stop interpolation, no repeating or
 looping animation, no layout-property animation (width, height, flex grow — each
 reintroduces the per-frame relayout this decision avoids), and no animation of
-the focus ring or the canvas. A theme change recolors every command and would
-repaint in full for the whole duration, so the theme path sets colors directly
-and never starts a transition. Only the native host samples; the DOM host's
-curve is the browser's, so a cross-host pixel comparison of a transition is not
-an oracle — only the endpoints and the declared curve are.
+the focus ring or the canvas. A theme change recolors every command, so the
+theme path sets colors directly and never starts a transition. Only the native
+host samples; the DOM host's curve is the browser's, so a cross-host pixel
+comparison is not an oracle — only the endpoints and the declared curve are.
 
 This decision establishes no memory, latency or frame-rate advantage over Freya.
+
