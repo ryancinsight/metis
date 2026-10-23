@@ -5,7 +5,7 @@ use std::fmt::Write;
 
 /// Shortest scientific f64 notation fits 24 glyphs: sign, 17 significant digits,
 /// decimal point, exponent marker/sign and three exponent digits.
-const NUMBER_GLYPHS: usize = 24;
+pub const NUMBER_GLYPHS: usize = 24;
 
 /// Appends `value` rounded to `decimals` places.
 pub(crate) fn write_result_number(out: &mut String, value: f64, decimals: usize) -> fmt::Result {
