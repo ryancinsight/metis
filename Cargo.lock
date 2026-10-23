@@ -1363,6 +1363,7 @@ name = "metis-ui-lang"
 version = "0.5.0"
 dependencies = [
  "consus-raster",
+ "criterion",
  "eunomia",
  "flate2",
  "iris-viz",

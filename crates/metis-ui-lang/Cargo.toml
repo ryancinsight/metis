@@ -14,6 +14,13 @@ iris.workspace = true
 metis-core = { workspace = true }
 metis-platform = { workspace = true }
 
+[dev-dependencies]
+criterion = { workspace = true }
+
+[[bench]]
+name = "virtual_list"
+harness = false
+
 [target.'cfg(not(target_arch = "wasm32"))'.dependencies]
 png.workspace = true
 flate2.workspace = true
