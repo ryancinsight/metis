@@ -4109,6 +4109,35 @@ with their integration suites green, and the visual gate passing all fifteen
 comparisons. The capture figure and the transition samples are unchanged by the
 repair, which is what the passing gate demonstrates.
 
+## Virtual-list change path — 2026-10-23
+
+`METIS-LIST-003` gates per-row updates on the changed-row cost exceeding a frame
+budget. `crates/metis-ui-lang/benches/virtual_list.rs` measures the three
+operations a host performs on a list, at the pinned 10^5-row model of four
+repeating extents (18, 22, 24, 30 px), with criterion's 100 samples and its 95%
+interval:
+
+| operation | median | 95% interval |
+| --- | --- | --- |
+| `VirtualList::variable` (construction) | 113.21 µs | 111.20–115.29 µs |
+| `set_extent` (one changed row) | 5.96 ns | 5.797–6.124 ns |
+| `window` (one scroll query) | 101.39 ns | 98.06–104.66 ns |
+
+Measured at `b55b4e8` on the release profile of the development host with
+`cargo bench -p metis-ui-lang --bench virtual_list`. A changed row is already a
+Fenwick update — `ExtentTree::set` walks O(log n) sums, and
+`VirtualList::set_extent` delegates to it for a variable list — so the rebuild
+this item anticipated does not exist. 5.96 ns is about 2.8 million times under a
+16.67 ms frame, and even a complete reconstruction of the 10^5-row index is 0.7%
+of one. Per-row updates were therefore not added, which is the item's own
+acceptance condition.
+
+Two limits. `VirtualList` has no production consumer yet: `METIS-LIST-002` is
+the item that wires it into a host, so these numbers are a floor for that work
+rather than a profile of a shipped path. And they come from one host, one
+process, with no CPU pinning or frequency control, so the ratios between the
+three operations are the durable result, not the absolute nanoseconds.
+
 Input traces and workload sizes are fixed before comparison, chosen to exercise
 the relevant working-set regimes under the committed budget. Profile production
 paths before optimizing; preserve the instrument across comparisons. Inject

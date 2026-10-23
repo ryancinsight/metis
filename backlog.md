@@ -461,12 +461,13 @@ an owner. “Unsupported” cannot replace delivery of a required mobile/native 
 
 <a id="METIS-LIST-003"></a>
 ## METIS-LIST-003 — Measure the changed-row rebuild before adding per-row updates [tightening]
-- Status: todo; priority: tightening; needs: none
+- Status: done; priority: tightening; needs: none
 - Outcome: the `VirtualList` rebuild after a change is replaced by per-row Fenwick updates only if it measurably costs more than a frame.
 - Scope: `metis-ui-lang` layout `virtual_list` and `metis-frontend::list`; no production change before the measurement.
 - Acceptance: a controlled local benchmark (median with confidence interval, pinned 10⁵-row model, one change per query) records the rebuild cost; per-row updates land only when that cost exceeds the frame budget, and match the rebuild oracle.
 - basis: ce47b2b2ebc11c09b0d6f67d7c2e60487fe71cc6
-- next: write the benchmark harness and run it on the controlled host.
+- Measured (2026-10-23, `b55b4e8`): `crates/metis-ui-lang/benches/virtual_list.rs` measures the pinned 10^5-row model of four repeating extents with criterion's 100 samples and 95% intervals — construction `VirtualList::variable` 113.21 µs (111.20–115.29), one changed row `set_extent` 5.96 ns (5.797–6.124), one window query 101.39 ns (98.06–104.66). A changed row is already a Fenwick update (`ExtentTree::set` walks O(log n) sums and `VirtualList::set_extent` delegates to it), so the rebuild this item anticipated does not exist: 5.96 ns is about 2.8 million times under a 16.67 ms frame, and even a full 10^5-row reconstruction is 0.7% of a frame. Per-row updates are therefore not warranted and none were added, which is this item's own acceptance condition. `VirtualList` has no production consumer yet — `METIS-LIST-002` wires it into a host — so these are a floor for that work, not a profile of a shipped path.
+- next: none; the measurement closed the item. Re-run the harness when `METIS-LIST-002` lands, where the cost that matters is the row projection, not the extent index.
 
 <a id="METIS-ANIMATION-001"></a>
 ## METIS-ANIMATION-001 — Admit bounded transitions on presented properties [feature]
