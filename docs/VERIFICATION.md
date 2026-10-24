@@ -4138,6 +4138,72 @@ rather than a profile of a shipped path. And they come from one host, one
 process, with no CPU pinning or frequency control, so the ratios between the
 three operations are the durable result, not the absolute nanoseconds.
 
+## Relayout and reprojection of one edit — 2026-10-24
+
+`METIS-MEM-RENDER-002` requires a render that changes one label to request memory
+in proportion to what it changed. Three counting-allocator oracles measure it,
+each on its own thread with a thread-local counter, at `389e997` plus the
+increment recorded here:
+
+| measurement | before | after |
+| --- | --- | --- |
+| one-character `set_inputs` edit (`metis-frontend`) | 358 | 44 |
+| relayout of a 20-row / 200-row document (`metis-ui-lang`) | 114 / 1017 | 3 / 3 |
+| reprojection of one edited label, 20-row / 80-row | 449 / 1715 | 19 / 21 |
+
+The edit is `crates/metis-frontend/tests/render_allocations.rs::
+an_edit_requests_memory_for_what_it_changed`, run with
+`cargo test -p metis-frontend --test render_allocations`. It asserts the edit
+requests at most a quarter of the whole-document rebuild it replaced, which the
+same test measures at 321 requests on the authored form, so it cannot pass by
+shrinking both. The "before" column is `5ea77d7` for the edit (measured with the
+same harness before the change; the board recorded 350 at `c9b99c1` and the
+transition owner index accounts for the eight) and the fresh-projection and
+fresh-layout cost now, which is what the previous cache did on every revision.
+
+`crates/metis-ui-lang/tests/edit_allocation.rs` carries the structural pair,
+`cargo test -p metis-ui-lang --test edit_allocation`. A relayout and a
+reprojection after one edit request no more on a ten-times larger document
+(+0 and +2 respectively), while `SemanticTree::from_document` scales with it
+(449 → 1715 for 20 → 80 rows), which is what separates reuse from a smaller
+constant factor. The 200-row relayout is the larger document there; the
+projection cases use 80 rows because the root's aggregated name reaches the
+4,096-byte semantic text bound at about 100 rows and the projection then fails
+for every document of that size, refreshed or fresh.
+
+The `frame` bench's keystroke cases were measured in both directions to keep the
+wall-clock claim out of the change's favour. At `389e997` (before) and at the
+delivered revision (after), in one target directory, with
+`cargo bench -p metis-frontend --bench frame -- --save-baseline <name> keystroke`
+and the other revision run against that saved baseline:
+
+| case | before | after |
+| --- | --- | --- |
+| `keystroke_800x600_scale_1` | 51.20 µs (51.11–51.30) | 38.27 µs (38.17–38.37) |
+| `keystroke_1600x1200_scale_2` | 60.50 µs and 72.60 µs | 52.72 µs and 47.55 µs |
+
+The 800×600 case is stable in both directions: the old code measured +33% slower
+against the new baseline, the new code −25% faster against the old one. The
+1600×1200 case is not: its two runs of the same old code differ by 20%, so the
+durable result there is only that the new code is not slower. Both runs share one
+host with no CPU pinning, so the paired direction matters and the absolute
+microseconds do not.
+
+Reuse is guarded, and the guards are tested rather than assumed:
+`crates/metis-ui-lang/src/semantics/refresh/tests.rs` edits a document, refreshes
+the projection built before the edit, and asserts equality with
+`SemanticTree::from_document` afterwards — the fresh projection is the oracle, so
+any divergence fails the test. Nine cases cover a renamed label and its
+ancestors, a name resolved through `aria-labelledby`, inherited `aria-hidden`, an
+edit that changes nothing, an unknown id, and the duplicate-identity, unresolved
+reference, role and shape errors an edit can introduce.
+
+Limits: the refresh still walks the document and re-joins the ancestors' content,
+so its time stays linear in the document even though its memory does not; these
+oracles count requests, not bytes retained; and the DOM is mutable through its
+public fields, so the shape guard is what keeps a programmatic structural edit
+from being served a stale projection.
+
 Input traces and workload sizes are fixed before comparison, chosen to exercise
 the relevant working-set regimes under the committed budget. Profile production
 paths before optimizing; preserve the instrument across comparisons. Inject

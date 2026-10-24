@@ -147,3 +147,42 @@ fn a_tick_without_a_live_transition_requests_nothing() {
     assert!(!repainted);
     assert_eq!(COUNT.get(), 0, "a tick with no run must request no memory");
 }
+
+/// A one-character edit changes the patient label, the three ancestors whose
+/// names aggregate it, and the frame. It must not request memory for the rest
+/// of the form: before `METIS-MEM-RENDER-002` the same edit requested 358
+/// requests, because the layout and the projection were both rebuilt whole.
+#[test]
+fn an_edit_requests_memory_for_what_it_changed() {
+    let mut app = form();
+    // Settle: the first edit after construction pays for the document's own
+    // first projection, which is not what this measures.
+    app.set_inputs("PT-9042-ALPHA", 72.5, 4.0, 0.5)
+        .expect("invariant: the authored form renders");
+    app.render().expect("invariant: the authored form renders");
+
+    COUNT.set(0);
+    RECORDING.set(true);
+    app.set_inputs("PT-9042-ALPHAX", 72.5, 4.0, 0.5)
+        .expect("invariant: the authored form renders");
+    RECORDING.set(false);
+    let edit = COUNT.get();
+
+    // The rebuild this replaced, measured the same way: a layout and a
+    // projection of the whole document.
+    COUNT.set(0);
+    RECORDING.set(true);
+    let viewport = metis_ui_lang::LayoutViewport::new(800, 600);
+    let layout = metis_ui_lang::compute_layout(app.document(), viewport);
+    let semantics = metis_ui_lang::SemanticTree::from_document(app.document());
+    RECORDING.set(false);
+    layout.expect("invariant: the authored form lays out");
+    semantics.expect("invariant: the authored form projects");
+    let rebuild = COUNT.get();
+
+    assert!(
+        edit * 4 <= rebuild,
+        "a one-character edit requested {edit} of the {rebuild} a whole-document rebuild requests"
+    );
+    assert!(edit <= 48, "a one-character edit requested {edit} requests");
+}

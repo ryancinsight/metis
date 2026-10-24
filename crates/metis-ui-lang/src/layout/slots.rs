@@ -35,7 +35,7 @@ impl DisplayList {
     ) -> Result<BoxSlots> {
         let shadow = match style.box_shadow {
             Some(shadow) => {
-                let index = self.commands.len();
+                let index = self.written();
                 self.push(DisplayCommand::DrawShadow {
                     rect: placeholder,
                     radius: CornerRadius::SQUARE,
@@ -47,7 +47,7 @@ impl DisplayList {
         };
         let background = match style.background_color {
             Some(color) => {
-                let index = self.commands.len();
+                let index = self.written();
                 self.push(DisplayCommand::FillRect {
                     rect: placeholder,
                     radius: CornerRadius::SQUARE,
@@ -59,7 +59,7 @@ impl DisplayList {
         };
         let gradient = match &style.background_gradient {
             Some(gradient) => {
-                let index = self.commands.len();
+                let index = self.written();
                 self.push(DisplayCommand::FillGradient {
                     rect: placeholder,
                     radius: CornerRadius::SQUARE,

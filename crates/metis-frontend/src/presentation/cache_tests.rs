@@ -93,13 +93,13 @@ fn the_document_revision_moves_only_when_the_form_changes() {
 fn the_cached_focus_order_follows_the_document() {
     let mut app = form();
     let closed = app.focus_order().expect("focus order");
-    assert_eq!(app.cache.focusable(&app.doc).expect("cached"), closed);
+    assert_eq!(app.cache.focusable(&mut app.doc).expect("cached"), closed);
 
     app.toggle_command_menu().expect("menu opens");
     let open = app.focus_order().expect("focus order");
     assert_ne!(open, closed, "an open menu adds its items");
-    assert_eq!(app.cache.focusable(&app.doc).expect("cached"), open);
+    assert_eq!(app.cache.focusable(&mut app.doc).expect("cached"), open);
 
     app.toggle_command_menu().expect("menu closes");
-    assert_eq!(app.cache.focusable(&app.doc).expect("cached"), closed);
+    assert_eq!(app.cache.focusable(&mut app.doc).expect("cached"), closed);
 }

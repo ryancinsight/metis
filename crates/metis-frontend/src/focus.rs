@@ -157,6 +157,29 @@ pub(crate) fn focusable_ids(semantics: &SemanticTree) -> Vec<String> {
     order
 }
 
+/// The focusable controls of `semantics`, in navigation order, borrowed from
+/// the projection so a render can compare them before it copies any.
+pub(crate) fn focusable_order(semantics: &SemanticTree) -> Vec<&str> {
+    let mut order = Vec::new();
+    collect_focusable_refs(&semantics.root, &mut order);
+    order
+}
+
+fn collect_focusable_refs<'a>(node: &'a SemanticNode, order: &mut Vec<&'a str>) {
+    if node.hidden {
+        return;
+    }
+    if node.focusable
+        && !node.disabled
+        && let Some(id) = &node.id
+    {
+        order.push(id);
+    }
+    for child in &node.children {
+        collect_focusable_refs(child, order);
+    }
+}
+
 fn collect_focusable(node: &SemanticNode, order: &mut Vec<String>) {
     if node.hidden {
         return;

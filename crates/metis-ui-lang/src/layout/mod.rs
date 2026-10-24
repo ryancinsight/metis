@@ -35,7 +35,7 @@ mod tests;
 mod virtual_list;
 
 pub use display::{DisplayCommand, DisplayList, ElementIndex};
-pub use geometry::{LayoutViewport, compute_layout};
+pub use geometry::{LayoutViewport, compute_layout, compute_layout_into};
 pub use metis_platform::framebuffer::Rect;
 pub use metis_platform::rasterizer::{LineCap, LineJoin, StrokeWidth};
 pub use virtual_list::{

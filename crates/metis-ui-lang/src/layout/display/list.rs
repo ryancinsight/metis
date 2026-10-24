@@ -43,6 +43,13 @@ pub struct DisplayList {
     /// The element the next push belongs to, while layout is inside one that
     /// declares a transition.
     owner: Option<u32>,
+    /// One past the last command this list holds as current.
+    ///
+    /// A layout writes through this cursor, so laying a document out again
+    /// into a list it laid out before overwrites the storage it already owns
+    /// instead of growing a second one. It equals `commands.len()` for a list
+    /// a host appends to.
+    written: usize,
 }
 
 impl DisplayList {
@@ -50,6 +57,14 @@ impl DisplayList {
     #[must_use]
     pub fn commands(&self) -> &[DisplayCommand] {
         &self.commands
+    }
+
+    /// One past the last command the current layout wrote.
+    ///
+    /// Layout reads this instead of `commands.len()`, because a list being
+    /// laid out again holds commands the new layout has not reached yet.
+    pub(in crate::layout) const fn written(&self) -> usize {
+        self.written
     }
 
     /// The animated element that paints a command, or `None` when the command
@@ -356,11 +371,13 @@ impl DisplayList {
             owned: Arc::clone(&self.owned),
             animated: Arc::clone(&self.animated),
             owner: None,
+            written: 0,
         };
         copy.commands
             .try_reserve_exact(capacity)
             .map_err(|_| limit_error("Display command allocation failed"))?;
         copy.commands.extend_from_slice(&self.commands);
+        copy.written = copy.commands.len();
         Ok(copy)
     }
 
@@ -372,19 +389,75 @@ impl DisplayList {
     #[must_use]
     pub fn from_commands(commands: Vec<DisplayCommand>) -> Self {
         Self {
+            written: commands.len(),
             commands,
             ..Self::default()
+        }
+    }
+
+    /// Prepares this list to receive a layout that replaces what it holds.
+    ///
+    /// The storage stays: a document laid out again writes over the commands
+    /// it wrote before, so the second layout of an unchanged form requests no
+    /// memory for command storage. Every reader sees only the commands the
+    /// new layout wrote once [`Self::end_frame`] closes it.
+    pub(in crate::layout) fn begin_frame(&mut self) {
+        self.written = 0;
+        self.owner = None;
+        // Attribution is a fact of the layout being replaced. The table is
+        // shared with the frames painted from the previous layout, so it is
+        // cleared only when this list is its last holder.
+        self.owned = Arc::new(Vec::new());
+        self.animated = Arc::new(Vec::new());
+    }
+
+    /// Closes a layout [`Self::begin_frame`] opened, dropping the commands the
+    /// new layout did not reach.
+    pub(in crate::layout) fn end_frame(&mut self) {
+        self.commands.truncate(self.written);
+        self.owner = None;
+    }
+
+    /// The shared identifier this list already holds at the write position,
+    /// when it names `id`.
+    ///
+    /// A layout that replaces a document writes over the commands it wrote
+    /// before, so an identifier the previous layout interned is shared rather
+    /// than interned again. The answer is a hint: a position that holds
+    /// another command simply costs the request it would have cost anyway.
+    pub(in crate::layout) fn held_id(&self, id: &str) -> Option<Arc<str>> {
+        match self.commands.get(self.written) {
+            Some(DisplayCommand::ElementRect { id: held, .. }) if &**held == id => {
+                Some(Arc::clone(held))
+            }
+            _ => None,
+        }
+    }
+
+    /// The shared text this list already holds at the write position, when it
+    /// is `text`; see [`Self::held_id`].
+    pub(in crate::layout) fn held_text(&self, text: &str) -> Option<Arc<str>> {
+        match self.commands.get(self.written) {
+            Some(DisplayCommand::DrawText { text: held, .. }) if &**held == text => {
+                Some(Arc::clone(held))
+            }
+            _ => None,
         }
     }
 
     /// Appends a command for the element layout is inside, or for no element
     /// when a host appends one over the layout.
     pub(in crate::layout) fn push(&mut self, command: DisplayCommand) -> Result<()> {
-        let index = self.commands.len();
-        self.commands
-            .try_reserve(1)
-            .map_err(|_| limit_error("Display command allocation failed"))?;
-        self.commands.push(command);
+        let index = self.written;
+        if index == self.commands.len() {
+            self.commands
+                .try_reserve(1)
+                .map_err(|_| limit_error("Display command allocation failed"))?;
+            self.commands.push(command);
+        } else {
+            self.commands[index] = command;
+        }
+        self.written = index + 1;
         if let Some(owner) = self.owner {
             let index = u32::try_from(index).map_err(|_| {
                 limit_error("Display command count exceeds the display index range")

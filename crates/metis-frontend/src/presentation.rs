@@ -77,7 +77,7 @@ impl<T: IpcTransport> FrontendApp<T> {
         // Validate the custom renderer's host-neutral semantics before
         // painting so a malformed identity or action cannot be presented as
         // an accessible control; the same projection decides focus.
-        let order = self.cache.focusable(&self.doc)?;
+        let order = self.cache.focusable(&mut self.doc)?;
         self.focus.reconcile(&self.doc, order)?;
         let width = i32::try_from(self.framebuffer.width()).map_err(|_| layout_error())?;
         let height = i32::try_from(self.framebuffer.height()).map_err(|_| layout_error())?;

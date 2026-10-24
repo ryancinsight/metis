@@ -4,6 +4,13 @@
 
 ### Added
 
+- [patch] `SemanticTree::refresh` rebuilds a projection after an edit from the
+  nodes the edit could not have changed, and `compute_layout_into` lays a
+  document out into a display list a previous layout filled. A one-character
+  form edit now requests 44 allocations instead of 358, a relayout of a 20-row
+  and a 200-row document both request 3, and one edited label reprojects in 19
+  and 21 against 449 and 1715 for a fresh projection (ADR 0061).
+
 - [minor] The native QUIC example accepts validated independent receive/send
   queue requests and logs effective kernel sizes through the shared Moirai UDP
   configuration. Kernel defaults remain in effect when requests are absent.
@@ -55,6 +62,13 @@
 ## [0.4.1] - Unreleased
 
 ### Fixed
+
+- [patch] Restore the three host tests `e77a827` dropped when it split the
+  platform application tests — idle accessibility projection, damage-limited
+  presentation and resize presentation — which also removed the dead code the
+  split left in five test modules. Drop the unused input import that made the
+  same split fail the denied-warnings gate, and format the tree the split left
+  unformatted.
 
 - [patch] Require Consus compression and raster 0.2, matching their inherited
   workspace version. The consumed codec APIs and feature selections remain
