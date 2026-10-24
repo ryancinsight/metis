@@ -1,11 +1,13 @@
 //! Accessibility application and tree for host tests.
 
 use crate::Framebuffer;
-use crate::native::application::{NativeApplication, NativeFlow};
 use crate::native::application::tests::probe::ProbeError;
+use crate::native::application::tests::recording_surface::RecordingSurface;
+use crate::native::application::{NativeApplication, NativeFlow, run_application_loop};
 use crate::native::{AccessibilityNode, AccessibilityRole, AccessibilityTree, WindowEvent};
-use std::sync::atomic::{AtomicUsize, Ordering};
 use std::sync::Arc;
+use std::sync::atomic::{AtomicUsize, Ordering};
+use std::time::Duration;
 
 /// Projects one tree, then reports no semantic change, and counts the
 /// projections so a push the host did not need is visible.
@@ -51,4 +53,24 @@ pub fn accessibility_tree() -> AccessibilityTree {
         .expect("accessibility root");
     root.set_children(vec![2]).expect("root children");
     AccessibilityTree::from_nodes(1, 2, vec![root, button]).expect("validated tree")
+}
+
+#[test]
+fn an_idle_batch_projects_and_pushes_no_accessibility_tree() {
+    let projections = Arc::new(AtomicUsize::new(0));
+    let application = OnceAccessibilityApplication {
+        framebuffer: Framebuffer::new(2, 2).expect("bounded framebuffer"),
+        projections: Arc::clone(&projections),
+        changed: true,
+    };
+    let focus = || vec![WindowEvent::FocusGained];
+    let (surface, trace) =
+        RecordingSurface::new([focus(), focus(), focus(), vec![WindowEvent::CloseRequested]]);
+
+    run_application_loop(surface, application, Duration::ZERO).expect("recording host loop");
+
+    // One semantic change over three batches: the first projects, the rest do
+    // not, and the provider receives exactly one tree.
+    assert_eq!(projections.load(Ordering::SeqCst), 1);
+    assert_eq!(trace.accessibility_updates.load(Ordering::SeqCst), 1);
 }

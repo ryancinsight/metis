@@ -1,9 +1,8 @@
 //! Readiness and tick delivery tests for host.
 
-use crate::native::{WindowConfig, WindowEvent, WindowVisibility};
 use crate::native::application::run_native_application;
 use crate::native::application::tests::probe::{ProbeApplication, ProbeError};
-use crate::native::application::tests::recording_surface::RecordingSurface;
+use crate::native::{WindowConfig, WindowVisibility};
 use std::sync::Arc;
 use std::time::Duration;
 
@@ -39,7 +38,10 @@ fn host_preserves_typed_application_errors() {
     .expect("bounded native configuration");
     let error = run_native_application(&config, ProbeApplication::new(true), Duration::ZERO)
         .expect_err("application error");
-    assert!(matches!(error, crate::native::application::NativeHostError::Application(ProbeError)));
+    assert!(matches!(
+        error,
+        crate::native::application::NativeHostError::Application(ProbeError)
+    ));
 }
 
 #[test]
@@ -57,5 +59,8 @@ fn host_preserves_provider_wait_error_typed() {
         Duration::from_millis(u64::from(crate::native::MAX_WAIT_MILLISECONDS) + 1),
     )
     .expect_err("bounded wait error");
-    assert!(matches!(error, crate::native::application::NativeHostError::Surface(_)));
+    assert!(matches!(
+        error,
+        crate::native::application::NativeHostError::Surface(_)
+    ));
 }

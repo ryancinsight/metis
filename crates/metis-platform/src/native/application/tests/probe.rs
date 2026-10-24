@@ -1,8 +1,8 @@
 //! Probe infrastructure for native host application tests.
 
 use crate::Framebuffer;
-use crate::native::application::{NativeApplication, NativeFlow};
 use crate::native::WindowEvent;
+use crate::native::application::{NativeApplication, NativeFlow};
 use std::error::Error;
 use std::fmt;
 

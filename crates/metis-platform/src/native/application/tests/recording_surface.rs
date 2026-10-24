@@ -1,8 +1,7 @@
 //! Recording surface driver for native host tests.
 
-use crate::{Damage, Framebuffer, Rect};
-use crate::native::AccessibilityTree;
 use crate::native::WindowEvent;
+use crate::{Framebuffer, Rect};
 use std::collections::VecDeque;
 use std::io;
 use std::sync::atomic::{AtomicBool, AtomicUsize, Ordering};
@@ -43,9 +42,7 @@ pub struct RecordingSurface {
 
 impl RecordingSurface {
     /// Creates a new recording surface with the given event batches.
-    pub fn new(
-        events: impl IntoIterator<Item = Vec<WindowEvent>>,
-    ) -> (Self, RecordingTrace) {
+    pub fn new(events: impl IntoIterator<Item = Vec<WindowEvent>>) -> (Self, RecordingTrace) {
         let trace = RecordingTrace {
             presentations: Arc::new(Mutex::new(Vec::new())),
             waits: Arc::new(Mutex::new(Vec::new())),

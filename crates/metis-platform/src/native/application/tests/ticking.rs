@@ -1,12 +1,12 @@
 //! Ticking application and wait timing tests.
 
-use crate::native::application::{NativeApplication, NativeFlow, run_application_loop};
-use crate::{Framebuffer};
+use crate::Framebuffer;
 use crate::native::WindowEvent;
-use crate::native::application::tests::recording_surface::RecordingSurface;
 use crate::native::application::tests::probe::ProbeError;
-use std::sync::atomic::{AtomicUsize, Ordering};
+use crate::native::application::tests::recording_surface::RecordingSurface;
+use crate::native::application::{NativeApplication, NativeFlow, run_application_loop};
 use std::sync::Arc;
+use std::sync::atomic::{AtomicUsize, Ordering};
 use std::time::Duration;
 
 /// Reports a tick to the host and counts the batches the host delivers.
@@ -48,11 +48,8 @@ pub fn recorded_waits(wait: Duration, tick: Option<Duration>) -> (Vec<Duration>,
         batches: Arc::clone(&batches),
     };
     let focus = || vec![WindowEvent::FocusGained];
-    let (surface, trace) = RecordingSurface::new([
-        focus(),
-        focus(),
-        vec![WindowEvent::CloseRequested],
-    ]);
+    let (surface, trace) =
+        RecordingSurface::new([focus(), focus(), vec![WindowEvent::CloseRequested]]);
 
     run_application_loop(surface, application, wait).expect("recording host loop");
 

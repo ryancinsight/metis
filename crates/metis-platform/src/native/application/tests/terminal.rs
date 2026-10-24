@@ -1,8 +1,8 @@
 //! Terminal event classification tests.
 
-use crate::native::application::is_terminal;
-use crate::native::application::is_destroyed;
 use crate::native::WindowEvent;
+use crate::native::application::is_destroyed;
+use crate::native::application::is_terminal;
 
 #[test]
 fn terminal_event_classification_is_explicit() {
