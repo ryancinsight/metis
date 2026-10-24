@@ -1,7 +1,7 @@
 //! Form text rendering for input labels and outcome display.
 
 use crate::document::TrackedDocument;
-use crate::{FrontendApp, FormInputs};
+use crate::FrontendApp;
 use metis_core::{ErrorCode, MetisError, Result};
 use metis_ui_lang::MAX_SEMANTIC_TEXT_BYTES;
 use std::borrow::Cow;
@@ -46,7 +46,7 @@ pub(crate) fn written(result: fmt::Result) -> Result<()> {
     ))
 }
 
-/// Converts a write_outcome result into the form's error.
+/// Converts a `write_outcome` result into the form's error.
 pub(crate) fn written_outcome(result: Result<&'static str, fmt::Error>) -> Result<&'static str> {
     result.map_err(|_| MetisError::ui(
         ErrorCode::MalformedMarkup,
