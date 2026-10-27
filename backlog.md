@@ -423,16 +423,6 @@ an owner. “Unsupported” cannot replace delivery of a required mobile/native 
 - basis: 7ddca83.
 - Increment (2026-09-24): color tokens are declared once through `light-dark()` and themes choose only the color scheme; the status line leads with a state indicator, diagnostics read as a monospace log, cards are elevated on a darker page, section headings carry an accent rule, the primary action is taller and the command menu shows each item's shortcut from `aria-keyshortcuts`. The layout manifest and 360/800/1440 captures were re-recorded in Chromium 141 through Playwright 1.56.1 with classic scrollbars; 44px option targets hold and no viewport overflows. Firefox/WebKit captures and scale-2 evidence remain open.
 
-<a id="METIS-MEM-RENDER-002"></a>
-## METIS-MEM-RENDER-002 — Rebuild only the changed elements' layout and semantics on an edit [patch]
-- Status: done; priority: tightening; needs: none; ADR: [0061](docs/adr/0061-reuse-across-a-relayout-and-a-reprojection.md)
-- Outcome: a render that changes one label requests memory in proportion to the changed elements, not the whole form.
-- Scope: `crates/metis-ui-lang/src/layout/geometry.rs`, `grow.rs`, `intrinsic.rs`, `slots.rs`, `crates/metis-ui-lang/src/semantics.rs`, `crates/metis-frontend/src/presentation/cache.rs`.
-- Acceptance: An unchanged render requests one allocation (METIS-MEM-RENDER-001); a one-character `set_inputs` edit requests at most a quarter of the whole-document rebuild it replaced. Oracles: a counting allocator over `set_inputs` with a one-character patient edit compared with that rebuild (`render_allocations`), and a structural pair in the layout crate — a relayout and a reprojection of one edited label request no more on a ten-times larger document while `from_document` scales with it (`edit_allocation`). The `frame` bench's `keystroke_*` cases are recorded as a host baseline; the pre-change comparison is not claimed, because the allocation oracles are what separate reuse from a smaller constant.
-- basis: c9b99c1
-- Delivered (2026-10-24): the layout writes through a recycle cursor and shares the strings it already interned, child placements live in one arena sized from the node count, and `SemanticTree::refresh` rebuilds only the edited elements, their ancestors and the elements naming them. A one-character edit fell from 358 requests to 44 against a 321-request rebuild; a relayout fell from 114/1017 (20/200 rows) to 3/3, one edited label reprojects in 19/21 against 449/1715, and the `frame` bench's `keystroke_800x600_scale_1` fell from 51.20 µs to 38.27 µs (both directions of the paired comparison agree; the 1600×1200 case is too noisy on this host to claim more than "not slower"). Nine differential tests assert the refreshed projection equals `from_document` after an edit. [Evidence](docs/VERIFICATION.md#relayout-and-reprojection-of-one-edit--2026-10-24).
-- next: none; the outcome and both oracles are met. The projection still walks the document and re-joins its ancestors' content, so time stays linear even though memory does not; a keystroke bench delta and per-node reuse in the layout are open only if a profile shows them.
-
 <a id="METIS-MEM-WEB-001"></a>
 ## METIS-MEM-WEB-001 — Write only changed browser DOM state and reuse transfer buffers [patch]
 - Status: todo; priority: tightening; needs: none
