@@ -21,6 +21,7 @@ mod grow;
 mod grow_tests;
 mod intrinsic;
 mod limits;
+mod placement;
 mod popover;
 #[cfg(test)]
 #[path = "../layout_popover_tests.rs"]

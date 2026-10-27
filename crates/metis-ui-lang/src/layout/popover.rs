@@ -2,9 +2,10 @@
 
 use super::device::{add, sub};
 use super::display::DisplayList;
-use super::geometry::{LayoutViewport, PlacementArena};
+use super::geometry::LayoutViewport;
 use super::grow::Grown;
 use super::intrinsic::Sizing;
+use super::placement::PlacementArena;
 use crate::dom::{DomElement, DomNode};
 use crate::style::Display;
 use metis_core::error::{ErrorCode, MetisError, Result};

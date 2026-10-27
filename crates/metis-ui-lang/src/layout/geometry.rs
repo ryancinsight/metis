@@ -1,4 +1,5 @@
 use super::display::{DisplayCommand, DisplayList};
+use super::placement::{ChildExtent, ChildLayout, ChildPlacement, PlacementArena, mul};
 use crate::dom::{DomDocument, DomElement, DomNode};
 use crate::parser::limit_error;
 use crate::style::{AlignItems, ComputedStyle, Display, FlexDirection, JustifyContent};
@@ -6,7 +7,6 @@ use metis_core::error::Result;
 use metis_platform::DisplayScale;
 use metis_platform::framebuffer::Rect;
 use metis_platform::rasterizer::CornerRadius;
-use std::ops::Range;
 use std::sync::Arc;
 
 use super::device::{add, dimension, minimum, scaled_geometry, sub, text_style, whole_pixels};
@@ -436,66 +436,4 @@ impl DisplayList {
         self.end_element(enclosing);
         Ok(rect)
     }
-}
-
-/// Where one child's commands and extents landed during child layout.
-struct ChildPlacement {
-    /// First command this child emitted, in painter order.
-    first_command: usize,
-    /// One past this child's last command.
-    end_command: usize,
-    /// Extent along the container's cross axis.
-    cross: i32,
-}
-
-/// What child layout leaves for the container to redistribute.
-struct ChildExtent {
-    /// Content height the container uses for its automatic height.
-    content_height: i32,
-    /// Main-axis span the children occupied, gaps included.
-    main_used: i32,
-    /// The container's own records in [`PlacementArena::items`], one per
-    /// visible child, in painter order.
-    placements: Range<usize>,
-}
-
-/// Storage for the child placements of every container the current layout is
-/// inside.
-///
-/// A container appends its records above its children's and releases them once
-/// it has aligned them, so one buffer serves the whole tree instead of one per
-/// container. The buffer is sized once from the node count the resource
-/// validation already walks.
-#[derive(Default)]
-pub(super) struct PlacementArena {
-    items: Vec<ChildPlacement>,
-}
-
-impl PlacementArena {
-    fn with_capacity(nodes: usize) -> Self {
-        let mut arena = Self::default();
-        // The bound is the document's own node count, so this is the only
-        // request a layout makes for placements. A failed reservation leaves
-        // the arena empty, and `children_extent` reports the failure it hits
-        // instead.
-        let _ = arena.items.try_reserve_exact(nodes);
-        arena
-    }
-}
-
-#[derive(Clone, Copy)]
-struct ChildLayout<'style> {
-    style: &'style ComputedStyle,
-    content_x: i32,
-    content_y: i32,
-    content_width: i32,
-    available_height: i32,
-    row: bool,
-    gap: i32,
-    display_scale: DisplayScale,
-}
-
-fn mul(left: i32, right: i32) -> Result<i32> {
-    left.checked_mul(right)
-        .ok_or_else(|| limit_error("Layout text extent overflow"))
 }
