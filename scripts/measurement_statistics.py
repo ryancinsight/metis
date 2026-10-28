@@ -28,4 +28,3 @@ def summarize_numeric_samples(values: Iterable[int | float]) -> Mapping[str, flo
         "sample_stddev": deviation,
         "approximate_95_half_width": half_width,
     }
-
