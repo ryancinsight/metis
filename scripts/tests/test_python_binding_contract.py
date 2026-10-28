@@ -123,6 +123,10 @@ class PythonBindingContractTests(unittest.TestCase):
             "id-token: write",
             "ryancinsight/atlas/.github/workflows/python-wheels.yml@227ff172612b8aff553be22be89fabdf71838a03",
             "pypa/gh-action-pypi-publish@ba38be9e461d3875417946c167d0b5f3d385a247",
+            "needs: [wheels, identity]",
+            "name: release-identity",
+            "name: pypi-source-receipt",
+            '"metis-ui==$VERSION"',
         ):
             with self.subTest(fragment=fragment):
                 self.assertIn(fragment, self.workflow)
@@ -147,7 +151,9 @@ class PythonBindingContractTests(unittest.TestCase):
             self.workflow,
             re.MULTILINE,
         )
-        self.assertEqual(len(references), 3)
+        # The archive/source receipt and index read-back add pinned checkout,
+        # Python and artifact actions; retain the full pin check for every use.
+        self.assertEqual(len(references), 13)
         for action, revision in references:
             with self.subTest(action=action):
                 self.assertRegex(revision, r"\A[0-9a-f]{40}\Z")

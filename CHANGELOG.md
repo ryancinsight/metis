@@ -25,6 +25,13 @@
 
 ### Changed
 
+- [patch] Retain Python archive identities, source commit, SHA256 hashes and
+  sizes before upload; verify the complete PyPI file set against that receipt
+  and exercise the exact installed wheel after publication. Pull requests run
+  bounded receipt/caller tests; manual runs still verify the full wheel matrix
+  without uploading. Record #508's lockfile/debt repair while preserving the
+  #505 provider/security upload hold and all final release gates.
+
 - [patch] Reconcile the exact Moirai provider pin to the published provider revision after
   current-main integration, preserving the existing QUIC/UDP implementation,
   PR 502 provider/audit contracts and unrelated lock identities. Both canonical

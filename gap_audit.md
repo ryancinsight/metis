@@ -1,5 +1,32 @@
 # Open capability and evidence risks
 
+## METIS-PYPI-FIRST-RELEASE-001 [patch] — pending publisher; upload not attempted
+
+The user confirms the `metis-ui` registration is pending. Required identity is
+`ryancinsight/metis`, `python-release.yml`, environment `pypi`; the environment
+exists, but the detailed PyPI binding and expiry are not available without an
+account login. No duplicate registration or deadline is inferred.
+
+Manual run 35507532874 validates the complete wheel set and skips publishing.
+There is no matching `metis-ui-v0.5.0` GitHub release, and public PyPI JSON returns
+404. This is an uncompleted first publication, not evidence of an upload failure.
+#508 now merges as 406b13cb21cb6183fa29246af959463bd6cb09c4. Its exact final
+head 919e37dc00030a9c87b7975c61cdb7c75ca4e5f1 passes lockfile, debt, Windows,
+Apple, native QUIC and aggregate checks in run 40627800325. Browser, fuzz and
+the release SemVer gate are skipped. The old run 40264713611 lockfile failure
+and root-checklist debt are superseded. The continuation starts at current main,
+retains its native promotion item byte-for-byte and adds only the PyPI item;
+it does not replay the superseded checklist consolidation.
+
+The member workflow now retains archive/source/hash receipts before upload,
+compares the full public PyPI file set after publication and tests the exact
+installed wheel. Bounded archive/index and caller regressions and Actionlint
+pass locally; no current hosted wheel build or live receipt is claimed. Manual
+verification still runs the complete build matrix without uploading. #505's
+provider/security upload hold, #509/#551 hook/tool ownership, full source and
+Atlas acceptance, final exact-head independent review and the unverified account
+binding/expiry remain separate gates. Protected Pi work remains untouched.
+
 ## Native QUIC integration — 2026-10-13 [minor]
 
 Current integration preserves consumer e8dd4c9 and main 1ef9409, including

@@ -24,6 +24,61 @@ Current framework version: Metis 0.5.0. Remaining capability work follows.
 - Blocker: the advance cannot resolve while the nine `moirai-*` crates stay at the ADR 0058 quarantine revision. That revision's `moirai-core 0.9.0` requires `mnemosyne-memory ^0.9.0`; Mnemosyne main now offers only 0.10.1, and the stale 0.9.0 entry survives solely because no manifest edit reaches it. Any bump re-resolves that subtree and fails with `failed to select a version for the requirement mnemosyne-memory = "^0.9.0"`.
 - Re-open: [PR 618](https://github.com/ryancinsight/Moirai/pull/618) merges. Then pin `moirai-*` at `version = "0.10.0"` with no git ref and regenerate; the five non-Moirai bumps stand as prepared.
 
+<a id="METIS-PYPI-FIRST-RELEASE-001"></a>
+## METIS-PYPI-FIRST-RELEASE-001 — Complete the genuine Python first release [patch]
+
+- Status: blocked; priority: P1; owner: PyPI pipeline repair; last-update: 2026-10-28.
+- Identity: distribution `metis-ui`, import `metis`, crate `metis-python`;
+  version comes from `[workspace.package].version` (0.5.0 at inspection).
+  Only a published GitHub release tagged `metis-ui-v0.5.0` starts upload;
+  branch pushes, Rust release tags and manual verification do not.
+- Account evidence: the user confirms a pending publisher. Its required binding
+  is owner `ryancinsight`, repository `metis`, workflow `python-release.yml`,
+  environment `pypi`. The GitHub environment exists. Detailed PyPI binding and
+  expiry remain unverified because the available account page requires login;
+  do not add a duplicate or infer an expiry. Any binding correction requires
+  specific approval.
+- Run evidence: 35507532874 builds and validates the full wheel set, then skips
+  publishing because it is manual verification. No matching Python release is
+  present; public PyPI JSON returns 404. That historical green run is not proof
+  of current source acceptance or an attempted/failed PyPI upload.
+- Main reconciliation: #508 merged as 406b13cb21cb6183fa29246af959463bd6cb09c4.
+  Its final head 919e37dc00030a9c87b7975c61cdb7c75ca4e5f1 passes lockfile,
+  debt, Windows, Apple, native QUIC and aggregate checks in run 40627800325.
+  Browser, fuzz and the release SemVer gate are skipped in that run. The old
+  lockfile failure at 13542f6 and root-checklist debt are superseded; this
+  continuation retains #508's source and native planning unchanged.
+- Source hold: #505's provider/security and upload hold remains explicit.
+  #509 owns the member hook repair and Atlas #551 its shared tooling; those
+  owners and the protected Pi work remain intact. No full Atlas suite or
+  release acceptance is inferred from the selected #508 jobs.
+- Pipeline increment: the existing member caller retains validated archive
+  name/version, source commit, SHA256 and size before upload. A release-only
+  read-back compares the exact PyPI file set, hashes, sizes and availability,
+  then installs the exact binary wheel and runs the binding value tests.
+  Pull requests run bounded archive/index/caller tests; manual verification
+  retains its full wheel matrix and produces a receipt without publishing.
+- Acceptance: complete the provider/source holds, final exact-head checks and
+  independent review; match the existing pending binding; publish the real
+  release and verify versions, distributions and source/hash receipts. Do not
+  publish an empty release to retain a name. Archive/index/caller contracts and
+  workflow syntax are checked locally; new exact-head independent review,
+  normal hooks, hosted wheels, full source gates and live index proof remain.
+
+
+### Delivery criteria
+
+- [x] Resolve project/import/tag identity and inspect actual upload execution.
+- [x] Record user-confirmed pending publisher and the required existing binding.
+- [x] Reconcile #508's lockfile/debt repair while preserving #505's upload hold,
+      #509's hook ownership and the native promotion item byte-for-byte.
+- [x] Add and test archive/source receipts and strict PyPI read-back; retain
+      manual verification and distinguish historical wheel proof from publication.
+- [ ] Obtain independent review and normal-hook/hosted proof for this exact head.
+- [ ] Verify detailed pending binding and expiry from the account or actual notice.
+- [ ] Complete provider/source holds and final exact-head checks/review.
+- [ ] Publish the genuine gated release and retain index/source receipts.
+
 <a id="METIS-WEBVIEW-RUST-001"></a>
 ## METIS-WEBVIEW-RUST-001 — Rust-owned Windows page lifecycle [minor]
 
