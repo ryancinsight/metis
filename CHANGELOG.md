@@ -2,6 +2,62 @@
 
 ## [0.5.0] - Unreleased
 
+### Breaking
+
+- [major] `metis-platform::Color` and its `metis-ui-lang` re-export implement
+  the canonical Eunomia 0.11 provider's `Pod`/`Zeroable` traits. These are Eunomia-owned nominal traits;
+  callers using the former 0.9 bounds must select the same current provider identity.
+  Pixel layout and values are unchanged. ADR0062 records the public contract and
+  uniformly versioned workspace/internal requirements at 0.5.0. RITK consumers
+  advance their Metis requirements to 0.5.
+- [major] `metis-ui-lang::AssetError` converts the canonical Consus 0.4 provider's `DecodeError`.
+  Callers crossing that public conversion boundary must use the same Consus
+  provider identity; ADR0062 records this alongside the Eunomia migration.
+
+- Native IPC/backend builds include QUIC and ring's native build requirements
+  even with default features disabled. Remove `--features quic` from
+  draft-increment commands; native remote-session APIs require no feature flag.
+- `AsyncIpcServer<T>` now takes a native message transport as its generic
+  parameter. Explicit WebSocket annotations migrate from `AsyncIpcServer<S>` to
+  `AsyncIpcServer<WebSocketStream<S>>`; inferred construction remains unchanged.
+- Native WebSocket service streams require `Send`, matching the native transport
+  future contract. Custom native transports implement asynchronous `send_frame`,
+  `recv_frame` and `finish`; no legacy aliases or forwarding API remains.
+
+### Fixed
+
+- [patch] Preserve the authenticated fragment page's observed state and failing
+  phase before closing a failed browser session. Driver timeouts retain their
+  failure result and deadline; diagnostics expose the application response.
+- [patch] Use the canonical blocked/P1 board fields required by the existing
+  plan/conformance gates. Initial full Windows verification identifies the
+  malformed status; no validator or baseline changes.
+- [patch] Move the unchanged numeric-summary implementation to
+  `measurement_statistics.py`, shared by the resource CLI and browser drop
+  lifecycle. This removes collision with Unix's preloaded stdlib `resource`
+  module. The CLI, statistical formula, assertions and time budgets remain
+  unchanged; browser provenance fingerprints the actual shared owner.
+
+- [patch] Historical owner checkpoint at [held owner checkpoint](https://github.com/ryancinsight/metis/commit/0a9544957a1b748c32c89fe798e1e579637bbb9a): reconcile root/fuzz locks with then-approved provider
+  defaults: Eunomia0.10, Hermes0.9, memory0.10, Moirai0.9.3, Leto0.46,
+  Gaia0.6 (example dev dependency) and Consus0.3/Apollo core0.17.
+  The earlier checkpoint preserved root registry tuples relative to owner
+  [original provider preparation](https://github.com/ryancinsight/metis/commit/a253d9165a124a6240b87a4ef1359c552ebb4f22), with 17 earlier updates against
+  main. The rejected registry Gaia security candidate is withdrawn; the Git
+  graph remains held on its ZIP advisory and coordinated provider migration.
+  Fuzz retains only the earlier Moirai-required
+  rustls0.23.45 to0.23.46 security repair. No production source, feature,
+  default, test budget, permission or protected owner branch changes.
+- [patch] Historical owner checkpoint at [held owner checkpoint](https://github.com/ryancinsight/metis/commit/0a9544957a1b748c32c89fe798e1e579637bbb9a) passes698 native tests with zero skips,
+  42 doctests, strict all-feature Clippy/docs, formatting and fuzz-target
+  checks. Final API/platform/browser/release/package and exact-head hosted
+  gates remain required before delivery. Consus raster 0.3.0 was published
+  from `beae4ce7` on 2026-10-19 with its original handoff archive checksum;
+  normalized Metis packages and exact-head gates are refreshed before release.
+  The old source
+  3510db09/raster0.2.0 and f69ca65d/raster0.2.1 instructions are obsolete. No credentials or publisher
+  registration are configured. Miri remains deferred.
+
 ### Added
 
 - [patch] `SemanticTree::refresh` rebuilds a projection after an edit from the
@@ -57,18 +113,6 @@
   Validated typed peer-close causes distinguish clean closure from truncation.
 - Native session admission helpers share their callers' platform gates, keeping
   browser backend library compilation warning-free.
-
-### Breaking
-
-- Native IPC/backend builds include QUIC and ring's native build requirements
-  even with default features disabled. Remove `--features quic` from
-  draft-increment commands; native remote-session APIs require no feature flag.
-- `AsyncIpcServer<T>` now takes a native message transport as its generic
-  parameter. Explicit WebSocket annotations migrate from `AsyncIpcServer<S>` to
-  `AsyncIpcServer<WebSocketStream<S>>`; inferred construction remains unchanged.
-- Native WebSocket service streams require `Send`, matching the native transport
-  future contract. Custom native transports implement asynchronous `send_frame`,
-  `recv_frame` and `finish`; no legacy aliases or forwarding API remains.
 
 ## [0.4.1] - Unreleased
 

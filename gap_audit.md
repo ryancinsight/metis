@@ -1,5 +1,101 @@
 # Open capability and evidence risks
 
+## Current provider reconciliation — 2026-10-28 [patch]
+
+The isolated #505 supplement retains main #508's current manifest and root/fuzz
+locks, all protected Rust source and native promotion planning. The old ZIP
+cohort is superseded; a fresh unchanged complete supply-chain check passes at
+the identical manifest/lock source. Preserve the owner's statistics-import and
+fragment-failure diagnostics. Renumber its collided provider ADR to 0062.
+Final exact-head/native/hosted/package/API review remains required, and no
+upload or native promotion hold is removed. The following owner evidence is
+historical at [held owner checkpoint](https://github.com/ryancinsight/metis/commit/0a9544957a1b748c32c89fe798e1e579637bbb9a) and does not qualify this merged supplement.
+
+## Registry prerequisite renewed — 2026-10-19 (historical)
+
+Consus raster0.3.0 is published from beae4ce7 with the original handoff archive
+checksum, verified against the downloaded registry archive. All11 publishable
+Metis names remain absent. PR505 preserves the landed PR507 board recheck;
+normalized workspace packages, affected consumers and fresh final-head gates
+must pass before any Metis merge or initial upload. Existing Cargo login may
+be used without credential inspection or configuration. Pages is disabled;
+no app/service deployment or setting change is authorized by this repair.
+
+The fresh Windows gate rejects ZIP2.4.2 through the private Git Gaia0.6.0
+dev dependency (RustSec2026-0367/8/9). Current Git Gaia0.6.9 at ea7411df
+requires Git Moirai0.10; Metis/Consus0.3 require0.9.3. Targeted update and
+normal manifest-driven online resolution both fail. This coordinated provider
+migration is the remaining blocker, independent of the resolved raster upload.
+
+Candidate [rejected registry candidate](https://github.com/ryancinsight/metis/commit/ebc1310400eab11ab4fc238c5a4a234e97805215) uses source-equivalent registry Gaia0.6.9 and ZIP9.0.5.
+It passes the fresh advisory audit, strict all-target Clippy,698 native tests
+(zero skips; two transient leak labels do not recur in focused reruns), and
+424 Python tests. Its unchanged mesh example preserves exact BMP bytes,
+decompressed PNG scanlines and raster statistics. Nevertheless, Windows jobs
+117881269863/117881344606 reject registry Gaia under the committed direct-source
+policy, which includes dev dependencies. Withdraw that candidate and restore
+the original Git graph. These diagnostic passes do not establish acceptance.
+No source-policy exception, advisory ignore, baseline, feature, oracle or time
+budget is changed. No merge or Metis publication occurs while this hold remains.
+
+## Provider checkpoint — 2026-10-15 (historical)
+
+Consus0.3 is merged at beae4ce7. Its executed published-baseline consumer
+requires a pre-1.0 minor release for the Moirai0.7 to0.9 public async identity;
+the earlier0.2.1 claim is withdrawn and its publisher is cancelled before
+publishing steps execute. Both earlier raster upload commands are obsolete.
+The new0.3 source/archive handoff keeps first-upload authentication separate.
+
+This owned Metis0.5 preparation resolves root/fuzz locks against Consusbeae4ce7,
+Apollo0eab90e3 (core0.17 unchanged from published730f6262), Eunomia15fbb94c,
+Hermesac60146a, Moirai44a962f0, memory481c7452, Gaia c0db650e and Leto8b4ab407.
+The actual full graph passes698 native tests (zero skips),42 doctests, strict
+all-feature/all-target Clippy, strict docs and formatting. Root registry tuples
+are preserved; fuzz updates only the Moirai-required rustls0.23.45 to0.23.46.
+All fuzz harnesses check, with the existing protected nightly output-reader
+deprecation warning left untouched. No production Rust, feature, gate or
+native budget changes occur; protected503/504 source remains separate.
+
+## Full verification repairs [patch] — 2026-10-15
+
+Run38794411669 at [earlier Consus boundary](https://github.com/ryancinsight/metis/commit/a7c08ac53b959f67e41888c13211b474525fbc4f) passes the real Apple bundle, Chromium, Firefox,
+WebKit and cross-engine text jobs. Windows and conformance reject this task's
+malformed board status/missing priority. The canonical blocked/P1 metadata
+fix passes the existing plan tests and the exact pinned Atlas4cb1fe2
+conformance instrument with zero regressions; no baseline is edited.
+
+Local full Python verification also exposes a real import collision when Unix
+stdlib `resource` is already loaded. The one numeric-summary implementation
+moves unchanged to `measurement_statistics`; the resource CLI and browser
+lifecycle call that owner directly, with no wrapper or alias. All424 existing
+Python tests pass in14.477s after the repair, including loopback/process and
+analytical-value assertions. Its60-second outer bound is unchanged. Files
+changed for this import repair are absent from the protected504 changed-file
+list; that branch is neither edited nor incorporated.
+
+The next full run38797531486 at6bead6fc passes Windows, Chromium and WebKit.
+Firefox's authenticated fragment scenario fails with a60-second asynchronous
+script timeout; its old failure artifact omits the application response.
+Capture the failing phase and bounded page state before session teardown.
+This diagnostic repair preserves the failure and deadline; it does not claim
+the Firefox contract passes or change any acceptance check.
+
+The original run's final fuzz campaign and the repaired exact-head full gates
+remain to be observed before merge/publication.
+
+## Remaining current-provider acceptance [major]
+
+The current0.5 graph passes the local native/strict/doc gates above, including
+actual Consus0.3. External public-API proof and complete Windows/browser,
+release, normalized-package and exact-head hosted gates remain outstanding.
+The separate raster first-upload authentication is not granted by dependency
+repair authorization. No source, gate, budget, credential or permission
+workaround is supplied. The0.2.1 release claim and both earlier raster upload
+commands are retired; do not treat historical checkpoints as current readiness.
+
+Earlier unrelated capability evidence below is preserved; its historical
+provider versions do not override this current checkpoint.
+
 ## METIS-PYPI-FIRST-RELEASE-001 [patch] — pending publisher; upload not attempted
 
 The user confirms the `metis-ui` registration is pending. Required identity is

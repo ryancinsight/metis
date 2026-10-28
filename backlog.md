@@ -1,3 +1,68 @@
+Prepared framework target: Metis0.5.0; unpublished review in existing PR505.
+
+## Provider checkpoint — 2026-10-15 (historical; source [held owner checkpoint](https://github.com/ryancinsight/metis/commit/0a9544957a1b748c32c89fe798e1e579637bbb9a))
+
+Consus0.3 is merged at beae4ce7. Its executed published-baseline consumer
+requires a pre-1.0 minor release for the Moirai0.7 to0.9 public async identity;
+the earlier0.2.1 claim is withdrawn and its publisher is cancelled before
+publishing steps execute. Both earlier raster upload commands are obsolete.
+The new0.3 source/archive handoff keeps first-upload authentication separate.
+
+This owned Metis0.5 preparation resolves root/fuzz locks against Consusbeae4ce7,
+Apollo0eab90e3 (core0.17 unchanged from published730f6262), Eunomia15fbb94c,
+Hermesac60146a, Moirai44a962f0, memory481c7452, Gaia c0db650e and Leto8b4ab407.
+The actual full graph passes698 native tests (zero skips),42 doctests, strict
+all-feature/all-target Clippy, strict docs and formatting. Root registry tuples
+are preserved; fuzz updates only the Moirai-required rustls0.23.45 to0.23.46.
+All fuzz harnesses check, with the existing protected nightly output-reader
+deprecation warning left untouched. No production Rust, feature, gate or
+native budget changes occur; protected503/504 source remains separate.
+
+<a id="METIS-CURRENT-PROVIDERS-001"></a>
+## METIS-CURRENT-PROVIDERS-001 — Admit current provider defaults [major]
+
+- Status: blocked; priority: P1; owner: current-provider integration; target: 0.5.0; last-update: 2026-10-28.
+- Public contract: exported Color's Eunomia-owned Pod/Zeroable traits follow
+  the canonical 0.11 provider; AssetError's public From<Consus DecodeError>
+  follows Consus 0.4. The intermediate 0.10/0.3 checkpoint remains historical.
+  ADR0062 records the0.5 boundary for all13 packages/31 internal requirements.
+- Verification repairs: canonical blocked/P1 metadata; the unchanged shared
+  numeric summary now has an unambiguous module owner. All424 Python tests
+  and the unchanged pinned conformance gate pass locally; full exact-head
+  hosted verification remains required.
+- Hosted follow-up: PR38800495183 and full manual38800512106 pass at3f6efbee,
+  including Windows, Apple and all three browser engines. The earlier Firefox
+  timeout remains historical evidence with unproven cause; diagnostics preserve
+  the failure result and60-second deadline. Refresh gates after main reconciliation.
+- Canonical root/fuzz graphs and actual verification are recorded above.
+  No old provider/source substitution or compatibility adapter is used.
+- Remaining: refresh normalized packages, affected consumers and full exact-head
+  hosted verification before merge/publication. The prior external Color identity
+  proof and independent3f6efbee review remain evidence, not fresh-head acceptance.
+- External prerequisite resolved: consus-raster0.3.0 from beae4ce7 is published
+  with original archive SHA256 afd23ddad2b241d76bb9d1ee08dfb7002c3fe3fdf95aac9bc9aa33e86c54e7c9.
+  Use only existing configured Cargo credentials after verification; never inspect
+  or change credentials, publisher registration, permissions or deployment settings.
+- Security renewal: the old ZIP/cohort blocker is superseded by main #508's
+  coherent Consus 0.4 / Eunomia 0.11 / Gaia 0.6.10 / Moirai 0.11 graph.
+  This supplement retains that manifest and both locks exactly, without any
+  advisory/source exception. The full upload hold remains for final source,
+  API/package/native/platform/browser and exact-head review/acceptance.
+- Historical security blocker ([held owner checkpoint](https://github.com/ryancinsight/metis/commit/0a9544957a1b748c32c89fe798e1e579637bbb9a), 2026-10-19):
+  - Security blocker: RUSTSEC-2026-0367/0368/0369 rejects ZIP2.4.2 through Git
+    Gaia0.6.0. Current Git Gaia0.6.9 requires Git Moirai0.10, incompatible with
+    this Metis/Consus0.3 public cohort's0.9.3 requirements. Both targeted update
+    and normal manifest-driven online resolution fail; coordinate the provider
+    cohort before renewing acceptance (ADR0062).
+- Rejected candidate: [rejected registry candidate](https://github.com/ryancinsight/metis/commit/ebc1310400eab11ab4fc238c5a4a234e97805215)'s source-equivalent registry Gaia0.6.9 removes
+  the advisories and preserves public Git identities, but the committed source
+  gate rejects that direct dependency, including dev dependencies. Its refreshed
+  Windows jobs117881269863/117881344606 fail. Restore the original Git graph;
+  do not add a registry exception, ignore advisories or pin an older provider.
+  The failed candidate remains in history and cannot authorize merge/publication.
+- Coeus0.13 remains with its owner and separately blocks the prepared RITK
+  cases. Miri stays deferred. Incoming RITK requirements already admit Metis0.5.
+
 Current framework version: Metis 0.5.0. Remaining capability work follows.
 
 <a id="METIS-QUIC-PROMOTION-001"></a>

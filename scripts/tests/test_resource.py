@@ -9,6 +9,8 @@ import unittest
 
 
 SCRIPTS = pathlib.Path(__file__).resolve().parents[1]
+sys.path.insert(0, str(SCRIPTS))
+import measurement_statistics
 
 
 class ResourceSummaryTests(unittest.TestCase):
@@ -43,7 +45,7 @@ class ResourceSummaryTests(unittest.TestCase):
         self.assertEqual(result["handle_count"]["peak"], None)
 
     def test_numeric_sample_summary_reports_approximate_95_percent_half_width(self):
-        summary = self.resource["summarize_numeric_samples"]((10, 12, 14))
+        summary = measurement_statistics.summarize_numeric_samples((10, 12, 14))
         self.assertEqual(summary["count"], 3)
         self.assertEqual(summary["mean"], 12)
         self.assertEqual(summary["sample_stddev"], 2)
