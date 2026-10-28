@@ -18,9 +18,24 @@ thread_local! {
     /// Requests per watched size made on this thread, so concurrent tests
     /// cannot count each other's allocations.
     static REQUESTS: Cell<[usize; 3]> = const { Cell::new([0; 3]) };
+    /// Requests of any size made on this thread while a count is armed.
+    static ALLOCATIONS: Cell<Option<usize>> = const { Cell::new(None) };
+}
+
+/// Runs `body` and returns what it produced and how many allocation requests it
+/// made on this thread.
+fn count_allocations<T>(body: impl FnOnce() -> T) -> (T, usize) {
+    ALLOCATIONS.set(Some(0));
+    let value = body();
+    let count = ALLOCATIONS.get().unwrap_or_default();
+    ALLOCATIONS.set(None);
+    (value, count)
 }
 
 fn record(bytes: usize) {
+    if let Some(count) = ALLOCATIONS.get() {
+        ALLOCATIONS.set(Some(count + 1));
+    }
     if let Some(slot) = SURFACE_BYTES.iter().position(|&watched| watched == bytes) {
         REQUESTS.with(|requests| {
             let mut counts = requests.get();
@@ -80,6 +95,8 @@ fn form(width: u32, height: u32) -> NativeForm<MemoryTransport> {
         pid: 1,
         patient_id: String::new(),
         focused: true,
+        taken_accessibility: None,
+        started: std::time::Instant::now(),
     }
 }
 
@@ -213,4 +230,28 @@ fn a_trailing_oversize_size_fails_without_applying_the_sizes_it_supersedes() {
     assert_eq!(REQUESTS.get(), [0, 0, 0]);
     assert_eq!(form.framebuffer().width(), 400);
     assert_eq!(form.framebuffer().height(), 300);
+}
+
+#[test]
+fn an_idle_batch_projects_no_accessibility_tree_and_allocates_nothing() {
+    let mut form = form(400, 300);
+    // The host takes the startup tree before the first presentation; every
+    // later batch that changed nothing takes nothing.
+    assert!(form.take_accessibility_damage());
+    let (outcome, allocations) = count_allocations(|| {
+        let flow = form.handle_events(&[]).expect("idle batch");
+        let changed = form.take_accessibility_damage();
+        (flow, changed)
+    });
+    assert!(matches!(outcome.0, NativeFlow::Continue { repaint: false }));
+    assert!(!outcome.1, "an idle batch reported a semantic change");
+    assert_eq!(allocations, 0, "an idle batch allocated");
+}
+
+#[test]
+fn a_press_that_hits_no_control_allocates_nothing() {
+    let mut form = form(400, 300);
+    let (hit, allocations) = count_allocations(|| form.handle_pointer_up(-1, -1));
+    assert!(!hit.expect("a press outside every control"));
+    assert_eq!(allocations, 0, "a press that hit nothing allocated");
 }

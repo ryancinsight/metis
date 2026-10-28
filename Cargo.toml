@@ -56,27 +56,27 @@ wasm-bindgen-futures = "=0.4.79"
 png = "0.18.1"
 flate2 = "1.1.10"
 jpeg-encoder = "0.7.1"
-consus-compression = { git = "https://github.com/ryancinsight/consus.git", version = "0.2.0" }
-consus-raster = { git = "https://github.com/ryancinsight/consus.git", version = "0.2.0" }
+consus-compression = { git = "https://github.com/ryancinsight/consus.git", version = "0.4.0" }
+consus-raster = { git = "https://github.com/ryancinsight/consus.git", version = "0.4.0" }
 iris = { package = "iris-viz", git = "https://github.com/ryancinsight/iris", version = "0.1.1" }
-eunomia = { git = "https://github.com/ryancinsight/eunomia", version = "0.9.1", default-features = false }
+eunomia = { git = "https://github.com/ryancinsight/eunomia", version = "0.11.0", default-features = false }
 # Runtime ISA dispatch for rasterizer kernels (ADR 0053).
-hermes-simd = { git = "https://github.com/ryancinsight/hermes.git", version = "0.8.1", default-features = false, features = ["std"] }
+hermes-simd = { git = "https://github.com/ryancinsight/hermes.git", version = "0.9.2", default-features = false, features = ["std"] }
 # Git plus version, matching the sibling entries below: the package is named
 # `gaia-mesh` but its import path is `gaia`. The mesh viewer renders with gaia's
 # software rasteriser rather than a second one here.
-gaia = { package = "gaia-mesh", git = "https://github.com/ryancinsight/gaia", version = "0.5.2", default-features = false }
-# ADR 0058 pins the published native QUIC provider review revision.
-# Cargo.lock retains this source; advance the pin after provider promotion.
-moirai-core = { git = "https://github.com/ryancinsight/Moirai.git", rev = "ed039a6ed5fcc454a572fd7ab840b4c1919a2c9d", version = "0.9.0", default-features = false, features = ["std"] }
-moirai-executor = { git = "https://github.com/ryancinsight/Moirai.git", rev = "ed039a6ed5fcc454a572fd7ab840b4c1919a2c9d", version = "0.9.0", default-features = false }
-moirai-transport = { git = "https://github.com/ryancinsight/Moirai.git", rev = "ed039a6ed5fcc454a572fd7ab840b4c1919a2c9d", version = "0.9.0", default-features = false }
-moirai-pal = { git = "https://github.com/ryancinsight/Moirai.git", rev = "ed039a6ed5fcc454a572fd7ab840b4c1919a2c9d", version = "0.9.0", default-features = false }
-moirai-crypto = { git = "https://github.com/ryancinsight/Moirai.git", rev = "ed039a6ed5fcc454a572fd7ab840b4c1919a2c9d", version = "0.9.0", default-features = false }
-moirai-async = { git = "https://github.com/ryancinsight/Moirai.git", rev = "ed039a6ed5fcc454a572fd7ab840b4c1919a2c9d", version = "0.9.0", default-features = false }
-moirai-http = { git = "https://github.com/ryancinsight/Moirai.git", rev = "ed039a6ed5fcc454a572fd7ab840b4c1919a2c9d", version = "0.9.0", default-features = false }
-moirai-quic = { git = "https://github.com/ryancinsight/Moirai.git", rev = "ed039a6ed5fcc454a572fd7ab840b4c1919a2c9d", version = "0.1.0" }
-moirai-webview = { git = "https://github.com/ryancinsight/Moirai.git", rev = "ed039a6ed5fcc454a572fd7ab840b4c1919a2c9d", version = "0.2.0" }
+gaia = { package = "gaia-mesh", git = "https://github.com/ryancinsight/gaia", version = "0.6.10", default-features = false }
+# The native QUIC transport is a Moirai 0.11 provider; the edition is fixed by
+# that workspace rather than by a per-consumer revision pin.
+moirai-core = { git = "https://github.com/ryancinsight/Moirai.git", version = "0.11.0", default-features = false, features = ["std"] }
+moirai-executor = { git = "https://github.com/ryancinsight/Moirai.git", version = "0.11.0", default-features = false }
+moirai-transport = { git = "https://github.com/ryancinsight/Moirai.git", version = "0.11.0", default-features = false }
+moirai-pal = { git = "https://github.com/ryancinsight/Moirai.git", version = "0.11.0", default-features = false }
+moirai-crypto = { git = "https://github.com/ryancinsight/Moirai.git", version = "0.11.0", default-features = false }
+moirai-async = { git = "https://github.com/ryancinsight/Moirai.git", version = "0.11.0", default-features = false }
+moirai-http = { git = "https://github.com/ryancinsight/Moirai.git", version = "0.11.0", default-features = false }
+moirai-quic = { git = "https://github.com/ryancinsight/Moirai.git", version = "0.1.0" }
+moirai-webview = { git = "https://github.com/ryancinsight/Moirai.git", version = "0.2.0" }
 metis-core = { path = "crates/metis-core", version = "0.5.0" }
 metis-ipc = { path = "crates/metis-ipc", version = "0.5.0" }
 metis-ui-lang = { path = "crates/metis-ui-lang", version = "0.5.0" }

@@ -210,6 +210,7 @@ class EvidenceTests(unittest.TestCase):
             (self.output / f"{name}.png").write_bytes(solid_png("#ff0000", 1))
             (self.output / f"{name}.bmp").write_bytes(bmp_fixture(800, 600, bytes((0, 0, 255, 255)) + black[4:]))
         (self.output / "image-placement.png").write_bytes(png_fixture(2, 2, self.asset_pixels))
+        (self.output / "form-transition.png").write_bytes(png_fixture(2, 2, self.asset_pixels))
 
     def report_failure(self, update=False):
         with self.assertRaises(visual.VisualError) as failure:

@@ -8,7 +8,7 @@ mod commands;
 mod document;
 mod focus;
 pub mod navigation;
-mod presentation;
+pub mod presentation;
 pub mod reactive;
 #[path = "result_explorer/mod.rs"]
 mod result_explorer;
@@ -16,6 +16,7 @@ pub use app::{FormInputs, FormState, FrontendApp, MAX_COMPOSITION_BYTES};
 pub use async_app::AsyncFrontendApp;
 pub use commands::{ApplicationCommand, ApplicationTheme, CommandMenuState};
 pub use focus::{FocusDirection, FocusOrigin};
+pub use metis_core::protocol::ClinicalCalcResponsePayload;
 pub use presentation::{BADGE_CLOSED, BADGE_READY, CLINICAL_SCREEN_XML};
 pub use result_explorer::{
     ExplorerStatus, GroupId, MAX_PATIENT_LABEL_BYTES, MAX_RESULT_FILTER_BYTES, MAX_RESULT_GROUPS,

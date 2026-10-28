@@ -5,6 +5,7 @@ use super::display::DisplayList;
 use super::geometry::LayoutViewport;
 use super::grow::Grown;
 use super::intrinsic::Sizing;
+use super::placement::PlacementArena;
 use crate::dom::{DomElement, DomNode};
 use crate::style::Display;
 use metis_core::error::{ErrorCode, MetisError, Result};
@@ -15,6 +16,7 @@ impl DisplayList {
         &mut self,
         element: &DomElement,
         viewport: LayoutViewport,
+        arena: &mut PlacementArena,
     ) -> Result<()> {
         if element.computed_style.display == Display::None {
             return Ok(());
@@ -31,6 +33,7 @@ impl DisplayList {
                     viewport.scale(),
                     Sizing::Content,
                     Grown::Natural,
+                    arena,
                 )?
             };
             let x = popover_x(anchor.x, measured.width, viewport.width())?;
@@ -46,11 +49,12 @@ impl DisplayList {
                 viewport.scale(),
                 Sizing::Content,
                 Grown::Natural,
+                arena,
             )?;
         }
         for child in &element.children {
             if let DomNode::Element(child) = child {
-                self.popovers(child, viewport)?;
+                self.popovers(child, viewport, arena)?;
             }
         }
         Ok(())

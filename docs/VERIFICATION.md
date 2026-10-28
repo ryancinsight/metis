@@ -3963,6 +3963,247 @@ violations. This evidence describes the page boundary only; browser-process
 launch, operating-system, compositor, GPU, native-window and matched-framework
 latencies remain separate requirements.
 
+<a id="native-idle-and-transition-vocabulary-evidence"></a>
+## Native idle batches and the transition vocabulary — 2026-10-22
+
+At Metis revision `fa666e9`, `cargo test` and
+`cargo clippy --all-targets -- -D warnings` ran per crate in a detached
+worktree built from `git archive HEAD`, because the inherited `Cargo.toml` in
+the working tree bumps every `moirai-*` dependency to a published `0.10.0`
+that does not carry `moirai-quic`.
+
+METIS-PERF-IDLE-001: `an_idle_batch_projects_no_accessibility_tree` drives the
+generic host loop with three `FocusGained` batches and one `CloseRequested`
+through a recording surface. An application that reports one semantic change
+is projected once and its tree pushed to the provider once, where the previous
+host projected and pushed on every batch.
+`an_idle_batch_projects_no_accessibility_tree_and_allocates_nothing` and
+`a_press_that_hits_no_control_allocates_nothing` run the application side of
+that loop under a counting global allocator scoped to the test thread: an
+empty batch together with its accessibility take makes zero allocation
+requests, and a press at `(-1, -1)` makes zero. The provider's own
+`wait_events` still returns a `Vec<WindowEvent>` per batch, so a batch is not
+allocation-free end to end; that buffer belongs to Moirai's window provider
+and is outside this item.
+
+METIS-ANIMATION-001 phase 1: eight sampler tests and three grammar tests cover
+`metis_ui_lang::transition` — exact endpoints for every easing, a monotonic
+bounded curve, the CSS curve shape, alpha interpolation, repeatability, the
+2000 ms bound, and the admitted and refused `transition` grammars. The
+declaration is metadata: a test compares an animated style against the same
+style with the transition cleared. These tests pin the vocabulary and the
+sampler, not a rendered transition, so they establish no frame-rate, latency
+or memory advantage over Freya. Phase 2 is recorded below.
+
+Totals at that revision: 162 metis-platform, 56 metis-app, 60 metis-frontend
+and 146 metis-ui-lang unit tests, with their integration and doctest suites
+green and strict Clippy clean on every crate touched.
+
+### Transition overlay, owner index and tick seam — 2026-10-22
+
+At Metis revision `568efa2` plus the working-tree overlay, the same detached
+build was used: `git archive HEAD` into a scratch tree, the modified and
+untracked files copied over it, and `cargo test` and
+`cargo clippy -p metis-ui-lang -p metis-frontend -p metis-platform -p metis-app
+--all-targets -- -D warnings` run there, because the inherited `Cargo.toml`
+bumps every `moirai-*` dependency to a published `0.10.0` without
+`moirai-quic`. Both are green: 154 metis-ui-lang, 68 metis-frontend, 164
+metis-platform and 56 metis-app unit tests, 13 integration tests across
+`decode_allocation`, `render_allocations` and the app's `process` suite, and 29
+doctests, with zero Clippy findings.
+
+Owner index (`metis-ui-lang`): eight tests in `layout_display_tests` cover
+attribution. `every_command_of_an_animated_element_is_attributed` asserts
+exactly four commands carry the badge, and that a label inside it paints but is
+not addressable because it declares no transition.
+`an_element_owns_the_commands_it_paints_and_no_others` asserts exclusivity,
+`a_border_color_transition_addresses_the_border_command` the `DrawBorder` arm,
+and `a_document_without_a_transition_carries_no_attribution` that a static
+document carries none. `a_recolor_that_changes_no_pixel_reports_nothing` and
+`recolor_changes_only_the_element_it_names` pin the extent, and
+`a_copy_shares_its_payloads_and_keeps_its_owners` that the side index survives
+`copy_with_room`.
+
+Overlay (`metis-frontend`): eight tests in `presentation/transition_tests`.
+`a_transition_samples_from_the_shown_color_to_the_painted_one` and
+`a_sample_between_the_endpoints_moves_without_reaching_either` pin the sampling
+window; `an_interruption_starts_from_the_sampled_value` pins retargeting;
+`a_run_follows_its_element_when_a_relayout_renumbers_it` renumbers every element
+and asserts the run still addresses the badge, which is why runs are keyed on
+the authored identifier rather than the index.
+`reduced_motion_paints_the_target_in_one_frame` and
+`a_host_without_a_clock_paints_the_target` pin the two fallbacks.
+`a_transition_damages_only_its_element` compares the reported damage against a
+probe `recolor` extent for equality and asserts it is smaller than the surface,
+so a tick repaints its element and nothing else; the first version of this test
+asserted the damage lay inside the element's box and failed, because damage uses
+the glyph-accurate `TextStyle::extent`, which extends past the line box. The
+test was wrong, not the product.
+
+Memory: `a_tick_reuses_the_frame_buffer_it_samples` asserts the painted list's
+command-storage pointer is unchanged across a tick, and
+`a_tick_without_a_live_transition_requests_nothing` in `render_allocations`
+measures zero heap requests through a counting global allocator. The owner index
+was first written as a parallel `owners: Vec<u32>` per layout and per frame,
+which broke the landed invariant
+`an_unchanged_render_requests_only_the_display_list_storage` with
+`requests: [2736, 228, 696]`. It was then made sparse, and the attribution
+itself became two `Arc`s shared between a layout and the frames copied from it,
+because a copy that cloned the tables would have reintroduced the same defect as
+soon as a document declared a transition: `requests: [40, 40, 2736]` measured
+exactly the two `Arc` blocks a `Default` construction allocates. The copy now
+shares both pointers and allocates only the command storage, so both allocation
+tests pass for the authored form, which declares a transition on its badge.
+
+Adoption: `status-badge` declares `transition: color 150ms ease-out` in
+`CLINICAL_SCREEN_XML`. `the_authored_badge_declares_the_transition_it_is_sampled_with`
+reads the painted frame through `FrontendApp::painted_display`, asserts the
+declared property and 150 ms duration, and asserts the ready color paints in one
+frame when no clock is supplied. `a_palette_change_settles_instead_of_interpolating`
+supplies a clock, switches to the dark theme, and asserts `next_tick()` is
+`None`: a palette change recolors every command, so it settles rather than
+interpolating, which is the behaviour ADR 0060's Limits claim.
+
+Clock and policy (`metis-platform`, `metis-app`):
+`a_moving_application_shortens_the_host_wait_to_its_tick` records every timeout
+the host asks its provider for and asserts it is the application's 16 ms tick
+rather than the 200 ms wait, and
+`an_idle_or_slower_application_keeps_the_whole_host_wait` asserts a `None` tick
+and a tick longer than the wait both leave the wait unchanged, so the seam can
+only shorten a wait. `NativeApplication::next_tick` defaults to `None`, so no
+existing application changed behaviour.
+
+The figure is a recorded transition, not a description of one:
+`capture_transition` steps the clock through the declared 150 ms and writes the
+frame painted at 75 ms as `output/form-transition.png`, which the visual gate
+compares pixel for pixel against `docs/manual/images/form-transition.png`
+(`ASSETS` in `scripts/visual.py`). Its oracle is executable rather than a golden
+alone: the first step is the ready `#9ae6b4`, the last the closed `#feb2b2`,
+every interior step is a sample inside the endpoints and equal to neither, and
+no channel reverses or overshoots — so a run that jumped, stalled or overshot
+cannot be recorded. The samples are written to
+`output/form-transition-steps.json`: `0 → #9ae6b4` (no repaint, the shown frame
+already holds it), `50 → #cbcdb3`, `75 → #dec2b3`, `100 → #eebab2`,
+`150 → #feb2b2`. At this revision the gate reports `status: passed` for ten
+captures, three probes and both assets.
+
+Not established: no cross-host pixel comparison is an oracle — only the
+endpoints and the declared curve are shared with the DOM host, whose example
+stylesheet supplies its own CSS transitions and `prefers-reduced-motion` policy.
+No frame-rate, latency or memory advantage over Freya is claimed; the only
+measured numbers here are that a tick with no live run requests zero memory and
+that an unchanged render of the animated form still requests one allocation.
+
+The build gate was red between `387f65f` and `bbe0938`: that commit split
+`presentation.rs` into submodules but left the module boundaries unresolved, and
+`cargo check -p metis-frontend` reported seven errors (three unresolved
+re-exports at the presentation root, `crate::Inputs`, `crate::FormResponse`, a
+private `NUMBER_GLYPHS`, a private `ClinicalCalcResponsePayload` import) plus
+seventeen warnings and five files without a trailing newline. `bbe0938` renames
+each re-export to where the code went, drops the two dead preview constants and
+eleven unused imports the split left behind, and formats the tree. At `bbe0938`:
+`cargo check --workspace --all-targets` clean with no warnings,
+`cargo fmt --all --check` clean, strict Clippy clean on the four crates, 154
+metis-ui-lang, 68 metis-frontend, 164 metis-platform and 56 metis-app unit tests
+with their integration suites green, and the visual gate passing all fifteen
+comparisons. The capture figure and the transition samples are unchanged by the
+repair, which is what the passing gate demonstrates.
+
+## Virtual-list change path — 2026-10-23
+
+`METIS-LIST-003` gates per-row updates on the changed-row cost exceeding a frame
+budget. `crates/metis-ui-lang/benches/virtual_list.rs` measures the three
+operations a host performs on a list, at the pinned 10^5-row model of four
+repeating extents (18, 22, 24, 30 px), with criterion's 100 samples and its 95%
+interval:
+
+| operation | median | 95% interval |
+| --- | --- | --- |
+| `VirtualList::variable` (construction) | 113.21 µs | 111.20–115.29 µs |
+| `set_extent` (one changed row) | 5.96 ns | 5.797–6.124 ns |
+| `window` (one scroll query) | 101.39 ns | 98.06–104.66 ns |
+
+Measured at `b55b4e8` on the release profile of the development host with
+`cargo bench -p metis-ui-lang --bench virtual_list`. A changed row is already a
+Fenwick update — `ExtentTree::set` walks O(log n) sums, and
+`VirtualList::set_extent` delegates to it for a variable list — so the rebuild
+this item anticipated does not exist. 5.96 ns is about 2.8 million times under a
+16.67 ms frame, and even a complete reconstruction of the 10^5-row index is 0.7%
+of one. Per-row updates were therefore not added, which is the item's own
+acceptance condition.
+
+Two limits. `VirtualList` has no production consumer yet: `METIS-LIST-002` is
+the item that wires it into a host, so these numbers are a floor for that work
+rather than a profile of a shipped path. And they come from one host, one
+process, with no CPU pinning or frequency control, so the ratios between the
+three operations are the durable result, not the absolute nanoseconds.
+
+## Relayout and reprojection of one edit — 2026-10-24
+
+`METIS-MEM-RENDER-002` requires a render that changes one label to request memory
+in proportion to what it changed. Three counting-allocator oracles measure it,
+each on its own thread with a thread-local counter, at `389e997` plus the
+increment recorded here:
+
+| measurement | before | after |
+| --- | --- | --- |
+| one-character `set_inputs` edit (`metis-frontend`) | 358 | 44 |
+| relayout of a 20-row / 200-row document (`metis-ui-lang`) | 114 / 1017 | 3 / 3 |
+| reprojection of one edited label, 20-row / 80-row | 449 / 1715 | 19 / 21 |
+
+The edit is `crates/metis-frontend/tests/render_allocations.rs::
+an_edit_requests_memory_for_what_it_changed`, run with
+`cargo test -p metis-frontend --test render_allocations`. It asserts the edit
+requests at most a quarter of the whole-document rebuild it replaced, which the
+same test measures at 321 requests on the authored form, so it cannot pass by
+shrinking both. The "before" column is `5ea77d7` for the edit (measured with the
+same harness before the change; the board recorded 350 at `c9b99c1` and the
+transition owner index accounts for the eight) and the fresh-projection and
+fresh-layout cost now, which is what the previous cache did on every revision.
+
+`crates/metis-ui-lang/tests/edit_allocation.rs` carries the structural pair,
+`cargo test -p metis-ui-lang --test edit_allocation`. A relayout and a
+reprojection after one edit request no more on a ten-times larger document
+(+0 and +2 respectively), while `SemanticTree::from_document` scales with it
+(449 → 1715 for 20 → 80 rows), which is what separates reuse from a smaller
+constant factor. The 200-row relayout is the larger document there; the
+projection cases use 80 rows because the root's aggregated name reaches the
+4,096-byte semantic text bound at about 100 rows and the projection then fails
+for every document of that size, refreshed or fresh.
+
+The `frame` bench's keystroke cases were measured in both directions to keep the
+wall-clock claim out of the change's favour. At `389e997` (before) and at the
+delivered revision (after), in one target directory, with
+`cargo bench -p metis-frontend --bench frame -- --save-baseline <name> keystroke`
+and the other revision run against that saved baseline:
+
+| case | before | after |
+| --- | --- | --- |
+| `keystroke_800x600_scale_1` | 51.20 µs (51.11–51.30) | 38.27 µs (38.17–38.37) |
+| `keystroke_1600x1200_scale_2` | 60.50 µs and 72.60 µs | 52.72 µs and 47.55 µs |
+
+The 800×600 case is stable in both directions: the old code measured +33% slower
+against the new baseline, the new code −25% faster against the old one. The
+1600×1200 case is not: its two runs of the same old code differ by 20%, so the
+durable result there is only that the new code is not slower. Both runs share one
+host with no CPU pinning, so the paired direction matters and the absolute
+microseconds do not.
+
+Reuse is guarded, and the guards are tested rather than assumed:
+`crates/metis-ui-lang/src/semantics/refresh/tests.rs` edits a document, refreshes
+the projection built before the edit, and asserts equality with
+`SemanticTree::from_document` afterwards — the fresh projection is the oracle, so
+any divergence fails the test. Nine cases cover a renamed label and its
+ancestors, a name resolved through `aria-labelledby`, inherited `aria-hidden`, an
+edit that changes nothing, an unknown id, and the duplicate-identity, unresolved
+reference, role and shape errors an edit can introduce.
+
+Limits: the refresh still walks the document and re-joins the ancestors' content,
+so its time stays linear in the document even though its memory does not; these
+oracles count requests, not bytes retained; and the DOM is mutable through its
+public fields, so the shape guard is what keeps a programmatic structural edit
+from being served a stale projection.
+
 Input traces and workload sizes are fixed before comparison, chosen to exercise
 the relevant working-set regimes under the committed budget. Profile production
 paths before optimizing; preserve the instrument across comparisons. Inject

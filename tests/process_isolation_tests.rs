@@ -298,7 +298,7 @@ fn closed_peer_replaces_success_and_new_session_recovers() {
     )
     .expect("closed-session layout");
     let bounds = display
-        .commands
+        .commands()
         .iter()
         .find_map(|command| match command {
             DisplayCommand::DrawText { text, x, y, style } if &**text == "SESSION CLOSED" => {

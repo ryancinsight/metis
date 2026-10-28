@@ -8,7 +8,6 @@ unused-ignored-advisory = "deny"
 # upstream release; the provider tracks its replacement separately.
 ignore = [
     { id = "RUSTSEC-2023-0071", reason = "Moirai crypto still requires RSA and RustSec reports no safe upgrade; replacement remains tracked upstream." },
-    { crate = "zip@=2.4.2", reason = "Every zip 2.x release is yanked upstream while gaia-mesh 0.5.2 still requires zip ^2; a non-yanked resolution needs a Gaia release and remains tracked upstream." },
 ]
 
 [licenses]

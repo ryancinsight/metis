@@ -707,6 +707,25 @@ session. Synchronization uses worker completion, not a timed sleep.
 A new app and backend session submit weight 80 kg and return 0.96 mg/hour and
 0.48 mL/hour. Reconnection never silently retries an uncertain transaction.
 
+## Animated status color
+
+![Status badge sampled mid-transition](images/form-transition.png)
+
+The badge declares `transition: color 150ms ease-out`, so the color a session
+state produces is interpolated at the paint boundary rather than painted at
+once. This figure is the frame the software host painted 75 ms into the
+disconnection, read back from the list that painted it rather than
+reconstructed: the badge holds `#dec2b3` between the ready `#9ae6b4` and the
+closed `#feb2b2`, and the rest of the form is the disconnected frame above.
+
+Interpolating does not lay the document out again. The app samples the list it
+already painted and repaints only the badge's own extent. The recorded samples —
+0, 50, 75, 100 and 150 ms, each with the color that step painted — are in
+`output/form-transition-steps.json`, and the gate compares this figure pixel for
+pixel like any other asset. A host that supplies no clock, or that reports
+`MotionPreference::Reduced`, paints the target in one frame, so the figure above
+would then match the settled capture exactly.
+
 ## Reproduce and review
 
 ```text
@@ -719,9 +738,11 @@ layout as SVG text. The CSV records actual inputs, actions, state, displayed
 labels and text geometry alongside independently expected outcomes.
 
 The gate removes previous required captures before execution. It validates all
-nine new captures, checks BMP/SVG pixel agreement and compares both images and
-semantic records with the [reviewed baseline](images/captures.json). Source,
-lockfile and rendering-fixture hashes bind the observations to this run.
+ten captures, checks BMP/SVG pixel agreement and compares both images and
+semantic records with the [reviewed baseline](images/captures.json). It also
+compares the two raster assets — the placed image and the mid-transition frame —
+pixel for pixel against their reviewed PNGs. Source, lockfile and
+rendering-fixture hashes bind the observations to this run.
 For an intentional visual change:
 
 ```text

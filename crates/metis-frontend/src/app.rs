@@ -2,7 +2,7 @@
 use crate::commands::{ApplicationTheme, CommandMenuState};
 use crate::document::TrackedDocument;
 use crate::focus::Focus;
-use crate::presentation::{CLINICAL_SCREEN_XML, RenderCache};
+use crate::presentation::{CLINICAL_SCREEN_XML, RenderCache, Transitions};
 use metis_core::error::{ErrorCode, MetisError, Result};
 use metis_core::protocol::{
     ClinicalCalcRequestPayload, ClinicalCalcResponsePayload, ErrorResponsePayload, MessageType,
@@ -10,8 +10,9 @@ use metis_core::protocol::{
 };
 use metis_ipc::client::{HandshakeError, IpcClient};
 use metis_ipc::transport::IpcTransport;
-use metis_platform::{Damage, DisplayScale, Framebuffer};
+use metis_platform::{Damage, DisplayScale, Framebuffer, MotionPreference, Rect};
 use metis_ui_lang::{DisplayList, DomDocument, SemanticTree, parse_markup};
+use std::time::Duration;
 
 /// Outcome for the current inputs. Only success carries a result.
 /// Pending is painted before synchronous IPC; it does not imply an async host.
@@ -85,12 +86,23 @@ pub struct FrontendApp<T> {
     /// keeps the theme does not restyle; `None` before the first render.
     pub(crate) applied_theme: Option<ApplicationTheme>,
     pub(crate) focus: Focus,
+    /// Moves whenever focus changes, so a host can tell whether the
+    /// accessibility projection it last pushed is still current.
+    pub(crate) focus_revision: u64,
     /// The display list the framebuffer shows, so the next render repaints
     /// only what changed; `None` when the surface holds no complete frame.
     pub(crate) painted: Option<DisplayList>,
     /// Pixels repainted since the host last took the damage to present.
     pub(crate) unpresented: Damage,
     pub(crate) cache: RenderCache,
+    /// The transitions the painted frame is sampling.
+    pub(crate) transitions: Transitions,
+    /// The host clock a transition samples against; `None` until a host
+    /// supplies one, which paints every declared target in one frame rather
+    /// than sampling a transition the host cannot time.
+    pub(crate) now: Option<Duration>,
+    /// How much motion the host asks the presentation to show.
+    pub(crate) motion: MotionPreference,
 }
 
 impl<T: IpcTransport> FrontendApp<T> {
@@ -111,9 +123,13 @@ impl<T: IpcTransport> FrontendApp<T> {
             theme: ApplicationTheme::default(),
             applied_theme: None,
             focus: Focus::initial(),
+            focus_revision: 0,
             painted: None,
             unpresented: Damage::Unchanged,
             cache: RenderCache::default(),
+            transitions: Transitions::default(),
+            now: None,
+            motion: MotionPreference::default(),
         };
         app.render()?;
         Ok(app)
@@ -154,6 +170,30 @@ impl<T: IpcTransport> FrontendApp<T> {
     /// semantic values.
     pub fn semantic_tree(&self) -> Result<SemanticTree> {
         SemanticTree::from_document(&self.doc)
+    }
+
+    /// Identifies the state the accessibility projection reads, so a host
+    /// pushes a projection only when it can have changed.
+    ///
+    /// The pair is the document revision and the focus revision, which cover
+    /// every fact [`Self::semantic_tree`] and [`Self::focused_control`] expose
+    /// to a projection: two equal pairs project to equal trees. A projection
+    /// that starts reading another field must widen this pair, or it serves a
+    /// stale tree.
+    #[must_use]
+    pub const fn accessibility_revision(&self) -> (u64, u64) {
+        (self.doc.revision(), self.focus_revision)
+    }
+
+    /// The laid-out rectangle of an authored element in the frame the surface
+    /// shows, so hit testing reuses the painted layout instead of laying the
+    /// document out again.
+    ///
+    /// `None` before the first frame, or for an element the frame does not
+    /// paint.
+    #[must_use]
+    pub fn painted_rect(&self, id: &str) -> Option<Rect> {
+        self.painted.as_ref()?.element_rect(id)
     }
     /// Actual rendered pixels for host presentation or capture.
     #[must_use]
@@ -389,111 +429,4 @@ impl<T: IpcTransport> FrontendApp<T> {
 }
 
 #[cfg(test)]
-mod tests {
-    use super::{FrontendApp, MAX_COMPOSITION_BYTES};
-    use metis_core::ErrorCode;
-    use metis_ipc::MemoryTransport;
-    use metis_platform::DisplayScale;
-    use metis_ui_lang::DisplayCommand;
-
-    #[test]
-    fn resize_replaces_surface_and_preserves_it_on_invalid_dimensions() {
-        let (transport, _peer) = MemoryTransport::pair();
-        let mut app = FrontendApp::new(transport, 800, 600).expect("initial form");
-        app.resize(640, 480).expect("valid resize");
-        assert_eq!(app.framebuffer().width(), 640);
-        assert_eq!(app.framebuffer().height(), 480);
-
-        let error = app.resize(0, 480).expect_err("zero width");
-        assert_eq!(error.code, ErrorCode::SurfaceAllocationError);
-        assert_eq!(app.framebuffer().width(), 640);
-        assert_eq!(app.framebuffer().height(), 480);
-    }
-
-    #[test]
-    fn composition_is_transient_and_bounded() {
-        let (transport, _peer) = MemoryTransport::pair();
-        let mut app = FrontendApp::new(transport, 800, 600).expect("initial form");
-        app.set_composition(Some("東京".to_owned()))
-            .expect("bounded composition");
-        assert_eq!(app.composition(), Some("東京"));
-        assert_eq!(
-            app.document()
-                .find_element_by_id("label-patient")
-                .expect("patient label")
-                .text_content(),
-            "Patient ID: PT-9042-ALPHA [東京]"
-        );
-
-        let error = app
-            .set_composition(Some("x".repeat(MAX_COMPOSITION_BYTES + 1)))
-            .expect_err("oversized composition");
-        assert_eq!(error.code, ErrorCode::PayloadTooLarge);
-        assert_eq!(app.composition(), Some("東京"));
-
-        app.set_inputs("PT-2", 70.0, 4.0, 0.5)
-            .expect("committed input edit");
-        assert_eq!(app.composition(), None);
-    }
-
-    #[test]
-    fn display_scale_repaints_text_and_preserves_the_new_capability() {
-        let (transport, _peer) = MemoryTransport::pair();
-        let mut app = FrontendApp::new(transport, 800, 600).expect("initial form");
-        let scale = DisplayScale::from_milli(1_500).expect("150 percent");
-        app.set_display_scale(scale).expect("scaled form");
-        assert_eq!(app.display_scale(), scale);
-        let command = app.document().clone();
-        let display = metis_ui_lang::compute_layout(
-            &command,
-            metis_ui_lang::LayoutViewport::with_scale(800, 600, scale),
-        )
-        .expect("scaled layout");
-        assert!(display.commands.iter().any(|command| matches!(
-            command,
-            // The default 14-pixel size at 150 percent is 21 device
-            // pixels per em, exact in binary.
-            DisplayCommand::DrawText { style, .. }
-                if (style.size.pixels() - 21.0).abs() < f64::EPSILON
-        )));
-    }
-
-    #[test]
-    fn authored_form_exposes_host_neutral_semantics() {
-        let (transport, _peer) = MemoryTransport::pair();
-        let app = FrontendApp::new(transport, 800, 600).expect("initial form");
-        let tree = app.semantic_tree().expect("semantic tree");
-        assert_eq!(tree.root.id.as_deref(), Some("main-screen"));
-        assert_eq!(tree.root.role, metis_ui_lang::SemanticRole::Application);
-        let button = tree
-            .root
-            .children
-            .iter()
-            .flat_map(|node| node.children.iter())
-            .flat_map(|node| node.children.iter())
-            .find(|node| node.id.as_deref() == Some("btn-calc"))
-            .expect("submit action");
-        assert_eq!(button.role, metis_ui_lang::SemanticRole::Button);
-        assert!(button.focusable);
-        assert_eq!(
-            button.actions,
-            vec![metis_ui_lang::SemanticAction::Activate]
-        );
-        let patient = tree
-            .root
-            .children
-            .iter()
-            .flat_map(|node| node.children.iter())
-            .flat_map(|node| node.children.iter())
-            .find(|node| node.id.as_deref() == Some("label-patient"))
-            .expect("patient input");
-        assert_eq!(patient.role, metis_ui_lang::SemanticRole::TextBox);
-        assert_eq!(patient.name, "Patient ID");
-        assert_eq!(patient.value.as_deref(), Some("PT-9042-ALPHA"));
-        assert!(patient.focusable);
-        assert_eq!(
-            patient.actions,
-            vec![metis_ui_lang::SemanticAction::SetValue]
-        );
-    }
-}
+mod tests;

@@ -1,6 +1,7 @@
 //! Value tests for the authored form's projection and paint.
 
-use super::{BADGE_CLOSED, BADGE_READY, CLINICAL_SCREEN_XML, bounded_accessible_value};
+use super::form_text::bounded_accessible_value;
+use super::{BADGE_CLOSED, BADGE_READY, CLINICAL_SCREEN_XML};
 use metis_platform::{Color, Framebuffer};
 use metis_ui_lang::{
     DisplayCommand, LayoutViewport, MAX_SEMANTIC_TEXT_BYTES, compute_layout, parse_markup,
@@ -96,7 +97,7 @@ fn authored_form_text_and_status_fit_the_viewport() {
     let display =
         compute_layout(&document, LayoutViewport::new(800, 600)).expect("authored layout");
     let mut text_runs = Vec::new();
-    for command in &display.commands {
+    for command in display.commands() {
         if let DisplayCommand::DrawText { text, x, y, style } = command {
             let width = style.advance(text);
             let height = style.line_height();
@@ -126,7 +127,7 @@ fn authored_form_text_and_status_fit_the_viewport() {
     display.render_to(&mut framebuffer);
     // The status run paints in the ready color over the header.
     let status = display
-        .commands
+        .commands()
         .iter()
         .find_map(|command| match command {
             DisplayCommand::DrawText { text, x, y, style } if &**text == "SYSTEM READY" => {

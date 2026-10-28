@@ -10,6 +10,7 @@ pub mod display_scale;
 pub mod event;
 pub mod framebuffer;
 mod memo;
+pub mod motion;
 pub mod rasterizer;
 #[cfg(not(target_arch = "wasm32"))]
 pub mod scoped_clipboard;
@@ -36,6 +37,7 @@ pub use autostart::{Autostart, MAX_AUTOSTART_ARGUMENT_BYTES, MAX_AUTOSTART_ARGUM
 pub use display_scale::DisplayScale;
 pub use event::PlatformEvent;
 pub use framebuffer::{Clip, Color, Damage, Framebuffer, Rect};
+pub use motion::MotionPreference;
 pub use rasterizer::{
     LineCap, LineJoin, MAX_STROKE_POINTS, StrokeWidth, draw_line, draw_polyline, draw_rect_outline,
     fill_rect,

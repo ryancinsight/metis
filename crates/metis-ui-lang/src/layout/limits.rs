@@ -4,10 +4,13 @@ use crate::dom::{DomElement, DomNode};
 use crate::parser::{MAX_DEPTH, MAX_INPUT_BYTES, MAX_NODES, limit_error};
 use metis_core::error::Result;
 
-pub(super) fn validate_layout_tree(element: &DomElement) -> Result<()> {
+/// Validates the tree's depth, node and byte budgets, and reports the nodes it
+/// counted so a layout can size its scratch storage once.
+pub(super) fn validate_layout_tree(element: &DomElement) -> Result<usize> {
     let mut remaining_nodes = MAX_NODES;
     let mut remaining_bytes = MAX_INPUT_BYTES;
-    validate(element, 1, &mut remaining_nodes, &mut remaining_bytes)
+    validate(element, 1, &mut remaining_nodes, &mut remaining_bytes)?;
+    Ok(MAX_NODES - remaining_nodes)
 }
 
 fn validate(

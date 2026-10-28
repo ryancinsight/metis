@@ -16,7 +16,7 @@ import zlib
 CAPTURES = ("form", "form-menu", "form-menu-dark", "form-focus", "form-success", "form-edited",
             "form-rejected", "form-corrected", "form-disconnected", "form-recovered")
 PROBES = ("probe-label", "probe-geometry", "probe-color")
-ASSETS = ("image-placement",)
+ASSETS = ("image-placement", "form-transition")
 MAX_BYTES, MAX_WIDTH, MAX_HEIGHT = 4 * 1024 * 1024, 800, 600
 _ARTIFACTS = ("report.json", "manifest.json", "run.json") + tuple(
     f"{name}-{kind}.png" for name in (*CAPTURES, *PROBES)

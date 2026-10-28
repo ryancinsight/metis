@@ -9,20 +9,23 @@ use metis_platform::native::{
     run_native_application,
 };
 use metis_platform::{Damage, DisplayScale, Framebuffer, Rect};
-use metis_ui_lang::{LayoutViewport, compute_layout};
 use std::io::{stdin, stdout};
-use std::time::Duration;
+use std::time::{Duration, Instant};
 
 use super::native_accessibility;
 use keyboard::PATIENT_INPUT;
 
 mod copy_result;
 mod keyboard;
+mod patient_field;
+
+use patient_field::{
+    append_patient_character, append_patient_text, remove_patient_character, set_patient_value,
+};
 
 const INITIAL_WIDTH: u32 = 800;
 const INITIAL_HEIGHT: u32 = 600;
 const EVENT_WAIT: Duration = Duration::from_millis(250);
-const MAX_PATIENT_ID_BYTES: usize = 128;
 const RETURN_KEY: u32 = 0x0d;
 const ESCAPE_KEY: u32 = 0x1b;
 const BACKSPACE_KEY: u32 = 0x08;
@@ -56,6 +59,8 @@ pub(crate) fn run(inputs: [String; 3]) -> Result<(), Box<dyn std::error::Error>>
         pid,
         patient_id,
         focused: true,
+        taken_accessibility: None,
+        started: Instant::now(),
     };
     run_native_application(&config, application, EVENT_WAIT)?;
     Ok(())
@@ -66,6 +71,11 @@ struct NativeForm<T> {
     pid: u32,
     patient_id: String,
     focused: bool,
+    /// The accessibility revision the host last took, so a batch that changed
+    /// no semantic state projects no tree.
+    taken_accessibility: Option<(u64, u64)>,
+    /// The monotonic origin the application's transition clock counts from.
+    started: Instant,
 }
 
 impl<T: IpcTransport> NativeApplication for NativeForm<T> {
@@ -83,7 +93,24 @@ impl<T: IpcTransport> NativeApplication for NativeForm<T> {
         native_accessibility::project(&self.app).map(Some)
     }
 
+    fn take_accessibility_damage(&mut self) -> bool {
+        let revision = self.app.accessibility_revision();
+        if self.taken_accessibility == Some(revision) {
+            return false;
+        }
+        self.taken_accessibility = Some(revision);
+        true
+    }
+
+    fn next_tick(&self) -> Option<Duration> {
+        self.app.next_tick()
+    }
+
     fn handle_events(&mut self, events: &[WindowEvent]) -> Result<NativeFlow> {
+        // The host owns the clock: every transition this batch samples counts
+        // from here, and a batch that arrives mid-transition samples at the
+        // time it actually arrived.
+        self.app.set_now(self.started.elapsed());
         let mut repaint = false;
         for (index, event) in events.iter().enumerate() {
             if let WindowEvent::KeyDown {
@@ -156,65 +183,74 @@ impl<T: IpcTransport> NativeApplication for NativeForm<T> {
                 } if self.patient_has_focus() => {
                     repaint |= remove_patient_character(&mut self.app, &mut self.patient_id)?;
                 }
-                WindowEvent::TextInput { character } => {
-                    repaint |= self.patient_has_focus()
-                        && append_patient_character(
-                            &mut self.app,
-                            &mut self.patient_id,
-                            *character,
-                        )?;
-                }
-                WindowEvent::TextComposition { phase, text } if self.patient_has_focus() => {
-                    repaint = true;
-                    match phase {
-                        CompositionPhase::Started | CompositionPhase::Updated => {
-                            self.app.set_composition(Some(text.clone()))?;
-                        }
-                        CompositionPhase::Committed => {
-                            self.app.set_composition(None)?;
-                            append_patient_text(&mut self.app, &mut self.patient_id, text)?;
-                        }
-                        CompositionPhase::Canceled => self.app.set_composition(None)?,
-                    }
-                }
                 WindowEvent::AccessibilityAction { request } => {
                     repaint |= self.apply_accessibility_action(request)?;
                 }
-                _ => {}
+                // Typed text and composition belong to one editing concern.
+                _ => {
+                    if let Some(changed) = self.handle_text_edit(event)? {
+                        repaint |= changed;
+                    }
+                }
             }
         }
+        // A batch that repainted already sampled at this instant, so a second
+        // sample changes no pixel and reports nothing.
+        repaint |= self.app.advance_transitions();
         Ok(NativeFlow::Continue { repaint })
     }
 }
 
 impl<T: IpcTransport> NativeForm<T> {
+    /// Applies the events that edit the patient identifier field.
+    ///
+    /// `None` means the event is not text editing, so the caller's match has
+    /// already handled everything it accepts and this one changes nothing.
+    fn handle_text_edit(&mut self, event: &WindowEvent) -> Result<Option<bool>> {
+        match event {
+            WindowEvent::TextInput { character } => Ok(Some(
+                self.patient_has_focus()
+                    && append_patient_character(&mut self.app, &mut self.patient_id, *character)?,
+            )),
+            WindowEvent::TextComposition { phase, text } if self.patient_has_focus() => {
+                match phase {
+                    CompositionPhase::Started | CompositionPhase::Updated => {
+                        self.app.set_composition(Some(text.clone()))?;
+                    }
+                    CompositionPhase::Committed => {
+                        self.app.set_composition(None)?;
+                        append_patient_text(&mut self.app, &mut self.patient_id, text)?;
+                    }
+                    CompositionPhase::Canceled => self.app.set_composition(None)?,
+                }
+                Ok(Some(true))
+            }
+            _ => Ok(None),
+        }
+    }
+
     fn handle_pointer_up(&mut self, x: i32, y: i32) -> Result<bool> {
         self.focused = true;
         let menu_open = self.app.command_menu_open();
-        let mut targets = vec!["command-menu-toggle"];
-        if menu_open {
-            targets.extend([
-                ApplicationCommand::ThemeDark.id(),
-                ApplicationCommand::ThemeSystem.id(),
-                ApplicationCommand::CopyResult.id(),
-            ]);
+        let targets = if menu_open {
+            &OPEN_MENU_TARGETS[..]
         } else {
-            targets.extend([ApplicationCommand::FocusPatient.id(), "btn-calc"]);
-        }
+            &CLOSED_MENU_TARGETS[..]
+        };
         for target in targets {
-            if command_rect(&self.app, target)?.contains(x, y) {
+            if painted_rect(&self.app, target)?.contains(x, y) {
                 // A press focuses what it hits without a ring, then acts.
                 self.app.focus_control(target, FocusOrigin::Pointer)?;
                 return self.activate_control(target, FocusOrigin::Pointer);
             }
         }
         if menu_open {
-            if command_rect(&self.app, "command-menu")?.contains(x, y) {
+            if painted_rect(&self.app, "command-menu")?.contains(x, y) {
                 return Ok(false);
             }
             return self.app.close_command_menu();
         }
-        if command_rect(&self.app, PATIENT_INPUT)?.contains(x, y) {
+        if painted_rect(&self.app, PATIENT_INPUT)?.contains(x, y) {
             return self.app.focus_control(PATIENT_INPUT, FocusOrigin::Pointer);
         }
         Ok(false)
@@ -352,94 +388,6 @@ fn submit<T: IpcTransport>(app: &mut FrontendApp<T>, pid: u32) -> Result<()> {
     Ok(())
 }
 
-fn append_patient_character<T: IpcTransport>(
-    app: &mut FrontendApp<T>,
-    patient_id: &mut String,
-    character: char,
-) -> Result<bool> {
-    let mut encoded = [0; 4];
-    let text = character.encode_utf8(&mut encoded);
-    append_patient_text(app, patient_id, text)
-}
-
-fn append_patient_text<T: IpcTransport>(
-    app: &mut FrontendApp<T>,
-    patient_id: &mut String,
-    text: &str,
-) -> Result<bool> {
-    if text.chars().any(char::is_control) {
-        return Ok(false);
-    }
-    // The bounded copy lets set_inputs commit the edit only after validation
-    // and rendering succeed; native text input is a cold control-plane path.
-    let mut updated = patient_id.clone();
-    let next_bytes = updated
-        .len()
-        .checked_add(text.len())
-        .ok_or_else(input_limit_error)?;
-    if next_bytes > MAX_PATIENT_ID_BYTES {
-        return Err(input_limit_error());
-    }
-    updated.try_reserve(text.len()).map_err(|_| {
-        MetisError::ui(
-            ErrorCode::SurfaceAllocationError,
-            "Patient identifier storage reservation failed",
-        )
-    })?;
-    updated.push_str(text);
-    replace_patient_id(app, patient_id, updated)
-}
-
-fn remove_patient_character<T: IpcTransport>(
-    app: &mut FrontendApp<T>,
-    patient_id: &mut String,
-) -> Result<bool> {
-    let mut updated = patient_id.clone();
-    if updated.pop().is_none() {
-        return Ok(false);
-    }
-    replace_patient_id(app, patient_id, updated)
-}
-
-fn replace_patient_id<T: IpcTransport>(
-    app: &mut FrontendApp<T>,
-    patient_id: &mut String,
-    updated: String,
-) -> Result<bool> {
-    validate_patient_value(&updated)?;
-    if *patient_id == updated {
-        return Ok(false);
-    }
-    let weight = app.inputs().weight_kg;
-    let concentration = app.inputs().concentration_mg_ml;
-    let dose = app.inputs().target_dose_mcg_kg_min;
-    app.set_inputs(&updated, weight, concentration, dose)?;
-    *patient_id = updated;
-    Ok(true)
-}
-
-fn set_patient_value<T: IpcTransport>(
-    app: &mut FrontendApp<T>,
-    patient_id: &mut String,
-    value: &str,
-) -> Result<bool> {
-    validate_patient_value(value)?;
-    replace_patient_id(app, patient_id, value.to_owned())
-}
-
-fn validate_patient_value(value: &str) -> Result<()> {
-    if value.len() > MAX_PATIENT_ID_BYTES {
-        return Err(input_limit_error());
-    }
-    if value.chars().any(char::is_control) {
-        return Err(MetisError::protocol(
-            ErrorCode::MalformedPayload,
-            "Patient identifier contains a control character",
-        ));
-    }
-    Ok(())
-}
-
 /// Reports whether the event before `following` is skipped because the
 /// consecutive `Resized` events at the head of `following` include a usable
 /// size, which replaces the surface the earlier event would have allocated.
@@ -460,33 +408,30 @@ fn resize_superseded(following: &[WindowEvent]) -> bool {
         .any(|(width, height)| width > 0 && height > 0)
 }
 
-fn command_rect<T: IpcTransport>(app: &FrontendApp<T>, id: &str) -> Result<Rect> {
-    let width = i32::try_from(app.framebuffer().width()).map_err(|_| layout_error())?;
-    let height = i32::try_from(app.framebuffer().height()).map_err(|_| layout_error())?;
-    let display = compute_layout(
-        app.document(),
-        LayoutViewport::with_scale(width, height, app.display_scale()),
-    )?;
-    display.element_rect(id).ok_or_else(|| {
+/// Controls a press tests while the command menu is open, in hit order.
+const OPEN_MENU_TARGETS: [&str; 4] = [
+    "command-menu-toggle",
+    ApplicationCommand::ThemeDark.id(),
+    ApplicationCommand::ThemeSystem.id(),
+    ApplicationCommand::CopyResult.id(),
+];
+
+/// Controls a press tests while the command menu is closed, in hit order.
+const CLOSED_MENU_TARGETS: [&str; 3] = [
+    "command-menu-toggle",
+    ApplicationCommand::FocusPatient.id(),
+    "btn-calc",
+];
+
+/// The rectangle the painted frame gives an authored element, so a press hits
+/// what the user saw rather than a layout recomputed from later state.
+fn painted_rect<T: IpcTransport>(app: &FrontendApp<T>, id: &str) -> Result<Rect> {
+    app.painted_rect(id).ok_or_else(|| {
         MetisError::ui(
             ErrorCode::MalformedMarkup,
             format!("Authored form is missing command surface {id}"),
         )
     })
-}
-
-fn input_limit_error() -> MetisError {
-    MetisError::protocol(
-        ErrorCode::PayloadTooLarge,
-        "Patient identifier exceeds the bounded native input limit",
-    )
-}
-
-fn layout_error() -> MetisError {
-    MetisError::ui(
-        ErrorCode::LayoutOverflow,
-        "Native surface dimensions exceed layout coordinates",
-    )
 }
 
 #[cfg(test)]

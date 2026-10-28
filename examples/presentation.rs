@@ -7,10 +7,11 @@ use metis_ipc::{server::IpcServer, transport::MemoryTransport};
 mod capture;
 #[path = "support/framebuffer.rs"]
 mod framebuffer_artifacts;
-use capture::{Oracle, capture, comparator_probes};
+use capture::{Oracle, capture, capture_transition, comparator_probes};
 
 use moirai_core::TaskSpawner;
 use moirai_executor::ExecutorBuilder;
+use std::time::Duration;
 
 fn main() -> Result<(), Box<dyn std::error::Error>> {
     std::fs::create_dir_all("output")?;
@@ -84,12 +85,18 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
             (4, None)
         ]
     );
-    // session_trace joins the finite worker: the peer has actually closed.
+    // session_trace joins the finite worker: the peer has actually closed. The
+    // host owns time from here, so the badge's declared transition is sampled
+    // rather than painted at once, and the figure below is a real mid-run frame.
+    app.set_now(Duration::ZERO);
     let error = submit(&mut app, &mut actions).expect_err("closed backend endpoint");
     assert_eq!(error.code, ErrorCode::ConnectionClosed);
     assert_eq!(app.state(), &FormState::Disconnected(error));
     assert_no_result(&app, "Connection failed [0x4002] - reconnect");
     assert_label(&app, "status-badge", "SESSION CLOSED");
+    // Steps the clock through the declared duration, which leaves the badge
+    // settled, so the capture below sees the same pixels it saw before.
+    capture_transition(&mut app)?;
     capture(
         &app,
         "form-disconnected",

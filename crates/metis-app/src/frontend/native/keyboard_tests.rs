@@ -1,6 +1,6 @@
 //! Native keyboard focus navigation, activation and text routing.
 
-use super::super::{NativeForm, command_rect, native_accessibility};
+use super::super::{NativeForm, native_accessibility, painted_rect};
 use super::{PATIENT_INPUT, SPACE_KEY, TAB_KEY};
 use metis_frontend::{ApplicationCommand, ApplicationTheme, FrontendApp};
 use metis_ipc::MemoryTransport;
@@ -18,6 +18,8 @@ fn form() -> NativeForm<MemoryTransport> {
         pid: 1,
         patient_id,
         focused: true,
+        taken_accessibility: None,
+        started: std::time::Instant::now(),
     }
 }
 
@@ -85,7 +87,7 @@ fn typing_reaches_the_patient_reference_only_while_it_has_focus() {
         .expect("text on a button");
     assert_eq!(form.app.inputs().patient_id, before);
 
-    let patient = command_rect(&form.app, PATIENT_INPUT).expect("patient surface");
+    let patient = painted_rect(&form.app, PATIENT_INPUT).expect("patient surface");
     form.handle_events(&[WindowEvent::PointerUp {
         x: patient.x,
         y: patient.y,
@@ -102,7 +104,7 @@ fn typing_reaches_the_patient_reference_only_while_it_has_focus() {
 #[test]
 fn a_pointer_press_focuses_its_control_without_a_ring() {
     let mut form = form();
-    let toggle = command_rect(&form.app, "command-menu-toggle").expect("toggle surface");
+    let toggle = painted_rect(&form.app, "command-menu-toggle").expect("toggle surface");
     form.handle_events(&[WindowEvent::PointerUp {
         x: toggle.x,
         y: toggle.y,

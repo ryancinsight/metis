@@ -1,4 +1,5 @@
 use super::display::{DisplayCommand, DisplayList};
+use super::placement::{ChildExtent, ChildLayout, ChildPlacement, PlacementArena, mul};
 use crate::dom::{DomDocument, DomElement, DomNode};
 use crate::parser::limit_error;
 use crate::style::{AlignItems, ComputedStyle, Display, FlexDirection, JustifyContent};
@@ -70,25 +71,60 @@ impl LayoutViewport {
 /// used as the document root, or a visible popover whose anchor has not been laid
 /// out.
 pub fn compute_layout(doc: &DomDocument, viewport: LayoutViewport) -> Result<DisplayList> {
+    let mut list = DisplayList::default();
+    compute_layout_into(doc, viewport, &mut list)?;
+    Ok(list)
+}
+
+/// Lays `doc` out into `list`, reusing the storage `list` already holds.
+///
+/// A document laid out again after an edit overwrites the commands of its
+/// previous layout, shares the identifiers and text runs whose content did not
+/// change, and requests storage only for what the edit moved past the
+/// previous layout's length. `list` holds the new layout exactly when this
+/// returns `Ok`, and is empty when it returns an error.
+///
+/// # Errors
+/// Returns every error [`compute_layout`] returns.
+pub fn compute_layout_into(
+    doc: &DomDocument,
+    viewport: LayoutViewport,
+    list: &mut DisplayList,
+) -> Result<()> {
     if viewport.width < 0 || viewport.height < 0 {
         return Err(limit_error("Viewport dimensions must be nonnegative"));
     }
-    validate_layout_tree(&doc.root)?;
-    let mut list = DisplayList::default();
+    let nodes = validate_layout_tree(&doc.root)?;
     if is_visible_popover(&doc.root) {
         return Err(popover_error(
             "The document root cannot be an anchored popover",
         ));
     }
-    list.element(
-        &doc.root,
-        Rect::new(0, 0, viewport.width, viewport.height),
-        viewport.scale,
-        Sizing::Fill,
-        Grown::Natural,
-    )?;
-    list.popovers(&doc.root, viewport)?;
-    Ok(list)
+    list.begin_frame();
+    let mut arena = PlacementArena::with_capacity(nodes);
+    let laid_out = list
+        .element(
+            &doc.root,
+            Rect::new(0, 0, viewport.width, viewport.height),
+            viewport.scale,
+            Sizing::Fill,
+            Grown::Natural,
+            &mut arena,
+        )
+        .and_then(|_| list.popovers(&doc.root, viewport, &mut arena));
+    match laid_out {
+        Ok(()) => {
+            list.end_frame();
+            Ok(())
+        }
+        Err(error) => {
+            // A partial layout is not a frame, so it is dropped rather than
+            // left for a reader to mistake for one.
+            list.begin_frame();
+            list.end_frame();
+            Err(error)
+        }
+    }
 }
 
 impl DisplayList {
@@ -104,8 +140,9 @@ impl DisplayList {
         // Extents round up so the box always holds the glyphs it measures.
         let text_width = whole_pixels(text_style.advance(text))?;
         let text_height = whole_pixels(text_style.line_height())?;
+        let text = self.held_text(text).unwrap_or_else(|| Arc::from(text));
         self.push(DisplayCommand::DrawText {
-            text: Arc::from(text),
+            text,
             x,
             y,
             style: text_style,
@@ -117,6 +154,7 @@ impl DisplayList {
         &mut self,
         element: &DomElement,
         layout: ChildLayout<'_>,
+        arena: &mut PlacementArena,
     ) -> Result<ChildExtent> {
         let ChildLayout {
             style,
@@ -131,7 +169,7 @@ impl DisplayList {
         let mut child_x = content_x;
         let mut child_y = content_y;
         let mut cross_size = 0;
-        let mut placements = Vec::new();
+        let base = arena.items.len();
         let mut visible_children = 0;
         let plan = grow::plan(
             element,
@@ -156,7 +194,7 @@ impl DisplayList {
                     child_y = add(child_y, gap)?;
                 }
             }
-            let first_command = self.commands.len();
+            let first_command = self.written();
             let (child_width, child_height) = match child {
                 DomNode::Element(child) => {
                     let available_width = if row {
@@ -178,17 +216,19 @@ impl DisplayList {
                         display_scale,
                         sizing,
                         plan.as_ref().map_or(Grown::Natural, |plan| plan[index]),
+                        arena,
                     )?;
                     (child_rect.width, child_rect.height)
                 }
                 DomNode::Text(text) => self.text(text, style, child_x, child_y, display_scale)?,
             };
-            placements
+            arena
+                .items
                 .try_reserve(1)
                 .map_err(|_| limit_error("Child placement allocation failed"))?;
-            placements.push(ChildPlacement {
+            arena.items.push(ChildPlacement {
                 first_command,
-                end_command: self.commands.len(),
+                end_command: self.written(),
                 cross: if row { child_height } else { child_width },
             });
             if row {
@@ -215,7 +255,7 @@ impl DisplayList {
         Ok(ChildExtent {
             content_height,
             main_used,
-            placements,
+            placements: base..arena.items.len(),
         })
     }
 
@@ -228,6 +268,7 @@ impl DisplayList {
         &mut self,
         style: &crate::style::ComputedStyle,
         extent: &ChildExtent,
+        arena: &PlacementArena,
         content_main: i32,
         content_cross: i32,
         row: bool,
@@ -235,7 +276,7 @@ impl DisplayList {
         let free = sub(content_main, extent.main_used)?.max(0);
         let count = i32::try_from(extent.placements.len())
             .map_err(|_| limit_error("Child count exceeds coordinate range"))?;
-        for (index, placement) in extent.placements.iter().enumerate() {
+        for (index, placement) in arena.items[extent.placements.clone()].iter().enumerate() {
             let ordinal = i32::try_from(index)
                 .map_err(|_| limit_error("Child index exceeds coordinate range"))?;
             let main_offset = match style.justify_content {
@@ -283,11 +324,19 @@ impl DisplayList {
         display_scale: DisplayScale,
         sizing: Sizing,
         grown: Grown,
+        arena: &mut PlacementArena,
     ) -> Result<Rect> {
         let style = &element.computed_style;
         if style.display == Display::None {
             return Ok(Rect::new(available.x, available.y, 0, 0));
         }
+        // The placements of this element's children are this call's, so it
+        // releases them once it has aligned them.
+        let placement_base = arena.items.len();
+        // Everything this element paints — its reserved background slots, its
+        // own text runs, its descendants' boxes and its trailing border —
+        // belongs to it until the closing call restores the parent.
+        let enclosing = self.begin_element(element.id(), style.transition)?;
         let geometry = scaled_geometry(style, display_scale)?;
         let width = match grown {
             Grown::Width(width) => width,
@@ -309,9 +358,10 @@ impl DisplayList {
         // filled after child layout, so siblings never paint behind earlier siblings.
         let slots = self.reserve_box(style, Rect::new(x, y, width, 0), display_scale)?;
         let element_rect = if let Some(id) = element.id() {
-            let index = self.commands.len();
+            let index = self.written();
+            let id = self.held_id(id).unwrap_or_else(|| Arc::from(id));
             self.push(DisplayCommand::ElementRect {
-                id: Arc::from(id),
+                id,
                 rect: Rect::new(x, y, width, 0),
             })?;
             Some(index)
@@ -330,6 +380,7 @@ impl DisplayList {
                 gap: geometry.gap,
                 display_scale,
             },
+            arena,
         )?;
         let vertical_edges = add(
             add(geometry.padding.top, geometry.padding.bottom)?,
@@ -355,7 +406,14 @@ impl DisplayList {
         } else {
             (content_height_box, content_width)
         };
-        self.align_children(style, &child_extent, content_main, content_cross, row)?;
+        self.align_children(
+            style,
+            &child_extent,
+            arena,
+            content_main,
+            content_cross,
+            row,
+        )?;
         // The radius is clamped against the final rectangle, whose height is
         // known only after the children have been laid out.
         let radius = CornerRadius::clamped(display_scale.scale_extent(style.border_radius)?, rect);
@@ -374,43 +432,8 @@ impl DisplayList {
                 color: style.border_color,
             })?;
         }
+        arena.items.truncate(placement_base);
+        self.end_element(enclosing);
         Ok(rect)
     }
-}
-
-/// Where one child's commands and extents landed during child layout.
-struct ChildPlacement {
-    /// First command this child emitted, in painter order.
-    first_command: usize,
-    /// One past this child's last command.
-    end_command: usize,
-    /// Extent along the container's cross axis.
-    cross: i32,
-}
-
-/// What child layout leaves for the container to redistribute.
-struct ChildExtent {
-    /// Content height the container uses for its automatic height.
-    content_height: i32,
-    /// Main-axis span the children occupied, gaps included.
-    main_used: i32,
-    /// One record per visible child, in painter order.
-    placements: Vec<ChildPlacement>,
-}
-
-#[derive(Clone, Copy)]
-struct ChildLayout<'style> {
-    style: &'style ComputedStyle,
-    content_x: i32,
-    content_y: i32,
-    content_width: i32,
-    available_height: i32,
-    row: bool,
-    gap: i32,
-    display_scale: DisplayScale,
-}
-
-fn mul(left: i32, right: i32) -> Result<i32> {
-    left.checked_mul(right)
-        .ok_or_else(|| limit_error("Layout text extent overflow"))
 }

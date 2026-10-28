@@ -123,7 +123,7 @@ fn hidden_popover_is_absent_without_resolving_its_anchor() {
 
     assert_eq!(display.element_rect("menu"), None);
     assert_eq!(display.element_rect("content"), Some(Rect::new(0, 0, 3, 2)));
-    assert!(!display.commands.iter().any(
+    assert!(!display.commands().iter().any(
         |command| matches!(command, DisplayCommand::FillRect { color, .. } if *color == Color::rgb(0, 0, 255))
     ));
 }

@@ -13,6 +13,9 @@ use std::ops::Deref;
 pub(crate) struct TrackedDocument {
     document: DomDocument,
     revision: u64,
+    /// Authored identifiers whose content an edit changed since a projection
+    /// last read them, so the projection can rebuild only what moved.
+    changed: Vec<String>,
 }
 
 impl TrackedDocument {
@@ -21,6 +24,7 @@ impl TrackedDocument {
         Self {
             document,
             revision: 0,
+            changed: Vec::new(),
         }
     }
 
@@ -38,13 +42,13 @@ impl TrackedDocument {
     /// Sets the text of the element `id`; see [`DomDocument::set_text_content`].
     pub(crate) fn set_text(&mut self, id: &str, text: &str) -> Edit {
         let edit = self.document.set_text_content(id, text);
-        self.record(edit)
+        self.record(edit, id)
     }
 
     /// Sets an attribute of the element `id`; see [`DomDocument::set_attribute`].
     pub(crate) fn set_attribute(&mut self, id: &str, key: &str, value: &str) -> Edit {
         let edit = self.document.set_attribute(id, key, value);
-        self.record(edit)
+        self.record(edit, id)
     }
 
     /// Applies `update` to the style of the element `id`, keeping the result
@@ -59,12 +63,21 @@ impl TrackedDocument {
             return Edit::Unchanged;
         }
         element.computed_style = style;
-        self.record(Edit::Changed)
+        self.record(Edit::Changed, id)
     }
 
-    fn record(&mut self, edit: Edit) -> Edit {
+    /// The identifiers edited since the last call, leaving none behind.
+    ///
+    /// A projection reads this to rebuild the nodes an edit can have changed;
+    /// the edit itself is still described by the revision.
+    pub(crate) fn take_changed(&mut self) -> Vec<String> {
+        std::mem::take(&mut self.changed)
+    }
+
+    fn record(&mut self, edit: Edit, id: &str) -> Edit {
         if edit == Edit::Changed {
             self.revision += 1;
+            self.changed.push(id.to_owned());
         }
         edit
     }

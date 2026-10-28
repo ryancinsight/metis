@@ -11,6 +11,9 @@
 mod damage;
 mod device;
 mod display;
+#[cfg(test)]
+#[path = "../layout_display_tests.rs"]
+mod display_tests;
 mod geometry;
 mod grow;
 #[cfg(test)]
@@ -18,6 +21,7 @@ mod grow;
 mod grow_tests;
 mod intrinsic;
 mod limits;
+mod placement;
 mod popover;
 #[cfg(test)]
 #[path = "../layout_popover_tests.rs"]
@@ -31,8 +35,8 @@ mod slots;
 mod tests;
 mod virtual_list;
 
-pub use display::{DisplayCommand, DisplayList};
-pub use geometry::{LayoutViewport, compute_layout};
+pub use display::{DisplayCommand, DisplayList, ElementIndex};
+pub use geometry::{LayoutViewport, compute_layout, compute_layout_into};
 pub use metis_platform::framebuffer::Rect;
 pub use metis_platform::rasterizer::{LineCap, LineJoin, StrokeWidth};
 pub use virtual_list::{

@@ -57,6 +57,12 @@ optional percentage positions ([ADR 0048](0048-linear-gradient-backgrounds.md)).
 Corner keywords, other angle units, color hints, length positions and the other
 gradient functions stay typed errors.
 
+Revision: 2026-10-22 — `METIS-ANIMATION-001` admits `transition` for one
+property, one whole-millisecond duration and one easing keyword
+([ADR 0060](0060-bounded-property-transitions.md)). It is admitted with the
+sampler that consumes it, so the declaration is never the silent no-op the
+contract exists to prevent.
+
 ## Context
 
 `metis-ui-lang` parses a bounded CSS-inspired subset for the software
@@ -93,7 +99,8 @@ browser CSS engine or change browser DOM parsing.
   display scale and clamps to half the shorter side of the laid-out rectangle.
   `box-shadow` is admitted since the 2026-09-22 revision as `none` or
   `<x> <y> [<blur>] <color>`; layout scales it and reports a blur past the
-  renderer's bound as a layout overflow.
+  renderer's bound as a layout overflow. `transition` is admitted since the
+  2026-10-22 revision as paint metadata ([ADR 0060](0060-bounded-property-transitions.md)).
 - `parse_markup` propagates style errors at the element boundary. Layout keeps
   ownership of representability errors for programmatically constructed DOMs,
   including non-finite percentages and coordinate overflow.

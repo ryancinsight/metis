@@ -117,13 +117,11 @@ fn nearest_scaling_clips_and_preserves_painter_order() {
         ImageSampling::Nearest,
     )
     .expect("placement");
-    let mut list = DisplayList {
-        commands: vec![DisplayCommand::FillRect {
-            rect: Rect::new(0, 0, 3, 2),
-            radius: CornerRadius::SQUARE,
-            color: Color::WHITE,
-        }],
-    };
+    let mut list = DisplayList::from_commands(vec![DisplayCommand::FillRect {
+        rect: Rect::new(0, 0, 3, 2),
+        radius: CornerRadius::SQUARE,
+        color: Color::WHITE,
+    }]);
     list.append_image(placement).expect("append image");
     let mut framebuffer = Framebuffer::new(3, 2).expect("surface");
     list.render_to(&mut framebuffer);

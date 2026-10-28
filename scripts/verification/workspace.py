@@ -38,6 +38,9 @@ REGISTRY_BOUNDARIES = {
     # sampling, and the crate never enters a shipped artifact.
     ("metis-platform", "criterion"),
     ("metis-frontend", "criterion"),
+    # The layout benches measure relayout and reprojection reuse; same
+    # development-only instrument, never in a shipped artifact.
+    ("metis-ui-lang", "criterion"),
     # The packaged WebView2 page speaks JSON to the host bridge, like the CLI
     # manifest and the application protocol above.
     ("metis-webview-page", "serde"),

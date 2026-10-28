@@ -11,6 +11,7 @@ pub mod layout;
 pub mod parser;
 pub mod semantics;
 pub mod style;
+pub mod transition;
 
 pub use catalog::{
     Catalog, Locale, MAX_KEY_BYTES, MAX_LOCALE_TAG_BYTES, MAX_MESSAGE_SLOTS, MAX_VALUE_BYTES,
@@ -19,8 +20,8 @@ pub use catalog::{
 pub use dom::{DomDocument, DomElement, DomNode, Edit};
 pub use image::{AffineTransform, ImagePlacement, ImageSampling, ImageTransform, RasterImage};
 pub use layout::{
-    DisplayCommand, DisplayList, LayoutViewport, LineCap, LineJoin, Rect, ScrollAlign, StrokeWidth,
-    VirtualList, VisibleWindow, compute_layout,
+    DisplayCommand, DisplayList, ElementIndex, LayoutViewport, LineCap, LineJoin, Rect,
+    ScrollAlign, StrokeWidth, VirtualList, VisibleWindow, compute_layout, compute_layout_into,
 };
 pub use parser::parse_markup;
 pub use semantics::{
@@ -31,3 +32,4 @@ pub use style::{
     AlignItems, Color, ComputedStyle, Display, EdgeValues, FlexDirection, FlexGrow, FontWeight,
     JustifyContent, LinearGradient, Shadow, Size,
 };
+pub use transition::{Easing, MAX_TRANSITION_MILLIS, Transition, TransitionProperty};
