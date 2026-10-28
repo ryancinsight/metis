@@ -101,6 +101,13 @@ public PyPI file set and availability with that receipt, installs the exact
 binary wheel and runs the binding's value tests. The retained artifacts are
 `release-identity` and `pypi-source-receipt`.
 
+Receipt and installed-test jobs check out the immutable event commit. The caller
+reproduces the source archive there with the shared builder's Maturin 1.14.1 and
+requires the complete shared sdist contents to match before upload. Source paths,
+types, modes, link targets and bytes remain strict; compression, ordering,
+ownership and timestamps are packaging details. The shared builder's current
+raw-tag comparison still leaves end-to-end prerelease publication unqualified.
+
 The existing publisher converts on the first genuine upload. Pending publishers
 do not reserve names, and expiry dates require actual account/notice evidence.
 

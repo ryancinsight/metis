@@ -27,6 +27,14 @@ provider/security upload hold, #509/#551 hook/tool ownership, full source and
 Atlas acceptance, final exact-head independent review and the unverified account
 binding/expiry remain separate gates. Protected Pi work remains untouched.
 
+Independent review of the initial candidate identifies mutable-tag source drift in the new
+receipt/test checkouts and the shared sdist producer. The member pins its jobs
+to the immutable event SHA and reproduces the sdist there with Maturin 1.14.1;
+complete archive contents must match before upload. Source mode/type/link/byte
+changes fail; packaging timestamps, ownership and ordering do not affect source
+identity. Shared-builder ownership remains intact. Its existing raw-tag versus
+PEP 440 prerelease comparison still needs separate upstream qualification.
+
 ## Native QUIC integration — 2026-10-13 [minor]
 
 Current integration preserves consumer e8dd4c9 and main 1ef9409, including

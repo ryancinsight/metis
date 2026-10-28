@@ -54,7 +54,48 @@ def python_version(cargo_version):
     return str(Version(cargo_version))
 
 
-def create_receipt(directory, version, commit):
+def verify_source_archive(artifact, reference):
+    """Require the shared sdist's contents to match one built at the event SHA.
+
+    Gzip headers, tar ordering, ownership and timestamps describe the packaging
+    host. Paths, entry types, modes, link targets and file bytes describe the
+    source; compare every one of those, rejecting ambiguous archive members.
+    """
+    def contents(path):
+        entries = {}
+        with tarfile.open(path, "r:gz") as archive:
+            for member in archive.getmembers():
+                name = pathlib.PurePosixPath(member.name)
+                if name.is_absolute() or ".." in name.parts or not name.parts:
+                    raise ValueError("source archive has an unsafe path")
+                key = str(name)
+                if key in entries:
+                    raise ValueError("source archive has duplicate paths")
+                entry = {"mode": member.mode}
+                if member.isfile():
+                    with archive.extractfile(member) as source:
+                        digest = hashlib.file_digest(source, "sha256").hexdigest()
+                    entry.update(type="file", size=member.size, sha256=digest)
+                elif member.isdir():
+                    entry.update(type="directory")
+                elif member.issym():
+                    entry.update(type="symlink", target=member.linkname)
+                else:
+                    raise ValueError("source archive has an unsupported entry type")
+                entries[key] = entry
+        if not entries:
+            raise ValueError("source archive is empty")
+        return entries
+
+    expected = contents(reference)
+    if contents(artifact) != expected:
+        raise ValueError("shared source archive differs from the immutable-source archive")
+    encoded = json.dumps(expected, sort_keys=True, separators=(",", ":")).encode()
+    return {"content_sha256": hashlib.sha256(encoded).hexdigest(),
+            "reference_sha256": hashlib.sha256(reference.read_bytes()).hexdigest()}
+
+
+def create_receipt(directory, version, commit, source_archive):
     """Reject unrelated artifacts before upload and hash the validated file set."""
     if not re.fullmatch(r"[0-9a-f]{40}", commit):
         raise ValueError("source commit must be a full Git SHA")
@@ -75,12 +116,15 @@ def create_receipt(directory, version, commit):
         if versions != [expected_version]:
             raise ValueError(f"{path.name}: distribution version does not match {expected_version}")
         files[path.name] = {"sha256": hashlib.sha256(path.read_bytes()).hexdigest(), "size": path.stat().st_size}
+    sdist = next(path for path in paths if path.name.endswith(".tar.gz"))
+    source_proof = verify_source_archive(sdist, source_archive)
     return {
         "schema": 1,
         "project": PROJECT,
         "version": expected_version,
         "cargo_version": version,
         "source": {"repository": REPOSITORY, "commit": commit, "workflow": "python-release.yml"},
+        "source_distribution": source_proof,
         "files": files,
     }
 
@@ -107,13 +151,14 @@ def main():
     create.add_argument("--dist", type=pathlib.Path, required=True)
     create.add_argument("--version", required=True)
     create.add_argument("--commit", required=True)
+    create.add_argument("--source-dist", type=pathlib.Path, required=True)
     create.add_argument("--output", type=pathlib.Path, required=True)
     verify = commands.add_parser("verify-index")
     verify.add_argument("--receipt", type=pathlib.Path, required=True)
     verify.add_argument("--output", type=pathlib.Path, required=True)
     args = parser.parse_args()
     if args.command == "create":
-        result = create_receipt(args.dist, args.version, args.commit)
+        result = create_receipt(args.dist, args.version, args.commit, args.source_dist)
     else:
         receipt = json.loads(args.receipt.read_text(encoding="utf-8"))
         if receipt["project"] != PROJECT or not receipt["version"]:

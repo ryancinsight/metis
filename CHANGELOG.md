@@ -31,6 +31,10 @@
   bounded receipt/caller tests; manual runs still verify the full wheel matrix
   without uploading. Record #508's lockfile/debt repair while preserving the
   #505 provider/security upload hold and all final release gates.
+- [patch] Pin receipt and installed-test checkouts to the immutable event SHA.
+  Reproduce the sdist with the shared builder's exact Maturin version and fail
+  before upload if its complete contents differ from that source. Ignore only
+  archive ordering, ownership and timestamps; retain path/type/mode/link/byte checks.
 
 - [patch] Reconcile the exact Moirai provider pin to the published provider revision after
   current-main integration, preserving the existing QUIC/UDP implementation,

@@ -30,6 +30,10 @@ class ReleaseIdentityTests(unittest.TestCase):
         self.sdist = self.directory / "metis_ui-0.1.0.tar.gz"
         self.write_wheel()
         self.write_sdist()
+        reference = tempfile.TemporaryDirectory(prefix="metis-source-reference-")
+        self.addCleanup(reference.cleanup)
+        self.reference = pathlib.Path(reference.name) / self.sdist.name
+        self.reference.write_bytes(self.sdist.read_bytes())
 
     def write_wheel(self, *, project="metis-ui", version="0.1.0", extra_metadata=False):
         with zipfile.ZipFile(self.wheel, "w") as archive:
@@ -40,11 +44,13 @@ class ReleaseIdentityTests(unittest.TestCase):
             if extra_metadata:
                 archive.writestr("unexpected.dist-info/METADATA", "Name: unrelated\nVersion: 0.1.0\n")
 
-    def write_sdist(self, *, project="metis-ui", version="0.1.0", duplicate=False):
+    def write_sdist(self, *, project="metis-ui", version="0.1.0", duplicate=False,
+                    source="pub fn value() -> u8 { 7 }"):
         with tarfile.open(self.sdist, "w:gz") as archive:
             records = [
                 (f"metis_ui-{version}/PKG-INFO", f"Metadata-Version: 2.4\nName: {project}\nVersion: {version}\n"),
                 (f"metis_ui-{version}/dependency/PKG-INFO", "Name: dependency\nVersion: 9.0.0\n"),
+                (f"metis_ui-{version}/src/lib.rs", source),
             ]
             if duplicate:
                 records.append(("other/PKG-INFO", "Name: unrelated\nVersion: 0.1.0\n"))
@@ -55,7 +61,7 @@ class ReleaseIdentityTests(unittest.TestCase):
                 archive.addfile(member, io.BytesIO(data))
 
     def receipt(self):
-        return release.create_receipt(self.directory, "0.1.0", "a" * 40)
+        return release.create_receipt(self.directory, "0.1.0", "a" * 40, self.reference)
 
     def published(self, receipt):
         return {
@@ -75,6 +81,8 @@ class ReleaseIdentityTests(unittest.TestCase):
         })
         self.assertEqual(receipt["project"], "metis-ui")
         self.assertEqual(receipt["version"], "0.1.0")
+        self.assertEqual(receipt["source_distribution"]["reference_sha256"],
+                         hashlib.sha256(self.reference.read_bytes()).hexdigest())
         self.assertEqual(set(receipt["files"]), {self.wheel.name, self.sdist.name})
         for path in [self.wheel, self.sdist]:
             self.assertEqual(receipt["files"][path.name], {
@@ -85,6 +93,7 @@ class ReleaseIdentityTests(unittest.TestCase):
     def test_project_name_comparison_accepts_python_normalization(self):
         self.write_wheel(project="Metis_UI")
         self.write_sdist(project="METIS.UI")
+        self.reference.write_bytes(self.sdist.read_bytes())
         self.receipt()
 
     def test_cargo_versions_use_canonical_python_metadata_and_keep_raw_tag_version(self):
@@ -103,7 +112,8 @@ class ReleaseIdentityTests(unittest.TestCase):
                 self.sdist = self.directory / f"metis_ui-{python}.tar.gz"
                 self.write_wheel(version=python)
                 self.write_sdist(version=python)
-                receipt = release.create_receipt(self.directory, cargo, "a" * 40)
+                self.reference.write_bytes(self.sdist.read_bytes())
+                receipt = release.create_receipt(self.directory, cargo, "a" * 40, self.reference)
                 self.assertEqual(receipt["version"], python)
                 self.assertEqual(receipt["cargo_version"], cargo)
                 index = self.published(receipt)
@@ -116,11 +126,61 @@ class ReleaseIdentityTests(unittest.TestCase):
                 self.write_wheel(version=metadata_version)
                 self.write_sdist(version=metadata_version)
                 with self.assertRaisesRegex(ValueError, "version"):
-                    release.create_receipt(self.directory, "0.2.0-rc.1", "a" * 40)
+                    release.create_receipt(self.directory, "0.2.0-rc.1", "a" * 40, self.reference)
 
     def test_rejects_cargo_prerelease_that_maturin_cannot_convert_to_pep440(self):
         with self.assertRaises(ValueError):
-            release.create_receipt(self.directory, "0.2.0-canary.1", "a" * 40)
+            release.create_receipt(self.directory, "0.2.0-canary.1", "a" * 40, self.reference)
+
+    def test_source_check_compares_contents_and_modes_while_ignoring_archive_timestamps(self):
+        def write(path, *, mtime, source=b"pub fn value() -> u8 { 7 }", mode=0o644, extra=False):
+            with tarfile.open(path, "w:gz") as archive:
+                records = [("metis_ui-0.1.0/src/lib.rs", source)]
+                if extra:
+                    records.append(("metis_ui-0.1.0/src/other.rs", b"pub const OTHER: u8 = 9;"))
+                for name, content in records:
+                    member = tarfile.TarInfo(name)
+                    member.size, member.mtime, member.mode = len(content), mtime, mode
+                    archive.addfile(member, io.BytesIO(content))
+
+        write(self.reference, mtime=100)
+        write(self.sdist, mtime=200)
+        self.assertNotEqual(self.reference.read_bytes(), self.sdist.read_bytes())
+        release.verify_source_archive(self.sdist, self.reference)
+        for override in [dict(source=b"pub fn value() -> u8 { 8 }"), dict(mode=0o755), dict(extra=True)]:
+            with self.subTest(override=override):
+                write(self.sdist, mtime=200, **override)
+                with self.assertRaisesRegex(ValueError, "source archive differs"):
+                    release.verify_source_archive(self.sdist, self.reference)
+
+    def test_receipt_rejects_changed_sdist_source_despite_equal_project_and_version(self):
+        self.write_sdist(source="pub fn value() -> u8 { 8 }")
+        self.assertEqual(release.metadata(self.sdist)["Name"], "metis-ui")
+        self.assertEqual(release.metadata(self.sdist)["Version"], "0.1.0")
+        with self.assertRaisesRegex(ValueError, "source archive differs"):
+            self.receipt()
+
+    def test_source_check_rejects_ambiguous_or_unsafe_archive_members(self):
+        for name, duplicate in [("metis_ui-0.1.0/src/lib.rs", True), ("../src/lib.rs", False), ("/src/lib.rs", False)]:
+            with self.subTest(name=name, duplicate=duplicate):
+                with tarfile.open(self.sdist, "w:gz") as archive:
+                    for _ in range(2 if duplicate else 1):
+                        member = tarfile.TarInfo(name)
+                        member.size = 4
+                        archive.addfile(member, io.BytesIO(b"code"))
+                with self.assertRaisesRegex(ValueError, "duplicate paths|unsafe path"):
+                    release.verify_source_archive(self.sdist, self.reference)
+
+    def test_caller_pins_source_to_event_commit_and_checks_the_shared_sdist(self):
+        workflow = (SCRIPT.parents[1] / ".github/workflows/python-release.yml").read_text()
+        checkouts = re.findall(r"(?ms)^      - uses: actions/checkout@[^\n]+\n(?P<settings>.*?)(?=^      -|\Z)", workflow)
+        self.assertEqual(len(checkouts), 3)
+        for settings in checkouts:
+            self.assertIn("ref: ${{ github.sha }}", settings)
+            self.assertNotIn("github.event.release.tag_name", settings)
+        self.assertIn("maturin==1.14.1", workflow)
+        self.assertIn("--source-dist", workflow)
+        self.assertLess(workflow.index("maturin sdist"), workflow.index("release_identity.py create"))
 
     def version_reader(self):
         workflow = SCRIPT.parents[1] / ".github/workflows/python-release.yml"
@@ -225,7 +285,7 @@ class ReleaseIdentityTests(unittest.TestCase):
             self.receipt()
         self.write_sdist()
         with self.assertRaisesRegex(ValueError, "full Git SHA"):
-            release.create_receipt(self.directory, "0.1.0", "aaaaaaa")
+            release.create_receipt(self.directory, "0.1.0", "aaaaaaa", self.reference)
 
     def test_rejects_index_identity_file_set_checksum_size_and_yank_changes(self):
         receipt = self.receipt()

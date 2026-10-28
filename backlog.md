@@ -58,6 +58,13 @@ Current framework version: Metis 0.5.0. Remaining capability work follows.
   then installs the exact binary wheel and runs the binding value tests.
   Pull requests run bounded archive/index/caller tests; manual verification
   retains its full wheel matrix and produces a receipt without publishing.
+- Source-provenance correction: independent review of the initial candidate finds that the
+  shared sdist job checks out a mutable release tag. The member now pins its
+  receipt/test jobs to the event SHA, reproduces the sdist at that commit using
+  Maturin 1.14.1 and rejects any path/type/mode/link/content difference before
+  upload. No shared-builder or hook source is changed. End-to-end prerelease
+  publishing remains unqualified because the shared builder compares raw tags
+  with canonical Python metadata; the planned first stable version is 0.5.0.
 - Acceptance: complete the provider/source holds, final exact-head checks and
   independent review; match the existing pending binding; publish the real
   release and verify versions, distributions and source/hash receipts. Do not
