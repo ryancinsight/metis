@@ -6,6 +6,7 @@ import io
 import os
 import pathlib
 import re
+import shutil
 import subprocess
 import sys
 import tarfile
@@ -181,6 +182,57 @@ class ReleaseIdentityTests(unittest.TestCase):
         self.assertIn("maturin==1.14.1", workflow)
         self.assertIn("--source-dist", workflow)
         self.assertLess(workflow.index("maturin sdist"), workflow.index("release_identity.py create"))
+
+    def test_receipt_step_requires_exactly_one_reference_archive(self):
+        workflow = (SCRIPT.parents[1] / ".github/workflows/python-release.yml").read_text()
+        match = re.search(
+            r"(?ms)^      - name: Retain archive identities, source commit and file hashes\n"
+            r".*?^        run: \|\n(?P<body>.*?)(?=^      -|\Z)", workflow,
+        )
+        self.assertIsNotNone(match)
+        shell = shutil.which("bash")
+        if os.name == "nt":
+            git = pathlib.Path(shutil.which("git"))
+            shell = next((str(p) for p in [git.parent / "bash.exe", git.parent.parent / "bin/bash.exe"]
+                          if p.is_file()), shell)
+        self.assertIsNotNone(shell, "The caller regression requires Bash, as does its workflow")
+        temporary = tempfile.TemporaryDirectory(prefix="metis-receipt-caller-")
+        self.addCleanup(temporary.cleanup)
+        workspace = pathlib.Path(temporary.name)
+        (workspace / "scripts").mkdir()
+        shutil.copy2(SCRIPT, workspace / "scripts/release_identity.py")
+        (workspace / "dist").mkdir()
+        for source in [self.wheel, self.sdist]:
+            shutil.copy2(source, workspace / "dist" / source.name)
+        references = workspace / "runner/metis-source-dist"
+        references.mkdir(parents=True)
+        git_dir = subprocess.check_output(
+            ["git", "-C", str(SCRIPT.parents[1]), "rev-parse", "--absolute-git-dir"], text=True,
+        ).strip()
+        environment = {
+            **os.environ, "RUNNER_TEMP": (workspace / "runner").as_posix(), "VERSION": "0.1.0",
+            "PATH": str(pathlib.Path(sys.executable).parent) + os.pathsep + os.environ["PATH"],
+            "GIT_DIR": pathlib.Path(git_dir).as_posix(), "GIT_WORK_TREE": SCRIPT.parents[1].as_posix(),
+        }
+        receipt = workspace / "release-identity.json"
+        for count in [1, 2, 0]:
+            with self.subTest(reference_count=count):
+                receipt.unlink(missing_ok=True)
+                for source in references.iterdir():
+                    source.unlink()
+                for index in range(count):
+                    shutil.copy2(self.reference, references / f"reference-{index}.tar.gz")
+                result = subprocess.run(
+                    [shell, "--noprofile", "--norc", "-e", "-o", "pipefail", "-c", textwrap.dedent(match.group("body"))],
+                    cwd=workspace, env=environment, capture_output=True, text=True, timeout=15,
+                )
+                if count == 1:
+                    self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
+                    self.assertTrue(receipt.is_file())
+                else:
+                    self.assertNotEqual(result.returncode, 0, result.stdout + result.stderr)
+                    self.assertIn("expected exactly one reference source archive", result.stderr)
+                    self.assertFalse(receipt.exists())
 
     def version_reader(self):
         workflow = SCRIPT.parents[1] / ".github/workflows/python-release.yml"

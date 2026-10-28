@@ -129,7 +129,10 @@ jobs:
         run: |
           set -euo pipefail
           sources=("$RUNNER_TEMP"/metis-source-dist/*.tar.gz)
-          [ "${#sources[@]}" -eq 1 ] && [ -f "${sources[0]}" ]
+          if [ "${#sources[@]}" -ne 1 ] || [ ! -f "${sources[0]}" ]; then
+            echo 'expected exactly one reference source archive' >&2
+            exit 1
+          fi
           python scripts/release_identity.py create --dist dist --version "$VERSION" \
             --commit "$(git rev-parse HEAD)" --source-dist "${sources[0]}" \
             --output release-identity.json
