@@ -607,6 +607,25 @@ jobs:
             --browser-heap-sample \
             --timeout-seconds 60 \
             --output "output/browser/runtime/$ENGINE-fragment.json"
+      - name: Retain HTTP boundary logs
+        if: always()
+        shell: bash
+        env:
+          ENGINE: ${{ matrix.engine }}
+        run: |
+          python - <<'PY'
+          import os
+          import pathlib
+          import shutil
+
+          temporary = pathlib.Path(os.environ["RUNNER_TEMP"])
+          output = pathlib.Path("output/browser/runtime")
+          output.mkdir(parents=True, exist_ok=True)
+          for name in ("metis-http-service.log", "metis-http-static.log"):
+              source = temporary / name
+              if source.is_file():
+                  shutil.copyfile(source, output / f"{os.environ['ENGINE']}-{name}")
+          PY
       - name: Upload browser runtime evidence
         if: always()
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2

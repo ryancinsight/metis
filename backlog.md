@@ -92,7 +92,7 @@ Current framework version: Metis 0.5.0. Remaining capability work follows.
 <a id="METIS-PYPI-FIRST-RELEASE-001"></a>
 ## METIS-PYPI-FIRST-RELEASE-001 — Complete the genuine Python first release [patch]
 
-- Status: blocked; priority: P1; owner: PyPI pipeline repair; last-update: 2026-10-28.
+- Status: blocked; priority: P1; owner: PyPI pipeline repair; last-update: 2026-10-29.
 - Identity: distribution `metis-ui`, import `metis`, crate `metis-python`;
   version comes from `[workspace.package].version` (0.5.0 at inspection).
   Only a published GitHub release tagged `metis-ui-v0.5.0` starts upload;
@@ -123,6 +123,20 @@ Current framework version: Metis 0.5.0. Remaining capability work follows.
   then installs the exact binary wheel and runs the binding value tests.
   Pull requests run bounded archive/index/caller tests; manual verification
   retains its full wheel matrix and produces a receipt without publishing.
+- Hosted renewal: the independently reviewed f08ccabd candidate passes its
+  normal hooks, 21 Python verification jobs and the genuine fuzz campaign.
+  All 18 wheels and the sdist match their immutable-source receipt and pass
+  strict package checks. Windows passes its debug, minimal transport, Python,
+  installer and release-test stages, then exhausts the 20-minute job allowance
+  with no cache available. Align Windows Cargo/Maturin verification with native
+  packaging's explicit compiler host target and use that artifact directory
+  throughout. A real Cargo regression fails on the duplicated target trees
+  and passes when packaging reuses the verified executable. Every stage,
+  feature, profile and job/command/nextest bound remains unchanged; final hosted
+  timing and acceptance remain required. Firefox repeats its
+  authenticated-fragment HTTP deadline failure
+  on unchanged source. Preserve this blocker and retain HTTP logs in artifacts;
+  no cause or successful browser acceptance is inferred from the diagnostic.
 - Source-provenance correction: independent review of the initial candidate finds that the
   shared sdist job checks out a mutable release tag. The member now pins its
   receipt/test jobs to the event SHA, reproduces the sdist at that commit using

@@ -1,5 +1,30 @@
 # Open capability and evidence risks
 
+## Hosted publishing gates — 2026-10-29 [patch]
+
+The reviewed f08ccabd candidate passes both normal delivery hooks, the complete
+upload-free Python matrix and the real fuzz campaign. All 19 distributions
+match the source receipt and strict package checks. The Windows cold run passes
+839 debug tests, 123 minimal transport tests, 25 binding tests and 839 release
+tests before its aggregate 20-minute allowance cancels benchmark compilation.
+No command deadline fails. Setup, distinct compile profiles and installer
+validation dominate elapsed time; a warm cache is unavailable. Packaging
+selects the compiler host target explicitly while verification/Maturin used
+the implicit host, creating separate artifact trees. A real dependency-free
+Cargo build reproduces duplicate compilation. Align the Windows gate with the
+explicit host, including native executable paths; the second packaging build
+then reports the same executable as fresh. Keep the full serial gate,
+features/profiles and existing job, command and 60-second nextest limits.
+Actual hosted timing savings and new exact-head acceptance remain unverified.
+
+Firefox's initial authenticated fragment fails again on an unchanged focused
+repeat, after its lifecycle trace passes. The browser reports its existing
+HTTP deadline expiry; the 60-second driver bound is unchanged. Retain the
+actual HTTP service/static-server logs with the trace instead of losing them
+from the runner temporary directory. A causal native reproduction remains
+unexecuted under the separate local loopback/process permission hold. Do not
+infer a transient cause, change request deadlines or remove release holds.
+
 ## Current provider reconciliation — 2026-10-28 [patch]
 
 The isolated #505 supplement retains main #508's current manifest and root/fuzz

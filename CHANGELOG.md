@@ -26,6 +26,14 @@
 
 ### Fixed
 
+- [patch] Give Windows verification, Maturin and native packaging the same
+  explicit compiler host target and artifact directory, avoiding duplicate
+  compilation into implicit/explicit target trees. Keep all stages, profiles,
+  features and deadlines; a real Cargo regression proves artifact reuse.
+- [patch] Retain the browser HTTP service and static-server logs alongside
+  fragment traces for timeout diagnosis. The repeated Firefox failure and
+  Windows aggregate timeout remain release blockers; all deadlines and
+  acceptance assertions remain unchanged.
 - [patch] Preserve the authenticated fragment page's observed state and failing
   phase before closing a failed browser session. Driver timeouts retain their
   failure result and deadline; diagnostics expose the application response.
