@@ -15,15 +15,27 @@ Cargo build reproduces duplicate compilation. Align the Windows gate with the
 explicit host, including native executable paths; the second packaging build
 then reports the same executable as fresh. Keep the full serial gate,
 features/profiles and existing job, command and 60-second nextest limits.
-Actual hosted timing savings and new exact-head acceptance remain unverified.
+The [reviewed cache repair](https://github.com/ryancinsight/metis/commit/a4eaef918e7ad21f5dbaf7085c1c26d728b95e83)
+passes all 29 Windows stages in 18m37s with no warm cache and the unchanged
+20-minute cap. Packaging compilation falls from 152s to 19s. Its real fuzz,
+native transport, Apple, Chromium and WebKit checks pass.
 
 Firefox's initial authenticated fragment fails again on an unchanged focused
 repeat, after its lifecycle trace passes. The browser reports its existing
 HTTP deadline expiry; the 60-second driver bound is unchanged. Retain the
 actual HTTP service/static-server logs with the trace instead of losing them
-from the runner temporary directory. A causal native reproduction remains
-unexecuted under the separate local loopback/process permission hold. Do not
-infer a transient cause, change request deadlines or remove release holds.
+from the runner temporary directory. The renewed failure occurs during negative
+probes after an initial fragment succeeds; a truncated peer precedes a fatal
+transport error. Its underlying I/O phase/kind were missing.
+
+The actual accepted-idle-peer regression fails after 5.012s on the serial loop
+while keeping the production 30-second server and five-second client deadlines.
+Bounded peer I/O with one authenticated state owner passes that oracle in 9ms.
+All 21 HTTP tests and all 48 backend tests pass, including single-slot pool
+backpressure, exact replayed grants and finite cancellation cleanup. No request
+or test deadline changes. Diagnostics retain phase/kind without peer content.
+Firefox causality still needs real hosted verification on the final reviewed
+revision. Preserve protected owner work and all remaining release holds.
 
 ## Current provider reconciliation — 2026-10-28 [patch]
 

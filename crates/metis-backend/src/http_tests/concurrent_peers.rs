@@ -38,7 +38,11 @@ fn write_before_deadline(
 
 fn timed_handshake(address: std::net::SocketAddr) -> io::Result<Vec<u8>> {
     let deadline = Instant::now() + CLIENT_BUDGET;
-    let mut client = BlockingTcpStream::connect_timeout(&address, remaining(deadline)?)?;
+    let client = BlockingTcpStream::connect_timeout(&address, remaining(deadline)?)?;
+    handshake_until(client, deadline)
+}
+
+fn handshake_until(mut client: BlockingTcpStream, deadline: Instant) -> io::Result<Vec<u8>> {
     let body = handshake(PRINCIPAL);
     let header = format!(
         "POST {SESSION_ROUTE} HTTP/1.1\r\nHost: 127.0.0.1\r\nOrigin: {ORIGIN}\r\nContent-Length: {}\r\n\r\n",
@@ -120,4 +124,119 @@ fn accepted_idle_peer_does_not_block_a_typed_handshake() {
     assert_eq!(handshake.server_version, PROTOCOL_VERSION);
     assert_eq!(handshake.initial_token.principal_id, PRINCIPAL);
     assert_eq!(failures.len(), 1, "only the closed idle peer fails");
+}
+
+#[test]
+fn single_connection_pool_rearms_after_a_response_releases_its_slot() {
+    let runtime = moirai_executor::global();
+    let config = ServerConfig::new(
+        1,
+        16 * 1024,
+        64,
+        MAX_PAYLOAD_SIZE,
+        128 * 1024,
+        Duration::from_secs(30),
+    )
+    .expect("single provider slot");
+    let server = runtime
+        .block_on(HttpServer::bind("127.0.0.1:0", config))
+        .expect("server");
+    let address = server.local_addr().expect("address");
+    let client = BlockingTcpStream::connect_timeout(&address, CLIENT_BUDGET).expect("first client");
+    let first = runtime.block_on(server.accept()).expect("first accept");
+    let service = runtime
+        .spawn_async(async move {
+            let mut failures = Vec::new();
+            let result = moirai_async::timer::timeout(
+                Duration::from_secs(40),
+                server::serve_accepted(
+                    server,
+                    first,
+                    application(),
+                    2,
+                    Some(Duration::from_millis(10)),
+                    |error| failures.push(error.code),
+                ),
+            )
+            .await;
+            (result, failures)
+        })
+        .expect("finite service");
+    let initial =
+        std::thread::spawn(move || handshake_until(client, Instant::now() + CLIENT_BUDGET));
+    let repeated = std::thread::spawn(move || timed_handshake(address));
+    let initial = initial.join().expect("first client join");
+    let repeated = repeated.join().expect("second client join");
+    let (result, failures) = service
+        .join()
+        .expect("service handle")
+        .expect("service join");
+    result
+        .expect("bounded service")
+        .expect("pool backpressure must not end service");
+    let initial = initial.expect("first handshake");
+    let repeated = repeated.expect("second handshake after slot release");
+    assert_eq!(status(&initial), 200);
+    assert_eq!(status(&repeated), 200);
+    assert_eq!(
+        response_body(&initial),
+        response_body(&repeated),
+        "one state owner must return the exact issued grant on replay"
+    );
+    assert_eq!(
+        HandshakeResponsePayload::decode(response_body(&repeated))
+            .expect("typed replay")
+            .initial_token
+            .principal_id,
+        PRINCIPAL
+    );
+    assert!(
+        failures.is_empty(),
+        "backpressure is not a peer failure: {failures:?}"
+    );
+}
+
+#[test]
+fn cancelling_service_drops_accepted_peers_and_pending_admission() {
+    let runtime = moirai_executor::global();
+    let config = ServerConfig::new(
+        2,
+        16 * 1024,
+        64,
+        MAX_PAYLOAD_SIZE,
+        128 * 1024,
+        Duration::from_secs(30),
+    )
+    .expect("two bounded provider slots");
+    let server = runtime
+        .block_on(HttpServer::bind("127.0.0.1:0", config))
+        .expect("server");
+    let address = server.local_addr().expect("address");
+    let mut idle = BlockingTcpStream::connect_timeout(&address, CLIENT_BUDGET).expect("idle peer");
+    let first = runtime
+        .block_on(server.accept())
+        .expect("actual accepted peer");
+    let mut failures = Vec::new();
+    let result = runtime.block_on(moirai_async::timer::timeout(
+        Duration::from_millis(50),
+        server::serve_accepted(server, first, application(), 2, None, |error| {
+            failures.push(error.code);
+        }),
+    ));
+    idle.set_read_timeout(Some(CLIENT_BUDGET))
+        .expect("bounded close observation");
+    let closed = idle.read(&mut [0_u8; 1]);
+    drop(idle);
+    assert!(
+        result.is_err(),
+        "the service must still be awaiting peer I/O at cancellation"
+    );
+    assert_eq!(
+        closed.expect("cancelled service closes the actual accepted socket"),
+        0
+    );
+    assert!(
+        failures.is_empty(),
+        "owner cancellation does not fabricate a peer failure"
+    );
 }

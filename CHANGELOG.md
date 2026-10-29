@@ -26,13 +26,18 @@
 
 ### Fixed
 
+- [patch] Multiplex bounded native HTTP peer reads and writes while one owner
+  serializes authenticated application responses. An idle peer no longer
+  blocks a valid typed handshake. Preserve provider connection limits, finite
+  request accounting, response delays, cancellation and all deadlines; retain
+  only transport phase and standard I/O kind in diagnostics.
 - [patch] Give Windows verification, Maturin and native packaging the same
   explicit compiler host target and artifact directory, avoiding duplicate
   compilation into implicit/explicit target trees. Keep all stages, profiles,
   features and deadlines; a real Cargo regression proves artifact reuse.
 - [patch] Retain the browser HTTP service and static-server logs alongside
-  fragment traces for timeout diagnosis. The repeated Firefox failure and
-  Windows aggregate timeout remain release blockers; all deadlines and
+  fragment traces for timeout diagnosis. The repeated Firefox failure
+  remains a release blocker; all deadlines and
   acceptance assertions remain unchanged.
 - [patch] Preserve the authenticated fragment page's observed state and failing
   phase before closing a failed browser session. Driver timeouts retain their

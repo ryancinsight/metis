@@ -137,6 +137,20 @@ Current framework version: Metis 0.5.0. Remaining capability work follows.
   authenticated-fragment HTTP deadline failure
   on unchanged source. Preserve this blocker and retain HTTP logs in artifacts;
   no cause or successful browser acceptance is inferred from the diagnostic.
+- Windows acceptance: the [reviewed cache repair](https://github.com/ryancinsight/metis/commit/a4eaef918e7ad21f5dbaf7085c1c26d728b95e83)
+  passes all 29 stages in 18m37s without a warm cache or deadline changes.
+  Packaging compilation takes 19s instead of the previous 152s. Its full fuzz,
+  native transport, Apple, Chromium and WebKit checks pass. Firefox still fails
+  negative probes after an initial fragment succeeds; the service reports a
+  fatal transport error, whose phase/kind were previously absent.
+- Native HTTP correction: a real two-peer regression fails after 5.012s on the
+  serial loop and passes in 9ms with bounded concurrent I/O. One application
+  owner serializes ready requests; provider pool backpressure waits for an
+  actual released slot. All 21 HTTP tests, including exact grant replay and
+  cancellation cleanup, and all 48 backend tests pass. Phase/kind diagnostics
+  preserve typed codes without peer payloads. Final revision review and hosted
+  Firefox/cross-engine/platform acceptance remain required; this local proof
+  does not establish Firefox causality or remove protected owner/release holds.
 - Source-provenance correction: independent review of the initial candidate finds that the
   shared sdist job checks out a mutable release tag. The member now pins its
   receipt/test jobs to the event SHA, reproduces the sdist at that commit using
