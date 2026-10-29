@@ -227,9 +227,9 @@ fn cancelling_service_drops_accepted_peers_and_pending_admission() {
         .expect("bounded close observation");
     let closed = idle.read(&mut [0_u8; 1]);
     drop(idle);
-    assert!(
-        result.is_err(),
-        "the service must still be awaiting peer I/O at cancellation"
+    assert_eq!(
+        result.expect_err("the service must still be awaiting peer I/O at cancellation"),
+        moirai_async::timer::TimeoutError
     );
     assert_eq!(
         closed.expect("cancelled service closes the actual accepted socket"),
