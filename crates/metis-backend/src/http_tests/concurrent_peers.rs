@@ -14,6 +14,28 @@ fn remaining(deadline: Instant) -> io::Result<Duration> {
         .ok_or_else(|| io::Error::new(io::ErrorKind::TimedOut, "five-second client deadline"))
 }
 
+fn write_before_deadline(
+    client: &mut BlockingTcpStream,
+    mut bytes: &[u8],
+    deadline: Instant,
+) -> io::Result<()> {
+    while !bytes.is_empty() {
+        client.set_write_timeout(Some(remaining(deadline)?))?;
+        let count = client.write(bytes)?;
+        remaining(deadline)?;
+        if count == 0 {
+            return Err(io::Error::new(
+                io::ErrorKind::WriteZero,
+                "handshake write ended",
+            ));
+        }
+        bytes = bytes
+            .get(count..)
+            .ok_or_else(|| io::Error::other("write exceeded the request byte count"))?;
+    }
+    Ok(())
+}
+
 fn timed_handshake(address: std::net::SocketAddr) -> io::Result<Vec<u8>> {
     let deadline = Instant::now() + CLIENT_BUDGET;
     let mut client = BlockingTcpStream::connect_timeout(&address, remaining(deadline)?)?;
@@ -22,19 +44,22 @@ fn timed_handshake(address: std::net::SocketAddr) -> io::Result<Vec<u8>> {
         "POST {SESSION_ROUTE} HTTP/1.1\r\nHost: 127.0.0.1\r\nOrigin: {ORIGIN}\r\nContent-Length: {}\r\n\r\n",
         body.len()
     );
-    client.set_write_timeout(Some(remaining(deadline)?))?;
-    client.write_all(header.as_bytes())?;
-    client.set_write_timeout(Some(remaining(deadline)?))?;
-    client.write_all(&body)?;
+    write_before_deadline(&mut client, header.as_bytes(), deadline)?;
+    write_before_deadline(&mut client, &body, deadline)?;
     let mut response = Vec::new();
     let mut buffer = [0_u8; 512];
     loop {
         client.set_read_timeout(Some(remaining(deadline)?))?;
         let count = client.read(&mut buffer)?;
+        remaining(deadline)?;
         if count == 0 {
             return Ok(response);
         }
-        response.extend_from_slice(&buffer[..count]);
+        response.extend_from_slice(
+            buffer
+                .get(..count)
+                .ok_or_else(|| io::Error::other("read exceeded the response buffer"))?,
+        );
         if response.len() > 128 * 1024 {
             return Err(io::Error::other("response exceeds production byte budget"));
         }
