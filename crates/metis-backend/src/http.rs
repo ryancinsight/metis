@@ -362,9 +362,10 @@ fn status_for_code(code: ErrorCode) -> u16 {
 }
 
 fn status_for_wire_code(code: u16) -> u16 {
-    if code == ErrorCode::PayloadTooLarge as u16 {
+    let known_code = ErrorCode::from_wire(code);
+    if known_code == Some(ErrorCode::PayloadTooLarge) {
         413
-    } else if code == ErrorCode::Timeout as u16 {
+    } else if known_code == Some(ErrorCode::Timeout) {
         408
     } else if (0x2000..=0x2fff).contains(&code) {
         403
