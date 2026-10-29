@@ -19,6 +19,8 @@ use moirai_http::{HttpRequest, HttpResponse, HttpServer};
 use std::io;
 use std::time::Duration;
 
+mod server;
+
 /// Maximum connection attempts before a demonstration host performs orderly teardown.
 pub const MAX_HTTP_REQUESTS: usize = 64;
 
@@ -285,10 +287,10 @@ pub async fn serve_browser_http(
 /// failure from the underlying HTTP service.
 pub async fn serve_browser_http_with_response_delay(
     server: HttpServer,
-    mut application: BrowserHttpService,
+    application: BrowserHttpService,
     max_requests: usize,
     response_delay: Option<Duration>,
-    mut on_connection_error: impl FnMut(MetisError),
+    on_connection_error: impl FnMut(MetisError),
 ) -> Result<()> {
     if max_requests == 0 || max_requests > MAX_HTTP_REQUESTS {
         return Err(MetisError::transport(
@@ -309,35 +311,19 @@ pub async fn serve_browser_http_with_response_delay(
         Some(delay) if !delay.is_zero() => Some(delay),
         Some(_) | None => None,
     };
-    for _ in 0..max_requests {
-        let connection = server
-            .accept()
-            .await
-            .map_err(|error| http_io_error(&error))?;
-        let (request, connection) = match connection.read_request().await {
-            Ok(request) => request,
-            Err(error)
-                if peer_disconnected(&error) || error.kind() == io::ErrorKind::InvalidData =>
-            {
-                on_connection_error(http_io_error(&error));
-                continue;
-            }
-            Err(error) => return Err(http_io_error(&error)),
-        };
-        let response = application.respond(&request).map_err(|_| {
-            MetisError::transport(ErrorCode::IoError, "HTTP response construction failed")
-        })?;
-        if let Some(delay) = response_delay {
-            moirai_async::timer::sleep(delay).await;
-        }
-        if let Err(error) = connection.write_response(response).await {
-            if !peer_disconnected(&error) {
-                return Err(http_io_error(&error));
-            }
-            on_connection_error(http_io_error(&error));
-        }
-    }
-    Ok(())
+    let first = server
+        .accept()
+        .await
+        .map_err(|error| http_io_error(&error))?;
+    server::serve_accepted(
+        server,
+        first,
+        application,
+        max_requests,
+        response_delay,
+        on_connection_error,
+    )
+    .await
 }
 
 fn peer_disconnected(error: &io::Error) -> bool {
