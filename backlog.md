@@ -123,7 +123,7 @@ Current framework version: Metis 0.5.0. Remaining capability work follows.
   then installs the exact binary wheel and runs the binding value tests.
   Pull requests run bounded archive/index/caller tests; manual verification
   retains its full wheel matrix and produces a receipt without publishing.
-- Hosted renewal: the independently reviewed f08ccabd candidate passes its
+- Hosted renewal: the independently [reviewed publishing candidate](https://github.com/ryancinsight/metis/commit/f08ccabd432296cce01a218643b7af3ff4390372) passes its
   normal hooks, 21 Python verification jobs and the genuine fuzz campaign.
   All 18 wheels and the sdist match their immutable-source receipt and pass
   strict package checks. Windows passes its debug, minimal transport, Python,

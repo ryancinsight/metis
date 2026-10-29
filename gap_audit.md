@@ -2,7 +2,7 @@
 
 ## Hosted publishing gates — 2026-10-29 [patch]
 
-The reviewed f08ccabd candidate passes both normal delivery hooks, the complete
+The [reviewed publishing candidate](https://github.com/ryancinsight/metis/commit/f08ccabd432296cce01a218643b7af3ff4390372) passes both normal delivery hooks, the complete
 upload-free Python matrix and the real fuzz campaign. All 19 distributions
 match the source receipt and strict package checks. The Windows cold run passes
 839 debug tests, 123 minimal transport tests, 25 binding tests and 839 release
