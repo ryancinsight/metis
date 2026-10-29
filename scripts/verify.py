@@ -300,6 +300,9 @@ def run_gate():
             raise SystemExit("Cargo target directory differs from the inherited shared target")
         workspace.application_targets(metadata)
         workspace.format_neutral_workspace(metadata)
+        native_directory = workspace.native_build_directory(
+            metadata, host, environment, explicit_target=sys.platform == "win32"
+        )
         source = source_state(metadata, configs)
         revision = execute("revision", ["git", "rev-parse", "HEAD"], seconds=30, cwd=ROOT).strip()
         provenance = {"mode": "standalone", "host": host, "sources": source, "run_nonce": run_nonce,
@@ -383,11 +386,11 @@ def run_gate():
                 seconds=300, cwd=ROOT)
         cargo("clippy", ["clippy", "--workspace", "--all-targets"], tail=["--", "-D", "warnings"])
         cargo("build", ["build", "--workspace", "--bins", "--examples"])
-        native_image = pathlib.Path(metadata["target_directory"]) / "debug" / "examples" / (
+        native_image = native_directory / "debug" / "examples" / (
             "native_image" + (".exe" if sys.platform == "win32" else "")
         )
         execute("native-image", [str(native_image)], seconds=60, cwd=ROOT)
-        native_capture = pathlib.Path(metadata["target_directory"]) / "debug" / "examples" / (
+        native_capture = native_directory / "debug" / "examples" / (
             "native_host_capture" + (".exe" if sys.platform == "win32" else "")
         )
         if sys.platform == "win32":
@@ -418,7 +421,7 @@ def run_gate():
                                 "-p", "metis-backend", "-p", "metis-ipc", "--profile", "ci"])
         execute("python-binding", [sys.executable, str(ROOT / "scripts" / "python_binding.py")], seconds=720, cwd=ROOT)
         cargo("release-build", ["build", "--workspace", "--bins", "--release"])
-        distribution_tool = pathlib.Path(metadata["target_directory"]) / "release" / "metis.exe"
+        distribution_tool = native_directory / "release" / "metis.exe"
         execute("distribution", [sys.executable, str(ROOT / "scripts" / "distribution.py"),
                                  "--tool", str(distribution_tool), "--output", str(OUTPUT / "distribution"),
                                  *(["--install"] if arguments.install else [])], seconds=720)
@@ -430,7 +433,7 @@ def run_gate():
               tail=("--", "--test"))
         cargo("doctests", ["test", "--workspace", "--doc"])
         cargo("docs", ["doc", "--workspace", "--no-deps"])
-        example = pathlib.Path(metadata["target_directory"]) / "debug" / "examples" / ("clinical_infusion_workflow" + (".exe" if sys.platform == "win32" else ""))
+        example = native_directory / "debug" / "examples" / ("clinical_infusion_workflow" + (".exe" if sys.platform == "win32" else ""))
         execute("example", [str(example)], seconds=60, cwd=ROOT)
         image = example.with_name("image" + (".exe" if sys.platform == "win32" else ""))
         execute("image", [str(image)], seconds=60, cwd=ROOT)

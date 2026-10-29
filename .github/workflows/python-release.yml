@@ -7,6 +7,13 @@ on:
   release:
     types: [published]
   workflow_dispatch:
+  pull_request:
+    paths:
+      - ".github/workflows/python-release.yml"
+      - "scripts/release_identity.py"
+      - "scripts/requirements-release.txt"
+      - "scripts/tests/test_release_identity.py"
+      - "scripts/tests/test_python_binding_contract.py"
 
 permissions:
   contents: read
@@ -16,9 +23,30 @@ concurrency:
   cancel-in-progress: false
 
 jobs:
+  contracts:
+    if: github.event_name != 'release' || startsWith(github.event.release.tag_name, 'metis-ui-v')
+    name: Python release identity contracts
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: ${{ github.sha }}
+          persist-credentials: false
+      - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
+        with:
+          python-version: "3.13"
+      - name: Install release metadata tooling
+        run: python -m pip install -r scripts/requirements-release.txt
+      - name: Verify archive, index and release caller contracts
+        run: |
+          python -m unittest discover -s scripts/tests -p test_release_identity.py -v
+          python -m unittest discover -s scripts/tests -p test_python_binding_contract.py -v
+
   wheels:
     if: github.event_name == 'workflow_dispatch' || startsWith(github.event.release.tag_name, 'metis-ui-v')
     name: Build and validate Python distributions
+    needs: contracts
     permissions:
       artifact-metadata: write
       attestations: write
@@ -41,10 +69,83 @@ jobs:
       abi3t-features: abi3t
       verification: ${{ github.event_name == 'workflow_dispatch' }}
 
+  identity:
+    name: Record validated upload identity
+    needs: wheels
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    outputs:
+      python-version: ${{ steps.read.outputs.python-version }}
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: ${{ github.sha }}
+          persist-credentials: false
+      - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
+        with:
+          python-version: "3.13"
+      - name: Install release metadata tooling
+        run: python -m pip install -r scripts/requirements-release.txt
+      - name: Read the inherited binding version and check the release tag
+        id: read
+        env:
+          EVENT: ${{ github.event_name }}
+          TAG: ${{ github.event.release.tag_name }}
+        run: |
+          python3 - <<'PY'
+          import os
+          import tomllib
+          from scripts.release_identity import python_version
+
+          with open("crates/metis-python/Cargo.toml", "rb") as manifest:
+              binding = tomllib.load(manifest)["package"]
+          if binding["version"] != {"workspace": True}:
+              raise SystemExit("metis-python must inherit its workspace version")
+          with open("Cargo.toml", "rb") as manifest:
+              version = tomllib.load(manifest)["workspace"]["package"]["version"]
+          tag = os.environ.get("TAG", "")
+          if os.environ["EVENT"] == "release" and tag != f"metis-ui-v{version}":
+              raise SystemExit(f"release tag {tag!r} does not name metis-ui {version}")
+          with open(os.environ["GITHUB_OUTPUT"], "a", encoding="utf-8") as output:
+              output.write(f"version={version}\n")
+              output.write(f"python-version={python_version(version)}\n")
+          PY
+      - name: Reproduce the source archive at the immutable event commit
+        shell: bash
+        run: |
+          set -euo pipefail
+          python -m pip install --disable-pip-version-check "maturin==1.14.1"
+          maturin sdist --manifest-path crates/metis-python/Cargo.toml \
+            --out "$RUNNER_TEMP/metis-source-dist"
+          git diff --exit-code HEAD
+      - name: Download validated distributions
+        uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
+        with:
+          name: ${{ github.event_name == 'workflow_dispatch' && 'verification-wheels' || 'release-wheels' }}
+          path: dist
+      - name: Retain archive identities, source commit and file hashes
+        env:
+          VERSION: ${{ steps.read.outputs.version }}
+        run: |
+          set -euo pipefail
+          sources=("$RUNNER_TEMP"/metis-source-dist/*.tar.gz)
+          if [ "${#sources[@]}" -ne 1 ] || [ ! -f "${sources[0]}" ]; then
+            echo 'expected exactly one reference source archive' >&2
+            exit 1
+          fi
+          python scripts/release_identity.py create --dist dist --version "$VERSION" \
+            --commit "$(git rev-parse HEAD)" --source-dist "${sources[0]}" \
+            --output release-identity.json
+      - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: release-identity
+          path: release-identity.json
+          if-no-files-found: error
+
   publish:
     if: github.event_name == 'release' && startsWith(github.event.release.tag_name, 'metis-ui-v')
     name: Publish release distributions to PyPI
-    needs: wheels
+    needs: [wheels, identity]
     runs-on: ubuntu-latest
     timeout-minutes: 30
     environment:
@@ -64,3 +165,46 @@ jobs:
         with:
           packages-dir: dist/
           print-hash: true
+
+  published:
+    if: github.event_name == 'release' && startsWith(github.event.release.tag_name, 'metis-ui-v')
+    name: Verify published files and installed binding
+    needs: [identity, publish]
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: ${{ github.sha }}
+          persist-credentials: false
+      - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
+        with:
+          python-version: "3.13"
+      - name: Install release verification tooling
+        run: python -m pip install -r scripts/requirements-release.txt "pytest==8.4.2"
+      - uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
+        with:
+          name: release-identity
+          path: receipt
+      - name: Verify every published archive against the source receipt
+        shell: bash
+        run: |
+          for attempt in 1 2 3 4 5 6; do
+            if python scripts/release_identity.py verify-index \
+              --receipt receipt/release-identity.json --output pypi-receipt.json; then
+              break
+            fi
+            [ "$attempt" = 6 ] && { echo 'PyPI does not match the validated upload'; exit 1; }
+            sleep 10
+          done
+      - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: pypi-source-receipt
+          path: pypi-receipt.json
+          if-no-files-found: error
+      - name: Install the exact published wheel and exercise its value contracts
+        env:
+          VERSION: ${{ needs.identity.outputs.python-version }}
+        run: |
+          python -m pip install --no-cache-dir --only-binary=:all: "metis-ui==$VERSION"
+          python -m pytest crates/metis-python/tests -q

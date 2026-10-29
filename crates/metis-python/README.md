@@ -6,6 +6,10 @@ clinical arithmetic, safety policy or process state.
 
 ## Install
 
+First publication is still pending. See
+[METIS-PYPI-FIRST-RELEASE-001](../../backlog.md#METIS-PYPI-FIRST-RELEASE-001)
+for the source and account gates. After the genuine release is published:
+
 ```bash
 python -m pip install metis-ui
 ```
@@ -42,7 +46,7 @@ and trace identifier.
 The native module declares `gil_used = false` after a compile-time `Send + Sync`
 audit of every exposed Rust class. The test suite exercises concurrent mutation
 of one `Application` and checks `sys._is_gil_enabled()` when a free-threaded
-interpreter is running. The release contains separate CPython 3.9 `abi3` wheels,
+interpreter is running. The release workflow builds separate CPython 3.9 `abi3` wheels,
 version-specific `cp314-cp314t` and `cp315-cp315t` free-threaded wheels, and Python 3.15
 `abi3t` wheels. The free-threaded artifacts use the package `abi3t` feature,
 which selects PyO3 `abi3t-py315`; the regular artifact keeps the default `abi3`
@@ -76,6 +80,36 @@ constructed after the provider call returns.
 
 The PyPI release caller uses GitHub Actions OIDC Trusted Publishing. It stores
 no PyPI token, signing key or developer private key in the repository.
+
+## Release contract
+
+The existing pending PyPI publisher must match project `metis-ui`, GitHub owner
+`ryancinsight`, repository `metis`, workflow filename `python-release.yml` and
+environment `pypi`. The shared `python-wheels.yml` workflow builds artifacts;
+the member's `python-release.yml` job performs the PyPI upload.
+
+Pull requests editing the release caller or receipt checks run bounded archive,
+index and caller regressions. `workflow_dispatch` runs the complete wheel and
+metadata verification and retains a source/hash receipt without uploading.
+Publishing requires a published GitHub release whose tag equals
+`metis-ui-v` plus `[workspace.package].version`; a Rust crate release tag or a
+branch push does not publish Python distributions. Complete the final source
+checks, independent review and outstanding release holds before that event.
+Before upload, the member caller records every validated archive's name,
+version, source commit, SHA256 and size. After upload, it compares the exact
+public PyPI file set and availability with that receipt, installs the exact
+binary wheel and runs the binding's value tests. The retained artifacts are
+`release-identity` and `pypi-source-receipt`.
+
+Receipt and installed-test jobs check out the immutable event commit. The caller
+reproduces the source archive there with the shared builder's Maturin 1.14.1 and
+requires the complete shared sdist contents to match before upload. Source paths,
+types, modes, link targets and bytes remain strict; compression, ordering,
+ownership and timestamps are packaging details. The shared builder's current
+raw-tag comparison still leaves end-to-end prerelease publication unqualified.
+
+The existing publisher converts on the first genuine upload. Pending publishers
+do not reserve names, and expiry dates require actual account/notice evidence.
 
 ## License
 

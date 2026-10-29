@@ -3,6 +3,19 @@
 import pathlib
 import tomllib
 
+
+def native_build_directory(metadata, host, environment, *, explicit_target):
+    """Select the native artifact directory shared by verification and packaging."""
+    directory = pathlib.Path(metadata["target_directory"])
+    if explicit_target:
+        # Windows packaging already selects this host triple explicitly.
+        # Cargo and Maturin must use that same identity earlier in the gate;
+        # an implicit host build otherwise recompiles into a different tree.
+        environment["CARGO_BUILD_TARGET"] = host
+        directory /= host
+    return directory
+
+
 REGISTRY_BOUNDARIES = {
     # Native entry logging and test span capture use the canonical tracing
     # crates; no Atlas provider supplies a tracing subscriber implementation.

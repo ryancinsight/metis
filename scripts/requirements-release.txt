@@ -1,0 +1,2 @@
+# Use PyPA's PEP 440 parser, matching Maturin's version conversion.
+packaging==26.3

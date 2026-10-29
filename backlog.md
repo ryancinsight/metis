@@ -1,3 +1,68 @@
+Prepared framework target: Metis0.5.0; unpublished review in existing PR505.
+
+## Provider checkpoint — 2026-10-15 (historical; source [held owner checkpoint](https://github.com/ryancinsight/metis/commit/0a9544957a1b748c32c89fe798e1e579637bbb9a))
+
+Consus0.3 is merged at beae4ce7. Its executed published-baseline consumer
+requires a pre-1.0 minor release for the Moirai0.7 to0.9 public async identity;
+the earlier0.2.1 claim is withdrawn and its publisher is cancelled before
+publishing steps execute. Both earlier raster upload commands are obsolete.
+The new0.3 source/archive handoff keeps first-upload authentication separate.
+
+This owned Metis0.5 preparation resolves root/fuzz locks against Consusbeae4ce7,
+Apollo0eab90e3 (core0.17 unchanged from published730f6262), Eunomia15fbb94c,
+Hermesac60146a, Moirai44a962f0, memory481c7452, Gaia c0db650e and Leto8b4ab407.
+The actual full graph passes698 native tests (zero skips),42 doctests, strict
+all-feature/all-target Clippy, strict docs and formatting. Root registry tuples
+are preserved; fuzz updates only the Moirai-required rustls0.23.45 to0.23.46.
+All fuzz harnesses check, with the existing protected nightly output-reader
+deprecation warning left untouched. No production Rust, feature, gate or
+native budget changes occur; protected503/504 source remains separate.
+
+<a id="METIS-CURRENT-PROVIDERS-001"></a>
+## METIS-CURRENT-PROVIDERS-001 — Admit current provider defaults [major]
+
+- Status: blocked; priority: P1; owner: current-provider integration; target: 0.5.0; last-update: 2026-10-28.
+- Public contract: exported Color's Eunomia-owned Pod/Zeroable traits follow
+  the canonical 0.11 provider; AssetError's public From<Consus DecodeError>
+  follows Consus 0.4. The intermediate 0.10/0.3 checkpoint remains historical.
+  ADR0062 records the0.5 boundary for all13 packages/31 internal requirements.
+- Verification repairs: canonical blocked/P1 metadata; the unchanged shared
+  numeric summary now has an unambiguous module owner. All424 Python tests
+  and the unchanged pinned conformance gate pass locally; full exact-head
+  hosted verification remains required.
+- Hosted follow-up: PR38800495183 and full manual38800512106 pass at3f6efbee,
+  including Windows, Apple and all three browser engines. The earlier Firefox
+  timeout remains historical evidence with unproven cause; diagnostics preserve
+  the failure result and60-second deadline. Refresh gates after main reconciliation.
+- Canonical root/fuzz graphs and actual verification are recorded above.
+  No old provider/source substitution or compatibility adapter is used.
+- Remaining: refresh normalized packages, affected consumers and full exact-head
+  hosted verification before merge/publication. The prior external Color identity
+  proof and independent3f6efbee review remain evidence, not fresh-head acceptance.
+- External prerequisite resolved: consus-raster0.3.0 from beae4ce7 is published
+  with original archive SHA256 afd23ddad2b241d76bb9d1ee08dfb7002c3fe3fdf95aac9bc9aa33e86c54e7c9.
+  Use only existing configured Cargo credentials after verification; never inspect
+  or change credentials, publisher registration, permissions or deployment settings.
+- Security renewal: the old ZIP/cohort blocker is superseded by main #508's
+  coherent Consus 0.4 / Eunomia 0.11 / Gaia 0.6.10 / Moirai 0.11 graph.
+  This supplement retains that manifest and both locks exactly, without any
+  advisory/source exception. The full upload hold remains for final source,
+  API/package/native/platform/browser and exact-head review/acceptance.
+- Historical security blocker ([held owner checkpoint](https://github.com/ryancinsight/metis/commit/0a9544957a1b748c32c89fe798e1e579637bbb9a), 2026-10-19):
+  - Security blocker: RUSTSEC-2026-0367/0368/0369 rejects ZIP2.4.2 through Git
+    Gaia0.6.0. Current Git Gaia0.6.9 requires Git Moirai0.10, incompatible with
+    this Metis/Consus0.3 public cohort's0.9.3 requirements. Both targeted update
+    and normal manifest-driven online resolution fail; coordinate the provider
+    cohort before renewing acceptance (ADR0062).
+- Rejected candidate: [rejected registry candidate](https://github.com/ryancinsight/metis/commit/ebc1310400eab11ab4fc238c5a4a234e97805215)'s source-equivalent registry Gaia0.6.9 removes
+  the advisories and preserves public Git identities, but the committed source
+  gate rejects that direct dependency, including dev dependencies. Its refreshed
+  Windows jobs117881269863/117881344606 fail. Restore the original Git graph;
+  do not add a registry exception, ignore advisories or pin an older provider.
+  The failed candidate remains in history and cannot authorize merge/publication.
+- Coeus0.13 remains with its owner and separately blocks the prepared RITK
+  cases. Miri stays deferred. Incoming RITK requirements already admit Metis0.5.
+
 Current framework version: Metis 0.5.0. Remaining capability work follows.
 
 <a id="METIS-QUIC-PROMOTION-001"></a>
@@ -23,6 +88,96 @@ Current framework version: Metis 0.5.0. Remaining capability work follows.
 - Acceptance: `cargo check --workspace --all-targets --locked`, the workspace clippy and nextest gates, and the pre-push source-identity gate pass at the recorded lock; no first-party requirement lags its provider.
 - Blocker: the advance cannot resolve while the nine `moirai-*` crates stay at the ADR 0058 quarantine revision. That revision's `moirai-core 0.9.0` requires `mnemosyne-memory ^0.9.0`; Mnemosyne main now offers only 0.10.1, and the stale 0.9.0 entry survives solely because no manifest edit reaches it. Any bump re-resolves that subtree and fails with `failed to select a version for the requirement mnemosyne-memory = "^0.9.0"`.
 - Re-open: [PR 618](https://github.com/ryancinsight/Moirai/pull/618) merges. Then pin `moirai-*` at `version = "0.10.0"` with no git ref and regenerate; the five non-Moirai bumps stand as prepared.
+
+<a id="METIS-PYPI-FIRST-RELEASE-001"></a>
+## METIS-PYPI-FIRST-RELEASE-001 — Complete the genuine Python first release [patch]
+
+- Status: blocked; priority: P1; owner: PyPI pipeline repair; last-update: 2026-10-29.
+- Identity: distribution `metis-ui`, import `metis`, crate `metis-python`;
+  version comes from `[workspace.package].version` (0.5.0 at inspection).
+  Only a published GitHub release tagged `metis-ui-v0.5.0` starts upload;
+  branch pushes, Rust release tags and manual verification do not.
+- Account evidence: the user confirms a pending publisher. Its required binding
+  is owner `ryancinsight`, repository `metis`, workflow `python-release.yml`,
+  environment `pypi`. The GitHub environment exists. Detailed PyPI binding and
+  expiry remain unverified because the available account page requires login;
+  do not add a duplicate or infer an expiry. Any binding correction requires
+  specific approval.
+- Run evidence: 35507532874 builds and validates the full wheel set, then skips
+  publishing because it is manual verification. No matching Python release is
+  present; public PyPI JSON returns 404. That historical green run is not proof
+  of current source acceptance or an attempted/failed PyPI upload.
+- Main reconciliation: #508 merged as 406b13cb21cb6183fa29246af959463bd6cb09c4.
+  Its final head 919e37dc00030a9c87b7975c61cdb7c75ca4e5f1 passes lockfile,
+  debt, Windows, Apple, native QUIC and aggregate checks in run 40627800325.
+  Browser, fuzz and the release SemVer gate are skipped in that run. The old
+  lockfile failure at 13542f6 and root-checklist debt are superseded; this
+  continuation retains #508's source and native planning unchanged.
+- Source hold: #505's provider/security and upload hold remains explicit.
+  #509 owns the member hook repair and Atlas #551 its shared tooling; those
+  owners and the protected Pi work remain intact. No full Atlas suite or
+  release acceptance is inferred from the selected #508 jobs.
+- Pipeline increment: the existing member caller retains validated archive
+  name/version, source commit, SHA256 and size before upload. A release-only
+  read-back compares the exact PyPI file set, hashes, sizes and availability,
+  then installs the exact binary wheel and runs the binding value tests.
+  Pull requests run bounded archive/index/caller tests; manual verification
+  retains its full wheel matrix and produces a receipt without publishing.
+- Hosted renewal: the independently [reviewed publishing candidate](https://github.com/ryancinsight/metis/commit/f08ccabd432296cce01a218643b7af3ff4390372) passes its
+  normal hooks, 21 Python verification jobs and the genuine fuzz campaign.
+  All 18 wheels and the sdist match their immutable-source receipt and pass
+  strict package checks. Windows passes its debug, minimal transport, Python,
+  installer and release-test stages, then exhausts the 20-minute job allowance
+  with no cache available. Align Windows Cargo/Maturin verification with native
+  packaging's explicit compiler host target and use that artifact directory
+  throughout. A real Cargo regression fails on the duplicated target trees
+  and passes when packaging reuses the verified executable. Every stage,
+  feature, profile and job/command/nextest bound remains unchanged; final hosted
+  timing and acceptance remain required. Firefox repeats its
+  authenticated-fragment HTTP deadline failure
+  on unchanged source. Preserve this blocker and retain HTTP logs in artifacts;
+  no cause or successful browser acceptance is inferred from the diagnostic.
+- Windows acceptance: the [reviewed cache repair](https://github.com/ryancinsight/metis/commit/a4eaef918e7ad21f5dbaf7085c1c26d728b95e83)
+  passes all 29 stages in 18m37s without a warm cache or deadline changes.
+  Packaging compilation takes 19s instead of the previous 152s. Its full fuzz,
+  native transport, Apple, Chromium and WebKit checks pass. Firefox still fails
+  negative probes after an initial fragment succeeds; the service reports a
+  fatal transport error, whose phase/kind were previously absent.
+- Native HTTP correction: a real two-peer regression fails after 5.012s on the
+  serial loop and passes in 9ms with bounded concurrent I/O. One application
+  owner serializes ready requests; provider pool backpressure waits for an
+  actual released slot. All 21 HTTP tests, including exact grant replay and
+  cancellation cleanup, and all 48 backend tests pass. Phase/kind diagnostics
+  preserve typed codes without peer payloads. Final revision review and hosted
+  Firefox/cross-engine/platform acceptance remain required; this local proof
+  does not establish Firefox causality or remove protected owner/release holds.
+- Source-provenance correction: independent review of the initial candidate finds that the
+  shared sdist job checks out a mutable release tag. The member now pins its
+  receipt/test jobs to the event SHA, reproduces the sdist at that commit using
+  Maturin 1.14.1 and rejects any path/type/mode/link/content difference before
+  upload. No shared-builder or hook source is changed. End-to-end prerelease
+  publishing remains unqualified because the shared builder compares raw tags
+  with canonical Python metadata; the planned first stable version is 0.5.0.
+- Acceptance: complete the provider/source holds, final exact-head checks and
+  independent review; match the existing pending binding; publish the real
+  release and verify versions, distributions and source/hash receipts. Do not
+  publish an empty release to retain a name. Archive/index/caller contracts and
+  workflow syntax are checked locally; new exact-head independent review,
+  normal hooks, hosted wheels, full source gates and live index proof remain.
+
+
+### Delivery criteria
+
+- [x] Resolve project/import/tag identity and inspect actual upload execution.
+- [x] Record user-confirmed pending publisher and the required existing binding.
+- [x] Reconcile #508's lockfile/debt repair while preserving #505's upload hold,
+      #509's hook ownership and the native promotion item byte-for-byte.
+- [x] Add and test archive/source receipts and strict PyPI read-back; retain
+      manual verification and distinguish historical wheel proof from publication.
+- [ ] Obtain independent review and normal-hook/hosted proof for this exact head.
+- [ ] Verify detailed pending binding and expiry from the account or actual notice.
+- [ ] Complete provider/source holds and final exact-head checks/review.
+- [ ] Publish the genuine gated release and retain index/source receipts.
 
 <a id="METIS-WEBVIEW-RUST-001"></a>
 ## METIS-WEBVIEW-RUST-001 — Rust-owned Windows page lifecycle [minor]
