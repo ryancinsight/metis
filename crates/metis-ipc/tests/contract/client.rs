@@ -7,7 +7,7 @@ use metis_ipc::{IpcClient, IpcTransport, MemoryTransport};
 
 #[test]
 fn correlated_handshake_rejections_preserve_known_and_unknown_codes() {
-    for error_code in [ErrorCode::InvalidPrincipal as u16, 0xffff] {
+    for error_code in [u16::from(ErrorCode::InvalidPrincipal), 0xffff] {
         let (transport, mut peer) = MemoryTransport::pair();
         let mut client = IpcClient::new(transport);
         client.set_active_token(CapabilityToken::issue(

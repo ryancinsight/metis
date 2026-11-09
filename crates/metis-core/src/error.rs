@@ -216,6 +216,15 @@ impl ErrorCode {
     }
 }
 
+/// Wire discriminant for persistence and protocol frames.
+///
+/// `#[repr(u16)]` makes the conversion exact; prefer this over `as`.
+impl From<ErrorCode> for u16 {
+    fn from(code: ErrorCode) -> Self {
+        code as u16
+    }
+}
+
 /// The core error type for Metis medical device architecture.
 #[derive(Clone, PartialEq, Eq)]
 pub struct MetisError {
@@ -394,7 +403,7 @@ mod tests {
             ErrorCode::UnsupportedPlatformEvent,
         ];
         for code in codes {
-            assert_eq!(ErrorCode::from_wire(code as u16), Some(code));
+            assert_eq!(ErrorCode::from_wire(u16::from(code)), Some(code));
         }
         assert_eq!(ErrorCode::from_wire(0), None);
         assert_eq!(ErrorCode::from_wire(u16::MAX), None);

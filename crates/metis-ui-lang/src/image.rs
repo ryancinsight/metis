@@ -138,8 +138,8 @@ fn pixel_count(width: u32, height: u32) -> Result<usize> {
     let count = u64::from(width) * u64::from(height);
     if width == 0
         || height == 0
-        || width > i32::MAX as u32
-        || height > i32::MAX as u32
+        || i64::from(width) > i64::from(i32::MAX)
+        || i64::from(height) > i64::from(i32::MAX)
         || count > MAX_PIXELS as u64
     {
         return Err(MetisError::ui(
