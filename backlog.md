@@ -30,6 +30,16 @@ native budget changes occur; protected503/504 source remains separate.
   numeric summary now has an unambiguous module owner. All424 Python tests
   and the unchanged pinned conformance gate pass locally; full exact-head
   hosted verification remains required.
+- Recheck (2026-11-09): branch `ci/sync-stack-hooks` merges the stack hook sync
+  under the iris-viz 0.1.2 lock (`fe302d51`); all three hook entry
+  points pass `bash -n` and `cargo fmt --check` is clean. The dependency-free
+  script suite passes 443 tests (2 skipped) with 461 subtests. Native
+  verification stays blocked stack-wide: `cargo metadata --locked` fails
+  identically in metis and coeus because the committed Eunomia 0.11.0 lock
+  (`d8ee31ab`) no longer resolves `eunomia-derive ^0.11.0` against the fetched
+  provider graph (only 0.12.0 is offered). No manifest, lock, or provider
+  revision is changed by this recheck; the cohort advance remains owned by
+  METIS-PROVIDER-COHORT-001.
 - Hosted follow-up: PR38800495183 and full manual38800512106 pass at3f6efbee,
   including Windows, Apple and all three browser engines. The earlier Firefox
   timeout remains historical evidence with unproven cause; diagnostics preserve
