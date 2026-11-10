@@ -1221,7 +1221,7 @@ dependencies = [
 [[package]]
 name = "moirai-async"
 version = "0.11.3"
-source = "git+https://github.com/ryancinsight/Moirai.git#ac38645729f0583febbbd8d0dbdd6f00a505cb99"
+source = "git+https://github.com/ryancinsight/Moirai.git#8050f2daa157911d3f033e2e0f35403bd741b8cd"
 dependencies = [
  "futures",
  "libc",
@@ -1237,7 +1237,7 @@ dependencies = [
 [[package]]
 name = "moirai-async-macros"
 version = "0.11.3"
-source = "git+https://github.com/ryancinsight/Moirai.git#ac38645729f0583febbbd8d0dbdd6f00a505cb99"
+source = "git+https://github.com/ryancinsight/Moirai.git#8050f2daa157911d3f033e2e0f35403bd741b8cd"
 dependencies = [
  "proc-macro2",
  "quote",
@@ -1247,7 +1247,7 @@ dependencies = [
 [[package]]
 name = "moirai-core"
 version = "0.11.3"
-source = "git+https://github.com/ryancinsight/Moirai.git#ac38645729f0583febbbd8d0dbdd6f00a505cb99"
+source = "git+https://github.com/ryancinsight/Moirai.git#8050f2daa157911d3f033e2e0f35403bd741b8cd"
 dependencies = [
  "bytemuck",
  "libc",
@@ -1259,7 +1259,7 @@ dependencies = [
 [[package]]
 name = "moirai-crypto"
 version = "0.11.3"
-source = "git+https://github.com/ryancinsight/Moirai.git#ac38645729f0583febbbd8d0dbdd6f00a505cb99"
+source = "git+https://github.com/ryancinsight/Moirai.git#8050f2daa157911d3f033e2e0f35403bd741b8cd"
 dependencies = [
  "aes-gcm",
  "chacha20poly1305",
@@ -1283,7 +1283,7 @@ dependencies = [
 [[package]]
 name = "moirai-executor"
 version = "0.11.3"
-source = "git+https://github.com/ryancinsight/Moirai.git#ac38645729f0583febbbd8d0dbdd6f00a505cb99"
+source = "git+https://github.com/ryancinsight/Moirai.git#8050f2daa157911d3f033e2e0f35403bd741b8cd"
 dependencies = [
  "melinoe",
  "mnemosyne-memory",
@@ -1297,7 +1297,7 @@ dependencies = [
 [[package]]
 name = "moirai-http"
 version = "0.11.3"
-source = "git+https://github.com/ryancinsight/Moirai.git#ac38645729f0583febbbd8d0dbdd6f00a505cb99"
+source = "git+https://github.com/ryancinsight/Moirai.git#8050f2daa157911d3f033e2e0f35403bd741b8cd"
 dependencies = [
  "http",
  "httparse",
@@ -1309,7 +1309,7 @@ dependencies = [
 [[package]]
 name = "moirai-pal"
 version = "0.11.3"
-source = "git+https://github.com/ryancinsight/Moirai.git#ac38645729f0583febbbd8d0dbdd6f00a505cb99"
+source = "git+https://github.com/ryancinsight/Moirai.git#8050f2daa157911d3f033e2e0f35403bd741b8cd"
 dependencies = [
  "accesskit",
  "accesskit_windows",
@@ -1334,7 +1334,7 @@ dependencies = [
 [[package]]
 name = "moirai-quic"
 version = "0.1.0"
-source = "git+https://github.com/ryancinsight/Moirai.git#ac38645729f0583febbbd8d0dbdd6f00a505cb99"
+source = "git+https://github.com/ryancinsight/Moirai.git#8050f2daa157911d3f033e2e0f35403bd741b8cd"
 dependencies = [
  "moirai-async",
  "moirai-core",
@@ -1347,7 +1347,7 @@ dependencies = [
 [[package]]
 name = "moirai-scheduler"
 version = "0.11.3"
-source = "git+https://github.com/ryancinsight/Moirai.git#ac38645729f0583febbbd8d0dbdd6f00a505cb99"
+source = "git+https://github.com/ryancinsight/Moirai.git#8050f2daa157911d3f033e2e0f35403bd741b8cd"
 dependencies = [
  "loom",
  "mnemosyne-memory",
@@ -1359,7 +1359,7 @@ dependencies = [
 [[package]]
 name = "moirai-tls"
 version = "0.11.3"
-source = "git+https://github.com/ryancinsight/Moirai.git#ac38645729f0583febbbd8d0dbdd6f00a505cb99"
+source = "git+https://github.com/ryancinsight/Moirai.git#8050f2daa157911d3f033e2e0f35403bd741b8cd"
 dependencies = [
  "futures-io",
  "futures-rustls",
@@ -1372,7 +1372,7 @@ dependencies = [
 [[package]]
 name = "moirai-transport"
 version = "0.11.3"
-source = "git+https://github.com/ryancinsight/Moirai.git#ac38645729f0583febbbd8d0dbdd6f00a505cb99"
+source = "git+https://github.com/ryancinsight/Moirai.git#8050f2daa157911d3f033e2e0f35403bd741b8cd"
 dependencies = [
  "bytemuck",
  "libc",
@@ -1384,7 +1384,7 @@ dependencies = [
 [[package]]
 name = "moirai-utils"
 version = "0.11.3"
-source = "git+https://github.com/ryancinsight/Moirai.git#ac38645729f0583febbbd8d0dbdd6f00a505cb99"
+source = "git+https://github.com/ryancinsight/Moirai.git#8050f2daa157911d3f033e2e0f35403bd741b8cd"
 
 [[package]]
 name = "munge"
