@@ -14,6 +14,13 @@ and `Zeroable` implementations, so this is the same public identity break
 recorded here. The preparation changes no package version and grants no release
 authority; release classification remains a pre-1.0 breaking increment.
 
+Revision 2026-11-10: Default commit `1c985fff466e88a1a67be530d5d69f0aa90dc8c2`
+already admits Eunomia 0.12 through the bounded 0.11 through 0.12 requirement.
+The remaining candidate preserves this as-built migration record while aligning
+the committed provider identities and removing two existing casts. Relative to
+that base, the candidate is a patch; the historical nominal-trait migration
+remains the breaking event documented by this decision.
+
 ## Context
 
 The isolated current-provider preparation changes Eunomia from 0.9.2 to 0.10.
