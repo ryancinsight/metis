@@ -12,6 +12,30 @@ import subprocess
 import sys
 import tomllib
 
+if __package__ in (None, ""):
+    # Standalone entry point: sys.path[0] is this script's directory, so the
+    # sibling process_tree module is importable directly. When metis ships
+    # inside the atlas stack the stack hook resolves the owned gate; this
+    # script follows the same rule, preferring the stack-owned process_tree
+    # (ATLAS_STACK_ROOT, else the stack checkout above this repo) over the
+    # repo-local copy, then falling back to the local sibling.
+    def _stack_process_tree_dir() -> pathlib.Path | None:
+        override = os.environ.get("ATLAS_STACK_ROOT")
+        if override:
+            candidate = pathlib.Path(override) / "scripts"
+            if (candidate / "process_tree.py").is_file():
+                return candidate
+        probe = pathlib.Path(__file__).resolve()
+        for parent in (probe.parents[2], *probe.parents[3:6]):
+            candidate = parent / "scripts"
+            if (parent / ".gitmodules").is_file() and (candidate / "process_tree.py").is_file():
+                return candidate
+        return None
+
+    _stack_dir = _stack_process_tree_dir()
+    if _stack_dir is not None and str(_stack_dir) not in sys.path:
+        sys.path.insert(0, str(_stack_dir))
+
 from process_tree import ProcessTreeTimeout, run as run_process_tree
 
 
