@@ -10,13 +10,11 @@ use std::time::Duration;
 /// ALPN for the Metis protocol-major-1 binary session mapping.
 pub const METIS_QUIC_ALPN: &[u8] = b"metis-ipc/1";
 
+const COMPLETE_FRAME_BYTE_COUNT: usize = HEADER_SIZE + MAX_PAYLOAD_SIZE;
+
 /// Maximum complete Metis wire frame, including its validated header.
-#[expect(
-    clippy::cast_possible_truncation,
-    reason = "The compile-time wire-domain assertion below proves this usize-to-u32 conversion"
-)]
-pub const MAX_QUIC_FRAME_BYTES: u32 = (HEADER_SIZE + MAX_PAYLOAD_SIZE) as u32;
-const _: () = assert!(HEADER_SIZE + MAX_PAYLOAD_SIZE <= u32::MAX as usize);
+pub const MAX_QUIC_FRAME_BYTES: u32 = 65_560;
+const _: () = assert!(COMPLETE_FRAME_BYTE_COUNT == 65_560);
 
 /// Construct full-domain Metis frame, stream and connection admission limits.
 ///

@@ -1,4 +1,4 @@
-# 0062 — Eunomia 0.10 public layout trait identity
+# 0062 — Eunomia public layout trait identity
 
 Status: Accepted
 
@@ -7,6 +7,12 @@ Date: 2026-10-15
 Change class: [major], pre-1.0 minor increment
 
 Driver: METIS-CURRENT-PROVIDERS-001
+
+Revision 2026-11-09: The selected provider cohort advances Eunomia from 0.11
+to 0.12. `metis_platform::Color` continues to expose Eunomia's nominal `Pod`
+and `Zeroable` implementations, so this is the same public identity break
+recorded here. The preparation changes no package version and grants no release
+authority; release classification remains a pre-1.0 breaking increment.
 
 ## Context
 
@@ -111,3 +117,24 @@ advisory ignore, dependency back-pin or protected Rust change. ZIP is absent.
 The whole upload hold remains until the owner completes final source/API,
 package, native/platform/browser and exact-head hosted review/acceptance.
 The isolated supplement does not lift native QUIC promotion or service holds.
+
+## Selected-cohort migration — 2026-11-09
+
+Metis commit `f9aa984ccecc02f4ee35fe89e9efdfa1b96b8135` exposes
+Eunomia 0.11's `Pod` and `Zeroable` identities through
+`metis_platform::Color`. The selected cohort replaces those implementations
+with Eunomia 0.12 at `00ffd14a9e2791795ded32e3b4842e8eb79208ce` without
+changing `Color`'s fields, representation, or byte layout.
+
+Consumers whose generic bounds mention Eunomia's layout traits must update
+their direct Eunomia dependency and bounds to 0.12 in the same migration.
+Consumers that use `Color` without those bounds require no source change but
+must resolve the coherent provider revision set. Metis supplies no old-trait
+alias, duplicate implementation, or compatibility package because those
+would preserve two incompatible nominal contracts.
+
+The root and standalone fuzz locks resolve the immutable selected cohort.
+Native, doctest, and fuzz-target compilation cover the new graph. The pinned
+SemVer tool cannot reconstruct the historical Git lock for this dependency
+transition; that limitation remains explicit and does not reclassify the
+public break as compatible.

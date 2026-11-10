@@ -99,7 +99,7 @@ impl Locale {
     #[must_use]
     pub fn tag(&self) -> &str {
         // `parse` admits ASCII only, so this cannot fail.
-        std::str::from_utf8(&self.bytes[..self.len as usize]).unwrap_or("en")
+        std::str::from_utf8(&self.bytes[..usize::from(self.len)]).unwrap_or("en")
     }
 }
 

@@ -20,6 +20,10 @@ pub const MAX_PIXELS: usize = 16 * 1024 * 1024;
 /// The layout is four contiguous bytes in `r, g, b, a` order with no padding,
 /// so a decoded RGBA8 byte buffer and a pixel buffer are the same allocation
 /// viewed through [`eunomia::layout`].
+///
+/// The layout traits use Eunomia 0.12's nominal identity. Generic consumers
+/// with explicit [`eunomia::Pod`] or [`eunomia::Zeroable`] bounds must select
+/// that provider line.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, eunomia::Pod, eunomia::Zeroable)]
 #[repr(C)]
 pub struct Color {
