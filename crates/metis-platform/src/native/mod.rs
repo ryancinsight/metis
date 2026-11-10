@@ -10,7 +10,9 @@ mod webview;
 mod window;
 
 pub use application::{NativeApplication, NativeFlow, NativeHostError, run_native_application};
-pub use dialog::{DialogSelection, MAX_DIALOG_PATH_UNITS, pick};
+pub use dialog::{
+    DialogSelection, FileFilter, MAX_DIALOG_FILTERS, MAX_DIALOG_PATH_UNITS, SaveRequest, pick,
+};
 pub use global_shortcut::{
     GlobalHotkey, GlobalShortcuts, HotkeyHost, HotkeyId, MAX_GLOBAL_HOTKEYS,
     MAX_PENDING_HOTKEY_PRESSES, hotkey_for,
