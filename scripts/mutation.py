@@ -1,4 +1,12 @@
-"""Run the bounded protocol-decoder mutation suite."""
+"""Run the bounded protocol-decoder mutation suite.
+
+Delegates process-tree ownership to the stack-owned
+``scripts/process_tree.py`` when reachable (``ATLAS_STACK_ROOT`` or the
+enclosing ``.gitmodules`` checkout), falling back to the repo-local copy, per
+METIS-PROCESS-TREE-OWNER. The local ``scripts/process_tree.py`` is retained as
+the standalone fallback; the stack extractor never exports a half-migrated
+pair.
+"""
 
 from __future__ import annotations
 
@@ -196,7 +204,17 @@ def summarize_outcomes(outcomes: pathlib.Path) -> dict[str, object]:
 
 
 def _run(command: list[str], environment: dict[str, str]) -> tuple[int, str]:
-    """Run cargo-mutants under one finite suite budget and retain its log."""
+    """Run cargo-mutants under one finite suite budget and retain its log.
+
+    Runs through the stack-owned process-tree owner (ATLAS_STACK_ROOT or the
+    enclosing `.gitmodules` checkout) when reachable, matching the member-hook
+    owned-gate rule; otherwise falls back to the repo-local copy, so a
+    standalone metis checkout keeps working. See METIS-PROCESS-TREE-OWNER.
+    """
+    return _run_owned(command, environment)
+
+
+def _run_owned(command: list[str], environment: dict[str, str]) -> tuple[int, str]:
     try:
         result = run_process_tree(
             command,
