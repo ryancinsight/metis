@@ -24,6 +24,20 @@ pub const MAX_PIXELS: usize = 16 * 1024 * 1024;
 /// The layout traits use Eunomia 0.12's nominal identity. Generic consumers
 /// with explicit [`eunomia::Pod`] or [`eunomia::Zeroable`] bounds must select
 /// that provider line.
+///
+/// # Examples
+///
+/// ```
+/// use metis_platform::Color;
+///
+/// fn selected_layout_bytes<T: eunomia::Pod + eunomia::Zeroable>(value: &T) -> &[u8] {
+///     eunomia::layout::bytes_of(value)
+/// }
+///
+/// let color = Color::rgba(0x12, 0x34, 0x56, 0x78);
+/// assert_eq!(selected_layout_bytes(&color), &[0x12, 0x34, 0x56, 0x78]);
+/// assert_eq!(<Color as eunomia::Zeroable>::zeroed(), Color::TRANSPARENT);
+/// ```
 #[derive(Debug, Clone, Copy, PartialEq, Eq, eunomia::Pod, eunomia::Zeroable)]
 #[repr(C)]
 pub struct Color {

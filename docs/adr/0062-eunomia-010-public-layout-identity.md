@@ -8,140 +8,119 @@ Change class: [major], pre-1.0 minor increment
 
 Driver: METIS-CURRENT-PROVIDERS-001
 
-Revision 2026-11-09: The selected provider cohort advances Eunomia from 0.11
-to 0.12. `metis_platform::Color` continues to expose Eunomia's nominal `Pod`
-and `Zeroable` implementations, so this is the same public identity break
-recorded here. The preparation changes no package version and grants no release
-authority; release classification remains a pre-1.0 breaking increment.
-
-Revision 2026-11-10: Default commit `1c985fff466e88a1a67be530d5d69f0aa90dc8c2`
-already admits Eunomia 0.12 through the bounded 0.11 through 0.12 requirement.
-The remaining candidate preserves this as-built migration record while aligning
-the committed provider identities and removing two existing casts. Relative to
-that base, the candidate is a patch; the historical nominal-trait migration
-remains the breaking event documented by this decision.
+Revision 2026-11-10: The selected cohort advances Eunomia 0.11 to 0.12.
+Review of historical commit `406b13cb21cb6183fa29246af959463bd6cb09c4`,
+the candidate prepared by [Metis PR #519], both provider sources, and the
+affected public routes confirms one nominal trait-identity break exposed by
+three Metis packages.
+This revision replaces delivery history with the resulting contract,
+migration, package disposition, and evidence limits.
 
 ## Context
 
-The isolated current-provider preparation changes Eunomia from 0.9.2 to 0.10.
-`metis_platform::framebuffer::Color` derives `eunomia::Pod` and
-`eunomia::Zeroable`. The platform root exports Color, and
-`metis_ui_lang::style::Color` re-exports the same canonical type.
+Historical commit `406b13cb21cb6183fa29246af959463bd6cb09c4`
+locks Eunomia 0.11.0 at
+`d8ee31abf9e10c3aaa4efd67ed5912a612086115`. The candidate locks Eunomia
+0.12.0 at `00ffd14a9e2791795ded32e3b4842e8eb79208ce`.
 
-Both published Eunomia versions define these traits in their own
-`src/layout/marker.rs`; they are not aliases of a stable third-party trait.
-Matching trait source text does not preserve identity across incompatible
-package versions. A caller using Eunomia 0.9's `Pod` bound cannot treat the
-replacement 0.10 trait implementation as that implementation. The proposed
-Metis 0.4.2 patch therefore understates this public contract change.
+`metis_platform::Color` publicly derives `eunomia::Pod` and
+`eunomia::Zeroable`. `metis-platform` exports that type from its crate root;
+`metis_ui_lang::style::Color` and the `metis-ui-lang` crate root re-export the
+same type. A generic consumer bound to Eunomia 0.11's traits therefore cannot
+use the Eunomia 0.12 implementations, even though the trait definitions and
+the implementing type's representation are unchanged.
+`metis_frontend::FrontendApp::framebuffer` also returns the public platform
+`Framebuffer`; its public `get_pixel` method yields this `Color`, so the
+frontend access path exposes the same migrated implementation.
 
-The cached published archives record 0.9.2 source `06848422be64b878a5c205a976e4643d2a3e48a5`
-and 0.10.0 source `a231e54dd3311bc916e78c91d994b00d651c1646`.
-Their marker files have the identical SHA-256
-`425e2e3371a936609f8c296714f91d3ea309a6c9007c170ffbad80fc5e37ee18`;
-this is an identity change, not a changed marker definition or pixel layout.
-
-Hermes is private implementation detail in the gradient rasterizer. Gaia is
-only a root dev dependency used by the mesh-viewer example in this checkout;
-no production signature exposes Gaia. Those uses do not independently force
-this public version increment. The public Eunomia marker implementations do.
+Direct comparison of the provider revisions above shows byte-identical
+`layout/marker.rs` sources and identical derive-crate trees. `Color` remains
+`#[repr(C)]` with four public `u8` fields in red, green, blue, alpha order,
+and its compile-time size/alignment assertion remains four bytes at byte
+alignment. The break is nominal Rust trait identity, not layout or value
+behavior.
 
 ## Decision
 
-- Prepare the existing uniformly versioned workspace at 0.5.0, including its
-  internal path requirements. Commit versions, provider requirements, final
-  locks and migration records together after exact-head gates pass.
-- Admit Eunomia 0.10 and owner-confirmed Hermes 0.9 through the existing Git
-  plus version policy. Admit the coordinated Gaia 0.6 line for the example.
-  Incoming RITK requirements must admit Metis 0.5.
-- Admit published Moirai 0.9.3 through all seven existing source declarations,
-  preserving URLs/features/defaults. Its merged PR623 `44a962f0` admits the
-  published memory 0.10 facade. Leto 0.46 and Gaia 0.6 remain upstream gates;
-  isolated provider validation does not establish Metis acceptance.
-- Security renewal (2026-10-19) remains blocked: Git Gaia0.6.0 locks vulnerable
-  ZIP2.4.2 (RustSec2026-0367/8/9). Current Git Gaia0.6.9 at
-  `ea7411df38a8d9794e236c9ced302ab0ef872756` requires ZIP^9.0.4 and Git
-  Moirai0.10. Updating it fails normal Cargo resolution because the public
-  Metis/Consus0.3 cohort requires Moirai0.9.3. Coordinate that provider migration
-  before acceptance; retain the current Git declarations and existing locks
-  as a held preparation, never as release evidence.
-- Reject [rejected registry candidate](https://github.com/ryancinsight/metis/commit/ebc1310400eab11ab4fc238c5a4a234e97805215)'s registry Gaia alternative. Its archive matches current Git
-  source, and the example exchanges primitive geometry/pixels, so the candidate
-  preserves public identities and removes the ZIP advisories. However, the
-  executable source policy in scripts/verify.py covers every direct dependency,
-  including dev dependencies; Gaia is not an admitted registry boundary.
-  Restore the existing Git graph. An ADR does not override that gate. No source
-  alias, older pin, registry allowlist change, advisory ignore, feature reduction
-  or reduced verification scope is authorized to make the candidate pass.
-- Consumers using Color with layout bounds select the same Eunomia 0.10
-  provider identity. No duplicate marker implementations, old-line aliases,
-  feature reductions or compatibility packages bridge the old trait identity.
-- Keep framebuffer layout, raster kernels, all Rust source and existing
-  value/byte/frame-hash oracles unchanged. Preserve peer-owned PR503/PR504.
-- Package publication of repaired packages/prerequisites is authorized after
-  exact-revision gates and reviews pass. This supersedes the prior hold. No new
-  credentials or publisher configuration is authorized; retain the separate
-  Consus first-upload owner-authentication handoff. Upstream Miri and Aequitas
-  documentation deployment remain with their existing owner. This consumer
-  change does not touch protected allocation functions.
+- Classify the Eunomia 0.11 to 0.12 transition as a breaking public change for
+  `metis-platform`, `metis-ui-lang`, and the `metis-frontend` framebuffer
+  access path. Under the uniformly versioned pre-1.0 workspace policy,
+  release classification is a minor increment.
+- Classify the candidate relative to fetched main
+  `318c83eca0e2a619b095075d419aed6292cbbec9` as a patch reconciliation. That
+  base already selects Eunomia 0.12; the candidate does not introduce another
+  trait-identity transition.
+- Consumers with `eunomia::Pod` or `eunomia::Zeroable` bounds over Metis
+  `Color` update their direct Eunomia dependency and bounds to 0.12 in the
+  same migration. Consumers that only construct, compare, render, or marshal
+  `Color` require no source change, but resolve the selected provider cohort.
+- Do not add an old-trait alias, duplicate implementation, compatibility
+  package, version rollback, or wider requirement to bridge the identities.
 
-## Alternatives
+## Affected package disposition
 
-- A 0.4.2 patch would omit the loss of the old public trait implementations.
-- A second Eunomia dependency/compatibility alias would keep incompatible
-  contracts in parallel instead of completing the intended provider migration.
-- Changing pixel storage or adding a consumer-owned layout trait would duplicate
-  provider ownership and alter a numerical/layout contract without need.
+| Package | Historical native result | Actual Eunomia contract |
+| --- | --- | --- |
+| `metis-platform` | reconstruction unsupported | Breaking: exports `Color` with the selected layout-trait impls. |
+| `metis-ui-lang` | reconstruction unsupported | Breaking: re-exports the same `Color`. |
+| `metis-backend` | reconstruction unsupported | No Eunomia type or bound in its public surface; dependency is transitive. |
+| `metis-frontend` | reconstruction unsupported | Breaking access path: public `FrontendApp::framebuffer` reaches the migrated `Color`. |
+| `metis-python` | reconstruction unsupported | Python boundary exposes RGBA bytes, not Rust layout traits. |
+| `metis-web` | reconstruction unsupported | Browser boundary exposes RGBA bytes, not Rust layout traits. |
 
-- Admit Consus0.3 after PR175's executed public async provider regression.
-  AssetError's public From<consus_raster::DecodeError> implementation also
-  follows the new provider identity; the existing0.5 release boundary covers
-  this alongside the Eunomia marker migration. Both older raster upload
-  commands are retired; await the verified0.3 human-authentication handoff.
+The six unsupported results are dependency-reconstruction failures, not six
+API verdicts. Cargo-semver-checks 0.51 cannot resolve the historical 0.11 Git
+requirement from the selected 0.12 provider state. It must not be reported as
+a passing native comparison. The other five Rust library packages complete
+229 checks with 229 passed and 31 skipped per package against this baseline.
 
-## Verification
+## Consumer contracts
 
-The source review checks both canonical trait definitions and both public
-Color export routes. Manifest-only metadata must show every workspace package
-and internal requirement at 0.5.0 without changing the existing lock. All source
-files remain byte-identical to the preserved draft head. These static checks
-do not replace dependency resolution or cargo-semver-checks.
+- `Color`'s Rustdoc example is an external-style consumer: its generic bound
+  requires the selected `Pod` and `Zeroable` identities, checks exact RGBA byte
+  order through `eunomia::layout::bytes_of`, and checks the zero value.
+- `rgba_bytes_preserve_row_major_channels_and_reject_length_mismatch` and
+  `admitted_color_forms_expand_to_exact_straight_channels` check the public
+  RGBA conversion behavior used by UI and Python consumers.
+- `locale_accepts_the_admitted_subset` and
+  `locale_rejects_everything_outside_the_subset` check that the unrelated
+  integer-conversion cleanup preserves locale behavior.
+- `actual_quic_frames_retain_truncation_checksum_size_and_trailing_byte_errors`
+  checks the wire behavior around the unchanged `65_560` byte frame limit.
+- RITK's exact-C14 consumer preparation runs
+  `cargo nextest run -p ritk-snap --locked`: 757 passed and none skipped. Its
+  value contracts preserve provider event values and coordinates, exact RGBA
+  conversion, one-frame host outcome counts, session framebuffer/navigation/
+  gesture/overlay behavior, and browser semantic attributes and dimensions.
+  This does not exercise Metis's Python binding or browser feature matrix.
 
-After the current provider defaults are available, resolve root and fuzz locks,
-then run the unchanged native/scalar/frame-hash, feature/target, strict Clippy,
-docs/doctest, API, package and exact-head hosted gates. Earlier 0.9.2 results
-remain historical evidence. No package is uploaded before these gates and reviews pass.
+## Rejected alternatives
 
-## Current-main reconciliation — 2026-10-28
+- Treating identical trait source as compatible rejects Rust's nominal trait
+  identity and leaves old generic consumers uncompilable.
+- Calling all six unsupported comparisons breaking overstates transitive
+  resolution failure as public exposure.
+- Calling compiler artifacts behavioral evidence omits the byte, locale,
+  transport, and downstream value contracts.
+- Preserving both provider identities creates the compatibility layer this
+  migration is intended to remove.
 
-The original 0060 number now belongs to the merged bounded-property-transitions
-decision. This provider decision moves to 0062; both accepted decisions remain.
-The October 15/19 cohort and ZIP rejection above are historical checkpoints.
-Main 406b13cb21cb6183fa29246af959463bd6cb09c4 now carries the coherent
-Consus 0.4 / Eunomia 0.11 / Hermes 0.9.2 / Gaia 0.6.10 / Moirai 0.11 graph.
-Its root/fuzz locks replace the old held graph without a source exception,
-advisory ignore, dependency back-pin or protected Rust change. ZIP is absent.
-The whole upload hold remains until the owner completes final source/API,
-package, native/platform/browser and exact-head hosted review/acceptance.
-The isolated supplement does not lift native QUIC promotion or service holds.
+## Consequences and verification
 
-## Selected-cohort migration — 2026-11-09
+The source migration is limited to provider selection, documentation, and
+real consumers. It does not change `Color` fields, representation, pixel
+packing, raster arithmetic, locale semantics, QUIC framing, or Python/browser
+byte boundaries.
 
-Metis commit `f9aa984ccecc02f4ee35fe89e9efdfa1b96b8135` exposes
-Eunomia 0.11's `Pod` and `Zeroable` identities through
-`metis_platform::Color`. The selected cohort replaces those implementations
-with Eunomia 0.12 at `00ffd14a9e2791795ded32e3b4842e8eb79208ce` without
-changing `Color`'s fields, representation, or byte layout.
+Candidate verification includes workspace format/check/Clippy, 845 passed and
+3 skipped Nextest tests, doctests, cast and conformance gates, and the normal
+push gate over `318c83ec..14f9eab`. The selected-layout Rustdoc consumer adds
+one exact public-contract case; all 10 `metis-platform` doctests pass. The RITK
+consumer result above supplies downstream behavior rather than compiler-only
+evidence. Cargo-semver-checks passes all 11 library packages against the live
+base. Against `406b13cb`, five packages pass and the six listed above remain
+explicitly unsupported. Registry inventory finds no released 0.5.0 contract
+for the affected Rust library packages; this does not turn unsupported
+historical coverage green.
 
-Consumers whose generic bounds mention Eunomia's layout traits must update
-their direct Eunomia dependency and bounds to 0.12 in the same migration.
-Consumers that use `Color` without those bounds require no source change but
-must resolve the coherent provider revision set. Metis supplies no old-trait
-alias, duplicate implementation, or compatibility package because those
-would preserve two incompatible nominal contracts.
-
-The root and standalone fuzz locks resolve the immutable selected cohort.
-Native, doctest, and fuzz-target compilation cover the new graph. The pinned
-SemVer tool cannot reconstruct the historical Git lock for this dependency
-transition; that limitation remains explicit and does not reclassify the
-public break as compatible.
+[Metis PR #519]: https://github.com/ryancinsight/metis/pull/519
