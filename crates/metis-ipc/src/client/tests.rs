@@ -115,7 +115,7 @@ fn capability_discovery_rejects_an_unadvertised_host_operation() {
     assert_eq!(
         error,
         CapabilityError::Remote(ErrorResponsePayload {
-            error_code: ErrorCode::UnexpectedMessageType as u16,
+            error_code: 0x1006,
             message: ErrorCode::UnexpectedMessageType.as_str().to_owned(),
         })
     );
