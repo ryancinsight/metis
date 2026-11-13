@@ -121,7 +121,7 @@ class PythonBindingContractTests(unittest.TestCase):
             "abi3t-features: abi3t",
             "verification: ${{ github.event_name == 'workflow_dispatch' }}",
             "id-token: write",
-            "ryancinsight/atlas/.github/workflows/python-wheels.yml@227ff172612b8aff553be22be89fabdf71838a03",
+            "ryancinsight/atlas/.github/workflows/python-wheels.yml@f19af27ce7b7ef6dd8a38dcc8d7e22c37fcdff2a",
             "pypa/gh-action-pypi-publish@ba38be9e461d3875417946c167d0b5f3d385a247",
             "needs: [wheels, identity]",
             "name: release-identity",
