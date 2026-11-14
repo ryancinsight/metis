@@ -188,9 +188,9 @@ Rustdoc metadata generated from unchanged baseline source and its canonical
 lock passes all 588 applicable native API checks. This does not prove generic
 Send-bound compatibility; the existing pre-1.0 migration remains documented.
 Provider Windows optional-module diagnostics are corrected at their source;
-installed Windows default/minimal/WebView2 cross-compilation passes. Fresh
-hosted consumer/provider runtime and protected default-branch promotion remain
-gates, and the measured controlled-loss performance limit remains open.
+installed Windows default/minimal/WebView2 cross-compilation passes. Both
+providers are merged to their default branches; the measured controlled-loss
+performance limit remains open.
 
 Historical consumer e8dd4c9 consumes the applied-UDP provider's shared PAL queue contract,
 accepts independent positive receive/send requests and logs effective native
@@ -222,7 +222,7 @@ default-API compatibility checks pass under the stronger minor override. These
 checks do not prove generic-bound compatibility: the pre-1.0 explicit server
 annotation/Send migration remains documented in CHANGELOG.md. Existing Iris/Gaia
 provider lag retains Moirai 0.8.3, following Atlas overlay policy; no stack-wide
-version migration is claimed. Default-branch promotion remains an active gate.
+version migration is claimed.
 Both hosted Linux and Windows pass 176 default and 113 minimal transport tests,
 with strict diagnostics at published consumer revision ed72092. Current-main reconciliation retains its provider/Consus
 contracts and lossless native audit identifiers; 703 native tests and synchronized
@@ -236,8 +236,8 @@ passes at ed72092, including Windows and the three browser engines. The first
 Firefox fragment-startup attempt times out; its unchanged retry passes. Provider
 measurement executes all 108 controlled pairs, with 105 exact-byte successes
 and three 60-second deadlines in the maximum-frame/16-stream 1% loss case.
-Kernel UDP errors remain zero; recovery-policy evaluation and provider
-promotion remain open. The canonical consumer pin adopts the published
+Kernel UDP errors remain zero; recovery-policy evaluation remains
+open. The canonical consumer pin adopts the published
 provider evidence and passive metrics API without changing session behavior.
 
 ## Standalone Consus adoption [patch]
