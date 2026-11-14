@@ -65,15 +65,6 @@ native budget changes occur; protected503/504 source remains separate.
 
 Current framework version: Metis 0.5.0. Remaining capability work follows.
 
-<a id="METIS-PROVIDER-COHORT-001"></a>
-## METIS-PROVIDER-COHORT-001 — Advance Metis to the Moirai 0.12 cohort [patch]
-
-- Status: todo; priority: P2; owner: Metis build; last-update: 2026-11-13; needs: none; basis: b00bed4.
-- Scope: `Cargo.toml` lines 71-79 move `moirai-core/-executor/-transport/-pal/-crypto/-async/-http` 0.11.0, `moirai-quic` 0.1.0 and `moirai-webview` 0.2.0 to 0.12.0; call-site migration for the breaking `StateWord::get_mut` removal (Moirai 519af3f0, `docs/migrations/task-results.md`); regenerated `Cargo.lock` and `fuzz/Cargo.lock`.
-- Lag (2026-11-13): Moirai origin/main 9e78bb7 sets `[workspace.package] version = "0.12.0"` for every member; Cargo's pre-1.0 rule excludes 0.12.0 from `^0.11.0`, `^0.1.0` and `^0.2.0`. Consus 0.4.1, hermes-simd 0.9.2, gaia-mesh 0.6.10 and eunomia 0.12.0 at their origin heads are admitted by the current requirements.
-- Acceptance: `Cargo.toml` requires 0.12.0 for all nine Moirai crates and both locks resolve one Moirai Git source; `cargo check --workspace --all-targets --locked`, the workspace clippy and nextest gates, and the pre-push source-identity gate pass at the recorded lock; no first-party requirement lags its provider.
-- Next step: bump the nine requirements, regenerate both locks outside the overlay, fix the compile breaks, then run the gates.
-
 <a id="METIS-PYPI-FIRST-RELEASE-001"></a>
 ## METIS-PYPI-FIRST-RELEASE-001 — Complete the genuine Python first release [patch]
 
