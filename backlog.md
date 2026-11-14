@@ -65,6 +65,15 @@ native budget changes occur; protected503/504 source remains separate.
 
 Current framework version: Metis 0.5.0. Remaining capability work follows.
 
+<a id="METIS-PROVIDER-COHORT-001"></a>
+## METIS-PROVIDER-COHORT-001 — Advance Metis to the Moirai 0.12 cohort [patch]
+
+- Status: todo; priority: P2; owner: Metis build; last-update: 2026-11-13; needs: none; basis: b00bed4.
+- Scope: `Cargo.toml` lines 71-79 move `moirai-core/-executor/-transport/-pal/-crypto/-async/-http` 0.11.0, `moirai-quic` 0.1.0 and `moirai-webview` 0.2.0 to 0.12.0; call-site migration for the breaking `StateWord::get_mut` removal (Moirai 519af3f0, `docs/migrations/task-results.md`); regenerated `Cargo.lock` and `fuzz/Cargo.lock`.
+- Lag (2026-11-13): Moirai origin/main 9e78bb7 sets `[workspace.package] version = "0.12.0"` for every member; Cargo's pre-1.0 rule excludes 0.12.0 from `^0.11.0`, `^0.1.0` and `^0.2.0`. Consus 0.4.1, hermes-simd 0.9.2, gaia-mesh 0.6.10 and eunomia 0.12.0 at their origin heads are admitted by the current requirements.
+- Acceptance: `Cargo.toml` requires 0.12.0 for all nine Moirai crates and both locks resolve one Moirai Git source; `cargo check --workspace --all-targets --locked`, the workspace clippy and nextest gates, and the pre-push source-identity gate pass at the recorded lock; no first-party requirement lags its provider.
+- Next step: bump the nine requirements, regenerate both locks outside the overlay, fix the compile breaks, then run the gates.
+
 <a id="METIS-PYPI-FIRST-RELEASE-001"></a>
 ## METIS-PYPI-FIRST-RELEASE-001 — Complete the genuine Python first release [patch]
 
@@ -222,7 +231,7 @@ an owner. “Unsupported” cannot replace delivery of a required mobile/native 
 - Scope: release-readiness metadata, package dry runs, final manual and platform evidence; registry authentication uses Atlas OIDC workflows without personal keys; preparation continues without release authority.
 - Acceptance: dependency-closed packages and exact-revision evidence; release execution is blocked until explicit authority, registry publisher registration, rollout and rollback details are available.
 - Historical evidence: [increment records](docs/backlog/evidence.md#metis-release-001).
-- Native QUIC (ADR 0058) is merged on both sides (Moirai#618, metis#503) with the canonical Moirai 0.11 requirements; its publication follows this item's release authority.
+- Native QUIC (ADR 0058) is merged on both sides (Moirai#618, metis#503). Metis requires `moirai-*` 0.11.0, `moirai-quic` 0.1.0 and `moirai-webview` 0.2.0 by Git; crates.io returns 404 for `moirai-quic` and `moirai-webview` and lists `moirai-core` only to 0.11.3 (checked 2026-11-13), so the Metis packages that require them cannot publish until Moirai does. Publication follows this item's release authority.
 - Recheck (2026-09-09): the Metis remote is HTTPS, local Git has no signing or SSH-key configuration, and the checked-in callers still contain no registry secret path. GitHub API inspection found zero Actions secrets or variables and two empty environments, `crates-io` and `pypi`, without protection rules. Trusted-publisher registration and release authority remain external; no key or token is requested from the developer. The visible browser is signed out.
 - Clarification (2026-09-09, `27853cc`): runtime IPC authentication uses an ephemeral symmetric session MAC key; it is never persisted or exposed to CI and is unrelated to registry or signing credentials.
 - Demonstration: [V10](docs/VERIFICATION.md#V10), locally built package installation/recovery instructions and actual captures before any publication.
