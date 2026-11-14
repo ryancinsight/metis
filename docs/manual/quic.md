@@ -2,7 +2,7 @@
 
 Metis 0.5.0 includes QUIC in every native `metis-ipc` and `metis-backend` build,
 including with default features disabled. No QUIC feature flag is needed.
-It consumes Moirai 0.9.0 and `moirai-quic` 0.1.0 from the exact published provider
+It consumes Moirai 0.12.0 and `moirai-quic` 0.12.0 from the exact published provider
 revision recorded in Cargo.toml and Cargo.lock. Canonical native verification
 uses that Git source without development path patches. Both hosted Linux and
 Windows pass the default and minimal native session suites at consumer revision
