@@ -80,32 +80,28 @@ node no longer reserves an element's computed style.
 
 ## Alternatives
 
-Per-pixel analytic evaluation — exact along x, quadrature along y over the
-whole window — was measured first. Eight-node Gauss–Legendre and midpoint
-rules both left errors of 2–7% at small σ with large radii, because the arc
-makes the integrand change over a fraction of a pixel.
+Per-pixel analytic evaluation, exact along x with eight-node Gauss–Legendre
+or midpoint quadrature along y, left errors of 2–7% at small σ with large
+radii, because the arc makes the integrand change within a pixel.
 
 Convolving the antialiased coverage mask with the discrete kernel on both axes
 was the first delivered form. It is exact on straight edges, but coverage is
-already an area average, so the arcs are blurred by an extra pixel-wide box on
-each axis. An independent review measured 15.6 levels against the 13.25-level
-bound at a one-pixel blur, the smallest the style subset accepts. Integrating
-arc rows as slabs with exact profiles removes that box and measures 0.5 levels
-at the same blur on a 12-pixel radius.
+already an area average, so arcs gain an extra pixel-wide box per axis. An
+independent review measured 15.6 levels against the 13.25-level bound at a
+one-pixel blur, the smallest the style subset accepts; slabs with exact
+profiles measure 0.5 levels at that blur on a 12-pixel radius.
 
 The slab count was first chosen for `σS ≥ 4` on a second-order error law
-measured only on that radius. A second review pass showed the law is first
-order near the flat apex of large arcs, where it reached 13.16 of the 13.25
-permitted levels at a radius of 67 million pixels; the resolution was doubled
-to halve the bound, and a large-radius test pins it.
+measured on that radius only. A second review showed the law is first order
+near the flat apex of large arcs, reaching 13.16 of the 13.25 permitted levels
+at a radius of 67 million pixels; the resolution was doubled to halve the
+bound, and a large-radius test pins it.
 
 A triple box blur, the common browser approximation, was rejected: it is not
 exact on straight edges, and exactness there is what lets the straight-edge
-test assert the closed form.
-
-Blurring a full rasterized mask of the whole shadow rectangle was rejected: its
-cost is proportional to the shadow's area times the kernel width, where the
-region decomposition pays only near the arcs.
+test assert the closed form. Blurring a full rasterized mask of the whole
+shadow rectangle was rejected: its cost is proportional to the shadow's area
+times the kernel width, where the region decomposition pays only near the arcs.
 
 ## Verification
 
