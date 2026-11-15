@@ -306,7 +306,10 @@ def assert_lifecycle_growth(records: object) -> None:
     for record in post_warmup[1:]:
         observed = [phase["gallery"]["wasm_bytes"] for phase in record["phases"]]
         if observed != capacity_profile:
-            raise BrowserRuntimeError("gallery WebAssembly capacity grew after warmup")
+            raise BrowserRuntimeError(
+                "gallery WebAssembly capacity grew after warmup: "
+                f"cycle={record['cycle']} reference={capacity_profile} observed={observed}"
+            )
 
 
 def summarize_lifecycle_resources(records: object) -> dict:
