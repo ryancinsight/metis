@@ -15,20 +15,21 @@ major API change, and release versioning remains a separate authorized action.
 Browser decoding remains browser-owned. RITK already implements sequential and
 lossless JPEG primitives and its file readers use an independent image decoder,
 so the shared JPEG and EXIF implementation moves to `consus-raster` under
-[Consus ADR 0004](../../../consus/docs/adr/0004-raster-codecs.md). This avoids a
-RITK-to-Metis-to-RITK repository cycle and preserves one format provider.
-Both consumer suites must pass before the duplicate implementations count as
-removed.
+[Consus ADR 0004](../../../consus/docs/adr/0004-raster-codecs.md). This avoids
+a RITK-to-Metis-to-RITK repository cycle and preserves one format provider.
+Both consumer suites must pass before duplicates count as removed.
 
-Revision 2026-09-21: Consus extends Huffman/arithmetic JPEG process and
-precision coverage and owns shared display quantization; Apollo owns the DCT
-used by reconstruction.
+Revision 2026-09-21: Consus
+[PR 80](https://github.com/ryancinsight/consus/pull/80) extends
+Huffman/arithmetic JPEG process and precision coverage and owns shared display
+quantization; Apollo [PR 526](https://github.com/ryancinsight/apollo/pull/526)
+owns the DCT used by reconstruction. Consumer code retains only presentation or
+clinical interpretation; no consumer duplicates these kernels.
 
 Encoded EXIF orientation is normalized once into immutable raster storage, so
-the returned width and height describe the oriented pixel grid and presentation
-uses identity unless the caller requests an additional transform. Metadata is
-neither omitted nor applied twice, and no EXIF camera metadata enters the
-framebuffer or platform host.
+the returned dimensions describe the oriented pixel grid and presentation is
+identity unless the caller adds a transform. Metadata is neither omitted nor
+applied twice, and no camera metadata enters the framebuffer or platform host.
 
 The independent orientation oracle uses the six row-major cells `A B / C D /
 E F`. [CIPA DC-X010-2017, Table 3](https://cipa.jp/std/documents/e/DC-X010-2017.pdf)
@@ -76,11 +77,11 @@ widened, normalized through a floating type or interpreted as modality values.
 Metis assembles the returned pixels with alpha 255 and orients them once.
 
 EXIF parsing checks the TIFF byte order, magic, field types/counts, external
-value extents and directory references. Traversal uses a fixed sixteen-directory
-budget and rejects cycles. Only the primary image's orientation changes the
-returned pixels. Both byte orders and all eight orientation values have exact
-asymmetric-grid tests. This is bounded image admission, not a general EXIF
-metadata editor or TIFF image decoder.
+value extents and directory references. Traversal uses a fixed
+sixteen-directory budget and rejects cycles. Only the primary image's
+orientation changes the returned pixels. Both byte orders and all eight
+orientation values have exact asymmetric-grid tests. This is bounded admission,
+not a general EXIF editor or TIFF decoder.
 
 `ImagePlacement::contain` fits the full image after its discrete orientation,
 centers it in positive bounds and leaves letterboxing untouched. Integer
@@ -93,8 +94,8 @@ transforms are rejected because they need a different fit contract.
 The raster placement contract scales and clips a validated source crop but
 cannot preserve a quarter-turn or mirror without the producer allocating a
 second pixel buffer. RITK orients clinically before handing a frame to Métis,
-and other Atlas consumers share the need. The host keeps one pixel mapping
-contract and never inspects DICOM or other format metadata.
+and other Atlas consumers can have the same need. The host keeps one pixel
+mapping contract and never inspects DICOM or other format metadata.
 
 ## Decision
 
@@ -105,11 +106,11 @@ validated crop and destination. Existing placements remain identity placements.
 
 Rendering dispatches once at the placement boundary to a zero-sized
 `ImageMapper` strategy. Each monomorphized mapper computes nearest-neighbor
-source coordinates in widened integer arithmetic; quarter-turns swap the
-source extents before scaling. The loop clips the destination first, allocates
-no intermediate image, and feeds every selected pixel to the existing
-source-over compositor. The transform does not alter the source `Arc`, so
-multiple views can share one decoded frame.
+source coordinates in widened integer arithmetic; quarter-turns swap the source
+extents before scaling. The loop clips the destination first, allocates no
+intermediate image, and feeds every selected pixel to the source-over
+compositor. The transform does not alter the source `Arc`, so views share one
+decoded frame.
 
 This is a presentation operation only: RITK keeps DICOM parsing, voxel
 geometry, clinical orientation policy and window/level decisions, and a
@@ -142,9 +143,8 @@ The generic orientation suite renders one asymmetric 2×3 source through all
 five transforms and asserts the exact row-major pixel order, including both
 axis-swapping rotations. JPEG fixtures cover two-, seven-, twelve- and
 sixteen-bit gray samples plus twelve-bit RGB samples against the integer
-conversion formula; the asymmetric EXIF corpus covers all eight orientations.
-The native image example presents five PNG transforms, all eight EXIF
-orientations, precision conversion and arithmetic JPEG fixtures with pixel and
-containment assertions. Focused `metis-ui-lang` nextest, strict formatting and
-the full Metis gate apply; the manual links the visual artifact, and real DICOM
-evidence stays in the RITK-owned workflow.
+conversion formula. The native image example presents five PNG transforms, all
+eight EXIF orientations, precision conversion and arithmetic JPEG fixtures with
+pixel and containment assertions. Focused `metis-ui-lang` nextest, strict
+formatting and the full Metis gate apply; the manual links the visual artifact,
+and real DICOM evidence stays in the RITK-owned workflow.

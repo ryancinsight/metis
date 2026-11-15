@@ -2,8 +2,7 @@
 
 Status: Accepted
 
-Date: 2026-09-09, revised through 2026-09-18 with each revision folded into
-the Decision.
+Date: 2026-09-09; revisions through 2026-09-18 are folded into the Decision.
 
 Driver: `METIS-BROWSER-001`.
 
@@ -12,10 +11,9 @@ Driver: `METIS-BROWSER-001`.
 Metis has a Rust/WASM browser workbench and a real authenticated loopback
 service, but its existing evidence is tied to one in-app browser surface. The
 browser lifecycle contract admits Chromium, Firefox and WebKit, and a
-screenshot or successful WASM build cannot establish that the same controls,
-bridge result and teardown behavior work in each engine. Automation must also
-stay outside the downloaded page: it cannot receive credentials, add native
-authority or become part of the application runtime.
+screenshot or WASM build cannot establish that the same controls, bridge result
+and teardown work in each engine. Automation must also stay outside the
+downloaded page, with no credentials, native authority or runtime role.
 
 The trace needs two input-sensitive observations, an authorized service result,
 cancellation of a delayed response, semantic snapshots, visual artifacts and a
@@ -52,14 +50,14 @@ operation restrictions and cleanup evidence. A stopped root must contain the
 stopped message and zero application controls; a remounted generation must not
 contain the old result.
 
-An opt-in accessibility probe observes media preferences, CSS and visual
-viewport scale, document extents, DOM focus order and bounded focusable-element
-geometry. It focuses visible enabled controls in DOM order, checks the
-sequence and blurs the probe focus; Python rejects duplicate identities,
-horizontal overflow, empty or off-viewport rectangles and malformed media data.
-`--require-reduced-motion` and `--require-forced-colors` make host preferences
-acceptance conditions without emulating them; screen-reader speech and native
-accessibility bridges remain host-specific evidence.
+The workbench trace adds an opt-in accessibility probe observing media
+preferences, CSS and visual viewport scale, document extents, DOM focus order
+and bounded focusable-element geometry. It focuses visible enabled controls in
+DOM order, checks the sequence and blurs the probe focus; Python rejects
+duplicate identities, horizontal overflow, empty or off-viewport rectangles and
+malformed media data. `--require-reduced-motion` and `--require-forced-colors`
+make host preferences acceptance conditions without emulation; screen-reader
+speech and native accessibility bridges remain host-specific evidence.
 
 The same client exposes bounded W3C `actions` and `release actions` commands
 for format-neutral canvas consumers. `pointer_drag` emits a trusted pointer
@@ -71,26 +69,29 @@ medical semantics; RITK maps the resulting events to its viewer reducer.
 The `canvas` scenario validates a finite list of HTML canvas identifiers,
 captures the complete browser window and each element, records intrinsic/CSS
 dimensions, applies the bounded pointer and wheel actions to every canvas, and
-explicitly releases all WebDriver sources. The trace stores the Metis revision
-and an optional 40-hex consumer revision separately, so RITK and other Atlas
-consumers reuse the runner without moving their state or format policy into
-Metis.
+releases all WebDriver sources. The trace stores the Metis revision and an
+optional 40-hex consumer revision separately, so RITK and other Atlas consumers
+reuse the runner without moving their state or format policy into Metis.
 
 - A finite allowlist of consumer-selected `data-*` attributes is recorded per
   canvas, or `null` when absent, within a 16-name and 1024-byte per-value
-  bound. Names and values are opaque, which keeps DICOM and viewer meaning out
-  of Metis.
+  bound. Names and values are opaque, so a consumer owns their interpretation
+  and assertions; this supplies RITK's browser workflow with semantic evidence
+  while keeping DICOM and viewer meaning out of Metis.
 - A bounded capture-phase observer records each action's event type, target
   canvas and browser `isTrusted` value, rejecting missing, mixed, untrusted or
   mis-targeted records. It is removed before the final window capture, so the
   trace proves the runner's own listeners are released while provider-private
   listener counts stay outside the WebDriver contract.
 - The file-backed gallery captures the paired canvas trace before its bounded
-  overflow rejection probes, and rejection invariance compares each rejected
-  batch with that post-input pixel baseline. The generic probes and comparison
-  complete before any consumer capture callback, which may stop or remount the
-  host as part of its own teardown; running it first would remove the generic
-  file picker and tie the host oracle to consumer lifecycle details.
+  overflow rejection probes. When the paired actions move a slice, rejection
+  invariance compares each rejected batch with that post-input pixel baseline,
+  keeping the committed window capture on the accepted study. The generic
+  probes and comparison complete before any consumer capture callback, which
+  may stop or remount the host in its own teardown; running it first would
+  remove the generic file picker and tie the host oracle to consumer lifecycle
+  details. The callback remains the owner of consumer controls and listener
+  cleanup, and the ordering does not add format-specific behavior to Metis.
 
 The runner accepts an optional fixed-point device scale between `0.5` and `4`.
 Chromium and Edge receive their native force-scale launch arguments, Firefox
@@ -144,7 +145,6 @@ privilege rejection, teardown state, unsupported operations, device-scale
 parsing, engine capabilities, ratio matching and the WebKit rejection;
 `python -m py_compile` checks the runner and tests. Each configured engine runs
 the browser manual's commands, and its schema-1 trace plus PNGs are reviewed
-before the browser item can close. This Windows environment has no configured
-WebDriver endpoint, so the increment supplies the runner and deterministic
-harness evidence; real three-engine and post-drop resource captures remain open
-under `METIS-BROWSER-001`.
+before the item closes. This Windows host has no configured WebDriver endpoint,
+so the increment supplies the runner and deterministic harness evidence; real
+three-engine and post-drop captures remain open under `METIS-BROWSER-001`.
