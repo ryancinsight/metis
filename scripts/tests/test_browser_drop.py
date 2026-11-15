@@ -628,6 +628,16 @@ class FileDropTests(unittest.TestCase):
                 self._lifecycle_records((65_536, 131_072, 131_072, 196_608))
             )
 
+    def test_growth_gate_reports_the_observed_capacity_profile(self):
+        with self.assertRaises(BrowserRuntimeError) as caught:
+            assert_lifecycle_growth(
+                self._lifecycle_records((65_536, 131_072, 131_072, 196_608))
+            )
+        message = str(caught.exception)
+        self.assertIn("cycle=4", message)
+        self.assertIn("reference=[131072, 131072, 131072, 131072, 131072]", message)
+        self.assertIn("observed=[196608, 196608, 196608, 196608, 196608]", message)
+
     def test_growth_gate_rejects_retained_stopped_listener_guard(self):
         records = self._lifecycle_records()
         records[-1]["phases"][-1]["gallery"]["consumer_listeners"] = 1
