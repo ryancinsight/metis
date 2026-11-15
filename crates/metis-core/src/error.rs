@@ -164,61 +164,6 @@ impl ErrorCode {
         }
     }
 
-
-    /// Returns the canonical wire value of this error code.
-    ///
-    /// The value is the protocol and persistence discriminant declared on
-    /// the variant, so a code keeps one numeric identity on every transport.
-    #[must_use]
-    pub const fn to_wire(self) -> u16 {
-        match self {
-            Self::MagicMismatch => 0x1001,
-            Self::VersionMismatch => 0x1002,
-            Self::ChecksumMismatch => 0x1003,
-            Self::PayloadTooLarge => 0x1004,
-            Self::FrameTruncated => 0x1005,
-            Self::UnexpectedMessageType => 0x1006,
-            Self::MalformedPayload => 0x1007,
-            Self::SequenceMismatch => 0x1008,
-            Self::ReplayDetected => 0x1009,
-            Self::MissingCapability => 0x2001,
-            Self::InvalidCapabilitySignature => 0x2002,
-            Self::CapabilityExpired => 0x2003,
-            Self::InsufficientScope => 0x2004,
-            Self::PrivilegeEscalationAttempt => 0x2005,
-            Self::InvalidPrincipal => 0x2006,
-            Self::InvalidOrigin => 0x2007,
-            Self::InvalidWindow => 0x2008,
-            Self::NavigationDenied => 0x2009,
-            Self::InvalidPluginDescriptor => 0x200a,
-            Self::PluginAlreadyRegistered => 0x200b,
-            Self::PluginRegistryFull => 0x200c,
-            Self::PluginNotFound => 0x200d,
-            Self::PluginOperationNotFound => 0x200e,
-            Self::PermissionDenied => 0x200f,
-            Self::InvalidPatientWeight => 0x3001,
-            Self::InvalidDrugConcentration => 0x3002,
-            Self::InvalidTargetDose => 0x3003,
-            Self::RateExceedsSafetyEnvelope => 0x3004,
-            Self::PediatricRateExceeded => 0x3005,
-            Self::NumericInstability => 0x3006,
-            Self::ClinicalInterlockBlocked => 0x3007,
-            Self::TransportBroken => 0x4001,
-            Self::ConnectionClosed => 0x4002,
-            Self::Timeout => 0x4003,
-            Self::IoError => 0x4004,
-            Self::QueueFull => 0x4005,
-            Self::MalformedMarkup => 0x5001,
-            Self::UnclosedTag => 0x5002,
-            Self::TagMismatch => 0x5003,
-            Self::InvalidCssStyle => 0x5004,
-            Self::LayoutOverflow => 0x5005,
-            Self::RenderFailure => 0x6001,
-            Self::SurfaceAllocationError => 0x6002,
-            Self::UnsupportedPlatformEvent => 0x6003,
-        }
-    }
-
     /// Returns the symbolic string for the error code.
     #[must_use]
     pub const fn as_str(&self) -> &'static str {
@@ -271,10 +216,12 @@ impl ErrorCode {
     }
 }
 
+/// Wire discriminant for persistence and protocol frames.
+///
+/// `#[repr(u16)]` makes the conversion exact; prefer this over `as`.
 impl From<ErrorCode> for u16 {
-    /// Returns the canonical wire value of the error code.
     fn from(code: ErrorCode) -> Self {
-        code.to_wire()
+        code as u16
     }
 }
 
