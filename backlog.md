@@ -78,7 +78,7 @@ Current framework version: Metis 0.5.0. Remaining capability work follows.
 - exit: the provider graph is coherent at head, the Python first release is complete, resource/latency evidence committed, capability/target closure holds.
 ## M-board: record hygiene — needs: none
 - exit: ADRs within budget, closed priority set with an item-block budget, every cited residual owned, no unlanded peer commits or stale tree dirt.
-## M-1.0: stable host release (authority-gated) — needs: M-platform, M-input, M-content, M-system, M-release, M-board
+## Milestone M-1.0: stable host release (authority-gated) — needs: M-platform, M-input, M-content, M-system, M-release, M-board
 - exit: `cargo semver-checks`, publish dry-run, `cargo doc`, full native/browser verification green, zero open correctness items. Veto: release authority sets the API-freeze contents; never forces `publish = true` without it.
 ## M-ecosystem: consumer-owned embedding (ritk, helios) — needs: M-1.0
 - exit: consumer receipts on their own boards; does not gate 1.0.
