@@ -667,10 +667,10 @@ an owner. “Unsupported” cannot replace delivery of a required mobile/native 
 - Status: todo; priority: verification; needs: none
 - milestone: M-board.
 - Outcome: each ADR records one decision in about 150 lines; the comparator matrices of ADR 0003 move to a gap register, with the Freya row from ADR 0055 added there.
-- Scope: `docs/adr/0003` (802 lines), `0014` (235), `0012` (222), `0002` (204), `0005` (194), `0015` (192), `0021` (179), `0029` (168), `0046` (153), measured at basis.
+- Scope: `docs/adr/0003-framework-conformance.md` (361 lines) and its `history.md` (455), `0014` (235), `0012` (222), `0002` (204), `0005` (194), `0015` (192), and `0059-windows-rust-pages/design.md` (346), measured at basis. ADRs 0046, 0029 and 0021 are compacted.
 - Acceptance: every ADR is at most 150 lines; each decision, rejected alternative and evidence survives; the index keeps exact statuses; a line census reports zero over-budget ADRs.
-- basis: ce47b2b2ebc11c09b0d6f67d7c2e60487fe71cc6
-- next: compact ADR 0003 first, since its dated revision paragraphs repeat git and PR history.
+- basis: 1ec2b8633e37577d37254aaf42da252771fce33f
+- next: compact ADR 0003's `history.md` first, since its dated revision paragraphs repeat git and PR history.
 
 <a id="METIS-BOARD-001"></a>
 ## METIS-BOARD-001 — Closed priority set and item-block budget [patch]
