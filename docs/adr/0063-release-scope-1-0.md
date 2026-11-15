@@ -47,7 +47,7 @@ item carries exactly one `milestone:` assignment.
   complete, comparative resource/latency evidence is committed, and
   capability/target closure holds.
 - **M-board**: record hygiene (METIS-DOCS-ADR-001, METIS-BOARD-001,
-  METIS-RESIDUAL-001, METIS-INTEG-DEBT-001). Exit: ADRs within budget, a
+  METIS-RESIDUAL-001). Exit: ADRs within budget, a
   closed priority set with an item-block budget, every cited residual
   owned, and no unlanded peer commits or stale tree dirt.
 - **M-1.0**: stable host release (**authority-gated**). Exit: `cargo
