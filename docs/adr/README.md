@@ -71,3 +71,4 @@
 | [0060](0060-bounded-property-transitions.md) | Bounded property transitions | Accepted |
 | [0061](0061-reuse-across-a-relayout-and-a-reprojection.md) | Reuse across a relayout and a reprojection | Accepted |
 | [0062](0062-eunomia-010-public-layout-identity.md) | Eunomia 0.10 public layout trait identity | Accepted |
+| [0063](0063-release-scope-1-0.md) | Release scope for 1.0 | Accepted |
