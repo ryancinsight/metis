@@ -26,6 +26,7 @@ mod popover;
 #[cfg(test)]
 #[path = "../layout_popover_tests.rs"]
 mod popover_tests;
+mod scrollbar;
 #[cfg(test)]
 #[path = "../layout_sizing_tests.rs"]
 mod sizing_tests;
@@ -39,6 +40,7 @@ pub use display::{DisplayCommand, DisplayList, ElementIndex};
 pub use geometry::{LayoutViewport, compute_layout, compute_layout_into};
 pub use metis_platform::framebuffer::Rect;
 pub use metis_platform::rasterizer::{LineCap, LineJoin, StrokeWidth};
+pub use scrollbar::{ScrollbarAxis, ScrollbarDrag, ScrollbarGeometry};
 pub use virtual_list::{
     MAX_ITEM_EXTENT, MAX_VIRTUAL_ITEMS, ScrollAlign, VirtualList, VisibleWindow,
 };
