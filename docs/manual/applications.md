@@ -110,11 +110,14 @@ variables and this SVG in their own browser asset directory. The browser build
 also carries a PNG alternate for user agents that do not select SVG sources.
 
 The package demonstration derives `metis-mark.ico` from the same local artwork
-for the Windows Start Menu shortcut. Its seven embedded PNG resolutions are
-validated by `metis-cli` before the MSI is written; the portable package keeps
-the SVG, PNG and ICO under `assets/` as well. The CLI applies the bounded SVG
-contract before copying the vector resource, rejecting XML expansion, external
-references, unknown attributes, malformed geometry and oversized viewports.
+for the Windows Start Menu shortcut; `python3 scripts/windows_icon.py`
+regenerates it and `scripts/tests/test_windows_icon.py` pins its seven
+embedded PNG resolutions, spot pixels, and container. Its seven embedded PNG
+resolutions are validated by `metis-cli` before the MSI is written; the
+portable package keeps the SVG, PNG and ICO under `assets/` as well. The CLI
+applies the bounded SVG contract before copying the vector resource, rejecting
+XML expansion, external references, unknown attributes, malformed geometry and
+oversized viewports.
 
 ## Deterministic synthetic DICOM baseline
 
