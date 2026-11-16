@@ -154,6 +154,10 @@ impl ScrollbarGeometry {
     /// `grab_offset` is the pointer's distance from the thumb's leading edge
     /// recorded when the host captured the thumb. The result is clamped to the
     /// track and content range.
+    ///
+    /// # Panics
+    /// Panics only if an internal nonnegative conversion or clamped offset
+    /// exceeds its declared integer range.
     #[must_use]
     pub fn offset_for_pointer(self, pointer: i32, grab_offset: i32) -> u64 {
         let (track_start, track_extent, thumb_extent) = match self.axis {
@@ -198,6 +202,10 @@ pub struct ScrollbarDrag {
 
 impl ScrollbarDrag {
     /// Maps a new pointer coordinate while preserving the captured offset.
+    ///
+    /// # Panics
+    /// Panics only if the clamped offset exceeds `u64`, which cannot occur for
+    /// the geometry's `u64` maximum offset.
     #[must_use]
     pub fn offset_for_pointer(self, pointer: i32) -> u64 {
         let (track_extent, thumb_extent) = match self.geometry.axis {
@@ -239,10 +247,20 @@ mod tests {
         .expect("invariant: content exceeds viewport and track is positive");
         assert_eq!(geometry.thumb(), Rect::new(10, 104, 12, 16));
         assert_eq!(geometry.max_offset(), 900);
-        assert_eq!(geometry.offset_for_pointer(120, 8), 0);
+        assert_eq!(geometry.offset_for_pointer(120, 8), 900);
         assert_eq!(geometry.offset_for_pointer(204, 8), 900);
-        let drag = geometry.begin_drag(112, 8, 451);
-        assert_eq!(drag.offset_for_pointer(112), 451);
+        let intermediate = ScrollbarGeometry::new(
+            ScrollbarAxis::Vertical,
+            Rect::new(10, 20, 12, 100),
+            1_000,
+            100,
+            451,
+        )
+        .expect("invariant: content exceeds viewport and track is positive");
+        assert_eq!(intermediate.thumb().y, 62);
+        let drag = intermediate.begin_drag(70, 8, 451);
+        assert_eq!(drag.offset_for_pointer(70), 451);
+        assert_eq!(drag.offset_for_pointer(154), 900);
     }
 
     #[test]
