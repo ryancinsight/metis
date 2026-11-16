@@ -363,12 +363,19 @@ def render_png(svg: str, pixels: int) -> bytes:
 
 
 def generate(
-    source: pathlib.Path, output: pathlib.Path, png: pathlib.Path | None = None
+    source: pathlib.Path,
+    output: pathlib.Path,
+    png: pathlib.Path | None = None,
+    sizes: tuple[int, ...] | None = None,
 ) -> bytes:
-    """Render the source mark at every size and pack the validated ICO."""
+    """Render the source mark at every size and pack the validated ICO.
+
+    `sizes` overrides the shipped slot list for checks that only need the
+    pipeline shape, not every slot; production always passes the default.
+    """
     images = []
     svg = source.read_text(encoding="utf-8")
-    for size in representations():
+    for size in SIZES if sizes is None else sizes:
         images.append((size, render_png(svg, size)))
     data = pack_ico(images)
     validate_ico(data)

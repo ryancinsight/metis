@@ -103,7 +103,8 @@ class WindowsIconTests(unittest.TestCase):
         with tempfile.TemporaryDirectory() as scratch:
             png = pathlib.Path(scratch) / "metis-mark.png"
             data = windows_icon.generate(
-                windows_icon.SOURCE, pathlib.Path(scratch) / "out.ico", png
+                windows_icon.SOURCE, pathlib.Path(scratch) / "out.ico", png,
+                sizes=(256,),
             )
             images = dict(windows_icon.validate_ico(data))
             self.assertEqual(png.read_bytes(), images[256])
@@ -112,12 +113,17 @@ class WindowsIconTests(unittest.TestCase):
             self.assertEqual(pixel(rgba, 256, 128, 40), (15, 118, 110, 255))
 
     def test_generation_is_deterministic(self):
+        # One slot proves the pipeline shape is deterministic; the full
+        # seven-slot generation runs once in the validation test above, and
+        # the visual-tests stage budgets the whole scripts suite at a minute.
         with tempfile.TemporaryDirectory() as scratch:
             first = windows_icon.generate(
-                windows_icon.SOURCE, pathlib.Path(scratch) / "first.ico"
+                windows_icon.SOURCE, pathlib.Path(scratch) / "first.ico",
+                sizes=(16,),
             )
             second = windows_icon.generate(
-                windows_icon.SOURCE, pathlib.Path(scratch) / "second.ico"
+                windows_icon.SOURCE, pathlib.Path(scratch) / "second.ico",
+                sizes=(16,),
             )
             self.assertEqual(first, second)
 
