@@ -63,6 +63,8 @@ Rust-owned native provider. It presents bounded RGBA frames and returns finite
 typed event dictionaries without Python callbacks or a second event loop.
 The dictionaries include `accessibility_action` records with the stable target
 node, action name, optional replacement value and optional signed adjustment.
+Native pointer capture loss is reported as a `pointer_capture_lost` event so
+consumers can release drag state when the operating system ends capture.
 Non-Windows construction returns `ERR_UNSUPPORTED_PLATFORM_EVENT` until a
 provider is admitted. RITK remains the owner of DICOM parsing and
 medical-display semantics.

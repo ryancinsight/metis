@@ -10,6 +10,7 @@ pub(super) enum Event {
     Destroyed,
     FocusGained,
     FocusLost,
+    PointerCaptureLost,
     PointerMove {
         x: i32,
         y: i32,
@@ -141,6 +142,7 @@ pub(super) fn event(value: WindowEvent) -> Event {
         WindowEvent::Destroyed => Event::Destroyed,
         WindowEvent::FocusGained => Event::FocusGained,
         WindowEvent::FocusLost => Event::FocusLost,
+        WindowEvent::PointerCaptureLost => Event::PointerCaptureLost,
         WindowEvent::PointerMove { x, y } => Event::PointerMove { x, y },
         WindowEvent::PointerDown {
             x,
@@ -219,6 +221,7 @@ pub(super) fn append_event<'py>(
         Event::Destroyed => set!("kind", "destroyed"),
         Event::FocusGained => set!("kind", "focus_gained"),
         Event::FocusLost => set!("kind", "focus_lost"),
+        Event::PointerCaptureLost => set!("kind", "pointer_capture_lost"),
         Event::PointerMove { x, y } => {
             set!("kind", "pointer_move");
             set!("x", x);
@@ -328,5 +331,13 @@ mod tests {
         for (action, name) in actions {
             assert_eq!(accessibility_action_name(action), name);
         }
+    }
+
+    #[test]
+    fn pointer_capture_loss_has_a_stable_event_kind() {
+        assert!(matches!(
+            event(WindowEvent::PointerCaptureLost),
+            Event::PointerCaptureLost
+        ));
     }
 }
