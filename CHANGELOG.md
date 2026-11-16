@@ -94,6 +94,16 @@
 
 ### Changed
 
+- [patch] Resolve Leto 0.50.0 in the lock. Metis reaches Leto through
+  Gaia-Mesh 0.6.10, whose recorded revision required `<0.49.0`; `Cargo.lock`
+  moves Gaia-Mesh onto its default-branch head `4c69a978` (from `5d91f772`),
+  whose requirement is `>=0.49.0, <0.51.0`, and Leto onto `6483eac3`
+  (from `e606789e`) at 0.50.0. Those two revisions are the only rows that
+  change. Leto 0.50 removes the `VecStorage::uninit` constructor; Metis calls
+  no `VecStorage` method and re-exports no Leto type, so the public surface is
+  unchanged. `cargo metadata --locked` resolves an export outside the Atlas
+  dependency overlay with the lock byte-identical.
+
 - [patch] Retain Python archive identities, source commit, SHA256 hashes and
   sizes before upload; verify the complete PyPI file set against that receipt
   and exercise the exact installed wheel after publication. Pull requests run
