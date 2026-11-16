@@ -224,6 +224,9 @@ impl ScrollbarDrag {
         if travel <= 0 {
             return self.offset;
         }
+        if pointer == self.pointer {
+            return self.offset;
+        }
         let leading_edge = i128::from(pointer).saturating_sub(i128::from(self.grab_offset));
         let track_start = i128::from(track_start);
         if leading_edge <= track_start {
@@ -278,6 +281,16 @@ mod tests {
         assert_eq!(drag.offset_for_pointer(70), 451);
         assert_eq!(drag.offset_for_pointer(28), 0);
         assert_eq!(drag.offset_for_pointer(154), 900);
+        let near_start = ScrollbarGeometry::new(
+            ScrollbarAxis::Vertical,
+            Rect::new(10, 20, 12, 100),
+            1_000,
+            1,
+            1,
+        )
+        .expect("invariant: content exceeds viewport and track is positive");
+        let near_start_drag = near_start.begin_drag(28, 8, 1);
+        assert_eq!(near_start_drag.offset_for_pointer(28), 1);
     }
 
     #[test]
