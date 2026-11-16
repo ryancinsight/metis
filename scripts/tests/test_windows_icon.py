@@ -99,6 +99,18 @@ class WindowsIconTests(unittest.TestCase):
             windows_icon.downsample(half, 2, 2), bytes([1, 1, 1, 1])
         )
 
+    def test_png_alternate_matches_the_largest_entry(self):
+        with tempfile.TemporaryDirectory() as scratch:
+            png = pathlib.Path(scratch) / "metis-mark.png"
+            data = windows_icon.generate(
+                windows_icon.SOURCE, pathlib.Path(scratch) / "out.ico", png
+            )
+            images = dict(windows_icon.validate_ico(data))
+            self.assertEqual(png.read_bytes(), images[256])
+            width, rgba = decode_png(png.read_bytes())
+            self.assertEqual(width, 256)
+            self.assertEqual(pixel(rgba, 256, 128, 40), (15, 118, 110, 255))
+
     def test_generation_is_deterministic(self):
         with tempfile.TemporaryDirectory() as scratch:
             first = windows_icon.generate(

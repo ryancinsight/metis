@@ -356,15 +356,20 @@ def downsample(rgba: bytes, pixels: int, factor: int) -> bytes:
     return bytes(out)
 
 
-def generate(source: pathlib.Path, output: pathlib.Path) -> bytes:
+def render_png(svg: str, pixels: int) -> bytes:
+    """Render the source mark at one size with fourfold supersampling."""
+    oversampled = render_mark(svg, pixels * 4)
+    return encode_png(downsample(oversampled, pixels * 4, 4), pixels)
+
+
+def generate(
+    source: pathlib.Path, output: pathlib.Path, png: pathlib.Path | None = None
+) -> bytes:
     """Render the source mark at every size and pack the validated ICO."""
     images = []
     svg = source.read_text(encoding="utf-8")
     for size in representations():
-        # Fourfold supersampling keeps small-slot diagonals smooth; the
-        # downsampled blocks stay deterministic integer math.
-        oversampled = render_mark(svg, size * 4)
-        images.append((size, encode_png(downsample(oversampled, size * 4, 4), size)))
+        images.append((size, render_png(svg, size)))
     data = pack_ico(images)
     validate_ico(data)
     output.parent.mkdir(parents=True, exist_ok=True)
@@ -373,6 +378,11 @@ def generate(source: pathlib.Path, output: pathlib.Path) -> bytes:
     ) as staging:
         staging.write(data)
     pathlib.Path(staging.name).replace(output)
+    if png is not None:
+        png.parent.mkdir(parents=True, exist_ok=True)
+        with tempfile.NamedTemporaryFile(dir=str(png.parent), delete=False) as staging:
+            staging.write(images[-1][1])
+        pathlib.Path(staging.name).replace(png)
     return data
 
 
@@ -387,12 +397,16 @@ def main(argv: list[str] | None = None) -> int:
         "--output", type=pathlib.Path, default=OUTPUT,
         help="ICO file to replace atomically",
     )
+    parser.add_argument(
+        "--png", type=pathlib.Path, default=None,
+        help="also write the 256-pixel PNG alternate to this path",
+    )
     arguments = parser.parse_args(argv)
     if not arguments.source.is_file():
         print(f"icon source {arguments.source} is not a local file", file=sys.stderr)
         return 2
     try:
-        data = generate(arguments.source, arguments.output)
+        data = generate(arguments.source, arguments.output, arguments.png)
     except (OSError, ValueError, ET.ParseError) as error:
         print(f"windows_icon: {error}", file=sys.stderr)
         return 1
