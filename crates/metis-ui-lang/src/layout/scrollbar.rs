@@ -208,13 +208,29 @@ impl ScrollbarDrag {
     /// the geometry's `u64` maximum offset.
     #[must_use]
     pub fn offset_for_pointer(self, pointer: i32) -> u64 {
-        let (track_extent, thumb_extent) = match self.geometry.axis {
-            ScrollbarAxis::Vertical => (self.geometry.track.height, self.geometry.thumb.height),
-            ScrollbarAxis::Horizontal => (self.geometry.track.width, self.geometry.thumb.width),
+        let (track_start, track_extent, thumb_extent) = match self.geometry.axis {
+            ScrollbarAxis::Vertical => (
+                self.geometry.track.y,
+                self.geometry.track.height,
+                self.geometry.thumb.height,
+            ),
+            ScrollbarAxis::Horizontal => (
+                self.geometry.track.x,
+                self.geometry.track.width,
+                self.geometry.thumb.width,
+            ),
         };
         let travel = i128::from(track_extent.saturating_sub(thumb_extent));
         if travel <= 0 {
             return self.offset;
+        }
+        let leading_edge = i128::from(pointer).saturating_sub(i128::from(self.grab_offset));
+        let track_start = i128::from(track_start);
+        if leading_edge <= track_start {
+            return 0;
+        }
+        if leading_edge >= track_start.saturating_add(travel) {
+            return self.geometry.max_offset;
         }
         let delta = i128::from(pointer).saturating_sub(i128::from(self.pointer));
         let change = delta * i128::from(self.geometry.max_offset) / travel;
@@ -260,6 +276,7 @@ mod tests {
         assert_eq!(intermediate.thumb().y, 62);
         let drag = intermediate.begin_drag(70, 8, 451);
         assert_eq!(drag.offset_for_pointer(70), 451);
+        assert_eq!(drag.offset_for_pointer(28), 0);
         assert_eq!(drag.offset_for_pointer(154), 900);
     }
 
