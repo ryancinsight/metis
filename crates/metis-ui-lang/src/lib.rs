@@ -22,8 +22,9 @@ pub use image::{AffineTransform, ImagePlacement, ImageSampling, ImageTransform, 
 pub use layout::{
     DecimalEdit, DecimalEntry, DisplayCommand, DisplayList, ElementIndex, LayoutViewport, LineCap,
     LineJoin, PathCapture, PathPush, PathTopology, PolylineError, Rect, ScrollAlign, ScrollbarAxis,
-    ScrollbarDrag, ScrollbarGeometry, StrokeWidth, VirtualList, VisibleWindow, compute_layout,
-    compute_layout_into, polyline_distance,
+    ScrollbarDrag, ScrollbarGeometry, SegmentHit, StrokeWidth, VertexHit, VirtualList,
+    VisibleWindow, compute_layout, compute_layout_into, nearest_polyline_segment,
+    nearest_polyline_vertex, polyline_distance,
 };
 pub use parser::parse_markup;
 pub use semantics::{

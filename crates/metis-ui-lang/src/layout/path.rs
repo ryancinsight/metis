@@ -1,9 +1,12 @@
-//! Bounded pointer-path capture and screen-space polyline hit geometry.
+//! Bounded pointer-path capture and screen-space picking.
 
 use metis_platform::rasterizer::MAX_STROKE_POINTS;
 mod picking;
 
-pub use picking::{PathTopology, PolylineError, polyline_distance};
+pub use picking::{
+    PathTopology, PolylineError, SegmentHit, VertexHit, nearest_polyline_segment,
+    nearest_polyline_vertex, polyline_distance,
+};
 
 /// The outcome of appending a point to a captured path.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
