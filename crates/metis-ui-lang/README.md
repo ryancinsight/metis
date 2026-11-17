@@ -59,6 +59,13 @@ assert_eq!(
 # Ok::<(), metis_core::error::MetisError>(())
 ```
 
+`PathCapture` records a bounded sequence of distinct pointer samples in the
+host's coordinate type. After projecting samples to screen pixels, use
+`polyline_distance` for open or closed path hit testing. Stroke rendering
+uses the same vertex budget. `DecimalEntry` captures bounded numeric text,
+including partial input during typing. The host parses the submitted value
+and applies its range and unit rules.
+
 Layout supports sequential row/column flow with flex alignment, explicit,
 percentage and minimum dimensions, automatic width/content height, spacing,
 colors, rounded backgrounds and borders, linear-gradient backgrounds, outer

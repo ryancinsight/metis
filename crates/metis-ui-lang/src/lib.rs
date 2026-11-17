@@ -20,9 +20,10 @@ pub use catalog::{
 pub use dom::{DomDocument, DomElement, DomNode, Edit};
 pub use image::{AffineTransform, ImagePlacement, ImageSampling, ImageTransform, RasterImage};
 pub use layout::{
-    DisplayCommand, DisplayList, ElementIndex, LayoutViewport, LineCap, LineJoin, Rect,
-    ScrollAlign, ScrollbarAxis, ScrollbarDrag, ScrollbarGeometry, StrokeWidth, VirtualList,
-    VisibleWindow, compute_layout, compute_layout_into,
+    DecimalEdit, DecimalEntry, DisplayCommand, DisplayList, ElementIndex, LayoutViewport, LineCap,
+    LineJoin, PathCapture, PathPush, PathTopology, PolylineError, Rect, ScrollAlign, ScrollbarAxis,
+    ScrollbarDrag, ScrollbarGeometry, StrokeWidth, VirtualList, VisibleWindow, compute_layout,
+    compute_layout_into, polyline_distance,
 };
 pub use parser::parse_markup;
 pub use semantics::{
