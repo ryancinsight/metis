@@ -9,6 +9,7 @@
 //! admits is painted; anything outside it is rejected when the style is parsed.
 
 mod damage;
+mod decimal_entry;
 mod device;
 mod display;
 #[cfg(test)]
@@ -21,6 +22,7 @@ mod grow;
 mod grow_tests;
 mod intrinsic;
 mod limits;
+mod path;
 mod placement;
 mod popover;
 #[cfg(test)]
@@ -36,10 +38,12 @@ mod slots;
 mod tests;
 mod virtual_list;
 
+pub use decimal_entry::{DecimalEdit, DecimalEntry};
 pub use display::{DisplayCommand, DisplayList, ElementIndex};
 pub use geometry::{LayoutViewport, compute_layout, compute_layout_into};
 pub use metis_platform::framebuffer::Rect;
 pub use metis_platform::rasterizer::{LineCap, LineJoin, StrokeWidth};
+pub use path::{PathCapture, PathPush, PathTopology, PolylineError, polyline_distance};
 pub use scrollbar::{ScrollbarAxis, ScrollbarDrag, ScrollbarGeometry};
 pub use virtual_list::{
     MAX_ITEM_EXTENT, MAX_VIRTUAL_ITEMS, ScrollAlign, VirtualList, VisibleWindow,
