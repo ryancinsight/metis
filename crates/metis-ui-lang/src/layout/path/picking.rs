@@ -226,19 +226,17 @@ fn segment_hit(
     end: [f64; 2],
     target: [f64; 2],
 ) -> Result<SegmentHit, PolylineError> {
-    // Shared vertices must agree exactly across adjacent segments even when
-    // normalizing a diagonal tangent would round its projection.
-    if target == start {
+    #[expect(
+        clippy::float_cmp,
+        reason = "coincident endpoints must agree exactly across adjacent segments"
+    )]
+    let endpoint = [(start, 0.0), (end, 1.0)]
+        .into_iter()
+        .find(|&(point, _)| point == target);
+    if let Some((_, fraction)) = endpoint {
         return Ok(SegmentHit {
             start_index,
-            fraction: 0.0,
-            distance: 0.0,
-        });
-    }
-    if target == end {
-        return Ok(SegmentHit {
-            start_index,
-            fraction: 1.0,
+            fraction,
             distance: 0.0,
         });
     }
