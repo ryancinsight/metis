@@ -21,7 +21,8 @@ pub use dom::{DomDocument, DomElement, DomNode, Edit};
 pub use image::{AffineTransform, ImagePlacement, ImageSampling, ImageTransform, RasterImage};
 pub use layout::{
     DisplayCommand, DisplayList, ElementIndex, LayoutViewport, LineCap, LineJoin, Rect,
-    ScrollAlign, StrokeWidth, VirtualList, VisibleWindow, compute_layout, compute_layout_into,
+    ScrollAlign, ScrollbarAxis, ScrollbarDrag, ScrollbarGeometry, StrokeWidth, VirtualList,
+    VisibleWindow, compute_layout, compute_layout_into,
 };
 pub use parser::parse_markup;
 pub use semantics::{
