@@ -20,6 +20,11 @@ pub(super) enum Event {
         y: i32,
         button: &'static str,
     },
+    PointerDoubleClick {
+        x: i32,
+        y: i32,
+        button: &'static str,
+    },
     PointerUp {
         x: i32,
         y: i32,
@@ -153,6 +158,15 @@ pub(super) fn event(value: WindowEvent) -> Event {
             y,
             button: button_name(value),
         },
+        WindowEvent::PointerDoubleClick {
+            x,
+            y,
+            button: value,
+        } => Event::PointerDoubleClick {
+            x,
+            y,
+            button: button_name(value),
+        },
         WindowEvent::PointerUp {
             x,
             y,
@@ -229,6 +243,12 @@ pub(super) fn append_event<'py>(
         }
         Event::PointerDown { x, y, button } => {
             set!("kind", "pointer_down");
+            set!("x", x);
+            set!("y", y);
+            set!("button", button);
+        }
+        Event::PointerDoubleClick { x, y, button } => {
+            set!("kind", "pointer_double_click");
             set!("x", x);
             set!("y", y);
             set!("button", button);
@@ -338,6 +358,22 @@ mod tests {
         assert!(matches!(
             event(WindowEvent::PointerCaptureLost),
             Event::PointerCaptureLost
+        ));
+    }
+
+    #[test]
+    fn pointer_double_click_preserves_coordinates_and_button() {
+        assert!(matches!(
+            event(WindowEvent::PointerDoubleClick {
+                x: 17,
+                y: -4,
+                button: MouseButton::Left,
+            }),
+            Event::PointerDoubleClick {
+                x: 17,
+                y: -4,
+                button: "left",
+            }
         ));
     }
 }
