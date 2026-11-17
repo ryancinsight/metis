@@ -15,14 +15,14 @@ pub enum PathTopology {
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 #[non_exhaustive]
 pub enum PolylineError {
-    /// The input contained no vertices.
-    EmptyPath,
     /// The input contained fewer than two points.
     TooFewPoints,
     /// A point contained a NaN or infinity.
     NonFiniteCoordinate,
     /// Finite input produced an unrepresentable distance.
     NonFiniteDistance,
+    /// The input contained no vertices.
+    EmptyPath,
 }
 
 impl fmt::Display for PolylineError {
