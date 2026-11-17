@@ -137,7 +137,6 @@ impl std::error::Error for PolylineError {}
 /// assert_eq!(distance, 3.0);
 /// # Ok::<(), metis_ui_lang::PolylineError>(())
 /// ```
-#[must_use]
 pub fn polyline_distance(
     points: impl IntoIterator<Item = [f64; 2]>,
     target: [f64; 2],
