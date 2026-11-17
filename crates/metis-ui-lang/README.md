@@ -61,7 +61,9 @@ assert_eq!(
 
 `PathCapture` records a bounded sequence of distinct pointer samples in the
 host's coordinate type. After projecting samples to screen pixels, use
-`polyline_distance` for open or closed path hit testing. Stroke rendering
+`polyline_distance` for open or closed path hit testing. Use
+`nearest_polyline_segment` to locate an insertion point and
+`nearest_polyline_vertex` to locate a handle. Stroke rendering
 uses the same vertex budget. `DecimalEntry` captures bounded numeric text,
 including partial input during typing. The host parses the submitted value
 and applies its range and unit rules.

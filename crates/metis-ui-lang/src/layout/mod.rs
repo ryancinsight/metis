@@ -43,7 +43,10 @@ pub use display::{DisplayCommand, DisplayList, ElementIndex};
 pub use geometry::{LayoutViewport, compute_layout, compute_layout_into};
 pub use metis_platform::framebuffer::Rect;
 pub use metis_platform::rasterizer::{LineCap, LineJoin, StrokeWidth};
-pub use path::{PathCapture, PathPush, PathTopology, PolylineError, polyline_distance};
+pub use path::{
+    PathCapture, PathPush, PathTopology, PolylineError, SegmentHit, VertexHit,
+    nearest_polyline_segment, nearest_polyline_vertex, polyline_distance,
+};
 pub use scrollbar::{ScrollbarAxis, ScrollbarDrag, ScrollbarGeometry};
 pub use virtual_list::{
     MAX_ITEM_EXTENT, MAX_VIRTUAL_ITEMS, ScrollAlign, VirtualList, VisibleWindow,
