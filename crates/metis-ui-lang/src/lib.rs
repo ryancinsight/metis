@@ -23,7 +23,7 @@ pub use layout::{
     DecimalEdit, DecimalEntry, DisplayCommand, DisplayList, ElementIndex, LayoutViewport, LineCap,
     LineJoin, PathCapture, PathPush, PathTopology, PolylineError, Rect, ScrollAlign, ScrollbarAxis,
     ScrollbarDrag, ScrollbarGeometry, SegmentHit, StrokeWidth, VertexHit, VirtualList,
-    VisibleWindow, compute_layout, compute_layout_into, nearest_polyline_segment,
+    VisibleWindow, arrow_wings, compute_layout, compute_layout_into, nearest_polyline_segment,
     nearest_polyline_vertex, polyline_distance,
 };
 pub use parser::parse_markup;

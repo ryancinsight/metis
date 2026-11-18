@@ -44,7 +44,7 @@ pub use geometry::{LayoutViewport, compute_layout, compute_layout_into};
 pub use metis_platform::framebuffer::Rect;
 pub use metis_platform::rasterizer::{LineCap, LineJoin, StrokeWidth};
 pub use path::{
-    PathCapture, PathPush, PathTopology, PolylineError, SegmentHit, VertexHit,
+    PathCapture, PathPush, PathTopology, PolylineError, SegmentHit, VertexHit, arrow_wings,
     nearest_polyline_segment, nearest_polyline_vertex, polyline_distance,
 };
 pub use scrollbar::{ScrollbarAxis, ScrollbarDrag, ScrollbarGeometry};
