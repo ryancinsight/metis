@@ -20,6 +20,11 @@ pub(super) enum Event {
         y: i32,
         button: &'static str,
     },
+    PointerDoubleClick {
+        x: i32,
+        y: i32,
+        button: &'static str,
+    },
     PointerUp {
         x: i32,
         y: i32,
@@ -153,6 +158,15 @@ pub(super) fn event(value: WindowEvent) -> Event {
             y,
             button: button_name(value),
         },
+        WindowEvent::PointerDoubleClick {
+            x,
+            y,
+            button: value,
+        } => Event::PointerDoubleClick {
+            x,
+            y,
+            button: button_name(value),
+        },
         WindowEvent::PointerUp {
             x,
             y,
@@ -233,6 +247,12 @@ pub(super) fn append_event<'py>(
             set!("y", y);
             set!("button", button);
         }
+        Event::PointerDoubleClick { x, y, button } => {
+            set!("kind", "pointer_double_click");
+            set!("x", x);
+            set!("y", y);
+            set!("button", button);
+        }
         Event::PointerUp { x, y, button } => {
             set!("kind", "pointer_up");
             set!("x", x);
@@ -251,10 +271,7 @@ pub(super) fn append_event<'py>(
             set!("y", y);
             set!("delta_x", delta_x);
             set!("delta_y", delta_y);
-            set!("ctrl", modifiers.ctrl());
-            set!("shift", modifiers.shift());
-            set!("alt", modifiers.alt());
-            set!("meta", modifiers.meta());
+            append_modifiers(&item, &modifiers)?;
         }
         Event::KeyDown {
             virtual_key,
@@ -264,10 +281,7 @@ pub(super) fn append_event<'py>(
             set!("kind", "key_down");
             set!("virtual_key", virtual_key);
             set!("repeated", repeated);
-            set!("ctrl", modifiers.ctrl());
-            set!("shift", modifiers.shift());
-            set!("alt", modifiers.alt());
-            set!("meta", modifiers.meta());
+            append_modifiers(&item, &modifiers)?;
         }
         Event::KeyUp {
             virtual_key,
@@ -275,10 +289,7 @@ pub(super) fn append_event<'py>(
         } => {
             set!("kind", "key_up");
             set!("virtual_key", virtual_key);
-            set!("ctrl", modifiers.ctrl());
-            set!("shift", modifiers.shift());
-            set!("alt", modifiers.alt());
-            set!("meta", modifiers.meta());
+            append_modifiers(&item, &modifiers)?;
         }
         Event::TextInput { character } => {
             set!("kind", "text_input");
@@ -314,6 +325,14 @@ pub(super) fn append_event<'py>(
     list.append(item)
 }
 
+fn append_modifiers(item: &Bound<'_, PyDict>, modifiers: &ModifierSnapshot) -> PyResult<()> {
+    item.set_item("ctrl", modifiers.ctrl())?;
+    item.set_item("shift", modifiers.shift())?;
+    item.set_item("alt", modifiers.alt())?;
+    item.set_item("meta", modifiers.meta())?;
+    Ok(())
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -338,6 +357,22 @@ mod tests {
         assert!(matches!(
             event(WindowEvent::PointerCaptureLost),
             Event::PointerCaptureLost
+        ));
+    }
+
+    #[test]
+    fn pointer_double_click_preserves_coordinates_and_button() {
+        assert!(matches!(
+            event(WindowEvent::PointerDoubleClick {
+                x: 17,
+                y: -4,
+                button: MouseButton::Left,
+            }),
+            Event::PointerDoubleClick {
+                x: 17,
+                y: -4,
+                button: "left",
+            }
         ));
     }
 }
