@@ -271,10 +271,7 @@ pub(super) fn append_event<'py>(
             set!("y", y);
             set!("delta_x", delta_x);
             set!("delta_y", delta_y);
-            set!("ctrl", modifiers.ctrl());
-            set!("shift", modifiers.shift());
-            set!("alt", modifiers.alt());
-            set!("meta", modifiers.meta());
+            append_modifiers(&item, modifiers)?;
         }
         Event::KeyDown {
             virtual_key,
@@ -284,10 +281,7 @@ pub(super) fn append_event<'py>(
             set!("kind", "key_down");
             set!("virtual_key", virtual_key);
             set!("repeated", repeated);
-            set!("ctrl", modifiers.ctrl());
-            set!("shift", modifiers.shift());
-            set!("alt", modifiers.alt());
-            set!("meta", modifiers.meta());
+            append_modifiers(&item, modifiers)?;
         }
         Event::KeyUp {
             virtual_key,
@@ -295,10 +289,7 @@ pub(super) fn append_event<'py>(
         } => {
             set!("kind", "key_up");
             set!("virtual_key", virtual_key);
-            set!("ctrl", modifiers.ctrl());
-            set!("shift", modifiers.shift());
-            set!("alt", modifiers.alt());
-            set!("meta", modifiers.meta());
+            append_modifiers(&item, modifiers)?;
         }
         Event::TextInput { character } => {
             set!("kind", "text_input");
@@ -332,6 +323,14 @@ pub(super) fn append_event<'py>(
         }
     }
     list.append(item)
+}
+
+fn append_modifiers(item: &Bound<'_, PyDict>, modifiers: ModifierSnapshot) -> PyResult<()> {
+    item.set_item("ctrl", modifiers.ctrl())?;
+    item.set_item("shift", modifiers.shift())?;
+    item.set_item("alt", modifiers.alt())?;
+    item.set_item("meta", modifiers.meta())?;
+    Ok(())
 }
 
 #[cfg(test)]
