@@ -524,7 +524,6 @@ jobs:
             --timeout-seconds 60 \
             --output "output/browser/runtime/$ENGINE-workbench.json"
       - name: Run GPU-free canvas input trace
-        if: matrix.engine != 'webkit'
         shell: bash
         run: |
           python scripts/browser_canvas_input.py \
