@@ -2,6 +2,7 @@
 
 mod accelerator;
 mod key;
+mod pointer_drag;
 mod shortcut_map;
 
 use super::{Accelerator, Key, Letter, Modifiers};

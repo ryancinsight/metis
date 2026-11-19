@@ -1,5 +1,7 @@
 //! Rust-owned bounded pan and zoom state for browser gestures.
 
+use metis_core::input::PointerDrag;
+
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
 pub(crate) enum WheelUnit {
     Pixel,
@@ -13,6 +15,7 @@ struct ActivePointer {
     id: i32,
     x: f64,
     y: f64,
+    drag: PointerDrag,
 }
 
 #[derive(Clone, Copy, Debug, PartialEq)]
@@ -56,16 +59,16 @@ impl Default for GestureViewport {
 
 impl GestureViewport {
     pub(crate) fn press(&mut self, id: i32, x: f64, y: f64) -> bool {
-        if !x.is_finite() || !y.is_finite() {
+        let Ok(drag) = PointerDrag::try_new([x, y], [1.0, 1.0]) else {
             return false;
-        }
+        };
         if self.active.iter().flatten().any(|pointer| pointer.id == id) {
             return false;
         }
         let Some(slot) = self.active.iter_mut().find(|pointer| pointer.is_none()) else {
             return false;
         };
-        *slot = Some(ActivePointer { id, x, y });
+        *slot = Some(ActivePointer { id, x, y, drag });
         if self.active_pointer_count() == MAX_ACTIVE_POINTERS {
             self.begin_pinch();
         }
@@ -73,9 +76,10 @@ impl GestureViewport {
     }
 
     pub(crate) fn move_pointer(&mut self, id: i32, x: f64, y: f64) -> bool {
-        if !x.is_finite() || !y.is_finite() {
+        let pinching = self.active_pointer_count() == MAX_ACTIVE_POINTERS;
+        let Ok(next_drag) = PointerDrag::try_new([x, y], [1.0, 1.0]) else {
             return false;
-        }
+        };
         let Some(active) = self
             .active
             .iter_mut()
@@ -83,16 +87,26 @@ impl GestureViewport {
         else {
             return false;
         };
-        let previous_x = active.x;
-        let previous_y = active.y;
+        if pinching {
+            active.x = x;
+            active.y = y;
+            active.drag = next_drag;
+            self.update_pinch();
+            return true;
+        }
+        let Ok([delta_x, delta_y]) = active.drag.displacement([x, y]) else {
+            return false;
+        };
+        let pan_x = self.pan_x + delta_x;
+        let pan_y = self.pan_y + delta_y;
+        if !pan_x.is_finite() || !pan_y.is_finite() {
+            return false;
+        }
         active.x = x;
         active.y = y;
-        if self.active_pointer_count() == MAX_ACTIVE_POINTERS {
-            self.update_pinch();
-        } else {
-            self.pan_x = clamp_pan(self.pan_x + x - previous_x);
-            self.pan_y = clamp_pan(self.pan_y + y - previous_y);
-        }
+        active.drag = next_drag;
+        self.pan_x = clamp_pan(pan_x);
+        self.pan_y = clamp_pan(pan_y);
         true
     }
 
@@ -262,6 +276,16 @@ mod tests {
     }
 
     #[test]
+    fn one_pointer_pan_reverses_incrementally_after_clamping() {
+        let mut viewport = GestureViewport::default();
+        assert!(viewport.press(1, 0.0, 0.0));
+        assert!(viewport.move_pointer(1, 2_000.0, 0.0));
+        assert_eq!(viewport.pan_x.to_bits(), 1_024.0f64.to_bits());
+        assert!(viewport.move_pointer(1, 1_990.0, 0.0));
+        assert_eq!(viewport.pan_x.to_bits(), 1_014.0f64.to_bits());
+    }
+
+    #[test]
     fn pinch_scales_from_its_baseline_and_pans_by_its_centroid() {
         let mut viewport = GestureViewport::default();
         assert!(viewport.press(1, 0.0, 0.0));
@@ -289,6 +313,18 @@ mod tests {
         assert!(viewport.is_pinching());
         assert!(viewport.move_pointer(1, -5.0, 0.0));
         assert_eq!(viewport.zoom.to_bits(), 2.0f64.to_bits());
+    }
+
+    #[test]
+    fn remaining_pointer_resumes_from_its_last_accepted_position() {
+        let mut viewport = GestureViewport::default();
+        assert!(viewport.press(1, 0.0, 0.0));
+        assert!(viewport.press(2, 10.0, 0.0));
+        assert!(viewport.move_pointer(1, 4.0, 0.0));
+        assert_eq!(viewport.pan_x.to_bits(), 2.0f64.to_bits());
+        assert!(viewport.release(2));
+        assert!(viewport.move_pointer(1, 6.0, 0.0));
+        assert_eq!(viewport.pan_x.to_bits(), 4.0f64.to_bits());
     }
 
     #[test]
@@ -327,6 +363,15 @@ mod tests {
         assert!(viewport.press(1, 1.0, 2.0));
         let pressed = viewport;
         assert!(!viewport.move_pointer(1, f64::INFINITY, 3.0));
+        assert_eq!(viewport, pressed);
+    }
+
+    #[test]
+    fn unrepresentable_pointer_delta_is_rejected_without_mutating_state() {
+        let mut viewport = GestureViewport::default();
+        assert!(viewport.press(1, f64::MAX, 2.0));
+        let pressed = viewport;
+        assert!(!viewport.move_pointer(1, -f64::MAX, 3.0));
         assert_eq!(viewport, pressed);
     }
 }
