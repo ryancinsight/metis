@@ -9,11 +9,11 @@ fn region(extent: Rect, bounds: Rect, obstacles: &[PlacementObstacle]) -> Placem
     PlacementRegion::new(extent, bounds, obstacles).expect("bounded placement region")
 }
 fn assert_extreme_axis(axis: Axis) {
-    let rect = |x, y, width, height| match axis {
+    let rect = |x, y, width, height| match &axis {
         Axis::Horizontal => Rect::new(x, y, width, height),
         Axis::Vertical => Rect::new(y, x, height, width),
     };
-    let point = |x, y| match axis {
+    let point = |x, y| match &axis {
         Axis::Horizontal => (x, y),
         Axis::Vertical => (y, x),
     };
