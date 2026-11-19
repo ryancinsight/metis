@@ -2,6 +2,7 @@
 
 use crate::framebuffer::{Color, Framebuffer, Rect, SourceOver};
 mod gradient;
+mod line;
 mod paint;
 mod round_rect;
 mod shadow;
@@ -11,9 +12,11 @@ const LEFT: u8 = 1;
 const RIGHT: u8 = 2;
 const TOP: u8 = 4;
 const BOTTOM: u8 = 8;
+const CLIP_BOUNDARY_COUNT: usize = 4;
 
 use gradient::PlacedGradient;
 pub use gradient::{GradientStop, LinearGradient, MAX_GRADIENT_STOPS};
+pub use line::RasterLine;
 pub use round_rect::CornerRadius;
 use round_rect::{RoundRect, composite_shape};
 pub use shadow::{BoxShadow, draw_box_shadow};
@@ -160,42 +163,16 @@ pub fn draw_rect_outline(
 /// clipping invariant that every traversed coordinate fits the framebuffer's
 /// signed coordinate range.
 pub fn draw_line(fb: &mut Framebuffer, start: (i32, i32), end: (i32, i32), color: Color) {
-    let Some((x0, y0, x1, y1)) = clip_line(
-        i64::from(start.0),
-        i64::from(start.1),
-        i64::from(end.0),
-        i64::from(end.1),
-        i64::from(fb.width()) - 1,
-        i64::from(fb.height()) - 1,
-    ) else {
+    let frame = Rect::new(
+        0,
+        0,
+        i32::try_from(fb.width()).expect("invariant: framebuffer width fits i32"),
+        i32::try_from(fb.height()).expect("invariant: framebuffer height fits i32"),
+    );
+    let Some(line) = RasterLine::clipped(start, end, frame) else {
         return;
     };
-
-    let dx = (x1 - x0).abs();
-    let dy = -(y1 - y0).abs();
-    let step_x = if x0 < x1 { 1 } else { -1 };
-    let step_y = if y0 < y1 { 1 } else { -1 };
-    let mut error = dx + dy;
-    let (mut x, mut y) = (x0, y0);
-    loop {
-        fb.blend_pixel(
-            i32::try_from(x).expect("invariant: clipped x coordinate fits i32"),
-            i32::try_from(y).expect("invariant: clipped y coordinate fits i32"),
-            color,
-        );
-        if x == x1 && y == y1 {
-            break;
-        }
-        let doubled = error * 2;
-        if doubled >= dy {
-            error += dy;
-            x += step_x;
-        }
-        if doubled <= dx {
-            error += dx;
-            y += step_y;
-        }
-    }
+    line.for_each_pixel(|x, y| fb.blend_pixel(x, y, color));
 }
 
 fn clip_line(
@@ -206,9 +183,18 @@ fn clip_line(
     max_x: i64,
     max_y: i64,
 ) -> Option<(i64, i64, i64, i64)> {
+    // Cohen-Sutherland endpoint clipping follows Newman and Sproull,
+    // Principles of Interactive Computer Graphics, 2nd ed., section 5-1.
+    // The clip window includes coordinates from zero through each finite
+    // maximum. An intersection fixes only its selected boundary coordinate;
+    // preserving the other coordinate lets the next outcode reject a line
+    // that misses the window beyond an adjacent edge. Each endpoint has at
+    // most one horizontal and one vertical outside bit, so it can cross at
+    // most two selected boundaries. Four updates cover both endpoints;
+    // acceptance is checked after every update, including the fourth.
     let mut first = out_code(x0, y0, max_x, max_y);
     let mut second = out_code(x1, y1, max_x, max_y);
-    for _ in 0..4 {
+    for _ in 0..CLIP_BOUNDARY_COUNT {
         if first | second == 0 {
             return Some((x0, y0, x1, y1));
         }
@@ -229,8 +215,6 @@ fn clip_line(
             let x = 0;
             (x, interpolate(x0, y0, x1, y1, x))
         };
-        let x = x.clamp(0, max_x);
-        let y = y.clamp(0, max_y);
         if outside == first {
             x0 = x;
             y0 = y;
@@ -239,6 +223,9 @@ fn clip_line(
             x1 = x;
             y1 = y;
             second = out_code(x1, y1, max_x, max_y);
+        }
+        if first | second == 0 {
+            return Some((x0, y0, x1, y1));
         }
     }
     None

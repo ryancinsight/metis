@@ -116,6 +116,127 @@ fn line_clips_extreme_endpoints_before_traversal() {
 }
 
 #[test]
+fn line_rectangle_intersection_matches_half_open_pixel_bounds() {
+    let rect = Rect::new(10, 20, 4, 3);
+    let cases = [
+        ((10, 20), (10, 20), true),
+        ((14, 20), (14, 20), false),
+        ((0, 20), (10, 20), true),
+        ((0, 19), (20, 19), false),
+        ((14, 20), (14, 22), false),
+        ((8, 18), (12, 22), true),
+        ((i32::MIN, i32::MIN + 10), (i32::MAX - 10, i32::MAX), true),
+        ((i32::MIN, 19), (i32::MAX, 19), false),
+    ];
+    for (start, end, expected) in cases {
+        assert_eq!(RasterLine::new(start, end).intersects(rect), expected);
+    }
+    let point = RasterLine::new((10, 20), (10, 20));
+    assert!(!point.intersects(Rect::new(10, 20, 0, 3)));
+    assert!(!point.intersects(Rect::new(10, 20, 4, -1)));
+}
+
+#[test]
+fn line_rectangle_intersection_preserves_drawn_raster_phase() {
+    let mut framebuffer = Framebuffer::new(5, 3).expect("line surface");
+    draw_line(&mut framebuffer, (0, 0), (4, 2), Color::BLUE);
+    assert_eq!(framebuffer.get_pixel(1, 1), Color::BLUE);
+    let line = RasterLine::new((0, 0), (4, 2));
+    assert!(line.intersects(Rect::new(1, 1, 1, 1)));
+    assert!(!line.intersects(Rect::new(1, 0, 1, 1)));
+}
+
+#[test]
+fn line_rectangle_intersection_rejects_disjoint_axis_ranges() {
+    let rising = ((0, 0), (30, 30));
+    let rising = RasterLine::new(rising.0, rising.1);
+    assert!(!rising.intersects(Rect::new(10, 20, 4, 3)));
+    assert!(rising.intersects(Rect::new(10, 10, 4, 3)));
+    assert!(RasterLine::new((0, 30), (30, 0)).intersects(Rect::new(10, 17, 4, 4)));
+
+    let mut fb = Framebuffer::new(4, 3).expect("line surface");
+    draw_line(&mut fb, (-10, -20), (20, 10), Color::BLUE);
+    for y in 0..3 {
+        for x in 0..4 {
+            assert_eq!(fb.get_pixel(x, y), Color::TRANSPARENT);
+        }
+    }
+}
+
+#[test]
+fn line_clipping_accepts_after_four_boundary_updates() {
+    let rect = Rect::new(0, 0, 4, 3);
+    let line = RasterLine::clipped((-10, -4), (6, 3), rect).expect("line crosses bounds");
+    assert!(line.intersects(rect));
+
+    let mut fb = Framebuffer::new(4, 3).expect("line surface");
+    draw_line(&mut fb, (-10, -4), (6, 3), Color::BLUE);
+    let expected = [
+        ((0, 0), Color::BLUE),
+        ((1, 0), Color::BLUE),
+        ((2, 0), Color::TRANSPARENT),
+        ((3, 0), Color::TRANSPARENT),
+        ((0, 1), Color::TRANSPARENT),
+        ((1, 1), Color::TRANSPARENT),
+        ((2, 1), Color::BLUE),
+        ((3, 1), Color::BLUE),
+        ((0, 2), Color::TRANSPARENT),
+        ((1, 2), Color::TRANSPARENT),
+        ((2, 2), Color::TRANSPARENT),
+        ((3, 2), Color::TRANSPARENT),
+    ];
+    for ((x, y), pixel) in expected {
+        assert_eq!(fb.get_pixel(x, y), pixel);
+    }
+}
+
+#[test]
+fn raster_line_queries_match_drawn_pixels_across_small_domain() {
+    let frame = Rect::new(0, 0, 5, 5);
+    for x0 in -2..=6 {
+        for y0 in -2..=6 {
+            for x1 in -2..=6 {
+                for y1 in -2..=6 {
+                    let start = (x0, y0);
+                    let end = (x1, y1);
+                    let line = RasterLine::clipped(start, end, frame);
+                    let mut framebuffer = Framebuffer::new(5, 5).expect("line surface");
+                    draw_line(&mut framebuffer, start, end, Color::BLUE);
+                    for y in 0..5 {
+                        for x in 0..5 {
+                            let painted = framebuffer.get_pixel(x, y) == Color::BLUE;
+                            assert_eq!(
+                                line.is_some_and(|line| { line.intersects(Rect::new(x, y, 1, 1)) }),
+                                painted,
+                                "segment {start:?}->{end:?}, pixel ({x}, {y})"
+                            );
+                        }
+                    }
+                }
+            }
+        }
+    }
+}
+
+#[test]
+fn clipped_raster_line_queries_keep_the_draw_phase() {
+    let frame = Rect::new(0, 0, 4, 3);
+    let line = RasterLine::clipped((-10, -4), (6, 3), frame).expect("line crosses frame");
+    let mut framebuffer = Framebuffer::new(4, 3).expect("line surface");
+    draw_line(&mut framebuffer, (-10, -4), (6, 3), Color::BLUE);
+    for y in 0..3 {
+        for x in 0..4 {
+            assert_eq!(
+                line.intersects(Rect::new(x, y, 1, 1)),
+                framebuffer.get_pixel(x, y) == Color::BLUE,
+                "pixel ({x}, {y})"
+            );
+        }
+    }
+    assert_eq!(line.endpoints(), ((0, 0), (3, 1)));
+}
+
+#[test]
 fn translucent_line_composites_each_pixel_once() {
     let mut fb = Framebuffer::new(3, 1).expect("line surface");
     fb.clear(Color::WHITE);
