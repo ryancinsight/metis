@@ -2,6 +2,7 @@
 
 use crate::framebuffer::{Color, Framebuffer, Rect, SourceOver};
 mod gradient;
+mod line;
 mod paint;
 mod round_rect;
 mod shadow;
@@ -15,6 +16,7 @@ const CLIP_BOUNDARY_COUNT: usize = 4;
 
 use gradient::PlacedGradient;
 pub use gradient::{GradientStop, LinearGradient, MAX_GRADIENT_STOPS};
+pub use line::RasterLine;
 pub use round_rect::CornerRadius;
 use round_rect::{RoundRect, composite_shape};
 pub use shadow::{BoxShadow, draw_box_shadow};
@@ -161,104 +163,16 @@ pub fn draw_rect_outline(
 /// clipping invariant that every traversed coordinate fits the framebuffer's
 /// signed coordinate range.
 pub fn draw_line(fb: &mut Framebuffer, start: (i32, i32), end: (i32, i32), color: Color) {
-    let Some((x0, y0, x1, y1)) = clip_line(
-        i64::from(start.0),
-        i64::from(start.1),
-        i64::from(end.0),
-        i64::from(end.1),
-        i64::from(fb.width()) - 1,
-        i64::from(fb.height()) - 1,
-    ) else {
+    let frame = Rect::new(
+        0,
+        0,
+        i32::try_from(fb.width()).expect("invariant: framebuffer width fits i32"),
+        i32::try_from(fb.height()).expect("invariant: framebuffer height fits i32"),
+    );
+    let Some(line) = RasterLine::clipped(start, end, frame) else {
         return;
     };
-
-    let dx = (x1 - x0).abs();
-    let dy = -(y1 - y0).abs();
-    let step_x = if x0 < x1 { 1 } else { -1 };
-    let step_y = if y0 < y1 { 1 } else { -1 };
-    let mut error = dx + dy;
-    let (mut x, mut y) = (x0, y0);
-    loop {
-        fb.blend_pixel(
-            i32::try_from(x).expect("invariant: clipped x coordinate fits i32"),
-            i32::try_from(y).expect("invariant: clipped y coordinate fits i32"),
-            color,
-        );
-        if x == x1 && y == y1 {
-            break;
-        }
-        let doubled = error * 2;
-        if doubled >= dy {
-            error += dy;
-            x += step_x;
-        }
-        if doubled <= dx {
-            error += dx;
-            y += step_y;
-        }
-    }
-}
-
-/// Clips an inclusive line segment to a half-open rectangle.
-///
-/// Coordinates identify raster pixels, so intersection means the clipped
-/// integer segment is nonempty, not that a continuous geometric line enters
-/// the pixel area. The query uses the same clipping operation as [`draw_line`],
-/// so its decision agrees with the pixels the rasterizer can write. Empty
-/// rectangles never intersect. Coordinates may span the full `i32` range.
-#[must_use]
-pub fn clip_line_to_rect(
-    start: (i32, i32),
-    end: (i32, i32),
-    rect: Rect,
-) -> Option<((i32, i32), (i32, i32))> {
-    if rect.width <= 0 || rect.height <= 0 {
-        return None;
-    }
-    let translate = |point: (i32, i32)| {
-        (
-            i64::from(point.0) - i64::from(rect.x),
-            i64::from(point.1) - i64::from(rect.y),
-        )
-    };
-    let (x0, y0) = translate(start);
-    let (x1, y1) = translate(end);
-    let (x0, y0, x1, y1) = clip_line(
-        x0,
-        y0,
-        x1,
-        y1,
-        i64::from(rect.width) - 1,
-        i64::from(rect.height) - 1,
-    )?;
-    let restore = |x: i64, y: i64| {
-        Some((
-            i32::try_from(i64::from(rect.x).checked_add(x)?).ok()?,
-            i32::try_from(i64::from(rect.y).checked_add(y)?).ok()?,
-        ))
-    };
-    Some((restore(x0, y0)?, restore(x1, y1)?))
-}
-
-/// Tests whether an inclusive raster line crosses a half-open rectangle.
-///
-/// This is the presence-only form of [`clip_line_to_rect`].
-///
-/// # Examples
-///
-/// ```
-/// use metis_platform::{Rect, line_intersects_rect};
-///
-/// assert!(line_intersects_rect((0, 0), (30, 30), Rect::new(10, 10, 1, 1)));
-/// assert!(!line_intersects_rect(
-///     (0, 0),
-///     (30, 30),
-///     Rect::new(10, 20, 4, 3),
-/// ));
-/// ```
-#[must_use]
-pub fn line_intersects_rect(start: (i32, i32), end: (i32, i32), rect: Rect) -> bool {
-    clip_line_to_rect(start, end, rect).is_some()
+    line.for_each_pixel(|x, y| fb.blend_pixel(x, y, color));
 }
 
 fn clip_line(
