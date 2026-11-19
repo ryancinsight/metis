@@ -24,7 +24,7 @@ pub use layout::{
     LineJoin, PathCapture, PathPush, PathTopology, PolylineError, Rect, ScrollAlign, ScrollbarAxis,
     ScrollbarDrag, ScrollbarGeometry, SegmentHit, StrokeWidth, VertexHit, VirtualList,
     VisibleWindow, arrow_wings, compute_layout, compute_layout_into, nearest_polyline_segment,
-    nearest_polyline_vertex, polyline_distance,
+    nearest_polyline_vertex, place_rect_avoiding, polyline_distance,
 };
 pub use parser::parse_markup;
 pub use semantics::{

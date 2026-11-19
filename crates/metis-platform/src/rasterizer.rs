@@ -243,6 +243,19 @@ pub fn clip_line_to_rect(
 /// Tests whether an inclusive raster line crosses a half-open rectangle.
 ///
 /// This is the presence-only form of [`clip_line_to_rect`].
+///
+/// # Examples
+///
+/// ```
+/// use metis_platform::{Rect, line_intersects_rect};
+///
+/// assert!(line_intersects_rect((0, 0), (30, 30), Rect::new(10, 10, 1, 1)));
+/// assert!(!line_intersects_rect(
+///     (0, 0),
+///     (30, 30),
+///     Rect::new(10, 20, 4, 3),
+/// ));
+/// ```
 #[must_use]
 pub fn line_intersects_rect(start: (i32, i32), end: (i32, i32), rect: Rect) -> bool {
     clip_line_to_rect(start, end, rect).is_some()
