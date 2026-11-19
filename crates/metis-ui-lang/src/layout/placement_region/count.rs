@@ -37,7 +37,7 @@ impl PlacementRegion {
         let Some(bounds) = self.bounds else {
             return Ok(0);
         };
-        let events = events(&self.forbidden, bounds)?;
+        let events = events(&self.forbidden, bounds, None)?;
         let mut scratch = Scratch::new(self.forbidden.len())?;
         let mut total = 0_i128;
         for (index, &row) in events.iter().enumerate() {
@@ -96,13 +96,13 @@ struct Gap {
     left: Edge,
 }
 
-struct Scratch {
+pub(super) struct Scratch {
     intervals: Vec<Interval>,
     gaps: Vec<Gap>,
 }
 
 impl Scratch {
-    fn new(count: usize) -> Result<Self> {
+    pub(super) fn new(count: usize) -> Result<Self> {
         let gap_count = count
             .checked_add(1)
             .ok_or_else(|| limit_error("Placement count capacity overflow"))?;
@@ -117,7 +117,11 @@ impl Scratch {
     }
 }
 
-fn events(polygons: &[Polygon], bounds: OriginBounds) -> Result<Vec<i64>> {
+pub(super) fn events(
+    polygons: &[Polygon],
+    bounds: OriginBounds,
+    preferred_row: Option<i64>,
+) -> Result<Vec<i64>> {
     let line_count = polygons
         .len()
         .checked_mul(6)
@@ -139,12 +143,13 @@ fn events(polygons: &[Polygon], bounds: OriginBounds) -> Result<Vec<i64>> {
     let capacity = lines
         .len()
         .checked_mul(lines.len().saturating_sub(1))
-        .and_then(|n| n.checked_add(2))
+        .and_then(|n| n.checked_add(3))
         .ok_or_else(|| limit_error("Placement count capacity overflow"))?;
     let mut rows = Vec::new();
     rows.try_reserve_exact(capacity)
         .map_err(|_| limit_error("Placement count allocation failed"))?;
     rows.extend([bounds.y.0, bounds.y.1]);
+    rows.extend(preferred_row);
     for (index, first) in lines.iter().enumerate() {
         for second in &lines[index + 1..] {
             let mut denominator = first.0 * second.1 - first.1 * second.0;
@@ -226,11 +231,16 @@ fn gaps<'a>(
     &scratch.gaps
 }
 
-fn row_count(polygons: &[Polygon], y: i64, bounds: OriginBounds, scratch: &mut Scratch) -> i128 {
+pub(super) fn row_count(
+    polygons: &[Polygon],
+    y: i64,
+    bounds: OriginBounds,
+    scratch: &mut Scratch,
+) -> i128 {
     gap_count(gaps(polygons, y, bounds, scratch), y, y)
 }
 
-fn slab_count(
+pub(super) fn slab_count(
     polygons: &[Polygon],
     first: i64,
     last: i64,
@@ -241,6 +251,41 @@ fn slab_count(
         return 0;
     }
     gap_count(gaps(polygons, first, bounds, scratch), first, last)
+}
+
+pub(super) fn row_origin(
+    polygons: &[Polygon],
+    y: i64,
+    preferred_x: i64,
+    bounds: OriginBounds,
+    scratch: &mut Scratch,
+) -> Option<i64> {
+    let gaps = gaps(polygons, y, bounds, scratch);
+    let integer_bounds = |gap: Gap| {
+        let low = gap.right.numerator(y).div_euclid(gap.right.r) + 1;
+        let high = -(-gap.left.numerator(y)).div_euclid(gap.left.r) - 1;
+        (low, high)
+    };
+    gaps.iter()
+        .copied()
+        .map(integer_bounds)
+        .find_map(|(low, high)| {
+            let requested = i128::from(preferred_x).max(low);
+            (requested <= high)
+                .then(|| i64::try_from(requested).expect("invariant: a feasible origin fits i64"))
+        })
+        .or_else(|| {
+            gaps.iter()
+                .copied()
+                .rev()
+                .map(integer_bounds)
+                .find_map(|(low, high)| {
+                    let requested = i128::from(preferred_x).min(high);
+                    (requested >= low).then(|| {
+                        i64::try_from(requested).expect("invariant: a feasible origin fits i64")
+                    })
+                })
+        })
 }
 
 fn gap_count(gaps: &[Gap], first: i64, last: i64) -> i128 {
