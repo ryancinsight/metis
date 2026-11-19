@@ -47,6 +47,7 @@ pub use path::{
     PathCapture, PathPush, PathTopology, PolylineError, SegmentHit, VertexHit, arrow_wings,
     nearest_polyline_segment, nearest_polyline_vertex, polyline_distance,
 };
+pub use placement::{HorizontalSearch, place_rect_avoiding};
 pub use scrollbar::{ScrollbarAxis, ScrollbarDrag, ScrollbarGeometry};
 pub use virtual_list::{
     MAX_ITEM_EXTENT, MAX_VIRTUAL_ITEMS, ScrollAlign, VirtualList, VisibleWindow,

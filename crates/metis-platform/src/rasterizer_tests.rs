@@ -175,6 +175,15 @@ fn line_rectangle_intersection_rejects_disjoint_axis_ranges() {
 fn line_clipping_accepts_after_four_boundary_updates() {
     let rect = Rect::new(0, 0, 4, 3);
     assert!(line_intersects_rect((-10, -4), (6, 3), rect));
+    assert_eq!(
+        clip_line_to_rect((-10, -4), (6, 3), rect),
+        Some(((0, 0), (3, 1)))
+    );
+    assert_eq!(
+        clip_line_to_rect((6, 3), (-10, -4), rect),
+        // Integer interpolation truncates 2 + 6 / -5 to 1 at the left edge.
+        Some(((3, 2), (0, 1)))
+    );
 
     let mut fb = Framebuffer::new(4, 3).expect("line surface");
     draw_line(&mut fb, (-10, -4), (6, 3), Color::BLUE);

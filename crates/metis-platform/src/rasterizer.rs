@@ -199,7 +199,7 @@ pub fn draw_line(fb: &mut Framebuffer, start: (i32, i32), end: (i32, i32), color
     }
 }
 
-/// Tests whether an inclusive line segment crosses a half-open rectangle.
+/// Clips an inclusive line segment to a half-open rectangle.
 ///
 /// Coordinates identify raster pixels, so intersection means the clipped
 /// integer segment is nonempty, not that a continuous geometric line enters
@@ -207,9 +207,13 @@ pub fn draw_line(fb: &mut Framebuffer, start: (i32, i32), end: (i32, i32), color
 /// so its decision agrees with the pixels the rasterizer can write. Empty
 /// rectangles never intersect. Coordinates may span the full `i32` range.
 #[must_use]
-pub fn line_intersects_rect(start: (i32, i32), end: (i32, i32), rect: Rect) -> bool {
+pub fn clip_line_to_rect(
+    start: (i32, i32),
+    end: (i32, i32),
+    rect: Rect,
+) -> Option<((i32, i32), (i32, i32))> {
     if rect.width <= 0 || rect.height <= 0 {
-        return false;
+        return None;
     }
     let translate = |point: (i32, i32)| {
         (
@@ -219,15 +223,29 @@ pub fn line_intersects_rect(start: (i32, i32), end: (i32, i32), rect: Rect) -> b
     };
     let (x0, y0) = translate(start);
     let (x1, y1) = translate(end);
-    clip_line(
+    let (x0, y0, x1, y1) = clip_line(
         x0,
         y0,
         x1,
         y1,
         i64::from(rect.width) - 1,
         i64::from(rect.height) - 1,
-    )
-    .is_some()
+    )?;
+    let restore = |x: i64, y: i64| {
+        Some((
+            i32::try_from(i64::from(rect.x).checked_add(x)?).ok()?,
+            i32::try_from(i64::from(rect.y).checked_add(y)?).ok()?,
+        ))
+    };
+    Some((restore(x0, y0)?, restore(x1, y1)?))
+}
+
+/// Tests whether an inclusive raster line crosses a half-open rectangle.
+///
+/// This is the presence-only form of [`clip_line_to_rect`].
+#[must_use]
+pub fn line_intersects_rect(start: (i32, i32), end: (i32, i32), rect: Rect) -> bool {
+    clip_line_to_rect(start, end, rect).is_some()
 }
 
 fn clip_line(
