@@ -75,11 +75,72 @@ class WindowsIconTests(unittest.TestCase):
         self.assertEqual(blended[3], 255)
         self.assertNotIn(blended[:3], ((15, 118, 110), (67, 56, 202)))
 
+    def test_render_bounds_keep_fractional_and_clipped_shape_edges(self):
+        fractional = windows_icon.render_mark(
+            '<svg xmlns="http://www.w3.org/2000/svg" width="4" height="4"'
+            ' viewBox="0 0 4 4"><path d="M.25 .25H3.75V3.75H.25Z"'
+            ' fill="#f00"/></svg>',
+            4,
+        )
+        self.assertEqual(
+            [pixel(fractional, 4, x, y) for y in range(4) for x in range(4)],
+            [(255, 0, 0, 255)] * 16,
+        )
+        clipped = windows_icon.render_mark(
+            '<svg xmlns="http://www.w3.org/2000/svg" width="4" height="4"'
+            ' viewBox="0 0 4 4"><path d="M-1-1H1.1V1.1H-1Z"'
+            ' fill="#0f0"/></svg>',
+            4,
+        )
+        self.assertEqual(pixel(clipped, 4, 0, 0), (0, 255, 0, 255))
+        self.assertEqual(
+            [
+                pixel(clipped, 4, x, y)
+                for y in range(4)
+                for x in range(4)
+                if (x, y) != (0, 0)
+            ],
+            [(0, 0, 0, 0)] * 15,
+        )
+        far_offscreen = windows_icon.render_mark(
+            '<svg xmlns="http://www.w3.org/2000/svg" width="4" height="4"'
+            ' viewBox="0 0 4 4"><path d="M1e308 1e308H1.1e308V1.1e308H1e308Z"'
+            ' fill="#00f"/></svg>',
+            16,
+        )
+        self.assertEqual(far_offscreen, bytes(16 * 16 * 4))
+        rounded_edge = windows_icon.render_mark(
+            '<svg xmlns="http://www.w3.org/2000/svg" width="273" height="273"'
+            ' viewBox="0 0 273 273"><path d="M0 0H300V300H0Z"'
+            ' fill="#f00"/></svg>',
+            24,
+        )
+        self.assertEqual(len(rounded_edge), 24 * 24 * 4)
+        self.assertEqual(
+            [pixel(rounded_edge, 24, x, y) for y in range(24) for x in range(24)],
+            [(255, 0, 0, 255)] * (24 * 24),
+        )
+
+    def test_pixel_bounds_stay_within_canvas(self):
+        for viewport, pixels in ((1, 1), (3, 2), (273, 24), (4095, 257)):
+            with self.subTest(viewport=viewport, pixels=pixels):
+                scale = pixels / viewport
+                beyond_edge = float(viewport + 1)
+                columns, rows = windows_icon._pixel_bounds(
+                    [[(0.0, 0.0), (beyond_edge, beyond_edge)]], scale, pixels
+                )
+                self.assertEqual(columns, range(pixels))
+                self.assertEqual(rows, range(pixels))
+
     def test_generated_icon_validates_and_decodes(self):
         with tempfile.TemporaryDirectory() as scratch:
             output = pathlib.Path(scratch) / "metis-mark.ico"
             data = windows_icon.generate(windows_icon.SOURCE, output)
             self.assertEqual(data, output.read_bytes())
+            self.assertEqual(
+                data,
+                (ROOT / "examples" / "browser" / "assets" / "metis-mark.ico").read_bytes(),
+            )
             images = windows_icon.validate_ico(data)
             self.assertEqual([edge for edge, _ in images], [16, 24, 32, 48, 64, 128, 256])
             width, rgba = decode_png(images[-1][1])
@@ -138,6 +199,18 @@ class WindowsIconTests(unittest.TestCase):
             windows_icon.render_mark(
                 '<svg xmlns="http://www.w3.org/2000/svg" width="256" height="128"'
                 ' viewBox="0 0 256 128"><path d="M0 0H10V10Z"/></svg>',
+                16,
+            )
+        with self.assertRaises(ValueError):
+            windows_icon.render_mark(
+                '<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16"'
+                ' viewBox="0 0 16 16"><path d="Z"/></svg>',
+                16,
+            )
+        with self.assertRaises(ValueError):
+            windows_icon.render_mark(
+                '<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16"'
+                ' viewBox="0 0 16 16"><path d="M0 0H1e999V1Z"/></svg>',
                 16,
             )
 
