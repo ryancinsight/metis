@@ -8,6 +8,11 @@ enum Axis {
 fn region(extent: Rect, bounds: Rect, obstacles: &[PlacementObstacle]) -> PlacementRegion {
     PlacementRegion::new(extent, bounds, obstacles).expect("bounded placement region")
 }
+
+fn count(value: &PlacementRegion) -> u64 {
+    value.count().expect("bounded count")
+}
+
 fn assert_extreme_axis(axis: &Axis) {
     let rect = |x, y, width, height| match axis {
         Axis::Horizontal => Rect::new(x, y, width, height),
@@ -146,4 +151,77 @@ fn extreme_bearings_and_snapshot_ownership_are_explicit() {
         [after.contains((0, 0)), after.contains((1, 0))],
         [true, false]
     );
+}
+
+#[test]
+fn count_matches_enumeration_and_coordinate_extremes() {
+    let occupied = [
+        PlacementObstacle::Line(RasterLine::new((2, 0), (2, 2))),
+        PlacementObstacle::Rect(Rect::new(4, 0, 2, 1)),
+    ];
+    let value = region(Rect::new(0, 0, 2, 1), Rect::new(0, 0, 6, 3), &occupied);
+    assert_eq!(count(&value), 7);
+    let enumerated = (0..=4)
+        .flat_map(|x| (0..=2).map(move |y| (x, y)))
+        .filter(|&anchor| value.contains(anchor))
+        .count();
+    assert_eq!(
+        usize::try_from(count(&value)).expect("small count"),
+        enumerated
+    );
+    for (bearing, bounds, xs, ys) in [
+        ((0, 0), Rect::new(0, 0, 5, 5), (0, 4), (0, 4)),
+        ((-1, 2), Rect::new(-2, -2, 7, 7), (-4, 6), (-6, 4)),
+    ] {
+        for (start, end) in [
+            ((0, 0), (4, 2)),
+            ((4, 2), (0, 0)),
+            ((2, 0), (2, 4)),
+            ((0, 2), (4, 2)),
+            ((2, 2), (2, 2)),
+            ((-3, -2), (1, 2)),
+            ((1, 2), (-3, -2)),
+            ((-3, 2), (1, -2)),
+            ((1, -2), (-3, 2)),
+        ] {
+            for width in 1..=2 {
+                for height in 1..=2 {
+                    let line = [PlacementObstacle::Line(RasterLine::new(start, end))];
+                    let extent = Rect::new(bearing.0, bearing.1, width, height);
+                    let value = region(extent, bounds, &line);
+                    let expected = (xs.0..=xs.1)
+                        .flat_map(|x| (ys.0..=ys.1).map(move |y| (x, y)))
+                        .filter(|&anchor| value.contains(anchor))
+                        .count();
+                    assert_eq!(count(&value), u64::try_from(expected).expect("small count"));
+                }
+            }
+        }
+    }
+
+    let full = [PlacementObstacle::Rect(Rect::new(0, 0, 3, 3))];
+    assert_eq!(
+        count(&region(Rect::new(0, 0, 1, 1), Rect::new(0, 0, 3, 3), &full)),
+        0
+    );
+    assert_eq!(
+        count(&region(Rect::new(0, 0, 2, 1), Rect::new(0, 0, 1, 1), &[])),
+        0
+    );
+
+    for height in [8, i32::MAX] {
+        let line = [PlacementObstacle::Line(RasterLine::new(
+            (0, 0),
+            (0, height - 1),
+        ))];
+        let value = region(Rect::new(0, 0, 1, 1), Rect::new(0, 0, 2, height), &line);
+        assert_eq!(count(&value), u64::from(height.unsigned_abs()));
+    }
+    let side = u64::from(i32::MAX.unsigned_abs());
+    let huge = region(
+        Rect::new(0, 0, 1, 1),
+        Rect::new(i32::MIN, i32::MIN, i32::MAX, i32::MAX),
+        &[],
+    );
+    assert_eq!(count(&huge), side * side);
 }
