@@ -4,12 +4,14 @@ PAGE = """<!doctype html>
 <html lang="en">
 <head><meta charset="utf-8"><title>Metis WebGPU recovery</title></head>
 <body>
+  <button id="recovery-start" type="button" disabled>Start canvas</button><button id="recovery-check" type="button" disabled>Check canvas</button><output id="recovery-observation"></output>
   <canvas id="recovery" width="32" height="32"></canvas>
   <pre id="recovery-error" hidden></pre>
   <script type="module">
     import init from './canvas_recovery.js';
     try {
       window.recovery = await init();
+      const start = document.getElementById('recovery-start'); const check = document.getElementById('recovery-check'); const output = document.getElementById('recovery-observation'); start.onclick = () => window.recovery.canvas_start(); check.onclick = () => { const diagnostic = document.getElementById('recovery-error'); (function() { __METIS_READ_PIXELS__ }).apply(null, ['recovery', 10000, (pixels) => { output.textContent = JSON.stringify({status: Number(window.recovery.canvas_status()), diagnostic: (diagnostic.textContent || '').trim(), pixels}); }]); }; start.disabled = false; check.disabled = false;
       window.__recoveryReady = true;
     } catch (error) {
       window.__recoveryLoadError = String(error).slice(0, 512);
@@ -233,3 +235,5 @@ const capture = () => {
 };
 window.requestAnimationFrame(capture);
 """
+
+PAGE = PAGE.replace("__METIS_READ_PIXELS__", READ_PIXELS)

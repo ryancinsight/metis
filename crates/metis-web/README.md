@@ -48,7 +48,8 @@ reconfigures the same surface; a failed acquisition leaves the previous
 provider state in place, and raster surfaces return an unsupported error.
 
 The `canvas_recovery` example exercises this public surface with opaque
-two-color frames. With Edge `WebDriver` listening on port 9515, run
+two-color frames whose equal maximum-finite spacing must produce unit aspect
+before upload. With Edge `WebDriver` listening on port 9515, run
 `python scripts/browser_gpu_recovery.py`. The runner builds the locked WASM
 example, destroys its actual browser device, awaits `device.lost`, calls
 `CanvasSurface::recreate` through the example, and checks the recovered frame

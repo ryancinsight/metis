@@ -4,6 +4,9 @@ Status: Accepted
 
 Date: 2026-09-19
 
+Revision: 2026-11-18 — compute the physical ratio as an exact binary rational
+and round once, so representable results survive intermediate exponent limits.
+
 Driver: `METIS-PRESENTATION-GEOMETRY-001`.
 
 ## Decision
@@ -35,10 +38,17 @@ selection cannot change geometry validation.
 - Spacing components are finite and strictly positive.
 - Frame dimensions remain validated by the existing Moirai canvas contract.
 - The physical width-to-height ratio is finite and positive before upload.
+- Aspect calculation decodes each positive finite spacing into its exact
+  integer significand and power-of-two exponent. Dimension products need at
+  most 85 bits; bounded binary long division emits the kept binary64 bits and
+  the final remainder selects round-to-nearest, ties-to-even.
+- Only a final value that rounds to zero or infinity is rejected. Intermediate
+  multiplication cannot overflow or underflow because it uses `u128` products.
 - Existing pixel-only frame implementations retain identical dimensions and
   RGBA bytes.
 
 Focused unit tests cover valid anisotropic ratios, invalid distances and empty
-dimensions. Native and WASM package gates remain the delivery oracle. RITK
-consumer integration carries the derived spacing into this seam in its next
-co-evolution increment.
+dimensions, equal extreme spacings, subnormal and maximum-finite boundaries,
+and ties on both sides of the normal boundary. Native and WASM package gates
+remain the delivery oracle. RITK consumer integration carries the derived
+spacing into this seam in its next co-evolution increment.
