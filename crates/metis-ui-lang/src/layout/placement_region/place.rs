@@ -7,13 +7,11 @@ use metis_platform::Rect;
 impl PlacementRegion {
     /// Finds the first clear glyph rectangle in row-major proximity order.
     ///
-    /// Search checks the preferred row first, then lower rows in ascending
-    /// order, followed by upper rows in descending order. Within a row it
-    /// chooses the first clear origin at or right of the preferred origin,
-    /// otherwise the last clear origin to its left. The preferred text anchor
-    /// is clamped to the representable glyph-origin domain. Exact slab counts
-    /// skip blocked coordinate spans and locate a nonempty row by prefix or
-    /// suffix count, so the search never enumerates rows or raster pixels.
+    /// Search checks the preferred row, lower rows in ascending order, then
+    /// upper rows in descending order. Within a row it chooses the first clear
+    /// origin at or right of the preferred origin, otherwise the last one to
+    /// its left. The preferred anchor is clamped to the representable domain.
+    /// Exact slab counts skip spans without enumerating rows or raster pixels.
     ///
     /// # Errors
     ///
@@ -97,12 +95,9 @@ impl PlacementRegion {
     }
 
     fn rectangle(&self, x: i64, y: i64) -> Rect {
-        Rect::new(
-            i32::try_from(x).expect("invariant: a feasible x origin fits i32"),
-            i32::try_from(y).expect("invariant: a feasible y origin fits i32"),
-            self.extent.width,
-            self.extent.height,
-        )
+        let x = i32::try_from(x).expect("invariant: a feasible x origin fits i32");
+        let y = i32::try_from(y).expect("invariant: a feasible y origin fits i32");
+        Rect::new(x, y, self.extent.width, self.extent.height)
     }
 }
 
@@ -129,8 +124,9 @@ fn locate_clear_row(
     }
     let from_end = matches!(direction, RowDirection::Last);
     while first < last {
-        let midpoint =
-            i64::midpoint(first, last) + i64::from(from_end && ((first ^ last) & 1) != 0);
+        // Origin bounds are i32, so this nonnegative difference fits i64.
+        let difference = last - first;
+        let midpoint = first + difference / 2 + i64::from(from_end && difference % 2 != 0);
         if from_end {
             if slab_count(polygons, midpoint, last, bounds, scratch) > 0 {
                 first = midpoint;

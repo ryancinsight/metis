@@ -34,12 +34,9 @@ fn brute_place(value: &PlacementRegion, preferred: (i32, i32)) -> Option<Rect> {
                 i32::try_from(y - i64::from(value.extent.y)).expect("representable y anchor"),
             );
             if value.contains(anchor) {
-                return Some(Rect::new(
-                    i32::try_from(x).expect("representable x origin"),
-                    i32::try_from(y).expect("representable y origin"),
-                    value.extent.width,
-                    value.extent.height,
-                ));
+                let x = i32::try_from(x).expect("representable x origin");
+                let y = i32::try_from(y).expect("representable y origin");
+                return Some(Rect::new(x, y, value.extent.width, value.extent.height));
             }
         }
     }
@@ -291,22 +288,22 @@ fn placement_order_handles_rectangles_and_extreme_domains() {
             Some(expected)
         );
     }
-    let above = [PlacementObstacle::Rect(Rect::new(0, 10, 20, 10))];
-    assert_eq!(
-        place(
-            &region(Rect::new(0, 0, 4, 4), Rect::new(0, 0, 20, 20), &above),
-            (5, 10),
-        ),
-        Some(Rect::new(5, 6, 4, 4))
-    );
-    let full = [PlacementObstacle::Rect(Rect::new(0, 0, 20, 20))];
-    assert_eq!(
-        place(
-            &region(Rect::new(0, 0, 4, 4), Rect::new(0, 0, 20, 20), &full),
-            (5, 10),
-        ),
-        None
-    );
+    for (obstacle, expected) in [
+        (Rect::new(0, 10, 20, 10), Some(Rect::new(5, 6, 4, 4))),
+        (Rect::new(0, 0, 20, 20), None),
+    ] {
+        let obstacles = [PlacementObstacle::Rect(obstacle)];
+        let value = region(Rect::new(0, 0, 4, 4), Rect::new(0, 0, 20, 20), &obstacles);
+        assert_eq!(place(&value, (5, 10)), expected);
+    }
+    for (preferred_y, blocked_y, expected_y) in [(-5, -5, -4), (-1, -1, -2)] {
+        let obstacles = [PlacementObstacle::Rect(Rect::new(0, blocked_y, 1, 1))];
+        let value = region(Rect::new(0, 0, 1, 1), Rect::new(0, -5, 1, 5), &obstacles);
+        assert_eq!(
+            place(&value, (0, preferred_y)),
+            Some(Rect::new(0, expected_y, 1, 1))
+        );
+    }
 }
 
 #[test]
