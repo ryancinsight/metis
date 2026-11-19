@@ -299,7 +299,7 @@ mod tests {
             for m in 1_i128..=11 {
                 for a in -12_i128..=12 {
                     for b in -12_i128..=12 {
-                        let direct = (0..n).map(|k| (a * k + b).div_euclid(m)).sum();
+                        let direct: i128 = (0..n).map(|k| (a * k + b).div_euclid(m)).sum();
                         assert_eq!(floor_sum(n, m, a, b), direct, "{n} {m} {a} {b}");
                     }
                 }
