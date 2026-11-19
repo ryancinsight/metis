@@ -11,7 +11,7 @@ from browser_canvas import ensure_canvas_visible, settle_canvas_input
 from browser_canvas_capture import READ_SCREENSHOT_PIXELS, capture_screenshot, pixel_observation
 from browser_protocol import ELEMENT_KEY, BrowserRuntimeError, StaticServer, WebDriverClient, parse_device_scale
 from browser_runtime import _wait_for_text, _write_trace
-from browser_trace import BrowserEngine, Trace
+from browser_trace import BrowserEngine, Trace, record_device_scale
 
 
 CANVAS_ID = "canvas-input"
@@ -84,6 +84,15 @@ def _pointer_actions(actions: list[dict[str, Any]]) -> list[dict[str, Any]]:
              "parameters": {"pointerType": "mouse"}, "actions": actions}]
 
 
+def _screenshot_dimensions(scale_milli: int) -> tuple[int, int]:
+    # CSS extents times physical pixels per CSS pixel; this fixture requires
+    # integral boundaries so the screenshot contains no partial edge pixel.
+    dimensions = tuple(divmod(extent * scale_milli, 1_000) for extent in (100, 80))
+    if any(remainder for _, remainder in dimensions):
+        raise BrowserRuntimeError("canvas fixture has a fractional physical pixel boundary")
+    return tuple(extent for extent, _ in dimensions)
+
+
 def run(
     webdriver: str, engine: BrowserEngine, serve_dir: pathlib.Path, timeout_seconds: float,
     device_scale_milli: int | None, revision: str,
@@ -120,19 +129,21 @@ def run(
             if canvas != expected_canvas:
                 raise BrowserRuntimeError(f"raster canvas differs from its oracle: {canvas!r}")
             trace = Trace(engine, url, "none", revision, client.capabilities)
+            scale = record_device_scale(client, trace, device_scale_milli)
+            dimensions = _screenshot_dimensions(scale["effective_milli"])
             screenshot_dir = serve_dir / "runtime" / "screenshots" / engine.value
             capture_screenshot(
                 client, trace, screenshot_dir, CANVAS_ID, expected_canvas, "2d",
             )
             screenshot = trace.screenshots[-1]
-            if (screenshot["width"], screenshot["height"]) != (100, 80):
-                raise BrowserRuntimeError("canvas screenshot is not 100 by 80 pixels")
+            if (screenshot["width"], screenshot["height"]) != dimensions:
+                raise BrowserRuntimeError(f"canvas screenshot differs from physical extent {dimensions}")
             image_path = (screenshot_dir / f"{CANVAS_ID}.png").relative_to(serve_dir)
             decoded = client.execute_async(
                 READ_SCREENSHOT_PIXELS, [image_path.as_posix(), 10_000],
             )
             observed_pixels = pixel_observation(
-                decoded, (100, 80), bytes((17, 34, 51, 255)) * 8_000,
+                decoded, dimensions, bytes((17, 34, 51, 255)) * (dimensions[0] * dimensions[1]),
             )
             canvas["pixel"] = decoded["pixels"][:4]
             registered = _trace(client)
@@ -192,7 +203,9 @@ def run(
                 "url": url, "capabilities": dict(client.capabilities), "canvas": canvas,
                 "events": gesture, "callbacks": completed["observations"],
                 "screenshot": screenshot,
-                "visible_pixels": {**observed_pixels, "method": "element-screenshot", "count": 8_000},
+                "device_scale": scale,
+                "visible_pixels": {**observed_pixels, "method": "element-screenshot",
+                                   "count": dimensions[0] * dimensions[1]},
                 "cleanup": {
                     "surface_listeners": listeners, "registrations": stopped["registrations"],
                     "removals": stopped["removals"], "active_listeners": stopped["active"],
