@@ -66,12 +66,16 @@ impl Edge {
         }
     }
 
-    fn from_plane(Plane(a, b, c): Plane) -> Self {
-        let (mut p, mut q, mut r) = (-b, c, a);
-        if r < 0 {
-            (p, q, r) = (-p, -q, -r)
+    fn from_plane(Plane(x_weight, y_weight, limit): Plane) -> Self {
+        let (mut row_weight, mut offset, mut divisor) = (-y_weight, limit, x_weight);
+        if divisor < 0 {
+            (row_weight, offset, divisor) = (-row_weight, -offset, -divisor);
         }
-        Self { p, q, r }
+        Self {
+            p: row_weight,
+            q: offset,
+            r: divisor,
+        }
     }
 
     fn numerator(self, y: i64) -> i128 {
@@ -149,7 +153,7 @@ fn events(polygons: &[Polygon], bounds: OriginBounds) -> Result<Vec<i64>> {
             }
             let mut numerator = first.0 * second.2 - second.0 * first.2;
             if denominator < 0 {
-                (numerator, denominator) = (-numerator, -denominator)
+                (numerator, denominator) = (-numerator, -denominator);
             }
             for value in [
                 numerator.div_euclid(denominator),
@@ -187,10 +191,10 @@ fn gaps<'a>(
             } else {
                 let edge = Edge::from_plane(plane);
                 if a < 0 && edge.cmp(lower, y) == Ordering::Greater {
-                    lower = edge
+                    lower = edge;
                 }
                 if a > 0 && edge.cmp(upper, y) == Ordering::Less {
-                    upper = edge
+                    upper = edge;
                 }
             }
         }
@@ -210,7 +214,7 @@ fn gaps<'a>(
             });
         }
         if upper.cmp(edge, y) == Ordering::Greater {
-            edge = upper
+            edge = upper;
         }
     }
     if edge.cmp(right, y) == Ordering::Less {
@@ -291,10 +295,10 @@ mod tests {
 
     #[test]
     fn signed_floor_sum_matches_direct_and_large_affine_values() {
-        for n in 0..=15 {
-            for m in 1..=11 {
-                for a in -12..=12 {
-                    for b in -12..=12 {
+        for n in 0_i128..=15 {
+            for m in 1_i128..=11 {
+                for a in -12_i128..=12 {
+                    for b in -12_i128..=12 {
                         let direct = (0..n).map(|k| (a * k + b).div_euclid(m)).sum();
                         assert_eq!(floor_sum(n, m, a, b), direct, "{n} {m} {a} {b}");
                     }
