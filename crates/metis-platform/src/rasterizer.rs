@@ -206,6 +206,19 @@ pub fn draw_line(fb: &mut Framebuffer, start: (i32, i32), end: (i32, i32), color
 /// the pixel area. The query uses the same clipping operation as [`draw_line`],
 /// so its decision agrees with the pixels the rasterizer can write. Empty
 /// rectangles never intersect. Coordinates may span the full `i32` range.
+///
+/// # Examples
+///
+/// ```
+/// use metis_platform::{Rect, line_intersects_rect};
+///
+/// assert!(line_intersects_rect((0, 0), (30, 30), Rect::new(10, 10, 1, 1)));
+/// assert!(!line_intersects_rect(
+///     (0, 0),
+///     (30, 30),
+///     Rect::new(10, 20, 4, 3),
+/// ));
+/// ```
 #[must_use]
 pub fn line_intersects_rect(start: (i32, i32), end: (i32, i32), rect: Rect) -> bool {
     if rect.width <= 0 || rect.height <= 0 {
