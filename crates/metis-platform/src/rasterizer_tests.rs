@@ -172,6 +172,53 @@ fn line_rectangle_intersection_rejects_disjoint_axis_ranges() {
 }
 
 #[test]
+fn line_clipping_accepts_after_four_boundary_updates() {
+    let rect = Rect::new(0, 0, 4, 3);
+    assert!(line_intersects_rect((-10, -4), (6, 3), rect));
+
+    let mut fb = Framebuffer::new(4, 3).expect("line surface");
+    draw_line(&mut fb, (-10, -4), (6, 3), Color::BLUE);
+    let expected = [
+        ((0, 0), Color::BLUE),
+        ((1, 0), Color::BLUE),
+        ((2, 0), Color::TRANSPARENT),
+        ((3, 0), Color::TRANSPARENT),
+        ((0, 1), Color::TRANSPARENT),
+        ((1, 1), Color::TRANSPARENT),
+        ((2, 1), Color::BLUE),
+        ((3, 1), Color::BLUE),
+        ((0, 2), Color::TRANSPARENT),
+        ((1, 2), Color::TRANSPARENT),
+        ((2, 2), Color::TRANSPARENT),
+        ((3, 2), Color::TRANSPARENT),
+    ];
+    for ((x, y), pixel) in expected {
+        assert_eq!(fb.get_pixel(x, y), pixel);
+    }
+}
+
+#[test]
+fn line_rectangle_intersection_covers_each_boundary_partition() {
+    let rect = Rect::new(10, 20, 4, 3);
+    let cases = [
+        ((0, 21), (11, 21), true),
+        ((12, 21), (20, 21), true),
+        ((11, 0), (11, 21), true),
+        ((11, 21), (11, 30), true),
+        ((0, 20), (9, 22), false),
+        ((14, 20), (20, 22), false),
+        ((10, 19), (13, 19), false),
+        ((10, 23), (13, 23), false),
+        ((0, 10), (10, 20), true),
+        ((14, 23), (20, 29), false),
+    ];
+    for (start, end, expected) in cases {
+        assert_eq!(line_intersects_rect(start, end, rect), expected);
+        assert_eq!(line_intersects_rect(end, start, rect), expected);
+    }
+}
+
+#[test]
 fn translucent_line_composites_each_pixel_once() {
     let mut fb = Framebuffer::new(3, 1).expect("line surface");
     fb.clear(Color::WHITE);

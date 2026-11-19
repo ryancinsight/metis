@@ -11,6 +11,7 @@ const LEFT: u8 = 1;
 const RIGHT: u8 = 2;
 const TOP: u8 = 4;
 const BOTTOM: u8 = 8;
+const CLIP_BOUNDARY_COUNT: usize = 4;
 
 use gradient::PlacedGradient;
 pub use gradient::{GradientStop, LinearGradient, MAX_GRADIENT_STOPS};
@@ -240,10 +241,13 @@ fn clip_line(
     // The clip window includes coordinates from zero through each finite
     // maximum. An intersection fixes only its selected boundary coordinate;
     // preserving the other coordinate lets the next outcode reject a line
-    // that misses the window beyond an adjacent edge.
+    // that misses the window beyond an adjacent edge. Each endpoint has at
+    // most one horizontal and one vertical outside bit, so four updates cover
+    // both endpoints; acceptance is checked after every update, including the
+    // fourth.
     let mut first = out_code(x0, y0, max_x, max_y);
     let mut second = out_code(x1, y1, max_x, max_y);
-    for _ in 0..4 {
+    for _ in 0..CLIP_BOUNDARY_COUNT {
         if first | second == 0 {
             return Some((x0, y0, x1, y1));
         }
@@ -272,6 +276,9 @@ fn clip_line(
             x1 = x;
             y1 = y;
             second = out_code(x1, y1, max_x, max_y);
+        }
+        if first | second == 0 {
+            return Some((x0, y0, x1, y1));
         }
     }
     None
