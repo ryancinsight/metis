@@ -53,9 +53,7 @@ pub struct PlacementRegion {
 }
 
 impl PlacementRegion {
-    /// Compiles a snapshot of obstacles for a measured glyph extent.
-    ///
-    /// Empty rectangle obstacles do not occupy pixels.
+    /// Compiles a snapshot of obstacles, ignoring empty rectangles.
     ///
     /// # Errors
     ///
@@ -153,7 +151,7 @@ impl Polygon {
         }
         let (x, y) = (i128::from(rect.x), i128::from(rect.y));
         Some(Self::from(
-            [
+            &[
                 Plane(-1, 0, -x + i128::from(width) - 1),
                 Plane(1, 0, x + i128::from(rect.width) - 1),
                 Plane(0, -1, -y + i128::from(height) - 1),
@@ -209,11 +207,14 @@ impl Polygon {
         for (target, source) in planes.iter_mut().zip(normalized) {
             *target = restore(source, x, y);
         }
-        Self::from(planes, if major == 0 { 4 } else { 6 })
+        Self::from(&planes, if major == 0 { 4 } else { 6 })
     }
 
-    const fn from(planes: [Plane; 6], len: usize) -> Self {
-        Self { planes, len }
+    const fn from(planes: &[Plane; 6], len: usize) -> Self {
+        Self {
+            planes: *planes,
+            len,
+        }
     }
 
     fn contains(self, x: i64, y: i64) -> bool {

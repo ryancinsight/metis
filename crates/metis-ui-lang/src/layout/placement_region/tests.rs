@@ -8,12 +8,12 @@ enum Axis {
 fn region(extent: Rect, bounds: Rect, obstacles: &[PlacementObstacle]) -> PlacementRegion {
     PlacementRegion::new(extent, bounds, obstacles).expect("bounded placement region")
 }
-fn assert_extreme_axis(axis: Axis) {
-    let rect = |x, y, width, height| match &axis {
+fn assert_extreme_axis(axis: &Axis) {
+    let rect = |x, y, width, height| match axis {
         Axis::Horizontal => Rect::new(x, y, width, height),
         Axis::Vertical => Rect::new(y, x, height, width),
     };
-    let point = |x, y| match &axis {
+    let point = |x, y| match axis {
         Axis::Horizontal => (x, y),
         Axis::Vertical => (y, x),
     };
@@ -131,8 +131,8 @@ fn line_clearance_matches_explicit_all_octant_pixels() {
 
 #[test]
 fn extreme_bearings_and_snapshot_ownership_are_explicit() {
-    assert_extreme_axis(Axis::Horizontal);
-    assert_extreme_axis(Axis::Vertical);
+    assert_extreme_axis(&Axis::Horizontal);
+    assert_extreme_axis(&Axis::Vertical);
 
     let mut obstacle = [PlacementObstacle::Rect(Rect::new(0, 0, 1, 1))];
     let before = region(Rect::new(0, 0, 1, 1), Rect::new(0, 0, 2, 1), &obstacle);
