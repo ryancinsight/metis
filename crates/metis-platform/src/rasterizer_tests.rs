@@ -125,7 +125,7 @@ fn line_rectangle_intersection_matches_half_open_pixel_bounds() {
         ((0, 19), (20, 19), false),
         ((14, 20), (14, 22), false),
         ((8, 18), (12, 22), true),
-        ((i32::MIN, i32::MIN), (i32::MAX, i32::MAX), true),
+        ((i32::MIN, i32::MIN + 10), (i32::MAX - 10, i32::MAX), true),
         ((i32::MIN, 19), (i32::MAX, 19), false),
     ];
     for (start, end, expected) in cases {
@@ -141,6 +141,34 @@ fn line_rectangle_intersection_matches_half_open_pixel_bounds() {
         (10, 20),
         Rect::new(10, 20, 4, -1)
     ));
+}
+
+#[test]
+fn line_rectangle_intersection_rejects_disjoint_axis_ranges() {
+    let rising = ((0, 0), (30, 30));
+    assert!(!line_intersects_rect(
+        rising.0,
+        rising.1,
+        Rect::new(10, 20, 4, 3)
+    ));
+    assert!(line_intersects_rect(
+        rising.0,
+        rising.1,
+        Rect::new(10, 10, 4, 3)
+    ));
+    assert!(line_intersects_rect(
+        (0, 30),
+        (30, 0),
+        Rect::new(10, 17, 4, 4)
+    ));
+
+    let mut fb = Framebuffer::new(4, 3).expect("line surface");
+    draw_line(&mut fb, (-10, -20), (20, 10), Color::BLUE);
+    for y in 0..3 {
+        for x in 0..4 {
+            assert_eq!(fb.get_pixel(x, y), Color::TRANSPARENT);
+        }
+    }
 }
 
 #[test]

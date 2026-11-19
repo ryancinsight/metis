@@ -235,6 +235,12 @@ fn clip_line(
     max_x: i64,
     max_y: i64,
 ) -> Option<(i64, i64, i64, i64)> {
+    // Cohen-Sutherland endpoint clipping follows Newman and Sproull,
+    // Principles of Interactive Computer Graphics, 2nd ed., section 5-1.
+    // The clip window includes coordinates from zero through each finite
+    // maximum. An intersection fixes only its selected boundary coordinate;
+    // preserving the other coordinate lets the next outcode reject a line
+    // that misses the window beyond an adjacent edge.
     let mut first = out_code(x0, y0, max_x, max_y);
     let mut second = out_code(x1, y1, max_x, max_y);
     for _ in 0..4 {
@@ -258,8 +264,6 @@ fn clip_line(
             let x = 0;
             (x, interpolate(x0, y0, x1, y1, x))
         };
-        let x = x.clamp(0, max_x);
-        let y = y.clamp(0, max_y);
         if outside == first {
             x0 = x;
             y0 = y;
