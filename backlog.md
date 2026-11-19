@@ -705,3 +705,13 @@ an owner. “Unsupported” cannot replace delivery of a required mobile/native 
 - milestone: M-system
 - basis: b96e9ca67e0ee7130d0922d15aae9f4f93fefc26
 - driver: [RITK sample-aspect fitting](../ritk/backlog/RITK-SNAP-IMAGE-FIT-001.md); DICOM spacing admission remains RITK-owned.
+
+<a id="METIS-CANVAS-SAFARI-001"></a>
+## METIS-CANVAS-SAFARI-001 — Diagnose Safari raster presentation
+- outcome: Safari presents the known raster and passes the unchanged input trace.
+- acceptance: Visible plain HTML/control and all canvas pixels, trusted drag, capture and held-drop values pass; preserve current failures and every existing Safari job.
+- scope: scripts/browser_canvas_input.py; .github/workflows/ci.yml; browser/PAL canvas ownership
+- next: Distinguish failed raster presentation from element capture using source/control readback and viewport evidence; finish Safari automation.
+- basis: daf5638e563e920cdf51eadcff8367e8622a82ab
+- needs: none
+- Status: todo; priority: correctness; milestone: M-release

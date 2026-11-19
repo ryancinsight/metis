@@ -356,3 +356,11 @@ require their owning Moirai/RITK/native evidence and are not inferred from a
 browser screenshot.
 
 [Input Events]: https://w3c.github.io/input-events/
+
+## Raster canvas input
+
+Build the fixture with `python scripts/browser.py build`; use
+`python scripts/browser_canvas_input.py --help` for the driver and trace flags.
+CI checks Chromium and Firefox pixels, trusted drag and held-pointer cleanup.
+Safari has failing raster observations; its [investigation](../../../backlog.md#METIS-CANVAS-SAFARI-001)
+and three-engine parity remain open. Every CLI pixel/input assertion stays enabled.
