@@ -16,14 +16,11 @@ pub enum PlacementObstacle {
 
 /// Clear text anchors for one measured glyph rectangle and fixed obstacle set.
 ///
-/// This immutable region represents text anchors whose measured glyph
-/// rectangle fits `bounds`, has a representable glyph origin and text anchor,
-/// and covers no supplied occupied pixel. `extent.x` and `extent.y` are the
-/// bearing from the text anchor to its glyph bounds. [`Self::contains`] checks
-/// the requested anchor without clamping. Nonpositive or oversized extents or
-/// bounds, and an empty representability intersection, produce an empty
-/// region. Construction owns the compiled geometry; later changes to the
-/// input slice do not alter it.
+/// This immutable region represents anchors whose measured glyph rectangle fits `bounds`, has a
+/// representable glyph origin and text anchor, and covers no supplied occupied pixel. `extent.x`
+/// and `extent.y` are the bearing from anchor to glyph bounds. [`Self::contains`] checks without
+/// clamping. Nonpositive or oversized geometry and an empty representability intersection produce
+/// an empty region. Construction owns compiled geometry; later input-slice changes do not alter it.
 ///
 /// For `n` obstacles, construction and membership use `O(n)` work; stored
 /// geometry has at most six inequalities per nonempty obstacle. No raster

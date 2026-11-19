@@ -1,18 +1,22 @@
 use super::*;
 
+enum Axis {
+    Horizontal,
+    Vertical,
+}
+
 fn region(extent: Rect, bounds: Rect, obstacles: &[PlacementObstacle]) -> PlacementRegion {
     PlacementRegion::new(extent, bounds, obstacles).expect("bounded placement region")
 }
-
-fn assert_extreme_axis(transpose: bool) {
-    let rect = |x, y, width, height| {
-        if transpose {
-            Rect::new(y, x, height, width)
-        } else {
-            Rect::new(x, y, width, height)
-        }
+fn assert_extreme_axis(axis: Axis) {
+    let rect = |x, y, width, height| match axis {
+        Axis::Horizontal => Rect::new(x, y, width, height),
+        Axis::Vertical => Rect::new(y, x, height, width),
     };
-    let point = |x, y| if transpose { (y, x) } else { (x, y) };
+    let point = |x, y| match axis {
+        Axis::Horizontal => (x, y),
+        Axis::Vertical => (y, x),
+    };
     let check = |extent, bounds, clear, outside| {
         let value = region(extent, bounds, &[]);
         assert!(value.contains(clear));
@@ -127,8 +131,8 @@ fn line_clearance_matches_explicit_all_octant_pixels() {
 
 #[test]
 fn extreme_bearings_and_snapshot_ownership_are_explicit() {
-    assert_extreme_axis(false);
-    assert_extreme_axis(true);
+    assert_extreme_axis(Axis::Horizontal);
+    assert_extreme_axis(Axis::Vertical);
 
     let mut obstacle = [PlacementObstacle::Rect(Rect::new(0, 0, 1, 1))];
     let before = region(Rect::new(0, 0, 1, 1), Rect::new(0, 0, 2, 1), &obstacle);
