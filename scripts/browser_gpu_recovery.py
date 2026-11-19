@@ -12,12 +12,12 @@ from typing import Any, Mapping
 
 import browser
 from browser_canvas import _element_screenshot, ensure_canvas_visible
+from browser_canvas_capture import READ_SCREENSHOT_PIXELS
 from browser_gpu_trace import (
     DESTROY_AND_WAIT,
     INSTALL_GPU_TRACE,
     PAGE,
     READ_PIXELS,
-    READ_SCREENSHOT_PIXELS,
     WAIT_FOR_LOADER,
     WAIT_FOR_STATUS,
 )
@@ -41,6 +41,7 @@ SOURCE_PATHS = (
     "crates/metis-web/src/canvas/frame.rs",
     "scripts/browser.py",
     "scripts/browser_canvas.py",
+    "scripts/browser_canvas_capture.py",
     "scripts/browser_gpu_recovery.py",
     "scripts/browser_gpu_trace.py",
     "scripts/browser_protocol.py",

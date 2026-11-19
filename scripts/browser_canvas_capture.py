@@ -119,3 +119,33 @@ def compare_screenshot_stability(
             raise BrowserRuntimeError(
                 f"a rejected file batch changed canvas {canvas_id} screenshot"
             )
+
+READ_SCREENSHOT_PIXELS = """
+const done = arguments[arguments.length - 1];
+const path = arguments[0];
+const limit = arguments[1];
+let settled = false;
+const finish = (value) => {
+  if (settled) return;
+  settled = true;
+  window.clearTimeout(timer);
+  done(value);
+};
+const timer = window.setTimeout(
+  () => finish({ok: false, error: 'screenshot decode deadline exceeded'}), limit
+);
+const image = new Image();
+image.src = new URL(path, document.baseURI).href;
+image.decode().then(() => {
+  const copy = document.createElement('canvas');
+  copy.width = image.naturalWidth;
+  copy.height = image.naturalHeight;
+  const context = copy.getContext('2d', {willReadFrequently: true});
+  if (!context) throw new Error('2D screenshot context is unavailable');
+  context.drawImage(image, 0, 0);
+  finish({
+    ok: true, width: copy.width, height: copy.height,
+    pixels: Array.from(context.getImageData(0, 0, copy.width, copy.height).data)
+  });
+}).catch((error) => finish({ok: false, error: String(error).slice(0, 512)}));
+"""
