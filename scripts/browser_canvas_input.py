@@ -93,6 +93,7 @@ def run(
         raise BrowserRuntimeError("revision must be one lowercase hexadecimal Git object ID")
     client = WebDriverClient(webdriver, timeout_seconds)
     trace_installed = False
+    phase = "create browser session"
     try:
         with StaticServer(serve_dir) as origin:
             url = urllib.parse.urljoin(origin, "canvas-input.html")
@@ -104,8 +105,10 @@ def run(
             trace_installed = True
             if _trace(client) != {"registrations": 0, "active": 0, "removals": 0, "observations": []}:
                 raise BrowserRuntimeError("canvas input instrumentation was not empty before start")
+            phase = "start raster surface"
             client.execute("window.canvasInput.canvas_start();")
             _wait_for_text(client, STATUS_ID, "ready", include=False, timeout_ms=10_000)
+            phase = "read rendered raster pixel"
             canvas = client.execute(
                 "const c=document.getElementById(arguments[0]),r=c.getBoundingClientRect();"
                 "return {width:c.width,height:c.height,css_width:r.width,css_height:r.height,"
@@ -121,6 +124,7 @@ def run(
                 "registrations": listeners, "active": listeners, "removals": 0, "observations": [],
             }:
                 raise BrowserRuntimeError(f"canvas DOM registration state is invalid: {registered!r}")
+            phase = "complete ordinary pointer drag"
             ensure_canvas_visible(client, CANVAS_ID)
             element = client.find(f"#{CANVAS_ID}")
             client.pointer_drag(element, (-30, -10), (-20, -10), source_id="metis-active-drop")
@@ -129,6 +133,7 @@ def run(
             gesture = _validate_drag(_batch(client))
             completed = _trace(client)
             _validate_callbacks(completed["observations"], gesture[0][1])
+            phase = "press and retain active pointer"
             client.perform_actions(_pointer_actions([
                 {"type": "pointerMove", "origin": {ELEMENT_KEY: element}, "x": -30, "y": -10, "duration": 0},
                 {"type": "pointerDown", "button": 0},
@@ -142,16 +147,19 @@ def run(
                              "has_capture": True}
             if type(pointer_id) is not int or active_down != expected_down:
                 raise BrowserRuntimeError(f"active pointer callback differs: {active_down!r}")
+            phase = "drop surface while pointer is held"
             client.execute("window.canvasInput.canvas_stop();")
             stopped = _trace(client)
             if stopped["registrations"] != listeners or stopped["removals"] != listeners or stopped["active"] != 0:
                 raise BrowserRuntimeError(f"surface teardown did not remove each DOM listener: {stopped!r}")
+            phase = "check capture after surface drop"
             capture_after_drop = client.execute(
                 "return document.getElementById(arguments[0]).hasPointerCapture(arguments[1]);",
                 [CANVAS_ID, pointer_id],
             )
             if capture_after_drop is not False:
                 raise BrowserRuntimeError("surface drop retained active pointer capture")
+            phase = "send input after listener removal"
             callback_count = len(stopped["observations"])
             client.perform_actions(_pointer_actions([
                 {"type": "pointerMove", "origin": "pointer", "x": 10, "y": 0, "duration": 0},
@@ -174,6 +182,8 @@ def run(
                     "callback_count_after_input": len(after_input["observations"]),
                 },
             }
+    except BrowserRuntimeError as error:
+        raise BrowserRuntimeError(f"canvas input {phase}: {error}") from error
     finally:
         if trace_installed and client.session_id is not None:
             client.execute("window.canvasInputTrace.restore();")
