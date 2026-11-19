@@ -198,6 +198,35 @@ pub fn draw_line(fb: &mut Framebuffer, start: (i32, i32), end: (i32, i32), color
     }
 }
 
+/// Tests whether an inclusive line segment crosses a half-open rectangle.
+///
+/// The query uses the same integer clipping operation as [`draw_line`], so
+/// geometry decisions agree with the pixels the rasterizer can write. Empty
+/// rectangles never intersect. Coordinates may span the full `i32` range.
+#[must_use]
+pub fn line_intersects_rect(start: (i32, i32), end: (i32, i32), rect: Rect) -> bool {
+    if rect.width <= 0 || rect.height <= 0 {
+        return false;
+    }
+    let translate = |point: (i32, i32)| {
+        (
+            i64::from(point.0) - i64::from(rect.x),
+            i64::from(point.1) - i64::from(rect.y),
+        )
+    };
+    let (x0, y0) = translate(start);
+    let (x1, y1) = translate(end);
+    clip_line(
+        x0,
+        y0,
+        x1,
+        y1,
+        i64::from(rect.width) - 1,
+        i64::from(rect.height) - 1,
+    )
+    .is_some()
+}
+
 fn clip_line(
     mut x0: i64,
     mut y0: i64,

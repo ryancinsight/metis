@@ -116,6 +116,34 @@ fn line_clips_extreme_endpoints_before_traversal() {
 }
 
 #[test]
+fn line_rectangle_intersection_matches_half_open_pixel_bounds() {
+    let rect = Rect::new(10, 20, 4, 3);
+    let cases = [
+        ((10, 20), (10, 20), true),
+        ((14, 20), (14, 20), false),
+        ((0, 20), (10, 20), true),
+        ((0, 19), (20, 19), false),
+        ((14, 20), (14, 22), false),
+        ((8, 18), (12, 22), true),
+        ((i32::MIN, i32::MIN), (i32::MAX, i32::MAX), true),
+        ((i32::MIN, 19), (i32::MAX, 19), false),
+    ];
+    for (start, end, expected) in cases {
+        assert_eq!(line_intersects_rect(start, end, rect), expected);
+    }
+    assert!(!line_intersects_rect(
+        (10, 20),
+        (10, 20),
+        Rect::new(10, 20, 0, 3)
+    ));
+    assert!(!line_intersects_rect(
+        (10, 20),
+        (10, 20),
+        Rect::new(10, 20, 4, -1)
+    ));
+}
+
+#[test]
 fn translucent_line_composites_each_pixel_once() {
     let mut fb = Framebuffer::new(3, 1).expect("line surface");
     fb.clear(Color::WHITE);

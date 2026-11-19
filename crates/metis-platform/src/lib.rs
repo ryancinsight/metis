@@ -40,7 +40,7 @@ pub use framebuffer::{Clip, Color, Damage, Framebuffer, Rect};
 pub use motion::MotionPreference;
 pub use rasterizer::{
     LineCap, LineJoin, MAX_STROKE_POINTS, StrokeWidth, draw_line, draw_polyline, draw_rect_outline,
-    fill_rect,
+    fill_rect, line_intersects_rect,
 };
 #[cfg(not(target_arch = "wasm32"))]
 pub use scoped_clipboard::{MAX_CLIPBOARD_TEXT_BYTES, ScopedClipboard};
