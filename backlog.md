@@ -691,3 +691,17 @@ an owner. “Unsupported” cannot replace delivery of a required mobile/native 
 - Acceptance: a scan finds no ADR reference to an ID without a board item, unless the sentence cites a gap-register risk and its re-open trigger.
 - basis: ce47b2b2ebc11c09b0d6f67d7c2e60487fe71cc6
 - next: list each residual sentence per ID, assign it, and delete the closed ones.
+
+<a id="METIS-DISPLAY-ASPECT-001"></a>
+## METIS-DISPLAY-ASPECT-001 — Preserve representable frame aspect — todo
+- outcome: positive finite sample spacing produces its representable width/height ratio without intermediate overflow or underflow.
+- acceptance: 2×2 frames with equal maximum finite spacing have aspect 1; equal minimum subnormals also yield 1; dimension-compensated subnormal ratios remain positive; only unrepresentable final ratios return InvalidInput.
+- acceptance: browser presentation accepts those valid ratios; malformed dimensions/spacing remain rejected before upload.
+- scope: crates/metis-web/src/canvas/frame.rs, canvas/surface.rs, existing tests; RITK browser geometry consumer.
+- next: derive bounded exponent scaling using the locked numeric provider; retain raw physical spacing and consolidate the repeated RITK aspect formula after provider delivery.
+- evidence: current DisplaySpacing::aspect multiplies each dimension by spacing before division; maximum finite spacing times 2 overflows both operands although their true ratio equals 1.
+- needs: none
+- priority: correctness
+- milestone: M-system
+- basis: b96e9ca67e0ee7130d0922d15aae9f4f93fefc26
+- driver: [RITK sample-aspect fitting](../ritk/backlog/RITK-SNAP-IMAGE-FIT-001.md); DICOM spacing admission remains RITK-owned.
