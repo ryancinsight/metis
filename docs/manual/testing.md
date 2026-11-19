@@ -310,7 +310,7 @@ python D:\atlas\repos\metis\scripts\resource.py `
   --repeat 3 `
   --capture $capture `
   -- `
-  D:\atlas\target\debug\ritk-snap.exe $study `
+  D:\atlas\target\debug\asterslice.exe $study `
   --series-instance-uid $series `
   --metis-native `
   --capture-application `

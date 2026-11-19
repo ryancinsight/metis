@@ -473,7 +473,7 @@ values to the RITK-owned launcher:
 cargo build --locked -p ritk-snap
 $study = 'C:\path\to\saved-study'
 $series = Read-Host 'SeriesInstanceUID shown by the RITK series browser'
-target\debug\ritk-snap.exe $study `
+target\debug\asterslice.exe $study `
   --series-instance-uid $series `
   --metis-native `
   --capture-application `
@@ -495,7 +495,7 @@ image, pass the DICOM file itself:
 
 ```powershell
 $image = 'C:\path\to\saved-study\image.dcm'
-target\debug\ritk-snap.exe $image `
+target\debug\asterslice.exe $image `
   --metis-native `
   --capture-application `
   --capture "$env:TEMP\ritk-metis-local-image.png"

@@ -50,7 +50,7 @@ python scripts/browser_drop.py --driver-url http://127.0.0.1:9516 `
 Validate the resulting trace from the RITK checkout:
 
 ```powershell
-ritk-snap.exe --validate-browser-trace `
+asterslice.exe --validate-browser-trace `
   D:/atlas/repos/metis/output/browser/drop-mri-edge-canvas-final/canvas-trace.json `
   --canvas-id ritk-snap-axial --canvas-id ritk-snap-coronal `
   --canvas-id ritk-snap-sagittal
