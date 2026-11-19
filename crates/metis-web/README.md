@@ -85,9 +85,11 @@ Keyboard listeners use Moirai's bounded `KeyboardMetadata` snapshot and retain
 the browser key, physical code, repeat flag and modifier state. They prevent
 the default action after provider validation, leaving shortcut meaning to the
 consumer's presentation reducer.
-The Rust-owned gesture policy consumes those records as a bounded viewport:
-one captured pointer drags a CSS-pixel pan, two captured pointers pan by their
-centroid and zoom by their finite distance ratio, ordinary wheel input pans,
+The Rust-owned gesture policy consumes those records as a bounded viewport.
+One captured pointer uses `metis_core::input::PointerDrag` to apply each finite
+CSS-pixel displacement from the last accepted point, preserving incremental
+reversal at the pan bound. Two captured pointers pan by their centroid and zoom
+by their finite distance ratio, ordinary wheel input pans,
 and Ctrl+wheel changes zoom between 50% and 300%. Line and page deltas are
 normalized to fixed CSS-pixel units; non-finite deltas are rejected without
 changing the viewport. A zero-distance pair waits for a valid baseline and a

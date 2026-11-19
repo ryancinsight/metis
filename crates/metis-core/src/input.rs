@@ -1,4 +1,4 @@
-//! Host-neutral keyboard accelerators and shortcut bindings.
+//! Host-neutral pointer displacement, keyboard accelerators, and shortcuts.
 //!
 //! Every presentation host reports keys differently: browsers send
 //! `KeyboardEvent.code`/`key` strings and Windows sends virtual-key codes.
@@ -16,12 +16,14 @@ mod accelerator;
 mod error;
 mod key;
 mod modifiers;
+mod pointer_drag;
 mod shortcut_map;
 
 pub use accelerator::{Accelerator, MAX_ACCELERATOR_BYTES};
-pub use error::{AcceleratorError, ShortcutError};
+pub use error::{AcceleratorError, PointerDragError, ShortcutError};
 pub use key::{Digit, FunctionKey, Key, Letter};
 pub use modifiers::Modifiers;
+pub use pointer_drag::PointerDrag;
 pub use shortcut_map::{MAX_SHORTCUTS, ShortcutMap};
 
 #[cfg(test)]

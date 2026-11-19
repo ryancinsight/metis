@@ -61,3 +61,31 @@ impl fmt::Display for ShortcutError {
 }
 
 impl Error for ShortcutError {}
+
+/// Why a pointer displacement could not be represented.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+#[non_exhaustive]
+pub enum PointerDragError {
+    /// A press or current coordinate is not finite.
+    InvalidCoordinate,
+    /// A coordinate scale is not finite and positive.
+    InvalidScale,
+    /// Coordinate subtraction or scaling produced a non-finite displacement.
+    UnrepresentableDisplacement,
+}
+
+impl fmt::Display for PointerDragError {
+    fn fmt(&self, formatter: &mut fmt::Formatter<'_>) -> fmt::Result {
+        match self {
+            Self::InvalidCoordinate => formatter.write_str("pointer coordinate is not finite"),
+            Self::InvalidScale => {
+                formatter.write_str("pointer coordinate scale must be finite and positive")
+            }
+            Self::UnrepresentableDisplacement => {
+                formatter.write_str("pointer displacement is not finite")
+            }
+        }
+    }
+}
+
+impl Error for PointerDragError {}
