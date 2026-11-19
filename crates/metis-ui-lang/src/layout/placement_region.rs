@@ -4,6 +4,8 @@ use crate::parser::limit_error;
 use metis_core::error::Result;
 use metis_platform::{RasterLine, Rect};
 
+mod count;
+
 /// Fixed geometry that text glyphs must not cover.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 #[non_exhaustive]
@@ -211,10 +213,7 @@ impl Polygon {
     }
 
     const fn from(planes: &[Plane; 6], len: usize) -> Self {
-        Self {
-            planes: *planes,
-            len,
-        }
+        Self { planes: *planes, len }
     }
 
     fn contains(self, x: i64, y: i64) -> bool {
