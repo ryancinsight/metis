@@ -412,7 +412,7 @@ checksum = "a6ef517f0926dd24a1582492c791b6a4818a4d94e789a334894aa15b0d12f55c"
 [[package]]
 name = "consus-compression"
 version = "0.5.0"
-source = "git+https://github.com/ryancinsight/consus.git#25d40197d231a4ddae604bfa2d85f439322fd0fc"
+source = "git+https://github.com/ryancinsight/consus.git#2193675bd5e1fbb726cb9f6b324feb91167311b4"
 dependencies = [
  "byteorder",
  "consus-core",
@@ -422,7 +422,7 @@ dependencies = [
 [[package]]
 name = "consus-core"
 version = "0.5.0"
-source = "git+https://github.com/ryancinsight/consus.git#25d40197d231a4ddae604bfa2d85f439322fd0fc"
+source = "git+https://github.com/ryancinsight/consus.git#2193675bd5e1fbb726cb9f6b324feb91167311b4"
 dependencies = [
  "byteorder",
  "smallvec",
@@ -432,7 +432,7 @@ dependencies = [
 [[package]]
 name = "consus-raster"
 version = "0.5.0"
-source = "git+https://github.com/ryancinsight/consus.git#25d40197d231a4ddae604bfa2d85f439322fd0fc"
+source = "git+https://github.com/ryancinsight/consus.git#2193675bd5e1fbb726cb9f6b324feb91167311b4"
 dependencies = [
  "apollo-dctdst-core",
  "jpeg-encoder",
@@ -441,7 +441,7 @@ dependencies = [
 [[package]]
 name = "consus-zip"
 version = "0.5.0"
-source = "git+https://github.com/ryancinsight/consus.git#25d40197d231a4ddae604bfa2d85f439322fd0fc"
+source = "git+https://github.com/ryancinsight/consus.git#2193675bd5e1fbb726cb9f6b324feb91167311b4"
 dependencies = [
  "consus-compression",
  "consus-core",
@@ -906,7 +906,7 @@ dependencies = [
 [[package]]
 name = "gaia-mesh"
 version = "0.6.10"
-source = "git+https://github.com/ryancinsight/gaia#1dd95568936b603a77f221ba8d24d0d6e59e2799"
+source = "git+https://github.com/ryancinsight/gaia#c35981b5ebe90461dae232e78776f5eae3d35bdb"
 dependencies = [
  "aequitas",
  "consus-zip",
