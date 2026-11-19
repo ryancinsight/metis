@@ -11,11 +11,43 @@ from browser_canvas import ensure_canvas_visible, settle_canvas_input
 from browser_canvas_capture import READ_SCREENSHOT_PIXELS, capture_screenshot, pixel_observation
 from browser_protocol import ELEMENT_KEY, BrowserRuntimeError, StaticServer, WebDriverClient, parse_device_scale
 from browser_runtime import _wait_for_text, _write_trace
-from browser_trace import BrowserEngine, Trace, record_device_scale
+from browser_trace import BrowserEngine, Trace, record_device_scale, screenshot as viewport_screenshot
 
 
 CANVAS_ID = "canvas-input"
 STATUS_ID = "canvas-input-status"
+
+
+RASTER_DIAGNOSTIC = """
+const canvas = document.getElementById(arguments[0]);
+const read = (context) => {
+  const result = {lost: 'unsupported'};
+  try {
+    if (!context) return {error: '2D context unavailable', lost: 'unavailable'};
+    if (typeof context.isContextLost === 'function') result.lost = context.isContextLost();
+    result.pixel = Array.from(context.getImageData(0, 0, 1, 1).data);
+  } catch (error) { result.error = String(error).slice(0, 256); }
+  return result;
+};
+const rect = canvas.getBoundingClientRect();
+const style = getComputedStyle(canvas);
+const plain = document.createElement('canvas');
+plain.width = 100; plain.height = 80;
+const context = plain.getContext('2d');
+let control;
+try {
+  const pixels = new Uint8ClampedArray(100 * 80 * 4);
+  for (let offset = 0; offset < pixels.length; offset += 4)
+    pixels.set([17, 34, 51, 255], offset);
+  context.putImageData(new ImageData(pixels, 100, 80), 0, 0);
+  control = read(context);
+} catch (error) { control = {error: String(error).slice(0, 256)}; }
+return {source: read(canvas.getContext('2d')), plain: control,
+  css: {left: rect.left, top: rect.top, width: rect.width, height: rect.height},
+  backing: {width: canvas.width, height: canvas.height},
+  visibility: document.visibilityState, device_pixel_ratio: window.devicePixelRatio,
+  style: {display: style.display, visibility: style.visibility, opacity: style.opacity}};
+"""
 
 
 def _batch(client: WebDriverClient) -> list[list[Any]]:
@@ -142,9 +174,23 @@ def run(
             decoded = client.execute_async(
                 READ_SCREENSHOT_PIXELS, [image_path.as_posix(), 10_000],
             )
-            observed_pixels = pixel_observation(
-                decoded, dimensions, bytes((17, 34, 51, 255)) * (dimensions[0] * dimensions[1]),
-            )
+            try:
+                observed_pixels = pixel_observation(
+                    decoded, dimensions, bytes((17, 34, 51, 255)) * (dimensions[0] * dimensions[1]),
+                )
+            except BrowserRuntimeError as error:
+                diagnostic = {}
+                try:
+                    viewport_screenshot(client, trace, screenshot_dir, "canvas-input-viewport")
+                    diagnostic["viewport"] = trace.screenshots[-1]
+                except (BrowserRuntimeError, OSError) as capture_error:
+                    diagnostic["viewport_error"] = str(capture_error)[:512]
+                try:
+                    diagnostic["readback"] = client.execute(RASTER_DIAGNOSTIC, [CANVAS_ID])
+                except BrowserRuntimeError as readback_error:
+                    diagnostic["readback_error"] = str(readback_error)[:512]
+                detail = json.dumps(diagnostic, sort_keys=True)[:2_048]
+                raise BrowserRuntimeError(f"{error}; raster diagnostic: {detail}") from error
             canvas["pixel"] = decoded["pixels"][:4]
             registered = _trace(client)
             listeners = registered["registrations"]

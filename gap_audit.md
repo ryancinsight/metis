@@ -416,7 +416,7 @@ physical Windows delivery and monitor transitions retain their existing
 acceptance requirements. [Design](scripts/native_input/design.md).
 
 <a id="canvas-source-readback"></a>
-## Canvas source readback
-- Risk: Safari source-canvas getImageData throws InvalidState after the raster surface reports ready; its cause remains unverified.
-- Evidence: [first input run](https://github.com/ryancinsight/metis/actions/runs/44512101145) and [phase-labelled run](https://github.com/ryancinsight/metis/actions/runs/44514208123) fail source-pixel readback; the input fixture now observes the actual element PNG for its visible-pixel oracle.
-- Re-open: browser/PAL changes or any consumer requiring source-canvas readback; compare a plain JavaScript canvas with the PAL-presented canvas and inspect context-loss state. A screenshot result does not certify this API.
+## Canvas raster observations
+- Risk: Safari source-canvas readback and visible raster presentation have unresolved failures after the surface reports ready; neither cause is established.
+- Evidence: [source readback](https://github.com/ryancinsight/metis/actions/runs/44514208123) fails with InvalidState; [run 44533119338](https://github.com/ryancinsight/metis/actions/runs/44533119338) passes Safari pixels/input/drop, but [run 44536135175](https://github.com/ryancinsight/metis/actions/runs/44536135175) captures a white element PNG. No passing source-only review certifies runtime.
+- Re-open: compare source/control readback, context loss and a viewport PNG recorded before diagnostic probes; isolate PAL presentation from element capture. Keep exact pixel and input assertions; a screenshot result does not certify source readback.
