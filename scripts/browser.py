@@ -72,7 +72,7 @@ def wasm_bindgen() -> str:
     )
 
 
-def wasm_artifact() -> pathlib.Path:
+def wasm_artifact(relative: str) -> pathlib.Path:
     metadata = cargo(
         ["metadata", "--no-deps", "--format-version", "1", "--locked"],
         timeout=30,
@@ -80,7 +80,7 @@ def wasm_artifact() -> pathlib.Path:
         text=True,
     )
     target_directory = pathlib.Path(json.loads(metadata.stdout)["target_directory"])
-    return target_directory / "wasm32-unknown-unknown" / "release" / "metis_web.wasm"
+    return target_directory / "wasm32-unknown-unknown" / "release" / relative
 
 
 def content_security_policy() -> str:
@@ -103,8 +103,16 @@ def validate_index_policy(index: pathlib.Path) -> None:
 
 def build() -> None:
     cargo(["build", "--locked", "-p", "metis-web", "--target", "wasm32-unknown-unknown", "--release"])
+    cargo([
+        "build", "--locked", "-p", "metis-web", "--example", "canvas_input",
+        "--target", "wasm32-unknown-unknown", "--release",
+    ])
     OUTPUT.mkdir(parents=True, exist_ok=True)
-    run([wasm_bindgen(), str(wasm_artifact()), "--target", "web", "--out-dir", str(OUTPUT)])
+    run([wasm_bindgen(), str(wasm_artifact("metis_web.wasm")), "--target", "web", "--out-dir", str(OUTPUT)])
+    run([
+        wasm_bindgen(), str(wasm_artifact("examples/canvas_input.wasm")), "--target", "web",
+        "--out-dir", str(OUTPUT),
+    ])
     index = SOURCE / "index.html"
     validate_index_policy(index)
     shutil.copy2(index, OUTPUT / "index.html")
@@ -122,6 +130,10 @@ def build() -> None:
         OUTPUT / "bootstrap.js",
         OUTPUT / "metis_web.js",
         OUTPUT / "metis_web_bg.wasm",
+        OUTPUT / "canvas_input.js",
+        OUTPUT / "canvas_input_bg.wasm",
+        OUTPUT / "canvas-input.html",
+        OUTPUT / "canvas-input.js",
         OUTPUT / "assets" / "metis-mark.png",
         OUTPUT / "assets" / "metis-mark.ico",
         OUTPUT / "assets" / "metis-mark.svg",
