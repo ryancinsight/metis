@@ -24,6 +24,7 @@ mod intrinsic;
 mod limits;
 mod path;
 mod placement;
+mod placement_region;
 mod popover;
 #[cfg(test)]
 #[path = "../layout_popover_tests.rs"]
@@ -47,6 +48,7 @@ pub use path::{
     PathCapture, PathPush, PathTopology, PolylineError, SegmentHit, VertexHit, arrow_wings,
     nearest_polyline_segment, nearest_polyline_vertex, polyline_distance,
 };
+pub use placement_region::{PlacementObstacle, PlacementRegion};
 pub use scrollbar::{ScrollbarAxis, ScrollbarDrag, ScrollbarGeometry};
 pub use virtual_list::{
     MAX_ITEM_EXTENT, MAX_VIRTUAL_ITEMS, ScrollAlign, VirtualList, VisibleWindow,

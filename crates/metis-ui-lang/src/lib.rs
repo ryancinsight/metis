@@ -26,6 +26,7 @@ pub use layout::{
     VisibleWindow, arrow_wings, compute_layout, compute_layout_into, nearest_polyline_segment,
     nearest_polyline_vertex, polyline_distance,
 };
+pub use layout::{PlacementObstacle, PlacementRegion};
 pub use parser::parse_markup;
 pub use semantics::{
     MAX_SEMANTIC_ID_BYTES, MAX_SEMANTIC_TEXT_BYTES, SemanticAction, SemanticNode, SemanticRole,
