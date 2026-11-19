@@ -201,8 +201,10 @@ pub fn draw_line(fb: &mut Framebuffer, start: (i32, i32), end: (i32, i32), color
 
 /// Tests whether an inclusive line segment crosses a half-open rectangle.
 ///
-/// The query uses the same integer clipping operation as [`draw_line`], so
-/// geometry decisions agree with the pixels the rasterizer can write. Empty
+/// Coordinates identify raster pixels, so intersection means the clipped
+/// integer segment is nonempty, not that a continuous geometric line enters
+/// the pixel area. The query uses the same clipping operation as [`draw_line`],
+/// so its decision agrees with the pixels the rasterizer can write. Empty
 /// rectangles never intersect. Coordinates may span the full `i32` range.
 #[must_use]
 pub fn line_intersects_rect(start: (i32, i32), end: (i32, i32), rect: Rect) -> bool {
@@ -242,9 +244,9 @@ fn clip_line(
     // maximum. An intersection fixes only its selected boundary coordinate;
     // preserving the other coordinate lets the next outcode reject a line
     // that misses the window beyond an adjacent edge. Each endpoint has at
-    // most one horizontal and one vertical outside bit, so four updates cover
-    // both endpoints; acceptance is checked after every update, including the
-    // fourth.
+    // most one horizontal and one vertical outside bit, so it can cross at
+    // most two selected boundaries. Four updates cover both endpoints;
+    // acceptance is checked after every update, including the fourth.
     let mut first = out_code(x0, y0, max_x, max_y);
     let mut second = out_code(x1, y1, max_x, max_y);
     for _ in 0..CLIP_BOUNDARY_COUNT {
