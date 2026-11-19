@@ -92,6 +92,7 @@ def run(
         raise BrowserRuntimeError("timeout-seconds must be greater than zero and at most 120")
     if len(revision) != 40 or any(character not in "0123456789abcdef" for character in revision):
         raise BrowserRuntimeError("revision must be one lowercase hexadecimal Git object ID")
+    serve_dir = serve_dir.resolve()
     client = WebDriverClient(webdriver, timeout_seconds)
     trace_installed = False
     phase = "create browser session"
