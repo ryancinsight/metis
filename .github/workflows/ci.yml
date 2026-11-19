@@ -533,7 +533,7 @@ jobs:
             --device-scale "${{ matrix.device_scale }}" \
             --revision "$GITHUB_SHA" \
             --timeout-seconds 60 \
-            --output "output/browser/runtime/$ENGINE-canvas-input.json"
+            --output "output/browser/runtime/${{ matrix.engine }}-canvas-input.json"
       - name: Run authenticated fragment trace
         shell: bash
         env:
