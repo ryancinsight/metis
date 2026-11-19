@@ -92,12 +92,12 @@ def run(
         raise BrowserRuntimeError("timeout-seconds must be greater than zero and at most 120")
     if len(revision) != 40 or any(character not in "0123456789abcdef" for character in revision):
         raise BrowserRuntimeError("revision must be one lowercase hexadecimal Git object ID")
-    serve_dir = serve_dir.resolve()
     client = WebDriverClient(webdriver, timeout_seconds)
     trace_installed = False
     phase = "create browser session"
     try:
         with StaticServer(serve_dir) as origin:
+            serve_dir = serve_dir.resolve()
             url = urllib.parse.urljoin(origin, "canvas-input.html")
             client.create_session(engine.resolve_webdriver_name(None), device_scale_milli)
             client.set_timeouts(int(timeout_seconds * 1_000))

@@ -382,8 +382,8 @@ jobs:
       - name: Build browser assets
         shell: bash
         run: python scripts/browser.py build
-      - name: Check subprocess-tree deadlines
-        run: python -m unittest scripts.tests.test_process_tree
+      - name: Check browser harness and subprocess-tree contracts
+        run: python -m unittest scripts.tests.test_process_tree scripts.tests.test_browser_canvas_input
       - name: Upload browser assets
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
         with:
