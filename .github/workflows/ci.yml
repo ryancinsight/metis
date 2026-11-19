@@ -382,8 +382,8 @@ jobs:
       - name: Build browser assets
         shell: bash
         run: python scripts/browser.py build
-      - name: Check subprocess-tree deadlines
-        run: python -m unittest scripts.tests.test_process_tree
+      - name: Check browser harness and subprocess-tree contracts
+        run: python -m unittest scripts.tests.test_process_tree scripts.tests.test_browser_canvas_input scripts.tests.test_browser_canvas_capture
       - name: Upload browser assets
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
         with:
@@ -523,6 +523,18 @@ jobs:
             --lifecycle-cycles 4 \
             --timeout-seconds 60 \
             --output "output/browser/runtime/$ENGINE-workbench.json"
+      - name: Run GPU-free canvas input trace
+        if: matrix.engine != 'webkit'
+        shell: bash
+        run: |
+          python scripts/browser_canvas_input.py \
+            --engine "${{ matrix.engine }}" \
+            --driver-url "${{ matrix.driver_url }}" \
+            --serve-dir output/browser \
+            --device-scale "${{ matrix.device_scale }}" \
+            --revision "$GITHUB_SHA" \
+            --timeout-seconds 60 \
+            --output "output/browser/runtime/${{ matrix.engine }}-canvas-input.json"
       - name: Run authenticated fragment trace
         shell: bash
         env:
