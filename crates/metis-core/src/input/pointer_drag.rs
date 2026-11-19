@@ -78,4 +78,38 @@ impl PointerDrag {
         }
         Ok([displacement_x, displacement_y])
     }
+
+    /// Returns the largest square displacement contained in the raw drag.
+    ///
+    /// For raw displacement `d`, the shared magnitude is
+    /// `m = min(abs(d[0]), abs(d[1]))`. Each nonzero result component has
+    /// magnitude `m` and keeps the corresponding raw sign. A zero magnitude
+    /// returns `[0.0, 0.0]`, including when either raw component is negative
+    /// zero. The calculation uses the coordinate scale captured by this drag,
+    /// so the square is expressed in that output coordinate space. Callers
+    /// retain ownership of gesture state and persistence decisions.
+    ///
+    /// # Errors
+    ///
+    /// Returns the same [`PointerDragError`] as [`Self::displacement`] for the
+    /// same `current` coordinate.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// use metis_core::input::PointerDrag;
+    ///
+    /// let drag = PointerDrag::try_new([10.0, -3.0], [2.0, 0.5])?;
+    /// assert_eq!(drag.displacement([4.0, 5.0])?, [-12.0, 4.0]);
+    /// assert_eq!(drag.square_displacement([4.0, 5.0])?, [-4.0, 4.0]);
+    /// # Ok::<(), metis_core::input::PointerDragError>(())
+    /// ```
+    pub fn square_displacement(self, current: [f64; 2]) -> Result<[f64; 2], PointerDragError> {
+        let [raw_x, raw_y] = self.displacement(current)?;
+        let magnitude = raw_x.abs().min(raw_y.abs());
+        if magnitude <= 0.0 {
+            return Ok([0.0, 0.0]);
+        }
+        Ok([magnitude.copysign(raw_x), magnitude.copysign(raw_y)])
+    }
 }
