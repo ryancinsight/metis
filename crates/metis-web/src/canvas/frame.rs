@@ -2,6 +2,8 @@
 
 use std::io;
 
+use super::aspect;
+
 /// Physical row and column spacing for a borrowed display frame.
 ///
 /// The values are format-neutral sample distances. RITK derives them from its
@@ -48,14 +50,12 @@ impl DisplaySpacing {
                 "display frame dimensions must be positive",
             ));
         }
-        let ratio = (f64::from(width) * self.column) / (f64::from(height) * self.row);
-        if !ratio.is_finite() || ratio <= 0.0 {
-            return Err(io::Error::new(
+        aspect::physical_ratio(width, height, self.row, self.column).ok_or_else(|| {
+            io::Error::new(
                 io::ErrorKind::InvalidInput,
                 "display frame aspect is not representable",
-            ));
-        }
-        Ok(ratio)
+            )
+        })
     }
 }
 
@@ -157,5 +157,79 @@ mod tests {
                 std::io::ErrorKind::InvalidInput
             );
         }
+        for unrepresentable in [
+            DisplaySpacing::try_new(f64::from_bits(1), f64::MAX)
+                .expect("valid overflow-boundary spacing"),
+            DisplaySpacing::try_new(f64::MAX, f64::from_bits(1))
+                .expect("valid underflow-boundary spacing"),
+        ] {
+            assert_eq!(
+                unrepresentable
+                    .aspect(1, 1)
+                    .expect_err("unrepresentable final aspect")
+                    .kind(),
+                std::io::ErrorKind::InvalidInput
+            );
+        }
+    }
+
+    #[test]
+    fn display_spacing_preserves_extreme_representable_aspects() {
+        for value in [f64::MAX, f64::from_bits(1)] {
+            let spacing = DisplaySpacing::try_new(value, value).expect("valid equal spacing");
+            assert_eq!(
+                spacing
+                    .aspect(2, 2)
+                    .expect("equal physical extents")
+                    .to_bits(),
+                1.0_f64.to_bits()
+            );
+        }
+
+        let spacing = DisplaySpacing::try_new(2.0, f64::from_bits(1))
+            .expect("valid dimension-compensated spacing");
+        assert_eq!(
+            spacing
+                .aspect(2, 1)
+                .expect("minimum subnormal aspect")
+                .to_bits(),
+            1
+        );
+
+        let spacing = DisplaySpacing::try_new(7.0, 7.0).expect("valid equal spacing");
+        assert_eq!(
+            spacing
+                .aspect(u32::MAX, u32::MAX)
+                .expect("maximum equal dimensions")
+                .to_bits(),
+            1.0_f64.to_bits()
+        );
+    }
+
+    #[test]
+    fn display_spacing_rounds_boundary_counterexamples_once() {
+        let maximum = DisplaySpacing::try_new(
+            f64::from_bits(0x3efb_ea7f_22df_9fae),
+            f64::from_bits(0x7f07_fdd5_0854_7ce0),
+        )
+        .expect("valid maximum-boundary spacing");
+        assert_eq!(
+            maximum
+                .aspect(4_300, 7_391)
+                .expect("ratio rounds to maximum finite")
+                .to_bits(),
+            f64::MAX.to_bits()
+        );
+
+        let minimum =
+            DisplaySpacing::try_new(f64::from_bits(0x4004_2a8d_b1ae_f7a0), f64::from_bits(1))
+                .expect("valid minimum-boundary spacing");
+        assert_eq!(
+            minimum
+                .aspect(8_553, 6_786)
+                .expect("ratio rounds to minimum subnormal")
+                .to_bits(),
+            1
+        );
     }
 }

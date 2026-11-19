@@ -1,4 +1,4 @@
-use metis_web::{CanvasFrame, CanvasSurface};
+use metis_web::{CanvasFrame, CanvasSurface, DisplaySpacing};
 use moirai_pal::wasm::{WebDocument, spawn_local};
 use std::cell::{Cell, RefCell};
 use std::io;
@@ -8,15 +8,21 @@ thread_local! {
     static STATUS: Cell<u32> = const { Cell::new(0) };
 }
 
-struct Frame([u8; 32 * 32 * 4]);
+struct Frame {
+    pixels: [u8; 32 * 32 * 4],
+    spacing: DisplaySpacing,
+}
 
 impl Frame {
-    fn new(left: [u8; 4], right: [u8; 4]) -> Self {
-        let mut frame = Self([0; 32 * 32 * 4]);
-        for (index, pixel) in frame.0.chunks_exact_mut(4).enumerate() {
+    fn new(left: [u8; 4], right: [u8; 4]) -> io::Result<Self> {
+        let mut frame = Self {
+            pixels: [0; 32 * 32 * 4],
+            spacing: DisplaySpacing::try_new(f64::MAX, f64::MAX)?,
+        };
+        for (index, pixel) in frame.pixels.chunks_exact_mut(4).enumerate() {
             pixel.copy_from_slice(if index % 32 < 16 { &left } else { &right });
         }
-        frame
+        Ok(frame)
     }
 }
 
@@ -28,7 +34,10 @@ impl CanvasFrame for Frame {
         32
     }
     fn rgba(&self) -> &[u8] {
-        &self.0
+        &self.pixels
+    }
+    fn display_spacing(&self) -> Option<DisplaySpacing> {
+        Some(self.spacing)
     }
 }
 
@@ -54,7 +63,8 @@ pub extern "C" fn canvas_start() {
     spawn_local(async {
         match CanvasSurface::from_current_document_gpu_with_input("recovery").await {
             Ok(surface) => {
-                let result = surface.present(&Frame::new([255, 0, 0, 255], [0, 255, 0, 255]));
+                let result = Frame::new([255, 0, 0, 255], [0, 255, 0, 255])
+                    .and_then(|frame| surface.present(&frame));
                 SURFACE.with_borrow_mut(|slot| *slot = Some(surface));
                 finish(result, 2);
             }
@@ -74,7 +84,8 @@ pub extern "C" fn canvas_recreate() {
             return;
         };
         let result = match surface.recreate().await {
-            Ok(()) => surface.present(&Frame::new([0, 0, 255, 255], [255, 255, 255, 255])),
+            Ok(()) => Frame::new([0, 0, 255, 255], [255, 255, 255, 255])
+                .and_then(|frame| surface.present(&frame)),
             Err(error) => Err(error),
         };
         SURFACE.with_borrow_mut(|slot| *slot = Some(surface));
@@ -86,9 +97,10 @@ pub extern "C" fn canvas_recreate() {
 #[unsafe(no_mangle)]
 pub extern "C" fn canvas_redraw() {
     let result = SURFACE.with_borrow(|slot| {
-        slot.as_ref()
-            .ok_or_else(|| io::Error::new(io::ErrorKind::NotConnected, "canvas is not mounted"))?
-            .present(&Frame::new([255, 0, 0, 255], [0, 255, 0, 255]))
+        let surface = slot
+            .as_ref()
+            .ok_or_else(|| io::Error::new(io::ErrorKind::NotConnected, "canvas is not mounted"))?;
+        Frame::new([255, 0, 0, 255], [0, 255, 0, 255]).and_then(|frame| surface.present(&frame))
     });
     finish(result, 5);
 }

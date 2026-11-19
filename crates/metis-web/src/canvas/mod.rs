@@ -1,5 +1,6 @@
 //! Format-neutral raster presentation at the browser host boundary.
 
+mod aspect;
 mod events;
 mod frame;
 
