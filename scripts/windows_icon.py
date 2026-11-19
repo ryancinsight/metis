@@ -11,6 +11,7 @@ mark. Run on any host: python3 scripts/windows_icon.py
 from __future__ import annotations
 
 import argparse
+import math
 import pathlib
 import re
 import struct
@@ -210,29 +211,65 @@ def _winding(point: tuple[float, float], polygon: list[tuple[float, float]]) -> 
     return total
 
 
+def _pixel_bounds(
+    subpaths: list[list[tuple[float, float]]], scale: float, pixels: int
+) -> tuple[range, range]:
+    """Bound pixel centers that can lie inside one vector shape.
+
+    A polygon and its interior lie within the extrema of its vertices. A pixel
+    center is `(index + 0.5) / scale`, so floor at the lower vertex and ceil at
+    the upper vertex conservatively include every center that can be inside.
+    """
+    points = [point for polygon in subpaths for point in polygon]
+    if not points:
+        raise ValueError("a path must draw at least one polygon point")
+    if not all(
+        math.isfinite(coordinate) for point in points for coordinate in point
+    ):
+        raise ValueError("path coordinates must be finite")
+    source_edge = pixels / scale
+    min_x = min(
+        pixels,
+        math.floor(min(source_edge, max(0.0, min(x for x, _ in points))) * scale),
+    )
+    max_x = min(
+        pixels,
+        math.ceil(min(source_edge, max(0.0, max(x for x, _ in points))) * scale),
+    )
+    min_y = min(
+        pixels,
+        math.floor(min(source_edge, max(0.0, min(y for _, y in points))) * scale),
+    )
+    max_y = min(
+        pixels,
+        math.ceil(min(source_edge, max(0.0, max(y for _, y in points))) * scale),
+    )
+    return range(min_x, max_x), range(min_y, max_y)
+
+
 def render_mark(svg: str, pixels: int) -> bytes:
-    """Render the mark to raw RGBA bytes; pixel centers sample the shapes."""
+    """Render raw RGBA; pixel centers sample source-ordered shapes."""
     viewport, shapes = _shapes(svg)
     scale = pixels / viewport
     canvas = bytearray(pixels * pixels * 4)
-    for y in range(pixels):
-        for x in range(pixels):
-            point = ((x + 0.5) / scale, (y + 0.5) / scale)
-            red, green, blue, alpha = 0, 0, 0, 0
-            for (fr, fg, fb, fa), subpaths in shapes:
-                if fa == 0:
+    for (fr, fg, fb, fa), subpaths in shapes:
+        if fa == 0:
+            continue
+        columns, rows = _pixel_bounds(subpaths, scale, pixels)
+        for y in rows:
+            for x in columns:
+                point = ((x + 0.5) / scale, (y + 0.5) / scale)
+                if not any(_winding(point, polygon) != 0 for polygon in subpaths):
                     continue
-                if any(_winding(point, polygon) != 0 for polygon in subpaths):
-                    if fa == 255:
-                        red, green, blue, alpha = fr, fg, fb, 255
-                    else:
-                        out_alpha = fa + alpha * (255 - fa) // 255
-                        red = (fr * fa + red * (255 - fa)) // 255
-                        green = (fg * fa + green * (255 - fa)) // 255
-                        blue = (fb * fa + blue * (255 - fa)) // 255
-                        alpha = out_alpha
-            offset = (y * pixels + x) * 4
-            canvas[offset : offset + 4] = bytes((red, green, blue, alpha))
+                offset = (y * pixels + x) * 4
+                if fa == 255:
+                    canvas[offset : offset + 4] = bytes((fr, fg, fb, 255))
+                else:
+                    red, green, blue, alpha = canvas[offset : offset + 4]
+                    canvas[offset] = (fr * fa + red * (255 - fa)) // 255
+                    canvas[offset + 1] = (fg * fa + green * (255 - fa)) // 255
+                    canvas[offset + 2] = (fb * fa + blue * (255 - fa)) // 255
+                    canvas[offset + 3] = fa + alpha * (255 - fa) // 255
     return bytes(canvas)
 
 
