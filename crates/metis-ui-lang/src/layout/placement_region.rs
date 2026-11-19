@@ -213,7 +213,10 @@ impl Polygon {
     }
 
     const fn from(planes: &[Plane; 6], len: usize) -> Self {
-        Self { planes: *planes, len }
+        Self {
+            planes: *planes,
+            len,
+        }
     }
 
     fn contains(self, x: i64, y: i64) -> bool {
