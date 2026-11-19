@@ -35,5 +35,9 @@ name = "canvas_recovery"
 crate-type = ["cdylib"]
 
 [[example]]
+name = "canvas_input"
+crate-type = ["cdylib"]
+
+[[example]]
 name = "http_transport"
 crate-type = ["cdylib"]
