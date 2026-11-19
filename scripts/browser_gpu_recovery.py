@@ -12,7 +12,7 @@ from typing import Any, Mapping
 
 import browser
 from browser_canvas import _element_screenshot, ensure_canvas_visible
-from browser_canvas_capture import READ_SCREENSHOT_PIXELS
+from browser_canvas_capture import READ_SCREENSHOT_PIXELS, pixel_observation
 from browser_gpu_trace import (
     DESTROY_AND_WAIT,
     INSTALL_GPU_TRACE,
@@ -129,32 +129,10 @@ def _listener_count(client: WebDriverClient) -> int:
 
 
 def _pixel_observation(value: Any, left: tuple[int, ...], right: tuple[int, ...]) -> dict[str, Any]:
-    value = _require_ok(value, "canvas pixel readback")
-    if value.get("width") != CANVAS_SIZE or value.get("height") != CANVAS_SIZE:
-        raise BrowserRuntimeError(f"recovery canvas dimensions are invalid: {value!r}")
-    pixels = value.get("pixels")
-    expected_length = CANVAS_SIZE * CANVAS_SIZE * 4
-    if not isinstance(pixels, list) or len(pixels) != expected_length:
-        raise BrowserRuntimeError("recovery canvas returned an invalid RGBA buffer")
-    raw = bytearray()
-    for index, component in enumerate(pixels):
-        if type(component) is not int or not 0 <= component <= 255:
-            raise BrowserRuntimeError(f"RGBA component {index} is invalid: {component!r}")
-        raw.append(component)
-    for pixel_index in range(CANVAS_SIZE * CANVAS_SIZE):
-        offset = pixel_index * 4
-        expected = left if pixel_index % CANVAS_SIZE < CANVAS_SIZE // 2 else right
-        actual = tuple(raw[offset:offset + 4])
-        if actual != expected:
-            x = pixel_index % CANVAS_SIZE
-            y = pixel_index // CANVAS_SIZE
-            raise BrowserRuntimeError(f"pixel ({x}, {y}) is {actual}, expected {expected}")
+    row = bytes(left) * (CANVAS_SIZE // 2) + bytes(right) * (CANVAS_SIZE // 2)
     return {
-        "width": CANVAS_SIZE,
-        "height": CANVAS_SIZE,
-        "rgba_sha256": hashlib.sha256(raw).hexdigest(),
-        "left_rgba": list(left),
-        "right_rgba": list(right),
+        **pixel_observation(value, (CANVAS_SIZE, CANVAS_SIZE), row * CANVAS_SIZE),
+        "left_rgba": list(left), "right_rgba": list(right),
     }
 
 

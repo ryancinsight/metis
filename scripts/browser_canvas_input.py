@@ -8,9 +8,10 @@ import urllib.parse
 from typing import Any, Mapping, Sequence
 
 from browser_canvas import ensure_canvas_visible, settle_canvas_input
+from browser_canvas_capture import READ_SCREENSHOT_PIXELS, capture_screenshot, pixel_observation
 from browser_protocol import ELEMENT_KEY, BrowserRuntimeError, StaticServer, WebDriverClient, parse_device_scale
 from browser_runtime import _wait_for_text, _write_trace
-from browser_trace import BrowserEngine
+from browser_trace import BrowserEngine, Trace
 
 
 CANVAS_ID = "canvas-input"
@@ -111,13 +112,28 @@ def run(
             phase = "read rendered raster pixel"
             canvas = client.execute(
                 "const c=document.getElementById(arguments[0]),r=c.getBoundingClientRect();"
-                "return {width:c.width,height:c.height,css_width:r.width,css_height:r.height,"
-                "pixel:Array.from(c.getContext('2d').getImageData(0,0,1,1).data)};", [CANVAS_ID],
+                "return {width:c.width,height:c.height,css_width:r.width,css_height:r.height};", [CANVAS_ID],
             )
             expected_canvas = {"width": 100, "height": 80, "css_width": 100,
-                               "css_height": 80, "pixel": [17, 34, 51, 255]}
+                               "css_height": 80}
             if canvas != expected_canvas:
                 raise BrowserRuntimeError(f"raster canvas differs from its oracle: {canvas!r}")
+            trace = Trace(engine, url, "none", revision, client.capabilities)
+            screenshot_dir = serve_dir / "runtime" / "screenshots" / engine.value
+            capture_screenshot(
+                client, trace, screenshot_dir, CANVAS_ID, expected_canvas, "2d",
+            )
+            screenshot = trace.screenshots[-1]
+            if (screenshot["width"], screenshot["height"]) != (100, 80):
+                raise BrowserRuntimeError("canvas screenshot is not 100 by 80 pixels")
+            image_path = (screenshot_dir / f"{CANVAS_ID}.png").relative_to(serve_dir)
+            decoded = client.execute_async(
+                READ_SCREENSHOT_PIXELS, [image_path.as_posix(), 10_000],
+            )
+            observed_pixels = pixel_observation(
+                decoded, (100, 80), bytes((17, 34, 51, 255)) * 8_000,
+            )
+            canvas["pixel"] = decoded["pixels"][:4]
             registered = _trace(client)
             listeners = registered["registrations"]
             if listeners <= 0 or registered != {
@@ -174,6 +190,8 @@ def run(
                 "schema": 1, "status": "passed", "revision": revision, "engine": engine.value,
                 "url": url, "capabilities": dict(client.capabilities), "canvas": canvas,
                 "events": gesture, "callbacks": completed["observations"],
+                "screenshot": screenshot,
+                "visible_pixels": {**observed_pixels, "method": "element-screenshot", "count": 8_000},
                 "cleanup": {
                     "surface_listeners": listeners, "registrations": stopped["registrations"],
                     "removals": stopped["removals"], "active_listeners": stopped["active"],

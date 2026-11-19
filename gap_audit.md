@@ -414,3 +414,9 @@ delivery. The full suite passes 424 tests without skips in 15.311 seconds.
 This verifies portable record construction and retained tool behavior;
 physical Windows delivery and monitor transitions retain their existing
 acceptance requirements. [Design](scripts/native_input/design.md).
+
+<a id="canvas-source-readback"></a>
+## Canvas source readback
+- Risk: Safari source-canvas getImageData throws InvalidState after the raster surface reports ready; its cause remains unverified.
+- Evidence: [first input run](https://github.com/ryancinsight/metis/actions/runs/44512101145) and [phase-labelled run](https://github.com/ryancinsight/metis/actions/runs/44514208123) fail source-pixel readback; the input fixture now observes the actual element PNG for its visible-pixel oracle.
+- Re-open: browser/PAL changes or any consumer requiring source-canvas readback; compare a plain JavaScript canvas with the PAL-presented canvas and inspect context-loss state. A screenshot result does not certify this API.

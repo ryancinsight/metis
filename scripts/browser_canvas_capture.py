@@ -2,6 +2,7 @@
 from __future__ import annotations
 
 import enum
+import hashlib
 import pathlib
 import re
 from typing import Any, Mapping
@@ -120,6 +121,7 @@ def compare_screenshot_stability(
                 f"a rejected file batch changed canvas {canvas_id} screenshot"
             )
 
+
 READ_SCREENSHOT_PIXELS = """
 const done = arguments[arguments.length - 1];
 const path = arguments[0];
@@ -149,3 +151,37 @@ image.decode().then(() => {
   });
 }).catch((error) => finish({ok: false, error: String(error).slice(0, 512)}));
 """
+
+
+def pixel_observation(
+    value: Any, dimensions: tuple[int, int], expected_rgba: bytes,
+) -> dict[str, Any]:
+    """Compare every decoded pixel with an independently supplied frame."""
+    if not isinstance(value, dict) or value.get("ok") is not True:
+        detail = value.get("error") if isinstance(value, dict) else value
+        raise BrowserRuntimeError(f"canvas pixel readback failed: {detail!r}")
+    width, height = dimensions
+    if value.get("width") != width or value.get("height") != height:
+        raise BrowserRuntimeError(f"canvas dimensions differ from {dimensions}: {value!r}")
+    pixels = value.get("pixels")
+    expected_length = width * height * 4
+    if len(expected_rgba) != expected_length:
+        raise BrowserRuntimeError("pixel oracle length differs from its dimensions")
+    if not isinstance(pixels, list) or len(pixels) != expected_length:
+        raise BrowserRuntimeError("canvas returned an invalid RGBA buffer")
+    raw = bytearray()
+    for index, component in enumerate(pixels):
+        if type(component) is not int or not 0 <= component <= 255:
+            raise BrowserRuntimeError(f"RGBA component {index} is invalid: {component!r}")
+        raw.append(component)
+    for pixel_index in range(width * height):
+        offset = pixel_index * 4
+        expected = tuple(expected_rgba[offset:offset + 4])
+        actual = tuple(raw[offset:offset + 4])
+        if actual != expected:
+            x, y = pixel_index % width, pixel_index // width
+            raise BrowserRuntimeError(f"pixel ({x}, {y}) is {actual}, expected {expected}")
+    return {
+        "width": width, "height": height,
+        "rgba_sha256": hashlib.sha256(raw).hexdigest(),
+    }
