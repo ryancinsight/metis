@@ -449,7 +449,7 @@ class WebDriverClient:
         pointer_type: str = "mouse",
         source_id: str = "metis-pointer",
     ) -> None:
-        """Perform one trusted pointer drag relative to a DOM element."""
+        """Drag using CSS-pixel offsets from an element's in-view center."""
         if pointer_type not in {"mouse", "pen", "touch"}:
             raise BrowserRuntimeError(f"unsupported pointer type: {pointer_type!r}")
         if button not in range(5):
