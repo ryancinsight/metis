@@ -10,7 +10,7 @@
 use crate::app::FrontendApp;
 use metis_core::{ErrorCode, MetisError, Result};
 use metis_ipc::IpcTransport;
-use metis_ui_lang::{DomDocument, DomElement, DomNode, SemanticNode, SemanticTree};
+use metis_ui_lang::{DomDocument, DomElement, DomNode, SemanticNode, SemanticTree, TabOrder};
 
 /// Control focused when the form opens: the patient reference, so typing
 /// edits it without a prior focus move.
@@ -101,22 +101,14 @@ impl<T: IpcTransport> FrontendApp<T> {
     /// focus when the surface cannot render.
     pub fn move_focus(&mut self, direction: FocusDirection) -> Result<()> {
         let order = self.focus_order()?;
-        let count = order.len();
-        if count == 0 {
-            return Err(no_focusable_control());
+        let tab_order = TabOrder::new(&order);
+        let next = match direction {
+            FocusDirection::Forward => tab_order.forward_from(self.focus.control.as_str()),
+            FocusDirection::Backward => tab_order.backward_from(self.focus.control.as_str()),
         }
-        let next = match order.iter().position(|id| *id == self.focus.control) {
-            Some(index) => match direction {
-                FocusDirection::Forward => (index + 1) % count,
-                FocusDirection::Backward => (index + count - 1) % count,
-            },
-            None => match direction {
-                FocusDirection::Forward => 0,
-                FocusDirection::Backward => count - 1,
-            },
-        };
+        .ok_or_else(no_focusable_control)?;
         self.set_focus(Focus {
-            control: order[next].clone(),
+            control: next.clone(),
             origin: FocusOrigin::Keyboard,
         })
     }

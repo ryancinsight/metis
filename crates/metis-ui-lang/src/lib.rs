@@ -6,6 +6,7 @@
 pub mod asset;
 pub mod catalog;
 pub mod dom;
+mod focus;
 pub mod image;
 pub mod layout;
 pub mod parser;
@@ -18,6 +19,7 @@ pub use catalog::{
     Resolved, format_message,
 };
 pub use dom::{DomDocument, DomElement, DomNode, Edit};
+pub use focus::TabOrder;
 pub use image::{AffineTransform, ImagePlacement, ImageSampling, ImageTransform, RasterImage};
 pub use layout::{
     DecimalEdit, DecimalEntry, DisplayCommand, DisplayList, ElementIndex, LayoutViewport, LineCap,
