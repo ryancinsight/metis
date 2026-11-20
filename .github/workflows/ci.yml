@@ -31,11 +31,8 @@ jobs:
     timeout-minutes: 5
     permissions:
       contents: read
-      actions: read # the artifact and run listings behind the verified-tree lookup
     outputs:
       code: ${{ steps.diff.outputs.code }}
-      tree: ${{ steps.tree.outputs.tree }}
-      verified: ${{ steps.verified.outputs.verified }}
       fuzz: ${{ steps.diff.outputs.fuzz }}
     steps:
       - name: Checkout
@@ -43,28 +40,6 @@ jobs:
         with:
           fetch-depth: 0
           persist-credentials: false
-      - name: Record the checked-out tree
-        # A pull request checks out refs/pull/<N>/merge, the tree that lands if
-        # main does not move before the merge; a push checks out its own commit.
-        id: tree
-        shell: bash
-        run: echo "tree=$(git rev-parse 'HEAD^{tree}')" >> "$GITHUB_OUTPUT"
-      - name: Look up a pull-request run that verified this tree
-        # A landed tree the pull-request gate already passed is not verified a
-        # second time; scripts/verified_tree.py states which markers count.
-        if: github.event_name == 'push'
-        id: verified
-        shell: bash
-        env:
-          GH_TOKEN: ${{ github.token }}
-          REPOSITORY: ${{ github.repository }}
-          REPOSITORY_ID: ${{ github.repository_id }}
-          TREE: ${{ steps.tree.outputs.tree }}
-        run: >-
-          python3 scripts/verified_tree.py
-          --repository "$REPOSITORY"
-          --repository-id "$REPOSITORY_ID"
-          --tree "$TREE"
       - name: Determine changed paths
         id: diff
         shell: bash
@@ -134,10 +109,7 @@ jobs:
       (
         github.event_name == 'workflow_dispatch' ||
         github.event_name == 'merge_group' ||
-        (
-          needs.changes.outputs.code == 'true' &&
-          (github.event_name != 'push' || needs.changes.outputs.verified != 'true')
-        )
+        needs.changes.outputs.code == 'true'
       )
     runs-on: windows-latest
     timeout-minutes: 20
@@ -733,20 +705,3 @@ jobs:
               raise SystemExit(1)
           print("All required Metis jobs completed.")
           PY
-      - name: Write the verified-tree marker
-        # Reached only when the check above passed, so the marker is written
-        # after a green pull-request run of every required job.
-        if: github.event_name == 'pull_request' && needs.verify.result == 'success'
-        env:
-          TREE: ${{ needs.changes.outputs.tree }}
-        run: printf '%s\n' "$TREE" > verified-tree.txt
-      - name: Record the verified tree
-        # Lets the push that lands this tree skip the Windows gate
-        # (scripts/verified_tree.py decides whether the marker is trusted).
-        if: github.event_name == 'pull_request' && needs.verify.result == 'success'
-        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
-        with:
-          name: verified-tree-${{ needs.changes.outputs.tree }}
-          path: verified-tree.txt
-          if-no-files-found: error
-          retention-days: 7
