@@ -51,14 +51,17 @@ See the workspace [wire contract](../../docs/INTERFACE.md) and
 
 `input` owns pointer displacement and the keyboard accelerator vocabulary every
 host shares. `PointerDrag` captures a press coordinate and its scale, then
-reports finite press-relative displacement. RITK captures one drag for the full
-gesture; the browser gesture policy captures each accepted point to preserve
-its incremental clamp behavior. Native hosts can use screen-pixel coordinates
-directly; normalized-coordinate hosts capture the backing extent. The
-accelerator parser accepts the `CmdOrCtrl+Shift+K` text Tauri and Electron menus
-use, resolves browser `KeyboardEvent` codes and Windows virtual keys onto the
-same keys, and formats the WAI-ARIA `aria-keyshortcuts` spelling. `ShortcutMap`
-refuses a conflicting binding when it is made.
+reports finite press-relative displacement. It can project that displacement to
+the largest axis-aligned square contained in the raw drag rectangle, expressed
+in the same captured output coordinates. The projection owns geometry only;
+callers retain gesture and persistence state. RITK captures one drag for the
+full gesture; the browser gesture policy captures each accepted point to
+preserve its incremental clamp behavior. Native hosts can use screen-pixel
+coordinates directly; normalized-coordinate hosts capture the backing extent.
+The accelerator parser accepts the `CmdOrCtrl+Shift+K` text Tauri and Electron
+menus use, resolves browser `KeyboardEvent` codes and Windows virtual keys onto
+the same keys, and formats the WAI-ARIA `aria-keyshortcuts` spelling.
+`ShortcutMap` refuses a conflicting binding when it is made.
 
 ```rust
 use metis_core::input::{Accelerator, Key, Modifiers, ShortcutMap};
