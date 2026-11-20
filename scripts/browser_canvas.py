@@ -348,19 +348,36 @@ def _canvas_snapshot(
     return value
 
 
-def _canvas_action_offsets(canvas: Mapping[str, Any]) -> tuple[tuple[int, int], tuple[int, int], tuple[int, int]]:
-    """Clamp trusted input offsets to the visible bounds of one canvas."""
-    css_width = float(canvas["css_width"])
-    css_height = float(canvas["css_height"])
+def canvas_action_offsets(
+    canvas: Mapping[str, Any],
+    requested_points: Sequence[tuple[int, int]],
+) -> tuple[tuple[int, int], ...]:
+    """Clamp CSS-pixel offsets from a fully visible canvas's in-view center.
 
-    def clamp(requested: int, size: float) -> int:
-        extent = max(0, math.floor(size / 2.0) - 1)
-        return max(-extent, min(extent, requested))
-
-    def point(requested: tuple[int, int]) -> tuple[int, int]:
-        return clamp(requested[0], css_width), clamp(requested[1], css_height)
-
-    return point(CANVAS_DRAG_START), point(CANVAS_DRAG_END), point(CANVAS_WHEEL_POSITION)
+    The caller supplies current ``css_width`` and ``css_height`` and keeps the
+    canvas visible until dispatch. Each axis uses floor(size / 2) - 1 pixels
+    of symmetric travel, or zero for smaller surfaces. Point order is retained;
+    clamping can collapse geometry, which the consumer must check when needed.
+    Transport-specific coordinate bounds still apply at action dispatch.
+    """
+    if not isinstance(canvas, Mapping):
+        raise BrowserRuntimeError("canvas dimensions must be a mapping")
+    extents = []
+    for key in ("css_width", "css_height"):
+        size = canvas.get(key)
+        if type(size) not in (int, float) or not 0 < size <= MAX_CANVAS_CSS_SIZE:
+            raise BrowserRuntimeError(f"canvas {key} must be positive, finite and bounded")
+        extents.append(max(0, math.floor(size / 2.0) - 1))
+    if not isinstance(requested_points, Sequence) or isinstance(requested_points, (str, bytes)):
+        raise BrowserRuntimeError("canvas action points must be a sequence of integer pairs")
+    result = []
+    for point in requested_points:
+        if (not isinstance(point, (tuple, list)) or len(point) != 2
+                or any(type(coordinate) is not int for coordinate in point)):
+            raise BrowserRuntimeError("canvas action points must be integer pairs")
+        result.append(tuple(max(-extent, min(extent, coordinate))
+                            for coordinate, extent in zip(point, extents)))
+    return tuple(result)
 
 
 def _element_screenshot(client: WebDriverClient, trace: Trace, directory: pathlib.Path, label: str, element_id: str) -> None:
@@ -725,7 +742,9 @@ def capture_canvas_trace(
         for canvas_id in canvas_ids:
             element = elements[canvas_id]
             initial_canvas = _canvas_snapshot(client, trace, canvas_id, f"{canvas_id}-initial", canvas_attributes)
-            drag_start, drag_end, wheel_position = _canvas_action_offsets(initial_canvas)
+            drag_start, drag_end, wheel_position = canvas_action_offsets(
+                initial_canvas, (CANVAS_DRAG_START, CANVAS_DRAG_END, CANVAS_WHEEL_POSITION)
+            )
             if browser_heap:
                 browser_heap_sample(client, trace, f"{canvas_id}-initial")
             if browser_memory:
