@@ -50,6 +50,18 @@ class ProgressResultTests(unittest.TestCase):
         with self.assertRaisesRegex(RuntimeError, "without a matching start"):
             result.stopTest(_Case("check_value"))
 
+    def test_skip_is_flushed_with_its_reason(self) -> None:
+        stream = _Stream()
+        result = ProgressResult(stream, descriptions=False, verbosity=0)
+        case = _Case("check_value")
+        result.addSkip(case, "platform decoder unavailable")
+        self.assertEqual(
+            stream.getvalue(),
+            f"test-skip: {case.id()}: platform decoder unavailable\n",
+        )
+        self.assertEqual(result.skipped, [(case, "platform decoder unavailable")])
+        self.assertEqual(stream.flushes, 1)
+
 
 if __name__ == "__main__":
     unittest.main()

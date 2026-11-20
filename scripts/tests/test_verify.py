@@ -81,6 +81,18 @@ class FormatNeutralWorkspaceTests(unittest.TestCase):
         self.assertFalse(admits("metis-ui", "gaia-mesh", crates_io))
 
 
+class BenchBootstrapTests(unittest.TestCase):
+    """Keep the benchmark CLI bound to verification configuration."""
+
+    def test_help_imports_without_starting_a_benchmark(self):
+        result = subprocess.run(
+            [sys.executable, str(SCRIPTS / "bench.py"), "--help"],
+            capture_output=True, text=True, timeout=10, check=False,
+        )
+        self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
+        self.assertIn("--smoke", result.stdout)
+
+
 class BootstrapEvidenceTests(unittest.TestCase):
     """A failed new invocation must never retain an earlier green report."""
 

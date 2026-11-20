@@ -5,16 +5,14 @@ import contextlib
 import hashlib
 import os
 import pathlib
-import re
 import shutil
 import subprocess
 import sys
 import stat
 import tomllib
 import tempfile
-from urllib.parse import unquote, urlsplit
 
-from verification import workspace
+from verification import documentation, source, workspace
 
 PHYSICAL_ROOT = pathlib.Path(__file__).resolve().parents[1]
 ROOT = PHYSICAL_ROOT
@@ -28,14 +26,6 @@ BUILD_LINK_PACKAGES = {
     "pyo3-ffi": "PyO3 interpreter FFI build contract",
     "wasm-bindgen-shared": "wasm-bindgen browser ABI build contract",
 }
-
-def resolution():
-    """Preserve every byte of the standalone lock, rejecting overlay residue."""
-    lock = LOCK.read_bytes()
-    if "unused" in tomllib.loads(lock.decode("utf-8")).get("patch", {}):
-        raise SystemExit("Cargo.lock contains Atlas overlay residue; regenerate standalone before verification")
-    return lock
-
 
 BASELINE = None
 EVIDENCE = {"schema": 1, "status": "running", "stages": {}, "commands": {}}
@@ -118,70 +108,11 @@ def evidence():
     output_path("verification.json").write_text(json.dumps(EVIDENCE, sort_keys=True, indent=2), encoding="utf-8")
 
 
-def inherited_configuration():
-    """Retain ancestor build budgets without importing their source patches."""
-    target = None
-    profiles = {}
-    configs = []
-
-    def leaves(table, prefix=()):
-        for key, value in table.items():
-            path = (*prefix, key)
-            if isinstance(value, dict):
-                yield from leaves(value, path)
-            else:
-                yield path, value
-
-    # Cargo merges ancestor configuration first, with the nearest value winning.
-    for directory in reversed((PHYSICAL_ROOT, *PHYSICAL_ROOT.parents)):
-        candidates = [directory / ".cargo" / name for name in ("config", "config.toml")]
-        config = next((path for path in candidates if path.is_file()), None)
-        if config is None:
-            continue
-        configs.append(config)
-        content = tomllib.loads(config.read_text(encoding="utf-8"))
-        configured = content.get("build", {}).get("target-dir")
-        if configured is not None:
-            target = (directory / configured).resolve()
-        profiles.update(leaves(content.get("profile", {}), ("profile",)))
-    if os.environ.get("CARGO_TARGET_DIR"):
-        target = pathlib.Path(os.environ["CARGO_TARGET_DIR"]).resolve()
-    return target, profiles, configs
-
-
 def command(arguments, *, resolve=True, tail=()):
     """Select the pinned toolchain and root manifest independently of cwd."""
     return ["rustup", "run", TOOLCHAIN, "cargo", *arguments,
             "--manifest-path", str(ROOT / "Cargo.toml"),
             *(["--locked", "--offline"] if resolve else []), *tail]
-
-
-def manual_links():
-    """Check inline Markdown file/image destinations without network requests."""
-    for document in sorted((ROOT / "docs" / "manual").rglob("*.md")):
-        for match in re.finditer(r"!?\[[^\]\n]*\]\(([^)\n]+)\)", document.read_text(encoding="utf-8")):
-            destination = match.group(1).strip().split(maxsplit=1)[0].strip("<>")
-            link = urlsplit(destination)
-            if link.scheme in ("http", "https", "mailto"):
-                continue
-            if link.scheme or link.netloc:
-                raise SystemExit(f"Unsupported manual link in {document}: {destination}")
-            target = (document.parent / unquote(link.path)).resolve() if link.path else document
-            if not target.is_relative_to(PHYSICAL_ROOT) or not target.is_file():
-                raise SystemExit(f"Missing or external manual target in {document}: {destination}")
-
-
-def citations():
-    """Refuse a gate whose cited revisions or evidence digests no longer resolve."""
-    from citations import evidence_findings, unreachable_revisions
-
-    unreachable = unreachable_revisions(ROOT)
-    mismatched, absent, verified = evidence_findings(ROOT)
-    for finding in (*unreachable, *mismatched):
-        print(f"citation: {finding}", file=sys.stderr)
-    if unreachable or mismatched:
-        raise SystemExit("Cited revisions or evidence digests no longer resolve")
-    print(f"citations: {verified} digest(s) verified; {len(absent)} artifact(s) absent on this host", flush=True)
 
 
 def run(name, args, *, cwd, environment, seconds=300, expected_exit=0, required_diagnostic=None):
@@ -207,7 +138,7 @@ def run(name, args, *, cwd, environment, seconds=300, expected_exit=0, required_
         raise SystemExit(f"{name}: exceeded {seconds}-second budget; see {log}") from error
     diagnostic = result.stdout + result.stderr
     output_path(name + ".log").write_text(diagnostic, encoding="utf-8")
-    if resolution() != BASELINE:
+    if source.resolution(LOCK) != BASELINE:
         raise SystemExit(f"{name}: Cargo changed the locked dependency graph; review and resolve before verification")
     print(f"{name}: exit {result.returncode}", flush=True)
     accepted = result.returncode == expected_exit and (required_diagnostic is None or required_diagnostic in diagnostic)
@@ -217,31 +148,6 @@ def run(name, args, *, cwd, environment, seconds=300, expected_exit=0, required_
         print(diagnostic[-12000:])
         raise SystemExit(f"{name}: expected exit {expected_exit} and diagnostic {required_diagnostic!r}; got exit {result.returncode}")
     return result.stdout
-
-def source_state(metadata, configs):
-    inputs = {ROOT / "rust-toolchain.toml", ROOT / "metis.json", ROOT / "deny.toml", *configs}
-    inputs.update(path for path in (ROOT / "examples" / "browser").rglob("*") if path.is_file())
-    workflow_root = ROOT / ".github" / "workflows"
-    if workflow_root.is_dir():
-        inputs.update(path for path in workflow_root.iterdir()
-                      if path.is_file() and path.suffix in {".yml", ".yaml"})
-    inputs.update((ROOT / "docs").rglob("*.md"))
-    inputs.update(path for path in (ROOT / "scripts").rglob("*")
-                  if path.is_file() and "__pycache__" not in path.parts)
-    for package in metadata["packages"]:
-        if package["source"] is None:
-            manifest = pathlib.Path(package["manifest_path"])
-            inputs.add(manifest)
-            directory = manifest.parent
-            inputs.update(directory.glob("*.rs"))
-            inputs.update(directory.glob("*.md"))
-            # `fonts` holds typefaces the renderer embeds, a rendering input.
-            for folder in ("src", "tests", "examples", "scripts", "python", ".config", "fonts"):
-                inputs.update(path for path in (directory / folder).rglob("*") if path.is_file() and "__pycache__" not in path.parts)
-            if package["name"] == "metis-python":
-                inputs.add(directory / "pyproject.toml")
-    from visual import source_digest
-    return {str(path.resolve()): source_digest(path) for path in sorted(inputs)}
 
 def run_gate():
     global BASELINE, TOOLCHAIN
@@ -256,11 +162,11 @@ def run_gate():
     from visual import begin_run, source_digest
     run_nonce = begin_run(OUTPUT)
     TOOLCHAIN = tomllib.loads((ROOT / "rust-toolchain.toml").read_text(encoding="utf-8"))["toolchain"]["channel"]
-    BASELINE = resolution()
+    BASELINE = source.resolution(LOCK)
     # Windows consoles may use a legacy code page; never lose the failing-test
     # diagnostic to a UnicodeEncodeError. Full UTF-8 output remains in the log.
     sys.stdout.reconfigure(errors="backslashreplace")
-    target, profiles, configs = inherited_configuration()
+    target, profiles, configs = source.inherited_configuration(PHYSICAL_ROOT, os.environ)
     environment = os.environ.copy()
     if any(environment.get(name) for name in ("RUSTC", "RUSTDOC")):
         raise SystemExit("Unset RUSTC/RUSTDOC overrides; verification requires the pinned toolchain")
@@ -303,13 +209,16 @@ def run_gate():
         native_directory = workspace.native_build_directory(
             metadata, host, environment, explicit_target=sys.platform == "win32"
         )
-        source = source_state(metadata, configs)
+        source_inputs = source.state(ROOT, metadata, configs)
         revision = execute("revision", ["git", "rev-parse", "HEAD"], seconds=30, cwd=ROOT).strip()
-        provenance = {"mode": "standalone", "host": host, "sources": source, "run_nonce": run_nonce,
+        provenance = {"mode": "standalone", "host": host, "sources": source_inputs,
+                      "run_nonce": run_nonce,
                       "revision": revision, "compiler": TOOLCHAIN,
                       "host_capabilities": {"focus_order": "unsupported", "accessibility_tree": "unsupported",
                                             "pointer_dispatch": "unsupported", "responsive_cancellation": "unsupported"},
-                      "source_sha256": hashlib.sha256(json.dumps(source, sort_keys=True).encode()).hexdigest(),
+                      "source_sha256": hashlib.sha256(
+                          json.dumps(source_inputs, sort_keys=True).encode()
+                      ).hexdigest(),
                       "lock_sha256": source_digest(LOCK)}
         EVIDENCE.update(provenance)
         evidence()
@@ -452,9 +361,9 @@ def run_gate():
                            "--provenance", str(provenance_path),
                            *(["--update"] if arguments.update_snapshots else [])], seconds=60, cwd=ROOT)
         EVIDENCE["visual"] = json.loads((OUTPUT / "visual" / "latest" / "report.json").read_text(encoding="utf-8"))
-        manual_links()
-        citations()
-        if source_state(metadata, configs) != source:
+        documentation.manual_links(ROOT, PHYSICAL_ROOT)
+        documentation.citations(ROOT)
+        if source.state(ROOT, metadata, configs) != source_inputs:
             raise SystemExit("Source inputs changed during verification; collect against a stable revision")
         EVIDENCE["status"] = "passed"
         evidence()
