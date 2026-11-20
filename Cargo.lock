@@ -413,7 +413,7 @@ checksum = "a6ef517f0926dd24a1582492c791b6a4818a4d94e789a334894aa15b0d12f55c"
 [[package]]
 name = "consus-compression"
 version = "0.5.0"
-source = "git+https://github.com/ryancinsight/consus.git#bab9c3599fb723d4e3f8f66d050ccedf563a4ef2"
+source = "git+https://github.com/ryancinsight/consus.git#b3901040f5fdd3c17ef9e1b8f406e89e38a84aa1"
 dependencies = [
  "byteorder",
  "consus-core",
@@ -423,7 +423,7 @@ dependencies = [
 [[package]]
 name = "consus-core"
 version = "0.5.0"
-source = "git+https://github.com/ryancinsight/consus.git#bab9c3599fb723d4e3f8f66d050ccedf563a4ef2"
+source = "git+https://github.com/ryancinsight/consus.git#b3901040f5fdd3c17ef9e1b8f406e89e38a84aa1"
 dependencies = [
  "byteorder",
  "smallvec",
@@ -442,7 +442,7 @@ dependencies = [
 [[package]]
 name = "consus-zip"
 version = "0.5.0"
-source = "git+https://github.com/ryancinsight/consus.git#bab9c3599fb723d4e3f8f66d050ccedf563a4ef2"
+source = "git+https://github.com/ryancinsight/consus.git#b3901040f5fdd3c17ef9e1b8f406e89e38a84aa1"
 dependencies = [
  "consus-compression",
  "consus-core",
@@ -908,8 +908,8 @@ dependencies = [
 
 [[package]]
 name = "gaia-mesh"
-version = "0.7.0"
-source = "git+https://github.com/ryancinsight/gaia#0dd85796317cd171917ba8ba711f9c2f71786131"
+version = "0.8.0"
+source = "git+https://github.com/ryancinsight/gaia#bdac6214249fbe9791b0140ee204de13ef7717ba"
 dependencies = [
  "aequitas",
  "consus-zip",
@@ -1233,7 +1233,7 @@ dependencies = [
 [[package]]
 name = "leto"
 version = "0.52.0"
-source = "git+https://github.com/ryancinsight/leto.git#a98b8a706b6644bdd28c9fd5680c2dc044bb2b67"
+source = "git+https://github.com/ryancinsight/leto.git#de7c3965e53b09d9498b40df1230e8ff02d44fec"
 dependencies = [
  "aequitas",
  "eunomia",
@@ -1290,7 +1290,7 @@ dependencies = [
 [[package]]
 name = "melinoe"
 version = "0.10.0"
-source = "git+https://github.com/ryancinsight/melinoe.git#ae347a95c788c23247abaa8781b243d41bb03934"
+source = "git+https://github.com/ryancinsight/melinoe.git#e2d93b806a26ce5eddc51b400641cb0c936fc528"
 
 [[package]]
 name = "memchr"
@@ -1589,7 +1589,7 @@ dependencies = [
 [[package]]
 name = "moirai-async"
 version = "0.12.0"
-source = "git+https://github.com/ryancinsight/Moirai.git#c909e4fa3e1548cb4c26869c20caea67dbcf8323"
+source = "git+https://github.com/ryancinsight/Moirai.git#e5108b5d420ba302ebe534e1f07f26e5cd7262ef"
 dependencies = [
  "futures",
  "libc",
@@ -1605,7 +1605,7 @@ dependencies = [
 [[package]]
 name = "moirai-async-macros"
 version = "0.12.0"
-source = "git+https://github.com/ryancinsight/Moirai.git#c909e4fa3e1548cb4c26869c20caea67dbcf8323"
+source = "git+https://github.com/ryancinsight/Moirai.git#e5108b5d420ba302ebe534e1f07f26e5cd7262ef"
 dependencies = [
  "proc-macro2",
  "quote",
@@ -1615,7 +1615,7 @@ dependencies = [
 [[package]]
 name = "moirai-core"
 version = "0.12.0"
-source = "git+https://github.com/ryancinsight/Moirai.git#c909e4fa3e1548cb4c26869c20caea67dbcf8323"
+source = "git+https://github.com/ryancinsight/Moirai.git#e5108b5d420ba302ebe534e1f07f26e5cd7262ef"
 dependencies = [
  "bytemuck",
  "libc",
@@ -1651,7 +1651,7 @@ dependencies = [
 [[package]]
 name = "moirai-executor"
 version = "0.12.0"
-source = "git+https://github.com/ryancinsight/Moirai.git#c909e4fa3e1548cb4c26869c20caea67dbcf8323"
+source = "git+https://github.com/ryancinsight/Moirai.git#e5108b5d420ba302ebe534e1f07f26e5cd7262ef"
 dependencies = [
  "melinoe",
  "mnemosyne-memory",
@@ -1677,7 +1677,7 @@ dependencies = [
 [[package]]
 name = "moirai-pal"
 version = "0.12.0"
-source = "git+https://github.com/ryancinsight/Moirai.git#c909e4fa3e1548cb4c26869c20caea67dbcf8323"
+source = "git+https://github.com/ryancinsight/Moirai.git#e5108b5d420ba302ebe534e1f07f26e5cd7262ef"
 dependencies = [
  "accesskit",
  "accesskit_windows",
@@ -1702,7 +1702,7 @@ dependencies = [
 [[package]]
 name = "moirai-parallel"
 version = "0.12.0"
-source = "git+https://github.com/ryancinsight/Moirai.git#c909e4fa3e1548cb4c26869c20caea67dbcf8323"
+source = "git+https://github.com/ryancinsight/Moirai.git#e5108b5d420ba302ebe534e1f07f26e5cd7262ef"
 dependencies = [
  "melinoe",
  "moirai-core",
@@ -1713,7 +1713,7 @@ dependencies = [
 [[package]]
 name = "moirai-quic"
 version = "0.12.0"
-source = "git+https://github.com/ryancinsight/Moirai.git#c909e4fa3e1548cb4c26869c20caea67dbcf8323"
+source = "git+https://github.com/ryancinsight/Moirai.git#e5108b5d420ba302ebe534e1f07f26e5cd7262ef"
 dependencies = [
  "moirai-async",
  "moirai-core",
@@ -1726,7 +1726,7 @@ dependencies = [
 [[package]]
 name = "moirai-runtime"
 version = "0.12.0"
-source = "git+https://github.com/ryancinsight/Moirai.git#c909e4fa3e1548cb4c26869c20caea67dbcf8323"
+source = "git+https://github.com/ryancinsight/Moirai.git#e5108b5d420ba302ebe534e1f07f26e5cd7262ef"
 dependencies = [
  "moirai-core",
  "moirai-executor",
@@ -1741,7 +1741,7 @@ dependencies = [
 [[package]]
 name = "moirai-scheduler"
 version = "0.12.0"
-source = "git+https://github.com/ryancinsight/Moirai.git#c909e4fa3e1548cb4c26869c20caea67dbcf8323"
+source = "git+https://github.com/ryancinsight/Moirai.git#e5108b5d420ba302ebe534e1f07f26e5cd7262ef"
 dependencies = [
  "loom",
  "mnemosyne-memory",
@@ -1753,7 +1753,7 @@ dependencies = [
 [[package]]
 name = "moirai-sync"
 version = "0.12.0"
-source = "git+https://github.com/ryancinsight/Moirai.git#c909e4fa3e1548cb4c26869c20caea67dbcf8323"
+source = "git+https://github.com/ryancinsight/Moirai.git#e5108b5d420ba302ebe534e1f07f26e5cd7262ef"
 dependencies = [
  "libc",
  "moirai-core",
@@ -1776,7 +1776,7 @@ dependencies = [
 [[package]]
 name = "moirai-transport"
 version = "0.12.0"
-source = "git+https://github.com/ryancinsight/Moirai.git#c909e4fa3e1548cb4c26869c20caea67dbcf8323"
+source = "git+https://github.com/ryancinsight/Moirai.git#e5108b5d420ba302ebe534e1f07f26e5cd7262ef"
 dependencies = [
  "bytemuck",
  "libc",
@@ -1788,7 +1788,7 @@ dependencies = [
 [[package]]
 name = "moirai-utils"
 version = "0.12.0"
-source = "git+https://github.com/ryancinsight/Moirai.git#c909e4fa3e1548cb4c26869c20caea67dbcf8323"
+source = "git+https://github.com/ryancinsight/Moirai.git#e5108b5d420ba302ebe534e1f07f26e5cd7262ef"
 
 [[package]]
 name = "moirai-webview"

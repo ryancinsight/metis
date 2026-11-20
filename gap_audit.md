@@ -1,5 +1,12 @@
 # Open capability and evidence risks
 
+## Gaia 0.8 mesh viewer [patch]
+
+The root lock resolves Gaia 0.8.0 and Leto 0.52.0. The locked headless
+example writes the same 960 × 640 PNG and BMP as the Gaia 0.7 base. Both
+runs consider 3,072 faces, rasterize 1,536 triangles, and cover 64,108
+fragments. The Gaia edge is a development dependency of the root package.
+
 ## Hosted publishing gates — 2026-10-29 [patch]
 
 The [reviewed publishing candidate](https://github.com/ryancinsight/metis/commit/f08ccabd432296cce01a218643b7af3ff4390372) passes both normal delivery hooks, the complete

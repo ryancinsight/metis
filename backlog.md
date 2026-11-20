@@ -1,5 +1,9 @@
 Prepared framework target: Metis0.5.0; unpublished review in existing PR505.
 
+- [patch] The standalone mesh viewer selects Gaia 0.8 for the Aequitas
+  0.5 and Leto 0.52 rollout. The locked headless render matches the Gaia
+  0.7 base byte for byte at 960 × 640 in both PNG and BMP.
+
 ## Provider checkpoint — 2026-10-15 (historical; source [held owner checkpoint](https://github.com/ryancinsight/metis/commit/0a9544957a1b748c32c89fe798e1e579637bbb9a))
 
 Consus0.3 is merged at beae4ce7. Its executed published-baseline consumer
