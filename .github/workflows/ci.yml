@@ -140,8 +140,7 @@ jobs:
         )
       )
     runs-on: windows-latest
-    # A cold build reached the benchmark and documentation checks at 20 minutes.
-    timeout-minutes: 25
+    timeout-minutes: 20
     env:
       CARGO_TERM_COLOR: always
       CARGO_INCREMENTAL: '0'
