@@ -5,6 +5,7 @@ use super::faces;
 use super::glyf::Transform;
 use super::glyph_cache::{GlyphCache, GlyphKey, GlyphMask};
 use super::raster::{Canvas, Outline, PixelBounds};
+use crate::conversion::{layout_error, whole_pixels};
 use crate::framebuffer::{Color, Framebuffer, Rect, SourceOver, coverage_alpha};
 use crate::memo::Lookup;
 use std::cell::RefCell;
@@ -186,6 +187,39 @@ impl TextStyle {
         let face = self.weight.face();
         f64::from(face.line_height()) * self.scale(face)
     }
+
+    /// Places this style's line box vertically in `bounds`.
+    ///
+    /// When the line box is taller than the bounds, the returned coordinate
+    /// preserves its center and may lie above `bounds.y`.
+    ///
+    /// # Errors
+    /// Returns [`metis_core::error::ErrorCode::LayoutOverflow`] when either
+    /// bounds extent is nonpositive or the centered coordinate leaves the
+    /// `i32` range.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// use metis_platform::{Color, Rect};
+    /// use metis_platform::typeface::{TextSize, TextStyle};
+    ///
+    /// let size = TextSize::new(13.0).expect("13 pixels is a valid text size");
+    /// let style = TextStyle::new(Color::BLACK, size);
+    /// let bounds = Rect::new(20, 40, 100, 30);
+    /// assert_eq!(style.centered_line_box_top(bounds)?, 46);
+    /// # Ok::<(), metis_core::error::MetisError>(())
+    /// ```
+    pub fn centered_line_box_top(self, bounds: Rect) -> metis_core::error::Result<i32> {
+        if bounds.width <= 0 || bounds.height <= 0 {
+            return Err(layout_error("Text control bounds must be positive"));
+        }
+        let line_height = whole_pixels(self.line_height())?;
+        let free_space = i64::from(bounds.height) - i64::from(line_height);
+        let centered = i64::from(bounds.y) + free_space.div_euclid(2);
+        i32::try_from(centered)
+            .map_err(|_| layout_error("Centered text coordinate exceeds layout range"))
+    }
 }
 
 /// Renders one horizontal text run whose line box has its top-left corner at
@@ -308,3 +342,7 @@ fn surface_coordinate(origin: i32, index: usize, limit: u32) -> Option<u32> {
         .ok()
         .filter(|value| *value < limit)
 }
+
+#[cfg(test)]
+#[path = "text_tests.rs"]
+mod tests;

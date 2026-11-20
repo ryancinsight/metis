@@ -17,6 +17,7 @@
 //! [`NONZERO_SUBROWS`] rows per pixel, exact along x.
 
 use super::glyf::Point;
+use crate::conversion::pixel;
 
 /// Largest distance a flattened chord may stray from its quadratic, in
 /// pixels.
@@ -383,20 +384,6 @@ fn offset(point: Point, origin: Point) -> Point {
         x: point.x - origin.x,
         y: point.y - origin.y,
     }
-}
-
-/// A whole pixel coordinate within the `i32` range.
-fn pixel(value: f64) -> Option<i32> {
-    if !value.is_finite() || value < f64::from(i32::MIN) || value > f64::from(i32::MAX) {
-        return None;
-    }
-    // The guard bounds the value to the i32 range and it is already whole.
-    #[expect(
-        clippy::cast_possible_truncation,
-        reason = "a whole value checked to lie in the i32 range"
-    )]
-    let pixel = value as i32;
-    Some(pixel)
 }
 
 /// Adds one segment's signed area to the accumulation buffer.
