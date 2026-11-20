@@ -118,5 +118,7 @@ The Atlas migration uses the released Eunomia 0.12.1 from crates.io.
 `metis-platform` and `metis-ui-lang` are the existing direct owners of
 this layout dependency. The executable source policy admits the crates.io
 Eunomia edge for those two crates. Root and standalone fuzz locks resolve
-the same Eunomia and derive packages. The Gaia mesh example continues to
-use Gaia's Atlas Git source.
+the same Eunomia and derive packages. The mesh example in `metis-ui` uses
+Gaia Mesh 0.8.0 from crates.io. Its geometry and stencil types share the
+published Aequitas 0.5.0 dependency with RITK. The source policy limits
+this registry edge to the existing example owner.

@@ -68,11 +68,17 @@ REGISTRY_BOUNDARIES = {
 }
 
 
+PUBLISHED_ATLAS_PROVIDERS = {
+    "eunomia": {"metis-platform", "metis-ui-lang"},
+    "gaia-mesh": {"metis-ui"},
+}
+
+
 def registry_boundary(package, dependency, source):
     """Determine whether a direct dependency uses its admitted registry boundary."""
-    if dependency == "eunomia":
+    if dependency in PUBLISHED_ATLAS_PROVIDERS:
         return (source == "registry+https://github.com/rust-lang/crates.io-index"
-                and package in {"metis-platform", "metis-ui-lang"})
+                and package in PUBLISHED_ATLAS_PROVIDERS[dependency])
     return source.startswith("registry+") and (package, dependency) in REGISTRY_BOUNDARIES
 
 
