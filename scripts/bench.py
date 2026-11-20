@@ -16,7 +16,8 @@ import sys
 import time
 
 sys.path.insert(0, str(pathlib.Path(__file__).resolve().parent))
-from verify import inherited_configuration, neutral_workspace
+from verification import source
+from verify import neutral_workspace
 
 ROOT = pathlib.Path(__file__).resolve().parents[1]
 OUTPUT = ROOT / "output" / "bench"
@@ -64,7 +65,7 @@ def cargo_environment():
     instead of in a repository-local `target/`.
     """
     environment = os.environ.copy()
-    target, _profiles, _configs = inherited_configuration()
+    target, _profiles, _configs = source.inherited_configuration(ROOT, environment)
     if target is not None:
         environment["CARGO_TARGET_DIR"] = str(target)
     return environment

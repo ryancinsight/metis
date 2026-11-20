@@ -45,6 +45,11 @@ class ProgressResult(unittest.TextTestResult):
         self._started_at = None
         super().stopTest(test)
 
+    def addSkip(self, test: unittest.case.TestCase, reason: str) -> None:
+        super().addSkip(test, reason)
+        self.stream.write(f"test-skip: {test.id()}: {reason}\n")
+        self.stream.flush()
+
 
 def main() -> int:
     """Discover and run every scripts test under the gate's existing policy."""

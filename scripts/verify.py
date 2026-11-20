@@ -5,16 +5,14 @@ import contextlib
 import hashlib
 import os
 import pathlib
-import re
 import shutil
 import subprocess
 import sys
 import stat
 import tomllib
 import tempfile
-from urllib.parse import unquote, urlsplit
 
-from verification import workspace
+from verification import documentation, source, workspace
 
 PHYSICAL_ROOT = pathlib.Path(__file__).resolve().parents[1]
 ROOT = PHYSICAL_ROOT
@@ -28,14 +26,6 @@ BUILD_LINK_PACKAGES = {
     "pyo3-ffi": "PyO3 interpreter FFI build contract",
     "wasm-bindgen-shared": "wasm-bindgen browser ABI build contract",
 }
-
-def resolution():
-    """Preserve every byte of the standalone lock, rejecting overlay residue."""
-    lock = LOCK.read_bytes()
-    if "unused" in tomllib.loads(lock.decode("utf-8")).get("patch", {}):
-        raise SystemExit("Cargo.lock contains Atlas overlay residue; regenerate standalone before verification")
-    return lock
-
 
 BASELINE = None
 EVIDENCE = {"schema": 1, "status": "running", "stages": {}, "commands": {}}
@@ -118,70 +108,11 @@ def evidence():
     output_path("verification.json").write_text(json.dumps(EVIDENCE, sort_keys=True, indent=2), encoding="utf-8")
 
 
-def inherited_configuration():
-    """Retain ancestor build budgets without importing their source patches."""
-    target = None
-    profiles = {}
-    configs = []
-
-    def leaves(table, prefix=()):
-        for key, value in table.items():
-            path = (*prefix, key)
-            if isinstance(value, dict):
-                yield from leaves(value, path)
-            else:
-                yield path, value
-
-    # Cargo merges ancestor configuration first, with the nearest value winning.
-    for directory in reversed((PHYSICAL_ROOT, *PHYSICAL_ROOT.parents)):
-        candidates = [directory / ".cargo" / name for name in ("config", "config.toml")]
-        config = next((path for path in candidates if path.is_file()), None)
-        if config is None:
-            continue
-        configs.append(config)
-        content = tomllib.loads(config.read_text(encoding="utf-8"))
-        configured = content.get("build", {}).get("target-dir")
-        if configured is not None:
-            target = (directory / configured).resolve()
-        profiles.update(leaves(content.get("profile", {}), ("profile",)))
-    if os.environ.get("CARGO_TARGET_DIR"):
-        target = pathlib.Path(os.environ["CARGO_TARGET_DIR"]).resolve()
-    return target, profiles, configs
-
-
 def command(arguments, *, resolve=True, tail=()):
     """Select the pinned toolchain and root manifest independently of cwd."""
     return ["rustup", "run", TOOLCHAIN, "cargo", *arguments,
             "--manifest-path", str(ROOT / "Cargo.toml"),
             *(["--locked", "--offline"] if resolve else []), *tail]
-
-
-def manual_links():
-    """Check inline Markdown file/image destinations without network requests."""
-    for document in sorted((ROOT / "docs" / "manual").rglob("*.md")):
-        for match in re.finditer(r"!?\[[^\]\n]*\]\(([^)\n]+)\)", document.read_text(encoding="utf-8")):
-            destination = match.group(1).strip().split(maxsplit=1)[0].strip("<>")
-            link = urlsplit(destination)
-            if link.scheme in ("http", "https", "mailto"):
-                continue
-            if link.scheme or link.netloc:
-                raise SystemExit(f"Unsupported manual link in {document}: {destination}")
-            target = (document.parent / unquote(link.path)).resolve() if link.path else document
-            if not target.is_relative_to(PHYSICAL_ROOT) or not target.is_file():
-                raise SystemExit(f"Missing or external manual target in {document}: {destination}")
-
-
-def citations():
-    """Refuse a gate whose cited revisions or evidence digests no longer resolve."""
-    from citations import evidence_findings, unreachable_revisions
-
-    unreachable = unreachable_revisions(ROOT)
-    mismatched, absent, verified = evidence_findings(ROOT)
-    for finding in (*unreachable, *mismatched):
-        print(f"citation: {finding}", file=sys.stderr)
-    if unreachable or mismatched:
-        raise SystemExit("Cited revisions or evidence digests no longer resolve")
-    print(f"citations: {verified} digest(s) verified; {len(absent)} artifact(s) absent on this host", flush=True)
 
 
 def run(name, args, *, cwd, environment, seconds=300, expected_exit=0, required_diagnostic=None):
@@ -207,7 +138,7 @@ def run(name, args, *, cwd, environment, seconds=300, expected_exit=0, required_
         raise SystemExit(f"{name}: exceeded {seconds}-second budget; see {log}") from error
     diagnostic = result.stdout + result.stderr
     output_path(name + ".log").write_text(diagnostic, encoding="utf-8")
-    if resolution() != BASELINE:
+    if source.resolution(LOCK) != BASELINE:
         raise SystemExit(f"{name}: Cargo changed the locked dependency graph; review and resolve before verification")
     print(f"{name}: exit {result.returncode}", flush=True)
     accepted = result.returncode == expected_exit and (required_diagnostic is None or required_diagnostic in diagnostic)
@@ -218,31 +149,6 @@ def run(name, args, *, cwd, environment, seconds=300, expected_exit=0, required_
         raise SystemExit(f"{name}: expected exit {expected_exit} and diagnostic {required_diagnostic!r}; got exit {result.returncode}")
     return result.stdout
 
-def source_state(metadata, configs):
-    inputs = {ROOT / "rust-toolchain.toml", ROOT / "metis.json", ROOT / "deny.toml", *configs}
-    inputs.update(path for path in (ROOT / "examples" / "browser").rglob("*") if path.is_file())
-    workflow_root = ROOT / ".github" / "workflows"
-    if workflow_root.is_dir():
-        inputs.update(path for path in workflow_root.iterdir()
-                      if path.is_file() and path.suffix in {".yml", ".yaml"})
-    inputs.update((ROOT / "docs").rglob("*.md"))
-    inputs.update(path for path in (ROOT / "scripts").rglob("*")
-                  if path.is_file() and "__pycache__" not in path.parts)
-    for package in metadata["packages"]:
-        if package["source"] is None:
-            manifest = pathlib.Path(package["manifest_path"])
-            inputs.add(manifest)
-            directory = manifest.parent
-            inputs.update(directory.glob("*.rs"))
-            inputs.update(directory.glob("*.md"))
-            # `fonts` holds typefaces the renderer embeds, a rendering input.
-            for folder in ("src", "tests", "examples", "scripts", "python", ".config", "fonts"):
-                inputs.update(path for path in (directory / folder).rglob("*") if path.is_file() and "__pycache__" not in path.parts)
-            if package["name"] == "metis-python":
-                inputs.add(directory / "pyproject.toml")
-    from visual import source_digest
-    return {str(path.resolve()): source_digest(path) for path in sorted(inputs)}
-
 def run_gate():
     global BASELINE, TOOLCHAIN
     parser = argparse.ArgumentParser(description=__doc__)
@@ -250,17 +156,21 @@ def run_gate():
                         help="Replace reviewed visual baselines with this run's validated captures")
     parser.add_argument("--install", action="store_true",
                         help="Also install/run/uninstall the generated per-user MSI in an isolated directory")
+    parser.add_argument("--base",
+                        help="Limit a pull-request run to package owners and their workspace consumers")
+    parser.add_argument("--phase", choices=("all", "native", "release"), default="all",
+                        help="Run all checks or one dependency-ordered hosted full-gate phase")
     arguments = parser.parse_args()
     evidence()
     # Import and configuration failures must invalidate the previous success too.
     from visual import begin_run, source_digest
     run_nonce = begin_run(OUTPUT)
     TOOLCHAIN = tomllib.loads((ROOT / "rust-toolchain.toml").read_text(encoding="utf-8"))["toolchain"]["channel"]
-    BASELINE = resolution()
+    BASELINE = source.resolution(LOCK)
     # Windows consoles may use a legacy code page; never lose the failing-test
     # diagnostic to a UnicodeEncodeError. Full UTF-8 output remains in the log.
     sys.stdout.reconfigure(errors="backslashreplace")
-    target, profiles, configs = inherited_configuration()
+    target, profiles, configs = source.inherited_configuration(PHYSICAL_ROOT, os.environ)
     environment = os.environ.copy()
     if any(environment.get(name) for name in ("RUSTC", "RUSTDOC")):
         raise SystemExit("Unset RUSTC/RUSTDOC overrides; verification requires the pinned toolchain")
@@ -289,6 +199,14 @@ def run_gate():
         def cargo(name, args, *, resolve=True, tail=()):
             return execute(name, command(args, resolve=resolve, tail=tail))
 
+        def covers(*names):
+            return selected_packages is None or bool(set(names).intersection(selected_packages))
+
+        def skip(*names):
+            for name in names:
+                EVIDENCE["stages"][name] = "skipped: outside selected gate profile"
+            evidence()
+
         host = next(line.split(": ", 1)[1] for line in execute(
             "compiler", ["rustup", "run", TOOLCHAIN, "rustc", "-vV"]
         ).splitlines() if line.startswith("host: "))
@@ -303,13 +221,24 @@ def run_gate():
         native_directory = workspace.native_build_directory(
             metadata, host, environment, explicit_target=sys.platform == "win32"
         )
-        source = source_state(metadata, configs)
+        source_inputs = source.state(ROOT, metadata, configs)
         revision = execute("revision", ["git", "rev-parse", "HEAD"], seconds=30, cwd=ROOT).strip()
-        provenance = {"mode": "standalone", "host": host, "sources": source, "run_nonce": run_nonce,
+        selected_packages = None
+        if arguments.base:
+            changed = execute("scope-diff",
+                              ["git", "diff", "--name-only", "--no-renames", "-z",
+                               f"{arguments.base}...HEAD"], seconds=30, cwd=ROOT).split("\0")
+            selected_packages = workspace.pull_request_packages(
+                metadata, ROOT, [path for path in changed if path]
+            )
+        provenance = {"mode": "standalone", "host": host, "sources": source_inputs, "run_nonce": run_nonce,
                       "revision": revision, "compiler": TOOLCHAIN,
+                      "profile": {"kind": "full" if selected_packages is None else "packages",
+                                  "phase": arguments.phase, "base": arguments.base,
+                                  "packages": list(selected_packages or ())},
                       "host_capabilities": {"focus_order": "unsupported", "accessibility_tree": "unsupported",
                                             "pointer_dispatch": "unsupported", "responsive_cancellation": "unsupported"},
-                      "source_sha256": hashlib.sha256(json.dumps(source, sort_keys=True).encode()).hexdigest(),
+                      "source_sha256": hashlib.sha256(json.dumps(source_inputs, sort_keys=True).encode()).hexdigest(),
                       "lock_sha256": source_digest(LOCK)}
         EVIDENCE.update(provenance)
         evidence()
@@ -377,23 +306,43 @@ def run_gate():
             cwd=ROOT,
         )
         execute("plan", [sys.executable, str(ROOT / "scripts" / "plan.py"), "check"], seconds=60, cwd=ROOT)
+        scope_arguments = (["--workspace"] if selected_packages is None
+                           else workspace.package_flags(selected_packages))
+        run_native = arguments.phase != "release"
+        run_followup = arguments.phase != "native"
+        run_full_release = run_followup and selected_packages is None
         # Compile the browser host in the same locked gate; runtime evidence is
         # collected by scripts/browser.py and the manual browser trace.
-        cargo("wasm-libraries", ["build", "--lib", "--target", "wasm32-unknown-unknown",
-                                 "-p", "metis-core", "-p", "metis-platform", "-p", "metis-ui-lang",
-                                 "-p", "metis-web", "-p", "metis-starter"])
-        execute("browser-assets", [sys.executable, str(ROOT / "scripts" / "browser.py"), "build"],
-                seconds=300, cwd=ROOT)
-        cargo("clippy", ["clippy", "--workspace", "--all-targets"], tail=["--", "-D", "warnings"])
-        cargo("build", ["build", "--workspace", "--bins", "--examples"])
+        wasm_packages = ("metis-core", "metis-platform", "metis-ui-lang", "metis-web", "metis-starter")
+        selected_wasm = (wasm_packages if selected_packages is None else
+                         tuple(package for package in wasm_packages if package in selected_packages))
+        if run_native and selected_wasm:
+            cargo("wasm-libraries", ["build", "--lib", "--target", "wasm32-unknown-unknown",
+                                     *workspace.package_flags(selected_wasm)])
+        else:
+            skip("wasm-libraries")
+        if run_native and covers("metis-web", "metis-starter"):
+            execute("browser-assets", [sys.executable, str(ROOT / "scripts" / "browser.py"), "build"],
+                    seconds=300, cwd=ROOT)
+        else:
+            skip("browser-assets")
+        if run_native:
+            cargo("clippy", ["clippy", *scope_arguments, "--all-targets"],
+                  tail=["--", "-D", "warnings"])
+            cargo("build", ["build", *scope_arguments, "--bins", "--examples"])
+        else:
+            skip("clippy", "build")
         native_image = native_directory / "debug" / "examples" / (
             "native_image" + (".exe" if sys.platform == "win32" else "")
         )
-        execute("native-image", [str(native_image)], seconds=60, cwd=ROOT)
+        if run_native and covers("metis-platform"):
+            execute("native-image", [str(native_image)], seconds=60, cwd=ROOT)
+        else:
+            skip("native-image")
         native_capture = native_directory / "debug" / "examples" / (
             "native_host_capture" + (".exe" if sys.platform == "win32" else "")
         )
-        if sys.platform == "win32":
+        if run_native and sys.platform == "win32" and covers("metis-platform"):
             native_output = output_path("native-host")
             execute(
                 "native-host-capture",
@@ -414,47 +363,77 @@ def run_gate():
             if native_trace.get("source_revision") != revision or native_trace.get("host_result") != "ok":
                 raise SystemExit("native-host-capture trace is not tied to the verified revision")
             EVIDENCE["native_host"] = native_trace
-        else:
+        elif sys.platform != "win32":
             EVIDENCE["stages"]["native-host-capture"] = "skipped: Windows-only host"
-        cargo("tests", ["nextest", "run", "--workspace", "--profile", "ci"])
-        cargo("quic-minimal", ["nextest", "run", "--no-default-features",
-                                "-p", "metis-backend", "-p", "metis-ipc", "--profile", "ci"])
-        execute("python-binding", [sys.executable, str(ROOT / "scripts" / "python_binding.py")], seconds=720, cwd=ROOT)
-        cargo("release-build", ["build", "--workspace", "--bins", "--release"])
-        distribution_tool = native_directory / "release" / "metis.exe"
-        execute("distribution", [sys.executable, str(ROOT / "scripts" / "distribution.py"),
-                                 "--tool", str(distribution_tool), "--output", str(OUTPUT / "distribution"),
-                                 *(["--install"] if arguments.install else [])], seconds=720)
-        cargo("release-tests", ["nextest", "run", "--workspace", "--release", "--profile", "ci"])
+        else:
+            skip("native-host-capture")
+        if run_native:
+            cargo("tests", ["nextest", "run", *scope_arguments, "--profile", "ci"])
+        else:
+            skip("tests")
+        if run_native and covers("metis-backend", "metis-ipc"):
+            cargo("quic-minimal", ["nextest", "run", "--no-default-features",
+                                    "-p", "metis-backend", "-p", "metis-ipc", "--profile", "ci"])
+        else:
+            skip("quic-minimal")
+        if run_native and covers("metis-python"):
+            execute("python-binding", [sys.executable, str(ROOT / "scripts" / "python_binding.py")],
+                    seconds=720, cwd=ROOT)
+        else:
+            skip("python-binding")
+        if run_full_release:
+            cargo("release-build", ["build", "--workspace", "--bins", "--release"])
+            distribution_tool = native_directory / "release" / "metis.exe"
+            execute("distribution", [sys.executable, str(ROOT / "scripts" / "distribution.py"),
+                                     "--tool", str(distribution_tool), "--output", str(OUTPUT / "distribution"),
+                                     *(["--install"] if arguments.install else [])], seconds=720)
+            cargo("release-tests", ["nextest", "run", "--workspace", "--release", "--profile", "ci"])
+        else:
+            skip("release-build", "distribution", "release-tests")
         # Benchmarks are local measurement instruments, so the gate proves only
         # that every bench builds and executes one iteration. Timing runs and
         # their stored baselines stay on the controlled local machine class.
-        cargo("bench-smoke", ["bench", "-p", "metis-platform", "--bench", "rasterizer"],
-              tail=("--", "--test"))
-        cargo("doctests", ["test", "--workspace", "--doc"])
-        cargo("docs", ["doc", "--workspace", "--no-deps"])
+        if run_followup and covers("metis-platform"):
+            cargo("bench-smoke", ["bench", "-p", "metis-platform", "--bench", "rasterizer"],
+                  tail=("--", "--test"))
+        else:
+            skip("bench-smoke")
+        if run_followup:
+            cargo("doctests", ["test", *scope_arguments, "--doc"])
+            cargo("docs", ["doc", *scope_arguments, "--no-deps"])
+        else:
+            skip("doctests", "docs")
         example = native_directory / "debug" / "examples" / ("clinical_infusion_workflow" + (".exe" if sys.platform == "win32" else ""))
-        execute("example", [str(example)], seconds=60, cwd=ROOT)
         image = example.with_name("image" + (".exe" if sys.platform == "win32" else ""))
-        execute("image", [str(image)], seconds=60, cwd=ROOT)
         presentation = example.with_name("presentation" + (".exe" if sys.platform == "win32" else ""))
-        with tempfile.TemporaryDirectory(prefix="metis-capture-failure-") as failure_root:
-            # A real directory at the CSV file path forces the OS write failure
-            # while the backend awaits requests. The process must collect it.
-            (pathlib.Path(failure_root) / "output" / "form.csv").mkdir(parents=True)
-            execute("capture-failure", [str(presentation)], seconds=60, cwd=failure_root,
-                    expected_exit=1, required_diagnostic="PermissionDenied" if sys.platform == "win32" else "IsADirectory")
-        execute("presentation", [str(presentation)], seconds=60, cwd=ROOT)
-        provenance_path = output_path("visual-provenance.json")
-        provenance_path.write_text(json.dumps(provenance, sort_keys=True), encoding="utf-8")
-        execute("visual", [sys.executable, str(ROOT / "scripts" / "visual.py"),
-                           "--root", str(ROOT), "--output", str(OUTPUT),
-                           "--provenance", str(provenance_path),
-                           *(["--update"] if arguments.update_snapshots else [])], seconds=60, cwd=ROOT)
-        EVIDENCE["visual"] = json.loads((OUTPUT / "visual" / "latest" / "report.json").read_text(encoding="utf-8"))
-        manual_links()
-        citations()
-        if source_state(metadata, configs) != source:
+        if run_followup and covers("metis-ui"):
+            if arguments.phase == "release":
+                cargo("examples-build", ["build", *scope_arguments, "--examples"])
+            execute("example", [str(example)], seconds=60, cwd=ROOT)
+            execute("image", [str(image)], seconds=60, cwd=ROOT)
+            with tempfile.TemporaryDirectory(prefix="metis-capture-failure-") as failure_root:
+                # A real directory at the CSV file path forces the OS write failure
+                # while the backend awaits requests. The process must collect it.
+                (pathlib.Path(failure_root) / "output" / "form.csv").mkdir(parents=True)
+                execute("capture-failure", [str(presentation)], seconds=60, cwd=failure_root,
+                        expected_exit=1,
+                        required_diagnostic=("PermissionDenied" if sys.platform == "win32"
+                                             else "IsADirectory"))
+            execute("presentation", [str(presentation)], seconds=60, cwd=ROOT)
+            provenance_path = output_path("visual-provenance.json")
+            provenance_path.write_text(json.dumps(provenance, sort_keys=True), encoding="utf-8")
+            execute("visual", [sys.executable, str(ROOT / "scripts" / "visual.py"),
+                               "--root", str(ROOT), "--output", str(OUTPUT),
+                               "--provenance", str(provenance_path),
+                               *(["--update"] if arguments.update_snapshots else [])], seconds=60, cwd=ROOT)
+            EVIDENCE["visual"] = json.loads(
+                (OUTPUT / "visual" / "latest" / "report.json").read_text(encoding="utf-8")
+            )
+        else:
+            skip("example", "image", "capture-failure", "presentation", "visual")
+        documentation.manual_links(ROOT, PHYSICAL_ROOT)
+        documentation.citations(ROOT)
+        if source.state(ROOT, metadata, configs) != source_inputs:
             raise SystemExit("Source inputs changed during verification; collect against a stable revision")
         EVIDENCE["status"] = "passed"
         evidence()
