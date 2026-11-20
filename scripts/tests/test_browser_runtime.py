@@ -22,7 +22,7 @@ from browser_runtime_cli import main
 from browser_canvas import (
     KeyboardTraceKind,
     MAX_CANVAS_ATTRIBUTES,
-    _canvas_action_offsets,
+    canvas_action_offsets,
     capture_canvas_trace,
     ensure_canvas_visible,
     run_canvas_scenario,
@@ -1423,11 +1423,48 @@ class BrowserRuntimeTests(unittest.TestCase):
         )
 
     def test_canvas_action_offsets_stay_inside_short_surfaces(self):
-        offsets = _canvas_action_offsets({"css_width": 448.8, "css_height": 82.4})
+        offsets = canvas_action_offsets(
+            {"css_width": 448.8, "css_height": 82.4}, ((24, 24), (64, 48), (64, 48))
+        )
         self.assertEqual(offsets, ((24, 24), (64, 40), (64, 40)))
 
-        tiny = _canvas_action_offsets({"css_width": 1.0, "css_height": 1.0})
+        tiny = canvas_action_offsets(
+            {"css_width": 1.0, "css_height": 1.0}, ((24, 24), (64, 48), (64, 48))
+        )
         self.assertEqual(tiny, ((0, 0), (0, 0), (0, 0)))
+
+    def test_canvas_action_offsets_preserve_order_and_centered_bounds(self):
+        canvas = {"css_width": 446.6640625, "css_height": 82.4}
+        requested = ((256, 64), (-256, -64), (-128, -128), (-128, 0), (0, 0))
+        self.assertEqual(canvas_action_offsets(canvas, requested),
+                         ((222, 40), (-222, -40), (-128, -40), (-128, 0), (0, 0)))
+        self.assertEqual(canvas_action_offsets(canvas, ()), ())
+        for width, height in ((1.0, 1.0), (2, 3), (17, 9), (448.8, 82.4)):
+            with self.subTest(width=width, height=height):
+                points = canvas_action_offsets({"css_width": width, "css_height": height}, requested)
+                for x, y in points:
+                    self.assertLess(abs(x), width / 2)
+                    self.assertLess(abs(y), height / 2)
+
+    def test_canvas_action_offsets_reject_invalid_dimensions(self):
+        for invalid in (None, True, "448", 0, -1, float("nan"), float("inf"), 16385, 1 << 4096):
+            for key in ("css_width", "css_height"):
+                canvas = {"css_width": 448, "css_height": 82}
+                canvas[key] = invalid
+                with self.subTest(key=key, invalid=repr(invalid)):
+                    with self.assertRaisesRegex(BrowserRuntimeError, key):
+                        canvas_action_offsets(canvas, ((0, 0),))
+        with self.assertRaisesRegex(BrowserRuntimeError, "css_height"):
+            canvas_action_offsets({"css_width": 448}, ((0, 0),))
+        with self.assertRaisesRegex(BrowserRuntimeError, "mapping"):
+            canvas_action_offsets(None, ((0, 0),))
+
+    def test_canvas_action_offsets_reject_invalid_points(self):
+        canvas = {"css_width": 448, "css_height": 82}
+        for points in (None, "ab", ((0,),), ((0, 1, 2),), ((0.0, 1),), ((True, 1),), (None,)):
+            with self.subTest(points=points):
+                with self.assertRaisesRegex(BrowserRuntimeError, "integer pairs"):
+                    canvas_action_offsets(canvas, points)
 
     def test_canvas_capture_scrolls_named_surface_into_view(self):
         class Client:
