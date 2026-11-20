@@ -4,12 +4,12 @@ use crate::dom::{DomDocument, DomElement, DomNode};
 use crate::parser::limit_error;
 use crate::style::{AlignItems, ComputedStyle, Display, FlexDirection, JustifyContent};
 use metis_core::error::Result;
-use metis_platform::DisplayScale;
 use metis_platform::framebuffer::Rect;
 use metis_platform::rasterizer::CornerRadius;
+use metis_platform::{DisplayScale, whole_pixels};
 use std::sync::Arc;
 
-use super::device::{add, dimension, minimum, scaled_geometry, sub, text_style, whole_pixels};
+use super::device::{add, dimension, minimum, scaled_geometry, sub, text_style};
 use super::grow::{self, GrowContainer, Grown};
 use super::intrinsic::{Sizing, border_box_width, is_visible_popover};
 use super::limits::validate_layout_tree;

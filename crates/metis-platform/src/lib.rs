@@ -6,6 +6,9 @@
 mod atomic_file;
 #[cfg(not(target_arch = "wasm32"))]
 pub mod autostart;
+mod conversion;
+#[cfg(test)]
+mod conversion_tests;
 pub mod display_scale;
 pub mod event;
 pub mod framebuffer;
@@ -34,6 +37,7 @@ pub mod native;
 
 #[cfg(not(target_arch = "wasm32"))]
 pub use autostart::{Autostart, MAX_AUTOSTART_ARGUMENT_BYTES, MAX_AUTOSTART_ARGUMENTS};
+pub use conversion::whole_pixels;
 pub use display_scale::DisplayScale;
 pub use event::PlatformEvent;
 pub use framebuffer::{Clip, Color, Damage, Framebuffer, Rect};

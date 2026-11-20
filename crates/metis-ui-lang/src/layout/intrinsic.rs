@@ -5,12 +5,12 @@
 //! a column that is the child's max-content width, the width its content
 //! occupies without wrapping.
 
-use super::device::{add, dimension, minimum, scaled_geometry, sub, text_style, whole_pixels};
+use super::device::{add, dimension, minimum, scaled_geometry, sub, text_style};
 use crate::dom::{DomElement, DomNode};
 use crate::parser::limit_error;
 use crate::style::{Display, FlexDirection, Size};
 use metis_core::error::Result;
-use metis_platform::DisplayScale;
+use metis_platform::{DisplayScale, whole_pixels};
 
 /// How an element with automatic width resolves it.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
