@@ -68,6 +68,14 @@ REGISTRY_BOUNDARIES = {
 }
 
 
+def registry_boundary(package, dependency, source):
+    """Determine whether a direct dependency uses its admitted registry boundary."""
+    if dependency == "eunomia":
+        return (source == "registry+https://github.com/rust-lang/crates.io-index"
+                and package in {"metis-platform", "metis-ui-lang"})
+    return source.startswith("registry+") and (package, dependency) in REGISTRY_BOUNDARIES
+
+
 def package_version(lock: pathlib.Path, name: str) -> str:
     """Return the one locked package version required by an external ABI tool."""
     with lock.open("rb") as source:

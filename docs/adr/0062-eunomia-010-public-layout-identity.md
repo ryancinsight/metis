@@ -111,3 +111,12 @@ advisory ignore, dependency back-pin or protected Rust change. ZIP is absent.
 The whole upload hold remains until the owner completes final source/API,
 package, native/platform/browser and exact-head hosted review/acceptance.
 The isolated supplement does not lift native QUIC promotion or service holds.
+
+## Published Eunomia provider
+
+The Atlas migration uses the released Eunomia 0.12.1 from crates.io.
+`metis-platform` and `metis-ui-lang` are the existing direct owners of
+this layout dependency. The executable source policy admits the crates.io
+Eunomia edge for those two crates. Root and standalone fuzz locks resolve
+the same Eunomia and derive packages. The Gaia mesh example continues to
+use Gaia's Atlas Git source.

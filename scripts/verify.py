@@ -318,12 +318,7 @@ def run_gate():
             if package["name"].startswith("metis"):
                 for dependency in package["dependencies"]:
                     provider = dependency.get("source") or ""
-                    # Serialization stays at declared text boundaries: the CLI
-                    # manifest and the application protocol; clinical crates
-                    # stay on the binary IPC contract.
-                    registry_boundary = provider.startswith("registry+") and (
-                        package["name"], dependency["name"]
-                    ) in workspace.REGISTRY_BOUNDARIES
+                    registry_boundary = workspace.registry_boundary(package["name"], dependency["name"], provider)
                     if provider and not provider.startswith("git+https://github.com/ryancinsight/") and not registry_boundary:
                         raise SystemExit(f"Non-Atlas direct dependency: {dependency}")
         output_path("provider-dependencies.json").write_text(json.dumps(external, indent=2), encoding="utf-8")
