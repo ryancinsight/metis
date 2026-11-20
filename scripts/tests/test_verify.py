@@ -70,6 +70,16 @@ class FormatNeutralWorkspaceTests(unittest.TestCase):
         self.assertIn(("metis-web", "unicode-segmentation"), boundaries)
         self.assertNotIn(("metis-core", "unicode-segmentation"), boundaries)
 
+    def test_published_eunomia_is_admitted_only_for_the_layout_owners(self):
+        admits = self.verify["workspace"].registry_boundary
+        crates_io = "registry+https://github.com/rust-lang/crates.io-index"
+        for owner in ("metis-platform", "metis-ui-lang"):
+            with self.subTest(owner=owner):
+                self.assertTrue(admits(owner, "eunomia", crates_io))
+                self.assertFalse(admits(owner, "eunomia", "registry+https://example.invalid/index"))
+        self.assertFalse(admits("metis-core", "eunomia", crates_io))
+        self.assertFalse(admits("metis-ui", "gaia-mesh", crates_io))
+
 
 class BootstrapEvidenceTests(unittest.TestCase):
     """A failed new invocation must never retain an earlier green report."""
