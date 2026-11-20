@@ -81,6 +81,58 @@ class FormatNeutralWorkspaceTests(unittest.TestCase):
         self.assertFalse(admits("metis-ui", "gaia-mesh", crates_io))
 
 
+class PullRequestPackageTests(unittest.TestCase):
+    """Select package owners and transitive workspace consumers."""
+
+    @classmethod
+    def setUpClass(cls):
+        cls.verify = runpy.run_path(str(SCRIPTS / "verify.py"))
+        root = cls.verify["ROOT"]
+        specifications = (
+            ("root", "metis-ui", "", "src/lib.rs"),
+            ("core", "metis-core", "crates/metis-core", "src/lib.rs"),
+            ("platform", "metis-platform", "crates/metis-platform", "src/lib.rs"),
+            ("app", "metis-app", "crates/metis-app", "src/main.rs"),
+        )
+        cls.metadata = {
+            "packages": [
+                {"id": identifier, "name": name,
+                 "manifest_path": str(root / directory / "Cargo.toml"),
+                 "targets": [{"src_path": str(root / directory / target)}]}
+                for identifier, name, directory, target in specifications
+            ],
+            "workspace_members": ["root", "core", "platform", "app"],
+            "resolve": {"nodes": [
+                {"id": "root", "dependencies": ["core"]},
+                {"id": "core", "dependencies": []},
+                {"id": "platform", "dependencies": ["core"]},
+                {"id": "app", "dependencies": ["platform"]},
+            ]},
+        }
+
+    def test_changes_select_reverse_consumers_not_dependencies(self):
+        select = self.verify["workspace"].pull_request_packages
+        cases = (
+            ("crates/metis-platform/src/typeface/text.rs", ("metis-app", "metis-platform")),
+            ("crates/metis-core/src/lib.rs",
+             ("metis-app", "metis-core", "metis-platform", "metis-ui")),
+        )
+        for path, expected in cases:
+            with self.subTest(path=path):
+                self.assertEqual(select(self.metadata, self.verify["ROOT"], [path]), expected)
+        self.assertEqual(self.verify["workspace"].package_flags(cases[0][1]),
+                         ["-p", "metis-app", "-p", "metis-platform"])
+
+    def test_root_target_and_unowned_input_take_distinct_paths(self):
+        select = self.verify["workspace"].pull_request_packages
+        root = self.verify["ROOT"]
+        self.assertEqual(select(self.metadata, root, ["src/lib.rs"]), ("metis-ui",))
+        self.assertIsNone(select(self.metadata, root, ["scripts/verify.py"]))
+        self.assertIsNone(select(self.metadata, root, []))
+        with self.assertRaisesRegex(ValueError, "invalid changed path"):
+            select(self.metadata, root, ["../outside.rs"])
+
+
 class BootstrapEvidenceTests(unittest.TestCase):
     """A failed new invocation must never retain an earlier green report."""
 
@@ -217,6 +269,9 @@ class WorkflowContractTests(unittest.TestCase):
     def setUpClass(cls):
         cls.workflow = SCRIPTS.parent / ".github" / "workflows" / "ci.yml"
         cls.source = cls.workflow.read_text(encoding="utf-8")
+        cls.windows_workflow = cls.workflow.with_name("windows-gate.yml")
+        cls.windows_source = cls.windows_workflow.read_text(encoding="utf-8")
+        cls.pipeline = cls.source + "\n" + cls.windows_source
 
     def test_one_pinned_pipeline_covers_supported_targets(self):
         required = (
@@ -229,7 +284,10 @@ class WorkflowContractTests(unittest.TestCase):
             "permissions:\n  contents: read",
             "concurrency:",
             "cancel-in-progress:",
-            "python scripts/verify.py --install",
+            "uses: ./.github/workflows/windows-gate.yml",
+            "phase: native",
+            "phase: release",
+            "python @arguments",
             "taiki-e/install-action@a6b2e2dcd845ddd7f509ce4f3ed3d922b80cc5d9",
             "cargo-nextest@0.9.143",
             "cargo-deny@0.20.2",
@@ -254,16 +312,17 @@ class WorkflowContractTests(unittest.TestCase):
         )
         for fragment in required:
             with self.subTest(fragment=fragment):
-                self.assertIn(fragment, self.source)
+                self.assertIn(fragment, self.pipeline)
 
     def test_gate_tools_use_release_binaries_with_checksums(self):
-        self.assertNotIn("cargo install cargo-nextest", self.source)
-        self.assertNotIn("cargo install cargo-deny", self.source)
-        self.assertNotIn("cargo install wasm-bindgen-cli", self.source)
-        self.assertIn("checksum: true", self.source)
+        self.assertNotIn("cargo install cargo-nextest", self.pipeline)
+        self.assertNotIn("cargo install cargo-deny", self.pipeline)
+        self.assertNotIn("cargo install wasm-bindgen-cli", self.pipeline)
+        self.assertIn("checksum: true", self.windows_source)
 
     def test_external_actions_and_guards_are_revision_pinned(self):
-        references = re.findall(r"^\s*(?:-\s+)?uses:\s+([^@\s]+)@([^\s#]+)", self.source, re.MULTILINE)
+        references = re.findall(r"^\s*(?:-\s+)?uses:\s+([^@\s]+)@([^\s#]+)",
+                                self.pipeline, re.MULTILINE)
         self.assertGreaterEqual(len(references), 4)
         for action, revision in references:
             with self.subTest(action=action):
@@ -292,14 +351,16 @@ class WorkflowContractTests(unittest.TestCase):
             block = re.search(rf"^  {re.escape(job)}:\n.*?(?=^  [\w-]+:|\Z)", self.source, re.MULTILINE | re.DOTALL)
             self.assertIsNotNone(block, job)
             self.assertIn(draft_guard, block.group(), job)
-        verify = self.source.split("\n  verify:\n", 1)[1].split("\n  apple:\n", 1)[0]
-        self.assertIn("github.event_name != 'schedule'", verify)
-        self.assertIn("github.event_name == 'merge_group'", verify)
-        self.assertIn("needs.changes.outputs.code == 'true'", verify)
+        native = self.source.split("\n  verify-native:\n", 1)[1].split("\n  verify-release:\n", 1)[0]
+        self.assertIn("github.event.pull_request.draft == false", native)
+        self.assertIn("github.event_name != 'schedule'", native)
+        self.assertIn("github.event_name == 'merge_group'", native)
+        self.assertIn("needs.changes.outputs.code == 'true'", native)
         self.assertIn("merge_group:", self.source)
         self.assertIn("github.event_name == 'pull_request' && github.event.pull_request.draft == false", self.source)
         self.assertNotIn("pull_request_target", self.source)
-        self.assertIn("runs-on: windows-latest", self.source)
+        self.assertIn("runs-on: windows-latest", self.windows_source)
+        self.assertIn("timeout-minutes: 20", self.windows_source)
 
     def test_scheduled_fuzz_campaign_is_pinned_and_bounded(self):
         for fragment in (

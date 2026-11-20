@@ -144,17 +144,17 @@ class RequiredGateTests(unittest.TestCase):
         for state in ("failure", "cancelled"):
             with self.subTest(state=state):
                 results = dict(passed)
-                results["verify"] = {"result": state}
+                results["verify-native"] = {"result": state}
                 outcome = self.run_gate(results)
                 self.assertEqual(outcome.returncode, 1)
-                self.assertIn("verify", outcome.stderr)
+                self.assertIn("verify-native", outcome.stderr)
 
         draft = self.run_gate(passed, draft=True)
         self.assertEqual(draft.returncode, 1)
         self.assertIn("draft pull requests", draft.stderr)
 
         incomplete = dict(passed)
-        incomplete.pop("verify")
+        incomplete.pop("verify-native")
         for results in (incomplete, {}):
             with self.subTest(results=results):
                 outcome = self.run_gate(results)
@@ -162,10 +162,10 @@ class RequiredGateTests(unittest.TestCase):
                 self.assertIn("job set", outcome.stderr)
 
         unknown = dict(passed)
-        unknown["verify"] = {"result": "neutral"}
+        unknown["verify-native"] = {"result": "neutral"}
         outcome = self.run_gate(unknown)
         self.assertEqual(outcome.returncode, 1)
-        self.assertIn("verify", outcome.stderr)
+        self.assertIn("verify-native", outcome.stderr)
 
     def test_required_workflow_uses_job_level_path_filtering(self):
         triggers = self.source.split("\npermissions:\n", 1)[0]
@@ -207,40 +207,22 @@ class RequiredGateTests(unittest.TestCase):
                     "code=" + str(expected).lower(),
                 )
 
-    def test_push_looks_up_a_verified_tree_and_the_windows_gate_honors_it(self):
-        changes = self.source.split("\n  changes:\n", 1)[1].split("\n  verify:\n", 1)[0]
-        verify = self.source.split("\n  verify:\n", 1)[1].split("\n  workflow-lint:\n", 1)[0]
-        self.assertIn("      actions: read", changes)
-        self.assertIn("tree: ${{ steps.tree.outputs.tree }}", changes)
-        self.assertIn("verified: ${{ steps.verified.outputs.verified }}", changes)
-        lookup = changes.split("      - name: Look up a pull-request run", 1)[1].split(
-            "\n      - name: Determine changed paths", 1
+    def test_pull_requests_and_landing_pushes_use_distinct_gate_scopes(self):
+        native = self.source.split("\n  verify-native:\n", 1)[1].split(
+            "\n  verify-release:\n", 1
         )[0]
-        self.assertIn("if: github.event_name == 'push'", lookup)
-        self.assertIn("id: verified", lookup)
-        self.assertIn("python3 scripts/verified_tree.py", lookup)
-        self.assertIn('--tree "$TREE"', lookup)
-        self.assertIn("(github.event_name != 'push' || needs.changes.outputs.verified != 'true')", verify)
-        # Scheduled, dispatched and merge-group runs never read the marker.
-        self.assertIn("github.event_name == 'workflow_dispatch' ||", verify)
-        self.assertIn("github.event_name == 'merge_group' ||", verify)
-
-    def test_gate_records_the_verified_tree_only_after_a_green_pull_request(self):
-        marker = "verified-tree-${{ needs.changes.outputs.tree }}"
-        steps = self.block.split("\n      - name: ")[1:]
-        recording = [step for step in steps if marker in step or "verified-tree.txt" in step]
-        self.assertEqual(len(recording), 2)
-        for step in recording:
-            with self.subTest(step=step.splitlines()[0]):
-                self.assertIn(
-                    "if: github.event_name == 'pull_request' && needs.verify.result == 'success'",
-                    step,
-                )
-        # A step with no `if` implies success(), so the result check above it
-        # has already passed before the marker is written.
-        self.assertTrue(steps[0].startswith("Check required job results"))
-        self.assertNotIn("always()", "".join(recording))
-        self.assertIn(marker, "".join(recording))
+        release = self.source.split("\n  verify-release:\n", 1)[1].split(
+            "\n  apple:\n", 1
+        )[0]
+        self.assertIn("github.event.pull_request.draft == false", native)
+        self.assertIn("phase: native", native)
+        self.assertIn("base: ${{ github.event_name == 'pull_request'", native)
+        self.assertIn("needs: [changes, verify-native]", release)
+        self.assertIn("needs.verify-native.result == 'success'", release)
+        self.assertIn("phase: release", release)
+        self.assertIn("base: ${{ github.event_name == 'pull_request'", release)
+        self.assertNotIn("verified-tree", self.source)
+        self.assertFalse((REPOSITORY / "scripts" / "verified_tree.py").exists())
 
     def test_fuzz_campaign_follows_the_harness_for_pull_requests(self):
         cases = (
@@ -263,8 +245,8 @@ class RequiredGateTests(unittest.TestCase):
         self.assertIn("github.event_name == 'workflow_dispatch'", fuzz)
 
     def test_windows_and_semver_skip_documentation_only_changes(self):
-        verify = self.source.split("\n  verify:\n", 1)[1].split(
-            "\n  workflow-lint:\n", 1
+        verify = self.source.split("\n  verify-native:\n", 1)[1].split(
+            "\n  verify-release:\n", 1
         )[0]
         semver = self.source.split("\n  semver:\n", 1)[1].split(
             "\n  fuzz:\n", 1

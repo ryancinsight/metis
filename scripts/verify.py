@@ -243,6 +243,7 @@ def source_state(metadata, configs):
     from visual import source_digest
     return {str(path.resolve()): source_digest(path) for path in sorted(inputs)}
 
+
 def run_gate():
     global BASELINE, TOOLCHAIN
     parser = argparse.ArgumentParser(description=__doc__)
@@ -250,6 +251,10 @@ def run_gate():
                         help="Replace reviewed visual baselines with this run's validated captures")
     parser.add_argument("--install", action="store_true",
                         help="Also install/run/uninstall the generated per-user MSI in an isolated directory")
+    parser.add_argument("--base",
+                        help="Limit a pull-request run to package owners and their workspace consumers")
+    parser.add_argument("--phase", choices=("all", "native", "release"), default="all",
+                        help="Run all checks or one dependency-ordered hosted full-gate phase")
     arguments = parser.parse_args()
     evidence()
     # Import and configuration failures must invalidate the previous success too.
@@ -289,6 +294,14 @@ def run_gate():
         def cargo(name, args, *, resolve=True, tail=()):
             return execute(name, command(args, resolve=resolve, tail=tail))
 
+        def covers(*names):
+            return selected_packages is None or bool(set(names).intersection(selected_packages))
+
+        def skip(*names):
+            for name in names:
+                EVIDENCE["stages"][name] = "skipped: outside selected gate profile"
+            evidence()
+
         host = next(line.split(": ", 1)[1] for line in execute(
             "compiler", ["rustup", "run", TOOLCHAIN, "rustc", "-vV"]
         ).splitlines() if line.startswith("host: "))
@@ -305,8 +318,19 @@ def run_gate():
         )
         source = source_state(metadata, configs)
         revision = execute("revision", ["git", "rev-parse", "HEAD"], seconds=30, cwd=ROOT).strip()
+        selected_packages = None
+        if arguments.base:
+            changed = execute("scope-diff",
+                              ["git", "diff", "--name-only", "--no-renames", "-z",
+                               f"{arguments.base}...HEAD"], seconds=30, cwd=ROOT).split("\0")
+            selected_packages = workspace.pull_request_packages(
+                metadata, ROOT, [path for path in changed if path]
+            )
         provenance = {"mode": "standalone", "host": host, "sources": source, "run_nonce": run_nonce,
                       "revision": revision, "compiler": TOOLCHAIN,
+                      "profile": {"kind": "full" if selected_packages is None else "packages",
+                                  "phase": arguments.phase, "base": arguments.base,
+                                  "packages": list(selected_packages or ())},
                       "host_capabilities": {"focus_order": "unsupported", "accessibility_tree": "unsupported",
                                             "pointer_dispatch": "unsupported", "responsive_cancellation": "unsupported"},
                       "source_sha256": hashlib.sha256(json.dumps(source, sort_keys=True).encode()).hexdigest(),
@@ -377,23 +401,43 @@ def run_gate():
             cwd=ROOT,
         )
         execute("plan", [sys.executable, str(ROOT / "scripts" / "plan.py"), "check"], seconds=60, cwd=ROOT)
+        scope_arguments = (["--workspace"] if selected_packages is None
+                           else workspace.package_flags(selected_packages))
+        run_native = arguments.phase != "release"
+        run_followup = arguments.phase != "native"
+        run_full_release = run_followup and selected_packages is None
         # Compile the browser host in the same locked gate; runtime evidence is
         # collected by scripts/browser.py and the manual browser trace.
-        cargo("wasm-libraries", ["build", "--lib", "--target", "wasm32-unknown-unknown",
-                                 "-p", "metis-core", "-p", "metis-platform", "-p", "metis-ui-lang",
-                                 "-p", "metis-web", "-p", "metis-starter"])
-        execute("browser-assets", [sys.executable, str(ROOT / "scripts" / "browser.py"), "build"],
-                seconds=300, cwd=ROOT)
-        cargo("clippy", ["clippy", "--workspace", "--all-targets"], tail=["--", "-D", "warnings"])
-        cargo("build", ["build", "--workspace", "--bins", "--examples"])
+        wasm_packages = ("metis-core", "metis-platform", "metis-ui-lang", "metis-web", "metis-starter")
+        selected_wasm = (wasm_packages if selected_packages is None else
+                         tuple(package for package in wasm_packages if package in selected_packages))
+        if run_native and selected_wasm:
+            cargo("wasm-libraries", ["build", "--lib", "--target", "wasm32-unknown-unknown",
+                                     *workspace.package_flags(selected_wasm)])
+        else:
+            skip("wasm-libraries")
+        if run_native and covers("metis-web", "metis-starter"):
+            execute("browser-assets", [sys.executable, str(ROOT / "scripts" / "browser.py"), "build"],
+                    seconds=300, cwd=ROOT)
+        else:
+            skip("browser-assets")
+        if run_native:
+            cargo("clippy", ["clippy", *scope_arguments, "--all-targets"],
+                  tail=["--", "-D", "warnings"])
+            cargo("build", ["build", *scope_arguments, "--bins", "--examples"])
+        else:
+            skip("clippy", "build")
         native_image = native_directory / "debug" / "examples" / (
             "native_image" + (".exe" if sys.platform == "win32" else "")
         )
-        execute("native-image", [str(native_image)], seconds=60, cwd=ROOT)
+        if run_native and covers("metis-platform"):
+            execute("native-image", [str(native_image)], seconds=60, cwd=ROOT)
+        else:
+            skip("native-image")
         native_capture = native_directory / "debug" / "examples" / (
             "native_host_capture" + (".exe" if sys.platform == "win32" else "")
         )
-        if sys.platform == "win32":
+        if run_native and sys.platform == "win32" and covers("metis-platform"):
             native_output = output_path("native-host")
             execute(
                 "native-host-capture",
@@ -414,44 +458,74 @@ def run_gate():
             if native_trace.get("source_revision") != revision or native_trace.get("host_result") != "ok":
                 raise SystemExit("native-host-capture trace is not tied to the verified revision")
             EVIDENCE["native_host"] = native_trace
-        else:
+        elif sys.platform != "win32":
             EVIDENCE["stages"]["native-host-capture"] = "skipped: Windows-only host"
-        cargo("tests", ["nextest", "run", "--workspace", "--profile", "ci"])
-        cargo("quic-minimal", ["nextest", "run", "--no-default-features",
-                                "-p", "metis-backend", "-p", "metis-ipc", "--profile", "ci"])
-        execute("python-binding", [sys.executable, str(ROOT / "scripts" / "python_binding.py")], seconds=720, cwd=ROOT)
-        cargo("release-build", ["build", "--workspace", "--bins", "--release"])
-        distribution_tool = native_directory / "release" / "metis.exe"
-        execute("distribution", [sys.executable, str(ROOT / "scripts" / "distribution.py"),
-                                 "--tool", str(distribution_tool), "--output", str(OUTPUT / "distribution"),
-                                 *(["--install"] if arguments.install else [])], seconds=720)
-        cargo("release-tests", ["nextest", "run", "--workspace", "--release", "--profile", "ci"])
+        else:
+            skip("native-host-capture")
+        if run_native:
+            cargo("tests", ["nextest", "run", *scope_arguments, "--profile", "ci"])
+        else:
+            skip("tests")
+        if run_native and covers("metis-backend", "metis-ipc"):
+            cargo("quic-minimal", ["nextest", "run", "--no-default-features",
+                                    "-p", "metis-backend", "-p", "metis-ipc", "--profile", "ci"])
+        else:
+            skip("quic-minimal")
+        if run_native and covers("metis-python"):
+            execute("python-binding", [sys.executable, str(ROOT / "scripts" / "python_binding.py")],
+                    seconds=720, cwd=ROOT)
+        else:
+            skip("python-binding")
+        if run_full_release:
+            cargo("release-build", ["build", "--workspace", "--bins", "--release"])
+            distribution_tool = native_directory / "release" / "metis.exe"
+            execute("distribution", [sys.executable, str(ROOT / "scripts" / "distribution.py"),
+                                     "--tool", str(distribution_tool), "--output", str(OUTPUT / "distribution"),
+                                     *(["--install"] if arguments.install else [])], seconds=720)
+            cargo("release-tests", ["nextest", "run", "--workspace", "--release", "--profile", "ci"])
+        else:
+            skip("release-build", "distribution", "release-tests")
         # Benchmarks are local measurement instruments, so the gate proves only
         # that every bench builds and executes one iteration. Timing runs and
         # their stored baselines stay on the controlled local machine class.
-        cargo("bench-smoke", ["bench", "-p", "metis-platform", "--bench", "rasterizer"],
-              tail=("--", "--test"))
-        cargo("doctests", ["test", "--workspace", "--doc"])
-        cargo("docs", ["doc", "--workspace", "--no-deps"])
+        if run_followup and covers("metis-platform"):
+            cargo("bench-smoke", ["bench", "-p", "metis-platform", "--bench", "rasterizer"],
+                  tail=("--", "--test"))
+        else:
+            skip("bench-smoke")
+        if run_followup:
+            cargo("doctests", ["test", *scope_arguments, "--doc"])
+            cargo("docs", ["doc", *scope_arguments, "--no-deps"])
+        else:
+            skip("doctests", "docs")
         example = native_directory / "debug" / "examples" / ("clinical_infusion_workflow" + (".exe" if sys.platform == "win32" else ""))
-        execute("example", [str(example)], seconds=60, cwd=ROOT)
         image = example.with_name("image" + (".exe" if sys.platform == "win32" else ""))
-        execute("image", [str(image)], seconds=60, cwd=ROOT)
         presentation = example.with_name("presentation" + (".exe" if sys.platform == "win32" else ""))
-        with tempfile.TemporaryDirectory(prefix="metis-capture-failure-") as failure_root:
-            # A real directory at the CSV file path forces the OS write failure
-            # while the backend awaits requests. The process must collect it.
-            (pathlib.Path(failure_root) / "output" / "form.csv").mkdir(parents=True)
-            execute("capture-failure", [str(presentation)], seconds=60, cwd=failure_root,
-                    expected_exit=1, required_diagnostic="PermissionDenied" if sys.platform == "win32" else "IsADirectory")
-        execute("presentation", [str(presentation)], seconds=60, cwd=ROOT)
-        provenance_path = output_path("visual-provenance.json")
-        provenance_path.write_text(json.dumps(provenance, sort_keys=True), encoding="utf-8")
-        execute("visual", [sys.executable, str(ROOT / "scripts" / "visual.py"),
-                           "--root", str(ROOT), "--output", str(OUTPUT),
-                           "--provenance", str(provenance_path),
-                           *(["--update"] if arguments.update_snapshots else [])], seconds=60, cwd=ROOT)
-        EVIDENCE["visual"] = json.loads((OUTPUT / "visual" / "latest" / "report.json").read_text(encoding="utf-8"))
+        if run_followup and covers("metis-ui"):
+            if arguments.phase == "release":
+                cargo("release-examples", ["build", "--workspace", "--examples"])
+            execute("example", [str(example)], seconds=60, cwd=ROOT)
+            execute("image", [str(image)], seconds=60, cwd=ROOT)
+            with tempfile.TemporaryDirectory(prefix="metis-capture-failure-") as failure_root:
+                # A real directory at the CSV file path forces the OS write failure
+                # while the backend awaits requests. The process must collect it.
+                (pathlib.Path(failure_root) / "output" / "form.csv").mkdir(parents=True)
+                execute("capture-failure", [str(presentation)], seconds=60, cwd=failure_root,
+                        expected_exit=1,
+                        required_diagnostic=("PermissionDenied" if sys.platform == "win32"
+                                             else "IsADirectory"))
+            execute("presentation", [str(presentation)], seconds=60, cwd=ROOT)
+            provenance_path = output_path("visual-provenance.json")
+            provenance_path.write_text(json.dumps(provenance, sort_keys=True), encoding="utf-8")
+            execute("visual", [sys.executable, str(ROOT / "scripts" / "visual.py"),
+                               "--root", str(ROOT), "--output", str(OUTPUT),
+                               "--provenance", str(provenance_path),
+                               *(["--update"] if arguments.update_snapshots else [])], seconds=60, cwd=ROOT)
+            EVIDENCE["visual"] = json.loads(
+                (OUTPUT / "visual" / "latest" / "report.json").read_text(encoding="utf-8")
+            )
+        else:
+            skip("example", "image", "capture-failure", "presentation", "visual")
         manual_links()
         citations()
         if source_state(metadata, configs) != source:

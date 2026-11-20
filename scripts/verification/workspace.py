@@ -16,6 +16,64 @@ def native_build_directory(metadata, host, environment, *, explicit_target):
     return directory
 
 
+def pull_request_packages(metadata, root, changed_paths):
+    """Select changed workspace packages and every workspace consumer."""
+    members = set(metadata["workspace_members"])
+    packages = {package["id"]: package for package in metadata["packages"]
+                if package["id"] in members}
+    ownership = {}
+    for package_id, package in packages.items():
+        manifest = pathlib.Path(package["manifest_path"])
+        directory = pathlib.PurePosixPath(manifest.relative_to(root).parent.as_posix())
+        if directory != pathlib.PurePosixPath("."):
+            ownership[package_id] = (directory,)
+        else:
+            targets = tuple(
+                pathlib.PurePosixPath(
+                    pathlib.Path(target["src_path"]).relative_to(root).as_posix()
+                )
+                for target in package["targets"]
+            )
+            roots = tuple(pathlib.PurePosixPath(path.parts[0]) for path in targets
+                          if path.parts and path.parts[0] in {"src", "tests", "benches"})
+            ownership[package_id] = targets + roots
+
+    direct = set()
+    for raw_path in changed_paths:
+        path = pathlib.PurePosixPath(raw_path)
+        if path.is_absolute() or ".." in path.parts:
+            raise ValueError(f"Git reported an invalid changed path: {raw_path!r}")
+        owners = {package_id for package_id, roots in ownership.items()
+                  if any(path == owned or owned in path.parents for owned in roots)}
+        if len(owners) != 1:
+            return None
+        direct.update(owners)
+    if not direct:
+        return None
+
+    consumers = {package_id: set() for package_id in packages}
+    for node in metadata["resolve"]["nodes"]:
+        if node["id"] not in packages:
+            continue
+        for dependency in node["dependencies"]:
+            if dependency in packages:
+                consumers[dependency].add(node["id"])
+    selected = set(direct)
+    pending = list(direct)
+    while pending:
+        dependency = pending.pop()
+        for consumer in consumers[dependency]:
+            if consumer not in selected:
+                selected.add(consumer)
+                pending.append(consumer)
+    return tuple(sorted(packages[package_id]["name"] for package_id in selected))
+
+
+def package_flags(packages):
+    """Return Cargo package selectors for one pull-request closure."""
+    return [argument for package in packages for argument in ("-p", package)]
+
+
 REGISTRY_BOUNDARIES = {
     # Native entry logging and test span capture use the canonical tracing
     # crates; no Atlas provider supplies a tracing subscriber implementation.

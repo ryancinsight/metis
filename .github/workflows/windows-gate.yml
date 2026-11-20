@@ -1,0 +1,89 @@
+name: Windows gate
+
+on:
+  workflow_call:
+    inputs:
+      phase:
+        required: true
+        type: string
+      base:
+        type: string
+        default: ''
+
+permissions:
+  contents: read
+
+jobs:
+  gate:
+    name: Windows ${{ inputs.phase }} gate
+    runs-on: windows-latest
+    timeout-minutes: 20
+    env:
+      CARGO_TERM_COLOR: always
+      CARGO_INCREMENTAL: '0'
+      RUST_BACKTRACE: '1'
+    steps:
+      - name: Checkout
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+      - name: Setup Python
+        uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
+        with:
+          python-version: '3.13'
+      - name: Install Python binding gate tools
+        if: inputs.phase != 'release'
+        shell: pwsh
+        run: python -m pip install --disable-pip-version-check "maturin==1.14.1" "pytest==8.4.2"
+      - name: Setup Rust
+        uses: dtolnay/rust-toolchain@4cda84d5c5c54efe2404f9d843567869ab1699d4 # stable
+        with:
+          toolchain: 1.97.0
+          components: rustfmt, clippy
+          targets: wasm32-unknown-unknown
+      - name: Restore the compile cache (keyed on lockfile and toolchain)
+        uses: Swatinem/rust-cache@6323deb102c322ba6fcbdcafc7e3dddab59af2b6 # v2.9.2
+        with:
+          shared-key: metis-windows
+          save-if: ${{ github.ref == 'refs/heads/main' && inputs.phase == 'native' }}
+      - name: Prime locked Cargo sources
+        shell: pwsh
+        run: rustup run 1.97.0 cargo fetch --locked --manifest-path Cargo.toml
+      - name: Install pinned gate tools
+        uses: taiki-e/install-action@a6b2e2dcd845ddd7f509ce4f3ed3d922b80cc5d9 # v2.84.0
+        with:
+          tool: |
+            cargo-nextest@0.9.143
+            cargo-deny@0.20.2
+            wasm-bindgen@0.2.129
+          checksum: true
+      - name: Prime advisory database
+        shell: pwsh
+        run: cargo-deny fetch db
+      - name: Run the committed Metis gate
+        shell: pwsh
+        env:
+          METIS_GATE_BASE: ${{ inputs.base }}
+          METIS_GATE_PHASE: ${{ inputs.phase }}
+        run: |
+          $arguments = @('scripts/verify.py')
+          if ($env:METIS_GATE_PHASE -eq 'release') { $arguments += '--install' }
+          if ($env:METIS_GATE_BASE) { $arguments += @('--base', $env:METIS_GATE_BASE) }
+          if ($env:METIS_GATE_PHASE -ne 'all') { $arguments += @('--phase', $env:METIS_GATE_PHASE) }
+          python @arguments
+      - name: Upload gate evidence
+        if: always()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        with:
+          name: metis-verification-${{ inputs.phase }}-${{ github.run_id }}
+          path: |
+            output/verification.json
+            output/*.log
+            output/provider-dependencies.json
+            output/build-links.json
+            output/visual/latest/**
+            output/distribution/latest/**
+            output/browser/**
+          if-no-files-found: ignore
+          retention-days: 7
