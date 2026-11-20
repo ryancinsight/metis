@@ -137,22 +137,3 @@ pub(super) fn text_style(style: &ComputedStyle, display_scale: DisplayScale) -> 
     };
     Ok(TextStyle::new(style.text_color, size).with_weight(weight))
 }
-
-/// Rounds a nonnegative device-pixel extent up to whole pixels, so a box
-/// always holds what it measures.
-///
-/// # Errors
-/// Returns a layout limit error when the extent exceeds the coordinate range.
-pub(super) fn whole_pixels(extent: f64) -> Result<i32> {
-    let whole = extent.ceil();
-    if !(0.0..=f64::from(i32::MAX)).contains(&whole) {
-        return Err(limit_error("Text extent exceeds coordinate range"));
-    }
-    // The guard bounds a whole value to the nonnegative i32 range.
-    #[expect(
-        clippy::cast_possible_truncation,
-        reason = "a whole value checked against the i32 range"
-    )]
-    let pixels = whole as i32;
-    Ok(pixels)
-}

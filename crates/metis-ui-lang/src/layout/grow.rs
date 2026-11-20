@@ -10,13 +10,13 @@
 //! A container none of whose children grows is not planned at all, so every
 //! document that does not declare `flex-grow` lays out exactly as before.
 
-use super::device::{add, dimension, minimum, scaled_geometry, sub, text_style, whole_pixels};
+use super::device::{add, dimension, minimum, scaled_geometry, sub, text_style};
 use super::intrinsic::{Sizing, border_box_width, is_visible_popover, max_content_height};
 use crate::dom::{DomElement, DomNode};
 use crate::parser::limit_error;
 use crate::style::{ComputedStyle, Display, FlexGrow};
 use metis_core::error::Result;
-use metis_platform::DisplayScale;
+use metis_platform::{DisplayScale, whole_pixels};
 
 /// A main-axis extent a container fixes for one child before laying it out.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
