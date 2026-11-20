@@ -144,17 +144,17 @@ class RequiredGateTests(unittest.TestCase):
         for state in ("failure", "cancelled"):
             with self.subTest(state=state):
                 results = dict(passed)
-                results["verify"] = {"result": state}
+                results["verify-native"] = {"result": state}
                 outcome = self.run_gate(results)
                 self.assertEqual(outcome.returncode, 1)
-                self.assertIn("verify", outcome.stderr)
+                self.assertIn("verify-native", outcome.stderr)
 
         draft = self.run_gate(passed, draft=True)
         self.assertEqual(draft.returncode, 1)
         self.assertIn("draft pull requests", draft.stderr)
 
         incomplete = dict(passed)
-        incomplete.pop("verify")
+        incomplete.pop("verify-native")
         for results in (incomplete, {}):
             with self.subTest(results=results):
                 outcome = self.run_gate(results)
@@ -162,10 +162,10 @@ class RequiredGateTests(unittest.TestCase):
                 self.assertIn("job set", outcome.stderr)
 
         unknown = dict(passed)
-        unknown["verify"] = {"result": "neutral"}
+        unknown["verify-native"] = {"result": "neutral"}
         outcome = self.run_gate(unknown)
         self.assertEqual(outcome.returncode, 1)
-        self.assertIn("verify", outcome.stderr)
+        self.assertIn("verify-native", outcome.stderr)
 
     def test_required_workflow_uses_job_level_path_filtering(self):
         triggers = self.source.split("\npermissions:\n", 1)[0]
@@ -207,15 +207,22 @@ class RequiredGateTests(unittest.TestCase):
                     "code=" + str(expected).lower(),
                 )
 
-    def test_landing_push_always_runs_the_windows_gate(self):
-        changes = self.source.split("\n  changes:\n", 1)[1].split("\n  verify:\n", 1)[0]
-        verify = self.source.split("\n  verify:\n", 1)[1].split("\n  workflow-lint:\n", 1)[0]
-        self.assertNotIn("actions: read", changes)
-        self.assertNotIn("verified", changes)
+    def test_pull_requests_and_landing_pushes_use_distinct_gate_scopes(self):
+        native = self.source.split("\n  verify-native:\n", 1)[1].split(
+            "\n  verify-release:\n", 1
+        )[0]
+        release = self.source.split("\n  verify-release:\n", 1)[1].split(
+            "\n  apple:\n", 1
+        )[0]
+        self.assertIn("github.event.pull_request.draft == false", native)
+        self.assertIn("phase: native", native)
+        self.assertIn("base: ${{ github.event_name == 'pull_request'", native)
+        self.assertIn("needs: [changes, verify-native]", release)
+        self.assertIn("needs.verify-native.result == 'success'", release)
+        self.assertIn("phase: release", release)
+        self.assertIn("base: ${{ github.event_name == 'pull_request'", release)
         self.assertNotIn("verified-tree", self.source)
-        self.assertIn("needs.changes.outputs.code == 'true'", verify)
-        self.assertIn("github.event_name == 'workflow_dispatch' ||", verify)
-        self.assertIn("github.event_name == 'merge_group' ||", verify)
+        self.assertFalse((REPOSITORY / "scripts" / "verified_tree.py").exists())
 
     def test_fuzz_campaign_follows_the_harness_for_pull_requests(self):
         cases = (
@@ -238,8 +245,8 @@ class RequiredGateTests(unittest.TestCase):
         self.assertIn("github.event_name == 'workflow_dispatch'", fuzz)
 
     def test_windows_and_semver_skip_documentation_only_changes(self):
-        verify = self.source.split("\n  verify:\n", 1)[1].split(
-            "\n  workflow-lint:\n", 1
+        verify = self.source.split("\n  verify-native:\n", 1)[1].split(
+            "\n  verify-release:\n", 1
         )[0]
         semver = self.source.split("\n  semver:\n", 1)[1].split(
             "\n  fuzz:\n", 1
