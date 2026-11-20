@@ -11,6 +11,7 @@ mark. Run on any host: python3 scripts/windows_icon.py
 from __future__ import annotations
 
 import argparse
+import itertools
 import math
 import pathlib
 import re
@@ -97,16 +98,22 @@ def _commands(data: str) -> list[tuple[str, list[float]]]:
 
 
 def _trace(data: str) -> list[list[tuple[float, float]]]:
-    """Trace path data into closed subpath polygons of absolute points."""
+    """Trace absolute polygons; SVG 2 fills open subpaths as if closed.
+
+    See https://www.w3.org/TR/SVG2/paths.html#PathDataClosePathCommand and
+    https://www.w3.org/TR/SVG2/painting.html#FillRuleProperty.
+    """
     subpaths: list[list[tuple[float, float]]] = []
     current: list[tuple[float, float]] = []
     point = (0.0, 0.0)
     start = (0.0, 0.0)
     for command, parameters in _commands(data):
         absolute = command.isupper()
+        if command not in "MmZz" and not current and subpaths:
+            current = [point]
         if command in "Mm":
             if current:
-                subpaths.append(current)
+                subpaths.append(_close_polygon(current))
             x = parameters[0] if absolute else point[0] + parameters[0]
             y = parameters[1] if absolute else point[1] + parameters[1]
             point = (x, y)
@@ -134,8 +141,15 @@ def _trace(data: str) -> list[list[tuple[float, float]]]:
         else:  # pragma: no cover - the tokenizer admits only the above.
             raise ValueError(f"unsupported path command {command!r}")
     if current:
-        subpaths.append(current)
+        subpaths.append(_close_polygon(current))
     return subpaths
+
+
+def _close_polygon(polygon: list[tuple[float, float]]) -> list[tuple[float, float]]:
+    """Close an SVG fill subpath once before pixel sampling."""
+    if polygon[-1] != polygon[0]:
+        polygon.append(polygon[0])
+    return polygon
 
 
 def _shapes(svg: str) -> tuple[int, list[tuple[
@@ -200,13 +214,13 @@ def _shapes(svg: str) -> tuple[int, list[tuple[
     return int(box[2]), shapes
 
 
-def _winding(point: tuple[float, float], polygon: list[tuple[float, float]]) -> int:
+def _winding(point_x: float, point_y: float, polygon: list[tuple[float, float]]) -> int:
     """Count how often the polygon winds around the point (nonzero rule)."""
     total = 0
-    for (x1, y1), (x2, y2) in zip(polygon, polygon[1:] + polygon[:1]):
-        if (y1 <= point[1] < y2) or (y2 <= point[1] < y1):
-            crossing = x1 + (point[1] - y1) / (y2 - y1) * (x2 - x1)
-            if crossing > point[0]:
+    for (x1, y1), (x2, y2) in itertools.pairwise(polygon):
+        if (y1 <= point_y < y2) or (y2 <= point_y < y1):
+            crossing = x1 + (point_y - y1) / (y2 - y1) * (x2 - x1)
+            if crossing > point_x:
                 total += 1 if y2 > y1 else -1
     return total
 
@@ -251,15 +265,21 @@ def render_mark(svg: str, pixels: int) -> bytes:
     """Render raw RGBA; pixel centers sample source-ordered shapes."""
     viewport, shapes = _shapes(svg)
     scale = pixels / viewport
+    sample_x = tuple((x + 0.5) / scale for x in range(pixels))
+    sample_y = tuple((y + 0.5) / scale for y in range(pixels))
     canvas = bytearray(pixels * pixels * 4)
     for (fr, fg, fb, fa), subpaths in shapes:
         if fa == 0:
             continue
         columns, rows = _pixel_bounds(subpaths, scale, pixels)
         for y in rows:
+            point_y = sample_y[y]
             for x in columns:
-                point = ((x + 0.5) / scale, (y + 0.5) / scale)
-                if not any(_winding(point, polygon) != 0 for polygon in subpaths):
+                point_x = sample_x[x]
+                winding = 0
+                for polygon in subpaths:
+                    winding += _winding(point_x, point_y, polygon)
+                if winding == 0:
                     continue
                 offset = (y * pixels + x) * 4
                 if fa == 255:

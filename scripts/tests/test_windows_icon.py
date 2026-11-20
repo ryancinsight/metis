@@ -121,6 +121,38 @@ class WindowsIconTests(unittest.TestCase):
             [(255, 0, 0, 255)] * (24 * 24),
         )
 
+    def test_open_fill_subpath_matches_explicit_close(self):
+        prefix = (
+            '<svg xmlns="http://www.w3.org/2000/svg" width="4" height="4"'
+            ' viewBox="0 0 4 4"><path d="'
+        )
+        suffix = '" fill="#f00"/></svg>'
+        implicit = windows_icon.render_mark(prefix + "M0 0H4V4H0" + suffix, 4)
+        explicit = windows_icon.render_mark(prefix + "M0 0H4V4H0Z" + suffix, 4)
+        self.assertEqual(implicit, explicit)
+        same = windows_icon.render_mark(prefix + "M0 0H4V4H0ZM1 1H3V3H1Z" + suffix, 4)
+        hole = windows_icon.render_mark(prefix + "M0 0H4V4H0ZM1 1V3H3V1Z" + suffix, 4)
+        self.assertEqual(pixel(same, 4, 1, 1), (255, 0, 0, 255))
+        self.assertEqual(pixel(hole, 4, 1, 1), (0, 0, 0, 0))
+        for continuation in (
+            "L4 0V4H0",
+            "H4V4H0",
+            "M0 0H4V4H0",
+            "ZZH4V4H0",
+        ):
+            with self.subTest(continuation=continuation):
+                after_close = prefix + "M0 0H2V2H0Z" + continuation + suffix
+                self.assertEqual(windows_icon.render_mark(after_close, 4), explicit)
+        vertical = windows_icon.render_mark(
+            prefix + "M0 0H2V2H0ZV4H4V0" + suffix, 4
+        )
+        self.assertEqual(pixel(vertical, 4, 0, 0), (0, 0, 0, 0))
+        self.assertEqual(pixel(vertical, 4, 2, 0), (255, 0, 0, 255))
+        self.assertEqual(
+            windows_icon.render_mark(prefix + "M0 0H4V4H0ZM2 2Z" + suffix, 4),
+            explicit,
+        )
+
     def test_pixel_bounds_stay_within_canvas(self):
         for viewport, pixels in ((1, 1), (3, 2), (273, 24), (4095, 257)):
             with self.subTest(viewport=viewport, pixels=pixels):
