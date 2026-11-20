@@ -65,7 +65,7 @@ hermes-simd = { git = "https://github.com/ryancinsight/hermes.git", version = "0
 # Git plus version, matching the sibling entries below: the package is named
 # `gaia-mesh` but its import path is `gaia`. The mesh viewer renders with gaia's
 # software rasteriser rather than a second one here.
-gaia = { package = "gaia-mesh", git = "https://github.com/ryancinsight/gaia", version = "0.7.0", default-features = false }
+gaia = { package = "gaia-mesh", version = "0.8.0", default-features = false }
 # The native QUIC transport is a Moirai 0.12 provider; the edition is fixed by
 # that workspace rather than by a per-consumer revision pin.
 moirai-core = { git = "https://github.com/ryancinsight/Moirai.git", version = "0.12.0", default-features = false, features = ["std"] }
