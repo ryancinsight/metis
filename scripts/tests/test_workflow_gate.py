@@ -176,6 +176,19 @@ class RequiredGateTests(unittest.TestCase):
         self.assertIn('range="$BASE_SHA...$HEAD_SHA"', self.source)
         self.assertIn('range="$BEFORE_SHA..$CURRENT_SHA"', self.source)
         self.assertIn("0000000000000000000000000000000000000000", self.source)
+        zero_before = self.source.split(
+            'if [[ "$BEFORE_SHA" == "0000000000000000000000000000000000000000" ]]; then',
+            1,
+        )[1].split("exit 0", 1)[0]
+        with tempfile.TemporaryDirectory() as directory:
+            output = pathlib.Path(directory) / "github-output"
+            environment = {**os.environ, "GITHUB_OUTPUT": str(output)}
+            result = subprocess.run(["bash", "-euo", "pipefail", "-c", zero_before],
+                                    capture_output=True, env=environment, text=True, timeout=10)
+            self.assertEqual(result.returncode, 0, result.stderr)
+            self.assertEqual(output.read_text(encoding="utf-8").splitlines(),
+                             ["code=true", "fuzz=true", "canvas_recovery=true"])
+        self.assertEqual(zero_before.count('>> "$GITHUB_OUTPUT"'), 1)
         self.assertIn("needs: changes", self.source)
         self.assertIn("needs.changes.outputs.code == 'true'", self.source)
         self.assertIn("needs: [changes,", self.block)
@@ -230,12 +243,93 @@ class RequiredGateTests(unittest.TestCase):
             with self.subTest(paths=paths):
                 data = b"\0".join(paths) + (b"\0" if paths else b"")
                 self.assertEqual(self.outputs(data)["fuzz"], str(expected).lower())
-        fuzz = self.source.split("\n  fuzz:\n", 1)[1].split("\n  browser-assets:\n", 1)[0]
+        fuzz = self.source.split("\n  fuzz:\n", 1)[1].split(
+            "\n  canvas-recovery:\n", 1
+        )[0]
         self.assertIn("needs: changes", fuzz)
         self.assertIn("needs.changes.outputs.fuzz == 'true'", fuzz)
         self.assertIn("github.event.pull_request.draft == false", fuzz)
         self.assertIn("github.event_name == 'schedule'", fuzz)
         self.assertIn("github.event_name == 'workflow_dispatch'", fuzz)
+
+    def test_canvas_recovery_job_tracks_its_real_inputs_and_oracle(self):
+        cases = (
+            ((b"crates/metis-web/src/canvas/frame.rs",), True),
+            ((b"crates/metis-web/examples/canvas_recovery/browser.rs",), True),
+            ((b"scripts/browser_gpu_recovery.py",), True),
+            ((b"scripts/browser_runtime.py",), True),
+            ((b"scripts/browser_trace.py",), True),
+            ((b"scripts/browser_font.py",), True),
+            ((b"scripts/verification/workspace.py",), True),
+            ((b"scripts/webdriver_health.py",), True),
+            ((b"Cargo.lock",), True),
+            ((b"rust-toolchain.toml",), True),
+            ((b".github/workflows/ci.yml",), True),
+            ((b"crates/metis-core/src/lib.rs",), False),
+            ((b"docs/manual/browser.md",), False),
+            ((), False),
+        )
+        for paths, expected in cases:
+            with self.subTest(paths=paths):
+                data = b"\0".join(paths) + (b"\0" if paths else b"")
+                self.assertEqual(
+                    self.outputs(data)["canvas_recovery"],
+                    str(expected).lower(),
+                )
+
+        job = self.source.split("\n  canvas-recovery:\n", 1)[1].split(
+            "\n  browser-assets:\n", 1
+        )[0]
+        for text in (
+            "needs: changes", "needs.changes.outputs.canvas_recovery == 'true'",
+            "github.event.pull_request.draft == false", "runs-on: windows-2025",
+            "timeout-minutes: 5", "$env:EDGEWEBDRIVER", "-WindowStyle Hidden",
+            "scripts/webdriver_health.py", "scripts/browser_gpu_recovery.py",
+            "--browser-name MicrosoftEdge", "finally {",
+            "taskkill.exe\" /PID $driver.Id /T /F",
+        ):
+            self.assertIn(text, job)
+        self.assertNotIn("--disable-gpu", job)
+        self.assertNotIn("--use-angle", job)
+        for artifact in ("trace.json", "initial.png", "recreated.png"):
+            self.assertIn(artifact, job)
+
+        condition = re.search(r"(?ms)^    if: >-\n(?P<body>.*?)^    runs-on:", job)
+        self.assertIsNotNone(condition)
+        expression = " ".join(line.strip() for line in condition.group("body").splitlines())
+        expression = (
+            expression.replace("always()", "True")
+            .replace("&&", " and ")
+            .replace("||", " or ")
+            .replace("github.event_name", "event_name")
+            .replace("github.event.pull_request.draft", "draft")
+            .replace("needs.changes.result", "changes_result")
+            .replace("needs.changes.outputs.canvas_recovery", "changed")
+            .replace(" false", " False")
+        )
+        cases = (
+            ("schedule", False, "skipped", "", True), ("workflow_dispatch", False, "skipped", "", True),
+            ("merge_group", False, "skipped", "", True),
+            ("pull_request", True, "success", "true", False),
+            ("pull_request", False, "success", "true", True),
+            ("pull_request", False, "success", "false", False),
+            ("push", False, "success", "true", True), ("push", False, "success", "false", False),
+            ("push", False, "failure", "true", False),
+        )
+        for event_name, draft, changes_result, changed, expected in cases:
+            with self.subTest(event_name=event_name, draft=draft, changed=changed):
+                values = dict(event_name=event_name, draft=draft,
+                              changes_result=changes_result, changed=changed)
+                actual = eval(expression, {"__builtins__": {}}, values)
+                self.assertEqual(actual, expected)
+
+        browser_runtime = self.source.split("\n  browser-runtime:\n", 1)[1]
+        browser_runtime = browser_runtime.split("\n  browser-text-cross-engine:\n", 1)[0]
+        driver_wait = browser_runtime.split("\n      - name: Wait for WebDriver\n", 1)[1].split(
+            "\n      - name: Run browser lifecycle trace\n", 1
+        )[0]
+        self.assertIn("scripts/webdriver_health.py", driver_wait)
+        self.assertNotIn("urllib.request.urlopen", driver_wait)
 
     def test_windows_and_semver_skip_documentation_only_changes(self):
         verify = self.source.split("\n  verify:\n", 1)[1].split(

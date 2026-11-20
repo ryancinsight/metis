@@ -34,6 +34,7 @@ jobs:
     outputs:
       code: ${{ steps.diff.outputs.code }}
       fuzz: ${{ steps.diff.outputs.fuzz }}
+      canvas_recovery: ${{ steps.diff.outputs.canvas_recovery }}
     steps:
       - name: Checkout
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
@@ -55,8 +56,7 @@ jobs:
             range="$BASE_SHA...$HEAD_SHA"
           else
             if [[ "$BEFORE_SHA" == "0000000000000000000000000000000000000000" ]]; then
-              echo "code=true" >> "$GITHUB_OUTPUT"
-              echo "fuzz=true" >> "$GITHUB_OUTPUT"
+              printf '%s\n' 'code=true' 'fuzz=true' 'canvas_recovery=true' >> "$GITHUB_OUTPUT"
               exit 0
             fi
             range="$BEFORE_SHA..$CURRENT_SHA"
@@ -93,9 +93,27 @@ jobs:
           # The fuzz campaign runs for a pull request only when the harness,
           # its seeds or its lock changed; the weekly run covers parser changes.
           has_fuzz_changes = any(path.startswith(b"fuzz/") for path in paths)
+          canvas_recovery_files = {
+              b".github/workflows/ci.yml",
+              b"Cargo.lock",
+              b"Cargo.toml",
+              b"crates/metis-web/Cargo.toml",
+              b"scripts/cargo_overlay.py",
+              b"scripts/verification/workspace.py",
+              b"scripts/webdriver_health.py",
+              b"rust-toolchain.toml",
+          }
+          has_canvas_recovery_changes = any(
+              path in canvas_recovery_files
+              or path.startswith(b"scripts/browser") and path.endswith(b".py")
+              or path.startswith(b"crates/metis-web/examples/canvas_recovery")
+              or path.startswith(b"crates/metis-web/src/canvas/")
+              for path in paths
+          )
           with open(os.environ["GITHUB_OUTPUT"], "a", encoding="utf-8") as output:
               output.write(f"code={str(has_code_changes).lower()}\n")
               output.write(f"fuzz={str(has_fuzz_changes).lower()}\n")
+              output.write(f"canvas_recovery={str(has_canvas_recovery_changes).lower()}\n")
           PY
 
   verify:
@@ -321,6 +339,99 @@ jobs:
           if-no-files-found: ignore
           retention-days: 7
 
+  canvas-recovery:
+    name: Canvas recovery pixels
+    needs: changes
+    if: >-
+      always() &&
+      (needs.changes.result == 'success' || needs.changes.result == 'skipped') &&
+      (github.event_name != 'pull_request' || github.event.pull_request.draft == false) &&
+      (
+        github.event_name == 'schedule' ||
+        github.event_name == 'workflow_dispatch' ||
+        github.event_name == 'merge_group' ||
+        needs.changes.outputs.canvas_recovery == 'true'
+      )
+    runs-on: windows-2025
+    timeout-minutes: 5
+    permissions:
+      contents: read
+    env:
+      CARGO_INCREMENTAL: '0'
+      CARGO_TERM_COLOR: always
+    steps:
+      - name: Checkout source
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - name: Setup Python
+        uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
+        with:
+          python-version: '3.13'
+      - name: Setup Rust
+        uses: dtolnay/rust-toolchain@4cda84d5c5c54efe2404f9d843567869ab1699d4 # stable
+        with:
+          toolchain: 1.97.0
+          targets: wasm32-unknown-unknown
+      - name: Restore the compile cache
+        uses: Swatinem/rust-cache@6323deb102c322ba6fcbdcafc7e3dddab59af2b6 # v2.9.2
+        with:
+          shared-key: metis-windows
+          save-if: ${{ github.ref == 'refs/heads/main' }}
+      - name: Prime locked Cargo sources
+        shell: pwsh
+        run: rustup run 1.97.0 cargo fetch --locked --manifest-path Cargo.toml
+      - name: Install wasm-bindgen
+        uses: taiki-e/install-action@a6b2e2dcd845ddd7f509ce4f3ed3d922b80cc5d9 # v2.84.0
+        with:
+          tool: wasm-bindgen@0.2.129
+          checksum: true
+      - name: Run Edge recovery oracle
+        shell: pwsh
+        run: |
+          $artifactDirectory = 'output/browser/gpu-recovery'
+          New-Item -ItemType Directory -Force -Path $artifactDirectory | Out-Null
+          $driverPath = Join-Path $env:EDGEWEBDRIVER 'msedgedriver.exe'
+          if (-not (Test-Path -LiteralPath $driverPath -PathType Leaf)) {
+            throw "Microsoft Edge Driver is absent from EDGEWEBDRIVER: $driverPath"
+          }
+          $driver = Start-Process -FilePath $driverPath -ArgumentList '--port=9515' `
+            -WindowStyle Hidden -PassThru `
+            -RedirectStandardOutput "$artifactDirectory/driver.stdout.log" `
+            -RedirectStandardError "$artifactDirectory/driver.stderr.log"
+          try {
+            python scripts/webdriver_health.py `
+              --webdriver http://127.0.0.1:9515 --timeout-seconds 20
+            if ($LASTEXITCODE -ne 0) {
+              throw "WebDriver health check exited with status $LASTEXITCODE"
+            }
+            python scripts/browser_gpu_recovery.py `
+              --webdriver http://127.0.0.1:9515 `
+              --browser-name MicrosoftEdge --timeout-seconds 30
+            if ($LASTEXITCODE -ne 0) {
+              throw "browser GPU recovery exited with status $LASTEXITCODE"
+            }
+          } finally {
+            if (-not $driver.HasExited) {
+              & "$env:SystemRoot/System32/taskkill.exe" /PID $driver.Id /T /F
+              if ($LASTEXITCODE -ne 0) {
+                throw "WebDriver process-tree cleanup exited with status $LASTEXITCODE"
+              }
+            }
+          }
+      - name: Upload recovery evidence
+        if: always()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        with:
+          name: metis-canvas-recovery-${{ github.run_id }}
+          path: |
+            output/browser/gpu-recovery/trace.json
+            output/browser/gpu-recovery/initial.png
+            output/browser/gpu-recovery/recreated.png
+            output/browser/gpu-recovery/driver.*.log
+          if-no-files-found: error
+          retention-days: 7
+
   browser-assets:
     name: Build browser runtime assets
     if: github.event_name == 'schedule' || github.event_name == 'workflow_dispatch'
@@ -446,34 +557,10 @@ jobs:
         shell: bash
         env:
           DRIVER_URL: ${{ matrix.driver_url }}
-        run: |
-          set -euo pipefail
-          python - "$DRIVER_URL" <<'PY'
-          import json
-          import sys
-          import time
-          import urllib.error
-          import urllib.request
-
-          endpoint = sys.argv[1].rstrip("/") + "/status"
-          deadline = time.monotonic() + 20.0
-          last_error = "no response"
-          while time.monotonic() < deadline:
-              try:
-                  with urllib.request.urlopen(endpoint, timeout=1.0) as response:
-                      if response.status != 200:
-                          last_error = f"HTTP {response.status}"
-                      else:
-                          document = json.load(response)
-                          value = document.get("value") if isinstance(document, dict) else None
-                          if isinstance(value, dict) and value.get("ready") is not False:
-                              raise SystemExit(0)
-                          last_error = "driver status is not ready"
-              except (OSError, urllib.error.URLError, json.JSONDecodeError) as error:
-                  last_error = str(error)
-              time.sleep(0.1)
-          raise SystemExit(f"WebDriver did not become ready within 20 seconds: {last_error}")
-          PY
+        run: >-
+          python scripts/webdriver_health.py
+          --webdriver "$DRIVER_URL"
+          --timeout-seconds 20
       - name: Run browser lifecycle trace
         shell: bash
         env:
@@ -661,7 +748,7 @@ jobs:
   gate:
     name: Metis gate
     if: always()
-    needs: [changes, verify, apple, workflow-lint, lockfile, adr-index, conformance, semver, artifact-budget, fuzz, browser-assets, browser-runtime, browser-text-cross-engine, native-transport]
+    needs: [changes, verify, apple, workflow-lint, lockfile, adr-index, conformance, semver, artifact-budget, fuzz, canvas-recovery, browser-assets, browser-runtime, browser-text-cross-engine, native-transport]
     runs-on: ubuntu-24.04
     timeout-minutes: 5
     permissions: {}
@@ -669,7 +756,7 @@ jobs:
       - name: Check required job results
         env:
           METIS_GATE_NEEDS: ${{ toJSON(needs) }}
-          METIS_GATE_EXPECTED_JOBS: '["changes","verify","apple","workflow-lint","lockfile","adr-index","conformance","semver","artifact-budget","fuzz","browser-assets","browser-runtime","browser-text-cross-engine","native-transport"]'
+          METIS_GATE_EXPECTED_JOBS: '["changes","verify","apple","workflow-lint","lockfile","adr-index","conformance","semver","artifact-budget","fuzz","canvas-recovery","browser-assets","browser-runtime","browser-text-cross-engine","native-transport"]'
           METIS_GATE_DRAFT: ${{ github.event_name == 'pull_request' && github.event.pull_request.draft || false }}
         run: |
           python3 - <<'PY'
