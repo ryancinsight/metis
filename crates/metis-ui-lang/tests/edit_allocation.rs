@@ -1,4 +1,4 @@
-//! Heap requests of a relayout and a reprojection, against the document's size.
+//! Heap requests of a relayout, a reprojection and focus-order traversal.
 //!
 //! `METIS-MEM-RENDER-002` requires a render that changes one label to request
 //! memory in proportion to what it changed, not to the form it did not. The
@@ -9,7 +9,7 @@
 #![cfg(not(target_arch = "wasm32"))]
 
 use metis_ui_lang::{
-    LayoutViewport, SemanticTree, compute_layout, compute_layout_into, parse_markup,
+    LayoutViewport, SemanticTree, TabOrder, compute_layout, compute_layout_into, parse_markup,
 };
 use std::alloc::{GlobalAlloc, Layout, System};
 use std::cell::Cell;
@@ -158,4 +158,23 @@ fn a_fresh_projection_requests_memory_for_every_element() {
         "a ten-times larger document projected in {large_requests} against {small_requests}, \
          so the measurement cannot tell reuse from a smaller constant"
     );
+}
+
+#[test]
+fn focus_order_traversal_requests_no_memory() {
+    let controls = ["name", "email", "save"];
+    let order = TabOrder::new(&controls);
+    let mut selected = "name";
+    let allocation_requests = requests(|| {
+        selected = order
+            .forward_from(selected)
+            .copied()
+            .expect("nonempty order has a target");
+        selected = order
+            .backward_from(selected)
+            .copied()
+            .expect("nonempty order has a target");
+    });
+    assert_eq!(selected, "name");
+    assert_eq!(allocation_requests, 0);
 }

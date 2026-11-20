@@ -59,6 +59,25 @@ assert_eq!(
 # Ok::<(), metis_core::error::MetisError>(())
 ```
 
+`TabOrder` traverses an authored slice of semantic control identifiers without
+owning or copying it. Its traversal machinery allocates no storage; custom
+identifier comparison implementations retain their own behavior. Forward and
+backward navigation wrap at the endpoints; when a host's current identifier is
+absent, traversal enters at the first or last identifier respectively. A
+repeated identifier resolves to its first position moving forward and its last
+position moving backward. The semantic projection rejects duplicate authored
+IDs before the Metis frontend constructs this view. Hosts keep focus origin,
+painting and domain state outside this shared ordering operation.
+
+```rust
+use metis_ui_lang::TabOrder;
+
+let controls = ["name", "email", "save"];
+let order = TabOrder::new(&controls);
+assert_eq!(order.forward_from("name"), Some(&"email"));
+assert_eq!(order.backward_from("name"), Some(&"save"));
+```
+
 `PathCapture` records a bounded sequence of distinct pointer samples in the
 host's coordinate type. After projecting samples to screen pixels, use
 `polyline_distance` for open or closed path hit testing. Use

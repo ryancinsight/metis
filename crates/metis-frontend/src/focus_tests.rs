@@ -76,6 +76,20 @@ fn sequential_navigation_wraps_in_both_directions() {
 }
 
 #[test]
+fn sequential_navigation_reenters_when_the_current_control_is_absent() {
+    let mut app = app();
+    app.focus.control = "removed-control".to_owned();
+    app.move_focus(FocusDirection::Forward).expect("tab");
+    assert_eq!(app.focused_control(), "command-menu-toggle");
+    assert!(app.focus_visible());
+
+    app.focus.control = "removed-control".to_owned();
+    app.move_focus(FocusDirection::Backward).expect("shift tab");
+    assert_eq!(app.focused_control(), "btn-calc");
+    assert!(app.focus_visible());
+}
+
+#[test]
 fn only_keyboard_focus_paints_a_ring_in_the_theme_color() {
     // The patient reference casts no shadow, so the pixels around it are the
     // card's own fill until a ring covers them.
