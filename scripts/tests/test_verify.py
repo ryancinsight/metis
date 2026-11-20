@@ -81,6 +81,58 @@ class FormatNeutralWorkspaceTests(unittest.TestCase):
         self.assertFalse(admits("metis-ui", "gaia-mesh", crates_io))
 
 
+class PullRequestPackageTests(unittest.TestCase):
+    """Select package owners and transitive workspace consumers."""
+
+    @classmethod
+    def setUpClass(cls):
+        cls.verify = runpy.run_path(str(SCRIPTS / "verify.py"))
+        root = cls.verify["ROOT"]
+        specifications = (
+            ("root", "metis-ui", "", "src/lib.rs"),
+            ("core", "metis-core", "crates/metis-core", "src/lib.rs"),
+            ("platform", "metis-platform", "crates/metis-platform", "src/lib.rs"),
+            ("app", "metis-app", "crates/metis-app", "src/main.rs"),
+        )
+        cls.metadata = {
+            "packages": [
+                {"id": identifier, "name": name,
+                 "manifest_path": str(root / directory / "Cargo.toml"),
+                 "targets": [{"src_path": str(root / directory / target)}]}
+                for identifier, name, directory, target in specifications
+            ],
+            "workspace_members": ["root", "core", "platform", "app"],
+            "resolve": {"nodes": [
+                {"id": "root", "dependencies": ["core"]},
+                {"id": "core", "dependencies": []},
+                {"id": "platform", "dependencies": ["core"]},
+                {"id": "app", "dependencies": ["platform"]},
+            ]},
+        }
+
+    def test_changes_select_reverse_consumers_not_dependencies(self):
+        select = self.verify["workspace"].pull_request_packages
+        cases = (
+            ("crates/metis-platform/src/typeface/text.rs", ("metis-app", "metis-platform")),
+            ("crates/metis-core/src/lib.rs",
+             ("metis-app", "metis-core", "metis-platform", "metis-ui")),
+        )
+        for path, expected in cases:
+            with self.subTest(path=path):
+                self.assertEqual(select(self.metadata, self.verify["ROOT"], [path]), expected)
+        self.assertEqual(self.verify["workspace"].package_flags(cases[0][1]),
+                         ["-p", "metis-app", "-p", "metis-platform"])
+
+    def test_root_target_and_unowned_input_take_distinct_paths(self):
+        select = self.verify["workspace"].pull_request_packages
+        root = self.verify["ROOT"]
+        self.assertEqual(select(self.metadata, root, ["src/lib.rs"]), ("metis-ui",))
+        self.assertIsNone(select(self.metadata, root, ["scripts/verify.py"]))
+        self.assertIsNone(select(self.metadata, root, []))
+        with self.assertRaisesRegex(ValueError, "invalid changed path"):
+            select(self.metadata, root, ["../outside.rs"])
+
+
 class BenchBootstrapTests(unittest.TestCase):
     """Keep the benchmark CLI bound to verification configuration."""
 
