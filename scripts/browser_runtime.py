@@ -40,6 +40,7 @@ from browser_text_stability import validate_text_geometry_stability
 
 BRIDGE_MODES = ("disconnected", "authorized")
 MAX_LIFECYCLE_CYCLES = 8
+MAX_STARTUP_STATUS_BYTES = 512
 
 
 WAIT_FOR_SCRIPT = """
@@ -48,27 +49,33 @@ const selector = arguments[0];
 const expected = arguments[1];
 const include = arguments[2];
 const limit = arguments[3];
+const failureTextLimit = arguments[4];
 const read = () => {
   const element = document.querySelector(selector);
-  const text = element ? (element.textContent || '').trim() : '';
-  return element !== null && (include ? text.includes(expected) : text === expected);
+  if (!element) return null;
+  const text = (element.textContent || '').trim();
+  if (typeof failureTextLimit === 'number' && element.getAttribute('data-state') === 'failed') {
+    return {ok: false, failed: true, status: text.slice(0, failureTextLimit)};
+  }
+  return (include ? text.includes(expected) : text === expected) ? {ok: true} : null;
 };
-if (read()) { done({ok: true}); return; }
+const initial = read();
+if (initial) { done(initial); return; }
 let settled = false;
-const observer = new MutationObserver(() => {
-  if (settled || !read()) return;
+const settle = (result) => {
+  if (settled) return;
   settled = true;
   window.clearTimeout(timer);
   observer.disconnect();
-  done({ok: true});
+  done(result);
+};
+const observer = new MutationObserver(() => {
+  if (settled) return;
+  const result = read();
+  if (result) settle(result);
 });
 observer.observe(document, {subtree: true, childList: true, attributes: true, characterData: true});
-const timer = window.setTimeout(() => {
-  if (settled) return;
-  settled = true;
-  observer.disconnect();
-  done({ok: false});
-}, limit);
+const timer = window.setTimeout(() => settle({ok: false}), limit);
 """
 
 
@@ -106,9 +113,28 @@ return {
 """
 
 
-def _wait_for_text(client: WebDriverClient, element_id: str, expected: str, *, include: bool, timeout_ms: int) -> None:
-    """Wait on a DOM mutation rather than polling or sleeping in the host."""
-    result = client.execute_async(WAIT_FOR_SCRIPT, [f"#{element_id}", expected, include, timeout_ms])
+def _wait_for_text(
+    client: WebDriverClient, element_id: str, expected: str, *,
+    include: bool, timeout_ms: int, fail_on_terminal_state: bool = False,
+) -> None:
+    """Wait for text, optionally treating data-state="failed" as terminal."""
+    args = [f"#{element_id}", expected, include, timeout_ms]
+    if fail_on_terminal_state:
+        args.append(MAX_STARTUP_STATUS_BYTES)
+    result = client.execute_async(WAIT_FOR_SCRIPT, args)
+    if fail_on_terminal_state and isinstance(result, dict) and result.get("failed") is True:
+        raw_status = result.get("status")
+        status = ""
+        if isinstance(raw_status, str):
+            printable = "".join(
+                ch if ch.isprintable() else " " for ch in raw_status[:MAX_STARTUP_STATUS_BYTES]
+            )
+            status = " ".join(printable.split()).encode("utf-8")[:MAX_STARTUP_STATUS_BYTES].decode(
+                "utf-8", errors="ignore",
+            ).rstrip()
+        raise BrowserRuntimeError(
+            f"#{element_id} reported startup failure: {status or '(no status text)'}"
+        )
     if not isinstance(result, dict) or result.get("ok") is not True:
         relation = "contains" if include else "equals"
         raise BrowserRuntimeError(f"#{element_id} did not {relation} {expected!r} within {timeout_ms} ms")
