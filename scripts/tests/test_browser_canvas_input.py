@@ -73,7 +73,8 @@ def _node_wait(script, args, initial, steps=()):
     result = subprocess.run(
         ["node", "-e", NATIVE_WAIT_HARNESS, script, json.dumps(args),
          json.dumps({"initial": initial, "steps": steps})],
-        capture_output=True, check=True, text=True, timeout=30,
+        # Node writes UTF-8 JSON independently of the Python host locale.
+        capture_output=True, check=True, encoding="utf-8", timeout=30,
     )
     return json.loads(result.stdout)
 
