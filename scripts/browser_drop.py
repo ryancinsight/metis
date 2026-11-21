@@ -372,6 +372,7 @@ def run(
     trace = Trace(engine, "", "disconnected", revision, {}, args.consumer_revision)
     observations: dict[str, dict[str, object]] = {}
     document = {"status": "failed"}
+    gallery_ready = False
     transfer_observer_installed = False
     try:
         with StaticServer(ROOT / "output" / "browser") as origin:
@@ -387,7 +388,11 @@ def run(
             client.set_timeouts(120_000)
             client.set_window_rect(1440, 1100)
             client.navigate(trace.url)
-            _wait_for_text(client, "gallery-status", "Ready", timeout_ms=30_000, include=True)
+            _wait_for_text(
+                client, "gallery-status", "Ready", timeout_ms=30_000, include=True,
+                fail_on_terminal_state=True,
+            )
+            gallery_ready = True
             record_device_scale(client, trace, device_scale_milli)
             if getattr(args, "browser_memory_sample", False):
                 browser_memory_sample(client, trace, "mounted")
@@ -575,7 +580,7 @@ def run(
                 )
             except BrowserRuntimeError as screenshot_error:
                 capture_error = str(screenshot_error)
-            if args.input == "chooser":
+            if gallery_ready and args.input == "chooser":
                 capture_file_selection_diagnostic(client, trace, files)
         document = trace.document("failed")
         document["error"] = str(error)
