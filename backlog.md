@@ -1,5 +1,6 @@
-<a id="metis-stable-qualification"></a>
-## METIS-STABLE-QUALIFICATION — metis stable-release qualification [patch] — todo
+<a id="METIS-STABLE-QUALIFICATION"></a>
+## METIS-STABLE-QUALIFICATION — Metis stable-release qualification [patch]
+- Status: todo
 - priority: verification; milestone: M-platform; basis: `d7034d7d3dd5`.
 - Outcome: Qualify the host lifecycle that RITK needs for its viewer. Follow the [release scope](docs/adr/0063-release-scope-1-0.md) and `M-platform`.
 - Representative manifest `metis-ui 0.5.0`. Target 1.0.0.
