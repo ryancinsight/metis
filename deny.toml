@@ -4,11 +4,6 @@ all-features = true
 [advisories]
 yanked = "deny"
 unused-ignored-advisory = "deny"
-# RSA remains a required Moirai crypto transitive dependency and has no safe
-# upstream release; the provider tracks its replacement separately.
-ignore = [
-    { id = "RUSTSEC-2023-0071", reason = "Moirai crypto still requires RSA and RustSec reports no safe upgrade; replacement remains tracked upstream." },
-]
 
 [licenses]
 confidence-threshold = 0.8

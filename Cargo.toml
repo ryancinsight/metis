@@ -72,7 +72,7 @@ moirai-core = { git = "https://github.com/ryancinsight/Moirai.git", version = "0
 moirai-executor = { git = "https://github.com/ryancinsight/Moirai.git", version = "0.12.0", default-features = false }
 moirai-transport = { git = "https://github.com/ryancinsight/Moirai.git", version = "0.12.0", default-features = false }
 moirai-pal = { git = "https://github.com/ryancinsight/Moirai.git", version = "0.12.0", default-features = false }
-moirai-crypto = { git = "https://github.com/ryancinsight/Moirai.git", version = "0.12.0", default-features = false }
+moirai-crypto = { git = "https://github.com/ryancinsight/Moirai.git", version = "0.12.1", default-features = false }
 moirai-async = { git = "https://github.com/ryancinsight/Moirai.git", version = "0.12.0", default-features = false }
 moirai-http = { git = "https://github.com/ryancinsight/Moirai.git", version = "0.12.0", default-features = false }
 moirai-quic = { git = "https://github.com/ryancinsight/Moirai.git", version = "0.12.0" }
