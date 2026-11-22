@@ -1,3 +1,13 @@
+<a id="metis-stable-qualification"></a>
+## METIS-STABLE-QUALIFICATION — metis stable-release qualification [patch] — todo
+- priority: verification; milestone: M-platform; basis: `d7034d7d3dd5`.
+- Outcome: Qualify the host lifecycle that RITK needs for its viewer. Follow the [release scope](docs/adr/0063-release-scope-1-0.md) and `M-platform`.
+- Representative manifest `metis-ui 0.5.0`. Target 1.0.0.
+- [ ] [patch] Exercise a real browser or native session from startup through file selection, completed display and teardown. Assert terminal failure propagation and resource cleanup for a failed startup.
+- [ ] [minor] Complete the platform and input exits on their supported hosts, coordinating focus traversal with [PR #585](https://github.com/ryancinsight/metis/pull/585). Record OS-restricted session behavior, text input and actual rendered output.
+- [ ] [major] Close the content, system and release milestones with a packaged application and a real RITK viewer session. Verify each supported host and distribution channel on its selected release.
+- [ ] [patch] Attach exact-revision evidence for the local exits and this member’s [Atlas qualification criteria](https://github.com/ryancinsight/atlas/blob/17b0124a7548ad81e817284afc5cb115c1d1bc78/docs/parity/repositories.json).
+
 Prepared framework target: Metis0.5.0; unpublished review in existing PR505.
 
 ## Provider checkpoint — 2026-10-15 (historical; source [held owner checkpoint](https://github.com/ryancinsight/metis/commit/0a9544957a1b748c32c89fe798e1e579637bbb9a))
