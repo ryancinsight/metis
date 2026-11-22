@@ -1,5 +1,10 @@
 # Open capability and evidence risks
 
+## Browser rejected-file frame comparison
+
+After a successful interaction, the screenshot check previously compared the displayed frame against the initial image. The RGBA check sampled its interaction baseline after invalid input. Both modes now measure the frame before testing rejection. On Chromium with WebGPU, all three AsterSlice views retained identical screenshots across the three invalid selections. The later consumer slider check has a separate pixel-readback failure.
+
+
 ## Hosted publishing gates — 2026-10-29 [patch]
 
 The [reviewed publishing candidate](https://github.com/ryancinsight/metis/commit/f08ccabd432296cce01a218643b7af3ff4390372) passes both normal delivery hooks, the complete

@@ -279,16 +279,26 @@ def _capture_consumer_after_host_probes(
 ) -> None:
     """Run generic rejection probes before a consumer may tear down the host."""
     if input_source in ("chromium", "chooser"):
-        check_rejections(client, trace, point, input_source)
+        # User interactions can change the frame before the rejection probes.
+        # Take the comparison sample before submitting any invalid batch.
         if canvas_capture is CanvasCaptureMode.RGBA:
             expected_rgba = {
-                canvas_id: oracle[canvas_id]["rgba_sha256"] for canvas_id in canvas_ids
+                canvas_id: (
+                    client.execute_async(CANVAS_PIXELS, [canvas_id])["rgba_sha256"]
+                    if canvas_trace is not None else oracle[canvas_id]["rgba_sha256"]
+                )
+                for canvas_id in canvas_ids
             }
-            if canvas_trace is not None:
-                expected_rgba = {
-                    canvas_id: client.execute_async(CANVAS_PIXELS, [canvas_id])["rgba_sha256"]
-                    for canvas_id in canvas_ids
-                }
+        elif canvas_trace is not None:
+            observations = {
+                canvas_id: capture_screenshot(
+                    client, trace, output, canvas_id, observations[canvas_id], canvas_context,
+                    screenshot_label=f"{canvas_id}-before-rejections",
+                )
+                for canvas_id in canvas_ids
+            }
+        check_rejections(client, trace, point, input_source)
+        if canvas_capture is CanvasCaptureMode.RGBA:
             for canvas_id in canvas_ids:
                 actual = client.execute_async(CANVAS_PIXELS, [canvas_id])
                 if actual["rgba_sha256"] != expected_rgba[canvas_id]:

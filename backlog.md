@@ -188,6 +188,7 @@ Current framework version: Metis 0.5.0. Remaining capability work follows.
 
 <a id="METIS-BROWSER-READ-001"></a>
 ## METIS-BROWSER-READ-001 — Diagnose selected-file reads
+- [patch] Rejection verification samples the post-interaction frame before submitting invalid input. Browser-frame comparison is independent of selected-file read diagnostics.
 - Status: blocked; priority: P0; integrator: root; last-update: 2026-09-22.
 - milestone: M-content.
 - Scope: preserve format-neutral provider read failures and reproduce real chooser reads; DICOM semantics remain in RITK.

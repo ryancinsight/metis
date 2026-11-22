@@ -26,6 +26,8 @@
 
 ### Fixed
 
+- [patch] The browser file-selection check compares frames immediately before and after invalid input, including after a valid canvas interaction.
+
 - [patch] Multiplex bounded native HTTP peer reads and writes while one owner
   serializes authenticated application responses. An idle peer no longer
   blocks a valid typed handshake. Preserve provider connection limits, finite

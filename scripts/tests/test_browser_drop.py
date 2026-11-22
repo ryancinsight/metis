@@ -337,25 +337,22 @@ class FileDropTests(unittest.TestCase):
             events.append("consumer")
             return {"teardown": True}
 
-        trace = types.SimpleNamespace(metrics={})
-        with mock.patch("browser_drop.check_rejections", side_effect=rejection_probe):
-            _capture_consumer_after_host_probes(
-                Client(),
-                trace,
-                {},
-                "chooser",
-                CanvasCaptureMode.RGBA,
-                None,
-                ("viewer",),
-                {"viewer": {"rgba_sha256": "stable"}},
-                {},
-                None,
-                consumer_capture,
-                pathlib.Path("output/browser"),
-            )
-
-        self.assertEqual(events, ["rejections", ("find", "#file-input"), "frame", "consumer"])
-        self.assertEqual(trace.metrics, {"consumer_capture": {"teardown": True}})
+        for interacted in (False, True):
+            with self.subTest(interacted=interacted):
+                events.clear()
+                trace = types.SimpleNamespace(metrics={})
+                with mock.patch("browser_drop.check_rejections", side_effect=rejection_probe):
+                    _capture_consumer_after_host_probes(
+                        Client(), trace, {}, "chooser", CanvasCaptureMode.RGBA,
+                        trace if interacted else None, ("viewer",),
+                        {"viewer": {"rgba_sha256": "stable"}}, {}, None,
+                        consumer_capture, pathlib.Path("output/browser"),
+                    )
+                expected = ["rejections", ("find", "#file-input"), "frame", "consumer"]
+                if interacted:
+                    expected.insert(0, "frame")
+                self.assertEqual(events, expected)
+                self.assertEqual(trace.metrics, {"consumer_capture": {"teardown": True}})
 
     def test_generic_parser_has_no_consumer_specific_slice_option(self):
         parser = build_parser()
