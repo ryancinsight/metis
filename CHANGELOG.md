@@ -26,6 +26,8 @@
 
 ### Fixed
 
+- [patch] Require Moirai Crypto 0.12.1 and remove the RSA advisory waiver. The workspace and fuzz graph use RSA 0.10.0.
+
 - [patch] Multiplex bounded native HTTP peer reads and writes while one owner
   serializes authenticated application responses. An idle peer no longer
   blocks a valid typed handshake. Preserve provider connection limits, finite

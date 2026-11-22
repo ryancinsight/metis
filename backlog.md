@@ -3,6 +3,7 @@
 - priority: verification; milestone: M-platform; basis: `d7034d7d3dd5`.
 - Outcome: Qualify the host lifecycle that RITK needs for its viewer. Follow the [release scope](docs/adr/0063-release-scope-1-0.md) and `M-platform`.
 - Representative manifest `metis-ui 0.5.0`. Target 1.0.0.
+- [x] [patch] Resolve the root and fuzz graphs to Moirai Crypto 0.12.1 and RSA 0.10.0. The locked project audit passes with the RSA advisory waiver removed.
 - [ ] [patch] Exercise a real browser or native session from startup through file selection, completed display and teardown. Assert terminal failure propagation and resource cleanup for a failed startup.
 - [ ] [minor] Complete the platform and input exits on their supported hosts, coordinating focus traversal with [PR #585](https://github.com/ryancinsight/metis/pull/585). Record OS-restricted session behavior, text input and actual rendered output.
 - [ ] [major] Close the content, system and release milestones with a packaged application and a real RITK viewer session. Verify each supported host and distribution channel on its selected release.
