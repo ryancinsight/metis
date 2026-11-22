@@ -5,6 +5,10 @@
 After a successful interaction, the screenshot check previously compared the displayed frame against the initial image. The RGBA check sampled its interaction baseline after invalid input. Both modes now measure the frame before testing rejection. On Chromium with WebGPU, all three AsterSlice views retained identical screenshots across the three invalid selections. The later consumer slider check has a separate pixel-readback failure.
 
 
+## Moirai RSA provider — 2026-11-22 [patch]
+
+Removing the waiver exposed RUSTSEC-2023-0071 in RSA 0.9.10. The workspace and fuzz lockfiles now resolve one Moirai Crypto 0.12.1 and one RSA 0.10.0 each. Both graphs retain the Git source used by the webview. The workspace passes all four dependency checks and 121 core, host and backend tests, including capability scope and audit-chain integrity. RITK consumes this change through its Metis lock.
+
 ## Hosted publishing gates — 2026-10-29 [patch]
 
 The [reviewed publishing candidate](https://github.com/ryancinsight/metis/commit/f08ccabd432296cce01a218643b7af3ff4390372) passes both normal delivery hooks, the complete
