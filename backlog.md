@@ -1,14 +1,16 @@
 <a id="METIS-STABLE-QUALIFICATION"></a>
 ## METIS-STABLE-QUALIFICATION — Metis stable-release qualification [patch]
 - Status: todo
-- priority: verification; milestone: M-platform; basis: `d7034d7d3dd5`.
-- Outcome: Qualify the host lifecycle that RITK needs for its viewer. Follow the [release scope](docs/adr/0063-release-scope-1-0.md) and `M-platform`.
+- priority: verification; milestone: M-platform; basis: `e15b8b5f93aa`.
+- Outcome: Qualify the host lifecycle that RITK needs for its viewer. Follow the [release scope](docs/adr/0063-release-scope-1-0.md) and `M-platform`. Planning targets for `metis-ui` are 0.5.1, then 0.6.0 proposed for additive host capabilities, then 1.0.0. Verification alone can advance the current version.
 - Representative manifest `metis-ui 0.5.0`. Target 1.0.0.
 - [x] [patch] Resolve the root and fuzz graphs to Moirai Crypto 0.12.1 and RSA 0.10.0. The locked project audit passes with the RSA advisory waiver removed.
 - [ ] [patch] Exercise a real browser or native session from startup through file selection, completed display and teardown. Assert terminal failure propagation and resource cleanup for a failed startup.
 - [ ] [minor] Complete the platform and input exits on their supported hosts, coordinating focus traversal with [PR #585](https://github.com/ryancinsight/metis/pull/585). Record OS-restricted session behavior, text input and actual rendered output.
 - [ ] [major] Close the content, system and release milestones with a packaged application and a real RITK viewer session. Verify each supported host and distribution channel on its selected release.
-- [ ] [patch] Attach exact-revision evidence for the local exits and this member’s [Atlas qualification criteria](https://github.com/ryancinsight/atlas/blob/17b0124a7548ad81e817284afc5cb115c1d1bc78/docs/parity/repositories.json).
+- [ ] [patch] **0.5.1.** Start the host, open a file, display the result and close it. Repeat with a failed start or cancelled request. Verify terminal status and resource cleanup against the published Moirai Crypto graph. [Source and baseline](gap_audit.md#incremental-release-baseline).
+- [ ] [minor] **0.6.0 proposed for additive host capabilities.** Complete the platform, input, content and system exits for each claimed host. Record which restricted desktop or browser executed each case and replay the RITK viewer through the installed host.
+- [ ] [major] **1.0.0-beta.1 → 1.0.0-rc.1 → 1.0.0.** Freeze the supported surface at beta. An external viewer opens and renders a study across the declared hosts, and teardown releases the same resources as on clean startup. Repeat the applicable exits on the exact RC before stable promotion. Attach exact-revision evidence for the local exits and this member’s [Atlas qualification criteria](https://github.com/ryancinsight/atlas/blob/17b0124a7548ad81e817284afc5cb115c1d1bc78/docs/parity/repositories.json).
 
 Prepared framework target: Metis0.5.0; unpublished review in existing PR505.
 

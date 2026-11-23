@@ -1,5 +1,13 @@
 # Open capability and evidence risks
 
+## Incremental release baseline
+
+Reviewed [metis-ui 0.5.0](Cargo.toml) at [e15b8b5f93aa](https://github.com/ryancinsight/metis/tree/e15b8b5f93aa91c8045cb68287a33c258dff94fc). The exact version appears in the [registry](https://crates.io/crates/metis-ui/0.5.0).
+
+The next [patch] checkpoint uses [lifecycle tests](crates/metis-web/src/http/lifecycle_tests.rs). [Target version and acceptance criteria](backlog.md#metis-stable-qualification).
+
+The Atlas board check reports 22 existing schema findings, including `METIS-CURRENT-PROVIDERS-001`. Verify each item against its delivery evidence, archive completed work and rerun the board check before the freeze.
+
 ## Moirai RSA provider — 2026-11-22 [patch]
 
 Removing the waiver exposed RUSTSEC-2023-0071 in RSA 0.9.10. The workspace and fuzz lockfiles now resolve one Moirai Crypto 0.12.1 and one RSA 0.10.0 each. Both graphs retain the Git source used by the webview. The workspace passes all four dependency checks and 121 core, host and backend tests, including capability scope and audit-chain integrity. RITK consumes this change through its Metis lock.
