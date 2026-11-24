@@ -17,6 +17,8 @@ mod types;
 
 #[cfg(test)]
 mod tests;
+#[cfg(test)]
+mod wire_tests;
 
 pub use codec::{decode, encode};
 pub use types::{
