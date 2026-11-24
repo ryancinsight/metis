@@ -36,7 +36,7 @@ native budget changes occur; protected503/504 source remains separate.
 ## METIS-CURRENT-PROVIDERS-001 — Admit current provider defaults [major]
 - milestone: M-release.
 
-- Status: blocked; priority: P1; owner: current-provider integration; target: 0.5.0; last-update: 2026-10-28.
+- Status: blocked; priority: feature; owner: current-provider integration; target: 0.5.0; last-update: 2026-10-28.
 - Public contract: exported Color's Eunomia-owned Pod/Zeroable traits follow
   the canonical 0.11 provider; AssetError's public From<Consus DecodeError>
   follows Consus 0.4. The intermediate 0.10/0.3 checkpoint remains historical.
@@ -103,7 +103,7 @@ Current framework version: Metis 0.5.0. Remaining capability work follows.
 ## METIS-PYPI-FIRST-RELEASE-001 — Complete the genuine Python first release [patch]
 - milestone: M-release.
 
-- Status: blocked; priority: P1; owner: PyPI pipeline repair; last-update: 2026-10-29.
+- Status: blocked; priority: feature; owner: PyPI pipeline repair; last-update: 2026-10-29.
 - Identity: distribution `metis-ui`, import `metis`, crate `metis-python`;
   version comes from `[workspace.package].version` (0.5.0 at inspection).
   Only a published GitHub release tagged `metis-ui-v0.5.0` starts upload;
@@ -194,7 +194,7 @@ Current framework version: Metis 0.5.0. Remaining capability work follows.
 ## METIS-WEBVIEW-RUST-001 — Rust-owned Windows page lifecycle [minor]
 - milestone: M-platform.
 
-- Status: todo; priority: P1; owner: Metis presentation; last-update: 2026-10-12; risk: application behavior lost during script removal.
+- Status: todo; priority: feature; owner: Metis presentation; last-update: 2026-10-12; risk: application behavior lost during script removal.
 - Scope: replace the form's 125 and permission probe's 88 embedded JavaScript lines with Rust/WASM presentation and typed WebView2 bridge bindings; retain generated browser interoperability.
 - Acceptance: real Windows journeys preserve theme/command focus, shortcuts, input-sensitive calculation replies, malformed/error replies, request admission and all four capability denials; listeners and permission work detach on teardown.
 - Verification: build the packaged pages from the canonical Git lock and compare exact model, reply, focus and capability outcomes before/after; count raw-string scripts as well as standalone modules.
@@ -202,7 +202,7 @@ Current framework version: Metis 0.5.0. Remaining capability work follows.
 
 <a id="METIS-BROWSER-READ-001"></a>
 ## METIS-BROWSER-READ-001 — Diagnose selected-file reads
-- Status: blocked; priority: P0; integrator: root; last-update: 2026-09-22.
+- Status: blocked; priority: correctness; integrator: root; last-update: 2026-09-22.
 - milestone: M-content.
 - Scope: preserve format-neutral provider read failures and reproduce real chooser reads; DICOM semantics remain in RITK.
 - Acceptance: exact failing operation identified, owning fix verified on saved MRI-DIR Chromium/Firefox/WebKit gallery and byte oracles.
@@ -233,7 +233,7 @@ an owner. “Unsupported” cannot replace delivery of a required mobile/native 
 
 <a id="METIS-DESKTOP-001"></a>
 ## METIS-DESKTOP-001 — Native restricted desktop [arch] [major]
-- Status: todo; priority: P1; owner: Metis Windows host + Moirai; last-update: 2026-10-12; ADR: [0032](docs/adr/0032-display-scale.md); dependencies: METIS-AUTHORITY-001, METIS-COMMANDS-001; risk: trust boundary
+- Status: todo; priority: feature; owner: Metis Windows host + Moirai; last-update: 2026-10-12; ADR: [0032](docs/adr/0032-display-scale.md); dependencies: METIS-AUTHORITY-001, METIS-COMMANDS-001; risk: trust boundary
 - milestone: M-platform.
 - [x] [patch] Portable verification ABI and module partition (2026-10-13): capture/input Windows `LONG`/`DWORD`/`BOOL` use exact 32-bit widths; `INPUT` has its real three arms and virtual-desktop movement uses 0x4000. Capture/input share 27 acyclic leaf modules, largest 249 lines; all importers and the public wheel-child path are updated without legacy forwarding helpers. Compiler binding checks reject shadowed dependencies, and eight input combinations preserve computed evidence values. All 424 script tests pass without skips; physical Windows input and heterogeneous-DPI acceptance remain open. [Design](scripts/native_input/design.md).
 - Trusted-input evidence increment (2026-10-12): `scripts/python_native_input_capture.py` now builds pointer press/release records with `MOUSEEVENTF_ABSOLUTE|MOUSEEVENTF_MOVE` (absolute grid coordinates were previously sent as relative deltas), re-verifies foreground at each delivered input and no longer masks the original failure when a `finally` detach fails; regression tests cover the record construction (focused suite 23 passed, full dependency-free suite 400 passed with 1 intentional skip). The overlay-resilience guards (`_guard_surface_visible` plus coverer naming) were behaviorally verified under a forced visible `CASCADIA_HOSTING_WINDOW_CLASS` occluder, and the wheel notch→shift response was measured live at [125, 125, 125, 65] logical px per notch (clamping at the 440 px scroll boundary); both contracts are documented in the native manual. All three trusted journeys were re-recorded at 120 dpi (`output/rec/*.json`) and each produces the audited Rate sentence: native Enter, WebView2 click→type→Enter and WebView2 pointer click on **Submit calculation**. The pointer journey required the compensated click point (404, 490): measured on this host the WebView2 surface hit-tests pointer input at `dpi/96` × the client point, so the button's client box (505, 613) is reached only through the compensation and an uncompensated physical click misses by 1.25×. The host display-scale defect is registered in [gap_audit.md](gap_audit.md); direct native-window input, uncompensated pointer submission at non-96 dpi, physical-mouse evidence and heterogeneous-DPI transitions remain open.
@@ -256,7 +256,7 @@ an owner. “Unsupported” cannot replace delivery of a required mobile/native 
 
 <a id="METIS-RELEASE-001"></a>
 ## METIS-RELEASE-001 — Publication readiness [patch]
-- Status: blocked; priority: P3; owner: Metis delivery; integrator: root; last-update: 2026-09-17; dependencies: METIS-DISTRIBUTION-001, METIS-CONFORMANCE-001; blocker: crates.io trusted-publisher registration and explicit release authority are external; re-open: registrations and release authority are available without adding repository secrets
+- Status: blocked; priority: feature; owner: Metis delivery; integrator: root; last-update: 2026-09-17; dependencies: METIS-DISTRIBUTION-001, METIS-CONFORMANCE-001; blocker: crates.io trusted-publisher registration and explicit release authority are external; re-open: registrations and release authority are available without adding repository secrets
 - milestone: M-release.
 - Scope: release-readiness metadata, package dry runs, final manual and platform evidence; registry authentication uses Atlas OIDC workflows without personal keys; preparation continues without release authority.
 - Acceptance: dependency-closed packages and exact-revision evidence; release execution is blocked until explicit authority, registry publisher registration, rollout and rollback details are available.
@@ -268,7 +268,7 @@ an owner. “Unsupported” cannot replace delivery of a required mobile/native 
 
 <a id="METIS-INPUT-001"></a>
 ## METIS-INPUT-001 — Interactive controls and shared UI state [minor]
-- Status: todo; priority: P1; owner: Metis UI/host; last-update: 2026-09-18; dependencies: METIS-BROWSER-001, MOI-WINDOW-KEY-MODIFIERS-2026-09-15; risk: native shortcut modifier state loss; ADR: 0014, 0027
+- Status: todo; priority: feature; owner: Metis UI/host; last-update: 2026-09-18; dependencies: METIS-BROWSER-001, MOI-WINDOW-KEY-MODIFIERS-2026-09-15; risk: native shortcut modifier state loss; ADR: 0014, 0027
 - milestone: M-input.
 - Scope: buttons, checks, radios, sliders, editable fields, select/menu/dialog controls; focus, pointer capture, drag/drop, wheel/touch/modifiers, shortcuts, reusable state/actions and subscription teardown.
 - Acceptance: keyboard and pointer/touch journeys update identical model values; disabled controls reject action; focus survives rerender and subscriptions detach on close; real hit targets agree with rendered geometry.
@@ -288,7 +288,7 @@ an owner. “Unsupported” cannot replace delivery of a required mobile/native 
 
 <a id="METIS-TEXT-001"></a>
 ## METIS-TEXT-001 — Text, selection and IME [minor]
-- Status: todo; priority: P1; owner: Metis input/presentation; last-update: 2026-09-22; dependencies: METIS-INPUT-001; risk: text corruption
+- Status: todo; priority: feature; owner: Metis input/presentation; last-update: 2026-09-22; dependencies: METIS-INPUT-001; risk: text corruption
 - milestone: M-input.
 - Scope: DOM text first; grapheme selection, composition/preedit/commit/cancel, clipboard/undo, wrapping, fallback fonts, bidi and text scaling. Custom renderer requires its own admitted text contract.
 - Acceptance: Unicode fixture strings/selection ranges and caret/line geometry match the contract; native IME exercised per OS, including CJK, combining marks, emoji and mixed-direction input.
@@ -299,7 +299,7 @@ an owner. “Unsupported” cannot replace delivery of a required mobile/native 
 
 <a id="METIS-A11Y-001"></a>
 ## METIS-A11Y-001 — Accessible application interaction [minor]
-- Status: todo; priority: P1; owner: Metis host/UI; last-update: 2026-09-22; dependencies: METIS-INPUT-001; risk: inaccessible controls
+- Status: todo; priority: feature; owner: Metis host/UI; last-update: 2026-09-22; dependencies: METIS-INPUT-001; risk: inaccessible controls
 - milestone: M-input.
 - Scope: semantic DOM roles/names/states, focus/action mapping, announcements, reduced motion/high contrast/zoom; OS accessibility bridge for any custom UI path.
 - Acceptance: semantic tree identity/actions and keyboard-only completion pass; actual supported screen readers traverse and operate the application; document platform limits instead of claiming certification from tree presence.
@@ -315,7 +315,7 @@ an owner. “Unsupported” cannot replace delivery of a required mobile/native 
 
 <a id="METIS-MACOS-001"></a>
 ## METIS-MACOS-001 — macOS restricted desktop [arch] [minor]
-- Status: todo; priority: P1; owner: Metis macOS host + Moirai; dependencies: METIS-DESKTOP-001; risk: OS boundary
+- Status: todo; priority: feature; owner: Metis macOS host + Moirai; dependencies: METIS-DESKTOP-001; risk: OS boundary
 - milestone: M-platform.
 - Scope: native window/WebView events, accessibility/IME integration, process containment, sandbox restrictions and teardown; share broker semantics, not Windows implementation details.
 - Acceptance: host-native [V05](docs/VERIFICATION.md#V05) plus unauthorized file/network/process denial, child drain and positive IPC; cross compilation alone cannot close this item.
@@ -329,7 +329,7 @@ an owner. “Unsupported” cannot replace delivery of a required mobile/native 
 
 <a id="METIS-LINUX-001"></a>
 ## METIS-LINUX-001 — Linux restricted desktop [arch] [minor]
-- Status: todo; priority: P1; owner: Metis Linux host + Moirai; dependencies: METIS-DESKTOP-001; risk: OS/display boundary
+- Status: todo; priority: feature; owner: Metis Linux host + Moirai; dependencies: METIS-DESKTOP-001; risk: OS/display boundary
 - milestone: M-platform.
 - Scope: native WebView hosting under Wayland and X11, input/accessibility/IME, process containment, permission restrictions and bounded teardown.
 - Acceptance: [V05](docs/VERIFICATION.md#V05) on both display paths, positive IPC and unauthorized file/network/process denial; unavailable prerequisites produce actionable errors, never sandbox bypass.
@@ -343,7 +343,7 @@ an owner. “Unsupported” cannot replace delivery of a required mobile/native 
 - Native JPEG increment: [PR 312](https://github.com/ryancinsight/metis/pull/312) uses merged [Consus PR 76](https://github.com/ryancinsight/consus/pull/76), with [RITK](../ritk/backlog.md#RITK-JPEG-001) owning medical conversion. The integrated full gate passes 386 debug and 386 release tests; native V06 matches all 464,000 client RGB pixels at 120 DPI. Broader media/GPU acceptance remains open.
 - Native PNG increment (2026-09-19): bounded scoped loading, strict complete zlib/PNG decoding, orientation-aware contain and value-semantic malformed/alpha/aspect/orientation fixtures; [ADR 0029](docs/adr/0029-image-orientation.md) and [native V06 gallery](docs/manual/native.md#native-image-assets) own the contract and exact client-pixel capture.
 - Media evidence increment (2026-09-21): reviewed browser and native captures now use lossless WebP/PNG assets under the 200 KiB tracked-image budget, the Python capture manifest names the retained files, and the Metis mark is a bounded PNG alternate. The real MRI-DIR CT gallery remains 409 files/216,156,416 bytes with non-black axial, coronal and sagittal views; hosted Windows and lockfile checks passed in [PR #322](https://github.com/ryancinsight/metis/pull/322), merged at `6633064`.
-- Status: todo; priority: P1; owner: Metis asset/presentation + existing Atlas format providers; last-update: 2026-09-21; dependencies: METIS-BROWSER-001, METIS-AUTHORITY-001; risk: hostile content
+- Status: todo; priority: feature; owner: Metis asset/presentation + existing Atlas format providers; last-update: 2026-09-21; dependencies: METIS-BROWSER-001, METIS-AUTHORITY-001; risk: hostile content
 - ADR: [0019](docs/adr/0019-raster-display-command.md); the public `DisplayCommand` enum addition is a major release change and has no version bump until release authority opens a release increment.
 - Scope: bounded local asset loading, image/SVG presentation, font loading and browser audio/video controls; validate paths/origins, dimensions/decoding budgets and target permissions.
 - Acceptance: malformed/truncated/oversized/traversal assets fail; declared colors/alpha/aspect ratio/orientation match fixtures; media error and teardown states release resources.
@@ -354,7 +354,7 @@ an owner. “Unsupported” cannot replace delivery of a required mobile/native 
 
 <a id="METIS-GRAPHICS-001"></a>
 ## METIS-GRAPHICS-001 — Custom graphics conformance [arch] [minor]
-- Status: todo; priority: P2; owner: Metis custom renderer over Iris; last-update: 2026-09-13; dependencies: METIS-VISUAL-001, METIS-LAYOUT-001; risk: rendering/lifetime correctness; delivery: Metis PR #97, merge `81d7dff`
+- Status: todo; priority: feature; owner: Metis custom renderer over Iris; last-update: 2026-09-13; dependencies: METIS-VISUAL-001, METIS-LAYOUT-001; risk: rendering/lifetime correctness; delivery: Metis PR #97, merge `81d7dff`
 - milestone: M-content.
 - Scope: admitted vector/image/transform/clip operations and accelerated display path where required by the custom-UI demonstrator; retain one rendering contract and verify Atlas GPU ownership before additions.
 - Acceptance: geometry/color/alpha and device-loss/recreate tests; differential software/device output under justified raster bounds; measured profile justifies acceleration and accounts for memory cost.
@@ -365,7 +365,7 @@ an owner. “Unsupported” cannot replace delivery of a required mobile/native 
 
 <a id="METIS-FILES-001"></a>
 ## METIS-FILES-001 — Scoped files and persistent state [minor]
-- Status: todo; priority: P2; owner: Metis broker + owning Atlas storage provider; last-update: 2026-09-15; dependencies: METIS-DESKTOP-001; risk: user data/TOCTOU
+- Status: todo; priority: feature; owner: Metis broker + owning Atlas storage provider; last-update: 2026-09-15; dependencies: METIS-DESKTOP-001; risk: user data/TOCTOU
 - milestone: M-content.
 - Historical evidence: [increment records](docs/backlog/evidence.md#metis-files-001).
 - Scope: file dialogs, reads/writes/watch, settings/store/database contract and versioned recovery with explicit scope; no raw frontend access to unrestricted paths.
@@ -383,7 +383,7 @@ an owner. “Unsupported” cannot replace delivery of a required mobile/native 
 
 <a id="METIS-INTEGRATION-001"></a>
 ## METIS-INTEGRATION-001 — Desktop integration services [minor]
-- Status: todo; priority: P2; owner: Metis host/broker; last-update: 2026-10-13; branch: feat/metis-native-command-menu-001; dependencies: METIS-DESKTOP-001; risk: OS interaction
+- Status: todo; priority: feature; owner: Metis host/broker; last-update: 2026-10-13; branch: feat/metis-native-command-menu-001; dependencies: METIS-DESKTOP-001; risk: OS interaction
 - milestone: M-system.
 - Scope: menus/tray, clipboard, notifications, global shortcuts, deep links, file associations, opener, single-instance and window state; bind each exposed API to policy.
 - Acceptance: typed commands/events agree across supported hosts, denial/error paths remain explicit, clipboard/user-content permissions obey host rules and listeners unregister on shutdown.
@@ -510,7 +510,7 @@ an owner. “Unsupported” cannot replace delivery of a required mobile/native 
 
 <a id="METIS-SERVICES-001"></a>
 ## METIS-SERVICES-001 — Scoped network, shell and sidecars [minor]
-- Status: todo; priority: P2; owner: Moirai mechanisms + Metis policy; last-update: 2026-09-21; delivery: [PR #328](https://github.com/ryancinsight/metis/pull/328), merge `e8c37b23e5231234518a29cdc713de0eb21c38d8`; dependencies: METIS-DESKTOP-001, METIS-COMMANDS-001; risk: privilege escalation
+- Status: todo; priority: feature; owner: Moirai mechanisms + Metis policy; last-update: 2026-09-21; delivery: [PR #328](https://github.com/ryancinsight/metis/pull/328), merge `e8c37b23e5231234518a29cdc713de0eb21c38d8`; dependencies: METIS-DESKTOP-001, METIS-COMMANDS-001; risk: privilege escalation
 - milestone: M-system.
 - Scope: HTTP/WebSocket and subprocess APIs, sidecar lifecycle, endpoint/argument allowlists, bounded IO and credential redaction; local test services only by default.
 - Acceptance: unauthorized endpoints/commands/arguments fail; transient errors, deadlines, cancellation, crash and cleanup are exercised against real processes/local servers; no shell-string injection or secret output.
@@ -523,7 +523,7 @@ an owner. “Unsupported” cannot replace delivery of a required mobile/native 
 
 <a id="METIS-MIGRATION-001"></a>
 ## METIS-MIGRATION-001 — egui and Tauri application migration [arch] [minor]
-- Status: todo; priority: P1; owner: Metis framework + application owners; last-update: 2026-09-21; delivery: Metis PR #124 (merge `35ba45c`); risk: lost application behavior.
+- Status: todo; priority: feature; owner: Metis framework + application owners; last-update: 2026-09-21; delivery: Metis PR #124 (merge `35ba45c`); risk: lost application behavior.
 - milestone: M-system.
 - lease: root — backlog.md current replay citations — 2026-09-22T00:00:00-04:00
 - Dependencies: METIS-FILES-001, METIS-INPUT-001, METIS-ASSETS-001, METIS-GRAPHICS-001, METIS-DESKTOP-001, METIS-INTEGRATION-001, METIS-SERVICES-001.
@@ -544,7 +544,7 @@ an owner. “Unsupported” cannot replace delivery of a required mobile/native 
 
 <a id="METIS-DISTRIBUTION-003"></a>
 ## METIS-DISTRIBUTION-003 — macOS and Linux installers [arch] [minor]
-- Status: todo; priority: P2; owner: Metis tooling; last-update: 2026-09-21; dependencies: METIS-DISTRIBUTION-001; risk: platform ownership and lifecycle
+- Status: todo; priority: feature; owner: Metis tooling; last-update: 2026-09-21; dependencies: METIS-DISTRIBUTION-001; risk: platform ownership and lifecycle
 - milestone: M-system.
 - Scope: target-specific executable/bundle and installation formats using the same validated inventory; each target requires its native host for installation evidence.
 - Acceptance: build/install/run/uninstall on macOS and Linux preserves user files and application behavior; actual host evidence and platform manual instructions. [ADR 0005](docs/adr/0005-application-distribution.md), [V10](docs/VERIFICATION.md#V10).
@@ -553,14 +553,14 @@ an owner. “Unsupported” cannot replace delivery of a required mobile/native 
 
 <a id="METIS-DISTRIBUTION-004"></a>
 ## METIS-DISTRIBUTION-004 — Signed update and recovery [arch] [minor]
-- Status: todo; priority: P2; owner: Metis tooling; dependencies: METIS-DISTRIBUTION-001; risk: publisher authentication/data loss
+- Status: todo; priority: feature; owner: Metis tooling; dependencies: METIS-DISTRIBUTION-001; risk: publisher authentication/data loss
 - milestone: M-system.
 - Scope: signed package verification, authenticated update/rollback and format evolution; no silent MSI overwrite or downgrade. Production signing identity/publication needs separate authority.
 - Acceptance: corrupt/expired/signature-invalid updates reject, interruption recovers installed state and preserves user files; real local update/recovery workflow and manual. [ADR 0005](docs/adr/0005-application-distribution.md), [V10](docs/VERIFICATION.md#V10).
 
 <a id="METIS-MOBILE-001"></a>
 ## METIS-MOBILE-001 — Mobile host and capability matrix [arch] [minor]
-- Status: todo; priority: P3; owner: Metis mobile host; dependencies: METIS-COMMANDS-001, METIS-INPUT-001, METIS-AUTHORITY-001; risk: mobile lifecycle/permissions
+- Status: todo; priority: feature; owner: Metis mobile host; dependencies: METIS-COMMANDS-001, METIS-INPUT-001, METIS-AUTHORITY-001; risk: mobile lifecycle/permissions
 - milestone: M-platform.
 - Scope: Android/iOS WebView host, touch/keyboard/rotation/suspend/resume, platform plugin boundary; enumerate geolocation, biometric, barcode, NFC and haptics requirements from the Tauri inventory.
 - Acceptance: real device/emulator journeys and permission prompts, restore/cancel across suspension; pin required Android/iOS capability pairs from Tauri's inventory and implement/test each. Restriction closes only comparator-unsupported/out-of-scope pairs; unmet admitted pairs remain open.
@@ -588,7 +588,7 @@ an owner. “Unsupported” cannot replace delivery of a required mobile/native 
 
 <a id="METIS-CONFORMANCE-001"></a>
 ## METIS-CONFORMANCE-001 — Final capability and target closure [patch]
-- Status: todo; priority: P3; owner: Metis integration; last-update: 2026-09-21; risk: structural conformance debt
+- Status: todo; priority: verification; owner: Metis integration; last-update: 2026-09-21; risk: structural conformance debt
 - milestone: M-release.
 - Historical evidence: [increment records](docs/backlog/evidence.md#metis-conformance-001).
 - Dependencies: METIS-DESKTOP-001, METIS-MACOS-001, METIS-LINUX-001, METIS-TEXT-001, METIS-A11Y-001, METIS-ASSETS-001, METIS-GRAPHICS-001, METIS-FILES-001, METIS-INTEGRATION-001, METIS-SERVICES-001, METIS-MIGRATION-001, METIS-MOBILE-001, METIS-PERF-001
@@ -622,7 +622,7 @@ an owner. “Unsupported” cannot replace delivery of a required mobile/native 
 
 <a id="METIS-I18N-001"></a>
 ## METIS-I18N-001 — Localize UI strings through a message catalog [minor]
-- Status: todo; priority: P2; needs: METIS-TEXT-001
+- Status: todo; priority: feature; needs: METIS-TEXT-001
 - milestone: M-input.
 - Outcome: user-visible strings render in the selected locale instead of the source language they were written in.
 - Scope: message catalog + locale selection only; text shaping, bidi, and IME stay in METIS-TEXT-001. The catalog core is delivered (metis#444: `Locale`, `Catalog`, `Resolved`, `catalog!`, `format_message`, 12 tests). What remains is routing display text through it — and measurement shows the first-party Rust surface is almost entirely NOT display text: `metis-app`/`metis-frontend` literals are semantic ids (`label-patient`), ARIA roles (`menuitem`), error/log strings, and test fixtures, none of which may move (localizing an id breaks its references; logs stay source-language for diagnosability). Genuine display text originates from consumers (the RITK viewer strings), window/menu configuration supplied by callers, and HTML/JS assets — a multi-language, multi-repo surface, not a Rust-literal migration.
