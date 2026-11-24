@@ -423,5 +423,5 @@ fn path_rule_table() {
 }
 
 fn check_path_for_test(path: &str) -> bool {
-    super::check_path(path).is_ok()
+    super::types::check_path(path).is_ok()
 }

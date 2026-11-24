@@ -3,7 +3,7 @@
 //! [`encode`] always emits canonical bytes; [`decode`] accepts only canonical
 //! bytes. See the parent module for the field order and the rejected classes.
 
-use super::{
+use super::types::{
     AssetKind, AssetRecord, BuildConfiguration, EmbeddedModuleInventory, INVENTORY_MAGIC,
     INVENTORY_SCHEMA, InputRecord, InventoryError, MAX_MANIFEST_BYTES, MAX_MODULE_BYTES,
     MAX_RECORDS, ProviderRecord, ProviderSource, Result, ToolRecord, check_assets,
@@ -71,14 +71,14 @@ fn push_identity(
     tools: &[ToolRecord],
 ) -> Result<()> {
     out.extend_from_slice(INVENTORY_MAGIC);
-    push_u16(out, INVENTORY_SCHEMA);
+    out.extend_from_slice(&INVENTORY_SCHEMA.to_be_bytes());
     push_string(out, &inventory.package)?;
     push_string(out, &inventory.package_id)?;
     push_string(out, &inventory.cdylib_target)?;
     push_string(out, &inventory.wasm_target)?;
     push_string(out, &inventory.export_name)?;
     push_string(out, &inventory.platform_tag)?;
-    push_u16(out, inventory.page_schema);
+    out.extend_from_slice(&inventory.page_schema.to_be_bytes());
     out.extend_from_slice(&inventory.lock_digest);
     for provider in providers {
         check_string(&provider.package_id)?;
@@ -96,7 +96,7 @@ fn push_identity(
         check_string(&tool.name)?;
         check_string(&tool.version_output)?;
     }
-    push_u32(out, u32_len(providers.len())?);
+    out.extend_from_slice(&checked_len(providers.len())?.to_be_bytes());
     for provider in providers {
         push_string(out, &provider.package_id)?;
         push_string(out, &provider.version)?;
@@ -116,7 +116,7 @@ fn push_identity(
             }
         }
     }
-    push_u32(out, u32_len(tools.len())?);
+    out.extend_from_slice(&checked_len(tools.len())?.to_be_bytes());
     for tool in tools {
         push_string(out, &tool.name)?;
         push_string(out, &tool.version_output)?;
@@ -143,15 +143,15 @@ fn push_config(
         check_string(value)?;
     }
     push_string(out, &config.profile)?;
-    push_u32(out, u32_len(features.len())?);
+    out.extend_from_slice(&checked_len(features.len())?.to_be_bytes());
     for feature in features {
         push_string(out, feature)?;
     }
-    push_u32(out, u32_len(config.rustflags.len())?);
+    out.extend_from_slice(&checked_len(config.rustflags.len())?.to_be_bytes());
     for flag in &config.rustflags {
         push_string(out, flag)?;
     }
-    push_u32(out, u32_len(environment.len())?);
+    out.extend_from_slice(&checked_len(environment.len())?.to_be_bytes());
     for (key, value) in environment {
         push_string(out, key)?;
         push_string(out, value)?;
@@ -160,25 +160,25 @@ fn push_config(
 }
 
 fn push_inputs(out: &mut Vec<u8>, inputs: &[InputRecord]) -> Result<()> {
-    push_u32(out, u32_len(inputs.len())?);
+    out.extend_from_slice(&checked_len(inputs.len())?.to_be_bytes());
     for input in inputs {
         push_string(out, &input.owner)?;
         push_string(out, &input.path)?;
-        push_u64(out, input.length);
+        out.extend_from_slice(&input.length.to_be_bytes());
         out.extend_from_slice(&input.digest);
     }
     Ok(())
 }
 
 fn push_assets(out: &mut Vec<u8>, assets: &[AssetRecord]) -> Result<()> {
-    push_u32(out, u32_len(assets.len())?);
+    out.extend_from_slice(&checked_len(assets.len())?.to_be_bytes());
     for asset in assets {
         out.push(match asset.kind {
             AssetKind::JavaScript => 0,
             AssetKind::Wasm => 1,
         });
         push_string(out, &asset.destination)?;
-        push_u64(out, asset.length);
+        out.extend_from_slice(&asset.length.to_be_bytes());
         out.extend_from_slice(&asset.digest);
     }
     Ok(())
@@ -198,7 +198,7 @@ pub fn decode(bytes: &[u8]) -> Result<EmbeddedModuleInventory> {
     if magic != INVENTORY_MAGIC {
         return Err(InventoryError::UnknownSchema(0));
     }
-    let schema = cursor.u16_be()?;
+    let schema = u16::from_be_bytes(cursor.fixed()?);
     if schema != INVENTORY_SCHEMA {
         return Err(InventoryError::UnknownSchema(schema));
     }
@@ -208,7 +208,7 @@ pub fn decode(bytes: &[u8]) -> Result<EmbeddedModuleInventory> {
     let wasm_target = cursor.string()?;
     let export_name = cursor.string()?;
     let platform_tag = cursor.string()?;
-    let page_schema = cursor.u16_be()?;
+    let page_schema = u16::from_be_bytes(cursor.fixed()?);
     let lock_digest = cursor.digest()?;
     let providers = pull_providers(&mut cursor)?;
     let tools = pull_tools(&mut cursor)?;
@@ -323,7 +323,7 @@ fn pull_inputs(cursor: &mut Cursor<'_>) -> Result<Vec<InputRecord>> {
         let owner = cursor.string()?;
         let path = cursor.string()?;
         check_path(&path)?;
-        let length = cursor.u64_be()?;
+        let length = u64::from_be_bytes(cursor.fixed()?);
         let digest = cursor.digest()?;
         inputs.push(InputRecord {
             owner,
@@ -347,7 +347,7 @@ fn pull_assets(cursor: &mut Cursor<'_>) -> Result<Vec<AssetRecord>> {
         };
         let destination = cursor.string()?;
         check_path(&destination)?;
-        let length = cursor.u64_be()?;
+        let length = u64::from_be_bytes(cursor.fixed()?);
         if length > MAX_MODULE_BYTES {
             return Err(InventoryError::OversizeAsset);
         }
@@ -364,25 +364,13 @@ fn pull_assets(cursor: &mut Cursor<'_>) -> Result<Vec<AssetRecord>> {
 }
 
 /// Convert a length to `u32`, rejecting values no manifest can hold.
-fn u32_len(len: usize) -> Result<u32> {
+fn checked_len(len: usize) -> Result<u32> {
     u32::try_from(len).map_err(|_| InventoryError::OversizeManifest)
-}
-
-fn push_u16(out: &mut Vec<u8>, value: u16) {
-    out.extend_from_slice(&value.to_be_bytes());
-}
-
-fn push_u32(out: &mut Vec<u8>, value: u32) {
-    out.extend_from_slice(&value.to_be_bytes());
-}
-
-fn push_u64(out: &mut Vec<u8>, value: u64) {
-    out.extend_from_slice(&value.to_be_bytes());
 }
 
 fn push_string(out: &mut Vec<u8>, value: &str) -> Result<()> {
     let bytes = value.as_bytes();
-    push_u32(out, u32_len(bytes.len())?);
+    out.extend_from_slice(&checked_len(bytes.len())?.to_be_bytes());
     out.extend_from_slice(bytes);
     Ok(())
 }
@@ -411,25 +399,15 @@ impl<'a> Cursor<'a> {
         Ok(slice)
     }
 
-    fn u16_be(&mut self) -> Result<u16> {
-        let bytes = self.take(2)?;
-        Ok(u16::from_be_bytes([bytes[0], bytes[1]]))
-    }
-
-    fn u32_be(&mut self) -> Result<u32> {
-        let bytes = self.take(4)?;
-        Ok(u32::from_be_bytes([bytes[0], bytes[1], bytes[2], bytes[3]]))
-    }
-
-    fn u64_be(&mut self) -> Result<u64> {
-        let bytes = self.take(8)?;
-        Ok(u64::from_be_bytes([
-            bytes[0], bytes[1], bytes[2], bytes[3], bytes[4], bytes[5], bytes[6], bytes[7],
-        ]))
+    fn fixed<const N: usize>(&mut self) -> Result<[u8; N]> {
+        let bytes = self.take(N)?;
+        let mut out = [0u8; N];
+        out.copy_from_slice(bytes);
+        Ok(out)
     }
 
     fn count(&mut self) -> Result<usize> {
-        let value = self.u32_be()?;
+        let value = u32::from_be_bytes(self.fixed()?);
         if usize::try_from(value).map_err(|_| InventoryError::TooManyRecords)? > MAX_RECORDS {
             return Err(InventoryError::TooManyRecords);
         }
@@ -438,7 +416,7 @@ impl<'a> Cursor<'a> {
     }
 
     fn string(&mut self) -> Result<String> {
-        let len = self.u32_be()?;
+        let len = u32::from_be_bytes(self.fixed()?);
         if u64::from(len) > self.remaining() as u64 {
             return Err(InventoryError::Truncated);
         }
@@ -451,10 +429,7 @@ impl<'a> Cursor<'a> {
     }
 
     fn digest(&mut self) -> Result<[u8; 32]> {
-        let bytes = self.take(32)?;
-        let mut out = [0u8; 32];
-        out.copy_from_slice(bytes);
-        Ok(out)
+        self.fixed()
     }
 
     fn tag(&mut self) -> Result<u8> {
