@@ -211,7 +211,7 @@ pub struct EmbeddedModuleInventory {
 }
 
 pub(super) fn check_string(value: &str) -> Result<()> {
-    if value.len() > u32::MAX as usize {
+    if u32::try_from(value.len()).is_err() {
         return Err(InventoryError::OversizeManifest);
     }
     Ok(())
@@ -368,8 +368,8 @@ pub fn hex_digest(digest: &[u8; 32]) -> String {
     const HEX: &[u8; 16] = b"0123456789abcdef";
     let mut out = String::with_capacity(64);
     for byte in digest {
-        out.push(HEX[(byte >> 4) as usize] as char);
-        out.push(HEX[(byte & 0x0f) as usize] as char);
+        out.push(char::from(HEX[usize::from(byte >> 4)]));
+        out.push(char::from(HEX[usize::from(byte & 0x0f)]));
     }
     out
 }

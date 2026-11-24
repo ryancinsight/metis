@@ -417,7 +417,8 @@ impl<'a> Cursor<'a> {
 
     fn string(&mut self) -> Result<String> {
         let len = u32::from_be_bytes(self.fixed()?);
-        if u64::from(len) > self.remaining() as u64 {
+        let remaining = u64::try_from(self.remaining()).map_err(|_| InventoryError::Truncated)?;
+        if u64::from(len) > remaining {
             return Err(InventoryError::Truncated);
         }
         // Exact: len fits the remaining in-memory bytes, which fit in usize.
