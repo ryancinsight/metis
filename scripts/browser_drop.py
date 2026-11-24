@@ -140,6 +140,14 @@ def _sample_canvas_pixels(client: WebDriverClient, canvas_id: str) -> dict[str, 
     return sample
 
 
+def _require_served_output(output: pathlib.Path) -> None:
+    """Require screenshot output under the served tree, where the page decodes it."""
+    if not output.resolve().is_relative_to(BROWSER_SERVE_ROOT.resolve()):
+        raise BrowserRuntimeError(
+            f"screenshot canvas capture requires --output inside {BROWSER_SERVE_ROOT}: {output}"
+        )
+
+
 def study_files(directory: pathlib.Path, pattern: str = "*") -> tuple[list[pathlib.Path], int]:
     """Select immediate regular files without traversing a folder or link."""
     files = []
@@ -376,6 +384,7 @@ def run(
     canvas_context = getattr(args, "canvas_context", None)
     if canvas_capture is CanvasCaptureMode.SCREENSHOT:
         canvas_context = validate_context_name(canvas_context)
+        _require_served_output(args.output)
     if canvas_capture is CanvasCaptureMode.SCREENSHOT and lifecycle_cycles > 1:
         raise BrowserRuntimeError("screenshot canvas capture requires one gallery lifecycle")
     device_scale_milli = (

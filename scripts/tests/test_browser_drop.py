@@ -22,6 +22,7 @@ from browser_drop import (
     OBSERVE_TRANSFER,
     build_parser,
     _capture_consumer_after_host_probes,
+    _require_served_output,
     parse_page_query,
     resolve_browser_target,
     run,
@@ -346,6 +347,24 @@ class FileDropTests(unittest.TestCase):
         with self.assertRaisesRegex(BrowserRuntimeError, "single gallery lifecycle"):
             run(args, consumer_capture=lambda *_: {})
 
+    def test_screenshot_output_must_lie_in_the_served_tree(self):
+        outside = BROWSER_SERVE_ROOT.parent / "elsewhere"
+        escaping = BROWSER_SERVE_ROOT / ".." / "elsewhere"
+        for label, output in (("sibling", outside), ("dot-dot", escaping)):
+            with self.subTest(label=label):
+                args = types.SimpleNamespace(
+                    engine="chromium", browser_name=None, input="chooser",
+                    lifecycle_cycles=1, canvas_trace=None, keyboard_trace=None,
+                    canvas_capture="screenshot", canvas_context="webgpu", output=output,
+                )
+                with self.assertRaisesRegex(
+                    BrowserRuntimeError,
+                    r"screenshot canvas capture requires --output inside .*output.browser: ",
+                ):
+                    run(args)
+        _require_served_output(BROWSER_SERVE_ROOT / "drop")
+        _require_served_output(BROWSER_SERVE_ROOT)
+
     @staticmethod
     def _probe_frames(
         client, *, interacted, capture=CanvasCaptureMode.RGBA, consumer_capture=None,
@@ -461,6 +480,13 @@ class FileDropTests(unittest.TestCase):
         client = _FrameClient(decoded=varied)
         require_screenshot_content(client, root, image, "viewer")
         self.assertEqual(client.decode_requests, [["drop/viewer.png", 10_000]])
+        a, b = [1, 2, 3, 255], [9, 2, 3, 255]
+        for label, pixels in (("last differs", a + a + b), ("middle differs", a + b + a)):
+            with self.subTest(label=label):
+                require_screenshot_content(
+                    _FrameClient(decoded={"ok": True, "width": 3, "height": 1, "pixels": pixels}),
+                    root, image, "viewer",
+                )
         cases = (
             ("decode failure", {"ok": False, "error": "decode deadline"}, image,
              "screenshot decode failed: 'decode deadline'"),
@@ -468,6 +494,8 @@ class FileDropTests(unittest.TestCase):
             ("short buffer", {"ok": True, "width": 2, "height": 1, "pixels": [1, 2, 3, 255]},
              image, "invalid RGBA buffer"),
             ("empty buffer", {"ok": True, "width": 0, "height": 0, "pixels": []},
+             image, "invalid RGBA buffer"),
+            ("missing width", {"ok": True, "width": None, "height": 1, "pixels": [1, 2, 3, 255]},
              image, "invalid RGBA buffer"),
             ("outside the served tree", varied, pathlib.Path("elsewhere") / "viewer.png",
              "outside the served tree"),

@@ -6,6 +6,11 @@ Date: 2026-09-16
 
 Driver: `METIS-BROWSER-001`
 
+Revised 2026-11-24: the runner decodes the baseline PNG and refuses a single
+uniform colour, so a blank frame cannot equal itself across the rejection
+probes; it still claims no RGBA equivalence. Evidence: the unit tests in
+`scripts/tests/test_browser_drop.py` and ryancinsight/metis#591.
+
 ## Context
 
 The generic browser runner's exact RGBA oracle reads a two-dimensional canvas
@@ -21,8 +26,12 @@ explicit `--canvas-capture screenshot --canvas-context <name>` mode. Screenshot
 mode validates the bounded intrinsic dimensions, checks the named context on
 each consumer canvas, captures the element PNG through WebDriver, and records
 its digest and dimensions. It supports one lifecycle and compares those
-digests after the rejection probes. The runner treats the PNG as opaque;
-consumers own pixel interpretation and any cross-provider comparison.
+digests after the rejection probes. Before those probes the runner decodes the
+saved baseline PNG from the served `output/browser` tree and refuses a single
+uniform colour, so `--output` must lie under that tree; argument checking
+rejects any other path before a file transfer. Beyond that check the runner
+does not interpret the pixels: consumers own pixel interpretation and any
+cross-provider comparison.
 
 ## Alternatives rejected
 
@@ -35,8 +44,10 @@ consumers own pixel interpretation and any cross-provider comparison.
 ## Failure modes and limits
 
 The runner fails when the named context is unavailable, intrinsic dimensions
-are outside the capture bound, WebDriver cannot return a valid PNG, or a
-rejection probe changes the captured digest. An element PNG does not establish
+are outside the capture bound, WebDriver cannot return a valid PNG, the
+baseline PNG is a single uniform colour, the browser cannot decode the
+baseline within its 10 s deadline, `--output` lies outside `output/browser`,
+or a rejection probe changes the captured digest. An element PNG does not establish
 RGBA readback equivalence, compositor timing, device performance or memory
 use. Those claims require a consumer-owned artifact and an independent oracle.
 

@@ -13,7 +13,7 @@ from browser_trace import Trace
 
 
 CONTEXT_NAME_PATTERN = re.compile(r"[a-z0-9][a-z0-9-]{0,31}\Z")
-# Screenshot decode deadline shared with the other READ_SCREENSHOT_PIXELS callers.
+# Browser-side PNG decode deadline of require_screenshot_content.
 SCREENSHOT_DECODE_DEADLINE_MS = 10_000
 
 
