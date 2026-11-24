@@ -1,4 +1,4 @@
-//! Embedded WebView2 module inventory and canonical binary codec.
+//! Embedded `WebView2` module inventory and canonical binary codec.
 //!
 //! Entry point for ADR 0059's preparation contract: one typed description of
 //! a prepared WASM page module plus the single binary encoding every

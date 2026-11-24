@@ -234,7 +234,7 @@ pub(super) fn check_path(path: &str) -> Result<()> {
             || segment == ".."
             || segment.ends_with(' ')
             || segment.ends_with('.')
-            || segment.chars().any(|c| c.is_control())
+            || segment.chars().any(char::is_control)
         {
             return Err(InventoryError::BadPath);
         }

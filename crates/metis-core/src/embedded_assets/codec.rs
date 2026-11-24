@@ -407,12 +407,12 @@ impl<'a> Cursor<'a> {
     }
 
     fn count(&mut self) -> Result<usize> {
-        let value = u32::from_be_bytes(self.fixed()?);
-        if usize::try_from(value).map_err(|_| InventoryError::TooManyRecords)? > MAX_RECORDS {
+        let count = u32::from_be_bytes(self.fixed()?);
+        let count = usize::try_from(count).map_err(|_| InventoryError::TooManyRecords)?;
+        if count > MAX_RECORDS {
             return Err(InventoryError::TooManyRecords);
         }
-        // The bound above proves the conversion is exact on every platform.
-        Ok(usize::try_from(value).map_err(|_| InventoryError::TooManyRecords)?)
+        Ok(count)
     }
 
     fn string(&mut self) -> Result<String> {
