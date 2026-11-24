@@ -46,7 +46,7 @@ pub enum InventoryError {
     UnknownTag(u8),
     /// An asset list is not exactly one JavaScript plus one WASM record.
     BadAssetSet,
-    /// A tool list is not exactly three records.
+    /// The tool list must contain one record each for `cargo`, `rustc`, and `wasm-bindgen`.
     BadToolSet,
     /// A WASM artifact lacks its magic or version header.
     BadWasmArtifact,
@@ -72,7 +72,9 @@ impl fmt::Display for InventoryError {
             InventoryError::BadAssetSet => {
                 write!(f, "asset set is not one JavaScript plus one WASM record")
             }
-            InventoryError::BadToolSet => write!(f, "tool set is not exactly three records"),
+            InventoryError::BadToolSet => {
+                write!(f, "expected cargo, rustc, and wasm-bindgen tool records")
+            }
             InventoryError::BadWasmArtifact => {
                 write!(f, "WASM artifact lacks magic or version header")
             }
@@ -200,7 +202,7 @@ pub struct EmbeddedModuleInventory {
     pub lock_digest: [u8; 32],
     /// Locked provider packages, sorted by package id.
     pub providers: Vec<ProviderRecord>,
-    /// Exactly three pinned tool records.
+    /// Exactly one pinned record each for `cargo`, `rustc`, and `wasm-bindgen`.
     pub tools: Vec<ToolRecord>,
     /// The build configuration.
     pub config: BuildConfiguration,
@@ -208,13 +210,6 @@ pub struct EmbeddedModuleInventory {
     pub inputs: Vec<InputRecord>,
     /// Exactly two generated assets: one JavaScript, one WASM.
     pub assets: Vec<AssetRecord>,
-}
-
-pub(super) fn check_string(value: &str) -> Result<()> {
-    if u32::try_from(value.len()).is_err() {
-        return Err(InventoryError::OversizeManifest);
-    }
-    Ok(())
 }
 
 /// Enforce the portable-path rule: non-empty, at most [`MAX_PATH_BYTES`]
@@ -259,20 +254,19 @@ fn lower_key(owner: &str, path: &str) -> (String, String) {
     (owner.to_ascii_lowercase(), path.to_ascii_lowercase())
 }
 
-/// Validate input content independent of order: portable paths, bounded
-/// owners, the module size budget, exact duplicates and ASCII-case
+/// Validate input content independent of order: portable paths, the
+/// module size budget, exact duplicates and ASCII-case
 /// collisions. Sorted copies make duplicate detection order-independent.
 pub(super) fn check_inputs(inputs: &[InputRecord]) -> Result<()> {
     for input in inputs {
         check_path(&input.path)?;
-        check_string(&input.owner)?;
         if input.length > MAX_MODULE_BYTES {
             return Err(InventoryError::OversizeAsset);
         }
     }
-    let mut keys: Vec<(String, String)> = inputs
+    let mut keys: Vec<_> = inputs
         .iter()
-        .map(|input| (input.owner.clone(), input.path.clone()))
+        .map(|input| (&input.owner, &input.path))
         .collect();
     keys.sort();
     for pair in keys.windows(2) {
@@ -305,10 +299,11 @@ pub(super) fn check_input_order(inputs: &[InputRecord]) -> Result<()> {
     Ok(())
 }
 
-pub(super) fn check_assets(assets: &[AssetRecord]) -> Result<()> {
-    if assets.len() != 2 {
+pub(super) fn check_assets<T: std::borrow::Borrow<AssetRecord>>(records: &[T]) -> Result<()> {
+    let [first, second] = records else {
         return Err(InventoryError::BadAssetSet);
-    }
+    };
+    let assets = [first.borrow(), second.borrow()];
     let mut kinds = [false, false];
     for asset in assets {
         check_path(&asset.destination)?;

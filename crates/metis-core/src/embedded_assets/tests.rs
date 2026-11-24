@@ -57,7 +57,11 @@ fn sample() -> EmbeddedModuleInventory {
         config: BuildConfiguration {
             profile: "release".into(),
             features: vec!["b".into(), "a".into(), "a".into()],
-            rustflags: vec!["-C debuginfo=line-tables-only".into()],
+            rustflags: vec![
+                "-Copt-level=2".into(),
+                "-Copt-level=1".into(),
+                "-Copt-level=2".into(),
+            ],
             environment: vec![("B".into(), "2".into()), ("A".into(), "1".into())],
         },
         inputs: vec![
@@ -104,9 +108,14 @@ fn round_trip_canonicalizes_and_reencodes_stably() {
     assert_eq!(decoded.providers[0].package_id, "alpha 1.0.0");
     assert_eq!(decoded.tools[0].name, "cargo");
     assert_eq!(
+        decoded.config.environment,
+        [("A".into(), "1".into()), ("B".into(), "2".into())]
+    );
+    assert_eq!(
         decoded.config.features,
         vec!["a".to_string(), "b".to_string()]
     );
+    assert_eq!(decoded.config.rustflags, sample().config.rustflags);
     assert_eq!(decoded.inputs[0].path, "a/lib.rs");
     assert_eq!(decoded.assets[0].destination, "a.js");
     assert_eq!(decoded.assets[1].destination, "b.wasm");
@@ -317,7 +326,7 @@ fn decode_rejects_unsorted_inputs() {
 fn decode_rejects_unsorted_tools() {
     let mut bytes = head();
     providers_zero(&mut bytes);
-    tools_named(&mut bytes, &["b", "a", "c"]);
+    tools_named(&mut bytes, &["rustc", "cargo", "wasm-bindgen"]);
     assert!(matches!(
         decode(&bytes),
         Err(InventoryError::UnsortedRecords)
@@ -424,4 +433,106 @@ fn path_rule_table() {
 
 fn check_path_for_test(path: &str) -> bool {
     super::types::check_path(path).is_ok()
+}
+
+#[test]
+fn provider_ids_must_be_unique_on_both_paths() {
+    let mut inv = sample();
+    inv.providers[0].package_id = inv.providers[1].package_id.clone();
+    assert_eq!(encode(&inv), Err(InventoryError::UnsortedRecords));
+
+    let mut bytes = head();
+    u32be(2, &mut bytes);
+    for version in [b"1", b"2"] {
+        field(&mut bytes, b"same-id");
+        field(&mut bytes, version);
+        bytes.push(1); // Registry
+        bytes.extend_from_slice(&[0; 32]);
+    }
+    tools_named(&mut bytes, &["cargo", "rustc", "wasm-bindgen"]);
+    config_empty(&mut bytes);
+    inputs_section(&mut bytes, &[]);
+    bytes.extend_from_slice(&assets_js_wasm("a.js", "b.wasm"));
+    assert_eq!(decode(&bytes), Err(InventoryError::UnsortedRecords));
+}
+
+#[test]
+fn tool_identities_are_checked_on_both_paths() {
+    for (replacement, error) in [
+        ("wasm-bindgen-cli", InventoryError::BadToolSet),
+        ("rustc", InventoryError::UnsortedRecords),
+    ] {
+        let mut inv = sample();
+        inv.tools[0].name = replacement.into();
+        assert_eq!(encode(&inv), Err(error.clone()));
+        let mut bytes = head();
+        providers_zero(&mut bytes);
+        tools_named(&mut bytes, &["cargo", "rustc", replacement]);
+        config_empty(&mut bytes);
+        inputs_section(&mut bytes, &[]);
+        bytes.extend_from_slice(&assets_js_wasm("a.js", "b.wasm"));
+        assert_eq!(decode(&bytes), Err(error));
+    }
+}
+
+#[test]
+fn duplicate_environment_pairs_are_rejected_on_both_paths() {
+    let mut inv = sample();
+    inv.config
+        .environment
+        .push(inv.config.environment[0].clone());
+    assert_eq!(encode(&inv), Err(InventoryError::UnsortedRecords));
+
+    let mut bytes = head();
+    providers_zero(&mut bytes);
+    tools_named(&mut bytes, &["cargo", "rustc", "wasm-bindgen"]);
+    field(&mut bytes, b"release");
+    u32be(0, &mut bytes); // Features
+    u32be(0, &mut bytes); // Flags
+    u32be(2, &mut bytes);
+    for _ in 0..2 {
+        field(&mut bytes, b"B");
+        field(&mut bytes, b"2");
+    }
+    inputs_section(&mut bytes, &[]);
+    bytes.extend_from_slice(&assets_js_wasm("a.js", "b.wasm"));
+    assert_eq!(decode(&bytes), Err(InventoryError::UnsortedRecords));
+}
+
+/// Construct a complete manifest of the requested size with a single long
+/// package name. The remaining fields are identical at both size boundaries.
+fn sized_manifest(size: usize) -> Vec<u8> {
+    let mut bytes = head();
+    providers_zero(&mut bytes);
+    tools_named(&mut bytes, &["cargo", "rustc", "wasm-bindgen"]);
+    config_empty(&mut bytes);
+    inputs_section(&mut bytes, &[]);
+    bytes.extend_from_slice(&assets_js_wasm("a.js", "b.wasm"));
+    let added = size - bytes.len();
+    let field_start = INVENTORY_MAGIC.len() + size_of::<u16>();
+    let payload_start = field_start + size_of::<u32>();
+    bytes[field_start..payload_start].copy_from_slice(
+        &u32::try_from(added)
+            .expect("test size fits u32")
+            .to_be_bytes(),
+    );
+    bytes.splice(
+        payload_start..payload_start,
+        std::iter::repeat_n(b'x', added),
+    );
+    bytes
+}
+
+#[test]
+fn manifest_budget_is_inclusive_on_both_paths() {
+    let bytes = sized_manifest(MAX_MANIFEST_BYTES);
+    let mut inv = decode(&bytes).expect("exact limit");
+    assert_eq!(encode(&inv).expect("re-encode exact limit"), bytes);
+    inv.package.push('x');
+    assert_eq!(encode(&inv).err(), Some(InventoryError::OversizeManifest));
+    let oversized = sized_manifest(MAX_MANIFEST_BYTES + 1);
+    assert_eq!(
+        decode(&oversized).err(),
+        Some(InventoryError::OversizeManifest)
+    );
 }
