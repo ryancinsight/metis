@@ -503,17 +503,16 @@ Current framework version: Metis 0.5.0. Remaining capability work follows.
 - next: list each residual sentence per ID, assign it, and delete the closed ones.
 
 <a id="METIS-DISPLAY-ASPECT-001"></a>
-## METIS-DISPLAY-ASPECT-001 — Preserve representable frame aspect
-- outcome: positive finite sample spacing produces its representable width/height ratio without intermediate overflow or underflow.
-- acceptance: 2×2 frames with equal maximum finite spacing have aspect 1; equal minimum subnormals also yield 1; dimension-compensated subnormal ratios remain positive; only unrepresentable final ratios return InvalidInput.
-- acceptance: browser presentation accepts those valid ratios; malformed dimensions/spacing remain rejected before upload.
-- scope: crates/metis-web/src/canvas/frame.rs, canvas/surface.rs, existing tests; RITK browser geometry consumer.
-- next: derive bounded exponent scaling using the locked numeric provider; retain raw physical spacing and consolidate the repeated RITK aspect formula after provider delivery.
-- evidence: current DisplaySpacing::aspect multiplies each dimension by spacing before division; maximum finite spacing times 2 overflows both operands although their true ratio equals 1.
+## METIS-DISPLAY-ASPECT-001 — Reject malformed frames before upload in the browser
+- outcome: `CanvasSurface::present` returns `InvalidInput` for malformed dimensions and unrepresentable spacing before any pixel upload, shown by execution.
+- acceptance: the `canvas_recovery` browser run presents a zero-dimension frame and a frame with unrepresentable spacing (minimum subnormal row, maximum finite column, 1×1); each returns `InvalidInput`, and the canvas pixels read back equal the previously presented frame. The example's existing equal-maximum-spacing frame must also be executed by a CI browser job.
+- scope: crates/metis-web/src/canvas/surface.rs (wasm32 only), crates/metis-web/examples/canvas_recovery/browser.rs, scripts/browser_gpu_recovery.py, .github/workflows/ci.yml
+- next: add the two rejection frames to the example and trace; run `scripts/browser_gpu_recovery.py` in the CI browser job (`git grep -n gpu_recovery -- .github` prints nothing at the basis). RITK formula consolidation is owned by RITK-SNAP-IMAGE-FIT-001 and leaves this item.
+- evidence: native aspect arithmetic passes `display_spacing_preserves_extreme_representable_aspects`, `display_spacing_rounds_boundary_counterexamples_once`, `display_spacing_rejects_invalid_values_and_dimensions` (canvas/frame.rs) and four `canvas::aspect` tests; `present` is wasm32-only, so no native test reaches it and no test passes it a malformed frame.
 - needs: none
-- Status: todo; priority: correctness
+- Status: todo; priority: verification
 - milestone: M-system
-- basis: b96e9ca67e0ee7130d0922d15aae9f4f93fefc26
+- basis: 90a0b593e8122adabd2c98f033fe513ffd6d04f1
 - driver: [RITK sample-aspect fitting](../ritk/backlog/RITK-SNAP-IMAGE-FIT-001.md); DICOM spacing admission remains RITK-owned.
 
 <a id="METIS-CANVAS-SAFARI-001"></a>
