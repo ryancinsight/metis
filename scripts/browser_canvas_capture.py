@@ -13,6 +13,8 @@ from browser_trace import Trace
 
 
 CONTEXT_NAME_PATTERN = re.compile(r"[a-z0-9][a-z0-9-]{0,31}\Z")
+# Screenshot decode deadline shared with the other READ_SCREENSHOT_PIXELS callers.
+SCREENSHOT_DECODE_DEADLINE_MS = 10_000
 
 
 CANVAS_CONTEXT = """
@@ -94,6 +96,51 @@ def capture_screenshot(
         "screenshot_bytes": screenshot["bytes"],
         "screenshot_sha256": screenshot["sha256"],
     }
+
+
+def require_screenshot_content(
+    client: WebDriverClient,
+    serve_root: pathlib.Path,
+    image_path: pathlib.Path,
+    canvas_id: str,
+) -> None:
+    """Require one saved canvas screenshot to hold more than a single colour.
+
+    The PNG is decoded by the browser from the served tree, so the comparison of
+    a screenshot against a later one cannot pass vacuously on two blank frames.
+    """
+    try:
+        served = image_path.relative_to(serve_root)
+    except ValueError as error:
+        raise BrowserRuntimeError(
+            f"canvas {canvas_id!r} screenshot lies outside the served tree {serve_root}"
+        ) from error
+    decoded = client.execute_async(
+        READ_SCREENSHOT_PIXELS, [served.as_posix(), SCREENSHOT_DECODE_DEADLINE_MS]
+    )
+    if not isinstance(decoded, dict) or decoded.get("ok") is not True:
+        detail = decoded.get("error") if isinstance(decoded, dict) else decoded
+        raise BrowserRuntimeError(
+            f"canvas {canvas_id!r} screenshot decode failed: {detail!r}"
+        )
+    pixels = decoded.get("pixels")
+    width, height = decoded.get("width"), decoded.get("height")
+    if (
+        type(width) is not int
+        or type(height) is not int
+        or not isinstance(pixels, list)
+        or len(pixels) == 0
+        or len(pixels) != width * height * 4
+    ):
+        raise BrowserRuntimeError(
+            f"canvas {canvas_id!r} screenshot decode returned an invalid RGBA buffer"
+        )
+    first = pixels[:4]
+    if pixels == first * (len(pixels) // 4):
+        raise BrowserRuntimeError(
+            f"canvas {canvas_id!r} screenshot is a single uniform colour {first}; "
+            "a rejection comparison against it would hold for any blank frame"
+        )
 
 
 def compare_screenshot_stability(

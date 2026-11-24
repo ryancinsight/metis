@@ -25,7 +25,7 @@ from browser_canvas import (
     capture_canvas_trace,
     KeyboardTraceKind,
     validate_canvas_ids, validate_canvas_attributes, validate_consumer_revision,
-    _element_screenshot, ensure_canvas_visible,
+    _element_screenshot, ensure_canvas_visible, settle_canvas_input,
 )
 from browser_file_read import capture_file_read_diagnostic, capture_file_selection_diagnostic
 from browser_runtime import _wait_for_text, _wait_for_selector, _write_trace
@@ -34,6 +34,7 @@ from browser_canvas_capture import (
     CanvasCaptureMode,
     capture_screenshot,
     compare_screenshot_stability,
+    require_screenshot_content,
     validate_context_name,
 )
 from browser_drop_lifecycle import (
@@ -49,6 +50,9 @@ ConsumerCapture = Callable[
     Mapping[str, Any],
 ]
 
+
+# Directory served to the browser; screenshots under it are decodable by the page.
+BROWSER_SERVE_ROOT = ROOT / "output" / "browser"
 
 # Independent test oracle for the existing host admission contract.
 MAX_FILES = 512
@@ -121,6 +125,19 @@ crypto.subtle.digest('SHA-256', pixels).then(hash => done({
   rgba_sha256: Array.from(new Uint8Array(hash), b => b.toString(16).padStart(2, '0')).join('')
 }), error => done({diagnostic: String(error)}));
 """
+
+
+def _sample_canvas_pixels(client: WebDriverClient, canvas_id: str) -> dict[str, Any]:
+    """Read one canvas after queued input settles, rejecting a failed readback."""
+    settle_canvas_input(client)
+    sample = client.execute_async(CANVAS_PIXELS, [canvas_id])
+    if (
+        not isinstance(sample, dict)
+        or any(key not in sample for key in ("non_black_pixels", "rgba_sha256"))
+    ):
+        detail = sample.get("diagnostic") if isinstance(sample, dict) else sample
+        raise BrowserRuntimeError(f"canvas {canvas_id!r} pixel readback failed: {detail!r}")
+    return sample
 
 
 def study_files(directory: pathlib.Path, pattern: str = "*") -> tuple[list[pathlib.Path], int]:
@@ -231,7 +248,7 @@ def _cleanup_transfer(client: WebDriverClient) -> dict:
 
 def _asset_digests() -> dict[str, str]:
     """Record generated page and consumer-module files without naming a consumer."""
-    output = ROOT / "output" / "browser"
+    output = BROWSER_SERVE_ROOT
     paths = [output / name for name in ("gallery.html", "gallery.js", "gallery.css")]
     package = output / "consumer"
     if package.is_dir():
@@ -280,27 +297,40 @@ def _capture_consumer_after_host_probes(
     """Run generic rejection probes before a consumer may tear down the host."""
     if input_source in ("chromium", "chooser"):
         # User interactions can change the frame before the rejection probes.
-        # Take the comparison sample before submitting any invalid batch.
+        # Take the comparison sample before submitting any invalid batch, and
+        # require it to hold content so a blank frame cannot equal itself.
         if canvas_capture is CanvasCaptureMode.RGBA:
-            expected_rgba = {
-                canvas_id: (
-                    client.execute_async(CANVAS_PIXELS, [canvas_id])["rgba_sha256"]
-                    if canvas_trace is not None else oracle[canvas_id]["rgba_sha256"]
+            expected_rgba = {}
+            for canvas_id in canvas_ids:
+                if canvas_trace is None:
+                    expected_rgba[canvas_id] = oracle[canvas_id]["rgba_sha256"]
+                    continue
+                sample = _sample_canvas_pixels(client, canvas_id)
+                if sample["non_black_pixels"] == 0:
+                    raise BrowserRuntimeError(
+                        f"canvas {canvas_id!r} is blank before the rejection probes"
+                    )
+                expected_rgba[canvas_id] = sample["rgba_sha256"]
+        else:
+            label_suffix = ""
+            if canvas_trace is not None:
+                label_suffix = "-before-rejections"
+                observations = {
+                    canvas_id: capture_screenshot(
+                        client, trace, output, canvas_id, observations[canvas_id], canvas_context,
+                        screenshot_label=f"{canvas_id}{label_suffix}",
+                    )
+                    for canvas_id in canvas_ids
+                }
+            for canvas_id in canvas_ids:
+                require_screenshot_content(
+                    client, BROWSER_SERVE_ROOT, output / f"{canvas_id}{label_suffix}.png",
+                    canvas_id,
                 )
-                for canvas_id in canvas_ids
-            }
-        elif canvas_trace is not None:
-            observations = {
-                canvas_id: capture_screenshot(
-                    client, trace, output, canvas_id, observations[canvas_id], canvas_context,
-                    screenshot_label=f"{canvas_id}-before-rejections",
-                )
-                for canvas_id in canvas_ids
-            }
         check_rejections(client, trace, point, input_source)
         if canvas_capture is CanvasCaptureMode.RGBA:
             for canvas_id in canvas_ids:
-                actual = client.execute_async(CANVAS_PIXELS, [canvas_id])
+                actual = _sample_canvas_pixels(client, canvas_id)
                 if actual["rgba_sha256"] != expected_rgba[canvas_id]:
                     raise BrowserRuntimeError("a rejected file batch changed the consumer frame")
         else:
@@ -385,7 +415,7 @@ def run(
     gallery_ready = False
     transfer_observer_installed = False
     try:
-        with StaticServer(ROOT / "output" / "browser") as origin:
+        with StaticServer(BROWSER_SERVE_ROOT) as origin:
             trace.url = origin + "gallery.html" + parse_page_query(
                 getattr(args, "page_query", ())
             )
