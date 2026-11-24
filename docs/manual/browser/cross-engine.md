@@ -293,9 +293,11 @@ python scripts/browser_drop.py --driver-url http://127.0.0.1:9515 \
 
 Screenshot mode verifies the consumer's intrinsic canvas dimensions, confirms
 that the named context exists, writes the real element PNG, and records its
-digest and dimensions. It does not reinterpret the pixels or claim equivalence
-with an RGBA readback; the consumer owns the visual oracle and any comparison
-against its decoded frame. Repeated lifecycle mode remains available for the
+digest and dimensions. The runner decodes the baseline PNG only to refuse a
+single uniform colour before the rejection probes, so `--output` must lie
+under `output/browser`. It does not otherwise reinterpret the pixels or claim
+equivalence with an RGBA readback; the consumer owns the visual oracle and any
+comparison against its decoded frame. Repeated lifecycle mode remains available for the
 RGBA contract; screenshot mode is a single bounded lifecycle so an unchanged
 element digest can be checked after rejection probes.
 

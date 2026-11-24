@@ -13,6 +13,8 @@ from unittest import mock
 
 sys.path.insert(0, str(pathlib.Path(__file__).resolve().parents[1]))
 from browser_drop import (
+    BROWSER_SERVE_ROOT,
+    CANVAS_PIXELS,
     CLEANUP_TRANSFER,
     MAX_FILE_BYTES,
     MAX_BATCH_BYTES,
@@ -20,14 +22,17 @@ from browser_drop import (
     OBSERVE_TRANSFER,
     build_parser,
     _capture_consumer_after_host_probes,
+    _require_served_output,
     parse_page_query,
     resolve_browser_target,
     run,
     study_files,
 )
 from browser_canvas_capture import (
+    READ_SCREENSHOT_PIXELS,
     CanvasCaptureMode,
     compare_screenshot_stability,
+    require_screenshot_content,
     validate_context_name,
 )
 from browser_canvas import settle_canvas_input
@@ -256,6 +261,31 @@ def setUpModule() -> None:
         )
 
 
+class _FrameClient:
+    """Fake WebDriver client serving canvas pixel samples and decoded screenshots."""
+
+    def __init__(self, pixel_samples=(), decoded=None):
+        self.events = []
+        self.decode_requests = []
+        self._pixel_samples = list(pixel_samples)
+        self._decoded = decoded
+
+    def find(self, selector):
+        self.events.append(("find", selector))
+        return selector
+
+    def execute_async(self, script, arguments):
+        if script == CANVAS_PIXELS:
+            self.events.append("frame")
+            return self._pixel_samples.pop(0)
+        if script == READ_SCREENSHOT_PIXELS:
+            self.events.append("decode")
+            self.decode_requests.append(list(arguments))
+            return self._decoded
+        self.events.append("settle")
+        return {"ok": True}
+
+
 class FileDropTests(unittest.TestCase):
     @staticmethod
     def _lifecycle_records(capacities=(65_536, 131_072, 131_072, 131_072)):
@@ -317,45 +347,162 @@ class FileDropTests(unittest.TestCase):
         with self.assertRaisesRegex(BrowserRuntimeError, "single gallery lifecycle"):
             run(args, consumer_capture=lambda *_: {})
 
-    def test_host_rejections_run_before_consumer_teardown(self):
-        events = []
+    def test_screenshot_output_must_lie_in_the_served_tree(self):
+        outside = BROWSER_SERVE_ROOT.parent / "elsewhere"
+        escaping = BROWSER_SERVE_ROOT / ".." / "elsewhere"
+        for label, output in (("sibling", outside), ("dot-dot", escaping)):
+            with self.subTest(label=label):
+                args = types.SimpleNamespace(
+                    engine="chromium", browser_name=None, input="chooser",
+                    lifecycle_cycles=1, canvas_trace=None, keyboard_trace=None,
+                    canvas_capture="screenshot", canvas_context="webgpu", output=output,
+                )
+                with self.assertRaisesRegex(
+                    BrowserRuntimeError,
+                    r"screenshot canvas capture requires --output inside .*output.browser: ",
+                ):
+                    run(args)
+        _require_served_output(BROWSER_SERVE_ROOT / "drop")
+        _require_served_output(BROWSER_SERVE_ROOT)
 
-        class Client:
-            def find(self, selector):
-                events.append(("find", selector))
-                return selector
-
-            def execute_async(self, _script, _arguments):
-                events.append("frame")
-                return {"rgba_sha256": "stable"}
-
-        def rejection_probe(client, _trace, _point, _input_source):
-            events.append("rejections")
-            client.find("#file-input")
-
-        def consumer_capture(_client, _output, _oracle, _canvas_ids):
-            events.append("consumer")
-            return {"teardown": True}
+    @staticmethod
+    def _probe_frames(
+        client, *, interacted, capture=CanvasCaptureMode.RGBA, consumer_capture=None,
+    ):
+        """Run the host probes against a fake client; return the trace and stability stub."""
+        def rejection_probe(probe_client, _trace, _point, _input_source):
+            client.events.append("rejections")
+            probe_client.find("#file-input")
 
         trace = types.SimpleNamespace(metrics={})
-        with mock.patch("browser_drop.check_rejections", side_effect=rejection_probe):
+        with mock.patch("browser_drop.check_rejections", side_effect=rejection_probe), \
+                mock.patch("browser_drop.capture_screenshot", return_value={}), \
+                mock.patch("browser_drop.compare_screenshot_stability") as stability:
             _capture_consumer_after_host_probes(
-                Client(),
-                trace,
-                {},
-                "chooser",
-                CanvasCaptureMode.RGBA,
-                None,
-                ("viewer",),
-                {"viewer": {"rgba_sha256": "stable"}},
-                {},
-                None,
-                consumer_capture,
-                pathlib.Path("output/browser"),
+                client, trace, {}, "chooser", capture,
+                trace if interacted else None, ("viewer",),
+                {"viewer": {"rgba_sha256": "stable"}}, {"viewer": {}}, "webgpu",
+                consumer_capture, BROWSER_SERVE_ROOT / "drop",
             )
+        return trace, stability
 
-        self.assertEqual(events, ["rejections", ("find", "#file-input"), "frame", "consumer"])
-        self.assertEqual(trace.metrics, {"consumer_capture": {"teardown": True}})
+    def test_host_rejections_run_before_consumer_teardown(self):
+        stable = {"rgba_sha256": "stable", "non_black_pixels": 7}
+        for interacted in (False, True):
+            with self.subTest(interacted=interacted):
+                client = _FrameClient(pixel_samples=[stable, stable])
+
+                def consumer_capture(_client, _output, _oracle, _canvas_ids):
+                    client.events.append("consumer")
+                    return {"teardown": True}
+
+                trace, _ = self._probe_frames(
+                    client, interacted=interacted, consumer_capture=consumer_capture,
+                )
+                expected = [
+                    "rejections", ("find", "#file-input"), "settle", "frame", "consumer",
+                ]
+                if interacted:
+                    expected[:0] = ["settle", "frame"]
+                self.assertEqual(client.events, expected)
+                self.assertEqual(trace.metrics, {"consumer_capture": {"teardown": True}})
+
+    def test_blank_frame_before_rejections_is_refused(self):
+        blank = {"rgba_sha256": "blank", "non_black_pixels": 0}
+        client = _FrameClient(pixel_samples=[blank, blank])
+        with self.assertRaisesRegex(
+            BrowserRuntimeError, "canvas 'viewer' is blank before the rejection probes"
+        ):
+            self._probe_frames(client, interacted=True)
+        self.assertEqual(client.events, ["settle", "frame"])
+
+    def test_rejection_that_changes_the_frame_is_refused(self):
+        client = _FrameClient(pixel_samples=[
+            {"rgba_sha256": "before", "non_black_pixels": 5},
+            {"rgba_sha256": "after", "non_black_pixels": 5},
+        ])
+        with self.assertRaisesRegex(
+            BrowserRuntimeError, "a rejected file batch changed the consumer frame"
+        ):
+            self._probe_frames(client, interacted=True)
+        self.assertEqual(client.events.count("rejections"), 1)
+
+    def test_rejection_that_changes_the_oracle_frame_is_refused(self):
+        client = _FrameClient(pixel_samples=[{"rgba_sha256": "after", "non_black_pixels": 5}])
+        with self.assertRaisesRegex(
+            BrowserRuntimeError, "a rejected file batch changed the consumer frame"
+        ):
+            self._probe_frames(client, interacted=False)
+
+    def test_failed_pixel_readback_is_a_typed_error(self):
+        frame = {"rgba_sha256": "frame", "non_black_pixels": 5}
+        failed = {"diagnostic": "Error: getImageData denied"}
+        for label, samples, interacted in (
+            ("before", [failed], True),
+            ("after", [frame, failed], True),
+            ("after-oracle", [failed], False),
+        ):
+            with self.subTest(label=label):
+                with self.assertRaisesRegex(
+                    BrowserRuntimeError,
+                    "canvas 'viewer' pixel readback failed: 'Error: getImageData denied'",
+                ):
+                    self._probe_frames(_FrameClient(pixel_samples=samples), interacted=interacted)
+
+    def test_screenshot_baseline_must_hold_more_than_one_colour(self):
+        uniform = {"ok": True, "width": 2, "height": 1, "pixels": [1, 2, 3, 255] * 2}
+        varied = {"ok": True, "width": 2, "height": 1, "pixels": [1, 2, 3, 255, 9, 2, 3, 255]}
+        for interacted, name in ((True, "viewer-before-rejections.png"), (False, "viewer.png")):
+            with self.subTest(interacted=interacted, content="uniform"):
+                client = _FrameClient(decoded=uniform)
+                with self.assertRaisesRegex(
+                    BrowserRuntimeError,
+                    r"canvas 'viewer' screenshot is a single uniform colour \[1, 2, 3, 255\]",
+                ):
+                    self._probe_frames(
+                        client, interacted=interacted, capture=CanvasCaptureMode.SCREENSHOT,
+                    )
+                self.assertEqual(client.decode_requests, [[f"drop/{name}", 10_000]])
+                self.assertNotIn("rejections", client.events)
+            with self.subTest(interacted=interacted, content="varied"):
+                client = _FrameClient(decoded=varied)
+                _, stability = self._probe_frames(
+                    client, interacted=interacted, capture=CanvasCaptureMode.SCREENSHOT,
+                )
+                self.assertEqual(client.events[:2], ["decode", "rejections"])
+                self.assertEqual(client.decode_requests, [[f"drop/{name}", 10_000]])
+                stability.assert_called_once()
+
+    def test_screenshot_content_requires_a_decodable_served_image(self):
+        root = pathlib.Path("served")
+        image = root / "drop" / "viewer.png"
+        varied = {"ok": True, "width": 2, "height": 1, "pixels": [1, 2, 3, 255, 9, 2, 3, 255]}
+        client = _FrameClient(decoded=varied)
+        require_screenshot_content(client, root, image, "viewer")
+        self.assertEqual(client.decode_requests, [["drop/viewer.png", 10_000]])
+        a, b = [1, 2, 3, 255], [9, 2, 3, 255]
+        for label, pixels in (("last differs", a + a + b), ("middle differs", a + b + a)):
+            with self.subTest(label=label):
+                require_screenshot_content(
+                    _FrameClient(decoded={"ok": True, "width": 3, "height": 1, "pixels": pixels}),
+                    root, image, "viewer",
+                )
+        cases = (
+            ("decode failure", {"ok": False, "error": "decode deadline"}, image,
+             "screenshot decode failed: 'decode deadline'"),
+            ("non-mapping", None, image, "screenshot decode failed: None"),
+            ("short buffer", {"ok": True, "width": 2, "height": 1, "pixels": [1, 2, 3, 255]},
+             image, "invalid RGBA buffer"),
+            ("empty buffer", {"ok": True, "width": 0, "height": 0, "pixels": []},
+             image, "invalid RGBA buffer"),
+            ("missing width", {"ok": True, "width": None, "height": 1, "pixels": [1, 2, 3, 255]},
+             image, "invalid RGBA buffer"),
+            ("outside the served tree", varied, pathlib.Path("elsewhere") / "viewer.png",
+             "outside the served tree"),
+        )
+        for label, decoded, path, message in cases:
+            with self.subTest(label=label), self.assertRaisesRegex(BrowserRuntimeError, message):
+                require_screenshot_content(_FrameClient(decoded=decoded), root, path, "viewer")
 
     def test_generic_parser_has_no_consumer_specific_slice_option(self):
         parser = build_parser()

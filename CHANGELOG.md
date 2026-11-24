@@ -26,6 +26,8 @@
 
 ### Fixed
 
+- [patch] The browser file-selection check compares frames immediately before and after invalid input, including after a valid canvas interaction, and refuses a blank baseline frame.
+
 - [patch] Require Moirai Crypto 0.12.1 and remove the RSA advisory waiver. The workspace and fuzz graph use RSA 0.10.0.
 
 - [patch] Multiplex bounded native HTTP peer reads and writes while one owner
