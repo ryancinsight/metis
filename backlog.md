@@ -12,31 +12,11 @@
 - [ ] [minor] **0.6.0 proposed for additive host capabilities.** Complete the platform, input, content and system exits for each claimed host. Record which restricted desktop or browser executed each case and replay the RITK viewer through the installed host.
 - [ ] [major] **1.0.0-beta.1 → 1.0.0-rc.1 → 1.0.0.** Freeze the supported surface at beta. An external viewer opens and renders a study across the declared hosts, and teardown releases the same resources as on clean startup. Repeat the applicable exits on the exact RC before stable promotion. Attach exact-revision evidence for the local exits and this member’s [Atlas qualification criteria](https://github.com/ryancinsight/atlas/blob/17b0124a7548ad81e817284afc5cb115c1d1bc78/docs/parity/repositories.json).
 
-Prepared framework target: Metis0.5.0; unpublished review in existing PR505.
-
-## Provider checkpoint — 2026-10-15 (historical; source [held owner checkpoint](https://github.com/ryancinsight/metis/commit/0a9544957a1b748c32c89fe798e1e579637bbb9a))
-
-Consus0.3 is merged at beae4ce7. Its executed published-baseline consumer
-requires a pre-1.0 minor release for the Moirai0.7 to0.9 public async identity;
-the earlier0.2.1 claim is withdrawn and its publisher is cancelled before
-publishing steps execute. Both earlier raster upload commands are obsolete.
-The new0.3 source/archive handoff keeps first-upload authentication separate.
-
-This owned Metis0.5 preparation resolves root/fuzz locks against Consusbeae4ce7,
-Apollo0eab90e3 (core0.17 unchanged from published730f6262), Eunomia15fbb94c,
-Hermesac60146a, Moirai44a962f0, memory481c7452, Gaia c0db650e and Leto8b4ab407.
-The actual full graph passes698 native tests (zero skips),42 doctests, strict
-all-feature/all-target Clippy, strict docs and formatting. Root registry tuples
-are preserved; fuzz updates only the Moirai-required rustls0.23.45 to0.23.46.
-All fuzz harnesses check, with the existing protected nightly output-reader
-deprecation warning left untouched. No production Rust, feature, gate or
-native budget changes occur; protected503/504 source remains separate.
-
 <a id="METIS-CURRENT-PROVIDERS-001"></a>
 ## METIS-CURRENT-PROVIDERS-001 — Admit current provider defaults [major]
 - milestone: M-release.
 
-- Status: blocked; priority: P1; owner: current-provider integration; target: 0.5.0; last-update: 2026-10-28.
+- Status: blocked; priority: feature; owner: current-provider integration; target: 0.5.0; last-update: 2026-10-28.
 - Public contract: exported Color's Eunomia-owned Pod/Zeroable traits follow
   the canonical 0.11 provider; AssetError's public From<Consus DecodeError>
   follows Consus 0.4. The intermediate 0.10/0.3 checkpoint remains historical.
@@ -103,7 +83,7 @@ Current framework version: Metis 0.5.0. Remaining capability work follows.
 ## METIS-PYPI-FIRST-RELEASE-001 — Complete the genuine Python first release [patch]
 - milestone: M-release.
 
-- Status: blocked; priority: P1; owner: PyPI pipeline repair; last-update: 2026-10-29.
+- Status: blocked; priority: feature; owner: PyPI pipeline repair; last-update: 2026-10-29.
 - Identity: distribution `metis-ui`, import `metis`, crate `metis-python`;
   version comes from `[workspace.package].version` (0.5.0 at inspection).
   Only a published GitHub release tagged `metis-ui-v0.5.0` starts upload;
@@ -194,7 +174,7 @@ Current framework version: Metis 0.5.0. Remaining capability work follows.
 ## METIS-WEBVIEW-RUST-001 — Rust-owned Windows page lifecycle [minor]
 - milestone: M-platform.
 
-- Status: todo; priority: P1; owner: Metis presentation; last-update: 2026-10-12; risk: application behavior lost during script removal.
+- Status: todo; priority: feature; owner: Metis presentation; last-update: 2026-10-12; risk: application behavior lost during script removal.
 - Scope: replace the form's 125 and permission probe's 88 embedded JavaScript lines with Rust/WASM presentation and typed WebView2 bridge bindings; retain generated browser interoperability.
 - Acceptance: real Windows journeys preserve theme/command focus, shortcuts, input-sensitive calculation replies, malformed/error replies, request admission and all four capability denials; listeners and permission work detach on teardown.
 - Verification: build the packaged pages from the canonical Git lock and compare exact model, reply, focus and capability outcomes before/after; count raw-string scripts as well as standalone modules.
@@ -202,7 +182,7 @@ Current framework version: Metis 0.5.0. Remaining capability work follows.
 
 <a id="METIS-BROWSER-READ-001"></a>
 ## METIS-BROWSER-READ-001 — Diagnose selected-file reads
-- Status: blocked; priority: P0; integrator: root; last-update: 2026-09-22.
+- Status: blocked; priority: correctness; integrator: root; last-update: 2026-09-22.
 - milestone: M-content.
 - Scope: preserve format-neutral provider read failures and reproduce real chooser reads; DICOM semantics remain in RITK.
 - Acceptance: exact failing operation identified, owning fix verified on saved MRI-DIR Chromium/Firefox/WebKit gallery and byte oracles.
@@ -210,53 +190,20 @@ Current framework version: Metis 0.5.0. Remaining capability work follows.
 - Historical evidence: [increment records](docs/backlog/evidence.md#metis-browser-read-001).
 - Blocker: SafariDriver/WebKit selected-file authorization; run 35690425860 reproduces the denial after SafariDriver accepts the chooser request, and no Metis read API can grant the denied access. Re-open when the same real selected file is readable under a corrected browser/runner authorization path. DICOM remains in RITK.
 
-Registration: [Atlas member item](../../backlog.md#atlas-member-registration-defects)
-is done. Public source and executable packaging are merged, and the Atlas stack
-records the verified Metis and RITK revisions through its gitlinks.
-
-The [framework gap matrix](docs/adr/0003-framework-conformance.md) is the scope
-inventory. Every implementation item follows the [visual contract](docs/VERIFICATION.md#visual-contract)
-and links its completed, runnable demonstration into the user manual. A screenshot
-alone is not acceptance. Status and dependencies live here, not in the manual.
-
-Priority order: P0 correctness/security and evidence foundations, P1 usable
-browser/desktop interaction, P2 migration/native services, P3 distribution/mobile
-and final comparative closure. An item's dependencies take precedence over its
-priority. Ready disjoint items can proceed in parallel; hold one integrating item
-per agent. This plan authorizes development/verification, not registry releases,
-signing identities, deployments or new third-party hosted services.
-
-Each implementation first pins its required capability/target pairs from the
-comparison inventory. Target restrictions close only comparator-unsupported or
-explicitly out-of-scope pairs; an unimplemented admitted pair remains open with
-an owner. “Unsupported” cannot replace delivery of a required mobile/native API.
-
 <a id="METIS-DESKTOP-001"></a>
 ## METIS-DESKTOP-001 — Native restricted desktop [arch] [major]
-- Status: todo; priority: P1; owner: Metis Windows host + Moirai; last-update: 2026-10-12; ADR: [0032](docs/adr/0032-display-scale.md); dependencies: METIS-AUTHORITY-001, METIS-COMMANDS-001; risk: trust boundary
+- Status: todo; priority: feature; owner: Metis Windows host + Moirai; last-update: 2026-10-12; ADR: [0032](docs/adr/0032-display-scale.md); dependencies: METIS-AUTHORITY-001, METIS-COMMANDS-001; risk: trust boundary
 - milestone: M-platform.
-- [x] [patch] Portable verification ABI and module partition (2026-10-13): capture/input Windows `LONG`/`DWORD`/`BOOL` use exact 32-bit widths; `INPUT` has its real three arms and virtual-desktop movement uses 0x4000. Capture/input share 27 acyclic leaf modules, largest 249 lines; all importers and the public wheel-child path are updated without legacy forwarding helpers. Compiler binding checks reject shadowed dependencies, and eight input combinations preserve computed evidence values. All 424 script tests pass without skips; physical Windows input and heterogeneous-DPI acceptance remain open. [Design](scripts/native_input/design.md).
-- Trusted-input evidence increment (2026-10-12): `scripts/python_native_input_capture.py` now builds pointer press/release records with `MOUSEEVENTF_ABSOLUTE|MOUSEEVENTF_MOVE` (absolute grid coordinates were previously sent as relative deltas), re-verifies foreground at each delivered input and no longer masks the original failure when a `finally` detach fails; regression tests cover the record construction (focused suite 23 passed, full dependency-free suite 400 passed with 1 intentional skip). The overlay-resilience guards (`_guard_surface_visible` plus coverer naming) were behaviorally verified under a forced visible `CASCADIA_HOSTING_WINDOW_CLASS` occluder, and the wheel notch→shift response was measured live at [125, 125, 125, 65] logical px per notch (clamping at the 440 px scroll boundary); both contracts are documented in the native manual. All three trusted journeys were re-recorded at 120 dpi (`output/rec/*.json`) and each produces the audited Rate sentence: native Enter, WebView2 click→type→Enter and WebView2 pointer click on **Submit calculation**. The pointer journey required the compensated click point (404, 490): measured on this host the WebView2 surface hit-tests pointer input at `dpi/96` × the client point, so the button's client box (505, 613) is reached only through the compensation and an uncompensated physical click misses by 1.25×. The host display-scale defect is registered in [gap_audit.md](gap_audit.md); direct native-window input, uncompensated pointer submission at non-96 dpi, physical-mouse evidence and heterogeneous-DPI transitions remain open.
-- Display-scale fix increment (2026-10-12): `metis-app` now writes `WEBVIEW2_ADDITIONAL_BROWSER_ARGUMENTS` carrying `--force-device-scale-factor=<dpi/96>` (the scale probed under a per-monitor-aware thread context) before the WebView2 environment is created, so the browser's input mapping and rasterization share one scale over the rendered layout; scoped `unsafe_code` follows the `entropy.rs` pattern with documented `SAFETY` reasons. Verified live on the 120 dpi development host: the uncompensated click at the button client point (505, 613) submits the audited Rate sentence (`output/rec/webview-uncomp-*.png/.json`); its after frame sits 0.77 mean-intensity from the compensated-click success frame (5,018 pixels ≥32 of 849,230) and 20.55 from the pre-submit form (114,980). The forced factor is fixed at environment creation, so a live monitor-scale transition still needs a relaunch; physical-mouse evidence and heterogeneous-DPI transitions stay open in [gap_audit.md](gap_audit.md).
-- Permission matrix capture increment (2026-09-22): the WebView2 capture role now waits for the typed `permission_probe_complete` message after all four bounded capability requests settle, then closes the supervised session. Metis commit `543edfb533be0c0422c38445174001b616c96ace` and Moirai `0e2e1bbb2d81e16dd9c694ba46a9e9710e034417` produce a 1025×769 CapturePreview PNG (9,265 bytes, SHA-256 `0f36794bea61fe540e7a4603b2c56d943718344c68c4e46aa3b0d839e7ab3a36`) showing all four completed rows: geolocation and notifications host-denied, camera and microphone browser-rejected. Focused `metis-app` nextest passes 35/35 with strict Clippy; dependency-free script tests pass 331/331 with one intentional skip. The prior geolocation-only image is superseded by this matrix capture; file/network/process denial, installed IME, screen-reader traversal, physical heterogeneous DPI and non-Windows host evidence remain open.
-- Historical evidence: [increment records](docs/backlog/evidence.md#metis-desktop-001).
 - Scope: Windows native window/system WebView, real events, multi-window lifecycle and OS-restricted renderer; macOS/Linux have separate items below.
 - Acceptance: actual visible form, pointer/keyboard/resize/DPI/close/reopen; file/network/process denial probes; IPC remains functional under restrictions and all child processes drain.
 - Demonstration: [V05](docs/VERIFICATION.md#V05), actual Windows window captures, keyboard journey and permission-denied results in the manual.
-- Current evidence: Moirai PR #287 (`7ad8eeee`, following PRs #286 and #284) supplies the real Win32 HWND, bounded message translation including IME composition phases, retained ARGB presentation, finite queue waiting and retained-event readiness. `metis-platform::native::NativeSurface` is the safe consumer boundary; `PlatformSurface` and `PlatformEvent` remain portable application-supplied values.
-- Follow-on provider: Moirai PR #299 merged to `main` at `f4eb4f2b` and its board item is done. It adds the thread-affine WebView2 host, packaged `file:///` navigation policy, bounded WebMessageReceived bridge and callback teardown. Its installed-runtime smoke passes on WebView2 `152.0.4191.66`, and the visible Metis bundle journey is captured in the linked manifest. No registry or signing key is part of that provider.
-- Permission matrix increment (2026-09-22): the separate permission-probe page makes bounded sequential requests for geolocation, camera, microphone and notifications. It renders one row per capability, preserves the provider's typed `permission_denied` payload including `user_initiated`, and distinguishes host denial from browser rejection or an unavailable API. The capture role waits for the typed completion message and now records the four-row matrix in a 1025×769 CapturePreview; file/network/process denial, physical display-scale, screen-reader traversal and installed-IME evidence remain open.
-- Theme increment (2026-09-20): the packaged WebView2 form now uses the same four bounded presentation modes as the browser workbench (`system`, `light`, `dark` and `high-contrast`). A page-local selector changes only CSS variables and the document theme attribute; it cannot reach the bridge or change backend authority. Static asset tests assert every option, palette selector and fail-closed guard. The bounded `--metis-webview-theme-capture` role produced inspected `CapturePreview` PNGs for all four modes at 1025×769; the hashes and manual links are recorded in [`native.md`](docs/manual/native.md#packaged-webview2-window). Visible palette evidence is delivered; screen-reader, installed-IME, physical display-scale and broader OS-enforcement evidence remain open.
-- Permission event increment (2026-09-17): Moirai PR #392 merged at `64d5cdc1465542748d2261663284c9c357850541` and PR #394 merged at `b94f3ed7a0faa436ebe993dbfec49726cef853fa`; the provider denies WebView2 requests synchronously and emits typed `PermissionDenied` values, while Metis maps them to `permission_denied` with `ErrorCode::PermissionDenied`. The ignored geolocation smoke and frontend serialization test pass; the focused consumer gate passes 84/84 with strict Clippy. Broader OS enforcement and a visible permission-probe capture remain open.
-- Capture increment (2026-09-17): Metis source `285322892aca245faf3962d57838682dd6689d77` consumes Moirai `d324018efa3b67d2b92350a4e3c781d179019014` `CapturePreview`; the supervised WebView2 permission page was captured on runtime `153.0.4234.32` at 1024×768, 6,561 bytes, SHA-256 `a9df158ff6a167ed3c708e9621a44446cae93b3c0d87e646c818601606a33b8f`. The inspected artifact is linked from the [native manual](docs/manual/native.md#webview2-permission-probe-capture) and manifest; broader OS enforcement, physical display-scale, native accessibility, installed IME and non-Windows hosts remain open.
-- Physical-monitor increment (2026-09-19): `scripts/python_native_capture.py --move-monitor` now enumerates attached monitors, moves a real HWND, captures both images and records effective DPI plus fixed-point scale. `--require-dpi-change` fails closed when the host cannot produce a heterogeneous-scale transition; deterministic mapping remains the oracle and equal-scale/single-monitor hosts remain an explicit residual. The development host exercised the real command and reported one 3072×1728 monitor at 96 DPI, identical initial/moved PNG digest `a021194e4ef9406ee6789a9ea2eea00d25223e06d8d6f13e65975e9004acb442`, and `dpi_changed: false`; no transition claim is made.
-- Lease discharged: the bounded monitor probe, parser contracts, manual, V05 verification record and ADR 0032 are synchronized in this increment; native accessibility, installed IME, broader OS permissions and non-Windows hosts remain open.
-- Completed increments: the adapter test creates a real hidden HWND, presents the production framebuffer, observes resize and closes the window; the `metis-app --metis-native-window` role now composes that surface with the real frontend and supervised private IPC, handling text, transient IME preedit/commit/cancel, Enter/click submit, resize, DPI, focus and close; focused nextest and warning-denied Clippy pass on Windows. The adapter now rejects reopening a live surface and recreates a closed surface from its validated configuration; the Windows lifecycle regression test closes and reopens a real hidden HWND. A two-window regression test presents separate frames, verifies independent event batches and confirms closing one leaves the other live.
-- Decision: [ADR 0015](docs/adr/0015-native-window-provider.md) (accepted); committed visual captures cover the current native/WebView2 initial and submit journeys plus the native framebuffer resize. Installed IME, WebView2 composition, broader OS permission enforcement, visible permission-probe, accessibility and macOS/Linux providers remain open follow-on slices.
+- Decision: [ADR 0015](docs/adr/0015-native-window-provider.md) (accepted); [ADR 0032](docs/adr/0032-display-scale.md); the display-scale row of [gap_audit.md](gap_audit.md) holds the physical-mouse and monitor-transition trigger.
+- Historical evidence: [increment records](docs/backlog/evidence.md#metis-desktop-001).
+- Open: file, network and process denial probes, installed IME and WebView2 composition, screen-reader traversal and native accessibility, broader OS permission enforcement, heterogeneous-DPI transitions, and the macOS and Linux providers (METIS-MACOS-001, METIS-LINUX-001).
 
 <a id="METIS-RELEASE-001"></a>
 ## METIS-RELEASE-001 — Publication readiness [patch]
-- Status: blocked; priority: P3; owner: Metis delivery; integrator: root; last-update: 2026-09-17; dependencies: METIS-DISTRIBUTION-001, METIS-CONFORMANCE-001; blocker: crates.io trusted-publisher registration and explicit release authority are external; re-open: registrations and release authority are available without adding repository secrets
+- Status: blocked; priority: feature; owner: Metis delivery; integrator: root; last-update: 2026-09-17; dependencies: METIS-DISTRIBUTION-001, METIS-CONFORMANCE-001; blocker: crates.io trusted-publisher registration and explicit release authority are external; re-open: registrations and release authority are available without adding repository secrets
 - milestone: M-release.
 - Scope: release-readiness metadata, package dry runs, final manual and platform evidence; registry authentication uses Atlas OIDC workflows without personal keys; preparation continues without release authority.
 - Acceptance: dependency-closed packages and exact-revision evidence; release execution is blocked until explicit authority, registry publisher registration, rollout and rollback details are available.
@@ -268,27 +215,17 @@ an owner. “Unsupported” cannot replace delivery of a required mobile/native 
 
 <a id="METIS-INPUT-001"></a>
 ## METIS-INPUT-001 — Interactive controls and shared UI state [minor]
-- Status: todo; priority: P1; owner: Metis UI/host; last-update: 2026-09-18; dependencies: METIS-BROWSER-001, MOI-WINDOW-KEY-MODIFIERS-2026-09-15; risk: native shortcut modifier state loss; ADR: 0014, 0027
+- Status: todo; priority: feature; owner: Metis UI/host; last-update: 2026-09-18; dependencies: METIS-BROWSER-001, MOI-WINDOW-KEY-MODIFIERS-2026-09-15; risk: native shortcut modifier state loss; ADR: 0014, 0027
 - milestone: M-input.
 - Scope: buttons, checks, radios, sliders, editable fields, select/menu/dialog controls; focus, pointer capture, drag/drop, wheel/touch/modifiers, shortcuts, reusable state/actions and subscription teardown.
 - Acceptance: keyboard and pointer/touch journeys update identical model values; disabled controls reject action; focus survives rerender and subscriptions detach on close; real hit targets agree with rendered geometry.
 - Demonstration: [V02](docs/VERIFICATION.md#V02), settings workbench; repeat on each native host as it becomes supported.
-- Historical evidence: [increment records](docs/backlog/evidence.md#metis-input-001).
-- Live evidence: [browser control evidence](docs/VERIFICATION.md#browser-control-evidence--2026-09-07) records pointer radio/visibility changes, two keyboard range steps and a native select change in the authenticated service trace. Presentation changes preserve the correlated backend result.
-- Live evidence: [browser control evidence](docs/VERIFICATION.md#browser-control-evidence--2026-09-07) records the disabled accessibility state before connection, the pending-state disable during a delayed response, re-enablement after the correlated result, and unchanged state after activation was rejected.
-- Live evidence: [browser dialog evidence](docs/VERIFICATION.md#browser-dialog-evidence--2026-09-07) records the authenticated modal screenshot, accessibility content, provider open-state read, close action, Escape dismissal and opener focus restoration.
-- Live evidence: [browser pointer-capture evidence](docs/VERIFICATION.md#browser-pointer-capture-evidence--2026-09-07) records pointer ID `1`, release status, semantic surface name and the rendered surface screenshot.
-- Live evidence: [browser pointer metadata evidence](docs/VERIFICATION.md#browser-pointer-metadata-evidence--2026-09-07) records the input-sensitive status and screenshot; the bounded gesture policy is recorded in [browser gesture policy evidence](docs/VERIFICATION.md#browser-gesture-policy-evidence--2026-09-07).
-- Live evidence: [browser wheel metadata evidence](docs/VERIFICATION.md#browser-wheel-metadata-evidence--2026-09-07) records input-sensitive vertical and horizontal scroll actions and the rendered status; the automation trust limitation is explicit.
-- Live evidence: [browser gesture policy evidence](docs/VERIFICATION.md#browser-gesture-policy-evidence--2026-09-07) records vertical/horizontal wheel pan and a pointer drag with the transformed content; the CUA hardware-trust limitation is explicit.
-- Superseded increment (before the format-neutral handoff): the browser host read a bounded prefix through a provider-owned handle and rendered `reading`/`complete`/`failed` states. `METIS-DICOM-002` removed the format classification and replaced that path with a generic byte handoff.
-- Live evidence: [browser file-drop evidence](docs/VERIFICATION.md#browser-file-drop-evidence--2026-09-08) records the native policy suite, batch ownership tests, strict WASM checks and rendered drop-zone state; CUA cannot provide trusted OS file-drop evidence or a live byte-read trace.
-- Browser keyboard snapshot increment (2026-09-14): merged Metis `02d4047c5567834667ab9beb796ea27f6257f0ad` records an `after-keyboard` canvas snapshot after each focused `ArrowDown` pair. The RITK consumer can therefore validate wheel progression from the state immediately before the wheel instead of comparing a keyboard-plus-wheel final state with the initial state.
+- Historical evidence: [increment records](docs/backlog/evidence.md#metis-input-001); live browser journeys are the control, dialog, pointer-capture, pointer-metadata, wheel-metadata, gesture-policy and file-drop sections of [VERIFICATION](docs/VERIFICATION.md).
 - Residuals: trusted physical file-drop evidence, Safari/WebKit selected-file authorization for saved-study reads, installed IME journeys, screen-reader traversal, provider-private resources, post-drop allocation measurement and native-host visual evidence remain open. RITK real-study opening and decoding now pass on Chromium and Firefox in [run 35089121864](https://github.com/ryancinsight/ritk/actions/runs/35089121864); re-open this item when the remaining dependencies land.
 
 <a id="METIS-TEXT-001"></a>
 ## METIS-TEXT-001 — Text, selection and IME [minor]
-- Status: todo; priority: P1; owner: Metis input/presentation; last-update: 2026-09-22; dependencies: METIS-INPUT-001; risk: text corruption
+- Status: todo; priority: feature; owner: Metis input/presentation; last-update: 2026-09-22; dependencies: METIS-INPUT-001; risk: text corruption
 - milestone: M-input.
 - Scope: DOM text first; grapheme selection, composition/preedit/commit/cancel, clipboard/undo, wrapping, fallback fonts, bidi and text scaling. Custom renderer requires its own admitted text contract.
 - Acceptance: Unicode fixture strings/selection ranges and caret/line geometry match the contract; native IME exercised per OS, including CJK, combining marks, emoji and mixed-direction input.
@@ -299,23 +236,17 @@ an owner. “Unsupported” cannot replace delivery of a required mobile/native 
 
 <a id="METIS-A11Y-001"></a>
 ## METIS-A11Y-001 — Accessible application interaction [minor]
-- Status: todo; priority: P1; owner: Metis host/UI; last-update: 2026-09-22; dependencies: METIS-INPUT-001; risk: inaccessible controls
+- Status: todo; priority: feature; owner: Metis host/UI; last-update: 2026-09-22; dependencies: METIS-INPUT-001; risk: inaccessible controls
 - milestone: M-input.
 - Scope: semantic DOM roles/names/states, focus/action mapping, announcements, reduced motion/high contrast/zoom; OS accessibility bridge for any custom UI path.
 - Acceptance: semantic tree identity/actions and keyboard-only completion pass; actual supported screen readers traverse and operate the application; document platform limits instead of claiming certification from tree presence.
 - Demonstration: [V03](docs/VERIFICATION.md#V03), readable focus/contrast/zoom captures plus semantic/action and assistive-technology evidence.
 - Historical evidence: [increment records](docs/backlog/evidence.md#metis-a11y-001).
-- Upstream delivery (2026-09-22): Moirai PR [#432](https://github.com/ryancinsight/Moirai/pull/432), merge `0e2e1bbb2d81e16dd9c694ba46a9e9710e034417`, adds the matching bounded native roles and AccessKit mappings. `metis-app` now projects the five command-surface roles through that contract; focused Metis tests pass 55/55 in `metis-ui-lang` and 33/33 in `metis-app`.
-- Lease discharged: `scripts/python_native_accessibility.py`, `scripts/tests/test_python_native_accessibility.py`, `docs/manual/native.md`, `docs/VERIFICATION.md` and this item are synchronized in this increment.
-- Gate correction (2026-09-21): the hosted Windows replay exposed a Node diagnostic subprocess that kept stdout open after bounded cleanup, causing the delayed stream-cancel test to hit its ten-second parent deadline. The test harness now closes stdout and exits only after the serialized result is flushed; the three diagnostic fault cases pass locally, including 25 repeated delayed-cancel runs.
-- Visual baseline correction (2026-09-21): hosted replay 35607367715 passed every pixel and semantic comparison and reported only the derived fixture digest as stale; commit 23dd3e4 records fixture SHA-256 16c7f5cae9f02eb0c47bc412499ef54b9a79762b692cfcd5a7f79392a7e93a36, with rerun 35608777745 queued.
 - Residuals: supported screen-reader speech, host-specific forced-colors/reduced-motion acceptance and installed-client traversal remain open.
-
-- Native shortcut announcement (2026-09-24): Moirai PR #460 (merge `7f6ca66e`) adds `AccessibilityNode::set_keyboard_shortcut`, projected into AccessKit's `keyboard_shortcut`; the Windows native host now passes each semantic node's `aria-keyshortcuts` through it, so UI Automation clients can announce the Alt+Shift command shortcuts. Screen-reader speech remains installed-host evidence.
 
 <a id="METIS-MACOS-001"></a>
 ## METIS-MACOS-001 — macOS restricted desktop [arch] [minor]
-- Status: todo; priority: P1; owner: Metis macOS host + Moirai; dependencies: METIS-DESKTOP-001; risk: OS boundary
+- Status: todo; priority: feature; owner: Metis macOS host + Moirai; dependencies: METIS-DESKTOP-001; risk: OS boundary
 - milestone: M-platform.
 - Scope: native window/WebView events, accessibility/IME integration, process containment, sandbox restrictions and teardown; share broker semantics, not Windows implementation details.
 - Acceptance: host-native [V05](docs/VERIFICATION.md#V05) plus unauthorized file/network/process denial, child drain and positive IPC; cross compilation alone cannot close this item.
@@ -329,7 +260,7 @@ an owner. “Unsupported” cannot replace delivery of a required mobile/native 
 
 <a id="METIS-LINUX-001"></a>
 ## METIS-LINUX-001 — Linux restricted desktop [arch] [minor]
-- Status: todo; priority: P1; owner: Metis Linux host + Moirai; dependencies: METIS-DESKTOP-001; risk: OS/display boundary
+- Status: todo; priority: feature; owner: Metis Linux host + Moirai; dependencies: METIS-DESKTOP-001; risk: OS/display boundary
 - milestone: M-platform.
 - Scope: native WebView hosting under Wayland and X11, input/accessibility/IME, process containment, permission restrictions and bounded teardown.
 - Acceptance: [V05](docs/VERIFICATION.md#V05) on both display paths, positive IPC and unauthorized file/network/process denial; unavailable prerequisites produce actionable errors, never sandbox bypass.
@@ -339,22 +270,17 @@ an owner. “Unsupported” cannot replace delivery of a required mobile/native 
 <a id="METIS-ASSETS-001"></a>
 ## METIS-ASSETS-001 — Images, vectors and media assets [major]
 - milestone: M-content.
-- Closure: integrator root; Consus [PR 80](https://github.com/ryancinsight/consus/pull/80) supplies Apollo-owned transforms and arithmetic/precision support. Focused nextest passes 53/53, strict Clippy passes, and refreshed V06 matches all 464,000 pixels; full gate and integration remain.
-- Native JPEG increment: [PR 312](https://github.com/ryancinsight/metis/pull/312) uses merged [Consus PR 76](https://github.com/ryancinsight/consus/pull/76), with [RITK](../ritk/backlog.md#RITK-JPEG-001) owning medical conversion. The integrated full gate passes 386 debug and 386 release tests; native V06 matches all 464,000 client RGB pixels at 120 DPI. Broader media/GPU acceptance remains open.
-- Native PNG increment (2026-09-19): bounded scoped loading, strict complete zlib/PNG decoding, orientation-aware contain and value-semantic malformed/alpha/aspect/orientation fixtures; [ADR 0029](docs/adr/0029-image-orientation.md) and [native V06 gallery](docs/manual/native.md#native-image-assets) own the contract and exact client-pixel capture.
-- Media evidence increment (2026-09-21): reviewed browser and native captures now use lossless WebP/PNG assets under the 200 KiB tracked-image budget, the Python capture manifest names the retained files, and the Metis mark is a bounded PNG alternate. The real MRI-DIR CT gallery remains 409 files/216,156,416 bytes with non-black axial, coronal and sagittal views; hosted Windows and lockfile checks passed in [PR #322](https://github.com/ryancinsight/metis/pull/322), merged at `6633064`.
-- Status: todo; priority: P1; owner: Metis asset/presentation + existing Atlas format providers; last-update: 2026-09-21; dependencies: METIS-BROWSER-001, METIS-AUTHORITY-001; risk: hostile content
+- Status: todo; priority: feature; owner: Metis asset/presentation + existing Atlas format providers; last-update: 2026-09-21; dependencies: METIS-BROWSER-001, METIS-AUTHORITY-001; risk: hostile content
 - ADR: [0019](docs/adr/0019-raster-display-command.md); the public `DisplayCommand` enum addition is a major release change and has no version bump until release authority opens a release increment.
 - Scope: bounded local asset loading, image/SVG presentation, font loading and browser audio/video controls; validate paths/origins, dimensions/decoding budgets and target permissions.
 - Acceptance: malformed/truncated/oversized/traversal assets fail; declared colors/alpha/aspect ratio/orientation match fixtures; media error and teardown states release resources.
 - Demonstration: [V06](docs/VERIFICATION.md#V06), actual asset gallery with source attribution and load/error states.
 - Historical evidence: [increment records](docs/backlog/evidence.md#metis-assets-001).
-- Lease discharged: `metis.json`, `examples/browser/assets/metis-probe.woff2`, `scripts/browser_font.py`, `scripts/browser_runtime.py`, `scripts/browser_runtime_cli.py`, `scripts/browser_runtime_probes.py`, `scripts/tests/test_browser_font.py`, `scripts/tests/test_browser_assets.py`, and `scripts/tests/test_browser_runtime.py`.
 - Residuals: native formats beyond the admitted PNG/JPEG subset and clinical orientation metadata, selected fallback-face identity, cross-engine/native font metrics, video playback/native media providers, GPU vectors, and runtime shell rendering on a Windows install remain open under V06; browser local-mark decode, font resource loading, audio playback, media error/teardown, SVG admission, ICO packaging and format-neutral pixel-grid orientation contracts are closed.
 
 <a id="METIS-GRAPHICS-001"></a>
 ## METIS-GRAPHICS-001 — Custom graphics conformance [arch] [minor]
-- Status: todo; priority: P2; owner: Metis custom renderer over Iris; last-update: 2026-09-13; dependencies: METIS-VISUAL-001, METIS-LAYOUT-001; risk: rendering/lifetime correctness; delivery: Metis PR #97, merge `81d7dff`
+- Status: todo; priority: feature; owner: Metis custom renderer over Iris; last-update: 2026-09-13; dependencies: METIS-VISUAL-001, METIS-LAYOUT-001; risk: rendering/lifetime correctness; delivery: Metis PR #97, merge `81d7dff`
 - milestone: M-content.
 - Scope: admitted vector/image/transform/clip operations and accelerated display path where required by the custom-UI demonstrator; retain one rendering contract and verify Atlas GPU ownership before additions.
 - Acceptance: geometry/color/alpha and device-loss/recreate tests; differential software/device output under justified raster bounds; measured profile justifies acceleration and accounts for memory cost.
@@ -365,152 +291,31 @@ an owner. “Unsupported” cannot replace delivery of a required mobile/native 
 
 <a id="METIS-FILES-001"></a>
 ## METIS-FILES-001 — Scoped files and persistent state [minor]
-- Status: todo; priority: P2; owner: Metis broker + owning Atlas storage provider; last-update: 2026-09-15; dependencies: METIS-DESKTOP-001; risk: user data/TOCTOU
+- Status: todo; priority: feature; owner: Metis broker + owning Atlas storage provider; last-update: 2026-09-15; dependencies: METIS-DESKTOP-001; risk: user data/TOCTOU
 - milestone: M-content.
 - Historical evidence: [increment records](docs/backlog/evidence.md#metis-files-001).
 - Scope: file dialogs, reads/writes/watch, settings/store/database contract and versioned recovery with explicit scope; no raw frontend access to unrestricted paths.
 - Acceptance: allowed-handle operations succeed; traversal/symlink/TOCTOU and denied scope fail; atomic writes, crash/disk-full recovery and watcher teardown preserve user data.
 - Demonstration: [V08](docs/VERIFICATION.md#V08), document open/save/restart/denial on each supported target; browsers expose selected-file semantics or explicit restrictions.
-- Increment (2026-09-14): `metis-platform::native::pick` re-exports Moirai's bounded Windows common-dialog selection seam. Metis returns only a user-selected path; browser file handles and application format policy remain separate. Moirai ADR 0058 owns COM/task-memory lifetime and cancellation semantics.
-- Increment (2026-09-15): RITK PR [#392](https://github.com/ryancinsight/ritk/pull/392),
-  merge `3f46a08bf`, consumes `pick(DialogSelection::Folder)` from the native
-  Métis viewer session for `Ctrl+O` study reopen. The selected folder is
-  scanned and decoded by RITK; cancellation and unreadable-study errors leave
-  the prior framebuffer intact. The saved MRI picker window and provenance are
-  recorded in the [RITK DICOM manual](https://github.com/ryancinsight/ritk/blob/main/docs/manual/dicom-workflow.md).
-  This closes the Windows selection-consumer increment; persistent storage,
-  native permission policy and non-Windows providers remain in scope.
+- Open: persistent storage, native permission policy and non-Windows providers; the Windows folder selection `native::pick` (consumed by RITK PR #392) is the only provider.
 
 <a id="METIS-INTEGRATION-001"></a>
 ## METIS-INTEGRATION-001 — Desktop integration services [minor]
-- Status: todo; priority: P2; owner: Metis host/broker; last-update: 2026-10-13; branch: feat/metis-native-command-menu-001; dependencies: METIS-DESKTOP-001; risk: OS interaction
+- Status: todo; priority: feature; owner: Metis host/broker; dependencies: METIS-DESKTOP-001; risk: OS interaction
 - milestone: M-system.
-- Scope: menus/tray, clipboard, notifications, global shortcuts, deep links, file associations, opener, single-instance and window state; bind each exposed API to policy.
+- Outcome: menus/tray, clipboard, notifications, global shortcuts, deep links, file associations, opener, single-instance, autostart and window state work on every supported host, each API bound to policy.
+- Scope: `crates/metis-platform/src/native/`, `scoped_clipboard.rs`, `scoped_opener.rs`, `autostart.rs`, `single_instance.rs`, `window_state_file.rs` and `crates/metis-platform/Cargo.toml`.
 - Acceptance: typed commands/events agree across supported hosts, denial/error paths remain explicit, clipboard/user-content permissions obey host rules and listeners unregister on shutdown.
 - Demonstration: [V08](docs/VERIFICATION.md#V08), actual OS interactions and permission failures; capture menus/dialogs where visible and assert nonvisual events.
+- Open: global shortcuts, tray, menu bars and window placement exist only under `cfg(windows)` (`crates/metis-platform/src/lib.rs:35`); macOS, Linux and mobile mechanisms follow METIS-MACOS-001, METIS-LINUX-001 and METIS-MOBILE-001. Clipboard has no Linux, macOS or non-text mechanism. Installed-OS click-through evidence for deep links and file associations is missing.
+- Open: the `clipboard` feature is off by default and its manifest comment still names a pending Moirai release (`crates/metis-platform/Cargo.toml:26-31`), yet the locked Moirai `f83eb68635c6d948ab4750cb4a10e8c7eb353a24` carries `windows::clipboard`. Nested layouts, SSR/hydration, code hot patching and mobile bundles are rows of [ADR 0003](docs/adr/0003-framework-conformance.md).
 - Historical evidence: [increment records](docs/backlog/evidence.md#metis-integration-001).
-- Browser command-surface increment (2026-09-22): the workbench now mounts a
-  Rust-owned navigation landmark, toolbar and menu with focus-patient and
-  validated dark/system theme actions. Menu state and live status render from
-  `BrowserState`, and its listener consumes the shared
-  `metis_frontend::ApplicationCommand` identities. Escape closes the menu and
-  restores trigger focus. The asset contract and WASM/clippy checks cover the
-  DOM seam. Native tray,
-  notifications, global shortcuts, deep links, file associations, opener,
-  single-instance and window-state services remain open.
-- WebView2 command-surface increment (2026-09-22): the packaged page now
-  mounts the same bounded navigation landmark, toolbar, local theme menu and
-  patient-focus command. Asset tests cover roles, state attributes, Escape
-  handling and the no-bridge command boundary; native visual menu capture and
-  installed accessibility technology remain host-specific evidence.
-- Native command-surface increment (2026-09-22): the software-rendered Windows
-  role now mounts the same typed navigation, toolbar, menu and menu-item
-  surface. Pointer and AccessKit activation mutate `FrontendApp` command state,
-  apply dark/system palettes, focus the patient reference and close the menu on
-  Escape before exiting. Native component/event tests pass; installed
-  screen-reader speech, native tray/notification/shortcut services and physical
-  window captures remain host-specific residuals.
-- Shortcut increment (2026-09-24): `metis_core::input` parses `CmdOrCtrl` accelerator text, resolves browser `KeyboardEvent` codes/keys and Windows virtual keys onto one key vocabulary and refuses conflicting bindings in a bounded `ShortcutMap`. The native window and browser workbench activate the local commands with Alt+Shift+P/D/S, ignore auto-repeat, and announce the bindings through `aria-keyshortcuts` (carried by the semantic tree). A real Chromium run applied the dark/system themes and focused the patient field by shortcut; that run also exposed and fixed the theme commands failing on the `<select>` provider seam. The packaged WebView2 page dispatches the same shortcuts from its buttons' `aria-keyshortcuts` (exercised in Chromium; its Windows asset test binds the attributes to the Rust declarations). OS-global hotkeys, tray, notifications, deep links, file associations, opener, single-instance and window state remain open.
-
-- Opener increment (2026-09-24): `ScopedOpener` opens allowlisted http(s) URLs through a host-fixed launcher (`xdg-open`, `open` or the Windows URL protocol handler at standard paths) behind the new `OPEN_EXTERNAL` capability. URLs are validated as printable RFC 3986 ASCII without credentials and passed as one argument with a session-only environment. A recording launcher verifies the argument, origin denial, deadline bounds and launcher failure. `HostOrigin::from_url` is now the one URL-origin parser that the network and opener providers share. Menus/tray, notifications, global shortcuts, deep links, file associations, single-instance and window state remain open.
-
-- Deep-link increment (2026-09-24): manifests declare `url_schemes`, validated by the same `metis_core::deep_link::DeepLinkScheme` rule the parser applies. The Linux desktop entry registers `x-scheme-handler` types with `%u`, the macOS bundle adds `CFBundleURLTypes`, and the Windows MSI writes per-user `Software\Classes` rows owned by the entry component. `DeepLink` parses bounded, percent-decoded routes and query pairs and rejects dot segments, control characters and undeclared schemes. Forwarding a link to an already running instance (single instance) and installed-OS click-through evidence remain open.
-
-- Window-state increment (2026-09-24): `metis_core::window_state::WindowState` is the bounded, platform-neutral restored rectangle and maximized flag, with an exact text codec; `WindowStateFile` saves it by write-and-rename and loads it with a byte bound. Moirai `NativeWindow::placement`/`set_placement` and `WindowConfig::with_placement` (Moirai PR #461) let the Windows pixel and WebView2 surfaces restore it before first show and read it on close; a hidden window stays hidden and shows maximized when asked. Menus/tray, notifications, global shortcuts, file associations and single-instance remain open.
-
-- Global-shortcut increment (2026-09-24): Moirai `NativeWindow::register_hotkey` (Moirai PR #462) registers modifier chords through `RegisterHotKey` with repeat suppressed, queues presses apart from `WindowEvent` so exhaustive matchers in Metis and RITK still compile, and releases every registration on close. `native::GlobalShortcuts` binds `Accelerator` values to commands on the pixel and WebView2 surfaces through the `HotkeyHost` seam, reusing `ShortcutMap` for conflict refusal; `Key::windows_virtual_key` inverts the one virtual-key table. Tray, notifications, file associations and single-instance remain open.
-
-- Tray and notification increment (2026-09-24): Moirai `NativeWindow::show_tray_icon`, `show_notification` and `take_tray_events` (Moirai PR #463) show one notification-area icon from a validated 16/32 pixel ARGB image, raise shell-balloon notifications (presented as toasts on Windows 10+ without a packaged identity) and decode version-4 callbacks into `TrayEvent` values queued apart from `WindowEvent`. `native::TrayHost` exposes them on the pixel and WebView2 surfaces, and `tray_image` converts an application-drawn `Framebuffer`. `show_popup_menu` opens a bounded native menu at a context request's anchor and returns the chosen index. File associations and single-instance remain open.
-
-- Single-instance increment (2026-09-24): Moirai `instance::claim` (Moirai PR #464) makes the first launch primary through an advisory lock and owner-only socket on Unix, or the first instance of a session-scoped, local-only named pipe on Windows, and forwards one bounded frame from later launches. `metis_platform::claim_or_forward` encodes the launch arguments, so a second launch hands its deep link to the running instance. File associations and installed-OS click-through evidence remain open.
-
-- File-association increment (2026-09-24): manifests declare bounded, unique `file_associations` (extensions, MIME type, description). The Linux package lists the types in the desktop entry and installs a shared-mime-info package mapping extensions to types, the macOS bundle adds `CFBundleDocumentTypes`, and the Windows MSI writes per-user ProgIDs listed under each extension's `OpenWithProgids`, owned by the entry component. Installed-OS click-through evidence remains open.
-
-- Autostart increment (2026-09-24): `metis_platform::Autostart` enables, checks and disables a per-user login item: an XDG autostart entry, a macOS launch agent, or a Windows `Run` value through Moirai `windows::startup` (Moirai PR #465), which reaches no other registry location. `metis_core::command_line` is now the single Windows CRT and desktop `Exec` quoting implementation shared by the MSI shortcut, the Linux package and login items, and `atomic_file::replace` is the shared write-and-rename save.
-
-- Dioxus comparison (2026-09-24): ADR 0003 adds Dioxus 0.7.10, inspected from its published crates, as the closest Rust comparator. Its signals, memos, store fields and `use_resource` are now matched by `metis_frontend::reactive::{derived2, Writable::project, resource}`, with explicit dependencies and stale-result rejection. `metis_core::route::Router` then closes its typed-routing gap (literal/parameter/rest patterns, order-independent precedence, conflict refusal, `href`, deep-link segments through one shared path decoder). Moirai PR #468 then adds native menu bars and same-origin browser history: `native::MenuBarHost` with `menu_label` shortcuts, and `navigation::Navigator` with `metis_web::BrowserNavigator` for reactive, history-backed routes. Nested layouts, SSR/hydration, code hot patching and mobile bundles remain open.
-- Clipboard provider increment (2026-10-13): `metis_platform::ScopedClipboard`
-  admits bounded text reads/writes of the system clipboard behind the new
-  `metis_core::capability::CapabilityScope::CLIPBOARD` witness (`1 << 9`), the
-  counterpart of Tauri's clipboard-manager plugin. The Windows mechanism is
-  Moirai `windows::clipboard` (local Moirai work pending its release): one
-  `OpenClipboard`/`CloseClipboard` region per call, bounded `CF_UNICODETEXT`
-  read/write through global-memory handles, sequence-number torn-read
-  detection, a 1 Mi UTF-16 unit bound, and `png` moved from a dev-dependency
-  into the optional `webview2` feature so external consumers compile. The
-  provider bounds text at `MAX_CLIPBOARD_TEXT_BYTES` (1 MiB UTF-8), refuses
-  reads over the budget and empty/oversized writes before the clipboard is
-  touched, and the host policy refuses a `UI_RENDER` witness with
-  `InsufficientScope`; no normalization, shell or command interpretation
-  exists between caller and clipboard bytes. The real Windows round-trip
-  journey (write, read back, restore the prior content) passes at the
-  mechanism layer (`cargo test -p moirai-pal clipboard -- --ignored`, 1
-  passed) and through the provider (`cargo test -p metis-platform --features
-  clipboard scoped_clipboard -- --ignored`, 1 passed); default gates stay
-  green without the feature. Linux/macOS hosts, app-surface wiring, non-text
-  formats and mobile journeys remain open; the pinned inventory moves the
-  clipboard-manager Windows pair to bounded (47 bounded, 77 open pairs).
-- Clipboard command-surface increment (2026-10-13): `ApplicationCommand::CopyResult`
-  (`Alt+Shift+C`) joins the shared command identity, so one declaration
-  serves every host's markup, `aria-keyshortcuts` announcement, AccessKit
-  node and the `ShortcutMap`. The trusted authority is the backend `clipboard`
-  plugin: `invoke_plugin` mints the typed `CLIPBOARD` witness
-  (`mint_clipboard_witness`) right after the session scope check, the
-  supervised desktop service registers the plugin, and the write crosses the
-  session as a bounded `ClipboardWritePayload` under the session grant that
-  now includes `CLIPBOARD`; an unregistered plugin is refused before scope
-  verification, a `UI_RENDER`-only session path still fails closed, and the
-  OS clipboard is never touched by the untrusted process. The native
-  workbench activates the command by pointer, `Alt+Shift+C` and the
-  AccessKit `Activate` action under the same menu contract (closed-menu
-  refusal included); the browser workbench carries the selected result row's
-  displayed sentence through the context clipboard with task-slot and
-  generation guards; the packaged WebView2 page uses
-  `navigator.clipboard.write_text` through its promise chain and the same
-  status vocabulary. Focused gates: metis-backend 47 default tests plus the
-  ignored real-clipboard journey under `--features clipboard`
-  (`the_clipboard_plugin_round_trips_the_rate_sentence`), metis-frontend 58,
-  metis-app 48+5, metis-web 65 and wasm check, metis-webview-page 5; the
-  command-identity asset contracts update through the shared `ALL`
-  iteration. committed journey evidence (2026-10-13): the trusted
-  input-capture runner gained a follow-shortcut phase and a byte-exact
-  clipboard verification (`Get-Clipboard -Raw` read with its console output
-  encoding pinned to UTF-8, `matches = true`,
-  SHA-256 `fa52fbda3bc875a8d8335c829e2d4dad2877e72a042d594c62280a1b9e6529a9`);
-  the real Windows journey (`output/rec/native-copy.json`, before
-  `fb12e0a92f6c7603d52652cb63867791903a3b40bc5209b6b2dcb9a0d08b3fd8`, after
-  `d94c9fe2b33c0d549bbe6e44bbb3bb33eeba752a86ce35cbc427a9e286ea0334` at 120
-  dpi) submits with real Enter, copies with the real Alt+Shift+C chord, and
-  the clipboard carries the exact rendered sentence
-  `Rate: 0.360 mL/hr (0.72 mg/hr)`; the capture-runner suite passes 26/26.
-  The journey build enabled the `metis-backend/clipboard` feature chain
-  under the temporary local Moirai patch, which was removed afterwards.
-  Remaining: Linux/macOS clipboard mechanisms (separate host
-  items), non-text formats, mobile journeys and the Moirai PR/release with
-  the Metis lock advance that activates the Windows mechanism by default.
-  Moirai-side increment (2026-10-13): the `windows::clipboard` provider is
-  committed on local Moirai main
-  (`feat(pal): add bounded Windows text clipboard provider`; clippy pedantic
-  clean after nesting the test's or-pattern as `Ok(None | Some(_))`, fmt
-  clean, 2 unit tests pass and the ignored real-clipboard journey passes
-  with restore) plus a companion commit wiring `png` into the `webview2`
-  feature so the `metis-platform`-enabled build compiles; `cargo check
-  --features webview2` is clean. A follow-up Moirai commit resolves the
-  pre-existing parallel-suite flake in the closed-socket tests (reproduced
-  on its parent without this change): Winsock recycles
-  process-global socket values across suite threads, so a just-closed value
-  can read live under a foreign owner or reject the poll with `WSAENOTSOCK`
-  mid-teardown. Observation loops with a 10 s deadline, `WSAENOTSOCK`
-  retries, a free-set-draining reuse scan and pre-pinning the global
-  reactor absorb the transient modes; the three tests needing a quiescent
-  namespace are explicit opt-ins per repo convention and all pass solo,
-  with deterministic generation coverage staying in-gate. In-gate suite:
-  173 passed, 0 failed (6 consecutive runs), fmt/clippy clean. No push:
-  the release and the Metis lock advance stay external.
+- next: decide whether the `clipboard` feature stays for a named consumer's size need or deletes with its `cfg` sites, and correct its stale manifest comment.
+- basis: 9ba5695ec2d04a76b4d7258b8748cb0e78905185
 
 <a id="METIS-SERVICES-001"></a>
 ## METIS-SERVICES-001 — Scoped network, shell and sidecars [minor]
-- Status: todo; priority: P2; owner: Moirai mechanisms + Metis policy; last-update: 2026-09-21; delivery: [PR #328](https://github.com/ryancinsight/metis/pull/328), merge `e8c37b23e5231234518a29cdc713de0eb21c38d8`; dependencies: METIS-DESKTOP-001, METIS-COMMANDS-001; risk: privilege escalation
+- Status: todo; priority: feature; owner: Moirai mechanisms + Metis policy; last-update: 2026-09-21; delivery: [PR #328](https://github.com/ryancinsight/metis/pull/328), merge `e8c37b23e5231234518a29cdc713de0eb21c38d8`; dependencies: METIS-DESKTOP-001, METIS-COMMANDS-001; risk: privilege escalation
 - milestone: M-system.
 - Scope: HTTP/WebSocket and subprocess APIs, sidecar lifecycle, endpoint/argument allowlists, bounded IO and credential redaction; local test services only by default.
 - Acceptance: unauthorized endpoints/commands/arguments fail; transient errors, deadlines, cancellation, crash and cleanup are exercised against real processes/local servers; no shell-string injection or secret output.
@@ -523,28 +328,19 @@ an owner. “Unsupported” cannot replace delivery of a required mobile/native 
 
 <a id="METIS-MIGRATION-001"></a>
 ## METIS-MIGRATION-001 — egui and Tauri application migration [arch] [minor]
-- Status: todo; priority: P1; owner: Metis framework + application owners; last-update: 2026-09-21; delivery: Metis PR #124 (merge `35ba45c`); risk: lost application behavior.
+- Status: todo; priority: feature; owner: Metis framework + application owners; last-update: 2026-09-21; delivery: Metis PR #124 (merge `35ba45c`); risk: lost application behavior.
 - milestone: M-system.
-- lease: root — backlog.md current replay citations — 2026-09-22T00:00:00-04:00
 - Dependencies: METIS-FILES-001, METIS-INPUT-001, METIS-ASSETS-001, METIS-GRAPHICS-001, METIS-DESKTOP-001, METIS-INTEGRATION-001, METIS-SERVICES-001.
 - Named driver: [ritk-snap](../ritk/backlog.md#RITK-SNAP-METIS-001), retaining egui/eframe at RITK while exposing `--metis-native` through merged [PR 269](https://github.com/ryancinsight/ritk/pull/269) (`c1b8130bb`), following [PR 267](https://github.com/ryancinsight/ritk/pull/267) (`2f2058062`). No Tauri dependency is present in its manifest or workspace lock. RITK owns decoder, volume geometry and medical display correctness; Metis supplies the replacement shell.
-- Baseline: RITK `8152f483` ([PR 237](https://github.com/ryancinsight/ritk/pull/237)) adds physical display/hit rectangles to selected-study loading, restore/rejection and the original native capture; [manual](docs/manual/applications.md#deterministic-synthetic-dicom-baseline). The merged RITK native MPR increment now proves one bounded Métis framebuffer containing all three spacing-aware planes and panel-specific routing while keeping DICOM semantics in RITK.
 - Progress: the Windows `ritk-snap PATH --metis-native` workflow opens the synthetic study, renders axial/coronal/sagittal panels, routes wheel navigation by panel, captures a deterministic content golden and rejects a missing study. Browser chooser, keyboard, cine and diagnostic-tool input are now evidenced by RITK PR #522; multiframe/color host capture, matched memory measurements and packaging remain open acceptance work. The current complete operating-system application-window capture is recorded in the RITK user manual.
 - Scope: inventory the actual viewer and a distinct pinned Tauri fixture; native Metis implementations replace required UI/state/input/render/file/lifecycle surfaces. First viewer journey opens a local DICOM study, selects its series and displays all three orthogonal views; full cutover retains the whole admitted viewer inventory.
 - Acceptance: [V09](docs/VERIFICATION.md#V09) plus RITK opening/frames/color/grayscale prerequisites; required symbols/config/plugins and viewer actions are mapped/tested. Existing bugs cannot serve as parity oracles. No retained egui/eframe/Tauri runtime or forwarding shim in the completed migrated viewer.
 - Demonstration: actual same-study before/after workflows, verified voxels/physical coordinates and real host captures in the user manual; record JavaScript retained versus Rust/WASM replacement and matched memory evidence.
 - Historical evidence: [increment records](docs/backlog/evidence.md#metis-migration-001).
 
-- Build increment (2026-09-12): `Cargo.lock` now pins the Metis consumer to merged Iris `a5df753f7a553b8f94b613e2a65a0910a81a7c81`; the exact full gate passes, and the visual baseline refresh changes only its lock-bound fixture digest while all seven SVG captures remain byte-identical with zero semantic or pixel differences.
-
-- Actual saved-study smoke (2026-09-14): RITK opened the saved `test_data/2_skull_ct/DICOM` series through `--metis-native` with its explicit `SeriesInstanceUID` and produced a real 1280 × 800 three-plane CT frame (SHA-256 `f9d715f04eb1a536fa7aa06ebef90d2829e11d13a10df866db5c8550cdf8c190`). Wrapping that frame in the Metis native host produced a 1296 × 839 Windows capture (SHA-256 `1f2fabae6576cba059feff8e1985a1bb2b22ed7e4293376ebef503e0a882ad4`). These are DICOM-derived pixels; Metis remains format-neutral and no patient pixels were committed.
-- Historical replay reconciliation (superseded by RITK PR #594): RITK PR #588 merge `27ac7d12bc69a04f7fb12e5ba41ef8fd4fe93aa9` and standalone replay source `b671ae72a20bb6d113de35314e73874f197d2a83` remain preserved with their Metis, Moirai, lock and executable hashes in git history. The 94-file MRI frame and invalid-study result are unchanged; the current comparison basis is the delivery below.
-- Demonstration increment (2026-09-18): the application gallery now links RITK's real MRI diagnostic-tool capture and provenance, including 11 trusted tool actions, seven rejected probes and listener teardown from 21 consumer/32 host listeners to zero. DICOM tool semantics remain RITK-owned; Métis supplies the bounded canvas and event host.
-
-
 <a id="METIS-DISTRIBUTION-003"></a>
 ## METIS-DISTRIBUTION-003 — macOS and Linux installers [arch] [minor]
-- Status: todo; priority: P2; owner: Metis tooling; last-update: 2026-09-21; dependencies: METIS-DISTRIBUTION-001; risk: platform ownership and lifecycle
+- Status: todo; priority: feature; owner: Metis tooling; last-update: 2026-09-21; dependencies: METIS-DISTRIBUTION-001; risk: platform ownership and lifecycle
 - milestone: M-system.
 - Scope: target-specific executable/bundle and installation formats using the same validated inventory; each target requires its native host for installation evidence.
 - Acceptance: build/install/run/uninstall on macOS and Linux preserves user files and application behavior; actual host evidence and platform manual instructions. [ADR 0005](docs/adr/0005-application-distribution.md), [V10](docs/VERIFICATION.md#V10).
@@ -553,14 +349,14 @@ an owner. “Unsupported” cannot replace delivery of a required mobile/native 
 
 <a id="METIS-DISTRIBUTION-004"></a>
 ## METIS-DISTRIBUTION-004 — Signed update and recovery [arch] [minor]
-- Status: todo; priority: P2; owner: Metis tooling; dependencies: METIS-DISTRIBUTION-001; risk: publisher authentication/data loss
+- Status: todo; priority: feature; owner: Metis tooling; dependencies: METIS-DISTRIBUTION-001; risk: publisher authentication/data loss
 - milestone: M-system.
 - Scope: signed package verification, authenticated update/rollback and format evolution; no silent MSI overwrite or downgrade. Production signing identity/publication needs separate authority.
 - Acceptance: corrupt/expired/signature-invalid updates reject, interruption recovers installed state and preserves user files; real local update/recovery workflow and manual. [ADR 0005](docs/adr/0005-application-distribution.md), [V10](docs/VERIFICATION.md#V10).
 
 <a id="METIS-MOBILE-001"></a>
 ## METIS-MOBILE-001 — Mobile host and capability matrix [arch] [minor]
-- Status: todo; priority: P3; owner: Metis mobile host; dependencies: METIS-COMMANDS-001, METIS-INPUT-001, METIS-AUTHORITY-001; risk: mobile lifecycle/permissions
+- Status: todo; priority: feature; owner: Metis mobile host; dependencies: METIS-COMMANDS-001, METIS-INPUT-001, METIS-AUTHORITY-001; risk: mobile lifecycle/permissions
 - milestone: M-platform.
 - Scope: Android/iOS WebView host, touch/keyboard/rotation/suspend/resume, platform plugin boundary; enumerate geolocation, biometric, barcode, NFC and haptics requirements from the Tauri inventory.
 - Acceptance: real device/emulator journeys and permission prompts, restore/cancel across suspension; pin required Android/iOS capability pairs from Tauri's inventory and implement/test each. Restriction closes only comparator-unsupported/out-of-scope pairs; unmet admitted pairs remain open.
@@ -588,7 +384,7 @@ an owner. “Unsupported” cannot replace delivery of a required mobile/native 
 
 <a id="METIS-CONFORMANCE-001"></a>
 ## METIS-CONFORMANCE-001 — Final capability and target closure [patch]
-- Status: todo; priority: P3; owner: Metis integration; last-update: 2026-09-21; risk: structural conformance debt
+- Status: todo; priority: verification; owner: Metis integration; last-update: 2026-09-21; risk: structural conformance debt
 - milestone: M-release.
 - Historical evidence: [increment records](docs/backlog/evidence.md#metis-conformance-001).
 - Dependencies: METIS-DESKTOP-001, METIS-MACOS-001, METIS-LINUX-001, METIS-TEXT-001, METIS-A11Y-001, METIS-ASSETS-001, METIS-GRAPHICS-001, METIS-FILES-001, METIS-INTEGRATION-001, METIS-SERVICES-001, METIS-MIGRATION-001, METIS-MOBILE-001, METIS-PERF-001
@@ -622,7 +418,7 @@ an owner. “Unsupported” cannot replace delivery of a required mobile/native 
 
 <a id="METIS-I18N-001"></a>
 ## METIS-I18N-001 — Localize UI strings through a message catalog [minor]
-- Status: todo; priority: P2; needs: METIS-TEXT-001
+- Status: todo; priority: feature; needs: METIS-TEXT-001
 - milestone: M-input.
 - Outcome: user-visible strings render in the selected locale instead of the source language they were written in.
 - Scope: message catalog + locale selection only; text shaping, bidi, and IME stay in METIS-TEXT-001. The catalog core is delivered (metis#444: `Locale`, `Catalog`, `Resolved`, `catalog!`, `format_message`, 12 tests). What remains is routing display text through it — and measurement shows the first-party Rust surface is almost entirely NOT display text: `metis-app`/`metis-frontend` literals are semantic ids (`label-patient`), ARIA roles (`menuitem`), error/log strings, and test fixtures, none of which may move (localizing an id breaks its references; logs stay source-language for diagnosability). Genuine display text originates from consumers (the RITK viewer strings), window/menu configuration supplied by callers, and HTML/JS assets — a multi-language, multi-repo surface, not a Rust-literal migration.
@@ -691,10 +487,10 @@ an owner. “Unsupported” cannot replace delivery of a required mobile/native 
 - Status: todo; priority: verification; needs: none
 - milestone: M-board.
 - Outcome: every open item uses the closed set (correctness, architecture, verification, tightening, feature), and no item block exceeds 15 lines.
-- Scope: `backlog.md`. At basis, 19 items carry `P0`–`P3` (P0 1, P1 8, P2 7, P3 3). Six blocks exceed 15 lines (measured heading to heading): METIS-MIGRATION-001 68, METIS-INTEGRATION-001 50, METIS-A11Y-001 42, METIS-INPUT-001 41, METIS-TEXT-001 40, METIS-BROWSER-READ-001 32.
+- Scope: `backlog.md`. Once the first slice merges no `P0`-`P3` code remains. Three blocks still exceed 15 lines (measured heading to heading): METIS-PYPI-FIRST-RELEASE-001 91, METIS-CURRENT-PROVIDERS-001 47, METIS-PERF-001 18.
 - Acceptance: a board lint reports zero off-set priorities and zero blocks over 15 lines; the board stays under 1,000 lines.
-- basis: ce47b2b2ebc11c09b0d6f67d7c2e60487fe71cc6
-- next: map each `P`-code to the closed set in one commit, then compact the six blocks to their DoR fields.
+- basis: 9ba5695ec2d04a76b4d7258b8748cb0e78905185
+- next: verify METIS-PYPI-FIRST-RELEASE-001 and METIS-CURRENT-PROVIDERS-001 against provider and registry state, then compact both; move METIS-PERF-001's falsified blending record to an ADR 0053 alternative before deleting it. The compacted INPUT, A11Y, ASSETS, FILES, MIGRATION and DESKTOP items keep their open lists unverified and lack outcome/`next:`/`basis:`; give each its DoR fields.
 
 <a id="METIS-RESIDUAL-001"></a>
 ## METIS-RESIDUAL-001 — Give each residual that ADR 0003 cites a live owner [patch]
