@@ -2,8 +2,8 @@
 //!
 //! Entry point for ADR 0059's preparation contract: one typed description of
 //! a prepared WASM page module plus the single binary encoding every
-//! producer and consumer agrees on. Concrete record types and validation
-//! live in [`types`]; the encoding lives in [`codec`].
+//! producer and consumer agrees on. See [`EmbeddedModuleInventory`] for the
+//! record layout and [`encode`] for the canonical writer.
 
 mod codec;
 mod types;

@@ -179,7 +179,7 @@ pub struct AssetRecord {
 
 /// One prepared embedded module: identity, provenance and hashed contents.
 ///
-/// All lists are stored in canonical sorted order (see [`encode`]).
+/// All lists are stored in canonical sorted order (see `encode`).
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct EmbeddedModuleInventory {
     /// Cargo package name, e.g. `metis-web`.
