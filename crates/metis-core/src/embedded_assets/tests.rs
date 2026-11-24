@@ -97,22 +97,10 @@ fn is_err(result: &Result<EmbeddedModuleInventory>) -> bool {
 
 #[test]
 fn round_trip_canonicalizes_and_reencodes_stably() {
-    let bytes = match encode(&sample()) {
-        Ok(bytes) => bytes,
-        Err(_) => {
-            assert!(false, "sample must encode");
-            return;
-        }
-    };
+    let bytes = encode(&sample()).expect("sample must encode");
     assert_eq!(&bytes[..8], INVENTORY_MAGIC);
     assert_eq!(&bytes[8..10], &INVENTORY_SCHEMA.to_be_bytes());
-    let decoded = match decode(&bytes) {
-        Ok(inventory) => inventory,
-        Err(_) => {
-            assert!(false, "canonical bytes must decode");
-            return;
-        }
-    };
+    let decoded = decode(&bytes).expect("canonical bytes must decode");
     assert_eq!(decoded.providers[0].package_id, "alpha 1.0.0");
     assert_eq!(decoded.tools[0].name, "cargo");
     assert_eq!(
@@ -122,46 +110,28 @@ fn round_trip_canonicalizes_and_reencodes_stably() {
     assert_eq!(decoded.inputs[0].path, "a/lib.rs");
     assert_eq!(decoded.assets[0].destination, "a.js");
     assert_eq!(decoded.assets[1].destination, "b.wasm");
-    let reencoded = match encode(&decoded) {
-        Ok(bytes) => bytes,
-        Err(_) => {
-            assert!(false, "decoded inventory must re-encode");
-            return;
-        }
-    };
+    let reencoded = encode(&decoded).expect("decoded inventory must re-encode");
     assert_eq!(bytes, reencoded);
 }
 
 #[test]
 fn rejects_bad_magic_and_schema() {
-    let bytes = match encode(&sample()) {
-        Ok(bytes) => bytes,
-        Err(_) => {
-            assert!(false, "sample must encode");
-            return;
-        }
-    };
+    let bytes = encode(&sample()).expect("sample must encode");
     let mut bad = bytes.clone();
     bad[0] ^= 0xff;
     assert!(is_err(&decode(&bad)));
     let mut bad_schema = bytes;
     bad_schema[8] = 0;
     bad_schema[9] = 2;
-    match decode(&bad_schema) {
-        Err(InventoryError::UnknownSchema(2)) => {}
-        _ => assert!(false, "schema 2 must be rejected by version"),
-    }
+    assert!(matches!(
+        decode(&bad_schema),
+        Err(InventoryError::UnknownSchema(2))
+    ));
 }
 
 #[test]
 fn rejects_every_truncation() {
-    let bytes = match encode(&sample()) {
-        Ok(bytes) => bytes,
-        Err(_) => {
-            assert!(false, "sample must encode");
-            return;
-        }
-    };
+    let bytes = encode(&sample()).expect("sample must encode");
     for cut in 0..bytes.len() {
         assert!(
             decode(&bytes[..cut]).is_err(),
@@ -172,13 +142,7 @@ fn rejects_every_truncation() {
 
 #[test]
 fn rejects_trailing_bytes() {
-    let mut bytes = match encode(&sample()) {
-        Ok(bytes) => bytes,
-        Err(_) => {
-            assert!(false, "sample must encode");
-            return;
-        }
-    };
+    let mut bytes = encode(&sample()).expect("sample must encode");
     bytes.push(0);
     assert!(matches!(decode(&bytes), Err(InventoryError::TrailingBytes)));
 }
@@ -253,7 +217,7 @@ fn u32be(value: u32, out: &mut Vec<u8>) {
 }
 
 fn field(out: &mut Vec<u8>, value: &[u8]) {
-    let len = value.len() as u32;
+    let len = u32::try_from(value.len()).expect("test value fits u32");
     u32be(len, out);
     out.extend_from_slice(value);
 }
@@ -283,7 +247,10 @@ fn providers_zero(out: &mut Vec<u8>) {
 }
 
 fn tools_named(out: &mut Vec<u8>, tool_names: &[&str]) {
-    u32be(tool_names.len() as u32, out);
+    u32be(
+        u32::try_from(tool_names.len()).expect("test value fits u32"),
+        out,
+    );
     for name in tool_names {
         tool(out, name);
     }
@@ -297,7 +264,10 @@ fn config_empty(out: &mut Vec<u8>) {
 }
 
 fn inputs_section(out: &mut Vec<u8>, records: &[Vec<u8>]) {
-    u32be(records.len() as u32, out);
+    u32be(
+        u32::try_from(records.len()).expect("test value fits u32"),
+        out,
+    );
     for record in records {
         out.extend_from_slice(record);
     }
@@ -385,7 +355,8 @@ fn decode_rejects_huge_length_as_truncated() {
 #[test]
 fn decode_rejects_count_overflow() {
     let mut bytes = head();
-    u32be(MAX_RECORDS as u32 + 1, &mut bytes);
+    let over = u32::try_from(MAX_RECORDS).expect("test value fits u32") + 1;
+    u32be(over, &mut bytes);
     assert!(matches!(
         decode(&bytes),
         Err(InventoryError::TooManyRecords)
@@ -417,10 +388,7 @@ fn decode_rejects_unknown_tags() {
 fn wasm_artifact_validation() {
     let mut good = vec![0x00, 0x61, 0x73, 0x6d, 0x01, 0x00, 0x00, 0x00];
     good.extend_from_slice(&[0u8; 16]);
-    match validate_wasm_artifact(&good) {
-        Ok(1) => {}
-        _ => assert!(false, "valid header must report version 1"),
-    }
+    assert_eq!(validate_wasm_artifact(&good), Ok(1));
     assert!(validate_wasm_artifact(&good[..7]).is_err());
     let mut bad = good.clone();
     bad[0] = 0x7f;

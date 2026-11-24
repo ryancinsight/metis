@@ -1,4 +1,4 @@
-//! Embedded WebView2 module inventory and canonical binary codec.
+//! Embedded `WebView2` module inventory and canonical binary codec.
 //!
 //! This is the inventory half of ADR 0059's preparation contract: one typed
 //! description of a prepared WASM page module (identity, lock digest,
@@ -285,7 +285,7 @@ fn is_reserved_stem(stem: &str) -> bool {
         "COM9", "LPT1", "LPT2", "LPT3", "LPT4", "LPT5", "LPT6", "LPT7", "LPT8", "LPT9",
     ];
     let upper = stem.to_ascii_uppercase();
-    RESERVED.iter().any(|reserved| *reserved == upper)
+    RESERVED.contains(&upper.as_str())
 }
 
 fn lower_key(owner: &str, path: &str) -> (String, String) {
@@ -359,8 +359,10 @@ fn check_assets(assets: &[AssetRecord]) -> Result<()> {
     if assets[0].destination >= assets[1].destination {
         return Err(InventoryError::UnsortedRecords);
     }
-    if assets[0].destination.to_ascii_lowercase() == assets[1].destination.to_ascii_lowercase()
-        && assets[0].destination != assets[1].destination
+    if assets[0].destination != assets[1].destination
+        && assets[0]
+            .destination
+            .eq_ignore_ascii_case(&assets[1].destination)
     {
         return Err(InventoryError::CaseCollidingPaths);
     }

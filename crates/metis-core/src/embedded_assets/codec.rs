@@ -1,14 +1,13 @@
 //! Canonical binary encoding for [`EmbeddedModuleInventory`](super::EmbeddedModuleInventory).
 //!
-//! [`encode`] sorts every list into canonical order before writing;
-//! [`decode`] accepts only canonical bytes. See the parent module for the
-//! field order and the rejected classes.
+//! [`encode`] always emits canonical bytes; [`decode`] accepts only canonical
+//! bytes. See the parent module for the field order and the rejected classes.
 
 use super::{
-    check_assets, check_input_order, check_inputs, check_path, check_string, AssetKind,
-    AssetRecord, BuildConfiguration, EmbeddedModuleInventory, InputRecord, InventoryError,
-    ProviderRecord, ProviderSource, Result, ToolRecord, INVENTORY_MAGIC, INVENTORY_SCHEMA,
-    MAX_MANIFEST_BYTES, MAX_MODULE_BYTES, MAX_RECORDS,
+    AssetKind, AssetRecord, BuildConfiguration, EmbeddedModuleInventory, INVENTORY_MAGIC,
+    INVENTORY_SCHEMA, InputRecord, InventoryError, MAX_MANIFEST_BYTES, MAX_MODULE_BYTES,
+    MAX_RECORDS, ProviderRecord, ProviderSource, Result, ToolRecord, check_assets,
+    check_input_order, check_inputs, check_path, check_string,
 };
 
 /// Encode `inventory` to canonical bytes.
@@ -53,7 +52,35 @@ pub fn encode(inventory: &EmbeddedModuleInventory) -> Result<Vec<u8>> {
     assets.sort_by(|a, b| a.destination.cmp(&b.destination));
     check_inputs(&inputs)?;
     check_assets(&assets)?;
-    for provider in &providers {
+
+    let mut out = Vec::new();
+    push_identity(&mut out, inventory, &providers, &tools)?;
+    push_config(&mut out, &inventory.config, &features, &environment)?;
+    push_inputs(&mut out, &inputs)?;
+    push_assets(&mut out, &assets)?;
+    if out.len() > MAX_MANIFEST_BYTES {
+        return Err(InventoryError::OversizeManifest);
+    }
+    Ok(out)
+}
+
+fn push_identity(
+    out: &mut Vec<u8>,
+    inventory: &EmbeddedModuleInventory,
+    providers: &[ProviderRecord],
+    tools: &[ToolRecord],
+) -> Result<()> {
+    out.extend_from_slice(INVENTORY_MAGIC);
+    push_u16(out, INVENTORY_SCHEMA);
+    push_string(out, &inventory.package)?;
+    push_string(out, &inventory.package_id)?;
+    push_string(out, &inventory.cdylib_target)?;
+    push_string(out, &inventory.wasm_target)?;
+    push_string(out, &inventory.export_name)?;
+    push_string(out, &inventory.platform_tag)?;
+    push_u16(out, inventory.page_schema);
+    out.extend_from_slice(&inventory.lock_digest);
+    for provider in providers {
         check_string(&provider.package_id)?;
         check_string(&provider.version)?;
         match &provider.source {
@@ -65,48 +92,19 @@ pub fn encode(inventory: &EmbeddedModuleInventory) -> Result<Vec<u8>> {
             ProviderSource::Path { member } => check_string(member)?,
         }
     }
-    for tool in &tools {
+    for tool in tools {
         check_string(&tool.name)?;
         check_string(&tool.version_output)?;
     }
-    check_string(&inventory.package)?;
-    check_string(&inventory.package_id)?;
-    check_string(&inventory.cdylib_target)?;
-    check_string(&inventory.wasm_target)?;
-    check_string(&inventory.export_name)?;
-    check_string(&inventory.platform_tag)?;
-    check_string(&inventory.config.profile)?;
-    for feature in &features {
-        check_string(feature)?;
-    }
-    for flag in &inventory.config.rustflags {
-        check_string(flag)?;
-    }
-    for (key, value) in &environment {
-        check_string(key)?;
-        check_string(value)?;
-    }
-
-    let mut out = Vec::new();
-    out.extend_from_slice(INVENTORY_MAGIC);
-    push_u16(&mut out, INVENTORY_SCHEMA);
-    push_string(&mut out, &inventory.package);
-    push_string(&mut out, &inventory.package_id);
-    push_string(&mut out, &inventory.cdylib_target);
-    push_string(&mut out, &inventory.wasm_target);
-    push_string(&mut out, &inventory.export_name);
-    push_string(&mut out, &inventory.platform_tag);
-    push_u16(&mut out, inventory.page_schema);
-    out.extend_from_slice(&inventory.lock_digest);
-    push_u32(&mut out, providers.len() as u32);
-    for provider in &providers {
-        push_string(&mut out, &provider.package_id);
-        push_string(&mut out, &provider.version);
+    push_u32(out, u32_len(providers.len())?);
+    for provider in providers {
+        push_string(out, &provider.package_id)?;
+        push_string(out, &provider.version)?;
         match &provider.source {
             ProviderSource::Git { url, revision } => {
                 out.push(0);
-                push_string(&mut out, url);
-                push_string(&mut out, revision);
+                push_string(out, url)?;
+                push_string(out, revision)?;
             }
             ProviderSource::Registry { checksum } => {
                 out.push(1);
@@ -114,51 +112,76 @@ pub fn encode(inventory: &EmbeddedModuleInventory) -> Result<Vec<u8>> {
             }
             ProviderSource::Path { member } => {
                 out.push(2);
-                push_string(&mut out, member);
+                push_string(out, member)?;
             }
         }
     }
-    push_u32(&mut out, tools.len() as u32);
-    for tool in &tools {
-        push_string(&mut out, &tool.name);
-        push_string(&mut out, &tool.version_output);
+    push_u32(out, u32_len(tools.len())?);
+    for tool in tools {
+        push_string(out, &tool.name)?;
+        push_string(out, &tool.version_output)?;
         out.extend_from_slice(&tool.executable_digest);
     }
-    push_string(&mut out, &inventory.config.profile);
-    push_u32(&mut out, features.len() as u32);
-    for feature in &features {
-        push_string(&mut out, feature);
+    Ok(())
+}
+
+fn push_config(
+    out: &mut Vec<u8>,
+    config: &BuildConfiguration,
+    features: &[String],
+    environment: &[(String, String)],
+) -> Result<()> {
+    check_string(&config.profile)?;
+    for feature in features {
+        check_string(feature)?;
     }
-    push_u32(&mut out, inventory.config.rustflags.len() as u32);
-    for flag in &inventory.config.rustflags {
-        push_string(&mut out, flag);
+    for flag in &config.rustflags {
+        check_string(flag)?;
     }
-    push_u32(&mut out, environment.len() as u32);
-    for (key, value) in &environment {
-        push_string(&mut out, key);
-        push_string(&mut out, value);
+    for (key, value) in environment {
+        check_string(key)?;
+        check_string(value)?;
     }
-    push_u32(&mut out, inputs.len() as u32);
-    for input in &inputs {
-        push_string(&mut out, &input.owner);
-        push_string(&mut out, &input.path);
-        push_u64(&mut out, input.length);
+    push_string(out, &config.profile)?;
+    push_u32(out, u32_len(features.len())?);
+    for feature in features {
+        push_string(out, feature)?;
+    }
+    push_u32(out, u32_len(config.rustflags.len())?);
+    for flag in &config.rustflags {
+        push_string(out, flag)?;
+    }
+    push_u32(out, u32_len(environment.len())?);
+    for (key, value) in environment {
+        push_string(out, key)?;
+        push_string(out, value)?;
+    }
+    Ok(())
+}
+
+fn push_inputs(out: &mut Vec<u8>, inputs: &[InputRecord]) -> Result<()> {
+    push_u32(out, u32_len(inputs.len())?);
+    for input in inputs {
+        push_string(out, &input.owner)?;
+        push_string(out, &input.path)?;
+        push_u64(out, input.length);
         out.extend_from_slice(&input.digest);
     }
-    push_u32(&mut out, assets.len() as u32);
-    for asset in &assets {
+    Ok(())
+}
+
+fn push_assets(out: &mut Vec<u8>, assets: &[AssetRecord]) -> Result<()> {
+    push_u32(out, u32_len(assets.len())?);
+    for asset in assets {
         out.push(match asset.kind {
             AssetKind::JavaScript => 0,
             AssetKind::Wasm => 1,
         });
-        push_string(&mut out, &asset.destination);
-        push_u64(&mut out, asset.length);
+        push_string(out, &asset.destination)?;
+        push_u64(out, asset.length);
         out.extend_from_slice(&asset.digest);
     }
-    if out.len() > MAX_MANIFEST_BYTES {
-        return Err(InventoryError::OversizeManifest);
-    }
-    Ok(out)
+    Ok(())
 }
 
 /// Decode canonical `bytes` into an [`EmbeddedModuleInventory`].
@@ -187,6 +210,32 @@ pub fn decode(bytes: &[u8]) -> Result<EmbeddedModuleInventory> {
     let platform_tag = cursor.string()?;
     let page_schema = cursor.u16_be()?;
     let lock_digest = cursor.digest()?;
+    let providers = pull_providers(&mut cursor)?;
+    let tools = pull_tools(&mut cursor)?;
+    let config = pull_config(&mut cursor)?;
+    let inputs = pull_inputs(&mut cursor)?;
+    let assets = pull_assets(&mut cursor)?;
+    if cursor.remaining() != 0 {
+        return Err(InventoryError::TrailingBytes);
+    }
+    Ok(EmbeddedModuleInventory {
+        package,
+        package_id,
+        cdylib_target,
+        wasm_target,
+        export_name,
+        platform_tag,
+        page_schema,
+        lock_digest,
+        providers,
+        tools,
+        config,
+        inputs,
+        assets,
+    })
+}
+
+fn pull_providers(cursor: &mut Cursor<'_>) -> Result<Vec<ProviderRecord>> {
     let mut providers = Vec::new();
     for _ in 0..cursor.count()? {
         let package_id = cursor.string()?;
@@ -217,6 +266,10 @@ pub fn decode(bytes: &[u8]) -> Result<EmbeddedModuleInventory> {
     {
         return Err(InventoryError::UnsortedRecords);
     }
+    Ok(providers)
+}
+
+fn pull_tools(cursor: &mut Cursor<'_>) -> Result<Vec<ToolRecord>> {
     let mut tools = Vec::new();
     for _ in 0..cursor.count()? {
         tools.push(ToolRecord {
@@ -231,6 +284,10 @@ pub fn decode(bytes: &[u8]) -> Result<EmbeddedModuleInventory> {
     if tools.windows(2).any(|pair| pair[0].name >= pair[1].name) {
         return Err(InventoryError::UnsortedRecords);
     }
+    Ok(tools)
+}
+
+fn pull_config(cursor: &mut Cursor<'_>) -> Result<BuildConfiguration> {
     let profile = cursor.string()?;
     let mut features = Vec::new();
     for _ in 0..cursor.count()? {
@@ -252,6 +309,15 @@ pub fn decode(bytes: &[u8]) -> Result<EmbeddedModuleInventory> {
     if environment.windows(2).any(|pair| pair[0] >= pair[1]) {
         return Err(InventoryError::UnsortedRecords);
     }
+    Ok(BuildConfiguration {
+        profile,
+        features,
+        rustflags,
+        environment,
+    })
+}
+
+fn pull_inputs(cursor: &mut Cursor<'_>) -> Result<Vec<InputRecord>> {
     let mut inputs = Vec::new();
     for _ in 0..cursor.count()? {
         let owner = cursor.string()?;
@@ -268,6 +334,10 @@ pub fn decode(bytes: &[u8]) -> Result<EmbeddedModuleInventory> {
     }
     check_inputs(&inputs)?;
     check_input_order(&inputs)?;
+    Ok(inputs)
+}
+
+fn pull_assets(cursor: &mut Cursor<'_>) -> Result<Vec<AssetRecord>> {
     let mut assets = Vec::new();
     for _ in 0..cursor.count()? {
         let kind = match cursor.tag()? {
@@ -290,29 +360,12 @@ pub fn decode(bytes: &[u8]) -> Result<EmbeddedModuleInventory> {
         });
     }
     check_assets(&assets)?;
-    if cursor.remaining() != 0 {
-        return Err(InventoryError::TrailingBytes);
-    }
-    Ok(EmbeddedModuleInventory {
-        package,
-        package_id,
-        cdylib_target,
-        wasm_target,
-        export_name,
-        platform_tag,
-        page_schema,
-        lock_digest,
-        providers,
-        tools,
-        config: BuildConfiguration {
-            profile,
-            features,
-            rustflags,
-            environment,
-        },
-        inputs,
-        assets,
-    })
+    Ok(assets)
+}
+
+/// Convert a length to `u32`, rejecting values no manifest can hold.
+fn u32_len(len: usize) -> Result<u32> {
+    u32::try_from(len).map_err(|_| InventoryError::OversizeManifest)
 }
 
 fn push_u16(out: &mut Vec<u8>, value: u16) {
@@ -327,10 +380,11 @@ fn push_u64(out: &mut Vec<u8>, value: u64) {
     out.extend_from_slice(&value.to_be_bytes());
 }
 
-fn push_string(out: &mut Vec<u8>, value: &str) {
+fn push_string(out: &mut Vec<u8>, value: &str) -> Result<()> {
     let bytes = value.as_bytes();
-    push_u32(out, bytes.len() as u32);
+    push_u32(out, u32_len(bytes.len())?);
     out.extend_from_slice(bytes);
+    Ok(())
 }
 
 struct Cursor<'a> {
@@ -376,10 +430,11 @@ impl<'a> Cursor<'a> {
 
     fn count(&mut self) -> Result<usize> {
         let value = self.u32_be()?;
-        if u64::from(value) > MAX_RECORDS as u64 {
+        if usize::try_from(value).map_err(|_| InventoryError::TooManyRecords)? > MAX_RECORDS {
             return Err(InventoryError::TooManyRecords);
         }
-        Ok(value as usize)
+        // The bound above proves the conversion is exact on every platform.
+        Ok(usize::try_from(value).map_err(|_| InventoryError::TooManyRecords)?)
     }
 
     fn string(&mut self) -> Result<String> {
@@ -387,10 +442,12 @@ impl<'a> Cursor<'a> {
         if u64::from(len) > self.remaining() as u64 {
             return Err(InventoryError::Truncated);
         }
-        let bytes = self.take(len as usize)?;
+        // Exact: len fits the remaining in-memory bytes, which fit in usize.
+        let len = usize::try_from(len).map_err(|_| InventoryError::Truncated)?;
+        let bytes = self.take(len)?;
         core::str::from_utf8(bytes)
             .map_err(|_| InventoryError::InvalidUtf8)
-            .map(|text| text.to_owned())
+            .map(str::to_owned)
     }
 
     fn digest(&mut self) -> Result<[u8; 32]> {
