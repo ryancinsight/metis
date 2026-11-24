@@ -297,7 +297,7 @@ Current framework version: Metis 0.5.0. Remaining capability work follows.
 - Scope: file dialogs, reads/writes/watch, settings/store/database contract and versioned recovery with explicit scope; no raw frontend access to unrestricted paths.
 - Acceptance: allowed-handle operations succeed; traversal/symlink/TOCTOU and denied scope fail; atomic writes, crash/disk-full recovery and watcher teardown preserve user data.
 - Demonstration: [V08](docs/VERIFICATION.md#V08), document open/save/restart/denial on each supported target; browsers expose selected-file semantics or explicit restrictions.
-- Open: persistent storage, native permission policy and non-Windows providers; the Windows folder selection `native::pick` (consumed by RITK PR #392) is the only provider.
+- Open: persistent storage, native permission policy and non-Windows providers; the Windows common-dialog `native::pick` (file, folder and save selection; RITK PR #392 consumes the folder selection) is the only provider.
 
 <a id="METIS-INTEGRATION-001"></a>
 ## METIS-INTEGRATION-001 — Desktop integration services [minor]
@@ -487,10 +487,10 @@ Current framework version: Metis 0.5.0. Remaining capability work follows.
 - Status: todo; priority: verification; needs: none
 - milestone: M-board.
 - Outcome: every open item uses the closed set (correctness, architecture, verification, tightening, feature), and no item block exceeds 15 lines.
-- Scope: `backlog.md`. Once the first slice merges no `P0`-`P3` code remains. Three blocks still exceed 15 lines (measured heading to heading): METIS-PYPI-FIRST-RELEASE-001 91, METIS-CURRENT-PROVIDERS-001 47, METIS-PERF-001 18.
-- Acceptance: a board lint reports zero off-set priorities and zero blocks over 15 lines; the board stays under 1,000 lines.
+- Scope: `backlog.md`. Once the first slice merges no `P0`-`P3` code remains. Three blocks still exceed 15 lines, measured from the heading line to the next `##` heading line (a following item's anchor line and the blank line before it count): METIS-PYPI-FIRST-RELEASE-001 91, METIS-CURRENT-PROVIDERS-001 47, METIS-PERF-001 18. Fifteen status lines name prerequisites under `dependencies:` instead of `needs:`.
+- Acceptance: a board lint reports zero off-set priorities and zero blocks over 15 lines; the board stays under 1,000 lines. No committed instrument measures inline blocks: `atlas-artifact-budget.py` counts per-item files under `backlog/` only.
 - basis: 9ba5695ec2d04a76b4d7258b8748cb0e78905185
-- next: verify METIS-PYPI-FIRST-RELEASE-001 and METIS-CURRENT-PROVIDERS-001 against provider and registry state, then compact both; move METIS-PERF-001's falsified blending record to an ADR 0053 alternative before deleting it. The compacted INPUT, A11Y, ASSETS, FILES, MIGRATION and DESKTOP items keep their open lists unverified and lack outcome/`next:`/`basis:`; give each its DoR fields.
+- next: verify METIS-PYPI-FIRST-RELEASE-001 and METIS-CURRENT-PROVIDERS-001 against provider and registry state, then compact both; move METIS-PERF-001's falsified blending record to an ADR 0053 alternative before deleting it. The compacted INPUT, A11Y, ASSETS, FILES, MIGRATION and DESKTOP items keep their open lists unverified and lack outcome/`next:`/`basis:`; give each its DoR fields; convert the fifteen `dependencies:` fields to `needs:`, moving non-item prerequisites into Scope.
 
 <a id="METIS-RESIDUAL-001"></a>
 ## METIS-RESIDUAL-001 — Give each residual that ADR 0003 cites a live owner [patch]
@@ -525,3 +525,33 @@ Current framework version: Metis 0.5.0. Remaining capability work follows.
 - basis: daf5638e563e920cdf51eadcff8367e8622a82ab
 - needs: none
 - Status: todo; priority: correctness; milestone: M-release
+
+<a id="METIS-BROWSER-FRAME-DOCS-001"></a>
+## METIS-BROWSER-FRAME-DOCS-001 — Date the screenshot-evidence record and the changelog constraint [patch]
+- Status: todo; priority: verification; needs: PR #591 landed
+- milestone: M-content.
+- Outcome: no reader of `docs/VERIFICATION.md` or `CHANGELOG.md` takes the browser screenshot runner to leave the image uninterpreted or to accept any `--output`.
+- Scope: `docs/VERIFICATION.md` (section "Browser canvas screenshot evidence — 2026-09-16", line 2184 "The runner does not interpret the image") and the `[patch]` Fixed line of `CHANGELOG.md` for the frame comparison, which omits that screenshot mode refuses an `--output` outside `output/browser`; both follow [ADR 0037](docs/adr/0037-browser-canvas-capture.md) as revised by PR #591.
+- Acceptance: `git grep -n 0037 -- docs/VERIFICATION.md` has a hit inside that dated section and `git grep -n output/browser -- CHANGELOG.md` has a hit; both print nothing at basis.
+- basis: d38cfb2058d3423ad29dbc67d3e373127be6eaa8
+- next: after PR #591 lands, add one forward reference to ADR 0037's dated revision in that section, leaving its dated text unchanged, and name the `--output` constraint in the changelog line.
+
+<a id="METIS-BROWSER-DECODE-DEADLINE-001"></a>
+## METIS-BROWSER-DECODE-DEADLINE-001 — One decode deadline for browser screenshot reads [tightening]
+- Status: todo; priority: tightening; needs: PR #591 landed
+- milestone: M-content.
+- Outcome: the 10 s deadline of `READ_SCREENSHOT_PIXELS` has one definition, `SCREENSHOT_DECODE_DEADLINE_MS` (added to `scripts/browser_canvas_capture.py` by PR #591), instead of the literal at `browser_canvas_input.py:175` and `WAIT_MILLISECONDS` at `browser_gpu_recovery.py:159`; the GPU runner's loader and status waits keep their own constant.
+- Scope: `scripts/browser_canvas_capture.py`, `scripts/browser_canvas_input.py`, `scripts/browser_gpu_recovery.py` and their `scripts/tests/test_browser_*.py` suites.
+- Acceptance: every line of `git grep -n -E 'READ_SCREENSHOT_PIXELS, \[' -- scripts` names `SCREENSHOT_DECODE_DEADLINE_MS` (at basis the constant does not exist); `python -m pytest scripts/tests/test_browser_canvas_input.py scripts/tests/test_browser_gpu_recovery.py scripts/tests/test_browser_drop.py -q` passes.
+- basis: d38cfb2058d3423ad29dbc67d3e373127be6eaa8
+- next: after PR #591 lands, import the constant at both call sites and delete the literal; keep the `WAIT_MILLISECONDS` value for the waits that are not decode reads.
+
+<a id="METIS-BROWSER-FRAME-UNIFORM-001"></a>
+## METIS-BROWSER-FRAME-UNIFORM-001 — Refuse a uniform non-black RGBA baseline frame [patch]
+- Status: todo; priority: verification; needs: PR #591 landed
+- milestone: M-content.
+- Outcome: the rejection comparison of `scripts/browser_drop.py` cannot pass on a uniform RGBA frame; a baseline of one non-black colour is refused like a black one.
+- Scope: `scripts/browser_drop.py` (`CANVAS_PIXELS`, `_sample_canvas_pixels`, the RGBA baseline check) and `scripts/tests/test_browser_drop.py`. At PR #591's head the in-browser script counts only non-black pixels, so a uniform non-black frame passes, and the branch without a canvas trace takes the oracle hash with no content check. Open, a design choice without an oracle yet: screenshot mode decides uniformity from all `width * height * 4` values copied through WebDriver as JSON (canvas bound 4096 x 4096), while `browser_canvas_input.py:174-180` compares the full buffer from the same read.
+- Acceptance: `python -m pytest scripts/tests/test_browser_drop.py -q -k rgba_uniform_non_black_baseline` runs `test_rgba_uniform_non_black_baseline_is_refused` and passes; at basis it selects no test (exit 5).
+- basis: d38cfb2058d3423ad29dbc67d3e373127be6eaa8
+- next: after PR #591 lands, extend `CANVAS_PIXELS` to report whether every pixel equals the first and refuse on it; PR #591's commits carry no `Item:` trailer, so commits from here cite this id.
