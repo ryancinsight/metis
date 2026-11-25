@@ -12,23 +12,26 @@ use crate::{
     Result,
     build::{
         self,
-        artifacts::{closure, module, module_target},
+        artifacts::{module, module_target},
     },
     manifest::{self, Application},
     process,
 };
 use metis_core::embedded_assets::{
-    AssetKind, AssetRecord, BuildConfiguration, EmbeddedModuleInventory, INVENTORY_SCHEMA,
-    InputRecord, MAX_RECORDS, ProviderRecord, ProviderSource, ToolRecord, decode, digest_inventory,
-    encode, hex_digest, validate_wasm_artifact,
+    AssetKind, AssetRecord, BuildConfiguration, EmbeddedModuleInventory, InputRecord, MAX_RECORDS,
+    ProviderRecord, ToolRecord, decode, digest_inventory, encode, validate_wasm_artifact,
 };
+use providers::{LockedChecksums, lock_checksums, providers};
+use report::report_json;
 use std::{
-    collections::BTreeMap,
     ffi::OsString,
     fs,
     path::{Path, PathBuf},
     time::Duration,
 };
+
+mod providers;
+mod report;
 
 /// WebAssembly target triple for prepared page modules.
 const WASM_TARGET: &str = "wasm32-unknown-unknown";
@@ -276,152 +279,6 @@ fn package_dir(metadata: &[u8], package_id: &str) -> Result<PathBuf> {
         .map(Path::to_path_buf)
 }
 
-/// Locked registry checksums from `Cargo.lock`, keyed by
-/// `(name, version, source)`: the provenance pin `cargo metadata` no longer
-/// reports (its graph carries `checksum: null` for every registry package
-/// while the lock records them), so the lock is the single source of truth.
-type LockedChecksums = BTreeMap<(String, String, String), [u8; 32]>;
-
-/// Parses the workspace lock into its registry checksums. A registry entry
-/// without a checksum is unpinned and rejected by name; other sources carry
-/// no checksum by construction and are skipped.
-fn lock_checksums(lock: &str) -> Result<LockedChecksums> {
-    let document: toml::Table = toml::from_str(lock)?;
-    let packages = document
-        .get("package")
-        .and_then(toml::Value::as_array)
-        .ok_or("workspace lock omits its package table")?;
-    let mut checksums = LockedChecksums::new();
-    for package in packages {
-        let name = package
-            .get("name")
-            .and_then(toml::Value::as_str)
-            .ok_or("locked package omits its name")?;
-        let version = package
-            .get("version")
-            .and_then(toml::Value::as_str)
-            .ok_or("locked package omits its version")?;
-        let source = package
-            .get("source")
-            .and_then(toml::Value::as_str)
-            .unwrap_or_default();
-        if !source.starts_with("registry+") {
-            continue;
-        }
-        let raw = package
-            .get("checksum")
-            .and_then(toml::Value::as_str)
-            .ok_or(format!(
-                "locked registry package omits its checksum: {name} {version}"
-            ))?;
-        checksums.insert(
-            (name.to_owned(), version.to_owned(), source.to_owned()),
-            hex_to_digest(raw)?,
-        );
-    }
-    Ok(checksums)
-}
-
-/// Workspace packages reachable from `root_id` through the resolved graph,
-/// as `(name, version, source)` tuples. Registry checksums are resolved
-/// separately from the parsed lock (see [`lock_checksums`).
-type ProviderRow = (String, String, Option<String>);
-
-fn provider_packages(metadata: &[u8], root_id: &str) -> Result<Vec<ProviderRow>> {
-    let document: serde_json::Value = serde_json::from_slice(metadata)?;
-    let packages = document
-        .get("packages")
-        .and_then(serde_json::Value::as_array)
-        .ok_or("cargo metadata omitted packages")?;
-    let mut records = Vec::new();
-    for id in closure(&document, root_id)? {
-        let package = packages
-            .iter()
-            .find(|candidate| candidate.get("id") == Some(id))
-            .ok_or("resolved package omitted its manifest entry")?;
-        let name = package
-            .get("name")
-            .and_then(serde_json::Value::as_str)
-            .ok_or("package omitted its name")?;
-        let version = package
-            .get("version")
-            .and_then(serde_json::Value::as_str)
-            .ok_or("package omitted its version")?;
-        records.push((
-            name.to_owned(),
-            version.to_owned(),
-            package
-                .get("source")
-                .and_then(serde_json::Value::as_str)
-                .map(str::to_owned),
-        ));
-    }
-    Ok(records)
-}
-
-fn providers(
-    metadata: &[u8],
-    root_id: &str,
-    checksums: &LockedChecksums,
-) -> Result<Vec<ProviderRecord>> {
-    let mut records = Vec::new();
-    for (name, version, source) in provider_packages(metadata, root_id)? {
-        let package_id = format!("{name} {version}");
-        let source = match source.as_deref() {
-            None => ProviderSource::Path { member: name },
-            Some(source) if source.starts_with("registry+") => {
-                let key = (name.clone(), version.clone(), source.to_owned());
-                let checksum = checksums.get(&key).copied().ok_or(format!(
-                    "locked registry checksum is missing for {package_id}"
-                ))?;
-                ProviderSource::Registry { checksum }
-            }
-            Some(source) if source.starts_with("git+") => {
-                let (url, revision) = split_git_source(source)?;
-                ProviderSource::Git { url, revision }
-            }
-            Some(source) => {
-                return Err(
-                    format!("unsupported provider source for {package_id}: {source}").into(),
-                );
-            }
-        };
-        records.push(ProviderRecord {
-            package_id,
-            version,
-            source,
-        });
-    }
-    Ok(records)
-}
-
-fn split_git_source(source: &str) -> Result<(String, String)> {
-    let rest = source
-        .strip_prefix("git+")
-        .ok_or("git source lacks its scheme")?;
-    let (url, revision) = rest
-        .rsplit_once('#')
-        .ok_or("git source lacks its resolved revision")?;
-    let url = url.split('?').next().unwrap_or(url).to_owned();
-    if url.is_empty() || revision.is_empty() {
-        return Err("git source lacks its URL or revision".into());
-    }
-    Ok((url, revision.to_owned()))
-}
-
-fn hex_to_digest(hex: &str) -> Result<[u8; 32]> {
-    if hex.len() != 64 || !hex.bytes().all(|byte| byte.is_ascii_hexdigit()) {
-        return Err("registry checksum is not 64 hexadecimal digits".into());
-    }
-    let mut out = [0u8; 32];
-    for (index, chunk) in hex.as_bytes().chunks_exact(2).enumerate() {
-        let pair = core::str::from_utf8(chunk).map_err(|_| "registry checksum is not ASCII")?;
-        out[index] =
-            u8::from_str_radix(pair, 16).map_err(|_| "registry checksum is not hexadecimal")?;
-    }
-    Ok(out)
-}
-
 fn rustflags() -> Vec<String> {
     std::env::var("RUSTFLAGS")
         .map(|flags| flags.split_whitespace().map(str::to_owned).collect())
@@ -557,194 +414,6 @@ fn write_new(path: &Path, bytes: &[u8]) -> Result<()> {
     file.write_all(bytes)?;
     file.sync_all()?;
     Ok(())
-}
-
-fn report_json(inventory: &EmbeddedModuleInventory, digest: &[u8; 32]) -> serde_json::Value {
-    use serde_json::{Map, Value};
-    let mut root = Map::new();
-    root.insert("magic".into(), Value::String("METISAS1".into()));
-    root.insert("schema".into(), Value::from(INVENTORY_SCHEMA));
-    root.insert("package".into(), Value::String(inventory.package.clone()));
-    root.insert(
-        "package_id".into(),
-        Value::String(inventory.package_id.clone()),
-    );
-    root.insert(
-        "cdylib_target".into(),
-        Value::String(inventory.cdylib_target.clone()),
-    );
-    root.insert(
-        "wasm_target".into(),
-        Value::String(inventory.wasm_target.clone()),
-    );
-    root.insert(
-        "export".into(),
-        Value::String(inventory.export_name.clone()),
-    );
-    root.insert(
-        "platform_tag".into(),
-        Value::String(inventory.platform_tag.clone()),
-    );
-    root.insert("page_schema".into(), Value::from(inventory.page_schema));
-    root.insert(
-        "lock_digest".into(),
-        Value::String(hex_digest(&inventory.lock_digest)),
-    );
-    root.insert(
-        "providers".into(),
-        Value::Array(report_providers(&inventory.providers)),
-    );
-    root.insert("tools".into(), Value::Array(report_tools(&inventory.tools)));
-    root.insert(
-        "config".into(),
-        Value::Object(report_config(&inventory.config)),
-    );
-    root.insert(
-        "inputs".into(),
-        Value::Array(report_inputs(&inventory.inputs)),
-    );
-    root.insert(
-        "assets".into(),
-        Value::Array(report_assets(&inventory.assets)),
-    );
-    root.insert("inventory_sha256".into(), Value::String(hex_digest(digest)));
-    Value::Object(root)
-}
-
-fn report_providers(providers: &[ProviderRecord]) -> Vec<serde_json::Value> {
-    use serde_json::{Map, Value};
-    providers
-        .iter()
-        .map(|provider| {
-            let mut entry = Map::new();
-            entry.insert(
-                "package_id".into(),
-                Value::String(provider.package_id.clone()),
-            );
-            entry.insert("version".into(), Value::String(provider.version.clone()));
-            entry.insert("source".into(), report_provider_source(&provider.source));
-            Value::Object(entry)
-        })
-        .collect()
-}
-
-fn report_provider_source(source: &ProviderSource) -> serde_json::Value {
-    use serde_json::{Map, Value};
-    let mut entry = Map::new();
-    match source {
-        ProviderSource::Git { url, revision } => {
-            entry.insert("git".into(), Value::String(url.clone()));
-            entry.insert("revision".into(), Value::String(revision.clone()));
-        }
-        ProviderSource::Registry { checksum } => {
-            entry.insert("registry".into(), Value::String(hex_digest(checksum)));
-        }
-        ProviderSource::Path { member } => {
-            entry.insert("path".into(), Value::String(member.clone()));
-        }
-    }
-    Value::Object(entry)
-}
-
-fn report_tools(tools: &[ToolRecord]) -> Vec<serde_json::Value> {
-    use serde_json::{Map, Value};
-    tools
-        .iter()
-        .map(|tool| {
-            let mut entry = Map::new();
-            entry.insert("name".into(), Value::String(tool.name.clone()));
-            entry.insert("version".into(), Value::String(tool.version_output.clone()));
-            entry.insert(
-                "digest".into(),
-                Value::String(hex_digest(&tool.executable_digest)),
-            );
-            Value::Object(entry)
-        })
-        .collect()
-}
-
-fn report_config(config: &BuildConfiguration) -> serde_json::Map<String, serde_json::Value> {
-    use serde_json::{Map, Value};
-    let mut entry = Map::new();
-    entry.insert("profile".into(), Value::String(config.profile.clone()));
-    entry.insert(
-        "features".into(),
-        Value::Array(
-            config
-                .features
-                .iter()
-                .map(|feature| Value::String(feature.clone()))
-                .collect(),
-        ),
-    );
-    entry.insert(
-        "rustflags".into(),
-        Value::Array(
-            config
-                .rustflags
-                .iter()
-                .map(|flag| Value::String(flag.clone()))
-                .collect(),
-        ),
-    );
-    entry.insert(
-        "environment".into(),
-        Value::Array(
-            config
-                .environment
-                .iter()
-                .map(|(key, value)| {
-                    let mut pair = Map::new();
-                    pair.insert("key".into(), Value::String(key.clone()));
-                    pair.insert("value".into(), Value::String(value.clone()));
-                    Value::Object(pair)
-                })
-                .collect(),
-        ),
-    );
-    entry
-}
-
-fn report_inputs(inputs: &[InputRecord]) -> Vec<serde_json::Value> {
-    use serde_json::{Map, Value};
-    inputs
-        .iter()
-        .map(|input| {
-            let mut entry = Map::new();
-            entry.insert("owner".into(), Value::String(input.owner.clone()));
-            entry.insert("path".into(), Value::String(input.path.clone()));
-            entry.insert("length".into(), Value::from(input.length));
-            entry.insert("digest".into(), Value::String(hex_digest(&input.digest)));
-            Value::Object(entry)
-        })
-        .collect()
-}
-
-fn report_assets(assets: &[AssetRecord]) -> Vec<serde_json::Value> {
-    use serde_json::{Map, Value};
-    assets
-        .iter()
-        .map(|asset| {
-            let mut entry = Map::new();
-            entry.insert(
-                "kind".into(),
-                Value::String(
-                    match asset.kind {
-                        AssetKind::JavaScript => "javascript",
-                        AssetKind::Wasm => "wasm",
-                    }
-                    .into(),
-                ),
-            );
-            entry.insert(
-                "destination".into(),
-                Value::String(asset.destination.clone()),
-            );
-            entry.insert("length".into(), Value::from(asset.length));
-            entry.insert("digest".into(), Value::String(hex_digest(&asset.digest)));
-            Value::Object(entry)
-        })
-        .collect()
 }
 
 #[cfg(test)]
