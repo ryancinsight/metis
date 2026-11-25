@@ -503,17 +503,17 @@ Current framework version: Metis 0.5.0. Remaining capability work follows.
 - next: list each residual sentence per ID, assign it, and delete the closed ones.
 
 <a id="METIS-DISPLAY-ASPECT-001"></a>
-## METIS-DISPLAY-ASPECT-001 — Preserve representable frame aspect
-- outcome: positive finite sample spacing produces its representable width/height ratio without intermediate overflow or underflow.
-- acceptance: 2×2 frames with equal maximum finite spacing have aspect 1; equal minimum subnormals also yield 1; dimension-compensated subnormal ratios remain positive; only unrepresentable final ratios return InvalidInput.
-- acceptance: browser presentation accepts those valid ratios; malformed dimensions/spacing remain rejected before upload.
-- scope: crates/metis-web/src/canvas/frame.rs, canvas/surface.rs, existing tests; RITK browser geometry consumer.
-- next: derive bounded exponent scaling using the locked numeric provider; retain raw physical spacing and consolidate the repeated RITK aspect formula after provider delivery.
-- evidence: current DisplaySpacing::aspect multiplies each dimension by spacing before division; maximum finite spacing times 2 overflows both operands although their true ratio equals 1.
+## METIS-DISPLAY-ASPECT-001 — Reject malformed frames before upload in the browser
+- outcome: `CanvasSurface::present` accepts frames whose spacing gives a representable aspect and returns `InvalidInput` for malformed dimensions and unrepresentable spacing before any canvas mutation, shown by execution on wasm32.
+- acceptance: `scripts/browser_canvas_input.py` exits 0 and its `<engine>-canvas-input.json` records (1) three accepted presentations whose 2D-context pixels read back equal to the presented frame: 2×2 with equal maximum finite spacing, 2×2 with equal minimum subnormal spacing, and 2×1 with row spacing 2.0 and minimum subnormal column spacing; (2) two rejected presentations, a zero-dimension frame and a 1×1 frame with minimum subnormal row and maximum finite column spacing, each reporting `InvalidInput` while the canvas backing size and pixels still equal the last accepted frame, whose extent differs from the rejected one. The frames are additive: the trace's existing raster pixel, drag, capture and held-drop oracle is unchanged.
+- check: step `Run GPU-free canvas input trace` of job `browser-runtime` in `.github/workflows/ci.yml`, cells `Browser runtime (chromium)` and `Browser runtime (firefox)`, in a `workflow_dispatch` run of that workflow on the delivering branch. The job runs only on `schedule` and `workflow_dispatch`, so no pull-request check shows it and the weekly schedule repeats it. Fails at basis: `git grep -n -e display_spacing -e InvalidInput -- crates/metis-web/examples/canvas_input scripts/browser_canvas_input.py` prints nothing. The `Browser runtime (webkit)` cell runs the same step; its result is owned by METIS-CANVAS-SAFARI-001.
+- scope: crates/metis-web/examples/canvas_input/browser.rs, examples/browser/canvas-input.js, scripts/browser_canvas_input.py, scripts/tests/test_browser_canvas_input.py; crates/metis-web/src/canvas/surface.rs only if the run exposes a defect.
+- next: export an entry point from the `canvas_input` example that presents the five frames and reports each result, assert them in `browser_canvas_input.py` and its unit suite, then dispatch `ci.yml` on the branch. RITK formula consolidation is owned by RITK-SNAP-IMAGE-FIT-001 and leaves this item.
+- evidence: `present` validates extent, aspect and storage (canvas/surface.rs:210-214) before its only renderer dispatch (:215), so the GPU-free raster surface executes the rejection path both renderers share; the WebGPU provider behind that dispatch is not executed by this item. `scripts/browser_gpu_recovery.py` is not the check: its example constructs a WebGPU-only surface ([ADR 0036](docs/adr/0036-browser-webgpu-canvas.md)), and this board's 2026-09-16 and 2026-09-22 RITK replay entries record hosted Chromium WebGPU adapter failures. `present` discards the ratio, so the three values stay asserted natively by `display_spacing_preserves_extreme_representable_aspects` (canvas/frame.rs) and the browser run adds their wasm32 execution. The zero-dimension case shows the returned kind only: extent validation is the first statement of `present`, so its readback cannot detect a reordering; the 1×1 case can.
 - needs: none
-- Status: todo; priority: correctness
+- Status: todo; priority: verification
 - milestone: M-system
-- basis: b96e9ca67e0ee7130d0922d15aae9f4f93fefc26
+- basis: 90a0b593e8122adabd2c98f033fe513ffd6d04f1
 - driver: [RITK sample-aspect fitting](../ritk/backlog/RITK-SNAP-IMAGE-FIT-001.md); DICOM spacing admission remains RITK-owned.
 
 <a id="METIS-CANVAS-SAFARI-001"></a>
