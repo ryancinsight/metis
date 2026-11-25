@@ -15,7 +15,7 @@ use std::{
     time::Duration,
 };
 
-mod artifacts;
+pub(crate) mod artifacts;
 #[cfg(any(not(windows), test))]
 mod install;
 mod platform;
@@ -312,7 +312,7 @@ fn cargo_target(os: &str, architecture: &str) -> Option<&'static str> {
     (os == "windows" && architecture == "x86_64").then_some("x86_64-pc-windows-msvc")
 }
 
-fn absolute_output(path: &Path) -> Result<PathBuf> {
+pub(crate) fn absolute_output(path: &Path) -> Result<PathBuf> {
     let name = path.file_name().ok_or("output requires a directory name")?;
     let parent = path
         .parent()
