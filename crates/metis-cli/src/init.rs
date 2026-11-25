@@ -32,6 +32,7 @@ pub(crate) fn create(directory: &Path) -> Result<()> {
             bin: "metis-app".to_owned(),
         }],
         resources: Vec::new(),
+        embedded_module: None,
     };
     application.validate()?;
 

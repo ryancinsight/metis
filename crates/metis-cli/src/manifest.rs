@@ -101,6 +101,25 @@ pub(crate) struct Application {
     pub(crate) binaries: Vec<Binary>,
     #[serde(default)]
     pub(crate) resources: Vec<Resource>,
+    /// Optional embedded `WebView2` page module: `metis prepare` builds
+    /// it from this workspace package and records its canonical inventory
+    /// before the native executable compiles.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub(crate) embedded_module: Option<EmbeddedModule>,
+}
+
+/// An embedded `WebView2` page module declared on a native application.
+#[derive(Debug, Deserialize, Serialize)]
+#[serde(deny_unknown_fields)]
+pub(crate) struct EmbeddedModule {
+    /// Workspace package owning the page; must provide a `cdylib` target.
+    pub(crate) package: String,
+    /// Native consumer platform tag; only `windows` is admitted.
+    pub(crate) platform: String,
+    /// Page entry point the generated loader instantiates.
+    pub(crate) export: String,
+    /// Page schema version the generated module implements.
+    pub(crate) page_schema: u16,
 }
 
 #[derive(Debug, Deserialize, Serialize)]
@@ -182,7 +201,33 @@ impl Application {
         }
         url_schemes::validate(&self.url_schemes)?;
         file_associations::validate(&self.file_associations)?;
+        self.validate_embedded_module()?;
         self.validate_inventory()
+    }
+
+    fn validate_embedded_module(&self) -> Result<()> {
+        let Some(module) = &self.embedded_module else {
+            return Ok(());
+        };
+        identifier(&module.package)?;
+        if module.export.is_empty()
+            || module.export.len() > 100
+            || !module
+                .export
+                .bytes()
+                .next()
+                .is_some_and(|first| first.is_ascii_alphabetic() || first == b'_' || first == b'$')
+            || !module
+                .export
+                .bytes()
+                .all(|byte| byte.is_ascii_alphanumeric() || byte == b'_' || byte == b'$')
+        {
+            return Err("embedded export must be a JavaScript identifier".into());
+        }
+        if module.platform != "windows" {
+            return Err("embedded platform admits only windows".into());
+        }
+        Ok(())
     }
 
     fn validate_inventory(&self) -> Result<()> {

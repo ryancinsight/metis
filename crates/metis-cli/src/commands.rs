@@ -47,6 +47,12 @@ const COMMANDS: &[Command] = &[
         options: &[],
     },
     Command {
+        name: "prepare",
+        usage: "prepare MANIFEST OUTPUT",
+        summary: "Build the embedded WASM page module and record its canonical inventory",
+        options: &[],
+    },
+    Command {
         name: "install",
         usage: "install ARCHIVE PREFIX",
         summary: "Install a Linux USTAR package below a prefix",

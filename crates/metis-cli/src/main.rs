@@ -6,6 +6,7 @@ mod commands;
 mod dev;
 mod init;
 mod manifest;
+mod prepare;
 mod process;
 mod serve;
 mod tree;
@@ -82,6 +83,12 @@ fn main() -> Result<()> {
                     Ok(())
                 }
             }
+        }
+        Some("prepare") => {
+            let [_, manifest, output] = args.as_slice() else {
+                return Err(usage_error("prepare requires MANIFEST and OUTPUT"));
+            };
+            prepare::run(Path::new(manifest), Path::new(output))
         }
         Some("package") => {
             let [_, input, output] = args.as_slice() else {

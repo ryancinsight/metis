@@ -127,16 +127,16 @@ pub(super) fn artifacts(
 /// The `cdylib` target a browser application compiles, and the
 /// `wasm-bindgen` release its dependency graph locks.
 #[derive(Debug, PartialEq, Eq)]
-pub(super) struct ModuleTarget {
-    pub(super) package_id: String,
-    pub(super) target: String,
-    pub(super) bindgen_version: String,
+pub(crate) struct ModuleTarget {
+    pub(crate) package_id: String,
+    pub(crate) target: String,
+    pub(crate) bindgen_version: String,
 }
 
 /// Selects `package`'s `cdylib` target from full `cargo metadata` output,
 /// with the one `wasm-bindgen` version in that package's dependency closure;
 /// the generating CLI must match it exactly.
-pub(super) fn module_target(metadata: &[u8], package: &str) -> Result<ModuleTarget> {
+pub(crate) fn module_target(metadata: &[u8], package: &str) -> Result<ModuleTarget> {
     let document: serde_json::Value = serde_json::from_slice(metadata)?;
     let packages = document
         .get("packages")
@@ -193,7 +193,7 @@ pub(super) fn module_target(metadata: &[u8], package: &str) -> Result<ModuleTarg
 }
 
 /// Package ids reachable from `root` through the resolved dependency graph.
-fn closure<'document>(
+pub(crate) fn closure<'document>(
     document: &'document serde_json::Value,
     root: &str,
 ) -> Result<Vec<&'document serde_json::Value>> {
@@ -226,7 +226,7 @@ fn closure<'document>(
 }
 
 /// The `.wasm` file Cargo reported for `module`'s target.
-pub(super) fn module(messages: &[u8], module: &ModuleTarget) -> Result<PathBuf> {
+pub(crate) fn module(messages: &[u8], module: &ModuleTarget) -> Result<PathBuf> {
     let mut found = None;
     for message in compiler_artifacts(messages) {
         let message = message?;
