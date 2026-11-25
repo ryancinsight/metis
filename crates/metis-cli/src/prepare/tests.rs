@@ -351,18 +351,18 @@ fn assemble_round_trips_through_canonical_bytes() {
         }],
         tools: vec![
             ToolRecorded {
-                name: "b".into(),
-                version: "b 2".into(),
-                digest: [2u8; 32],
-            },
-            ToolRecorded {
-                name: "a".into(),
-                version: "a 1".into(),
+                name: "cargo".into(),
+                version: "cargo 1".into(),
                 digest: [1u8; 32],
             },
             ToolRecorded {
-                name: "c".into(),
-                version: "c 3".into(),
+                name: "rustc".into(),
+                version: "rustc 2".into(),
+                digest: [2u8; 32],
+            },
+            ToolRecorded {
+                name: "wasm-bindgen".into(),
+                version: "wasm-bindgen 3".into(),
                 digest: [9u8; 32],
             },
         ],
@@ -377,7 +377,7 @@ fn assemble_round_trips_through_canonical_bytes() {
         wasm: vec![0x00, 0x61, 0x73, 0x6d, 0x01, 0x00, 0x00, 0x00],
     };
     let inventory = assemble(parts).expect("assembly");
-    assert_eq!(inventory.tools[0].name, "b");
+    assert_eq!(inventory.tools[0].name, "cargo");
     let encoded = encode(&inventory).expect("canonical bytes");
     let decoded = decode(&encoded).expect("round trip");
     assert_eq!(decoded.export_name, "start");
