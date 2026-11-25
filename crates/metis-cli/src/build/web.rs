@@ -73,7 +73,8 @@ pub(crate) fn application(
         METADATA_DEADLINE,
         &[],
     )?;
-    let target = artifacts::module_target(&metadata, &application.frontend.package)?;
+    let document: serde_json::Value = serde_json::from_slice(&metadata)?;
+    let target = artifacts::module_target(&document, &application.frontend.package)?;
     let bindgen = wasm_bindgen(&target.bindgen_version)?;
     let mut build = arguments(
         &[

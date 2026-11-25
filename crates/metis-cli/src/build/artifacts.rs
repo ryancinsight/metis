@@ -136,8 +136,7 @@ pub(crate) struct ModuleTarget {
 /// Selects `package`'s `cdylib` target from full `cargo metadata` output,
 /// with the one `wasm-bindgen` version in that package's dependency closure;
 /// the generating CLI must match it exactly.
-pub(crate) fn module_target(metadata: &[u8], package: &str) -> Result<ModuleTarget> {
-    let document: serde_json::Value = serde_json::from_slice(metadata)?;
+pub(crate) fn module_target(document: &serde_json::Value, package: &str) -> Result<ModuleTarget> {
     let packages = document
         .get("packages")
         .and_then(serde_json::Value::as_array)
@@ -168,7 +167,7 @@ pub(crate) fn module_target(metadata: &[u8], package: &str) -> Result<ModuleTarg
         .find(|target| kinds(target).any(|kind| kind == "cdylib"))
         .and_then(|target| target.get("name").and_then(serde_json::Value::as_str))
         .ok_or_else(|| format!("{package} has no cdylib target to compile to WebAssembly"))?;
-    let versions = closure(&document, package_id)?
+    let versions = closure(document, package_id)?
         .into_iter()
         .filter_map(|id| {
             packages

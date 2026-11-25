@@ -116,12 +116,12 @@ fn module_metadata(bridge_bindgen: &str) -> serde_json::Value {
 
 #[test]
 fn module_target_takes_the_bindgen_version_from_the_package_closure() {
-    let metadata = serde_json::to_vec(&module_metadata("bindgen-new")).expect("metadata");
+    let metadata = module_metadata("bindgen-new");
     let target = artifacts::module_target(&metadata, "metis-starter").expect("module target");
     assert_eq!(target.package_id, "starter");
     assert_eq!(target.target, "metis_starter");
     assert_eq!(target.bindgen_version, "0.2.128");
-    let metadata = serde_json::to_vec(&module_metadata("bindgen-old")).expect("metadata");
+    let metadata = module_metadata("bindgen-old");
     let target = artifacts::module_target(&metadata, "metis-starter").expect("module target");
     assert_eq!(target.bindgen_version, "0.2.100");
 }
@@ -131,15 +131,13 @@ fn module_target_rejects_packages_it_cannot_bind() {
     let mut document = module_metadata("bindgen-new");
     document["resolve"]["nodes"][1]["dependencies"] =
         serde_json::json!(["bindgen-new", "bindgen-old"]);
-    let two = serde_json::to_vec(&document).expect("metadata");
-    let error = artifacts::module_target(&two, "metis-starter").expect_err("two versions");
+    let error = artifacts::module_target(&document, "metis-starter").expect_err("two versions");
     assert!(
         error.to_string().contains("more than one wasm-bindgen"),
         "{error}"
     );
     document["resolve"]["nodes"][1]["dependencies"] = serde_json::json!([]);
-    let none = serde_json::to_vec(&document).expect("metadata");
-    let error = artifacts::module_target(&none, "metis-starter").expect_err("no bindgen");
+    let error = artifacts::module_target(&document, "metis-starter").expect_err("no bindgen");
     assert!(
         error
             .to_string()
@@ -147,10 +145,9 @@ fn module_target_rejects_packages_it_cannot_bind() {
         "{error}"
     );
     document["packages"][0]["targets"][0]["kind"] = serde_json::json!(["rlib"]);
-    let library = serde_json::to_vec(&document).expect("metadata");
-    let error = artifacts::module_target(&library, "metis-starter").expect_err("no cdylib");
+    let error = artifacts::module_target(&document, "metis-starter").expect_err("no cdylib");
     assert!(error.to_string().contains("no cdylib target"), "{error}");
-    let error = artifacts::module_target(&library, "moirai-pal").expect_err("not a member");
+    let error = artifacts::module_target(&document, "moirai-pal").expect_err("not a member");
     assert!(
         error.to_string().contains("not a workspace member"),
         "{error}"
