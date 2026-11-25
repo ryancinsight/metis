@@ -40,6 +40,9 @@ REGISTRY_BOUNDARIES = {
     ("metis-ui-lang", "flate2"),
     ("metis-cli", "serde"),
     ("metis-cli", "serde_json"),
+    # No Atlas provider supplies Cargo.lock parsing; the prepare stage reads
+    # registry provenance pins from the audited lock.
+    ("metis-cli", "toml"),
     ("metis-app", "serde"),
     ("metis-app", "serde_json"),
     ("metis-python", "pyo3"),
