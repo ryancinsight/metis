@@ -56,14 +56,13 @@ pub(super) fn lock_checksums(lock: &str) -> Result<LockedChecksums> {
 /// separately from the parsed lock (see [`lock_checksums`]).
 type ProviderRow = (String, String, Option<String>);
 
-fn provider_packages(metadata: &[u8], root_id: &str) -> Result<Vec<ProviderRow>> {
-    let document: serde_json::Value = serde_json::from_slice(metadata)?;
+fn provider_packages(document: &serde_json::Value, root_id: &str) -> Result<Vec<ProviderRow>> {
     let packages = document
         .get("packages")
         .and_then(serde_json::Value::as_array)
         .ok_or("cargo metadata omitted packages")?;
     let mut records = Vec::new();
-    for id in closure(&document, root_id)? {
+    for id in closure(document, root_id)? {
         let package = packages
             .iter()
             .find(|candidate| candidate.get("id") == Some(id))
@@ -89,12 +88,12 @@ fn provider_packages(metadata: &[u8], root_id: &str) -> Result<Vec<ProviderRow>>
 }
 
 pub(super) fn providers(
-    metadata: &[u8],
+    document: &serde_json::Value,
     root_id: &str,
     checksums: &LockedChecksums,
 ) -> Result<Vec<ProviderRecord>> {
     let mut records = Vec::new();
-    for (name, version, source) in provider_packages(metadata, root_id)? {
+    for (name, version, source) in provider_packages(document, root_id)? {
         let package_id = format!("{name} {version}");
         let source = match source.as_deref() {
             None => ProviderSource::Path { member: name },

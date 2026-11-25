@@ -152,21 +152,34 @@ fn fixture_metadata() -> serde_json::Value {
     })
 }
 
-fn fixture_bytes() -> Vec<u8> {
-    serde_json::to_vec(&fixture_metadata()).expect("fixture metadata")
+fn fixture_document() -> serde_json::Value {
+    fixture_metadata()
+}
+
+fn digest_bytes(data: &[u8]) -> [u8; 32] {
+    use moirai_crypto::Sha256;
+    let mut hash = Sha256::new();
+    hash.update(data);
+    hash.finalize()
 }
 
 #[test]
 fn package_dir_resolves_member_manifest() {
-    let bytes = fixture_bytes();
-    let dir = package_dir(&bytes, "page 0.1.0 (path+file:///tmp/ws/page)").expect("member");
+    let document = fixture_document();
+    let dir = package_dir(&document, "page 0.1.0 (path+file:///tmp/ws/page)").expect("member");
     assert_eq!(dir, Path::new("/tmp/ws/page"));
 }
 
 #[test]
 fn package_dir_rejects_outsider() {
-    let bytes = fixture_bytes();
-    assert!(package_dir(&bytes, "outsider 9.9.9 (registry+https://example.invalid)").is_err());
+    let document = fixture_document();
+    assert!(
+        package_dir(
+            &document,
+            "outsider 9.9.9 (registry+https://example.invalid)"
+        )
+        .is_err()
+    );
 }
 
 fn fixture_lock() -> &'static str {
@@ -185,9 +198,9 @@ fn fixture_checksums() -> LockedChecksums {
 
 #[test]
 fn providers_map_all_source_kinds() {
-    let bytes = fixture_bytes();
+    let document = fixture_document();
     let providers = providers(
-        &bytes,
+        &document,
         "page 0.1.0 (path+file:///tmp/ws/page)",
         &fixture_checksums(),
     )
@@ -210,10 +223,9 @@ fn providers_map_all_source_kinds() {
 fn providers_reject_unknown_source() {
     let mut document = fixture_metadata();
     document["packages"][1]["source"] = serde_json::Value::String("ftp://example.invalid/x".into());
-    let bytes = serde_json::to_vec(&document).expect("fixture metadata");
     assert!(
         providers(
-            &bytes,
+            &document,
             "page 0.1.0 (path+file:///tmp/ws/page)",
             &fixture_checksums()
         )
@@ -224,9 +236,9 @@ fn providers_reject_unknown_source() {
 #[test]
 fn providers_take_registry_checksums_from_the_lock() {
     // The metadata graph carries a decoy checksum; the lock wins.
-    let bytes = fixture_bytes();
+    let document = fixture_document();
     let providers = providers(
-        &bytes,
+        &document,
         "page 0.1.0 (path+file:///tmp/ws/page)",
         &fixture_checksums(),
     )
@@ -246,10 +258,10 @@ fn providers_take_registry_checksums_from_the_lock() {
 
 #[test]
 fn providers_reject_registry_package_missing_from_the_lock() {
-    let bytes = fixture_bytes();
+    let document = fixture_document();
     assert!(
         providers(
-            &bytes,
+            &document,
             "page 0.1.0 (path+file:///tmp/ws/page)",
             &LockedChecksums::new()
         )
@@ -278,6 +290,19 @@ fn lock_checksums_reject_malformed_hex() {
         "checksum = \"not-hex\"\n",
     );
     assert!(lock_checksums(lock).is_err());
+}
+
+#[test]
+fn hash_generated_streams_length_and_digest() {
+    let fixture = Fixture::new("hash-generated");
+    let module = &[0x00, 0x61, 0x73, 0x6d, 0x01, 0x00, 0x00, 0x00];
+    let path = fixture.file("page_bg.wasm", module);
+    let hashed = hash_generated(&path, "page_bg.wasm").expect("hash");
+    assert_eq!(hashed.length, 8);
+    assert_eq!(hashed.digest, digest_bytes(module));
+    let empty = fixture.file("empty.js", &[]);
+    assert!(hash_generated(&empty, "empty.js").is_err());
+    assert!(hash_generated(&fixture.root.join("missing.js"), "missing.js").is_err());
 }
 
 #[test]
@@ -375,10 +400,16 @@ fn assemble_round_trips_through_canonical_bytes() {
             length: 3,
             digest: [3u8; 32],
         }],
-        loader: b"loader".to_vec(),
-        wasm: vec![0x00, 0x61, 0x73, 0x6d, 0x01, 0x00, 0x00, 0x00],
+        loader: HashedFile {
+            length: 6,
+            digest: digest_bytes(b"loader"),
+        },
+        wasm: HashedFile {
+            length: 8,
+            digest: digest_bytes(&[0x00, 0x61, 0x73, 0x6d, 0x01, 0x00, 0x00, 0x00]),
+        },
     };
-    let inventory = assemble(parts).expect("assembly");
+    let inventory = assemble(parts);
     assert_eq!(inventory.tools[0].name, "cargo");
     let encoded = encode(&inventory).expect("canonical bytes");
     let decoded = decode(&encoded).expect("round trip");
