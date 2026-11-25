@@ -1,11 +1,8 @@
-//! Round-trip and rejection tests for the inventory codec.
-//!
-//! Hand-built byte vectors (not `encode` output) exercise every decode
-//! rejection, so a decoder that merely echoes the encoder cannot pass.
+//! Typed inventory, canonicalization and artifact tests.
 
 use super::*;
 
-fn sample() -> EmbeddedModuleInventory {
+pub(super) fn sample() -> EmbeddedModuleInventory {
     EmbeddedModuleInventory {
         package: "metis-web".into(),
         package_id: "metis-web 0.5.0".into(),
@@ -57,7 +54,11 @@ fn sample() -> EmbeddedModuleInventory {
         config: BuildConfiguration {
             profile: "release".into(),
             features: vec!["b".into(), "a".into(), "a".into()],
-            rustflags: vec!["-C debuginfo=line-tables-only".into()],
+            rustflags: vec![
+                "-Copt-level=2".into(),
+                "-Copt-level=1".into(),
+                "-Copt-level=2".into(),
+            ],
             environment: vec![("B".into(), "2".into()), ("A".into(), "1".into())],
         },
         inputs: vec![
@@ -104,9 +105,14 @@ fn round_trip_canonicalizes_and_reencodes_stably() {
     assert_eq!(decoded.providers[0].package_id, "alpha 1.0.0");
     assert_eq!(decoded.tools[0].name, "cargo");
     assert_eq!(
+        decoded.config.environment,
+        [("A".into(), "1".into()), ("B".into(), "2".into())]
+    );
+    assert_eq!(
         decoded.config.features,
         vec!["a".to_string(), "b".to_string()]
     );
+    assert_eq!(decoded.config.rustflags, sample().config.rustflags);
     assert_eq!(decoded.inputs[0].path, "a/lib.rs");
     assert_eq!(decoded.assets[0].destination, "a.js");
     assert_eq!(decoded.assets[1].destination, "b.wasm");
@@ -203,184 +209,6 @@ fn rejects_oversize_manifest_on_encode() {
     assert!(matches!(
         encode(&big),
         Err(InventoryError::OversizeManifest)
-    ));
-}
-
-// --- Hand-built byte vectors: decode-only rejection paths. ---
-
-fn u16be(value: u16, out: &mut Vec<u8>) {
-    out.extend_from_slice(&value.to_be_bytes());
-}
-
-fn u32be(value: u32, out: &mut Vec<u8>) {
-    out.extend_from_slice(&value.to_be_bytes());
-}
-
-fn field(out: &mut Vec<u8>, value: &[u8]) {
-    let len = u32::try_from(value.len()).expect("test value fits u32");
-    u32be(len, out);
-    out.extend_from_slice(value);
-}
-
-fn tool(out: &mut Vec<u8>, name: &str) {
-    field(out, name.as_bytes());
-    field(out, b"v");
-    out.extend_from_slice(&[0u8; 32]);
-}
-
-/// Canonical prefix through the lock digest: magic, schema, six empty
-/// identity strings, zero page schema, zero lock digest.
-fn head() -> Vec<u8> {
-    let mut out = Vec::new();
-    out.extend_from_slice(INVENTORY_MAGIC);
-    u16be(INVENTORY_SCHEMA, &mut out);
-    for _ in 0..6 {
-        u32be(0, &mut out);
-    }
-    u16be(0, &mut out);
-    out.extend_from_slice(&[0u8; 32]);
-    out
-}
-
-fn providers_zero(out: &mut Vec<u8>) {
-    u32be(0, out);
-}
-
-fn tools_named(out: &mut Vec<u8>, tool_names: &[&str]) {
-    u32be(
-        u32::try_from(tool_names.len()).expect("test value fits u32"),
-        out,
-    );
-    for name in tool_names {
-        tool(out, name);
-    }
-}
-
-fn config_empty(out: &mut Vec<u8>) {
-    field(out, b"");
-    u32be(0, out);
-    u32be(0, out);
-    u32be(0, out);
-}
-
-fn inputs_section(out: &mut Vec<u8>, records: &[Vec<u8>]) {
-    u32be(
-        u32::try_from(records.len()).expect("test value fits u32"),
-        out,
-    );
-    for record in records {
-        out.extend_from_slice(record);
-    }
-}
-
-fn input_rec(owner: &str, path: &str) -> Vec<u8> {
-    let mut out = Vec::new();
-    field(&mut out, owner.as_bytes());
-    field(&mut out, path.as_bytes());
-    out.extend_from_slice(&0u64.to_be_bytes());
-    out.extend_from_slice(&[0u8; 32]);
-    out
-}
-
-fn assets_js_wasm(js: &str, wasm: &str) -> Vec<u8> {
-    let mut out = Vec::new();
-    u32be(2, &mut out);
-    out.push(0);
-    field(&mut out, js.as_bytes());
-    out.extend_from_slice(&0u64.to_be_bytes());
-    out.extend_from_slice(&[0u8; 32]);
-    out.push(1);
-    field(&mut out, wasm.as_bytes());
-    out.extend_from_slice(&0u64.to_be_bytes());
-    out.extend_from_slice(&[0u8; 32]);
-    out
-}
-
-#[test]
-fn decode_rejects_unsorted_inputs() {
-    let mut bytes = head();
-    providers_zero(&mut bytes);
-    tools_named(&mut bytes, &["cargo", "rustc", "wasm-bindgen"]);
-    config_empty(&mut bytes);
-    inputs_section(
-        &mut bytes,
-        &[input_rec("m", "b.js"), input_rec("m", "a.js")],
-    );
-    bytes.extend_from_slice(&assets_js_wasm("a.js", "b.wasm"));
-    assert!(matches!(
-        decode(&bytes),
-        Err(InventoryError::UnsortedRecords)
-    ));
-}
-
-#[test]
-fn decode_rejects_unsorted_tools() {
-    let mut bytes = head();
-    providers_zero(&mut bytes);
-    tools_named(&mut bytes, &["b", "a", "c"]);
-    assert!(matches!(
-        decode(&bytes),
-        Err(InventoryError::UnsortedRecords)
-    ));
-}
-
-#[test]
-fn decode_rejects_bad_utf8() {
-    let mut bytes = head();
-    providers_zero(&mut bytes);
-    tools_named(&mut bytes, &["cargo", "rustc", "wasm-bindgen"]);
-    config_empty(&mut bytes);
-    let mut rec = input_rec("m", "a.js");
-    // Byte 10 is the '.' inside the "a.js" content: 0xFF is never valid UTF-8.
-    let at = rec.len() - 43;
-    rec[at] = 0xff;
-    inputs_section(&mut bytes, &[rec]);
-    bytes.extend_from_slice(&assets_js_wasm("a.js", "b.wasm"));
-    assert!(matches!(decode(&bytes), Err(InventoryError::InvalidUtf8)));
-}
-
-#[test]
-fn decode_rejects_huge_length_as_truncated() {
-    let mut bytes = head();
-    providers_zero(&mut bytes);
-    tools_named(&mut bytes, &["cargo", "rustc", "wasm-bindgen"]);
-    config_empty(&mut bytes);
-    u32be(1, &mut bytes);
-    field(&mut bytes, b"m");
-    field(&mut bytes, b"a.js");
-    bytes.extend_from_slice(&u64::MAX.to_be_bytes());
-    assert!(matches!(decode(&bytes), Err(InventoryError::Truncated)));
-}
-
-#[test]
-fn decode_rejects_count_overflow() {
-    let mut bytes = head();
-    let over = u32::try_from(MAX_RECORDS).expect("test value fits u32") + 1;
-    u32be(over, &mut bytes);
-    assert!(matches!(
-        decode(&bytes),
-        Err(InventoryError::TooManyRecords)
-    ));
-}
-
-#[test]
-fn decode_rejects_bad_tool_count() {
-    let mut bytes = head();
-    providers_zero(&mut bytes);
-    tools_named(&mut bytes, &["cargo", "rustc"]);
-    assert!(matches!(decode(&bytes), Err(InventoryError::BadToolSet)));
-}
-
-#[test]
-fn decode_rejects_unknown_tags() {
-    let mut with_tag = head();
-    u32be(1, &mut with_tag);
-    field(&mut with_tag, b"p");
-    field(&mut with_tag, b"1.0");
-    with_tag.push(7);
-    assert!(matches!(
-        decode(&with_tag),
-        Err(InventoryError::UnknownTag(7))
     ));
 }
 

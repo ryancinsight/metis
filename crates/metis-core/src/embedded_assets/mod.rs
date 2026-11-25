@@ -4,12 +4,21 @@
 //! a prepared WASM page module plus the single binary encoding every
 //! producer and consumer agrees on. See [`EmbeddedModuleInventory`] for the
 //! record layout and [`encode`] for the canonical writer.
+//!
+//! Every successful encoding can be decoded, and re-encoding any accepted
+//! byte sequence reproduces it exactly. The writer sorts records and deduplicates
+//! enabled features. On the wire, provider IDs, tool names, features, and
+//! environment pairs must each be in strictly increasing order. Compiler flags
+//! retain their order and may repeat. Both directions admit at most
+//! [`MAX_MANIFEST_BYTES`] per inventory, including its header.
 
 mod codec;
 mod types;
 
 #[cfg(test)]
 mod tests;
+#[cfg(test)]
+mod wire_tests;
 
 pub use codec::{decode, encode};
 pub use types::{
