@@ -21,7 +21,7 @@ use metis_core::embedded_assets::{
     AssetKind, AssetRecord, BuildConfiguration, EmbeddedModuleInventory, InputRecord, MAX_RECORDS,
     ProviderRecord, ToolRecord, decode, digest_inventory, encode, validate_wasm_artifact,
 };
-use providers::{LockedChecksums, lock_checksums, providers};
+use providers::{lock_checksums, providers};
 use report::report_json;
 use std::{
     ffi::OsString,

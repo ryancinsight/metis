@@ -2,7 +2,7 @@
 //! assembly round-trips and the readable report. Subprocess orchestration in
 //! `run` stays thin by construction and is covered by the pre-push gate.
 
-use super::providers::{hex_to_digest, split_git_source};
+use super::providers::{LockedChecksums, hex_to_digest, split_git_source};
 use super::*;
 use metis_core::embedded_assets::{ProviderRecord, ProviderSource};
 use std::sync::atomic::{AtomicU64, Ordering};
