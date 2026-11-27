@@ -14,6 +14,7 @@
 //! (system-wide) hotkey.
 mod accelerator;
 mod error;
+mod history;
 mod key;
 mod modifiers;
 mod pointer_drag;
@@ -21,6 +22,7 @@ mod shortcut_map;
 
 pub use accelerator::{Accelerator, MAX_ACCELERATOR_BYTES};
 pub use error::{AcceleratorError, PointerDragError, ShortcutError};
+pub use history::HistoryAction;
 pub use key::{Digit, FunctionKey, Key, Letter};
 pub use modifiers::Modifiers;
 pub use pointer_drag::PointerDrag;
