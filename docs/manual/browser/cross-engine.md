@@ -363,6 +363,10 @@ browser screenshot.
 
 Build the fixture with `python scripts/browser.py build`; use
 `python scripts/browser_canvas_input.py --help` for the driver and trace flags.
-CI checks Chromium and Firefox pixels, trusted drag and held-pointer cleanup.
+The page loader only initializes the generated module. Rust owns the start,
+drain and stop controls and the canvas surface lifecycle. The driver installs
+its listener observer on the fixture canvas after Rust mounts and before Start,
+so measurement code does not ship as application behavior. CI checks Chromium
+and Firefox pixels, trusted drag and held-pointer cleanup.
 Safari has failing raster observations; its [investigation](../../../backlog.md#METIS-CANVAS-SAFARI-001)
 and three-engine parity remain open. Every CLI pixel/input assertion stays enabled.

@@ -17,7 +17,7 @@ from unittest import mock
 sys.path.insert(0, str(pathlib.Path(__file__).resolve().parents[1]))
 import browser_drop
 from browser_canvas_capture import pixel_observation
-from browser_canvas_input import _screenshot_dimensions, run
+from browser_canvas_input import INSTALL_CANVAS_TRACE, _screenshot_dimensions, run
 from browser_file_read import (
     CLEANUP_SELECTION_DIAGNOSTIC,
     INSTALL_SELECTION_DIAGNOSTIC,
@@ -264,6 +264,56 @@ class CanvasInputPathTests(unittest.TestCase):
                 raise
             with self.assertRaisesRegex(BrowserRuntimeError, "path is linked"):
                 run("http://127.0.0.1:0", BrowserEngine.CHROMIUM, link, 1.0, 1000, "1" * 40)
+
+
+@unittest.skipUnless(shutil.which("node"), "Node.js is required for listener instrumentation")
+class CanvasInputTraceTests(unittest.TestCase):
+    def test_trace_is_scoped_to_one_canvas_and_restores_its_methods(self):
+        harness = r"""
+const install = process.argv[1];
+const canvas = new EventTarget();
+const other = new EventTarget();
+canvas.hasPointerCapture = () => true;
+globalThis.window = {};
+globalThis.document = {getElementById: id => id === 'canvas-input' ? canvas : null};
+new Function(install)('canvas-input');
+let canvasCalls = 0, otherCalls = 0;
+const onCanvas = event => { canvasCalls++; event.preventDefault(); };
+const onOther = () => { otherCalls++; };
+canvas.addEventListener('pointerdown', onCanvas);
+other.addEventListener('pointerdown', onOther);
+const event = new Event('pointerdown', {cancelable: true});
+Object.defineProperties(event, {
+  pointerId: {value: 7}, button: {value: 0}, buttons: {value: 1}
+});
+canvas.dispatchEvent(event);
+other.dispatchEvent(new Event('pointerdown'));
+canvas.removeEventListener('pointerdown', onCanvas);
+const state = window.canvasInputTrace.state();
+window.canvasInputTrace.restore();
+process.stdout.write(JSON.stringify({canvasCalls, otherCalls, state,
+  ownAdd: Object.hasOwn(canvas, 'addEventListener'), traceRemoved: !window.canvasInputTrace}));
+"""
+        result = subprocess.run(
+            ["node", "-e", harness, INSTALL_CANVAS_TRACE], capture_output=True,
+            check=True, encoding="utf-8", timeout=30,
+        )
+        self.assertEqual(json.loads(result.stdout), {
+            "canvasCalls": 1,
+            "otherCalls": 1,
+            "state": {
+                "registrations": 1,
+                "active": 0,
+                "removals": 1,
+                "observations": [{
+                    "type": "pointerdown", "pointer_id": 7, "button": 0, "buttons": 1,
+                    "trusted": False, "returned": True, "default_prevented": True,
+                    "has_capture": True,
+                }],
+            },
+            "ownAdd": False,
+            "traceRemoved": True,
+        })
 
 
 class CanvasInputScreenshotTests(unittest.TestCase):

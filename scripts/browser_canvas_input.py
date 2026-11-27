@@ -18,6 +18,57 @@ CANVAS_ID = "canvas-input"
 STATUS_ID = "canvas-input-status"
 
 
+INSTALL_CANVAS_TRACE = """
+const canvas = document.getElementById(arguments[0]);
+if (!canvas) throw new Error(`canvas trace target is missing: ${arguments[0]}`);
+if (window.canvasInputTrace) throw new Error('canvas trace is already installed');
+const ownAdd = Object.getOwnPropertyDescriptor(canvas, 'addEventListener');
+const ownRemove = Object.getOwnPropertyDescriptor(canvas, 'removeEventListener');
+const add = canvas.addEventListener.bind(canvas);
+const remove = canvas.removeEventListener.bind(canvas);
+const entries = [], observations = [];
+const capture = (options) => typeof options === 'boolean'
+  ? options : Boolean(options && options.capture);
+Object.defineProperty(canvas, 'addEventListener', {configurable: true, value(type, listener, options) {
+  if (typeof listener !== 'function') return add(type, listener, options);
+  const entry = {type, listener, capture: capture(options), active: true, wrapped: null};
+  entry.wrapped = function(event) {
+    const observation = {
+      type, pointer_id: event.pointerId ?? null, button: event.button ?? null,
+      buttons: event.buttons ?? null, trusted: event.isTrusted === true, returned: false,
+      default_prevented: null, has_capture: null,
+    };
+    observations.push(observation);
+    listener.call(this, event);
+    Object.assign(observation, {returned: true, default_prevented: event.defaultPrevented === true,
+      has_capture: Number.isInteger(event.pointerId) ? canvas.hasPointerCapture(event.pointerId) : null});
+  };
+  entries.push(entry);
+  return add(type, entry.wrapped, options);
+}});
+Object.defineProperty(canvas, 'removeEventListener', {configurable: true, value(type, listener, options) {
+  const registered = entries.find((entry) => entry.active && entry.type === type &&
+    entry.listener === listener && entry.capture === capture(options));
+  if (!registered) return remove(type, listener, options);
+  const result = remove(type, registered.wrapped, options);
+  registered.active = false;
+  return result;
+}});
+const state = () => ({registrations: entries.length,
+  active: entries.filter((entry) => entry.active).length,
+  removals: entries.filter((entry) => !entry.active).length,
+  observations: observations.slice()});
+window.canvasInputTrace = {state, restore: () => {
+  if (ownAdd) Object.defineProperty(canvas, 'addEventListener', ownAdd);
+  else delete canvas.addEventListener;
+  if (ownRemove) Object.defineProperty(canvas, 'removeEventListener', ownRemove);
+  else delete canvas.removeEventListener;
+  delete window.canvasInputTrace;
+}};
+return state();
+"""
+
+
 RASTER_DIAGNOSTIC = """
 const canvas = document.getElementById(arguments[0]);
 const read = (context) => {
@@ -90,7 +141,9 @@ def _validate_drag(records: Sequence[list[Any]]) -> list[list[Any]]:
 
 
 def _trace(client: WebDriverClient) -> dict[str, Any]:
-    state = client.execute("return window.canvasInputTrace.state();")
+    state = client.execute(
+        "return window.canvasInputTrace ? window.canvasInputTrace.state() : null;"
+    )
     counts = ("registrations", "active", "removals")
     if not isinstance(state, dict) or any(type(state.get(field)) is not int for field in counts) \
             or not isinstance(state.get("observations"), list):
@@ -145,11 +198,14 @@ def run(
             client.set_window_rect(640, 480)
             client.navigate(url)
             _wait_for_text(client, STATUS_ID, "loaded", include=False, timeout_ms=10_000)
+            installed = client.execute(INSTALL_CANVAS_TRACE, [CANVAS_ID])
             trace_installed = True
-            if _trace(client) != {"registrations": 0, "active": 0, "removals": 0, "observations": []}:
+            empty_trace = {"registrations": 0, "active": 0, "removals": 0,
+                           "observations": []}
+            if installed != empty_trace or _trace(client) != empty_trace:
                 raise BrowserRuntimeError("canvas input instrumentation was not empty before start")
             phase = "start raster surface"
-            client.execute("window.canvasInput.canvas_start();")
+            client.click(client.find("#canvas-start"))
             _wait_for_text(client, STATUS_ID, "ready", include=False, timeout_ms=10_000)
             phase = "read rendered raster pixel"
             canvas = client.execute(
@@ -203,7 +259,7 @@ def run(
             element = client.find(f"#{CANVAS_ID}")
             client.pointer_drag(element, (-30, -10), (-20, -10), source_id="metis-active-drop")
             settle_canvas_input(client)
-            client.execute("window.canvasInput.canvas_drain();")
+            client.click(client.find("#canvas-drain"))
             gesture = _validate_drag(_batch(client))
             completed = _trace(client)
             _validate_callbacks(completed["observations"], gesture[0][1])
@@ -222,7 +278,7 @@ def run(
             if type(pointer_id) is not int or active_down != expected_down:
                 raise BrowserRuntimeError(f"active pointer callback differs: {active_down!r}")
             phase = "drop surface while pointer is held"
-            client.execute("window.canvasInput.canvas_stop();")
+            client.execute("document.getElementById('canvas-stop').click();")
             stopped = _trace(client)
             if stopped["registrations"] != listeners or stopped["removals"] != listeners or stopped["active"] != 0:
                 raise BrowserRuntimeError(f"surface teardown did not remove each DOM listener: {stopped!r}")
@@ -264,7 +320,7 @@ def run(
         raise BrowserRuntimeError(f"canvas input {phase}: {error}") from error
     finally:
         if trace_installed and client.session_id is not None:
-            client.execute("window.canvasInputTrace.restore();")
+            client.execute("if (window.canvasInputTrace) window.canvasInputTrace.restore();")
         if client.session_id is not None:
             client.release_actions()
         client.close()
