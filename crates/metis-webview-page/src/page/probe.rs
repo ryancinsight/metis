@@ -19,7 +19,7 @@ const PERMISSIONS: [(WebPermissionKind, &str); 4] = [
 
 /// One frontend element handle bundle for the permission probe.
 #[derive(Clone)]
-struct ProbeElements {
+pub(super) struct ProbeElements {
     /// The host connection status line.
     status: Element,
     /// The probe progress and result line.
@@ -51,53 +51,7 @@ pub(super) fn run_permission_probe(window: &Window, document: &Document) {
     let Some(elements) = collect_probe(document) else {
         return;
     };
-    let denied_elements = elements.clone();
-    let connection = bridge::connect(move |message| {
-        let message = match message {
-            Ok(message) => message,
-            Err(error) => {
-                let diagnostic = bridge::reply_diagnostic(&error);
-                denied_elements.result.set_text_content(Some(&diagnostic));
-                return;
-            }
-        };
-        match message {
-            PostedMessage::PermissionDenied {
-                status,
-                error_code,
-                permission,
-                message: text,
-                user_initiated,
-            } => {
-                if let Some(index) = PERMISSIONS
-                    .iter()
-                    .position(|(_, admitted)| *admitted == permission)
-                {
-                    let note = if user_initiated {
-                        "host denied after user action"
-                    } else {
-                        "host denied"
-                    };
-                    let mut host_denials = denied_elements.host_denials.get();
-                    host_denials[index] = true;
-                    denied_elements.host_denials.set(host_denials);
-                    denied_elements.rows[index]
-                        .set_text_content(Some(&format!("{permission}: {note}")));
-                    let line = error_line(&status, &text, error_code);
-                    denied_elements.result.set_text_content(Some(&line));
-                }
-            }
-            PostedMessage::Error {
-                status,
-                error_code,
-                message: text,
-            } => {
-                let line = error_line(&status, &text, error_code);
-                denied_elements.result.set_text_content(Some(&line));
-            }
-            PostedMessage::Result { .. } => {}
-        }
-    });
+    let connection = bridge::connect(bridge::MessageReceiver::Probe(elements.clone()));
     let Ok((bridge, listener)) = connection else {
         elements
             .status
@@ -128,6 +82,54 @@ pub(super) fn run_permission_probe(window: &Window, document: &Document) {
         result.set_text_content(Some(
             "The permission probe listener could not be installed.",
         ));
+    }
+}
+
+pub(super) fn receive_probe(denied_elements: &ProbeElements, message: io::Result<PostedMessage>) {
+    let message = match message {
+        Ok(message) => message,
+        Err(error) => {
+            let diagnostic = bridge::reply_diagnostic(&error);
+            denied_elements.result.set_text_content(Some(&diagnostic));
+            return;
+        }
+    };
+    match message {
+        PostedMessage::PermissionDenied {
+            status,
+            error_code,
+            permission,
+            message: text,
+            user_initiated,
+        } => {
+            if let Some(index) = PERMISSIONS
+                .iter()
+                .position(|(_, admitted)| *admitted == permission)
+            {
+                let note = if user_initiated {
+                    "host denied after user action"
+                } else {
+                    "host denied"
+                };
+                let mut host_denials = denied_elements.host_denials.get();
+                host_denials[index] = true;
+                denied_elements.host_denials.set(host_denials);
+                denied_elements.rows[index]
+                    .set_text_content(Some(&format!("{permission}: {note}")));
+                let line = error_line(&status, &text, error_code);
+                denied_elements.result.set_text_content(Some(&line));
+            }
+        }
+        PostedMessage::Error {
+            status,
+            error_code,
+            message: text,
+        } => {
+            denied_elements
+                .result
+                .set_text_content(Some(&error_line(&status, &text, error_code)));
+        }
+        PostedMessage::Result { .. } => {}
     }
 }
 

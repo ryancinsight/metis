@@ -7,6 +7,7 @@ use super::retain;
 use crate::logic::{error_line, number_argument, number_text};
 use crate::message::PostedMessage;
 use serde::Serialize;
+use std::io;
 use wasm_bindgen::{JsCast, closure::Closure, prelude::*};
 use web_sys::{Event, Window};
 
@@ -28,47 +29,7 @@ struct SubmitRequest<'a> {
 /// Connects the host bridge: typed reply rendering and the calculation
 /// submit path over the exact retired wire lines.
 pub(super) fn wire_form_bridge(window: &Window, elements: &FormElements) {
-    let reply_elements = elements.clone();
-    let connection = bridge::connect(move |reply| {
-        let reply = match reply {
-            Ok(message) => message,
-            Err(error) => {
-                let diagnostic = bridge::reply_diagnostic(&error);
-                reply_elements.show_error(&diagnostic);
-                return;
-            }
-        };
-        match reply {
-            PostedMessage::Result {
-                status,
-                audit_sequence_id,
-                rate_ml_hr,
-                drug_rate_mg_hr,
-            } if status == "success" => {
-                let line = format!(
-                    "Rate {} mL/hour; drug {} mg/hour; audit {audit_sequence_id}",
-                    number_text(rate_ml_hr),
-                    number_text(drug_rate_mg_hr)
-                );
-                reply_elements.result.set_text_content(Some(&line));
-                reply_elements.submit.set_disabled(false);
-            }
-            PostedMessage::Result { status, .. } => {
-                // The host contract only sends success in this envelope;
-                // anything else fails closed instead of rendering blanks.
-                let line = format!("{status}: the reply carries no calculation result");
-                reply_elements.show_error(&line);
-            }
-            PostedMessage::Error {
-                status,
-                error_code,
-                message: text,
-            } => {
-                reply_elements.show_error(&error_line(&status, &text, error_code));
-            }
-            PostedMessage::PermissionDenied { .. } => {}
-        }
-    });
+    let connection = bridge::connect(bridge::MessageReceiver::Form(elements.clone()));
     let Ok((bridge, listener)) = connection else {
         elements.show_error("WebView2 bridge is unavailable.");
         elements
@@ -112,4 +73,43 @@ pub(super) fn wire_form_bridge(window: &Window, elements: &FormElements) {
         .form
         .add_event_listener_with_callback("submit", on_submit.as_ref().unchecked_ref());
     retain(on_submit);
+}
+
+pub(super) fn receive_form(elements: &FormElements, reply: io::Result<PostedMessage>) {
+    let reply = match reply {
+        Ok(message) => message,
+        Err(error) => {
+            let diagnostic = bridge::reply_diagnostic(&error);
+            elements.show_error(&diagnostic);
+            return;
+        }
+    };
+    match reply {
+        PostedMessage::Result {
+            status,
+            audit_sequence_id,
+            rate_ml_hr,
+            drug_rate_mg_hr,
+        } if status == "success" => {
+            let line = format!(
+                "Rate {} mL/hour; drug {} mg/hour; audit {audit_sequence_id}",
+                number_text(rate_ml_hr),
+                number_text(drug_rate_mg_hr)
+            );
+            elements.result.set_text_content(Some(&line));
+            elements.submit.set_disabled(false);
+        }
+        PostedMessage::Result { status, .. } => {
+            let line = format!("{status}: the reply carries no calculation result");
+            elements.show_error(&line);
+        }
+        PostedMessage::Error {
+            status,
+            error_code,
+            message: text,
+        } => {
+            elements.show_error(&error_line(&status, &text, error_code));
+        }
+        PostedMessage::PermissionDenied { .. } => {}
+    }
 }
