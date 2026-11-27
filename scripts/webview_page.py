@@ -80,36 +80,40 @@ def source_roots(directory: pathlib.Path, environment: dict[str, str]) -> dict[p
     return {**{path.resolve(): name for path, name in locations.items()}, **locations}
 
 
-def remap_arguments(roots: dict[pathlib.Path, str], environment: dict[str, str]) -> list[str]:
-    # Cargo prioritizes explicit environment flags over configuration. Append
-    # to that source when present so remapping preserves the caller's flags.
+def compile_page(directory: pathlib.Path, environment: dict[str, str], roots: dict[pathlib.Path, str]) -> None:
+    command = ["cargo", "rustc", "--locked", "-p", CRATE, "--target", "wasm32-unknown-unknown",
+               "--release", "--crate-type", "cdylib", "--manifest-path", str(ROOT / "Cargo.toml")]
     flags = [f"--remap-path-prefix={path}={name}" for path, name in roots.items()]
-    if "CARGO_ENCODED_RUSTFLAGS" in environment:
-        inherited = environment["CARGO_ENCODED_RUSTFLAGS"].split(chr(31))
-    elif "RUSTFLAGS" in environment:
-        inherited = environment["RUSTFLAGS"].split()
+    if "CARGO_ENCODED_RUSTFLAGS" in environment or "RUSTFLAGS" in environment:
+        if "CARGO_ENCODED_RUSTFLAGS" in environment:
+            inherited = environment["CARGO_ENCODED_RUSTFLAGS"].split(chr(31))
+        else:
+            inherited = environment["RUSTFLAGS"].split()
+        environment["CARGO_ENCODED_RUSTFLAGS"] = chr(31).join([*filter(None, inherited), *flags])
     else:
-        key = ("target.wasm32-unknown-unknown.rustflags"
-               if "CARGO_TARGET_WASM32_UNKNOWN_UNKNOWN_RUSTFLAGS" in environment
-               else "build.rustflags")
-        return ["--config", key + "=" + json.dumps(flags, ensure_ascii=False)]
-    environment["CARGO_ENCODED_RUSTFLAGS"] = chr(31).join([*filter(None, inherited), *flags])
-    return []
+        # Target flags take precedence over build.rustflags. Let Cargo evaluate
+        # target triples and cfg expressions before extending the active layer.
+        marker = "metis_build_rustflags"
+        build_flags = "build.rustflags=" + json.dumps([*flags, f"--cfg={marker}"], ensure_ascii=False)
+        with tempfile.TemporaryDirectory() as temporary:
+            snapshot = pathlib.Path(temporary) / "compiler.cfg"
+            subprocess.run(
+                [*command, "--config", build_flags, "--", f"--print=cfg={snapshot}"],
+                cwd=directory, env=environment, check=True, timeout=300,
+            )
+            if marker in snapshot.read_text(encoding="utf-8").splitlines():
+                command.extend(["--config", build_flags])
+            else:
+                target_flags = "target.wasm32-unknown-unknown.rustflags=" + json.dumps(flags, ensure_ascii=False)
+                command.extend(["--config", target_flags])
+    subprocess.run([*command, "--", "-C", "opt-level=z"], cwd=directory, env=environment, check=True, timeout=300)
 
 
 def build(*, check: bool) -> None:
-    # The manifest stays rlib-only so its public contracts are a normal API
-    # surface for the workspace lint gates; this single WebAssembly build
-    # artifact asks for the loadable cdylib crate type explicitly.
+    # Only the packaged module requests cdylib. The native workspace verifies the rlib.
     with isolated_cargo(ROOT) as (directory, environment):
         roots = source_roots(directory, environment)
-        arguments = remap_arguments(roots, environment)
-        subprocess.run(
-            ["cargo", *arguments, "rustc", "--locked", "-p", CRATE, "--target", "wasm32-unknown-unknown",
-             "--release", "--crate-type", "cdylib", "--manifest-path", str(ROOT / "Cargo.toml"),
-             "--", "-C", "opt-level=z"],
-            cwd=directory, env=environment, check=True, timeout=300,
-        )
+        compile_page(directory, environment, roots)
     bindgen = wasm_bindgen(ROOT)
     module = target_directory(ROOT) / "wasm32-unknown-unknown" / "release" / (
         "metis_webview_page.wasm"
