@@ -76,37 +76,47 @@ pub(super) fn run_permission_probe(window: &Window, document: &Document) {
         return;
     };
     let denied_elements = elements.clone();
-    let connection = bridge::connect(move |message| match message {
-        PostedMessage::PermissionDenied {
-            status,
-            error_code,
-            permission,
-            message: text,
-            user_initiated,
-        } => {
-            if let Some(index) = PROBE_PERMISSIONS
-                .iter()
-                .position(|admitted| *admitted == permission)
-            {
-                let note = if user_initiated {
-                    "host denied after user action"
-                } else {
-                    "host denied"
-                };
-                record(&denied_elements, index, &permission, note);
+    let connection = bridge::connect(move |message| {
+        let message = match message {
+            Ok(message) => message,
+            Err(error) => {
+                let diagnostic = bridge::reply_diagnostic(&error);
+                denied_elements.result.set_text_content(Some(&diagnostic));
+                return;
+            }
+        };
+        match message {
+            PostedMessage::PermissionDenied {
+                status,
+                error_code,
+                permission,
+                message: text,
+                user_initiated,
+            } => {
+                if let Some(index) = PROBE_PERMISSIONS
+                    .iter()
+                    .position(|admitted| *admitted == permission)
+                {
+                    let note = if user_initiated {
+                        "host denied after user action"
+                    } else {
+                        "host denied"
+                    };
+                    record(&denied_elements, index, &permission, note);
+                    let line = error_line(&status, &text, error_code);
+                    denied_elements.result.set_text_content(Some(&line));
+                }
+            }
+            PostedMessage::Error {
+                status,
+                error_code,
+                message: text,
+            } => {
                 let line = error_line(&status, &text, error_code);
                 denied_elements.result.set_text_content(Some(&line));
             }
+            PostedMessage::Result { .. } => {}
         }
-        PostedMessage::Error {
-            status,
-            error_code,
-            message: text,
-        } => {
-            let line = error_line(&status, &text, error_code);
-            denied_elements.result.set_text_content(Some(&line));
-        }
-        PostedMessage::Result { .. } => {}
     });
     let Ok((bridge, listener)) = connection else {
         elements

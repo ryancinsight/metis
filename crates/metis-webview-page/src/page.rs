@@ -5,8 +5,7 @@
 //! ids, same user-visible text, same event wiring and the same typed bridge
 //! payload and reply handling. The host bridge (`window.chrome.webview`) is
 //! reached with structural browser bindings, host replies are typed Rust
-//! values parsed from JSON, and unknown or malformed payloads fail closed:
-//! they change no page state. Page listeners live for the document lifetime
+//! values parsed from JSON, and malformed replies produce a visible error. Page listeners live for the document lifetime
 //! and disappear with surface teardown, which is exactly the detachment
 //! contract the owning item accepts.
 

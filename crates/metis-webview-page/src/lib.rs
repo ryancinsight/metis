@@ -6,8 +6,8 @@
 //! rendering) and the same bounded permission-probe lifecycle run from
 //! WebAssembly through typed browser bindings. The generated `wasm-bindgen`
 //! loader (`scripts/webview_page.py`) remains generated interop; the Rust
-//! presentation below owns every behavioral line. Unknown or malformed host
-//! messages fail closed like the previous scripts: they change no page state.
+//! presentation below owns every behavioral line. The page reports malformed
+//! host replies and releases the submit button so the user can retry.
 
 #![deny(missing_docs)]
 #![forbid(unsafe_code)]

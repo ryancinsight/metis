@@ -30,6 +30,14 @@ struct SubmitRequest<'a> {
 pub(super) fn wire_form_bridge(window: &Window, elements: &FormElements) {
     let reply_elements = elements.clone();
     let connection = bridge::connect(move |reply| {
+        let reply = match reply {
+            Ok(message) => message,
+            Err(error) => {
+                let diagnostic = bridge::reply_diagnostic(&error);
+                reply_elements.show_error(&diagnostic);
+                return;
+            }
+        };
         match reply {
             PostedMessage::Result {
                 status,
