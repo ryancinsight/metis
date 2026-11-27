@@ -8,8 +8,7 @@ use metis_core::error::{ErrorCode, MetisError, Result};
 use metis_frontend::{FormState, FrontendApp};
 use metis_ipc::{IpcTransport, StreamTransport};
 use metis_platform::native::{
-    WebViewConfig, WebViewEvent, WebViewHostEvent, WebViewSurface, WindowConfig, WindowEvent,
-    WindowVisibility,
+    WebViewEvent, WebViewHostEvent, WebViewSurface, WindowConfig, WindowEvent, WindowVisibility,
 };
 use std::io::{stdin, stdout};
 use std::{fs, path::Path, time::Duration};
@@ -136,10 +135,6 @@ fn run_with_page(
     )?;
 
     let package = Package::create(page, initial_theme)?;
-    let uri = match package.entry_uri() {
-        Ok(uri) => uri,
-        Err(error) => return Err(package_failure(package, error).into()),
-    };
     let window = match WindowConfig::with_visibility(
         "Metis WebView2 form",
         INITIAL_WIDTH,
@@ -149,7 +144,7 @@ fn run_with_page(
         Ok(window) => window,
         Err(error) => return Err(package_failure(package, error).into()),
     };
-    let config = match WebViewConfig::new(uri) {
+    let config = match package.config() {
         Ok(config) => config,
         Err(error) => return Err(package_failure(package, error).into()),
     };

@@ -1,8 +1,8 @@
 use super::{
     MAX_PATIENT_ID_BYTES, WebViewAction, WebViewRequest,
-    assets::{INDEX_HTML, PAGE_JS, PERMISSION_PROBE_INDEX_HTML, STYLES_CSS},
+    assets::{INDEX_HTML, PAGE_JS, PAGE_WASM, PERMISSION_PROBE_INDEX_HTML, STYLES_CSS},
     is_permission_probe_complete,
-    package::file_uri,
+    package::{Package, Page},
     permission_denied_message,
 };
 use metis_platform::native::WebViewPermission;
@@ -15,7 +15,7 @@ fn package_assets_are_script_scoped_and_wasm_capable() {
         "img-src 'none'",
         "font-src 'none'",
         "media-src 'none'",
-        "connect-src 'none'",
+        "connect-src https://metis.invalid/page_bg.wasm;",
         "object-src 'none'",
         "frame-src 'none'",
         "child-src 'none'",
@@ -61,21 +61,11 @@ fn package_assets_are_script_scoped_and_wasm_capable() {
 
 #[test]
 fn page_loader_is_generated_and_mechanically_started() {
-    // The loader is wasm-bindgen output plus one mechanical auto-init suffix;
-    // authored page behavior lives in the metis-webview-page Rust module.
     assert!(PAGE_JS.starts_with("/* @ts-self-types=\"./page.d.ts\" */"));
     assert!(PAGE_JS.contains("export { initSync, __wbg_init as default };"));
-    let suffix = "Mechanical auto-init appended by scripts/webview_page.py";
-    let suffix_index = PAGE_JS.find(suffix).expect("mechanical auto-init suffix");
-    assert!(PAGE_JS[suffix_index..].contains("initSync({ module: new WebAssembly.Module("));
-    assert!(PAGE_JS[suffix_index..].contains("atob("));
-    // The suffix is the only place after the generated exports.
-    assert!(
-        PAGE_JS[suffix_index..].matches("append").count() == 1,
-        "the generator suffix must appear exactly once"
-    );
-    // The generated module is embedded once as one base64 payload.
-    assert_eq!(PAGE_JS.matches("atob(").count(), 1);
+    assert!(PAGE_JS.ends_with("\nawait __wbg_init();\n"));
+    assert!(PAGE_JS.contains("new URL('page_bg.wasm', import.meta.url)"));
+    assert_eq!(PAGE_WASM.get(..8), Some(b"\0asm\x01\0\0\0".as_slice()));
 }
 
 #[test]
@@ -129,11 +119,11 @@ fn page_loader_has_no_unscoped_authority_bridge() {
             "page loader must not acquire unscoped authority: {forbidden}"
         );
     }
-    // The generated glue retains an async fetch default path that the page
-    // never runs; the mechanical suffix embeds the module instead. Its one
-    // occurrence must be the unused `__wbg_init` default.
-    let fetch_count = PAGE_JS.matches("fetch(").count();
-    assert_eq!(fetch_count, 1, "only the unused generated fetch default");
+    assert_eq!(
+        PAGE_JS.matches("fetch(").count(),
+        1,
+        "WASM initialization fetch"
+    );
 }
 
 #[test]
@@ -152,17 +142,22 @@ fn permission_probe_is_separate_from_the_calculation_page() {
 }
 
 #[test]
-fn file_uri_percent_encodes_package_path_without_separators() {
-    let uri = file_uri(std::path::Path::new(r"C:\Metis App\index.html")).expect("file URI");
-    assert_eq!(uri, "file:///C:/Metis%20App/index.html");
-    assert!(!uri.contains("%2F"));
-}
-
-#[test]
-fn file_uri_removes_windows_extended_drive_prefix() {
-    let uri =
-        file_uri(std::path::Path::new(r"\\?\C:\Metis App\index.html")).expect("extended file URI");
-    assert_eq!(uri, "file:///C:/Metis%20App/index.html");
+fn packaged_module_uses_the_reserved_secure_origin() {
+    for page in [Page::Form, Page::PermissionProbe] {
+        let package = Package::create(page, None).expect("packaged assets");
+        let config = package.config().expect("mapped WebView2 origin");
+        assert_eq!(config.start_uri(), "https://metis.invalid/index.html");
+        assert_eq!(
+            std::fs::read_to_string(package.root.join("assets/index.html"))
+                .expect("packaged entry"),
+            page.assets()
+        );
+        assert_eq!(
+            std::fs::read(package.root.join("assets/page_bg.wasm")).expect("packaged WASM"),
+            PAGE_WASM
+        );
+        package.cleanup().expect("release package");
+    }
 }
 
 #[test]

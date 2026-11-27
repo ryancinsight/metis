@@ -74,10 +74,8 @@ limits are not treatment guidance.
 
 Metis 0.3.0 moves browser shell, protocol and HTTP lifecycle behavior into Rust.
 The workbench, HTTP page and starter modules contain nine initialization lines.
-The Windows WebView2 form and permission probe still embed 213 authored
-JavaScript lines in `crates/metis-app/src/frontend/webview/assets.rs`;
-their Rust migration remains open in METIS-WEBVIEW-RUST-001. Generated
-wasm-bindgen bindings remain. [ADR 0056](docs/adr/0056-rust-browser-shell.md)
+The Windows form and permission probe also run in Rust/WASM. The generated
+JavaScript loads the binary module from the app's local virtual host. [ADR 0056](docs/adr/0056-rust-browser-shell.md)
 records the contracts and [the Tauri review](docs/manual/tauri.md) records
 the required native pairs and their remaining acceptance.
 
@@ -88,7 +86,7 @@ Metis 0.4.1 requires Consus compression and raster 0.2, matching the provider's
 workspace versions. The canonical Git locks record the consumed provider graph.
 The Windows private bridge encodes audit identifiers as decimal JSON strings in
 Rust, retaining every backend `u64` through WebView2's JavaScript object parsing.
-The controller scripts remain tracked in the [Rust migration](docs/adr/0059-windows-rust-pages.md).
+The remaining Windows lifecycle work is tracked in the [Rust migration](docs/adr/0059-windows-rust-pages.md).
 From this directory:
 
 ```text

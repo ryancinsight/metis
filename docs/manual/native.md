@@ -620,19 +620,10 @@ while RITK owns DICOM opening, decoding and medical display semantics.
 ## Embed packaged HTML and CSS with WebView2
 
 `metis_platform::native::WebViewSurface` embeds the Moirai WebView2 provider in
-the same thread-owned HWND boundary. The entry page must be a validated
-`file:///` URI; navigation is restricted to that entry directory, new-window
-requests are denied and page messages are bounded JSON values. The surface
-does not grant page code filesystem, network or process authority. The
-WebView2 runtime must be installed on the Windows machine. The Windows
-`metis-platform` target explicitly enables Moirai's `webview2` feature; other
-Metis targets do not pull the optional COM binding. The standalone Cargo.lock currently pins Moirai revision
-`0c2f752e28c6683d91440783a8b5967a78fa909d`, which includes the AccessKit
-provider, the UI Automation value-action mapping, WebView2 0.39.1 bindings and
-the surrogate-preservation correction. The current lock retains the provider feature,
-bounded host implementation, stable browser canvas extents, the content-box
-mapping used by the RITK consumer and the bounded `CapturePreview` PNG path;
-it also contains the later WebGPU provider recreation. The capture hash and
+the same thread-owned HWND boundary. The form and permission probe open at
+`https://metis.invalid/index.html`. Moirai maps that origin to the local
+package and restricts navigation to its resources. The Windows host requires
+the installed WebView2 runtime. The capture hash and
 runtime provenance remain tied to the revision that produced that artifact.
 WebGPU is a browser-only opt-in surface; native WebView2 packaging does not
 claim GPU presentation evidence.
@@ -645,12 +636,13 @@ cargo run --locked -p metis-app -- --metis-webview 60 2 0.2
 ```
 
 The host writes a bounded temporary package containing the form, stylesheet and
-bridge script, then removes it after the window closes. Submitting the form
+generated loader and binary WASM module. A separate profile holds browser state. Submitting the form
 crosses the WebView2 message callback, the unprivileged frontend's private pipe
 and the backend's existing capability and audit checks before the result is
 posted back to the page. Its content-security policy admits only the package's
-own script and stylesheet; images, fonts, media, network connections, objects,
-frames, workers, manifests and forms are denied. The page script uses only the
+own script and stylesheet. The module fetch is restricted to
+`https://metis.invalid/page_bg.wasm`. Images, fonts, media, objects, frames,
+workers, manifests and form navigation are disabled. The page script uses only the
 bounded `chrome.webview.postMessage` bridge; WebView2 host objects and process
 APIs are not registered. The provider separately rejects arbitrary navigation
 and new-window requests. These are package/provider restrictions, not a claim

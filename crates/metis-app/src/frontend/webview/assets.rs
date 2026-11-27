@@ -4,7 +4,7 @@ pub(super) const INDEX_HTML: &str = r#"<!doctype html>
 <html lang="en">
 <head>
   <meta charset="utf-8">
-  <meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'self' 'wasm-unsafe-eval'; style-src 'self'; img-src 'none'; font-src 'none'; media-src 'none'; connect-src 'none'; object-src 'none'; frame-src 'none'; child-src 'none'; worker-src 'none'; manifest-src 'none'; form-action 'none'; base-uri 'none'">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'self' 'wasm-unsafe-eval'; style-src 'self'; img-src 'none'; font-src 'none'; media-src 'none'; connect-src https://metis.invalid/page_bg.wasm; object-src 'none'; frame-src 'none'; child-src 'none'; worker-src 'none'; manifest-src 'none'; form-action 'none'; base-uri 'none'">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>Metis WebView2 form</title>
   <link rel="stylesheet" href="./styles.css">
@@ -54,7 +54,7 @@ pub(super) const PERMISSION_PROBE_INDEX_HTML: &str = r#"<!doctype html>
 <html lang="en">
 <head>
   <meta charset="utf-8">
-  <meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'self' 'wasm-unsafe-eval'; style-src 'self'; img-src 'none'; font-src 'none'; media-src 'none'; connect-src 'none'; object-src 'none'; frame-src 'none'; child-src 'none'; worker-src 'none'; manifest-src 'none'; form-action 'none'; base-uri 'none'">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'self' 'wasm-unsafe-eval'; style-src 'self'; img-src 'none'; font-src 'none'; media-src 'none'; connect-src https://metis.invalid/page_bg.wasm; object-src 'none'; frame-src 'none'; child-src 'none'; worker-src 'none'; manifest-src 'none'; form-action 'none'; base-uri 'none'">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>Metis WebView2 permission probe</title>
   <link rel="stylesheet" href="./styles.css">
@@ -109,8 +109,5 @@ input:focus-visible, select:focus-visible, button:focus-visible { outline: 3px s
 }
 "#;
 
-/// The generated WebAssembly page loader: `scripts/webview_page.py` compiles
-/// the Rust presentation (the crate `metis-webview-page`) and appends one
-/// mechanical auto-init suffix embedding the module bytes for the file://
-/// packaged origin.
 pub(super) const PAGE_JS: &str = include_str!("generated/page.js");
+pub(super) const PAGE_WASM: &[u8] = include_bytes!("generated/page_bg.wasm");

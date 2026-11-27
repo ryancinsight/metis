@@ -1,24 +1,11 @@
-"""Build the packaged WebView2 page loader (METIS-WEBVIEW-RUST-001).
-
-The packaged page presentation is Rust owned by ``crates/metis-webview-page``
-and compiled to WebAssembly. This script runs the audited chain — cargo build
-under the committed lock, the pinned ``wasm-bindgen-cli`` — and writes the
-packaged loader with one mechanical auto-init suffix into
-``crates/metis-app/src/frontend/webview/generated/page.js``.
-
-The suffix exists because the packaged page runs from a ``file://`` origin,
-where the browser cannot fetch sibling files: the loader therefore embeds the
-module bytes and calls the generated ``initSync`` with them. The suffix is a
-build artifact, not authored page code, and `check` verifies the committed
-loader byte-for-byte against a clean regeneration.
-"""
+"""Build or verify the packaged WebView2 loader and Rust WebAssembly module."""
 
 from __future__ import annotations
 
 import argparse
-import base64
 import json
 import os
+import tempfile
 import pathlib
 import shutil
 import subprocess
@@ -29,18 +16,7 @@ from verification import workspace
 PHYSICAL_ROOT = pathlib.Path(__file__).resolve().parents[1]
 ROOT = pathlib.Path(__file__).resolve().parents[1]
 GENERATED = ROOT / "crates" / "metis-app" / "src" / "frontend" / "webview" / "generated"
-LOADER = GENERATED / "page.js"
 CRATE = "metis-webview-page"
-
-AUTO_INIT_PROLOGUE = (
-    "\n"
-    "// Mechanical auto-init appended by scripts/webview_page.py. The packaged\n"
-    "// page runs from a file:// origin, so it cannot fetch sibling modules: the\n"
-    "// generator embeds the module bytes below and starts them synchronously.\n"
-    "initSync({ module: new WebAssembly.Module(\n"
-    "  Uint8Array.from(atob(\"{ENCODED}\"), (b) => b.charCodeAt(0))) });\n"
-)
-
 
 def run(command: list[str]) -> None:
     subprocess.run(command, cwd=ROOT, check=True, timeout=300)
@@ -106,13 +82,7 @@ def target_directory(root: pathlib.Path) -> pathlib.Path:
     return pathlib.Path(json.loads(result.stdout)["target_directory"])
 
 
-def render_loader(glue: str, module: bytes) -> str:
-    """Append the mechanical auto-init suffix carrying the module bytes."""
-    encoded = base64.b64encode(module).decode("ascii")
-    return glue + AUTO_INIT_PROLOGUE.replace("{ENCODED}", encoded)
-
-
-def build() -> None:
+def build(*, check: bool) -> None:
     # The manifest stays rlib-only so its public contracts are a normal API
     # surface for the workspace lint gates; this single WebAssembly build
     # artifact asks for the loadable cdylib crate type explicitly.
@@ -124,42 +94,29 @@ def build() -> None:
     module = target_directory(ROOT) / "wasm32-unknown-unknown" / "release" / (
         "metis_webview_page.wasm"
     )
-    working = GENERATED / ".build"
-    if working.exists():
-        shutil.rmtree(working)
-    run([bindgen, str(module), "--target", "web", "--out-name", "page", "--out-dir", str(working)])
-    glue = (working / "page.js").read_text(encoding="utf-8")
-    wasm = (working / "page_bg.wasm").read_bytes()
-    if wasm[:8] != b"\0asm\x01\0\0\0":
-        raise SystemExit("wasm-bindgen emitted an invalid WebAssembly header")
-    shutil.rmtree(working)
-    if not LOADER.parent.exists():
-        LOADER.parent.mkdir(parents=True)
-    LOADER.write_text(render_loader(glue, wasm), encoding="utf-8")
-    print(f"webview_page_loader={LOADER.relative_to(ROOT)} bytes={LOADER.stat().st_size}")
-
-
-def check() -> None:
-    if not LOADER.is_file():
-        raise SystemExit("the committed page loader is missing; run scripts/webview_page.py build")
-    before = LOADER.read_bytes()
-    build()
-    after = LOADER.read_bytes()
-    if before != after:
-        raise SystemExit(
-            "the committed page loader differs from a clean regeneration; "
-            "rebuild and commit the loader"
-        )
+    with tempfile.TemporaryDirectory() as staging:
+        working = pathlib.Path(staging)
+        run([bindgen, str(module), "--target", "web", "--out-name", "page", "--out-dir", staging])
+        wasm = (working / "page_bg.wasm").read_bytes()
+        if not wasm.startswith(b"\0asm\x01\0\0\0"):
+            raise SystemExit("wasm-bindgen emitted an invalid WebAssembly header")
+        glue = (working / "page.js").read_text(encoding="utf-8")
+        # The generated initializer resolves page_bg.wasm relative to the loader.
+        assets = {"page.js": (glue + "\nawait __wbg_init();\n").encode(), "page_bg.wasm": wasm}
+        for name, content in assets.items():
+            path = GENERATED / name
+            if check:
+                if not path.is_file() or path.read_bytes() != content:
+                    raise SystemExit(f"{name} differs from a clean regeneration")
+            else:
+                path.write_bytes(content)
 
 
 def main() -> None:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("command", choices=("build", "check"))
     arguments = parser.parse_args()
-    if arguments.command == "build":
-        build()
-    elif arguments.command == "check":
-        check()
+    build(check=arguments.command == "check")
 
 
 if __name__ == "__main__":
