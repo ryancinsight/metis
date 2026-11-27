@@ -17,7 +17,14 @@ from unittest import mock
 sys.path.insert(0, str(pathlib.Path(__file__).resolve().parents[1]))
 import browser_drop
 from browser_canvas_capture import pixel_observation
-from browser_canvas_input import INSTALL_CANVAS_TRACE, _screenshot_dimensions, run
+from browser_canvas_input import (
+    CANVAS_INPUT_KINDS,
+    INSTALL_CANVAS_TRACE,
+    PROBE_REMOVED_CANVAS_LISTENERS,
+    _screenshot_dimensions,
+    _validate_post_stop_probe,
+    run,
+)
 from browser_file_read import (
     CLEANUP_SELECTION_DIAGNOSTIC,
     INSTALL_SELECTION_DIAGNOSTIC,
@@ -314,6 +321,36 @@ process.stdout.write(JSON.stringify({canvasCalls, otherCalls, state,
             "ownAdd": False,
             "traceRemoved": True,
         })
+
+    def test_post_stop_oracle_detects_retained_callbacks_despite_zero_active_count(self):
+        harness = r"""
+const install = process.argv[1], probeScript = process.argv[2];
+const canvas = new EventTarget();
+canvas.hasPointerCapture = () => false;
+Object.defineProperty(canvas, 'removeEventListener', {configurable: true, value() {}});
+globalThis.window = {};
+globalThis.document = {getElementById: id => id === 'canvas-input' ? canvas : null};
+new Function(install)('canvas-input');
+let nativeCalls = 0;
+const retained = () => { nativeCalls++; };
+for (const kind of JSON.parse(process.argv[3])) {
+  canvas.addEventListener(kind, retained);
+  canvas.removeEventListener(kind, retained);
+}
+const probe = new Function(probeScript)('canvas-input');
+process.stdout.write(JSON.stringify({nativeCalls, probe}));
+"""
+        result = subprocess.run(
+            ["node", "-e", harness, INSTALL_CANVAS_TRACE, PROBE_REMOVED_CANVAS_LISTENERS,
+             json.dumps(CANVAS_INPUT_KINDS)],
+            capture_output=True, check=True, encoding="utf-8", timeout=30,
+        )
+        observed = json.loads(result.stdout)
+        self.assertEqual(observed["nativeCalls"], len(CANVAS_INPUT_KINDS))
+        self.assertEqual(observed["probe"]["before"]["active"], 0)
+        self.assertEqual(observed["probe"]["before"]["removals"], len(CANVAS_INPUT_KINDS))
+        with self.assertRaisesRegex(BrowserRuntimeError, "removed canvas callback"):
+            _validate_post_stop_probe(observed["probe"], observed["probe"]["before"])
 
 
 class CanvasInputScreenshotTests(unittest.TestCase):

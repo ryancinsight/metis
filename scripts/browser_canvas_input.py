@@ -16,6 +16,9 @@ from browser_trace import BrowserEngine, Trace, record_device_scale, screenshot 
 
 CANVAS_ID = "canvas-input"
 STATUS_ID = "canvas-input-status"
+CANVAS_INPUT_KINDS = (
+    "pointerdown", "pointermove", "pointerup", "pointercancel", "keydown", "keyup", "wheel",
+)
 
 
 INSTALL_CANVAS_TRACE = """
@@ -58,7 +61,8 @@ const state = () => ({registrations: entries.length,
   active: entries.filter((entry) => entry.active).length,
   removals: entries.filter((entry) => !entry.active).length,
   observations: observations.slice()});
-window.canvasInputTrace = {state, restore: () => {
+const kinds = () => [...new Set(entries.map((entry) => entry.type))];
+window.canvasInputTrace = {state, kinds, restore: () => {
   if (ownAdd) Object.defineProperty(canvas, 'addEventListener', ownAdd);
   else delete canvas.addEventListener;
   if (ownRemove) Object.defineProperty(canvas, 'removeEventListener', ownRemove);
@@ -66,6 +70,30 @@ window.canvasInputTrace = {state, restore: () => {
   delete window.canvasInputTrace;
 }};
 return state();
+"""
+
+
+PROBE_REMOVED_CANVAS_LISTENERS = """
+const canvas = document.getElementById(arguments[0]);
+const trace = window.canvasInputTrace;
+if (!canvas || !trace) throw new Error('canvas trace is unavailable');
+const kinds = trace.kinds();
+const before = trace.state();
+for (const kind of kinds) {
+  let event;
+  if (kind.startsWith('pointer') && typeof PointerEvent === 'function') {
+    event = new PointerEvent(kind, {pointerId: 31, button: 0,
+      buttons: kind === 'pointerdown' ? 1 : 0, bubbles: true, cancelable: true});
+  } else if (kind.startsWith('key') && typeof KeyboardEvent === 'function') {
+    event = new KeyboardEvent(kind, {code: 'KeyT', key: 't', bubbles: true, cancelable: true});
+  } else if (kind === 'wheel' && typeof WheelEvent === 'function') {
+    event = new WheelEvent(kind, {deltaY: 1, bubbles: true, cancelable: true});
+  } else {
+    event = new Event(kind, {bubbles: true, cancelable: true});
+  }
+  canvas.dispatchEvent(event);
+}
+return {kinds, before, after: trace.state()};
 """
 
 
@@ -140,15 +168,34 @@ def _validate_drag(records: Sequence[list[Any]]) -> list[list[Any]]:
     return gesture
 
 
-def _trace(client: WebDriverClient) -> dict[str, Any]:
-    state = client.execute(
-        "return window.canvasInputTrace ? window.canvasInputTrace.state() : null;"
-    )
+def _validated_trace_state(state: Any) -> dict[str, Any]:
     counts = ("registrations", "active", "removals")
     if not isinstance(state, dict) or any(type(state.get(field)) is not int for field in counts) \
             or not isinstance(state.get("observations"), list):
         raise BrowserRuntimeError("canvas input instrumentation returned invalid state")
     return state
+
+
+def _trace(client: WebDriverClient) -> dict[str, Any]:
+    state = client.execute(
+        "return window.canvasInputTrace ? window.canvasInputTrace.state() : null;"
+    )
+    return _validated_trace_state(state)
+
+
+def _validate_post_stop_probe(probe: Any, stopped: Mapping[str, Any]) -> list[str]:
+    if not isinstance(probe, dict) or not isinstance(probe.get("kinds"), list):
+        raise BrowserRuntimeError("post-stop listener probe returned an invalid document")
+    kinds = probe["kinds"]
+    if kinds != list(CANVAS_INPUT_KINDS):
+        raise BrowserRuntimeError(f"canvas listener kinds differ from their oracle: {kinds!r}")
+    before = _validated_trace_state(probe.get("before"))
+    after = _validated_trace_state(probe.get("after"))
+    if before != stopped:
+        raise BrowserRuntimeError("post-stop listener probe did not start from the stopped trace")
+    if after != before:
+        raise BrowserRuntimeError("removed canvas callback received its registered input after teardown")
+    return kinds
 
 
 def _validate_callbacks(observations: Sequence[Mapping[str, Any]], pointer_id: int) -> None:
@@ -298,6 +345,10 @@ def run(
             after_input = _trace(client)
             if len(after_input["observations"]) != callback_count:
                 raise BrowserRuntimeError("removed canvas callback received pointer input after teardown")
+            phase = "probe every removed listener kind"
+            listener_kinds = _validate_post_stop_probe(
+                client.execute(PROBE_REMOVED_CANVAS_LISTENERS, [CANVAS_ID]), after_input,
+            )
             client.execute("window.canvasInputTrace.restore();")
             trace_installed = False
             return {
@@ -314,6 +365,7 @@ def run(
                     "active_pointer_id": pointer_id, "capture_after_drop": capture_after_drop,
                     "callback_count_after_drop": callback_count,
                     "callback_count_after_input": len(after_input["observations"]),
+                    "post_stop_listener_kinds": listener_kinds,
                 },
             }
     except BrowserRuntimeError as error:
