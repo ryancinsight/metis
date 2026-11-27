@@ -1,53 +1,40 @@
-//! The typed host bridge: `window.chrome.webview` reached with structural
-//! browser bindings, exactly like the retired truthiness checks.
+//! Ownership of the native message listener and the optional permission task.
 
-use js_sys::{Function, Reflect as JsReflect};
-use wasm_bindgen::{JsCast, closure::Closure, prelude::*};
-use web_sys::Window;
+use crate::message::PostedMessage;
+use moirai_pal::wasm::{LocalTaskHandle, WebViewBridge, WebViewMessageListener};
+use std::io;
+use wasm_bindgen::{JsCast, closure::Closure};
+use web_sys::{PageTransitionEvent, Window};
 
-/// Reads `window.chrome.webview` when the packaged host bound it, exactly like
-/// the retired truthiness check.
-pub(super) fn find_bridge(window: &Window) -> Option<JsValue> {
-    let chrome = JsReflect::get(&window.clone().into(), &JsValue::from_str("chrome")).ok()?;
-    if chrome.is_null() || chrome.is_undefined() {
-        return None;
-    }
-    let webview = JsReflect::get(&chrome, &JsValue::from_str("webview")).ok()?;
-    if webview.is_null() || webview.is_undefined() {
-        return None;
-    }
-    Some(webview)
+pub(super) fn connect(
+    mut receive: impl FnMut(PostedMessage) + 'static,
+) -> io::Result<(WebViewBridge, WebViewMessageListener)> {
+    let bridge = WebViewBridge::current()?;
+    let listener = bridge.listen(move |data| {
+        if let Ok(text) = data
+            && let Ok(message) = serde_json::from_str(&text)
+        {
+            receive(message);
+        }
+    })?;
+    Ok((bridge, listener))
 }
 
-/// Posts one JSON text payload through the typed host bridge.
-pub(super) fn post_text(bridge: &JsValue, payload: &str) {
-    let Ok(method) = JsReflect::get(bridge, &JsValue::from_str("postMessage")) else {
-        return;
-    };
-    let Ok(function) = method.dyn_into::<Function>() else {
-        return;
-    };
-    let _ignored = function.call1(bridge, &JsValue::from_str(payload));
-}
-
-/// Registers one bridge message listener that lives for the page lifetime.
-pub(super) fn listen_for_messages(bridge: &JsValue, listener: &Closure<dyn FnMut(JsValue)>) {
-    let Ok(method) = JsReflect::get(bridge, &JsValue::from_str("addEventListener")) else {
-        return;
-    };
-    let Ok(function) = method.dyn_into::<Function>() else {
-        return;
-    };
-    let _ignored = function.call2(
-        bridge,
-        &JsValue::from_str("message"),
-        listener.as_ref().unchecked_ref(),
-    );
-}
-
-/// Reads a bridge message's `data` entry the way the retired script did: only
-/// string payloads carry a typed envelope.
-pub(super) fn message_data(event: &JsValue) -> Option<String> {
-    let data = JsReflect::get(event, &JsValue::from_str("data")).ok()?;
-    data.as_string()
+/// A cached document resumes with its original handlers. Leaving it for good
+/// detaches the native callback and cancels any pending permission request.
+pub(super) fn own_session(
+    window: &Window,
+    listener: WebViewMessageListener,
+    probe: Option<LocalTaskHandle>,
+) -> Result<(), wasm_bindgen::JsValue> {
+    let mut resources = Some((listener, probe));
+    let on_hide =
+        Closure::<dyn FnMut(PageTransitionEvent)>::new(move |event: PageTransitionEvent| {
+            if !event.persisted() {
+                drop(resources.take());
+            }
+        });
+    window.add_event_listener_with_callback("pagehide", on_hide.as_ref().unchecked_ref())?;
+    on_hide.into_js_value();
+    Ok(())
 }

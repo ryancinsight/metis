@@ -23,6 +23,7 @@ crate-type = ["rlib"]
 # target stays dependency-free for the workspace-wide builds and lint gates.
 [target.'cfg(target_arch = "wasm32")'.dependencies]
 wasm-bindgen = { workspace = true }
+moirai-pal.workspace = true
 js-sys = { workspace = true }
 web-sys = { workspace = true, features = [
     "Document",
@@ -44,12 +45,17 @@ web-sys = { workspace = true, features = [
     "Navigator",
     "Node",
     "NodeList",
+    "PageTransitionEvent",
     "Notification",
     "Window",
 ] }
 serde.workspace = true
 serde_json.workspace = true
 wasm-bindgen-futures = { workspace = true }
+
+[dev-dependencies]
+serde.workspace = true
+serde_json.workspace = true
 
 [lints]
 workspace = true

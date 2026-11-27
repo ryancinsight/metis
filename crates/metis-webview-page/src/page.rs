@@ -10,7 +10,6 @@
 //! and disappear with surface teardown, which is exactly the detachment
 //! contract the owning item accepts.
 
-use crate::message::PostedMessage;
 use wasm_bindgen::{closure::Closure, prelude::*};
 use web_sys::{Document, Window};
 

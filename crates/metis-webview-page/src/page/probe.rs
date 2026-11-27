@@ -1,10 +1,11 @@
 //! The bounded permission probe: one sequential pass over four browser
 //! capabilities, one row per outcome, one typed completion notice.
 
-use super::bridge::{find_bridge, listen_for_messages, message_data, post_text};
-use super::{PostedMessage, retain};
+use super::bridge;
 use crate::logic::error_line;
+use crate::message::PostedMessage;
 use js_sys::{Function, Object, Promise, Reflect as JsReflect};
+use moirai_pal::wasm::{WebViewBridge, spawn_local_with_handle};
 use serde::Serialize;
 use std::{cell::RefCell, vec::Vec};
 use wasm_bindgen::{JsCast, closure::Closure, prelude::*};
@@ -74,7 +75,40 @@ pub(super) fn run_permission_probe(window: &Window, document: &Document) {
     let Some(elements) = collect_probe(document) else {
         return;
     };
-    let Some(bridge) = find_bridge(window) else {
+    let denied_elements = elements.clone();
+    let connection = bridge::connect(move |message| match message {
+        PostedMessage::PermissionDenied {
+            status,
+            error_code,
+            permission,
+            message: text,
+            user_initiated,
+        } => {
+            if let Some(index) = PROBE_PERMISSIONS
+                .iter()
+                .position(|admitted| *admitted == permission)
+            {
+                let note = if user_initiated {
+                    "host denied after user action"
+                } else {
+                    "host denied"
+                };
+                record(&denied_elements, index, &permission, note);
+                let line = error_line(&status, &text, error_code);
+                denied_elements.result.set_text_content(Some(&line));
+            }
+        }
+        PostedMessage::Error {
+            status,
+            error_code,
+            message: text,
+        } => {
+            let line = error_line(&status, &text, error_code);
+            denied_elements.result.set_text_content(Some(&line));
+        }
+        PostedMessage::Result { .. } => {}
+    });
+    let Ok((bridge, listener)) = connection else {
         elements
             .status
             .set_text_content(Some("Host bridge unavailable"));
@@ -87,58 +121,18 @@ pub(super) fn run_permission_probe(window: &Window, document: &Document) {
         "Host bridge connected; every capability request is denied by policy.",
     ));
 
-    let denied_elements = elements.clone();
-    let on_denied = Closure::<dyn FnMut(JsValue)>::new(move |value: JsValue| {
-        (|| {
-            let Some(data) = message_data(&value) else {
-                return;
-            };
-            let Ok(message) = serde_json::from_str::<PostedMessage>(&data) else {
-                return;
-            };
-            match message {
-                PostedMessage::PermissionDenied {
-                    status,
-                    error_code,
-                    permission,
-                    message: text,
-                    user_initiated,
-                } => {
-                    if let Some(index) = PROBE_PERMISSIONS
-                        .iter()
-                        .position(|admitted| *admitted == permission)
-                    {
-                        let note = if user_initiated {
-                            "host denied after user action"
-                        } else {
-                            "host denied"
-                        };
-                        record(&denied_elements, index, &permission, note);
-                        let line = error_line(&status, &text, error_code);
-                        denied_elements.result.set_text_content(Some(&line));
-                    }
-                }
-                PostedMessage::Error {
-                    status,
-                    error_code,
-                    message: text,
-                } => {
-                    let line = error_line(&status, &text, error_code);
-                    denied_elements.result.set_text_content(Some(&line));
-                }
-                PostedMessage::Result { .. } => {}
-            }
-        })();
-    });
-    listen_for_messages(&bridge, &on_denied);
-    retain(on_denied);
-
-    wasm_bindgen_futures::spawn_local(run_probe_sequence(window.clone(), elements, bridge));
+    let status = elements.result.clone();
+    let task = spawn_local_with_handle(run_probe_sequence(window.clone(), elements, bridge));
+    if bridge::own_session(window, listener, Some(task)).is_err() {
+        status.set_text_content(Some(
+            "The permission probe listener could not be installed.",
+        ));
+    }
 }
 
 /// Runs the sequential probe chain: request, record, next, then announce the
 /// bounded completion count and notify the host exactly once.
-async fn run_probe_sequence(window: Window, elements: ProbeElements, bridge: JsValue) {
+async fn run_probe_sequence(window: Window, elements: ProbeElements, bridge: WebViewBridge) {
     for (index, permission) in PROBE_PERMISSIONS.iter().enumerate() {
         let pending = format!("Requesting {permission} permission.");
         elements.result.set_text_content(Some(&pending));
@@ -151,7 +145,11 @@ async fn run_probe_sequence(window: Window, elements: ProbeElements, bridge: JsV
     if let Ok(payload) = serde_json::to_string(&ProbeComplete {
         action: "permission_probe_complete",
     }) {
-        post_text(&bridge, &payload);
+        if let Err(error) = bridge.post_json(&payload) {
+            elements
+                .result
+                .set_text_content(Some(&format!("Permission completion failed: {error}")));
+        }
     }
 }
 

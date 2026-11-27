@@ -12,7 +12,7 @@
 #![deny(missing_docs)]
 #![forbid(unsafe_code)]
 
-#[cfg(target_arch = "wasm32")]
+#[cfg(any(test, target_arch = "wasm32"))]
 mod message;
 
 #[cfg(target_arch = "wasm32")]
