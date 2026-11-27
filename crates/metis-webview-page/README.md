@@ -8,7 +8,8 @@ identifier without passing it through a JavaScript number.
 ## Build
 
 Regenerate the packaged module and its JavaScript loader from the workspace
-lockfile, then compare both files with an independent build.
+lockfile, then compare both files with an independent build. The generator
+uses Rust's size optimization for the final WebAssembly page crate.
 
 ```sh
 python scripts/webview_page.py build
