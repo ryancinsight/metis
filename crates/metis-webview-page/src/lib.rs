@@ -13,6 +13,9 @@
 #![forbid(unsafe_code)]
 
 #[cfg(target_arch = "wasm32")]
+mod message;
+
+#[cfg(target_arch = "wasm32")]
 mod page;
 
 /// Pure page-domain contracts: the crate's public native API surface, with
