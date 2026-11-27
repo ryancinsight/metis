@@ -4,6 +4,8 @@ Status: Accepted
 
 Date: 2026-10-13
 
+Revised 2026-11-27 to record the packaged controller and its installed Windows outcomes.
+
 Change class: [minor]; internal module restructuring is [arch].
 
 Target: Metis 0.5.0 and Moirai PAL/workspace 0.9.0.
@@ -31,10 +33,9 @@ Its `wasm::webview` domain owns the page-side WebView2 bridge; its
 The independently versioned `moirai-webview` 0.2 package owns AppKit/UIKit and
 WebKit hosting. No Windows bridge or duplicate DOM API is added there.
 
-`metis-web::embedded` owns the form/probe controller and shared JSON codec;
-serialized DTOs stay private behind its typed domain messages. It reuses
-`Theme`, `ApplicationCommand` and `CommandMenuState` while
-preserving the native page's focus, physical-key and status-label behavior.
+`metis-webview-page` owns the packaged form, permission probe and private
+host-reply decoder. The native host encodes audit identifiers as decimal strings
+so they retain their full unsigned 64-bit range across the JavaScript boundary.
 `metis-app` consumes the same contract and forwards admitted submissions to the
 existing frontend/backend boundary. It does not compile to WASM. The page does
 not acquire a loopback transport or compute a backend result.
@@ -90,8 +91,10 @@ the implementation. No retired checklist is recreated.
 
 ## Verification status
 
-Source review establishes the available DOM/folder-host APIs and the absent
-page bridge and capability bindings. Implementation and real Windows evidence
-are pending. The existing framebuffer `native_host_capture` gate does not
-exercise WebView2. No macOS build, screenshot or four-row completion message
-substitutes for the Windows gate specified in the domain design.
+On an installed Windows WebView2 runtime, changing the form input produced a
+different result and the next audit identifier. An invalid input displayed the
+host error and released the submit button. The command menu applied the dark
+theme. The permission probe observed native denials for geolocation and
+notifications and browser rejections for camera and microphone. The remaining
+Windows acceptance cases are tracked in the
+[page lifecycle item](../../backlog.md#METIS-WEBVIEW-RUST-001).

@@ -65,8 +65,6 @@ REGISTRY_BOUNDARIES = {
     # exact-pinned interop versions recorded in the audited lock, so a caret
     # range cannot drift the locked graph.
     ("metis-webview-page", "wasm-bindgen"),
-    ("metis-webview-page", "wasm-bindgen-futures"),
-    ("metis-webview-page", "js-sys"),
     ("metis-webview-page", "web-sys"),
 }
 
