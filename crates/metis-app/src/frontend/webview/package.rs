@@ -1,9 +1,7 @@
 use super::{MAX_PACKAGE_ATTEMPTS, assets};
 use crate::invocation::WebViewTheme;
-use std::{
-    fs, io,
-    path::{Path, PathBuf},
-};
+use metis_platform::native::{MAX_WEBVIEW_WAIT_MILLISECONDS, WebViewConfig};
+use std::{fs, io, path::PathBuf};
 
 pub(super) struct Package {
     pub(super) root: PathBuf,
@@ -42,11 +40,13 @@ impl Package {
             match fs::create_dir(&root) {
                 Ok(()) => {
                     let result = (|| {
-                        fs::write(root.join("index.html"), &index)?;
-                        fs::write(root.join("styles.css"), assets::STYLES_CSS)?;
-                        // Both packaged pages share one generated WebAssembly
-                        // loader; the page behavior itself is Rust-owned.
-                        fs::write(root.join("page.js"), assets::PAGE_JS)?;
+                        let files = root.join("assets");
+                        fs::create_dir(&files)?;
+                        fs::create_dir(root.join("profile"))?;
+                        fs::write(files.join("index.html"), &index)?;
+                        fs::write(files.join("styles.css"), assets::STYLES_CSS)?;
+                        fs::write(files.join("page.js"), assets::PAGE_JS)?;
+                        fs::write(files.join("page_bg.wasm"), assets::PAGE_WASM)?;
                         Ok(())
                     })();
                     return match result {
@@ -64,44 +64,19 @@ impl Package {
         ))
     }
 
-    pub(super) fn entry_uri(&self) -> io::Result<String> {
-        let entry = self.root.join("index.html").canonicalize()?;
-        file_uri(&entry)
+    pub(super) fn config(&self) -> io::Result<WebViewConfig> {
+        WebViewConfig::folder(
+            "metis.invalid",
+            self.root.join("assets"),
+            "index.html",
+            std::time::Duration::from_millis(u64::from(MAX_WEBVIEW_WAIT_MILLISECONDS)),
+        )?
+        .with_user_data_folder(self.root.join("profile"))
     }
 
     pub(super) fn cleanup(self) -> io::Result<()> {
         fs::remove_dir_all(self.root)
     }
-}
-
-pub(super) fn file_uri(path: &Path) -> io::Result<String> {
-    let text = path.to_str().ok_or_else(|| {
-        io::Error::new(
-            io::ErrorKind::InvalidInput,
-            "WebView2 package path is not valid Unicode",
-        )
-    })?;
-    let normalized = text.replace('\\', "/");
-    let normalized = normalized
-        .strip_prefix("//?/")
-        .map_or(normalized.as_str(), |path| path);
-    if normalized.starts_with('/') || normalized.starts_with("UNC/") {
-        return Err(io::Error::new(
-            io::ErrorKind::InvalidInput,
-            "WebView2 package path must use a local drive",
-        ));
-    }
-    let mut uri = String::from("file:///");
-    for byte in normalized.bytes() {
-        if byte.is_ascii_alphanumeric() || matches!(byte, b'-' | b'.' | b'_' | b'~' | b'/' | b':') {
-            uri.push(char::from(byte));
-        } else {
-            uri.push('%');
-            uri.push(char::from(b"0123456789ABCDEF"[(byte >> 4) as usize]));
-            uri.push(char::from(b"0123456789ABCDEF"[(byte & 0x0f) as usize]));
-        }
-    }
-    Ok(uri)
 }
 
 pub(super) fn package_failure(package: Package, error: io::Error) -> io::Error {
