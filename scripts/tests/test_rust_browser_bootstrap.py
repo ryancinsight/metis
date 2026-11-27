@@ -1,4 +1,4 @@
-"""Authored application modules instantiate WASM and call one Rust host."""
+"""Authored application modules contain only the required WASM loader glue."""
 from __future__ import annotations
 
 import json
@@ -16,7 +16,6 @@ class RustBrowserBootstrapTests(unittest.TestCase):
         for filename, module, export in (
             ("examples/browser/bootstrap.js", "metis_web", "metis_browser_start"),
             ("examples/browser/http-health.js", "metis_web", "metis_http_start"),
-            ("crates/metis-starter/frontend/main.js", "metis_starter", "metis_starter_start"),
         ):
             script = (ROOT / filename).read_text(encoding="utf-8")
             pattern = (r'import init from "\./' + module +

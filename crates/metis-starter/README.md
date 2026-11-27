@@ -7,12 +7,13 @@ greeting computed in Rust.
 In the Tauri template, `main.js` wires the form and calls the Rust `greet`
 command over IPC. Here the Rust code is compiled to WebAssembly and owns the
 page itself: it binds the form, reads the name, and writes the reply. The
-page's only JavaScript is the generated module loader and one call:
+page's only authored JavaScript initializes the generated module; its
+`wasm-bindgen` start hook transfers startup directly to Rust:
 
 ```js
 import init from "./metis_starter.js";
 
-(await init()).metis_starter_start();
+await init();
 ```
 
 ```rust

@@ -8,6 +8,9 @@ Revised 2026-09-24: building and serving moved from `scripts/starter.py`
 into `metis build` and `metis serve`, driven by the crate's `metis.json`, and
 `metis dev` hosts the page in a WebView2 window.
 
+Revised 2026-11-27: the WebAssembly start hook now owns page startup; authored
+JavaScript only initializes the generated module.
+
 Driver: [METIS-STARTER-001](https://github.com/ryancinsight/metis/pull/387).
 
 ## Context
@@ -33,8 +36,9 @@ owning the page.
 - The crate compiles to WebAssembly and binds the page itself through Moirai's
   DOM handles. It cancels the form's navigation, reads the name, and writes
   the greeting. The page's only JavaScript is the generated wasm-bindgen
-  loader and a two-line module that calls `metis_starter_start`. There is no
-  IPC round trip, because the Rust code already runs in the page.
+  loader and a two-line module that initializes it. The module invokes the
+  Rust start hook during initialization. There is no IPC round trip, because
+  the Rust code already runs in the page.
 - Tauri's trademark policy does not license its logo, so the logo row shows the
   Metis mark and the WebAssembly logo (CC0 1.0), the analogues of the
   template's framework and language logos. Hover glows use each mark's color.
@@ -78,7 +82,7 @@ untrimmed spaces. `scripts/tests/test_starter.py` checks that:
 
 - the manifest builds this crate and a page with an `index.html`;
 - the page's Metis mark equals the canonical mark;
-- the page runs only the loader, which calls the export `browser.rs` defines;
+- the page runs only the loader, whose initialization invokes the Rust start hook;
 - the policy admits WebAssembly and nothing inline;
 - Rust binds exactly the ids the page declares;
 - the checked reply is the Rust format string.

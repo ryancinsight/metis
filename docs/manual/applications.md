@@ -20,12 +20,13 @@ create-tauri-app's vanilla template produces: a heading, a logo row, a name
 field and a **Greet** button. The greeting is computed in Rust. Where the Tauri
 template's `main.js` sends the name to a Rust command over IPC, the Metis
 starter compiles its Rust to WebAssembly and binds the page directly, so its
-only JavaScript is the module loader:
+only authored JavaScript initializes the generated module. The module's Rust
+start hook owns page startup:
 
 ```js
 import init from "./metis_starter.js";
 
-(await init()).metis_starter_start();
+await init();
 ```
 
 In `crates/metis-starter`, as in a Tauri project:
