@@ -94,7 +94,7 @@ The Windows adapter is a native pixel, event and `WebView2` boundary, not a
 general application permission broker. Use
 `metis_platform::native::NativeSurface` with a validated
 `metis_platform::native::WindowConfig` for a real framebuffer HWND, or use
-`WebViewSurface` with a validated `WebViewConfig` for a packaged `file:///`
+`WebViewSurface` with a validated `WebViewConfig` for a local file or mapped HTTPS
 entry. Both surfaces keep their callbacks and operating-system handles on the
 creating thread; `WebView` navigation and messages remain bounded and
 allowlisted. The `WebView2` provider denies every `PermissionRequested` callback

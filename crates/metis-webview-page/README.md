@@ -1,6 +1,9 @@
 # metis-webview-page
 
 The Windows form and permission probe run in Rust on WebAssembly.
+Moirai owns the WebView2 message bridge.
+The form sends a JSON object to the native host and reads the decimal audit
+identifier without passing it through a JavaScript number.
 
 ## Build
 

@@ -5,12 +5,10 @@
 //! ids, same user-visible text, same event wiring and the same typed bridge
 //! payload and reply handling. The host bridge (`window.chrome.webview`) is
 //! reached with structural browser bindings, host replies are typed Rust
-//! values parsed from JSON, and unknown or malformed payloads fail closed:
-//! they change no page state. Page listeners live for the document lifetime
+//! values parsed from JSON, and malformed replies produce a visible error. Page listeners live for the document lifetime
 //! and disappear with surface teardown, which is exactly the detachment
 //! contract the owning item accepts.
 
-use serde::Deserialize;
 use wasm_bindgen::{closure::Closure, prelude::*};
 use web_sys::{Document, Window};
 
@@ -76,43 +74,4 @@ pub(super) fn apply_theme_if_known(document: &Document, value: &str) {
 /// the closure until surface teardown destroys the document itself.
 pub(super) fn retain(listener: Closure<dyn FnMut(JsValue)>) {
     Box::leak(Box::new(listener));
-}
-
-/// The host reply envelope, typed with the exact wire shape the host owns.
-#[derive(Deserialize)]
-#[serde(tag = "type", rename_all = "snake_case")]
-pub(super) enum PostedMessage {
-    /// One correlated calculation reply.
-    Result {
-        /// Always `success` on the current host contract.
-        status: String,
-        /// The audited calculation sequence identifier.
-        audit_sequence_id: u64,
-        /// mL per hour.
-        rate_ml_hr: f64,
-        /// mg per hour.
-        drug_rate_mg_hr: f64,
-    },
-    /// One rejected, failed or host-generated reply.
-    Error {
-        /// The typed status token.
-        status: String,
-        /// The Metis error code.
-        error_code: u16,
-        /// The human-readable diagnostic.
-        message: String,
-    },
-    /// One bounded capability denial, delivered on the probe page.
-    PermissionDenied {
-        /// The typed status token.
-        status: String,
-        /// The Metis error code.
-        error_code: u16,
-        /// The denied capability name.
-        permission: String,
-        /// The human-readable diagnostic.
-        message: String,
-        /// Whether the browser recorded a user-initiated denial.
-        user_initiated: bool,
-    },
 }

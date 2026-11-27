@@ -16,7 +16,7 @@ pub use moirai_pal::windows::webview::{
 ///
 /// The surface keeps the `WebView2` controller, its parent HWND and all callback
 /// state on the creating thread. Navigation is restricted by [`WebViewConfig`]
-/// to packaged `file:///` resources; the host does not grant filesystem,
+/// to the configured file directory or mapped HTTPS package; the host does not grant filesystem,
 /// network or process authority to page code. Application state and command
 /// authorization stay above this platform boundary.
 pub struct WebViewSurface {
