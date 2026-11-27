@@ -9,7 +9,9 @@ identifier without passing it through a JavaScript number.
 
 Regenerate the packaged module and its JavaScript loader from the workspace
 lockfile, then compare both files with an independent build. The generator
-uses Rust's size optimization for the final WebAssembly page crate.
+uses Rust's size optimization for the final WebAssembly page crate. Compiler
+source locations in the module use workspace-relative paths and virtual
+Cargo and toolchain roots, independent of the build account.
 
 ```sh
 python scripts/webview_page.py build
