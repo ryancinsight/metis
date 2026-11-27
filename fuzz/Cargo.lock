@@ -311,8 +311,8 @@ checksum = "a6ef517f0926dd24a1582492c791b6a4818a4d94e789a334894aa15b0d12f55c"
 
 [[package]]
 name = "consus-raster"
-version = "0.5.0"
-source = "git+https://github.com/ryancinsight/consus.git#2193675bd5e1fbb726cb9f6b324feb91167311b4"
+version = "0.5.1"
+source = "git+https://github.com/ryancinsight/consus.git#a54a772e3e8b08af2584959a3273ec462f89d2b1"
 dependencies = [
  "apollo-dctdst-core",
  "jpeg-encoder",
