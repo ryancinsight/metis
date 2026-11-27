@@ -6,12 +6,30 @@ use std::io;
 use wasm_bindgen::{JsCast, closure::Closure};
 use web_sys::{PageTransitionEvent, Window};
 
+use super::{form::FormElements, probe::ProbeElements};
+
+/// The closed set of page receivers sharing one host-listener closure type.
+pub(super) enum MessageReceiver {
+    Form(FormElements),
+    Probe(ProbeElements),
+}
+
+impl MessageReceiver {
+    fn receive(&self, message: io::Result<PostedMessage>) {
+        match self {
+            Self::Form(elements) => super::submit::receive_form(elements, message),
+            Self::Probe(elements) => super::probe::receive_probe(elements, message),
+        }
+    }
+}
+
 pub(super) fn connect(
-    mut receive: impl FnMut(io::Result<PostedMessage>) + 'static,
+    receiver: MessageReceiver,
 ) -> io::Result<(WebViewBridge, WebViewMessageListener)> {
     let bridge = WebViewBridge::current()?;
     let listener = bridge.listen(move |data| {
-        receive(data.and_then(|text| serde_json::from_str(&text).map_err(io::Error::from)));
+        receiver
+            .receive(data.and_then(|text| serde_json::from_str(&text).map_err(io::Error::from)));
     })?;
     Ok((bridge, listener))
 }
