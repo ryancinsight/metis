@@ -13,27 +13,12 @@ import subprocess
 from cargo_overlay import isolated_cargo
 from verification import workspace
 
-PHYSICAL_ROOT = pathlib.Path(__file__).resolve().parents[1]
 ROOT = pathlib.Path(__file__).resolve().parents[1]
 GENERATED = ROOT / "crates" / "metis-app" / "src" / "frontend" / "webview" / "generated"
 CRATE = "metis-webview-page"
 
 def run(command: list[str]) -> None:
     subprocess.run(command, cwd=ROOT, check=True, timeout=300)
-
-
-def cargo(arguments: list[str], *, timeout: int = 300) -> subprocess.CompletedProcess:
-    """Run Cargo against the committed lock, outside an inherited stack
-    configuration, like ``scripts/browser.py``."""
-    with isolated_cargo(ROOT) as (directory, environment):
-        return subprocess.run(
-            ["cargo", *arguments, "--manifest-path", str(ROOT / "Cargo.toml")],
-            cwd=directory,
-            env=environment,
-            check=True,
-            timeout=timeout,
-            **{"capture_output": False},
-        )
 
 
 def wasm_bindgen(root: pathlib.Path) -> str:
@@ -86,10 +71,13 @@ def build(*, check: bool) -> None:
     # The manifest stays rlib-only so its public contracts are a normal API
     # surface for the workspace lint gates; this single WebAssembly build
     # artifact asks for the loadable cdylib crate type explicitly.
-    cargo(
-        ["rustc", "--locked", "-p", CRATE, "--target", "wasm32-unknown-unknown",
-         "--release", "--crate-type", "cdylib"]
-    )
+    with isolated_cargo(ROOT) as (directory, environment):
+        subprocess.run(
+            ["cargo", "rustc", "--locked", "-p", CRATE, "--target", "wasm32-unknown-unknown",
+             "--release", "--crate-type", "cdylib", "--manifest-path", str(ROOT / "Cargo.toml"),
+             "--", "-C", "opt-level=z"],
+            cwd=directory, env=environment, check=True, timeout=300,
+        )
     bindgen = wasm_bindgen(ROOT)
     module = target_directory(ROOT) / "wasm32-unknown-unknown" / "release" / (
         "metis_webview_page.wasm"
