@@ -72,7 +72,6 @@ REGISTRY_BOUNDARIES = {
 
 PUBLISHED_ATLAS_PROVIDERS = {
     "eunomia": {"metis-platform", "metis-ui-lang"},
-    "gaia-mesh": {"metis-ui"},
 }
 
 

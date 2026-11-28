@@ -414,33 +414,11 @@ checksum = "a6ef517f0926dd24a1582492c791b6a4818a4d94e789a334894aa15b0d12f55c"
 [[package]]
 name = "consus-compression"
 version = "0.5.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "456f9fa3aa759881ca9fa96f6baf4d48b92a11e496e9f949618577e31ecd4139"
-dependencies = [
- "byteorder",
- "consus-core 0.5.0 (registry+https://github.com/rust-lang/crates.io-index)",
- "flate2",
-]
-
-[[package]]
-name = "consus-compression"
-version = "0.5.0"
 source = "git+https://github.com/ryancinsight/consus.git#a54a772e3e8b08af2584959a3273ec462f89d2b1"
 dependencies = [
  "byteorder",
- "consus-core 0.5.0 (git+https://github.com/ryancinsight/consus.git)",
+ "consus-core",
  "flate2",
-]
-
-[[package]]
-name = "consus-core"
-version = "0.5.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "bbfdf79c009f4d1519e9a7b1525df1b7b69e395fff2ec492a3d5996b9246d98c"
-dependencies = [
- "byteorder",
- "smallvec",
- "zerocopy",
 ]
 
 [[package]]
@@ -465,11 +443,10 @@ dependencies = [
 [[package]]
 name = "consus-zip"
 version = "0.5.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "a7ade12110ae8f9960b04fe9c9ab3c4b16773e5434f39cf4dace88d7c3aaac07"
+source = "git+https://github.com/ryancinsight/consus.git#a54a772e3e8b08af2584959a3273ec462f89d2b1"
 dependencies = [
- "consus-compression 0.5.0 (registry+https://github.com/rust-lang/crates.io-index)",
- "consus-core 0.5.0 (registry+https://github.com/rust-lang/crates.io-index)",
+ "consus-compression",
+ "consus-core",
  "thiserror",
 ]
 
@@ -945,8 +922,7 @@ dependencies = [
 [[package]]
 name = "gaia-mesh"
 version = "0.8.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "f90569e1d74dd84b8855473952e7015f0cb84957a9eeb90c46ce92f637a152fb"
+source = "git+https://github.com/ryancinsight/gaia#8349d59e4ae48aa439293294cd1d842a57913246"
 dependencies = [
  "aequitas",
  "consus-zip",
@@ -954,11 +930,11 @@ dependencies = [
  "geometry-predicates",
  "hashbrown",
  "leto",
- "melinoe 0.10.0",
- "mnemosyne-memory 0.10.2 (registry+https://github.com/rust-lang/crates.io-index)",
+ "melinoe",
+ "mnemosyne-memory",
  "moirai-runtime",
  "num-bigint",
- "rand 0.8.8",
+ "rand",
  "serde",
  "serde_json",
  "slotmap",
@@ -1089,7 +1065,7 @@ dependencies = [
  "hermes-simd-intrinsics",
  "hermes-simd-macros",
  "hermes-simd-types",
- "themis-topology 0.11.5 (git+https://github.com/ryancinsight/themis)",
+ "themis-topology",
  "tracing",
 ]
 
@@ -1099,9 +1075,9 @@ version = "0.10.0"
 source = "git+https://github.com/ryancinsight/hermes.git#87832abef93a3faa187341fc843d80876f2f7664"
 dependencies = [
  "eunomia",
- "mnemosyne-memory 0.10.2 (git+https://github.com/ryancinsight/Mnemosyne.git)",
+ "mnemosyne-memory",
  "rkyv",
- "themis-topology 0.11.5 (git+https://github.com/ryancinsight/themis)",
+ "themis-topology",
 ]
 
 [[package]]
@@ -1267,8 +1243,7 @@ checksum = "20870f649af7073d53e38067b2a84312175d56ea15217e1b15bc83506ec50afb"
 [[package]]
 name = "leto"
 version = "0.52.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "ebc2dcc1b2fb90e6f8f3c53de0ca975914b26219cacb10dea87a59c3fa8e0d1a"
+source = "git+https://github.com/ryancinsight/leto.git#0f31fd233632f93dee6ca3c25d8daf610a3597da"
 dependencies = [
  "aequitas",
  "eunomia",
@@ -1324,12 +1299,6 @@ dependencies = [
 
 [[package]]
 name = "melinoe"
-version = "0.10.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "aea7e15b946fc4131a113942783184c9a645f7a26e4418b118fc9bb39af33ae4"
-
-[[package]]
-name = "melinoe"
 version = "0.10.1"
 source = "git+https://github.com/ryancinsight/melinoe.git#3d0311446b7bcfb6cde5076448e368e28a8181c7"
 
@@ -1349,8 +1318,8 @@ dependencies = [
  "metis-ipc",
  "metis-platform",
  "metis-ui-lang",
- "moirai-async 0.12.0 (git+https://github.com/ryancinsight/Moirai.git)",
- "moirai-executor 0.12.0 (git+https://github.com/ryancinsight/Moirai.git)",
+ "moirai-async",
+ "moirai-executor",
  "moirai-http",
  "serde",
  "serde_json",
@@ -1365,13 +1334,13 @@ dependencies = [
  "metis-core",
  "metis-ipc",
  "metis-platform",
- "moirai-async 0.12.0 (git+https://github.com/ryancinsight/Moirai.git)",
- "moirai-core 0.12.0 (git+https://github.com/ryancinsight/Moirai.git)",
+ "moirai-async",
+ "moirai-core",
  "moirai-crypto",
- "moirai-executor 0.12.0 (git+https://github.com/ryancinsight/Moirai.git)",
+ "moirai-executor",
  "moirai-http",
- "moirai-quic 0.12.0 (git+https://github.com/ryancinsight/Moirai.git)",
- "moirai-transport 0.12.0 (git+https://github.com/ryancinsight/Moirai.git)",
+ "moirai-quic",
+ "moirai-transport",
  "tracing",
  "tracing-subscriber",
 ]
@@ -1382,11 +1351,11 @@ version = "0.5.0"
 dependencies = [
  "metis-core",
  "metis-platform",
- "moirai-core 0.12.0 (git+https://github.com/ryancinsight/Moirai.git)",
+ "moirai-core",
  "moirai-crypto",
- "moirai-executor 0.12.0 (git+https://github.com/ryancinsight/Moirai.git)",
+ "moirai-executor",
  "moirai-http",
- "moirai-transport 0.12.0 (git+https://github.com/ryancinsight/Moirai.git)",
+ "moirai-transport",
  "moirai-webview",
  "serde",
  "serde_json",
@@ -1429,11 +1398,11 @@ name = "metis-ipc"
 version = "0.5.0"
 dependencies = [
  "metis-core",
- "moirai-async 0.12.0 (git+https://github.com/ryancinsight/Moirai.git)",
- "moirai-executor 0.12.0 (git+https://github.com/ryancinsight/Moirai.git)",
+ "moirai-async",
+ "moirai-executor",
  "moirai-http",
- "moirai-pal 0.12.0 (git+https://github.com/ryancinsight/Moirai.git)",
- "moirai-quic 0.12.0 (git+https://github.com/ryancinsight/Moirai.git)",
+ "moirai-pal",
+ "moirai-quic",
 ]
 
 [[package]]
@@ -1444,11 +1413,11 @@ dependencies = [
  "eunomia",
  "hermes-simd",
  "metis-core",
- "moirai-async 0.12.0 (git+https://github.com/ryancinsight/Moirai.git)",
- "moirai-executor 0.12.0 (git+https://github.com/ryancinsight/Moirai.git)",
+ "moirai-async",
+ "moirai-executor",
  "moirai-http",
- "moirai-pal 0.12.0 (git+https://github.com/ryancinsight/Moirai.git)",
- "moirai-transport 0.12.0 (git+https://github.com/ryancinsight/Moirai.git)",
+ "moirai-pal",
+ "moirai-transport",
 ]
 
 [[package]]
@@ -1466,7 +1435,7 @@ dependencies = [
 name = "metis-starter"
 version = "0.5.0"
 dependencies = [
- "moirai-pal 0.12.0 (git+https://github.com/ryancinsight/Moirai.git)",
+ "moirai-pal",
  "wasm-bindgen",
 ]
 
@@ -1474,7 +1443,7 @@ dependencies = [
 name = "metis-ui"
 version = "0.5.0"
 dependencies = [
- "consus-compression 0.5.0 (git+https://github.com/ryancinsight/consus.git)",
+ "consus-compression",
  "gaia-mesh",
  "iris-viz",
  "metis-backend",
@@ -1483,9 +1452,9 @@ dependencies = [
  "metis-ipc",
  "metis-platform",
  "metis-ui-lang",
- "moirai-core 0.12.0 (git+https://github.com/ryancinsight/Moirai.git)",
+ "moirai-core",
  "moirai-crypto",
- "moirai-executor 0.12.0 (git+https://github.com/ryancinsight/Moirai.git)",
+ "moirai-executor",
 ]
 
 [[package]]
@@ -1510,7 +1479,7 @@ dependencies = [
  "metis-core",
  "metis-frontend",
  "metis-ipc",
- "moirai-pal 0.12.0 (git+https://github.com/ryancinsight/Moirai.git)",
+ "moirai-pal",
  "tracing",
  "tracing-subscriber",
  "unicode-segmentation",
@@ -1520,7 +1489,7 @@ dependencies = [
 name = "metis-webview-page"
 version = "0.5.0"
 dependencies = [
- "moirai-pal 0.12.0 (git+https://github.com/ryancinsight/Moirai.git)",
+ "moirai-pal",
  "serde",
  "serde_json",
  "wasm-bindgen",
@@ -1550,35 +1519,13 @@ dependencies = [
 [[package]]
 name = "mnemosyne-arena"
 version = "0.7.2"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "713caef28430481ed55d99942e341084f00b9eeaf59b3bece4d124ac13979ce5"
-dependencies = [
- "libc",
- "loom",
- "mnemosyne-backend 0.6.0 (registry+https://github.com/rust-lang/crates.io-index)",
- "mnemosyne-memory-core 0.3.0 (registry+https://github.com/rust-lang/crates.io-index)",
- "themis-topology 0.11.5 (registry+https://github.com/rust-lang/crates.io-index)",
-]
-
-[[package]]
-name = "mnemosyne-arena"
-version = "0.7.2"
 source = "git+https://github.com/ryancinsight/Mnemosyne.git#e14d388d5b71a12048cf458b8148092c511a5753"
 dependencies = [
  "libc",
  "loom",
- "mnemosyne-backend 0.6.0 (git+https://github.com/ryancinsight/Mnemosyne.git)",
- "mnemosyne-memory-core 0.3.0 (git+https://github.com/ryancinsight/Mnemosyne.git)",
- "themis-topology 0.11.5 (git+https://github.com/ryancinsight/themis)",
-]
-
-[[package]]
-name = "mnemosyne-backend"
-version = "0.6.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "5c5a1ba0d64a7a84de5773463e5c099a9c8e787b71991d5ca023d51c9f5facfe"
-dependencies = [
- "mnemosyne-memory-core 0.3.0 (registry+https://github.com/rust-lang/crates.io-index)",
+ "mnemosyne-backend",
+ "mnemosyne-memory-core",
+ "themis-topology",
 ]
 
 [[package]]
@@ -1586,14 +1533,8 @@ name = "mnemosyne-backend"
 version = "0.6.0"
 source = "git+https://github.com/ryancinsight/Mnemosyne.git#e14d388d5b71a12048cf458b8148092c511a5753"
 dependencies = [
- "mnemosyne-memory-core 0.3.0 (git+https://github.com/ryancinsight/Mnemosyne.git)",
+ "mnemosyne-memory-core",
 ]
-
-[[package]]
-name = "mnemosyne-build-util"
-version = "0.2.1"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "3a1b0aee13be41f79e4a97a2c6e2542923ab8a2017f916454e78fef6a41e49a0"
 
 [[package]]
 name = "mnemosyne-build-util"
@@ -1603,38 +1544,11 @@ source = "git+https://github.com/ryancinsight/Mnemosyne.git#e14d388d5b71a12048cf
 [[package]]
 name = "mnemosyne-decay"
 version = "0.3.3"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "5123cfd9231741d692b3860f0498577962a81aac8b33018a431587ab5c6e9b2c"
-dependencies = [
- "mnemosyne-arena 0.7.2 (registry+https://github.com/rust-lang/crates.io-index)",
- "mnemosyne-backend 0.6.0 (registry+https://github.com/rust-lang/crates.io-index)",
- "mnemosyne-memory-core 0.3.0 (registry+https://github.com/rust-lang/crates.io-index)",
-]
-
-[[package]]
-name = "mnemosyne-decay"
-version = "0.3.3"
 source = "git+https://github.com/ryancinsight/Mnemosyne.git#e14d388d5b71a12048cf458b8148092c511a5753"
 dependencies = [
- "mnemosyne-arena 0.7.2 (git+https://github.com/ryancinsight/Mnemosyne.git)",
- "mnemosyne-backend 0.6.0 (git+https://github.com/ryancinsight/Mnemosyne.git)",
- "mnemosyne-memory-core 0.3.0 (git+https://github.com/ryancinsight/Mnemosyne.git)",
-]
-
-[[package]]
-name = "mnemosyne-local"
-version = "0.7.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "9e2e5729346946d80bf14523d707e3dc3f7e347b09895d6cfb98ba0174702406"
-dependencies = [
- "melinoe 0.10.0",
- "mnemosyne-arena 0.7.2 (registry+https://github.com/rust-lang/crates.io-index)",
- "mnemosyne-backend 0.6.0 (registry+https://github.com/rust-lang/crates.io-index)",
- "mnemosyne-build-util 0.2.1 (registry+https://github.com/rust-lang/crates.io-index)",
- "mnemosyne-decay 0.3.3 (registry+https://github.com/rust-lang/crates.io-index)",
- "mnemosyne-memory-core 0.3.0 (registry+https://github.com/rust-lang/crates.io-index)",
- "mnemosyne-prof 0.2.1 (registry+https://github.com/rust-lang/crates.io-index)",
- "themis-topology 0.11.5 (registry+https://github.com/rust-lang/crates.io-index)",
+ "mnemosyne-arena",
+ "mnemosyne-backend",
+ "mnemosyne-memory-core",
 ]
 
 [[package]]
@@ -1642,28 +1556,14 @@ name = "mnemosyne-local"
 version = "0.7.0"
 source = "git+https://github.com/ryancinsight/Mnemosyne.git#e14d388d5b71a12048cf458b8148092c511a5753"
 dependencies = [
- "melinoe 0.10.1",
- "mnemosyne-arena 0.7.2 (git+https://github.com/ryancinsight/Mnemosyne.git)",
- "mnemosyne-backend 0.6.0 (git+https://github.com/ryancinsight/Mnemosyne.git)",
- "mnemosyne-build-util 0.2.1 (git+https://github.com/ryancinsight/Mnemosyne.git)",
- "mnemosyne-decay 0.3.3 (git+https://github.com/ryancinsight/Mnemosyne.git)",
- "mnemosyne-memory-core 0.3.0 (git+https://github.com/ryancinsight/Mnemosyne.git)",
- "mnemosyne-prof 0.2.1 (git+https://github.com/ryancinsight/Mnemosyne.git)",
- "themis-topology 0.11.5 (git+https://github.com/ryancinsight/themis)",
-]
-
-[[package]]
-name = "mnemosyne-memory"
-version = "0.10.2"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "a6b4ad8c809bc1f7e27b606aee09006808039b27a5f33c469c5f82a1bd1f62c7"
-dependencies = [
- "mnemosyne-arena 0.7.2 (registry+https://github.com/rust-lang/crates.io-index)",
- "mnemosyne-backend 0.6.0 (registry+https://github.com/rust-lang/crates.io-index)",
- "mnemosyne-decay 0.3.3 (registry+https://github.com/rust-lang/crates.io-index)",
- "mnemosyne-local 0.7.0 (registry+https://github.com/rust-lang/crates.io-index)",
- "mnemosyne-memory-core 0.3.0 (registry+https://github.com/rust-lang/crates.io-index)",
- "mnemosyne-prof 0.2.1 (registry+https://github.com/rust-lang/crates.io-index)",
+ "melinoe",
+ "mnemosyne-arena",
+ "mnemosyne-backend",
+ "mnemosyne-build-util",
+ "mnemosyne-decay",
+ "mnemosyne-memory-core",
+ "mnemosyne-prof",
+ "themis-topology",
 ]
 
 [[package]]
@@ -1671,21 +1571,12 @@ name = "mnemosyne-memory"
 version = "0.10.2"
 source = "git+https://github.com/ryancinsight/Mnemosyne.git#e14d388d5b71a12048cf458b8148092c511a5753"
 dependencies = [
- "mnemosyne-arena 0.7.2 (git+https://github.com/ryancinsight/Mnemosyne.git)",
- "mnemosyne-backend 0.6.0 (git+https://github.com/ryancinsight/Mnemosyne.git)",
- "mnemosyne-decay 0.3.3 (git+https://github.com/ryancinsight/Mnemosyne.git)",
- "mnemosyne-local 0.7.0 (git+https://github.com/ryancinsight/Mnemosyne.git)",
- "mnemosyne-memory-core 0.3.0 (git+https://github.com/ryancinsight/Mnemosyne.git)",
- "mnemosyne-prof 0.2.1 (git+https://github.com/ryancinsight/Mnemosyne.git)",
-]
-
-[[package]]
-name = "mnemosyne-memory-core"
-version = "0.3.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "8eed9421ac130b97d7ec6c5baad79dd07918eb23e85da75f926f63b33402b2e2"
-dependencies = [
- "loom",
+ "mnemosyne-arena",
+ "mnemosyne-backend",
+ "mnemosyne-decay",
+ "mnemosyne-local",
+ "mnemosyne-memory-core",
+ "mnemosyne-prof",
 ]
 
 [[package]]
@@ -1699,39 +1590,11 @@ dependencies = [
 [[package]]
 name = "mnemosyne-prof"
 version = "0.2.1"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "433d24d38cb8fa8bc3296389f1e2469a69d6666cb908dc21815d05ca93e621e1"
-dependencies = [
- "backtrace",
- "mnemosyne-build-util 0.2.1 (registry+https://github.com/rust-lang/crates.io-index)",
- "mnemosyne-memory-core 0.3.0 (registry+https://github.com/rust-lang/crates.io-index)",
-]
-
-[[package]]
-name = "mnemosyne-prof"
-version = "0.2.1"
 source = "git+https://github.com/ryancinsight/Mnemosyne.git#e14d388d5b71a12048cf458b8148092c511a5753"
 dependencies = [
  "backtrace",
- "mnemosyne-build-util 0.2.1 (git+https://github.com/ryancinsight/Mnemosyne.git)",
- "mnemosyne-memory-core 0.3.0 (git+https://github.com/ryancinsight/Mnemosyne.git)",
-]
-
-[[package]]
-name = "moirai-async"
-version = "0.12.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "8077a1d356796a65736a67bf618d43caaa52dcaf37afb754ecfa408f5f90cc9a"
-dependencies = [
- "futures",
- "libc",
- "moirai-async-macros 0.12.0 (registry+https://github.com/rust-lang/crates.io-index)",
- "moirai-core 0.12.0 (registry+https://github.com/rust-lang/crates.io-index)",
- "moirai-executor 0.12.0 (registry+https://github.com/rust-lang/crates.io-index)",
- "moirai-pal 0.12.0 (registry+https://github.com/rust-lang/crates.io-index)",
- "moirai-transport 0.12.0 (registry+https://github.com/rust-lang/crates.io-index)",
- "moirai-utils 0.12.0 (registry+https://github.com/rust-lang/crates.io-index)",
- "tracing",
+ "mnemosyne-build-util",
+ "mnemosyne-memory-core",
 ]
 
 [[package]]
@@ -1741,24 +1604,13 @@ source = "git+https://github.com/ryancinsight/Moirai.git#e384031983a39beb0996e4e
 dependencies = [
  "futures",
  "libc",
- "moirai-async-macros 0.12.0 (git+https://github.com/ryancinsight/Moirai.git)",
- "moirai-core 0.12.0 (git+https://github.com/ryancinsight/Moirai.git)",
- "moirai-executor 0.12.0 (git+https://github.com/ryancinsight/Moirai.git)",
- "moirai-pal 0.12.0 (git+https://github.com/ryancinsight/Moirai.git)",
- "moirai-transport 0.12.0 (git+https://github.com/ryancinsight/Moirai.git)",
- "moirai-utils 0.12.0 (git+https://github.com/ryancinsight/Moirai.git)",
+ "moirai-async-macros",
+ "moirai-core",
+ "moirai-executor",
+ "moirai-pal",
+ "moirai-transport",
+ "moirai-utils",
  "tracing",
-]
-
-[[package]]
-name = "moirai-async-macros"
-version = "0.12.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "1b1dbd5d88309fc4fad5ca251f46da3c83d62a561f48c91231d225c7481be298"
-dependencies = [
- "proc-macro2",
- "quote",
- "syn 2.0.119",
 ]
 
 [[package]]
@@ -1774,26 +1626,13 @@ dependencies = [
 [[package]]
 name = "moirai-core"
 version = "0.12.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "b5f0a2bd5c637b6225a24705f8a406932fbe5a98fe3017013fa6e6a305e5c26c"
-dependencies = [
- "bytemuck",
- "libc",
- "mnemosyne-memory 0.10.2 (registry+https://github.com/rust-lang/crates.io-index)",
- "moirai-utils 0.12.0 (registry+https://github.com/rust-lang/crates.io-index)",
- "themis-topology 0.11.5 (registry+https://github.com/rust-lang/crates.io-index)",
-]
-
-[[package]]
-name = "moirai-core"
-version = "0.12.0"
 source = "git+https://github.com/ryancinsight/Moirai.git#e384031983a39beb0996e4e286225df7f0a324de"
 dependencies = [
  "bytemuck",
  "libc",
- "mnemosyne-memory 0.10.2 (git+https://github.com/ryancinsight/Mnemosyne.git)",
- "moirai-utils 0.12.0 (git+https://github.com/ryancinsight/Moirai.git)",
- "themis-topology 0.11.5 (git+https://github.com/ryancinsight/themis)",
+ "mnemosyne-memory",
+ "moirai-utils",
+ "themis-topology",
 ]
 
 [[package]]
@@ -1822,30 +1661,15 @@ dependencies = [
 [[package]]
 name = "moirai-executor"
 version = "0.12.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "cf9fb6d6ef9fc6d497a5e414e8b02a12c37c18579f1b8bbe57233a8d4d7506c0"
-dependencies = [
- "melinoe 0.10.0",
- "mnemosyne-memory 0.10.2 (registry+https://github.com/rust-lang/crates.io-index)",
- "moirai-core 0.12.0 (registry+https://github.com/rust-lang/crates.io-index)",
- "moirai-pal 0.12.0 (registry+https://github.com/rust-lang/crates.io-index)",
- "moirai-scheduler 0.12.0 (registry+https://github.com/rust-lang/crates.io-index)",
- "moirai-utils 0.12.0 (registry+https://github.com/rust-lang/crates.io-index)",
- "themis-topology 0.11.5 (registry+https://github.com/rust-lang/crates.io-index)",
-]
-
-[[package]]
-name = "moirai-executor"
-version = "0.12.0"
 source = "git+https://github.com/ryancinsight/Moirai.git#e384031983a39beb0996e4e286225df7f0a324de"
 dependencies = [
- "melinoe 0.10.1",
- "mnemosyne-memory 0.10.2 (git+https://github.com/ryancinsight/Mnemosyne.git)",
- "moirai-core 0.12.0 (git+https://github.com/ryancinsight/Moirai.git)",
- "moirai-pal 0.12.0 (git+https://github.com/ryancinsight/Moirai.git)",
- "moirai-scheduler 0.12.0 (git+https://github.com/ryancinsight/Moirai.git)",
- "moirai-utils 0.12.0 (git+https://github.com/ryancinsight/Moirai.git)",
- "themis-topology 0.11.5 (git+https://github.com/ryancinsight/themis)",
+ "melinoe",
+ "mnemosyne-memory",
+ "moirai-core",
+ "moirai-pal",
+ "moirai-scheduler",
+ "moirai-utils",
+ "themis-topology",
 ]
 
 [[package]]
@@ -1855,30 +1679,9 @@ source = "git+https://github.com/ryancinsight/Moirai.git#e384031983a39beb0996e4e
 dependencies = [
  "http",
  "httparse",
- "moirai-async 0.12.0 (git+https://github.com/ryancinsight/Moirai.git)",
+ "moirai-async",
  "moirai-crypto",
  "moirai-tls",
-]
-
-[[package]]
-name = "moirai-pal"
-version = "0.12.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "d84bfe7987a5c95090c03b1fc7cbef85f6cdbf3a191b3c935edd538113ffdaf9"
-dependencies = [
- "accesskit",
- "accesskit_windows",
- "js-sys",
- "libc",
- "loom",
- "melinoe 0.10.0",
- "moirai-core 0.12.0 (registry+https://github.com/rust-lang/crates.io-index)",
- "socket2",
- "tracing",
- "wasm-bindgen",
- "wasm-bindgen-futures",
- "web-sys",
- "windows",
 ]
 
 [[package]]
@@ -1891,8 +1694,8 @@ dependencies = [
  "js-sys",
  "libc",
  "loom",
- "melinoe 0.10.1",
- "moirai-core 0.12.0 (git+https://github.com/ryancinsight/Moirai.git)",
+ "melinoe",
+ "moirai-core",
  "png",
  "serde",
  "serde_json",
@@ -1909,27 +1712,12 @@ dependencies = [
 [[package]]
 name = "moirai-parallel"
 version = "0.12.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "aeca2e366ce19012893114385ca26f4868e22c07d1f5b5143938c4d83ba37d38"
+source = "git+https://github.com/ryancinsight/Moirai.git#e384031983a39beb0996e4e286225df7f0a324de"
 dependencies = [
- "melinoe 0.10.0",
- "moirai-core 0.12.0 (registry+https://github.com/rust-lang/crates.io-index)",
- "moirai-executor 0.12.0 (registry+https://github.com/rust-lang/crates.io-index)",
- "themis-topology 0.11.5 (registry+https://github.com/rust-lang/crates.io-index)",
-]
-
-[[package]]
-name = "moirai-quic"
-version = "0.12.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "788faea9fd254cfcff0108920b6ac7ba603dca7de4f5a850df119300c785f71d"
-dependencies = [
- "moirai-async 0.12.0 (registry+https://github.com/rust-lang/crates.io-index)",
- "moirai-core 0.12.0 (registry+https://github.com/rust-lang/crates.io-index)",
- "moirai-pal 0.12.0 (registry+https://github.com/rust-lang/crates.io-index)",
- "quinn",
- "rustls",
- "tracing",
+ "melinoe",
+ "moirai-core",
+ "moirai-executor",
+ "themis-topology",
 ]
 
 [[package]]
@@ -1937,9 +1725,9 @@ name = "moirai-quic"
 version = "0.12.0"
 source = "git+https://github.com/ryancinsight/Moirai.git#e384031983a39beb0996e4e286225df7f0a324de"
 dependencies = [
- "moirai-async 0.12.0 (git+https://github.com/ryancinsight/Moirai.git)",
- "moirai-core 0.12.0 (git+https://github.com/ryancinsight/Moirai.git)",
- "moirai-pal 0.12.0 (git+https://github.com/ryancinsight/Moirai.git)",
+ "moirai-async",
+ "moirai-core",
+ "moirai-pal",
  "quinn",
  "rustls",
  "tracing",
@@ -1948,30 +1736,16 @@ dependencies = [
 [[package]]
 name = "moirai-runtime"
 version = "0.12.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "11422482b4f815c310c20807bd9b95a9c2f7bf18b9007a2ff510092baa2fc58e"
+source = "git+https://github.com/ryancinsight/Moirai.git#e384031983a39beb0996e4e286225df7f0a324de"
 dependencies = [
- "moirai-core 0.12.0 (registry+https://github.com/rust-lang/crates.io-index)",
- "moirai-executor 0.12.0 (registry+https://github.com/rust-lang/crates.io-index)",
+ "moirai-core",
+ "moirai-executor",
  "moirai-parallel",
- "moirai-quic 0.12.0 (registry+https://github.com/rust-lang/crates.io-index)",
- "moirai-scheduler 0.12.0 (registry+https://github.com/rust-lang/crates.io-index)",
+ "moirai-quic",
+ "moirai-scheduler",
  "moirai-sync",
- "moirai-transport 0.12.0 (registry+https://github.com/rust-lang/crates.io-index)",
- "moirai-utils 0.12.0 (registry+https://github.com/rust-lang/crates.io-index)",
-]
-
-[[package]]
-name = "moirai-scheduler"
-version = "0.12.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "afa0cab53c6ac9c0057d473420e2bced220fc3469d492b95a0b67490f1ebe1fa"
-dependencies = [
- "loom",
- "mnemosyne-memory 0.10.2 (registry+https://github.com/rust-lang/crates.io-index)",
- "moirai-core 0.12.0 (registry+https://github.com/rust-lang/crates.io-index)",
- "moirai-utils 0.12.0 (registry+https://github.com/rust-lang/crates.io-index)",
- "num_cpus",
+ "moirai-transport",
+ "moirai-utils",
 ]
 
 [[package]]
@@ -1980,21 +1754,20 @@ version = "0.12.0"
 source = "git+https://github.com/ryancinsight/Moirai.git#e384031983a39beb0996e4e286225df7f0a324de"
 dependencies = [
  "loom",
- "mnemosyne-memory 0.10.2 (git+https://github.com/ryancinsight/Mnemosyne.git)",
- "moirai-core 0.12.0 (git+https://github.com/ryancinsight/Moirai.git)",
- "moirai-utils 0.12.0 (git+https://github.com/ryancinsight/Moirai.git)",
+ "mnemosyne-memory",
+ "moirai-core",
+ "moirai-utils",
  "num_cpus",
 ]
 
 [[package]]
 name = "moirai-sync"
 version = "0.12.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "b26fb8d638408ca2a000aa9d265d46a4ce739c85bc70bdfcb540771ffe392fb8"
+source = "git+https://github.com/ryancinsight/Moirai.git#e384031983a39beb0996e4e286225df7f0a324de"
 dependencies = [
  "libc",
- "moirai-core 0.12.0 (registry+https://github.com/rust-lang/crates.io-index)",
- "moirai-utils 0.12.0 (registry+https://github.com/rust-lang/crates.io-index)",
+ "moirai-core",
+ "moirai-utils",
 ]
 
 [[package]]
@@ -2004,23 +1777,10 @@ source = "git+https://github.com/ryancinsight/Moirai.git#e384031983a39beb0996e4e
 dependencies = [
  "futures-io",
  "futures-rustls",
- "moirai-async 0.12.0 (git+https://github.com/ryancinsight/Moirai.git)",
+ "moirai-async",
  "moirai-crypto",
  "rustls-pki-types",
  "webpki-roots",
-]
-
-[[package]]
-name = "moirai-transport"
-version = "0.12.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "9f52a6919845900dea470730922cd730984f220daedf0f78121acba26379728e"
-dependencies = [
- "bytemuck",
- "libc",
- "moirai-core 0.12.0 (registry+https://github.com/rust-lang/crates.io-index)",
- "moirai-scheduler 0.12.0 (registry+https://github.com/rust-lang/crates.io-index)",
- "moirai-utils 0.12.0 (registry+https://github.com/rust-lang/crates.io-index)",
 ]
 
 [[package]]
@@ -2030,16 +1790,10 @@ source = "git+https://github.com/ryancinsight/Moirai.git#e384031983a39beb0996e4e
 dependencies = [
  "bytemuck",
  "libc",
- "moirai-core 0.12.0 (git+https://github.com/ryancinsight/Moirai.git)",
- "moirai-scheduler 0.12.0 (git+https://github.com/ryancinsight/Moirai.git)",
- "moirai-utils 0.12.0 (git+https://github.com/ryancinsight/Moirai.git)",
+ "moirai-core",
+ "moirai-scheduler",
+ "moirai-utils",
 ]
-
-[[package]]
-name = "moirai-utils"
-version = "0.12.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "169dbabce30dffaa19e5d190408d6fbfa2145822646e64c683bfd45d2d564682"
 
 [[package]]
 name = "moirai-utils"
@@ -2512,15 +2266,6 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "05c8b63e8d9609db387f0324918f81d68fe27748f084ef092fb35954d0539a85"
 
 [[package]]
-name = "ppv-lite86"
-version = "0.2.21"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "85eae3c4ed2f50dcfe72643da4befc30deadb458a9b590d720cde2f2b1e97da9"
-dependencies = [
- "zerocopy",
-]
-
-[[package]]
 name = "primefield"
 version = "0.14.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -2661,7 +2406,7 @@ dependencies = [
  "bytes",
  "getrandom 0.4.3",
  "lru-slab",
- "rand 0.10.3",
+ "rand",
  "rand_pcg",
  "ring",
  "rustc-hash",
@@ -2685,7 +2430,7 @@ dependencies = [
  "once_cell",
  "socket2",
  "tracing",
- "windows-sys 0.61.2",
+ "windows-sys 0.52.0",
 ]
 
 [[package]]
@@ -2714,17 +2459,6 @@ dependencies = [
 
 [[package]]
 name = "rand"
-version = "0.8.8"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "e058c7de0b26af77780c769414d6257830bb240f3c38477dbc2c16e5f54d6d4c"
-dependencies = [
- "libc",
- "rand_chacha",
- "rand_core 0.6.4",
-]
-
-[[package]]
-name = "rand"
 version = "0.10.3"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "65c9fb96cbc91e3478eaae79a69fcd3f1ae4ad052e471fe6732fff548984b4af"
@@ -2732,16 +2466,6 @@ dependencies = [
  "chacha20 0.10.2",
  "getrandom 0.4.3",
  "rand_core 0.10.1",
-]
-
-[[package]]
-name = "rand_chacha"
-version = "0.3.1"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "e6c10a63a0fa32252be49d21e7709d4d4baf8d231c2dbce1eaa8141b9b127d88"
-dependencies = [
- "ppv-lite86",
- "rand_core 0.6.4",
 ]
 
 [[package]]
@@ -3200,20 +2924,10 @@ checksum = "adb6935a6f5c20170eeceb1a3835a49e12e19d792f6dd344ccc76a985ca5a6ca"
 [[package]]
 name = "themis-topology"
 version = "0.11.5"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "53a355bea9ffa5f1f59a3a2306617833395b7a5a830a015b1722697c0c0451de"
-dependencies = [
- "libc",
- "melinoe 0.10.0",
-]
-
-[[package]]
-name = "themis-topology"
-version = "0.11.5"
 source = "git+https://github.com/ryancinsight/themis#ec424230050b25ae8150de200c169c28f14363d2"
 dependencies = [
  "libc",
- "melinoe 0.10.1",
+ "melinoe",
 ]
 
 [[package]]
@@ -3585,7 +3299,7 @@ version = "0.1.11"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "c2a7b1c03c876122aa43f3020e6c3c3ee5c05081c9a00739faf7503aeba10d22"
 dependencies = [
- "windows-sys 0.61.2",
+ "windows-sys 0.52.0",
 ]
 
 [[package]]

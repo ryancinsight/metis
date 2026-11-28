@@ -86,10 +86,11 @@ class FormatNeutralWorkspaceTests(unittest.TestCase):
                 self.assertTrue(admits(owner, "eunomia", crates_io))
                 self.assertFalse(admits(owner, "eunomia", "registry+https://example.invalid/index"))
         self.assertFalse(admits("metis-core", "eunomia", crates_io))
-    def test_published_gaia_is_admitted_only_for_the_mesh_example(self):
+
+    def test_gaia_requires_its_first_party_git_source(self):
         admits = self.verify["workspace"].registry_boundary
         crates_io = "registry+https://github.com/rust-lang/crates.io-index"
-        self.assertTrue(admits("metis-ui", "gaia-mesh", crates_io))
+        self.assertFalse(admits("metis-ui", "gaia-mesh", crates_io))
         self.assertFalse(admits("metis-core", "gaia-mesh", crates_io))
         self.assertFalse(admits("metis-ui", "gaia-mesh", "registry+https://example.invalid/index"))
 
