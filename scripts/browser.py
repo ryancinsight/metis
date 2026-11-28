@@ -19,6 +19,14 @@ CONTENT_SECURITY_POLICY = ROOT / "crates" / "metis-core" / "src" / "content_secu
 # Keep externally supplied browser assets bounded before they enter the output.
 MAX_CONSUMER_MODULE_BYTES = 64 * 1024 * 1024
 MAX_CONSUMER_PAGE_BYTES = 512 * 1024
+HOST_EXPORTS = (
+    "metis_start",
+    "metis_stop",
+    "metis_browser_start",
+    "metis_browser_stop",
+    "metis_http_start",
+    "metis_http_stop",
+)
 
 
 def run(command: list[str]) -> None:
@@ -101,6 +109,49 @@ def validate_index_policy(index: pathlib.Path) -> None:
         raise SystemExit("browser index content-security policy differs from HostPolicy source")
 
 
+def check_artifact_exports(host: pathlib.Path, canvas: pathlib.Path) -> None:
+    """Require application exports only in the distributed browser host."""
+    def declarations(path: pathlib.Path) -> dict[str, str]:
+        exports = {}
+        for line in path.read_text(encoding="utf-8").splitlines():
+            if line.startswith("export const "):
+                name, separator, signature = line.removeprefix("export const ").partition(":")
+                if not separator or name in exports:
+                    raise SystemExit(f"generated export table is malformed: {line}")
+                exports[name] = signature.strip()
+        return exports
+
+    host_exports = declarations(host)
+    canvas_exports = declarations(canvas)
+
+    def is_runtime_export(name: str) -> bool:
+        if name in {"memory", "__wbindgen_add_to_stack_pointer", "__wbindgen_start"}:
+            return True
+        wbindgen_suffix = name.removeprefix("__wbindgen_export")
+        if wbindgen_suffix != name and (
+            not wbindgen_suffix or wbindgen_suffix.isdecimal()
+        ):
+            return True
+        element_suffix = name.removeprefix("__wasm_bindgen_func_elem_")
+        return element_suffix != name and all(
+            part.isdecimal() for part in element_suffix.split("_")
+        )
+
+    for export in HOST_EXPORTS:
+        if host_exports.get(export) != "() => void;":
+            raise SystemExit(f"generated browser host is missing {export}")
+    if canvas_exports.get("start") != "() => void;":
+        raise SystemExit("generated canvas input is missing its start export")
+    canvas_application_exports = {
+        name for name in canvas_exports if not is_runtime_export(name)
+    }
+    unrelated = canvas_application_exports - {"start"}
+    if unrelated:
+        raise SystemExit(
+            "generated canvas input retains unrelated " + ", ".join(sorted(unrelated))
+        )
+
+
 def build() -> None:
     cargo(["build", "--locked", "-p", "metis-web", "--target", "wasm32-unknown-unknown", "--release"])
     cargo([
@@ -116,6 +167,10 @@ def build() -> None:
     canvas_loader = (OUTPUT / "canvas_input.js").read_text(encoding="utf-8")
     if "wasm.__wbindgen_start();" not in canvas_loader or "canvas_mount" in canvas_loader:
         raise SystemExit("generated canvas loader does not delegate startup to the Rust start hook")
+    check_artifact_exports(
+        OUTPUT / "metis_web_bg.wasm.d.ts",
+        OUTPUT / "canvas_input_bg.wasm.d.ts",
+    )
     index = SOURCE / "index.html"
     validate_index_policy(index)
     shutil.copy2(index, OUTPUT / "index.html")

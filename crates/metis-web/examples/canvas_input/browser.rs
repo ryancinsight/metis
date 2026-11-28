@@ -1,4 +1,4 @@
-use metis_web::{CanvasEvent, CanvasFrame, CanvasPointerEvent, CanvasSurface};
+use crate::canvas::{CanvasEvent, CanvasFrame, CanvasPointerEvent, CanvasSurface};
 use moirai_pal::wasm::{WebDocument, WebEventListener};
 use std::cell::RefCell;
 use std::fmt::Write;
@@ -53,12 +53,11 @@ fn status(text: &str) -> io::Result<()> {
 }
 
 fn report(result: io::Result<()>) {
-    if let Err(error) = result {
-        if let Ok(document) = WebDocument::current()
-            && let Some(element) = document.get_element_by_id("canvas-input-status")
-        {
-            element.set_text(&format!("error:{:?}:{error}", error.kind()));
-        }
+    if let Err(error) = result
+        && let Ok(document) = WebDocument::current()
+        && let Some(element) = document.get_element_by_id("canvas-input-status")
+    {
+        element.set_text(&format!("error:{:?}:{error}", error.kind()));
     }
 }
 
