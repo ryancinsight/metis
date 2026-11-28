@@ -174,11 +174,11 @@ Current framework version: Metis 0.5.0. Remaining capability work follows.
 ## METIS-WEBVIEW-RUST-001 — Rust-owned Windows page lifecycle [minor]
 - milestone: M-platform.
 
-- Status: todo; priority: feature; owner: Metis presentation; last-update: 2026-10-12; risk: application behavior lost during script removal.
-- Scope: replace the form's 125 and permission probe's 88 embedded JavaScript lines with Rust/WASM presentation and typed WebView2 bridge bindings; retain generated browser interoperability.
-- Acceptance: real Windows journeys preserve theme/command focus, shortcuts, input-sensitive calculation replies, malformed/error replies, request admission and all four capability denials; listeners and permission work detach on teardown.
-- Verification: build the packaged pages from the canonical Git lock and compare exact model, reply, focus and capability outcomes before/after; count raw-string scripts as well as standalone modules.
-- Design: [ADR 0059](docs/adr/0059-windows-rust-pages.md) defines PAL mechanisms, Rust page ownership and generated-asset coherence for Metis 0.5.0 and Moirai 0.9.0. Implementation and real Windows acceptance remain open.
+- Status: todo; priority: feature; owner: Metis presentation; last-update: 2026-11-27; risk: application behavior lost during script removal.
+- Scope: [PR 604](https://github.com/ryancinsight/metis/pull/604) replaced the form's 125 and permission probe's 88 embedded JavaScript lines with Rust/WASM presentation and typed WebView2 bridge bindings. Remaining scope is installed Windows acceptance for menu focus/dismissal, physical shortcuts, malformed-reply recovery, native camera and microphone denial events, and teardown/remount cleanup.
+- Acceptance: real Windows journeys preserve those remaining behaviors; page listeners, permission watches, media tracks and settlement work detach on teardown and remain bounded across remount.
+- Verification: drive the installed packaged pages through physical input and native WebView2 events; assert focus, command, visible malformed-reply recovery, all four native permission kinds and listener/permission resource counts before and after teardown/remount.
+- Design: [ADR 0059](docs/adr/0059-windows-rust-pages.md) defines PAL mechanisms, Rust page ownership and generated-asset coherence for Metis 0.5.0 and Moirai 0.9.0. PR 604 establishes input-sensitive admitted replies, rejected-reply recovery, a dark-theme command, native geolocation/notification denials and browser camera/microphone rejections; it does not establish the remaining acceptance cases above.
 
 <a id="METIS-BROWSER-READ-001"></a>
 ## METIS-BROWSER-READ-001 — Diagnose selected-file reads
