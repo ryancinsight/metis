@@ -1,8 +1,8 @@
 //! Binds the starter page's form to [`crate::greet`].
 //!
 //! The page ships static markup; Rust finds the form by id, cancels its
-//! navigation, reads the name and writes the greeting. The only JavaScript is
-//! the generated module loader and the call into [`metis_starter_start`].
+//! navigation, reads the name and writes the greeting. The generated module
+//! loader invokes [`start`] as part of WebAssembly initialization.
 
 use crate::greet;
 use moirai_pal::wasm::{WebDocument, WebElement, WebEventListener};
@@ -18,13 +18,12 @@ thread_local! {
     static SUBMIT: RefCell<Option<WebEventListener>> = const { RefCell::new(None) };
 }
 
-/// Binds the form, marking it `data-metis-ready` once Rust owns submission.
+/// Starts the page and marks the form `data-metis-ready` once Rust owns submission.
 ///
-/// A second call replaces the listener, so reloading the module never leaves
-/// two handlers answering one submit.
-#[expect(unsafe_code, reason = "raw WASM export the generated loader calls")]
-#[unsafe(no_mangle)]
-pub extern "C" fn metis_starter_start() {
+/// `wasm-bindgen` calls this hook once while initializing a module instance.
+/// The listener remains retained for that instance's lifetime.
+#[wasm_bindgen::prelude::wasm_bindgen(start)]
+pub fn start() {
     if let Err(error) = bind() {
         show(&format!("The starter could not start: {error}"));
     }

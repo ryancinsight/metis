@@ -79,10 +79,9 @@ class StarterPageTests(unittest.TestCase):
         self.assertEqual(page.scripts, [{"type": "module", "src": "main.js"}])
         loader = (FRONTEND / "main.js").read_text(encoding="utf-8")
         module = _manifest()["frontend"]["package"].replace("-", "_")
-        self.assertIn(f'from "./{module}.js"', loader)
-        export = re.search(r"\.(\w+)\(\);", loader).group(1)
+        self.assertEqual(loader, f'import init from "./{module}.js";\n\nawait init();\n')
         rust = (CRATE / "src" / "browser.rs").read_text(encoding="utf-8")
-        self.assertIn(f'pub extern "C" fn {export}()', rust)
+        self.assertIn("#[wasm_bindgen::prelude::wasm_bindgen(start)]", rust)
 
     def test_the_policy_admits_webassembly_and_nothing_inline(self):
         directives = dict(

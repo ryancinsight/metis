@@ -64,6 +64,7 @@ REGISTRY_BOUNDARIES = {
     # No Atlas provider supplies the wasm-bindgen browser ABI; the page uses
     # exact-pinned interop versions recorded in the audited lock, so a caret
     # range cannot drift the locked graph.
+    ("metis-starter", "wasm-bindgen"),
     ("metis-webview-page", "wasm-bindgen"),
     ("metis-webview-page", "web-sys"),
 }
