@@ -70,13 +70,21 @@ class FormatNeutralWorkspaceTests(unittest.TestCase):
         self.assertIn(("metis-web", "unicode-segmentation"), boundaries)
         self.assertNotIn(("metis-core", "unicode-segmentation"), boundaries)
 
-    def test_starter_owns_only_its_wasm_start_abi_dependency(self):
+    def test_rust_browser_entries_own_only_the_wasm_start_abi_dependency(self):
         admits = self.verify["workspace"].registry_boundary
         crates_io = "registry+https://github.com/rust-lang/crates.io-index"
-        self.assertTrue(admits("metis-starter", "wasm-bindgen", crates_io))
+        for owner in ("metis-starter", "metis-web"):
+            with self.subTest(owner=owner):
+                self.assertTrue(admits(owner, "wasm-bindgen", crates_io))
+                self.assertFalse(admits(owner, "web-sys", crates_io))
+                self.assertFalse(
+                    admits(
+                        owner,
+                        "wasm-bindgen",
+                        "git+https://example.invalid/wasm-bindgen",
+                    )
+                )
         self.assertFalse(admits("metis-core", "wasm-bindgen", crates_io))
-        self.assertFalse(admits("metis-starter", "web-sys", crates_io))
-        self.assertFalse(admits("metis-starter", "wasm-bindgen", "git+https://example.invalid/wasm-bindgen"))
 
     def test_published_eunomia_is_admitted_only_for_the_layout_owners(self):
         admits = self.verify["workspace"].registry_boundary

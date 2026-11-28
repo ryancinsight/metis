@@ -113,6 +113,9 @@ def build() -> None:
         wasm_bindgen(), str(wasm_artifact("examples/canvas_input.wasm")), "--target", "web",
         "--out-dir", str(OUTPUT),
     ])
+    canvas_loader = (OUTPUT / "canvas_input.js").read_text(encoding="utf-8")
+    if "wasm.__wbindgen_start();" not in canvas_loader or "canvas_mount" in canvas_loader:
+        raise SystemExit("generated canvas loader does not delegate startup to the Rust start hook")
     index = SOURCE / "index.html"
     validate_index_policy(index)
     shutil.copy2(index, OUTPUT / "index.html")
