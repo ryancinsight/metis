@@ -267,7 +267,9 @@ native-logo and capture/input module changes. The combined tree also corrects
 native audit-ID precision: Rust emits decimal JSON strings while retaining
 backend `u64` values; six private protocol tests reproduce two baseline failures
 and verify full-range identifiers with actual adult/pediatric calculations.
-The 213 authored Windows controller lines remain unchanged.
+At that delivery point, the 213 authored Windows controller lines remained
+unchanged; [PR 604](https://github.com/ryancinsight/metis/pull/604) later retired
+them.
 Implementation is complete; [PR 502](https://github.com/ryancinsight/metis/pull/502) owns protected delivery.
 It retains PR 499 commits; the old remote head has a stale fuzz lock that
 prevents baseline compilation. The normal gate verifies current main instead.
@@ -377,16 +379,23 @@ well as compilation. Real Atlas macOS bundling preserves both canonical locks,
 verifies the ad-hoc signature and packages exact frontend resource bytes. The
 shared cache, root build settings and live frontend paths remain intact.
 
-## Authored JavaScript inventory — 2026-10-12
+## Authored JavaScript inventory — 2026-11-27
 
-The nine-line count covers the workbench, HTTP page and starter initialization
-modules only. `metis-app` also embeds the Windows WebView2 form (125 lines) and
-permission probe (88 lines) in `frontend/webview/assets.rs`: 213 authored
-JavaScript lines remain outside those loaders. Counts include blank/comment
-lines within the raw-string bodies; generated wasm-bindgen output and test-only
-script snippets are separate. METIS-WEBVIEW-RUST-001 owns migration of their
-theme, command, form/bridge and capability-probe lifecycle into Rust, with real
-Windows acceptance required before retiring the scripts.
+Four authored browser initialization modules remain: workbench `bootstrap.js`
+(74 bytes, three lines), HTTP `http-health.js` (71 bytes, three lines), canvas
+`canvas-input.js` (225 bytes, seven lines) and starter `main.js` (54 bytes,
+three lines). Together they are 424 bytes and 16 newline-terminated lines. The
+stored 37,607-byte `frontend/webview/generated/page.js` is generated
+wasm-bindgen interoperability plus generator-owned initialization, not authored
+application logic. Test-only script snippets remain outside this inventory.
+
+Both packaged Windows pages contain no inline script body or event handler and
+load only generated `page.js`; `frontend/webview/assets.rs` embeds their HTML,
+CSS, generated loader and WebAssembly module. Rust now owns the retired 213-line
+controller behavior. [PR 604](https://github.com/ryancinsight/metis/pull/604)
+records the installed outcomes it exercised; the
+[page lifecycle item](backlog.md#METIS-WEBVIEW-RUST-001) retains the Windows
+acceptance cases that evidence did not establish.
 
 ## Native logo navigation — 2026-10-13
 
