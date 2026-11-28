@@ -425,7 +425,7 @@ dependencies = [
 [[package]]
 name = "consus-compression"
 version = "0.5.0"
-source = "git+https://github.com/ryancinsight/consus.git#86411c998b131babe39156a91541b767518f01c0"
+source = "git+https://github.com/ryancinsight/consus.git#a54a772e3e8b08af2584959a3273ec462f89d2b1"
 dependencies = [
  "byteorder",
  "consus-core 0.5.0 (git+https://github.com/ryancinsight/consus.git)",
@@ -446,7 +446,7 @@ dependencies = [
 [[package]]
 name = "consus-core"
 version = "0.5.0"
-source = "git+https://github.com/ryancinsight/consus.git#86411c998b131babe39156a91541b767518f01c0"
+source = "git+https://github.com/ryancinsight/consus.git#a54a772e3e8b08af2584959a3273ec462f89d2b1"
 dependencies = [
  "byteorder",
  "smallvec",
@@ -455,8 +455,8 @@ dependencies = [
 
 [[package]]
 name = "consus-raster"
-version = "0.5.0"
-source = "git+https://github.com/ryancinsight/consus.git#86411c998b131babe39156a91541b767518f01c0"
+version = "0.5.1"
+source = "git+https://github.com/ryancinsight/consus.git#a54a772e3e8b08af2584959a3273ec462f89d2b1"
 dependencies = [
  "apollo-dctdst-core",
  "jpeg-encoder",
