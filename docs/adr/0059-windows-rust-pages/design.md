@@ -2,43 +2,61 @@
 
 Owner: [ADR 0059](../0059-windows-rust-pages.md).
 
-State: selected design; implementation and native acceptance pending.
+State: the Rust page migration landed in
+[PR 604](https://github.com/ryancinsight/metis/pull/604); the native acceptance
+cases and prepared-asset build integration identified below remain open.
 
 ## Dependency graph
 
 ```text
-metis CLI (native build orchestration)
+scripts/webview_page.py (checked-in page artifact generator)
+  -> Cargo/wasm-bindgen subprocesses with bounded lifetime
+  -> metis-app/src/frontend/webview/generated/page.js and page_bg.wasm
+
+metis CLI `prepare` (standalone prepared-asset command)
   -> metis-core::embedded_assets (inventory, codec, integrity)
   -> Cargo/wasm-bindgen subprocesses with bounded lifetime
+  -> inventory.metisas1 and report.json
 
-WASM artifact: metis-web::embedded
-  -> metis-web::Theme
-  -> metis-frontend::{ApplicationCommand, CommandMenuState}
-  -> metis-core, metis-ipc (existing presentation dependencies)
-  -> moirai-pal::wasm (DOM, bridge, permissions, local tasks/timers)
-
-metis-app build.rs
-  -> metis-core::embedded_assets
-  -> verified prepared artifacts -> owned OUT_DIR embedding
+WASM artifact: metis-webview-page cdylib
+  -> wasm-bindgen, web-sys (generated ABI and DOM bindings)
+  -> moirai-pal::wasm (bridge, permissions, local tasks/timers)
+  -> serde, serde_json (private host reply decoding)
 
 metis-app (Windows native process)
-  -> metis-web::embedded (shared codec/domain messages; private JSON DTOs)
+  -> frontend::webview::assets include_str!/include_bytes! checked-in artifacts
+  -> frontend::webview::package writes the temporary WebView2 package
+  -> frontend::webview private JSON DTOs
   -> metis-platform -> moirai-pal::windows::webview
   -> metis-frontend -> private metis-ipc -> supervised metis-backend
 ```
 
-The WASM and frontend dependency closures contain no `metis-app`,
-`metis-backend` or `metis-cli`. The CLI and build script do not depend on one
-another. The core integrity module imports no presentation or distribution
-crate. Its SHA-256 implementation uses the existing Moirai crypto dependency.
-Serde belongs only to declared JSON boundaries in `metis-app`, `metis-web` and
-the CLI; update the registry-boundary gate with that scoped rationale.
+This graph and the startup ownership below describe the landed implementation.
+The `metis prepare` inventory is not consumed by the current application build:
+the tree has no `crates/metis-app/build.rs`, and `metis-app` does not read
+`METIS_WEBVIEW_ASSET_INVENTORY` or embed from `OUT_DIR`. The build-script path
+under "Prepared assets and coherence target" remains an accepted future
+migration. The later mount, stop, generation and installed-input scenarios
+remain the acceptance contract and verification plan; PR 604 establishes only
+the outcomes recorded in ADR 0059's verification status.
 
-Use the existing `metis-web` cdylib, with Rust start/stop exports for the embedded
-page. The HTML role selects form or permission probe in Rust. No parallel crate
-copies the command, theme or form algorithm. Measure generated artifact size
-and compile/runtime cost; remove unreachable work through normal release
-optimization without weakening the behavior or acceptance scenarios.
+The WASM and frontend dependency closures contain no `metis-app`,
+`metis-backend` or `metis-cli`. The checked-in artifact generator and CLI
+preparation command are separate entry points. The core integrity module
+imports no presentation or distribution crate. Its SHA-256 implementation uses
+the existing Moirai crypto dependency.
+Serde belongs only to declared JSON boundaries in `metis-app`,
+`metis-webview-page` and the CLI; the registry-boundary gate records that scoped
+rationale.
+
+Use the dedicated `metis-webview-page` cdylib for the embedded page. The
+generated module initializer enters its Rust `#[wasm_bindgen(start)]` function,
+and Rust selects form or permission probe from the packaged HTML. Document
+destruction owns page-listener lifetime; there is no application stop export.
+The page crate owns its page-specific command, theme and form state without a
+desktop presentation dependency. PR 604 measures generated artifact size and
+compiler output without claiming runtime performance. The remaining acceptance
+scenarios stay open as recorded above.
 
 ## PAL mechanisms
 
@@ -110,15 +128,14 @@ stale DOM writes; actual watch/track/Promise ownership performs resource cleanup
 
 ## Page behavior and protocol
 
-The private `metis-web::embedded::protocol` domain owns serialized request and
-response DTOs. Public codec operations expose typed page-domain messages to
-the native consumer, rather than exposing Serde DTOs or introducing a second
-schema definition. The new inventory and required WASM/codec entry points are
-public additions; the native process's request-handling DTOs are not public API.
-Use a versioned closed schema, reject unknown actions/fields, and apply the same
-64 KiB bounds on both sides. `PageRole` is form or permission-probe. Mount and
-request identifiers are nonzero, monotonically advancing `u64` values encoded
-as canonical decimal strings. At most one calculation is outstanding.
+The landed page-side reply decoder is private to
+`metis-webview-page::message`; the native request and reply DTOs are private to
+`metis-app::frontend::webview::protocol`. Neither crate exposes its Serde DTOs.
+The accepted target contract requires a versioned closed schema, rejects
+unknown actions and fields, and applies the same 64 KiB bounds on both sides.
+`PageRole` is form or permission-probe. Mount and request identifiers are
+nonzero, monotonically advancing `u64` values encoded as canonical decimal
+strings. At most one calculation is outstanding.
 Native replies carry the admitted request/mount identifiers; stale, duplicate
 or mismatched replies cannot update output or release another request's button.
 
@@ -196,14 +213,22 @@ denial acceptance additionally requires all four actual native kinds and no
 granted outcome. Unavailable APIs or missing media hardware cannot masquerade
 as host denial. A failed/deadline probe produces a failed evidence record.
 
-## Prepared assets and coherence
+## Prepared assets and coherence target
 
-Add an optional native `embedded_module` declaration with package `metis-web`
-and platform `windows`. Omission preserves native applications without this
-page. Presence does not change `Manifest::read` into the browser shape: only
-the existing `frontend` member does that. Reject mixed/unknown fields and an
-embedded module whose package is not a workspace cdylib owner. Existing native
-and browser callers migrate in the same release.
+The shipped application currently embeds the generated `page.js` and
+`page_bg.wasm` checked into `frontend/webview/generated`; `assets.rs` reads them
+with `include_str!` and `include_bytes!`, and `package.rs` writes those exact
+bytes into the temporary WebView2 package. `scripts/webview_page.py build`
+regenerates them and `scripts/webview_page.py check` rejects drift. The
+inventory-driven native build described in the rest of this section is the
+accepted future coherence path, not a claim about PR 604's landed packaging.
+
+Add an optional native `embedded_module` declaration with package
+`metis-webview-page` and platform `windows`. Omission preserves native
+applications without this page. Presence does not change `Manifest::read` into
+the browser shape: only the existing `frontend` member does that. Reject
+mixed/unknown fields and an embedded module whose package is not a workspace
+cdylib owner. Existing native and browser callers migrate in the same release.
 
 Factor the existing CLI WASM compiler/artifact selection and wasm-bindgen
 generation into their canonical build domain. Both browser packaging and native
@@ -268,25 +293,26 @@ checked addition must also obey the native 1 GiB payload bound. Stream hashes
 and check file metadata before retained allocation. Decode checks lengths/counts
 before reservation and uses checked arithmetic. Reject links/reparse points,
 absolute paths, traversal, reserved names and case collisions for all inputs.
-No build script may read undeclared inputs; a missing recorded input is a
-coherence failure rather than a reusable cache entry.
+No future build script may read undeclared inputs; a missing recorded input is
+a coherence failure rather than a reusable cache entry.
 
-The CLI fingerprints inputs before and after module generation and native
-compilation; a changed input invalidates the operation. It supplies the
-absolute prepared inventory path through `METIS_WEBVIEW_ASSET_INVENTORY` only
-to the native compile. The application build script decodes and independently
-checks current inputs, lock/config/tool identities, schema and artifact bytes,
-then copies those verified bytes into its owned OUT_DIR before embedding.
-It declares rerun dependencies for the inventory, inputs, artifacts and relevant
-environment. The Rust compiler embeds that owned copy, not an independently
-re-read external pathname. Missing/stale/mismatched preparation fails with its
-specific cause and preparation command; no empty or older snapshot is selected.
+In the future coherence path, the CLI fingerprints inputs before and after
+module generation and native compilation; a changed input invalidates the
+operation. It supplies the absolute prepared inventory path through
+`METIS_WEBVIEW_ASSET_INVENTORY` only to the native compile. The future
+application build script decodes and independently checks current inputs,
+lock/config/tool identities, schema and artifact bytes, then copies those
+verified bytes into its owned `OUT_DIR` before embedding. It declares rerun
+dependencies for the inventory, inputs, artifacts and relevant environment.
+The Rust compiler embeds that owned copy, not an independently re-read external
+pathname. Missing, stale or mismatched preparation fails with its specific
+cause and preparation command; no empty or older snapshot is selected.
 
-The installed executable retains embedded bytes and their inventory identity.
-The runtime package writes index, CSS, the initialization-only bootstrap,
-generated JavaScript and WASM into an exclusively owned temporary directory.
-It verifies extracted bytes and cleans up after closing the controller; partial
-write/cleanup errors retain both contexts. Preserve eight create-new attempts.
+The future installed executable retains embedded bytes and their inventory
+identity. The current runtime package writes index, CSS, the generated
+initialization-bearing JavaScript and WASM into an exclusively owned temporary
+directory. It cleans up after closing the controller; partial write and cleanup
+errors retain both contexts. Preserve eight create-new attempts.
 Only `https://metis.invalid/` maps this directory. CSP permits
 `script-src 'self' 'wasm-unsafe-eval'` and `connect-src 'self'` for module loading;
 retain remote, inline-script, eval, worker, frame, form, host-object and ordinary
@@ -299,8 +325,9 @@ network denials. Mapping does not add backend authority.
    bridge/capability ownership from this specification, with portable state/bound
    tests, WASM diagnostics and real visible WebView2 integration. Publish its
    canonical provider identity before changing Metis locks.
-2. Implement the shared inventory and codec, canonical CLI preparation stage and
-   build-script verification. Test computed round trips/hashes, changed source,
+2. Implement the shared inventory and codec, canonical CLI preparation stage
+   and future build-script verification. Test computed round trips/hashes,
+   changed source,
    wrong tool/lock/config/schema, every truncation boundary, oversize lengths,
    traversal, links and artifact corruption. CLI JSON and embedded values agree.
 3. Implement the Rust page/protocol with value-semantic command/theme/focus,

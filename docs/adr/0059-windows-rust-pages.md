@@ -4,7 +4,8 @@ Status: Accepted
 
 Date: 2026-10-13
 
-Revised 2026-11-27 to record the packaged controller and its installed Windows outcomes.
+Revised 2026-11-27 to record Rust-owned initialization, the current checked-in
+asset path and the installed Windows outcomes.
 
 Change class: [minor]; internal module restructuring is [arch].
 
@@ -15,14 +16,17 @@ Target: Metis 0.5.0 and Moirai PAL/workspace 0.9.0.
 Rust replaces the 125-line form controller and 88-line permission controller
 embedded in `metis-app/src/frontend/webview/assets.rs` at Metis `731b00d`.
 The HTML, CSS, native window, supervised private IPC and backend authority
-remain their respective owners. Authored product JavaScript initializes the
-generated wasm-bindgen module and calls its Rust entry point. Generated browser
-interoperability supplies the browser ABI; it contains no application policy.
+remain their respective owners. The package generator appends the module
+initialization to wasm-bindgen's generated `page.js`; its generated finalizer
+calls `wasm.__wbindgen_start()`, which enters Rust through
+`#[wasm_bindgen(start)]`. Generated browser interoperability supplies the
+browser ABI and initialization; no authored product JavaScript owns page
+behavior.
 
 The user's request authorizes this internal Rust migration. Accepted records
-the selected design, not implementation completion, release approval or native
-acceptance. Implementation starts after the independent Metis 0.4.1 dependency
-reconciliation and Moirai Windows capture-bound correction finish. The preserved
+the selected design, not release approval or complete native acceptance.
+[PR 604](https://github.com/ryancinsight/metis/pull/604) implements the selected
+page ownership and records the installed outcomes listed below. The preserved
 QUIC design owns ADR 0058; this decision owns ADR 0059.
 
 ## Decision and ownership
@@ -40,12 +44,16 @@ so they retain their full unsigned 64-bit range across the JavaScript boundary.
 existing frontend/backend boundary. It does not compile to WASM. The page does
 not acquire a loopback transport or compute a backend result.
 
-The existing Rust CLI compiles and generates the module before native
-compilation. A bounded `metis-core::embedded_assets` integrity contract supplies
-one typed inventory to the CLI and application build script. Human-readable
-build reports derive from that contract. The build script verifies and embeds
-the prepared module; it never launches Cargo. Installed applications need no
-compiler, Node process or local web server.
+The shipped application embeds the generated `page.js` and `page_bg.wasm`
+checked into `metis-app/src/frontend/webview/generated`. `assets.rs` includes
+those files at compile time, and `package.rs` writes the same bytes into its
+temporary WebView2 package. `scripts/webview_page.py` owns regeneration and its
+drift check. Separately, the Rust CLI's `prepare` command generates a bounded
+`metis-core::embedded_assets` inventory and a human-readable report. The
+current application has no build script and does not consume that inventory.
+Connecting the prepared inventory to a verifying application build script and
+owned `OUT_DIR` remains the accepted future coherence path. Installed
+applications need no compiler, Node process or local web server.
 
 The native host uses the existing PAL `WebViewConfig::folder` with
 `https://metis.invalid/`. It admits only packaged resources. Rust mount readiness
@@ -66,8 +74,11 @@ dependency closure. Replacing the native private bridge with the browser
 WebSocket workbench changes authority and behavior. These options are rejected.
 
 Recursive Cargo in `build.rs` risks workspace target-lock contention and hides
-the required generation stage. Checked-in generated snapshots, empty missing-
-asset fallbacks and runtime compilation cannot establish build coherence.
+the required generation stage. The accepted future coherence path replaces the
+current checked-in generated snapshots with verified prepared assets; until
+then, the generator drift check and application asset tests guard those
+snapshots. Empty missing-asset fallbacks and runtime compilation cannot
+establish build coherence.
 Moving the scripts into evaluated strings preserves authored JavaScript policy
 and does not perform the selected migration. These options are rejected.
 
