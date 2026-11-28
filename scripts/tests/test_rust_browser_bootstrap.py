@@ -12,6 +12,21 @@ ROOT = pathlib.Path(__file__).resolve().parents[2]
 
 
 class RustBrowserBootstrapTests(unittest.TestCase):
+    def test_canvas_artifact_uses_only_the_canvas_module(self):
+        manifest = tomllib.loads(
+            (ROOT / "crates/metis-web/Cargo.toml").read_text(encoding="utf-8")
+        )
+        self.assertEqual(manifest["lib"]["crate-type"], ["cdylib", "rlib"])
+        example = (ROOT / "crates/metis-web/examples/canvas_input.rs").read_text(
+            encoding="utf-8"
+        )
+        browser = (
+            ROOT / "crates/metis-web/examples/canvas_input/browser.rs"
+        ).read_text(encoding="utf-8")
+        self.assertIn('#[path = "../src/canvas/mod.rs"]', example)
+        self.assertIn("use crate::canvas::", browser)
+        self.assertNotIn("use metis_web::", browser)
+
     def test_authored_modules_only_initialize_rust_hosts(self):
         import re
         for filename, module, export in (

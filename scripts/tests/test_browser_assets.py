@@ -171,6 +171,33 @@ class BrowserAssetContractTests(unittest.TestCase):
             with self.assertRaisesRegex(SystemExit, "exactly gallery.html"):
                 browser.package_consumer(package, gallery)
 
+    def test_application_exports_belong_only_to_the_host_artifact(self):
+        spec = importlib.util.spec_from_file_location("metis_browser_packager", SCRIPTS / "browser.py")
+        self.assertIsNotNone(spec)
+        self.assertIsNotNone(spec.loader)
+        browser = importlib.util.module_from_spec(spec)
+        spec.loader.exec_module(browser)
+        declarations = "".join(
+            f"export const {name}: () => void;\n" for name in browser.HOST_EXPORTS
+        )
+        with tempfile.TemporaryDirectory() as directory:
+            root = pathlib.Path(directory)
+            host = root / "host.d.ts"
+            canvas = root / "canvas.d.ts"
+            host.write_text(declarations, encoding="utf-8")
+            canvas.write_text("export const start: () => void;\n", encoding="utf-8")
+            browser.check_artifact_exports(host, canvas)
+
+            host.write_text(declarations.replace("metis_http_stop", "missing"), encoding="utf-8")
+            with self.assertRaisesRegex(SystemExit, "missing metis_http_stop"):
+                browser.check_artifact_exports(host, canvas)
+            host.write_text(declarations, encoding="utf-8")
+            canvas.write_text(
+                "export const metis_start: () => number;\n", encoding="utf-8"
+            )
+            with self.assertRaisesRegex(SystemExit, "retains unrelated metis_start"):
+                browser.check_artifact_exports(host, canvas)
+
     def test_default_source_has_no_consumer_gallery(self):
         source = ROOT / "examples" / "browser"
         self.assertFalse((source / "gallery.html").exists())

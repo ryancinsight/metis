@@ -38,9 +38,17 @@ WebSocket service. The acceptor validates the observed Origin before the 101
 response, constructs a trusted host session and then applies Metis handshake,
 replay, oversize and capability checks before connecting UI state to a result.
 
-The raw `metis_start` and `metis_stop` exports are the WASM ABI boundary. Their
-unsafe attributes are isolated and documented; the host state, DOM operations
-and callbacks remain safe Rust.
+The packaged browser host's raw lifecycle exports are the WASM ABI boundary.
+Their unsafe attributes are isolated and documented in that artifact entry;
+the reusable lifecycle functions, host state, DOM operations and callbacks
+remain safe Rust.
+
+Revision 2026-11-27: the canvas-input artifact compiles the canonical
+`metis-web` canvas module as its Rust substrate instead of linking the complete
+host library. The `metis-web` library remains both `rlib` and `cdylib`; its raw
+workbench and HTTP exports and its public Rust lifecycle API remain unchanged.
+The normal packager still emits `metis_web.js` and `metis_web_bg.wasm`, while
+the standalone canvas artifact retains only its Rust start hook.
 
 Revision 2026-09-12: the mounted file-transfer controls include a user-activated
 HTML5 file input alongside drag/drop. Its `change` listener delegates through
@@ -87,13 +95,23 @@ into an authority decision, so endpoint selection waits for the origin/session
 contract. The contract is now defined by ADR 0011; a live service must still
 enforce it at its acceptor.
 
+Cargo features were rejected for artifact selection because feature unification
+would restore the entry exports when an example links the library. A new
+substrate package was rejected because one example does not justify another
+workspace dependency. Moving the raw entries to a wrapper artifact was rejected
+because it would remove the existing exports from a direct `metis-web` cdylib
+build. Post-link export removal was rejected because it would add a binary
+rewrite boundary instead of selecting the source that belongs to each artifact.
+
 ## Verification
 
-Moirai's browser PAL at
+Moirai's browser platform abstraction layer at
 `be87d009cd0e877beef719b47bdcbadc45659069` passes its
 WASM checks, strict Clippy and 39/39 PAL tests. Metis builds `metis-web` for
-`wasm32-unknown-unknown`; `scripts/browser.py build` generates the loader and
-WASM artifact with `wasm-bindgen` 0.2.128. A local browser trace loaded the
+`wasm32-unknown-unknown`; `scripts/browser.py build` generates the library and
+canvas loaders and WASM artifacts with `wasm-bindgen` 0.2.129. The packager
+checks that the host contains all six application exports and the canvas-input
+artifact contains none of them. A local browser trace loaded the
 page at `http://127.0.0.1:8080/` with a 1280×720 viewport and device scale
 1.25. It connected to the service at `ws://127.0.0.1:8765/socket`, submitted
 valid values, rejected zero weight with `0x3001`, observed service disconnect

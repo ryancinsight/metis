@@ -1,4 +1,4 @@
-use metis_web::{CanvasEvent, CanvasFrame, CanvasPointerEvent, CanvasSurface};
+use crate::canvas::{CanvasEvent, CanvasFrame, CanvasPointerEvent, CanvasSurface};
 use moirai_pal::wasm::{WebDocument, WebEventListener};
 use std::cell::RefCell;
 use std::fmt::Write;
