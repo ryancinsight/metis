@@ -5,6 +5,7 @@ import argparse
 import json
 import os
 import pathlib
+import re
 import shutil
 import subprocess
 
@@ -27,6 +28,7 @@ HOST_EXPORTS = (
     "metis_http_start",
     "metis_http_stop",
 )
+HOST_START_EXPORT = "initialize"
 
 
 def run(command: list[str]) -> None:
@@ -140,6 +142,17 @@ def check_artifact_exports(host: pathlib.Path, canvas: pathlib.Path) -> None:
     for export in HOST_EXPORTS:
         if host_exports.get(export) != "() => void;":
             raise SystemExit(f"generated browser host is missing {export}")
+    if host_exports.get(HOST_START_EXPORT) != "() => void;":
+        raise SystemExit("generated browser host is missing its private start adapter")
+    host_application_exports = {
+        name for name in host_exports if not is_runtime_export(name)
+    }
+    unrelated_host = host_application_exports - {*HOST_EXPORTS, HOST_START_EXPORT}
+    if unrelated_host:
+        raise SystemExit(
+            "generated browser host retains unrelated "
+            + ", ".join(sorted(unrelated_host))
+        )
     if canvas_exports.get("start") != "() => void;":
         raise SystemExit("generated canvas input is missing its start export")
     canvas_application_exports = {
@@ -150,6 +163,18 @@ def check_artifact_exports(host: pathlib.Path, canvas: pathlib.Path) -> None:
         raise SystemExit(
             "generated canvas input retains unrelated " + ", ".join(sorted(unrelated))
         )
+
+
+def check_host_startup(declarations: pathlib.Path, loader: pathlib.Path) -> None:
+    """Require automatic initialization without a public start wrapper."""
+    public = declarations.read_text(encoding="utf-8")
+    generated = loader.read_text(encoding="utf-8")
+    for name in ("start", HOST_START_EXPORT):
+        wrapper = re.compile(rf"\bexport\s+function\s+{re.escape(name)}\s*\(")
+        if wrapper.search(public) or wrapper.search(generated):
+            raise SystemExit(f"generated browser host exposes public {name}")
+    if generated.count("wasm.__wbindgen_start();") != 1:
+        raise SystemExit("generated browser loader does not delegate startup once")
 
 
 def build() -> None:
@@ -167,6 +192,7 @@ def build() -> None:
     canvas_loader = (OUTPUT / "canvas_input.js").read_text(encoding="utf-8")
     if "wasm.__wbindgen_start();" not in canvas_loader or "canvas_mount" in canvas_loader:
         raise SystemExit("generated canvas loader does not delegate startup to the Rust start hook")
+    check_host_startup(OUTPUT / "metis_web.d.ts", OUTPUT / "metis_web.js")
     check_artifact_exports(
         OUTPUT / "metis_web_bg.wasm.d.ts",
         OUTPUT / "canvas_input_bg.wasm.d.ts",

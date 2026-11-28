@@ -19,9 +19,11 @@ import browser_drop
 from browser_canvas_capture import pixel_observation
 from browser_canvas_input import (
     CANVAS_INPUT_KINDS,
+    HOST_EXPORTS,
     INSTALL_CANVAS_TRACE,
     PROBE_REMOVED_CANVAS_LISTENERS,
     _screenshot_dimensions,
+    _validate_import_only,
     _validate_post_stop_probe,
     run,
 )
@@ -260,6 +262,34 @@ class GalleryFileSelectionPhaseTests(unittest.TestCase):
         self.assertEqual(active["cleanup"], {"removed": True, "restored": True})
 
 class CanvasInputPathTests(unittest.TestCase):
+    def test_import_only_oracle_rejects_application_side_effects(self):
+        observation = {
+            "ok": True,
+            "before": {"entry": None, "shell_listeners": None, "status": "loaded"},
+            "after": {"entry": None, "shell_listeners": None, "status": "loaded"},
+            "host_exports": list(HOST_EXPORTS),
+            "worker": {"ok": True, "host_exports": list(HOST_EXPORTS)},
+        }
+        self.assertEqual(_validate_import_only(observation), observation)
+        observation["after"] = {
+            "entry": None,
+            "shell_listeners": "3",
+            "status": "loaded",
+        }
+        with self.assertRaisesRegex(BrowserRuntimeError, "changed application state"):
+            _validate_import_only(observation)
+
+    def test_import_only_oracle_rejects_worker_startup_failure(self):
+        observation = {
+            "ok": True,
+            "before": {"entry": None, "shell_listeners": None, "status": "loaded"},
+            "after": {"entry": None, "shell_listeners": None, "status": "loaded"},
+            "host_exports": list(HOST_EXPORTS),
+            "worker": {"ok": False, "error": "window is unavailable"},
+        }
+        with self.assertRaisesRegex(BrowserRuntimeError, "worker import did not initialize"):
+            _validate_import_only(observation)
+
     def test_linked_assets_are_rejected_before_browser_requests(self):
         with tempfile.TemporaryDirectory() as temporary:
             link = pathlib.Path(temporary) / "browser-assets"

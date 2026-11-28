@@ -179,7 +179,7 @@ class BrowserAssetContractTests(unittest.TestCase):
         spec.loader.exec_module(browser)
         declarations = "".join(
             f"export const {name}: () => void;\n" for name in browser.HOST_EXPORTS
-        )
+        ) + f"export const {browser.HOST_START_EXPORT}: () => void;\n"
         runtime = (
             "export const memory: WebAssembly.Memory;\n"
             "export const __wbindgen_export: (a: number) => void;\n"
@@ -192,7 +192,61 @@ class BrowserAssetContractTests(unittest.TestCase):
             canvas.write_text(
                 runtime + "export const start: () => void;\n", encoding="utf-8"
             )
+            host.write_text(
+                declarations + "export const unrelated_new_application_export: () => number;\n",
+                encoding="utf-8",
+            )
+            with self.assertRaisesRegex(
+                SystemExit, "retains unrelated unrelated_new_application_export"
+            ):
+                browser.check_artifact_exports(host, canvas)
+            host.write_text(
+                declarations.replace("initialize: () => void", "start: () => void"),
+                encoding="utf-8",
+            )
+            with self.assertRaisesRegex(SystemExit, "missing its private start adapter"):
+                browser.check_artifact_exports(host, canvas)
+            host.write_text(
+                declarations.replace("initialize: () => void", "initialize: () => number"),
+                encoding="utf-8",
+            )
+            with self.assertRaisesRegex(SystemExit, "missing its private start adapter"):
+                browser.check_artifact_exports(host, canvas)
+            host.write_text(declarations, encoding="utf-8")
             browser.check_artifact_exports(host, canvas)
+
+            public = root / "host.d.ts"
+            loader = root / "host.js"
+            public.write_text(
+                "export default function init(): Promise<unknown>;\n",
+                encoding="utf-8",
+            )
+            loader.write_text("wasm.__wbindgen_start();\n", encoding="utf-8")
+            browser.check_host_startup(public, loader)
+            for name in ("start", browser.HOST_START_EXPORT):
+                loader.write_text("wasm.__wbindgen_start();\n", encoding="utf-8")
+                public.write_text(
+                    f"export function {name}(): void;\n", encoding="utf-8"
+                )
+                with self.assertRaisesRegex(SystemExit, f"exposes public {name}"):
+                    browser.check_host_startup(public, loader)
+                public.write_text(
+                    "export default function init(): Promise<unknown>;\n",
+                    encoding="utf-8",
+                )
+                loader.write_text(
+                    f"export function {name} () {{}}\nwasm.__wbindgen_start();\n",
+                    encoding="utf-8",
+                )
+                with self.assertRaisesRegex(SystemExit, f"exposes public {name}"):
+                    browser.check_host_startup(public, loader)
+            public.write_text(
+                "export default function init(): Promise<unknown>;\n",
+                encoding="utf-8",
+            )
+            loader.write_text("wasm.__wbindgen_start();\n" * 2, encoding="utf-8")
+            with self.assertRaisesRegex(SystemExit, "delegate startup once"):
+                browser.check_host_startup(public, loader)
 
             host.write_text(declarations.replace("metis_http_stop", "missing"), encoding="utf-8")
             with self.assertRaisesRegex(SystemExit, "missing metis_http_stop"):
@@ -246,7 +300,8 @@ class BrowserAssetContractTests(unittest.TestCase):
         )
         self.assertEqual(policy, canonical)
         self.assertIn('<link rel="stylesheet" href="./styles.css">', document)
-        self.assertIn('<script type="module" src="./http-health.js"></script>', document)
+        self.assertIn('data-metis-entry="http"', document)
+        self.assertIn('<script type="module" src="./bootstrap.js"></script>', document)
         self.assertNotIn("<script type=\"module\">", document.lower())
         self.assertIn('id="metis-status" role="status"', document)
         self.assertIn('id="metis-health" type="button"', document)

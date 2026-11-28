@@ -365,7 +365,7 @@ oracle; capturing the minimized window re-raises it, and captures may retain
 their initial dimensions. Standard buttons have nonzero frames and are enabled
 and unhidden in normal mode, while recordings place a purple capture badge over
 their area. Unobscured glyph evidence remains separate. The native controls add
-no JavaScript; the three initialization modules retain nine authored lines.
+no JavaScript; the two shared initialization modules retain six authored lines.
 General programmable native window APIs and the remaining permission/mobile
 capability pairs stay open. Moirai PR 615 merges at
 `10a828f7e0a8cace10dd30e88e47ce2e64aec6e0`; all 701 consumer Rust tests pass
@@ -379,12 +379,14 @@ well as compilation. Real Atlas macOS bundling preserves both canonical locks,
 verifies the ad-hoc signature and packages exact frontend resource bytes. The
 shared cache, root build settings and live frontend paths remain intact.
 
-## Authored JavaScript inventory — 2026-11-27
+## Authored JavaScript inventory — 2026-11-28
 
-Four authored browser initialization modules remain: workbench `bootstrap.js`
-(74 bytes, three lines), HTTP `http-health.js` (71 bytes, three lines), canvas
-`canvas-input.js` (225 bytes, seven lines) and starter `main.js` (54 bytes,
-three lines). Together they are 424 bytes and 16 newline-terminated lines. The
+Three authored browser initialization modules remain: shared browser
+`bootstrap.js` (50 bytes, three lines), canvas `canvas-input.js` (225 bytes,
+seven lines) and starter `main.js` (54 bytes, three lines). Together they are
+329 bytes and 13 newline-terminated lines. Rust selects the packaged workbench
+or HTTP application from explicit page metadata; an unmarked import performs no
+application work. The
 stored 37,607-byte `frontend/webview/generated/page.js` is generated
 wasm-bindgen interoperability plus generator-owned initialization, not authored
 application logic. Test-only script snippets remain outside this inventory.
