@@ -1483,6 +1483,7 @@ dependencies = [
  "tracing",
  "tracing-subscriber",
  "unicode-segmentation",
+ "wasm-bindgen",
 ]
 
 [[package]]

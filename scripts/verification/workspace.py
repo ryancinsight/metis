@@ -61,9 +61,10 @@ REGISTRY_BOUNDARIES = {
     # manifest and the application protocol above.
     ("metis-webview-page", "serde"),
     ("metis-webview-page", "serde_json"),
-    # No Atlas provider supplies the wasm-bindgen browser ABI; the page uses
-    # exact-pinned interop versions recorded in the audited lock, so a caret
-    # range cannot drift the locked graph.
+    # No Atlas provider supplies the wasm-bindgen browser ABI; Rust-owned page
+    # and example entry points use exact-pinned interop versions recorded in
+    # the audited lock, so a caret range cannot drift the locked graph.
+    ("metis-web", "wasm-bindgen"),
     ("metis-starter", "wasm-bindgen"),
     ("metis-webview-page", "wasm-bindgen"),
     ("metis-webview-page", "web-sys"),

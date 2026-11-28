@@ -82,7 +82,7 @@ fn write_pointer(output: &mut String, event: CanvasPointerEvent) {
     .expect("invariant: writing to a String is infallible");
 }
 
-fn start() -> io::Result<()> {
+fn activate() -> io::Result<()> {
     APPLICATION.with_borrow_mut(|application| {
         let application = application.as_mut().ok_or_else(|| {
             io::Error::new(
@@ -152,7 +152,7 @@ fn mount() -> io::Result<()> {
         .get_element_by_id("canvas-stop")
         .ok_or_else(|| io::Error::new(io::ErrorKind::NotFound, "canvas stop control is missing"))?;
     let controls = [
-        start_button.add_event_listener("click", |_| report(start()))?,
+        start_button.add_event_listener("click", |_| report(activate()))?,
         drain_button.add_event_listener("click", |_| report(drain()))?,
         stop_button.add_event_listener("click", |_| report(stop()))?,
     ];
@@ -165,8 +165,11 @@ fn mount() -> io::Result<()> {
     status("loaded")
 }
 
-#[expect(unsafe_code, reason = "raw fixture WASM ABI")]
-#[unsafe(no_mangle)]
-pub extern "C" fn canvas_mount() {
+/// Binds the canvas controls while initializing this WebAssembly module instance.
+///
+/// `wasm-bindgen` calls this hook once for the instance. The retained listeners
+/// remain live for that instance and the stop control releases canvas input.
+#[wasm_bindgen::prelude::wasm_bindgen(start)]
+pub fn start() {
     report(mount());
 }
