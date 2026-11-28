@@ -180,12 +180,18 @@ class BrowserAssetContractTests(unittest.TestCase):
         declarations = "".join(
             f"export const {name}: () => void;\n" for name in browser.HOST_EXPORTS
         )
+        runtime = (
+            "export const memory: WebAssembly.Memory;\n"
+            "export const __wbindgen_export: (a: number) => void;\n"
+        )
         with tempfile.TemporaryDirectory() as directory:
             root = pathlib.Path(directory)
             host = root / "host.d.ts"
             canvas = root / "canvas.d.ts"
             host.write_text(declarations, encoding="utf-8")
-            canvas.write_text("export const start: () => void;\n", encoding="utf-8")
+            canvas.write_text(
+                runtime + "export const start: () => void;\n", encoding="utf-8"
+            )
             browser.check_artifact_exports(host, canvas)
 
             host.write_text(declarations.replace("metis_http_stop", "missing"), encoding="utf-8")
@@ -193,9 +199,22 @@ class BrowserAssetContractTests(unittest.TestCase):
                 browser.check_artifact_exports(host, canvas)
             host.write_text(declarations, encoding="utf-8")
             canvas.write_text(
-                "export const metis_start: () => number;\n", encoding="utf-8"
+                runtime + "export const start: () => number;\n", encoding="utf-8"
             )
-            with self.assertRaisesRegex(SystemExit, "retains unrelated metis_start"):
+            with self.assertRaisesRegex(SystemExit, "missing its start export"):
+                browser.check_artifact_exports(host, canvas)
+            canvas.write_text(runtime, encoding="utf-8")
+            with self.assertRaisesRegex(SystemExit, "missing its start export"):
+                browser.check_artifact_exports(host, canvas)
+            canvas.write_text(
+                runtime
+                + "export const start: () => void;\n"
+                + "export const unrelated_new_application_export: () => number;\n",
+                encoding="utf-8",
+            )
+            with self.assertRaisesRegex(
+                SystemExit, "retains unrelated unrelated_new_application_export"
+            ):
                 browser.check_artifact_exports(host, canvas)
 
     def test_default_source_has_no_consumer_gallery(self):

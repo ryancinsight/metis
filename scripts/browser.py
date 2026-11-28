@@ -111,19 +111,33 @@ def validate_index_policy(index: pathlib.Path) -> None:
 
 def check_artifact_exports(host: pathlib.Path, canvas: pathlib.Path) -> None:
     """Require application exports only in the distributed browser host."""
-    host_types = host.read_text(encoding="utf-8")
-    canvas_types = canvas.read_text(encoding="utf-8")
-    canvas_exports = {
-        line.removeprefix("export const ").partition(":")[0]
-        for line in canvas_types.splitlines()
-        if line.startswith("export const ")
-    }
+    def declarations(path: pathlib.Path) -> dict[str, str]:
+        exports = {}
+        for line in path.read_text(encoding="utf-8").splitlines():
+            if line.startswith("export const "):
+                name, separator, signature = line.removeprefix("export const ").partition(":")
+                if not separator or name in exports:
+                    raise SystemExit(f"generated export table is malformed: {line}")
+                exports[name] = signature.strip()
+        return exports
+
+    host_exports = declarations(host)
+    canvas_exports = declarations(canvas)
     for export in HOST_EXPORTS:
-        declaration = f"export const {export}: () => void;"
-        if declaration not in host_types:
+        if host_exports.get(export) != "() => void;":
             raise SystemExit(f"generated browser host is missing {export}")
-        if export in canvas_exports:
-            raise SystemExit(f"generated canvas input retains unrelated {export}")
+    if canvas_exports.get("start") != "() => void;":
+        raise SystemExit("generated canvas input is missing its start export")
+    canvas_application_exports = {
+        name
+        for name in canvas_exports
+        if name != "memory" and not name.startswith("__")
+    }
+    unrelated = canvas_application_exports - {"start"}
+    if unrelated:
+        raise SystemExit(
+            "generated canvas input retains unrelated " + ", ".join(sorted(unrelated))
+        )
 
 
 def build() -> None:
