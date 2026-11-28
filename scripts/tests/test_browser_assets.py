@@ -216,6 +216,16 @@ class BrowserAssetContractTests(unittest.TestCase):
                 SystemExit, "retains unrelated unrelated_new_application_export"
             ):
                 browser.check_artifact_exports(host, canvas)
+            canvas.write_text(
+                runtime
+                + "export const start: () => void;\n"
+                + "export const __unrelated_new_application_export: () => void;\n",
+                encoding="utf-8",
+            )
+            with self.assertRaisesRegex(
+                SystemExit, "retains unrelated __unrelated_new_application_export"
+            ):
+                browser.check_artifact_exports(host, canvas)
 
     def test_default_source_has_no_consumer_gallery(self):
         source = ROOT / "examples" / "browser"

@@ -123,15 +123,27 @@ def check_artifact_exports(host: pathlib.Path, canvas: pathlib.Path) -> None:
 
     host_exports = declarations(host)
     canvas_exports = declarations(canvas)
+
+    def is_runtime_export(name: str) -> bool:
+        if name in {"memory", "__wbindgen_add_to_stack_pointer", "__wbindgen_start"}:
+            return True
+        wbindgen_suffix = name.removeprefix("__wbindgen_export")
+        if wbindgen_suffix != name and (
+            not wbindgen_suffix or wbindgen_suffix.isdecimal()
+        ):
+            return True
+        element_suffix = name.removeprefix("__wasm_bindgen_func_elem_")
+        return element_suffix != name and all(
+            part.isdecimal() for part in element_suffix.split("_")
+        )
+
     for export in HOST_EXPORTS:
         if host_exports.get(export) != "() => void;":
             raise SystemExit(f"generated browser host is missing {export}")
     if canvas_exports.get("start") != "() => void;":
         raise SystemExit("generated canvas input is missing its start export")
     canvas_application_exports = {
-        name
-        for name in canvas_exports
-        if name != "memory" and not name.startswith("__")
+        name for name in canvas_exports if not is_runtime_export(name)
     }
     unrelated = canvas_application_exports - {"start"}
     if unrelated:
