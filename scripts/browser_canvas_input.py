@@ -7,6 +7,7 @@ import pathlib
 import urllib.parse
 from typing import Any, Mapping, Sequence
 
+from browser import HOST_EXPORTS
 from browser_canvas import ensure_canvas_visible, settle_canvas_input
 from browser_canvas_capture import READ_SCREENSHOT_PIXELS, capture_screenshot, pixel_observation
 from browser_protocol import ELEMENT_KEY, BrowserRuntimeError, StaticServer, WebDriverClient, parse_device_scale
@@ -19,6 +20,42 @@ STATUS_ID = "canvas-input-status"
 CANVAS_INPUT_KINDS = (
     "pointerdown", "pointermove", "pointerup", "pointercancel", "keydown", "keyup", "wheel",
 )
+
+
+IMPORT_HOST_WITHOUT_ENTRY = """
+const done = arguments[arguments.length - 1];
+const body = document.body;
+const status = document.getElementById('canvas-input-status');
+const observe = () => ({
+  entry: body.getAttribute('data-metis-entry'),
+  shell_listeners: body.getAttribute('data-metis-shell-listener-count'),
+  status: status ? status.textContent : null,
+});
+const before = observe();
+import('./metis_web.js').then(async module => {
+  const exports = await module.default();
+  const hostExports = __HOST_EXPORTS__;
+  const moduleUrl = new URL('./metis_web.js', location.href).href;
+  const source = `import init from ${JSON.stringify(moduleUrl)};
+const names = ${JSON.stringify(hostExports)};
+init().then(exports => postMessage({ok: true,
+  host_exports: names.filter(name => typeof exports[name] === 'function')}))
+  .catch(error => postMessage({ok: false, error: String(error).slice(0, 512)}));`;
+  const workerUrl = URL.createObjectURL(new Blob([source], {type: 'text/javascript'}));
+  const worker = new Worker(workerUrl, {type: 'module'});
+  const cleanup = () => { worker.terminate(); URL.revokeObjectURL(workerUrl); };
+  worker.onmessage = event => {
+    cleanup();
+    done({ok: true, before, after: observe(),
+      host_exports: hostExports.filter(name => typeof exports[name] === 'function'),
+      worker: event.data});
+  };
+  worker.onerror = event => {
+    cleanup();
+    done({ok: false, error: String(event.message).slice(0, 512)});
+  };
+}).catch(error => done({ok: false, error: String(error).slice(0, 512)}));
+""".replace("__HOST_EXPORTS__", json.dumps(HOST_EXPORTS))
 
 
 INSTALL_CANVAS_TRACE = """
@@ -148,6 +185,27 @@ def _batch(client: WebDriverClient) -> list[list[Any]]:
     return rows
 
 
+def _validate_import_only(observation: Any) -> dict[str, Any]:
+    expected = {
+        "entry": None,
+        "shell_listeners": None,
+        "status": "loaded",
+    }
+    exports = list(HOST_EXPORTS)
+    if not isinstance(observation, dict) or observation.get("ok") is not True:
+        raise BrowserRuntimeError("browser host import did not initialize")
+    if observation.get("before") != expected or observation.get("after") != expected:
+        raise BrowserRuntimeError("unmarked browser host import changed application state")
+    if observation.get("host_exports") != exports:
+        raise BrowserRuntimeError("browser host import omitted an explicit application export")
+    worker = observation.get("worker")
+    if not isinstance(worker, dict) or worker.get("ok") is not True:
+        raise BrowserRuntimeError("browser worker import did not initialize")
+    if worker.get("host_exports") != exports:
+        raise BrowserRuntimeError("browser worker import omitted an explicit application export")
+    return observation
+
+
 def _pointer_row(phase: str, pointer_id: int, x: float, y: float, button: int, buttons: int) -> list[Any]:
     return [phase, pointer_id, x, y, button, buttons, False, False, False, False, True]
 
@@ -245,6 +303,10 @@ def run(
             client.set_window_rect(640, 480)
             client.navigate(url)
             _wait_for_text(client, STATUS_ID, "loaded", include=False, timeout_ms=10_000)
+            phase = "import unmarked browser host"
+            import_only = _validate_import_only(
+                client.execute_async(IMPORT_HOST_WITHOUT_ENTRY, [])
+            )
             installed = client.execute(INSTALL_CANVAS_TRACE, [CANVAS_ID])
             trace_installed = True
             empty_trace = {"registrations": 0, "active": 0, "removals": 0,
@@ -354,6 +416,7 @@ def run(
             return {
                 "schema": 1, "status": "passed", "revision": revision, "engine": engine.value,
                 "url": url, "capabilities": dict(client.capabilities), "canvas": canvas,
+                "import_only": import_only,
                 "events": gesture, "callbacks": completed["observations"],
                 "screenshot": screenshot,
                 "device_scale": scale,

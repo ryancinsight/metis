@@ -151,8 +151,16 @@ cargo install wasm-bindgen-cli --version 0.2.129 --locked --root output/wasm-bin
 python scripts/browser.py build
 ```
 
-Serve `output/browser` from an HTTP origin and open `index.html`. The page
-contains real editable controls; input changes update the Rust-owned state.
+Serve `output/browser` from an HTTP origin and open `index.html`. The shared
+authored loader only initializes the generated module; Rust selects the
+workbench or HTTP application from `data-metis-entry` on the packaged page.
+Importing the module from a page without that marker installs no application
+state, while the six explicit raw host exports remain available to consumers.
+The generated ABI retains wasm-bindgen's private raw
+`initialize: () => void` start adapter, but generated JavaScript exposes no
+top-level `start` or `initialize` wrapper.
+The workbench contains real editable controls; input changes update the
+Rust-owned state.
 Configure the optional hidden host fields or the query parameters described in
 the user manual to enable the service bridge. The generated module also exports
 `metis_stop`, which drops the browser task and every Rust-owned DOM listener

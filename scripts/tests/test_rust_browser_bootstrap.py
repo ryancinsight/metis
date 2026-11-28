@@ -29,14 +29,19 @@ class RustBrowserBootstrapTests(unittest.TestCase):
 
     def test_authored_modules_only_initialize_rust_hosts(self):
         import re
-        for filename, module, export in (
-            ("examples/browser/bootstrap.js", "metis_web", "metis_browser_start"),
-            ("examples/browser/http-health.js", "metis_web", "metis_http_start"),
-        ):
-            script = (ROOT / filename).read_text(encoding="utf-8")
-            pattern = (r'import init from "\./' + module +
-                       r'\.js";\s*\(await init\(\)\)\.' + export + r'\(\);\s*')
-            self.assertIsNotNone(re.fullmatch(pattern, script), filename)
+        script = (ROOT / "examples/browser/bootstrap.js").read_text(encoding="utf-8")
+        startup = (ROOT / "crates/metis-web/src/startup.rs").read_text(encoding="utf-8")
+        self.assertIsNotNone(
+            re.fullmatch(r'import init from "\./metis_web\.js";\s*await init\(\);\s*', script)
+        )
+        self.assertIn("#[wasm_bindgen::prelude::wasm_bindgen(start, private)]", startup)
+        self.assertIn("fn initialize()", startup)
+        self.assertNotIn("fn start()", startup)
+        self.assertFalse((ROOT / "examples/browser/http-health.js").exists())
+        for page, marker in (("index.html", "workbench"), ("http-health.html", "http")):
+            document = (ROOT / "examples/browser" / page).read_text(encoding="utf-8")
+            self.assertIn(f'data-metis-entry="{marker}"', document)
+            self.assertIn('<script type="module" src="./bootstrap.js"></script>', document)
 
     def test_canvas_module_contains_only_initialization_and_bounded_failure_display(self):
         script = (ROOT / "examples/browser/canvas-input.js").read_text(encoding="utf-8")
@@ -49,6 +54,7 @@ class RustBrowserBootstrapTests(unittest.TestCase):
         self.assertNotIn("window.canvasInput", script)
         self.assertNotIn("EventTarget", script)
         self.assertIn("#[wasm_bindgen::prelude::wasm_bindgen(start)]", rust)
+        self.assertIn("pub fn start()", rust)
         self.assertNotIn("canvas_mount", rust)
         self.assertNotIn("no_mangle", rust)
 
@@ -56,8 +62,8 @@ class RustBrowserBootstrapTests(unittest.TestCase):
             (ROOT / "crates/metis-web/Cargo.toml").read_text(encoding="utf-8")
         )
         wasm = manifest["target"]['cfg(target_arch = "wasm32")']
-        self.assertNotIn("wasm-bindgen", wasm["dependencies"])
-        self.assertIn("wasm-bindgen", wasm["dev-dependencies"])
+        self.assertIn("wasm-bindgen", wasm["dependencies"])
+        self.assertNotIn("dev-dependencies", wasm)
 
     @unittest.skipUnless(shutil.which("node"), "Node.js is required for module-loader faults")
     def test_canvas_module_initializes_once_and_caps_loader_failures(self):

@@ -61,6 +61,9 @@ mod browser;
 #[cfg(target_arch = "wasm32")]
 mod navigation;
 
+#[cfg(any(target_arch = "wasm32", test))]
+mod startup;
+
 #[cfg(target_arch = "wasm32")]
 pub use navigation::BrowserNavigator;
 

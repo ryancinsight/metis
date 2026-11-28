@@ -4,13 +4,23 @@ Status: Accepted
 
 Date: 2026-10-12
 
+Revised: 2026-11-28 — packaged pages select their Rust application through
+body metadata so one authored loader only initializes the generated module.
+
 ## Decision and acceptance
 
 Target: Metis 0.3.0. Rust owns both browser shells: query configuration,
 start/stop listeners, same-origin anchor policy, HTTP session and request
-lifecycle, fragment codecs, allowlists and DOM updates. Each authored module
-loads the generated wasm-bindgen module and calls one Rust entry point.
-Generated Web API bindings remain the necessary browser ABI.
+lifecycle, fragment codecs, allowlists and DOM updates. Both packaged pages use
+one authored module that only initializes the generated wasm-bindgen module.
+Its Rust start hook selects the workbench or HTTP application from the page's
+explicit `data-metis-entry` value; an absent marker performs no application
+work, preserving import-only library use. The six explicit raw host exports
+remain the application API for browser and HTTP consumers. The generated ABI
+also retains wasm-bindgen's private raw `initialize: () => void` adapter for
+automatic startup, while generated JavaScript exposes no top-level `start` or
+`initialize` wrapper. Generated Web API bindings remain the necessary browser
+ABI.
 The HTTP endpoint comes from the host HTML configuration as an exact HTTP(S)
 `/health` URL; its typed origin supplies all three closed routes. CSP and the
 backend Origin/session policy remain separate enforcement boundaries.
